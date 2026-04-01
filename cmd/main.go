@@ -1,0 +1,41 @@
+package main
+
+import (
+	"os"
+	"path/filepath"
+
+	"github.com/spf13/cobra"
+	"github.com/useryege/athena/util/log"
+	"k8s.io/klog/v2"
+)
+
+const (
+	binaryNameEnv = "ATHENA_BINARY_NAME"
+)
+
+func init() {
+	// Make sure klog uses the configured log level and format.
+	klog.SetLogger(log.NewLogrusLogger(log.NewWithCurrentConfig()))
+}
+
+func main() {
+	var command *cobra.Command
+
+	binaryName := filepath.Base(os.Args[0])
+	if val := os.Getenv(binaryNameEnv); val != "" {
+		binaryName = val
+	}
+
+	switch binaryName {
+	case "athena-server":
+
+	default:
+		os.Exit(1)
+	}
+
+	err := command.Execute()
+
+	if err != nil {
+		os.Exit(1)
+	}
+}
