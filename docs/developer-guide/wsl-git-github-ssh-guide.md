@@ -1,37 +1,9 @@
 # WSL Git and GitHub SSH Guide
 
-This guide covers two tasks:
+This guide covers one task:
 
-1. Install Git in WSL
-2. Generate an SSH key and configure GitHub to use SSH access
+Generate an SSH key and configure GitHub to use SSH access
 
-## 1. Install Git in WSL
-
-This example uses Ubuntu in WSL.
-
-### Update package index
-
-```bash
-sudo apt update
-```
-
-### Install Git
-
-```bash
-sudo apt install -y git
-```
-
-### Verify the installation
-
-```bash
-git --version
-```
-
-You should see output similar to:
-
-```text
-git version 2.x.x
-```
 
 ### Optional: configure Git user information
 
@@ -40,20 +12,15 @@ git config --global user.name "Your Name"
 git config --global user.email "your-email@example.com"
 ```
 
-### Recommended line ending settings for WSL
+### Optional: Recommended line ending settings for WSL
 
 ```bash
 git config --global core.autocrlf input
 git config --global core.eol lf
 ```
 
-### Verify your Git configuration
 
-```bash
-git config --global --list
-```
-
-## 2. Generate an SSH Key for GitHub
+## Generate an SSH Key for GitHub
 
 ### Create the `.ssh` directory
 
