@@ -22,6 +22,16 @@ case "${unameOut}" in
     Darwin*)    INSTALL_OS=darwin;;
 esac
 
+if [[ -z "$ARCHITECTURE" ]]; then
+    echo "Unsupported architecture: $(uname -m)" >&2
+    exit 1
+fi
+
+if [[ -z "$INSTALL_OS" ]]; then
+    echo "Unsupported operating system: ${unameOut}" >&2
+    exit 1
+fi
+
 for product in "$@"; do
   ARCHITECTURE=$ARCHITECTURE INSTALL_OS=$INSTALL_OS "$(dirname "$0")/installers/install-${product}.sh"
 done

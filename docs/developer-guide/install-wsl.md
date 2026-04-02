@@ -120,7 +120,20 @@ cd argo-cd
 
 ---
 
-## 6. Open the Project in Cursor
+## 6. Install Required Tools
+
+Install the basic tools needed for local development inside WSL.
+
+For example, install `make` with:
+
+```bash
+sudo apt update
+sudo apt install -y make unzip
+```
+
+---
+
+## 7. Open the Project in Cursor
 
 From the WSL terminal, go to the project directory:
 
@@ -144,6 +157,8 @@ If you already installed Ubuntu, the shortest path is:
 
 ```bash
 wsl -d Ubuntu-24.04
+sudo apt update
+sudo apt install -y make
 mkdir -p ~/work
 cd ~/work
 git clone <your-repository-url> argo-cd
