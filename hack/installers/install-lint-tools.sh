@@ -5,3 +5,6 @@ set -eux -o pipefail
 GOLANGCI_LINT_VERSION=2.5.0
 
 GO111MODULE=on go install "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v${GOLANGCI_LINT_VERSION}"
+
+
+https://dl.google.com/go/go1.25.5.linux-amd64.tar.gz
