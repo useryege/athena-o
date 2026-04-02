@@ -6,7 +6,7 @@ If the DCO action in the integration test fails, one or more of your commits are
 
 Checklist:
 
-* [ ] Either (a) I've created an [enhancement proposal](https://github.com/argoproj/argo-cd/issues/new/choose) and discussed it with the community, (b) this is a bug fix, or (c) this does not need to be in the release notes.
+* [ ] Either (a) I've created an [enhancement proposal](https://github.com/useryege/athena/issues/new/choose) and discussed it with the community, (b) this is a bug fix, or (c) this does not need to be in the release notes.
 * [ ] The title of the PR states what changed and the related issues number (used for the release note).
 * [ ] The title of the PR conforms to the [Title of the PR](https://argo-cd.readthedocs.io/en/latest/developer-guide/submit-your-pr/#title-of-the-pr)
 * [ ] I've included "Closes [ISSUE #]" or "Fixes [ISSUE #]" in the description to automatically close the associated issue.
