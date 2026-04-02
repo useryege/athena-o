@@ -1,0 +1,11 @@
+dir: '{{.InterfaceDir}}/mocks'
+filename: '{{.InterfaceName}}.go'
+include-auto-generated: true # Needed since mockery 3.6.1
+packages:
+  github.com/useryege/athena/util/io:
+    interfaces:
+      TempPaths: {}
+pkgname: mocks
+structname: '{{.InterfaceName}}'
+template-data:
+  unroll-variadic: true

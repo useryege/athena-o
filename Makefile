@@ -167,12 +167,15 @@ mod-download-local:
 mod-vendor-local: mod-download-local
 	go mod vendor
 
-.PHONY: codegen-local
-codegen-local: mod-vendor-local mockgen gogen protogen clientgen openapigen clidocsgen actionsdocsgen resourceiconsgen manifests-local notification-docs notification-catalog
-	rm -rf vendor/
+# original codegen-local
+# .PHONY: codegen-local
+# codegen-local: mod-vendor-local mockgen gogen protogen clientgen openapigen clidocsgen actionsdocsgen resourceiconsgen manifests-local notification-docs notification-catalog
+# 	rm -rf vendor/
 
-.PHONY: codegen-local-fast
-codegen-local-fast: mockgen gogen protogen-fast clientgen openapigen clidocsgen manifests-local notification-docs notification-catalog
+# new codegen-local
+.PHONY: codegen-local
+codegen-local: mod-vendor-local mockgen
+	rm -rf vendor/
 
 .PHONY: test-tools-image
 test-tools-image:
