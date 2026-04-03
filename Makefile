@@ -174,7 +174,7 @@ mod-vendor-local: mod-download-local
 
 # new codegen-local
 .PHONY: codegen-local
-codegen-local: mod-vendor-local mockgen
+codegen-local: mod-vendor-local mockgen gogen protogen
 	rm -rf vendor/
 
 .PHONY: test-tools-image

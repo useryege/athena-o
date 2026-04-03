@@ -33,20 +33,20 @@ go_mod_install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 go_mod_install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
 
 # k8s tools to codegen .proto files, client libraries, and helpers from types.go
-# go_mod_install k8s.io/code-generator/cmd/go-to-protobuf
-# go_mod_install k8s.io/code-generator/cmd/go-to-protobuf/protoc-gen-gogo
-# go_mod_install k8s.io/code-generator/cmd/client-gen
-# go_mod_install k8s.io/code-generator/cmd/deepcopy-gen
-# go_mod_install k8s.io/code-generator/cmd/defaulter-gen
-# go_mod_install k8s.io/code-generator/cmd/informer-gen
-# go_mod_install k8s.io/code-generator/cmd/lister-gen
+go_mod_install k8s.io/code-generator/cmd/go-to-protobuf
+go_mod_install k8s.io/code-generator/cmd/go-to-protobuf/protoc-gen-gogo
+go_mod_install k8s.io/code-generator/cmd/client-gen
+go_mod_install k8s.io/code-generator/cmd/deepcopy-gen
+go_mod_install k8s.io/code-generator/cmd/defaulter-gen
+go_mod_install k8s.io/code-generator/cmd/informer-gen
+go_mod_install k8s.io/code-generator/cmd/lister-gen
 
 # We still install openapi-gen from go.mod since upstream does not utilize release tags. Use go install in order for
 # replace directives to be respected.
-# go install k8s.io/kube-openapi/cmd/openapi-gen
+go install k8s.io/kube-openapi/cmd/openapi-gen
 
 # # controller-gen is run by ./hack/gen-crd-spec to generate the CRDs
-# go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.18.0
+go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.18.0
 
 # swagger cli is used to generate swagger docs
 go install github.com/go-swagger/go-swagger/cmd/swagger@v0.28.0

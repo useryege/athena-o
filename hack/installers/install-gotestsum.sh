@@ -1,8 +1,6 @@
 #!/bin/bash
 set -eux -o pipefail
 
-# Code from: https://github.com/argoproj/argo-rollouts/blob/f650a1fd0ba7beb2125e1598410515edd572776f/hack/installers/install-dev-tools.sh
-
 PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")"/../..; pwd)
 INSTALL_PATH="${BIN:-$INSTALL_PATH}"
 INSTALL_PATH="${INSTALL_PATH:-$PROJECT_ROOT/dist}"
