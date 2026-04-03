@@ -124,11 +124,6 @@ protogen-fast:
 	export GO111MODULE=off
 	./hack/generate-proto.sh
 
-.PHONY: openapigen
-openapigen:
-	export GO111MODULE=off
-	./hack/update-openapi.sh
-
 .PHONY: notification-catalog
 notification-catalog:
 	go run ./hack/gen-catalog catalog
@@ -147,14 +142,6 @@ clientgen:
 clidocsgen:
 	go run tools/cmd-docs/main.go
 
-.PHONY: actionsdocsgen
-actionsdocsgen:
-	hack/generate-actions-list.sh
-
-.PHONY: resourceiconsgen
-resourceiconsgen:
-	hack/generate-icons-typescript.sh
-
 .PHONY: manifests-local
 manifests-local:
 	./hack/update-manifests.sh
@@ -169,16 +156,16 @@ mod-vendor-local: mod-download-local
 
 # original codegen-local
 # .PHONY: codegen-local
-# codegen-local: mod-vendor-local mockgen gogen protogen clientgen openapigen clidocsgen actionsdocsgen resourceiconsgen manifests-local notification-docs notification-catalog
+# codegen-local: mod-vendor-local mockgen gogen protogen clientgen clidocsgen  manifests-local notification-docs notification-catalog
 # 	rm -rf vendor/
 
 # new codegen-local
 .PHONY: codegen-local
-codegen-local: mod-vendor-local mockgen gogen protogen clientgen
+codegen-local: mod-vendor-local mockgen gogen protogen clientgen clidocsgen
 	rm -rf vendor/
 
 .PHONY: codegen-local-fast
-codegen-local-fast: mockgen gogen protogen-fast clientgen openapigen clidocsgen manifests-local notification-docs notification-catalog
+codegen-local-fast: mockgen gogen protogen-fast clientgen clidocsgen manifests-local notification-docs notification-catalog
 
 
 .PHONY: test-tools-image
