@@ -78,89 +78,106 @@ go-to-protobuf \
 # go-to-protobuf modifies vendored code. Re-vendor code so it's available for subsequent steps.
 go mod vendor
 
-# # Either protoc-gen-go, protoc-gen-gofast, or protoc-gen-gogofast can be used to build
-# # server/*/<service>.pb.go from .proto files. golang/protobuf and gogo/protobuf can be used
-# # interchangeably. The difference in the options are:
-# # 1. protoc-gen-go - official golang/protobuf
-# #GOPROTOBINARY=go
-# # 2. protoc-gen-gofast - fork of golang golang/protobuf. Faster code generation
-# #GOPROTOBINARY=gofast
-# # 3. protoc-gen-gogofast - faster code generation and gogo extensions and flexibility in controlling
-# # the generated go code (e.g. customizing field names, nullable fields)
-# GOPROTOBINARY=gogofast
+# Either protoc-gen-go, protoc-gen-gofast, or protoc-gen-gogofast can be used to build
+# server/*/<service>.pb.go from .proto files. golang/protobuf and gogo/protobuf can be used
+# interchangeably. The difference in the options are:
+# 1. protoc-gen-go - official golang/protobuf
+#GOPROTOBINARY=go
+# 2. protoc-gen-gofast - fork of golang golang/protobuf. Faster code generation
+#GOPROTOBINARY=gofast
+# 3. protoc-gen-gogofast - faster code generation and gogo extensions and flexibility in controlling
+# the generated go code (e.g. customizing field names, nullable fields)
+GOPROTOBINARY=gogofast
 
-# # Generate server/<service>/(<service>.pb.go|<service>.pb.gw.go)
-# MOD_ROOT=${GOPATH}/pkg/mod
-# grpc_gateway_version=$(go list -m github.com/grpc-ecosystem/grpc-gateway | awk '{print $NF}' | head -1)
-# GOOGLE_PROTO_API_PATH=${MOD_ROOT}/github.com/grpc-ecosystem/grpc-gateway@${grpc_gateway_version}/third_party/googleapis
-# GOGO_PROTOBUF_PATH=${PROJECT_ROOT}/vendor/github.com/gogo/protobuf
-# PROTO_FILES=$(find "$PROJECT_ROOT" \( -name "*.proto" -and -path '*/server/*' -or -path '*/reposerver/*' -and -name "*.proto" -or -path '*/cmpserver/*' -and -name "*.proto" -or -path '*/commitserver/*' -and -name "*.proto" -or -path '*/util/askpass/*' -and -name "*.proto" \) | sort)
-# for i in ${PROTO_FILES}; do
-#     protoc \
-#         -I"${PROJECT_ROOT}" \
-#         -I"${protoc_include}" \
-#         -I./vendor \
-#         -I"$GOPATH"/src \
-#         -I"${GOOGLE_PROTO_API_PATH}" \
-#         -I"${GOGO_PROTOBUF_PATH}" \
-#         --${GOPROTOBINARY}_out=plugins=grpc:"$GOPATH"/src \
-#         --grpc-gateway_out=logtostderr=true:"$GOPATH"/src \
-#         --swagger_out=logtostderr=true:. \
-#         "$i"
-# done
+# Generate server/<service>/(<service>.pb.go|<service>.pb.gw.go)
+MOD_ROOT=${GOPATH}/pkg/mod
+grpc_gateway_version=$(go list -m github.com/grpc-ecosystem/grpc-gateway | awk '{print $NF}' | head -1)
+GOOGLE_PROTO_API_PATH=${MOD_ROOT}/github.com/grpc-ecosystem/grpc-gateway@${grpc_gateway_version}/third_party/googleapis
+GOGO_PROTOBUF_PATH=${PROJECT_ROOT}/vendor/github.com/gogo/protobuf
 
+# Only generate service proto files from Athena source directories.
+# Make sure to clean the swagger file in the source code directory after generating the proto files.
+PROTO_FILES=$(find "${PROJECT_ROOT}/internal" -type f -name "*.proto" 2>/dev/null | sort || true)
+
+if [ -n "${PROTO_FILES}" ]; then
+    for i in ${PROTO_FILES}; do
+        protoc \
+            -I"${PROJECT_ROOT}" \
+            -I"${protoc_include}" \
+            -I./vendor \
+            -I"$GOPATH"/src \
+            -I"${GOOGLE_PROTO_API_PATH}" \
+            -I"${GOGO_PROTOBUF_PATH}" \
+            --${GOPROTOBINARY}_out=plugins=grpc:"$GOPATH"/src \
+            --grpc-gateway_out=logtostderr=true:"$GOPATH"/src \
+            --swagger_out=logtostderr=true:. \
+            "$i"
+    done
+fi
+
+# This is used to delete the swagger file you don't want it to be show in the swagger UI.
 # # This file is generated but should not be checked in.
 # rm util/askpass/askpass.swagger.json
 
-# [ -L "${GOPATH_PROJECT_ROOT}" ] && rm -rf "${GOPATH_PROJECT_ROOT}"
+# remove the symlink to the project root
+[ -L "${GOPATH_PROJECT_ROOT}" ] && rm -rf "${GOPATH_PROJECT_ROOT}"
 
-# # collect_swagger gathers swagger files into a subdirectory
-# collect_swagger() {
-#     SWAGGER_ROOT="$1"
-#     SWAGGER_OUT="${PROJECT_ROOT}/assets/swagger.json"
-#     PRIMARY_SWAGGER=$(mktemp)
-#     COMBINED_SWAGGER=$(mktemp)
+if [ -n "${ATHENA_SWAGGER_VERSION:-}" ]; then
+    SWAGGER_VERSION="${ATHENA_SWAGGER_VERSION}"
+elif git describe --exact-match --tags HEAD >/dev/null 2>&1; then
+    SWAGGER_VERSION="$(git describe --exact-match --tags HEAD)"
+elif git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    SWAGGER_VERSION="$(git describe --always --dirty 2>/dev/null || echo dev)"
+else
+    SWAGGER_VERSION="dev"
+fi
 
-#     cat <<EOF >"${PRIMARY_SWAGGER}"
-# {
-#   "swagger": "2.0",
-#   "info": {
-#     "title": "Consolidate Services",
-#     "description": "Description of all APIs",
-#     "version": "version not set"
-#   },
-#   "paths": {}
-# }
-# EOF
+# collect_swagger gathers swagger files into a subdirectory
+collect_swagger() {
+    SWAGGER_ROOT="$1"
+    SWAGGER_OUT="${PROJECT_ROOT}/assets/swagger.json"
+    PRIMARY_SWAGGER=$(mktemp)
+    COMBINED_SWAGGER=$(mktemp)
+    SWAGGER_FILES=$(find "${SWAGGER_ROOT}" -type f -name '*.swagger.json' 2>/dev/null | sort || true)
 
-#     rm -f "${SWAGGER_OUT}"
+    cat <<EOF >"${PRIMARY_SWAGGER}"
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Athena API",
+    "description": "Athena Service APIs",
+    "version": "${SWAGGER_VERSION}"
+  },
+  "paths": {}
+}
+EOF
 
-#     find "${SWAGGER_ROOT}" -name '*.swagger.json' -exec swagger mixin --ignore-conflicts "${PRIMARY_SWAGGER}" '{}' \+ >"${COMBINED_SWAGGER}"
-#     jq -r 'del(.definitions[].properties[]? | select(."$ref"!=null and .description!=null).description) | del(.definitions[].properties[]? | select(."$ref"!=null and .title!=null).title) |
-#       # The "array" and "map" fields have custom unmarshaling. Modify the swagger to reflect this.
-#       .definitions.v1alpha1ApplicationSourcePluginParameter.properties.array = {"description":"Array is the value of an array type parameter.","type":"array","items":{"type":"string"}} |
-#       del(.definitions.v1alpha1OptionalArray) |
-#       .definitions.v1alpha1ApplicationSourcePluginParameter.properties.map = {"description":"Map is the value of a map type parameter.","type":"object","additionalProperties":{"type":"string"}} |
-#       del(.definitions.v1alpha1OptionalMap) |
-#       # Output for int64 is incorrect, because it is based on proto definitions, where int64 is a string. In our JSON API, we expect int64 to be an integer. https://github.com/grpc-ecosystem/grpc-gateway/issues/219
-#       (.definitions[]?.properties[]? | select(.type == "string" and .format == "int64")) |= (.type = "integer")
-#     ' "${COMBINED_SWAGGER}" |
-#         jq '.definitions.v1Time.type = "string" | .definitions.v1Time.format = "date-time" | del(.definitions.v1Time.properties)' |
-#         jq '.definitions.v1alpha1ResourceNode.allOf = [{"$ref": "#/definitions/v1alpha1ResourceRef"}] | del(.definitions.v1alpha1ResourceNode.properties.resourceRef) ' \
-#             >"${SWAGGER_OUT}"
+    mkdir -p "$(dirname "${SWAGGER_OUT}")"
+    rm -f "${SWAGGER_OUT}"
 
-#     /bin/rm "${PRIMARY_SWAGGER}" "${COMBINED_SWAGGER}"
-# }
+    if [ -z "${SWAGGER_FILES}" ]; then
+        cp "${PRIMARY_SWAGGER}" "${SWAGGER_OUT}"
+    else
+        find "${SWAGGER_ROOT}" -type f -name '*.swagger.json' -exec swagger mixin --ignore-conflicts "${PRIMARY_SWAGGER}" '{}' \+ >"${COMBINED_SWAGGER}"
+        jq -r '
+          del(.definitions[]?.properties[]? | select(."$ref" != null and .description != null).description) |
+          del(.definitions[]?.properties[]? | select(."$ref" != null and .title != null).title) |
+          # grpc-gateway may emit int64 fields as strings in swagger; normalize them for JSON clients.
+          (.definitions[]?.properties[]? | select(.type == "string" and .format == "int64")) |= (.type = "integer")
+        ' "${COMBINED_SWAGGER}" >"${SWAGGER_OUT}"
+    fi
 
-# # clean up generated swagger files (should come after collect_swagger)
-# clean_swagger() {
-#     SWAGGER_ROOT="$1"
-#     find "${SWAGGER_ROOT}" -name '*.swagger.json' -delete
-# }
+    /bin/rm "${PRIMARY_SWAGGER}" "${COMBINED_SWAGGER}"
+}
 
-# collect_swagger server
-# clean_swagger server
-# clean_swagger reposerver
-# clean_swagger controller
-# clean_swagger cmpserver
-# clean_swagger commitserver
+# clean up generated swagger files (should come after collect_swagger)
+clean_swagger() {
+    SWAGGER_ROOT="$1"
+    find "${SWAGGER_ROOT}" -name '*.swagger.json' -delete
+}
+
+# build the swagger file for the web ui server
+collect_swagger internal/server
+
+# clean up generated swagger files in the source code directory
+clean_swagger internal

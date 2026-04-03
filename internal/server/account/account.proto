@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package account;
+
+option go_package = "github.com/useryege/athena/internal/server/account;account";
+
+message GetAccountRequest {
+  string id = 1;
+}
+
+message GetAccountResponse {
+  string id = 1;
+  string name = 2;
+}
+
+service AccountService {
+  rpc GetAccount(GetAccountRequest) returns (GetAccountResponse);
+}

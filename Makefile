@@ -177,6 +177,10 @@ mod-vendor-local: mod-download-local
 codegen-local: mod-vendor-local mockgen gogen protogen
 	rm -rf vendor/
 
+.PHONY: codegen-local-fast
+codegen-local-fast: mockgen gogen protogen-fast clientgen openapigen clidocsgen manifests-local notification-docs notification-catalog
+
+
 .PHONY: test-tools-image
 test-tools-image:
 ifndef SKIP_TEST_TOOLS_IMAGE
