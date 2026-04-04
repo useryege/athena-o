@@ -14,8 +14,8 @@ cd "${SRCROOT}/manifests/ha/base/redis-ha" && ./generate.sh
 
 # Image repository configuration - can be overridden in forks
 IMAGE_REGISTRY="${IMAGE_REGISTRY:-quay.io}"
-IMAGE_NAMESPACE="${IMAGE_NAMESPACE:-argoproj}"
-IMAGE_REPOSITORY="${IMAGE_REPOSITORY:-argocd}"
+IMAGE_NAMESPACE="${IMAGE_NAMESPACE:-useryege}"
+IMAGE_REPOSITORY="${IMAGE_REPOSITORY:-athena}"
 IMAGE_TAG="${IMAGE_TAG:-}"
 
 # Construct full image name
@@ -26,19 +26,19 @@ detect_current_image() {
   local manifest_file="$1"
   if [ -f "$manifest_file" ]; then
     # Look for the current image name in kustomization.yaml images section
-    awk '/^images:/,/^[a-zA-Z]/ { if (/- name:/ && /argocd/) { gsub(/.*name: */, ""); gsub(/ *$/, ""); print; exit } }' "$manifest_file"
+    awk '/^images:/,/^[a-zA-Z]/ { if (/- name:/ && /athena/) { gsub(/.*name: */, ""); gsub(/ *$/, ""); print; exit } }' "$manifest_file"
   fi
 }
 
 # Determine source image (what to replace)
 DETECTED_IMAGE=$(detect_current_image "${SRCROOT}/manifests/base/kustomization.yaml")
-if [ -n "$DETECTED_IMAGE" ] && [ "$DETECTED_IMAGE" != "quay.io/argoproj/argocd" ]; then
+if [ -n "$DETECTED_IMAGE" ] && [ "$DETECTED_IMAGE" != "quay.io/useryege/athena" ]; then
   # Found a custom image in manifests (subsequent release scenario)
   SOURCE_IMAGE_NAME="$DETECTED_IMAGE"
   echo "Detected existing custom image in manifests: $SOURCE_IMAGE_NAME"
 else
   # Use default source image (fresh fork or manual override)
-  SOURCE_IMAGE_NAME="quay.io/argoproj/argocd"
+  SOURCE_IMAGE_NAME="quay.io/useryege/athena"
   echo "Using default source image: $SOURCE_IMAGE_NAME"
 fi
 
@@ -65,7 +65,7 @@ which "$KUSTOMIZE"
 echo "=== Manifest Generation Configuration ==="
 echo "Source image (to replace): ${SOURCE_IMAGE_NAME}"
 echo "Target image (replace with): ${FULL_IMAGE_NAME}:${IMAGE_TAG}"
-if [ "$DETECTED_IMAGE" != "quay.io/argoproj/argocd" ] && [ -n "$DETECTED_IMAGE" ]; then
+if [ "$DETECTED_IMAGE" != "quay.io/useryege/athena" ] && [ -n "$DETECTED_IMAGE" ]; then
   echo "Scenario: Subsequent release (updating existing custom image)"
 else
   echo "Scenario: First release or local development"
@@ -74,41 +74,10 @@ echo "========================================"
 
 cd "${SRCROOT}/manifests/base" && $KUSTOMIZE edit set image "${SOURCE_IMAGE_NAME}=${FULL_IMAGE_NAME}:${IMAGE_TAG}"
 cd "${SRCROOT}/manifests/ha/base" && $KUSTOMIZE edit set image "${SOURCE_IMAGE_NAME}=${FULL_IMAGE_NAME}:${IMAGE_TAG}"
-cd "${SRCROOT}/manifests/core-install" && $KUSTOMIZE edit set image "${SOURCE_IMAGE_NAME}=${FULL_IMAGE_NAME}:${IMAGE_TAG}"
-
-# Because commit-server is added as a resource outside the base, we have to explicitly set the image override here.
-# If/when commit-server is added to the base, this can be removed.
-cd "${SRCROOT}/manifests/base/commit-server" && $KUSTOMIZE edit set image "${SOURCE_IMAGE_NAME}=${FULL_IMAGE_NAME}:${IMAGE_TAG}"
 
 echo "${AUTOGENMSG}" > "${SRCROOT}/manifests/install.yaml"
 $KUSTOMIZE build "${SRCROOT}/manifests/cluster-install" >> "${SRCROOT}/manifests/install.yaml"
 
-echo "${AUTOGENMSG}" > "${SRCROOT}/manifests/namespace-install.yaml"
-$KUSTOMIZE build "${SRCROOT}/manifests/namespace-install" >> "${SRCROOT}/manifests/namespace-install.yaml"
-
 echo "${AUTOGENMSG}" > "${SRCROOT}/manifests/ha/install.yaml"
 $KUSTOMIZE build "${SRCROOT}/manifests/ha/cluster-install" >> "${SRCROOT}/manifests/ha/install.yaml"
 
-echo "${AUTOGENMSG}" > "${SRCROOT}/manifests/ha/namespace-install.yaml"
-$KUSTOMIZE build "${SRCROOT}/manifests/ha/namespace-install" >> "${SRCROOT}/manifests/ha/namespace-install.yaml"
-
-echo "${AUTOGENMSG}" > "${SRCROOT}/manifests/core-install.yaml"
-$KUSTOMIZE build "${SRCROOT}/manifests/core-install" >> "${SRCROOT}/manifests/core-install.yaml"
-
-# Copies enabling manifest hydrator. These can be removed once the manifest hydrator is either removed or enabled by
-# default.
-
-echo "${AUTOGENMSG}" > "${SRCROOT}/manifests/install-with-hydrator.yaml"
-$KUSTOMIZE build "${SRCROOT}/manifests/cluster-install-with-hydrator" >> "${SRCROOT}/manifests/install-with-hydrator.yaml"
-
-echo "${AUTOGENMSG}" > "${SRCROOT}/manifests/namespace-install-with-hydrator.yaml"
-$KUSTOMIZE build "${SRCROOT}/manifests/namespace-install-with-hydrator" >> "${SRCROOT}/manifests/namespace-install-with-hydrator.yaml"
-
-echo "${AUTOGENMSG}" > "${SRCROOT}/manifests/ha/install-with-hydrator.yaml"
-$KUSTOMIZE build "${SRCROOT}/manifests/ha/cluster-install-with-hydrator" >> "${SRCROOT}/manifests/ha/install-with-hydrator.yaml"
-
-echo "${AUTOGENMSG}" > "${SRCROOT}/manifests/ha/namespace-install-with-hydrator.yaml"
-$KUSTOMIZE build "${SRCROOT}/manifests/ha/namespace-install-with-hydrator" >> "${SRCROOT}/manifests/ha/namespace-install-with-hydrator.yaml"
-
-echo "${AUTOGENMSG}" > "${SRCROOT}/manifests/core-install-with-hydrator.yaml"
-$KUSTOMIZE build "${SRCROOT}/manifests/core-install-with-hydrator" >> "${SRCROOT}/manifests/core-install-with-hydrator.yaml"

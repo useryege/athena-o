@@ -161,7 +161,7 @@ mod-vendor-local: mod-download-local
 
 # new codegen-local
 .PHONY: codegen-local
-codegen-local: mod-vendor-local mockgen gogen protogen clientgen clidocsgen
+codegen-local: mod-vendor-local mockgen gogen protogen clientgen clidocsgen manifests-local
 	rm -rf vendor/
 
 .PHONY: codegen-local-fast
