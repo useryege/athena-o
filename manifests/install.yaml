@@ -1,1 +1,203 @@
 # This is an auto-generated file. DO NOT EDIT
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - configmaps
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - argoproj.io
+  resources:
+  - applications
+  - appprojects
+  - applicationsets
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - delete
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: athena-server
+subjects:
+- kind: ServiceAccount
+  name: athena-server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: athena-server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server-metrics
+    app.kubernetes.io/part-of: athena
+  name: athena-server-metrics
+spec:
+  ports:
+  - name: metrics
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  selector:
+    app.kubernetes.io/name: athena-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: athena-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: athena-server
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: athena-server
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/part-of: athena
+              topologyKey: kubernetes.io/hostname
+            weight: 5
+      containers:
+      - args:
+        - /usr/local/bin/athena-server
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: auth
+              name: athena-redis
+        image: quay.io/useryege/athena:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz?full=true
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 30
+          timeoutSeconds: 5
+        name: athena-server
+        ports:
+        - containerPort: 8080
+        - containerPort: 8083
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 30
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: athena-server
+      volumes:
+      - emptyDir: {}
+        name: tmp
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server-network-policy
+spec:
+  ingress:
+  - {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: athena-server
+  policyTypes:
+  - Ingress

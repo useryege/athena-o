@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+    app.kubernetes.io/component: server
+  name: athena-server-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: athena-server
+  ingress:
+  - {}
+  policyTypes:
+  - Ingress
