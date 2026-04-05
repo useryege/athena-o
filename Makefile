@@ -173,7 +173,6 @@ build: test-tools-image
 build-local:
 	GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -v `go list ./... | grep -v 'resource_customizations\|test/e2e'`
 
-
 # Run all unit tests
 #
 # If TEST_MODULE is set (to fully qualified module name), only this specific
@@ -206,7 +205,6 @@ test-race-local:
 		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES="$(TEST_MODULE)" ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
 	fi
 
-
 # Run linter on the code
 .PHONY: lint
 lint: test-tools-image
@@ -219,3 +217,20 @@ lint-local:
 	# NOTE: If you get a "Killed" OOM message, try reducing the value of GOGC
 	# See https://github.com/golangci/golangci-lint#memory-usage-of-golangci-lint
 	GOGC=$(ATHENA_LINT_GOGC) GOMAXPROCS=2 golangci-lint run --fix --verbose
+
+# Verify that kubectl can connect to your K8s cluster from Docker
+.PHONY: verify-kube-connect
+verify-kube-connect: test-tools-image
+	$(call run-in-test-client,kubectl version)
+
+
+# Runs pre-commit validation with the virtualized toolchain
+.PHONY: pre-commit
+pre-commit: codegen build lint test
+
+
+MKDOCS_DOCKER_IMAGE?=python:3.12-alpine
+MKDOCS_RUN_ARGS?=
+.PHONY: serve-docs
+serve-docs:
+	$(DOCKER) run ${MKDOCS_RUN_ARGS} --rm -it -p 8000:8000 -v ${CURRENT_DIR}:/docs -w /docs --entrypoint "" ${MKDOCS_DOCKER_IMAGE} sh -c 'pip install -r docs/requirements.txt; mkdocs serve -a $$(ip route get 1 | awk '\''{print $$7}'\''):8000'
