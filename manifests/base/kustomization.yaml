@@ -6,5 +6,8 @@ images:
 - name: quay.io/useryege/athena
   newName: quay.io/useryege/athena
   newTag: latest
+
 resources:
 - ./server
+- ./config
+- ./redis

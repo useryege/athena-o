@@ -1,0 +1,28 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  labels:
+    app.kubernetes.io/name: athena-redis
+    app.kubernetes.io/part-of: athena
+    app.kubernetes.io/component: redis
+  name: athena-redis-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: athena-redis
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: athena-server
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: athena-repo-server
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: athena-application-controller
+    ports:
+    - protocol: TCP
+      port: 6379

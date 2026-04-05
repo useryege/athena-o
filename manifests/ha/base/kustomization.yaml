@@ -1,11 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-
+patches:
+- path: overlays/athena-server-deployment.yaml
+- path: overlays/athena-cmd-params-cm.yaml
 
 images:
 - name: quay.io/useryege/athena
   newName: quay.io/useryege/athena
   newTag: latest
 resources:
+- ../../base/config
+- ../../base/server
 - ./redis-ha

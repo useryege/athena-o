@@ -6,7 +6,7 @@
     resources:
       - secrets
     resourceNames:
-      - argocd-redis
+      - athena-redis
     verbs:
       - get
 - op: add

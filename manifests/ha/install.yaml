@@ -3,12 +3,10 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app: athena-redis-ha
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha
-  namespace: athena
 secrets:
 - name: athena-redis
 ---
@@ -16,23 +14,28 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app: athena-redis-ha
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha-haproxy
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-haproxy
-  namespace: athena
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app: redis-ha
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha
-  namespace: athena
 rules:
 - apiGroups:
   - ""
@@ -45,14 +48,25 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app: redis-ha
-    chart: redis-ha-4.34.11
-    component: haproxy
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-haproxy
-  namespace: athena
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resourceNames:
+  - athena-redis
+  resources:
+  - secrets
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -61,15 +75,57 @@ rules:
   - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - configmaps
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - argoproj.io
+  resources:
+  - applications
+  - appprojects
+  - applicationsets
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - delete
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app: redis-ha
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha
-  namespace: athena
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -82,13 +138,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app: redis-ha
-    chart: redis-ha-4.34.11
-    component: haproxy
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-haproxy
-  namespace: athena
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -96,6 +149,48 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: athena-redis-ha-haproxy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: athena-server
+subjects:
+- kind: ServiceAccount
+  name: athena-server
+---
+apiVersion: v1
+data:
+  redis.server: athena-redis-ha-haproxy:6379
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: athena-cmd-params-cm
+    app.kubernetes.io/part-of: athena
+  name: athena-cmd-params-cm
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: athena-config
+    app.kubernetes.io/part-of: athena
+  name: athena-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: athena-rbac-cm
+    app.kubernetes.io/part-of: athena
+  name: athena-rbac-cm
 ---
 apiVersion: v1
 data:
@@ -792,12 +887,10 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    app: athena-redis-ha
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-configmap
-  namespace: athena
 ---
 apiVersion: v1
 data:
@@ -866,23 +959,61 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    app: athena-redis-ha
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-health-configmap
-  namespace: athena
+---
+apiVersion: v1
+data:
+  ssh_known_hosts: |
+    # This file was automatically generated by hack/update-ssh-known-hosts.sh. DO NOT EDIT
+    [ssh.github.com]:443 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+    [ssh.github.com]:443 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+    [ssh.github.com]:443 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
+    bitbucket.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPIQmuzMBuKdWeF4+a2sjSSpBK0iqitSQ+5BM9KhpexuGt20JpTVM7u5BDZngncgrqDMbWdxMWWOGtZ9UgbqgZE=
+    bitbucket.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIazEu89wgQZ4bqs3d63QSMzYVa0MuJ2e2gKTKqu+UUO
+    bitbucket.org ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDQeJzhupRu0u0cdegZIa8e86EG2qOCsIsD1Xw0xSeiPDlCr7kq97NLmMbpKTX6Esc30NuoqEEHCuc7yWtwp8dI76EEEB1VqY9QJq6vk+aySyboD5QF61I/1WeTwu+deCbgKMGbUijeXhtfbxSxm6JwGrXrhBdofTsbKRUsrN1WoNgUa8uqN1Vx6WAJw1JHPhglEGGHea6QICwJOAr/6mrui/oB7pkaWKHj3z7d1IC4KWLtY47elvjbaTlkN04Kc/5LFEirorGYVbt15kAUlqGM65pk6ZBxtaO3+30LVlORZkxOh+LKL/BvbZ/iRNhItLqNyieoQj/uh/7Iv4uyH/cV/0b4WDSd3DptigWq84lJubb9t/DnZlrJazxyDCulTmKdOR7vs9gMTo+uoIrPSb8ScTtvw65+odKAlBj59dhnVp9zd7QUojOpXlL62Aw56U4oO+FALuevvMjiWeavKhJqlR7i5n9srYcrNV7ttmDw7kf/97P5zauIhxcjX+xHv4M=
+    github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+    github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+    github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
+    gitlab.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY=
+    gitlab.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfuCHKVTjquxvt6CM6tdG4SLp1Btn/nOeHHE5UOzRdf
+    gitlab.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsj2bNKTBSpIYDEGk9KxsGh3mySTRgMtXL583qmBpzeQ+jqCMRgBqB98u3z++J1sKlXHWfM9dyhSevkMwSbhoR8XIq/U0tCNyokEi/ueaBMCvbcTHhO7FcwzY92WK4Yt0aGROY5qX2UKSeOvuP4D6TPqKF1onrSzH9bx9XUf2lEdWT/ia1NEKjunUqu1xOB/StKDHMoX4/OKyIzuS0q/T1zOATthvasJFoPrAjkohTyaDUz2LN5JoH839hViyEG82yB+MjcFV5MU3N1l1QL3cVUCh93xSaua1N85qivl+siMkPGbO5xR/En4iEY6K2XPASUEMaieWVNTRCtJ4S8H+9
+    ssh.dev.azure.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7Hr1oTWqNqOlzGJOfGJ4NakVyIzf1rXYd4d7wo6jBlkLvCA4odBlL0mDUyZ0/QUfTTqeu+tm22gOsv+VrVTMk6vwRU75gY/y9ut5Mb3bR5BV58dKXyq9A9UeB5Cakehn5Zgm6x1mKoVyf+FFn26iYqXJRgzIZZcZ5V6hrE0Qg39kZm4az48o0AUbf6Sp4SLdvnuMa2sVNwHBboS7EJkm57XQPVU3/QpyNLHbWDdzwtrlS+ez30S3AdYhLKEOxAG8weOnyrtLJAUen9mTkol8oII1edf7mWWbWVf0nBmly21+nZcmCTISQBtdcyPaEno7fFQMDD26/s0lfKob4Kw8H
+    vs-ssh.visualstudio.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7Hr1oTWqNqOlzGJOfGJ4NakVyIzf1rXYd4d7wo6jBlkLvCA4odBlL0mDUyZ0/QUfTTqeu+tm22gOsv+VrVTMk6vwRU75gY/y9ut5Mb3bR5BV58dKXyq9A9UeB5Cakehn5Zgm6x1mKoVyf+FFn26iYqXJRgzIZZcZ5V6hrE0Qg39kZm4az48o0AUbf6Sp4SLdvnuMa2sVNwHBboS7EJkm57XQPVU3/QpyNLHbWDdzwtrlS+ez30S3AdYhLKEOxAG8weOnyrtLJAUen9mTkol8oII1edf7mWWbWVf0nBmly21+nZcmCTISQBtdcyPaEno7fFQMDD26/s0lfKob4Kw8H
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: athena-ssh-known-hosts-cm
+    app.kubernetes.io/part-of: athena
+  name: athena-ssh-known-hosts-cm
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: athena-tls-certs-cm
+    app.kubernetes.io/part-of: athena
+  name: athena-tls-certs-cm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/name: athena-secret
+    app.kubernetes.io/part-of: athena
+  name: athena-secret
+type: Opaque
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: redis-ha
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha
-  namespace: athena
 spec:
   clusterIP: None
   ports:
@@ -895,20 +1026,17 @@ spec:
     protocol: TCP
     targetPort: sentinel
   selector:
-    app: redis-ha
-    release: athena
+    app.kubernetes.io/name: athena-redis-ha
   type: ClusterIP
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: redis-ha
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-announce-0
-  namespace: athena
 spec:
   ports:
   - name: tcp-server
@@ -921,8 +1049,7 @@ spec:
     targetPort: sentinel
   publishNotReadyAddresses: true
   selector:
-    app: redis-ha
-    release: athena
+    app.kubernetes.io/name: athena-redis-ha
     statefulset.kubernetes.io/pod-name: athena-redis-ha-server-0
   type: ClusterIP
 ---
@@ -930,12 +1057,10 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: redis-ha
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-announce-1
-  namespace: athena
 spec:
   ports:
   - name: tcp-server
@@ -948,8 +1073,7 @@ spec:
     targetPort: sentinel
   publishNotReadyAddresses: true
   selector:
-    app: redis-ha
-    release: athena
+    app.kubernetes.io/name: athena-redis-ha
     statefulset.kubernetes.io/pod-name: athena-redis-ha-server-1
   type: ClusterIP
 ---
@@ -957,12 +1081,10 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: redis-ha
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-announce-2
-  namespace: athena
 spec:
   ports:
   - name: tcp-server
@@ -975,8 +1097,7 @@ spec:
     targetPort: sentinel
   publishNotReadyAddresses: true
   selector:
-    app: redis-ha
-    release: athena
+    app.kubernetes.io/name: athena-redis-ha
     statefulset.kubernetes.io/pod-name: athena-redis-ha-server-2
   type: ClusterIP
 ---
@@ -984,13 +1105,10 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: redis-ha
-    chart: redis-ha-4.34.11
-    component: haproxy
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha-haproxy
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-haproxy
-  namespace: athena
 spec:
   ports:
   - name: tcp-haproxy
@@ -1002,29 +1120,61 @@ spec:
     protocol: TCP
     targetPort: metrics-port
   selector:
-    app: redis-ha-haproxy
-    release: athena
+    app.kubernetes.io/name: athena-redis-ha-haproxy
   type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: athena-server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server-metrics
+    app.kubernetes.io/part-of: athena
+  name: athena-server-metrics
+spec:
+  ports:
+  - name: metrics
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  selector:
+    app.kubernetes.io/name: athena-server
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: redis-ha
-    chart: redis-ha-4.34.11
-    component: haproxy
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha-haproxy
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-haproxy
-  namespace: athena
 spec:
   replicas: 3
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      app: redis-ha-haproxy
-      component: haproxy
-      release: athena
+      app.kubernetes.io/name: athena-redis-ha-haproxy
   strategy:
     type: RollingUpdate
   template:
@@ -1035,9 +1185,7 @@ spec:
         prometheus.io/port: "9101"
         prometheus.io/scrape: "true"
       labels:
-        app: redis-ha-haproxy
-        component: haproxy
-        release: athena
+        app.kubernetes.io/name: athena-redis-ha-haproxy
       name: athena-redis-ha-haproxy
     spec:
       affinity:
@@ -1045,9 +1193,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
               matchLabels:
-                app: redis-ha-haproxy
-                component: haproxy
-                release: athena
+                app.kubernetes.io/name: athena-redis-ha-haproxy
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: true
       containers:
@@ -1080,13 +1226,12 @@ spec:
             port: probe
           initialDelaySeconds: 5
           periodSeconds: 3
-        resources: {}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-          runAsNonRoot: true
+          readOnlyRootFilesystem: true
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -1095,6 +1240,22 @@ spec:
         - mountPath: /run/haproxy
           name: shared-socket
       initContainers:
+      - command:
+        - athena
+        - admin
+        - redis-initial-password
+        image: quay.io/useryege/athena:latest
+        imagePullPolicy: IfNotPresent
+        name: secret-init
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
       - args:
         - /readonly/haproxy_init.sh
         command:
@@ -1102,13 +1263,12 @@ spec:
         image: public.ecr.aws/docker/library/haproxy:3.0.8-alpine
         imagePullPolicy: IfNotPresent
         name: config-init
-        resources: {}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-          runAsNonRoot: true
+          readOnlyRootFilesystem: true
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -1117,13 +1277,11 @@ spec:
           readOnly: true
         - mountPath: /data
           name: data
-      nodeSelector: {}
       securityContext:
         fsGroup: 99
         runAsNonRoot: true
         runAsUser: 99
       serviceAccountName: athena-redis-ha-haproxy
-      tolerations: []
       volumes:
       - configMap:
           name: athena-redis-ha-configmap
@@ -1134,41 +1292,114 @@ spec:
         name: data
 ---
 apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: athena-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: athena-server
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: athena-server
+              topologyKey: topology.kubernetes.io/zone
+            weight: 100
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: athena-server
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - args:
+        - /usr/local/bin/athena-server
+        env:
+        - name: ATHENA_API_SERVER_REPLICAS
+          value: "2"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: auth
+              name: athena-redis
+        image: quay.io/useryege/athena:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz?full=true
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 30
+          timeoutSeconds: 5
+        name: athena-server
+        ports:
+        - containerPort: 8080
+        - containerPort: 8083
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 30
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: athena-server
+      volumes:
+      - emptyDir: {}
+        name: tmp
+---
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
-    app: redis-ha
-    athena-redis-ha: replica
-    chart: redis-ha-4.34.11
-    heritage: Helm
-    release: athena
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: athena-redis-ha
+    app.kubernetes.io/part-of: athena
   name: athena-redis-ha-server
-  namespace: athena
 spec:
   podManagementPolicy: OrderedReady
   replicas: 3
   selector:
     matchLabels:
-      app: redis-ha
-      release: athena
+      app.kubernetes.io/name: athena-redis-ha
   serviceName: athena-redis-ha
   template:
     metadata:
       annotations:
         checksum/init-config: 7e04ebf06a9c52ceda04bd199ace28bb0e18859c7f3e103f13bca23ea3f63775
       labels:
-        app: redis-ha
-        athena-redis-ha: replica
-        release: athena
+        app.kubernetes.io/name: athena-redis-ha
     spec:
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
               matchLabels:
-                app: redis-ha
-                athena-redis-ha: replica
-                release: athena
+                app.kubernetes.io/name: athena-redis-ha
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: false
       containers:
@@ -1216,14 +1447,12 @@ spec:
           periodSeconds: 15
           successThreshold: 1
           timeoutSeconds: 15
-        resources: {}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-          runAsNonRoot: true
-          runAsUser: 1000
+          readOnlyRootFilesystem: true
           seccompProfile:
             type: RuntimeDefault
         startupProbe:
@@ -1290,14 +1519,12 @@ spec:
           periodSeconds: 15
           successThreshold: 3
           timeoutSeconds: 15
-        resources: {}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-          runAsNonRoot: true
-          runAsUser: 1000
+          readOnlyRootFilesystem: true
           seccompProfile:
             type: RuntimeDefault
         startupProbe:
@@ -1341,8 +1568,7 @@ spec:
           capabilities:
             drop:
             - ALL
-          runAsNonRoot: true
-          runAsUser: 1000
+          readOnlyRootFilesystem: true
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -1371,14 +1597,12 @@ spec:
         image: public.ecr.aws/docker/library/redis:8.2.3-alpine
         imagePullPolicy: IfNotPresent
         name: config-init
-        resources: {}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-          runAsNonRoot: true
-          runAsUser: 1000
+          readOnlyRootFilesystem: true
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -1485,3 +1709,20 @@ spec:
   policyTypes:
   - Ingress
   - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: athena-server
+    app.kubernetes.io/part-of: athena
+  name: athena-server-network-policy
+spec:
+  ingress:
+  - {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: athena-server
+  policyTypes:
+  - Ingress
