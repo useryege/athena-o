@@ -1,12 +1,38 @@
+PACKAGE=github.com/useryege/athena/common
+CURRENT_DIR=$(shell pwd)
+DIST_DIR=${CURRENT_DIR}/dist
+CLI_NAME=athena
+BIN_NAME=athena
 
-CURRENT_DIR := $(shell pwd)
-DIST_DIR := $(CURRENT_DIR)/dist
-HOST_OS := $(shell go env GOOS)
-HOST_ARCH := $(shell go env GOARCH)
-VOLUME_MOUNT := $(shell if test "$(go env GOOS)" = "darwin"; then echo ":delegated"; elif test selinuxenabled; then echo ":delegated"; else echo ""; fi)
-GOPATH ?= $(shell if test -x `which go`; then go env GOPATH; else echo "$(HOME)/go"; fi)
-GOCACHE ?= $(HOME)/.cache/go-build
+UNAME_S:=$(shell uname)
+IS_DARWIN:=$(if $(filter Darwin, $(UNAME_S)),true,false)
 
+# When using OSX/Darwin, you might need to enable CGO for local builds
+DEFAULT_CGO_FLAG:=0
+ifeq ($(IS_DARWIN),true)
+    DEFAULT_CGO_FLAG:=1
+endif
+CGO_FLAG?=${DEFAULT_CGO_FLAG}
+
+GEN_RESOURCES_CLI_NAME=athena-resources-gen
+
+HOST_OS:=$(shell go env GOOS)
+HOST_ARCH:=$(shell go env GOARCH)
+
+TARGET_ARCH?=linux/amd64
+
+VERSION=$(shell cat ${CURRENT_DIR}/VERSION)
+BUILD_DATE:=$(if $(BUILD_DATE),$(BUILD_DATE),$(shell date -u +'%Y-%m-%dT%H:%M:%SZ'))
+GIT_COMMIT:=$(if $(GIT_COMMIT),$(GIT_COMMIT),$(shell git rev-parse HEAD))
+GIT_TAG:=$(if $(GIT_TAG),$(GIT_TAG),$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi))
+GIT_TREE_STATE:=$(if $(GIT_TREE_STATE),$(GIT_TREE_STATE),$(shell if [ -z "`git status --porcelain`" ]; then echo "clean" ; else echo "dirty"; fi))
+VOLUME_MOUNT=$(shell if test "$(go env GOOS)" = "darwin"; then echo ":delegated"; elif test selinuxenabled; then echo ":delegated"; else echo ""; fi)
+KUBECTL_VERSION=$(shell go list -m k8s.io/client-go | head -n 1 | rev | cut -d' ' -f1 | rev)
+
+GOPATH?=$(shell if test -x `which go`; then go env GOPATH; else echo "$(HOME)/go"; fi)
+GOCACHE?=$(HOME)/.cache/go-build
+
+# Docker command to use
 DOCKER ?= docker
 ifneq ($(DOCKER),docker)
 $(error Only Docker is supported. Please run make with DOCKER=docker)
@@ -14,13 +40,24 @@ endif
 
 DOCKER_SRCDIR ?= $(GOPATH)/src
 DOCKER_WORKDIR ?= /go/src/github.com/useryege/athena
+# Allows you to control which Docker network the test-util containers attach to.
+# This is particularly useful if you are running Kubernetes in Docker (e.g., k3d)
+# and want the test containers to reach the Kubernetes API via an already-existing Docker network.
 DOCKER_NETWORK ?= default
-ifeq ($(DOCKER_NETWORK),default)
-DOCKER_NETWORK_ARG =
+
+ifneq ($(DOCKER_NETWORK),default)
+DOCKER_NETWORK_ARG := --network $(DOCKER_NETWORK)
 else
-DOCKER_NETWORK_ARG = --network $(DOCKER_NETWORK)
+DOCKER_NETWORK_ARG :=
 endif
 
+ATHENA_PROCFILE?=Procfile
+
+# pointing to python 3.12 
+MKDOCS_DOCKER_IMAGE?=python:3.12-alpine
+MKDOCS_RUN_ARGS?=
+
+# Configuration for building athena-test-tools image
 TEST_TOOLS_NAMESPACE ?=
 TEST_TOOLS_IMAGE = athena-test-tools
 TEST_TOOLS_TAG ?= latest
@@ -28,16 +65,41 @@ ifdef TEST_TOOLS_NAMESPACE
 TEST_TOOLS_PREFIX = $(TEST_TOOLS_NAMESPACE)/
 endif
 
-ifeq ("$(PWD)","$(GOPATH)/src/github.com/useryege/athena")
-DOCKER_SRC_MOUNT = "$(DOCKER_SRCDIR):/go/src$(VOLUME_MOUNT)"
+# You can change the ports where Athena components will be listening on by
+# setting the appropriate environment variables before running make.
+ATHENA_E2E_APISERVER_PORT?=8080
+ATHENA_E2E_REPOSERVER_PORT?=8081
+ATHENA_E2E_REDIS_PORT?=6379
+ATHENA_E2E_DEX_PORT?=5556
+ATHENA_E2E_YARN_HOST?=localhost
+ATHENA_E2E_DISABLE_AUTH?=
+ATHENA_E2E_DIR?=/tmp/athena-e2e
+
+ATHENA_E2E_TEST_TIMEOUT?=90m
+ATHENA_E2E_RERUN_FAILS?=5
+
+ATHENA_IN_CI?=false
+ATHENA_TEST_E2E?=true
+ATHENA_BIN_MODE?=true
+
+ATHENA_LINT_GOGC?=20
+
+# Depending on where we are (legacy or non-legacy pwd), we need to use
+# different Docker volume mounts for our source tree
+LEGACY_PATH=$(GOPATH)/src/github.com/useryege/athena
+ifeq ("$(PWD)","$(LEGACY_PATH)")
+DOCKER_SRC_MOUNT="$(DOCKER_SRCDIR):/go/src$(VOLUME_MOUNT)"
 else
-DOCKER_SRC_MOUNT = "$(PWD):/go/src/github.com/useryege/athena$(VOLUME_MOUNT)"
+DOCKER_SRC_MOUNT="$(PWD):/go/src/github.com/useryege/athena$(VOLUME_MOUNT)"
 endif
 
-CONTAINER_UID := $(shell id -u)
-CONTAINER_GID := $(shell id -g)
-SUDO ?=
-ATHENA_LINT_GOGC ?= 20
+# User and group IDs to map to the test container
+CONTAINER_UID=$(shell id -u)
+CONTAINER_GID=$(shell id -g)
+
+# Set SUDO to sudo to run privileged commands with sudo
+SUDO?=
+
 
 .PHONY: print-env-vars
 print-env-vars:
@@ -63,13 +125,46 @@ print-env-vars:
 	@echo "SUDO=$(SUDO)"
 	@echo "ATHENA_LINT_GOGC=$(ATHENA_LINT_GOGC)"
 
+# Runs any command in the athena-test-utils container in server mode
+# Server mode container will start with uid 0 and drop privileges during runtime
+define run-in-test-server
+	$(SUDO) $(DOCKER) run --rm -it \
+		--name athena-test-server \
+		-u $(CONTAINER_UID):$(CONTAINER_GID) \
+		-e USER_ID=$(CONTAINER_UID) \
+		-e HOME=/home/user \
+		-e GOPATH=/go \
+		-e GOCACHE=/tmp/go-build-cache \
+		-e ATHENA_IN_CI=$(ATHENA_IN_CI) \
+		-e ATHENA_E2E_TEST=$(ATHENA_E2E_TEST) \
+		-e ATHENA_E2E_YARN_HOST=$(ATHENA_E2E_YARN_HOST) \
+		-e ATHENA_E2E_DISABLE_AUTH=$(ATHENA_E2E_DISABLE_AUTH) \
+		-e ATHENA_TLS_DATA_PATH=${ATHENA_TLS_DATA_PATH:-/tmp/athena-local/tls} \
+		-e ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} \
+		-e ATHENA_GPG_DATA_PATH=${ATHENA_GPG_DATA_PATH:-/tmp/athena-local/gpg/source} \
+		-e ATHENA_APPLICATION_NAMESPACES \
+		-e GITHUB_TOKEN \
+		-v ${DOCKER_SRC_MOUNT} \
+		-v ${GOPATH}/pkg/mod:/go/pkg/mod${VOLUME_MOUNT} \
+		-v ${GOCACHE}:/tmp/go-build-cache${VOLUME_MOUNT} \
+		-v ${HOME}/.kube:/home/user/.kube${VOLUME_MOUNT} \
+		-w ${DOCKER_WORKDIR} \
+		-p ${ATHENA_E2E_APISERVER_PORT}:8080 \
+		-p 4000:4000 \
+		-p 5000:5000 \
+		$(DOCKER_NETWORK_ARG)\
+		$(PODMAN_ARGS) \
+		$(TEST_TOOLS_PREFIX)$(TEST_TOOLS_IMAGE):$(TEST_TOOLS_TAG) \
+		bash -c "$(1)"
+endef
+
 define run-in-test-client
 	$(SUDO) $(DOCKER) run --rm -it \
-	  --name argocd-test-client \
+	  --name athena-test-client \
 		-u $(CONTAINER_UID):$(CONTAINER_GID) \
 		-e HOME=/home/user \
 		-e GOPATH=/go \
-		-e ARGOCD_E2E_K3S=$(ARGOCD_E2E_K3S) \
+		-e ATHENA_E2E_K3S=$(ATHENA_E2E_K3S) \
 		-e GITHUB_TOKEN \
 		-e GOCACHE=/tmp/go-build-cache \
 		-e ATHENA_LINT_GOGC=$(ATHENA_LINT_GOGC) \
@@ -83,7 +178,69 @@ define run-in-test-client
 		bash -c "$(1)"
 endef
 
-# Installs all tools required to build and test ArgoCD locally
+#
+define exec-in-test-server
+	$(SUDO) $(DOCKER) exec -it -u $(CONTAINER_UID):$(CONTAINER_GID) -e ATHENA_E2E_RECORD=$(ATHENA_E2E_RECORD) -e ATHENA_E2E_K3S=$(ATHENA_E2E_K3S) athena-test-server $(1)
+endef
+
+PATH:=$(PATH):$(PWD)/hack
+
+# docker image publishing options
+DOCKER_PUSH?=false
+IMAGE_NAMESPACE?=
+# perform static compilation
+DEFAULT_STATIC_BUILD:=true
+ifeq ($(IS_DARWIN),true)
+    DEFAULT_STATIC_BUILD:=false
+endif
+STATIC_BUILD?=${DEFAULT_STATIC_BUILD}
+# build development images
+DEV_IMAGE?=false
+ATHENA_GPG_ENABLED?=true
+ATHENA_E2E_APISERVER_PORT?=8080
+
+ifeq (${COVERAGE_ENABLED}, true)
+# We use this in the cli-local target to enable code coverage for e2e tests.
+COVERAGE_FLAG=-cover
+else
+COVERAGE_FLAG=
+endif
+
+override LDFLAGS += \
+  -X ${PACKAGE}.version=${VERSION} \
+  -X ${PACKAGE}.buildDate=${BUILD_DATE} \
+  -X ${PACKAGE}.gitCommit=${GIT_COMMIT} \
+  -X ${PACKAGE}.gitTreeState=${GIT_TREE_STATE}\
+  -X ${PACKAGE}.kubectlVersion=${KUBECTL_VERSION}\
+  -X "${PACKAGE}.extraBuildInfo=${EXTRA_BUILD_INFO}"
+
+ifeq (${STATIC_BUILD}, true)
+override LDFLAGS += -extldflags "-static"
+endif
+
+
+ifneq (${GIT_TAG},)
+IMAGE_TAG=${GIT_TAG}
+override LDFLAGS += -X ${PACKAGE}.gitTag=${GIT_TAG}
+else
+IMAGE_TAG?=latest
+endif
+
+ifeq (${DOCKER_PUSH},true)
+ifndef IMAGE_NAMESPACE
+$(error IMAGE_NAMESPACE must be set to push images (e.g. IMAGE_NAMESPACE=useryege))
+endif
+endif
+
+ifdef IMAGE_NAMESPACE
+IMAGE_PREFIX=${IMAGE_NAMESPACE}/
+endif
+
+ifndef IMAGE_REGISTRY
+IMAGE_REGISTRY="quay.io"
+endif
+
+# Installs all tools required to build and test Athena locally
 .PHONY: install-tools-local
 install-tools-local: install-test-tools-local install-codegen-tools-local install-go-tools-local
 
@@ -229,8 +386,57 @@ verify-kube-connect: test-tools-image
 pre-commit: codegen build lint test
 
 
-MKDOCS_DOCKER_IMAGE?=python:3.12-alpine
-MKDOCS_RUN_ARGS?=
 .PHONY: serve-docs
 serve-docs:
 	$(DOCKER) run ${MKDOCS_RUN_ARGS} --rm -it -p 8000:8000 -v ${CURRENT_DIR}:/docs -w /docs --entrypoint "" ${MKDOCS_DOCKER_IMAGE} sh -c 'pip install -r docs/requirements.txt; mkdocs serve -a $$(ip route get 1 | awk '\''{print $$7}'\''):8000'
+
+
+# .PHONY: start
+# start: test-tools-image
+# 	$(DOCKER) version
+# 	$(call run-in-test-server,make ARGOCD_PROCFILE=test/container/Procfile start-local ARGOCD_START=${ARGOCD_START})
+
+# # Starts a local instance of ArgoCD
+# .PHONY: start-local
+# start-local: mod-vendor-local dep-ui-local cli-local
+# 	# check we can connect to Docker to start Redis
+# 	killall goreman || true
+# 	kubectl create ns argocd || true
+# 	rm -rf /tmp/argocd-local
+# 	mkdir -p /tmp/argocd-local
+# 	mkdir -p /tmp/argocd-local/gpg/keys && chmod 0700 /tmp/argocd-local/gpg/keys
+# 	mkdir -p /tmp/argocd-local/gpg/source
+# 	REDIS_PASSWORD=$(shell kubectl get secret argocd-redis -o jsonpath='{.data.auth}' | base64 -d) \
+# 	ARGOCD_ZJWT_FEATURE_FLAG=always \
+# 	ARGOCD_IN_CI=false \
+# 	ARGOCD_GPG_ENABLED=$(ARGOCD_GPG_ENABLED) \
+# 	BIN_MODE=$(ARGOCD_BIN_MODE) \
+# 	ARGOCD_E2E_TEST=false \
+# 	ARGOCD_APPLICATION_NAMESPACES=$(ARGOCD_APPLICATION_NAMESPACES) \
+# 		goreman -f $(ARGOCD_PROCFILE) start ${ARGOCD_START}
+
+
+# .PHONY: dep-ui
+# dep-ui: test-tools-image
+# 	$(call run-in-test-client,make dep-ui-local)
+
+# dep-ui-local:
+# 	cd ui && yarn install
+
+
+.PHONY: cli
+cli: test-tools-image
+	$(call run-in-test-client, GOOS=${HOST_OS} GOARCH=${HOST_ARCH} make cli-local)
+
+.PHONY: cli-local
+cli-local: clean-debug
+	CGO_ENABLED=${CGO_FLAG} GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -gcflags="all=-N -l" $(COVERAGE_FLAG) -v -ldflags '${LDFLAGS}' -o ${DIST_DIR}/${CLI_NAME} ./cmd
+
+# Cleans VSCode debug.test files from sub-dirs to prevent them from being included in by golang embed
+.PHONY: clean-debug
+clean-debug:
+	-find ${CURRENT_DIR} -name debug.test -exec rm -f {} +
+
+.PHONY: clean
+clean: clean-debug
+	-rm -rf ${CURRENT_DIR}/dist
