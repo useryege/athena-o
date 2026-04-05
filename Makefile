@@ -192,29 +192,16 @@ test-local:
 		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES="$(TEST_MODULE)" ./hack/test.sh -args -test.gocoverdir="$(PWD)/test-results" "$(TEST_MODULE)"; \
 	fi
 
-# .PHONY: test-race
-# test-race: test-tools-image
-# 	mkdir -p $(GOCACHE)
-# 	$(call run-in-test-client,make TEST_MODULE=$(TEST_MODULE) test-race-local)
+.PHONY: test-race
+test-race: test-tools-image
+	mkdir -p $(GOCACHE)
+	$(call run-in-test-client,make TEST_MODULE=$(TEST_MODULE) test-race-local)
 
-# # Run all unit tests, with data race detection, skipping known failures (local version)
-# .PHONY: test-race-local
-# test-race-local:
-# 	if test "$(TEST_MODULE)" = ""; then \
-# 		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES=`go list ./... | grep -v 'test/e2e'` ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
-# 	else \
-# 		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES="$(TEST_MODULE)" ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
-# 	fi
-
-# # Run the E2E test suite. E2E test servers (see start-e2e target) must be
-# # started before.
-# .PHONY: test-e2e
-# test-e2e:
-# 	$(call exec-in-test-server,make test-e2e-local)
-
-# # Run the E2E test suite (local version)
-# .PHONY: test-e2e-local
-# test-e2e-local: cli-local
-# 	# NO_PROXY ensures all tests don't go out through a proxy if one is configured on the test system
-# 	export GO111MODULE=off
-# 	DIST_DIR=${DIST_DIR} RERUN_FAILS=$(ARGOCD_E2E_RERUN_FAILS) PACKAGES="./test/e2e" ARGOCD_E2E_RECORD=${ARGOCD_E2E_RECORD} ARGOCD_CONFIG_DIR=$(HOME)/.config/argocd-e2e ARGOCD_GPG_ENABLED=true NO_PROXY=* ./hack/test.sh -timeout $(ARGOCD_E2E_TEST_TIMEOUT) -v -args -test.gocoverdir="$(PWD)/test-results"
+# Run all unit tests, with data race detection, skipping known failures (local version)
+.PHONY: test-race-local
+test-race-local:
+	if test "$(TEST_MODULE)" = ""; then \
+		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES=`go list ./... | grep -v 'test/e2e'` ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
+	else \
+		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES="$(TEST_MODULE)" ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
+	fi
