@@ -5,8 +5,9 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/useryege/athena/util/log"
 	"k8s.io/klog/v2"
+
+	"github.com/useryege/athena/util/log"
 )
 
 const (
@@ -34,7 +35,6 @@ func main() {
 	}
 
 	err := command.Execute()
-
 	if err != nil {
 		os.Exit(1)
 	}

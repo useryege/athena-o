@@ -2,19 +2,21 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/tools/clientcmd"
+
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/templates"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
 	// cliName is the name of the CLI
 	cliName = "athena-server"
 )
+
 const (
 	failureRetryCountEnv              = "ATHENA_K8S_RETRY_COUNT"
 	failureRetryPeriodMilliSecondsEnv = "ATHENA_K8S_RETRY_DURATION_MILLISECONDS"

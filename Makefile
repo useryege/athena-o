@@ -205,3 +205,17 @@ test-race-local:
 	else \
 		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES="$(TEST_MODULE)" ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
 	fi
+
+
+# Run linter on the code
+.PHONY: lint
+lint: test-tools-image
+	$(call run-in-test-client,make lint-local)
+
+# Run linter on the code (local version)
+.PHONY: lint-local
+lint-local:
+	golangci-lint --version
+	# NOTE: If you get a "Killed" OOM message, try reducing the value of GOGC
+	# See https://github.com/golangci/golangci-lint#memory-usage-of-golangci-lint
+	GOGC=$(ATHENA_LINT_GOGC) GOMAXPROCS=2 golangci-lint run --fix --verbose
