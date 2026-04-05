@@ -37,7 +37,7 @@ endif
 CONTAINER_UID := $(shell id -u)
 CONTAINER_GID := $(shell id -g)
 SUDO ?=
-ARGOCD_LINT_GOGC ?= 20
+ATHENA_LINT_GOGC ?= 20
 
 .PHONY: print-env-vars
 print-env-vars:
@@ -61,7 +61,7 @@ print-env-vars:
 	@echo "CONTAINER_UID=$(CONTAINER_UID)"
 	@echo "CONTAINER_GID=$(CONTAINER_GID)"
 	@echo "SUDO=$(SUDO)"
-	@echo "ARGOCD_LINT_GOGC=$(ARGOCD_LINT_GOGC)"
+	@echo "ATHENA_LINT_GOGC=$(ATHENA_LINT_GOGC)"
 
 define run-in-test-client
 	$(SUDO) $(DOCKER) run --rm -it \
@@ -72,7 +72,7 @@ define run-in-test-client
 		-e ARGOCD_E2E_K3S=$(ARGOCD_E2E_K3S) \
 		-e GITHUB_TOKEN \
 		-e GOCACHE=/tmp/go-build-cache \
-		-e ARGOCD_LINT_GOGC=$(ARGOCD_LINT_GOGC) \
+		-e ATHENA_LINT_GOGC=$(ATHENA_LINT_GOGC) \
 		-v $(DOCKER_SRC_MOUNT) \
 		-v $(GOPATH)/pkg/mod:/go/pkg/mod$(VOLUME_MOUNT) \
 		-v $(GOCACHE):/tmp/go-build-cache$(VOLUME_MOUNT) \
@@ -124,15 +124,6 @@ protogen-fast:
 	export GO111MODULE=off
 	./hack/generate-proto.sh
 
-.PHONY: notification-catalog
-notification-catalog:
-	go run ./hack/gen-catalog catalog
-
-.PHONY: notification-docs
-notification-docs:
-	go run ./hack/gen-docs
-	go run ./hack/gen-catalog docs
-
 .PHONY: clientgen
 clientgen:
 	export GO111MODULE=off
@@ -154,19 +145,10 @@ mod-download-local:
 mod-vendor-local: mod-download-local
 	go mod vendor
 
-# original codegen-local
-# .PHONY: codegen-local
-# codegen-local: mod-vendor-local mockgen gogen protogen clientgen clidocsgen  manifests-local notification-docs notification-catalog
-# 	rm -rf vendor/
-
 # new codegen-local
 .PHONY: codegen-local
 codegen-local: mod-vendor-local mockgen gogen protogen clientgen clidocsgen manifests-local
 	rm -rf vendor/
-
-.PHONY: codegen-local-fast
-codegen-local-fast: mockgen gogen protogen-fast clientgen clidocsgen manifests-local notification-docs notification-catalog
-
 
 .PHONY: test-tools-image
 test-tools-image:
@@ -178,3 +160,61 @@ endif
 .PHONY: codegen
 codegen: test-tools-image
 	$(call run-in-test-client,make codegen-local)
+
+
+# Build all Go code
+.PHONY: build
+build: test-tools-image
+	mkdir -p $(GOCACHE)
+	$(call run-in-test-client, make build-local)
+
+# Build all Go code (local version)
+.PHONY: build-local
+build-local:
+	GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -v `go list ./... | grep -v 'resource_customizations\|test/e2e'`
+
+
+# Run all unit tests
+#
+# If TEST_MODULE is set (to fully qualified module name), only this specific
+# module will be tested.
+.PHONY: test
+test: test-tools-image
+	mkdir -p $(GOCACHE)
+	$(call run-in-test-client,make TEST_MODULE=$(TEST_MODULE) test-local)
+
+# Run all unit tests (local version)
+.PHONY: test-local
+test-local:
+	if test "$(TEST_MODULE)" = ""; then \
+		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES=`go list ./... | grep -v 'test/e2e'` ./hack/test.sh -args -test.gocoverdir="$(PWD)/test-results"; \
+	else \
+		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES="$(TEST_MODULE)" ./hack/test.sh -args -test.gocoverdir="$(PWD)/test-results" "$(TEST_MODULE)"; \
+	fi
+
+# .PHONY: test-race
+# test-race: test-tools-image
+# 	mkdir -p $(GOCACHE)
+# 	$(call run-in-test-client,make TEST_MODULE=$(TEST_MODULE) test-race-local)
+
+# # Run all unit tests, with data race detection, skipping known failures (local version)
+# .PHONY: test-race-local
+# test-race-local:
+# 	if test "$(TEST_MODULE)" = ""; then \
+# 		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES=`go list ./... | grep -v 'test/e2e'` ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
+# 	else \
+# 		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES="$(TEST_MODULE)" ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
+# 	fi
+
+# # Run the E2E test suite. E2E test servers (see start-e2e target) must be
+# # started before.
+# .PHONY: test-e2e
+# test-e2e:
+# 	$(call exec-in-test-server,make test-e2e-local)
+
+# # Run the E2E test suite (local version)
+# .PHONY: test-e2e-local
+# test-e2e-local: cli-local
+# 	# NO_PROXY ensures all tests don't go out through a proxy if one is configured on the test system
+# 	export GO111MODULE=off
+# 	DIST_DIR=${DIST_DIR} RERUN_FAILS=$(ARGOCD_E2E_RERUN_FAILS) PACKAGES="./test/e2e" ARGOCD_E2E_RECORD=${ARGOCD_E2E_RECORD} ARGOCD_CONFIG_DIR=$(HOME)/.config/argocd-e2e ARGOCD_GPG_ENABLED=true NO_PROXY=* ./hack/test.sh -timeout $(ARGOCD_E2E_TEST_TIMEOUT) -v -args -test.gocoverdir="$(PWD)/test-results"
