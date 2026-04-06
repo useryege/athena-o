@@ -28,5 +28,5 @@ export TARGET_FILE="kind-${INSTALL_OS}-${ARCHITECTURE}"
 URL="https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-${INSTALL_OS}-${ARCHITECTURE}"
 
 [ -e "${DOWNLOADS}/${TARGET_FILE}" ] || curl -sLf --retry 3 -o "${DOWNLOADS}/${TARGET_FILE}" "${URL}"
-install -m 0755 "${DOWNLOADS}/${TARGET_FILE}" "${INSTALL_PATH}/kind"
+sudo install -m 0755 "${DOWNLOADS}/${TARGET_FILE}" "${INSTALL_PATH}/kind"
 kind version
