@@ -2,14 +2,7 @@ package server
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"net"
-	"net/http"
 	"sync/atomic"
-
-	log "github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	tlsutil "github.com/useryege/athena/util/tls"
 )
@@ -45,7 +38,7 @@ type AthenaServer struct {
 	// extensionManager   *extension.Manager
 	// Shutdown           func()
 	terminateRequested atomic.Bool
-	available          atomic.Bool
+	// available          atomic.Bool
 }
 
 type AthenaServerOpts struct {
@@ -83,48 +76,48 @@ type AthenaServerOpts struct {
 }
 
 // NewServer returns a new instance of the Argo CD API server
-func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
+func NewServer(_ context.Context, opts AthenaServerOpts) *AthenaServer {
 	return &AthenaServer{
 		AthenaServerOpts: opts,
 	}
 }
 
-const (
-	// catches corrupted informer state; see https://github.com/argoproj/argo-cd/issues/4960 for more information
-	notObjectErrMsg = "object does not implement the Object interfaces"
-)
+// const (
+// 	// catches corrupted informer state; see https://github.com/argoproj/argo-cd/issues/4960 for more information
+// 	notObjectErrMsg = "object does not implement the Object interfaces"
+// )
 
-func (server *AthenaServer) healthCheck(r *http.Request) error {
-	if server.terminateRequested.Load() {
-		return errors.New("API Server is terminating and unable to serve requests")
-	}
-	if !server.available.Load() {
-		return errors.New("API Server is not available: it either hasn't started or is restarting")
-	}
-	// TODO: implement health deep check
-	// if val, ok := r.URL.Query()["full"]; ok && len(val) > 0 && val[0] == "true" {
-	// 	argoDB := db.NewDB(server.Namespace, server.settingsMgr, server.KubeClientset)
-	// 	_, err := argoDB.ListClusters(r.Context())
-	// 	if err != nil && strings.Contains(err.Error(), notObjectErrMsg) {
-	// 		return err
-	// 	}
-	// }
-	return nil
-}
+// func (server *AthenaServer) healthCheck(_ *http.Request) error {
+// 	// if server.terminateRequested.Load() {
+// 	// 	return errors.New("API Server is terminating and unable to serve requests")
+// 	// }
+// 	// if !server.available.Load() {
+// 	// 	return errors.New("API Server is not available: it either hasn't started or is restarting")
+// 	// }
+// 	// TODO: implement health deep check
+// 	// if val, ok := r.URL.Query()["full"]; ok && len(val) > 0 && val[0] == "true" {
+// 	// 	argoDB := db.NewDB(server.Namespace, server.settingsMgr, server.KubeClientset)
+// 	// 	_, err := argoDB.ListClusters(r.Context())
+// 	// 	if err != nil && strings.Contains(err.Error(), notObjectErrMsg) {
+// 	// 		return err
+// 	// 	}
+// 	// }
+// 	return nil
+// }
 
-func startListener(host string, port int) (net.Listener, error) {
-	var conn net.Listener
-	var realErr error
-	lc := net.ListenConfig{}
-	_ = wait.ExponentialBackoff(backoff, func() (bool, error) {
-		conn, realErr = lc.Listen(context.Background(), "tcp", fmt.Sprintf("%s:%d", host, port))
-		if realErr != nil {
-			return false, nil
-		}
-		return true, nil
-	})
-	return conn, realErr
-}
+// func startListener(host string, port int) (net.Listener, error) {
+// 	var conn net.Listener
+// 	var realErr error
+// 	lc := net.ListenConfig{}
+// 	_ = wait.ExponentialBackoff(backoff, func() (bool, error) {
+// 		conn, realErr = lc.Listen(context.Background(), "tcp", fmt.Sprintf("%s:%d", host, port))
+// 		if realErr != nil {
+// 			return false, nil
+// 		}
+// 		return true, nil
+// 	})
+// 	return conn, realErr
+// }
 
 func (server *AthenaServer) Listen() (*Listeners, error) {
 	// mainLn, err := startListener(server.ListenHost, server.ListenPort)
@@ -167,7 +160,7 @@ func (server *AthenaServer) Listen() (*Listeners, error) {
 }
 
 // Init starts informers used by the API server
-func (server *AthenaServer) Init(ctx context.Context) {
+func (server *AthenaServer) Init(_ context.Context) {
 	// go server.projInformer.Run(ctx.Done())
 	// go server.appInformer.Run(ctx.Done())
 	// go server.appsetInformer.Run(ctx.Done())
@@ -179,7 +172,7 @@ func (server *AthenaServer) Init(ctx context.Context) {
 // We use k8s.io/code-generator/cmd/go-to-protobuf to generate the .proto files from the API types.
 // k8s.io/ go-to-protobuf uses protoc-gen-gogo, which comes from gogo/protobuf (a fork of
 // golang/protobuf).
-func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
+func (server *AthenaServer) Run(_ context.Context, _ *Listeners) {
 	// defer func() {
 	// 	if r := recover(); r != nil {
 	// 		log.WithField("trace", string(debug.Stack())).Error("Recovered from panic: ", r)
@@ -386,13 +379,13 @@ func (server *AthenaServer) TerminateRequested() bool {
 }
 
 // checkServeErr checks the error from a .Serve() call to decide if it was a graceful shutdown
-func (server *AthenaServer) checkServeErr(name string, err error) {
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Errorf("Error received from server %s: %v", name, err)
-	} else {
-		log.Infof("Graceful shutdown of %s initiated", name)
-	}
-}
+// func (server *AthenaServer) checkServeErr(name string, err error) {
+// 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+// 		log.Errorf("Error received from server %s: %v", name, err)
+// 	} else {
+// 		log.Infof("Graceful shutdown of %s initiated", name)
+// 	}
+// }
 
 // func checkOIDCConfigChange(currentOIDCConfig *settings_util.OIDCConfig, newArgoCDSettings *settings_util.ArgoCDSettings) bool {
 // 	newOIDCConfig := newArgoCDSettings.OIDCConfig()
@@ -412,115 +405,115 @@ func (server *AthenaServer) checkServeErr(name string, err error) {
 
 // watchSettings watches the configmap and secret for any setting updates that would warrant a
 // restart of the API server.
-func (server *AthenaServer) watchSettings() {
-	// updateCh := make(chan *settings_util.ArgoCDSettings, 1)
-	// server.settingsMgr.Subscribe(updateCh)
+// func (server *AthenaServer) watchSettings() {
+// 	// updateCh := make(chan *settings_util.ArgoCDSettings, 1)
+// 	// server.settingsMgr.Subscribe(updateCh)
 
-	// prevURL := server.settings.URL
-	// prevAdditionalURLs := server.settings.AdditionalURLs
-	// prevOIDCConfig := server.settings.OIDCConfig()
-	// prevDexCfgBytes, err := dexutil.GenerateDexConfigYAML(server.settings, server.DexTLSConfig == nil || server.DexTLSConfig.DisableTLS)
-	// errorsutil.CheckError(err)
-	// prevGitHubSecret := server.settings.GetWebhookGitHubSecret()
-	// prevGitLabSecret := server.settings.GetWebhookGitLabSecret()
-	// prevBitbucketUUID := server.settings.GetWebhookBitbucketUUID()
-	// prevBitbucketServerSecret := server.settings.GetWebhookBitbucketServerSecret()
-	// prevGogsSecret := server.settings.GetWebhookGogsSecret()
-	// prevExtConfig := server.settings.ExtensionConfig
-	// var prevCert, prevCertKey string
-	// if server.settings.Certificate != nil && !server.Insecure {
-	// 	prevCert, prevCertKey = tlsutil.EncodeX509KeyPairString(*server.settings.Certificate)
-	// }
+// 	// prevURL := server.settings.URL
+// 	// prevAdditionalURLs := server.settings.AdditionalURLs
+// 	// prevOIDCConfig := server.settings.OIDCConfig()
+// 	// prevDexCfgBytes, err := dexutil.GenerateDexConfigYAML(server.settings, server.DexTLSConfig == nil || server.DexTLSConfig.DisableTLS)
+// 	// errorsutil.CheckError(err)
+// 	// prevGitHubSecret := server.settings.GetWebhookGitHubSecret()
+// 	// prevGitLabSecret := server.settings.GetWebhookGitLabSecret()
+// 	// prevBitbucketUUID := server.settings.GetWebhookBitbucketUUID()
+// 	// prevBitbucketServerSecret := server.settings.GetWebhookBitbucketServerSecret()
+// 	// prevGogsSecret := server.settings.GetWebhookGogsSecret()
+// 	// prevExtConfig := server.settings.ExtensionConfig
+// 	// var prevCert, prevCertKey string
+// 	// if server.settings.Certificate != nil && !server.Insecure {
+// 	// 	prevCert, prevCertKey = tlsutil.EncodeX509KeyPairString(*server.settings.Certificate)
+// 	// }
 
-	// for {
-	// 	newSettings := <-updateCh
-	// 	server.settings = newSettings
-	// 	newDexCfgBytes, err := dexutil.GenerateDexConfigYAML(server.settings, server.DexTLSConfig == nil || server.DexTLSConfig.DisableTLS)
-	// 	errorsutil.CheckError(err)
-	// 	if !bytes.Equal(newDexCfgBytes, prevDexCfgBytes) {
-	// 		log.Infof("dex config modified. restarting")
-	// 		break
-	// 	}
-	// 	if checkOIDCConfigChange(prevOIDCConfig, server.settings) {
-	// 		log.Infof("oidc config modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevURL != server.settings.URL {
-	// 		log.Infof("url modified. restarting")
-	// 		break
-	// 	}
-	// 	if !reflect.DeepEqual(prevAdditionalURLs, server.settings.AdditionalURLs) {
-	// 		log.Infof("additionalURLs modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevGitHubSecret != server.settings.GetWebhookGitHubSecret() {
-	// 		log.Infof("github secret modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevGitLabSecret != server.settings.GetWebhookGitLabSecret() {
-	// 		log.Infof("gitlab secret modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevBitbucketUUID != server.settings.GetWebhookBitbucketUUID() {
-	// 		log.Infof("bitbucket uuid modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevBitbucketServerSecret != server.settings.GetWebhookBitbucketServerSecret() {
-	// 		log.Infof("bitbucket server secret modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevGogsSecret != server.settings.GetWebhookGogsSecret() {
-	// 		log.Infof("gogs secret modified. restarting")
-	// 		break
-	// 	}
-	// 	if !reflect.DeepEqual(prevExtConfig, server.settings.ExtensionConfig) {
-	// 		prevExtConfig = server.settings.ExtensionConfig
-	// 		log.Infof("extensions configs modified. Updating proxy registry...")
-	// 		err := server.extensionManager.UpdateExtensionRegistry(server.settings)
-	// 		if err != nil {
-	// 			log.Errorf("error updating extensions configs: %s", err)
-	// 		} else {
-	// 			log.Info("extensions configs updated successfully")
-	// 		}
-	// 	}
-	// 	if !server.Insecure {
-	// 		var newCert, newCertKey string
-	// 		if server.settings.Certificate != nil {
-	// 			newCert, newCertKey = tlsutil.EncodeX509KeyPairString(*server.settings.Certificate)
-	// 		}
-	// 		if newCert != prevCert || newCertKey != prevCertKey {
-	// 			log.Infof("tls certificate modified. reloading certificate")
-	// 			// No need to break out of this loop since TlsConfig.GetCertificate will automagically reload the cert.
-	// 		}
-	// 	}
-	// }
-	// log.Info("shutting down settings watch")
-	// server.settingsMgr.Unsubscribe(updateCh)
-	// close(updateCh)
-	// // Triggers server restart
-	// server.stopCh <- GracefulRestartSignal{}
-}
+// 	// for {
+// 	// 	newSettings := <-updateCh
+// 	// 	server.settings = newSettings
+// 	// 	newDexCfgBytes, err := dexutil.GenerateDexConfigYAML(server.settings, server.DexTLSConfig == nil || server.DexTLSConfig.DisableTLS)
+// 	// 	errorsutil.CheckError(err)
+// 	// 	if !bytes.Equal(newDexCfgBytes, prevDexCfgBytes) {
+// 	// 		log.Infof("dex config modified. restarting")
+// 	// 		break
+// 	// 	}
+// 	// 	if checkOIDCConfigChange(prevOIDCConfig, server.settings) {
+// 	// 		log.Infof("oidc config modified. restarting")
+// 	// 		break
+// 	// 	}
+// 	// 	if prevURL != server.settings.URL {
+// 	// 		log.Infof("url modified. restarting")
+// 	// 		break
+// 	// 	}
+// 	// 	if !reflect.DeepEqual(prevAdditionalURLs, server.settings.AdditionalURLs) {
+// 	// 		log.Infof("additionalURLs modified. restarting")
+// 	// 		break
+// 	// 	}
+// 	// 	if prevGitHubSecret != server.settings.GetWebhookGitHubSecret() {
+// 	// 		log.Infof("github secret modified. restarting")
+// 	// 		break
+// 	// 	}
+// 	// 	if prevGitLabSecret != server.settings.GetWebhookGitLabSecret() {
+// 	// 		log.Infof("gitlab secret modified. restarting")
+// 	// 		break
+// 	// 	}
+// 	// 	if prevBitbucketUUID != server.settings.GetWebhookBitbucketUUID() {
+// 	// 		log.Infof("bitbucket uuid modified. restarting")
+// 	// 		break
+// 	// 	}
+// 	// 	if prevBitbucketServerSecret != server.settings.GetWebhookBitbucketServerSecret() {
+// 	// 		log.Infof("bitbucket server secret modified. restarting")
+// 	// 		break
+// 	// 	}
+// 	// 	if prevGogsSecret != server.settings.GetWebhookGogsSecret() {
+// 	// 		log.Infof("gogs secret modified. restarting")
+// 	// 		break
+// 	// 	}
+// 	// 	if !reflect.DeepEqual(prevExtConfig, server.settings.ExtensionConfig) {
+// 	// 		prevExtConfig = server.settings.ExtensionConfig
+// 	// 		log.Infof("extensions configs modified. Updating proxy registry...")
+// 	// 		err := server.extensionManager.UpdateExtensionRegistry(server.settings)
+// 	// 		if err != nil {
+// 	// 			log.Errorf("error updating extensions configs: %s", err)
+// 	// 		} else {
+// 	// 			log.Info("extensions configs updated successfully")
+// 	// 		}
+// 	// 	}
+// 	// 	if !server.Insecure {
+// 	// 		var newCert, newCertKey string
+// 	// 		if server.settings.Certificate != nil {
+// 	// 			newCert, newCertKey = tlsutil.EncodeX509KeyPairString(*server.settings.Certificate)
+// 	// 		}
+// 	// 		if newCert != prevCert || newCertKey != prevCertKey {
+// 	// 			log.Infof("tls certificate modified. reloading certificate")
+// 	// 			// No need to break out of this loop since TlsConfig.GetCertificate will automagically reload the cert.
+// 	// 		}
+// 	// 	}
+// 	// }
+// 	// log.Info("shutting down settings watch")
+// 	// server.settingsMgr.Unsubscribe(updateCh)
+// 	// close(updateCh)
+// 	// // Triggers server restart
+// 	// server.stopCh <- GracefulRestartSignal{}
+// }
 
-func (server *AthenaServer) rbacPolicyLoader(ctx context.Context) {
-	// err := server.enf.RunPolicyLoader(ctx, func(cm *corev1.ConfigMap) error {
-	// 	var scopes []string
-	// 	if scopesStr, ok := cm.Data[rbac.ConfigMapScopesKey]; scopesStr != "" && ok {
-	// 		scopes = make([]string, 0)
-	// 		err := yaml.Unmarshal([]byte(scopesStr), &scopes)
-	// 		if err != nil {
-	// 			return fmt.Errorf("error unmarshalling scopes: %w", err)
-	// 		}
-	// 	}
+// func (server *AthenaServer) rbacPolicyLoader(_ context.Context) {
+// 	// err := server.enf.RunPolicyLoader(ctx, func(cm *corev1.ConfigMap) error {
+// 	// 	var scopes []string
+// 	// 	if scopesStr, ok := cm.Data[rbac.ConfigMapScopesKey]; scopesStr != "" && ok {
+// 	// 		scopes = make([]string, 0)
+// 	// 		err := yaml.Unmarshal([]byte(scopesStr), &scopes)
+// 	// 		if err != nil {
+// 	// 			return fmt.Errorf("error unmarshalling scopes: %w", err)
+// 	// 		}
+// 	// 	}
 
-	// 	server.policyEnforcer.SetScopes(scopes)
-	// 	return nil
-	// })
-	// errorsutil.CheckError(err)
-}
+// 	// 	server.policyEnforcer.SetScopes(scopes)
+// 	// 	return nil
+// 	// })
+// 	// errorsutil.CheckError(err)
+// }
 
-func (server *AthenaServer) useTLS() bool {
-	// if server.Insecure || server.settings.Certificate == nil {
-	// 	return false
-	// }
-	return true
-}
+// func (server *AthenaServer) useTLS() bool {
+// 	// if server.Insecure || server.settings.Certificate == nil {
+// 	// 	return false
+// 	// }
+// 	return true
+// }

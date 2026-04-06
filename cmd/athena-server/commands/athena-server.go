@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	log "github.com/sirupsen/logrus"
+
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/server"
@@ -137,7 +138,6 @@ func NewCommand() *cobra.Command {
 					break
 				}
 			}
-
 		},
 		Example: templates.Examples(`
 			# Start the Athena API server with default settings

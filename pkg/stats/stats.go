@@ -59,9 +59,8 @@ func RegisterHeapDumper(filePath string) {
 			if err := pprof.WriteHeapProfile(f); err != nil {
 				log.Warnf("could not write heap profile: %v", err)
 				return
-			} else {
-				log.Infof("dumped heap profile to %s", filePath)
 			}
+			log.Infof("dumped heap profile to %s", filePath)
 		}
 	}()
 }
@@ -71,7 +70,6 @@ func LogStats() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	log.Infof("Alloc=%v TotalAlloc=%v Sys=%v NumGC=%v Goroutines=%d", m.Alloc/1024, m.TotalAlloc/1024, m.Sys/1024, m.NumGC, runtime.NumGoroutine())
-
 }
 
 // LogStack will log the current stack

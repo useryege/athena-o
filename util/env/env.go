@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	timeutil "github.com/useryege/athena/util/time"
+	timeutil "github.com/useryege/athena/pkg/time"
 
 	log "github.com/sirupsen/logrus"
 )
