@@ -60,24 +60,23 @@ You can use `kind` to run Kubernetes inside Docker. But pointing to any other de
 kind create cluster
 ```
 
-#### Minikube
+If `kind create cluster` fails with an error similar to `failed to lock config file: open ~/.kube/config.lock: permission denied`, your `~/.kube` directory is likely owned by `root` or otherwise not writable by your current user.
 
-##### [Installation guide](https://minikube.sigs.k8s.io/docs/start)
-
-##### Start the Cluster
-```shell
-minikube start
-```
-
-Or, if you are using minikube with podman driver:
+Fix the permissions and export the `kind` kubeconfig again:
 
 ```shell
-minikube start --driver=podman
+sudo mkdir -p ~/.kube
+sudo chown -R "$(id -un)":"$(id -gn)" ~/.kube
+chmod 700 ~/.kube
+kind export kubeconfig --name kind
 ```
 
-#### K3d
+You can then verify the cluster is reachable with:
 
-##### [Installation guide](https://k3d.io/stable/#quick-start)
+```shell
+kubectl config current-context
+kubectl get nodes
+```
 
 ### Verify cluster installation
 
