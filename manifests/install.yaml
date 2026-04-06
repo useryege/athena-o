@@ -298,7 +298,7 @@ spec:
         - athena
         - admin
         - redis-initial-password
-        image: quay.io/useryege/athena:latest
+        image: docker.io/yege6776/athena:latest
         imagePullPolicy: IfNotPresent
         name: secret-init
         securityContext:
@@ -360,7 +360,7 @@ spec:
             secretKeyRef:
               key: auth
               name: athena-redis
-        image: quay.io/useryege/athena:latest
+        image: docker.io/yege6776/athena:latest
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

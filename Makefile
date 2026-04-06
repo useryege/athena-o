@@ -296,6 +296,9 @@ clidocsgen:
 .PHONY: manifests-local
 manifests-local:
 	./hack/update-manifests.sh
+.PHONY: manifests
+manifests: test-tools-image
+	$(call run-in-test-client,make manifests-local IMAGE_REGISTRY='${IMAGE_REGISTRY}' IMAGE_NAMESPACE='${IMAGE_NAMESPACE}' IMAGE_REPOSITORY='${IMAGE_REPOSITORY}' IMAGE_TAG='${IMAGE_TAG}')
 
 .PHONY: mod-download-local
 mod-download-local:
