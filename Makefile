@@ -247,10 +247,10 @@ install-tools-local: install-test-tools-local install-codegen-tools-local instal
 # Installs all tools required for running unit & end-to-end tests (Linux packages)
 .PHONY: install-test-tools-local
 install-test-tools-local:
-	# ./hack/install.sh kustomize
-	# ./hack/install.sh helm
-	# ./hack/install.sh gotestsum
-	# ./hack/install.sh oras
+	./hack/install.sh kustomize
+	./hack/install.sh helm
+	./hack/install.sh gotestsum
+	./hack/install.sh oras
 	./hack/install.sh kind
 
 
