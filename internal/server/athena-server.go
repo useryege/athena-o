@@ -17,25 +17,52 @@ import (
 // AthenaServer is the API server for Argo CD
 type AthenaServer struct {
 	AthenaServerOpts
+	// ssoClientApp   *oidc.ClientApp
+	// settings       *settings_util.ArgoCDSettings
+	// log            *log.Entry
+	// sessionMgr     *util_session.SessionManager
+	// settingsMgr    *settings_util.SettingsManager
+	// enf            *rbac.Enforcer
+	// projInformer   cache.SharedIndexInformer
+	// policyEnforcer *rbacpolicy.RBACPolicyEnforcer
+	// appInformer    cache.SharedIndexInformer
+	// appLister      applisters.ApplicationLister
+	// appsetInformer cache.SharedIndexInformer
+	// appsetLister   applisters.ApplicationSetLister
+	// db             db.ArgoDB
+
+	// // stopCh is the channel which when closed, will shutdown the Argo CD server
+	// stopCh             chan os.Signal
+	// userStateStorage   util_session.UserStateStorage
+	// indexDataInit      gosync.Once
+	// indexData          []byte
+	// indexDataErr       error
+	// staticAssets       http.FileSystem
+	// apiFactory         api.Factory
+	// secretInformer     cache.SharedIndexInformer
+	// configMapInformer  cache.SharedIndexInformer
+	// serviceSet         *ArgoCDServiceSet
+	// extensionManager   *extension.Manager
+	// Shutdown           func()
 	terminateRequested atomic.Bool
 	available          atomic.Bool
 }
 
 type AthenaServerOpts struct {
-	// DisableAuth     bool
-	ContentTypes []string
-	// EnableGZip      bool
-	// Insecure        bool
-	// StaticAssetsDir string
-	ListenPort  int
-	ListenHost  string
-	MetricsPort int
-	MetricsHost string
+	DisableAuth     bool
+	ContentTypes    []string
+	EnableGZip      bool
+	Insecure        bool
+	StaticAssetsDir string
+	ListenPort      int
+	ListenHost      string
+	MetricsPort     int
+	MetricsHost     string
 	// Namespace     string
 	// DexServerAddr string
 	// DexTLSConfig            *dexutil.DexTLSConfig
-	// BaseHRef string
-	// RootPath string
+	BaseHRef string
+	RootPath string
 	// DynamicClientset        dynamic.Interface
 	// KubeControllerClientset client.Client
 	// KubeClientset           kubernetes.Interface
@@ -44,9 +71,9 @@ type AthenaServerOpts struct {
 	// Cache                   *servercache.Cache
 	// RepoServerCache         *repocache.Cache
 	// RedisClient            *redis.Client
-	TLSConfigCustomizer tlsutil.ConfigCustomizer
-	// XFrameOptions          string
-	// ContentSecurityPolicy  string
+	TLSConfigCustomizer   tlsutil.ConfigCustomizer
+	XFrameOptions         string
+	ContentSecurityPolicy string
 	// ApplicationNamespaces  []string
 	// EnableProxyExtension   bool
 	// WebhookParallelism     int

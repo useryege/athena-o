@@ -29,12 +29,12 @@ const (
 // NewCommand returns a new instance of an argocd command
 func NewCommand() *cobra.Command {
 	var (
-		insecure              bool
-		staticAssetsDir       string
-		baseHRef              string
-		rootPath              string
-		glogLevel             int
-		dexServerAddress      string
+		insecure        bool
+		staticAssetsDir string
+		baseHRef        string
+		rootPath        string
+		glogLevel       int
+		// dexServerAddress      string
 		disableAuth           bool
 		contentTypes          string
 		enableGZip            bool
@@ -92,12 +92,20 @@ func NewCommand() *cobra.Command {
 			}
 
 			athenaOpts := server.AthenaServerOpts{
-				TLSConfigCustomizer: tlsConfigCustomizer,
-				ContentTypes:        contentTypesList,
-				ListenPort:          listenPort,
-				ListenHost:          listenHost,
-				MetricsPort:         metricsPort,
-				MetricsHost:         metricsHost,
+				TLSConfigCustomizer:   tlsConfigCustomizer,
+				ContentTypes:          contentTypesList,
+				ListenPort:            listenPort,
+				ListenHost:            listenHost,
+				MetricsPort:           metricsPort,
+				MetricsHost:           metricsHost,
+				StaticAssetsDir:       staticAssetsDir,
+				BaseHRef:              baseHRef,
+				RootPath:              rootPath,
+				Insecure:              insecure,
+				DisableAuth:           disableAuth,
+				EnableGZip:            enableGZip,
+				XFrameOptions:         frameOptions,
+				ContentSecurityPolicy: contentSecurityPolicy,
 			}
 
 			// Register stack dumper and start stats ticker and heap dumper
@@ -147,7 +155,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogFormat, "logformat", env.StringFromEnv("ATHENA_SERVER_LOGFORMAT", "json"), "Set the logging format. One of: json|text")
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv("ATHENA_SERVER_LOG_LEVEL", "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().IntVar(&glogLevel, "gloglevel", 0, "Set the glog logging level")
-	command.Flags().StringVar(&dexServerAddress, "dex-server", env.StringFromEnv("ATHENA_SERVER_DEX_SERVER", common.DefaultDexServerAddr), "Dex server address")
+	// command.Flags().StringVar(&dexServerAddress, "dex-server", env.StringFromEnv("ATHENA_SERVER_DEX_SERVER", common.DefaultDexServerAddr), "Dex server address")
 	command.Flags().BoolVar(&disableAuth, "disable-auth", env.ParseBoolFromEnv("ATHENA_SERVER_DISABLE_AUTH", false), "Disable client authentication")
 	command.Flags().StringVar(&contentTypes, "api-content-types", env.StringFromEnv("ATHENA_API_CONTENT_TYPES", "application/json", env.StringFromEnvOpts{AllowEmpty: true}), "Semicolon separated list of allowed content types for non GET api requests. Any content type is allowed if empty.")
 	command.Flags().BoolVar(&enableGZip, "enable-gzip", env.ParseBoolFromEnv("ATHENA_SERVER_ENABLE_GZIP", true), "Enable GZIP compression")
