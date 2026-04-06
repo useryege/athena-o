@@ -129,6 +129,7 @@ For example, install `make` with:
 ```bash
 sudo apt update
 sudo apt install -y make unzip
+sudo apt install -y net-tools
 ```
 
 ---

@@ -405,18 +405,18 @@ start-local: mod-vendor-local dep-ui-local cli-local
 	# check we can connect to Docker to start Redis
 	killall goreman || true
 	kubectl create ns athena || true
-	# rm -rf /tmp/argocd-local
-	# mkdir -p /tmp/argocd-local
-	# mkdir -p /tmp/argocd-local/gpg/keys && chmod 0700 /tmp/argocd-local/gpg/keys
-	# mkdir -p /tmp/argocd-local/gpg/source
-	# REDIS_PASSWORD=$(shell kubectl get secret argocd-redis -o jsonpath='{.data.auth}' | base64 -d) \
-	# ARGOCD_ZJWT_FEATURE_FLAG=always \
-	# ARGOCD_IN_CI=false \
-	# ARGOCD_GPG_ENABLED=$(ARGOCD_GPG_ENABLED) \
-	# BIN_MODE=$(ARGOCD_BIN_MODE) \
-	# ARGOCD_E2E_TEST=false \
-	# ARGOCD_APPLICATION_NAMESPACES=$(ARGOCD_APPLICATION_NAMESPACES) \
-	# 	goreman -f $(ARGOCD_PROCFILE) start ${ARGOCD_START}
+	rm -rf /tmp/athena-local
+	mkdir -p /tmp/athena-local
+	mkdir -p /tmp/athena-local/gpg/keys && chmod 0700 /tmp/athena-local/gpg/keys
+	mkdir -p /tmp/athena-local/gpg/source
+	REDIS_PASSWORD=$(shell kubectl get secret athena-redis -o jsonpath='{.data.auth}' | base64 -d) \
+	ATHENA_ZJWT_FEATURE_FLAG=always \
+	ATHENA_IN_CI=false \
+	ATHENA_GPG_ENABLED=$(ATHENA_GPG_ENABLED) \
+	BIN_MODE=$(ATHENA_BIN_MODE) \
+	ATHENA_E2E_TEST=false \
+	ATHENA_APPLICATION_NAMESPACES=$(ATHENA_APPLICATION_NAMESPACES) \
+		goreman -f $(ATHENA_PROCFILE) start ${ATHENA_START}
 
 
 .PHONY: dep-ui

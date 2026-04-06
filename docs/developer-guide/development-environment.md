@@ -49,7 +49,7 @@ Verify: run `docker version`
 
 You won't need a fully blown multi-master, multi-node cluster, but you will need something like K3S, K3d, Minikube, Kind or microk8s. You will also need a working Kubernetes client (`kubectl`) configuration in your development environment. The configuration must reside in `~/.kube/config`.
 
-#### Kind
+#### Kind(NOT RECOMMENDED)
 
 ##### [Installation guide](https://kind.sigs.k8s.io/docs/user/quick-start)
 
@@ -69,6 +69,27 @@ sudo mkdir -p ~/.kube
 sudo chown -R "$(id -un)":"$(id -gn)" ~/.kube
 chmod 700 ~/.kube
 kind export kubeconfig --name kind
+```
+
+You can then verify the cluster is reachable with:
+
+```shell
+kubectl config current-context
+kubectl get nodes
+```
+
+#### K3d(RECOMMENDED)
+
+##### [Installation guide](https://k3d.io/stable/#installation)
+
+```shell
+wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+```
+
+##### Start the Cluster
+
+```shell
+k3d cluster create athena
 ```
 
 You can then verify the cluster is reachable with:
@@ -107,7 +128,7 @@ make install-codegen-tools-local
 ## Install Latest Argo CD on Your Local Cluster
 
 ```shell
-kubectl create namespace argocd &&
+kubectl create namespace athena &&
 kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/master/manifests/install.yaml
 ```
 
