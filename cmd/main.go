@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
 
+	"github.com/useryege/athena/cmd/athena-server/commands"
 	"github.com/useryege/athena/util/log"
 )
 
@@ -29,7 +30,7 @@ func main() {
 
 	switch binaryName {
 	case "athena-server":
-
+		command = commands.NewCommand()
 	default:
 		os.Exit(1)
 	}

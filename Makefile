@@ -397,9 +397,9 @@ serve-docs:
 .PHONY: start
 start: test-tools-image
 	$(DOCKER) version
-	$(call run-in-test-server,make ARGOCD_PROCFILE=test/container/Procfile start-local ARGOCD_START=${ARGOCD_START})
+	$(call run-in-test-server,make ATHENA_PROCFILE=test/container/Procfile start-local ATHENA_START=${ATHENA_START})
 
-# Starts a local instance of ArgoCD
+# Starts a local instance of Athena
 .PHONY: start-local
 start-local: mod-vendor-local dep-ui-local cli-local
 	# check we can connect to Docker to start Redis
