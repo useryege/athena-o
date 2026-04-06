@@ -37,7 +37,8 @@ RUN  apt-get update && apt-get install --fix-missing -y \
     g++ \
     sudo \
     tini \
-    zip && \
+    zip \
+    psmisc && \
     if [ "$(uname -m)" = "aarch64" ]; then \
        apt-get install --fix-missing -y binutils-gold; \
     fi && \

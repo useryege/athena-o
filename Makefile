@@ -247,10 +247,12 @@ install-tools-local: install-test-tools-local install-codegen-tools-local instal
 # Installs all tools required for running unit & end-to-end tests (Linux packages)
 .PHONY: install-test-tools-local
 install-test-tools-local:
-	./hack/install.sh kustomize
-	./hack/install.sh helm
-	./hack/install.sh gotestsum
-	./hack/install.sh oras
+	# ./hack/install.sh kustomize
+	# ./hack/install.sh helm
+	# ./hack/install.sh gotestsum
+	# ./hack/install.sh oras
+	./hack/install.sh kind
+
 
 # Installs all tools required for running codegen (Go packages)
 .PHONY: install-go-tools-local
@@ -263,6 +265,7 @@ install-go-tools-local:
 install-codegen-tools-local:
 	./hack/install.sh codegen-tools
 	./hack/install.sh codegen-go-tools
+
 
 .PHONY: mockgen
 mockgen:
@@ -391,29 +394,29 @@ serve-docs:
 	$(DOCKER) run ${MKDOCS_RUN_ARGS} --rm -it -p 8000:8000 -v ${CURRENT_DIR}:/docs -w /docs --entrypoint "" ${MKDOCS_DOCKER_IMAGE} sh -c 'pip install -r docs/requirements.txt; mkdocs serve -a $$(ip route get 1 | awk '\''{print $$7}'\''):8000'
 
 
-# .PHONY: start
-# start: test-tools-image
-# 	$(DOCKER) version
-# 	$(call run-in-test-server,make ARGOCD_PROCFILE=test/container/Procfile start-local ARGOCD_START=${ARGOCD_START})
+.PHONY: start
+start: test-tools-image
+	$(DOCKER) version
+	$(call run-in-test-server,make ARGOCD_PROCFILE=test/container/Procfile start-local ARGOCD_START=${ARGOCD_START})
 
-# # Starts a local instance of ArgoCD
-# .PHONY: start-local
-# start-local: mod-vendor-local dep-ui-local cli-local
-# 	# check we can connect to Docker to start Redis
-# 	killall goreman || true
-# 	kubectl create ns argocd || true
-# 	rm -rf /tmp/argocd-local
-# 	mkdir -p /tmp/argocd-local
-# 	mkdir -p /tmp/argocd-local/gpg/keys && chmod 0700 /tmp/argocd-local/gpg/keys
-# 	mkdir -p /tmp/argocd-local/gpg/source
-# 	REDIS_PASSWORD=$(shell kubectl get secret argocd-redis -o jsonpath='{.data.auth}' | base64 -d) \
-# 	ARGOCD_ZJWT_FEATURE_FLAG=always \
-# 	ARGOCD_IN_CI=false \
-# 	ARGOCD_GPG_ENABLED=$(ARGOCD_GPG_ENABLED) \
-# 	BIN_MODE=$(ARGOCD_BIN_MODE) \
-# 	ARGOCD_E2E_TEST=false \
-# 	ARGOCD_APPLICATION_NAMESPACES=$(ARGOCD_APPLICATION_NAMESPACES) \
-# 		goreman -f $(ARGOCD_PROCFILE) start ${ARGOCD_START}
+# Starts a local instance of ArgoCD
+.PHONY: start-local
+start-local: mod-vendor-local dep-ui-local cli-local
+	# check we can connect to Docker to start Redis
+	killall goreman || true
+	kubectl create ns athena || true
+	# rm -rf /tmp/argocd-local
+	# mkdir -p /tmp/argocd-local
+	# mkdir -p /tmp/argocd-local/gpg/keys && chmod 0700 /tmp/argocd-local/gpg/keys
+	# mkdir -p /tmp/argocd-local/gpg/source
+	# REDIS_PASSWORD=$(shell kubectl get secret argocd-redis -o jsonpath='{.data.auth}' | base64 -d) \
+	# ARGOCD_ZJWT_FEATURE_FLAG=always \
+	# ARGOCD_IN_CI=false \
+	# ARGOCD_GPG_ENABLED=$(ARGOCD_GPG_ENABLED) \
+	# BIN_MODE=$(ARGOCD_BIN_MODE) \
+	# ARGOCD_E2E_TEST=false \
+	# ARGOCD_APPLICATION_NAMESPACES=$(ARGOCD_APPLICATION_NAMESPACES) \
+	# 	goreman -f $(ARGOCD_PROCFILE) start ${ARGOCD_START}
 
 
 .PHONY: dep-ui
