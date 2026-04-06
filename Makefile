@@ -442,3 +442,11 @@ clean-debug:
 .PHONY: clean
 clean: clean-debug
 	-rm -rf ${CURRENT_DIR}/dist
+
+.PHONY: lint-ui
+lint-ui: test-tools-image
+	$(call run-in-test-client,make lint-ui-local)
+
+.PHONY: lint-ui-local
+lint-ui-local:
+	cd ui && yarn lint
