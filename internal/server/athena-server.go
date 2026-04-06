@@ -10,29 +10,55 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	tlsutil "github.com/useryege/athena/util/tls"
 )
 
-// ArgoCDServer is the API server for Argo CD
-type ArgoCDServer struct {
-	ArgoCDServerOpts
+// AthenaServer is the API server for Argo CD
+type AthenaServer struct {
+	AthenaServerOpts
 	terminateRequested atomic.Bool
 	available          atomic.Bool
 }
 
-type ArgoCDServerOpts struct {
-	Namespace string
-
-	ListenPort int
-	ListenHost string
-
+type AthenaServerOpts struct {
+	// DisableAuth     bool
+	ContentTypes []string
+	// EnableGZip      bool
+	// Insecure        bool
+	// StaticAssetsDir string
+	ListenPort  int
+	ListenHost  string
 	MetricsPort int
 	MetricsHost string
+	// Namespace     string
+	// DexServerAddr string
+	// DexTLSConfig            *dexutil.DexTLSConfig
+	// BaseHRef string
+	// RootPath string
+	// DynamicClientset        dynamic.Interface
+	// KubeControllerClientset client.Client
+	// KubeClientset           kubernetes.Interface
+	// AppClientset            appclientset.Interface
+	// RepoClientset           repoapiclient.Clientset
+	// Cache                   *servercache.Cache
+	// RepoServerCache         *repocache.Cache
+	// RedisClient            *redis.Client
+	TLSConfigCustomizer tlsutil.ConfigCustomizer
+	// XFrameOptions          string
+	// ContentSecurityPolicy  string
+	// ApplicationNamespaces  []string
+	// EnableProxyExtension   bool
+	// WebhookParallelism     int
+	// EnableK8sEvent         []string
+	// HydratorEnabled        bool
+	// SyncWithReplaceAllowed bool
 }
 
 // NewServer returns a new instance of the Argo CD API server
-func NewServer(ctx context.Context, opts ArgoCDServerOpts) *ArgoCDServer {
-	return &ArgoCDServer{
-		ArgoCDServerOpts: opts,
+func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
+	return &AthenaServer{
+		AthenaServerOpts: opts,
 	}
 }
 
@@ -41,7 +67,7 @@ const (
 	notObjectErrMsg = "object does not implement the Object interfaces"
 )
 
-func (server *ArgoCDServer) healthCheck(r *http.Request) error {
+func (server *AthenaServer) healthCheck(r *http.Request) error {
 	if server.terminateRequested.Load() {
 		return errors.New("API Server is terminating and unable to serve requests")
 	}
@@ -73,7 +99,7 @@ func startListener(host string, port int) (net.Listener, error) {
 	return conn, realErr
 }
 
-func (server *ArgoCDServer) Listen() (*Listeners, error) {
+func (server *AthenaServer) Listen() (*Listeners, error) {
 	// mainLn, err := startListener(server.ListenHost, server.ListenPort)
 	// if err != nil {
 	// 	return nil, err
@@ -114,7 +140,7 @@ func (server *ArgoCDServer) Listen() (*Listeners, error) {
 }
 
 // Init starts informers used by the API server
-func (server *ArgoCDServer) Init(ctx context.Context) {
+func (server *AthenaServer) Init(ctx context.Context) {
 	// go server.projInformer.Run(ctx.Done())
 	// go server.appInformer.Run(ctx.Done())
 	// go server.appsetInformer.Run(ctx.Done())
@@ -126,7 +152,7 @@ func (server *ArgoCDServer) Init(ctx context.Context) {
 // We use k8s.io/code-generator/cmd/go-to-protobuf to generate the .proto files from the API types.
 // k8s.io/ go-to-protobuf uses protoc-gen-gogo, which comes from gogo/protobuf (a fork of
 // golang/protobuf).
-func (server *ArgoCDServer) Run(ctx context.Context, listeners *Listeners) {
+func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 	// defer func() {
 	// 	if r := recover(); r != nil {
 	// 		log.WithField("trace", string(debug.Stack())).Error("Recovered from panic: ", r)
@@ -321,19 +347,19 @@ func (server *ArgoCDServer) Run(ctx context.Context, listeners *Listeners) {
 	// }
 }
 
-func (server *ArgoCDServer) Initialized() bool {
+func (server *AthenaServer) Initialized() bool {
 	// return server.projInformer.HasSynced() && server.appInformer.HasSynced()
 	return true
 }
 
 // TerminateRequested returns whether a shutdown was initiated by a signal or context cancel
 // as opposed to a watch.
-func (server *ArgoCDServer) TerminateRequested() bool {
+func (server *AthenaServer) TerminateRequested() bool {
 	return server.terminateRequested.Load()
 }
 
 // checkServeErr checks the error from a .Serve() call to decide if it was a graceful shutdown
-func (server *ArgoCDServer) checkServeErr(name string, err error) {
+func (server *AthenaServer) checkServeErr(name string, err error) {
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Errorf("Error received from server %s: %v", name, err)
 	} else {
@@ -359,7 +385,7 @@ func (server *ArgoCDServer) checkServeErr(name string, err error) {
 
 // watchSettings watches the configmap and secret for any setting updates that would warrant a
 // restart of the API server.
-func (server *ArgoCDServer) watchSettings() {
+func (server *AthenaServer) watchSettings() {
 	// updateCh := make(chan *settings_util.ArgoCDSettings, 1)
 	// server.settingsMgr.Subscribe(updateCh)
 
@@ -448,7 +474,7 @@ func (server *ArgoCDServer) watchSettings() {
 	// server.stopCh <- GracefulRestartSignal{}
 }
 
-func (server *ArgoCDServer) rbacPolicyLoader(ctx context.Context) {
+func (server *AthenaServer) rbacPolicyLoader(ctx context.Context) {
 	// err := server.enf.RunPolicyLoader(ctx, func(cm *corev1.ConfigMap) error {
 	// 	var scopes []string
 	// 	if scopesStr, ok := cm.Data[rbac.ConfigMapScopesKey]; scopesStr != "" && ok {
@@ -465,7 +491,7 @@ func (server *ArgoCDServer) rbacPolicyLoader(ctx context.Context) {
 	// errorsutil.CheckError(err)
 }
 
-func (server *ArgoCDServer) useTLS() bool {
+func (server *AthenaServer) useTLS() bool {
 	// if server.Insecure || server.settings.Certificate == nil {
 	// 	return false
 	// }
