@@ -416,13 +416,12 @@ serve-docs:
 # 		goreman -f $(ARGOCD_PROCFILE) start ${ARGOCD_START}
 
 
-# .PHONY: dep-ui
-# dep-ui: test-tools-image
-# 	$(call run-in-test-client,make dep-ui-local)
+.PHONY: dep-ui
+dep-ui: test-tools-image
+	$(call run-in-test-client,make dep-ui-local)
 
-# dep-ui-local:
-# 	cd ui && yarn install
-
+dep-ui-local:
+	cd ui && yarn install
 
 .PHONY: cli
 cli: test-tools-image
