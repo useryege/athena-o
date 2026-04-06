@@ -1,6 +1,7 @@
 package commands
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -68,6 +69,9 @@ func NewCommand() *cobra.Command {
 					"port":      listenPort,
 				},
 			)
+
+			log.Info("Hello, Athena API Server!")
+
 		},
 		Example: templates.Examples(`
 			# Start the Athena API server with default settings
