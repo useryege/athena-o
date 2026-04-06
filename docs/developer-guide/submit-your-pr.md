@@ -82,9 +82,9 @@ Whenever you develop a new feature or submit a bug fix, please also write approp
 If you want to see how much coverage just a specific module (i.e. your new one) has, you can set the `TEST_MODULE` to the (fully qualified) name of that module with `make test`, i.e.:
 
 ```bash
- make test TEST_MODULE=github.com/argoproj/argo-cd/server/cache
+ make test TEST_MODULE=github.com/useryege/athena/internal/server/cache
 ...
-ok      github.com/argoproj/argo-cd/server/cache        0.029s  coverage: 89.3% of statements
+ok      github.com/useryege/athena/internal/server/cache        0.029s  coverage: 89.3% of statements
 ```
 
 ## Cherry-picking fixes

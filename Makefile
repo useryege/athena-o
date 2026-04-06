@@ -450,3 +450,37 @@ lint-ui: test-tools-image
 .PHONY: lint-ui-local
 lint-ui-local:
 	cd ui && yarn lint
+
+
+
+
+# Build the UI
+.PHONY: build-ui
+build-ui:
+	DOCKER_BUILDKIT=1 $(DOCKER) build -t athena-ui --platform=$(TARGET_ARCH) --target athena-ui .
+	find ./ui/dist -type f -not -name gitkeep -delete
+	$(DOCKER) run -v ${CURRENT_DIR}/ui/dist/app:/tmp/app --rm -t athena-ui sh -c 'cp -r ./dist/app/* /tmp/app/'
+
+# Build the image
+.PHONY: image
+ifeq ($(DEV_IMAGE), true)
+# The "dev" image builds the binaries from the users desktop environment (instead of in Docker)
+# which speeds up builds. Dockerfile.dev needs to be copied into dist to perform the build, since
+# the dist directory is under .dockerignore.
+IMAGE_TAG="dev-$(shell git describe --always --dirty)"
+image: build-ui
+	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -t athena-base --target athena-base .
+	CGO_ENABLED=${CGO_FLAG} GOOS=linux GOARCH=amd64 GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -v -ldflags '${LDFLAGS}' -o ${DIST_DIR}/athena ./cmd
+	ln -sfn ${DIST_DIR}/athena ${DIST_DIR}/athena-server
+	cp Dockerfile.dev dist
+	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -t $(IMAGE_PREFIX)athena:$(IMAGE_TAG) -f dist/Dockerfile.dev dist
+else
+image:
+	DOCKER_BUILDKIT=1 $(DOCKER) build -t $(IMAGE_PREFIX)athena:$(IMAGE_TAG) --platform=$(TARGET_ARCH) .
+endif
+	@if [ "$(DOCKER_PUSH)" = "true" ] ; then $(DOCKER) push $(IMAGE_PREFIX)athena:$(IMAGE_TAG) ; fi
+
+
+.PHONY: athena-all
+athena-all: clean-debug
+	CGO_ENABLED=${CGO_FLAG} GOOS=${GOOS} GOARCH=${GOARCH} GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -v -ldflags '${LDFLAGS}' -o ${DIST_DIR}/${BIN_NAME} ./cmd
