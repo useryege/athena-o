@@ -4,7 +4,10 @@ import (
 	"context"
 	"sync/atomic"
 
+	errorsutil "github.com/useryege/athena/util/errors"
+	settings_util "github.com/useryege/athena/util/settings"
 	tlsutil "github.com/useryege/athena/util/tls"
+	"k8s.io/client-go/kubernetes"
 )
 
 // AthenaServer is the API server for Argo CD
@@ -51,14 +54,14 @@ type AthenaServerOpts struct {
 	ListenHost      string
 	MetricsPort     int
 	MetricsHost     string
-	// Namespace     string
+	Namespace       string
 	// DexServerAddr string
 	// DexTLSConfig            *dexutil.DexTLSConfig
 	BaseHRef string
 	RootPath string
 	// DynamicClientset        dynamic.Interface
 	// KubeControllerClientset client.Client
-	// KubeClientset           kubernetes.Interface
+	KubeClientset kubernetes.Interface
 	// AppClientset            appclientset.Interface
 	// RepoClientset           repoapiclient.Clientset
 	// Cache                   *servercache.Cache
@@ -76,7 +79,12 @@ type AthenaServerOpts struct {
 }
 
 // NewServer returns a new instance of the Argo CD API server
-func NewServer(_ context.Context, opts AthenaServerOpts) *AthenaServer {
+func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
+
+	settingsMgr := settings_util.NewSettingsManager(ctx, opts.KubeClientset, opts.Namespace)
+	_, err := settingsMgr.InitializeSettings(opts.Insecure)
+	errorsutil.CheckError(err)
+
 	return &AthenaServer{
 		AthenaServerOpts: opts,
 	}

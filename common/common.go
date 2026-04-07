@@ -23,6 +23,62 @@ const (
 	DefaultSSHKnownHostsName = "ssh_known_hosts"
 )
 
+// Argo CD application related constants
+const (
+
+	// AthenaAdminUsername is the username of the 'admin' user
+	AthenaAdminUsername = "admin"
+	// // ArgoCDUserAgentName is the default user-agent name used by the gRPC API client library and grpc-gateway
+	// ArgoCDUserAgentName = "argocd-client"
+	// // ArgoCDSSAManager is the default argocd manager name used by server-side apply syncs
+	// ArgoCDSSAManager = "argocd-controller"
+	// AuthCookieName is the HTTP cookie name where we store our auth token
+	AuthCookieName = "argocd.token"
+	// // StateCookieName is the HTTP cookie name that holds temporary nonce tokens for CSRF protection
+	// StateCookieName = "argocd.oauthstate"
+	// // StateCookieMaxAge is the maximum age of the oauth state cookie
+	// StateCookieMaxAge = time.Minute * 5
+
+	// // ChangePasswordSSOTokenMaxAge is the max token age for password change operation
+	// ChangePasswordSSOTokenMaxAge = time.Minute * 5
+	// // GithubAppCredsExpirationDuration is the default time used to cache the GitHub app credentials
+	// GithubAppCredsExpirationDuration = time.Minute * 60
+
+	// PasswordPatten is the default password patten
+	PasswordPatten = `^.{8,32}$`
+
+	// // LegacyShardingAlgorithm is the default value for Sharding Algorithm it uses an `uid` based distribution (non-uniform)
+	// LegacyShardingAlgorithm = "legacy"
+	// // RoundRobinShardingAlgorithm is a flag value that can be opted for Sharding Algorithm it uses an equal distribution across all shards
+	// RoundRobinShardingAlgorithm = "round-robin"
+	// // AppControllerHeartbeatUpdateRetryCount is the retry count for updating the Shard Mapping to the Shard Mapping ConfigMap used by Application Controller
+	// AppControllerHeartbeatUpdateRetryCount = 3
+
+	// // ConsistentHashingWithBoundedLoadsAlgorithm uses an algorithm that tries to use an equal distribution across
+	// // all shards but is optimised to handle sharding and/or cluster addition or removal. In case of sharding or
+	// // cluster changes, this algorithm minimises the changes between shard and clusters assignments.
+	// ConsistentHashingWithBoundedLoadsAlgorithm = "consistent-hashing"
+
+	// DefaultShardingAlgorithm = LegacyShardingAlgorithm
+)
+
+// Kubernetes ConfigMap and Secret resource names which hold Argo CD settings
+const (
+	AthenaConfigMapName              = "athena-cm"
+	AthenaSecretName                 = "athena-secret"
+	ArgoCDNotificationsConfigMapName = "argocd-notifications-cm"
+	ArgoCDNotificationsSecretName    = "argocd-notifications-secret"
+	ArgoCDRBACConfigMapName          = "argocd-rbac-cm"
+	// ArgoCDKnownHostsConfigMapName contains SSH known hosts data for connecting repositories. Will get mounted as volume to pods
+	ArgoCDKnownHostsConfigMapName = "argocd-ssh-known-hosts-cm"
+	// ArgoCDTLSCertsConfigMapName contains TLS certificate data for connecting repositories. Will get mounted as volume to pods
+	ArgoCDTLSCertsConfigMapName = "argocd-tls-certs-cm"
+	ArgoCDGPGKeysConfigMapName  = "argocd-gpg-keys-cm"
+	// ArgoCDAppControllerShardConfigMapName contains the application controller to shard mapping
+	ArgoCDAppControllerShardConfigMapName = "argocd-app-controller-shard-cm"
+	ArgoCDCmdParamsConfigMapName          = "argocd-cmd-params-cm"
+)
+
 // Default listener ports for ArgoCD components
 const (
 	DefaultPortAPIServer              = 8080
@@ -77,6 +133,9 @@ const (
 
 	// EnvGRPCKeepAliveMin defines the GRPCKeepAliveEnforcementMinimum, used in the grpc.KeepaliveEnforcementPolicy. Expects a "Duration" format (e.g. 10s).
 	EnvGRPCKeepAliveMin = "ATHENA_GRPC_KEEP_ALIVE_MIN"
+
+	// EnvMaxCookieNumber max number of chunks a cookie can be broken into
+	EnvMaxCookieNumber = "ATHENA_MAX_COOKIE_NUMBER"
 )
 
 // Security severity logging
