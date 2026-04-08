@@ -75,7 +75,7 @@ This will start all Argo CD services and the UI in a Docker container and expose
 
 You can now use either the web UI by pointing your browser to `http://localhost:4000` or use the CLI against the API at `http://localhost:8080`. Be sure to use the `--insecure` and `--plaintext` options to the CLI. Webpack will take a while to bundle resources initially, so the first page load can take several seconds or minutes.
 
-As an alternative to using the above command line parameters each time you call `argocd` CLI, you can set the following environment variables:
+As an alternative to using the above command line parameters each time you call `athena` CLI, you can set the following environment variables:
 
 ```bash
 export ARGOCD_SERVER=127.0.0.1:8080
@@ -123,7 +123,7 @@ If some of the processes fail to start (not marked with `*`), check logs to see 
 
 You can now use either use the web UI by pointing your browser to `http://localhost:4000` or use the CLI against the API at `http://localhost:8080`. Be sure to use the `--insecure` and `--plaintext` options to the CLI. Webpack will take a while to bundle resources initially, so the first page load can take several seconds or minutes.
 
-As an alternative to using the above command line parameters each time you call `argocd` CLI, you can set the following environment variables:
+As an alternative to using the above command line parameters each time you call `athena` CLI, you can set the following environment variables:
 
 ```bash
 export ARGOCD_SERVER=127.0.0.1:8080
@@ -167,7 +167,7 @@ kubectl -n athena get secret athena-initial-admin-secret -o jsonpath="{.data.pas
 Then log in using that password and username `admin`:
 
 ```shell
-dist/argocd login localhost:8080
+dist/athena login localhost:8080
 ```
 
 ## Running Argo CD inside of K8s cluster
@@ -176,13 +176,13 @@ dist/argocd login localhost:8080
 Once you have finished testing your changes locally and want to bring back Argo CD in your development cluster, simply scale the deployments up again:
 
 ```bash
-kubectl -n argocd scale statefulset/argocd-application-controller --replicas 1
-kubectl -n argocd scale deployment/argocd-applicationset-controller --replicas 1
-kubectl -n argocd scale deployment/argocd-dex-server --replicas 1
-kubectl -n argocd scale deployment/argocd-repo-server --replicas 1
-kubectl -n argocd scale deployment/argocd-server --replicas 1
-kubectl -n argocd scale deployment/argocd-redis --replicas 1
-kubectl -n argocd scale deployment/argocd-notifications-controller --replicas 1
+kubectl -n athena scale statefulset/athena-application-controller --replicas 1
+kubectl -n athena scale deployment/athena-applicationset-controller --replicas 1
+kubectl -n athena scale deployment/athena-dex-server --replicas 1
+kubectl -n athena scale deployment/athena-repo-server --replicas 1
+kubectl -n athena scale deployment/athena-server --replicas 1
+kubectl -n athena scale deployment/athena-redis --replicas 1
+kubectl -n athena scale deployment/athena-notifications-controller --replicas 1
 ```
 
 ### Run your own Argo CD images on your cluster
@@ -249,5 +249,5 @@ make manifests-local
 The final step is to push the manifests to your cluster, so it will pull and run your image:
 
 ```bash
-kubectl apply -n argocd --server-side --force-conflicts -f manifests/install.yaml
+kubectl apply -n athena --server-side --force-conflicts -f manifests/install.yaml
 ```

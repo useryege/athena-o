@@ -32,7 +32,7 @@ cluster_version = decode_yaml(local('kubectl version -o yaml'))
 platform = cluster_version['serverVersion']['platform']
 arch = platform.split('/')[1]
 
-# build the argocd binary on code changes
+# build the athena binary on code changes
 code_deps = [
     'applicationset',
     'cmd',
@@ -50,17 +50,17 @@ code_deps = [
 ]
 local_resource(
     'build',
-    'CGO_ENABLED=0 GOOS=linux GOARCH=' + arch + ' go build -gcflags="all=-N -l" -mod=readonly -o .tilt-bin/argocd_linux cmd/main.go',
+    'CGO_ENABLED=0 GOOS=linux GOARCH=' + arch + ' go build -gcflags="all=-N -l" -mod=readonly -o .tilt-bin/athena_linux cmd/main.go',
     deps = code_deps,
     allow_parallel=True,
 )
 
-# deploy the argocd manifests
+# deploy the athena manifests
 k8s_yaml(kustomize('manifests/dev-tilt'))
 
 # build dev image
 docker_build_with_restart(
-    'argocd', 
+    'athena', 
     context='.',
     dockerfile='Dockerfile.tilt',
     entrypoint=[
@@ -77,7 +77,7 @@ docker_build_with_restart(
     ],
     platform=platform,
     live_update=[
-        sync('.tilt-bin/argocd_linux', '/usr/local/bin/argocd'),
+        sync('.tilt-bin/athena_linux', '/usr/local/bin/athena'),
     ],
     only=[
         '.tilt-bin',
@@ -87,9 +87,9 @@ docker_build_with_restart(
     restart_file='/tilt/.restart-proc'
 )
 
-# build image for argocd-cli jobs
+# build image for athena-cli jobs
 docker_build(
-    'argocd-job', 
+    'athena-job', 
     context='.',
     dockerfile='Dockerfile.tilt',
     platform=platform,
@@ -100,23 +100,23 @@ docker_build(
     ]
 )
 
-# track argocd-server resources and port forward
+# track athena-server resources and port forward
 k8s_resource(
-    workload='argocd-server',
+    workload='athena-server',
     objects=[
-        'argocd-server:serviceaccount',
-        'argocd-server:role',
-        'argocd-server:rolebinding',
-        'argocd-cm:configmap',
-        'argocd-cmd-params-cm:configmap',
-        'argocd-gpg-keys-cm:configmap',
-        'argocd-rbac-cm:configmap',
-        'argocd-ssh-known-hosts-cm:configmap',
-        'argocd-tls-certs-cm:configmap',
-        'argocd-secret:secret',
-        'argocd-server-network-policy:networkpolicy',
-        'argocd-server:clusterrolebinding',
-        'argocd-server:clusterrole',
+        'athena-server:serviceaccount',
+        'athena-server:role',
+        'athena-server:rolebinding',
+        'athena-cm:configmap',
+        'athena-cmd-params-cm:configmap',
+        'athena-gpg-keys-cm:configmap',
+        'athena-rbac-cm:configmap',
+        'athena-ssh-known-hosts-cm:configmap',
+        'athena-tls-certs-cm:configmap',
+        'athena-secret:secret',
+        'athena-server-network-policy:networkpolicy',
+        'athena-server:clusterrolebinding',
+        'athena-server:clusterrole',
     ],
     port_forwards=[
         '8080:8080',
@@ -133,16 +133,16 @@ k8s_resource(
         'applications.argoproj.io:customresourcedefinition',
         'applicationsets.argoproj.io:customresourcedefinition',
         'appprojects.argoproj.io:customresourcedefinition',
-        'argocd:namespace'
+        'athena:namespace'
     ]
 )
 
-# track argocd-repo-server resources and port forward
+# track athena-repo-server resources and port forward
 k8s_resource(
-    workload='argocd-repo-server',
+    workload='athena-repo-server',
     objects=[
-        'argocd-repo-server:serviceaccount',
-        'argocd-repo-server-network-policy:networkpolicy',
+        'athena-repo-server:serviceaccount',
+        'athena-repo-server-network-policy:networkpolicy',
     ],
     port_forwards=[
         '8081:8081',
@@ -152,14 +152,14 @@ k8s_resource(
     resource_deps=['build']
 )
 
-# track argocd-redis resources and port forward
+# track athena-redis resources and port forward
 k8s_resource(
-    workload='argocd-redis',
+    workload='athena-redis',
     objects=[
-        'argocd-redis:serviceaccount',
-        'argocd-redis:role',
-        'argocd-redis:rolebinding',
-        'argocd-redis-network-policy:networkpolicy',
+        'athena-redis:serviceaccount',
+        'athena-redis:role',
+        'athena-redis:rolebinding',
+        'athena-redis-network-policy:networkpolicy',
     ],
     port_forwards=[
         '6379:6379',
@@ -167,16 +167,16 @@ k8s_resource(
     resource_deps=['build']
 )
 
-# track argocd-applicationset-controller resources
+# track athena-applicationset-controller resources
 k8s_resource(
-    workload='argocd-applicationset-controller',
+    workload='athena-applicationset-controller',
     objects=[
-        'argocd-applicationset-controller:serviceaccount',
-        'argocd-applicationset-controller-network-policy:networkpolicy',
-        'argocd-applicationset-controller:role',
-        'argocd-applicationset-controller:rolebinding',
-        'argocd-applicationset-controller:clusterrolebinding',
-        'argocd-applicationset-controller:clusterrole',
+        'athena-applicationset-controller:serviceaccount',
+        'athena-applicationset-controller-network-policy:networkpolicy',
+        'athena-applicationset-controller:role',
+        'athena-applicationset-controller:rolebinding',
+        'athena-applicationset-controller:clusterrolebinding',
+        'athena-applicationset-controller:clusterrole',
     ],
     port_forwards=[
         '9347:2345',
@@ -186,16 +186,16 @@ k8s_resource(
     resource_deps=['build']
 )
 
-# track argocd-application-controller resources
+# track athena-application-controller resources
 k8s_resource(
-    workload='argocd-application-controller',
+    workload='athena-application-controller',
     objects=[
-        'argocd-application-controller:serviceaccount',
-        'argocd-application-controller-network-policy:networkpolicy',
-        'argocd-application-controller:role',
-        'argocd-application-controller:rolebinding',
-        'argocd-application-controller:clusterrolebinding',
-        'argocd-application-controller:clusterrole',
+        'athena-application-controller:serviceaccount',
+        'athena-application-controller-network-policy:networkpolicy',
+        'athena-application-controller:role',
+        'athena-application-controller:rolebinding',
+        'athena-application-controller:clusterrolebinding',
+        'athena-application-controller:clusterrole',
     ],
     port_forwards=[
         '9348:2345',
@@ -204,16 +204,16 @@ k8s_resource(
     resource_deps=['build']
 )
 
-# track argocd-notifications-controller resources
+# track athena-notifications-controller resources
 k8s_resource(
-    workload='argocd-notifications-controller',
+    workload='athena-notifications-controller',
     objects=[
-        'argocd-notifications-controller:serviceaccount',
-        'argocd-notifications-controller-network-policy:networkpolicy',
-        'argocd-notifications-controller:role',
-        'argocd-notifications-controller:rolebinding',
-        'argocd-notifications-cm:configmap',
-        'argocd-notifications-secret:secret',
+        'athena-notifications-controller:serviceaccount',
+        'athena-notifications-controller-network-policy:networkpolicy',
+        'athena-notifications-controller:role',
+        'athena-notifications-controller:rolebinding',
+        'athena-notifications-cm:configmap',
+        'athena-notifications-secret:secret',
     ],
     port_forwards=[
         '9349:2345',
@@ -222,24 +222,24 @@ k8s_resource(
     resource_deps=['build']
 )
 
-# track argocd-dex-server resources
+# track athena-dex-server resources
 k8s_resource(
-    workload='argocd-dex-server',
+    workload='athena-dex-server',
     objects=[
-        'argocd-dex-server:serviceaccount',
-        'argocd-dex-server-network-policy:networkpolicy',
-        'argocd-dex-server:role',
-        'argocd-dex-server:rolebinding',
+        'athena-dex-server:serviceaccount',
+        'athena-dex-server-network-policy:networkpolicy',
+        'athena-dex-server:role',
+        'athena-dex-server:rolebinding',
     ],
     resource_deps=['build']
 )
 
-# track argocd-commit-server resources
+# track athena-commit-server resources
 k8s_resource(
-    workload='argocd-commit-server',
+    workload='athena-commit-server',
     objects=[
-        'argocd-commit-server:serviceaccount',
-        'argocd-commit-server-network-policy:networkpolicy',
+        'athena-commit-server:serviceaccount',
+        'athena-commit-server-network-policy:networkpolicy',
     ],
     port_forwards=[
         '9350:2345',
@@ -263,7 +263,7 @@ local_resource(
 
 # docker for ui
 docker_build(
-    'argocd-ui',
+    'athena-ui',
     context='.',
     dockerfile='Dockerfile.ui.tilt',
     entrypoint=['sh', '-c', 'cd /app/ui && yarn start'], 
@@ -274,9 +274,9 @@ docker_build(
     ],
 )
 
-# track argocd-ui resources and port forward
+# track athena-ui resources and port forward
 k8s_resource(
-    workload='argocd-ui',
+    workload='athena-ui',
     port_forwards=[
         '4000:4000',
     ],

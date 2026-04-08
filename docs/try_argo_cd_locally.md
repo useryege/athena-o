@@ -15,14 +15,14 @@ Install Kind Following Instructions [here](https://kind.sigs.k8s.io/docs/user/qu
 ##  Create a Kind Cluster
 Once Kind is installed, create a new Kubernetes cluster with:
 ```bash
-kind create cluster --name argocd-cluster
+kind create cluster --name athena-cluster
 ```
-This will create a local Kubernetes cluster named `argocd-cluster`.
+This will create a local Kubernetes cluster named `athena-cluster`.
 
 ## Set Up kubectl to Use the Kind Cluster
 After creating the cluster, set `kubectl` to use your new `kind` cluster:
 ```bash
-kubectl cluster-info --context kind-argocd-cluster
+kubectl cluster-info --context kind-athena-cluster
 ```
 This command verifies that `kubectl` is pointed to the right cluster.
 
@@ -30,7 +30,7 @@ This command verifies that `kubectl` is pointed to the right cluster.
 You can now install Argo CD on your `kind` cluster. First, apply the Argo CD manifest to create the necessary resources:
 ```bash
 kubectl create namespace athena
-kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply -n athena --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 ```
 
 > [!NOTE]
@@ -39,7 +39,7 @@ kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubuse
 ## Expose ArgoCD API Server
 By default, Argo CD's API server is not exposed outside the cluster. You need to expose it to access the UI locally. For development purposes, you can use Kubectl 'port-forward'.
 ```bash
-kubectl port-forward svc/argocd-server -n argocd 8080:443
+kubectl port-forward svc/athena-server -n athena 8080:443
 ```
 This will forward port 8080 on your local machine to the ArgoCD API server’s port 443 inside the Kubernetes cluster.
 

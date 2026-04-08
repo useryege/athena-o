@@ -69,7 +69,7 @@ As is the case with the development process, this document is under constant cha
     - Or [set up a virtualized toolchain](toolchain-guide.md#setting-up-a-virtualized-toolchain)
 
 ### Perform the development cycle 
-- [Set kubectl context to argocd namespace](development-cycle.md#set-kubectl-context-to-argocd-namespace)
+- [Set kubectl context to athena namespace](development-cycle.md#set-kubectl-context-to-athena-namespace)
 - [Pull in all build dependencies](development-cycle.md#pull-in-all-build-dependencies)
 - [Generate API glue code and other assets](development-cycle.md#generate-API-glue-code-and-other-assets)
 - [Build your code and run unit tests](development-cycle.md#build-your-code-and-run-unit-tests)

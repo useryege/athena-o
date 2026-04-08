@@ -31,6 +31,7 @@ import (
 	"github.com/useryege/athena/internal/server/metrics"
 	"github.com/useryege/athena/internal/server/rbacpolicy"
 	"github.com/useryege/athena/pkg/apiclient"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/ui"
 	"github.com/useryege/athena/util/assets"
 	cacheutil "github.com/useryege/athena/util/cache"
@@ -50,6 +51,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -212,42 +215,42 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 
 // logInClusterWarnings checks the in-cluster configuration and prints out any warnings.
 func (server *AthenaServer) logInClusterWarnings() error {
-	// labelSelector := labels.NewSelector()
-	// req, err := labels.NewRequirement(common.LabelKeySecretType, selection.Equals, []string{common.LabelValueSecretTypeCluster})
-	// if err != nil {
-	// 	return fmt.Errorf("failed to construct cluster-type label selector: %w", err)
-	// }
-	// labelSelector = labelSelector.Add(*req)
-	// secretsLister, err := server.settingsMgr.GetSecretsLister()
-	// if err != nil {
-	// 	return fmt.Errorf("failed to get secrets lister: %w", err)
-	// }
-	// clusterSecrets, err := secretsLister.Secrets(server.ArgoCDServerOpts.Namespace).List(labelSelector)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to list cluster secrets: %w", err)
-	// }
-	// var inClusterSecrets []string
-	// for _, clusterSecret := range clusterSecrets {
-	// 	cluster, err := db.SecretToCluster(clusterSecret)
-	// 	if err != nil {
-	// 		return fmt.Errorf("could not unmarshal cluster secret %q: %w", clusterSecret.Name, err)
-	// 	}
-	// 	if cluster.Server == v1alpha1.KubernetesInternalAPIServerAddr {
-	// 		inClusterSecrets = append(inClusterSecrets, clusterSecret.Name)
-	// 	}
-	// }
-	// if len(inClusterSecrets) > 0 {
-	// 	// Don't make this call unless we actually have in-cluster secrets, to save time.
-	// 	dbSettings, err := server.settingsMgr.GetSettings()
-	// 	if err != nil {
-	// 		return fmt.Errorf("could not get DB settings: %w", err)
-	// 	}
-	// 	if !dbSettings.InClusterEnabled {
-	// 		for _, clusterName := range inClusterSecrets {
-	// 			log.Warnf("cluster %q uses in-cluster server address but it's disabled in Argo CD settings", clusterName)
-	// 		}
-	// 	}
-	// }
+	labelSelector := labels.NewSelector()
+	req, err := labels.NewRequirement(common.LabelKeySecretType, selection.Equals, []string{common.LabelValueSecretTypeCluster})
+	if err != nil {
+		return fmt.Errorf("failed to construct cluster-type label selector: %w", err)
+	}
+	labelSelector = labelSelector.Add(*req)
+	secretsLister, err := server.settingsMgr.GetSecretsLister()
+	if err != nil {
+		return fmt.Errorf("failed to get secrets lister: %w", err)
+	}
+	clusterSecrets, err := secretsLister.Secrets(server.AthenaServerOpts.Namespace).List(labelSelector)
+	if err != nil {
+		return fmt.Errorf("failed to list cluster secrets: %w", err)
+	}
+	var inClusterSecrets []string
+	for _, clusterSecret := range clusterSecrets {
+		cluster, err := db.SecretToCluster(clusterSecret)
+		if err != nil {
+			return fmt.Errorf("could not unmarshal cluster secret %q: %w", clusterSecret.Name, err)
+		}
+		if cluster.Server == v1alpha1.KubernetesInternalAPIServerAddr {
+			inClusterSecrets = append(inClusterSecrets, clusterSecret.Name)
+		}
+	}
+	if len(inClusterSecrets) > 0 {
+		// Don't make this call unless we actually have in-cluster secrets, to save time.
+		dbSettings, err := server.settingsMgr.GetSettings()
+		if err != nil {
+			return fmt.Errorf("could not get DB settings: %w", err)
+		}
+		if !dbSettings.InClusterEnabled {
+			for _, clusterName := range inClusterSecrets {
+				log.Warnf("cluster %q uses in-cluster server address but it's disabled in Argo CD settings", clusterName)
+			}
+		}
+	}
 	return nil
 }
 

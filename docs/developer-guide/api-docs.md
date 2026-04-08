@@ -15,7 +15,7 @@ Then pass using the HTTP `Authorization` header, prefixing with `Bearer `:
 
 ```bash
 $ curl $ARGOCD_SERVER/api/v1/applications -H "Authorization: Bearer $ARGOCD_TOKEN" 
-{"metadata":{"selfLink":"/apis/argoproj.io/v1alpha1/namespaces/argocd/applications","resourceVersion":"37755"},"items":...}
+{"metadata":{"selfLink":"/apis/argoproj.io/v1alpha1/namespaces/athena/applications","resourceVersion":"37755"},"items":...}
 ```
 
 ## Services

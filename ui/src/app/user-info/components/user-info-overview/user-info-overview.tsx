@@ -11,7 +11,7 @@ import {UserInfo} from '../../../shared/models';
 
 // Constants
 const CHANGE_PASSWORD_PARAM = 'changePassword';
-const ARGOCD_ISSUER = 'argocd';
+const ARGOCD_ISSUER = 'athena';
 
 // Types
 interface PasswordFormData {

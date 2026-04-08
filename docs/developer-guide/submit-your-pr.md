@@ -70,7 +70,7 @@ After you have submitted your PR, and whenever you push new commits to that bran
 * Run the unit tests (`make test`)
 * Run the End-to-End tests (`make test-e2e`)
 * Build and lint the UI code (`make lint-ui`)
-* Build the `argocd` CLI (`make cli`)
+* Build the `athena` CLI (`make cli`)
 
 If any of these tests in the CI pipeline fail, it means that some of your contribution is considered faulty (or a test might be flaky, see below).
 

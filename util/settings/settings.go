@@ -637,13 +637,13 @@ func (mgr *SettingsManager) onRepoOrClusterChanged() {
 // 	return enginecache.RespectRbacDisabled, nil
 // }
 
-// func (mgr *SettingsManager) GetSecretsLister() (v1listers.SecretLister, error) {
-// 	err := mgr.ensureSynced(false)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return mgr.secrets, nil
-// }
+func (mgr *SettingsManager) GetSecretsLister() (v1listers.SecretLister, error) {
+	err := mgr.ensureSynced(false)
+	if err != nil {
+		return nil, err
+	}
+	return mgr.secrets, nil
+}
 
 // func (mgr *SettingsManager) GetSecretsInformer() (cache.SharedIndexInformer, error) {
 // 	err := mgr.ensureSynced(false)
