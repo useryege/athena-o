@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package github.com.useryege.athena.server.settings.oidc;
+package github.com.useryege.athena.internal.server.settings.oidc;
 
 option go_package = "github.com/useryege/athena/internal/server/settings/oidc";
 

@@ -1,16 +1,24 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	goio "io"
 	"io/fs"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
+	"path"
+	"path/filepath"
+	"reflect"
 	"regexp"
+	go_runtime "runtime"
 	"runtime/debug"
 	"strings"
 	"sync/atomic"
@@ -19,6 +27,15 @@ import (
 
 	gosync "sync"
 
+	"github.com/golang-jwt/jwt/v5"
+	golang_proto "github.com/golang/protobuf/proto" //nolint:staticcheck
+	"github.com/gorilla/handlers"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
@@ -26,11 +43,17 @@ import (
 	"github.com/soheilhy/cmux"
 	"github.com/stretchr/testify/assert/yaml"
 	"github.com/useryege/athena/common"
-	"github.com/useryege/athena/internal/server/application"
+	"github.com/useryege/athena/internal/server/account"
 	servercache "github.com/useryege/athena/internal/server/cache"
+	"github.com/useryege/athena/internal/server/logout"
 	"github.com/useryege/athena/internal/server/metrics"
 	"github.com/useryege/athena/internal/server/rbacpolicy"
+	"github.com/useryege/athena/internal/server/session"
+	"github.com/useryege/athena/internal/server/settings"
+	"github.com/useryege/athena/internal/server/version"
 	"github.com/useryege/athena/pkg/apiclient"
+	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
+	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/ui"
 	"github.com/useryege/athena/util/assets"
@@ -38,24 +61,41 @@ import (
 	"github.com/useryege/athena/util/db"
 	dexutil "github.com/useryege/athena/util/dex"
 	errorsutil "github.com/useryege/athena/util/errors"
+	grpc_util "github.com/useryege/athena/util/grpc"
 	"github.com/useryege/athena/util/healthz"
+	httputil "github.com/useryege/athena/util/http"
 	utilio "github.com/useryege/athena/util/io"
+	"github.com/useryege/athena/util/io/files"
+	jwtutil "github.com/useryege/athena/util/jwt"
 	"github.com/useryege/athena/util/notification/k8s"
 	"github.com/useryege/athena/util/oidc"
 	"github.com/useryege/athena/util/rbac"
 	util_session "github.com/useryege/athena/util/session"
 	settings_util "github.com/useryege/athena/util/settings"
+	"github.com/useryege/athena/util/swagger"
 	tlsutil "github.com/useryege/athena/util/tls"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+
+	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
+	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 )
 
 // AthenaServer is the API server for Argo CD
@@ -78,10 +118,10 @@ type AthenaServer struct {
 	// stopCh is the channel which when closed, will shutdown the Argo CD server
 	stopCh           chan os.Signal
 	userStateStorage util_session.UserStateStorage
-	// indexDataInit    gosync.Once
-	// indexData        []byte
-	// indexDataErr     error
-	staticAssets http.FileSystem
+	indexDataInit    gosync.Once
+	indexData        []byte
+	indexDataErr     error
+	staticAssets     http.FileSystem
 	// apiFactory         api.Factory
 	secretInformer    cache.SharedIndexInformer
 	configMapInformer cache.SharedIndexInformer
@@ -119,11 +159,11 @@ type AthenaServerOpts struct {
 	XFrameOptions         string
 	ContentSecurityPolicy string
 	ApplicationNamespaces []string
-	// EnableProxyExtension   bool
+	// EnableProxyExtension  bool
 	// WebhookParallelism     int
 	// EnableK8sEvent         []string
-	// HydratorEnabled        bool
-	// SyncWithReplaceAllowed bool
+	HydratorEnabled        bool
+	SyncWithReplaceAllowed bool
 }
 
 // initializeDefaultProject creates the default project if it does not already exist
@@ -280,41 +320,56 @@ func startListener(host string, port int) (net.Listener, error) {
 }
 
 func (server *AthenaServer) Listen() (*Listeners, error) {
+	log.Debugf("Listen started (host=%s, listenPort=%d, metricsPort=%d, useTLS=%t)", server.ListenHost, server.ListenPort, server.MetricsPort, server.useTLS())
 	mainLn, err := startListener(server.ListenHost, server.ListenPort)
 	if err != nil {
+		log.Debugf("Failed to start main listener on %s:%d: %v", server.ListenHost, server.ListenPort, err)
 		return nil, err
 	}
+	log.Debugf("Started main listener on %s:%d", server.ListenHost, server.ListenPort)
 	metricsLn, err := startListener(server.ListenHost, server.MetricsPort)
 	if err != nil {
+		log.Debugf("Failed to start metrics listener on %s:%d: %v", server.ListenHost, server.MetricsPort, err)
 		utilio.Close(mainLn)
 		return nil, err
 	}
+	log.Debugf("Started metrics listener on %s:%d", server.ListenHost, server.MetricsPort)
 	var dOpts []grpc.DialOption
+	userAgent := fmt.Sprintf("%s/%s", common.ArgoCDUserAgentName, common.GetVersion().Version)
+	log.Debugf("Configuring gRPC gateway dial options (maxRecvMsgSize=%d, userAgent=%s)", apiclient.MaxGRPCMessageSize, userAgent)
 	dOpts = append(dOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(apiclient.MaxGRPCMessageSize)))
-	dOpts = append(dOpts, grpc.WithUserAgent(fmt.Sprintf("%s/%s", common.ArgoCDUserAgentName, common.GetVersion().Version)))
+	dOpts = append(dOpts, grpc.WithUserAgent(userAgent))
 	dOpts = append(dOpts, grpc.WithStatsHandler(otelgrpc.NewClientHandler()))
 	if server.useTLS() {
 		// The following sets up the dial Options for grpc-gateway to talk to gRPC server over TLS.
 		// grpc-gateway is just translating HTTP/HTTPS requests as gRPC requests over localhost,
 		// so we need to supply the same certificates to establish the connections that a normal,
 		// external gRPC client would need.
+		log.Debugf("TLS enabled for gRPC gateway client, building TLS config (hasCustomizer=%t)", server.TLSConfigCustomizer != nil)
 		tlsConfig := server.settings.TLSConfig()
 		if server.TLSConfigCustomizer != nil {
 			server.TLSConfigCustomizer(tlsConfig)
+			log.Debug("Applied TLS config customizer for gRPC gateway client")
 		}
 		tlsConfig.InsecureSkipVerify = true
 		dCreds := credentials.NewTLS(tlsConfig)
 		dOpts = append(dOpts, grpc.WithTransportCredentials(dCreds))
+		log.Debug("Configured TLS transport credentials for gRPC gateway client")
 	} else {
 		dOpts = append(dOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		log.Debug("TLS disabled, configured insecure transport credentials for gRPC gateway client")
 	}
 
-	conn, err := grpc.NewClient(fmt.Sprintf("localhost:%d", server.ListenPort), dOpts...)
+	gatewayAddr := fmt.Sprintf("localhost:%d", server.ListenPort)
+	log.Debugf("Creating gRPC gateway client connection to %s", gatewayAddr)
+	conn, err := grpc.NewClient(gatewayAddr, dOpts...)
 	if err != nil {
+		log.Debugf("Failed to create gRPC gateway client connection to %s: %v", gatewayAddr, err)
 		utilio.Close(mainLn)
 		utilio.Close(metricsLn)
 		return nil, err
 	}
+	log.Debug("Listen completed successfully")
 	return &Listeners{Main: mainLn, Metrics: metricsLn, GatewayConn: conn}, nil
 }
 
@@ -327,107 +382,108 @@ func (server *AthenaServer) Init(ctx context.Context) {
 	go server.secretInformer.Run(ctx.Done())
 }
 
-func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registry) (*grpc.Server, application.AppResourceTreeFn) {
-	// var serverMetricsOptions []grpc_prometheus.ServerMetricsOption
-	// if enableGRPCTimeHistogram {
-	// 	serverMetricsOptions = append(serverMetricsOptions, grpc_prometheus.WithServerHandlingTimeHistogram())
-	// }
-	// serverMetrics := grpc_prometheus.NewServerMetrics(serverMetricsOptions...)
-	// prometheusRegistry.MustRegister(serverMetrics)
+func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registry) *grpc.Server {
+	var serverMetricsOptions []grpc_prometheus.ServerMetricsOption
+	if enableGRPCTimeHistogram {
+		serverMetricsOptions = append(serverMetricsOptions, grpc_prometheus.WithServerHandlingTimeHistogram())
+	}
+	serverMetrics := grpc_prometheus.NewServerMetrics(serverMetricsOptions...)
+	prometheusRegistry.MustRegister(serverMetrics)
 
-	// sOpts := []grpc.ServerOption{
-	// 	// Set the both send and receive the bytes limit to be 100MB
-	// 	// The proper way to achieve high performance is to have pagination
-	// 	// while we work toward that, we can have high limit first
-	// 	grpc.MaxRecvMsgSize(apiclient.MaxGRPCMessageSize),
-	// 	grpc.MaxSendMsgSize(apiclient.MaxGRPCMessageSize),
-	// 	grpc.ConnectionTimeout(300 * time.Second),
-	// 	grpc.KeepaliveEnforcementPolicy(
-	// 		keepalive.EnforcementPolicy{
-	// 			MinTime: common.GetGRPCKeepAliveEnforcementMinimum(),
-	// 		},
-	// 	),
-	// }
-	// sensitiveMethods := map[string]bool{
-	// 	"/cluster.ClusterService/Create":                               true,
-	// 	"/cluster.ClusterService/Update":                               true,
-	// 	"/session.SessionService/Create":                               true,
-	// 	"/account.AccountService/UpdatePassword":                       true,
-	// 	"/gpgkey.GPGKeyService/CreateGnuPGPublicKey":                   true,
-	// 	"/repository.RepositoryService/Create":                         true,
-	// 	"/repository.RepositoryService/Update":                         true,
-	// 	"/repository.RepositoryService/CreateRepository":               true,
-	// 	"/repository.RepositoryService/UpdateRepository":               true,
-	// 	"/repository.RepositoryService/ValidateAccess":                 true,
-	// 	"/repocreds.RepoCredsService/CreateRepositoryCredentials":      true,
-	// 	"/repocreds.RepoCredsService/UpdateRepositoryCredentials":      true,
-	// 	"/repository.RepositoryService/CreateWriteRepository":          true,
-	// 	"/repository.RepositoryService/UpdateWriteRepository":          true,
-	// 	"/repository.RepositoryService/ValidateWriteAccess":            true,
-	// 	"/repocreds.RepoCredsService/CreateWriteRepositoryCredentials": true,
-	// 	"/repocreds.RepoCredsService/UpdateWriteRepositoryCredentials": true,
-	// 	"/application.ApplicationService/PatchResource":                true,
-	// 	// Remove from logs both because the contents are sensitive and because they may be very large.
-	// 	"/application.ApplicationService/GetManifestsWithFiles": true,
-	// }
-	// // NOTE: notice we do not configure the gRPC server here with TLS (e.g. grpc.Creds(creds))
-	// // This is because TLS handshaking occurs in cmux handling
-	// sOpts = append(sOpts, grpc.ChainStreamInterceptor(
-	// 	logging.StreamServerInterceptor(grpc_util.InterceptorLogger(server.log)),
-	// 	serverMetrics.StreamServerInterceptor(),
-	// 	grpc_auth.StreamServerInterceptor(server.Authenticate),
-	// 	grpc_util.UserAgentStreamServerInterceptor(common.ArgoCDUserAgentName, clientConstraint),
-	// 	grpc_util.PayloadStreamServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
-	// 		return !sensitiveMethods[c.FullMethod()]
-	// 	}),
-	// 	grpc_util.ErrorCodeK8sStreamServerInterceptor(),
-	// 	grpc_util.ErrorCodeGitStreamServerInterceptor(),
-	// 	recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpc_util.LoggerRecoveryHandler(server.log))),
-	// ))
-	// sOpts = append(sOpts, grpc.ChainUnaryInterceptor(
-	// 	bug21955WorkaroundInterceptor,
-	// 	logging.UnaryServerInterceptor(grpc_util.InterceptorLogger(server.log)),
-	// 	serverMetrics.UnaryServerInterceptor(),
-	// 	grpc_auth.UnaryServerInterceptor(server.Authenticate),
-	// 	grpc_util.UserAgentUnaryServerInterceptor(common.ArgoCDUserAgentName, clientConstraint),
-	// 	grpc_util.PayloadUnaryServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
-	// 		return !sensitiveMethods[c.FullMethod()]
-	// 	}),
-	// 	grpc_util.ErrorCodeK8sUnaryServerInterceptor(),
-	// 	grpc_util.ErrorCodeGitUnaryServerInterceptor(),
-	// 	recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpc_util.LoggerRecoveryHandler(server.log))),
-	// ))
-	// sOpts = append(sOpts, grpc.StatsHandler(otelgrpc.NewServerHandler()))
-	// grpcS := grpc.NewServer(sOpts...)
+	sOpts := []grpc.ServerOption{
+		// Set the both send and receive the bytes limit to be 100MB
+		// The proper way to achieve high performance is to have pagination
+		// while we work toward that, we can have high limit first
+		grpc.MaxRecvMsgSize(apiclient.MaxGRPCMessageSize),
+		grpc.MaxSendMsgSize(apiclient.MaxGRPCMessageSize),
+		grpc.ConnectionTimeout(300 * time.Second),
+		grpc.KeepaliveEnforcementPolicy(
+			keepalive.EnforcementPolicy{
+				MinTime: common.GetGRPCKeepAliveEnforcementMinimum(),
+			},
+		),
+	}
+	sensitiveMethods := map[string]bool{
+		"/cluster.ClusterService/Create":                               true,
+		"/cluster.ClusterService/Update":                               true,
+		"/session.SessionService/Create":                               true,
+		"/account.AccountService/UpdatePassword":                       true,
+		"/gpgkey.GPGKeyService/CreateGnuPGPublicKey":                   true,
+		"/repository.RepositoryService/Create":                         true,
+		"/repository.RepositoryService/Update":                         true,
+		"/repository.RepositoryService/CreateRepository":               true,
+		"/repository.RepositoryService/UpdateRepository":               true,
+		"/repository.RepositoryService/ValidateAccess":                 true,
+		"/repocreds.RepoCredsService/CreateRepositoryCredentials":      true,
+		"/repocreds.RepoCredsService/UpdateRepositoryCredentials":      true,
+		"/repository.RepositoryService/CreateWriteRepository":          true,
+		"/repository.RepositoryService/UpdateWriteRepository":          true,
+		"/repository.RepositoryService/ValidateWriteAccess":            true,
+		"/repocreds.RepoCredsService/CreateWriteRepositoryCredentials": true,
+		"/repocreds.RepoCredsService/UpdateWriteRepositoryCredentials": true,
+		"/application.ApplicationService/PatchResource":                true,
+		// Remove from logs both because the contents are sensitive and because they may be very large.
+		"/application.ApplicationService/GetManifestsWithFiles": true,
+	}
+	// NOTE: notice we do not configure the gRPC server here with TLS (e.g. grpc.Creds(creds))
+	// This is because TLS handshaking occurs in cmux handling
+	sOpts = append(sOpts, grpc.ChainStreamInterceptor(
+		logging.StreamServerInterceptor(grpc_util.InterceptorLogger(server.log)),
+		serverMetrics.StreamServerInterceptor(),
+		grpc_auth.StreamServerInterceptor(server.Authenticate),
+		grpc_util.UserAgentStreamServerInterceptor(common.ArgoCDUserAgentName, clientConstraint),
+		grpc_util.PayloadStreamServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
+			return !sensitiveMethods[c.FullMethod()]
+		}),
+		grpc_util.ErrorCodeK8sStreamServerInterceptor(),
+		grpc_util.ErrorCodeGitStreamServerInterceptor(),
+		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpc_util.LoggerRecoveryHandler(server.log))),
+	))
+	sOpts = append(sOpts, grpc.ChainUnaryInterceptor(
+		// bug21955WorkaroundInterceptor,
+		logging.UnaryServerInterceptor(grpc_util.InterceptorLogger(server.log)),
+		serverMetrics.UnaryServerInterceptor(),
+		grpc_auth.UnaryServerInterceptor(server.Authenticate),
+		grpc_util.UserAgentUnaryServerInterceptor(common.ArgoCDUserAgentName, clientConstraint),
+		grpc_util.PayloadUnaryServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
+			return !sensitiveMethods[c.FullMethod()]
+		}),
+		grpc_util.ErrorCodeK8sUnaryServerInterceptor(),
+		grpc_util.ErrorCodeGitUnaryServerInterceptor(),
+		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpc_util.LoggerRecoveryHandler(server.log))),
+	))
+	sOpts = append(sOpts, grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	grpcS := grpc.NewServer(sOpts...)
 
-	// healthService := health.NewServer()
-	// grpc_health_v1.RegisterHealthServer(grpcS, healthService)
+	healthService := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(grpcS, healthService)
 
-	// versionpkg.RegisterVersionServiceServer(grpcS, server.serviceSet.VersionService)
+	versionpkg.RegisterVersionServiceServer(grpcS, server.serviceSet.VersionService)
 	// clusterpkg.RegisterClusterServiceServer(grpcS, server.serviceSet.ClusterService)
 	// applicationpkg.RegisterApplicationServiceServer(grpcS, server.serviceSet.ApplicationService)
 	// applicationsetpkg.RegisterApplicationSetServiceServer(grpcS, server.serviceSet.ApplicationSetService)
 	// notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
 	// repositorypkg.RegisterRepositoryServiceServer(grpcS, server.serviceSet.RepoService)
 	// repocredspkg.RegisterRepoCredsServiceServer(grpcS, server.serviceSet.RepoCredsService)
-	// sessionpkg.RegisterSessionServiceServer(grpcS, server.serviceSet.SessionService)
-	// settingspkg.RegisterSettingsServiceServer(grpcS, server.serviceSet.SettingsService)
+	sessionpkg.RegisterSessionServiceServer(grpcS, server.serviceSet.SessionService)
+	settingspkg.RegisterSettingsServiceServer(grpcS, server.serviceSet.SettingsService)
 	// projectpkg.RegisterProjectServiceServer(grpcS, server.serviceSet.ProjectService)
-	// accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
+	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
 	// certificatepkg.RegisterCertificateServiceServer(grpcS, server.serviceSet.CertificateService)
 	// gpgkeypkg.RegisterGPGKeyServiceServer(grpcS, server.serviceSet.GpgkeyService)
-	// // Register reflection service on gRPC server.
-	// reflection.Register(grpcS)
-	// serverMetrics.InitializeMetrics(grpcS)
+	// Register reflection service on gRPC server.
+	reflection.Register(grpcS)
+	serverMetrics.InitializeMetrics(grpcS)
 	// errorsutil.CheckError(server.serviceSet.ProjectService.NormalizeProjs())
 
-	// TODO: delete this line when implementing the gRPC server
-	grpcS := grpc.NewServer()
-	return grpcS, server.serviceSet.AppResourceTreeFn
+	return grpcS
 }
 
 type AthenaServiceSet struct {
-	AppResourceTreeFn application.AppResourceTreeFn
+	SessionService  *session.Server
+	SettingsService *settings.Server
+	AccountService  *account.Server
+	VersionService  *version.Server
 }
 
 func newAthenaServiceSet(a *AthenaServer) *AthenaServiceSet {
@@ -435,11 +491,11 @@ func newAthenaServiceSet(a *AthenaServer) *AthenaServiceSet {
 	// clusterService := cluster.NewServer(a.db, a.enf, a.Cache, kubectl)
 	// repoService := repository.NewServer(a.RepoClientset, a.db, a.enf, a.Cache, a.appLister, a.projInformer, a.Namespace, a.settingsMgr, a.HydratorEnabled)
 	// repoCredsService := repocreds.NewServer(a.db, a.enf)
-	// var loginRateLimiter func() (utilio.Closer, error)
-	// if maxConcurrentLoginRequestsCount > 0 {
-	// 	loginRateLimiter = session.NewLoginRateLimiter(maxConcurrentLoginRequestsCount)
-	// }
-	// sessionService := session.NewServer(a.sessionMgr, a.settingsMgr, a, a.policyEnforcer, loginRateLimiter)
+	var loginRateLimiter func() (utilio.Closer, error)
+	if maxConcurrentLoginRequestsCount > 0 {
+		loginRateLimiter = session.NewLoginRateLimiter(maxConcurrentLoginRequestsCount)
+	}
+	sessionService := session.NewServer(a.sessionMgr, a.settingsMgr, a, a.policyEnforcer, loginRateLimiter)
 	// projectLock := sync.NewKeyLock()
 	// applicationService, appResourceTreeFn := application.NewServer(
 	// 	a.Namespace,
@@ -484,23 +540,23 @@ func newAthenaServiceSet(a *AthenaServer) *AthenaServiceSet {
 	// )
 
 	// projectService := project.NewServer(a.Namespace, a.KubeClientset, a.AppClientset, a.enf, projectLock, a.sessionMgr, a.policyEnforcer, a.projInformer, a.settingsMgr, a.db, a.EnableK8sEvent)
-	// appsInAnyNamespaceEnabled := len(a.ApplicationNamespaces) > 0
-	// settingsService := settings.NewServer(a.settingsMgr, a.RepoClientset, a, a.DisableAuth, appsInAnyNamespaceEnabled, a.HydratorEnabled, a.SyncWithReplaceAllowed)
-	// accountService := account.NewServer(a.sessionMgr, a.settingsMgr, a.enf)
+	appsInAnyNamespaceEnabled := len(a.ApplicationNamespaces) > 0
+	settingsService := settings.NewServer(a.settingsMgr, a, a.DisableAuth, appsInAnyNamespaceEnabled, a.HydratorEnabled, a.SyncWithReplaceAllowed)
+	accountService := account.NewServer(a.sessionMgr, a.settingsMgr, a.enf)
 
 	// notificationService := notification.NewServer(a.apiFactory)
 	// certificateService := certificate.NewServer(a.db, a.enf)
 	// gpgkeyService := gpgkey.NewServer(a.db, a.enf)
-	// versionService := version.NewServer(a, func() (bool, error) {
-	// 	if a.DisableAuth {
-	// 		return true, nil
-	// 	}
-	// 	sett, err := a.settingsMgr.GetSettings()
-	// 	if err != nil {
-	// 		return false, err
-	// 	}
-	// 	return sett.AnonymousUserEnabled, err
-	// })
+	versionService := version.NewServer(a, func() (bool, error) {
+		if a.DisableAuth {
+			return true, nil
+		}
+		sett, err := a.settingsMgr.GetSettings()
+		if err != nil {
+			return false, err
+		}
+		return sett.AnonymousUserEnabled, err
+	})
 
 	// return &ArgoCDServiceSet{
 	// 	ClusterService:        clusterService,
@@ -518,7 +574,12 @@ func newAthenaServiceSet(a *AthenaServer) *AthenaServiceSet {
 	// 	GpgkeyService:         gpgkeyService,
 	// 	VersionService:        versionService,
 	// }
-	return &AthenaServiceSet{}
+	return &AthenaServiceSet{
+		SessionService:  sessionService,
+		SettingsService: settingsService,
+		AccountService:  accountService,
+		VersionService:  versionService,
+	}
 }
 
 // newRedirectServer returns an HTTP server which does a 307 redirect to the HTTPS server
@@ -557,56 +618,285 @@ func newRedirectServer(port int, rootPath string) *http.Server {
 	}
 }
 
+type handlerSwitcher struct {
+	handler              http.Handler
+	urlToHandler         map[string]http.Handler
+	contentTypeToHandler map[string]http.Handler
+}
+
+func (s *handlerSwitcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if urlHandler, ok := s.urlToHandler[r.URL.Path]; ok {
+		urlHandler.ServeHTTP(w, r)
+	} else if contentHandler, ok := s.contentTypeToHandler[r.Header.Get("content-type")]; ok {
+		contentHandler.ServeHTTP(w, r)
+	} else {
+		s.handler.ServeHTTP(w, r)
+	}
+}
+
+// translateGrpcCookieHeader conditionally sets a cookie on the response.
+func (server *AthenaServer) translateGrpcCookieHeader(ctx context.Context, w http.ResponseWriter, resp golang_proto.Message) error {
+	if sessionResp, ok := resp.(*sessionpkg.SessionResponse); ok {
+		token := sessionResp.Token
+		err := server.setTokenCookie(token, w)
+		if err != nil {
+			return fmt.Errorf("error setting token cookie from session response: %w", err)
+		}
+	} else if md, ok := runtime.ServerMetadataFromContext(ctx); ok {
+		renewToken := md.HeaderMD[renewTokenKey]
+		if len(renewToken) > 0 {
+			return server.setTokenCookie(renewToken[0], w)
+		}
+	}
+	return nil
+}
+func (server *AthenaServer) setTokenCookie(token string, w http.ResponseWriter) error {
+	return httputil.SetTokenCookie(token, server.BaseHRef, !server.Insecure, w)
+}
+
+func compressHandler(handler http.Handler) http.Handler {
+	compr := handlers.CompressHandler(handler)
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Header.Get("Accept") == "text/event-stream" {
+			handler.ServeHTTP(writer, request)
+		} else {
+			compr.ServeHTTP(writer, request)
+		}
+	})
+}
+func enforceContentTypes(handler http.Handler, types []string) http.Handler {
+	allowedTypes := map[string]bool{}
+	for _, t := range types {
+		allowedTypes[strings.ToLower(t)] = true
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet || allowedTypes[strings.ToLower(r.Header.Get("Content-Type"))] {
+			handler.ServeHTTP(w, r)
+		} else {
+			http.Error(w, "Invalid content type", http.StatusUnsupportedMediaType)
+		}
+	})
+}
+
+type registerFunc func(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error
+
+// mustRegisterGWHandler is a convenience function to register a gateway handler
+func mustRegisterGWHandler(ctx context.Context, register registerFunc, mux *runtime.ServeMux, conn *grpc.ClientConn) {
+	err := register(ctx, mux, conn)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// registerDexHandlers will register dex HTTP handlers
+func (server *AthenaServer) registerDexHandlers(mux *http.ServeMux) {
+	if !server.settings.IsSSOConfigured() {
+		return
+	}
+	// Run dex OpenID Connect Identity Provider behind a reverse proxy (served at /api/dex)
+	mux.HandleFunc(common.DexAPIEndpoint+"/", dexutil.NewDexHTTPReverseProxy(server.DexServerAddr, server.BaseHRef, server.DexTLSConfig))
+	mux.HandleFunc(common.LoginEndpoint, server.ssoClientApp.HandleLogin)
+	mux.HandleFunc(common.CallbackEndpoint, server.ssoClientApp.HandleCallback)
+}
+
+// registerDownloadHandlers registers HTTP handlers to support downloads directly from the API server
+// (e.g. argocd CLI)
+func registerDownloadHandlers(mux *http.ServeMux, base string) {
+	linuxPath, err := exec.LookPath("argocd")
+	if err != nil {
+		log.Warnf("argocd not in PATH")
+	} else {
+		mux.HandleFunc(base+"/argocd-linux-"+go_runtime.GOARCH, func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, linuxPath)
+		})
+	}
+}
+
+var extensionsPattern = regexp.MustCompile(`^extension(.*)\.js$`)
+
+func (server *AthenaServer) serveExtensions(extensionsSharedPath string, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/javascript")
+
+	err := filepath.Walk(extensionsSharedPath, func(filePath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("failed to iterate files in '%s': %w", extensionsSharedPath, err)
+		}
+		if !files.IsSymlink(info) && !info.IsDir() && extensionsPattern.MatchString(info.Name()) {
+			processFile := func() error {
+				if _, err = fmt.Fprintf(w, "// source: %s/%s \n", filePath, info.Name()); err != nil {
+					return fmt.Errorf("failed to write to response: %w", err)
+				}
+
+				f, err := os.Open(filePath)
+				if err != nil {
+					return fmt.Errorf("failed to open file '%s': %w", filePath, err)
+				}
+				defer utilio.Close(f)
+
+				if _, err := goio.Copy(w, f); err != nil {
+					return fmt.Errorf("failed to copy file '%s': %w", filePath, err)
+				}
+
+				return nil
+			}
+
+			if processFile() != nil {
+				return fmt.Errorf("failed to serve extension file '%s': %w", filePath, processFile())
+			}
+		}
+		return nil
+	})
+
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		log.Errorf("Failed to walk extensions directory: %v", err)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (server *AthenaServer) uiAssetExists(filename string) bool {
+	f, err := server.staticAssets.Open(strings.Trim(filename, "/"))
+	if err != nil {
+		return false
+	}
+	defer utilio.Close(f)
+	stat, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return !stat.IsDir()
+}
+
+func replaceBaseHRef(data string, replaceWith string) string {
+	return baseHRefRegex.ReplaceAllString(data, replaceWith)
+}
+
+func (server *AthenaServer) getIndexData() ([]byte, error) {
+	server.indexDataInit.Do(func() {
+		data, err := ui.Embedded.ReadFile("dist/app/index.html")
+		if err != nil {
+			server.indexDataErr = err
+			return
+		}
+		if server.BaseHRef == "/" || server.BaseHRef == "" {
+			server.indexData = data
+		} else {
+			server.indexData = []byte(replaceBaseHRef(string(data), fmt.Sprintf(`<base href="/%s/">`, strings.Trim(server.BaseHRef, "/"))))
+		}
+	})
+
+	return server.indexData, server.indexDataErr
+}
+
+var mainJsBundleRegex = regexp.MustCompile(`^main\.[0-9a-f]{20}\.js$`)
+
+func isMainJsBundle(url *url.URL) bool {
+	filename := path.Base(url.Path)
+	return mainJsBundleRegex.MatchString(filename)
+}
+
+// newStaticAssetsHandler returns an HTTP handler to serve UI static assets
+func (server *AthenaServer) newStaticAssetsHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		acceptHTML := false
+		for _, acceptType := range strings.Split(r.Header.Get("Accept"), ",") {
+			if acceptType == "text/html" || acceptType == "html" {
+				acceptHTML = true
+				break
+			}
+		}
+
+		fileRequest := r.URL.Path != "/index.html" && server.uiAssetExists(r.URL.Path)
+
+		// Set X-Frame-Options according to configuration
+		if server.XFrameOptions != "" {
+			w.Header().Set("X-Frame-Options", server.XFrameOptions)
+		}
+		// Set Content-Security-Policy according to configuration
+		if server.ContentSecurityPolicy != "" {
+			w.Header().Set("Content-Security-Policy", server.ContentSecurityPolicy)
+		}
+		w.Header().Set("X-XSS-Protection", "1")
+
+		// serve index.html for non file requests to support HTML5 History API
+		if acceptHTML && !fileRequest && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+			for k, v := range noCacheHeaders {
+				w.Header().Set(k, v)
+			}
+			data, err := server.getIndexData()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			modTime, err := time.Parse(common.GetVersion().BuildDate, time.RFC3339)
+			if err != nil {
+				modTime = time.Now()
+			}
+			http.ServeContent(w, r, "index.html", modTime, utilio.NewByteReadSeeker(data))
+		} else {
+			if isMainJsBundle(r.URL) {
+				cacheControl := "public, max-age=31536000, immutable"
+				if !fileRequest {
+					cacheControl = "no-cache"
+				}
+				w.Header().Set("Cache-Control", cacheControl)
+			}
+			http.FileServer(server.staticAssets).ServeHTTP(w, r)
+		}
+	}
+}
+
 // newHTTPServer returns the HTTP server to serve HTTP/HTTPS requests. This is implemented
 // using grpc-gateway as a proxy to the gRPC server.
-func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWebHandler http.Handler, appResourceTreeFn application.AppResourceTreeFn, conn *grpc.ClientConn, metricsReg HTTPMetricsRegistry) *http.Server {
+func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWebHandler http.Handler, conn *grpc.ClientConn, metricsReg HTTPMetricsRegistry) *http.Server {
 	endpoint := fmt.Sprintf("localhost:%d", port)
-	// mux := http.NewServeMux()
+	mux := http.NewServeMux()
 	httpS := http.Server{
 		Addr: endpoint,
-		// Handler: &handlerSwitcher{
-		// 	handler: mux,
-		// 	urlToHandler: map[string]http.Handler{
-		// 		"/api/badge":          badge.NewHandler(server.AppClientset, server.settingsMgr, server.Namespace, server.ApplicationNamespaces),
-		// 		common.LogoutEndpoint: logout.NewHandler(server.settingsMgr, server.sessionMgr, server.RootPath, server.BaseHRef),
-		// 	},
-		// 	contentTypeToHandler: map[string]http.Handler{
-		// 		"application/grpc-web+proto": grpcWebHandler,
-		// 	},
-		// },
+		Handler: &handlerSwitcher{
+			handler: mux,
+			urlToHandler: map[string]http.Handler{
+				// "/api/badge":          badge.NewHandler(server.AppClientset, server.settingsMgr, server.Namespace, server.ApplicationNamespaces),
+				common.LogoutEndpoint: logout.NewHandler(server.settingsMgr, server.sessionMgr, server.RootPath, server.BaseHRef),
+			},
+			contentTypeToHandler: map[string]http.Handler{
+				"application/grpc-web+proto": grpcWebHandler,
+			},
+		},
 	}
 
-	// // HTTP 1.1+JSON Server
-	// // grpc-ecosystem/grpc-gateway is used to proxy HTTP requests to the corresponding gRPC call
-	// // NOTE: if a marshaller option is not supplied, grpc-gateway will default to the jsonpb from
-	// // golang/protobuf. Which does not support types such as time.Time. gogo/protobuf does support
-	// // time.Time, but does not support custom UnmarshalJSON() and MarshalJSON() methods. Therefore
-	// // we use our own Marshaler
-	// gwMuxOpts := runtime.WithMarshalerOption(runtime.MIMEWildcard, new(grpc_util.JSONMarshaler))
-	// gwCookieOpts := runtime.WithForwardResponseOption(server.translateGrpcCookieHeader)
-	// gwmux := runtime.NewServeMux(gwMuxOpts, gwCookieOpts)
+	// HTTP 1.1+JSON Server
+	// grpc-ecosystem/grpc-gateway is used to proxy HTTP requests to the corresponding gRPC call
+	// NOTE: if a marshaller option is not supplied, grpc-gateway will default to the jsonpb from
+	// golang/protobuf. Which does not support types such as time.Time. gogo/protobuf does support
+	// time.Time, but does not support custom UnmarshalJSON() and MarshalJSON() methods. Therefore
+	// we use our own Marshaler
+	gwMuxOpts := runtime.WithMarshalerOption(runtime.MIMEWildcard, new(grpc_util.JSONMarshaler))
+	gwCookieOpts := runtime.WithForwardResponseOption(server.translateGrpcCookieHeader)
+	gwmux := runtime.NewServeMux(gwMuxOpts, gwCookieOpts)
 
-	// var handler http.Handler = gwmux
-	// if server.EnableGZip {
-	// 	handler = compressHandler(handler)
-	// }
-	// // withTracingHandler is a middleware that extracts OpenTelemetry trace context from HTTP headers
-	// // and injects it into the request context. This enables trace context propagation from HTTP clients
-	// // to gRPC services, allowing for better distributed tracing across the Athena server.
-	// withTracingHandler := func(h http.Handler) http.Handler {
-	// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 		propagator := otel.GetTextMapPropagator()
-	// 		ctx := propagator.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
-	// 		h.ServeHTTP(w, r.WithContext(ctx))
-	// 	})
-	// }
-	// handler = withTracingHandler(handler)
-	// if len(server.ContentTypes) > 0 {
-	// 	handler = enforceContentTypes(handler, server.ContentTypes)
-	// } else {
-	// 	log.WithField(common.SecurityField, common.SecurityHigh).Warnf("Content-Type enforcement is disabled, which may make your API vulnerable to CSRF attacks")
-	// }
-	// mux.Handle("/api/", handler)
+	var handler http.Handler = gwmux
+	if server.EnableGZip {
+		handler = compressHandler(handler)
+	}
+	// withTracingHandler is a middleware that extracts OpenTelemetry trace context from HTTP headers
+	// and injects it into the request context. This enables trace context propagation from HTTP clients
+	// to gRPC services, allowing for better distributed tracing across the ArgoCD server.
+	withTracingHandler := func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			propagator := otel.GetTextMapPropagator()
+			ctx := propagator.Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+			h.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+	handler = withTracingHandler(handler)
+	if len(server.ContentTypes) > 0 {
+		handler = enforceContentTypes(handler, server.ContentTypes)
+	} else {
+		log.WithField(common.SecurityField, common.SecurityHigh).Warnf("Content-Type enforcement is disabled, which may make your API vulnerable to CSRF attacks")
+	}
+	mux.Handle("/api/", handler)
 
 	// terminalOpts := application.TerminalOptions{DisableAuth: server.DisableAuth, Enf: server.enf}
 
@@ -624,26 +914,26 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// 	registerExtensions(mux, server, metricsReg)
 	// }
 
-	// mustRegisterGWHandler(ctx, versionpkg.RegisterVersionServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, versionpkg.RegisterVersionServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, clusterpkg.RegisterClusterServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, applicationpkg.RegisterApplicationServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, applicationsetpkg.RegisterApplicationSetServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, notificationpkg.RegisterNotificationServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, repositorypkg.RegisterRepositoryServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, repocredspkg.RegisterRepoCredsServiceHandler, gwmux, conn)
-	// mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
-	// mustRegisterGWHandler(ctx, settingspkg.RegisterSettingsServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, settingspkg.RegisterSettingsServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, projectpkg.RegisterProjectServiceHandler, gwmux, conn)
-	// mustRegisterGWHandler(ctx, accountpkg.RegisterAccountServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, accountpkg.RegisterAccountServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, certificatepkg.RegisterCertificateServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, gpgkeypkg.RegisterGPGKeyServiceHandler, gwmux, conn)
 
-	// // Swagger UI
-	// swagger.ServeSwaggerUI(mux, assets.SwaggerJSON, "/swagger-ui", server.RootPath)
-	// healthz.ServeHealthCheck(mux, server.healthCheck)
+	// Swagger UI
+	swagger.ServeSwaggerUI(mux, assets.SwaggerJSON, "/swagger-ui", server.RootPath)
+	healthz.ServeHealthCheck(mux, server.healthCheck)
 
-	// // Dex reverse proxy and OAuth2 login/callback
-	// server.registerDexHandlers(mux)
+	// Dex reverse proxy and OAuth2 login/callback
+	server.registerDexHandlers(mux)
 
 	// // Webhook handler for git events (Note: cache timeouts are hardcoded because API server does not write to cache and not really using them)
 	// argoDB := db.NewDB(server.Namespace, server.settingsMgr, server.KubeClientset)
@@ -651,26 +941,26 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 
 	// mux.HandleFunc("/api/webhook", acdWebhookHandler.Handler)
 
-	// // Serve cli binaries directly from API server
-	// registerDownloadHandlers(mux, "/download")
+	// Serve cli binaries directly from API server
+	registerDownloadHandlers(mux, "/download")
 
-	// // Serve extensions
-	// extensionsSharedPath := "/tmp/extensions/"
+	// Serve extensions
+	extensionsSharedPath := "/tmp/extensions/"
 
-	// var extensionsHandler http.Handler = http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
-	// 	server.serveExtensions(extensionsSharedPath, writer)
-	// })
-	// if server.EnableGZip {
-	// 	extensionsHandler = compressHandler(extensionsHandler)
-	// }
-	// mux.Handle("/extensions.js", extensionsHandler)
+	var extensionsHandler http.Handler = http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		server.serveExtensions(extensionsSharedPath, writer)
+	})
+	if server.EnableGZip {
+		extensionsHandler = compressHandler(extensionsHandler)
+	}
+	mux.Handle("/extensions.js", extensionsHandler)
 
-	// // Serve UI static assets
-	// var assetsHandler http.Handler = http.HandlerFunc(server.newStaticAssetsHandler())
-	// if server.EnableGZip {
-	// 	assetsHandler = compressHandler(assetsHandler)
-	// }
-	// mux.Handle("/", assetsHandler)
+	// Serve UI static assets
+	var assetsHandler http.Handler = http.HandlerFunc(server.newStaticAssetsHandler())
+	if server.EnableGZip {
+		assetsHandler = compressHandler(assetsHandler)
+	}
+	mux.Handle("/", assetsHandler)
 	return &httpS
 }
 func withRootPath(handler http.Handler, a *AthenaServer) http.Handler {
@@ -691,28 +981,29 @@ func withRootPath(handler http.Handler, a *AthenaServer) http.Handler {
 }
 
 // Workaround for https://github.com/golang/go/issues/21955 to support escaped URLs in URL path.
-type bug21955Workaround struct {
-	handler http.Handler
-}
-
-var pathPatters = []*regexp.Regexp{
-	regexp.MustCompile(`/api/v1/clusters/[^/]+`),
-	regexp.MustCompile(`/api/v1/repositories/[^/]+`),
-	regexp.MustCompile(`/api/v1/repocreds/[^/]+`),
-	regexp.MustCompile(`/api/v1/repositories/[^/]+/apps`),
-	regexp.MustCompile(`/api/v1/repositories/[^/]+/apps/[^/]+`),
-	regexp.MustCompile(`/settings/clusters/[^/]+`),
-}
-
-func (bf *bug21955Workaround) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	for _, pattern := range pathPatters {
-		if pattern.MatchString(r.URL.RawPath) {
-			r.URL.Path = r.URL.RawPath
-			break
-		}
-	}
-	bf.handler.ServeHTTP(w, r)
-}
+// Disabled: not needed for this web app.
+// type bug21955Workaround struct {
+// 	handler http.Handler
+// }
+//
+// var pathPatters = []*regexp.Regexp{
+// 	regexp.MustCompile(`/api/v1/clusters/[^/]+`),
+// 	regexp.MustCompile(`/api/v1/repositories/[^/]+`),
+// 	regexp.MustCompile(`/api/v1/repocreds/[^/]+`),
+// 	regexp.MustCompile(`/api/v1/repositories/[^/]+/apps`),
+// 	regexp.MustCompile(`/api/v1/repositories/[^/]+/apps/[^/]+`),
+// 	regexp.MustCompile(`/settings/clusters/[^/]+`),
+// }
+//
+// func (bf *bug21955Workaround) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// 	for _, pattern := range pathPatters {
+// 		if pattern.MatchString(r.URL.RawPath) {
+// 			r.URL.Path = r.URL.RawPath
+// 			break
+// 		}
+// 	}
+// 	bf.handler.ServeHTTP(w, r)
+// }
 
 // Run runs the API Server
 // We use k8s.io/code-generator/cmd/go-to-protobuf to generate the .proto files from the API types.
@@ -740,15 +1031,15 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 		server.sessionMgr.CollectMetrics(metricsServ)
 	}
 	server.serviceSet = svcSet
-	grpcS, appResourceTreeFn := server.newGRPCServer(metricsServ.PrometheusRegistry)
+	grpcS := server.newGRPCServer(metricsServ.PrometheusRegistry)
 	grpcWebS := grpcweb.WrapServer(grpcS)
 	var httpS *http.Server
 	var httpsS *http.Server
 	if server.useTLS() {
 		httpS = newRedirectServer(server.ListenPort, server.RootPath)
-		httpsS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, appResourceTreeFn, listeners.GatewayConn, metricsServ)
+		httpsS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn, metricsServ)
 	} else {
-		httpS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, appResourceTreeFn, listeners.GatewayConn, metricsServ)
+		httpS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn, metricsServ)
 	}
 	if server.RootPath != "" {
 		httpS.Handler = withRootPath(httpS.Handler, server)
@@ -757,10 +1048,10 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 			httpsS.Handler = withRootPath(httpsS.Handler, server)
 		}
 	}
-	httpS.Handler = &bug21955Workaround{handler: httpS.Handler}
-	if httpsS != nil {
-		httpsS.Handler = &bug21955Workaround{handler: httpsS.Handler}
-	}
+	// httpS.Handler = &bug21955Workaround{handler: httpS.Handler}
+	// if httpsS != nil {
+	// 	httpsS.Handler = &bug21955Workaround{handler: httpsS.Handler}
+	// }
 
 	// CMux is used to support servicing gRPC and HTTP1.1+JSON on the same port
 	tcpm := cmux.New(listeners.Main)
@@ -914,6 +1205,7 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 }
 
 func (server *AthenaServer) Initialized() bool {
+	// TODO: This is the original code for Athena.
 	// return server.projInformer.HasSynced() && server.appInformer.HasSynced()
 	return true
 }
@@ -933,111 +1225,111 @@ func (server *AthenaServer) checkServeErr(name string, err error) {
 	}
 }
 
-// func checkOIDCConfigChange(currentOIDCConfig *settings_util.OIDCConfig, newArgoCDSettings *settings_util.ArgoCDSettings) bool {
-// 	newOIDCConfig := newArgoCDSettings.OIDCConfig()
+func checkOIDCConfigChange(currentOIDCConfig *settings_util.OIDCConfig, newArgoCDSettings *settings_util.ArgoCDSettings) bool {
+	newOIDCConfig := newArgoCDSettings.OIDCConfig()
 
-// 	if (currentOIDCConfig != nil && newOIDCConfig == nil) || (currentOIDCConfig == nil && newOIDCConfig != nil) {
-// 		return true
-// 	}
+	if (currentOIDCConfig != nil && newOIDCConfig == nil) || (currentOIDCConfig == nil && newOIDCConfig != nil) {
+		return true
+	}
 
-// 	if currentOIDCConfig != nil && newOIDCConfig != nil {
-// 		if !reflect.DeepEqual(*currentOIDCConfig, *newOIDCConfig) {
-// 			return true
-// 		}
-// 	}
+	if currentOIDCConfig != nil && newOIDCConfig != nil {
+		if !reflect.DeepEqual(*currentOIDCConfig, *newOIDCConfig) {
+			return true
+		}
+	}
 
-// 	return false
-// }
+	return false
+}
 
 // watchSettings watches the configmap and secret for any setting updates that would warrant a
 // restart of the API server.
 func (server *AthenaServer) watchSettings() {
-	// updateCh := make(chan *settings_util.ArgoCDSettings, 1)
-	// server.settingsMgr.Subscribe(updateCh)
+	updateCh := make(chan *settings_util.ArgoCDSettings, 1)
+	server.settingsMgr.Subscribe(updateCh)
 
-	// prevURL := server.settings.URL
-	// prevAdditionalURLs := server.settings.AdditionalURLs
-	// prevOIDCConfig := server.settings.OIDCConfig()
-	// prevDexCfgBytes, err := dexutil.GenerateDexConfigYAML(server.settings, server.DexTLSConfig == nil || server.DexTLSConfig.DisableTLS)
-	// errorsutil.CheckError(err)
+	prevURL := server.settings.URL
+	prevAdditionalURLs := server.settings.AdditionalURLs
+	prevOIDCConfig := server.settings.OIDCConfig()
+	prevDexCfgBytes, err := dexutil.GenerateDexConfigYAML(server.settings, server.DexTLSConfig == nil || server.DexTLSConfig.DisableTLS)
+	errorsutil.CheckError(err)
 	// prevGitHubSecret := server.settings.GetWebhookGitHubSecret()
 	// prevGitLabSecret := server.settings.GetWebhookGitLabSecret()
 	// prevBitbucketUUID := server.settings.GetWebhookBitbucketUUID()
 	// prevBitbucketServerSecret := server.settings.GetWebhookBitbucketServerSecret()
 	// prevGogsSecret := server.settings.GetWebhookGogsSecret()
 	// prevExtConfig := server.settings.ExtensionConfig
-	// var prevCert, prevCertKey string
-	// if server.settings.Certificate != nil && !server.Insecure {
-	// 	prevCert, prevCertKey = tlsutil.EncodeX509KeyPairString(*server.settings.Certificate)
-	// }
+	var prevCert, prevCertKey string
+	if server.settings.Certificate != nil && !server.Insecure {
+		prevCert, prevCertKey = tlsutil.EncodeX509KeyPairString(*server.settings.Certificate)
+	}
 
-	// for {
-	// 	newSettings := <-updateCh
-	// 	server.settings = newSettings
-	// 	newDexCfgBytes, err := dexutil.GenerateDexConfigYAML(server.settings, server.DexTLSConfig == nil || server.DexTLSConfig.DisableTLS)
-	// 	errorsutil.CheckError(err)
-	// 	if !bytes.Equal(newDexCfgBytes, prevDexCfgBytes) {
-	// 		log.Infof("dex config modified. restarting")
-	// 		break
-	// 	}
-	// 	if checkOIDCConfigChange(prevOIDCConfig, server.settings) {
-	// 		log.Infof("oidc config modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevURL != server.settings.URL {
-	// 		log.Infof("url modified. restarting")
-	// 		break
-	// 	}
-	// 	if !reflect.DeepEqual(prevAdditionalURLs, server.settings.AdditionalURLs) {
-	// 		log.Infof("additionalURLs modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevGitHubSecret != server.settings.GetWebhookGitHubSecret() {
-	// 		log.Infof("github secret modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevGitLabSecret != server.settings.GetWebhookGitLabSecret() {
-	// 		log.Infof("gitlab secret modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevBitbucketUUID != server.settings.GetWebhookBitbucketUUID() {
-	// 		log.Infof("bitbucket uuid modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevBitbucketServerSecret != server.settings.GetWebhookBitbucketServerSecret() {
-	// 		log.Infof("bitbucket server secret modified. restarting")
-	// 		break
-	// 	}
-	// 	if prevGogsSecret != server.settings.GetWebhookGogsSecret() {
-	// 		log.Infof("gogs secret modified. restarting")
-	// 		break
-	// 	}
-	// 	if !reflect.DeepEqual(prevExtConfig, server.settings.ExtensionConfig) {
-	// 		prevExtConfig = server.settings.ExtensionConfig
-	// 		log.Infof("extensions configs modified. Updating proxy registry...")
-	// 		err := server.extensionManager.UpdateExtensionRegistry(server.settings)
-	// 		if err != nil {
-	// 			log.Errorf("error updating extensions configs: %s", err)
-	// 		} else {
-	// 			log.Info("extensions configs updated successfully")
-	// 		}
-	// 	}
-	// 	if !server.Insecure {
-	// 		var newCert, newCertKey string
-	// 		if server.settings.Certificate != nil {
-	// 			newCert, newCertKey = tlsutil.EncodeX509KeyPairString(*server.settings.Certificate)
-	// 		}
-	// 		if newCert != prevCert || newCertKey != prevCertKey {
-	// 			log.Infof("tls certificate modified. reloading certificate")
-	// 			// No need to break out of this loop since TlsConfig.GetCertificate will automagically reload the cert.
-	// 		}
-	// 	}
-	// }
-	// log.Info("shutting down settings watch")
-	// server.settingsMgr.Unsubscribe(updateCh)
-	// close(updateCh)
-	// // Triggers server restart
-	// server.stopCh <- GracefulRestartSignal{}
+	for {
+		newSettings := <-updateCh
+		server.settings = newSettings
+		newDexCfgBytes, err := dexutil.GenerateDexConfigYAML(server.settings, server.DexTLSConfig == nil || server.DexTLSConfig.DisableTLS)
+		errorsutil.CheckError(err)
+		if !bytes.Equal(newDexCfgBytes, prevDexCfgBytes) {
+			log.Infof("dex config modified. restarting")
+			break
+		}
+		if checkOIDCConfigChange(prevOIDCConfig, server.settings) {
+			log.Infof("oidc config modified. restarting")
+			break
+		}
+		if prevURL != server.settings.URL {
+			log.Infof("url modified. restarting")
+			break
+		}
+		if !reflect.DeepEqual(prevAdditionalURLs, server.settings.AdditionalURLs) {
+			log.Infof("additionalURLs modified. restarting")
+			break
+		}
+		// if prevGitHubSecret != server.settings.GetWebhookGitHubSecret() {
+		// 	log.Infof("github secret modified. restarting")
+		// 	break
+		// }
+		// if prevGitLabSecret != server.settings.GetWebhookGitLabSecret() {
+		// 	log.Infof("gitlab secret modified. restarting")
+		// 	break
+		// }
+		// if prevBitbucketUUID != server.settings.GetWebhookBitbucketUUID() {
+		// 	log.Infof("bitbucket uuid modified. restarting")
+		// 	break
+		// }
+		// if prevBitbucketServerSecret != server.settings.GetWebhookBitbucketServerSecret() {
+		// 	log.Infof("bitbucket server secret modified. restarting")
+		// 	break
+		// }
+		// if prevGogsSecret != server.settings.GetWebhookGogsSecret() {
+		// 	log.Infof("gogs secret modified. restarting")
+		// 	break
+		// }
+		// if !reflect.DeepEqual(prevExtConfig, server.settings.ExtensionConfig) {
+		// 	prevExtConfig = server.settings.ExtensionConfig
+		// 	log.Infof("extensions configs modified. Updating proxy registry...")
+		// 	err := server.extensionManager.UpdateExtensionRegistry(server.settings)
+		// 	if err != nil {
+		// 		log.Errorf("error updating extensions configs: %s", err)
+		// 	} else {
+		// 		log.Info("extensions configs updated successfully")
+		// 	}
+		// }
+		if !server.Insecure {
+			var newCert, newCertKey string
+			if server.settings.Certificate != nil {
+				newCert, newCertKey = tlsutil.EncodeX509KeyPairString(*server.settings.Certificate)
+			}
+			if newCert != prevCert || newCertKey != prevCertKey {
+				log.Infof("tls certificate modified. reloading certificate")
+				// No need to break out of this loop since TlsConfig.GetCertificate will automagically reload the cert.
+			}
+		}
+	}
+	log.Info("shutting down settings watch")
+	server.settingsMgr.Unsubscribe(updateCh)
+	close(updateCh)
+	// Triggers server restart
+	server.stopCh <- GracefulRestartSignal{}
 
 }
 
@@ -1074,4 +1366,115 @@ func (server *AthenaServer) allowedApplicationNamespacesAsString() string {
 		ns += strings.Join(server.ApplicationNamespaces, ", ")
 	}
 	return ns
+}
+
+// Authenticate checks for the presence of a valid token when accessing server-side resources.
+func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, error) {
+	if server.DisableAuth {
+		return ctx, nil
+	}
+	claims, newToken, claimsErr := server.getClaims(ctx)
+	if claims != nil {
+		// Add claims to the context to inspect for RBAC
+		//nolint:staticcheck
+		ctx = context.WithValue(ctx, "claims", claims)
+		if newToken != "" {
+			// Session tokens that are expiring soon should be regenerated if user stays active.
+			// The renewed token is stored in outgoing ServerMetadata. Metadata is available to grpc-gateway
+			// response forwarder that will translate it into Set-Cookie header.
+			if err := grpc.SendHeader(ctx, metadata.New(map[string]string{renewTokenKey: newToken})); err != nil {
+				log.Warnf("Failed to set %s header", renewTokenKey)
+			}
+		}
+	}
+	if claimsErr != nil {
+		//nolint:staticcheck
+		ctx = context.WithValue(ctx, util_session.AuthErrorCtxKey, claimsErr)
+	}
+
+	if claimsErr != nil {
+		argoCDSettings, err := server.settingsMgr.GetSettings()
+		if err != nil {
+			return ctx, status.Errorf(codes.Internal, "unable to load settings: %v", err)
+		}
+		if !argoCDSettings.AnonymousUserEnabled {
+			return ctx, claimsErr
+		}
+		//nolint:staticcheck
+		ctx = context.WithValue(ctx, "claims", "")
+	}
+
+	return ctx, nil
+}
+
+// getClaims extracts, validates and refreshes a JWT token from an incoming request context.
+func (server *AthenaServer) getClaims(ctx context.Context) (jwt.Claims, string, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, "", ErrNoSession
+	}
+	tokenString := getToken(md)
+	if tokenString == "" {
+		return nil, "", ErrNoSession
+	}
+	// A valid argocd-issued token is automatically refreshed here prior to expiration.
+	// OIDC tokens will be verified but will not be refreshed here.
+	claims, newToken, err := server.sessionMgr.VerifyToken(ctx, tokenString)
+	if err != nil {
+		return claims, "", status.Errorf(codes.Unauthenticated, "invalid session: %v", err)
+	}
+
+	finalClaims := claims
+	oidcConfig := server.settings.OIDCConfig()
+	if oidcConfig != nil || server.settings.IsDexConfigured() {
+		updatedClaims, err := server.ssoClientApp.SetGroupsFromUserInfo(ctx, claims, util_session.SessionManagerClaimsIssuer)
+		if err != nil {
+			return claims, "", status.Errorf(codes.Unauthenticated, "invalid session: %v", err)
+		}
+		finalClaims = updatedClaims
+		// OIDC tokens are automatically refreshed here prior to expiration
+		refreshedToken, err := server.ssoClientApp.CheckAndRefreshToken(ctx, updatedClaims, server.settings.RefreshTokenThresholdWithConfig(oidcConfig))
+		if err != nil {
+			log.Errorf("error checking and refreshing token: %v", err)
+		}
+		if refreshedToken != "" && refreshedToken != tokenString {
+			newToken = refreshedToken
+			log.Infof("refreshed token for subject: %v", jwtutil.StringField(updatedClaims, "sub"))
+		}
+	}
+
+	return finalClaims, newToken, nil
+}
+
+// getToken extracts the token from gRPC metadata or cookie headers
+func getToken(md metadata.MD) string {
+	// check the "token" metadata
+	{
+		tokens, ok := md[apiclient.MetaDataTokenKey]
+		if ok && len(tokens) > 0 {
+			return tokens[0]
+		}
+	}
+
+	// looks for the HTTP header `Authorization: Bearer ...`
+	// argocd prefers bearer token over cookie
+	for _, t := range md["authorization"] {
+		token := strings.TrimPrefix(t, "Bearer ")
+		if strings.HasPrefix(t, "Bearer ") && jwtutil.IsValid(token) {
+			return token
+		}
+	}
+
+	// check the HTTP cookie
+	for _, t := range md["grpcgateway-cookie"] {
+		header := http.Header{}
+		header.Add("Cookie", t)
+		request := http.Request{Header: header}
+		token, err := httputil.JoinCookies(common.AuthCookieName, request.Cookies())
+		if err == nil && jwtutil.IsValid(token) {
+			return token
+		}
+	}
+
+	return ""
 }

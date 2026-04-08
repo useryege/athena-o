@@ -2,31 +2,33 @@ package server
 
 import (
 	"math"
+	"regexp"
 	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/util/env"
 )
 
 const (
 	maxConcurrentLoginRequestsCountEnv = "ATHENA_MAX_CONCURRENT_LOGIN_REQUESTS_COUNT"
 	replicasCountEnv                   = "ATHENA_API_SERVER_REPLICAS"
-	// renewTokenKey                      = "renew-token"
+	renewTokenKey                      = "renew-token"
 )
 
 // ErrNoSession indicates no auth token was supplied as part of a request
 var ErrNoSession = status.Errorf(codes.Unauthenticated, "no session information")
 
 // noCacheHeaders is a map of headers that use to tell the browser not to cache the response
-// var noCacheHeaders = map[string]string{
-// 	"Expires":         time.Unix(0, 0).Format(time.RFC1123),
-// 	"Cache-Control":   "no-cache, private, max-age=0",
-// 	"Pragma":          "no-cache",
-// 	"X-Accel-Expires": "0",
-// }
+var noCacheHeaders = map[string]string{
+	"Expires":         time.Unix(0, 0).Format(time.RFC1123),
+	"Cache-Control":   "no-cache, private, max-age=0",
+	"Pragma":          "no-cache",
+	"X-Accel-Expires": "0",
+}
 
 // backoff is a backoff strategy for retrying operations
 var backoff = wait.Backoff{
@@ -37,11 +39,12 @@ var backoff = wait.Backoff{
 }
 
 var (
-	// baseHRefRegex = regexp.MustCompile(`<base href="(.*?)">`)
+	clientConstraint = ">= " + common.MinClientVersion
+	baseHRefRegex    = regexp.MustCompile(`<base href="(.*?)">`)
 	// limits number of concurrent login requests to prevent password brute forcing. If set to 0 then no limit is enforced.
 	maxConcurrentLoginRequestsCount = 50
 	replicasCount                   = 1
-	// enableGRPCTimeHistogram         = true
+	enableGRPCTimeHistogram         = true
 )
 
 func init() {

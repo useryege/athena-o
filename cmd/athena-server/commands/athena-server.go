@@ -43,22 +43,24 @@ func NewCommand() *cobra.Command {
 		rootPath        string
 		glogLevel       int
 		// dexServerAddress      string
-		disableAuth           bool
-		contentTypes          string
-		enableGZip            bool
-		listenHost            string
-		listenPort            int
-		metricsHost           string
-		metricsPort           int
-		otlpAddress           string
-		otlpInsecure          bool
-		otlpHeaders           map[string]string
-		otlpAttrs             []string
-		frameOptions          string
-		contentSecurityPolicy string
-		dexServerAddress      string
-		dexServerPlaintext    bool
-		dexServerStrictTLS    bool
+		disableAuth            bool
+		contentTypes           string
+		enableGZip             bool
+		listenHost             string
+		listenPort             int
+		metricsHost            string
+		metricsPort            int
+		otlpAddress            string
+		otlpInsecure           bool
+		otlpHeaders            map[string]string
+		otlpAttrs              []string
+		frameOptions           string
+		contentSecurityPolicy  string
+		dexServerAddress       string
+		dexServerPlaintext     bool
+		dexServerStrictTLS     bool
+		hydratorEnabled        bool
+		syncWithReplaceAllowed bool
 
 		clientConfig           clientcmd.ClientConfig
 		tlsConfigCustomizerSrc func() (tls.ConfigCustomizer, error)
@@ -141,26 +143,28 @@ func NewCommand() *cobra.Command {
 			}
 
 			athenaOpts := server.AthenaServerOpts{
-				Namespace:             namespace,
-				KubeClientset:         kubeclientset,
-				TLSConfigCustomizer:   tlsConfigCustomizer,
-				ContentTypes:          contentTypesList,
-				ListenPort:            listenPort,
-				ListenHost:            listenHost,
-				MetricsPort:           metricsPort,
-				MetricsHost:           metricsHost,
-				StaticAssetsDir:       staticAssetsDir,
-				BaseHRef:              baseHRef,
-				RootPath:              rootPath,
-				Insecure:              insecure,
-				DisableAuth:           disableAuth,
-				EnableGZip:            enableGZip,
-				XFrameOptions:         frameOptions,
-				ContentSecurityPolicy: contentSecurityPolicy,
-				RedisClient:           redisClient,
-				Cache:                 cache,
-				DexServerAddr:         dexServerAddress,
-				DexTLSConfig:          dexTLSConfig,
+				Namespace:              namespace,
+				KubeClientset:          kubeclientset,
+				TLSConfigCustomizer:    tlsConfigCustomizer,
+				ContentTypes:           contentTypesList,
+				ListenPort:             listenPort,
+				ListenHost:             listenHost,
+				MetricsPort:            metricsPort,
+				MetricsHost:            metricsHost,
+				StaticAssetsDir:        staticAssetsDir,
+				BaseHRef:               baseHRef,
+				RootPath:               rootPath,
+				Insecure:               insecure,
+				DisableAuth:            disableAuth,
+				EnableGZip:             enableGZip,
+				XFrameOptions:          frameOptions,
+				ContentSecurityPolicy:  contentSecurityPolicy,
+				RedisClient:            redisClient,
+				Cache:                  cache,
+				DexServerAddr:          dexServerAddress,
+				DexTLSConfig:           dexTLSConfig,
+				HydratorEnabled:        hydratorEnabled,
+				SyncWithReplaceAllowed: syncWithReplaceAllowed,
 			}
 
 			// Register stack dumper and start stats ticker and heap dumper
@@ -227,7 +231,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&dexServerAddress, "dex-server", env.StringFromEnv("ATHENA_SERVER_DEX_SERVER", common.DefaultDexServerAddr), "Dex server address")
 	command.Flags().BoolVar(&dexServerPlaintext, "dex-server-plaintext", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_PLAINTEXT", false), "Use a plaintext client (non-TLS) to connect to dex server")
 	command.Flags().BoolVar(&dexServerStrictTLS, "dex-server-strict-tls", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_STRICT_TLS", false), "Perform strict validation of TLS certificates when connecting to dex server")
-
+	command.Flags().BoolVar(&hydratorEnabled, "hydrator-enabled", env.ParseBoolFromEnv("ATHENA_SERVER_HYDRATOR_ENABLED", false), "Feature flag to enable Hydrator. Default (\"false\")")
+	command.Flags().BoolVar(&syncWithReplaceAllowed, "sync-with-replace-allowed", env.ParseBoolFromEnv("ATHENA_SERVER_SYNC_WITH_REPLACE_ALLOWED", true), "Whether to allow users to select replace for syncs from UI/CLI")
 	tlsConfigCustomizerSrc = tls.AddTLSFlagsToCmd(command)
 
 	cacheSrc = servercache.AddCacheFlagsToCmd(command, cacheutil.Options{

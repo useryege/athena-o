@@ -60,8 +60,10 @@ import (
 	utilnet "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/client-go/rest"
 
+	"github.com/useryege/athena/gitops-engine/pkg/health"
 	"github.com/useryege/athena/util/env"
 	utilhttp "github.com/useryege/athena/util/http"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -125,13 +127,13 @@ type Application struct {
 // 	return reflect.DeepEqual(id, other)
 // }
 
-// type TrackingMethod string
+type TrackingMethod string
 
-// const (
-// 	TrackingMethodAnnotation         TrackingMethod = "annotation"
-// 	TrackingMethodLabel              TrackingMethod = "label"
-// 	TrackingMethodAnnotationAndLabel TrackingMethod = "annotation+label"
-// )
+const (
+	TrackingMethodAnnotation TrackingMethod = "annotation"
+	// TrackingMethodLabel              TrackingMethod = "label"
+	// TrackingMethodAnnotationAndLabel TrackingMethod = "annotation+label"
+)
 
 // // ResourceIgnoreDifferences contains resource filter and list of json paths which should be ignored during comparison with live state.
 // type ResourceIgnoreDifferences struct {
@@ -1906,80 +1908,80 @@ type ApplicationList struct {
 // 	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty" protobuf:"bytes,3,opt,name=lastTransitionTime"`
 // }
 
-// // HealthStatus contains information about the currently observed health state of a resource
-// type HealthStatus struct {
-// 	// Status holds the status code of the resource
-// 	Status health.HealthStatusCode `json:"status,omitempty" protobuf:"bytes,1,opt,name=status"`
-// 	// Message is a human-readable informational message describing the health status
-// 	Message string `json:"message,omitempty" protobuf:"bytes,2,opt,name=message"`
-// 	// LastTransitionTime is the time the HealthStatus was set or updated
-// 	//
-// 	// Deprecated: this field is not used and will be removed in a future release.
-// 	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty" protobuf:"bytes,3,opt,name=lastTransitionTime"`
-// }
+// HealthStatus contains information about the currently observed health state of a resource
+type HealthStatus struct {
+	// Status holds the status code of the resource
+	Status health.HealthStatusCode `json:"status,omitempty" protobuf:"bytes,1,opt,name=status"`
+	// Message is a human-readable informational message describing the health status
+	Message string `json:"message,omitempty" protobuf:"bytes,2,opt,name=message"`
+	// LastTransitionTime is the time the HealthStatus was set or updated
+	//
+	// Deprecated: this field is not used and will be removed in a future release.
+	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty" protobuf:"bytes,3,opt,name=lastTransitionTime"`
+}
 
-// // InfoItem contains arbitrary, human readable information about an application
-// type InfoItem struct {
-// 	// Name is a human readable title for this piece of information.
-// 	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
-// 	// Value is human readable content.
-// 	Value string `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
-// }
+// InfoItem contains arbitrary, human readable information about an application
+type InfoItem struct {
+	// Name is a human readable title for this piece of information.
+	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	// Value is human readable content.
+	Value string `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
+}
 
-// // ResourceNetworkingInfo holds networking-related information for a resource.
-// type ResourceNetworkingInfo struct {
-// 	// TargetLabels represents labels associated with the target resources that this resource communicates with.
-// 	TargetLabels map[string]string `json:"targetLabels,omitempty" protobuf:"bytes,1,opt,name=targetLabels"`
-// 	// TargetRefs contains references to other resources that this resource interacts with, such as Services or Pods.
-// 	TargetRefs []ResourceRef `json:"targetRefs,omitempty" protobuf:"bytes,2,opt,name=targetRefs"`
-// 	// Labels holds the labels associated with this networking resource.
-// 	Labels map[string]string `json:"labels,omitempty" protobuf:"bytes,3,opt,name=labels"`
-// 	// Ingress provides information about external access points (e.g., load balancer ingress) for this resource.
-// 	Ingress []corev1.LoadBalancerIngress `json:"ingress,omitempty" protobuf:"bytes,4,opt,name=ingress"`
-// 	// ExternalURLs holds a list of URLs that should be accessible externally.
-// 	// This field is typically populated for Ingress resources based on their hostname rules.
-// 	ExternalURLs []string `json:"externalURLs,omitempty" protobuf:"bytes,5,opt,name=externalURLs"`
-// }
+// ResourceNetworkingInfo holds networking-related information for a resource.
+type ResourceNetworkingInfo struct {
+	// TargetLabels represents labels associated with the target resources that this resource communicates with.
+	TargetLabels map[string]string `json:"targetLabels,omitempty" protobuf:"bytes,1,opt,name=targetLabels"`
+	// TargetRefs contains references to other resources that this resource interacts with, such as Services or Pods.
+	TargetRefs []ResourceRef `json:"targetRefs,omitempty" protobuf:"bytes,2,opt,name=targetRefs"`
+	// Labels holds the labels associated with this networking resource.
+	Labels map[string]string `json:"labels,omitempty" protobuf:"bytes,3,opt,name=labels"`
+	// Ingress provides information about external access points (e.g., load balancer ingress) for this resource.
+	Ingress []corev1.LoadBalancerIngress `json:"ingress,omitempty" protobuf:"bytes,4,opt,name=ingress"`
+	// ExternalURLs holds a list of URLs that should be accessible externally.
+	// This field is typically populated for Ingress resources based on their hostname rules.
+	ExternalURLs []string `json:"externalURLs,omitempty" protobuf:"bytes,5,opt,name=externalURLs"`
+}
 
-// // HostResourceInfo represents resource usage details for a specific resource type on a host.
-// type HostResourceInfo struct {
-// 	// ResourceName specifies the type of resource (e.g., CPU, memory, storage).
-// 	ResourceName corev1.ResourceName `json:"resourceName,omitempty" protobuf:"bytes,1,name=resourceName"`
-// 	// RequestedByApp indicates the total amount of this resource requested by the application running on the host.
-// 	RequestedByApp int64 `json:"requestedByApp,omitempty" protobuf:"bytes,2,name=requestedByApp"`
-// 	// RequestedByNeighbors indicates the total amount of this resource requested by other workloads on the same host.
-// 	RequestedByNeighbors int64 `json:"requestedByNeighbors,omitempty" protobuf:"bytes,3,name=requestedByNeighbors"`
-// 	// Capacity represents the total available capacity of this resource on the host.
-// 	Capacity int64 `json:"capacity,omitempty" protobuf:"bytes,4,name=capacity"`
-// }
+// HostResourceInfo represents resource usage details for a specific resource type on a host.
+type HostResourceInfo struct {
+	// ResourceName specifies the type of resource (e.g., CPU, memory, storage).
+	ResourceName corev1.ResourceName `json:"resourceName,omitempty" protobuf:"bytes,1,name=resourceName"`
+	// RequestedByApp indicates the total amount of this resource requested by the application running on the host.
+	RequestedByApp int64 `json:"requestedByApp,omitempty" protobuf:"bytes,2,name=requestedByApp"`
+	// RequestedByNeighbors indicates the total amount of this resource requested by other workloads on the same host.
+	RequestedByNeighbors int64 `json:"requestedByNeighbors,omitempty" protobuf:"bytes,3,name=requestedByNeighbors"`
+	// Capacity represents the total available capacity of this resource on the host.
+	Capacity int64 `json:"capacity,omitempty" protobuf:"bytes,4,name=capacity"`
+}
 
-// // HostInfo holds metadata and resource usage metrics for a specific host in the cluster.
-// type HostInfo struct {
-// 	// Name is the hostname or node name in the Kubernetes cluster.
-// 	Name string `json:"name,omitempty" protobuf:"bytes,1,name=name"`
-// 	// ResourcesInfo provides a list of resource usage details for different resource types on this host.
-// 	ResourcesInfo []HostResourceInfo `json:"resourcesInfo,omitempty" protobuf:"bytes,2,name=resourcesInfo"`
-// 	// SystemInfo contains detailed system-level information about the host, such as OS, kernel version, and architecture.
-// 	SystemInfo corev1.NodeSystemInfo `json:"systemInfo,omitempty" protobuf:"bytes,3,opt,name=systemInfo"`
-// 	// Labels holds the labels attached to the host.
-// 	Labels map[string]string `json:"labels,omitempty" protobuf:"bytes,4,opt,name=labels"`
-// }
+// HostInfo holds metadata and resource usage metrics for a specific host in the cluster.
+type HostInfo struct {
+	// Name is the hostname or node name in the Kubernetes cluster.
+	Name string `json:"name,omitempty" protobuf:"bytes,1,name=name"`
+	// ResourcesInfo provides a list of resource usage details for different resource types on this host.
+	ResourcesInfo []HostResourceInfo `json:"resourcesInfo,omitempty" protobuf:"bytes,2,name=resourcesInfo"`
+	// SystemInfo contains detailed system-level information about the host, such as OS, kernel version, and architecture.
+	SystemInfo corev1.NodeSystemInfo `json:"systemInfo,omitempty" protobuf:"bytes,3,opt,name=systemInfo"`
+	// Labels holds the labels attached to the host.
+	Labels map[string]string `json:"labels,omitempty" protobuf:"bytes,4,opt,name=labels"`
+}
 
-// // ApplicationTree represents the hierarchical structure of resources associated with an Argo CD application.
-// type ApplicationTree struct {
-// 	// Nodes contains a list of resources that are either directly managed by the application
-// 	// or are children of directly managed resources.
-// 	Nodes []ResourceNode `json:"nodes,omitempty" protobuf:"bytes,1,rep,name=nodes"`
-// 	// OrphanedNodes contains resources that exist in the same namespace as the application
-// 	// but are not managed by it. This list is populated only if orphaned resource tracking
-// 	// is enabled in the application's project settings.
-// 	OrphanedNodes []ResourceNode `json:"orphanedNodes,omitempty" protobuf:"bytes,2,rep,name=orphanedNodes"`
-// 	// Hosts provides a list of Kubernetes nodes that are running pods related to the application.
-// 	Hosts []HostInfo `json:"hosts,omitempty" protobuf:"bytes,3,rep,name=hosts"`
-// 	// ShardsCount represents the total number of shards the application tree is split into.
-// 	// This is used to distribute resource processing across multiple shards.
-// 	ShardsCount int64 `json:"shardsCount,omitempty" protobuf:"bytes,4,opt,name=shardsCount"`
-// }
+// ApplicationTree represents the hierarchical structure of resources associated with an Argo CD application.
+type ApplicationTree struct {
+	// Nodes contains a list of resources that are either directly managed by the application
+	// or are children of directly managed resources.
+	Nodes []ResourceNode `json:"nodes,omitempty" protobuf:"bytes,1,rep,name=nodes"`
+	// OrphanedNodes contains resources that exist in the same namespace as the application
+	// but are not managed by it. This list is populated only if orphaned resource tracking
+	// is enabled in the application's project settings.
+	OrphanedNodes []ResourceNode `json:"orphanedNodes,omitempty" protobuf:"bytes,2,rep,name=orphanedNodes"`
+	// Hosts provides a list of Kubernetes nodes that are running pods related to the application.
+	Hosts []HostInfo `json:"hosts,omitempty" protobuf:"bytes,3,rep,name=hosts"`
+	// ShardsCount represents the total number of shards the application tree is split into.
+	// This is used to distribute resource processing across multiple shards.
+	ShardsCount int64 `json:"shardsCount,omitempty" protobuf:"bytes,4,opt,name=shardsCount"`
+}
 
 // func (t *ApplicationTree) Merge(other *ApplicationTree) {
 // 	t.Nodes = append(t.Nodes, other.Nodes...)
@@ -2115,38 +2117,38 @@ type ApplicationList struct {
 // 	return ApplicationSummary{ExternalURLs: urls, Images: images}
 // }
 
-// // ResourceRef includes fields which uniquely identify a resource
-// type ResourceRef struct {
-// 	Group     string `json:"group,omitempty" protobuf:"bytes,1,opt,name=group"`
-// 	Version   string `json:"version,omitempty" protobuf:"bytes,2,opt,name=version"`
-// 	Kind      string `json:"kind,omitempty" protobuf:"bytes,3,opt,name=kind"`
-// 	Namespace string `json:"namespace,omitempty" protobuf:"bytes,4,opt,name=namespace"`
-// 	Name      string `json:"name,omitempty" protobuf:"bytes,5,opt,name=name"`
-// 	UID       string `json:"uid,omitempty" protobuf:"bytes,6,opt,name=uid"`
-// }
+// ResourceRef includes fields which uniquely identify a resource
+type ResourceRef struct {
+	Group     string `json:"group,omitempty" protobuf:"bytes,1,opt,name=group"`
+	Version   string `json:"version,omitempty" protobuf:"bytes,2,opt,name=version"`
+	Kind      string `json:"kind,omitempty" protobuf:"bytes,3,opt,name=kind"`
+	Namespace string `json:"namespace,omitempty" protobuf:"bytes,4,opt,name=namespace"`
+	Name      string `json:"name,omitempty" protobuf:"bytes,5,opt,name=name"`
+	UID       string `json:"uid,omitempty" protobuf:"bytes,6,opt,name=uid"`
+}
 
-// // ResourceNode contains information about a live Kubernetes resource and its relationships with other resources.
-// type ResourceNode struct {
-// 	// ResourceRef uniquely identifies the resource using its group, kind, namespace, and name.
-// 	ResourceRef `json:",inline" protobuf:"bytes,1,opt,name=resourceRef"`
-// 	// ParentRefs lists the parent resources that reference this resource.
-// 	// This helps in understanding ownership and hierarchical relationships.
-// 	ParentRefs []ResourceRef `json:"parentRefs,omitempty" protobuf:"bytes,2,opt,name=parentRefs"`
-// 	// Info provides additional metadata or annotations about the resource.
-// 	Info []InfoItem `json:"info,omitempty" protobuf:"bytes,3,opt,name=info"`
-// 	// NetworkingInfo contains details about the resource's networking attributes,
-// 	// such as ingress information and external URLs.
-// 	NetworkingInfo *ResourceNetworkingInfo `json:"networkingInfo,omitempty" protobuf:"bytes,4,opt,name=networkingInfo"`
-// 	// ResourceVersion indicates the version of the resource, used to track changes.
-// 	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,5,opt,name=resourceVersion"`
-// 	// Images lists container images associated with the resource.
-// 	// This is primarily useful for pods and other workload resources.
-// 	Images []string `json:"images,omitempty" protobuf:"bytes,6,opt,name=images"`
-// 	// Health represents the health status of the resource (e.g., Healthy, Degraded, Progressing).
-// 	Health *HealthStatus `json:"health,omitempty" protobuf:"bytes,7,opt,name=health"`
-// 	// CreatedAt records the timestamp when the resource was created.
-// 	CreatedAt *metav1.Time `json:"createdAt,omitempty" protobuf:"bytes,8,opt,name=createdAt"`
-// }
+// ResourceNode contains information about a live Kubernetes resource and its relationships with other resources.
+type ResourceNode struct {
+	// ResourceRef uniquely identifies the resource using its group, kind, namespace, and name.
+	ResourceRef `json:",inline" protobuf:"bytes,1,opt,name=resourceRef"`
+	// ParentRefs lists the parent resources that reference this resource.
+	// This helps in understanding ownership and hierarchical relationships.
+	ParentRefs []ResourceRef `json:"parentRefs,omitempty" protobuf:"bytes,2,opt,name=parentRefs"`
+	// Info provides additional metadata or annotations about the resource.
+	Info []InfoItem `json:"info,omitempty" protobuf:"bytes,3,opt,name=info"`
+	// NetworkingInfo contains details about the resource's networking attributes,
+	// such as ingress information and external URLs.
+	NetworkingInfo *ResourceNetworkingInfo `json:"networkingInfo,omitempty" protobuf:"bytes,4,opt,name=networkingInfo"`
+	// ResourceVersion indicates the version of the resource, used to track changes.
+	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,5,opt,name=resourceVersion"`
+	// Images lists container images associated with the resource.
+	// This is primarily useful for pods and other workload resources.
+	Images []string `json:"images,omitempty" protobuf:"bytes,6,opt,name=images"`
+	// Health represents the health status of the resource (e.g., Healthy, Degraded, Progressing).
+	Health *HealthStatus `json:"health,omitempty" protobuf:"bytes,7,opt,name=health"`
+	// CreatedAt records the timestamp when the resource was created.
+	CreatedAt *metav1.Time `json:"createdAt,omitempty" protobuf:"bytes,8,opt,name=createdAt"`
+}
 
 // // FullName returns a resource node's full name in the format "group/kind/namespace/name"
 // // For cluster-scoped resources, namespace will be the empty string.
@@ -2474,29 +2476,29 @@ type TLSClientConfig struct {
 	CAData []byte `json:"caData,omitempty" protobuf:"bytes,5,opt,name=caData"`
 }
 
-// // KnownTypeField contains a mapping between a Custom Resource Definition (CRD) field
-// // and a well-known Kubernetes type. This mapping is primarily used for unit conversions
-// // in resources where the type is not explicitly defined (e.g., converting "0.1" to "100m" for CPU requests).
-// type KnownTypeField struct {
-// 	// Field represents the JSON path to the specific field in the CRD that requires type conversion.
-// 	// Example: "spec.resources.requests.cpu"
-// 	Field string `json:"field,omitempty" protobuf:"bytes,1,opt,name=field"`
-// 	// Type specifies the expected Kubernetes type for the field, such as "cpu" or "memory".
-// 	// This helps in converting values between different formats (e.g., "0.1" to "100m" for CPU).
-// 	Type string `json:"type,omitempty" protobuf:"bytes,2,opt,name=type"`
-// }
+// KnownTypeField contains a mapping between a Custom Resource Definition (CRD) field
+// and a well-known Kubernetes type. This mapping is primarily used for unit conversions
+// in resources where the type is not explicitly defined (e.g., converting "0.1" to "100m" for CPU requests).
+type KnownTypeField struct {
+	// Field represents the JSON path to the specific field in the CRD that requires type conversion.
+	// Example: "spec.resources.requests.cpu"
+	Field string `json:"field,omitempty" protobuf:"bytes,1,opt,name=field"`
+	// Type specifies the expected Kubernetes type for the field, such as "cpu" or "memory".
+	// This helps in converting values between different formats (e.g., "0.1" to "100m" for CPU).
+	Type string `json:"type,omitempty" protobuf:"bytes,2,opt,name=type"`
+}
 
-// // OverrideIgnoreDiff contains configurations about how fields should be ignored during diffs between
-// // the desired state and live state
-// type OverrideIgnoreDiff struct {
-// 	// JSONPointers is a JSON path list following the format defined in RFC4627 (https://datatracker.ietf.org/doc/html/rfc6902#section-3)
-// 	JSONPointers []string `json:"jsonPointers" protobuf:"bytes,1,rep,name=jSONPointers"`
-// 	// JQPathExpressions is a JQ path list that will be evaludated during the diff process
-// 	JQPathExpressions []string `json:"jqPathExpressions" protobuf:"bytes,2,opt,name=jqPathExpressions"`
-// 	// ManagedFieldsManagers is a list of trusted managers. Fields mutated by those managers will take precedence over the
-// 	// desired state defined in the SCM and won't be displayed in diffs
-// 	ManagedFieldsManagers []string `json:"managedFieldsManagers" protobuf:"bytes,3,opt,name=managedFieldsManagers"`
-// }
+// OverrideIgnoreDiff contains configurations about how fields should be ignored during diffs between
+// the desired state and live state
+type OverrideIgnoreDiff struct {
+	// JSONPointers is a JSON path list following the format defined in RFC4627 (https://datatracker.ietf.org/doc/html/rfc6902#section-3)
+	JSONPointers []string `json:"jsonPointers" protobuf:"bytes,1,rep,name=jSONPointers"`
+	// JQPathExpressions is a JQ path list that will be evaludated during the diff process
+	JQPathExpressions []string `json:"jqPathExpressions" protobuf:"bytes,2,opt,name=jqPathExpressions"`
+	// ManagedFieldsManagers is a list of trusted managers. Fields mutated by those managers will take precedence over the
+	// desired state defined in the SCM and won't be displayed in diffs
+	ManagedFieldsManagers []string `json:"managedFieldsManagers" protobuf:"bytes,3,opt,name=managedFieldsManagers"`
+}
 
 // type rawResourceOverride struct {
 // 	HealthLua             string           `json:"health.lua,omitempty"`
@@ -2507,21 +2509,21 @@ type TLSClientConfig struct {
 // 	KnownTypeFields       []KnownTypeField `json:"knownTypeFields,omitempty"`
 // }
 
-// // ResourceOverride holds configuration to customize resource diffing and health assessment
-// type ResourceOverride struct {
-// 	// HealthLua contains a Lua script that defines custom health checks for the resource.
-// 	HealthLua string `protobuf:"bytes,1,opt,name=healthLua"`
-// 	// UseOpenLibs indicates whether to use open-source libraries for the resource.
-// 	UseOpenLibs bool `protobuf:"bytes,5,opt,name=useOpenLibs"`
-// 	// Actions defines the set of actions that can be performed on the resource, as a Lua script.
-// 	Actions string `protobuf:"bytes,3,opt,name=actions"`
-// 	// IgnoreDifferences contains configuration for which differences should be ignored during the resource diffing.
-// 	IgnoreDifferences OverrideIgnoreDiff `protobuf:"bytes,2,opt,name=ignoreDifferences"`
-// 	// IgnoreResourceUpdates holds configuration for ignoring updates to specific resource fields.
-// 	IgnoreResourceUpdates OverrideIgnoreDiff `protobuf:"bytes,6,opt,name=ignoreResourceUpdates"`
-// 	// KnownTypeFields lists fields for which unit conversions should be applied.
-// 	KnownTypeFields []KnownTypeField `protobuf:"bytes,4,opt,name=knownTypeFields"`
-// }
+// ResourceOverride holds configuration to customize resource diffing and health assessment
+type ResourceOverride struct {
+	// HealthLua contains a Lua script that defines custom health checks for the resource.
+	HealthLua string `protobuf:"bytes,1,opt,name=healthLua"`
+	// UseOpenLibs indicates whether to use open-source libraries for the resource.
+	UseOpenLibs bool `protobuf:"bytes,5,opt,name=useOpenLibs"`
+	// Actions defines the set of actions that can be performed on the resource, as a Lua script.
+	Actions string `protobuf:"bytes,3,opt,name=actions"`
+	// IgnoreDifferences contains configuration for which differences should be ignored during the resource diffing.
+	IgnoreDifferences OverrideIgnoreDiff `protobuf:"bytes,2,opt,name=ignoreDifferences"`
+	// IgnoreResourceUpdates holds configuration for ignoring updates to specific resource fields.
+	IgnoreResourceUpdates OverrideIgnoreDiff `protobuf:"bytes,6,opt,name=ignoreResourceUpdates"`
+	// KnownTypeFields lists fields for which unit conversions should be applied.
+	KnownTypeFields []KnownTypeField `protobuf:"bytes,4,opt,name=knownTypeFields"`
+}
 
 // // UnmarshalJSON unmarshals a JSON byte slice into a ResourceOverride object.
 // // It parses the raw input data and handles special processing for `IgnoreDifferences`
@@ -3274,50 +3276,50 @@ type TLSClientConfig struct {
 // 	ID        string `json:"id,omitempty" protobuf:"bytes,3,opt,name=id"`
 // }
 
-// // Command holds binary path and arguments list
-// type Command struct {
-// 	Command []string `json:"command,omitempty" protobuf:"bytes,1,name=command"`
-// 	Args    []string `json:"args,omitempty" protobuf:"bytes,2,rep,name=args"`
-// }
+// Command holds binary path and arguments list
+type Command struct {
+	Command []string `json:"command,omitempty" protobuf:"bytes,1,name=command"`
+	Args    []string `json:"args,omitempty" protobuf:"bytes,2,rep,name=args"`
+}
 
-// // ConfigManagementPlugin contains config management plugin configuration
-// type ConfigManagementPlugin struct {
-// 	Name     string   `json:"name" protobuf:"bytes,1,name=name"`
-// 	Init     *Command `json:"init,omitempty" protobuf:"bytes,2,name=init"`
-// 	Generate Command  `json:"generate" protobuf:"bytes,3,name=generate"`
-// 	LockRepo bool     `json:"lockRepo,omitempty" protobuf:"bytes,4,name=lockRepo"`
-// }
+// ConfigManagementPlugin contains config management plugin configuration
+type ConfigManagementPlugin struct {
+	Name     string   `json:"name" protobuf:"bytes,1,name=name"`
+	Init     *Command `json:"init,omitempty" protobuf:"bytes,2,name=init"`
+	Generate Command  `json:"generate" protobuf:"bytes,3,name=generate"`
+	LockRepo bool     `json:"lockRepo,omitempty" protobuf:"bytes,4,name=lockRepo"`
+}
 
 // // HelmOptions holds helm options
 // type HelmOptions struct {
 // 	ValuesFileSchemes []string `protobuf:"bytes,1,opt,name=valuesFileSchemes"`
 // }
 
-// // KustomizeVersion holds information about additional Kustomize versions
-// type KustomizeVersion struct {
-// 	// Name holds Kustomize version name
-// 	Name string `protobuf:"bytes,1,opt,name=name"`
-// 	// Path holds the corresponding binary path
-// 	Path string `protobuf:"bytes,2,opt,name=path"`
-// 	// BuildOptions that are specific to a Kustomize version
-// 	BuildOptions string `protobuf:"bytes,3,opt,name=buildOptions"`
-// }
+// KustomizeVersion holds information about additional Kustomize versions
+type KustomizeVersion struct {
+	// Name holds Kustomize version name
+	Name string `protobuf:"bytes,1,opt,name=name"`
+	// Path holds the corresponding binary path
+	Path string `protobuf:"bytes,2,opt,name=path"`
+	// BuildOptions that are specific to a Kustomize version
+	BuildOptions string `protobuf:"bytes,3,opt,name=buildOptions"`
+}
 
-// // KustomizeOptions are options for kustomize to use when building manifests
-// type KustomizeOptions struct {
-// 	// BuildOptions is a string of build parameters to use when calling `kustomize build`
-// 	BuildOptions string `protobuf:"bytes,1,opt,name=buildOptions"`
+// KustomizeOptions are options for kustomize to use when building manifests
+type KustomizeOptions struct {
+	// BuildOptions is a string of build parameters to use when calling `kustomize build`
+	BuildOptions string `protobuf:"bytes,1,opt,name=buildOptions"`
 
-// 	// BinaryPath holds optional path to kustomize binary
-// 	//
-// 	// Deprecated: Use settings.Settings instead. See: settings.Settings.KustomizeVersions.
-// 	// If this field is set, it will be used as the Kustomize binary path.
-// 	// Otherwise, Versions is used.
-// 	BinaryPath string `protobuf:"bytes,2,opt,name=binaryPath"`
+	// BinaryPath holds optional path to kustomize binary
+	//
+	// Deprecated: Use settings.Settings instead. See: settings.Settings.KustomizeVersions.
+	// If this field is set, it will be used as the Kustomize binary path.
+	// Otherwise, Versions is used.
+	BinaryPath string `protobuf:"bytes,2,opt,name=binaryPath"`
 
-// 	// Versions is a list of Kustomize versions and their corresponding binary paths and build options.
-// 	Versions []KustomizeVersion `protobuf:"bytes,3,rep,name=versions"`
-// }
+	// Versions is a list of Kustomize versions and their corresponding binary paths and build options.
+	Versions []KustomizeVersion `protobuf:"bytes,3,rep,name=versions"`
+}
 
 // // ApplicationDestinationServiceAccount holds information about the service account to be impersonated for the application sync operation.
 // type ApplicationDestinationServiceAccount struct {

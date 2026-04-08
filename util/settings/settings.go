@@ -22,6 +22,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/server/settings/oidc"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	timeutil "github.com/useryege/athena/pkg/time"
 	"github.com/useryege/athena/util"
 	"github.com/useryege/athena/util/crypto"
@@ -144,25 +145,25 @@ type ArgoCDSettings struct {
 	RequireOverridePrivilegeForRevisionSync bool `json:"requireOverridePrivilegeForRevisionSync"`
 }
 
-// type GoogleAnalytics struct {
-// 	TrackingID     string `json:"trackingID,omitempty"`
-// 	AnonymizeUsers bool   `json:"anonymizeUsers,omitempty"`
-// }
+type GoogleAnalytics struct {
+	TrackingID     string `json:"trackingID,omitempty"`
+	AnonymizeUsers bool   `json:"anonymizeUsers,omitempty"`
+}
 
-// type GlobalProjectSettings struct {
-// 	ProjectName   string               `json:"projectName,omitempty"`
-// 	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
-// }
+type GlobalProjectSettings struct {
+	ProjectName   string               `json:"projectName,omitempty"`
+	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
+}
 
-// // Help settings
-// type Help struct {
-// 	// the URL for getting chat help, this will typically be your Slack channel for support
-// 	ChatURL string `json:"chatUrl,omitempty"`
-// 	// the text for getting chat help, defaults to "Chat now!"
-// 	ChatText string `json:"chatText,omitempty"`
-// 	// the URLs for downloading athena binaries
-// 	BinaryURLs map[string]string `json:"binaryUrl,omitempty"`
-// }
+// Help settings
+type Help struct {
+	// the URL for getting chat help, this will typically be your Slack channel for support
+	ChatURL string `json:"chatUrl,omitempty"`
+	// the text for getting chat help, defaults to "Chat now!"
+	ChatText string `json:"chatText,omitempty"`
+	// the URLs for downloading athena binaries
+	BinaryURLs map[string]string `json:"binaryUrl,omitempty"`
+}
 
 // oidcConfig is the same as the public OIDCConfig, except the public one excludes the AllowedAudiences and the
 // SkipAudienceCheckWhenTokenHasNoAudience fields.
@@ -411,14 +412,14 @@ var (
 const (
 	// settingServerSignatureKey designates the key for a server secret key inside a Kubernetes secret.
 	settingServerSignatureKey = "server.secretkey"
-	// // gaTrackingID holds Google Analytics tracking id
-	// gaTrackingID = "ga.trackingid"
-	// // the URL for getting chat help, this will typically be your Slack channel for support
-	// helpChatURL = "help.chatUrl"
-	// // the text for getting chat help, defaults to "Chat now!"
-	// helpChatText = "help.chatText"
-	// // gaAnonymizeUsers specifies if user ids should be anonymized (hashed) before sending to Google Analytics. True unless value is set to 'false'
-	// gaAnonymizeUsers = "ga.anonymizeusers"
+	// gaTrackingID holds Google Analytics tracking id
+	gaTrackingID = "ga.trackingid"
+	// the URL for getting chat help, this will typically be your Slack channel for support
+	helpChatURL = "help.chatUrl"
+	// the text for getting chat help, defaults to "Chat now!"
+	helpChatText = "help.chatText"
+	// gaAnonymizeUsers specifies if user ids should be anonymized (hashed) before sending to Google Analytics. True unless value is set to 'false'
+	gaAnonymizeUsers = "ga.anonymizeusers"
 	// settingServerCertificate designates the key for the public cert used in TLS
 	settingServerCertificate = "tls.crt"
 	// settingServerPrivateKey designates the key for the private key used in TLS
@@ -451,16 +452,16 @@ const (
 	settingsWebhookAzureDevOpsPasswordKey = "webhook.azuredevops.password"
 	// // settingsWebhookMaxPayloadSize is the key for the maximum payload size for webhooks in MB
 	// settingsWebhookMaxPayloadSizeMB = "webhook.maxPayloadSizeMB"
-	// // settingsApplicationInstanceLabelKey is the key to configure injected app instance label key
-	// settingsApplicationInstanceLabelKey = "application.instanceLabelKey"
+	// settingsApplicationInstanceLabelKey is the key to configure injected app instance label key
+	settingsApplicationInstanceLabelKey = "application.instanceLabelKey"
 	// settingsResourceTrackingMethodKey is the key to configure tracking method for application resources
 	settingsResourceTrackingMethodKey = "application.resourceTrackingMethod"
 	// // allowedNodeLabelsKey is the key to the list of allowed node labels for the application pod view
 	// allowedNodeLabelsKey = "application.allowedNodeLabels"
-	// // settingsInstallationID holds the key for the instance installation ID
-	// settingsInstallationID = "installationID"
-	// // resourcesCustomizationsKey is the key to the map of resource overrides
-	// resourceCustomizationsKey = "resource.customizations"
+	// settingsInstallationID holds the key for the instance installation ID
+	settingsInstallationID = "installationID"
+	// resourcesCustomizationsKey is the key to the map of resource overrides
+	resourceCustomizationsKey = "resource.customizations"
 	// // resourceExclusions is the key to the list of excluded resources
 	// resourceExclusionsKey = "resource.exclusions"
 	// // resourceInclusions is the key to the list of explicitly watched resources
@@ -477,16 +478,16 @@ const (
 	// resourceExcludeEventLabelKeys = "resource.excludeEventLabelKeys"
 	// kustomizeBuildOptionsKey is a string of kustomize build parameters
 	kustomizeBuildOptionsKey = "kustomize.buildOptions"
-	// // kustomizeVersionKeyPrefix is a kustomize version key prefix
-	// kustomizeVersionKeyPrefix = "kustomize.version"
-	// // kustomizePathPrefixKey is a kustomize path for a specific version
-	// kustomizePathPrefixKey = "kustomize.path"
+	// kustomizeVersionKeyPrefix is a kustomize version key prefix
+	kustomizeVersionKeyPrefix = "kustomize.version"
+	// kustomizePathPrefixKey is a kustomize path for a specific version
+	kustomizePathPrefixKey = "kustomize.path"
 	// anonymousUserEnabledKey is the key which enables or disables anonymous user
 	anonymousUserEnabledKey = "users.anonymous.enabled"
 	// userSessionDurationKey is the key which specifies token expiration duration
 	userSessionDurationKey = "users.session.duration"
-	// // diffOptions is the key where diff options are configured
-	// resourceCompareOptionsKey = "resource.compareoptions"
+	// diffOptions is the key where diff options are configured
+	resourceCompareOptionsKey = "resource.compareoptions"
 	// settingUICSSURLKey designates the key for user-defined CSS URL for UI customization
 	settingUICSSURLKey = "ui.cssurl"
 	// settingUIBannerContentKey designates the key for content of user-defined info banner for UI
@@ -588,26 +589,26 @@ type incompleteSettingsError struct {
 	message string
 }
 
-// type IgnoreStatus string
+type IgnoreStatus string
 
-// const (
-// 	// IgnoreResourceStatusInCRD ignores status changes for all CRDs
-// 	IgnoreResourceStatusInCRD IgnoreStatus = "crd"
-// 	// IgnoreResourceStatusInAll ignores status changes for all resources
-// 	IgnoreResourceStatusInAll IgnoreStatus = "all"
-// 	// IgnoreResourceStatusInNone ignores status changes for no resources
-// 	IgnoreResourceStatusInNone IgnoreStatus = "none"
-// )
+const (
+	// IgnoreResourceStatusInCRD ignores status changes for all CRDs
+	IgnoreResourceStatusInCRD IgnoreStatus = "crd"
+	// IgnoreResourceStatusInAll ignores status changes for all resources
+	IgnoreResourceStatusInAll IgnoreStatus = "all"
+	// IgnoreResourceStatusInNone ignores status changes for no resources
+	IgnoreResourceStatusInNone IgnoreStatus = "none"
+)
 
-// type ArgoCDDiffOptions struct {
-// 	IgnoreAggregatedRoles bool `json:"ignoreAggregatedRoles,omitempty"`
+type ArgoCDDiffOptions struct {
+	IgnoreAggregatedRoles bool `json:"ignoreAggregatedRoles,omitempty"`
 
-// 	// If set to true then differences caused by status are ignored.
-// 	IgnoreResourceStatusField IgnoreStatus `json:"ignoreResourceStatusField,omitempty"`
+	// If set to true then differences caused by status are ignored.
+	IgnoreResourceStatusField IgnoreStatus `json:"ignoreResourceStatusField,omitempty"`
 
-// 	// If set to true then ignoreDifferences are applied to ignore application refresh on resource updates.
-// 	IgnoreDifferencesOnResourceUpdates bool `json:"ignoreDifferencesOnResourceUpdates,omitempty"`
-// }
+	// If set to true then ignoreDifferences are applied to ignore application refresh on resource updates.
+	IgnoreDifferencesOnResourceUpdates bool `json:"ignoreDifferencesOnResourceUpdates,omitempty"`
+}
 
 func (e *incompleteSettingsError) Error() string {
 	return e.message
@@ -827,49 +828,49 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // 	return rf, nil
 // }
 
-// func (mgr *SettingsManager) GetAppInstanceLabelKey() (string, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	label := argoCDCM.Data[settingsApplicationInstanceLabelKey]
-// 	if label == "" {
-// 		return common.LabelKeyAppInstance, nil
-// 	}
-// 	return label, nil
-// }
+func (mgr *SettingsManager) GetAppInstanceLabelKey() (string, error) {
+	argoCDCM, err := mgr.getConfigMap()
+	if err != nil {
+		return "", err
+	}
+	label := argoCDCM.Data[settingsApplicationInstanceLabelKey]
+	if label == "" {
+		return common.LabelKeyAppInstance, nil
+	}
+	return label, nil
+}
 
-// func (mgr *SettingsManager) GetTrackingMethod() (string, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	tm := argoCDCM.Data[settingsResourceTrackingMethodKey]
-// 	if tm == "" {
-// 		return string(v1alpha1.TrackingMethodAnnotation), nil
-// 	}
-// 	return tm, nil
-// }
+func (mgr *SettingsManager) GetTrackingMethod() (string, error) {
+	argoCDCM, err := mgr.getConfigMap()
+	if err != nil {
+		return "", err
+	}
+	tm := argoCDCM.Data[settingsResourceTrackingMethodKey]
+	if tm == "" {
+		return string(v1alpha1.TrackingMethodAnnotation), nil
+	}
+	return tm, nil
+}
 
-// func (mgr *SettingsManager) GetInstallationID() (string, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return argoCDCM.Data[settingsInstallationID], nil
-// }
+func (mgr *SettingsManager) GetInstallationID() (string, error) {
+	argoCDCM, err := mgr.getConfigMap()
+	if err != nil {
+		return "", err
+	}
+	return argoCDCM.Data[settingsInstallationID], nil
+}
 
-// func (mgr *SettingsManager) GetPasswordPattern() (string, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	label := argoCDCM.Data[settingsPasswordPatternKey]
-// 	if label == "" {
-// 		return common.PasswordPatten, nil
-// 	}
-// 	return label, nil
-// }
+func (mgr *SettingsManager) GetPasswordPattern() (string, error) {
+	argoCDCM, err := mgr.getConfigMap()
+	if err != nil {
+		return "", err
+	}
+	label := argoCDCM.Data[settingsPasswordPatternKey]
+	if label == "" {
+		return common.PasswordPatten, nil
+	}
+	return label, nil
+}
 
 // func (mgr *SettingsManager) ApplicationFineGrainedRBACInheritanceDisabled() (bool, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
@@ -979,51 +980,51 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // 	return strconv.ParseBool(argoCDCM.Data[resourceIgnoreResourceUpdatesEnabledKey])
 // }
 
-// // GetResourceOverrides loads Resource Overrides from athena-cm ConfigMap
-// func (mgr *SettingsManager) GetResourceOverrides() (map[string]v1alpha1.ResourceOverride, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving config map: %w", err)
-// 	}
-// 	resourceOverrides := map[string]v1alpha1.ResourceOverride{}
-// 	if value, ok := argoCDCM.Data[resourceCustomizationsKey]; ok && value != "" {
-// 		err := yaml.Unmarshal([]byte(value), &resourceOverrides)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 	}
+// GetResourceOverrides loads Resource Overrides from athena-cm ConfigMap
+func (mgr *SettingsManager) GetResourceOverrides() (map[string]v1alpha1.ResourceOverride, error) {
+	argoCDCM, err := mgr.getConfigMap()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving config map: %w", err)
+	}
+	resourceOverrides := map[string]v1alpha1.ResourceOverride{}
+	if value, ok := argoCDCM.Data[resourceCustomizationsKey]; ok && value != "" {
+		err := yaml.Unmarshal([]byte(value), &resourceOverrides)
+		if err != nil {
+			return nil, err
+		}
+	}
 
-// 	err = mgr.appendResourceOverridesFromSplitKeys(argoCDCM.Data, resourceOverrides)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	err = mgr.appendResourceOverridesFromSplitKeys(argoCDCM.Data, resourceOverrides)
+	if err != nil {
+		return nil, err
+	}
 
-// 	diffOptions, err := mgr.GetResourceCompareOptions()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to get compare options: %w", err)
-// 	}
+	diffOptions, err := mgr.GetResourceCompareOptions()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get compare options: %w", err)
+	}
 
-// 	crdGK := "apiextensions.k8s.io/CustomResourceDefinition"
+	crdGK := "apiextensions.k8s.io/CustomResourceDefinition"
 
-// 	switch diffOptions.IgnoreResourceStatusField {
-// 	case "", IgnoreResourceStatusInAll:
-// 		addStatusOverrideToGK(resourceOverrides, "*/*")
-// 		log.Info("Ignore status for all objects")
-// 	case IgnoreResourceStatusInCRD:
-// 		addStatusOverrideToGK(resourceOverrides, crdGK)
-// 	case IgnoreResourceStatusInNone, "off", "false":
-// 		// Yaml 'off' non-string value can be converted to 'false'
-// 		// Support these cases because compareoptions is a yaml string in the config
-// 		// and this misconfiguration can be hard to catch for users.
-// 		// To prevent this, the default value has been changed to none
-// 		log.Info("Not ignoring status for any object")
-// 	default:
-// 		addStatusOverrideToGK(resourceOverrides, "*/*")
-// 		log.Warnf("Unrecognized value for ignoreResourceStatusField - %s, ignore status for all resources", diffOptions.IgnoreResourceStatusField)
-// 	}
+	switch diffOptions.IgnoreResourceStatusField {
+	case "", IgnoreResourceStatusInAll:
+		addStatusOverrideToGK(resourceOverrides, "*/*")
+		log.Info("Ignore status for all objects")
+	case IgnoreResourceStatusInCRD:
+		addStatusOverrideToGK(resourceOverrides, crdGK)
+	case IgnoreResourceStatusInNone, "off", "false":
+		// Yaml 'off' non-string value can be converted to 'false'
+		// Support these cases because compareoptions is a yaml string in the config
+		// and this misconfiguration can be hard to catch for users.
+		// To prevent this, the default value has been changed to none
+		log.Info("Not ignoring status for any object")
+	default:
+		addStatusOverrideToGK(resourceOverrides, "*/*")
+		log.Warnf("Unrecognized value for ignoreResourceStatusField - %s, ignore status for all resources", diffOptions.IgnoreResourceStatusField)
+	}
 
-// 	return resourceOverrides, nil
-// }
+	return resourceOverrides, nil
+}
 
 // func (mgr *SettingsManager) GetSourceHydratorCommitMessageTemplate() (string, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
@@ -1036,16 +1037,16 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // 	return argoCDCM.Data[settingsSourceHydratorCommitMessageTemplateKey], nil
 // }
 
-// func addStatusOverrideToGK(resourceOverrides map[string]v1alpha1.ResourceOverride, groupKind string) {
-// 	if val, ok := resourceOverrides[groupKind]; ok {
-// 		val.IgnoreDifferences.JSONPointers = append(val.IgnoreDifferences.JSONPointers, "/status")
-// 		resourceOverrides[groupKind] = val
-// 	} else {
-// 		resourceOverrides[groupKind] = v1alpha1.ResourceOverride{
-// 			IgnoreDifferences: v1alpha1.OverrideIgnoreDiff{JSONPointers: []string{"/status"}},
-// 		}
-// 	}
-// }
+func addStatusOverrideToGK(resourceOverrides map[string]v1alpha1.ResourceOverride, groupKind string) {
+	if val, ok := resourceOverrides[groupKind]; ok {
+		val.IgnoreDifferences.JSONPointers = append(val.IgnoreDifferences.JSONPointers, "/status")
+		resourceOverrides[groupKind] = val
+	} else {
+		resourceOverrides[groupKind] = v1alpha1.ResourceOverride{
+			IgnoreDifferences: v1alpha1.OverrideIgnoreDiff{JSONPointers: []string{"/status"}},
+		}
+	}
+}
 
 // func addIgnoreDiffItemOverrideToGK(resourceOverrides map[string]v1alpha1.ResourceOverride, groupKind, ignoreItem string) {
 // 	if val, ok := resourceOverrides[groupKind]; ok {
@@ -1058,109 +1059,109 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // 	}
 // }
 
-// func (mgr *SettingsManager) appendResourceOverridesFromSplitKeys(cmData map[string]string, resourceOverrides map[string]v1alpha1.ResourceOverride) error {
-// 	for k, v := range cmData {
-// 		if !strings.HasPrefix(k, resourceCustomizationsKey) {
-// 			continue
-// 		}
+func (mgr *SettingsManager) appendResourceOverridesFromSplitKeys(cmData map[string]string, resourceOverrides map[string]v1alpha1.ResourceOverride) error {
+	for k, v := range cmData {
+		if !strings.HasPrefix(k, resourceCustomizationsKey) {
+			continue
+		}
 
-// 		// config map key should be of format resource.customizations.<type>.<group_kind>
-// 		parts := strings.SplitN(k, ".", 4)
-// 		if len(parts) < 4 {
-// 			continue
-// 		}
+		// config map key should be of format resource.customizations.<type>.<group_kind>
+		parts := strings.SplitN(k, ".", 4)
+		if len(parts) < 4 {
+			continue
+		}
 
-// 		overrideKey, err := convertToOverrideKey(parts[3])
-// 		if err != nil {
-// 			return err
-// 		}
+		overrideKey, err := convertToOverrideKey(parts[3])
+		if err != nil {
+			return err
+		}
 
-// 		if overrideKey == "all" {
-// 			overrideKey = "*/*"
-// 		}
+		if overrideKey == "all" {
+			overrideKey = "*/*"
+		}
 
-// 		overrideVal, ok := resourceOverrides[overrideKey]
-// 		if !ok {
-// 			overrideVal = v1alpha1.ResourceOverride{}
-// 		}
+		overrideVal, ok := resourceOverrides[overrideKey]
+		if !ok {
+			overrideVal = v1alpha1.ResourceOverride{}
+		}
 
-// 		customizationType := parts[2]
-// 		switch customizationType {
-// 		case "health":
-// 			overrideVal.HealthLua = v
-// 		case "useOpenLibs":
-// 			useOpenLibs, err := strconv.ParseBool(v)
-// 			if err != nil {
-// 				return err
-// 			}
-// 			overrideVal.UseOpenLibs = useOpenLibs
-// 		case "actions":
-// 			overrideVal.Actions = v
-// 		case "ignoreDifferences":
-// 			overrideIgnoreDiff := v1alpha1.OverrideIgnoreDiff{}
-// 			err := yaml.Unmarshal([]byte(v), &overrideIgnoreDiff)
-// 			if err != nil {
-// 				return err
-// 			}
-// 			overrideVal.IgnoreDifferences = overrideIgnoreDiff
-// 		case "ignoreResourceUpdates":
-// 			overrideIgnoreUpdate := v1alpha1.OverrideIgnoreDiff{}
-// 			err := yaml.Unmarshal([]byte(v), &overrideIgnoreUpdate)
-// 			if err != nil {
-// 				return err
-// 			}
-// 			overrideVal.IgnoreResourceUpdates = overrideIgnoreUpdate
-// 		case "knownTypeFields":
-// 			var knownTypeFields []v1alpha1.KnownTypeField
-// 			err := yaml.Unmarshal([]byte(v), &knownTypeFields)
-// 			if err != nil {
-// 				return err
-// 			}
-// 			overrideVal.KnownTypeFields = knownTypeFields
-// 		default:
-// 			return fmt.Errorf("resource customization type %s not supported", customizationType)
-// 		}
-// 		resourceOverrides[overrideKey] = overrideVal
-// 	}
-// 	return nil
-// }
+		customizationType := parts[2]
+		switch customizationType {
+		case "health":
+			overrideVal.HealthLua = v
+		case "useOpenLibs":
+			useOpenLibs, err := strconv.ParseBool(v)
+			if err != nil {
+				return err
+			}
+			overrideVal.UseOpenLibs = useOpenLibs
+		case "actions":
+			overrideVal.Actions = v
+		case "ignoreDifferences":
+			overrideIgnoreDiff := v1alpha1.OverrideIgnoreDiff{}
+			err := yaml.Unmarshal([]byte(v), &overrideIgnoreDiff)
+			if err != nil {
+				return err
+			}
+			overrideVal.IgnoreDifferences = overrideIgnoreDiff
+		case "ignoreResourceUpdates":
+			overrideIgnoreUpdate := v1alpha1.OverrideIgnoreDiff{}
+			err := yaml.Unmarshal([]byte(v), &overrideIgnoreUpdate)
+			if err != nil {
+				return err
+			}
+			overrideVal.IgnoreResourceUpdates = overrideIgnoreUpdate
+		case "knownTypeFields":
+			var knownTypeFields []v1alpha1.KnownTypeField
+			err := yaml.Unmarshal([]byte(v), &knownTypeFields)
+			if err != nil {
+				return err
+			}
+			overrideVal.KnownTypeFields = knownTypeFields
+		default:
+			return fmt.Errorf("resource customization type %s not supported", customizationType)
+		}
+		resourceOverrides[overrideKey] = overrideVal
+	}
+	return nil
+}
 
-// // Convert group_kind format to <group/kind>, allowed key format examples
-// // resource.customizations.health.cert-manager.io_Certificate
-// // resource.customizations.health.Certificate
-// func convertToOverrideKey(groupKind string) (string, error) {
-// 	parts := strings.Split(groupKind, "_")
-// 	if len(parts) == 2 {
-// 		return fmt.Sprintf("%s/%s", parts[0], parts[1]), nil
-// 	} else if len(parts) == 1 && groupKind != "" {
-// 		return groupKind, nil
-// 	}
-// 	return "", fmt.Errorf("group kind should be in format `resource.customizations.<type>.<group_kind>` or resource.customizations.<type>.<kind>`, got group kind: '%s'", groupKind)
-// }
+// Convert group_kind format to <group/kind>, allowed key format examples
+// resource.customizations.health.cert-manager.io_Certificate
+// resource.customizations.health.Certificate
+func convertToOverrideKey(groupKind string) (string, error) {
+	parts := strings.Split(groupKind, "_")
+	if len(parts) == 2 {
+		return fmt.Sprintf("%s/%s", parts[0], parts[1]), nil
+	} else if len(parts) == 1 && groupKind != "" {
+		return groupKind, nil
+	}
+	return "", fmt.Errorf("group kind should be in format `resource.customizations.<type>.<group_kind>` or resource.customizations.<type>.<kind>`, got group kind: '%s'", groupKind)
+}
 
-// func GetDefaultDiffOptions() ArgoCDDiffOptions {
-// 	return ArgoCDDiffOptions{IgnoreAggregatedRoles: false, IgnoreResourceStatusField: IgnoreResourceStatusInAll, IgnoreDifferencesOnResourceUpdates: true}
-// }
+func GetDefaultDiffOptions() ArgoCDDiffOptions {
+	return ArgoCDDiffOptions{IgnoreAggregatedRoles: false, IgnoreResourceStatusField: IgnoreResourceStatusInAll, IgnoreDifferencesOnResourceUpdates: true}
+}
 
-// // GetResourceCompareOptions loads the resource compare options settings from the ConfigMap
-// func (mgr *SettingsManager) GetResourceCompareOptions() (ArgoCDDiffOptions, error) {
-// 	// We have a sane set of default diff options
-// 	diffOptions := GetDefaultDiffOptions()
+// GetResourceCompareOptions loads the resource compare options settings from the ConfigMap
+func (mgr *SettingsManager) GetResourceCompareOptions() (ArgoCDDiffOptions, error) {
+	// We have a sane set of default diff options
+	diffOptions := GetDefaultDiffOptions()
 
-// 	argoCDCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return diffOptions, err
-// 	}
+	argoCDCM, err := mgr.getConfigMap()
+	if err != nil {
+		return diffOptions, err
+	}
 
-// 	if value, ok := argoCDCM.Data[resourceCompareOptionsKey]; ok {
-// 		err := yaml.Unmarshal([]byte(value), &diffOptions)
-// 		if err != nil {
-// 			return diffOptions, err
-// 		}
-// 	}
+	if value, ok := argoCDCM.Data[resourceCompareOptionsKey]; ok {
+		err := yaml.Unmarshal([]byte(value), &diffOptions)
+		if err != nil {
+			return diffOptions, err
+		}
+	}
 
-// 	return diffOptions, nil
-// }
+	return diffOptions, nil
+}
 
 // // GetHelmSettings returns helm settings
 // func (mgr *SettingsManager) GetHelmSettings() (*v1alpha1.HelmOptions, error) {
@@ -1181,96 +1182,96 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // 	return helmOptions, nil
 // }
 
-// // GetKustomizeSettings loads the kustomize settings from athena-cm ConfigMap
-// func (mgr *SettingsManager) GetKustomizeSettings() (*v1alpha1.KustomizeOptions, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
-// 	}
-// 	kustomizeVersionsMap := map[string]v1alpha1.KustomizeVersion{}
-// 	buildOptions := map[string]string{}
-// 	settings := &v1alpha1.KustomizeOptions{}
+// GetKustomizeSettings loads the kustomize settings from athena-cm ConfigMap
+func (mgr *SettingsManager) GetKustomizeSettings() (*v1alpha1.KustomizeOptions, error) {
+	argoCDCM, err := mgr.getConfigMap()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
+	}
+	kustomizeVersionsMap := map[string]v1alpha1.KustomizeVersion{}
+	buildOptions := map[string]string{}
+	settings := &v1alpha1.KustomizeOptions{}
 
-// 	// extract build options for the default version
-// 	if options, ok := argoCDCM.Data[kustomizeBuildOptionsKey]; ok {
-// 		settings.BuildOptions = options
-// 	}
+	// extract build options for the default version
+	if options, ok := argoCDCM.Data[kustomizeBuildOptionsKey]; ok {
+		settings.BuildOptions = options
+	}
 
-// 	// extract per-version binary paths and build options
-// 	for k, v := range argoCDCM.Data {
-// 		// extract version and path from kustomize.version.<version>
-// 		if strings.HasPrefix(k, kustomizeVersionKeyPrefix) {
-// 			err = addKustomizeVersion(kustomizeVersionKeyPrefix, k, v, kustomizeVersionsMap)
-// 			if err != nil {
-// 				return nil, fmt.Errorf("failed to add kustomize version from %q: %w", k, err)
-// 			}
-// 		}
+	// extract per-version binary paths and build options
+	for k, v := range argoCDCM.Data {
+		// extract version and path from kustomize.version.<version>
+		if strings.HasPrefix(k, kustomizeVersionKeyPrefix) {
+			err = addKustomizeVersion(kustomizeVersionKeyPrefix, k, v, kustomizeVersionsMap)
+			if err != nil {
+				return nil, fmt.Errorf("failed to add kustomize version from %q: %w", k, err)
+			}
+		}
 
-// 		// extract version and path from kustomize.path.<version>
-// 		if strings.HasPrefix(k, kustomizePathPrefixKey) {
-// 			err = addKustomizeVersion(kustomizePathPrefixKey, k, v, kustomizeVersionsMap)
-// 			if err != nil {
-// 				return nil, fmt.Errorf("failed to add kustomize version from %q: %w", k, err)
-// 			}
-// 		}
+		// extract version and path from kustomize.path.<version>
+		if strings.HasPrefix(k, kustomizePathPrefixKey) {
+			err = addKustomizeVersion(kustomizePathPrefixKey, k, v, kustomizeVersionsMap)
+			if err != nil {
+				return nil, fmt.Errorf("failed to add kustomize version from %q: %w", k, err)
+			}
+		}
 
-// 		// extract version and build options from kustomize.buildOptions.<version>
-// 		if strings.HasPrefix(k, kustomizeBuildOptionsKey) && k != kustomizeBuildOptionsKey {
-// 			buildOptions[k[len(kustomizeBuildOptionsKey)+1:]] = v
-// 		}
-// 	}
+		// extract version and build options from kustomize.buildOptions.<version>
+		if strings.HasPrefix(k, kustomizeBuildOptionsKey) && k != kustomizeBuildOptionsKey {
+			buildOptions[k[len(kustomizeBuildOptionsKey)+1:]] = v
+		}
+	}
 
-// 	for _, v := range kustomizeVersionsMap {
-// 		if _, ok := buildOptions[v.Name]; ok {
-// 			v.BuildOptions = buildOptions[v.Name]
-// 		}
-// 		settings.Versions = append(settings.Versions, v)
-// 	}
-// 	return settings, nil
-// }
+	for _, v := range kustomizeVersionsMap {
+		if _, ok := buildOptions[v.Name]; ok {
+			v.BuildOptions = buildOptions[v.Name]
+		}
+		settings.Versions = append(settings.Versions, v)
+	}
+	return settings, nil
+}
 
-// func addKustomizeVersion(prefix, name, path string, kvMap map[string]v1alpha1.KustomizeVersion) error {
-// 	version := name[len(prefix)+1:]
-// 	if _, ok := kvMap[version]; ok {
-// 		return fmt.Errorf("found duplicate kustomize version: %s", version)
-// 	}
-// 	kvMap[version] = v1alpha1.KustomizeVersion{
-// 		Name: version,
-// 		Path: path,
-// 	}
-// 	return nil
-// }
+func addKustomizeVersion(prefix, name, path string, kvMap map[string]v1alpha1.KustomizeVersion) error {
+	version := name[len(prefix)+1:]
+	if _, ok := kvMap[version]; ok {
+		return fmt.Errorf("found duplicate kustomize version: %s", version)
+	}
+	kvMap[version] = v1alpha1.KustomizeVersion{
+		Name: version,
+		Path: path,
+	}
+	return nil
+}
 
-// func (mgr *SettingsManager) GetGoogleAnalytics() (*GoogleAnalytics, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving config map: %w", err)
-// 	}
-// 	return &GoogleAnalytics{
-// 		TrackingID:     argoCDCM.Data[gaTrackingID],
-// 		AnonymizeUsers: argoCDCM.Data[gaAnonymizeUsers] != "false",
-// 	}, nil
-// }
+func (mgr *SettingsManager) GetGoogleAnalytics() (*GoogleAnalytics, error) {
+	argoCDCM, err := mgr.getConfigMap()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving config map: %w", err)
+	}
+	return &GoogleAnalytics{
+		TrackingID:     argoCDCM.Data[gaTrackingID],
+		AnonymizeUsers: argoCDCM.Data[gaAnonymizeUsers] != "false",
+	}, nil
+}
 
-// func (mgr *SettingsManager) GetHelp() (*Help, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving config map: %w", err)
-// 	}
-// 	chatText, ok := argoCDCM.Data[helpChatText]
-// 	if !ok {
-// 		chatText = "Chat now!"
-// 	}
-// 	chatURL, ok := argoCDCM.Data[helpChatURL]
-// 	if !ok {
-// 		chatText = ""
-// 	}
-// 	return &Help{
-// 		ChatURL:    chatURL,
-// 		ChatText:   chatText,
-// 		BinaryURLs: getDownloadBinaryUrlsFromConfigMap(argoCDCM),
-// 	}, nil
-// }
+func (mgr *SettingsManager) GetHelp() (*Help, error) {
+	argoCDCM, err := mgr.getConfigMap()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving config map: %w", err)
+	}
+	chatText, ok := argoCDCM.Data[helpChatText]
+	if !ok {
+		chatText = "Chat now!"
+	}
+	chatURL, ok := argoCDCM.Data[helpChatURL]
+	if !ok {
+		chatText = ""
+	}
+	return &Help{
+		ChatURL:    chatURL,
+		ChatText:   chatText,
+		BinaryURLs: getDownloadBinaryUrlsFromConfigMap(argoCDCM),
+	}, nil
+}
 
 // func (mgr *SettingsManager) RequireOverridePrivilegeForRevisionSync() (bool, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
@@ -2129,13 +2130,13 @@ func isIncompleteSettingsError(err error) bool {
 // InitializeSettings is used to initialize empty admin password, signature, certificate etc if missing
 func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoCDSettings, error) {
 	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-	log.Infof("InitializeSettings started (namespace=%s, insecureModeEnabled=%t)", mgr.namespace, insecureModeEnabled)
+	log.Debugf("InitializeSettings started (namespace=%s, insecureModeEnabled=%t)", mgr.namespace, insecureModeEnabled)
 	err := mgr.UpdateAccount(common.ArgoCDAdminUsername, func(adminAccount *Account) error {
-		log.Infof("Processing admin account settings (enabled=%t, hasPasswordHash=%t, hasPasswordMtime=%t)", adminAccount.Enabled, adminAccount.PasswordHash != "", adminAccount.PasswordMtime != nil && !adminAccount.PasswordMtime.IsZero())
+		log.Debugf("Processing admin account settings (enabled=%t, hasPasswordHash=%t, hasPasswordMtime=%t)", adminAccount.Enabled, adminAccount.PasswordHash != "", adminAccount.PasswordMtime != nil && !adminAccount.PasswordMtime.IsZero())
 		if adminAccount.Enabled {
 			now := time.Now().UTC()
 			if adminAccount.PasswordHash == "" {
-				log.Info("Admin password hash missing, generating initial password")
+				log.Debug("Admin password hash missing, generating initial password")
 				randBytes := make([]byte, initialPasswordLength)
 				for i := 0; i < initialPasswordLength; i++ {
 					num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
@@ -2151,25 +2152,25 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 					return err
 				}
 				ku := kube.NewKubeUtil(mgr.ctx, mgr.clientset)
-				log.Infof("Persisting generated admin password secret to %s/%s", mgr.namespace, initialPasswordSecretName)
+				log.Debugf("Persisting generated admin password secret to %s/%s", mgr.namespace, initialPasswordSecretName)
 				err = ku.CreateOrUpdateSecretField(mgr.namespace, initialPasswordSecretName, initialPasswordSecretField, initialPassword)
 				if err != nil {
 					return err
 				}
 				adminAccount.PasswordHash = hashedPassword
 				adminAccount.PasswordMtime = &now
-				log.Info("Initialized admin password")
+				log.Debug("Initialized admin password")
 			} else {
-				log.Info("Admin password hash already exists, skipping password initialization")
+				log.Debug("Admin password hash already exists, skipping password initialization")
 			}
 			if adminAccount.PasswordMtime == nil || adminAccount.PasswordMtime.IsZero() {
 				adminAccount.PasswordMtime = &now
-				log.Info("Initialized admin mtime")
+				log.Debug("Initialized admin mtime")
 			} else {
-				log.Info("Admin mtime already exists, skipping mtime initialization")
+				log.Debug("Admin mtime already exists, skipping mtime initialization")
 			}
 		} else {
-			log.Info("admin disabled")
+			log.Debug("admin disabled")
 		}
 		return nil
 	})
@@ -2177,33 +2178,33 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 		return nil, err
 	}
 
-	log.Info("Loading existing settings for initialization")
+	log.Debug("Loading existing settings for initialization")
 	cdSettings, err := mgr.GetSettings()
 	if err != nil && !isIncompleteSettingsError(err) {
 		return nil, err
 	}
 	if cdSettings == nil {
-		log.Info("Settings not found, creating empty settings struct")
+		log.Debug("Settings not found, creating empty settings struct")
 		cdSettings = &ArgoCDSettings{}
 	} else {
-		log.Infof("Loaded existing settings (hasServerSignature=%t, hasCertificate=%t)", cdSettings.ServerSignature != nil, cdSettings.Certificate != nil)
+		log.Debugf("Loaded existing settings (hasServerSignature=%t, hasCertificate=%t)", cdSettings.ServerSignature != nil, cdSettings.Certificate != nil)
 	}
 	if cdSettings.ServerSignature == nil {
 		// set JWT signature
-		log.Info("Server signature missing, generating new signature")
+		log.Debug("Server signature missing, generating new signature")
 		signature, err := util.MakeSignature(32)
 		if err != nil {
 			return nil, fmt.Errorf("error setting JWT signature: %w", err)
 		}
 		cdSettings.ServerSignature = signature
-		log.Info("Initialized server signature")
+		log.Debug("Initialized server signature")
 	} else {
-		log.Info("Server signature already exists, skipping signature initialization")
+		log.Debug("Server signature already exists, skipping signature initialization")
 	}
 
 	if cdSettings.Certificate == nil && !insecureModeEnabled {
 		// generate TLS cert
-		log.Info("TLS certificate missing and insecure mode disabled, generating TLS certificate")
+		log.Debug("TLS certificate missing and insecure mode disabled, generating TLS certificate")
 		hosts := []string{
 			"localhost",
 			"athena-server",
@@ -2221,14 +2222,14 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 			return nil, err
 		}
 		cdSettings.Certificate = cert
-		log.Info("Initialized TLS certificate")
+		log.Debug("Initialized TLS certificate")
 	} else if cdSettings.Certificate != nil {
-		log.Info("TLS certificate already exists, skipping certificate initialization")
+		log.Debug("TLS certificate already exists, skipping certificate initialization")
 	} else {
-		log.Info("Insecure mode enabled, skipping TLS certificate initialization")
+		log.Debug("Insecure mode enabled, skipping TLS certificate initialization")
 	}
 
-	log.Info("Saving initialized signature and certificate settings")
+	log.Debug("Saving initialized signature and certificate settings")
 	err = mgr.saveSignatureAndCertificate(cdSettings)
 	if apierrors.IsConflict(err) {
 		// assume settings are initialized by another instance of api server
@@ -2236,7 +2237,7 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 		return mgr.GetSettings()
 	}
 	if err == nil {
-		log.Info("InitializeSettings completed successfully")
+		log.Debug("InitializeSettings completed successfully")
 	}
 	return cdSettings, nil
 }
@@ -2309,9 +2310,9 @@ func ReplaceStringSecret(val string, secretValues map[string]string) string {
 // 	return globalProjectSettings, nil
 // }
 
-// func (mgr *SettingsManager) GetNamespace() string {
-// 	return mgr.namespace
-// }
+func (mgr *SettingsManager) GetNamespace() string {
+	return mgr.namespace
+}
 
 // func (mgr *SettingsManager) GetResourceCustomLabels() ([]string, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
