@@ -19,37 +19,37 @@ import (
 
 // Component names
 const (
-	ApplicationController    = "argocd-application-controller"
-	ApplicationSetController = "argocd-applicationset-controller"
+	ApplicationController    = "athena-application-controller"
+	ApplicationSetController = "athena-applicationset-controller"
 )
 
 // Default service addresses and URLS of Argo CD internal services
 const (
 	// DefaultRepoServerAddr is the gRPC address of the Argo CD repo server
-	DefaultRepoServerAddr = "argocd-repo-server:8081"
+	DefaultRepoServerAddr = "athena-repo-server:8081"
 	// DefaultCommitServerAddr is the gRPC address of the Argo CD commit server
-	DefaultCommitServerAddr = "argocd-commit-server:8086"
+	DefaultCommitServerAddr = "athena-commit-server:8086"
 	// DefaultDexServerAddr is the HTTP address of the Dex OIDC server, which we run a reverse proxy against
-	DefaultDexServerAddr = "argocd-dex-server:5556"
+	DefaultDexServerAddr = "athena-dex-server:5556"
 	// DefaultRedisAddr is the default redis address
-	DefaultRedisAddr = "argocd-redis:6379"
+	DefaultRedisAddr = "athena-redis:6379"
 )
 
 // Kubernetes ConfigMap and Secret resource names which hold Argo CD settings
 const (
-	ArgoCDConfigMapName              = "argocd-cm"
-	ArgoCDSecretName                 = "argocd-secret"
-	ArgoCDNotificationsConfigMapName = "argocd-notifications-cm"
-	ArgoCDNotificationsSecretName    = "argocd-notifications-secret"
-	ArgoCDRBACConfigMapName          = "argocd-rbac-cm"
+	ArgoCDConfigMapName              = "athena-cm"
+	ArgoCDSecretName                 = "athena-secret"
+	ArgoCDNotificationsConfigMapName = "athena-notifications-cm"
+	ArgoCDNotificationsSecretName    = "athena-notifications-secret"
+	ArgoCDRBACConfigMapName          = "athena-rbac-cm"
 	// ArgoCDKnownHostsConfigMapName contains SSH known hosts data for connecting repositories. Will get mounted as volume to pods
-	ArgoCDKnownHostsConfigMapName = "argocd-ssh-known-hosts-cm"
+	ArgoCDKnownHostsConfigMapName = "athena-ssh-known-hosts-cm"
 	// ArgoCDTLSCertsConfigMapName contains TLS certificate data for connecting repositories. Will get mounted as volume to pods
-	ArgoCDTLSCertsConfigMapName = "argocd-tls-certs-cm"
-	ArgoCDGPGKeysConfigMapName  = "argocd-gpg-keys-cm"
+	ArgoCDTLSCertsConfigMapName = "athena-tls-certs-cm"
+	ArgoCDGPGKeysConfigMapName  = "athena-gpg-keys-cm"
 	// ArgoCDAppControllerShardConfigMapName contains the application controller to shard mapping
-	ArgoCDAppControllerShardConfigMapName = "argocd-app-controller-shard-cm"
-	ArgoCDCmdParamsConfigMapName          = "argocd-cmd-params-cm"
+	ArgoCDAppControllerShardConfigMapName = "athena-app-controller-shard-cm"
+	ArgoCDCmdParamsConfigMapName          = "athena-cmd-params-cm"
 )
 
 // Some default configurables
@@ -58,7 +58,7 @@ const (
 	DefaultRepoType        = "git"
 )
 
-// Default listener ports for ArgoCD components
+// Default listener ports for Athena components
 const (
 	DefaultPortAPIServer              = 8080
 	DefaultPortRepoServer             = 8081
@@ -69,7 +69,7 @@ const (
 	DefaultPortCommitServerMetrics    = 8087
 )
 
-// DefaultAddressAPIServer for ArgoCD components
+// DefaultAddressAPIServer for Athena components
 const (
 	DefaultAddressAdminDashboard      = "localhost"
 	DefaultAddressAPIServer           = "0.0.0.0"
@@ -93,9 +93,9 @@ const (
 	// DefaultAppConfigPath is the Default path to repo server TLS endpoint config
 	DefaultAppConfigPath = "/app/config"
 	// DefaultPluginSockFilePath is the Default path to cmp server plugin socket file
-	DefaultPluginSockFilePath = "/home/argocd/cmp-server/plugins"
+	DefaultPluginSockFilePath = "/home/athena/cmp-server/plugins"
 	// DefaultPluginConfigFilePath is the Default path to cmp server plugin configuration file
-	DefaultPluginConfigFilePath = "/home/argocd/cmp-server/config"
+	DefaultPluginConfigFilePath = "/home/athena/cmp-server/config"
 	// PluginConfigFileName is the Plugin Config File is a ConfigManagementPlugin manifest located inside the plugin container
 	PluginConfigFileName = "plugin.yaml"
 )
@@ -112,13 +112,13 @@ const (
 	// ArgoCDAdminUsername is the username of the 'admin' user
 	ArgoCDAdminUsername = "admin"
 	// ArgoCDUserAgentName is the default user-agent name used by the gRPC API client library and grpc-gateway
-	ArgoCDUserAgentName = "argocd-client"
-	// ArgoCDSSAManager is the default argocd manager name used by server-side apply syncs
-	ArgoCDSSAManager = "argocd-controller"
+	ArgoCDUserAgentName = "athena-client"
+	// ArgoCDSSAManager is the default athena manager name used by server-side apply syncs
+	ArgoCDSSAManager = "athena-controller"
 	// AuthCookieName is the HTTP cookie name where we store our auth token
-	AuthCookieName = "argocd.token"
+	AuthCookieName = "athena.token"
 	// StateCookieName is the HTTP cookie name that holds temporary nonce tokens for CSRF protection
-	StateCookieName = "argocd.oauthstate"
+	StateCookieName = "athena.oauthstate"
 	// StateCookieMaxAge is the maximum age of the oauth state cookie
 	StateCookieMaxAge = time.Minute * 5
 
@@ -160,11 +160,11 @@ const (
 	// ArgoCDClientAppName is name of the Oauth client app used when registering our web app to dex
 	ArgoCDClientAppName = "Argo CD"
 	// ArgoCDClientAppID is the Oauth client ID we will use when registering our app to dex
-	ArgoCDClientAppID = "argo-cd"
+	ArgoCDClientAppID = "athena"
 	// ArgoCDCLIClientAppName is name of the Oauth client app used when registering our CLI to dex
 	ArgoCDCLIClientAppName = "Argo CD CLI"
 	// ArgoCDCLIClientAppID is the Oauth client ID we will use when registering our CLI to dex
-	ArgoCDCLIClientAppID = "argo-cd-cli"
+	ArgoCDCLIClientAppID = "athena-cli"
 	// DexFederatedScope allows to receive the federated_claims from Dex. https://dexidp.io/docs/configuration/custom-scopes-claims-clients/
 	DexFederatedScope = "federated:id"
 )
@@ -177,13 +177,13 @@ const (
 	// LabelKeyAppName is the label key to use to uniquely identify the name of the Kubernetes application
 	LabelKeyAppName = "app.kubernetes.io/name"
 	// LabelKeyAutoLabelClusterInfo if set to true will automatically add extra labels from the cluster info (currently it only adds a k8s version label)
-	LabelKeyAutoLabelClusterInfo = "argocd.argoproj.io/auto-label-cluster-info"
+	LabelKeyAutoLabelClusterInfo = "athena.useryege.io/auto-label-cluster-info"
 	// LabelKeyLegacyApplicationName is the legacy label (v0.10 and below) and is superseded by 'app.kubernetes.io/instance'
-	LabelKeyLegacyApplicationName = "applications.argoproj.io/app-name"
-	// LabelKeySecretType contains the type of argocd secret (currently: 'cluster', 'repository', 'repo-config' or 'repo-creds')
-	LabelKeySecretType = "argocd.argoproj.io/secret-type"
+	LabelKeyLegacyApplicationName = "applications.useryege.io/app-name"
+	// LabelKeySecretType contains the type of athena secret (currently: 'cluster', 'repository', 'repo-config' or 'repo-creds')
+	LabelKeySecretType = "athena.useryege.io/secret-type"
 	// LabelKeyClusterKubernetesVersion contains the kubernetes version of the cluster secret if it has been enabled
-	LabelKeyClusterKubernetesVersion = "argocd.argoproj.io/kubernetes-version"
+	LabelKeyClusterKubernetesVersion = "athena.useryege.io/kubernetes-version"
 	// LabelValueSecretTypeCluster indicates a secret type of cluster
 	LabelValueSecretTypeCluster = "cluster"
 	// LabelValueSecretTypeRepository indicates a secret type of repository
@@ -198,41 +198,41 @@ const (
 	LabelValueSecretTypeSCMCreds = "scm-creds"
 
 	// AnnotationKeyAppInstance is the Argo CD application name is used as the instance name
-	AnnotationKeyAppInstance = "argocd.argoproj.io/tracking-id"
-	AnnotationInstallationID = "argocd.argoproj.io/installation-id"
+	AnnotationKeyAppInstance = "athena.useryege.io/tracking-id"
+	AnnotationInstallationID = "athena.useryege.io/installation-id"
 
 	// AnnotationCompareOptions is a comma-separated list of options for comparison
-	AnnotationCompareOptions = "argocd.argoproj.io/compare-options"
+	AnnotationCompareOptions = "athena.useryege.io/compare-options"
 
 	// AnnotationClientSideApplyMigrationManager specifies a custom field manager for client-side apply migration
-	AnnotationClientSideApplyMigrationManager = "argocd.argoproj.io/client-side-apply-migration-manager"
+	AnnotationClientSideApplyMigrationManager = "athena.useryege.io/client-side-apply-migration-manager"
 
 	// AnnotationIgnoreHealthCheck when set on an Application's immediate child indicates that its health check
 	// can be disregarded.
-	AnnotationIgnoreHealthCheck = "argocd.argoproj.io/ignore-healthcheck"
+	AnnotationIgnoreHealthCheck = "athena.useryege.io/ignore-healthcheck"
 
 	// AnnotationKeyManagedBy is annotation name which indicates that k8s resource is managed by an application.
 	AnnotationKeyManagedBy = "managed-by"
 	// AnnotationValueManagedByArgoCD is a 'managed-by' annotation value for resources managed by Argo CD
-	AnnotationValueManagedByArgoCD = "argocd.argoproj.io"
+	AnnotationValueManagedByArgoCD = "athena.useryege.io"
 
 	// AnnotationKeyLinkPrefix tells the UI to add an external link icon to the application node
 	// that links to the value given in the annotation.
-	// The annotation key must be followed by a unique identifier. Ex: link.argocd.argoproj.io/dashboard
+	// The annotation key must be followed by a unique identifier. Ex: link.athena.useryege.io/dashboard
 	// It's valid to have multiple annotations that match the prefix.
 	// Values can simply be a url or they can have
 	// an optional link title separated by a "|"
 	// Ex: "http://grafana.example.com/d/yu5UH4MMz/deployments"
 	// Ex: "Go to Dashboard|http://grafana.example.com/d/yu5UH4MMz/deployments"
-	AnnotationKeyLinkPrefix = "link.argocd.argoproj.io/"
+	AnnotationKeyLinkPrefix = "link.athena.useryege.io/"
 	// AnnotationKeyIgnoreDefaultLinks tells the Application to not add autogenerated links from this object into its externalURLs
 	// This applies to ingress objects and takes effect if set to "true"
 	// This only disables the default behavior of generating links based on the ingress spec, and does not disable AnnotationKeyLinkPrefix
-	AnnotationKeyIgnoreDefaultLinks = "argocd.argoproj.io/ignore-default-links"
+	AnnotationKeyIgnoreDefaultLinks = "athena.useryege.io/ignore-default-links"
 
 	// AnnotationKeyAppSkipReconcile tells the Application to skip the Application controller reconcile.
 	// Skip reconcile when the value is "true" or any other string values that can be strconv.ParseBool() to be true.
-	AnnotationKeyAppSkipReconcile = "argocd.argoproj.io/skip-reconcile"
+	AnnotationKeyAppSkipReconcile = "athena.useryege.io/skip-reconcile"
 
 	// LabelKeyComponentRepoServer is the label key to identify the component as repo-server
 	LabelKeyComponentRepoServer = "app.kubernetes.io/component"
@@ -243,90 +243,90 @@ const (
 // Environment variables for tuning and debugging Argo CD
 const (
 	// EnvVarSSODebug is an environment variable to enable additional OAuth debugging in the API server
-	EnvVarSSODebug = "ARGOCD_SSO_DEBUG"
+	EnvVarSSODebug = "ATHENA_SSO_DEBUG"
 	// EnvVarRBACDebug is an environment variable to enable additional RBAC debugging in the API server
-	EnvVarRBACDebug = "ARGOCD_RBAC_DEBUG"
+	EnvVarRBACDebug = "ATHENA_RBAC_DEBUG"
 	// EnvVarSSHDataPath overrides the location where SSH known hosts for repo access data is stored
-	EnvVarSSHDataPath = "ARGOCD_SSH_DATA_PATH"
+	EnvVarSSHDataPath = "ATHENA_SSH_DATA_PATH"
 	// EnvVarTLSDataPath overrides the location where TLS certificate for repo access data is stored
-	EnvVarTLSDataPath = "ARGOCD_TLS_DATA_PATH"
+	EnvVarTLSDataPath = "ATHENA_TLS_DATA_PATH"
 	// EnvGitAttemptsCount specifies number of git remote operations attempts count
-	EnvGitAttemptsCount = "ARGOCD_GIT_ATTEMPTS_COUNT"
+	EnvGitAttemptsCount = "ATHENA_GIT_ATTEMPTS_COUNT"
 	// EnvGitRetryMaxDuration specifies max duration of git remote operation retry
-	EnvGitRetryMaxDuration = "ARGOCD_GIT_RETRY_MAX_DURATION"
+	EnvGitRetryMaxDuration = "ATHENA_GIT_RETRY_MAX_DURATION"
 	// EnvGitRetryDuration specifies duration of git remote operation retry
-	EnvGitRetryDuration = "ARGOCD_GIT_RETRY_DURATION"
+	EnvGitRetryDuration = "ATHENA_GIT_RETRY_DURATION"
 	// EnvGitRetryFactor specifies factor of git remote operation retry
-	EnvGitRetryFactor = "ARGOCD_GIT_RETRY_FACTOR"
+	EnvGitRetryFactor = "ATHENA_GIT_RETRY_FACTOR"
 	// EnvGitSubmoduleEnabled overrides git submodule support, true by default
-	EnvGitSubmoduleEnabled = "ARGOCD_GIT_MODULES_ENABLED"
-	// EnvGnuPGHome is the path to ArgoCD's GnuPG keyring for signature verification
-	EnvGnuPGHome = "ARGOCD_GNUPGHOME"
+	EnvGitSubmoduleEnabled = "ATHENA_GIT_MODULES_ENABLED"
+	// EnvGnuPGHome is the path to Athena's GnuPG keyring for signature verification
+	EnvGnuPGHome = "ATHENA_GNUPGHOME"
 	// EnvWatchAPIBufferSize is the buffer size used to transfer K8S watch events to watch API consumer
-	EnvWatchAPIBufferSize = "ARGOCD_WATCH_API_BUFFER_SIZE"
+	EnvWatchAPIBufferSize = "ATHENA_WATCH_API_BUFFER_SIZE"
 	// EnvPauseGenerationAfterFailedAttempts will pause manifest generation after the specified number of failed generation attempts
-	EnvPauseGenerationAfterFailedAttempts = "ARGOCD_PAUSE_GEN_AFTER_FAILED_ATTEMPTS"
+	EnvPauseGenerationAfterFailedAttempts = "ATHENA_PAUSE_GEN_AFTER_FAILED_ATTEMPTS"
 	// EnvPauseGenerationMinutes pauses manifest generation for the specified number of minutes, after sufficient manifest generation failures
-	EnvPauseGenerationMinutes = "ARGOCD_PAUSE_GEN_MINUTES"
+	EnvPauseGenerationMinutes = "ATHENA_PAUSE_GEN_MINUTES"
 	// EnvPauseGenerationRequests pauses manifest generation for the specified number of requests, after sufficient manifest generation failures
-	EnvPauseGenerationRequests = "ARGOCD_PAUSE_GEN_REQUESTS"
+	EnvPauseGenerationRequests = "ATHENA_PAUSE_GEN_REQUESTS"
 	// EnvControllerReplicas is the number of controller replicas
-	EnvControllerReplicas = "ARGOCD_CONTROLLER_REPLICAS"
+	EnvControllerReplicas = "ATHENA_CONTROLLER_REPLICAS"
 	// EnvControllerHeartbeatTime will update the heartbeat for application controller to claim shard
-	EnvControllerHeartbeatTime = "ARGOCD_CONTROLLER_HEARTBEAT_TIME"
+	EnvControllerHeartbeatTime = "ATHENA_CONTROLLER_HEARTBEAT_TIME"
 	// EnvControllerShard is the shard number that should be handled by controller
-	EnvControllerShard = "ARGOCD_CONTROLLER_SHARD"
+	EnvControllerShard = "ATHENA_CONTROLLER_SHARD"
 	// EnvControllerShardingAlgorithm is the distribution sharding algorithm to be used: legacy or round-robin
-	EnvControllerShardingAlgorithm = "ARGOCD_CONTROLLER_SHARDING_ALGORITHM"
+	EnvControllerShardingAlgorithm = "ATHENA_CONTROLLER_SHARDING_ALGORITHM"
 	// EnvEnableDynamicClusterDistribution enables dynamic sharding (ALPHA)
-	EnvEnableDynamicClusterDistribution = "ARGOCD_ENABLE_DYNAMIC_CLUSTER_DISTRIBUTION"
+	EnvEnableDynamicClusterDistribution = "ATHENA_ENABLE_DYNAMIC_CLUSTER_DISTRIBUTION"
 	// EnvEnableGRPCTimeHistogramEnv enables gRPC metrics collection
-	EnvEnableGRPCTimeHistogramEnv = "ARGOCD_ENABLE_GRPC_TIME_HISTOGRAM"
+	EnvEnableGRPCTimeHistogramEnv = "ATHENA_ENABLE_GRPC_TIME_HISTOGRAM"
 	// EnvGithubAppCredsExpirationDuration controls the caching of Github app credentials. This value is in minutes (default: 60)
-	EnvGithubAppCredsExpirationDuration = "ARGOCD_GITHUB_APP_CREDS_EXPIRATION_DURATION"
+	EnvGithubAppCredsExpirationDuration = "ATHENA_GITHUB_APP_CREDS_EXPIRATION_DURATION"
 	// EnvHelmIndexCacheDuration controls how the helm repository index file is cached for (default: 0)
-	EnvHelmIndexCacheDuration = "ARGOCD_HELM_INDEX_CACHE_DURATION"
+	EnvHelmIndexCacheDuration = "ATHENA_HELM_INDEX_CACHE_DURATION"
 	// EnvAppConfigPath allows to override the configuration path for repo server
-	EnvAppConfigPath = "ARGOCD_APP_CONF_PATH"
+	EnvAppConfigPath = "ATHENA_APP_CONF_PATH"
 	// EnvAuthToken is the environment variable name for the auth token used by the CLI
-	EnvAuthToken = "ARGOCD_AUTH_TOKEN"
+	EnvAuthToken = "ATHENA_AUTH_TOKEN"
 	// EnvLogFormat log format that is defined by `--logformat` option
-	EnvLogFormat = "ARGOCD_LOG_FORMAT"
+	EnvLogFormat = "ATHENA_LOG_FORMAT"
 	// EnvLogLevel log level that is defined by `--loglevel` option
-	EnvLogLevel = "ARGOCD_LOG_LEVEL"
+	EnvLogLevel = "ATHENA_LOG_LEVEL"
 	// EnvLogFormatEnableFullTimestamp enables the FullTimestamp option in logs
-	EnvLogFormatEnableFullTimestamp = "ARGOCD_LOG_FORMAT_ENABLE_FULL_TIMESTAMP"
+	EnvLogFormatEnableFullTimestamp = "ATHENA_LOG_FORMAT_ENABLE_FULL_TIMESTAMP"
 	// EnvLogFormatTimestamp is the timestamp format used in logs
-	EnvLogFormatTimestamp = "ARGOCD_LOG_FORMAT_TIMESTAMP"
+	EnvLogFormatTimestamp = "ATHENA_LOG_FORMAT_TIMESTAMP"
 	// EnvMaxCookieNumber max number of chunks a cookie can be broken into
-	EnvMaxCookieNumber = "ARGOCD_MAX_COOKIE_NUMBER"
+	EnvMaxCookieNumber = "ATHENA_MAX_COOKIE_NUMBER"
 	// EnvPluginSockFilePath allows to override the pluginSockFilePath for repo server and cmp server
-	EnvPluginSockFilePath = "ARGOCD_PLUGINSOCKFILEPATH"
+	EnvPluginSockFilePath = "ATHENA_PLUGINSOCKFILEPATH"
 	// EnvCMPChunkSize defines the chunk size in bytes used when sending files to the cmp server
-	EnvCMPChunkSize = "ARGOCD_CMP_CHUNK_SIZE"
+	EnvCMPChunkSize = "ATHENA_CMP_CHUNK_SIZE"
 	// EnvCMPWorkDir defines the full path of the work directory used by the CMP server
-	EnvCMPWorkDir = "ARGOCD_CMP_WORKDIR"
+	EnvCMPWorkDir = "ATHENA_CMP_WORKDIR"
 	// EnvGPGDataPath overrides the location where GPG keyring for signature verification is stored
-	EnvGPGDataPath = "ARGOCD_GPG_DATA_PATH"
+	EnvGPGDataPath = "ATHENA_GPG_DATA_PATH"
 	// EnvServer is the server address of the Argo CD API server.
-	EnvServer = "ARGOCD_SERVER"
+	EnvServer = "ATHENA_SERVER"
 	// EnvServerName is the name of the Argo CD server component, as specified by the value under the LabelKeyAppName label key.
-	EnvServerName = "ARGOCD_SERVER_NAME"
+	EnvServerName = "ATHENA_SERVER_NAME"
 	// EnvRepoServerName is the name of the Argo CD repo server component, as specified by the value under the LabelKeyAppName label key.
-	EnvRepoServerName = "ARGOCD_REPO_SERVER_NAME"
+	EnvRepoServerName = "ATHENA_REPO_SERVER_NAME"
 	// EnvAppControllerName is the name of the Argo CD application controller component, as specified by the value under the LabelKeyAppName label key.
-	EnvAppControllerName = "ARGOCD_APPLICATION_CONTROLLER_NAME"
+	EnvAppControllerName = "ATHENA_APPLICATION_CONTROLLER_NAME"
 	// EnvRedisName is the name of the Argo CD redis component, as specified by the value under the LabelKeyAppName label key.
-	EnvRedisName = "ARGOCD_REDIS_NAME"
+	EnvRedisName = "ATHENA_REDIS_NAME"
 	// EnvRedisHaProxyName is the name of the Argo CD Redis HA proxy component, as specified by the value under the LabelKeyAppName label key.
-	EnvRedisHaProxyName = "ARGOCD_REDIS_HAPROXY_NAME"
+	EnvRedisHaProxyName = "ATHENA_REDIS_HAPROXY_NAME"
 	// EnvGRPCKeepAliveMin defines the GRPCKeepAliveEnforcementMinimum, used in the grpc.KeepaliveEnforcementPolicy. Expects a "Duration" format (e.g. 10s).
-	EnvGRPCKeepAliveMin = "ARGOCD_GRPC_KEEP_ALIVE_MIN"
+	EnvGRPCKeepAliveMin = "ATHENA_GRPC_KEEP_ALIVE_MIN"
 	// EnvServerSideDiff defines the env var used to enable ServerSide Diff feature.
 	// If defined, value must be "true" or "false".
-	EnvServerSideDiff = "ARGOCD_APPLICATION_CONTROLLER_SERVER_SIDE_DIFF"
+	EnvServerSideDiff = "ATHENA_APPLICATION_CONTROLLER_SERVER_SIDE_DIFF"
 	// EnvGRPCMaxSizeMB is the environment variable to look for a max GRPC message size
-	EnvGRPCMaxSizeMB = "ARGOCD_GRPC_MAX_SIZE_MB"
+	EnvGRPCMaxSizeMB = "ATHENA_GRPC_MAX_SIZE_MB"
 )
 
 // Config Management Plugin related constants
@@ -337,7 +337,7 @@ const (
 	// DefaultCMPWorkDirName defines the work directory name used by the cmp-server
 	DefaultCMPWorkDirName = "_cmp_server"
 
-	ConfigMapPluginDeprecationWarning = "argocd-cm plugins are deprecated, and support will be removed in v2.7. Upgrade your plugin to be installed via sidecar. https://argo-cd.readthedocs.io/en/stable/user-guide/config-management-plugins/"
+	// ConfigMapPluginDeprecationWarning = "athena-cm plugins are deprecated, and support will be removed in v2.7. Upgrade your plugin to be installed via sidecar. https://athena.readthedocs.io/en/stable/user-guide/config-management-plugins/"
 )
 
 const (
@@ -368,11 +368,11 @@ const (
 // Constants represent the pod selector labels of the Argo CD component names. These values are determined by the
 // installation manifests.
 const (
-	DefaultServerName                = "argocd-server"
-	DefaultRepoServerName            = "argocd-repo-server"
-	DefaultApplicationControllerName = "argocd-application-controller"
-	DefaultRedisName                 = "argocd-redis"
-	DefaultRedisHaProxyName          = "argocd-redis-ha-haproxy"
+	DefaultServerName                = "athena-server"
+	DefaultRepoServerName            = "athena-repo-server"
+	DefaultApplicationControllerName = "athena-application-controller"
+	DefaultRedisName                 = "athena-redis"
+	DefaultRedisHaProxyName          = "athena-redis-ha-haproxy"
 )
 
 // GetGnuPGHomePath retrieves the path to use for GnuPG home directory, which is either taken from GNUPGHOME environment or a default value
@@ -418,7 +418,7 @@ func GetCMPWorkDir() string {
 
 const (
 	// AnnotationApplicationSetRefresh is an annotation that is added when an ApplicationSet is requested to be refreshed by a webhook. The ApplicationSet controller will remove this annotation at the end of reconciliation.
-	AnnotationApplicationSetRefresh = "argocd.argoproj.io/application-set-refresh"
+	AnnotationApplicationSetRefresh = "athena.useryege.io/application-set-refresh"
 )
 
 // gRPC settings
@@ -466,9 +466,9 @@ var PermissionDeniedAPIError = status.Error(codes.PermissionDenied, "permission 
 
 // Redis password consts
 const (
-	// RedisInitialCredentials is the name for the argocd kubernetes secret which will have the redis password
-	RedisInitialCredentials = "argocd-redis"
-	// RedisInitialCredentialsKey is the key for the argocd kubernetes secret that maps to the redis password
+	// RedisInitialCredentials is the name for the athena kubernetes secret which will have the redis password
+	RedisInitialCredentials = "athena-redis"
+	// RedisInitialCredentialsKey is the key for the athena kubernetes secret that maps to the redis password
 	RedisInitialCredentialsKey = "auth"
 )
 
