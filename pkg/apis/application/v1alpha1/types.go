@@ -1805,13 +1805,13 @@ type Application struct {
 // 	Application Application `json:"application" protobuf:"bytes,2,opt,name=application"`
 // }
 
-// // ApplicationList is list of Application resources
-// // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// type ApplicationList struct {
-// 	metav1.TypeMeta `json:",inline"`
-// 	metav1.ListMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
-// 	Items           []Application `json:"items" protobuf:"bytes,2,rep,name=items"`
-// }
+// ApplicationList is list of Application resources
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type ApplicationList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
+	Items           []Application `json:"items" protobuf:"bytes,2,rep,name=items"`
+}
 
 // // ComponentParameter contains information about component parameter value
 // type ComponentParameter struct {

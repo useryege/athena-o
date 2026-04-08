@@ -669,7 +669,7 @@ func (mgr *SettingsManager) updateSecret(callback func(*corev1.Secret) error) er
 		}
 		argoCDSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: common.AthenaSecretName,
+				Name: common.ArgoCDSecretName,
 			},
 			Data: make(map[string][]byte),
 		}
@@ -707,7 +707,7 @@ func (mgr *SettingsManager) updateConfigMap(callback func(*corev1.ConfigMap) err
 		}
 		argoCDCM = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: common.AthenaConfigMapName,
+				Name: common.ArgoCDConfigMapName,
 			},
 			Data: make(map[string]string),
 		}
@@ -737,7 +737,7 @@ func (mgr *SettingsManager) updateConfigMap(callback func(*corev1.ConfigMap) err
 }
 
 func (mgr *SettingsManager) getConfigMap() (*corev1.ConfigMap, error) {
-	return mgr.GetConfigMapByName(common.AthenaConfigMapName)
+	return mgr.GetConfigMapByName(common.ArgoCDConfigMapName)
 }
 
 // Returns the ConfigMap with the given name from the cluster.
@@ -760,7 +760,7 @@ func (mgr *SettingsManager) GetConfigMapByName(configMapName string) (*corev1.Co
 }
 
 func (mgr *SettingsManager) getSecret() (*corev1.Secret, error) {
-	return mgr.GetSecretByName(common.AthenaSecretName)
+	return mgr.GetSecretByName(common.ArgoCDSecretName)
 }
 
 // GetSecretByName returns the Secret with the given name from the cluster.

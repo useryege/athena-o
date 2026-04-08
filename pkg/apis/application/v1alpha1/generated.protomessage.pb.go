@@ -9,6 +9,8 @@ func (*AWSAuthConfig) ProtoMessage() {}
 
 func (*Application) ProtoMessage() {}
 
+func (*ApplicationList) ProtoMessage() {}
+
 func (*Cluster) ProtoMessage() {}
 
 func (*ClusterCacheInfo) ProtoMessage() {}
