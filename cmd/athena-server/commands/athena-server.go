@@ -34,7 +34,7 @@ const (
 	cliName = "athena-server"
 )
 
-// NewCommand returns a new instance of an argocd command
+// NewCommand returns a new instance of an athena command
 func NewCommand() *cobra.Command {
 	var (
 		insecure        bool

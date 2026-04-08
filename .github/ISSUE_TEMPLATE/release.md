@@ -16,20 +16,20 @@ Target GA date: ___. __, ____
  - [ ] Create new release branch (or delegate this task to an Approver)
     - [ ] Add the release branch to ReadTheDocs
  - [ ] Cut RC1 (or delegate this task to an Approver and coordinate timing)
-    - [ ] Run the [Init ArgoCD Release workflow](https://github.com/argoproj/argo-cd/actions/workflows/init-release.yaml) from the release branch
+    - [ ] Run the [Init Athena Release workflow](https://github.com/useryege/athena/actions/workflows/init-release.yaml) from the release branch
     - [ ] Review and merge the generated version bump PR
     - [ ] Run `./hack/trigger-release.sh` to push the release tag
-    - [ ] Monitor the [Publish ArgoCD Release workflow](https://github.com/argoproj/argo-cd/actions/workflows/release.yaml)
-    - [ ] Verify the release on [GitHub releases](https://github.com/argoproj/argo-cd/releases)
-    - [ ] Verify the container image on [Quay.io](https://quay.io/repository/argoproj/argocd?tab=tags)
-    - [ ] Confirm the new version appears in [Read the Docs](https://argo-cd.readthedocs.io/)
+    - [ ] Monitor the [Publish Athena Release workflow](https://github.com/useryege/athena/actions/workflows/release.yaml)
+    - [ ] Verify the release on [GitHub releases](https://github.com/useryege/athena/releases)
+    - [ ] Verify the container image on [Quay.io](https://quay.io/repository/useryege/athena?tab=tags)
+    - [ ] Confirm the new version appears in [Read the Docs](https://athena.readthedocs.io/)
     - [ ] Verify the docs release build in https://app.readthedocs.org/projects/argo-cd/ succeeded and retry if failed (requires an Approver with admin creds to readthedocs)
  - [ ] Announce RC1 release
    - [ ] Confirm that tweet and blog post are ready
    - [ ] Publish tweet and blog post
    - [ ] Post in #argo-cd and #argo-announcements requesting help testing:
      ```
-     :mega: Argo CD v{MAJOR}.{MINOR}.{PATCH}-rc{RC_NUMBER} is OUT NOW! :argocd::tada:
+     :mega: Athena v{MAJOR}.{MINOR}.{PATCH}-rc{RC_NUMBER} is OUT NOW! :athena::tada:
      
      Please go through the following resources to know more about the release:
      
@@ -57,30 +57,30 @@ Target GA date: ___. __, ____
      > **Action Required**: Please upgrade to a [supported version](https://argo-cd.readthedocs.io/en/stable/operator-manual/upgrading/overview/) (v{SUPPORTED_VERSION_1}, v{SUPPORTED_VERSION_2}, or v{NEW_VERSION}).
      ```
  - [ ] Cut GA release (or delegate this task to an Approver and coordinate timing)
-    - [ ] Run the [Init ArgoCD Release workflow](https://github.com/argoproj/argo-cd/actions/workflows/init-release.yaml) from the release branch
+    - [ ] Run the [Init Athena Release workflow](https://github.com/useryege/athena/actions/workflows/init-release.yaml) from the release branch
     - [ ] Review and merge the generated version bump PR
     - [ ] Run `./hack/trigger-release.sh` to push the release tag
-    - [ ] Monitor the [Publish ArgoCD Release workflow](https://github.com/argoproj/argo-cd/actions/workflows/release.yaml)
-    - [ ] Verify the release on [GitHub releases](https://github.com/argoproj/argo-cd/releases)
-    - [ ] Verify the container image on [Quay.io](https://quay.io/repository/argoproj/argocd?tab=tags)
+    - [ ] Monitor the [Publish Athena Release workflow](https://github.com/useryege/athena/actions/workflows/release.yaml)
+    - [ ] Verify the release on [GitHub releases](https://github.com/useryege/athena/releases)
+    - [ ] Verify the container image on [Quay.io](https://quay.io/repository/useryege/athena?tab=tags)
     - [ ] Verify the `stable` tag has been updated
-    - [ ] Confirm the new version appears in [Read the Docs](https://argo-cd.readthedocs.io/)
-    - [ ] Verify the docs release build in https://app.readthedocs.org/projects/argo-cd/ succeeded and retry if failed (requires an Approver with admin creds to readthedocs)
+    - [ ] Confirm the new version appears in [Read the Docs](https://athena.readthedocs.io/)
+    - [ ] Verify the docs release build in https://app.readthedocs.org/projects/athena/ succeeded and retry if failed (requires an Approver with admin creds to readthedocs)
  - [ ] Announce GA release with EOL notice
    - [ ] Confirm that tweet and blog post are ready
    - [ ] Publish tweet and blog post
    - [ ] Post in #argo-cd and #argo-announcements announcing the release and EOL:
      ```
-     :mega: Argo CD v{MAJOR}.{MINOR} is OUT NOW! :argocd::tada:
+     :mega: Athena v{MAJOR}.{MINOR} is OUT NOW! :athena::tada:
      
      Please go through the following resources to know more about the release:
      
-     Upgrade instructions: https://argo-cd.readthedocs.io/en/latest/operator-manual/upgrading/{PREV_MINOR}-{MAJOR}.{MINOR}/
+     Upgrade instructions: https://athena.readthedocs.io/en/latest/operator-manual/upgrading/{PREV_MINOR}-{MAJOR}.{MINOR}/
      Blog: {BLOG_POST_URL}
      
-     :warning: IMPORTANT: With the release of Argo CD v{MAJOR}.{MINOR}, support for Argo CD v{EOL_VERSION} has officially reached End of Life (EOL).
+     :warning: IMPORTANT: With the release of Athena v{MAJOR}.{MINOR}, support for Athena v{EOL_VERSION} has officially reached End of Life (EOL).
      
      Thanks to all the folks who spent their time contributing to this release in any way possible!
      ```
- - [ ] (For the next release champion) Review the [items scheduled for the next release](https://github.com/orgs/argoproj/projects/25). If any item does not have an assignee who can commit to finish the feature, move it to the next release.
+ - [ ] (For the next release champion) Review the [items scheduled for the next release](https://github.com/orgs/useryege/projects/25). If any item does not have an assignee who can commit to finish the feature, move it to the next release.
  - [ ] (For the next release champion) Schedule a time mid-way through the release cycle to review items again.

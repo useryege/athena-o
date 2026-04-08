@@ -6,13 +6,13 @@ labels: ['bug', 'triage/pending']
 assignees: ''
 ---
 
-<!-- If you are trying to resolve an environment-specific issue or have a one-off question about the edge case that does not require a feature then please consider asking a question in argocd slack [channel](https://argoproj.github.io/community/join-slack). -->
+<!-- If you are trying to resolve an environment-specific issue or have a one-off question about the edge case that does not require a feature then please consider asking a question in athena slack [channel](https://athena.readthedocs.io/en/stable/community/join-slack). -->
 
 Checklist:
 
-- [ ] I've searched in the docs and FAQ for my answer: https://bit.ly/argocd-faq.
+- [ ] I've searched in the docs and FAQ for my answer: https://bit.ly/athena-faq.
 - [ ] I've included steps to reproduce the bug.
-- [ ] I've pasted the output of `argocd version`.
+- [ ] I've pasted the output of `athena version`.
 
 **Describe the bug**
 
@@ -33,7 +33,7 @@ Checklist:
 **Version**
 
 ```shell
-Paste the output from `argocd version` here.
+Paste the output from `athena version` here.
 ```
 
 **Logs**
