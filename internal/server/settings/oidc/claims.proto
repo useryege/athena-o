@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package github.com.useryege.athena.server.settings.oidc;
+
+option go_package = "github.com/useryege/athena/internal/server/settings/oidc";
+
+message Claim {
+  bool essential = 1;
+  string value = 2;
+  repeated string values = 3;
+}

@@ -5,11 +5,191 @@ syntax = "proto2";
 
 package github.com.useryege.athena.pkg.apis.application.v1alpha1;
 
+import "k8s.io/apimachinery/pkg/apis/meta/v1/generated.proto";
+
 // Package-wide variables from generator "generated".
 option go_package = "github.com/useryege/athena/pkg/apis/application/v1alpha1";
 
-// Application is a minimal API type used to bootstrap protobuf generation.
+// AWSAuthConfig is an AWS IAM authentication configuration
+message AWSAuthConfig {
+  // ClusterName contains AWS cluster name
+  optional string clusterName = 1;
+
+  // RoleARN contains optional role ARN. If set then AWS IAM Authenticator assume a role to perform cluster operations instead of the default AWS credential provider chain.
+  optional string roleARN = 2;
+
+  // Profile contains optional role ARN. If set then AWS IAM Authenticator uses the profile to perform cluster operations instead of the default AWS credential provider chain.
+  optional string profile = 3;
+}
+
+// Application is a definition of Application resource.
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:path=applications,shortName=app;apps
+// +kubebuilder:printcolumn:name="Sync Status",type=string,JSONPath=`.status.sync.status`
+// +kubebuilder:printcolumn:name="Health Status",type=string,JSONPath=`.status.health.status`
+// +kubebuilder:printcolumn:name="Revision",type=string,JSONPath=`.status.sync.revision`,priority=10
+// +kubebuilder:printcolumn:name="Project",type=string,JSONPath=`.spec.project`,priority=10
 message Application {
-  optional string name = 1;
+  // Common: shared with ApplicationSet
+  optional .k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
+}
+
+// Cluster is the definition of a cluster resource
+message Cluster {
+  // Server is the API server URL of the Kubernetes cluster
+  optional string server = 1;
+
+  // Name of the cluster. If omitted, will use the server address
+  optional string name = 2;
+
+  // Config holds cluster information for connecting to a cluster
+  optional ClusterConfig config = 3;
+
+  // Deprecated: use Info.ConnectionState field instead.
+  // ConnectionState contains information about cluster connection state
+  optional ConnectionState connectionState = 4;
+
+  // Deprecated: use Info.ServerVersion field instead.
+  // The server version
+  optional string serverVersion = 5;
+
+  // Holds list of namespaces which are accessible in that cluster. Cluster level resources will be ignored if namespace list is not empty.
+  repeated string namespaces = 6;
+
+  // RefreshRequestedAt holds time when cluster cache refresh has been requested
+  optional .k8s.io.apimachinery.pkg.apis.meta.v1.Time refreshRequestedAt = 7;
+
+  // Info holds information about cluster cache and state
+  optional ClusterInfo info = 8;
+
+  // Shard contains optional shard number. Calculated on the fly by the application controller if not specified.
+  optional int64 shard = 9;
+
+  // Indicates if cluster level resources should be managed. This setting is used only if cluster is connected in a namespaced mode.
+  optional bool clusterResources = 10;
+
+  // Reference between project and cluster that allow you automatically to be added as item inside Destinations project entity
+  optional string project = 11;
+
+  // Labels for cluster secret metadata
+  map<string, string> labels = 12;
+
+  // Annotations for cluster secret metadata
+  map<string, string> annotations = 13;
+}
+
+// ClusterCacheInfo contains information about the cluster cache
+message ClusterCacheInfo {
+  // ResourcesCount holds number of observed Kubernetes resources
+  optional int64 resourcesCount = 1;
+
+  // APIsCount holds number of observed Kubernetes API count
+  optional int64 apisCount = 2;
+
+  // LastCacheSyncTime holds time of most recent cache synchronization
+  optional .k8s.io.apimachinery.pkg.apis.meta.v1.Time lastCacheSyncTime = 3;
+}
+
+// ClusterConfig is the configuration attributes. This structure is subset of the go-client
+// rest.Config with annotations added for marshalling.
+message ClusterConfig {
+  // Server requires Basic authentication
+  optional string username = 1;
+
+  optional string password = 2;
+
+  // Server requires Bearer authentication. This client will not attempt to use
+  // refresh tokens for an OAuth2 flow.
+  // TODO: demonstrate an OAuth2 compatible client.
+  optional string bearerToken = 3;
+
+  // TLSClientConfig contains settings to enable transport layer security
+  optional TLSClientConfig tlsClientConfig = 4;
+
+  // AWSAuthConfig contains IAM authentication configuration
+  optional AWSAuthConfig awsAuthConfig = 5;
+
+  // ExecProviderConfig contains configuration for an exec provider
+  optional ExecProviderConfig execProviderConfig = 6;
+
+  // DisableCompression bypasses automatic GZip compression requests to the server.
+  optional bool disableCompression = 7;
+
+  // ProxyURL is the URL to the proxy to be used for all requests send to the server
+  optional string proxyUrl = 8;
+}
+
+// ClusterInfo contains information about the cluster
+message ClusterInfo {
+  // ConnectionState contains information about the connection to the cluster
+  optional ConnectionState connectionState = 1;
+
+  // ServerVersion contains information about the Kubernetes version of the cluster
+  optional string serverVersion = 2;
+
+  // CacheInfo contains information about the cluster cache
+  optional ClusterCacheInfo cacheInfo = 3;
+
+  // ApplicationsCount is the number of applications managed by Argo CD on the cluster
+  optional int64 applicationsCount = 4;
+
+  // APIVersions contains list of API versions supported by the cluster
+  repeated string apiVersions = 5;
+}
+
+// ConnectionState contains information about remote resource connection state, currently used for clusters and repositories
+message ConnectionState {
+  // Status contains the current status indicator for the connection
+  optional string status = 1;
+
+  // Message contains human readable information about the connection status
+  optional string message = 2;
+
+  // ModifiedAt contains the timestamp when this connection status has been determined
+  optional .k8s.io.apimachinery.pkg.apis.meta.v1.Time attemptedAt = 3;
+}
+
+// ExecProviderConfig is config used to call an external command to perform cluster authentication
+// See: https://godoc.org/k8s.io/client-go/tools/clientcmd/api#ExecConfig
+message ExecProviderConfig {
+  // Command to execute
+  optional string command = 1;
+
+  // Arguments to pass to the command when executing it
+  repeated string args = 2;
+
+  // Env defines additional environment variables to expose to the process
+  map<string, string> env = 3;
+
+  // Preferred input version of the ExecInfo
+  optional string apiVersion = 4;
+
+  // This text is shown to the user when the executable doesn't seem to be present
+  optional string installHint = 5;
+}
+
+// TLSClientConfig contains settings to enable transport layer security
+message TLSClientConfig {
+  // Insecure specifies that the server should be accessed without verifying the TLS certificate. For testing only.
+  optional bool insecure = 1;
+
+  // ServerName is passed to the server for SNI and is used in the client to check server
+  // certificates against. If ServerName is empty, the hostname used to contact the
+  // server is used.
+  optional string serverName = 2;
+
+  // CertData holds PEM-encoded bytes (typically read from a client certificate file).
+  // CertData takes precedence over CertFile
+  optional bytes certData = 3;
+
+  // KeyData holds PEM-encoded bytes (typically read from a client certificate key file).
+  // KeyData takes precedence over KeyFile
+  optional bytes keyData = 4;
+
+  // CAData holds PEM-encoded bytes (typically read from a root certificates bundle).
+  // CAData takes precedence over CAFile
+  optional bytes caData = 5;
 }
 

@@ -121,17 +121,17 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/name: athena-cmd-params-cm
+    app.kubernetes.io/name: athena-cm
     app.kubernetes.io/part-of: athena
-  name: athena-cmd-params-cm
+  name: athena-cm
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/name: athena-config
+    app.kubernetes.io/name: athena-cmd-params-cm
     app.kubernetes.io/part-of: athena
-  name: athena-config
+  name: athena-cmd-params-cm
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -298,7 +298,7 @@ spec:
         - athena
         - admin
         - redis-initial-password
-        image: docker.io/yege6776/athena:latest
+        image: quay.io/useryege/athena:latest
         imagePullPolicy: IfNotPresent
         name: secret-init
         securityContext:
@@ -360,7 +360,7 @@ spec:
             secretKeyRef:
               key: auth
               name: athena-redis
-        image: docker.io/yege6776/athena:latest
+        image: quay.io/useryege/athena:latest
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

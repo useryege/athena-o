@@ -29,7 +29,7 @@ import (
 // 	corev1 "k8s.io/api/core/v1"
 // 	"k8s.io/client-go/util/retry"
 
-// 	"github.com/argoproj/argo-cd/v3/common"
+// 	"github.com/useryege/athena/common"
 // )
 
 const (
@@ -90,25 +90,25 @@ func (a *Account) FormatCapabilities() string {
 	return strings.Join(items, ",")
 }
 
-// // TokenIndex return an index of a token with the given identifier or -1 if token not found.
-// func (a *Account) TokenIndex(id string) int {
-// 	for i := range a.Tokens {
-// 		if a.Tokens[i].ID == id {
-// 			return i
-// 		}
-// 	}
-// 	return -1
-// }
+// TokenIndex return an index of a token with the given identifier or -1 if token not found.
+func (a *Account) TokenIndex(id string) int {
+	for i := range a.Tokens {
+		if a.Tokens[i].ID == id {
+			return i
+		}
+	}
+	return -1
+}
 
-// // HasCapability return true if the account has the specified capability.
-// func (a *Account) HasCapability(capability AccountCapability) bool {
-// 	for _, c := range a.Capabilities {
-// 		if c == capability {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
+// HasCapability return true if the account has the specified capability.
+func (a *Account) HasCapability(capability AccountCapability) bool {
+	for _, c := range a.Capabilities {
+		if c == capability {
+			return true
+		}
+	}
+	return false
+}
 
 func (mgr *SettingsManager) saveAccount(name string, account Account) error {
 	return mgr.updateSecret(func(secret *corev1.Secret) error {
@@ -118,17 +118,17 @@ func (mgr *SettingsManager) saveAccount(name string, account Account) error {
 	})
 }
 
-// // AddAccount save an account with the given name and properties.
-// func (mgr *SettingsManager) AddAccount(name string, account Account) error {
-// 	accounts, err := mgr.GetAccounts()
-// 	if err != nil {
-// 		return fmt.Errorf("error getting accounts: %w", err)
-// 	}
-// 	if _, ok := accounts[name]; ok {
-// 		return status.Errorf(codes.AlreadyExists, "account '%s' already exists", name)
-// 	}
-// 	return mgr.saveAccount(name, account)
-// }
+// AddAccount save an account with the given name and properties.
+func (mgr *SettingsManager) AddAccount(name string, account Account) error {
+	accounts, err := mgr.GetAccounts()
+	if err != nil {
+		return fmt.Errorf("error getting accounts: %w", err)
+	}
+	if _, ok := accounts[name]; ok {
+		return status.Errorf(codes.AlreadyExists, "account '%s' already exists", name)
+	}
+	return mgr.saveAccount(name, account)
+}
 
 // GetAccount return an account info by the specified name.
 func (mgr *SettingsManager) GetAccount(name string) (*Account, error) {
@@ -199,7 +199,7 @@ func saveAccount(secret *corev1.Secret, cm *corev1.ConfigMap, name string, accou
 	if err != nil {
 		return err
 	}
-	if name == common.AthenaAdminUsername {
+	if name == common.ArgoCDAdminUsername {
 		updateAccountSecret(secret, settingAdminPasswordHashKey, account.PasswordHash, "")
 		updateAccountSecret(secret, settingAdminPasswordMtimeKey, account.FormatPasswordMtime(), "")
 		updateAccountSecret(secret, settingAdminTokensKey, string(tokens), "[]")
@@ -249,7 +249,7 @@ func parseAccounts(secret *corev1.Secret, cm *corev1.ConfigMap) (map[string]Acco
 		return nil, err
 	}
 	accounts := map[string]Account{
-		common.AthenaAdminUsername: *adminAccount,
+		common.ArgoCDAdminUsername: *adminAccount,
 	}
 
 	for key, v := range cm.Data {
@@ -304,7 +304,7 @@ func parseAccounts(secret *corev1.Secret, cm *corev1.ConfigMap) (map[string]Acco
 	}
 
 	for name, account := range accounts {
-		if name == common.AthenaAdminUsername {
+		if name == common.ArgoCDAdminUsername {
 			continue
 		}
 

@@ -1,16 +1,13 @@
 package common
 
 import (
+	"errors"
 	"os"
 	"time"
 
 	"github.com/sirupsen/logrus"
-)
-
-// Server environment variables
-const (
-	// EnvEnableGRPCTimeHistogramEnv enables gRPC metrics collection
-	EnvEnableGRPCTimeHistogramEnv = "ATHENA_ENABLE_GRPC_TIME_HISTOGRAM"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Default paths on the pod's file system
@@ -21,45 +18,55 @@ const (
 	DefaultPathSSHConfig = "/app/config/ssh"
 	// DefaultSSHKnownHostsName is the Default name for the SSH known hosts file
 	DefaultSSHKnownHostsName = "ssh_known_hosts"
+	// DefaultGnuPgHomePath is the Default path to GnuPG home directory
+	DefaultGnuPgHomePath = "/app/config/gpg/keys"
+	// DefaultAppConfigPath is the Default path to repo server TLS endpoint config
+	DefaultAppConfigPath = "/app/config"
+	// DefaultPluginSockFilePath is the Default path to cmp server plugin socket file
+	DefaultPluginSockFilePath = "/home/argocd/cmp-server/plugins"
+	// DefaultPluginConfigFilePath is the Default path to cmp server plugin configuration file
+	DefaultPluginConfigFilePath = "/home/argocd/cmp-server/config"
+	// PluginConfigFileName is the Plugin Config File is a ConfigManagementPlugin manifest located inside the plugin container
+	PluginConfigFileName = "plugin.yaml"
 )
 
 // Argo CD application related constants
 const (
 
-	// AthenaAdminUsername is the username of the 'admin' user
-	AthenaAdminUsername = "admin"
-	// // ArgoCDUserAgentName is the default user-agent name used by the gRPC API client library and grpc-gateway
-	// ArgoCDUserAgentName = "argocd-client"
-	// // ArgoCDSSAManager is the default argocd manager name used by server-side apply syncs
-	// ArgoCDSSAManager = "argocd-controller"
+	// ArgoCDAdminUsername is the username of the 'admin' user
+	ArgoCDAdminUsername = "admin"
+	// ArgoCDUserAgentName is the default user-agent name used by the gRPC API client library and grpc-gateway
+	ArgoCDUserAgentName = "argocd-client"
+	// ArgoCDSSAManager is the default argocd manager name used by server-side apply syncs
+	ArgoCDSSAManager = "argocd-controller"
 	// AuthCookieName is the HTTP cookie name where we store our auth token
 	AuthCookieName = "argocd.token"
-	// // StateCookieName is the HTTP cookie name that holds temporary nonce tokens for CSRF protection
-	// StateCookieName = "argocd.oauthstate"
-	// // StateCookieMaxAge is the maximum age of the oauth state cookie
-	// StateCookieMaxAge = time.Minute * 5
+	// StateCookieName is the HTTP cookie name that holds temporary nonce tokens for CSRF protection
+	StateCookieName = "argocd.oauthstate"
+	// StateCookieMaxAge is the maximum age of the oauth state cookie
+	StateCookieMaxAge = time.Minute * 5
 
-	// // ChangePasswordSSOTokenMaxAge is the max token age for password change operation
-	// ChangePasswordSSOTokenMaxAge = time.Minute * 5
-	// // GithubAppCredsExpirationDuration is the default time used to cache the GitHub app credentials
-	// GithubAppCredsExpirationDuration = time.Minute * 60
+	// ChangePasswordSSOTokenMaxAge is the max token age for password change operation
+	ChangePasswordSSOTokenMaxAge = time.Minute * 5
+	// GithubAppCredsExpirationDuration is the default time used to cache the GitHub app credentials
+	GithubAppCredsExpirationDuration = time.Minute * 60
 
 	// PasswordPatten is the default password patten
 	PasswordPatten = `^.{8,32}$`
 
-	// // LegacyShardingAlgorithm is the default value for Sharding Algorithm it uses an `uid` based distribution (non-uniform)
-	// LegacyShardingAlgorithm = "legacy"
-	// // RoundRobinShardingAlgorithm is a flag value that can be opted for Sharding Algorithm it uses an equal distribution across all shards
-	// RoundRobinShardingAlgorithm = "round-robin"
-	// // AppControllerHeartbeatUpdateRetryCount is the retry count for updating the Shard Mapping to the Shard Mapping ConfigMap used by Application Controller
-	// AppControllerHeartbeatUpdateRetryCount = 3
+	// LegacyShardingAlgorithm is the default value for Sharding Algorithm it uses an `uid` based distribution (non-uniform)
+	LegacyShardingAlgorithm = "legacy"
+	// RoundRobinShardingAlgorithm is a flag value that can be opted for Sharding Algorithm it uses an equal distribution across all shards
+	RoundRobinShardingAlgorithm = "round-robin"
+	// AppControllerHeartbeatUpdateRetryCount is the retry count for updating the Shard Mapping to the Shard Mapping ConfigMap used by Application Controller
+	AppControllerHeartbeatUpdateRetryCount = 3
 
-	// // ConsistentHashingWithBoundedLoadsAlgorithm uses an algorithm that tries to use an equal distribution across
-	// // all shards but is optimised to handle sharding and/or cluster addition or removal. In case of sharding or
-	// // cluster changes, this algorithm minimises the changes between shard and clusters assignments.
-	// ConsistentHashingWithBoundedLoadsAlgorithm = "consistent-hashing"
+	// ConsistentHashingWithBoundedLoadsAlgorithm uses an algorithm that tries to use an equal distribution across
+	// all shards but is optimised to handle sharding and/or cluster addition or removal. In case of sharding or
+	// cluster changes, this algorithm minimises the changes between shard and clusters assignments.
+	ConsistentHashingWithBoundedLoadsAlgorithm = "consistent-hashing"
 
-	// DefaultShardingAlgorithm = LegacyShardingAlgorithm
+	DefaultShardingAlgorithm = LegacyShardingAlgorithm
 )
 
 // Kubernetes ConfigMap and Secret resource names which hold Argo CD settings
@@ -113,29 +120,115 @@ const (
 
 // Environment variables for tuning and debugging Argo CD
 const (
-	// EnvLogFormat log format that is defined by `--logformat` option
-	EnvLogFormat = "ATHENA_LOG_FORMAT"
-	// EnvLogLevel log level that is defined by `--loglevel` option
-	EnvLogLevel = "ATHENA_LOG_LEVEL"
-	// EnvLogFormatEnableFullTimestamp enables the FullTimestamp option in logs
-	EnvLogFormatEnableFullTimestamp = "ATHENA_LOG_FORMAT_ENABLE_FULL_TIMESTAMP"
-	// EnvLogFormatTimestamp is the timestamp format used in logs
-	EnvLogFormatTimestamp = "ATHENA_LOG_FORMAT_TIMESTAMP"
-
-	// EnvGRPCMaxSizeMB is the environment variable to look for a max GRPC message size
-	EnvGRPCMaxSizeMB = "ATHENA_GRPC_MAX_SIZE_MB"
-
-	// EnvVarTLSDataPath overrides the location where TLS certificate for repo access data is stored
-	EnvVarTLSDataPath = "ATHENA_TLS_DATA_PATH"
-
+	// EnvVarSSODebug is an environment variable to enable additional OAuth debugging in the API server
+	EnvVarSSODebug = "ARGOCD_SSO_DEBUG"
+	// EnvVarRBACDebug is an environment variable to enable additional RBAC debugging in the API server
+	EnvVarRBACDebug = "ARGOCD_RBAC_DEBUG"
 	// EnvVarSSHDataPath overrides the location where SSH known hosts for repo access data is stored
-	EnvVarSSHDataPath = "ATHENA_SSH_DATA_PATH"
-
-	// EnvGRPCKeepAliveMin defines the GRPCKeepAliveEnforcementMinimum, used in the grpc.KeepaliveEnforcementPolicy. Expects a "Duration" format (e.g. 10s).
-	EnvGRPCKeepAliveMin = "ATHENA_GRPC_KEEP_ALIVE_MIN"
-
+	EnvVarSSHDataPath = "ARGOCD_SSH_DATA_PATH"
+	// EnvVarTLSDataPath overrides the location where TLS certificate for repo access data is stored
+	EnvVarTLSDataPath = "ARGOCD_TLS_DATA_PATH"
+	// EnvGitAttemptsCount specifies number of git remote operations attempts count
+	EnvGitAttemptsCount = "ARGOCD_GIT_ATTEMPTS_COUNT"
+	// EnvGitRetryMaxDuration specifies max duration of git remote operation retry
+	EnvGitRetryMaxDuration = "ARGOCD_GIT_RETRY_MAX_DURATION"
+	// EnvGitRetryDuration specifies duration of git remote operation retry
+	EnvGitRetryDuration = "ARGOCD_GIT_RETRY_DURATION"
+	// EnvGitRetryFactor specifies factor of git remote operation retry
+	EnvGitRetryFactor = "ARGOCD_GIT_RETRY_FACTOR"
+	// EnvGitSubmoduleEnabled overrides git submodule support, true by default
+	EnvGitSubmoduleEnabled = "ARGOCD_GIT_MODULES_ENABLED"
+	// EnvGnuPGHome is the path to ArgoCD's GnuPG keyring for signature verification
+	EnvGnuPGHome = "ARGOCD_GNUPGHOME"
+	// EnvWatchAPIBufferSize is the buffer size used to transfer K8S watch events to watch API consumer
+	EnvWatchAPIBufferSize = "ARGOCD_WATCH_API_BUFFER_SIZE"
+	// EnvPauseGenerationAfterFailedAttempts will pause manifest generation after the specified number of failed generation attempts
+	EnvPauseGenerationAfterFailedAttempts = "ARGOCD_PAUSE_GEN_AFTER_FAILED_ATTEMPTS"
+	// EnvPauseGenerationMinutes pauses manifest generation for the specified number of minutes, after sufficient manifest generation failures
+	EnvPauseGenerationMinutes = "ARGOCD_PAUSE_GEN_MINUTES"
+	// EnvPauseGenerationRequests pauses manifest generation for the specified number of requests, after sufficient manifest generation failures
+	EnvPauseGenerationRequests = "ARGOCD_PAUSE_GEN_REQUESTS"
+	// EnvControllerReplicas is the number of controller replicas
+	EnvControllerReplicas = "ARGOCD_CONTROLLER_REPLICAS"
+	// EnvControllerHeartbeatTime will update the heartbeat for application controller to claim shard
+	EnvControllerHeartbeatTime = "ARGOCD_CONTROLLER_HEARTBEAT_TIME"
+	// EnvControllerShard is the shard number that should be handled by controller
+	EnvControllerShard = "ARGOCD_CONTROLLER_SHARD"
+	// EnvControllerShardingAlgorithm is the distribution sharding algorithm to be used: legacy or round-robin
+	EnvControllerShardingAlgorithm = "ARGOCD_CONTROLLER_SHARDING_ALGORITHM"
+	// EnvEnableDynamicClusterDistribution enables dynamic sharding (ALPHA)
+	EnvEnableDynamicClusterDistribution = "ARGOCD_ENABLE_DYNAMIC_CLUSTER_DISTRIBUTION"
+	// EnvEnableGRPCTimeHistogramEnv enables gRPC metrics collection
+	EnvEnableGRPCTimeHistogramEnv = "ARGOCD_ENABLE_GRPC_TIME_HISTOGRAM"
+	// EnvGithubAppCredsExpirationDuration controls the caching of Github app credentials. This value is in minutes (default: 60)
+	EnvGithubAppCredsExpirationDuration = "ARGOCD_GITHUB_APP_CREDS_EXPIRATION_DURATION"
+	// EnvHelmIndexCacheDuration controls how the helm repository index file is cached for (default: 0)
+	EnvHelmIndexCacheDuration = "ARGOCD_HELM_INDEX_CACHE_DURATION"
+	// EnvAppConfigPath allows to override the configuration path for repo server
+	EnvAppConfigPath = "ARGOCD_APP_CONF_PATH"
+	// EnvAuthToken is the environment variable name for the auth token used by the CLI
+	EnvAuthToken = "ARGOCD_AUTH_TOKEN"
+	// EnvLogFormat log format that is defined by `--logformat` option
+	EnvLogFormat = "ARGOCD_LOG_FORMAT"
+	// EnvLogLevel log level that is defined by `--loglevel` option
+	EnvLogLevel = "ARGOCD_LOG_LEVEL"
+	// EnvLogFormatEnableFullTimestamp enables the FullTimestamp option in logs
+	EnvLogFormatEnableFullTimestamp = "ARGOCD_LOG_FORMAT_ENABLE_FULL_TIMESTAMP"
+	// EnvLogFormatTimestamp is the timestamp format used in logs
+	EnvLogFormatTimestamp = "ARGOCD_LOG_FORMAT_TIMESTAMP"
 	// EnvMaxCookieNumber max number of chunks a cookie can be broken into
-	EnvMaxCookieNumber = "ATHENA_MAX_COOKIE_NUMBER"
+	EnvMaxCookieNumber = "ARGOCD_MAX_COOKIE_NUMBER"
+	// EnvPluginSockFilePath allows to override the pluginSockFilePath for repo server and cmp server
+	EnvPluginSockFilePath = "ARGOCD_PLUGINSOCKFILEPATH"
+	// EnvCMPChunkSize defines the chunk size in bytes used when sending files to the cmp server
+	EnvCMPChunkSize = "ARGOCD_CMP_CHUNK_SIZE"
+	// EnvCMPWorkDir defines the full path of the work directory used by the CMP server
+	EnvCMPWorkDir = "ARGOCD_CMP_WORKDIR"
+	// EnvGPGDataPath overrides the location where GPG keyring for signature verification is stored
+	EnvGPGDataPath = "ARGOCD_GPG_DATA_PATH"
+	// EnvServer is the server address of the Argo CD API server.
+	EnvServer = "ARGOCD_SERVER"
+	// EnvServerName is the name of the Argo CD server component, as specified by the value under the LabelKeyAppName label key.
+	EnvServerName = "ARGOCD_SERVER_NAME"
+	// EnvRepoServerName is the name of the Argo CD repo server component, as specified by the value under the LabelKeyAppName label key.
+	EnvRepoServerName = "ARGOCD_REPO_SERVER_NAME"
+	// EnvAppControllerName is the name of the Argo CD application controller component, as specified by the value under the LabelKeyAppName label key.
+	EnvAppControllerName = "ARGOCD_APPLICATION_CONTROLLER_NAME"
+	// EnvRedisName is the name of the Argo CD redis component, as specified by the value under the LabelKeyAppName label key.
+	EnvRedisName = "ARGOCD_REDIS_NAME"
+	// EnvRedisHaProxyName is the name of the Argo CD Redis HA proxy component, as specified by the value under the LabelKeyAppName label key.
+	EnvRedisHaProxyName = "ARGOCD_REDIS_HAPROXY_NAME"
+	// EnvGRPCKeepAliveMin defines the GRPCKeepAliveEnforcementMinimum, used in the grpc.KeepaliveEnforcementPolicy. Expects a "Duration" format (e.g. 10s).
+	EnvGRPCKeepAliveMin = "ARGOCD_GRPC_KEEP_ALIVE_MIN"
+	// EnvServerSideDiff defines the env var used to enable ServerSide Diff feature.
+	// If defined, value must be "true" or "false".
+	EnvServerSideDiff = "ARGOCD_APPLICATION_CONTROLLER_SERVER_SIDE_DIFF"
+	// EnvGRPCMaxSizeMB is the environment variable to look for a max GRPC message size
+	EnvGRPCMaxSizeMB = "ARGOCD_GRPC_MAX_SIZE_MB"
+)
+
+// Dex related constants
+const (
+	// DexAPIEndpoint is the endpoint where we serve the Dex API server
+	DexAPIEndpoint = "/api/dex"
+	// LoginEndpoint is Argo CD's shorthand login endpoint which redirects to dex's OAuth 2.0 provider's consent page
+	LoginEndpoint = "/auth/login"
+	// LogoutEndpoint is Argo CD's shorthand logout endpoint which invalidates OIDC session after logout
+	LogoutEndpoint = "/auth/logout"
+	// CallbackEndpoint is Argo CD's final callback endpoint we reach after OAuth 2.0 login flow has been completed
+	CallbackEndpoint = "/auth/callback"
+	// DexCallbackEndpoint is Argo CD's final callback endpoint when Dex is configured
+	DexCallbackEndpoint = "/api/dex/callback"
+	// ArgoCDClientAppName is name of the Oauth client app used when registering our web app to dex
+	ArgoCDClientAppName = "Argo CD"
+	// ArgoCDClientAppID is the Oauth client ID we will use when registering our app to dex
+	ArgoCDClientAppID = "argo-cd"
+	// ArgoCDCLIClientAppName is name of the Oauth client app used when registering our CLI to dex
+	ArgoCDCLIClientAppName = "Argo CD CLI"
+	// ArgoCDCLIClientAppID is the Oauth client ID we will use when registering our CLI to dex
+	ArgoCDCLIClientAppID = "argo-cd-cli"
+	// DexFederatedScope allows to receive the federated_claims from Dex. https://dexidp.io/docs/configuration/custom-scopes-claims-clients/
+	DexFederatedScope = "federated:id"
 )
 
 // Security severity logging
@@ -150,6 +243,92 @@ const (
 	SecurityHigh                              = 3 // Indicates likely malicious events but one that had no side effects or was blocked (i.e. out of bounds symlinks in repos)
 	SecurityMedium                            = 2 // Could indicate malicious events, but has a high likelihood of being user/system error (i.e. access denied)
 	SecurityLow                               = 1 // Unexceptional entries (i.e. successful access logs)
+)
+
+// Resource metadata labels and annotations (keys and values) used by Argo CD components
+const (
+	// LabelKeyAppInstance is the label key to use to uniquely identify the instance of an application
+	// The Argo CD application name is used as the instance name
+	LabelKeyAppInstance = "app.kubernetes.io/instance"
+	// LabelKeyAppName is the label key to use to uniquely identify the name of the Kubernetes application
+	LabelKeyAppName = "app.kubernetes.io/name"
+	// LabelKeyAutoLabelClusterInfo if set to true will automatically add extra labels from the cluster info (currently it only adds a k8s version label)
+	LabelKeyAutoLabelClusterInfo = "argocd.argoproj.io/auto-label-cluster-info"
+	// LabelKeyLegacyApplicationName is the legacy label (v0.10 and below) and is superseded by 'app.kubernetes.io/instance'
+	LabelKeyLegacyApplicationName = "applications.argoproj.io/app-name"
+	// LabelKeySecretType contains the type of argocd secret (currently: 'cluster', 'repository', 'repo-config' or 'repo-creds')
+	LabelKeySecretType = "argocd.argoproj.io/secret-type"
+	// LabelKeyClusterKubernetesVersion contains the kubernetes version of the cluster secret if it has been enabled
+	LabelKeyClusterKubernetesVersion = "argocd.argoproj.io/kubernetes-version"
+	// LabelValueSecretTypeCluster indicates a secret type of cluster
+	LabelValueSecretTypeCluster = "cluster"
+	// LabelValueSecretTypeRepository indicates a secret type of repository
+	LabelValueSecretTypeRepository = "repository"
+	// LabelValueSecretTypeRepoCreds indicates a secret type of repository credentials
+	LabelValueSecretTypeRepoCreds = "repo-creds"
+	// LabelValueSecretTypeRepositoryWrite indicates a secret type of repository credentials for writing
+	LabelValueSecretTypeRepositoryWrite = "repository-write"
+	// LabelValueSecretTypeRepoCredsWrite indicates a secret type of repository credentials for writing for templating
+	LabelValueSecretTypeRepoCredsWrite = "repo-write-creds"
+	// LabelValueSecretTypeSCMCreds indicates a secret type of SCM credentials
+	LabelValueSecretTypeSCMCreds = "scm-creds"
+
+	// AnnotationKeyAppInstance is the Argo CD application name is used as the instance name
+	AnnotationKeyAppInstance = "argocd.argoproj.io/tracking-id"
+	AnnotationInstallationID = "argocd.argoproj.io/installation-id"
+
+	// AnnotationCompareOptions is a comma-separated list of options for comparison
+	AnnotationCompareOptions = "argocd.argoproj.io/compare-options"
+
+	// AnnotationClientSideApplyMigrationManager specifies a custom field manager for client-side apply migration
+	AnnotationClientSideApplyMigrationManager = "argocd.argoproj.io/client-side-apply-migration-manager"
+
+	// AnnotationIgnoreHealthCheck when set on an Application's immediate child indicates that its health check
+	// can be disregarded.
+	AnnotationIgnoreHealthCheck = "argocd.argoproj.io/ignore-healthcheck"
+
+	// AnnotationKeyManagedBy is annotation name which indicates that k8s resource is managed by an application.
+	AnnotationKeyManagedBy = "managed-by"
+	// AnnotationValueManagedByArgoCD is a 'managed-by' annotation value for resources managed by Argo CD
+	AnnotationValueManagedByArgoCD = "argocd.argoproj.io"
+
+	// AnnotationKeyLinkPrefix tells the UI to add an external link icon to the application node
+	// that links to the value given in the annotation.
+	// The annotation key must be followed by a unique identifier. Ex: link.argocd.argoproj.io/dashboard
+	// It's valid to have multiple annotations that match the prefix.
+	// Values can simply be a url or they can have
+	// an optional link title separated by a "|"
+	// Ex: "http://grafana.example.com/d/yu5UH4MMz/deployments"
+	// Ex: "Go to Dashboard|http://grafana.example.com/d/yu5UH4MMz/deployments"
+	AnnotationKeyLinkPrefix = "link.argocd.argoproj.io/"
+	// AnnotationKeyIgnoreDefaultLinks tells the Application to not add autogenerated links from this object into its externalURLs
+	// This applies to ingress objects and takes effect if set to "true"
+	// This only disables the default behavior of generating links based on the ingress spec, and does not disable AnnotationKeyLinkPrefix
+	AnnotationKeyIgnoreDefaultLinks = "argocd.argoproj.io/ignore-default-links"
+
+	// AnnotationKeyAppSkipReconcile tells the Application to skip the Application controller reconcile.
+	// Skip reconcile when the value is "true" or any other string values that can be strconv.ParseBool() to be true.
+	AnnotationKeyAppSkipReconcile = "argocd.argoproj.io/skip-reconcile"
+
+	// LabelKeyComponentRepoServer is the label key to identify the component as repo-server
+	LabelKeyComponentRepoServer = "app.kubernetes.io/component"
+	// LabelValueComponentRepoServer is the label value for the repo-server component
+	LabelValueComponentRepoServer = "repo-server"
+)
+
+// TokenVerificationError is a generic error message for a failure to verify a JWT
+const TokenVerificationError = "failed to verify the token"
+
+var ErrTokenVerification = errors.New(TokenVerificationError)
+
+var PermissionDeniedAPIError = status.Error(codes.PermissionDenied, "permission denied")
+
+// Redis password consts
+const (
+	// RedisInitialCredentials is the name for the argocd kubernetes secret which will have the redis password
+	RedisInitialCredentials = "argocd-redis"
+	// RedisInitialCredentialsKey is the key for the argocd kubernetes secret that maps to the redis password
+	RedisInitialCredentialsKey = "auth"
 )
 
 // Constants used by util/clusterauth package

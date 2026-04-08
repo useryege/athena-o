@@ -7,7 +7,7 @@ patches:
 
 images:
 - name: quay.io/useryege/athena
-  newName: docker.io/yege6776/athena
+  newName: quay.io/useryege/athena
   newTag: latest
 resources:
 - ../../base/config

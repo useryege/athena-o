@@ -7,7 +7,7 @@ package kube
 // 	"k8s.io/client-go/rest"
 // 	"k8s.io/kubectl/pkg/util/openapi"
 
-// 	"github.com/argoproj/argo-cd/v3/util/log"
+// 	"github.com/useryege/athena/util/log"
 
 // 	"github.com/argoproj/gitops-engine/pkg/diff"
 // 	"github.com/argoproj/gitops-engine/pkg/utils/kube"

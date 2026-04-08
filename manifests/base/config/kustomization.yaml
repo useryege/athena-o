@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
 - athena-cmd-params-cm.yaml
-- athena-config.yaml
+- athena-cm.yaml
 - athena-rbac-cm.yaml
 - athena-secret.yaml
 - athena-ssh-known-hosts-cm.yaml

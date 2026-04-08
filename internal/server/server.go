@@ -6,6 +6,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/useryege/athena/util/env"
 )
@@ -28,12 +29,12 @@ var ErrNoSession = status.Errorf(codes.Unauthenticated, "no session information"
 // }
 
 // backoff is a backoff strategy for retrying operations
-// var backoff = wait.Backoff{
-// 	Steps:    5,
-// 	Duration: 500 * time.Millisecond,
-// 	Factor:   1.0,
-// 	Jitter:   0.1,
-// }
+var backoff = wait.Backoff{
+	Steps:    5,
+	Duration: 500 * time.Millisecond,
+	Factor:   1.0,
+	Jitter:   0.1,
+}
 
 var (
 	// baseHRefRegex = regexp.MustCompile(`<base href="(.*?)">`)

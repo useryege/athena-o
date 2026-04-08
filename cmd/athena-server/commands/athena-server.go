@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -15,9 +16,12 @@ import (
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/server"
+	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/pkg/stats"
+	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
+	"github.com/useryege/athena/util/dex"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/templates"
@@ -52,9 +56,14 @@ func NewCommand() *cobra.Command {
 		otlpAttrs             []string
 		frameOptions          string
 		contentSecurityPolicy string
+		dexServerAddress      string
+		dexServerPlaintext    bool
+		dexServerStrictTLS    bool
 
 		clientConfig           clientcmd.ClientConfig
 		tlsConfigCustomizerSrc func() (tls.ConfigCustomizer, error)
+		redisClient            *redis.Client
+		cacheSrc               func() (*servercache.Cache, error)
 	)
 	command := &cobra.Command{
 		Use:               cliName,
@@ -97,9 +106,34 @@ func NewCommand() *cobra.Command {
 			tlsConfigCustomizer, err := tlsConfigCustomizerSrc()
 			errors.CheckError(err)
 
+			cache, err := cacheSrc()
+			errors.CheckError(err)
+
 			kubeclientset := kubernetes.NewForConfigOrDie(config)
 
 			log.Infof("athena-server/%s (%s)", vers.Version, vers.Platform)
+
+			dexTLSConfig := &dex.DexTLSConfig{
+				DisableTLS:       dexServerPlaintext,
+				StrictValidation: dexServerStrictTLS,
+			}
+
+			if !dexServerPlaintext && dexServerStrictTLS {
+				pool, err := tls.LoadX509CertPool(
+					env.StringFromEnv(common.EnvAppConfigPath, common.DefaultAppConfigPath) + "/dex/tls/ca.crt",
+				)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				dexTLSConfig.RootCAs = pool
+				cert, err := tls.LoadX509Cert(
+					env.StringFromEnv(common.EnvAppConfigPath, common.DefaultAppConfigPath) + "/dex/tls/tls.crt",
+				)
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+				dexTLSConfig.Certificate = cert.Raw
+			}
 
 			var contentTypesList []string
 			if contentTypes != "" {
@@ -123,6 +157,10 @@ func NewCommand() *cobra.Command {
 				EnableGZip:            enableGZip,
 				XFrameOptions:         frameOptions,
 				ContentSecurityPolicy: contentSecurityPolicy,
+				RedisClient:           redisClient,
+				Cache:                 cache,
+				DexServerAddr:         dexServerAddress,
+				DexTLSConfig:          dexTLSConfig,
 			}
 
 			// Register stack dumper and start stats ticker and heap dumper
@@ -172,7 +210,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogFormat, "logformat", env.StringFromEnv("ATHENA_SERVER_LOGFORMAT", "json"), "Set the logging format. One of: json|text")
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv("ATHENA_SERVER_LOG_LEVEL", "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().IntVar(&glogLevel, "gloglevel", 0, "Set the glog logging level")
-	// command.Flags().StringVar(&dexServerAddress, "dex-server", env.StringFromEnv("ATHENA_SERVER_DEX_SERVER", common.DefaultDexServerAddr), "Dex server address")
 	command.Flags().BoolVar(&disableAuth, "disable-auth", env.ParseBoolFromEnv("ATHENA_SERVER_DISABLE_AUTH", false), "Disable client authentication")
 	command.Flags().StringVar(&contentTypes, "api-content-types", env.StringFromEnv("ATHENA_API_CONTENT_TYPES", "application/json", env.StringFromEnvOpts{AllowEmpty: true}), "Semicolon separated list of allowed content types for non GET api requests. Any content type is allowed if empty.")
 	command.Flags().BoolVar(&enableGZip, "enable-gzip", env.ParseBoolFromEnv("ATHENA_SERVER_ENABLE_GZIP", true), "Enable GZIP compression")
@@ -187,8 +224,17 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringSliceVar(&otlpAttrs, "otlp-attrs", env.StringsFromEnv("ATHENA_SERVER_OTLP_ATTRS", []string{}, ","), "List of OpenTelemetry collector extra attrs when send traces, each attribute is separated by a colon(e.g. key:value)")
 	command.Flags().StringVar(&frameOptions, "x-frame-options", env.StringFromEnv("ATHENA_SERVER_X_FRAME_OPTIONS", "sameorigin"), "Set X-Frame-Options header in HTTP responses to `value`. To disable, set to \"\".")
 	command.Flags().StringVar(&contentSecurityPolicy, "content-security-policy", env.StringFromEnv("ATHENA_SERVER_CONTENT_SECURITY_POLICY", "frame-ancestors 'self';"), "Set Content-Security-Policy header in HTTP responses to `value`. To disable, set to \"\".")
+	command.Flags().StringVar(&dexServerAddress, "dex-server", env.StringFromEnv("ATHENA_SERVER_DEX_SERVER", common.DefaultDexServerAddr), "Dex server address")
+	command.Flags().BoolVar(&dexServerPlaintext, "dex-server-plaintext", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_PLAINTEXT", false), "Use a plaintext client (non-TLS) to connect to dex server")
+	command.Flags().BoolVar(&dexServerStrictTLS, "dex-server-strict-tls", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_STRICT_TLS", false), "Perform strict validation of TLS certificates when connecting to dex server")
 
 	tlsConfigCustomizerSrc = tls.AddTLSFlagsToCmd(command)
+
+	cacheSrc = servercache.AddCacheFlagsToCmd(command, cacheutil.Options{
+		OnClientCreated: func(client *redis.Client) {
+			redisClient = client
+		},
+	})
 
 	return command
 }

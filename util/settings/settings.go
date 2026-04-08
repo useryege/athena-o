@@ -3,11 +3,16 @@ package settings
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math/big"
+	"net/http"
 	"net/url"
+	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -15,19 +20,24 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert/yaml"
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/server/settings/oidc"
 	timeutil "github.com/useryege/athena/pkg/time"
 	"github.com/useryege/athena/util"
+	"github.com/useryege/athena/util/crypto"
 	kube "github.com/useryege/athena/util/kube"
 	"github.com/useryege/athena/util/password"
 	tlsutil "github.com/useryege/athena/util/tls"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
+	informersv1 "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	v1listers "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/cache"
+	"sigs.k8s.io/yaml"
 )
 
 // var CommitMessageTemplate = `{{.metadata.drySha | trunc 7}}: {{ .metadata.subject }}
@@ -154,120 +164,120 @@ type ArgoCDSettings struct {
 // 	BinaryURLs map[string]string `json:"binaryUrl,omitempty"`
 // }
 
-// // oidcConfig is the same as the public OIDCConfig, except the public one excludes the AllowedAudiences and the
-// // SkipAudienceCheckWhenTokenHasNoAudience fields.
-// // AllowedAudiences should be accessed via ArgoCDSettings.OAuth2AllowedAudiences.
-// // SkipAudienceCheckWhenTokenHasNoAudience should be accessed via ArgoCDSettings.SkipAudienceCheckWhenTokenHasNoAudience.
-// type oidcConfig struct {
-// 	OIDCConfig
-// 	AllowedAudiences                        []string `json:"allowedAudiences,omitempty"`
-// 	SkipAudienceCheckWhenTokenHasNoAudience *bool    `json:"skipAudienceCheckWhenTokenHasNoAudience,omitempty"`
-// }
+// oidcConfig is the same as the public OIDCConfig, except the public one excludes the AllowedAudiences and the
+// SkipAudienceCheckWhenTokenHasNoAudience fields.
+// AllowedAudiences should be accessed via ArgoCDSettings.OAuth2AllowedAudiences.
+// SkipAudienceCheckWhenTokenHasNoAudience should be accessed via ArgoCDSettings.SkipAudienceCheckWhenTokenHasNoAudience.
+type oidcConfig struct {
+	OIDCConfig
+	AllowedAudiences                        []string `json:"allowedAudiences,omitempty"`
+	SkipAudienceCheckWhenTokenHasNoAudience *bool    `json:"skipAudienceCheckWhenTokenHasNoAudience,omitempty"`
+}
 
-// func (o *oidcConfig) toExported() *OIDCConfig {
-// 	if o == nil {
-// 		return nil
-// 	}
-// 	return &OIDCConfig{
-// 		Name:                     o.Name,
-// 		Issuer:                   o.Issuer,
-// 		ClientID:                 o.ClientID,
-// 		ClientSecret:             o.ClientSecret,
-// 		Azure:                    o.Azure,
-// 		CLIClientID:              o.CLIClientID,
-// 		UserInfoPath:             o.UserInfoPath,
-// 		EnableUserInfoGroups:     o.EnableUserInfoGroups,
-// 		UserInfoCacheExpiration:  o.UserInfoCacheExpiration,
-// 		RefreshTokenThreshold:    o.RefreshTokenThreshold,
-// 		RequestedScopes:          o.RequestedScopes,
-// 		RequestedIDTokenClaims:   o.RequestedIDTokenClaims,
-// 		LogoutURL:                o.LogoutURL,
-// 		RootCA:                   o.RootCA,
-// 		EnablePKCEAuthentication: o.EnablePKCEAuthentication,
-// 		DomainHint:               o.DomainHint,
-// 	}
-// }
+func (o *oidcConfig) toExported() *OIDCConfig {
+	if o == nil {
+		return nil
+	}
+	return &OIDCConfig{
+		Name:                     o.Name,
+		Issuer:                   o.Issuer,
+		ClientID:                 o.ClientID,
+		ClientSecret:             o.ClientSecret,
+		Azure:                    o.Azure,
+		CLIClientID:              o.CLIClientID,
+		UserInfoPath:             o.UserInfoPath,
+		EnableUserInfoGroups:     o.EnableUserInfoGroups,
+		UserInfoCacheExpiration:  o.UserInfoCacheExpiration,
+		RefreshTokenThreshold:    o.RefreshTokenThreshold,
+		RequestedScopes:          o.RequestedScopes,
+		RequestedIDTokenClaims:   o.RequestedIDTokenClaims,
+		LogoutURL:                o.LogoutURL,
+		RootCA:                   o.RootCA,
+		EnablePKCEAuthentication: o.EnablePKCEAuthentication,
+		DomainHint:               o.DomainHint,
+	}
+}
 
-// type OIDCConfig struct {
-// 	Name                     string                 `json:"name,omitempty"`
-// 	Issuer                   string                 `json:"issuer,omitempty"`
-// 	ClientID                 string                 `json:"clientID,omitempty"`
-// 	ClientSecret             string                 `json:"clientSecret,omitempty"`
-// 	CLIClientID              string                 `json:"cliClientID,omitempty"`
-// 	EnableUserInfoGroups     bool                   `json:"enableUserInfoGroups,omitempty"`
-// 	UserInfoPath             string                 `json:"userInfoPath,omitempty"`
-// 	UserInfoCacheExpiration  string                 `json:"userInfoCacheExpiration,omitempty"`
-// 	RequestedScopes          []string               `json:"requestedScopes,omitempty"`
-// 	RequestedIDTokenClaims   map[string]*oidc.Claim `json:"requestedIDTokenClaims,omitempty"`
-// 	LogoutURL                string                 `json:"logoutURL,omitempty"`
-// 	RootCA                   string                 `json:"rootCA,omitempty"`
-// 	EnablePKCEAuthentication bool                   `json:"enablePKCEAuthentication,omitempty"`
-// 	DomainHint               string                 `json:"domainHint,omitempty"`
-// 	Azure                    *AzureOIDCConfig       `json:"azure,omitempty"`
-// 	RefreshTokenThreshold    string                 `json:"refreshTokenThreshold,omitempty"`
-// }
+type OIDCConfig struct {
+	Name                     string                 `json:"name,omitempty"`
+	Issuer                   string                 `json:"issuer,omitempty"`
+	ClientID                 string                 `json:"clientID,omitempty"`
+	ClientSecret             string                 `json:"clientSecret,omitempty"`
+	CLIClientID              string                 `json:"cliClientID,omitempty"`
+	EnableUserInfoGroups     bool                   `json:"enableUserInfoGroups,omitempty"`
+	UserInfoPath             string                 `json:"userInfoPath,omitempty"`
+	UserInfoCacheExpiration  string                 `json:"userInfoCacheExpiration,omitempty"`
+	RequestedScopes          []string               `json:"requestedScopes,omitempty"`
+	RequestedIDTokenClaims   map[string]*oidc.Claim `json:"requestedIDTokenClaims,omitempty"`
+	LogoutURL                string                 `json:"logoutURL,omitempty"`
+	RootCA                   string                 `json:"rootCA,omitempty"`
+	EnablePKCEAuthentication bool                   `json:"enablePKCEAuthentication,omitempty"`
+	DomainHint               string                 `json:"domainHint,omitempty"`
+	Azure                    *AzureOIDCConfig       `json:"azure,omitempty"`
+	RefreshTokenThreshold    string                 `json:"refreshTokenThreshold,omitempty"`
+}
 
-// type AzureOIDCConfig struct {
-// 	UseWorkloadIdentity bool `json:"useWorkloadIdentity,omitempty"`
-// }
+type AzureOIDCConfig struct {
+	UseWorkloadIdentity bool `json:"useWorkloadIdentity,omitempty"`
+}
 
-// var (
-// 	ByClusterURLIndexer     = "byClusterURL"
-// 	byClusterURLIndexerFunc = func(obj any) ([]string, error) {
-// 		s, ok := obj.(*corev1.Secret)
-// 		if !ok {
-// 			return nil, nil
-// 		}
-// 		if s.Labels == nil || s.Labels[common.LabelKeySecretType] != common.LabelValueSecretTypeCluster {
-// 			return nil, nil
-// 		}
-// 		if s.Data == nil {
-// 			return nil, nil
-// 		}
-// 		if url, ok := s.Data["server"]; ok {
-// 			return []string{strings.TrimRight(string(url), "/")}, nil
-// 		}
-// 		return nil, nil
-// 	}
-// 	ByClusterNameIndexer     = "byClusterName"
-// 	byClusterNameIndexerFunc = func(obj any) ([]string, error) {
-// 		s, ok := obj.(*corev1.Secret)
-// 		if !ok {
-// 			return nil, nil
-// 		}
-// 		if s.Labels == nil || s.Labels[common.LabelKeySecretType] != common.LabelValueSecretTypeCluster {
-// 			return nil, nil
-// 		}
-// 		if s.Data == nil {
-// 			return nil, nil
-// 		}
-// 		if name, ok := s.Data["name"]; ok {
-// 			return []string{string(name)}, nil
-// 		}
-// 		return nil, nil
-// 	}
-// 	ByProjectClusterIndexer   = "byProjectCluster"
-// 	ByProjectRepoIndexer      = "byProjectRepo"
-// 	ByProjectRepoWriteIndexer = "byProjectRepoWrite"
-// 	byProjectIndexerFunc      = func(secretType string) func(obj any) ([]string, error) {
-// 		return func(obj any) ([]string, error) {
-// 			s, ok := obj.(*corev1.Secret)
-// 			if !ok {
-// 				return nil, nil
-// 			}
-// 			if s.Labels == nil || s.Labels[common.LabelKeySecretType] != secretType {
-// 				return nil, nil
-// 			}
-// 			if s.Data == nil {
-// 				return nil, nil
-// 			}
-// 			if project, ok := s.Data["project"]; ok {
-// 				return []string{string(project)}, nil
-// 			}
-// 			return nil, nil
-// 		}
-// 	}
-// )
+var (
+	ByClusterURLIndexer     = "byClusterURL"
+	byClusterURLIndexerFunc = func(obj any) ([]string, error) {
+		s, ok := obj.(*corev1.Secret)
+		if !ok {
+			return nil, nil
+		}
+		if s.Labels == nil || s.Labels[common.LabelKeySecretType] != common.LabelValueSecretTypeCluster {
+			return nil, nil
+		}
+		if s.Data == nil {
+			return nil, nil
+		}
+		if url, ok := s.Data["server"]; ok {
+			return []string{strings.TrimRight(string(url), "/")}, nil
+		}
+		return nil, nil
+	}
+	ByClusterNameIndexer     = "byClusterName"
+	byClusterNameIndexerFunc = func(obj any) ([]string, error) {
+		s, ok := obj.(*corev1.Secret)
+		if !ok {
+			return nil, nil
+		}
+		if s.Labels == nil || s.Labels[common.LabelKeySecretType] != common.LabelValueSecretTypeCluster {
+			return nil, nil
+		}
+		if s.Data == nil {
+			return nil, nil
+		}
+		if name, ok := s.Data["name"]; ok {
+			return []string{string(name)}, nil
+		}
+		return nil, nil
+	}
+	ByProjectClusterIndexer   = "byProjectCluster"
+	ByProjectRepoIndexer      = "byProjectRepo"
+	ByProjectRepoWriteIndexer = "byProjectRepoWrite"
+	byProjectIndexerFunc      = func(secretType string) func(obj any) ([]string, error) {
+		return func(obj any) ([]string, error) {
+			s, ok := obj.(*corev1.Secret)
+			if !ok {
+				return nil, nil
+			}
+			if s.Labels == nil || s.Labels[common.LabelKeySecretType] != secretType {
+				return nil, nil
+			}
+			if s.Data == nil {
+				return nil, nil
+			}
+			if project, ok := s.Data["project"]; ok {
+				return []string{string(project)}, nil
+			}
+			return nil, nil
+		}
+	}
+)
 
 // // KustomizeVersionNotRegisteredError is an error type that indicates a requested Kustomize version is not registered in
 // // the Kustomize options in argocd-cm.
@@ -503,7 +513,7 @@ const (
 	// externalServerTLSSecretName defines the name of the external secret holding the server's TLS certificate
 	externalServerTLSSecretName = "argocd-server-tls"
 	// partOfArgoCDSelector holds label selector that should be applied to config maps and secrets used to manage Argo CD
-	partOfArgoCDSelector = "app.kubernetes.io/part-of=argocd"
+	partOfArgoCDSelector = "app.kubernetes.io/part-of=athena"
 
 	// settingsPasswordPatternKey is the key to configure user password regular expression
 	settingsPasswordPatternKey = "passwordPattern"
@@ -554,24 +564,24 @@ const (
 
 // SettingsManager holds config info for a new manager with which to access Kubernetes ConfigMaps.
 type SettingsManager struct {
-	ctx       context.Context
-	clientset kubernetes.Interface
-	secrets   v1listers.SecretLister
-	// secretsInformer cache.SharedIndexInformer
-	configmaps v1listers.ConfigMapLister
-	namespace  string
-	// // subscribers is a list of subscribers to settings updates
-	// subscribers []chan<- *ArgoCDSettings
-	// // mutex protects concurrency sensitive parts of settings manager: access to subscribers list and initialization flag
-	mutex             *sync.Mutex
-	initContextCancel func()
-	// reposOrClusterChanged     func()
+	ctx             context.Context
+	clientset       kubernetes.Interface
+	secrets         v1listers.SecretLister
+	secretsInformer cache.SharedIndexInformer
+	configmaps      v1listers.ConfigMapLister
+	namespace       string
+	// subscribers is a list of subscribers to settings updates
+	subscribers []chan<- *ArgoCDSettings
+	// mutex protects concurrency sensitive parts of settings manager: access to subscribers list and initialization flag
+	mutex                     *sync.Mutex
+	initContextCancel         func()
+	reposOrClusterChanged     func()
 	tlsCertParser             func([]byte, []byte) (tls.Certificate, error)
 	tlsCertCache              *tls.Certificate
 	tlsCertCacheSecretName    string
 	tlsCertCacheSecretVersion string
-	// // clusterInformer provides optimized cluster lookups using informer transforms
-	// clusterInformer *ClusterInformer
+	// clusterInformer provides optimized cluster lookups using informer transforms
+	clusterInformer *ClusterInformer
 }
 
 type incompleteSettingsError struct {
@@ -603,11 +613,11 @@ func (e *incompleteSettingsError) Error() string {
 	return e.message
 }
 
-// func (mgr *SettingsManager) onRepoOrClusterChanged() {
-// 	if mgr.reposOrClusterChanged != nil {
-// 		go mgr.reposOrClusterChanged()
-// 	}
-// }
+func (mgr *SettingsManager) onRepoOrClusterChanged() {
+	if mgr.reposOrClusterChanged != nil {
+		go mgr.reposOrClusterChanged()
+	}
+}
 
 // func (mgr *SettingsManager) RespectRBAC() (int, error) {
 // 	cm, err := mgr.getConfigMap()
@@ -1310,112 +1320,112 @@ func (mgr *SettingsManager) GetSettings() (*ArgoCDSettings, error) {
 	return &settings, nil
 }
 
-func (mgr *SettingsManager) initialize(_ context.Context) error {
-	// tweakConfigMap := func(options *metav1.ListOptions) {
-	// 	cmLabelSelector := fields.ParseSelectorOrDie(partOfArgoCDSelector)
-	// 	options.LabelSelector = cmLabelSelector.String()
-	// }
+func (mgr *SettingsManager) initialize(ctx context.Context) error {
+	tweakConfigMap := func(options *metav1.ListOptions) {
+		cmLabelSelector := fields.ParseSelectorOrDie(partOfArgoCDSelector)
+		options.LabelSelector = cmLabelSelector.String()
+	}
 
-	// eventHandler := cache.ResourceEventHandlerFuncs{
-	// 	UpdateFunc: func(_, _ any) {
-	// 		mgr.onRepoOrClusterChanged()
-	// 	},
-	// 	AddFunc: func(_ any) {
-	// 		mgr.onRepoOrClusterChanged()
-	// 	},
-	// 	DeleteFunc: func(_ any) {
-	// 		mgr.onRepoOrClusterChanged()
-	// 	},
-	// }
-	// indexers := cache.Indexers{
-	// 	cache.NamespaceIndex:      cache.MetaNamespaceIndexFunc,
-	// 	ByClusterURLIndexer:       byClusterURLIndexerFunc,
-	// 	ByClusterNameIndexer:      byClusterNameIndexerFunc,
-	// 	ByProjectClusterIndexer:   byProjectIndexerFunc(common.LabelValueSecretTypeCluster),
-	// 	ByProjectRepoIndexer:      byProjectIndexerFunc(common.LabelValueSecretTypeRepository),
-	// 	ByProjectRepoWriteIndexer: byProjectIndexerFunc(common.LabelValueSecretTypeRepositoryWrite),
-	// }
-	// cmInformer := informersv1.NewFilteredConfigMapInformer(mgr.clientset, mgr.namespace, 3*time.Minute, indexers, tweakConfigMap)
-	// secretsInformer := informersv1.NewSecretInformer(mgr.clientset, mgr.namespace, 3*time.Minute, indexers)
-	// clusterInformer, err := NewClusterInformer(mgr.clientset, mgr.namespace)
-	// if err != nil {
-	// 	log.Error(err)
-	// }
+	eventHandler := cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, _ any) {
+			mgr.onRepoOrClusterChanged()
+		},
+		AddFunc: func(_ any) {
+			mgr.onRepoOrClusterChanged()
+		},
+		DeleteFunc: func(_ any) {
+			mgr.onRepoOrClusterChanged()
+		},
+	}
+	indexers := cache.Indexers{
+		cache.NamespaceIndex:      cache.MetaNamespaceIndexFunc,
+		ByClusterURLIndexer:       byClusterURLIndexerFunc,
+		ByClusterNameIndexer:      byClusterNameIndexerFunc,
+		ByProjectClusterIndexer:   byProjectIndexerFunc(common.LabelValueSecretTypeCluster),
+		ByProjectRepoIndexer:      byProjectIndexerFunc(common.LabelValueSecretTypeRepository),
+		ByProjectRepoWriteIndexer: byProjectIndexerFunc(common.LabelValueSecretTypeRepositoryWrite),
+	}
+	cmInformer := informersv1.NewFilteredConfigMapInformer(mgr.clientset, mgr.namespace, 3*time.Minute, indexers, tweakConfigMap)
+	secretsInformer := informersv1.NewSecretInformer(mgr.clientset, mgr.namespace, 3*time.Minute, indexers)
+	clusterInformer, err := NewClusterInformer(mgr.clientset, mgr.namespace)
+	if err != nil {
+		log.Error(err)
+	}
 
-	// _, err = cmInformer.AddEventHandler(eventHandler)
-	// if err != nil {
-	// 	log.Error(err)
-	// }
+	_, err = cmInformer.AddEventHandler(eventHandler)
+	if err != nil {
+		log.Error(err)
+	}
 
-	// _, err = secretsInformer.AddEventHandler(eventHandler)
-	// if err != nil {
-	// 	log.Error(err)
-	// }
+	_, err = secretsInformer.AddEventHandler(eventHandler)
+	if err != nil {
+		log.Error(err)
+	}
 
-	// _, err = clusterInformer.AddEventHandler(eventHandler)
-	// if err != nil {
-	// 	log.Error(err)
-	// }
+	_, err = clusterInformer.AddEventHandler(eventHandler)
+	if err != nil {
+		log.Error(err)
+	}
 
-	// log.Info("Starting configmap/secret informers")
-	// go func() {
-	// 	cmInformer.Run(ctx.Done())
-	// 	log.Info("configmap informer cancelled")
-	// }()
-	// go func() {
-	// 	secretsInformer.Run(ctx.Done())
-	// 	log.Info("secrets informer cancelled")
-	// }()
+	log.Info("Starting configmap/secret informers")
+	go func() {
+		cmInformer.Run(ctx.Done())
+		log.Info("configmap informer cancelled")
+	}()
+	go func() {
+		secretsInformer.Run(ctx.Done())
+		log.Info("secrets informer cancelled")
+	}()
 
-	// go func() {
-	// 	clusterInformer.Run(ctx.Done())
-	// 	log.Info("cluster secrets informer cancelled")
-	// }()
+	go func() {
+		clusterInformer.Run(ctx.Done())
+		log.Info("cluster secrets informer cancelled")
+	}()
 
-	// if !cache.WaitForCacheSync(ctx.Done(), cmInformer.HasSynced, secretsInformer.HasSynced, clusterInformer.HasSynced) {
-	// 	return errors.New("timed out waiting for settings cache to sync")
-	// }
-	// log.Info("Configmap/secret informer synced")
+	if !cache.WaitForCacheSync(ctx.Done(), cmInformer.HasSynced, secretsInformer.HasSynced, clusterInformer.HasSynced) {
+		return errors.New("timed out waiting for settings cache to sync")
+	}
+	log.Info("Configmap/secret informer synced")
 
-	// mgr.clusterInformer = clusterInformer
-	// log.Info("Cluster cache informer synced")
+	mgr.clusterInformer = clusterInformer
+	log.Info("Cluster cache informer synced")
 
-	// tryNotify := func() {
-	// 	newSettings, err := mgr.GetSettings()
-	// 	if err != nil {
-	// 		log.Warnf("Unable to parse updated settings: %v", err)
-	// 	} else {
-	// 		mgr.notifySubscribers(newSettings)
-	// 	}
-	// }
-	// now := time.Now()
-	// handler := cache.ResourceEventHandlerFuncs{
-	// 	AddFunc: func(obj any) {
-	// 		if metaObj, ok := obj.(metav1.Object); ok {
-	// 			if metaObj.GetCreationTimestamp().After(now) {
-	// 				tryNotify()
-	// 			}
-	// 		}
-	// 	},
-	// 	UpdateFunc: func(oldObj, newObj any) {
-	// 		oldMeta, oldOk := oldObj.(metav1.Common)
-	// 		newMeta, newOk := newObj.(metav1.Common)
-	// 		if oldOk && newOk && oldMeta.GetResourceVersion() != newMeta.GetResourceVersion() {
-	// 			tryNotify()
-	// 		}
-	// 	},
-	// }
-	// _, err = secretsInformer.AddEventHandler(handler)
-	// if err != nil {
-	// 	log.Error(err)
-	// }
-	// _, err = cmInformer.AddEventHandler(handler)
-	// if err != nil {
-	// 	log.Error(err)
-	// }
-	// mgr.secrets = v1listers.NewSecretLister(secretsInformer.GetIndexer())
-	// mgr.secretsInformer = secretsInformer
-	// mgr.configmaps = v1listers.NewConfigMapLister(cmInformer.GetIndexer())
+	tryNotify := func() {
+		newSettings, err := mgr.GetSettings()
+		if err != nil {
+			log.Warnf("Unable to parse updated settings: %v", err)
+		} else {
+			mgr.notifySubscribers(newSettings)
+		}
+	}
+	now := time.Now()
+	handler := cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj any) {
+			if metaObj, ok := obj.(metav1.Object); ok {
+				if metaObj.GetCreationTimestamp().After(now) {
+					tryNotify()
+				}
+			}
+		},
+		UpdateFunc: func(oldObj, newObj any) {
+			oldMeta, oldOk := oldObj.(metav1.Common)
+			newMeta, newOk := newObj.(metav1.Common)
+			if oldOk && newOk && oldMeta.GetResourceVersion() != newMeta.GetResourceVersion() {
+				tryNotify()
+			}
+		},
+	}
+	_, err = secretsInformer.AddEventHandler(handler)
+	if err != nil {
+		log.Error(err)
+	}
+	_, err = cmInformer.AddEventHandler(handler)
+	if err != nil {
+		log.Error(err)
+	}
+	mgr.secrets = v1listers.NewSecretLister(secretsInformer.GetIndexer())
+	mgr.secretsInformer = secretsInformer
+	mgr.configmaps = v1listers.NewConfigMapLister(cmInformer.GetIndexer())
 	return nil
 }
 
@@ -1729,74 +1739,74 @@ func (mgr *SettingsManager) ResyncInformers() error {
 	return mgr.ensureSynced(true)
 }
 
-// // IsSSOConfigured returns whether or not single-sign-on is configured
-// func (a *ArgoCDSettings) IsSSOConfigured() bool {
-// 	if a.IsDexConfigured() {
-// 		return true
-// 	}
-// 	if a.OIDCConfig() != nil {
-// 		return true
-// 	}
-// 	return false
-// }
+// IsSSOConfigured returns whether or not single-sign-on is configured
+func (a *ArgoCDSettings) IsSSOConfigured() bool {
+	if a.IsDexConfigured() {
+		return true
+	}
+	if a.OIDCConfig() != nil {
+		return true
+	}
+	return false
+}
 
-// func (a *ArgoCDSettings) IsDexConfigured() bool {
-// 	if a.URL == "" {
-// 		return false
-// 	}
-// 	dexCfg, err := UnmarshalDexConfig(a.DexConfig)
-// 	if err != nil {
-// 		log.Warnf("invalid dex yaml config: %s", err.Error())
-// 		return false
-// 	}
-// 	return len(dexCfg) > 0
-// }
+func (a *ArgoCDSettings) IsDexConfigured() bool {
+	if a.URL == "" {
+		return false
+	}
+	dexCfg, err := UnmarshalDexConfig(a.DexConfig)
+	if err != nil {
+		log.Warnf("invalid dex yaml config: %s", err.Error())
+		return false
+	}
+	return len(dexCfg) > 0
+}
 
-// // GetServerEncryptionKey generates a new server encryption key using the server signature as a passphrase
-// func (a *ArgoCDSettings) GetServerEncryptionKey() ([]byte, error) {
-// 	return crypto.KeyFromPassphrase(string(a.ServerSignature))
-// }
+// GetServerEncryptionKey generates a new server encryption key using the server signature as a passphrase
+func (a *ArgoCDSettings) GetServerEncryptionKey() ([]byte, error) {
+	return crypto.KeyFromPassphrase(string(a.ServerSignature))
+}
 
-// func UnmarshalDexConfig(config string) (map[string]any, error) {
-// 	var dexCfg map[string]any
-// 	err := yaml.Unmarshal([]byte(config), &dexCfg)
-// 	return dexCfg, err
-// }
+func UnmarshalDexConfig(config string) (map[string]any, error) {
+	var dexCfg map[string]any
+	err := yaml.Unmarshal([]byte(config), &dexCfg)
+	return dexCfg, err
+}
 
-// func (a *ArgoCDSettings) oidcConfig() *oidcConfig {
-// 	if a.OIDCConfigRAW == "" {
-// 		return nil
-// 	}
-// 	configMap := map[string]any{}
-// 	err := yaml.Unmarshal([]byte(a.OIDCConfigRAW), &configMap)
-// 	if err != nil {
-// 		log.Warnf("invalid oidc config: %v", err)
-// 		return nil
-// 	}
+func (a *ArgoCDSettings) oidcConfig() *oidcConfig {
+	if a.OIDCConfigRAW == "" {
+		return nil
+	}
+	configMap := map[string]any{}
+	err := yaml.Unmarshal([]byte(a.OIDCConfigRAW), &configMap)
+	if err != nil {
+		log.Warnf("invalid oidc config: %v", err)
+		return nil
+	}
 
-// 	configMap = ReplaceMapSecrets(configMap, a.Secrets)
-// 	data, err := yaml.Marshal(configMap)
-// 	if err != nil {
-// 		log.Warnf("invalid oidc config: %v", err)
-// 		return nil
-// 	}
+	configMap = ReplaceMapSecrets(configMap, a.Secrets)
+	data, err := yaml.Marshal(configMap)
+	if err != nil {
+		log.Warnf("invalid oidc config: %v", err)
+		return nil
+	}
 
-// 	config, err := unmarshalOIDCConfig(string(data))
-// 	if err != nil {
-// 		log.Warnf("invalid oidc config: %v", err)
-// 		return nil
-// 	}
+	config, err := unmarshalOIDCConfig(string(data))
+	if err != nil {
+		log.Warnf("invalid oidc config: %v", err)
+		return nil
+	}
 
-// 	return &config
-// }
+	return &config
+}
 
-// func (a *ArgoCDSettings) OIDCConfig() *OIDCConfig {
-// 	config := a.oidcConfig()
-// 	if config == nil {
-// 		return nil
-// 	}
-// 	return config.toExported()
-// }
+func (a *ArgoCDSettings) OIDCConfig() *OIDCConfig {
+	config := a.oidcConfig()
+	if config == nil {
+		return nil
+	}
+	return config.toExported()
+}
 
 // // GetWebhookGitHubSecret returns the resolved GitHub webhook secret
 // func (a *ArgoCDSettings) GetWebhookGitHubSecret() string {
@@ -1833,283 +1843,283 @@ func (mgr *SettingsManager) ResyncInformers() error {
 // 	return ReplaceStringSecret(a.WebhookAzureDevOpsPassword, a.Secrets)
 // }
 
-// func unmarshalOIDCConfig(configStr string) (oidcConfig, error) {
-// 	var config oidcConfig
-// 	err := yaml.Unmarshal([]byte(configStr), &config)
-// 	return config, err
-// }
+func unmarshalOIDCConfig(configStr string) (oidcConfig, error) {
+	var config oidcConfig
+	err := yaml.Unmarshal([]byte(configStr), &config)
+	return config, err
+}
 
-// func ValidateOIDCConfig(configStr string) error {
-// 	_, err := unmarshalOIDCConfig(configStr)
-// 	return err
-// }
+func ValidateOIDCConfig(configStr string) error {
+	_, err := unmarshalOIDCConfig(configStr)
+	return err
+}
 
-// // TLSConfig returns a tls.Config with the configured certificates
-// func (a *ArgoCDSettings) TLSConfig() *tls.Config {
-// 	if a.Certificate == nil {
-// 		return nil
-// 	}
-// 	certPool := x509.NewCertPool()
-// 	pemCertBytes, _ := tlsutil.EncodeX509KeyPair(*a.Certificate)
-// 	ok := certPool.AppendCertsFromPEM(pemCertBytes)
-// 	if !ok {
-// 		panic("bad certs")
-// 	}
-// 	return &tls.Config{
-// 		RootCAs: certPool,
-// 	}
-// }
+// TLSConfig returns a tls.Config with the configured certificates
+func (a *ArgoCDSettings) TLSConfig() *tls.Config {
+	if a.Certificate == nil {
+		return nil
+	}
+	certPool := x509.NewCertPool()
+	pemCertBytes, _ := tlsutil.EncodeX509KeyPair(*a.Certificate)
+	ok := certPool.AppendCertsFromPEM(pemCertBytes)
+	if !ok {
+		panic("bad certs")
+	}
+	return &tls.Config{
+		RootCAs: certPool,
+	}
+}
 
-// func (a *ArgoCDSettings) IssuerURL() string {
-// 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
-// 		return oidcConfig.Issuer
-// 	}
-// 	if a.DexConfig != "" {
-// 		return a.URL + common.DexAPIEndpoint
-// 	}
-// 	return ""
-// }
+func (a *ArgoCDSettings) IssuerURL() string {
+	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
+		return oidcConfig.Issuer
+	}
+	if a.DexConfig != "" {
+		return a.URL + common.DexAPIEndpoint
+	}
+	return ""
+}
 
-// // UserInfoGroupsEnabled returns whether group claims should be fetch from UserInfo endpoint
-// func (a *ArgoCDSettings) UserInfoGroupsEnabled() bool {
-// 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
-// 		return oidcConfig.EnableUserInfoGroups
-// 	}
-// 	return false
-// }
+// UserInfoGroupsEnabled returns whether group claims should be fetch from UserInfo endpoint
+func (a *ArgoCDSettings) UserInfoGroupsEnabled() bool {
+	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
+		return oidcConfig.EnableUserInfoGroups
+	}
+	return false
+}
 
-// // UserInfoPath returns the sub-path on which the IDP exposes the UserInfo endpoint
-// func (a *ArgoCDSettings) UserInfoPath() string {
-// 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
-// 		return oidcConfig.UserInfoPath
-// 	}
-// 	return ""
-// }
+// UserInfoPath returns the sub-path on which the IDP exposes the UserInfo endpoint
+func (a *ArgoCDSettings) UserInfoPath() string {
+	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
+		return oidcConfig.UserInfoPath
+	}
+	return ""
+}
 
-// // UserInfoCacheExpiration returns the expiry time of the UserInfo cache
-// func (a *ArgoCDSettings) UserInfoCacheExpiration() time.Duration {
-// 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil && oidcConfig.UserInfoCacheExpiration != "" {
-// 		userInfoCacheExpiration, err := time.ParseDuration(oidcConfig.UserInfoCacheExpiration)
-// 		if err != nil {
-// 			log.Warnf("Failed to parse 'oidc.config.userInfoCacheExpiration' key: %v", err)
-// 		}
-// 		return userInfoCacheExpiration
-// 	}
-// 	return 0
-// }
+// UserInfoCacheExpiration returns the expiry time of the UserInfo cache
+func (a *ArgoCDSettings) UserInfoCacheExpiration() time.Duration {
+	if oidcConfig := a.OIDCConfig(); oidcConfig != nil && oidcConfig.UserInfoCacheExpiration != "" {
+		userInfoCacheExpiration, err := time.ParseDuration(oidcConfig.UserInfoCacheExpiration)
+		if err != nil {
+			log.Warnf("Failed to parse 'oidc.config.userInfoCacheExpiration' key: %v", err)
+		}
+		return userInfoCacheExpiration
+	}
+	return 0
+}
 
-// // RefreshTokenThreshold returns the duration before token expiration that a token should be refreshed by the server
-// func (a *ArgoCDSettings) RefreshTokenThreshold() time.Duration {
-// 	return a.RefreshTokenThresholdWithConfig(a.OIDCConfig())
-// }
+// RefreshTokenThreshold returns the duration before token expiration that a token should be refreshed by the server
+func (a *ArgoCDSettings) RefreshTokenThreshold() time.Duration {
+	return a.RefreshTokenThresholdWithConfig(a.OIDCConfig())
+}
 
-// // RefreshTokenThresholdWithConfig takes oidcConfig as param and returns the duration before token expiration that a token should be refreshed by the server
-// func (a *ArgoCDSettings) RefreshTokenThresholdWithConfig(oidcConfig *OIDCConfig) time.Duration {
-// 	if oidcConfig != nil && oidcConfig.RefreshTokenThreshold != "" {
-// 		refreshTokenThreshold, err := time.ParseDuration(oidcConfig.RefreshTokenThreshold)
-// 		if err != nil {
-// 			log.Warnf("Failed to parse 'oidc.config.refreshTokenThreshold' key: %v", err)
-// 		}
-// 		return refreshTokenThreshold
-// 	}
-// 	return 0
-// }
+// RefreshTokenThresholdWithConfig takes oidcConfig as param and returns the duration before token expiration that a token should be refreshed by the server
+func (a *ArgoCDSettings) RefreshTokenThresholdWithConfig(oidcConfig *OIDCConfig) time.Duration {
+	if oidcConfig != nil && oidcConfig.RefreshTokenThreshold != "" {
+		refreshTokenThreshold, err := time.ParseDuration(oidcConfig.RefreshTokenThreshold)
+		if err != nil {
+			log.Warnf("Failed to parse 'oidc.config.refreshTokenThreshold' key: %v", err)
+		}
+		return refreshTokenThreshold
+	}
+	return 0
+}
 
-// func (a *ArgoCDSettings) OAuth2ClientID() string {
-// 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
-// 		return oidcConfig.ClientID
-// 	}
-// 	if a.DexConfig != "" {
-// 		return common.ArgoCDClientAppID
-// 	}
-// 	return ""
-// }
+func (a *ArgoCDSettings) OAuth2ClientID() string {
+	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
+		return oidcConfig.ClientID
+	}
+	if a.DexConfig != "" {
+		return common.ArgoCDClientAppID
+	}
+	return ""
+}
 
-// // OAuth2AllowedAudiences returns a list of audiences that are allowed for the OAuth2 client. If the user has not
-// // explicitly configured the list of audiences (or has configured an empty list), then the OAuth2 client ID is returned
-// // as the only allowed audience. When using the bundled Dex, that client ID is always "argo-cd".
-// func (a *ArgoCDSettings) OAuth2AllowedAudiences() []string {
-// 	if config := a.oidcConfig(); config != nil {
-// 		if len(config.AllowedAudiences) == 0 {
-// 			allowedAudiences := []string{config.ClientID}
-// 			if config.CLIClientID != "" {
-// 				allowedAudiences = append(allowedAudiences, config.CLIClientID)
-// 			}
-// 			return allowedAudiences
-// 		}
-// 		return config.AllowedAudiences
-// 	}
-// 	if a.DexConfig != "" {
-// 		return []string{common.ArgoCDClientAppID, common.ArgoCDCLIClientAppID}
-// 	}
-// 	return nil
-// }
+// OAuth2AllowedAudiences returns a list of audiences that are allowed for the OAuth2 client. If the user has not
+// explicitly configured the list of audiences (or has configured an empty list), then the OAuth2 client ID is returned
+// as the only allowed audience. When using the bundled Dex, that client ID is always "argo-cd".
+func (a *ArgoCDSettings) OAuth2AllowedAudiences() []string {
+	if config := a.oidcConfig(); config != nil {
+		if len(config.AllowedAudiences) == 0 {
+			allowedAudiences := []string{config.ClientID}
+			if config.CLIClientID != "" {
+				allowedAudiences = append(allowedAudiences, config.CLIClientID)
+			}
+			return allowedAudiences
+		}
+		return config.AllowedAudiences
+	}
+	if a.DexConfig != "" {
+		return []string{common.ArgoCDClientAppID, common.ArgoCDCLIClientAppID}
+	}
+	return nil
+}
 
-// func (a *ArgoCDSettings) SkipAudienceCheckWhenTokenHasNoAudience() bool {
-// 	if config := a.oidcConfig(); config != nil {
-// 		if config.SkipAudienceCheckWhenTokenHasNoAudience != nil {
-// 			return *config.SkipAudienceCheckWhenTokenHasNoAudience
-// 		}
-// 		return false
-// 	}
-// 	// When using the bundled Dex, the audience check is required. Dex will always send JWTs with an audience.
-// 	return false
-// }
+func (a *ArgoCDSettings) SkipAudienceCheckWhenTokenHasNoAudience() bool {
+	if config := a.oidcConfig(); config != nil {
+		if config.SkipAudienceCheckWhenTokenHasNoAudience != nil {
+			return *config.SkipAudienceCheckWhenTokenHasNoAudience
+		}
+		return false
+	}
+	// When using the bundled Dex, the audience check is required. Dex will always send JWTs with an audience.
+	return false
+}
 
-// func (a *ArgoCDSettings) OAuth2ClientSecret() string {
-// 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
-// 		return oidcConfig.ClientSecret
-// 	}
-// 	if a.DexConfig != "" {
-// 		return a.DexOAuth2ClientSecret()
-// 	}
-// 	return ""
-// }
+func (a *ArgoCDSettings) OAuth2ClientSecret() string {
+	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
+		return oidcConfig.ClientSecret
+	}
+	if a.DexConfig != "" {
+		return a.DexOAuth2ClientSecret()
+	}
+	return ""
+}
 
-// func (a *ArgoCDSettings) OAuth2UsePKCE() bool {
-// 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
-// 		return oidcConfig.EnablePKCEAuthentication
-// 	}
-// 	return false
-// }
+func (a *ArgoCDSettings) OAuth2UsePKCE() bool {
+	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
+		return oidcConfig.EnablePKCEAuthentication
+	}
+	return false
+}
 
-// func (a *ArgoCDSettings) UseAzureWorkloadIdentity() bool {
-// 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil && oidcConfig.Azure != nil {
-// 		return oidcConfig.Azure.UseWorkloadIdentity
-// 	}
-// 	return false
-// }
+func (a *ArgoCDSettings) UseAzureWorkloadIdentity() bool {
+	if oidcConfig := a.OIDCConfig(); oidcConfig != nil && oidcConfig.Azure != nil {
+		return oidcConfig.Azure.UseWorkloadIdentity
+	}
+	return false
+}
 
-// // OIDCTLSConfig returns the TLS config for the OIDC provider. If an external provider is configured, returns a TLS
-// // config using the root CAs (if any) specified in the OIDC config. If an external OIDC provider is not configured,
-// // returns the API server TLS config, because the API server proxies requests to Dex.
-// func (a *ArgoCDSettings) OIDCTLSConfig() *tls.Config {
-// 	var tlsConfig *tls.Config
+// OIDCTLSConfig returns the TLS config for the OIDC provider. If an external provider is configured, returns a TLS
+// config using the root CAs (if any) specified in the OIDC config. If an external OIDC provider is not configured,
+// returns the API server TLS config, because the API server proxies requests to Dex.
+func (a *ArgoCDSettings) OIDCTLSConfig() *tls.Config {
+	var tlsConfig *tls.Config
 
-// 	oidcConfig := a.OIDCConfig()
-// 	if oidcConfig != nil {
-// 		tlsConfig = &tls.Config{}
-// 		if oidcConfig.RootCA != "" {
-// 			certPool := x509.NewCertPool()
-// 			ok := certPool.AppendCertsFromPEM([]byte(oidcConfig.RootCA))
-// 			if !ok {
-// 				log.Warn("failed to append certificates from PEM: proceeding without custom rootCA")
-// 			} else {
-// 				tlsConfig.RootCAs = certPool
-// 			}
-// 		}
-// 	} else {
-// 		tlsConfig = a.TLSConfig()
-// 	}
-// 	if tlsConfig != nil && a.OIDCTLSInsecureSkipVerify {
-// 		tlsConfig.InsecureSkipVerify = true
-// 	}
-// 	return tlsConfig
-// }
+	oidcConfig := a.OIDCConfig()
+	if oidcConfig != nil {
+		tlsConfig = &tls.Config{}
+		if oidcConfig.RootCA != "" {
+			certPool := x509.NewCertPool()
+			ok := certPool.AppendCertsFromPEM([]byte(oidcConfig.RootCA))
+			if !ok {
+				log.Warn("failed to append certificates from PEM: proceeding without custom rootCA")
+			} else {
+				tlsConfig.RootCAs = certPool
+			}
+		}
+	} else {
+		tlsConfig = a.TLSConfig()
+	}
+	if tlsConfig != nil && a.OIDCTLSInsecureSkipVerify {
+		tlsConfig.InsecureSkipVerify = true
+	}
+	return tlsConfig
+}
 
-// func appendURLPath(inputURL string, inputPath string) (string, error) {
-// 	u, err := url.Parse(inputURL)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	u.Path = path.Join(u.Path, inputPath)
-// 	return u.String(), nil
-// }
+func appendURLPath(inputURL string, inputPath string) (string, error) {
+	u, err := url.Parse(inputURL)
+	if err != nil {
+		return "", err
+	}
+	u.Path = path.Join(u.Path, inputPath)
+	return u.String(), nil
+}
 
-// func (a *ArgoCDSettings) RedirectURL() (string, error) {
-// 	return appendURLPath(a.URL, common.CallbackEndpoint)
-// }
+func (a *ArgoCDSettings) RedirectURL() (string, error) {
+	return appendURLPath(a.URL, common.CallbackEndpoint)
+}
 
-// func (a *ArgoCDSettings) ArgoURLForRequest(r *http.Request) (string, error) {
-// 	for _, candidateURL := range append([]string{a.URL}, a.AdditionalURLs...) {
-// 		u, err := url.Parse(candidateURL)
-// 		if err != nil {
-// 			return "", err
-// 		}
-// 		if u.Host == r.Host && strings.HasPrefix(r.URL.RequestURI(), u.RequestURI()) {
-// 			return candidateURL, nil
-// 		}
-// 	}
-// 	return a.URL, nil
-// }
+func (a *ArgoCDSettings) ArgoURLForRequest(r *http.Request) (string, error) {
+	for _, candidateURL := range append([]string{a.URL}, a.AdditionalURLs...) {
+		u, err := url.Parse(candidateURL)
+		if err != nil {
+			return "", err
+		}
+		if u.Host == r.Host && strings.HasPrefix(r.URL.RequestURI(), u.RequestURI()) {
+			return candidateURL, nil
+		}
+	}
+	return a.URL, nil
+}
 
-// func (a *ArgoCDSettings) RedirectURLForRequest(r *http.Request) (string, error) {
-// 	if r == nil {
-// 		return "", errors.New("request is nil")
-// 	}
-// 	base, err := a.ArgoURLForRequest(r)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return appendURLPath(base, common.CallbackEndpoint)
-// }
+func (a *ArgoCDSettings) RedirectURLForRequest(r *http.Request) (string, error) {
+	if r == nil {
+		return "", errors.New("request is nil")
+	}
+	base, err := a.ArgoURLForRequest(r)
+	if err != nil {
+		return "", err
+	}
+	return appendURLPath(base, common.CallbackEndpoint)
+}
 
-// func (a *ArgoCDSettings) RedirectAdditionalURLs() ([]string, error) {
-// 	RedirectAdditionalURLs := []string{}
-// 	for _, url := range a.AdditionalURLs {
-// 		redirectURL, err := appendURLPath(url, common.CallbackEndpoint)
-// 		if err != nil {
-// 			return []string{}, err
-// 		}
-// 		RedirectAdditionalURLs = append(RedirectAdditionalURLs, redirectURL)
-// 	}
-// 	return RedirectAdditionalURLs, nil
-// }
+func (a *ArgoCDSettings) RedirectAdditionalURLs() ([]string, error) {
+	RedirectAdditionalURLs := []string{}
+	for _, url := range a.AdditionalURLs {
+		redirectURL, err := appendURLPath(url, common.CallbackEndpoint)
+		if err != nil {
+			return []string{}, err
+		}
+		RedirectAdditionalURLs = append(RedirectAdditionalURLs, redirectURL)
+	}
+	return RedirectAdditionalURLs, nil
+}
 
-// func (a *ArgoCDSettings) DexRedirectURL() (string, error) {
-// 	return appendURLPath(a.URL, common.DexCallbackEndpoint)
-// }
+func (a *ArgoCDSettings) DexRedirectURL() (string, error) {
+	return appendURLPath(a.URL, common.DexCallbackEndpoint)
+}
 
-// // DexOAuth2ClientSecret calculates an arbitrary, but predictable OAuth2 client secret string derived
-// // from the server secret. This is called by the dex startup wrapper (argocd-dex rundex), as well
-// // as the API server, such that they both independently come to the same conclusion of what the
-// // OAuth2 shared client secret should be.
-// func (a *ArgoCDSettings) DexOAuth2ClientSecret() string {
-// 	h := sha256.New()
-// 	_, err := h.Write(a.ServerSignature)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	sha := h.Sum(nil)
-// 	return base64.URLEncoding.EncodeToString(sha)[:40]
-// }
+// DexOAuth2ClientSecret calculates an arbitrary, but predictable OAuth2 client secret string derived
+// from the server secret. This is called by the dex startup wrapper (argocd-dex rundex), as well
+// as the API server, such that they both independently come to the same conclusion of what the
+// OAuth2 shared client secret should be.
+func (a *ArgoCDSettings) DexOAuth2ClientSecret() string {
+	h := sha256.New()
+	_, err := h.Write(a.ServerSignature)
+	if err != nil {
+		panic(err)
+	}
+	sha := h.Sum(nil)
+	return base64.URLEncoding.EncodeToString(sha)[:40]
+}
 
-// // Subscribe registers a channel in which to subscribe to settings updates
-// func (mgr *SettingsManager) Subscribe(subCh chan<- *ArgoCDSettings) {
-// 	mgr.mutex.Lock()
-// 	defer mgr.mutex.Unlock()
-// 	mgr.subscribers = append(mgr.subscribers, subCh)
-// 	log.Infof("%v subscribed to settings updates", subCh)
-// }
+// Subscribe registers a channel in which to subscribe to settings updates
+func (mgr *SettingsManager) Subscribe(subCh chan<- *ArgoCDSettings) {
+	mgr.mutex.Lock()
+	defer mgr.mutex.Unlock()
+	mgr.subscribers = append(mgr.subscribers, subCh)
+	log.Infof("%v subscribed to settings updates", subCh)
+}
 
-// // Unsubscribe unregisters a channel from receiving of settings updates
-// func (mgr *SettingsManager) Unsubscribe(subCh chan<- *ArgoCDSettings) {
-// 	mgr.mutex.Lock()
-// 	defer mgr.mutex.Unlock()
-// 	for i, ch := range mgr.subscribers {
-// 		if ch == subCh {
-// 			mgr.subscribers = append(mgr.subscribers[:i], mgr.subscribers[i+1:]...)
-// 			log.Infof("%v unsubscribed from settings updates", subCh)
-// 			return
-// 		}
-// 	}
-// }
+// Unsubscribe unregisters a channel from receiving of settings updates
+func (mgr *SettingsManager) Unsubscribe(subCh chan<- *ArgoCDSettings) {
+	mgr.mutex.Lock()
+	defer mgr.mutex.Unlock()
+	for i, ch := range mgr.subscribers {
+		if ch == subCh {
+			mgr.subscribers = append(mgr.subscribers[:i], mgr.subscribers[i+1:]...)
+			log.Infof("%v unsubscribed from settings updates", subCh)
+			return
+		}
+	}
+}
 
-// func (mgr *SettingsManager) notifySubscribers(newSettings *ArgoCDSettings) {
-// 	mgr.mutex.Lock()
-// 	defer mgr.mutex.Unlock()
-// 	if len(mgr.subscribers) > 0 {
-// 		subscribers := make([]chan<- *ArgoCDSettings, len(mgr.subscribers))
-// 		copy(subscribers, mgr.subscribers)
-// 		// make sure subscribes are notified in a separate thread to avoid potential deadlock
-// 		go func() {
-// 			log.Infof("Notifying %d settings subscribers: %v", len(subscribers), subscribers)
-// 			for _, sub := range subscribers {
-// 				sub <- newSettings
-// 			}
-// 		}()
-// 	}
-// }
+func (mgr *SettingsManager) notifySubscribers(newSettings *ArgoCDSettings) {
+	mgr.mutex.Lock()
+	defer mgr.mutex.Unlock()
+	if len(mgr.subscribers) > 0 {
+		subscribers := make([]chan<- *ArgoCDSettings, len(mgr.subscribers))
+		copy(subscribers, mgr.subscribers)
+		// make sure subscribes are notified in a separate thread to avoid potential deadlock
+		go func() {
+			log.Infof("Notifying %d settings subscribers: %v", len(subscribers), subscribers)
+			for _, sub := range subscribers {
+				sub <- newSettings
+			}
+		}()
+	}
+}
 
 func isIncompleteSettingsError(err error) bool {
 	var incompleteSettingsErr *incompleteSettingsError
@@ -2119,7 +2129,7 @@ func isIncompleteSettingsError(err error) bool {
 // InitializeSettings is used to initialize empty admin password, signature, certificate etc if missing
 func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoCDSettings, error) {
 	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-	err := mgr.UpdateAccount(common.AthenaAdminUsername, func(adminAccount *Account) error {
+	err := mgr.UpdateAccount(common.ArgoCDAdminUsername, func(adminAccount *Account) error {
 		if adminAccount.Enabled {
 			now := time.Now().UTC()
 			if adminAccount.PasswordHash == "" {
@@ -2207,55 +2217,55 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 	return cdSettings, nil
 }
 
-// // ReplaceMapSecrets takes a json object and recursively looks for any secret key references in the
-// // object and replaces the value with the secret value
-// func ReplaceMapSecrets(obj map[string]any, secretValues map[string]string) map[string]any {
-// 	newObj := make(map[string]any)
-// 	for k, v := range obj {
-// 		switch val := v.(type) {
-// 		case map[string]any:
-// 			newObj[k] = ReplaceMapSecrets(val, secretValues)
-// 		case []any:
-// 			newObj[k] = replaceListSecrets(val, secretValues)
-// 		case string:
-// 			newObj[k] = ReplaceStringSecret(val, secretValues)
-// 		default:
-// 			newObj[k] = val
-// 		}
-// 	}
-// 	return newObj
-// }
+// ReplaceMapSecrets takes a json object and recursively looks for any secret key references in the
+// object and replaces the value with the secret value
+func ReplaceMapSecrets(obj map[string]any, secretValues map[string]string) map[string]any {
+	newObj := make(map[string]any)
+	for k, v := range obj {
+		switch val := v.(type) {
+		case map[string]any:
+			newObj[k] = ReplaceMapSecrets(val, secretValues)
+		case []any:
+			newObj[k] = replaceListSecrets(val, secretValues)
+		case string:
+			newObj[k] = ReplaceStringSecret(val, secretValues)
+		default:
+			newObj[k] = val
+		}
+	}
+	return newObj
+}
 
-// func replaceListSecrets(obj []any, secretValues map[string]string) []any {
-// 	newObj := make([]any, len(obj))
-// 	for i, v := range obj {
-// 		switch val := v.(type) {
-// 		case map[string]any:
-// 			newObj[i] = ReplaceMapSecrets(val, secretValues)
-// 		case []any:
-// 			newObj[i] = replaceListSecrets(val, secretValues)
-// 		case string:
-// 			newObj[i] = ReplaceStringSecret(val, secretValues)
-// 		default:
-// 			newObj[i] = val
-// 		}
-// 	}
-// 	return newObj
-// }
+func replaceListSecrets(obj []any, secretValues map[string]string) []any {
+	newObj := make([]any, len(obj))
+	for i, v := range obj {
+		switch val := v.(type) {
+		case map[string]any:
+			newObj[i] = ReplaceMapSecrets(val, secretValues)
+		case []any:
+			newObj[i] = replaceListSecrets(val, secretValues)
+		case string:
+			newObj[i] = ReplaceStringSecret(val, secretValues)
+		default:
+			newObj[i] = val
+		}
+	}
+	return newObj
+}
 
-// // ReplaceStringSecret checks if given string is a secret key reference ( starts with $ ) and returns corresponding value from provided map
-// func ReplaceStringSecret(val string, secretValues map[string]string) string {
-// 	if val == "" || !strings.HasPrefix(val, "$") {
-// 		return val
-// 	}
-// 	secretKey := val[1:]
-// 	secretVal, ok := secretValues[secretKey]
-// 	if !ok {
-// 		log.Warnf("config referenced '%s', but key does not exist in secret", val)
-// 		return val
-// 	}
-// 	return strings.TrimSpace(secretVal)
-// }
+// ReplaceStringSecret checks if given string is a secret key reference ( starts with $ ) and returns corresponding value from provided map
+func ReplaceStringSecret(val string, secretValues map[string]string) string {
+	if val == "" || !strings.HasPrefix(val, "$") {
+		return val
+	}
+	secretKey := val[1:]
+	secretVal, ok := secretValues[secretKey]
+	if !ok {
+		log.Warnf("config referenced '%s', but key does not exist in secret", val)
+		return val
+	}
+	return strings.TrimSpace(secretVal)
+}
 
 // // GetGlobalProjectsSettings loads the global project settings from argocd-cm ConfigMap
 // func (mgr *SettingsManager) GetGlobalProjectsSettings() ([]GlobalProjectSettings, error) {

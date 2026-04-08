@@ -5,4 +5,20 @@
 
 package v1alpha1
 
+func (*AWSAuthConfig) ProtoMessage() {}
+
 func (*Application) ProtoMessage() {}
+
+func (*Cluster) ProtoMessage() {}
+
+func (*ClusterCacheInfo) ProtoMessage() {}
+
+func (*ClusterConfig) ProtoMessage() {}
+
+func (*ClusterInfo) ProtoMessage() {}
+
+func (*ConnectionState) ProtoMessage() {}
+
+func (*ExecProviderConfig) ProtoMessage() {}
+
+func (*TLSClientConfig) ProtoMessage() {}

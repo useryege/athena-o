@@ -130,6 +130,7 @@ For example, install `make` with:
 sudo apt update
 sudo apt install -y make unzip
 sudo apt install -y net-tools
+sudo apt install -y jq
 ```
 
 ---
