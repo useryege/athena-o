@@ -40,7 +40,7 @@ athena-server [flags]
       --content-security-policy value                 Set Content-Security-Policy header in HTTP responses to value. To disable, set to "". (default "frame-ancestors 'self';")
       --context string                                The name of the kubeconfig context to use
       --default-cache-expiration duration             Cache expiration default (default 24h0m0s)
-      --dex-server string                             Dex server address (default "argocd-dex-server:5556")
+      --dex-server string                             Dex server address (default "athena-dex-server:5556")
       --dex-server-plaintext                          Use a plaintext client (non-TLS) to connect to dex server
       --dex-server-strict-tls                         Perform strict validation of TLS certificates when connecting to dex server
       --disable-auth                                  Disable client authentication
@@ -65,7 +65,7 @@ athena-server [flags]
       --password string                               Password for basic authentication to the API server
       --port int                                      Listen on given port (default 8080)
       --proxy-url string                              If provided, this URL will be used to connect via proxy
-      --redis string                                  Redis server hostname and port (e.g. argocd-redis:6379). 
+      --redis string                                  Redis server hostname and port (e.g. athena-redis:6379). 
       --redis-ca-certificate string                   Path to Redis server CA certificate (e.g. /etc/certs/redis/ca.crt). If not specified, system trusted CAs will be used for server certificate validation.
       --redis-client-certificate string               Path to Redis client certificate (e.g. /etc/certs/redis/client.crt).
       --redis-client-key string                       Path to Redis client key (e.g. /etc/certs/redis/client.crt).
@@ -75,7 +75,7 @@ athena-server [flags]
       --redisdb int                                   Redis database.
       --request-timeout string                        The length of time to wait before giving up on a single server request. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means don't timeout requests. (default "0")
       --rootpath string                               Used if Argo CD is running behind reverse proxy under subpath different from /
-      --sentinel stringArray                          Redis sentinel hostname and port (e.g. argocd-redis-ha-announce-0:6379). 
+      --sentinel stringArray                          Redis sentinel hostname and port (e.g. athena-redis-ha-announce-0:6379). 
       --sentinelmaster string                         Redis sentinel master group name. (default "master")
       --server string                                 The address and port of the Kubernetes API server
       --staticassets string                           Directory path that contains additional static assets (default "/shared/app")

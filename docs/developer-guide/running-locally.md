@@ -30,18 +30,21 @@ The services you will start later assume you are running in the namespace where 
 kubectl config set-context --current --namespace=athena
 ```
 
+### Get All Resources that can be scaled down
+```shell
+kubectl -n athena get deploy,statefulset
+```
+
 ### Scale down any Argo CD instance in your cluster
 
 Make sure that Argo CD is not running in your development cluster by scaling down the deployments:
 
 ```shell
-kubectl -n athena scale statefulset/athena-application-controller --replicas 0
-kubectl -n athena scale deployment/athena-dex-server --replicas 0
-kubectl -n athena scale deployment/athena-repo-server --replicas 0
+# kubectl -n athena scale deployment/athena-dex-server --replicas 0
 kubectl -n athena scale deployment/athena-server --replicas 0
 kubectl -n athena scale deployment/athena-redis --replicas 0
-kubectl -n athena scale deployment/athena-applicationset-controller --replicas 0
-kubectl -n athena scale deployment/athena-notifications-controller --replicas 0
+# kubectl -n athena scale deployment/athena-applicationset-controller --replicas 0
+# kubectl -n athena scale deployment/athena-notifications-controller --replicas 0
 ```
 
 ## Running Argo CD locally, outside of K8s cluster
@@ -158,7 +161,7 @@ To test most CLI commands, you will need to log in.
 First, get the auto-generated secret:
 
 ```shell
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+kubectl -n athena get secret athena-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
 ```
 
 Then log in using that password and username `admin`:

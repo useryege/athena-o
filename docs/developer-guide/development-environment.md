@@ -129,12 +129,12 @@ make install-codegen-tools-local
 
 ```shell
 kubectl create namespace athena &&
-kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/master/manifests/install.yaml
+kubectl apply -n athena --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/master/manifests/install.yaml
 ```
 
 Set kubectl config to avoid specifying the namespace in every kubectl command.  
 
 ```shell
-kubectl config set-context --current --namespace=argocd
+kubectl config set-context --current --namespace=athena
 ```
 
