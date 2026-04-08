@@ -2129,10 +2129,13 @@ func isIncompleteSettingsError(err error) bool {
 // InitializeSettings is used to initialize empty admin password, signature, certificate etc if missing
 func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoCDSettings, error) {
 	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+	log.Infof("InitializeSettings started (namespace=%s, insecureModeEnabled=%t)", mgr.namespace, insecureModeEnabled)
 	err := mgr.UpdateAccount(common.ArgoCDAdminUsername, func(adminAccount *Account) error {
+		log.Infof("Processing admin account settings (enabled=%t, hasPasswordHash=%t, hasPasswordMtime=%t)", adminAccount.Enabled, adminAccount.PasswordHash != "", adminAccount.PasswordMtime != nil && !adminAccount.PasswordMtime.IsZero())
 		if adminAccount.Enabled {
 			now := time.Now().UTC()
 			if adminAccount.PasswordHash == "" {
+				log.Info("Admin password hash missing, generating initial password")
 				randBytes := make([]byte, initialPasswordLength)
 				for i := 0; i < initialPasswordLength; i++ {
 					num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
@@ -2148,6 +2151,7 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 					return err
 				}
 				ku := kube.NewKubeUtil(mgr.ctx, mgr.clientset)
+				log.Infof("Persisting generated admin password secret to %s/%s", mgr.namespace, initialPasswordSecretName)
 				err = ku.CreateOrUpdateSecretField(mgr.namespace, initialPasswordSecretName, initialPasswordSecretField, initialPassword)
 				if err != nil {
 					return err
@@ -2155,10 +2159,14 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 				adminAccount.PasswordHash = hashedPassword
 				adminAccount.PasswordMtime = &now
 				log.Info("Initialized admin password")
+			} else {
+				log.Info("Admin password hash already exists, skipping password initialization")
 			}
 			if adminAccount.PasswordMtime == nil || adminAccount.PasswordMtime.IsZero() {
 				adminAccount.PasswordMtime = &now
 				log.Info("Initialized admin mtime")
+			} else {
+				log.Info("Admin mtime already exists, skipping mtime initialization")
 			}
 		} else {
 			log.Info("admin disabled")
@@ -2169,25 +2177,33 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 		return nil, err
 	}
 
+	log.Info("Loading existing settings for initialization")
 	cdSettings, err := mgr.GetSettings()
 	if err != nil && !isIncompleteSettingsError(err) {
 		return nil, err
 	}
 	if cdSettings == nil {
+		log.Info("Settings not found, creating empty settings struct")
 		cdSettings = &ArgoCDSettings{}
+	} else {
+		log.Infof("Loaded existing settings (hasServerSignature=%t, hasCertificate=%t)", cdSettings.ServerSignature != nil, cdSettings.Certificate != nil)
 	}
 	if cdSettings.ServerSignature == nil {
 		// set JWT signature
+		log.Info("Server signature missing, generating new signature")
 		signature, err := util.MakeSignature(32)
 		if err != nil {
 			return nil, fmt.Errorf("error setting JWT signature: %w", err)
 		}
 		cdSettings.ServerSignature = signature
 		log.Info("Initialized server signature")
+	} else {
+		log.Info("Server signature already exists, skipping signature initialization")
 	}
 
 	if cdSettings.Certificate == nil && !insecureModeEnabled {
 		// generate TLS cert
+		log.Info("TLS certificate missing and insecure mode disabled, generating TLS certificate")
 		hosts := []string{
 			"localhost",
 			"athena-server",
@@ -2206,13 +2222,21 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 		}
 		cdSettings.Certificate = cert
 		log.Info("Initialized TLS certificate")
+	} else if cdSettings.Certificate != nil {
+		log.Info("TLS certificate already exists, skipping certificate initialization")
+	} else {
+		log.Info("Insecure mode enabled, skipping TLS certificate initialization")
 	}
 
+	log.Info("Saving initialized signature and certificate settings")
 	err = mgr.saveSignatureAndCertificate(cdSettings)
 	if apierrors.IsConflict(err) {
 		// assume settings are initialized by another instance of api server
 		log.Warnf("conflict when initializing settings. assuming updated by another replica")
 		return mgr.GetSettings()
+	}
+	if err == nil {
+		log.Info("InitializeSettings completed successfully")
 	}
 	return cdSettings, nil
 }
