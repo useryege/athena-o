@@ -1074,7 +1074,7 @@ type Application struct {
 // }
 
 // // Environ builds a list of environment variables to represent parameters sent to a plugin from the Application
-// // manifest. Parameters are represented as one large stringified JSON array (under `ARGOCD_APP_PARAMETERS`). They're
+// // manifest. Parameters are represented as one large stringified JSON array (under `ATHENA_APP_PARAMETERS`). They're
 // // also represented as individual environment variables, each variable's key being an escaped version of the parameter's
 // // name.
 // func (p ApplicationSourcePluginParameters) Environ() ([]string, error) {
@@ -1082,7 +1082,7 @@ type Application struct {
 // 	if err != nil {
 // 		return nil, fmt.Errorf("failed to marshal plugin parameters: %w", err)
 // 	}
-// 	jsonParam := "ARGOCD_APP_PARAMETERS=" + string(out)
+// 	jsonParam := "ATHENA_APP_PARAMETERS=" + string(out)
 
 // 	env := []string{jsonParam}
 
@@ -1628,23 +1628,23 @@ type Application struct {
 // type CommitMetadata struct {
 // 	// Author is the author of the commit, i.e. `git show -s --format=%an <%ae>`.
 // 	// Must be formatted according to RFC 5322 (mail.Address.String()).
-// 	// Comes from the Argocd-reference-commit-author trailer.
+// 	// Comes from the Athena-reference-commit-author trailer.
 // 	Author string `json:"author,omitempty" protobuf:"bytes,1,opt,name=author"`
 // 	// Date is the date of the commit, formatted as by `git show -s --format=%aI` (RFC 3339).
 // 	// It can also be an empty string if the date is unknown.
-// 	// Comes from the Argocd-reference-commit-date trailer.
+// 	// Comes from the Athena-reference-commit-date trailer.
 // 	Date string `json:"date,omitempty" protobuf:"bytes,2,opt,name=date"`
 // 	// Subject is the commit message subject line, i.e. `git show -s --format=%s`.
-// 	// Comes from the Argocd-reference-commit-subject trailer.
+// 	// Comes from the Athena-reference-commit-subject trailer.
 // 	Subject string `json:"subject,omitempty" protobuf:"bytes,3,opt,name=subject"`
 // 	// Body is the commit message body minus the subject line, i.e. `git show -s --format=%b`.
-// 	// Comes from the Argocd-reference-commit-body trailer.
+// 	// Comes from the Athena-reference-commit-body trailer.
 // 	Body string `json:"body,omitempty" protobuf:"bytes,4,opt,name=body"`
 // 	// SHA is the commit hash.
-// 	// Comes from the Argocd-reference-commit-sha trailer.
+// 	// Comes from the Athena-reference-commit-sha trailer.
 // 	SHA string `json:"sha,omitempty" protobuf:"bytes,5,opt,name=sha"`
 // 	// RepoURL is the URL of the repository where the commit is located.
-// 	// Comes from the Argocd-reference-commit-repourl trailer.
+// 	// Comes from the Athena-reference-commit-repourl trailer.
 // 	// This value is not validated and should not be used to construct UI links unless it is properly
 // 	// validated and/or sanitized first.
 // 	RepoURL string `json:"repoUrl,omitempty" protobuf:"bytes,6,opt,name=repoUrl"`
@@ -3769,7 +3769,7 @@ func SetK8SConfigDefaults(config *rest.Config) error {
 // 				TLSClientConfig: tlsClientConfig,
 // 				ExecProvider: &api.ExecConfig{
 // 					APIVersion:      "client.authentication.k8s.io/v1beta1",
-// 					Command:         "argocd-k8s-auth",
+// 					Command:         "athena-k8s-auth",
 // 					Args:            args,
 // 					InteractiveMode: api.NeverExecInteractiveMode,
 // 				},
@@ -3901,7 +3901,7 @@ func SetK8SConfigDefaults(config *rest.Config) error {
 // }
 
 // // GetAnnotation returns the value of the specified annotation if it exists,
-// // e.g., a.GetAnnotation("argocd.argoproj.io/manifest-generate-paths").
+// // e.g., a.GetAnnotation("athena.useryege.io/manifest-generate-paths").
 // // If the annotation does not exist, it returns an empty string.
 // func (app *Application) GetAnnotation(annotation string) string {
 // 	v, exists := app.Annotations[annotation]

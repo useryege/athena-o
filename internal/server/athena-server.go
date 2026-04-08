@@ -164,8 +164,8 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		staticFS = utilio.NewComposableFS(staticFS, root.FS())
 	}
 
-	secretInformer := k8s.NewSecretInformer(opts.KubeClientset, opts.Namespace, "argocd-notifications-secret")
-	configMapInformer := k8s.NewConfigMapInformer(opts.KubeClientset, opts.Namespace, "argocd-notifications-cm")
+	secretInformer := k8s.NewSecretInformer(opts.KubeClientset, opts.Namespace, "athena-notifications-secret")
+	configMapInformer := k8s.NewConfigMapInformer(opts.KubeClientset, opts.Namespace, "athena-notifications-cm")
 
 	dbInstance := db.NewDB(opts.Namespace, settingsMgr, opts.KubeClientset)
 	logger := log.NewEntry(log.StandardLogger())
@@ -589,7 +589,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// }
 	// // withTracingHandler is a middleware that extracts OpenTelemetry trace context from HTTP headers
 	// // and injects it into the request context. This enables trace context propagation from HTTP clients
-	// // to gRPC services, allowing for better distributed tracing across the ArgoCD server.
+	// // to gRPC services, allowing for better distributed tracing across the Athena server.
 	// withTracingHandler := func(h http.Handler) http.Handler {
 	// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 		propagator := otel.GetTextMapPropagator()
@@ -796,7 +796,7 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 	}
 
 	// Start the muxed listeners for our servers
-	log.Infof("argocd %s serving on port %d (url: %s, tls: %v, namespace: %s, sso: %v)",
+	log.Infof("athena %s serving on port %d (url: %s, tls: %v, namespace: %s, sso: %v)",
 		common.GetVersion(), server.ListenPort, server.settings.URL, server.useTLS(), server.Namespace, server.settings.IsSSOConfigured())
 	log.Infof("Enabled application namespace patterns: %s", server.allowedApplicationNamespacesAsString())
 

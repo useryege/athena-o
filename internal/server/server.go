@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	maxConcurrentLoginRequestsCountEnv = "ARGOCD_MAX_CONCURRENT_LOGIN_REQUESTS_COUNT"
-	replicasCountEnv                   = "ARGOCD_API_SERVER_REPLICAS"
+	maxConcurrentLoginRequestsCountEnv = "ATHENA_MAX_CONCURRENT_LOGIN_REQUESTS_COUNT"
+	replicasCountEnv                   = "ATHENA_API_SERVER_REPLICAS"
 	// renewTokenKey                      = "renew-token"
 )
 

@@ -92,7 +92,7 @@ type ArgoCDSettings struct {
 	WebhookAzureDevOpsUsername string `json:"webhookAzureDevOpsUsername,omitempty"`
 	// WebhookAzureDevOpsPassword holds the password for authenticating Azure DevOps webhook events
 	WebhookAzureDevOpsPassword string `json:"webhookAzureDevOpsPassword,omitempty"`
-	// Secrets holds all secrets in argocd-secret as a map[string]string
+	// Secrets holds all secrets in athena-secret as a map[string]string
 	Secrets map[string]string `json:"secrets,omitempty"`
 	// KustomizeBuildOptions is a string of kustomize build parameters
 	KustomizeBuildOptions string `json:"kustomizeBuildOptions,omitempty"`
@@ -100,7 +100,7 @@ type ArgoCDSettings struct {
 	AnonymousUserEnabled bool `json:"anonymousUserEnabled,omitempty"`
 	// Specifies token expiration duration
 	UserSessionDuration time.Duration `json:"userSessionDuration,omitempty"`
-	// UiCssURL local or remote path to user-defined CSS to customize ArgoCD UI
+	// UiCssURL local or remote path to user-defined CSS to customize Athena UI
 	UiCssURL string `json:"uiCssURL,omitempty"` //nolint:revive //FIXME(var-naming)
 	// Content of UI Banner
 	UiBannerContent string `json:"uiBannerContent,omitempty"` //nolint:revive //FIXME(var-naming)
@@ -112,7 +112,7 @@ type ArgoCDSettings struct {
 	UiBannerPosition string `json:"uiBannerPosition,omitempty"` //nolint:revive //FIXME(var-naming)
 	// PasswordPattern for password regular expression
 	PasswordPattern string `json:"passwordPattern,omitempty"`
-	// BinaryUrls contains the URLs for downloading argocd binaries
+	// BinaryUrls contains the URLs for downloading athena binaries
 	BinaryUrls map[string]string `json:"binaryUrls,omitempty"`
 	// InClusterEnabled indicates whether to allow in-cluster server address
 	InClusterEnabled bool `json:"inClusterEnabled"`
@@ -133,7 +133,7 @@ type ArgoCDSettings struct {
 	OIDCTLSInsecureSkipVerify bool `json:"oidcTLSInsecureSkipVerify"`
 	// AppsInAnyNamespaceEnabled indicates whether applications are allowed to be created in any namespace
 	AppsInAnyNamespaceEnabled bool `json:"appsInAnyNamespaceEnabled"`
-	// ExtensionConfig configurations related to ArgoCD proxy extensions. The keys are the extension name.
+	// ExtensionConfig configurations related to Athena proxy extensions. The keys are the extension name.
 	// The value is a yaml string defined in extension.ExtensionConfigs struct.
 	ExtensionConfig map[string]string `json:"extensionConfig,omitempty"`
 	// ImpersonationEnabled indicates whether Application sync privileges can be decoupled from control plane
@@ -160,7 +160,7 @@ type ArgoCDSettings struct {
 // 	ChatURL string `json:"chatUrl,omitempty"`
 // 	// the text for getting chat help, defaults to "Chat now!"
 // 	ChatText string `json:"chatText,omitempty"`
-// 	// the URLs for downloading argocd binaries
+// 	// the URLs for downloading athena binaries
 // 	BinaryURLs map[string]string `json:"binaryUrl,omitempty"`
 // }
 
@@ -280,7 +280,7 @@ var (
 )
 
 // // KustomizeVersionNotRegisteredError is an error type that indicates a requested Kustomize version is not registered in
-// // the Kustomize options in argocd-cm.
+// // the Kustomize options in athena-cm.
 // type KustomizeVersionNotRegisteredError struct {
 // 	// Version is the Kustomize version that is not registered
 // 	Version string
@@ -497,21 +497,21 @@ const (
 	settingUIBannerPermanentKey = "ui.bannerpermanent"
 	// settingUIBannerPositionKey designates the key for the position of the banner
 	settingUIBannerPositionKey = "ui.bannerposition"
-	// settingsBinaryUrlsKey designates the key for the argocd binary URLs
+	// settingsBinaryUrlsKey designates the key for the athena binary URLs
 	settingsBinaryUrlsKey = "help.download"
 	// // settingsApplicationInstanceLabelKey is the key to configure injected app instance label key
 	// settingsSourceHydratorCommitMessageTemplateKey = "sourceHydrator.commitMessageTemplate"
 	// // globalProjectsKey designates the key for global project settings
 	// globalProjectsKey = "globalProjects"
 	// initialPasswordSecretName is the name of the secret that will hold the initial admin password
-	initialPasswordSecretName = "argocd-initial-admin-secret"
+	initialPasswordSecretName = "athena-initial-admin-secret"
 	// initialPasswordSecretField is the name of the field in initialPasswordSecretName to store the password
 	initialPasswordSecretField = "password"
 	// initialPasswordLength defines the length of the generated initial password
 	initialPasswordLength = 16
 
 	// externalServerTLSSecretName defines the name of the external secret holding the server's TLS certificate
-	externalServerTLSSecretName = "argocd-server-tls"
+	externalServerTLSSecretName = "athena-server-tls"
 	// partOfArgoCDSelector holds label selector that should be applied to config maps and secrets used to manage Argo CD
 	partOfArgoCDSelector = "app.kubernetes.io/part-of=athena"
 
@@ -538,7 +538,7 @@ const (
 	// ResourceDeepLinks is the resource deep link key
 	ResourceDeepLinks = "resource.links"
 	extensionConfig   = "extension.config"
-	// RespectRBAC is the key to configure argocd to respect rbac while watching for resources
+	// RespectRBAC is the key to configure athena to respect rbac while watching for resources
 	RespectRBAC            = "resource.respectRBAC"
 	RespectRBACValueStrict = "strict"
 	RespectRBACValueNormal = "normal"
@@ -741,7 +741,7 @@ func (mgr *SettingsManager) getConfigMap() (*corev1.ConfigMap, error) {
 }
 
 // Returns the ConfigMap with the given name from the cluster.
-// The ConfigMap must be labeled with "app.kubernetes.io/part-of: argocd" in
+// The ConfigMap must be labeled with "app.kubernetes.io/part-of: athena" in
 // order to be retrievable.
 func (mgr *SettingsManager) GetConfigMapByName(configMapName string) (*corev1.ConfigMap, error) {
 	err := mgr.ensureSynced(false)
@@ -804,7 +804,7 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // func (mgr *SettingsManager) GetResourcesFilter() (*ResourcesFilter, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
 // 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving argocd-cm: %w", err)
+// 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
 // 	}
 // 	rf := &ResourcesFilter{}
 // 	if value, ok := argoCDCM.Data[resourceInclusionsKey]; ok {
@@ -900,7 +900,7 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // func (mgr *SettingsManager) GetDeepLinks(deeplinkType string) ([]DeepLink, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
 // 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving argocd-cm: %w", err)
+// 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
 // 	}
 // 	deepLinks := make([]DeepLink, 0)
 // 	if value, ok := argoCDCM.Data[deeplinkType]; ok {
@@ -979,7 +979,7 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // 	return strconv.ParseBool(argoCDCM.Data[resourceIgnoreResourceUpdatesEnabledKey])
 // }
 
-// // GetResourceOverrides loads Resource Overrides from argocd-cm ConfigMap
+// // GetResourceOverrides loads Resource Overrides from athena-cm ConfigMap
 // func (mgr *SettingsManager) GetResourceOverrides() (map[string]v1alpha1.ResourceOverride, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
 // 	if err != nil {
@@ -1181,11 +1181,11 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // 	return helmOptions, nil
 // }
 
-// // GetKustomizeSettings loads the kustomize settings from argocd-cm ConfigMap
+// // GetKustomizeSettings loads the kustomize settings from athena-cm ConfigMap
 // func (mgr *SettingsManager) GetKustomizeSettings() (*v1alpha1.KustomizeOptions, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
 // 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving argocd-cm: %w", err)
+// 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
 // 	}
 // 	kustomizeVersionsMap := map[string]v1alpha1.KustomizeVersion{}
 // 	buildOptions := map[string]string{}
@@ -1296,15 +1296,15 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 func (mgr *SettingsManager) GetSettings() (*ArgoCDSettings, error) {
 	argoCDCM, err := mgr.getConfigMap()
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving argocd-cm: %w", err)
+		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
 	}
 	argoCDSecret, err := mgr.getSecret()
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving argocd-secret: %w", err)
+		return nil, fmt.Errorf("error retrieving athena-secret: %w", err)
 	}
 	secrets, err := mgr.getSecrets()
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving argocd secrets: %w", err)
+		return nil, fmt.Errorf("error retrieving athena secrets: %w", err)
 	}
 
 	var settings ArgoCDSettings
@@ -1510,7 +1510,7 @@ func updateSettingsFromConfigMap(settings *ArgoCDSettings, argoCDCM *corev1.Conf
 	if execShells != "" {
 		settings.ExecShells = strings.Split(execShells, ",")
 	} else {
-		// Fall back to default. If you change this list, also change docs/operator-manual/argocd-cm.yaml.
+		// Fall back to default. If you change this list, also change docs/operator-manual/athena-cm.yaml.
 		settings.ExecShells = []string{"bash", "sh", "powershell", "cmd"}
 	}
 	settings.TrackingMethod = argoCDCM.Data[settingsResourceTrackingMethodKey]
@@ -1558,7 +1558,7 @@ func (mgr *SettingsManager) updateSettingsFromSecret(settings *ArgoCDSettings, a
 
 	// The TLS certificate may be externally managed. We try to load it from an
 	// external secret first. If the external secret doesn't exist, we either
-	// load it from argocd-secret or generate (and persist) a self-signed one.
+	// load it from athena-secret or generate (and persist) a self-signed one.
 	externalSecret, err := mgr.GetSecretByName(externalServerTLSSecretName)
 	if err != nil && !apierrors.IsNotFound(err) {
 		errs = append(errs, &incompleteSettingsError{message: fmt.Sprintf("could not read from secret %s/%s: %v", mgr.namespace, externalServerTLSSecretName, err)})
@@ -2071,7 +2071,7 @@ func (a *ArgoCDSettings) DexRedirectURL() (string, error) {
 }
 
 // DexOAuth2ClientSecret calculates an arbitrary, but predictable OAuth2 client secret string derived
-// from the server secret. This is called by the dex startup wrapper (argocd-dex rundex), as well
+// from the server secret. This is called by the dex startup wrapper (athena-dex rundex), as well
 // as the API server, such that they both independently come to the same conclusion of what the
 // OAuth2 shared client secret should be.
 func (a *ArgoCDSettings) DexOAuth2ClientSecret() string {
@@ -2190,10 +2190,10 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 		// generate TLS cert
 		hosts := []string{
 			"localhost",
-			"argocd-server",
-			"argocd-server." + mgr.namespace,
-			fmt.Sprintf("argocd-server.%s.svc", mgr.namespace),
-			fmt.Sprintf("argocd-server.%s.svc.cluster.local", mgr.namespace),
+			"athena-server",
+			"athena-server." + mgr.namespace,
+			fmt.Sprintf("athena-server.%s.svc", mgr.namespace),
+			fmt.Sprintf("athena-server.%s.svc.cluster.local", mgr.namespace),
 		}
 		certOpts := tlsutil.CertOptions{
 			Hosts:        hosts,
@@ -2267,11 +2267,11 @@ func ReplaceStringSecret(val string, secretValues map[string]string) string {
 	return strings.TrimSpace(secretVal)
 }
 
-// // GetGlobalProjectsSettings loads the global project settings from argocd-cm ConfigMap
+// // GetGlobalProjectsSettings loads the global project settings from athena-cm ConfigMap
 // func (mgr *SettingsManager) GetGlobalProjectsSettings() ([]GlobalProjectSettings, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
 // 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving argocd-cm: %w", err)
+// 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
 // 	}
 // 	globalProjectSettings := make([]GlobalProjectSettings, 0)
 // 	if value, ok := argoCDCM.Data[globalProjectsKey]; ok {
@@ -2374,7 +2374,7 @@ func ReplaceStringSecret(val string, secretValues map[string]string) string {
 // 	return maxPayloadSizeMB * 1024 * 1024
 // }
 
-// // IsImpersonationEnabled returns true if application sync with impersonation feature is enabled in argocd-cm configmap
+// // IsImpersonationEnabled returns true if application sync with impersonation feature is enabled in athena-cm configmap
 // func (mgr *SettingsManager) IsImpersonationEnabled() (bool, error) {
 // 	cm, err := mgr.getConfigMap()
 // 	if err != nil {

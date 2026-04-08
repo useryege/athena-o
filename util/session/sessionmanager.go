@@ -57,7 +57,7 @@ type MetricsRegistry interface {
 
 const (
 	// SessionManagerClaimsIssuer fills the "iss" field of the token.
-	SessionManagerClaimsIssuer = "argocd"
+	SessionManagerClaimsIssuer = "athena"
 	AuthErrorCtxKey            = "auth-error"
 
 	// invalidLoginError, for security purposes, doesn't say whether the username or password was invalid.  This does not mitigate the potential for timing attacks to determine which is which.
@@ -86,13 +86,13 @@ const (
 	// environment variables to control rate limiter behaviour:
 
 	// Max number of login failures before login delay kicks in
-	envLoginMaxFailCount = "ARGOCD_SESSION_FAILURE_MAX_FAIL_COUNT"
+	envLoginMaxFailCount = "ATHENA_SESSION_FAILURE_MAX_FAIL_COUNT"
 
 	// Number of maximum seconds the login is allowed to delay for. Default: 300 (5 minutes).
-	envLoginFailureWindowSeconds = "ARGOCD_SESSION_FAILURE_WINDOW_SECONDS"
+	envLoginFailureWindowSeconds = "ATHENA_SESSION_FAILURE_WINDOW_SECONDS"
 
 	// Max number of stored usernames
-	envLoginMaxCacheSize = "ARGOCD_SESSION_MAX_CACHE_SIZE"
+	envLoginMaxCacheSize = "ATHENA_SESSION_MAX_CACHE_SIZE"
 )
 
 var InvalidLoginErr = status.Errorf(codes.Unauthenticated, invalidLoginError)

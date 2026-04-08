@@ -19,7 +19,7 @@ func main() {
 
 	identity := func(s string) string { return s }
 	headerPrepender := func(filename string) string {
-		// The default header looks like `Argocd app get`. The leading capital letter is off-putting.
+		// The default header looks like `Athena app get`. The leading capital letter is off-putting.
 		// This header overrides the default. It's better visually and for search results.
 		filename = filepath.Base(filename)
 		filename = filename[:len(filename)-3] // Drop the '.md'

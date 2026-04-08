@@ -66,18 +66,18 @@ type ClientApp struct {
 	usePKCE bool
 	// Use Azure Workload Identity for clientID auth instead of clientSecret
 	useAzureWorkloadIdentity bool
-	// Callback URL for OAuth2 responses (e.g. https://argocd.example.com/auth/callback)
+	// Callback URL for OAuth2 responses (e.g. https://athena.example.com/auth/callback)
 	redirectURI string
-	// URL of the issuer (e.g. https://argocd.example.com/api/dex)
+	// URL of the issuer (e.g. https://athena.example.com/api/dex)
 	issuerURL string
-	// The URL endpoint at which the ArgoCD server is accessed.
+	// The URL endpoint at which the Athena server is accessed.
 	baseHRef string
 	// client is the HTTP client which is used to query the IDp
 	client *http.Client
 	// secureCookie indicates if the cookie should be set with the Secure flag, meaning it should
 	// only ever be sent over HTTPS. This value is inferred by the scheme of the redirectURI.
 	secureCookie bool
-	// settings holds Argo CD settings
+	// settings holds Athena settings
 	settings *settings.ArgoCDSettings
 	// encryptionKey holds server encryption key
 	encryptionKey []byte
@@ -228,7 +228,7 @@ func NewClientApp(settings *settings.ArgoCDSettings, dexServerAddr string, dexTL
 func (a *ClientApp) getRedirectURIForRequest(req *http.Request) string {
 	redirectURI, err := a.settings.RedirectURLForRequest(req)
 	if err != nil {
-		log.Warnf("Unable to find ArgoCD URL from request, falling back to configured redirect URI: %v", err)
+		log.Warnf("Unable to find Athena URL from request, falling back to configured redirect URI: %v", err)
 		redirectURI = a.redirectURI
 	}
 	return redirectURI
@@ -799,7 +799,7 @@ func createClaimsAuthenticationRequestParameter(requestedClaims map[string]*oidc
 // SetGroupsFromUserInfo takes a claims object and adds groups claim from userinfo endpoint if available
 // This is required by some SSO implementations as they don't provide the groups claim in the ID token
 // If querying the UserInfo endpoint fails, we return an error to indicate the session is invalid
-// we assume that everywhere in argocd jwt.MapClaims is used as type for interface jwt.Claims
+// we assume that everywhere in athena jwt.MapClaims is used as type for interface jwt.Claims
 // otherwise this would cause a panic
 func (a *ClientApp) SetGroupsFromUserInfo(ctx context.Context, claims jwt.Claims, sessionManagerClaimsIssuer string) (jwt.MapClaims, error) {
 	var groupClaims jwt.MapClaims

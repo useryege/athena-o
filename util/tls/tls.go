@@ -169,9 +169,9 @@ func AddTLSFlagsToCmd(cmd *cobra.Command) func() (ConfigCustomizer, error) {
 	minVersionStr := ""
 	maxVersionStr := ""
 	tlsCiphersStr := ""
-	cmd.Flags().StringVar(&minVersionStr, "tlsminversion", env.StringFromEnv("ARGOCD_TLS_MIN_VERSION", DefaultTLSMinVersion), "The minimum SSL/TLS version that is acceptable (one of: 1.0|1.1|1.2|1.3)")
-	cmd.Flags().StringVar(&maxVersionStr, "tlsmaxversion", env.StringFromEnv("ARGOCD_TLS_MAX_VERSION", DefaultTLSMaxVersion), "The maximum SSL/TLS version that is acceptable (one of: 1.0|1.1|1.2|1.3)")
-	cmd.Flags().StringVar(&tlsCiphersStr, "tlsciphers", env.StringFromEnv("ARGOCD_TLS_CIPHERS", DefaultTLSCipherSuite), "The list of acceptable ciphers to be used when establishing TLS connections. Use 'list' to list available ciphers.")
+	cmd.Flags().StringVar(&minVersionStr, "tlsminversion", env.StringFromEnv("ATHENA_TLS_MIN_VERSION", DefaultTLSMinVersion), "The minimum SSL/TLS version that is acceptable (one of: 1.0|1.1|1.2|1.3)")
+	cmd.Flags().StringVar(&maxVersionStr, "tlsmaxversion", env.StringFromEnv("ATHENA_TLS_MAX_VERSION", DefaultTLSMaxVersion), "The maximum SSL/TLS version that is acceptable (one of: 1.0|1.1|1.2|1.3)")
+	cmd.Flags().StringVar(&tlsCiphersStr, "tlsciphers", env.StringFromEnv("ATHENA_TLS_CIPHERS", DefaultTLSCipherSuite), "The list of acceptable ciphers to be used when establishing TLS connections. Use 'list' to list available ciphers.")
 
 	return func() (ConfigCustomizer, error) {
 		return getTLSConfigCustomizer(minVersionStr, maxVersionStr, tlsCiphersStr)

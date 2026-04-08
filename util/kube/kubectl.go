@@ -20,7 +20,7 @@ package kube
 // )
 
 // func init() {
-// 	if os.Getenv("ARGOCD_TRACING_ENABLED") == "1" {
+// 	if os.Getenv("ATHENA_TRACING_ENABLED") == "1" {
 // 		tracer = tracing.NewLoggingTracer(logger)
 // 	}
 // }

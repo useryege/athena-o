@@ -65,7 +65,7 @@ var (
 	argoVersion = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "argocd_info",
-			Help: "ArgoCD version information",
+			Help: "Athena version information",
 		},
 		[]string{"version"},
 	)

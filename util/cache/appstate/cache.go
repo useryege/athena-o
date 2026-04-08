@@ -11,7 +11,7 @@ import (
 
 var (
 	ErrCacheMiss = cacheutil.ErrCacheMiss
-	// treeShardSize = env.ParseInt64FromEnv("ARGOCD_APPLICATION_TREE_SHARD_SIZE", 0, 0, 1000)
+	// treeShardSize = env.ParseInt64FromEnv("ATHENA_APPLICATION_TREE_SHARD_SIZE", 0, 0, 1000)
 )
 
 // const (
@@ -30,7 +30,7 @@ func NewCache(cache *cacheutil.Cache, appStateCacheExpiration time.Duration) *Ca
 func AddCacheFlagsToCmd(cmd *cobra.Command, opts ...cacheutil.Options) func() (*Cache, error) {
 	var appStateCacheExpiration time.Duration
 
-	cmd.Flags().DurationVar(&appStateCacheExpiration, "app-state-cache-expiration", env.ParseDurationFromEnv("ARGOCD_APP_STATE_CACHE_EXPIRATION", 1*time.Hour, 0, 10*time.Hour), "Cache expiration for app state")
+	cmd.Flags().DurationVar(&appStateCacheExpiration, "app-state-cache-expiration", env.ParseDurationFromEnv("ATHENA_APP_STATE_CACHE_EXPIRATION", 1*time.Hour, 0, 10*time.Hour), "Cache expiration for app state")
 
 	cacheFactory := cacheutil.AddCacheFlagsToCmd(cmd, opts...)
 
