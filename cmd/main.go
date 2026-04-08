@@ -9,6 +9,7 @@ import (
 
 	athenaApplicationControllerCommands "github.com/useryege/athena/cmd/athena-application-controller/commands"
 	athenaDexCommands "github.com/useryege/athena/cmd/athena-dex/commands"
+	athenaK8sAuthCommands "github.com/useryege/athena/cmd/athena-k8s-auth/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
 	athenaCommands "github.com/useryege/athena/cmd/athena/commands"
@@ -43,6 +44,8 @@ func main() {
 		command = athenaNotificationCommands.NewCommand()
 	case "athena":
 		command = athenaCommands.NewCommand()
+	case "athena-k8s-auth":
+		command = athenaK8sAuthCommands.NewCommand()
 	default:
 		os.Exit(1)
 	}

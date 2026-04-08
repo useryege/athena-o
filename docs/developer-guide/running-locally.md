@@ -49,21 +49,21 @@ kubectl -n athena scale deployment/athena-redis --replicas 0
 
 ## Running Argo CD locally, outside of K8s cluster
 #### Prerequisites
-1. [Deploy Argo CD resources to your cluster](running-locally.md#deploy-argo-cd-resources-to-your-cluster)   
-2. [Scale down any Argo CD instance in your cluster](running-locally.md#scale-down-any-argo-cd-instance-in-your-cluster)
+1. [Deploy Argo CD resources to your cluster](running-locally.md#deploy-athena-resources-to-your-cluster)   
+2. [Scale down any Argo CD instance in your cluster](running-locally.md#scale-down-any-athena-instance-in-your-cluster)
 
 ### Start local services (virtualized toolchain)
 When you use the virtualized toolchain, starting local services is as simple as running
 
 ```bash
-cd argo-cd
+cd athena
 make start
 ```
 
 By default, Argo CD uses Docker. To use Podman instead, set the `DOCKER` environment variable to `podman` before running the `make` command:
 
 ```shell
-cd argo-cd
+cd athena
 DOCKER=podman make start
 ```
 
@@ -87,19 +87,19 @@ When you use the local toolchain, starting local services can be performed in 3 
 
 #### With "make start-local"
 ```shell
-cd argo-cd
+cd athena
 make start-local ARGOCD_GPG_ENABLED=false
 ```
 
 #### With "make run"
 ```shell
-cd argo-cd
+cd athena
 make run ARGOCD_GPG_ENABLED=false
 ```
 
 #### With "goreman start"
 ```shell
-cd argo-cd
+cd athena
 ARGOCD_GPG_ENABLED=false && goreman start
 ```
 
@@ -133,10 +133,10 @@ export ARGOCD_OPTS="--plaintext --insecure"
 
 #### Docs Changes
 
-Modifying the docs auto-reloads the changes on the [documentation website](https://argo-cd.readthedocs.io/) that can be locally built using `make serve-docs-local` command. 
+Modifying the docs auto-reloads the changes on the [documentation website](https://athena.readthedocs.io/) that can be locally built using `make serve-docs-local` command. 
 Once running, you can view your locally built documentation on port 8000.
 
-Read more about this [here](https://argo-cd.readthedocs.io/en/latest/developer-guide/docs-site/).
+Read more about this [here](https://athena.readthedocs.io/en/latest/developer-guide/docs-site/).
 
 #### UI Changes
 

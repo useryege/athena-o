@@ -47,7 +47,7 @@ func constructLogoutURL(logoutURL, token, logoutRedirectURL string) string {
 }
 
 // ServeHTTP is the logout handler for ArgoCD and constructs OIDC logout URL and redirects to it for OIDC issued sessions,
-// and redirects user to '/login' for argocd issued sessions
+// and redirects user to '/login' for athena issued sessions
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var tokenString string
 	var oidcConfig *settings.OIDCConfig

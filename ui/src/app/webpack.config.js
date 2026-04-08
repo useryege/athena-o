@@ -98,7 +98,7 @@ const config = {
         }),
         codecovWebpackPlugin({
             enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
-            bundleName: "argo-cd-ui",
+            bundleName: "athena-ui",
             uploadToken: process.env.CODECOV_TOKEN,
         }),
     ],

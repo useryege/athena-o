@@ -10,6 +10,10 @@ package settings
 import (
 	context "context"
 	fmt "fmt"
+	io "io"
+	math "math"
+	math_bits "math/bits"
+
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	oidc "github.com/useryege/athena/internal/server/settings/oidc"
@@ -18,9 +22,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	io "io"
-	math "math"
-	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -455,7 +456,7 @@ type Help struct {
 	ChatUrl string `protobuf:"bytes,1,opt,name=chatUrl,proto3" json:"chatUrl,omitempty"`
 	// the text for getting chat help, defaults to "Chat now!"
 	ChatText string `protobuf:"bytes,2,opt,name=chatText,proto3" json:"chatText,omitempty"`
-	// the URLs for downloading argocd binaries
+	// the URLs for downloading athena binaries
 	BinaryUrls           map[string]string `protobuf:"bytes,3,rep,name=binaryUrls,proto3" json:"binaryUrls,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`

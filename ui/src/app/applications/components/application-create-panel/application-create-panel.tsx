@@ -247,7 +247,7 @@ export const ApplicationCreatePanel = (props: {
                                                     This causes problems with some entry fields that require enter to be
                                                     pressed for the value to be accepted.
 
-                                                    See https://github.com/argoproj/argo-cd/issues/4576
+                                                    See https://github.com/argoproj/athena/issues/4576
                                                 */}
                                             {!yamlMode && (
                                                 <button

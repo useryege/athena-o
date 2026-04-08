@@ -89,13 +89,13 @@ That means you are now inside the Linux environment.
 Keep the project in the WSL Linux filesystem and use this path format consistently:
 
 ```bash
-~/work/argo-cd
+~/work/athena
 ```
 
 Do not use a Windows-mounted path such as:
 
 ```bash
-/mnt/d/LEARN/Athena/argo-cd
+/mnt/d/LEARN/Athena/athena
 ```
 
 Why:
@@ -114,8 +114,8 @@ The recommended way is to clone the repository again inside WSL:
 ```bash
 mkdir -p ~/work
 cd ~/work
-git clone <your-repository-url> argo-cd
-cd argo-cd
+git clone <your-repository-url> athena
+cd athena
 ```
 
 ---
@@ -141,7 +141,7 @@ curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/instal
 From the WSL terminal, go to the project directory:
 
 ```bash
-cd ~/work/argo-cd
+cd ~/work/athena
 ```
 
 Then run:
@@ -164,8 +164,8 @@ sudo apt update
 sudo apt install -y make
 mkdir -p ~/work
 cd ~/work
-git clone <your-repository-url> argo-cd
-cd argo-cd
+git clone <your-repository-url> athena
+cd athena
 cursor .
 ```
 

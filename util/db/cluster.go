@@ -17,31 +17,6 @@ import (
 	appv1 "github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
-// import (
-// 	"context"
-// 	"encoding/json"
-// 	"fmt"
-// 	"maps"
-// 	"strconv"
-// 	"strings"
-// 	"sync"
-// 	"time"
-
-// 	log "github.com/sirupsen/logrus"
-// 	"google.golang.org/grpc/codes"
-// 	"google.golang.org/grpc/status"
-// 	corev1 "k8s.io/api/core/v1"
-// 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-// 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-// 	"k8s.io/apimachinery/pkg/util/version"
-// 	"k8s.io/apimachinery/pkg/watch"
-// 	"k8s.io/utils/ptr"
-
-// 	"github.com/argoproj/argo-cd/v3/common"
-// 	appv1 "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
-// 	"github.com/argoproj/argo-cd/v3/util/settings"
-// )
-
 // var (
 // 	localCluster = appv1.Cluster{
 // 		Name:            "in-cluster",

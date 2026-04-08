@@ -700,13 +700,13 @@ func (server *AthenaServer) registerDexHandlers(mux *http.ServeMux) {
 }
 
 // registerDownloadHandlers registers HTTP handlers to support downloads directly from the API server
-// (e.g. argocd CLI)
+// (e.g. athena CLI)
 func registerDownloadHandlers(mux *http.ServeMux, base string) {
-	linuxPath, err := exec.LookPath("argocd")
+	linuxPath, err := exec.LookPath("athena")
 	if err != nil {
-		log.Warnf("argocd not in PATH")
+		log.Warnf("athena not in PATH")
 	} else {
-		mux.HandleFunc(base+"/argocd-linux-"+go_runtime.GOARCH, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(base+"/athena-linux-"+go_runtime.GOARCH, func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, linuxPath)
 		})
 	}
@@ -1417,7 +1417,7 @@ func (server *AthenaServer) getClaims(ctx context.Context) (jwt.Claims, string, 
 	if tokenString == "" {
 		return nil, "", ErrNoSession
 	}
-	// A valid argocd-issued token is automatically refreshed here prior to expiration.
+	// A valid athena-issued token is automatically refreshed here prior to expiration.
 	// OIDC tokens will be verified but will not be refreshed here.
 	claims, newToken, err := server.sessionMgr.VerifyToken(ctx, tokenString)
 	if err != nil {
@@ -1457,7 +1457,7 @@ func getToken(md metadata.MD) string {
 	}
 
 	// looks for the HTTP header `Authorization: Bearer ...`
-	// argocd prefers bearer token over cookie
+	// athena prefers bearer token over cookie
 	for _, t := range md["authorization"] {
 		token := strings.TrimPrefix(t, "Bearer ")
 		if strings.HasPrefix(t, "Bearer ") && jwtutil.IsValid(token) {

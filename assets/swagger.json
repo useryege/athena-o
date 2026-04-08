@@ -484,7 +484,7 @@
       "properties": {
         "binaryUrls": {
           "type": "object",
-          "title": "the URLs for downloading argocd binaries",
+          "title": "the URLs for downloading athena binaries",
           "additionalProperties": {
             "type": "string"
           }

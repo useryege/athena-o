@@ -58,7 +58,7 @@ type ClaimsRequest struct {
 }
 
 type ClientApp struct {
-	// OAuth2 client ID of this application (e.g. argo-cd)
+	// OAuth2 client ID of this application (e.g. athena)
 	clientID string
 	// OAuth2 client secret of this application
 	clientSecret string

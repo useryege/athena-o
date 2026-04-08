@@ -1,9 +1,9 @@
 # E2E Tests
 
-The test [directory](https://github.com/argoproj/argo-cd/tree/master/test) contains E2E tests and test applications. The tests assume that Argo CD services are installed into `athena-e2e` namespace or cluster in current context. A throw-away
+The test [directory](https://github.com/argoproj/athena/tree/master/test) contains E2E tests and test applications. The tests assume that Argo CD services are installed into `athena-e2e` namespace or cluster in current context. A throw-away
 namespace `athena-e2e***` is created prior to the execution of the tests. The throw-away namespace is used as a target namespace for test applications.
 
-The [/test/e2e/testdata](https://github.com/argoproj/argo-cd/tree/master/test/e2e/testdata) directory contains various Argo CD applications. Before test execution, the directory is copied into `/tmp/argo-e2e***` temp directory (configurable by `ARGOCD_E2E_DIR`) and used in tests as a
+The [/test/e2e/testdata](https://github.com/argoproj/athena/tree/master/test/e2e/testdata) directory contains various Argo CD applications. Before test execution, the directory is copied into `/tmp/argo-e2e***` temp directory (configurable by `ARGOCD_E2E_DIR`) and used in tests as a
 Git repository via file url: `file:///tmp/argo-e2e***`.
 
 > [!NOTE]

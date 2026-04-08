@@ -916,7 +916,7 @@ func (mgr *SettingsManager) GetPasswordPattern() (string, error) {
 // func (mgr *SettingsManager) GetEnabledSourceTypes() (map[string]bool, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
 // 	if err != nil {
-// 		return nil, fmt.Errorf("failed to get argo-cd config map: %w", err)
+// 		return nil, fmt.Errorf("failed to get athena config map: %w", err)
 // 	}
 // 	res := map[string]bool{}
 // 	for sourceType := range sourceTypeToEnableGenerationKey {
@@ -1167,7 +1167,7 @@ func (mgr *SettingsManager) GetResourceCompareOptions() (ArgoCDDiffOptions, erro
 // func (mgr *SettingsManager) GetHelmSettings() (*v1alpha1.HelmOptions, error) {
 // 	argoCDCM, err := mgr.getConfigMap()
 // 	if err != nil {
-// 		return nil, fmt.Errorf("failed to get argo-cd config map: %w", err)
+// 		return nil, fmt.Errorf("failed to get athena config map: %w", err)
 // 	}
 // 	helmOptions := &v1alpha1.HelmOptions{}
 // 	if value, ok := argoCDCM.Data[helmValuesFileSchemesKey]; ok {
@@ -1938,7 +1938,7 @@ func (a *ArgoCDSettings) OAuth2ClientID() string {
 
 // OAuth2AllowedAudiences returns a list of audiences that are allowed for the OAuth2 client. If the user has not
 // explicitly configured the list of audiences (or has configured an empty list), then the OAuth2 client ID is returned
-// as the only allowed audience. When using the bundled Dex, that client ID is always "argo-cd".
+// as the only allowed audience. When using the bundled Dex, that client ID is always "athena".
 func (a *ArgoCDSettings) OAuth2AllowedAudiences() []string {
 	if config := a.oidcConfig(); config != nil {
 		if len(config.AllowedAudiences) == 0 {

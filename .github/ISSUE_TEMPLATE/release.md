@@ -23,17 +23,17 @@ Target GA date: ___. __, ____
     - [ ] Verify the release on [GitHub releases](https://github.com/useryege/athena/releases)
     - [ ] Verify the container image on [Quay.io](https://quay.io/repository/useryege/athena?tab=tags)
     - [ ] Confirm the new version appears in [Read the Docs](https://athena.readthedocs.io/)
-    - [ ] Verify the docs release build in https://app.readthedocs.org/projects/argo-cd/ succeeded and retry if failed (requires an Approver with admin creds to readthedocs)
+    - [ ] Verify the docs release build in https://app.readthedocs.org/projects/athena/ succeeded and retry if failed (requires an Approver with admin creds to readthedocs)
  - [ ] Announce RC1 release
    - [ ] Confirm that tweet and blog post are ready
    - [ ] Publish tweet and blog post
-   - [ ] Post in #argo-cd and #argo-announcements requesting help testing:
+   - [ ] Post in #athena and #argo-announcements requesting help testing:
      ```
      :mega: Athena v{MAJOR}.{MINOR}.{PATCH}-rc{RC_NUMBER} is OUT NOW! :athena::tada:
      
      Please go through the following resources to know more about the release:
      
-     Release notes: https://github.com/argoproj/argo-cd/releases/tag/v{VERSION}
+     Release notes: https://github.com/argoproj/athena/releases/tag/v{VERSION}
      Blog: {BLOG_POST_URL}
      
      We'd love your help testing this release candidate! Please try it out in your environments and report any issues you find. This helps us ensure a stable GA release.
@@ -54,7 +54,7 @@ Target GA date: ___. __, ____
      > 
      > This is the final release of the {EOL_SERIES} release series. As of {GA_DATE}, this version has reached end of life and will no longer receive bug fixes or security updates.
      > 
-     > **Action Required**: Please upgrade to a [supported version](https://argo-cd.readthedocs.io/en/stable/operator-manual/upgrading/overview/) (v{SUPPORTED_VERSION_1}, v{SUPPORTED_VERSION_2}, or v{NEW_VERSION}).
+     > **Action Required**: Please upgrade to a [supported version](https://athena.readthedocs.io/en/stable/operator-manual/upgrading/overview/) (v{SUPPORTED_VERSION_1}, v{SUPPORTED_VERSION_2}, or v{NEW_VERSION}).
      ```
  - [ ] Cut GA release (or delegate this task to an Approver and coordinate timing)
     - [ ] Run the [Init Athena Release workflow](https://github.com/useryege/athena/actions/workflows/init-release.yaml) from the release branch
@@ -69,7 +69,7 @@ Target GA date: ___. __, ____
  - [ ] Announce GA release with EOL notice
    - [ ] Confirm that tweet and blog post are ready
    - [ ] Publish tweet and blog post
-   - [ ] Post in #argo-cd and #argo-announcements announcing the release and EOL:
+   - [ ] Post in #athena and #argo-announcements announcing the release and EOL:
      ```
      :mega: Athena v{MAJOR}.{MINOR} is OUT NOW! :athena::tada:
      

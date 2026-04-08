@@ -70,7 +70,7 @@ make test-local
 If you only want to verify the module you touched first, you can also run targeted tests:
 
 ```bash
-make test TEST_MODULE=github.com/argoproj/argo-cd/server/cache
+make test TEST_MODULE=github.com/argoproj/athena/server/cache
 ```
 
 For new features or bug fixes, the project expects you to add or update unit tests when possible. For new modules, the target is ideally around 80% coverage. This expectation is mentioned in `docs/developer-guide/submit-your-pr.md`.
