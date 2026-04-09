@@ -78,8 +78,8 @@ You can now use either the web UI by pointing your browser to `http://localhost:
 As an alternative to using the above command line parameters each time you call `athena` CLI, you can set the following environment variables:
 
 ```bash
-export ARGOCD_SERVER=127.0.0.1:8080
-export ARGOCD_OPTS="--plaintext --insecure"
+export ATHENA_SERVER=127.0.0.1:8080
+export ATHENA_OPTS="--plaintext --insecure"
 ```
 
 ### Start local services (local toolchain)
@@ -88,19 +88,19 @@ When you use the local toolchain, starting local services can be performed in 3 
 #### With "make start-local"
 ```shell
 cd athena
-make start-local ARGOCD_GPG_ENABLED=false
+make start-local ATHENA_GPG_ENABLED=false
 ```
 
 #### With "make run"
 ```shell
 cd athena
-make run ARGOCD_GPG_ENABLED=false
+make run ATHENA_GPG_ENABLED=false
 ```
 
 #### With "goreman start"
 ```shell
 cd athena
-ARGOCD_GPG_ENABLED=false && goreman start
+ATHENA_GPG_ENABLED=false && goreman start
 ```
 
 Any of those options will start all Argo CD services and the UI:
@@ -126,8 +126,8 @@ You can now use either use the web UI by pointing your browser to `http://localh
 As an alternative to using the above command line parameters each time you call `athena` CLI, you can set the following environment variables:
 
 ```bash
-export ARGOCD_SERVER=127.0.0.1:8080
-export ARGOCD_OPTS="--plaintext --insecure"
+export ATHENA_SERVER=127.0.0.1:8080
+export ATHENA_OPTS="--plaintext --insecure"
 ```
 ### Making code changes while Argo CD is running on your machine
 

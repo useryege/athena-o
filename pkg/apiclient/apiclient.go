@@ -10,9 +10,9 @@ import (
 const (
 	MetaDataTokenKey = "token"
 	// EnvArgoCDServer is the environment variable to look for an Argo CD server address
-	EnvArgoCDServer = "ARGOCD_SERVER"
+	EnvArgoCDServer = "ATHENA_SERVER"
 	// EnvArgoCDAuthToken is the environment variable to look for an Argo CD auth token
-	EnvArgoCDAuthToken = "ARGOCD_AUTH_TOKEN"
+	EnvArgoCDAuthToken = "ATHENA_AUTH_TOKEN"
 )
 
 // MaxGRPCMessageSize contains max grpc message size

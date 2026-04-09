@@ -103,6 +103,7 @@ SUDO?=
 
 .PHONY: print-env-vars
 print-env-vars:
+	@echo "PWD=$(PWD)"
 	@echo "CURRENT_DIR=$(CURRENT_DIR)"
 	@echo "DIST_DIR=$(DIST_DIR)"
 	@echo "HOST_OS=$(HOST_OS)"
@@ -296,6 +297,7 @@ clidocsgen:
 .PHONY: manifests-local
 manifests-local:
 	./hack/update-manifests.sh
+
 .PHONY: manifests
 manifests: test-tools-image
 	$(call run-in-test-client,make manifests-local IMAGE_REGISTRY='${IMAGE_REGISTRY}' IMAGE_NAMESPACE='${IMAGE_NAMESPACE}' IMAGE_REPOSITORY='${IMAGE_REPOSITORY}' IMAGE_TAG='${IMAGE_TAG}')
@@ -454,9 +456,6 @@ lint-ui: test-tools-image
 lint-ui-local:
 	cd ui && yarn lint
 
-
-
-
 # Build the UI
 .PHONY: build-ui
 build-ui:
@@ -487,3 +486,81 @@ endif
 .PHONY: athena-all
 athena-all: clean-debug
 	CGO_ENABLED=${CGO_FLAG} GOOS=${GOOS} GOARCH=${GOARCH} GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -v -ldflags '${LDFLAGS}' -o ${DIST_DIR}/${BIN_NAME} ./cmd
+
+# Run goreman start with exclude option , provide exclude env variable with list of services
+.PHONY: run
+run:
+	bash ./hack/goreman-start.sh
+
+.PHONY: serve-docs-local
+serve-docs-local:
+	mkdocs serve
+
+.PHONY: build-docs
+build-docs:
+	$(DOCKER) run ${MKDOCS_RUN_ARGS} --rm -it -v ${CURRENT_DIR}:/docs -w /docs --entrypoint "" ${MKDOCS_DOCKER_IMAGE} sh -c 'pip install -r docs/requirements.txt; mkdocs build'
+
+# Starts e2e server in a container
+.PHONY: start-e2e
+start-e2e: test-tools-image
+	$(DOCKER) version
+	mkdir -p ${GOCACHE}
+	$(call run-in-test-server,make ATHENA_PROCFILE=test/container/Procfile start-e2e-local)
+
+# Starts e2e server locally (or within a container)
+.PHONY: start-e2e-local
+start-e2e-local: mod-vendor-local dep-ui-local cli-local
+	kubectl create ns athena-e2e || true
+# kubectl create ns athena-e2e-external || true
+# kubectl create ns athena-e2e-external-2 || true
+	kubectl config set-context --current --namespace=athena-e2e
+	kustomize build test/manifests/base | kubectl apply --server-side --force-conflicts -f -
+# kubectl apply -f https://raw.githubusercontent.com/open-cluster-management/api/a6845f2ebcb186ec26b832f60c988537a58f3859/cluster/v1alpha1/0000_04_clusters.open-cluster-management.io_placementdecisions.crd.yaml
+# Create GPG keys and source directories
+# if test -d $(ATHENA_E2E_DIR)/app/config/gpg; then rm -rf $(ATHENA_E2E_DIR)/app/config/gpg/*; fi
+# mkdir -p $(ATHENA_E2E_DIR)/app/config/gpg/keys && chmod 0700 $(ATHENA_E2E_DIR)/app/config/gpg/keys
+# mkdir -p $(ATHENA_E2E_DIR)/app/config/gpg/source && chmod 0700 $(ATHENA_E2E_DIR)/app/config/gpg/source
+# mkdir -p $(ATHENA_E2E_DIR)/app/config/plugin && chmod 0700 $(ATHENA_E2E_DIR)/app/config/plugin
+# create folders to hold go coverage results for each component
+# mkdir -p /tmp/coverage/app-controller
+	mkdir -p /tmp/coverage/api-server
+# mkdir -p /tmp/coverage/repo-server
+# mkdir -p /tmp/coverage/applicationset-controller
+# mkdir -p /tmp/coverage/notification
+# mkdir -p /tmp/coverage/commit-server
+# set paths for locally managed ssh known hosts and tls certs data
+	# ATHENA_E2E_DIR=$(ATHENA_E2E_DIR) \
+	ATHENA_SSH_DATA_PATH=$(ATHENA_E2E_DIR)/app/config/ssh \
+	ATHENA_TLS_DATA_PATH=$(ATHENA_E2E_DIR)/app/config/tls \
+	# ATHENA_GPG_DATA_PATH=$(ATHENA_E2E_DIR)/app/config/gpg/source \
+	# ATHENA_GNUPGHOME=$(ATHENA_E2E_DIR)/app/config/gpg/keys \
+	# ATHENA_GPG_ENABLED=$(ATHENA_GPG_ENABLED) \
+	# ATHENA_PLUGINCONFIGFILEPATH=$(ATHENA_E2E_DIR)/app/config/plugin \
+	# ATHENA_PLUGINSOCKFILEPATH=$(ATHENA_E2E_DIR)/app/config/plugin \
+	# ATHENA_GIT_CONFIG=$(PWD)/test/e2e/fixture/gitconfig \
+	ATHENA_E2E_DISABLE_AUTH=false \
+	ATHENA_ZJWT_FEATURE_FLAG=always \
+	ATHENA_IN_CI=$(ATHENA_IN_CI) \
+	BIN_MODE=$(ATHENA_BIN_MODE) \
+	# ATHENA_APPLICATION_NAMESPACES=athena-e2e-external,athena-e2e-external-2 \
+	# ATHENA_APPLICATIONSET_CONTROLLER_NAMESPACES=athena-e2e-external,athena-e2e-external-2 \
+	# ATHENA_APPLICATIONSET_CONTROLLER_TOKENREF_STRICT_MODE=true \
+	# ATHENA_APPLICATIONSET_CONTROLLER_ALLOWED_SCM_PROVIDERS=http://127.0.0.1:8341,http://127.0.0.1:8342,http://127.0.0.1:8343,http://127.0.0.1:8344 \
+	# ATHENA_E2E_TEST=true \
+	ATHENA_HYDRATOR_ENABLED=true \
+	# ATHENA_CLUSTER_CACHE_EVENTS_PROCESSING_INTERVAL=1ms \
+		goreman -f $(ATHENA_PROCFILE) start ${ATHENA_START}
+	ls -lrt /tmp/coverage
+
+# Run the E2E test suite. E2E test servers (see start-e2e target) must be
+# started before.
+.PHONY: test-e2e
+test-e2e:
+	$(call exec-in-test-server,make test-e2e-local)
+
+# Run the E2E test suite (local version)
+.PHONY: test-e2e-local
+test-e2e-local: cli-local
+	# NO_PROXY ensures all tests don't go out through a proxy if one is configured on the test system
+	export GO111MODULE=off
+	DIST_DIR=${DIST_DIR} RERUN_FAILS=$(ATHENA_E2E_RERUN_FAILS) PACKAGES="./test/e2e" ATHENA_E2E_RECORD=${ATHENA_E2E_RECORD} ATHENA_CONFIG_DIR=$(HOME)/.config/athena-e2e ATHENA_GPG_ENABLED=true NO_PROXY=* ./hack/test.sh -timeout $(ATHENA_E2E_TEST_TIMEOUT) -v -args -test.gocoverdir="$(CURDIR)/test-results"

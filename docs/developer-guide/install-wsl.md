@@ -136,7 +136,54 @@ curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/instal
 
 ---
 
-## 7. Open the Project in Cursor
+## 7. Install the Athena toolchain in WSL
+
+### 7.1 Install the nodejs
+
+```bash
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+
+# Reload shell
+source ~/.bashrc
+
+# Install Node.js LTS version
+nvm install --lts
+
+# Use this version
+nvm use --lts
+
+# Check if installation is successful
+node -v
+npm -v
+```
+
+### 7.2 Install the yarn
+
+```bash
+# Install yarn globally
+npm install --global yarn
+
+# Check if installation is successful
+yarn -v
+```
+
+### 7.3 Install the goreman
+
+```bash
+# Install goreman
+go install github.com/mattn/goreman@latest
+
+# Add goreman to PATH
+echo 'export PATH="$PATH:$HOME/go/bin"' >> ~/.bashrc
+source ~/.bashrc
+
+# Check if installation is successful
+goreman -v
+```
+
+
+## 8. Open the Project in Cursor
 
 From the WSL terminal, go to the project directory:
 

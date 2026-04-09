@@ -11,7 +11,7 @@ const isProd = process.env.NODE_ENV === 'production';
 console.log(`Bundling in ${isProd ? 'production' : 'development'}...`);
 
 const proxyConf = {
-    target: process.env.ARGOCD_API_URL || 'http://localhost:8080',
+    target: process.env.ATHENA_API_URL || 'http://localhost:8080',
     secure: false
 };
 
@@ -108,13 +108,13 @@ const config = {
             disableDotRule: true
         },
         port: 4000,
-        host: process.env.ARGOCD_E2E_YARN_HOST || 'localhost',
+        host: process.env.ATHENA_E2E_YARN_HOST || 'localhost',
         proxy: {
             '/extensions': proxyConf,
             '/api': proxyConf,
             '/auth': proxyConf,
             '/terminal': {
-              target: process.env.ARGOCD_API_URL || 'ws://localhost:8080',
+              target: process.env.ATHENA_API_URL || 'ws://localhost:8080',
               ws: true,
             },
             '/swagger-ui': proxyConf,
