@@ -1,8 +1,8 @@
-# Argo CD UI
+# Athena UI
 
 <img src="https://github.com/argoproj/athena/blob/master/ui/src/assets/images/argo.png?raw=true" alt="Argo Image" width="600" />
 
-Web UI for [Argo CD](https://github.com/argoproj/athena).
+Web UI for [Athena](https://github.com/argoproj/athena).
 
 
 ## Getting started

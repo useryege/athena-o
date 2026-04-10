@@ -487,7 +487,7 @@ func (e *Enforcer) runInformer(ctx context.Context, onUpdated func(cm *corev1.Co
 }
 
 // PolicyCSV will generate the final policy csv to be used
-// by Argo CD RBAC. It will find entries in the given data
+// by Athena RBAC. It will find entries in the given data
 // that matches the policy key name convention:
 //
 //	policy[.overlay].csv

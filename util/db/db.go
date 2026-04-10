@@ -137,7 +137,7 @@ func NewDB(namespace string, settingsMgr *settings.SettingsManager, kubeclientse
 // 	if err != nil {
 // 		appControllerDeployment = nil
 // 		if !apierrors.IsNotFound(err) {
-// 			log.Warnf("error retrieveing Argo CD controller deployment: %s", err)
+// 			log.Warnf("error retrieveing Athena controller deployment: %s", err)
 // 		}
 // 	}
 // 	if appControllerDeployment != nil && appControllerDeployment.Spec.Replicas != nil {

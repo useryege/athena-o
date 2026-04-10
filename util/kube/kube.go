@@ -56,7 +56,7 @@ package kube
 // 			}
 // 			// The following is a workaround for issue #335. In API version extensions/v1beta1 or
 // 			// apps/v1beta1, if a spec omits spec.selector then k8s will default the
-// 			// spec.selector.matchLabels to match spec.template.metadata.labels. This means Argo CD
+// 			// spec.selector.matchLabels to match spec.template.metadata.labels. This means Athena
 // 			// labels can potentially make their way into spec.selector.matchLabels, which is a bad
 // 			// thing. The following logic prevents this behavior.
 // 			switch target.GetAPIVersion() {
@@ -67,8 +67,8 @@ package kube
 // 				}
 // 				if len(selector) == 0 {
 // 					// If we get here, user did not set spec.selector in their manifest. We do not want
-// 					// our Argo CD labels to get defaulted by kubernetes, so we explicitly set the labels
-// 					// for them (minus the Argo CD labels).
+// 					// our Athena labels to get defaulted by kubernetes, so we explicitly set the labels
+// 					// for them (minus the Athena labels).
 // 					delete(templateLabels, key)
 // 					err = unstructured.SetNestedMap(target.UnstructuredContent(), templateLabels, "spec", "selector", "matchLabels")
 // 					if err != nil {

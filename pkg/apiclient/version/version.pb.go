@@ -10,15 +10,16 @@ package version
 import (
 	context "context"
 	fmt "fmt"
+	io "io"
+	math "math"
+	math_bits "math/bits"
+
 	proto "github.com/gogo/protobuf/proto"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	io "io"
-	math "math"
-	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -32,7 +33,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// VersionMessage represents version of the Argo CD API server
+// VersionMessage represents version of the Athena API server
 type VersionMessage struct {
 	Version              string   `protobuf:"bytes,1,opt,name=Version,proto3" json:"Version,omitempty"`
 	BuildDate            string   `protobuf:"bytes,2,opt,name=BuildDate,proto3" json:"BuildDate,omitempty"`

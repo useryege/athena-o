@@ -1,7 +1,7 @@
 ---
-name: Argo CD Release
+name: Athena Release
 about: Used by our Release Champion to track progress of a minor release
-title: 'Argo CD Release vX.X'
+title: 'Athena Release vX.X'
 labels: 'release'
 assignees: ''
 ---

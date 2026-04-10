@@ -182,6 +182,20 @@ source ~/.bashrc
 goreman -v
 ```
 
+### 7.4 Install the buf
+
+```bash
+# Download and install buf into /usr/local/bin
+sudo curl -sSL \
+  "https://github.com/bufbuild/buf/releases/latest/download/buf-$(uname -s)-$(uname -m)" \
+  -o /usr/local/bin/buf
+
+sudo chmod +x /usr/local/bin/buf
+
+# Check if installation is successful
+buf --version
+```
+
 
 ## 8. Open the Project in Cursor
 

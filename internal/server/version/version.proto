@@ -10,7 +10,7 @@ import "google/protobuf/empty.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/version";
 
-// VersionMessage represents version of the Argo CD API server
+// VersionMessage represents version of the Athena API server
 message VersionMessage {
   string Version = 1;
   string BuildDate = 2;

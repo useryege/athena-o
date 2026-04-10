@@ -300,7 +300,7 @@
         "tags": [
           "SettingsService"
         ],
-        "summary": "Get returns Argo CD settings",
+        "summary": "Get returns Athena settings",
         "operationId": "SettingsService_Get",
         "responses": {
           "200": {
@@ -894,7 +894,7 @@
     },
     "versionVersionMessage": {
       "type": "object",
-      "title": "VersionMessage represents version of the Argo CD API server",
+      "title": "VersionMessage represents version of the Athena API server",
       "properties": {
         "BuildDate": {
           "type": "string"

@@ -31,7 +31,7 @@ athena-server [flags]
       --as string                                     Username to impersonate for the operation
       --as-group stringArray                          Group to impersonate for the operation, this flag can be repeated to specify multiple groups.
       --as-uid string                                 UID to impersonate for the operation
-      --basehref string                               Value for base href in index.html. Used if Argo CD is running behind reverse proxy under subpath different from / (default "/")
+      --basehref string                               Value for base href in index.html. Used if Athena is running behind reverse proxy under subpath different from / (default "/")
       --certificate-authority string                  Path to a cert file for the certificate authority
       --client-certificate string                     Path to a client certificate file for TLS
       --client-key string                             Path to a client key file for TLS
@@ -75,7 +75,7 @@ athena-server [flags]
       --redis-use-tls                                 Use TLS when connecting to Redis. 
       --redisdb int                                   Redis database.
       --request-timeout string                        The length of time to wait before giving up on a single server request. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means don't timeout requests. (default "0")
-      --rootpath string                               Used if Argo CD is running behind reverse proxy under subpath different from /
+      --rootpath string                               Used if Athena is running behind reverse proxy under subpath different from /
       --sentinel stringArray                          Redis sentinel hostname and port (e.g. athena-redis-ha-announce-0:6379). 
       --sentinelmaster string                         Redis sentinel master group name. (default "master")
       --server string                                 The address and port of the Kubernetes API server

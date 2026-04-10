@@ -1,4 +1,4 @@
-# Debugging a local Argo CD instance
+# Debugging a local Athena instance
 
 ## Prerequisites
 1. [Development Environment](development-environment.md)   
@@ -7,18 +7,18 @@
 4. [Running Locally](running-locally.md)
 
 ## Preface
-Please make sure you are familiar with running Argo CD locally using the [local toolchain](running-locally.md#start-local-services-local-toolchain).
+Please make sure you are familiar with running Athena locally using the [local toolchain](running-locally.md#start-local-services-local-toolchain).
 
-When running Argo CD locally for manual tests, the quickest way to do so is to run all the Argo CD components together, as described in [Running Locally](running-locally.md), 
+When running Athena locally for manual tests, the quickest way to do so is to run all the Athena components together, as described in [Running Locally](running-locally.md), 
 
-However, when you need to debug a single Argo CD component (for example, `api-server`, `repo-server`, etc), you will need to run this component separately in your IDE, using your IDE launch and debug configuration, while the other components will be running as described previously, using the local toolchain.
+However, when you need to debug a single Athena component (for example, `api-server`, `repo-server`, etc), you will need to run this component separately in your IDE, using your IDE launch and debug configuration, while the other components will be running as described previously, using the local toolchain.
 
-For the next steps, we will use Argo CD `api-server` as an example of running a component in an IDE.
+For the next steps, we will use Athena `api-server` as an example of running a component in an IDE.
 
 ## Configure your IDE
 
 ### Locate your component configuration in `Procfile`
-The `Procfile` is used by Goreman when running Argo CD locally with the local toolchain. The file is located in the top-level directory in your cloned Argo CD repo folder, you can view it's latest version [here](https://github.com/argoproj/argo-cd/blob/master/Procfile). It contains all the needed component run configuration, and you will need to copy parts of this configuration to your IDE. 
+The `Procfile` is used by Goreman when running Athena locally with the local toolchain. The file is located in the top-level directory in your cloned Athena repo folder, you can view it's latest version [here](https://github.com/argoproj/argo-cd/blob/master/Procfile). It contains all the needed component run configuration, and you will need to copy parts of this configuration to your IDE. 
 
 Example for `api-server` configuration in `Procfile`:
 ``` text
@@ -115,8 +115,8 @@ Example for an `api-server` launch configuration snippet, based on our above exa
 > [!NOTE]
 > As an alternative to importing the above file to Goland, you can create a Run/Debug Configuration using the official [Goland docs](https://www.jetbrains.com/help/go/go-build.html) and just copy the `parameters`, `directory` and `PATH` sections from the example above (specifying `Run kind` as `Directory` in the Run/Debug Configurations wizard)
 
-## Run Argo CD without the debugged component
-Next, we need to run all Argo CD components, except for the debugged component (cause we will run this component separately in the IDE).
+## Run Athena without the debugged component
+Next, we need to run all Athena components, except for the debugged component (cause we will run this component separately in the IDE).
 There is a mix-and-match approach to running the other components - you can run them in your K8s cluster or locally with the local toolchain.
 Below are the different options.
 
@@ -141,8 +141,8 @@ So for the case of debugging the `api-server`, run:
 To debug the `api-server`, run:
 `goreman start notification applicationset-controller repo-server redis dex controller ui` 
 
-## Run Argo CD debugged component from your IDE
+## Run Athena debugged component from your IDE
 Finally, run the component you wish to debug from your IDE and make sure it does not have any errors.
 
 ## Important
-When running Argo CD components separately, ensure components aren't creating conflicts - each component needs to be up exactly once, be it running locally with the local toolchain or running from your IDE. Otherwise you may get errors about ports not available or even debugging a process that does not contain your code changes. 
+When running Athena components separately, ensure components aren't creating conflicts - each component needs to be up exactly once, be it running locally with the local toolchain or running from your IDE. Otherwise you may get errors about ports not available or even debugging a process that does not contain your code changes. 

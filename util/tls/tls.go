@@ -423,7 +423,7 @@ func CreateServerTLSConfig(tlsCertPath, tlsKeyPath string, hosts []string) (*tls
 		log.Infof("Generating self-signed TLS certificate for this session")
 		c, err := GenerateX509KeyPair(CertOptions{
 			Hosts:        hosts,
-			Organization: "Argo CD",
+			Organization: "Athena",
 			IsCA:         false,
 		})
 		if err != nil {

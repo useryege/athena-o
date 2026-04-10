@@ -9,9 +9,9 @@ import (
 
 const (
 	MetaDataTokenKey = "token"
-	// EnvArgoCDServer is the environment variable to look for an Argo CD server address
+	// EnvArgoCDServer is the environment variable to look for an Athena server address
 	EnvArgoCDServer = "ATHENA_SERVER"
-	// EnvArgoCDAuthToken is the environment variable to look for an Argo CD auth token
+	// EnvArgoCDAuthToken is the environment variable to look for an Athena auth token
 	EnvArgoCDAuthToken = "ATHENA_AUTH_TOKEN"
 )
 

@@ -1,4 +1,4 @@
-# Running Argo CD locally
+# Running Athena locally
 
 ## Prerequisites
 1. [Development Environment](development-environment.md)   
@@ -6,16 +6,16 @@
 3. [Development Cycle](development-cycle.md)
 
 ## Preface
-During development, it is recommended to start with Argo CD running locally (outside of a K8s cluster). This will greatly speed up development, as you don't have to constantly build, push and install new Argo CD Docker images with your latest changes.
+During development, it is recommended to start with Athena running locally (outside of a K8s cluster). This will greatly speed up development, as you don't have to constantly build, push and install new Athena Docker images with your latest changes.
 
-After you have tested locally, you can move to the second phase of building a docker image, running Argo CD in your cluster and testing further.
+After you have tested locally, you can move to the second phase of building a docker image, running Athena in your cluster and testing further.
 
-For both cases, you will need a working K8s cluster, where Argo CD will store all of its resources and configuration.
+For both cases, you will need a working K8s cluster, where Athena will store all of its resources and configuration.
 
-In order to have all the required resources in your cluster, you will deploy Argo CD from your development branch and then scale down all it's instances.
-This will ensure you have all the relevant configuration (such as Argo CD Config Maps and CRDs) in the cluster while the instances themselves are stopped.
+In order to have all the required resources in your cluster, you will deploy Athena from your development branch and then scale down all it's instances.
+This will ensure you have all the relevant configuration (such as Athena Config Maps and CRDs) in the cluster while the instances themselves are stopped.
 
-### Deploy Argo CD resources to your cluster
+### Deploy Athena resources to your cluster
 
 First push the installation manifest into athena namespace:
 
@@ -24,7 +24,7 @@ kubectl create namespace athena
 kubectl apply -n athena --server-side --force-conflicts -f manifests/install.yaml
 ```
 
-The services you will start later assume you are running in the namespace where Argo CD is installed. You can set the current context default namespace as follows:
+The services you will start later assume you are running in the namespace where Athena is installed. You can set the current context default namespace as follows:
 
 ```bash
 kubectl config set-context --current --namespace=athena
@@ -35,9 +35,9 @@ kubectl config set-context --current --namespace=athena
 kubectl -n athena get deploy,statefulset
 ```
 
-### Scale down any Argo CD instance in your cluster
+### Scale down any Athena instance in your cluster
 
-Make sure that Argo CD is not running in your development cluster by scaling down the deployments:
+Make sure that Athena is not running in your development cluster by scaling down the deployments:
 
 ```shell
 # kubectl -n athena scale deployment/athena-dex-server --replicas 0
@@ -47,10 +47,10 @@ kubectl -n athena scale deployment/athena-redis --replicas 0
 # kubectl -n athena scale deployment/athena-notifications-controller --replicas 0
 ```
 
-## Running Argo CD locally, outside of K8s cluster
+## Running Athena locally, outside of K8s cluster
 #### Prerequisites
-1. [Deploy Argo CD resources to your cluster](running-locally.md#deploy-athena-resources-to-your-cluster)   
-2. [Scale down any Argo CD instance in your cluster](running-locally.md#scale-down-any-athena-instance-in-your-cluster)
+1. [Deploy Athena resources to your cluster](running-locally.md#deploy-athena-resources-to-your-cluster)   
+2. [Scale down any Athena instance in your cluster](running-locally.md#scale-down-any-athena-instance-in-your-cluster)
 
 ### Start local services (virtualized toolchain)
 When you use the virtualized toolchain, starting local services is as simple as running
@@ -60,17 +60,17 @@ cd athena
 make start
 ```
 
-By default, Argo CD uses Docker. To use Podman instead, set the `DOCKER` environment variable to `podman` before running the `make` command:
+By default, Athena uses Docker. To use Podman instead, set the `DOCKER` environment variable to `podman` before running the `make` command:
 
 ```shell
 cd athena
 DOCKER=podman make start
 ```
 
-This will start all Argo CD services and the UI in a Docker container and expose the following ports to your host:
+This will start all Athena services and the UI in a Docker container and expose the following ports to your host:
 
-* The Argo CD API server on port 8080
-* The Argo CD UI server on port 4000
+* The Athena API server on port 8080
+* The Athena UI server on port 4000
 * The Helm registry server on port 5000
 
 You can now use either the web UI by pointing your browser to `http://localhost:4000` or use the CLI against the API at `http://localhost:8080`. Be sure to use the `--insecure` and `--plaintext` options to the CLI. Webpack will take a while to bundle resources initially, so the first page load can take several seconds or minutes.
@@ -103,10 +103,10 @@ cd athena
 ATHENA_GPG_ENABLED=false && goreman start
 ```
 
-Any of those options will start all Argo CD services and the UI:
+Any of those options will start all Athena services and the UI:
 
-* The Argo CD API server on port 8080
-* The Argo CD UI server on port 4000
+* The Athena API server on port 8080
+* The Athena UI server on port 4000
 * The Helm registry server on port 5000
 
 
@@ -119,7 +119,7 @@ $ goreman run status
 [...]
 ```
 
-If some of the processes fail to start (not marked with `*`), check logs to see why they are not running. The logs are on `DEBUG` level by default. If the logs are too noisy to find the problem, try editing log levels for the commands in the `Procfile` in the root of the Argo CD repo.
+If some of the processes fail to start (not marked with `*`), check logs to see why they are not running. The logs are on `DEBUG` level by default. If the logs are too noisy to find the problem, try editing log levels for the commands in the `Procfile` in the root of the Athena repo.
 
 You can now use either use the web UI by pointing your browser to `http://localhost:4000` or use the CLI against the API at `http://localhost:8080`. Be sure to use the `--insecure` and `--plaintext` options to the CLI. Webpack will take a while to bundle resources initially, so the first page load can take several seconds or minutes.
 
@@ -129,7 +129,7 @@ As an alternative to using the above command line parameters each time you call 
 export ATHENA_SERVER=127.0.0.1:8080
 export ATHENA_OPTS="--plaintext --insecure"
 ```
-### Making code changes while Argo CD is running on your machine
+### Making code changes while Athena is running on your machine
 
 #### Docs Changes
 
@@ -170,10 +170,10 @@ Then log in using that password and username `admin`:
 dist/athena login localhost:8080
 ```
 
-## Running Argo CD inside of K8s cluster
-### Scale up Argo CD in your cluster
+## Running Athena inside of K8s cluster
+### Scale up Athena in your cluster
 
-Once you have finished testing your changes locally and want to bring back Argo CD in your development cluster, simply scale the deployments up again:
+Once you have finished testing your changes locally and want to bring back Athena in your development cluster, simply scale the deployments up again:
 
 ```bash
 kubectl -n athena scale statefulset/athena-application-controller --replicas 1
@@ -185,7 +185,7 @@ kubectl -n athena scale deployment/athena-redis --replicas 1
 kubectl -n athena scale deployment/athena-notifications-controller --replicas 1
 ```
 
-### Run your own Argo CD images on your cluster
+### Run your own Athena images on your cluster
 
 For your final tests, it might be necessary to build your own images and run them in your development cluster.
 

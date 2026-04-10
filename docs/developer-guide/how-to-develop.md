@@ -21,7 +21,7 @@ make install-codegen-tools-local
 make dep-ui-local
 ```
 
-If you want to run Argo CD locally for integration work, you also need a local Kubernetes cluster and should set the namespace to `athena`:
+If you want to run Athena locally for integration work, you also need a local Kubernetes cluster and should set the namespace to `athena`:
 
 ```bash
 kubectl config set-context --current --namespace=athena

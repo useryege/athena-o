@@ -181,7 +181,7 @@ export class App extends React.Component<{}, {popupProps: PopupProps; showVersio
                     <link rel='icon' type='image/png' href={`${base}assets/favicon/favicon-32x32.png`} sizes='32x32' />
                     <link rel='icon' type='image/png' href={`${base}assets/favicon/favicon-16x16.png`} sizes='16x16' />
                 </Helmet>
-                <PageContext.Provider value={{title: 'Argo CD'}}>
+                <PageContext.Provider value={{title: 'Athena'}}>
                     <Provider value={{history, popup: this.popupManager, notifications: this.notificationsManager, navigation: this.navigationManager, baseHref: base}}>
                         <DataLoader load={() => services.viewPreferences.getPreferences()}>
                             {pref => <ThemeWrapper theme={pref.theme}>{this.state.popupProps && <Popup {...this.state.popupProps} />}</ThemeWrapper>}
@@ -266,7 +266,7 @@ export class App extends React.Component<{}, {popupProps: PopupProps; showVersio
         const component = () => (
             <>
                 <Helmet>
-                    <title>{extension.title} - Argo CD</title>
+                    <title>{extension.title} - Athena</title>
                 </Helmet>
                 <Page title={extension.title}>
                     <extension.component />

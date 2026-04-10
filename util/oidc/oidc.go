@@ -164,7 +164,7 @@ func GetScopesOrDefault(scopes []string) []string {
 	return scopes
 }
 
-// NewClientApp will register the Argo CD client app (either via Dex or external OIDC) and return an
+// NewClientApp will register the Athena client app (either via Dex or external OIDC) and return an
 // object which has HTTP handlers for handling the HTTP responses for login and callback
 func NewClientApp(settings *settings.ArgoCDSettings, dexServerAddr string, dexTLSConfig *dex.DexTLSConfig, baseHRef string, cacheClient cache.CacheClient) (*ClientApp, error) {
 	redirectURL, err := settings.RedirectURL()
@@ -219,7 +219,7 @@ func NewClientApp(settings *settings.ArgoCDSettings, dexServerAddr string, dexTL
 	}
 
 	a.provider = NewOIDCProvider(a.issuerURL, a.client)
-	// NOTE: if we ever have replicas of Argo CD, this needs to switch to Redis cache
+	// NOTE: if we ever have replicas of Athena, this needs to switch to Redis cache
 	a.secureCookie = bool(u.Scheme == "https")
 	a.settings = settings
 	return &a, nil

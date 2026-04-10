@@ -19,7 +19,7 @@ type RBACPolicyEnforcer struct {
 	scopes []string
 }
 
-// NewRBACPolicyEnforcer returns a new RBAC Enforcer for the Argo CD API Server
+// NewRBACPolicyEnforcer returns a new RBAC Enforcer for the Athena API Server
 func NewRBACPolicyEnforcer(enf *rbac.Enforcer) *RBACPolicyEnforcer {
 	return &RBACPolicyEnforcer{
 		enf: enf,
@@ -53,7 +53,7 @@ func GetProjectRoleFromSubject(subject string) (string, string, bool) {
 	return "", "", false
 }
 
-// EnforceClaims is an RBAC claims enforcer specific to the Argo CD API server
+// EnforceClaims is an RBAC claims enforcer specific to the Athena API server
 func (p *RBACPolicyEnforcer) EnforceClaims(claims jwt.Claims, rvals ...any) bool {
 	mapClaims, err := jwtutil.MapClaims(claims)
 	if err != nil {

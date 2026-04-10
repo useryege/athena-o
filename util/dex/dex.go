@@ -56,7 +56,7 @@ func TLSConfig(tlsConfig *DexTLSConfig) *tls.Config {
 
 // NewDexHTTPReverseProxy returns a reverse proxy to the Dex server. Dex is assumed to be configured
 // with the external issuer URL muxed to the same path configured in server.go. In other words, if
-// Argo CD API server wants to proxy requests at /api/dex, then the dex config yaml issuer URL should
+// Athena API server wants to proxy requests at /api/dex, then the dex config yaml issuer URL should
 // also be /api/dex (e.g. issuer: https://athena.example.com/api/dex)
 func NewDexHTTPReverseProxy(serverAddr string, baseHRef string, tlsConfig *DexTLSConfig) func(writer http.ResponseWriter, request *http.Request) {
 	fullAddr := DexServerAddressWithProtocol(serverAddr, tlsConfig)
@@ -112,7 +112,7 @@ func NewDexRewriteURLRoundTripper(dexServerAddr string, t http.RoundTripper) Dex
 
 // DexRewriteURLRoundTripper is an HTTP RoundTripper to rewrite HTTP requests to the specified
 // dex server address. This is used when reverse proxying Dex to avoid the API server from
-// unnecessarily communicating to Argo CD through its externally facing load balancer, which is not
+// unnecessarily communicating to Athena through its externally facing load balancer, which is not
 // always permitted in firewalled/air-gapped networks.
 type DexRewriteURLRoundTripper struct {
 	DexURL *url.URL

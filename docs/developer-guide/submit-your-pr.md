@@ -10,14 +10,14 @@
 > [!NOTE]
 > **Before you start**
 >
-> The Argo CD project continuously grows, both in terms of features and community size. It gets adopted by more and more organizations which entrust Argo CD to handle their critical production workloads. Thus, we need to take great care with any changes that affect compatibility, performance, scalability, stability and security of Argo CD. For this reason, every new feature or larger enhancement must be properly designed and discussed before it gets accepted into the code base.
+> The Athena project continuously grows, both in terms of features and community size. It gets adopted by more and more organizations which entrust Athena to handle their critical production workloads. Thus, we need to take great care with any changes that affect compatibility, performance, scalability, stability and security of Athena. For this reason, every new feature or larger enhancement must be properly designed and discussed before it gets accepted into the code base.
 >
-> We do welcome and encourage everyone to participate in the Argo CD project, but please understand that we can't accept each and every contribution from the community, for various reasons. If you want to submit code for a great new feature or enhancement, we kindly ask you to take a look at the
+> We do welcome and encourage everyone to participate in the Athena project, but please understand that we can't accept each and every contribution from the community, for various reasons. If you want to submit code for a great new feature or enhancement, we kindly ask you to take a look at the
 > [code contribution guide](code-contributions.md#) before you start to write code or submit a PR.
 
 If you want to submit a PR, please read this document carefully, as it contains important information guiding you through our PR quality gates.
 
-If you need guidance with submitting a PR, or have any other questions regarding development of Argo CD, do not hesitate to [join our Slack](https://argoproj.github.io/community/join-slack) and get in touch with us in the `#athena-contributors` channel!
+If you need guidance with submitting a PR, or have any other questions regarding development of Athena, do not hesitate to [join our Slack](https://argoproj.github.io/community/join-slack) and get in touch with us in the `#athena-contributors` channel!
 
 ## Before Submitting a PR
 
@@ -34,12 +34,12 @@ make pre-commit-local
 
 ## Continuous Integration process
 
-When you submit a PR against Argo CD's GitHub repository, a couple of CI checks will be run automatically to ensure your changes will build fine and meet certain quality standards. Your contribution needs to pass those checks in order to be merged into the repository.
+When you submit a PR against Athena's GitHub repository, a couple of CI checks will be run automatically to ensure your changes will build fine and meet certain quality standards. Your contribution needs to pass those checks in order to be merged into the repository.
 
 > [!NOTE]
-> Please make sure that you always create PRs from a branch that is up-to-date with the latest changes from Argo CD's master branch. Depending on how long it takes for the maintainers to review and merge your PR, it might be necessary to pull in latest changes into your branch again.
+> Please make sure that you always create PRs from a branch that is up-to-date with the latest changes from Athena's master branch. Depending on how long it takes for the maintainers to review and merge your PR, it might be necessary to pull in latest changes into your branch again.
 
-Please understand that we, as an Open Source project, have limited capacities for reviewing and merging PRs to Argo CD. We will do our best to review your PR and give you feedback as soon as possible, but please bear with us if it takes a little longer as expected.
+Please understand that we, as an Open Source project, have limited capacities for reviewing and merging PRs to Athena. We will do our best to review your PR and give you feedback as soon as possible, but please bear with us if it takes a little longer as expected.
 
 The following read will help you to submit a PR that meets the standards of our CI tests:
 
@@ -52,7 +52,7 @@ We use [PR title checker](https://github.com/marketplace/actions/pr-title-checke
 * `fix` - Your PR contains one or more code bug fixes
 * `feat` - Your PR contains a new feature
 * `docs` - Your PR improves the documentation
-* `chore` - Your PR improves any internals of Argo CD, such as the build process, unit tests, etc
+* `chore` - Your PR improves any internals of Athena, such as the build process, unit tests, etc
 
 Please prefix the title of your PR with one of the valid categories. For example, if you chose the title your PR `Add documentation for GitHub SSO integration`, please use `docs: Add documentation for GitHub SSO integration` instead.
 

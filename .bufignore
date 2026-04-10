@@ -1,5 +1,0 @@
-# Ignore auto-generated proto files from go-to-protobuf.
-# These files use k8s-style import paths resolved by the Go module system,
-# not the Buf Schema Registry, so buf-lsp cannot resolve their dependencies.
-pkg/apis/application/v1alpha1/generated.proto
-pkg/apis/application/v1alpha1/generated.protomessage.pb.go

@@ -57,14 +57,14 @@ func init() {
 	// enableGRPCTimeHistogram = env.ParseBoolFromEnv(common.EnvEnableGRPCTimeHistogramEnv, false)
 }
 
-// HTTPMetricsRegistry exposes operations to update http metrics in the Argo CD
+// HTTPMetricsRegistry exposes operations to update http metrics in the Athena
 // API server.
 type HTTPMetricsRegistry interface {
 	// IncExtensionRequestCounter will increase the request counter for the given
 	// extension with the given status.
 	IncExtensionRequestCounter(extension string, status int)
 	// ObserveExtensionRequestDuration will register the request roundtrip duration
-	// between Argo CD API Server and the extension backend service for the given
+	// between Athena API Server and the extension backend service for the given
 	// extension.
 	ObserveExtensionRequestDuration(extension string, duration time.Duration)
 }

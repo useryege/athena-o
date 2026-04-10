@@ -21,7 +21,7 @@ const (
 	// BackgroundPropagationPolicyFinalizer is the finalizer we inject to delete application with background propagation policy
 	BackgroundPropagationPolicyFinalizer = "resources-finalizer.athena.argoproj.io/background"
 
-	// DefaultAppProjectName contains name of 'default' app project, which is available in every Argo CD installation
+	// DefaultAppProjectName contains name of 'default' app project, which is available in every Athena installation
 	DefaultAppProjectName = "default"
 
 	// RevisionHistoryLimit is the max number of successful sync to keep in history

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Argo CD is released in a 2 step automated fashion using GitHub actions. The release process takes about 60 minutes,
+Athena is released in a 2 step automated fashion using GitHub actions. The release process takes about 60 minutes,
 sometimes a little less, depending on the performance of GitHub Actions runners.
 
 The target release branch must already exist in the GitHub repository. If you for
@@ -22,13 +22,13 @@ triggered. This will be automated in the very near future.
 * Commit & push changes to `CHANGELOG.md`
 * Update `goreleaser.yaml` with the updated blog post link in the `Release Notes Blog Post` section.
 
-**The `Init ArgoCD Release` workflow will perform the following steps:**
+**The `Init Athena Release` workflow will perform the following steps:**
 
 * Update `VERSION` file in the release branch
 * Update manifests with image tags of the new version in the release branch
 * Create a pull request to submit the above changes
 
-**The `Publish ArgoCD Release` workflow will perform the following steps:**
+**The `Publish Athena Release` workflow will perform the following steps:**
 
 * Build, push, and signs the container image to Quay.io
 * Generate a provenance for the container image
@@ -56,7 +56,7 @@ When the action is completed a pull request will be generated that contains the 
 
 ### Step 2 - Tag Release Branch
 
-The steps below need to be executed by someone with write access in Argo CD upstream repo.
+The steps below need to be executed by someone with write access in Athena upstream repo.
 
 1. Checkout the release branch. Example: `git fetch upstream && git
    checkout release-2.7`
@@ -79,7 +79,7 @@ The script will ask for confirmation, type `y` to proceed. If no confirmation is
 > * Pre-release: `v<MAJOR>.<MINOR>.<PATCH>-rc<RC#>`
 
 Once the script is executed successfully, a GitHub workflow will start
-execution. You can follow its progress under the [Actions](https://github.com/argoproj/athena/actions/workflows/release.yaml) tab, the name of the action is `Publish ArgoCD Release`. 
+execution. You can follow its progress under the [Actions](https://github.com/argoproj/athena/actions/workflows/release.yaml) tab, the name of the action is `Publish Athena Release`. 
 
 > [!WARNING]
 > You cannot perform more than one release on the same release branch at the

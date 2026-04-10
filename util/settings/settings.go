@@ -58,10 +58,10 @@ import (
 
 // ArgoCDSettings holds in-memory runtime configuration options.
 type ArgoCDSettings struct {
-	// URL is the externally facing URL users will visit to reach Argo CD.
+	// URL is the externally facing URL users will visit to reach Athena.
 	// The value here is used when configuring SSO. Omitting this value will disable SSO.
 	URL string `json:"url,omitempty"`
-	// URLs is a list of externally facing URLs users will visit to reach Argo CD.
+	// URLs is a list of externally facing URLs users will visit to reach Athena.
 	// The value here is used when configuring SSO reachable from multiple domains.
 	AdditionalURLs []string `json:"additionalUrls,omitempty"`
 	// Indicates if status badge is enabled or not.
@@ -74,7 +74,7 @@ type ArgoCDSettings struct {
 	OIDCConfigRAW string `json:"oidcConfig,omitempty"`
 	// ServerSignature holds the key used to generate JWT tokens.
 	ServerSignature []byte `json:"serverSignature,omitempty"`
-	// Certificate holds the certificate/private key for the Argo CD API server.
+	// Certificate holds the certificate/private key for the Athena API server.
 	// If nil, will run insecure without TLS.
 	Certificate *tls.Certificate `json:"-"`
 	// CertificateIsExternal indicates whether Certificate was loaded from external secret
@@ -355,7 +355,7 @@ var (
 // 	NoProxy string `json:"noProxy,omitempty"`
 // 	// GCPServiceAccountKey specifies the service account key in JSON format to be used for getting credentials to Google Cloud Source repos
 // 	GCPServiceAccountKey *corev1.SecretKeySelector `json:"gcpServiceAccountKey,omitempty"`
-// 	// ForceHttpBasicAuth determines whether Argo CD should force use of basic auth for HTTP connected repositories
+// 	// ForceHttpBasicAuth determines whether Athena should force use of basic auth for HTTP connected repositories
 // 	ForceHttpBasicAuth bool `json:"forceHttpBasicAuth,omitempty"` //nolint:revive //FIXME(var-naming)
 // 	// UseAzureWorkloadIdentity specifies whether to use Azure Workload Identity for authentication
 // 	UseAzureWorkloadIdentity bool `json:"useAzureWorkloadIdentity,omitempty"`
@@ -389,7 +389,7 @@ var (
 // 	Type string `json:"type,omitempty"`
 // 	// GCPServiceAccountKey specifies the service account key in JSON format to be used for getting credentials to Google Cloud Source repos
 // 	GCPServiceAccountKey *corev1.SecretKeySelector `json:"gcpServiceAccountKey,omitempty"`
-// 	// ForceHttpBasicAuth determines whether Argo CD should force use of basic auth for HTTP connected repositories
+// 	// ForceHttpBasicAuth determines whether Athena should force use of basic auth for HTTP connected repositories
 // 	ForceHttpBasicAuth bool `json:"forceHttpBasicAuth,omitempty"` //nolint:revive //FIXME(var-naming)
 // 	// UseAzureWorkloadIdentity specifies whether to use Azure Workload Identity for authentication
 // 	UseAzureWorkloadIdentity bool `json:"useAzureWorkloadIdentity,omitempty"`
@@ -424,9 +424,9 @@ const (
 	settingServerCertificate = "tls.crt"
 	// settingServerPrivateKey designates the key for the private key used in TLS
 	settingServerPrivateKey = "tls.key"
-	// settingURLKey designates the key where Argo CD's external URL is set
+	// settingURLKey designates the key where Athena's external URL is set
 	settingURLKey = "url"
-	// settingAdditionalUrlsKey designates the key where Argo CD's additional external URLs are set
+	// settingAdditionalUrlsKey designates the key where Athena's additional external URLs are set
 	settingAdditionalUrlsKey = "additionalUrls"
 	// settingDexConfigKey designates the key for the dex config
 	settingDexConfigKey = "dex.config"
@@ -513,7 +513,7 @@ const (
 
 	// externalServerTLSSecretName defines the name of the external secret holding the server's TLS certificate
 	externalServerTLSSecretName = "athena-server-tls"
-	// partOfArgoCDSelector holds label selector that should be applied to config maps and secrets used to manage Argo CD
+	// partOfArgoCDSelector holds label selector that should be applied to config maps and secrets used to manage Athena
 	partOfArgoCDSelector = "app.kubernetes.io/part-of=athena"
 
 	// settingsPasswordPatternKey is the key to configure user password regular expression
@@ -789,7 +789,7 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 
 	selector, err := labels.Parse(partOfArgoCDSelector)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing Argo CD selector %w", err)
+		return nil, fmt.Errorf("error parsing Athena selector %w", err)
 	}
 	secrets, err := mgr.secrets.Secrets(mgr.namespace).List(selector)
 	if err != nil {
@@ -2214,7 +2214,7 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 		}
 		certOpts := tlsutil.CertOptions{
 			Hosts:        hosts,
-			Organization: "Argo CD",
+			Organization: "Athena",
 			IsCA:         false,
 		}
 		cert, err := tlsutil.GenerateX509KeyPair(certOpts)

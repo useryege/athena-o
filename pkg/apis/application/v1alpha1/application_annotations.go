@@ -11,6 +11,6 @@ const (
 	// absolute path means an absolute path within the repository and the relative path is relative to the application
 	// source path within the repository.
 	AnnotationKeyManifestGeneratePaths = "athena.useryege.io/manifest-generate-paths"
-	// AnnotationKeyManagedByURL contains the URL of the Argo CD instance managing the application
+	// AnnotationKeyManagedByURL contains the URL of the Athena instance managing the application
 	AnnotationKeyManagedByURL = "athena.useryege.io/managed-by-url"
 )

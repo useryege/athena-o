@@ -73,4 +73,4 @@ Every commit to master is built and published to `ghcr.io/argoproj/athena/athena
 > even publicly available packages. Follow the steps from Kubernetes [documentation](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry)
 > to configure image pull secret if you want to use `ghcr.io/argoproj/athena/athena` image.
 
-The image is automatically deployed to the dev Argo CD instance: [https://cd.apps.argoproj.io/](https://cd.apps.argoproj.io/)
+The image is automatically deployed to the dev Athena instance: [https://cd.apps.argoproj.io/](https://cd.apps.argoproj.io/)

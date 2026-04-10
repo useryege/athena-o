@@ -1,12 +1,12 @@
-# Try Argo CD Locally
+# Try Athena Locally
 
 > [!TIP]
-> This guide assumes you have a grounding in the tools that Argo CD is based on. Please read [understanding the basics](understand_the_basics.md) to learn about these tools.
+> This guide assumes you have a grounding in the tools that Athena is based on. Please read [understanding the basics](understand_the_basics.md) to learn about these tools.
 
 
-Follow these steps to install `Kind` for local development and set it up with Argo CD.
+Follow these steps to install `Kind` for local development and set it up with Athena.
 
-To run an Argo CD development environment review the [developer guide for running locally](./developer-guide/running-locally.md).
+To run an Athena development environment review the [developer guide for running locally](./developer-guide/running-locally.md).
 
 ## Install Kind
 
@@ -26,28 +26,28 @@ kubectl cluster-info --context kind-athena-cluster
 ```
 This command verifies that `kubectl` is pointed to the right cluster.
 
-## Install ArgoCD on the Cluster
-You can now install Argo CD on your `kind` cluster. First, apply the Argo CD manifest to create the necessary resources:
+## Install Athena on the Cluster
+You can now install Athena on your `kind` cluster. First, apply the Athena manifest to create the necessary resources:
 ```bash
 kubectl create namespace athena
 kubectl apply -n athena --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/athena/stable/manifests/install.yaml
 ```
 
 > [!NOTE]
-> The `--server-side --force-conflicts` flags are required because some Argo CD CRDs exceed the size limit for client-side apply. See the [getting started guide](getting_started.md) for more details.
+> The `--server-side --force-conflicts` flags are required because some Athena CRDs exceed the size limit for client-side apply. See the [getting started guide](getting_started.md) for more details.
 
-## Expose ArgoCD API Server
-By default, Argo CD's API server is not exposed outside the cluster. You need to expose it to access the UI locally. For development purposes, you can use Kubectl 'port-forward'.
+## Expose Athena API Server
+By default, Athena's API server is not exposed outside the cluster. You need to expose it to access the UI locally. For development purposes, you can use Kubectl 'port-forward'.
 ```bash
 kubectl port-forward svc/athena-server -n athena 8080:443
 ```
-This will forward port 8080 on your local machine to the ArgoCD API server’s port 443 inside the Kubernetes cluster.
+This will forward port 8080 on your local machine to the Athena API server’s port 443 inside the Kubernetes cluster.
 
-## Access ArgoCD UI
-Now, you can open your browser and navigate to http://localhost:8080 to access the ArgoCD UI.
+## Access Athena UI
+Now, you can open your browser and navigate to http://localhost:8080 to access the Athena UI.
 
-### Log in to ArgoCD
-To log in to the ArgoCD UI, you'll need the default admin password. You can retrieve it from the Kubernetes cluster:
+### Log in to Athena
+To log in to the Athena UI, you'll need the default admin password. You can retrieve it from the Kubernetes cluster:
 ```bash
 kubectl -n athena get secret athena-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
 ```

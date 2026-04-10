@@ -31,7 +31,7 @@ func NewServer(mgr *settings.SettingsManager, authenticator Authenticator, disab
 	return &Server{mgr: mgr, authenticator: authenticator, disableAuth: disableAuth, appsInAnyNamespaceEnabled: appsInAnyNamespaceEnabled, hydratorEnabled: hydratorEnabled, syncWithReplaceAllowed: syncWithReplaceAllowed}
 }
 
-// Get returns Argo CD settings
+// Get returns Athena settings
 func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settingspkg.Settings, error) {
 	resourceOverrides, err := s.mgr.GetResourceOverrides()
 	if err != nil {

@@ -1,9 +1,9 @@
 # E2E Tests
 
-The test [directory](https://github.com/argoproj/athena/tree/master/test) contains E2E tests and test applications. The tests assume that Argo CD services are installed into `athena-e2e` namespace or cluster in current context. A throw-away
+The test [directory](https://github.com/argoproj/athena/tree/master/test) contains E2E tests and test applications. The tests assume that Athena services are installed into `athena-e2e` namespace or cluster in current context. A throw-away
 namespace `athena-e2e***` is created prior to the execution of the tests. The throw-away namespace is used as a target namespace for test applications.
 
-The [/test/e2e/testdata](https://github.com/argoproj/athena/tree/master/test/e2e/testdata) directory contains various Argo CD applications. Before test execution, the directory is copied into `/tmp/argo-e2e***` temp directory (configurable by `ATHENA_E2E_DIR`) and used in tests as a
+The [/test/e2e/testdata](https://github.com/argoproj/athena/tree/master/test/e2e/testdata) directory contains various Athena applications. Before test execution, the directory is copied into `/tmp/argo-e2e***` temp directory (configurable by `ATHENA_E2E_DIR`) and used in tests as a
 Git repository via file url: `file:///tmp/argo-e2e***`.
 
 > [!NOTE]
@@ -39,7 +39,7 @@ You can observe the tests by using the UI [http://localhost:4000/applications](h
 
 ## Configuration of E2E Tests execution
 
-The Makefile's `start-e2e` target starts instances of ArgoCD on your local machine, of which the most will require a network listener. If, for any reason, your machine already has network services listening on the same ports, then the e2e tests will not run. You can derive from the defaults by setting the following environment variables before you run `make start-e2e`:
+The Makefile's `start-e2e` target starts instances of Athena on your local machine, of which the most will require a network listener. If, for any reason, your machine already has network services listening on the same ports, then the e2e tests will not run. You can derive from the defaults by setting the following environment variables before you run `make start-e2e`:
 
 - `ATHENA_E2E_APISERVER_PORT`: Listener port for `athena-server` (default: `8080`)
 - `ATHENA_E2E_REPOSERVER_PORT`: Listener port for `athena-reposerver` (default: `8081`)

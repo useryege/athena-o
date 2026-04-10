@@ -2,7 +2,7 @@ syntax = "proto3";
 
 // Settings Service
 //
-// Settings Service API retrieves Argo CD settings
+// Settings Service API retrieves Athena settings
 package cluster;
 
 import "github.com/useryege/athena/internal/server/settings/oidc/claims.proto";
@@ -12,7 +12,7 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/settings";
 
-// SettingsQuery is a query for Argo CD settings
+// SettingsQuery is a query for Athena settings
 message SettingsQuery {}
 
 message Settings {
@@ -95,12 +95,12 @@ message OIDCConfig {
 
 // SettingsService
 service SettingsService {
-  // Get returns Argo CD settings
+  // Get returns Athena settings
   rpc Get(SettingsQuery) returns (Settings) {
     option (google.api.http).get = "/api/v1/settings";
   }
 
-  // Get returns Argo CD plugins
+  // Get returns Athena plugins
   // rpc GetPlugins(SettingsQuery) returns (SettingsPluginsResponse) {
   //   option (google.api.http).get = "/api/v1/settings/plugins";
   // }

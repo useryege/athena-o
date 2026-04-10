@@ -23,11 +23,11 @@ const (
 	ApplicationSetController = "athena-applicationset-controller"
 )
 
-// Default service addresses and URLS of Argo CD internal services
+// Default service addresses and URLS of Athena internal services
 const (
-	// DefaultRepoServerAddr is the gRPC address of the Argo CD repo server
+	// DefaultRepoServerAddr is the gRPC address of the Athena repo server
 	DefaultRepoServerAddr = "athena-repo-server:8081"
-	// DefaultCommitServerAddr is the gRPC address of the Argo CD commit server
+	// DefaultCommitServerAddr is the gRPC address of the Athena commit server
 	DefaultCommitServerAddr = "athena-commit-server:8086"
 	// DefaultDexServerAddr is the HTTP address of the Dex OIDC server, which we run a reverse proxy against
 	DefaultDexServerAddr = "athena-dex-server:5556"
@@ -35,7 +35,7 @@ const (
 	DefaultRedisAddr = "athena-redis:6379"
 )
 
-// Kubernetes ConfigMap and Secret resource names which hold Argo CD settings
+// Kubernetes ConfigMap and Secret resource names which hold Athena settings
 const (
 	ArgoCDConfigMapName              = "athena-cm"
 	ArgoCDSecretName                 = "athena-secret"
@@ -106,7 +106,7 @@ const (
 	PodRequestsMEM = "memory"
 )
 
-// Argo CD application related constants
+// Athena application related constants
 const (
 
 	// ArgoCDAdminUsername is the username of the 'admin' user
@@ -149,30 +149,30 @@ const (
 const (
 	// DexAPIEndpoint is the endpoint where we serve the Dex API server
 	DexAPIEndpoint = "/api/dex"
-	// LoginEndpoint is Argo CD's shorthand login endpoint which redirects to dex's OAuth 2.0 provider's consent page
+	// LoginEndpoint is Athena's shorthand login endpoint which redirects to dex's OAuth 2.0 provider's consent page
 	LoginEndpoint = "/auth/login"
-	// LogoutEndpoint is Argo CD's shorthand logout endpoint which invalidates OIDC session after logout
+	// LogoutEndpoint is Athena's shorthand logout endpoint which invalidates OIDC session after logout
 	LogoutEndpoint = "/auth/logout"
-	// CallbackEndpoint is Argo CD's final callback endpoint we reach after OAuth 2.0 login flow has been completed
+	// CallbackEndpoint is Athena's final callback endpoint we reach after OAuth 2.0 login flow has been completed
 	CallbackEndpoint = "/auth/callback"
-	// DexCallbackEndpoint is Argo CD's final callback endpoint when Dex is configured
+	// DexCallbackEndpoint is Athena's final callback endpoint when Dex is configured
 	DexCallbackEndpoint = "/api/dex/callback"
 	// ArgoCDClientAppName is name of the Oauth client app used when registering our web app to dex
-	ArgoCDClientAppName = "Argo CD"
+	ArgoCDClientAppName = "Athena"
 	// ArgoCDClientAppID is the Oauth client ID we will use when registering our app to dex
 	ArgoCDClientAppID = "athena"
 	// ArgoCDCLIClientAppName is name of the Oauth client app used when registering our CLI to dex
-	ArgoCDCLIClientAppName = "Argo CD CLI"
+	ArgoCDCLIClientAppName = "Athena CLI"
 	// ArgoCDCLIClientAppID is the Oauth client ID we will use when registering our CLI to dex
 	ArgoCDCLIClientAppID = "athena-cli"
 	// DexFederatedScope allows to receive the federated_claims from Dex. https://dexidp.io/docs/configuration/custom-scopes-claims-clients/
 	DexFederatedScope = "federated:id"
 )
 
-// Resource metadata labels and annotations (keys and values) used by Argo CD components
+// Resource metadata labels and annotations (keys and values) used by Athena components
 const (
 	// LabelKeyAppInstance is the label key to use to uniquely identify the instance of an application
-	// The Argo CD application name is used as the instance name
+	// The Athena application name is used as the instance name
 	LabelKeyAppInstance = "app.kubernetes.io/instance"
 	// LabelKeyAppName is the label key to use to uniquely identify the name of the Kubernetes application
 	LabelKeyAppName = "app.kubernetes.io/name"
@@ -197,7 +197,7 @@ const (
 	// LabelValueSecretTypeSCMCreds indicates a secret type of SCM credentials
 	LabelValueSecretTypeSCMCreds = "scm-creds"
 
-	// AnnotationKeyAppInstance is the Argo CD application name is used as the instance name
+	// AnnotationKeyAppInstance is the Athena application name is used as the instance name
 	AnnotationKeyAppInstance = "athena.useryege.io/tracking-id"
 	AnnotationInstallationID = "athena.useryege.io/installation-id"
 
@@ -213,7 +213,7 @@ const (
 
 	// AnnotationKeyManagedBy is annotation name which indicates that k8s resource is managed by an application.
 	AnnotationKeyManagedBy = "managed-by"
-	// AnnotationValueManagedByArgoCD is a 'managed-by' annotation value for resources managed by Argo CD
+	// AnnotationValueManagedByArgoCD is a 'managed-by' annotation value for resources managed by Athena
 	AnnotationValueManagedByArgoCD = "athena.useryege.io"
 
 	// AnnotationKeyLinkPrefix tells the UI to add an external link icon to the application node
@@ -240,7 +240,7 @@ const (
 	LabelValueComponentRepoServer = "repo-server"
 )
 
-// Environment variables for tuning and debugging Argo CD
+// Environment variables for tuning and debugging Athena
 const (
 	// EnvVarSSODebug is an environment variable to enable additional OAuth debugging in the API server
 	EnvVarSSODebug = "ATHENA_SSO_DEBUG"
@@ -308,17 +308,17 @@ const (
 	EnvCMPWorkDir = "ATHENA_CMP_WORKDIR"
 	// EnvGPGDataPath overrides the location where GPG keyring for signature verification is stored
 	EnvGPGDataPath = "ATHENA_GPG_DATA_PATH"
-	// EnvServer is the server address of the Argo CD API server.
+	// EnvServer is the server address of the Athena API server.
 	EnvServer = "ATHENA_SERVER"
-	// EnvServerName is the name of the Argo CD server component, as specified by the value under the LabelKeyAppName label key.
+	// EnvServerName is the name of the Athena server component, as specified by the value under the LabelKeyAppName label key.
 	EnvServerName = "ATHENA_SERVER_NAME"
-	// EnvRepoServerName is the name of the Argo CD repo server component, as specified by the value under the LabelKeyAppName label key.
+	// EnvRepoServerName is the name of the Athena repo server component, as specified by the value under the LabelKeyAppName label key.
 	EnvRepoServerName = "ATHENA_REPO_SERVER_NAME"
-	// EnvAppControllerName is the name of the Argo CD application controller component, as specified by the value under the LabelKeyAppName label key.
+	// EnvAppControllerName is the name of the Athena application controller component, as specified by the value under the LabelKeyAppName label key.
 	EnvAppControllerName = "ATHENA_APPLICATION_CONTROLLER_NAME"
-	// EnvRedisName is the name of the Argo CD redis component, as specified by the value under the LabelKeyAppName label key.
+	// EnvRedisName is the name of the Athena redis component, as specified by the value under the LabelKeyAppName label key.
 	EnvRedisName = "ATHENA_REDIS_NAME"
-	// EnvRedisHaProxyName is the name of the Argo CD Redis HA proxy component, as specified by the value under the LabelKeyAppName label key.
+	// EnvRedisHaProxyName is the name of the Athena Redis HA proxy component, as specified by the value under the LabelKeyAppName label key.
 	EnvRedisHaProxyName = "ATHENA_REDIS_HAPROXY_NAME"
 	// EnvGRPCKeepAliveMin defines the GRPCKeepAliveEnforcementMinimum, used in the grpc.KeepaliveEnforcementPolicy. Expects a "Duration" format (e.g. 10s).
 	EnvGRPCKeepAliveMin = "ATHENA_GRPC_KEEP_ALIVE_MIN"
@@ -365,7 +365,7 @@ const (
 	DefaultGitRetryFactor                    = int64(2)
 )
 
-// Constants represent the pod selector labels of the Argo CD component names. These values are determined by the
+// Constants represent the pod selector labels of the Athena component names. These values are determined by the
 // installation manifests.
 const (
 	DefaultServerName                = "athena-server"

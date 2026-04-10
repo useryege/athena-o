@@ -2,7 +2,7 @@ syntax = "proto3";
 
 // Account Service
 //
-// Account Service API updates Argo CD account settings
+// Account Service API updates Athena account settings
 
 package account;
 

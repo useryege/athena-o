@@ -31,7 +31,6 @@ import (
 	golang_proto "github.com/golang/protobuf/proto" //nolint:staticcheck
 	"github.com/gorilla/handlers"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
@@ -98,7 +97,7 @@ import (
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 )
 
-// AthenaServer is the API server for Argo CD
+// AthenaServer is the API server for Athena
 type AthenaServer struct {
 	AthenaServerOpts
 	ssoClientApp *oidc.ClientApp
@@ -115,7 +114,7 @@ type AthenaServer struct {
 	// appsetLister   applisters.ApplicationSetLister
 	db db.ArgoDB
 
-	// stopCh is the channel which when closed, will shutdown the Argo CD server
+	// stopCh is the channel which when closed, will shutdown the Athena server
 	stopCh           chan os.Signal
 	userStateStorage util_session.UserStateStorage
 	indexDataInit    gosync.Once
@@ -172,7 +171,7 @@ func initializeDefaultProject(opts AthenaServerOpts) error {
 	return nil
 }
 
-// NewServer returns a new instance of the Argo CD API server
+// NewServer returns a new instance of the Athena API server
 func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	settingsMgr := settings_util.NewSettingsManager(ctx, opts.KubeClientset, opts.Namespace)
 	settings, err := settingsMgr.InitializeSettings(opts.Insecure)
@@ -287,7 +286,7 @@ func (server *AthenaServer) logInClusterWarnings() error {
 		}
 		if !dbSettings.InClusterEnabled {
 			for _, clusterName := range inClusterSecrets {
-				log.Warnf("cluster %q uses in-cluster server address but it's disabled in Argo CD settings", clusterName)
+				log.Warnf("cluster %q uses in-cluster server address but it's disabled in Athena settings", clusterName)
 			}
 		}
 	}
@@ -403,40 +402,40 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 			},
 		),
 	}
-	sensitiveMethods := map[string]bool{
-		"/cluster.ClusterService/Create":                               true,
-		"/cluster.ClusterService/Update":                               true,
-		"/session.SessionService/Create":                               true,
-		"/account.AccountService/UpdatePassword":                       true,
-		"/gpgkey.GPGKeyService/CreateGnuPGPublicKey":                   true,
-		"/repository.RepositoryService/Create":                         true,
-		"/repository.RepositoryService/Update":                         true,
-		"/repository.RepositoryService/CreateRepository":               true,
-		"/repository.RepositoryService/UpdateRepository":               true,
-		"/repository.RepositoryService/ValidateAccess":                 true,
-		"/repocreds.RepoCredsService/CreateRepositoryCredentials":      true,
-		"/repocreds.RepoCredsService/UpdateRepositoryCredentials":      true,
-		"/repository.RepositoryService/CreateWriteRepository":          true,
-		"/repository.RepositoryService/UpdateWriteRepository":          true,
-		"/repository.RepositoryService/ValidateWriteAccess":            true,
-		"/repocreds.RepoCredsService/CreateWriteRepositoryCredentials": true,
-		"/repocreds.RepoCredsService/UpdateWriteRepositoryCredentials": true,
-		"/application.ApplicationService/PatchResource":                true,
-		// Remove from logs both because the contents are sensitive and because they may be very large.
-		"/application.ApplicationService/GetManifestsWithFiles": true,
-	}
+	// sensitiveMethods := map[string]bool{
+	// 	"/cluster.ClusterService/Create":                               true,
+	// 	"/cluster.ClusterService/Update":                               true,
+	// 	"/session.SessionService/Create":                               true,
+	// 	"/account.AccountService/UpdatePassword":                       true,
+	// 	"/gpgkey.GPGKeyService/CreateGnuPGPublicKey":                   true,
+	// 	"/repository.RepositoryService/Create":                         true,
+	// 	"/repository.RepositoryService/Update":                         true,
+	// 	"/repository.RepositoryService/CreateRepository":               true,
+	// 	"/repository.RepositoryService/UpdateRepository":               true,
+	// 	"/repository.RepositoryService/ValidateAccess":                 true,
+	// 	"/repocreds.RepoCredsService/CreateRepositoryCredentials":      true,
+	// 	"/repocreds.RepoCredsService/UpdateRepositoryCredentials":      true,
+	// 	"/repository.RepositoryService/CreateWriteRepository":          true,
+	// 	"/repository.RepositoryService/UpdateWriteRepository":          true,
+	// 	"/repository.RepositoryService/ValidateWriteAccess":            true,
+	// 	"/repocreds.RepoCredsService/CreateWriteRepositoryCredentials": true,
+	// 	"/repocreds.RepoCredsService/UpdateWriteRepositoryCredentials": true,
+	// 	"/application.ApplicationService/PatchResource":                true,
+	// 	// Remove from logs both because the contents are sensitive and because they may be very large.
+	// 	"/application.ApplicationService/GetManifestsWithFiles": true,
+	// }
 	// NOTE: notice we do not configure the gRPC server here with TLS (e.g. grpc.Creds(creds))
 	// This is because TLS handshaking occurs in cmux handling
 	sOpts = append(sOpts, grpc.ChainStreamInterceptor(
 		logging.StreamServerInterceptor(grpc_util.InterceptorLogger(server.log)),
 		serverMetrics.StreamServerInterceptor(),
 		grpc_auth.StreamServerInterceptor(server.Authenticate),
-		grpc_util.UserAgentStreamServerInterceptor(common.ArgoCDUserAgentName, clientConstraint),
-		grpc_util.PayloadStreamServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
-			return !sensitiveMethods[c.FullMethod()]
-		}),
-		grpc_util.ErrorCodeK8sStreamServerInterceptor(),
-		grpc_util.ErrorCodeGitStreamServerInterceptor(),
+		// grpc_util.UserAgentStreamServerInterceptor(common.ArgoCDUserAgentName, clientConstraint),
+		// grpc_util.PayloadStreamServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
+		// 	return !sensitiveMethods[c.FullMethod()]
+		// }),
+		// grpc_util.ErrorCodeK8sStreamServerInterceptor(),
+		// grpc_util.ErrorCodeGitStreamServerInterceptor(),
 		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpc_util.LoggerRecoveryHandler(server.log))),
 	))
 	sOpts = append(sOpts, grpc.ChainUnaryInterceptor(
@@ -444,12 +443,12 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 		logging.UnaryServerInterceptor(grpc_util.InterceptorLogger(server.log)),
 		serverMetrics.UnaryServerInterceptor(),
 		grpc_auth.UnaryServerInterceptor(server.Authenticate),
-		grpc_util.UserAgentUnaryServerInterceptor(common.ArgoCDUserAgentName, clientConstraint),
-		grpc_util.PayloadUnaryServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
-			return !sensitiveMethods[c.FullMethod()]
-		}),
-		grpc_util.ErrorCodeK8sUnaryServerInterceptor(),
-		grpc_util.ErrorCodeGitUnaryServerInterceptor(),
+		// grpc_util.UserAgentUnaryServerInterceptor(common.ArgoCDUserAgentName, clientConstraint),
+		// grpc_util.PayloadUnaryServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
+		// 	return !sensitiveMethods[c.FullMethod()]
+		// }),
+		// grpc_util.ErrorCodeK8sUnaryServerInterceptor(),
+		// grpc_util.ErrorCodeGitUnaryServerInterceptor(),
 		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpc_util.LoggerRecoveryHandler(server.log))),
 	))
 	sOpts = append(sOpts, grpc.StatsHandler(otelgrpc.NewServerHandler()))
