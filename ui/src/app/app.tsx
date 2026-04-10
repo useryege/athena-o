@@ -5,10 +5,10 @@ import * as React from 'react';
 import {Helmet} from 'react-helmet';
 import {Redirect, Route, RouteComponentProps, Router, Switch} from 'react-router';
 import {Subscription} from 'rxjs';
-import applications from './applications';
+// import applications from './applications';
 import help from './help';
 import login from './login';
-import settings from './settings';
+// import settings from './settings';
 import {Layout, ThemeWrapper} from './shared/components/layout/layout';
 import {Page} from './shared/components/page/page';
 import {VersionPanel} from './shared/components/version-info/version-info-panel';
@@ -31,8 +31,8 @@ type Routes = {[path: string]: {component: React.ComponentType<RouteComponentPro
 
 const routes: Routes = {
     '/login': {component: login.component as any, noLayout: true},
-    '/applications': {component: applications.component},
-    '/settings': {component: settings.component},
+    // '/applications': {component: applications.component},
+    // '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
     '/help': {component: help.component}
 };
@@ -45,18 +45,18 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    {
-        title: 'Applications',
-        tooltip: 'Manage your applications, and diagnose health problems.',
-        path: '/applications',
-        iconClassName: 'argo-icon argo-icon-application'
-    },
-    {
-        title: 'Settings',
-        tooltip: 'Manage your repositories, projects, settings',
-        path: '/settings',
-        iconClassName: 'argo-icon argo-icon-settings'
-    },
+    // {
+    //     title: 'Applications',
+    //     tooltip: 'Manage your applications, and diagnose health problems.',
+    //     path: '/applications',
+    //     iconClassName: 'argo-icon argo-icon-application'
+    // },
+    // {
+    //     title: 'Settings',
+    //     tooltip: 'Manage your repositories, projects, settings',
+    //     path: '/settings',
+    //     iconClassName: 'argo-icon argo-icon-settings'
+    // },
     {
         title: 'User Info',
         path: '/user-info',
@@ -189,7 +189,8 @@ export class App extends React.Component<{}, {popupProps: PopupProps; showVersio
                         <AuthSettingsCtx.Provider value={this.state.authSettings}>
                             <Router history={history}>
                                 <Switch>
-                                    <Redirect exact={true} path='/' to='/applications' />
+                                    {/* <Redirect exact={true} path='/' to='/applications' /> */}
+                                    <Redirect exact={true} path='/' to='/user-info' />
                                     {Object.keys(this.routes).map(path => {
                                         const route = this.routes[path];
                                         return (

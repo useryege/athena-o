@@ -23,6 +23,7 @@ node_modules/
 .mirrord/
 .*.swp
 rerunreport.txt
+.env
 
 # ignore built binaries
 cmd/athena/athena
