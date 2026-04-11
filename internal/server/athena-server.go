@@ -881,7 +881,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	}
 	// withTracingHandler is a middleware that extracts OpenTelemetry trace context from HTTP headers
 	// and injects it into the request context. This enables trace context propagation from HTTP clients
-	// to gRPC services, allowing for better distributed tracing across the ArgoCD server.
+	// to gRPC services, allowing for better distributed tracing across the Athena server.
 	withTracingHandler := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			propagator := otel.GetTextMapPropagator()

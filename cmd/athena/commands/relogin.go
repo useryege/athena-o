@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/useryege/athena/cmd/athena/commands/headless"
-	argocdclient "github.com/useryege/athena/pkg/apiclient"
+	athenaclient "github.com/useryege/athena/pkg/apiclient"
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
 	"github.com/useryege/athena/util/errors"
 	utilio "github.com/useryege/athena/util/io"
@@ -17,8 +17,8 @@ import (
 	"github.com/useryege/athena/util/session"
 )
 
-// NewReloginCommand returns a new instance of `argocd relogin` command
-func NewReloginCommand(globalClientOpts *argocdclient.ClientOptions) *cobra.Command {
+// NewReloginCommand returns a new instance of `athena relogin` command
+func NewReloginCommand(globalClientOpts *athenaclient.ClientOptions) *cobra.Command {
 	var (
 		password         string
 		callback         string
@@ -39,14 +39,14 @@ func NewReloginCommand(globalClientOpts *argocdclient.ClientOptions) *cobra.Comm
 			localCfg, err := localconfig.ReadLocalConfig(globalClientOpts.ConfigPath)
 			errors.CheckError(err)
 			if localCfg == nil {
-				log.Fatalf("No context found. Login using `argocd login`")
+				log.Fatalf("No context found. Login using `athena login`")
 			}
 			configCtx, err := localCfg.ResolveContext(localCfg.CurrentContext)
 			errors.CheckError(err)
 
 			var tokenString string
 			var refreshToken string
-			clientOpts := argocdclient.ClientOptions{
+			clientOpts := athenaclient.ClientOptions{
 				ConfigPath:        "",
 				ServerAddr:        configCtx.Server.Server,
 				Insecure:          configCtx.Server.Insecure,
@@ -88,16 +88,16 @@ func NewReloginCommand(globalClientOpts *argocdclient.ClientOptions) *cobra.Comm
 		},
 		Example: `
 # Reinitiates the login with previous contexts
-argocd relogin
+athena relogin
 
 # Reinitiates the login with password
-argocd relogin --password YOUR_PASSWORD
+athena relogin --password YOUR_PASSWORD
 
 # Configure direct access using Kubernetes API server
-argocd login cd.argoproj.io --core
+athena login cd.argoproj.io --core
 
-# If user logged in with - "argocd login cd.argoproj.io" with sso login
-# The command - "argocd relogin" will Reinitiates SSO login and updates the server context`,
+# If user logged in with - "athena login cd.argoproj.io" with sso login
+# The command - "athena relogin" will Reinitiates SSO login and updates the server context`,
 	}
 	command.Flags().StringVar(&password, "password", "", "The password of an account to authenticate")
 	command.Flags().IntVar(&ssoPort, "sso-port", DefaultSSOLocalPort, "Port to run local OAuth2 login application")

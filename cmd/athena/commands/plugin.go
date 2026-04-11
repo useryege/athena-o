@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const prefix = "argocd"
+const prefix = "athena"
 
 type DefaultPluginHandler struct {
 	lookPath func(file string) (string, error)
@@ -35,7 +35,7 @@ func NewDefaultPluginHandler() *DefaultPluginHandler {
 // HandleCommandExecutionError processes the error returned from executing the command.
 // It handles both standard Argo CD commands and plugin commands. We don't require returning
 // an error, but we are doing it to cover various test scenarios.
-func (h *DefaultPluginHandler) HandleCommandExecutionError(err error, isArgocdCLI bool, args []string) error {
+func (h *DefaultPluginHandler) HandleCommandExecutionError(err error, isAthenaCLI bool, args []string) error {
 	// the log level needs to be setup manually here since the initConfig()
 	// set by the cobra.OnInitialize() was never executed because cmd.Execute()
 	// gave us a non-nil error.
@@ -45,7 +45,7 @@ func (h *DefaultPluginHandler) HandleCommandExecutionError(err error, isArgocdCL
 	// Unfortunately, cobra doesn't handle this error, so we need to assume
 	// that error consists of substring "unknown command".
 	// https://github.com/spf13/cobra/pull/2167
-	if isArgocdCLI && strings.Contains(err.Error(), "unknown command") {
+	if isAthenaCLI && strings.Contains(err.Error(), "unknown command") {
 		pluginPath, pluginErr := h.handlePluginCommand(args[1:])
 		// IMP: If a plugin doesn't exist, the returned path will be empty along with nil error
 		// This means the command is neither a normal Argo CD Command nor a plugin.
@@ -54,7 +54,7 @@ func (h *DefaultPluginHandler) HandleCommandExecutionError(err error, isArgocdCL
 			fmt.Printf("Error: %v\n", pluginErr)
 			return pluginErr
 		} else if pluginPath == "" {
-			fmt.Printf("Error: %v\nRun 'argocd --help' for usage.\n", err)
+			fmt.Printf("Error: %v\nRun 'athena --help' for usage.\n", err)
 			return err
 		}
 	} else {
@@ -84,7 +84,7 @@ func (h *DefaultPluginHandler) handlePluginCommand(cmdArgs []string) (string, er
 	return foundPluginPath, nil
 }
 
-// lookForPlugin looks for a plugin in the PATH that starts with argocd prefix
+// lookForPlugin looks for a plugin in the PATH that starts with athena prefix
 func (h *DefaultPluginHandler) lookForPlugin(filename string) (string, bool) {
 	pluginName := fmt.Sprintf("%s-%s", prefix, filename)
 	path, err := h.lookPath(pluginName)
@@ -168,7 +168,7 @@ func (h *DefaultPluginHandler) ListAvailablePlugins() []string {
 
 			name := entry.Name()
 
-			// Check if the file is a valid argocd plugin
+			// Check if the file is a valid athena plugin
 			pluginPrefix := prefix + "-"
 			if strings.HasPrefix(name, pluginPrefix) {
 				// Extract the plugin command name (everything after the prefix)

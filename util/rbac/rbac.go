@@ -127,7 +127,7 @@ var ProjectScoped = map[string]bool{
 type Enforcer struct {
 	lock               sync.Mutex
 	enforcerCache      *gocache.Cache
-	adapter            *argocdAdapter
+	adapter            *athenaAdapter
 	enableLog          bool
 	enabled            bool
 	clientset          kubernetes.Interface
@@ -554,21 +554,21 @@ func newBuiltInModel() model.Model {
 }
 
 // Casbin adapter which satisfies persist.Adapter interface
-type argocdAdapter struct {
+type athenaAdapter struct {
 	builtinPolicy     string
 	userDefinedPolicy string
 	runtimePolicy     string
 }
 
-func newAdapter(builtinPolicy, userDefinedPolicy, runtimePolicy string) *argocdAdapter {
-	return &argocdAdapter{
+func newAdapter(builtinPolicy, userDefinedPolicy, runtimePolicy string) *athenaAdapter {
+	return &athenaAdapter{
 		builtinPolicy:     builtinPolicy,
 		userDefinedPolicy: userDefinedPolicy,
 		runtimePolicy:     runtimePolicy,
 	}
 }
 
-func (a *argocdAdapter) LoadPolicy(model model.Model) error {
+func (a *athenaAdapter) LoadPolicy(model model.Model) error {
 	for _, policyStr := range []string{a.builtinPolicy, a.userDefinedPolicy, a.runtimePolicy} {
 		for _, line := range strings.Split(policyStr, "\n") {
 			if err := loadPolicyLine(strings.TrimSpace(line), model); err != nil {
@@ -614,18 +614,18 @@ func loadPolicyLine(line string, model model.Model) error {
 	return nil
 }
 
-func (a *argocdAdapter) SavePolicy(_ model.Model) error {
+func (a *athenaAdapter) SavePolicy(_ model.Model) error {
 	return errors.New("not implemented")
 }
 
-func (a *argocdAdapter) AddPolicy(_ string, _ string, _ []string) error {
+func (a *athenaAdapter) AddPolicy(_ string, _ string, _ []string) error {
 	return errors.New("not implemented")
 }
 
-func (a *argocdAdapter) RemovePolicy(_ string, _ string, _ []string) error {
+func (a *athenaAdapter) RemovePolicy(_ string, _ string, _ []string) error {
 	return errors.New("not implemented")
 }
 
-func (a *argocdAdapter) RemoveFilteredPolicy(_ string, _ string, _ int, _ ...string) error {
+func (a *athenaAdapter) RemoveFilteredPolicy(_ string, _ string, _ int, _ ...string) error {
 	return errors.New("not implemented")
 }

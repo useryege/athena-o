@@ -13,20 +13,20 @@ import (
 	"github.com/useryege/athena/util/localconfig"
 	"k8s.io/client-go/tools/clientcmd"
 
-	// 	"github.com/argoproj/argo-cd/v3/util/cache"
+	// 	"github.com/useryege/athena/util/cache"
 	// 	"k8s.io/client-go/tools/clientcmd"
-	// "github.com/argoproj/argo-cd/v3/cmd/argocd/commands/admin"
-	// "github.com/argoproj/argo-cd/v3/cmd/argocd/commands/initialize"
+	// "github.com/useryege/athena/cmd/athena/commands/admin"
+	// "github.com/useryege/athena/cmd/athena/commands/initialize"
 
 	"github.com/useryege/athena/cmd/athena/commands/initialize"
 	cmdutil "github.com/useryege/athena/cmd/util"
 
-	// "github.com/argoproj/argo-cd/v3/common"
+	// "github.com/useryege/athena/common"
 	athenaclient "github.com/useryege/athena/pkg/apiclient"
-	// "github.com/argoproj/argo-cd/v3/util/cli"
-	// "github.com/argoproj/argo-cd/v3/util/config"
-	// "github.com/argoproj/argo-cd/v3/util/env"
-	// "github.com/argoproj/argo-cd/v3/util/errors"
+	// "github.com/useryege/athena/util/cli"
+	// "github.com/useryege/athena/util/config"
+	// "github.com/useryege/athena/util/env"
+	// "github.com/useryege/athena/util/errors"
 )
 
 func init() {
@@ -38,7 +38,7 @@ func initConfig() {
 	cli.SetLogLevel(cmdutil.LogLevel)
 }
 
-// NewCommand returns a new instance of an argocd command
+// NewCommand returns a new instance of an athena command
 func NewCommand() *cobra.Command {
 	var (
 		clientOpts athenaclient.ClientOptions
@@ -47,7 +47,7 @@ func NewCommand() *cobra.Command {
 
 	command := &cobra.Command{
 		Use:   cliName,
-		Short: "argocd controls a Argo CD server",
+		Short: "athena controls a Argo CD server",
 		Run: func(c *cobra.Command, args []string) {
 			c.HelpFunc()(c, args)
 		},
@@ -96,11 +96,11 @@ func NewCommand() *cobra.Command {
 	command.PersistentFlags().StringVar(&cmdutil.LogFormat, "logformat", config.GetFlag("logformat", "json"), "Set the logging format. One of: json|text")
 	command.PersistentFlags().StringVar(&cmdutil.LogLevel, "loglevel", config.GetFlag("loglevel", "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.PersistentFlags().StringSliceVarP(&clientOpts.Headers, "header", "H", config.GetStringSliceFlag("header", []string{}), "Sets additional header to all requests made by Argo CD CLI. (Can be repeated multiple times to add multiple headers, also supports comma separated headers)")
-	command.PersistentFlags().BoolVar(&clientOpts.PortForward, "port-forward", config.GetBoolFlag("port-forward"), "Connect to a random argocd-server port using port forwarding")
+	command.PersistentFlags().BoolVar(&clientOpts.PortForward, "port-forward", config.GetBoolFlag("port-forward"), "Connect to a random athena-server port using port forwarding")
 	command.PersistentFlags().StringVar(&clientOpts.PortForwardNamespace, "port-forward-namespace", config.GetFlag("port-forward-namespace", ""), "Namespace name which should be used for port forwarding")
 	command.PersistentFlags().IntVar(&clientOpts.HttpRetryMax, "http-retry-max", config.GetIntFlag("http-retry-max", 0), "Maximum number of retries to establish http connection to Argo CD server")
 	command.PersistentFlags().BoolVar(&clientOpts.Core, "core", config.GetBoolFlag("core"), "If set to true then CLI talks directly to Kubernetes instead of talking to Argo CD API server")
-	command.PersistentFlags().StringVar(&clientOpts.Context, "argocd-context", "", "The name of the Argo-CD server context to use")
+	command.PersistentFlags().StringVar(&clientOpts.Context, "athena-context", "", "The name of the Argo-CD server context to use")
 	command.PersistentFlags().StringVar(&clientOpts.ServerName, "server-name", env.StringFromEnv(common.EnvServerName, common.DefaultServerName), fmt.Sprintf("Name of the Argo CD API server; set this or the %s environment variable when the server's name label differs from the default, for example when installing via the Helm chart", common.EnvServerName))
 	command.PersistentFlags().StringVar(&clientOpts.AppControllerName, "controller-name", env.StringFromEnv(common.EnvAppControllerName, common.DefaultApplicationControllerName), fmt.Sprintf("Name of the Argo CD Application controller; set this or the %s environment variable when the controller's name label differs from the default, for example when installing via the Helm chart", common.EnvAppControllerName))
 	command.PersistentFlags().StringVar(&clientOpts.RedisHaProxyName, "redis-haproxy-name", env.StringFromEnv(common.EnvRedisHaProxyName, common.DefaultRedisHaProxyName), fmt.Sprintf("Name of the Redis HA Proxy; set this or the %s environment variable when the HA Proxy's name label differs from the default, for example when installing via the Helm chart", common.EnvRedisHaProxyName))

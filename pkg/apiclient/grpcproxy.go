@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/useryege/athena/common"
-	argocderrors "github.com/useryege/athena/util/errors"
+	athenaerrors "github.com/useryege/athena/util/errors"
 	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/rand"
 )
@@ -189,7 +189,7 @@ func (c *client) startGRPCProxy(ctx context.Context) (*grpc.Server, net.Listener
 		}))
 	go func() {
 		err := proxySrv.Serve(ln)
-		argocderrors.CheckError(err)
+		athenaerrors.CheckError(err)
 	}()
 	return proxySrv, ln, nil
 }

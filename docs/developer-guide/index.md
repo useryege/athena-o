@@ -92,7 +92,7 @@ As is the case with the development process, this document is under constant cha
 Need help? Start with the [Contributors FAQ](faq/)
 
 ## Contributing to Athena dependencies
-- [Contributing to argo-ui](dependencies.md#argo-ui-components-githubcomargoprojargo-ui)
+- [Contributing to athena-ui](dependencies.md#athena-ui-components-githubcomargoprojargo-ui)
 - [Contributing to notifications-engine](dependencies.md#notifications-engine-githubcomargoprojnotifications-engine)
 
 ## Extensions and Third-Party Applications

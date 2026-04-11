@@ -22,7 +22,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/useryege/athena/cmd/athena/commands/headless"
-	argocdclient "github.com/useryege/athena/pkg/apiclient"
+	athenaclient "github.com/useryege/athena/pkg/apiclient"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
 	"github.com/useryege/athena/util/cli"
@@ -35,8 +35,8 @@ import (
 	oidcconfig "github.com/useryege/athena/util/settings"
 )
 
-// NewLoginCommand returns a new instance of `argocd login` command
-func NewLoginCommand(globalClientOpts *argocdclient.ClientOptions) *cobra.Command {
+// NewLoginCommand returns a new instance of `athena login` command
+func NewLoginCommand(globalClientOpts *athenaclient.ClientOptions) *cobra.Command {
 	var (
 		ctxName          string
 		username         string
@@ -52,13 +52,13 @@ func NewLoginCommand(globalClientOpts *argocdclient.ClientOptions) *cobra.Comman
 		Short: "Log in to Argo CD",
 		Long:  "Log in to Argo CD",
 		Example: `# Login to Argo CD using a username and password
-argocd login cd.argoproj.io
+athena login cd.argoproj.io
 
 # Login to Argo CD using SSO
-argocd login cd.argoproj.io --sso
+athena login cd.argoproj.io --sso
 
 # Configure direct access using Kubernetes API server
-argocd login cd.argoproj.io --core`,
+athena login cd.argoproj.io --core`,
 		Run: func(c *cobra.Command, args []string) {
 			ctx := c.Context()
 
@@ -98,7 +98,7 @@ argocd login cd.argoproj.io --core`,
 					}
 				}
 			}
-			clientOpts := argocdclient.ClientOptions{
+			clientOpts := athenaclient.ClientOptions{
 				ConfigPath:           "",
 				ServerAddr:           server,
 				Insecure:             globalClientOpts.Insecure,
@@ -360,7 +360,7 @@ func oauth2Login(
 	return tokenString, refreshToken
 }
 
-func passwordLogin(ctx context.Context, acdClient argocdclient.Client, username, password string) string {
+func passwordLogin(ctx context.Context, acdClient athenaclient.Client, username, password string) string {
 	username, password = cli.PromptCredentials(username, password)
 	sessConn, sessionIf := acdClient.NewSessionClientOrDie()
 	defer utilio.Close(sessConn)

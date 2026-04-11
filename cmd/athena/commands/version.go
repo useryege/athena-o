@@ -28,16 +28,16 @@ func NewVersionCmd(clientOpts *athenaclient.ClientOptions, serverVersion *versio
 		Use:   "version",
 		Short: "Print version information",
 		Example: `  # Print the full version of client and server to stdout
-  argocd version
+  athena version
 
   # Print only full version of the client - no connection to server will be made
-  argocd version --client
+  athena version --client
 
   # Print the full version of client and server in JSON format
-  argocd version -o json
+  athena version -o json
 
   # Print only client and server core version strings in YAML format
-  argocd version --short -o yaml
+  athena version --short -o yaml
 `,
 		Run: func(cmd *cobra.Command, _ []string) {
 			ctx := cmd.Context()
@@ -62,7 +62,7 @@ func NewVersionCmd(clientOpts *athenaclient.ClientOptions, serverVersion *versio
 					}
 
 					if short {
-						v["server"] = map[string]string{"argocd-server": sv.Version}
+						v["server"] = map[string]string{"athena-server": sv.Version}
 					} else {
 						v["server"] = sv
 					}
@@ -123,7 +123,7 @@ func printClientVersion(version *common.Version, short bool) string {
 }
 
 func printServerVersion(version *version.VersionMessage, short bool) string {
-	output := fmt.Sprintf("%s: %s\n", "argocd-server", version.Version)
+	output := fmt.Sprintf("%s: %s\n", "athena-server", version.Version)
 
 	if short {
 		return output

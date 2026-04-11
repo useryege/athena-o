@@ -13,20 +13,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GenerateDexConfigYAML(argocdSettings *settings.ArgoCDSettings, disableTLS bool) ([]byte, error) {
-	if !argocdSettings.IsDexConfigured() {
+func GenerateDexConfigYAML(athenaSettings *settings.ArgoCDSettings, disableTLS bool) ([]byte, error) {
+	if !athenaSettings.IsDexConfigured() {
 		return nil, nil
 	}
-	redirectURL, err := argocdSettings.RedirectURL()
+	redirectURL, err := athenaSettings.RedirectURL()
 	if err != nil {
 		return nil, fmt.Errorf("failed to infer redirect url from config: %w", err)
 	}
 	var dexCfg map[string]any
-	err = yaml.Unmarshal([]byte(argocdSettings.DexConfig), &dexCfg)
+	err = yaml.Unmarshal([]byte(athenaSettings.DexConfig), &dexCfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal dex.config from configmap: %w", err)
 	}
-	dexCfg["issuer"] = argocdSettings.IssuerURL()
+	dexCfg["issuer"] = athenaSettings.IssuerURL()
 	dexCfg["storage"] = map[string]any{
 		"type": "memory",
 	}
@@ -73,14 +73,14 @@ func GenerateDexConfigYAML(argocdSettings *settings.ArgoCDSettings, disableTLS b
 		}
 	}
 
-	additionalRedirectURLs, err := argocdSettings.RedirectAdditionalURLs()
+	additionalRedirectURLs, err := athenaSettings.RedirectAdditionalURLs()
 	if err != nil {
 		return nil, fmt.Errorf("failed to infer additional redirect urls from config: %w", err)
 	}
 	argoCDStaticClient := map[string]any{
 		"id":           common.ArgoCDClientAppID,
 		"name":         common.ArgoCDClientAppName,
-		"secret":       argocdSettings.DexOAuth2ClientSecret(),
+		"secret":       athenaSettings.DexOAuth2ClientSecret(),
 		"redirectURIs": append([]string{redirectURL}, additionalRedirectURLs...),
 	}
 	argoCDPKCEStaticClient := map[string]any{
@@ -108,7 +108,7 @@ func GenerateDexConfigYAML(argocdSettings *settings.ArgoCDSettings, disableTLS b
 		dexCfg["staticClients"] = []any{argoCDStaticClient, argoCDCLIStaticClient, argoCDPKCEStaticClient}
 	}
 
-	dexRedirectURL, err := argocdSettings.DexRedirectURL()
+	dexRedirectURL, err := athenaSettings.DexRedirectURL()
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func GenerateDexConfigYAML(argocdSettings *settings.ArgoCDSettings, disableTLS b
 		connectors[i] = connector
 	}
 	dexCfg["connectors"] = connectors
-	dexCfg = settings.ReplaceMapSecrets(dexCfg, argocdSettings.Secrets)
+	dexCfg = settings.ReplaceMapSecrets(dexCfg, athenaSettings.Secrets)
 	return yaml.Marshal(dexCfg)
 }
 

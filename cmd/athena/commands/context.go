@@ -11,26 +11,26 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	argocdclient "github.com/useryege/athena/pkg/apiclient"
+	athenaclient "github.com/useryege/athena/pkg/apiclient"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/localconfig"
 )
 
-// NewContextCommand returns a new instance of an `argocd ctx` command
-func NewContextCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
+// NewContextCommand returns a new instance of an `athena ctx` command
+func NewContextCommand(clientOpts *athenaclient.ClientOptions) *cobra.Command {
 	var deletion bool
 	command := &cobra.Command{
 		Use:     "context [CONTEXT]",
 		Aliases: []string{"ctx"},
 		Short:   "Switch between contexts",
 		Example: `# List Argo CD Contexts
-argocd context
+athena context
 
 # Switch Argo CD context
-argocd context cd.argoproj.io
+athena context cd.argoproj.io
 
 # Delete Argo CD context
-argocd context cd.argoproj.io --delete`,
+athena context cd.argoproj.io --delete`,
 		Run: func(c *cobra.Command, args []string) {
 			localCfg, err := localconfig.ReadLocalConfig(clientOpts.ConfigPath)
 			errors.CheckError(err)

@@ -30,31 +30,31 @@ After your Notifications Engine PR has been merged, Athena needs to be updated t
 
 - Create an Athena PR with a `refactor:` type in its title for the above file changes.
 
-## Athena UI Components (`github.com/useryege/argo-ui`)
+## Athena UI Components (`github.com/useryege/athena-ui`)
 ### Contributing to Athena UI
 
-Athena, along with Argo Workflows, uses shared React components from [Athena UI](https://github.com/useryege/argo-ui). Examples of some of these components include buttons, containers, form controls, 
+Athena, along with Argo Workflows, uses shared React components from [Athena UI](https://github.com/useryege/athena-ui). Examples of some of these components include buttons, containers, form controls, 
 and others. Although you can make changes to these files and run them locally, in order to have these changes added to the Athena repo, you will need to follow these steps. 
 
-1. Fork and clone the [Athena UI repository](https://github.com/useryege/argo-ui).
+1. Fork and clone the [Athena UI repository](https://github.com/useryege/athena-ui).
 
-2. `cd` into your `argo-ui` directory, and then run `yarn install`. 
+2. `cd` into your `athena-ui` directory, and then run `yarn install`. 
 
 3. Make your file changes.
 
 4. Run `yarn start` to start a [storybook](https://storybook.js.org/) dev server and view the components in your browser. Make sure all your changes work as expected. 
 
-5. Use [yarn link](https://classic.yarnpkg.com/en/docs/cli/link/) to link Athena UI package to your Athena repository. (Commands below assume that `argo-ui` and `athena` are both located within the same parent folder)
+5. Use [yarn link](https://classic.yarnpkg.com/en/docs/cli/link/) to link Athena UI package to your Athena repository. (Commands below assume that `athena-ui` and `athena` are both located within the same parent folder)
 
-    * `cd argo-ui`
+    * `cd athena-ui`
     * `yarn link`
     * `cd ../athena/ui`
-    * `yarn link argo-ui`
+    * `yarn link athena-ui`
 
-    Once the `argo-ui` package has been successfully linked, test changes in your local development environment. 
+    Once the `athena-ui` package has been successfully linked, test changes in your local development environment. 
 
-6. Commit changes and open a PR to [Athena UI](https://github.com/useryege/argo-ui). 
+6. Commit changes and open a PR to [Athena UI](https://github.com/useryege/athena-ui). 
 
-7. Once your PR has been merged in Athena UI, `cd` into your `athena/ui` folder and run `yarn add git+https://github.com/useryege/argo-ui.git`. This will update the commit SHA in the `ui/yarn.lock` file to use the latest master commit for argo-ui. 
+7. Once your PR has been merged in Athena UI, `cd` into your `athena/ui` folder and run `yarn add git+https://github.com/useryege/athena-ui.git`. This will update the commit SHA in the `ui/yarn.lock` file to use the latest master commit for athena-ui. 
 
 8. Submit changes to `ui/yarn.lock`in a PR to Athena. 

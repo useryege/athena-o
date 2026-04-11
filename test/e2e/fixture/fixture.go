@@ -637,7 +637,7 @@ func EnsureCleanState(t *testing.T, opts ...TestOption) *TestState {
 	state := NewTestState(t)
 
 	start := time.Now()
-	policy := metav1.DeletePropagationBackground
+	// policy := metav1.DeletePropagationBackground
 
 	// deleteNamespaces := func(namespaces []corev1.Namespace, wait bool) error {
 	// 	args := []string{"delete", "ns", "--ignore-not-found=true", fmt.Sprintf("--wait=%t", wait)}
@@ -679,13 +679,13 @@ func EnsureCleanState(t *testing.T, opts ...TestOption) *TestState {
 	// }
 
 	RunFunctionsInParallelAndCheckErrors(t, []func() error{
-		func() error {
-			// kubectl delete apps ...
-			return AppClientset.ArgoprojV1alpha1().Applications(TestNamespace()).DeleteCollection(
-				t.Context(),
-				metav1.DeleteOptions{PropagationPolicy: &policy},
-				metav1.ListOptions{})
-		},
+		// func() error {
+		// 	// kubectl delete apps ...
+		// 	return AppClientset.ArgoprojV1alpha1().Applications(TestNamespace()).DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{})
+		// },
 		// func() error {
 		// 	// kubectl delete apps ...
 		// 	return AppClientset.ArgoprojV1alpha1().Applications(AppNamespace()).DeleteCollection(

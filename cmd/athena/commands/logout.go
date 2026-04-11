@@ -8,23 +8,23 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/useryege/athena/cmd/athena/commands/utils"
-	argocdclient "github.com/useryege/athena/pkg/apiclient"
+	athenaclient "github.com/useryege/athena/pkg/apiclient"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/localconfig"
 )
 
-// NewLogoutCommand returns a new instance of `argocd logout` command
-func NewLogoutCommand(globalClientOpts *argocdclient.ClientOptions) *cobra.Command {
+// NewLogoutCommand returns a new instance of `athena logout` command
+func NewLogoutCommand(globalClientOpts *athenaclient.ClientOptions) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "logout CONTEXT",
 		Short: "Log out from Argo CD",
 		Long:  "Log out from Argo CD",
 		Example: `# Logout from the active Argo CD context
 # This can be helpful for security reasons or when you want to switch between different Argo CD contexts or accounts.
-argocd logout CONTEXT
+athena logout CONTEXT
 
 # Logout from a specific context named 'cd.argoproj.io'
-argocd logout cd.argoproj.io
+athena logout cd.argoproj.io
 `,
 		Run: func(c *cobra.Command, args []string) {
 			if len(args) == 0 {

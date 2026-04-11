@@ -7,24 +7,24 @@ import (
 
 	"github.com/spf13/cobra"
 
-	argocdclient "github.com/useryege/athena/pkg/apiclient"
+	athenaclient "github.com/useryege/athena/pkg/apiclient"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/localconfig"
 )
 
-// NewConfigureCommand returns a new instance of an `argocd configure` command
-func NewConfigureCommand(globalClientOpts *argocdclient.ClientOptions) *cobra.Command {
+// NewConfigureCommand returns a new instance of an `athena configure` command
+func NewConfigureCommand(globalClientOpts *athenaclient.ClientOptions) *cobra.Command {
 	var promptsEnabled bool
 
 	command := &cobra.Command{
 		Use:   "configure",
 		Short: "Manage local configuration",
 		Example: `# Enable optional interactive prompts
-argocd configure --prompts-enabled
-argocd configure --prompts-enabled=true
+athena configure --prompts-enabled
+athena configure --prompts-enabled=true
 
 # Disable optional interactive prompts
-argocd configure --prompts-enabled=false`,
+athena configure --prompts-enabled=false`,
 		Run: func(_ *cobra.Command, _ []string) {
 			localCfg, err := localconfig.ReadLocalConfig(globalClientOpts.ConfigPath)
 			errors.CheckError(err)

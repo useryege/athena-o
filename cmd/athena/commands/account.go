@@ -20,7 +20,7 @@ import (
 
 	"github.com/useryege/athena/cmd/athena/commands/headless"
 	"github.com/useryege/athena/cmd/athena/commands/utils"
-	argocdclient "github.com/useryege/athena/pkg/apiclient"
+	athenaclient "github.com/useryege/athena/pkg/apiclient"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	"github.com/useryege/athena/pkg/apiclient/session"
 	"github.com/useryege/athena/util/cli"
@@ -31,22 +31,22 @@ import (
 	"github.com/useryege/athena/util/templates"
 )
 
-func NewAccountCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
+func NewAccountCommand(clientOpts *athenaclient.ClientOptions) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "account",
 		Short: "Manage account settings",
 		Example: templates.Examples(`
 			# List accounts
-			argocd account list
+			athena account list
 
 			# Update the current user's password
-			argocd account update-password
+			athena account update-password
 
 			# Can I sync any app?
-			argocd account can-i sync applications '*'
+			athena account can-i sync applications '*'
 
 			# Get User information
-			argocd account get-user-info
+			athena account get-user-info
 		`),
 		Run: func(c *cobra.Command, args []string) {
 			c.HelpFunc()(c, args)
@@ -64,7 +64,7 @@ func NewAccountCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
 	return command
 }
 
-func NewAccountUpdatePasswordCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
+func NewAccountUpdatePasswordCommand(clientOpts *athenaclient.ClientOptions) *cobra.Command {
 	var (
 		account         string
 		currentPassword string
@@ -80,10 +80,10 @@ has appropriate RBAC permissions to change other accounts.
 `,
 		Example: `
 	# Update the current user's password
-	argocd account update-password
+	athena account update-password
 
 	# Update the password for user foobar
-	argocd account update-password --account foobar
+	athena account update-password --account foobar
 `,
 		Run: func(c *cobra.Command, args []string) {
 			ctx := c.Context()
@@ -152,18 +152,18 @@ has appropriate RBAC permissions to change other accounts.
 	return command
 }
 
-func NewAccountGetUserInfoCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
+func NewAccountGetUserInfoCommand(clientOpts *athenaclient.ClientOptions) *cobra.Command {
 	var output string
 	command := &cobra.Command{
 		Use:     "get-user-info",
 		Short:   "Get user info",
 		Aliases: []string{"whoami"},
 		Example: templates.Examples(`
-			# Get User information for the currently logged-in user (see 'argocd login')
-			argocd account get-user-info
+			# Get User information for the currently logged-in user (see 'athena login')
+			athena account get-user-info
 
 			# Get User information in yaml format
-			argocd account get-user-info -o yaml
+			athena account get-user-info -o yaml
 		`),
 		Run: func(c *cobra.Command, args []string) {
 			ctx := c.Context()
@@ -204,19 +204,19 @@ func NewAccountGetUserInfoCommand(clientOpts *argocdclient.ClientOptions) *cobra
 	return command
 }
 
-func NewAccountCanICommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
+func NewAccountCanICommand(clientOpts *athenaclient.ClientOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   "can-i ACTION RESOURCE SUBRESOURCE",
 		Short: "Can I",
 		Example: fmt.Sprintf(`
 # Can I sync any app?
-argocd account can-i sync applications '*'
+athena account can-i sync applications '*'
 
 # Can I update a project?
-argocd account can-i update projects 'default'
+athena account can-i update projects 'default'
 
 # Can I create a cluster?
-argocd account can-i create clusters '*'
+athena account can-i create clusters '*'
 
 Actions: %v
 Resources: %v
@@ -258,12 +258,12 @@ func printAccountsTable(items []*accountpkg.Account) {
 	_ = w.Flush()
 }
 
-func NewAccountListCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
+func NewAccountListCommand(clientOpts *athenaclient.ClientOptions) *cobra.Command {
 	var output string
 	cmd := &cobra.Command{
 		Use:     "list",
 		Short:   "List accounts",
-		Example: "argocd account list",
+		Example: "athena account list",
 		Run: func(c *cobra.Command, _ []string) {
 			ctx := c.Context()
 
@@ -290,7 +290,7 @@ func NewAccountListCommand(clientOpts *argocdclient.ClientOptions) *cobra.Comman
 	return cmd
 }
 
-func getCurrentAccount(ctx context.Context, clientset argocdclient.Client) session.GetUserInfoResponse {
+func getCurrentAccount(ctx context.Context, clientset athenaclient.Client) session.GetUserInfoResponse {
 	conn, client := clientset.NewSessionClientOrDie()
 	defer utilio.Close(conn)
 	userInfo, err := client.GetUserInfo(ctx, &session.GetUserInfoRequest{})
@@ -298,7 +298,7 @@ func getCurrentAccount(ctx context.Context, clientset argocdclient.Client) sessi
 	return *userInfo
 }
 
-func NewAccountGetCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
+func NewAccountGetCommand(clientOpts *athenaclient.ClientOptions) *cobra.Command {
 	var (
 		output  string
 		account string
@@ -307,10 +307,10 @@ func NewAccountGetCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command
 		Use:   "get",
 		Short: "Get account details",
 		Example: `# Get the currently logged in account details
-argocd account get
+athena account get
 
 # Get details for an account by name
-argocd account get --account <account-name>`,
+athena account get --account <account-name>`,
 		Run: func(c *cobra.Command, _ []string) {
 			ctx := c.Context()
 
@@ -370,7 +370,7 @@ func printAccountDetails(acc *accountpkg.Account) {
 	}
 }
 
-func NewAccountGenerateTokenCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
+func NewAccountGenerateTokenCommand(clientOpts *athenaclient.ClientOptions) *cobra.Command {
 	var (
 		account   string
 		expiresIn string
@@ -380,10 +380,10 @@ func NewAccountGenerateTokenCommand(clientOpts *argocdclient.ClientOptions) *cob
 		Use:   "generate-token",
 		Short: "Generate account token",
 		Example: `# Generate token for the currently logged in account
-argocd account generate-token
+athena account generate-token
 
 # Generate token for the account with the specified name
-argocd account generate-token --account <account-name>`,
+athena account generate-token --account <account-name>`,
 		Run: func(c *cobra.Command, _ []string) {
 			ctx := c.Context()
 
@@ -410,16 +410,16 @@ argocd account generate-token --account <account-name>`,
 	return cmd
 }
 
-func NewAccountDeleteTokenCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
+func NewAccountDeleteTokenCommand(clientOpts *athenaclient.ClientOptions) *cobra.Command {
 	var account string
 	cmd := &cobra.Command{
 		Use:   "delete-token",
 		Short: "Deletes account token",
 		Example: `# Delete token of the currently logged in account
-argocd account delete-token ID
+athena account delete-token ID
 
 # Delete token of the account with the specified name
-argocd account delete-token --account <account-name> ID`,
+athena account delete-token --account <account-name> ID`,
 		Run: func(c *cobra.Command, args []string) {
 			ctx := c.Context()
 

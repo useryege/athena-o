@@ -17,13 +17,13 @@ func NewBcryptCmd() *cobra.Command {
 		Use:   "bcrypt",
 		Short: "Generate bcrypt hash for any password",
 		Example: `# Generate bcrypt hash for any password 
-argocd account bcrypt --password YOUR_PASSWORD
+athena account bcrypt --password YOUR_PASSWORD
 
 # Prompt for password input
-argocd account bcrypt
+athena account bcrypt
 
 # Read password from stdin
-echo -e "password" | argocd account bcrypt`,
+echo -e "password" | athena account bcrypt`,
 		Run: func(cmd *cobra.Command, _ []string) {
 			password = cli.PromptPassword(password)
 			bytePassword := []byte(password)

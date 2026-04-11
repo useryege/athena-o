@@ -127,7 +127,7 @@ export const ClustersList = () => {
                                     )) || (
                                         <EmptyState icon='argo-icon-hosts'>
                                             <h4>No clusters connected</h4>
-                                            <h5>Connect more clusters using argocd CLI</h5>
+                                            <h5>Connect more clusters using athena CLI</h5>
                                         </EmptyState>
                                     )
                                 }
