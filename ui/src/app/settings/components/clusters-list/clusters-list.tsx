@@ -25,7 +25,7 @@ const CustomTopBar = (props: {toolbar?: Toolbar | Observable<Toolbar>}) => {
                                     <span className='help-text'>
                                         Refer to CLI{' '}
                                         <a
-                                            href='https://athena.readthedocs.io/en/stable/operator-manual/cluster-management/#adding-a-cluster'
+                                            href='https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-management/#adding-a-cluster'
                                             target='_blank'
                                             rel='noopener noreferrer'>
                                             <i className='fa fa-external-link-alt' /> Documentation{' '}
@@ -127,7 +127,7 @@ export const ClustersList = () => {
                                     )) || (
                                         <EmptyState icon='argo-icon-hosts'>
                                             <h4>No clusters connected</h4>
-                                            <h5>Connect more clusters using athena CLI</h5>
+                                            <h5>Connect more clusters using argocd CLI</h5>
                                         </EmptyState>
                                     )
                                 }

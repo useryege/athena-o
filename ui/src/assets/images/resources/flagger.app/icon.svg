@@ -3,7 +3,7 @@
 This logo is copied from here: https://github.com/fluxcd/flagger/blob/27daa2ca468c42f3f373355818c146d48efc64f5/docs/logo/flagger-icon-white.svg
 The logo is licensed under the Apache License 2.0: https://github.com/fluxcd/flagger/blob/27daa2ca468c42f3f373355818c146d48efc64f5/LICENSE
 
-The SVG is unmodified aside from this comment being added and the color being changed to match the Athena UI's color scheme.
+The SVG is unmodified aside from this comment being added and the color being changed to match the Argo CD UI's color scheme.
 -->
 <svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <title>flagger-icon-white</title>

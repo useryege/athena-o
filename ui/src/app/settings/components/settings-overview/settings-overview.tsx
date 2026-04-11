@@ -29,7 +29,7 @@ const settings = [
     },
     {
         title: 'Projects',
-        description: 'Configure Athena projects',
+        description: 'Configure Argo CD projects',
         path: './projects'
     },
     {

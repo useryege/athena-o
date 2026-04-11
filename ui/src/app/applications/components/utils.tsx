@@ -473,7 +473,7 @@ export const deleteSourceAction = (app: appModels.Application, source: appModels
 
 // Detect if a resource is an Application
 const isApplicationResource = (resource: ResourceTreeNode): boolean => {
-    return resource.kind === 'Application' && resource.group === 'useryege.io';
+    return resource.kind === 'Application' && resource.group === 'argoproj.io';
 };
 
 // Detect if an application is a child application
@@ -1426,7 +1426,7 @@ export function getConditionCategory(condition: appModels.ApplicationCondition):
 }
 
 export function isAppNode(node: appModels.ResourceNode) {
-    return node.kind === 'Application' && node.group === 'useryege.io';
+    return node.kind === 'Application' && node.group === 'argoproj.io';
 }
 
 export function getAppOverridesCount(app: appModels.AbstractApplication) {
@@ -1871,7 +1871,7 @@ export const podRequests = {
  * @returns The managed-by-url value or null if not present
  */
 export function getManagedByURL(app: any): string | null {
-    return app?.metadata?.annotations?.['athena.useryege.io/managed-by-url'] || null;
+    return app?.metadata?.annotations?.['argocd.argoproj.io/managed-by-url'] || null;
 }
 
 /**

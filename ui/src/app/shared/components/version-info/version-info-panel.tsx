@@ -14,11 +14,11 @@ type CopyState = 'success' | 'failed' | undefined;
 
 export function VersionPanel({isShown, onClose, version}: VersionPanelProps) {
     const [copyState, setCopyState] = useState<CopyState>(undefined);
-    const header = 'Athena Server Version';
+    const header = 'Argo CD Server Version';
 
     const buildVersionTable = (version: VersionMessage): JSX.Element => {
         const formattedVersion = {
-            'Athena': version.Version,
+            'Argo CD': version.Version,
             'Build Date': version.BuildDate,
             'Go Version': version.GoVersion,
             'Go Compiler': version.Compiler,

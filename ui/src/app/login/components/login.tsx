@@ -126,7 +126,7 @@ export function Login(props: RouteComponentProps<{}>) {
                     <div className='argo-form-row__error-msg'>Login is disabled. Please contact your system administrator.</div>
                 )}
                 <div className='login__footer'>
-                    <a href='https://useryege.io' target='_blank'>
+                    <a href='https://argoproj.io' target='_blank'>
                         <img className='logo-image' src='assets/images/argologo.svg' alt='argo' />
                     </a>
                 </div>

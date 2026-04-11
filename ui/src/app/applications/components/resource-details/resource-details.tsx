@@ -224,7 +224,7 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
             content: <ApplicationResourceEvents applicationName={application.metadata.name} applicationNamespace={application.metadata.namespace} />
         });
 
-        const extensionTabs = services.extensions.getResourceTabs('useryege.io', 'Application').map((ext, i) => ({
+        const extensionTabs = services.extensions.getResourceTabs('argoproj.io', 'Application').map((ext, i) => ({
             title: ext.title,
             key: `extension-${i}`,
             content: <ext.component resource={application} tree={tree} application={application} />,

@@ -5,10 +5,10 @@ import * as React from 'react';
 import {Helmet} from 'react-helmet';
 import {Redirect, Route, RouteComponentProps, Router, Switch} from 'react-router';
 import {Subscription} from 'rxjs';
-// import applications from './applications';
+import applications from './applications';
 import help from './help';
 import login from './login';
-// import settings from './settings';
+import settings from './settings';
 import {Layout, ThemeWrapper} from './shared/components/layout/layout';
 import {Page} from './shared/components/page/page';
 import {VersionPanel} from './shared/components/version-info/version-info-panel';
@@ -31,8 +31,8 @@ type Routes = {[path: string]: {component: React.ComponentType<RouteComponentPro
 
 const routes: Routes = {
     '/login': {component: login.component as any, noLayout: true},
-    // '/applications': {component: applications.component},
-    // '/settings': {component: settings.component},
+    '/applications': {component: applications.component},
+    '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
     '/help': {component: help.component}
 };
@@ -45,18 +45,18 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    // {
-    //     title: 'Applications',
-    //     tooltip: 'Manage your applications, and diagnose health problems.',
-    //     path: '/applications',
-    //     iconClassName: 'argo-icon argo-icon-application'
-    // },
-    // {
-    //     title: 'Settings',
-    //     tooltip: 'Manage your repositories, projects, settings',
-    //     path: '/settings',
-    //     iconClassName: 'argo-icon argo-icon-settings'
-    // },
+    {
+        title: 'Applications',
+        tooltip: 'Manage your applications, and diagnose health problems.',
+        path: '/applications',
+        iconClassName: 'argo-icon argo-icon-application'
+    },
+    {
+        title: 'Settings',
+        tooltip: 'Manage your repositories, projects, settings',
+        path: '/settings',
+        iconClassName: 'argo-icon argo-icon-settings'
+    },
     {
         title: 'User Info',
         path: '/user-info',
@@ -76,7 +76,7 @@ async function isExpiredSSO() {
     try {
         const {iss} = await services.users.get();
         const authSettings = await services.authService.settings();
-        if (iss && iss !== 'athena') {
+        if (iss && iss !== 'argocd') {
             return ((authSettings.dexConfig && authSettings.dexConfig.connectors) || []).length > 0 || authSettings.oidcConfig;
         }
     } catch {
@@ -160,7 +160,7 @@ export class App extends React.Component<{}, {popupProps: PopupProps; showVersio
     public render() {
         if (this.state.error != null) {
             const stack = this.state.error.stack;
-            const url = 'https://github.com/useryege/athena/issues/new?labels=bug&template=bug_report.md';
+            const url = 'https://github.com/argoproj/argo-cd/issues/new?labels=bug&template=bug_report.md';
 
             return (
                 <React.Fragment>
@@ -181,7 +181,7 @@ export class App extends React.Component<{}, {popupProps: PopupProps; showVersio
                     <link rel='icon' type='image/png' href={`${base}assets/favicon/favicon-32x32.png`} sizes='32x32' />
                     <link rel='icon' type='image/png' href={`${base}assets/favicon/favicon-16x16.png`} sizes='16x16' />
                 </Helmet>
-                <PageContext.Provider value={{title: 'Athena'}}>
+                <PageContext.Provider value={{title: 'Argo CD'}}>
                     <Provider value={{history, popup: this.popupManager, notifications: this.notificationsManager, navigation: this.navigationManager, baseHref: base}}>
                         <DataLoader load={() => services.viewPreferences.getPreferences()}>
                             {pref => <ThemeWrapper theme={pref.theme}>{this.state.popupProps && <Popup {...this.state.popupProps} />}</ThemeWrapper>}
@@ -189,8 +189,7 @@ export class App extends React.Component<{}, {popupProps: PopupProps; showVersio
                         <AuthSettingsCtx.Provider value={this.state.authSettings}>
                             <Router history={history}>
                                 <Switch>
-                                    {/* <Redirect exact={true} path='/' to='/applications' /> */}
-                                    <Redirect exact={true} path='/' to='/user-info' />
+                                    <Redirect exact={true} path='/' to='/applications' />
                                     {Object.keys(this.routes).map(path => {
                                         const route = this.routes[path];
                                         return (
@@ -267,7 +266,7 @@ export class App extends React.Component<{}, {popupProps: PopupProps; showVersio
         const component = () => (
             <>
                 <Helmet>
-                    <title>{extension.title} - Athena</title>
+                    <title>{extension.title} - Argo CD</title>
                 </Helmet>
                 <Page title={extension.title}>
                     <extension.component />

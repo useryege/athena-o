@@ -119,11 +119,11 @@ type Client interface {
 	// NewNotificationClient() (io.Closer, notificationpkg.NotificationServiceClient, error)
 	// NewNotificationClientOrDie() (io.Closer, notificationpkg.NotificationServiceClient)
 	NewSessionClient() (io.Closer, sessionpkg.SessionServiceClient, error)
-	// NewSessionClientOrDie() (io.Closer, sessionpkg.SessionServiceClient)
+	NewSessionClientOrDie() (io.Closer, sessionpkg.SessionServiceClient)
 	// NewSettingsClient() (io.Closer, settingspkg.SettingsServiceClient, error)
 	// NewSettingsClientOrDie() (io.Closer, settingspkg.SettingsServiceClient)
-	// NewVersionClient() (io.Closer, versionpkg.VersionServiceClient, error)
-	// NewVersionClientOrDie() (io.Closer, versionpkg.VersionServiceClient)
+	NewVersionClient() (io.Closer, versionpkg.VersionServiceClient, error)
+	NewVersionClientOrDie() (io.Closer, versionpkg.VersionServiceClient)
 	// NewProjectClient() (io.Closer, projectpkg.ProjectServiceClient, error)
 	// NewProjectClientOrDie() (io.Closer, projectpkg.ProjectServiceClient)
 	NewAccountClient() (io.Closer, accountpkg.AccountServiceClient, error)
@@ -756,13 +756,13 @@ func (c *client) NewSessionClient() (io.Closer, sessionpkg.SessionServiceClient,
 	return closer, sessionIf, nil
 }
 
-// func (c *client) NewSessionClientOrDie() (io.Closer, sessionpkg.SessionServiceClient) {
-// 	conn, sessionIf, err := c.NewSessionClient()
-// 	if err != nil {
-// 		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
-// 	}
-// 	return conn, sessionIf
-// }
+func (c *client) NewSessionClientOrDie() (io.Closer, sessionpkg.SessionServiceClient) {
+	conn, sessionIf, err := c.NewSessionClient()
+	if err != nil {
+		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
+	}
+	return conn, sessionIf
+}
 
 func (c *client) NewSettingsClient() (io.Closer, settingspkg.SettingsServiceClient, error) {
 	conn, closer, err := c.newConn(context.Background())

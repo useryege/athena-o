@@ -148,11 +148,11 @@ export type SyncResourceResult = ResourceResult & {
     syncWave?: number;
 };
 
-export const AnnotationRefreshKey = 'athena.useryege.io/refresh';
-export const AnnotationHookKey = 'athena.useryege.io/hook';
-export const AnnotationSyncWaveKey = 'athena.useryege.io/sync-wave';
-export const AnnotationDefaultView = 'pref.athena.useryege.io/default-view';
-export const AnnotationDefaultPodSort = 'pref.athena.useryege.io/default-pod-sort';
+export const AnnotationRefreshKey = 'argocd.argoproj.io/refresh';
+export const AnnotationHookKey = 'argocd.argoproj.io/hook';
+export const AnnotationSyncWaveKey = 'argocd.argoproj.io/sync-wave';
+export const AnnotationDefaultView = 'pref.argocd.argoproj.io/default-view';
+export const AnnotationDefaultPodSort = 'pref.argocd.argoproj.io/default-pod-sort';
 
 export interface AbstractApplication {
     apiVersion?: string;
@@ -1105,7 +1105,7 @@ export interface UserMessages {
     animation?: string;
 }
 
-export const AppDeletionConfirmedAnnotation = 'athena.useryege.io/deletion-approved';
+export const AppDeletionConfirmedAnnotation = 'argocd.argoproj.io/deletion-approved';
 
 export interface ApplicationSetSpec {
     strategy?: {

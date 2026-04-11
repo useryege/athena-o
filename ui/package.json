@@ -1,5 +1,5 @@
 {
-  "name": "athena-ui",
+  "name": "argo-cd-ui",
   "version": "1.0.0",
   "license": "Apache-2.0",
   "scripts": {
@@ -15,7 +15,7 @@
     "@types/react-virtualized": "^9.21.21",
     "@types/superagent": "^8.1.6",
     "ansi-to-react": "^6.1.6",
-    "argo-ui": "git+https://github.com/useryege/argo-ui.git",
+    "argo-ui": "git+https://github.com/argoproj/argo-ui.git",
     "buffer": "^6.0.3",
     "classnames": "^2.2.5",
     "color": "^3.2.1",

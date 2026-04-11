@@ -11,7 +11,7 @@ import {UserInfo} from '../../../shared/models';
 
 // Constants
 const CHANGE_PASSWORD_PARAM = 'changePassword';
-const ATHENA_ISSUER = 'athena';
+const ARGOCD_ISSUER = 'argocd';
 
 // Types
 interface PasswordFormData {
@@ -77,7 +77,7 @@ export const UserInfoComponent = ({userInfo}: {userInfo: UserInfo}) => {
         formApiPassword.current?.submitForm(null);
     }, []);
 
-    const isPasswordChangeAvailable = userInfo.loggedIn && userInfo.iss === ATHENA_ISSUER;
+    const isPasswordChangeAvailable = userInfo.loggedIn && userInfo.iss === ARGOCD_ISSUER;
 
     return (
         <Page

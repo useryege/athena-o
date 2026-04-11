@@ -245,7 +245,7 @@ export function compareNodes(first: ResourceTreeNode, second: ResourceTreeNode) 
 }
 
 function appNodeKey(app: models.Application) {
-    return nodeKey({group: 'useryege.io', kind: app.kind, name: app.metadata.name, namespace: app.metadata.namespace});
+    return nodeKey({group: 'argoproj.io', kind: app.kind, name: app.metadata.name, namespace: app.metadata.namespace});
 }
 
 function renderFilteredNode(node: {count: number} & dagre.Node, onClearFilter: () => any) {
@@ -915,7 +915,7 @@ export const ApplicationResourceTree = (props: ApplicationResourceTreeProps) => 
         name: props.app.metadata.name,
         namespace: props.app.metadata.namespace,
         resourceVersion: props.app.metadata.resourceVersion,
-        group: 'useryege.io',
+        group: 'argoproj.io',
         version: '',
         // @ts-expect-error its not any
         children: [],
