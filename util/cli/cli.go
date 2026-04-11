@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/useryege/athena/common"
-	"github.com/useryege/athena/util/cli/text"
+	"github.com/useryege/athena/gitops-engine/pkg/utils/text"
 	"github.com/useryege/athena/util/errors"
 	utilio "github.com/useryege/athena/util/io"
 	utillog "github.com/useryege/athena/util/log"

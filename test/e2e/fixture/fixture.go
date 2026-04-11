@@ -39,12 +39,12 @@ import (
 	// 	log "github.com/sirupsen/logrus"
 	// 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	// 	"k8s.io/apimachinery/pkg/runtime/schema"
 	// 	"k8s.io/client-go/dynamic"
 	// 	"k8s.io/client-go/kubernetes"
 	// 	"k8s.io/client-go/rest"
 	// 	"k8s.io/client-go/tools/clientcmd"
-	// 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	// 	"sigs.k8s.io/yaml"
 	// "github.com/argoproj/argo-cd/v3/common"
 	// "github.com/argoproj/argo-cd/v3/pkg/apiclient"
@@ -68,14 +68,14 @@ const (
 	ArgoCDAppNamespace      = "argocd-e2e-external"
 
 	// notifications controller, metrics server port
-	defaultNotificationServer = "localhost:9001"
+	// defaultNotificationServer = "localhost:9001"
 
 	// ensure all repos are in one directory tree, so we can easily clean them up
 	// TmpDir can be overridden via ARGOCD_E2E_DIR environment variable
-	defaultTmpDir      = "/tmp/argo-e2e"
-	repoDir            = "testdata.git"
-	submoduleDir       = "submodule.git"
-	submoduleParentDir = "submoduleParent.git"
+	defaultTmpDir = "/tmp/argo-e2e"
+	// repoDir            = "testdata.git"
+	// submoduleDir       = "submodule.git"
+	// submoduleParentDir = "submoduleParent.git"
 
 	GuestbookPath = "guestbook"
 
@@ -93,13 +93,13 @@ const (
 )
 
 const (
-	EnvAdminUsername           = "ARGOCD_E2E_ADMIN_USERNAME"
-	EnvAdminPassword           = "ARGOCD_E2E_ADMIN_PASSWORD"
-	EnvArgoCDServerName        = "ARGOCD_E2E_SERVER_NAME"
-	EnvArgoCDRedisHAProxyName  = "ARGOCD_E2E_REDIS_HAPROXY_NAME"
-	EnvArgoCDRedisName         = "ARGOCD_E2E_REDIS_NAME"
-	EnvArgoCDRepoServerName    = "ARGOCD_E2E_REPO_SERVER_NAME"
-	EnvArgoCDAppControllerName = "ARGOCD_E2E_APPLICATION_CONTROLLER_NAME"
+	EnvAdminUsername          = "ARGOCD_E2E_ADMIN_USERNAME"
+	EnvAdminPassword          = "ARGOCD_E2E_ADMIN_PASSWORD"
+	EnvArgoCDServerName       = "ARGOCD_E2E_SERVER_NAME"
+	EnvArgoCDRedisHAProxyName = "ARGOCD_E2E_REDIS_HAPROXY_NAME"
+	EnvArgoCDRedisName        = "ARGOCD_E2E_REDIS_NAME"
+	// EnvArgoCDRepoServerName    = "ARGOCD_E2E_REPO_SERVER_NAME"
+	// EnvArgoCDAppControllerName = "ARGOCD_E2E_APPLICATION_CONTROLLER_NAME"
 )
 
 var (
@@ -113,13 +113,13 @@ var (
 	apiServerAddress string
 	token            string
 
-	plainText               bool
-	testsRun                map[string]bool
-	argoCDServerName        string
-	argoCDRedisHAProxyName  string
-	argoCDRedisName         string
-	argoCDRepoServerName    string
-	argoCDAppControllerName string
+	plainText              bool
+	testsRun               map[string]bool
+	argoCDServerName       string
+	argoCDRedisHAProxyName string
+	argoCDRedisName        string
+	// argoCDRepoServerName    string
+	// argoCDAppControllerName string
 )
 
 // type RepoURLType string
@@ -167,11 +167,11 @@ func AppNamespace() string {
 	return GetEnvWithDefault("ARGOCD_E2E_APP_NAMESPACE", ArgoCDAppNamespace)
 }
 
-// // TmpDir returns the base directory for e2e test data.
-// // It can be overridden via the ARGOCD_E2E_DIR environment variable.
-// func TmpDir() string {
-// 	return GetEnvWithDefault("ARGOCD_E2E_DIR", defaultTmpDir)
-// }
+// TmpDir returns the base directory for e2e test data.
+// It can be overridden via the ARGOCD_E2E_DIR environment variable.
+func TmpDir() string {
+	return GetEnvWithDefault("ARGOCD_E2E_DIR", defaultTmpDir)
+}
 
 // getKubeConfig creates new kubernetes client config using specified config path and config overrides variables
 func getKubeConfig(configPath string, overrides clientcmd.ConfigOverrides) *rest.Config {
@@ -198,10 +198,10 @@ func IsRemote() bool {
 	return env.ParseBoolFromEnv("ARGOCD_E2E_REMOTE", false)
 }
 
-// // IsLocal returns when the tests are being run against a local workload
-// func IsLocal() bool {
-// 	return !IsRemote()
-// }
+// IsLocal returns when the tests are being run against a local workload
+func IsLocal() bool {
+	return !IsRemote()
+}
 
 // // creates e2e tests fixture: ensures that Application CRD is installed, creates temporal namespace, starts repo and api server,
 // // configure currently available cluster.
@@ -222,22 +222,22 @@ func init() {
 	argoCDServerName = GetEnvWithDefault(EnvArgoCDServerName, common.DefaultServerName)
 	argoCDRedisHAProxyName = GetEnvWithDefault(EnvArgoCDRedisHAProxyName, common.DefaultRedisHaProxyName)
 	argoCDRedisName = GetEnvWithDefault(EnvArgoCDRedisName, common.DefaultRedisName)
-	argoCDRepoServerName = GetEnvWithDefault(EnvArgoCDRepoServerName, common.DefaultRepoServerName)
-	argoCDAppControllerName = GetEnvWithDefault(EnvArgoCDAppControllerName, common.DefaultApplicationControllerName)
+	// argoCDRepoServerName = GetEnvWithDefault(EnvArgoCDRepoServerName, common.DefaultRepoServerName)
+	// argoCDAppControllerName = GetEnvWithDefault(EnvArgoCDAppControllerName, common.DefaultApplicationControllerName)
 
 	dialTime := 30 * time.Second
 	tlsTestResult, err := grpcutil.TestTLS(apiServerAddress, dialTime)
 	errors.CheckError(err)
 
 	ArgoCDClientset, err = apiclient.NewClient(&apiclient.ClientOptions{
-		Insecure:          true,
-		ServerAddr:        apiServerAddress,
-		PlainText:         !tlsTestResult.TLS,
-		ServerName:        argoCDServerName,
-		RedisHaProxyName:  argoCDRedisHAProxyName,
-		RedisName:         argoCDRedisName,
-		RepoServerName:    argoCDRepoServerName,
-		AppControllerName: argoCDAppControllerName,
+		Insecure:         true,
+		ServerAddr:       apiServerAddress,
+		PlainText:        !tlsTestResult.TLS,
+		ServerName:       argoCDServerName,
+		RedisHaProxyName: argoCDRedisHAProxyName,
+		RedisName:        argoCDRedisName,
+		// RepoServerName:    argoCDRepoServerName,
+		// AppControllerName: argoCDAppControllerName,
 	})
 	errors.CheckError(err)
 
@@ -294,15 +294,15 @@ func loginAs(username, password string) error {
 	token = sessionResponse.Token
 
 	ArgoCDClientset, err = apiclient.NewClient(&apiclient.ClientOptions{
-		Insecure:          true,
-		ServerAddr:        apiServerAddress,
-		AuthToken:         token,
-		PlainText:         plainText,
-		ServerName:        argoCDServerName,
-		RedisHaProxyName:  argoCDRedisHAProxyName,
-		RedisName:         argoCDRedisName,
-		RepoServerName:    argoCDRepoServerName,
-		AppControllerName: argoCDAppControllerName,
+		Insecure:         true,
+		ServerAddr:       apiServerAddress,
+		AuthToken:        token,
+		PlainText:        plainText,
+		ServerName:       argoCDServerName,
+		RedisHaProxyName: argoCDRedisHAProxyName,
+		RedisName:        argoCDRedisName,
+		// RepoServerName:    argoCDRepoServerName,
+		// AppControllerName: argoCDAppControllerName,
 	})
 	return err
 }
@@ -626,18 +626,18 @@ func WithTestData(testdata string) TestOption {
 func EnsureCleanState(t *testing.T, opts ...TestOption) *TestState {
 	t.Helper()
 	// opt := newTestOption(opts...)
-	// // In large scenarios, we can skip tests that already run
-	// SkipIfAlreadyRun(t)
-	// // Register this test after it has been run & was successful
-	// t.Cleanup(func() {
-	// 	RecordTestRun(t)
-	// })
+	// In large scenarios, we can skip tests that already run
+	SkipIfAlreadyRun(t)
+	// Register this test after it has been run & was successful
+	t.Cleanup(func() {
+		RecordTestRun(t)
+	})
 
 	// Create TestState to hold test-specific variables
 	state := NewTestState(t)
 
-	// start := time.Now()
-	// policy := metav1.DeletePropagationBackground
+	start := time.Now()
+	policy := metav1.DeletePropagationBackground
 
 	// deleteNamespaces := func(namespaces []corev1.Namespace, wait bool) error {
 	// 	args := []string{"delete", "ns", "--ignore-not-found=true", fmt.Sprintf("--wait=%t", wait)}
@@ -678,320 +678,326 @@ func EnsureCleanState(t *testing.T, opts ...TestOption) *TestState {
 	// 	return nil
 	// }
 
-	// RunFunctionsInParallelAndCheckErrors(t, []func() error{
-	// 	func() error {
-	// 		// kubectl delete apps ...
-	// 		return AppClientset.ArgoprojV1alpha1().Applications(TestNamespace()).DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{})
-	// 	},
-	// 	func() error {
-	// 		// kubectl delete apps ...
-	// 		return AppClientset.ArgoprojV1alpha1().Applications(AppNamespace()).DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{})
-	// 	},
-	// 	func() error {
-	// 		// kubectl delete appprojects --field-selector metadata.name!=default
-	// 		return AppClientset.ArgoprojV1alpha1().AppProjects(TestNamespace()).DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{FieldSelector: "metadata.name!=default"})
-	// 	},
-	// 	func() error {
-	// 		// kubectl delete secrets -l argocd.argoproj.io/secret-type=repo-config
-	// 		return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepository})
-	// 	},
-	// 	func() error {
-	// 		// kubectl delete secrets -l argocd.argoproj.io/secret-type=repo-creds
-	// 		return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepoCreds})
-	// 	},
-	// 	func() error {
-	// 		// kubectl delete secrets -l argocd.argoproj.io/secret-type=repository-write
-	// 		return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepositoryWrite})
-	// 	},
-	// 	func() error {
-	// 		// kubectl delete secrets -l argocd.argoproj.io/secret-type=repo-write-creds
-	// 		return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepoCredsWrite})
-	// 	},
-	// 	func() error {
-	// 		// kubectl delete secrets -l argocd.argoproj.io/secret-type=cluster
-	// 		return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeCluster})
-	// 	},
-	// 	func() error {
-	// 		// kubectl delete secrets -l e2e.argoproj.io=true
-	// 		return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{LabelSelector: TestingLabel + "=true"})
-	// 	},
-	// 	func() error {
-	// 		// kubectl delete clusterroles -l e2e.argoproj.io=true
-	// 		return KubeClientset.RbacV1().ClusterRoles().DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{LabelSelector: TestingLabel + "=true"})
-	// 	},
-	// 	func() error {
-	// 		// kubectl delete clusterrolebindings -l e2e.argoproj.io=true
-	// 		return KubeClientset.RbacV1().ClusterRoleBindings().DeleteCollection(
-	// 			t.Context(),
-	// 			metav1.DeleteOptions{PropagationPolicy: &policy},
-	// 			metav1.ListOptions{LabelSelector: TestingLabel + "=true"})
-	// 	},
-	// })
-	// RunFunctionsInParallelAndCheckErrors(t, []func() error{
-	// 	func() error {
-	// 		// delete old namespaces which were created by tests
-	// 		namespaces, err := KubeClientset.CoreV1().Namespaces().List(
-	// 			t.Context(),
-	// 			metav1.ListOptions{
-	// 				LabelSelector: TestingLabel + "=true",
-	// 			},
-	// 		)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		if len(namespaces.Items) > 0 {
-	// 			err = deleteNamespaces(namespaces.Items, false)
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 		}
+	RunFunctionsInParallelAndCheckErrors(t, []func() error{
+		func() error {
+			// kubectl delete apps ...
+			return AppClientset.ArgoprojV1alpha1().Applications(TestNamespace()).DeleteCollection(
+				t.Context(),
+				metav1.DeleteOptions{PropagationPolicy: &policy},
+				metav1.ListOptions{})
+		},
+		// func() error {
+		// 	// kubectl delete apps ...
+		// 	return AppClientset.ArgoprojV1alpha1().Applications(AppNamespace()).DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{})
+		// },
+		// func() error {
+		// 	// kubectl delete appprojects --field-selector metadata.name!=default
+		// 	return AppClientset.ArgoprojV1alpha1().AppProjects(TestNamespace()).DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{FieldSelector: "metadata.name!=default"})
+		// },
+		// func() error {
+		// 	// kubectl delete secrets -l argocd.argoproj.io/secret-type=repo-config
+		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepository})
+		// },
+		// func() error {
+		// 	// kubectl delete secrets -l argocd.argoproj.io/secret-type=repo-creds
+		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepoCreds})
+		// },
+		// func() error {
+		// 	// kubectl delete secrets -l argocd.argoproj.io/secret-type=repository-write
+		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepositoryWrite})
+		// },
+		// func() error {
+		// 	// kubectl delete secrets -l argocd.argoproj.io/secret-type=repo-write-creds
+		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepoCredsWrite})
+		// },
+		// func() error {
+		// 	// kubectl delete secrets -l argocd.argoproj.io/secret-type=cluster
+		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeCluster})
+		// },
+		// func() error {
+		// 	// kubectl delete secrets -l e2e.argoproj.io=true
+		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{LabelSelector: TestingLabel + "=true"})
+		// },
+		// func() error {
+		// 	// kubectl delete clusterroles -l e2e.argoproj.io=true
+		// 	return KubeClientset.RbacV1().ClusterRoles().DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{LabelSelector: TestingLabel + "=true"})
+		// },
+		// func() error {
+		// 	// kubectl delete clusterrolebindings -l e2e.argoproj.io=true
+		// 	return KubeClientset.RbacV1().ClusterRoleBindings().DeleteCollection(
+		// 		t.Context(),
+		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
+		// 		metav1.ListOptions{LabelSelector: TestingLabel + "=true"})
+		// },
+	})
+	RunFunctionsInParallelAndCheckErrors(t, []func() error{
+		// func() error {
+		// 	// delete old namespaces which were created by tests
+		// 	namespaces, err := KubeClientset.CoreV1().Namespaces().List(
+		// 		t.Context(),
+		// 		metav1.ListOptions{
+		// 			LabelSelector: TestingLabel + "=true",
+		// 		},
+		// 	)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	if len(namespaces.Items) > 0 {
+		// 		err = deleteNamespaces(namespaces.Items, false)
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 	}
 
-	// 		// Get all namespaces stuck in Terminating state
-	// 		terminatingNamespaces, err := KubeClientset.CoreV1().Namespaces().List(
-	// 			t.Context(),
-	// 			metav1.ListOptions{
-	// 				LabelSelector: TestingLabel + "=true",
-	// 				FieldSelector: "status.phase=Terminating",
-	// 			})
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		if len(terminatingNamespaces.Items) > 0 {
-	// 			err = deleteResourceWithTestFinalizer(terminatingNamespaces.Items, []schema.GroupVersionResource{
-	// 				// If finalizers are added to new resource kinds, they must be added here for a proper cleanup
-	// 				appsv1.SchemeGroupVersion.WithResource("deployments"),
-	// 			})
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 		}
-	// 		return nil
-	// 	},
-	// 	func() error {
-	// 		// delete old CRDs which were created by tests, doesn't seem to have kube api to get items
-	// 		_, err := Run("", "kubectl", "delete", "crd", "-l", TestingLabel+"=true", "--wait=false")
-	// 		return err
-	// 	},
-	// 	func() error {
-	// 		err := updateSettingConfigMap(func(cm *corev1.ConfigMap) error {
-	// 			cm.Data = map[string]string{}
-	// 			return nil
-	// 		})
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		err = updateNotificationsConfigMap(func(cm *corev1.ConfigMap) error {
-	// 			cm.Data = map[string]string{}
-	// 			return nil
-	// 		})
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		err = updateRBACConfigMap(func(cm *corev1.ConfigMap) error {
-	// 			cm.Data = map[string]string{}
-	// 			return nil
-	// 		})
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		return updateGenericConfigMap(common.ArgoCDGPGKeysConfigMapName, func(cm *corev1.ConfigMap) error {
-	// 			cm.Data = map[string]string{}
-	// 			return nil
-	// 		})
-	// 	},
-	// 	func() error {
-	// 		// We can switch user and as result in previous state we will have non-admin user, this case should be reset
-	// 		return LoginAs(adminUsername)
-	// 	},
-	// })
+		// 	// Get all namespaces stuck in Terminating state
+		// 	terminatingNamespaces, err := KubeClientset.CoreV1().Namespaces().List(
+		// 		t.Context(),
+		// 		metav1.ListOptions{
+		// 			LabelSelector: TestingLabel + "=true",
+		// 			FieldSelector: "status.phase=Terminating",
+		// 		})
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	if len(terminatingNamespaces.Items) > 0 {
+		// 		err = deleteResourceWithTestFinalizer(terminatingNamespaces.Items, []schema.GroupVersionResource{
+		// 			// If finalizers are added to new resource kinds, they must be added here for a proper cleanup
+		// 			appsv1.SchemeGroupVersion.WithResource("deployments"),
+		// 		})
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 	}
+		// 	return nil
+		// },
+		// func() error {
+		// 	// delete old CRDs which were created by tests, doesn't seem to have kube api to get items
+		// 	_, err := Run("", "kubectl", "delete", "crd", "-l", TestingLabel+"=true", "--wait=false")
+		// 	return err
+		// },
+		func() error {
+			err := updateSettingConfigMap(func(cm *corev1.ConfigMap) error {
+				cm.Data = map[string]string{}
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+			// err = updateNotificationsConfigMap(func(cm *corev1.ConfigMap) error {
+			// 	cm.Data = map[string]string{}
+			// 	return nil
+			// })
+			// if err != nil {
+			// 	return err
+			// }
+			err = updateRBACConfigMap(func(cm *corev1.ConfigMap) error {
+				cm.Data = map[string]string{}
+				return nil
+			})
+			if err != nil {
+				return err
+			}
 
-	// RunFunctionsInParallelAndCheckErrors(t, []func() error{
-	// 	func() error {
-	// 		err := SetProjectSpec("default", v1alpha1.AppProjectSpec{
-	// 			OrphanedResources:        nil,
-	// 			SourceRepos:              []string{"*"},
-	// 			Destinations:             []v1alpha1.ApplicationDestination{{Namespace: "*", Server: "*"}},
-	// 			ClusterResourceWhitelist: []v1alpha1.ClusterResourceRestrictionItem{{Group: "*", Kind: "*"}},
-	// 			SourceNamespaces:         []string{AppNamespace()},
-	// 		})
-	// 		if err != nil {
-	// 			return err
-	// 		}
+			// err = updateGenericConfigMap(common.ArgoCDCmdParamsConfigMapName, func(cm *corev1.ConfigMap) error {
+			// 	cm.Data = map[string]string{}
+			// 	return nil
+			// })
+			// if err != nil {
+			// 	return err
+			// }
 
-	// 		// Create separate project for testing gpg signature verification
-	// 		_, err = AppClientset.ArgoprojV1alpha1().AppProjects(TestNamespace()).Create(
-	// 			t.Context(),
-	// 			&v1alpha1.AppProject{
-	// 				ObjectMeta: metav1.ObjectMeta{
-	// 					Name: "gpg",
-	// 				},
-	// 				Spec: v1alpha1.AppProjectSpec{
-	// 					OrphanedResources:        nil,
-	// 					SourceRepos:              []string{"*"},
-	// 					Destinations:             []v1alpha1.ApplicationDestination{{Namespace: "*", Server: "*"}},
-	// 					ClusterResourceWhitelist: []v1alpha1.ClusterResourceRestrictionItem{{Group: "*", Kind: "*"}},
-	// 					SignatureKeys:            []v1alpha1.SignatureKey{{KeyID: GpgGoodKeyID}},
-	// 					SourceNamespaces:         []string{AppNamespace()},
-	// 				},
-	// 			},
-	// 			metav1.CreateOptions{},
-	// 		)
-	// 		return err
-	// 	},
-	// 	func() error {
-	// 		tmpDir := TmpDir()
-	// 		err := os.RemoveAll(tmpDir)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		_, err = Run("", "mkdir", "-p", tmpDir)
-	// 		if err != nil {
-	// 			return err
-	// 		}
+			return nil
+		},
+		func() error {
+			// We can switch user and as result in previous state we will have non-admin user, this case should be reset
+			return LoginAs(adminUsername)
+		},
+	})
 
-	// 		// create TLS and SSH certificate directories
-	// 		if IsLocal() {
-	// 			_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/tls")
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 			_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/ssh")
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 		}
+	RunFunctionsInParallelAndCheckErrors(t, []func() error{
+		// func() error {
+		// 	err := SetProjectSpec("default", v1alpha1.AppProjectSpec{
+		// 		OrphanedResources:        nil,
+		// 		SourceRepos:              []string{"*"},
+		// 		Destinations:             []v1alpha1.ApplicationDestination{{Namespace: "*", Server: "*"}},
+		// 		ClusterResourceWhitelist: []v1alpha1.ClusterResourceRestrictionItem{{Group: "*", Kind: "*"}},
+		// 		SourceNamespaces:         []string{AppNamespace()},
+		// 	})
+		// 	if err != nil {
+		// 		return err
+		// 	}
 
-	// 		// For signing during the tests
-	// 		_, err = Run("", "mkdir", "-p", tmpDir+"/gpg")
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		_, err = Run("", "chmod", "0700", tmpDir+"/gpg")
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		prevGnuPGHome := os.Getenv("GNUPGHOME")
-	// 		t.Setenv("GNUPGHOME", tmpDir+"/gpg")
-	// 		//nolint:errcheck
-	// 		Run("", "pkill", "-9", "gpg-agent")
-	// 		_, err = Run("", "gpg", "--import", "../fixture/gpg/signingkey.asc")
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		t.Setenv("GNUPGHOME", prevGnuPGHome)
+		// 	// Create separate project for testing gpg signature verification
+		// 	_, err = AppClientset.ArgoprojV1alpha1().AppProjects(TestNamespace()).Create(
+		// 		t.Context(),
+		// 		&v1alpha1.AppProject{
+		// 			ObjectMeta: metav1.ObjectMeta{
+		// 				Name: "gpg",
+		// 			},
+		// 			Spec: v1alpha1.AppProjectSpec{
+		// 				OrphanedResources:        nil,
+		// 				SourceRepos:              []string{"*"},
+		// 				Destinations:             []v1alpha1.ApplicationDestination{{Namespace: "*", Server: "*"}},
+		// 				ClusterResourceWhitelist: []v1alpha1.ClusterResourceRestrictionItem{{Group: "*", Kind: "*"}},
+		// 				SignatureKeys:            []v1alpha1.SignatureKey{{KeyID: GpgGoodKeyID}},
+		// 				SourceNamespaces:         []string{AppNamespace()},
+		// 			},
+		// 		},
+		// 		metav1.CreateOptions{},
+		// 	)
+		// 	return err
+		// },
+		func() error {
+			tmpDir := TmpDir()
+			err := os.RemoveAll(tmpDir)
+			if err != nil {
+				return err
+			}
+			_, err = Run("", "mkdir", "-p", tmpDir)
+			if err != nil {
+				return err
+			}
 
-	// 		// recreate GPG directories
-	// 		if IsLocal() {
-	// 			_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/gpg/source")
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 			_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/gpg/keys")
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 			_, err = Run("", "chmod", "0700", tmpDir+"/app/config/gpg/keys")
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 			_, err = Run("", "mkdir", "-p", tmpDir+PluginSockFilePath)
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 			_, err = Run("", "chmod", "0700", tmpDir+PluginSockFilePath)
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 		}
+			// create TLS and SSH certificate directories
+			if IsLocal() {
+				_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/tls")
+				if err != nil {
+					return err
+				}
+				_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/ssh")
+				if err != nil {
+					return err
+				}
+			}
 
-	// 		// set-up tmp repo, must have unique name
-	// 		_, err = Run("", "cp", "-Rf", opt.testdata, repoDirectory())
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		_, err = Run(repoDirectory(), "chmod", "777", ".")
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		_, err = Run(repoDirectory(), "git", "init", "-b", "master")
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		// Configure git to create files with more permissive permissions to avoid
-	// 		// issues when cleaning up. By default git creates object files as 0444.
-	// 		_, err = Run(repoDirectory(), "git", "config", "core.sharedRepository", "0666")
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		_, err = Run(repoDirectory(), "git", "add", ".")
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		_, err = Run(repoDirectory(), "git", "commit", "-q", "-m", "initial commit")
-	// 		if err != nil {
-	// 			return err
-	// 		}
+			// For signing during the tests
+			// _, err = Run("", "mkdir", "-p", tmpDir+"/gpg")
+			// if err != nil {
+			// 	return err
+			// }
+			// _, err = Run("", "chmod", "0700", tmpDir+"/gpg")
+			// if err != nil {
+			// 	return err
+			// }
+			// prevGnuPGHome := os.Getenv("GNUPGHOME")
+			// t.Setenv("GNUPGHOME", tmpDir+"/gpg")
+			// //nolint:errcheck
+			// Run("", "pkill", "-9", "gpg-agent")
+			// _, err = Run("", "gpg", "--import", "../fixture/gpg/signingkey.asc")
+			// if err != nil {
+			// 	return err
+			// }
+			// t.Setenv("GNUPGHOME", prevGnuPGHome)
 
-	// 		if IsRemote() {
-	// 			_, err = Run(repoDirectory(), "git", "remote", "add", "origin", os.Getenv("ARGOCD_E2E_GIT_SERVICE"))
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 			_, err = Run(repoDirectory(), "git", "push", "origin", "master", "-f")
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 		}
-	// 		return nil
-	// 	},
-	// 	func() error {
-	// 		// create namespace for this test
-	// 		_, err := Run("", "kubectl", "create", "ns", state.deploymentNamespace)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		_, err = Run("", "kubectl", "label", "ns", state.deploymentNamespace, TestingLabel+"=true")
-	// 		return err
-	// 	},
-	// })
+			// recreate GPG directories
+			// if IsLocal() {
+			// 	_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/gpg/source")
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// 	_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/gpg/keys")
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// 	_, err = Run("", "chmod", "0700", tmpDir+"/app/config/gpg/keys")
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// 	_, err = Run("", "mkdir", "-p", tmpDir+PluginSockFilePath)
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// 	_, err = Run("", "chmod", "0700", tmpDir+PluginSockFilePath)
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// }
 
-	// log.WithFields(log.Fields{
-	// 	"duration": time.Since(start),
-	// 	"name":     t.Name(),
-	// 	"id":       state.id,
-	// 	"username": "admin",
-	// 	"password": "password",
-	// }).Info("clean state")
+			// // set-up tmp repo, must have unique name
+			// _, err = Run("", "cp", "-Rf", opt.testdata, repoDirectory())
+			// if err != nil {
+			// 	return err
+			// }
+			// _, err = Run(repoDirectory(), "chmod", "777", ".")
+			// if err != nil {
+			// 	return err
+			// }
+			// _, err = Run(repoDirectory(), "git", "init", "-b", "master")
+			// if err != nil {
+			// 	return err
+			// }
+			// // Configure git to create files with more permissive permissions to avoid
+			// // issues when cleaning up. By default git creates object files as 0444.
+			// _, err = Run(repoDirectory(), "git", "config", "core.sharedRepository", "0666")
+			// if err != nil {
+			// 	return err
+			// }
+			// _, err = Run(repoDirectory(), "git", "add", ".")
+			// if err != nil {
+			// 	return err
+			// }
+			// _, err = Run(repoDirectory(), "git", "commit", "-q", "-m", "initial commit")
+			// if err != nil {
+			// 	return err
+			// }
+
+			// if IsRemote() {
+			// 	_, err = Run(repoDirectory(), "git", "remote", "add", "origin", os.Getenv("ARGOCD_E2E_GIT_SERVICE"))
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// 	_, err = Run(repoDirectory(), "git", "push", "origin", "master", "-f")
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// }
+			return nil
+		},
+		func() error {
+			// create namespace for this test
+			_, err := Run("", "kubectl", "create", "ns", state.deploymentNamespace)
+			if err != nil {
+				return err
+			}
+			_, err = Run("", "kubectl", "label", "ns", state.deploymentNamespace, TestingLabel+"=true")
+			return err
+		},
+	})
+
+	log.WithFields(log.Fields{
+		"duration": time.Since(start),
+		"name":     t.Name(),
+		"id":       state.id,
+		"username": "admin",
+		"password": "password",
+	}).Info("clean state")
 
 	return state
 }

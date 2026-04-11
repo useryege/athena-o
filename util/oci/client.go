@@ -26,7 +26,7 @@ import (
 	"github.com/useryege/athena/util/versions"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/pkg/sync"
+	"github.com/useryege/athena/gitops-engine/pkg/sync"
 
 	"github.com/useryege/athena/util/cache"
 	utilio "github.com/useryege/athena/util/io"

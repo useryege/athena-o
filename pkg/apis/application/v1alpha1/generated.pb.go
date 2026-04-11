@@ -9,7 +9,7 @@ import (
 	io "io"
 	"sort"
 
-	github_com_useryege_athena_pkg_health "github.com/useryege/athena/pkg/health"
+	github_com_useryege_athena_gitops_engine_pkg_health "github.com/useryege/athena/gitops-engine/pkg/health"
 	k8s_io_api_core_v1 "k8s.io/api/core/v1"
 	v11 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -5201,7 +5201,7 @@ func (m *HealthStatus) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Status = github_com_useryege_athena_pkg_health.HealthStatusCode(dAtA[iNdEx:postIndex])
+			m.Status = github_com_useryege_athena_gitops_engine_pkg_health.HealthStatusCode(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {

@@ -27,10 +27,8 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 	"k8s.io/client-go/tools/clientcmd"
 
 	// "context"
@@ -878,17 +876,17 @@ func (c *client) NewAccountClient() (io.Closer, accountpkg.AccountServiceClient,
 // 	return appEventsCh
 // }
 
-func isCanceledContextErr(err error) bool {
-	if err != nil && errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-		return true
-	}
-	if stat, ok := status.FromError(err); ok {
-		if stat.Code() == codes.Canceled || stat.Code() == codes.DeadlineExceeded {
-			return true
-		}
-	}
-	return false
-}
+// func isCanceledContextErr(err error) bool {
+// 	if err != nil && errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+// 		return true
+// 	}
+// 	if stat, ok := status.FromError(err); ok {
+// 		if stat.Code() == codes.Canceled || stat.Code() == codes.DeadlineExceeded {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 func parseHeaders(headerStrings []string) (http.Header, error) {
 	headers := http.Header{}

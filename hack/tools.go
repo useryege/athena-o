@@ -26,6 +26,9 @@ import (
 	// openapi-gen is vendored because upstream does not have tagged releases
 	_ "k8s.io/kube-openapi/cmd/openapi-gen"
 
+	// mockgen is used to generate mock files
+	_ "go.uber.org/mock/mockgen"
+
 	// apiextensions-apiserver is vendored because the generated *.pb.go code imports it.
 	_ "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )

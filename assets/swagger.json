@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "e81e004-dirty"
+    "version": "d021c48-dirty"
   },
   "paths": {
     "/api/v1/account": {

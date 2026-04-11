@@ -9,7 +9,7 @@ import (
 	utilnet "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/client-go/rest"
 
-	"github.com/useryege/athena/pkg/health"
+	"github.com/useryege/athena/gitops-engine/pkg/health"
 	"github.com/useryege/athena/util/env"
 	utilhttp "github.com/useryege/athena/util/http"
 	corev1 "k8s.io/api/core/v1"

@@ -1,42 +1,46 @@
 package e2e
 
-// import (
-// 	"testing"
+import (
+	"testing"
 
-// 	"github.com/spf13/cobra"
-// 	"github.com/stretchr/testify/assert"
-// 	"github.com/stretchr/testify/require"
-// 	"google.golang.org/grpc/codes"
-// 	"google.golang.org/grpc/status"
+	"github.com/stretchr/testify/assert"
+	"github.com/useryege/athena/pkg/apiclient/account"
+	"github.com/useryege/athena/pkg/apiclient/session"
 
-// 	"github.com/argoproj/argo-cd/v3/cmd/argocd/commands/headless"
-// 	"github.com/argoproj/argo-cd/v3/pkg/apiclient/account"
-// 	"github.com/argoproj/argo-cd/v3/pkg/apiclient/session"
-// 	. "github.com/argoproj/argo-cd/v3/test/e2e/fixture"
-// 	accountFixture "github.com/argoproj/argo-cd/v3/test/e2e/fixture/account"
-// 	"github.com/argoproj/argo-cd/v3/util/errors"
-// 	utilio "github.com/argoproj/argo-cd/v3/util/io"
-// )
+	// "testing"
+	// "github.com/spf13/cobra"
+	// "github.com/stretchr/testify/assert"
+	// "github.com/stretchr/testify/require"
+	// "google.golang.org/grpc/codes"
+	// "google.golang.org/grpc/status"
+	// "github.com/argoproj/argo-cd/v3/cmd/argocd/commands/headless"
+	// "github.com/argoproj/argo-cd/v3/pkg/apiclient/account"
+	// "github.com/argoproj/argo-cd/v3/pkg/apiclient/session"
+	// . "github.com/argoproj/argo-cd/v3/test/e2e/fixture"
+	accountFixture "github.com/useryege/athena/test/e2e/fixture/account"
+	// "github.com/argoproj/argo-cd/v3/util/errors"
+	// utilio "github.com/argoproj/argo-cd/v3/util/io"
+)
 
-// func TestCreateAndUseAccount(t *testing.T) {
-// 	ctx := accountFixture.Given(t)
-// 	ctx.
-// 		Name("test").
-// 		When().
-// 		Create().
-// 		Then().
-// 		And(func(account *account.Account, _ error) {
-// 			assert.Equal(t, ctx.GetName(), account.Name)
-// 			assert.Equal(t, []string{"login"}, account.Capabilities)
-// 		}).
-// 		When().
-// 		Login().
-// 		Then().
-// 		CurrentUser(func(user *session.GetUserInfoResponse, _ error) {
-// 			assert.True(t, user.LoggedIn)
-// 			assert.Equal(t, user.Username, ctx.GetName())
-// 		})
-// }
+func TestCreateAndUseAccount(t *testing.T) {
+	ctx := accountFixture.Given(t)
+	ctx.
+		Name("test").
+		When().
+		Create().
+		Then().
+		And(func(account *account.Account, _ error) {
+			assert.Equal(t, ctx.GetName(), account.Name)
+			assert.Equal(t, []string{"login"}, account.Capabilities)
+		}).
+		When().
+		Login().
+		Then().
+		CurrentUser(func(user *session.GetUserInfoResponse, _ error) {
+			assert.True(t, user.LoggedIn)
+			assert.Equal(t, user.Username, ctx.GetName())
+		})
+}
 
 // func TestCanIGetLogsAllow(t *testing.T) {
 // 	ctx := accountFixture.Given(t)
