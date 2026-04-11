@@ -120,14 +120,14 @@ type Client interface {
 	// NewNotificationClientOrDie() (io.Closer, notificationpkg.NotificationServiceClient)
 	NewSessionClient() (io.Closer, sessionpkg.SessionServiceClient, error)
 	NewSessionClientOrDie() (io.Closer, sessionpkg.SessionServiceClient)
-	// NewSettingsClient() (io.Closer, settingspkg.SettingsServiceClient, error)
-	// NewSettingsClientOrDie() (io.Closer, settingspkg.SettingsServiceClient)
+	NewSettingsClient() (io.Closer, settingspkg.SettingsServiceClient, error)
+	NewSettingsClientOrDie() (io.Closer, settingspkg.SettingsServiceClient)
 	NewVersionClient() (io.Closer, versionpkg.VersionServiceClient, error)
 	NewVersionClientOrDie() (io.Closer, versionpkg.VersionServiceClient)
 	// NewProjectClient() (io.Closer, projectpkg.ProjectServiceClient, error)
 	// NewProjectClientOrDie() (io.Closer, projectpkg.ProjectServiceClient)
 	NewAccountClient() (io.Closer, accountpkg.AccountServiceClient, error)
-	// NewAccountClientOrDie() (io.Closer, accountpkg.AccountServiceClient)
+	NewAccountClientOrDie() (io.Closer, accountpkg.AccountServiceClient)
 	// WatchApplicationWithRetry(ctx context.Context, appName string, revision string) chan *v1alpha1.ApplicationWatchEvent
 }
 
@@ -773,13 +773,13 @@ func (c *client) NewSettingsClient() (io.Closer, settingspkg.SettingsServiceClie
 	return closer, setIf, nil
 }
 
-// func (c *client) NewSettingsClientOrDie() (io.Closer, settingspkg.SettingsServiceClient) {
-// 	conn, setIf, err := c.NewSettingsClient()
-// 	if err != nil {
-// 		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
-// 	}
-// 	return conn, setIf
-// }
+func (c *client) NewSettingsClientOrDie() (io.Closer, settingspkg.SettingsServiceClient) {
+	conn, setIf, err := c.NewSettingsClient()
+	if err != nil {
+		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
+	}
+	return conn, setIf
+}
 
 func (c *client) NewVersionClient() (io.Closer, versionpkg.VersionServiceClient, error) {
 	conn, closer, err := c.newConn(context.Background())
@@ -824,13 +824,13 @@ func (c *client) NewAccountClient() (io.Closer, accountpkg.AccountServiceClient,
 	return closer, usrIf, nil
 }
 
-// func (c *client) NewAccountClientOrDie() (io.Closer, accountpkg.AccountServiceClient) {
-// 	conn, usrIf, err := c.NewAccountClient()
-// 	if err != nil {
-// 		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
-// 	}
-// 	return conn, usrIf
-// }
+func (c *client) NewAccountClientOrDie() (io.Closer, accountpkg.AccountServiceClient) {
+	conn, usrIf, err := c.NewAccountClient()
+	if err != nil {
+		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
+	}
+	return conn, usrIf
+}
 
 // WatchApplicationWithRetry returns a channel of watch events for an application, retrying the
 // watch upon errors. Closes the returned channel when the context is cancelled.
