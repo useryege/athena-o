@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -33,6 +35,8 @@ func main() {
 		binaryName = val
 	}
 
+	isArgocdCLI := false
+
 	switch binaryName {
 	case "athena-server":
 		command = athenaServerCommands.NewCommand()
@@ -42,16 +46,39 @@ func main() {
 		command = athenaDexCommands.NewCommand()
 	case "athena-notification":
 		command = athenaNotificationCommands.NewCommand()
-	case "athena":
+	case "athena", "athena-linux-amd64", "athena-darwin-amd64", "athena-windows-amd64.exe":
 		command = athenaCommands.NewCommand()
+		isArgocdCLI = true
 	case "athena-k8s-auth":
 		command = athenaK8sAuthCommands.NewCommand()
+		isArgocdCLI = true
 	default:
-		os.Exit(1)
+		command = athenaCommands.NewCommand()
+		isArgocdCLI = true
+	}
+
+	if isArgocdCLI {
+		// silence errors and usages since we'll be printing them manually.
+		// This is because if we execute a plugin, the initial
+		// errors and usage are always going to get printed that we don't want.
+		command.SilenceErrors = true
+		command.SilenceUsage = true
 	}
 
 	err := command.Execute()
+	// if an error is present, try to look for various scenarios
+	// such as if the error is from the execution of a normal argocd command,
+	// unknown command error or any other.
 	if err != nil {
-		os.Exit(1)
+		pluginErr := athenaCommands.NewDefaultPluginHandler().HandleCommandExecutionError(err, isArgocdCLI, os.Args)
+		if pluginErr != nil {
+			var exitErr *exec.ExitError
+			if errors.As(pluginErr, &exitErr) {
+				// Return the actual plugin exit code
+				os.Exit(exitErr.ExitCode())
+			}
+			// Fallback to exit code 1 if the error isn't an exec.ExitError
+			os.Exit(1)
+		}
 	}
 }
