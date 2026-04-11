@@ -18,11 +18,11 @@ For the next steps, we will use Athena `api-server` as an example of running a c
 ## Configure your IDE
 
 ### Locate your component configuration in `Procfile`
-The `Procfile` is used by Goreman when running Athena locally with the local toolchain. The file is located in the top-level directory in your cloned Athena repo folder, you can view it's latest version [here](https://github.com/argoproj/argo-cd/blob/master/Procfile). It contains all the needed component run configuration, and you will need to copy parts of this configuration to your IDE. 
+The `Procfile` is used by Goreman when running Athena locally with the local toolchain. The file is located in the top-level directory in your cloned Athena repo folder, you can view it's latest version [here](https://github.com/useryege/athena/blob/master/Procfile). It contains all the needed component run configuration, and you will need to copy parts of this configuration to your IDE. 
 
 Example for `api-server` configuration in `Procfile`:
 ``` text
-api-server: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/argocd || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ARGOCD_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ARGOCD_FAKE_IN_CLUSTER=true ARGOCD_TLS_DATA_PATH=${ARGOCD_TLS_DATA_PATH:-/tmp/argocd-local/tls} ARGOCD_SSH_DATA_PATH=${ARGOCD_SSH_DATA_PATH:-/tmp/argocd-local/ssh} ARGOCD_BINARY_NAME=argocd-server $COMMAND --loglevel debug --redis localhost:${ARGOCD_E2E_REDIS_PORT:-6379} --disable-auth=${ARGOCD_E2E_DISABLE_AUTH:-'true'} --insecure --dex-server http://localhost:${ARGOCD_E2E_DEX_PORT:-5556} --repo-server localhost:${ARGOCD_E2E_REPOSERVER_PORT:-8081} --port ${ARGOCD_E2E_APISERVER_PORT:-8080} --otlp-address=${ARGOCD_OTLP_ADDRESS} --application-namespaces=${ARGOCD_APPLICATION_NAMESPACES:-''} --hydrator-enabled=${ARGOCD_HYDRATOR_ENABLED:='false'}"
+api-server: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_FAKE_IN_CLUSTER=true ATHENA_TLS_DATA_PATH=${ATHENA_TLS_DATA_PATH:-/tmp/athena-local/tls} ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server $COMMAND --loglevel debug --redis localhost:${ATHENA_E2E_REDIS_PORT:-6379} --disable-auth=${ATHENA_E2E_DISABLE_AUTH:-'true'} --insecure --dex-server http://localhost:${ATHENA_E2E_DEX_PORT:-5556} --repo-server localhost:${ATHENA_E2E_REPOSERVER_PORT:-8081} --port ${ATHENA_E2E_APISERVER_PORT:-8080} --otlp-address=${ATHENA_OTLP_ADDRESS} --application-namespaces=${ATHENA_APPLICATION_NAMESPACES:-''} --hydrator-enabled=${ATHENA_HYDRATOR_ENABLED:='false'}"
 ```
 This configuration example will be used as the basis for the next steps.
 
@@ -30,25 +30,25 @@ This configuration example will be used as the basis for the next steps.
 > The Procfile for a component may change with time. Please go through the Procfile and make sure you use the latest configuration for debugging.
 
 ### Configure component env variables
-The component that you will run in your IDE for debugging (`api-server` in our case) will need env variables. Copy the env variables from `Procfile`, located in the `argo-cd` root folder of your development branch. The env variables are located before the `$COMMAND` section in the `sh -c` section of the component run command.
+The component that you will run in your IDE for debugging (`api-server` in our case) will need env variables. Copy the env variables from `Procfile`, located in the `athena` root folder of your development branch. The env variables are located before the `$COMMAND` section in the `sh -c` section of the component run command.
 You can keep them in `.env` file and then have the IDE launch configuration point to that file. Obviously, you can adjust the env variables to your needs when debugging a specific configuration.
 
 Example for an `api-server.env` file:
 ``` bash
-ARGOCD_BINARY_NAME=argocd-server
-ARGOCD_FAKE_IN_CLUSTER=true
-ARGOCD_GNUPGHOME=/tmp/argocd-local/gpg/keys
-ARGOCD_GPG_DATA_PATH=/tmp/argocd-local/gpg/source
-ARGOCD_GPG_ENABLED=false
-ARGOCD_LOG_FORMAT_ENABLE_FULL_TIMESTAMP=1
-ARGOCD_SSH_DATA_PATH=/tmp/argocd-local/ssh
-ARGOCD_TLS_DATA_PATH=/tmp/argocd-local/tls
-ARGOCD_TRACING_ENABLED=1
+ATHENA_BINARY_NAME=athena-server
+ATHENA_FAKE_IN_CLUSTER=true
+ATHENA_GNUPGHOME=/tmp/athena-local/gpg/keys
+ATHENA_GPG_DATA_PATH=/tmp/athena-local/gpg/source
+ATHENA_GPG_ENABLED=false
+ATHENA_LOG_FORMAT_ENABLE_FULL_TIMESTAMP=1
+ATHENA_SSH_DATA_PATH=/tmp/athena-local/ssh
+ATHENA_TLS_DATA_PATH=/tmp/athena-local/tls
+ATHENA_TRACING_ENABLED=1
 FORCE_LOG_COLORS=1
 KUBECONFIG=/Users/<YOUR_USERNAME>/.kube/config # Must be an absolute full path
 ... 
 # and so on, for example: when you test the app-in-any-namespace feature, 
-# you'll need to add ARGOCD_APPLICATION_NAMESPACES to this list 
+# you'll need to add ATHENA_APPLICATION_NAMESPACES to this list 
 # only for testing this functionality and remove it afterwards.
 ```
 
@@ -58,7 +58,7 @@ Using the market place / plugin manager of your IDE. The below example configura
 
 ### Configure component IDE launch configuration
 #### VSCode example
-Next, you will need to create a launch configuration, with the relevant args. Copy the args from `Procfile`, located in the `argo-cd` root folder of your development branch. The args are located after the `$COMMAND` section in the `sh -c` section of the component run command.
+Next, you will need to create a launch configuration, with the relevant args. Copy the args from `Procfile`, located in the `athena` root folder of your development branch. The args are located after the `$COMMAND` section in the `sh -c` section of the component run command.
 Example for an `api-server` launch configuration, based on our above example for `api-server` configuration in `Procfile`: 
 ``` json
     {
@@ -66,7 +66,7 @@ Example for an `api-server` launch configuration, based on our above example for
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "YOUR_CLONED_ARGO_CD_REPO_PATH/argo-cd/cmd",
+      "program": "YOUR_CLONED_ARGO_CD_REPO_PATH/athena/cmd",
       "args": [
         "--loglevel",
         "debug",
@@ -85,12 +85,12 @@ Example for an `api-server` launch configuration, based on our above example for
 ```
 
 #### Goland example
-Next, you will need to create a launch configuration, with the relevant parameters. Copy the parameters from `Procfile`, located in the `argo-cd` root folder of your development branch. The parameters are located after the `$COMMAND` section in the `sh -c` section of the component run command.
+Next, you will need to create a launch configuration, with the relevant parameters. Copy the parameters from `Procfile`, located in the `athena` root folder of your development branch. The parameters are located after the `$COMMAND` section in the `sh -c` section of the component run command.
 Example for an `api-server` launch configuration snippet, based on our above example for `api-server` configuration in `Procfile`: 
 ``` xml 
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="api-server" type="GoApplicationRunConfiguration" factoryName="Go Application">
-    <module name="argo-cd" />
+    <module name="athena" />
     <working_directory value="$PROJECT_DIR$" />
     <parameters value="--loglevel debug --redis localhost:6379 --insecure --dex-server http://localhost:5556 --repo-server localhost:8081 --port 8080" />
     <EXTENSION ID="net.ashald.envfile"> <!-- Assuming you installed the EnvFile plugin-->
@@ -125,10 +125,10 @@ Below are the different options.
 `make start-local` runs all the components by default, but it is also possible to run it with a whitelist of components, enabling the separation we need.
 
 So for the case of debugging the `api-server`, run:
-`make start-local ARGOCD_START="notification applicationset-controller repo-server redis dex controller ui"` 
+`make start-local ATHENA_START="notification applicationset-controller repo-server redis dex controller ui"` 
 
 > [!NOTE]
-> By default, the api-server in this configuration runs with auth disabled. If you need to test argo cd auth-related functionality, run `export ARGOCD_E2E_DISABLE_AUTH='false' && make start-local`
+> By default, the api-server in this configuration runs with auth disabled. If you need to test argo cd auth-related functionality, run `export ATHENA_E2E_DISABLE_AUTH='false' && make start-local`
 #### Run with "make run"
 `make run` runs all the components by default, but it is also possible to run it with a blacklist of components, enabling the separation we need.
 

@@ -1,4 +1,4 @@
-apiVersion: argoproj.io/v1alpha1
+apiVersion: useryege.io/v1alpha1
 kind: Application
 metadata:
   name: custom-resource
@@ -10,4 +10,4 @@ spec:
   project: default
   source:
     path: guestbook
-    repoURL: https://github.com/argoproj/argocd-example-apps.git
+    repoURL: https://github.com/useryege/athena-example-apps.git

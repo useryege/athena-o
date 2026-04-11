@@ -17,7 +17,7 @@
 
 If you want to submit a PR, please read this document carefully, as it contains important information guiding you through our PR quality gates.
 
-If you need guidance with submitting a PR, or have any other questions regarding development of Athena, do not hesitate to [join our Slack](https://argoproj.github.io/community/join-slack) and get in touch with us in the `#athena-contributors` channel!
+If you need guidance with submitting a PR, or have any other questions regarding development of Athena, do not hesitate to [join our Slack](https://useryege.github.io/community/join-slack) and get in touch with us in the `#athena-contributors` channel!
 
 ## Before Submitting a PR
 

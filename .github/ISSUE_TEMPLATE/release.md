@@ -33,7 +33,7 @@ Target GA date: ___. __, ____
      
      Please go through the following resources to know more about the release:
      
-     Release notes: https://github.com/argoproj/athena/releases/tag/v{VERSION}
+     Release notes: https://github.com/useryege/athena/releases/tag/v{VERSION}
      Blog: {BLOG_POST_URL}
      
      We'd love your help testing this release candidate! Please try it out in your environments and report any issues you find. This helps us ensure a stable GA release.

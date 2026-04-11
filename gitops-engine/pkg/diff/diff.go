@@ -102,7 +102,7 @@ func Diff(config, live *unstructured.Unstructured, opts ...Option) (*DiffResult,
 	// dependency with the kube package that blocks the usage of constants
 	// from common package. common package needs to be refactored and exclude
 	// dependency from kube.
-	syncOptAnnotation := "argocd.argoproj.io/sync-options"
+	syncOptAnnotation := "athena.useryege.io/sync-options"
 	ssaAnnotation := "ServerSideApply=true"
 
 	// structuredMergeDiff is mainly used as a feature flag to enable
@@ -937,7 +937,7 @@ func NormalizeSecret(un *unstructured.Unstructured, opts ...Option) {
 		o.log.Error(err, "Failed to convert from unstructured into Secret")
 		return
 	}
-	// We normalize nils to empty string to handle: https://github.com/argoproj/argo-cd/issues/943
+	// We normalize nils to empty string to handle: https://github.com/useryege/athena/issues/943
 	for k, v := range secret.Data {
 		if len(v) == 0 {
 			secret.Data[k] = []byte("")
@@ -1114,7 +1114,7 @@ func hide(target, live, liveLastAppliedAnnotation *unstructured.Unstructured, ke
 			var data map[string]any
 			if obj != nil {
 				// handles an edge case when secret data has nil value
-				// https://github.com/argoproj/argo-cd/issues/5584
+				// https://github.com/useryege/athena/issues/5584
 				dataValue, ok, _ := unstructured.NestedFieldCopy(obj.Object, fields...)
 				if ok {
 					if dataValue == nil {

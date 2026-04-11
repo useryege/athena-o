@@ -562,7 +562,7 @@ export class ApplicationsService {
         if (isFromApps) {
             data = deepMerge(
                 {
-                    apiVersion: 'argoproj.io/v1alpha1',
+                    apiVersion: 'useryege.io/v1alpha1',
                     kind: 'Application',
                     spec: {
                         project: 'default'
@@ -579,7 +579,7 @@ export class ApplicationsService {
         } else {
             data = deepMerge(
                 {
-                    apiVersion: 'argoproj.io/v1alpha1',
+                    apiVersion: 'useryege.io/v1alpha1',
                     kind: 'ApplicationSet',
                     status: {
                         resources: []
@@ -589,7 +589,7 @@ export class ApplicationsService {
             );
             if (data.status?.resources?.[0]) {
                 data.status.resources[0].kind = 'Application';
-                data.status.resources[0].group = 'argoproj.io';
+                data.status.resources[0].group = 'useryege.io';
             }
             return data as models.ApplicationSet;
         }

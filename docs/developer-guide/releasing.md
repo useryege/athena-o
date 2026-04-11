@@ -43,7 +43,7 @@ triggered. This will be automated in the very near future.
 ### Step 1 - Update Version and Manifest
 
 1. Ensure that the TARGET_BRANCH already exist.
-2. Visit the [Release GitHub Action](https://github.com/argoproj/athena/actions/workflows/init-release.yaml)
+2. Visit the [Release GitHub Action](https://github.com/useryege/athena/actions/workflows/init-release.yaml)
 and choose which branch you would like to work from.
 3. Enter the TARGET_BRANCH to checkout.
 4. Enter the TARGET_VERSION that will be used to build manifest and `VERSION` file. (e.g `2.7.0-rc1`)
@@ -79,7 +79,7 @@ The script will ask for confirmation, type `y` to proceed. If no confirmation is
 > * Pre-release: `v<MAJOR>.<MINOR>.<PATCH>-rc<RC#>`
 
 Once the script is executed successfully, a GitHub workflow will start
-execution. You can follow its progress under the [Actions](https://github.com/argoproj/athena/actions/workflows/release.yaml) tab, the name of the action is `Publish Athena Release`. 
+execution. You can follow its progress under the [Actions](https://github.com/useryege/athena/actions/workflows/release.yaml) tab, the name of the action is `Publish Athena Release`. 
 
 > [!WARNING]
 > You cannot perform more than one release on the same release branch at the
@@ -91,7 +91,7 @@ After the automatic release creation has finished, you should perform manual
 checks to see if the release came out correctly:
 
 * Check status & output of the GitHub action
-* Check [https://github.com/argoproj/athena/releases](https://github.com/argoproj/athena/releases)
+* Check [https://github.com/useryege/athena/releases](https://github.com/useryege/athena/releases)
   to see if the release has been correctly created and if all required assets
   are attached.
 * Check whether the image has been published on Quay.io correctly

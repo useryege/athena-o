@@ -114,7 +114,7 @@ func (c *client) startGRPCProxy(ctx context.Context) (*grpc.Server, net.Listener
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate random socket filename: %w", err)
 	}
-	serverAddr := fmt.Sprintf("%s/argocd-%s.sock", os.TempDir(), randSuffix)
+	serverAddr := fmt.Sprintf("%s/athena-%s.sock", os.TempDir(), randSuffix)
 	lc := &net.ListenConfig{}
 	ln, err := lc.Listen(ctx, "unix", serverAddr)
 	if err != nil {

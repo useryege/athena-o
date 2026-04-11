@@ -5,8 +5,8 @@ contact_links:
     url: https://athena.readthedocs.io/
     about: Much help can be found in the docs
   - name: Ask a question
-    url: https://github.com/argoproj/athena/discussions/new
+    url: https://github.com/useryege/athena/discussions/new
     about: Ask a question or start a discussion about Athena
   - name: Chat on Slack
-    url: https://argoproj.github.io/community/join-slack
+    url: https://useryege.github.io/community/join-slack
     about: Maybe chatting with the community can help

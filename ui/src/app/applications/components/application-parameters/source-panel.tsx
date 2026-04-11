@@ -43,7 +43,7 @@ function normalizeAppSource(app: models.Application, type: string): boolean {
 // Use a single source app to represent the 'new source'. This panel will make use of the source field only.
 // However, we need to use a template based on an Application so that we can reuse the application-parameters code
 const DEFAULT_APP: Partial<models.Application> = {
-    apiVersion: 'argoproj.io/v1alpha1',
+    apiVersion: 'useryege.io/v1alpha1',
     kind: 'Application',
     metadata: {
         name: ''

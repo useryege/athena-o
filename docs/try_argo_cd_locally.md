@@ -30,7 +30,7 @@ This command verifies that `kubectl` is pointed to the right cluster.
 You can now install Athena on your `kind` cluster. First, apply the Athena manifest to create the necessary resources:
 ```bash
 kubectl create namespace athena
-kubectl apply -n athena --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/athena/stable/manifests/install.yaml
+kubectl apply -n athena --server-side --force-conflicts -f https://raw.githubusercontent.com/useryege/athena/stable/manifests/install.yaml
 ```
 
 > [!NOTE]

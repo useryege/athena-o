@@ -21,7 +21,7 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - argoproj.io
+  - useryege.io
   resources:
   - applications
   - appprojects

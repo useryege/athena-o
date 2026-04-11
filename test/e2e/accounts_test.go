@@ -13,13 +13,13 @@ import (
 	// "github.com/stretchr/testify/require"
 	// "google.golang.org/grpc/codes"
 	// "google.golang.org/grpc/status"
-	// "github.com/argoproj/argo-cd/v3/cmd/argocd/commands/headless"
-	// "github.com/argoproj/argo-cd/v3/pkg/apiclient/account"
-	// "github.com/argoproj/argo-cd/v3/pkg/apiclient/session"
-	// . "github.com/argoproj/argo-cd/v3/test/e2e/fixture"
+	// "github.com/useryege/athena/v3/cmd/athena/commands/headless"
+	// "github.com/useryege/athena/v3/pkg/apiclient/account"
+	// "github.com/useryege/athena/v3/pkg/apiclient/session"
+	// . "github.com/useryege/athena/v3/test/e2e/fixture"
 	accountFixture "github.com/useryege/athena/test/e2e/fixture/account"
-	// "github.com/argoproj/argo-cd/v3/util/errors"
-	// utilio "github.com/argoproj/argo-cd/v3/util/io"
+	// "github.com/useryege/athena/v3/util/errors"
+	// utilio "github.com/useryege/athena/v3/util/io"
 )
 
 func TestCreateAndUseAccount(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test_resolveK8sRequestVerb is adapted from: https://github.com/argoproj/pkg/blob/f5a0a066030558f089fa645dc6546ddc5917bad5/kubeclientmetrics/metric_test.go
+// Test_resolveK8sRequestVerb is adapted from: https://github.com/useryege/pkg/blob/f5a0a066030558f089fa645dc6546ddc5917bad5/kubeclientmetrics/metric_test.go
 func Test_resolveK8sRequestVerb(t *testing.T) {
 	testData := []struct {
 		testName string
@@ -97,13 +97,13 @@ func Test_resolveK8sRequestVerb(t *testing.T) {
 		{
 			testName: "CRD Get",
 			method:   "GET",
-			url:      "https://127.0.0.1/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/dummies.argoproj.io",
+			url:      "https://127.0.0.1/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/dummies.useryege.io",
 			expected: "Get",
 		},
 		{
 			testName: "Resource With Periods Get",
 			method:   "GET",
-			url:      "https://127.0.0.1/apis/argoproj.io/v1alpha1/namespaces/athena/applications/my-cluster.cluster.k8s.local",
+			url:      "https://127.0.0.1/apis/useryege.io/v1alpha1/namespaces/athena/applications/my-cluster.cluster.k8s.local",
 			expected: "Get",
 		},
 		{

@@ -28,7 +28,7 @@ For backend and frontend contributions, that require a full building-testing-run
 ## Contributing to Athena Notifications documentation
 
 This guide will help you get started quickly with contributing documentation changes, performing the minimum setup you'll need.
-The notifications docs are located in [notifications-engine](https://github.com/argoproj/notifications-engine) Git repository and require 2 pull requests: one for the `notifications-engine` repo and one for the `athena` repo.
+The notifications docs are located in [notifications-engine](https://github.com/useryege/notifications-engine) Git repository and require 2 pull requests: one for the `notifications-engine` repo and one for the `athena` repo.
 For backend and frontend contributions, that require a full building-testing-running-locally cycle, please refer to [Contributing to Athena backend and frontend ](index.md#contributing-to-athena-backend-and-frontend) 
 
 ### Fork and clone Athena repository
@@ -101,4 +101,4 @@ Need help? Start with the [Contributors FAQ](faq/)
 * [Config Management Plugins](../operator-manual/config-management-plugins/)
 
 ## Contributing to Argo Website
-The Argo website is maintained in the [argo-site](https://github.com/argoproj/argo-site) repository.
+The Argo website is maintained in the [argo-site](https://github.com/useryege/argo-site) repository.

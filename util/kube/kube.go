@@ -4,7 +4,7 @@ package kube
 // 	"fmt"
 // 	"regexp"
 
-// 	"github.com/argoproj/gitops-engine/pkg/utils/kube"
+// 	"github.com/useryege/gitops-engine/pkg/utils/kube"
 // 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 // 	"k8s.io/apimachinery/pkg/runtime/schema"
 

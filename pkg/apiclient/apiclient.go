@@ -58,30 +58,30 @@ import (
 	// "google.golang.org/grpc/metadata"
 	// "google.golang.org/grpc/status"
 	// "k8s.io/client-go/tools/clientcmd"
-	// "github.com/argoproj/argo-cd/v3/common"
+	// "github.com/useryege/athena/v3/common"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 
-	// applicationsetpkg "github.com/argoproj/argo-cd/v3/pkg/apiclient/applicationset"
-	// certificatepkg "github.com/argoproj/argo-cd/v3/pkg/apiclient/certificate"
-	// clusterpkg "github.com/argoproj/argo-cd/v3/pkg/apiclient/cluster"
-	// gpgkeypkg "github.com/argoproj/argo-cd/v3/pkg/apiclient/gpgkey"
-	// notificationpkg "github.com/argoproj/argo-cd/v3/pkg/apiclient/notification"
-	// projectpkg "github.com/argoproj/argo-cd/v3/pkg/apiclient/project"
-	// repocredspkg "github.com/argoproj/argo-cd/v3/pkg/apiclient/repocreds"
-	// repositorypkg "github.com/argoproj/argo-cd/v3/pkg/apiclient/repository"
+	// applicationsetpkg "github.com/useryege/athena/v3/pkg/apiclient/applicationset"
+	// certificatepkg "github.com/useryege/athena/v3/pkg/apiclient/certificate"
+	// clusterpkg "github.com/useryege/athena/v3/pkg/apiclient/cluster"
+	// gpgkeypkg "github.com/useryege/athena/v3/pkg/apiclient/gpgkey"
+	// notificationpkg "github.com/useryege/athena/v3/pkg/apiclient/notification"
+	// projectpkg "github.com/useryege/athena/v3/pkg/apiclient/project"
+	// repocredspkg "github.com/useryege/athena/v3/pkg/apiclient/repocreds"
+	// repositorypkg "github.com/useryege/athena/v3/pkg/apiclient/repository"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
 
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
-	// "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
-	// "github.com/argoproj/argo-cd/v3/util/argo"
-	// "github.com/argoproj/argo-cd/v3/util/env"
+	// "github.com/useryege/athena/v3/pkg/apis/application/v1alpha1"
+	// "github.com/useryege/athena/v3/util/argo"
+	// "github.com/useryege/athena/v3/util/env"
 	grpc_util "github.com/useryege/athena/util/grpc"
 	http_util "github.com/useryege/athena/util/http"
 	utilio "github.com/useryege/athena/util/io"
 
-	// "github.com/argoproj/argo-cd/v3/util/kube"
-	// "github.com/argoproj/argo-cd/v3/util/localconfig"
+	// "github.com/useryege/athena/v3/util/kube"
+	// "github.com/useryege/athena/v3/util/localconfig"
 	oidcutil "github.com/useryege/athena/util/oidc"
 	tls_util "github.com/useryege/athena/util/tls"
 )
@@ -89,9 +89,9 @@ import (
 const (
 	MetaDataTokenKey = "token"
 	// EnvArgoCDServer is the environment variable to look for an Argo CD server address
-	EnvArgoCDServer = "ARGOCD_SERVER"
+	EnvArgoCDServer = "ATHENA_SERVER"
 	// EnvArgoCDAuthToken is the environment variable to look for an Argo CD auth token
-	EnvArgoCDAuthToken = "ARGOCD_AUTH_TOKEN"
+	EnvArgoCDAuthToken = "ATHENA_AUTH_TOKEN"
 )
 
 // MaxGRPCMessageSize contains max grpc message size

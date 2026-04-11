@@ -25,7 +25,7 @@ const appTypes = new Array<{field: string; type: models.AppSourceType}>(
 );
 
 const DEFAULT_APP: Partial<models.Application> = {
-    apiVersion: 'argoproj.io/v1alpha1',
+    apiVersion: 'useryege.io/v1alpha1',
     kind: 'Application',
     metadata: {
         name: ''
@@ -247,7 +247,7 @@ export const ApplicationCreatePanel = (props: {
                                                     This causes problems with some entry fields that require enter to be
                                                     pressed for the value to be accepted.
 
-                                                    See https://github.com/argoproj/athena/issues/4576
+                                                    See https://github.com/useryege/athena/issues/4576
                                                 */}
                                             {!yamlMode && (
                                                 <button

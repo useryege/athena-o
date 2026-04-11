@@ -2,7 +2,7 @@ package application
 
 const (
 	// API Group
-	Group string = "argoproj.io"
+	Group string = "useryege.io"
 
 	// Application constants
 	ApplicationKind      string = "Application"

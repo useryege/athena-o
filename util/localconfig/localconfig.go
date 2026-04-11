@@ -81,7 +81,7 @@ func ReadLocalConfig(path string) (*LocalConfig, error) {
 	var err error
 	var localconfig LocalConfig
 
-	// check file permission only when argocd config exists
+	// check file permission only when athena config exists
 	if fi, err := os.Stat(path); err == nil {
 		err = getFilePermission(fi)
 		if err != nil {
@@ -256,7 +256,7 @@ func (l *LocalConfig) IsEmpty() bool {
 // DefaultConfigDir returns the local configuration path for settings such as cached authentication tokens.
 func DefaultConfigDir() (string, error) {
 	// Manually defined config directory
-	configDir := os.Getenv("ARGOCD_CONFIG_DIR")
+	configDir := os.Getenv("ATHENA_CONFIG_DIR")
 	if configDir != "" {
 		return configDir, nil
 	}
@@ -268,7 +268,7 @@ func DefaultConfigDir() (string, error) {
 
 	// Legacy config directory
 	// Use it if it already exists
-	legacyConfigDir := path.Join(homeDir, ".argocd")
+	legacyConfigDir := path.Join(homeDir, ".athena")
 
 	if _, err := os.Stat(legacyConfigDir); err == nil {
 		return legacyConfigDir, nil
@@ -276,11 +276,11 @@ func DefaultConfigDir() (string, error) {
 
 	// Manually configured XDG config home
 	if xdgConfigHome := os.Getenv("XDG_CONFIG_HOME"); xdgConfigHome != "" {
-		return path.Join(xdgConfigHome, "argocd"), nil
+		return path.Join(xdgConfigHome, "athena"), nil
 	}
 
 	// XDG config home fallback
-	return path.Join(homeDir, ".config", "argocd"), nil
+	return path.Join(homeDir, ".config", "athena"), nil
 }
 
 func getHomeDir() (string, error) {

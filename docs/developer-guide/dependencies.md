@@ -1,10 +1,10 @@
 # Managing Dependencies
 
-## Notifications Engine (`github.com/argoproj/notifications-engine`)
+## Notifications Engine (`github.com/useryege/notifications-engine`)
 
 ### Repository
 
-[notifications-engine](https://github.com/argoproj/notifications-engine)
+[notifications-engine](https://github.com/useryege/notifications-engine)
 
 ### Pulling changes from `notifications-engine`
 
@@ -13,7 +13,7 @@ After your Notifications Engine PR has been merged, Athena needs to be updated t
 - Retrieve the SHA hash for your commit. You will use this in the next step.
 - From the `athena` folder, run the following command
 
-  `go get github.com/argoproj/notifications-engine@<git-commit-sha>`
+  `go get github.com/useryege/notifications-engine@<git-commit-sha>`
 
   If you get an error message `invalid version: unknown revision` then you got the wrong SHA hash
 
@@ -30,13 +30,13 @@ After your Notifications Engine PR has been merged, Athena needs to be updated t
 
 - Create an Athena PR with a `refactor:` type in its title for the above file changes.
 
-## Athena UI Components (`github.com/argoproj/argo-ui`)
+## Athena UI Components (`github.com/useryege/argo-ui`)
 ### Contributing to Athena UI
 
-Athena, along with Argo Workflows, uses shared React components from [Athena UI](https://github.com/argoproj/argo-ui). Examples of some of these components include buttons, containers, form controls, 
+Athena, along with Argo Workflows, uses shared React components from [Athena UI](https://github.com/useryege/argo-ui). Examples of some of these components include buttons, containers, form controls, 
 and others. Although you can make changes to these files and run them locally, in order to have these changes added to the Athena repo, you will need to follow these steps. 
 
-1. Fork and clone the [Athena UI repository](https://github.com/argoproj/argo-ui).
+1. Fork and clone the [Athena UI repository](https://github.com/useryege/argo-ui).
 
 2. `cd` into your `argo-ui` directory, and then run `yarn install`. 
 
@@ -53,8 +53,8 @@ and others. Although you can make changes to these files and run them locally, i
 
     Once the `argo-ui` package has been successfully linked, test changes in your local development environment. 
 
-6. Commit changes and open a PR to [Athena UI](https://github.com/argoproj/argo-ui). 
+6. Commit changes and open a PR to [Athena UI](https://github.com/useryege/argo-ui). 
 
-7. Once your PR has been merged in Athena UI, `cd` into your `athena/ui` folder and run `yarn add git+https://github.com/argoproj/argo-ui.git`. This will update the commit SHA in the `ui/yarn.lock` file to use the latest master commit for argo-ui. 
+7. Once your PR has been merged in Athena UI, `cd` into your `athena/ui` folder and run `yarn add git+https://github.com/useryege/argo-ui.git`. This will update the commit SHA in the `ui/yarn.lock` file to use the latest master commit for argo-ui. 
 
 8. Submit changes to `ui/yarn.lock`in a PR to Athena. 

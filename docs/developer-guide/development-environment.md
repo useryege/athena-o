@@ -115,7 +115,7 @@ git clone https://github.com/YOUR-USERNAME/athena.git
    To create the remote, run:
    ```shell
    cd athena
-   git remote add upstream https://github.com/argoproj/athena.git
+   git remote add upstream https://github.com/useryege/athena.git
    ```
 
 ## Install Additional Required Development Tools
@@ -129,7 +129,7 @@ make install-codegen-tools-local
 
 ```shell
 kubectl create namespace athena &&
-kubectl apply -n athena --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/athena/master/manifests/install.yaml
+kubectl apply -n athena --server-side --force-conflicts -f https://raw.githubusercontent.com/useryege/athena/master/manifests/install.yaml
 ```
 
 Set kubectl config to avoid specifying the namespace in every kubectl command.  

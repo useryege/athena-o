@@ -15,7 +15,7 @@ Then pass using the HTTP `Authorization` header, prefixing with `Bearer `:
 
 ```bash
 $ curl $ATHENA_SERVER/api/v1/applications -H "Authorization: Bearer $ATHENA_TOKEN" 
-{"metadata":{"selfLink":"/apis/argoproj.io/v1alpha1/namespaces/athena/applications","resourceVersion":"37755"},"items":...}
+{"metadata":{"selfLink":"/apis/useryege.io/v1alpha1/namespaces/athena/applications","resourceVersion":"37755"},"items":...}
 ```
 
 ## Services

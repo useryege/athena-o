@@ -775,7 +775,7 @@ Are you sure you want to disable auto-sync and rollback application '${props.mat
                                 }
                             };
                             const appFullName = AppUtils.nodeKey({
-                                group: 'argoproj.io',
+                                group: 'useryege.io',
                                 kind: application.kind,
                                 name: application.metadata.name,
                                 namespace: application.metadata.namespace
@@ -1150,7 +1150,7 @@ Are you sure you want to disable auto-sync and rollback application '${props.mat
     const getApplicationActionMenu = useCallback(
         (app: appModels.Application, needOverlapLabelOnNarrowScreen: boolean) => {
             const refreshing = app.metadata.annotations && app.metadata.annotations[appModels.AnnotationRefreshKey];
-            const fullName = AppUtils.nodeKey({group: 'argoproj.io', kind: app.kind, name: app.metadata.name, namespace: app.metadata.namespace});
+            const fullName = AppUtils.nodeKey({group: 'useryege.io', kind: app.kind, name: app.metadata.name, namespace: app.metadata.namespace});
             const ActionMenuItem = (prop: {actionLabel: string}) => <span className={needOverlapLabelOnNarrowScreen ? 'show-for-large' : ''}>{prop.actionLabel}</span>;
             return [
                 {
@@ -1345,7 +1345,7 @@ Are you sure you want to disable auto-sync and rollback application '${props.mat
     const groupAppNodesByKey = useCallback((application: appModels.Application, tree: appModels.ApplicationTree) => {
         const nodeByKey = new Map<string, appModels.ResourceDiff | appModels.ResourceNode | appModels.Application>();
         tree.nodes.concat(tree.orphanedNodes || []).forEach(node => nodeByKey.set(AppUtils.nodeKey(node), node));
-        nodeByKey.set(AppUtils.nodeKey({group: 'argoproj.io', kind: application.kind, name: application.metadata.name, namespace: application.metadata.namespace}), application);
+        nodeByKey.set(AppUtils.nodeKey({group: 'useryege.io', kind: application.kind, name: application.metadata.name, namespace: application.metadata.namespace}), application);
         return nodeByKey;
     }, []);
 

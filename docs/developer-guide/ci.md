@@ -6,7 +6,7 @@ You can click on the "Details" link next to the failed step to get more informat
 
 ![Failed GitHub Action](ci-pipeline-failed.png)
 
-To read more about The GitHub actions are configured in [`ci-build.yaml`](https://github.com/argoproj/athena/blob/master/.github/workflows/ci-build.yaml).
+To read more about The GitHub actions are configured in [`ci-build.yaml`](https://github.com/useryege/athena/blob/master/.github/workflows/ci-build.yaml).
 
 ### Can I retrigger the checks without pushing a new commit?
 
@@ -60,17 +60,17 @@ docker login
 Build image:
 
 ```bash
-make builder-image IMAGE_NAMESPACE=argoproj IMAGE_TAG=v1.0.0
+make builder-image IMAGE_NAMESPACE=useryege IMAGE_TAG=v1.0.0
 ```
 
 ## Public CD
 
-Every commit to master is built and published to `ghcr.io/argoproj/athena/athena:<version>-<short-sha>`. The list of images is available at
-[https://github.com/argoproj/athena/packages](https://github.com/argoproj/athena/packages).
+Every commit to master is built and published to `ghcr.io/useryege/athena/athena:<version>-<short-sha>`. The list of images is available at
+[https://github.com/useryege/athena/packages](https://github.com/useryege/athena/packages).
 
 > [!NOTE]
 > GitHub docker registry [requires](https://github.community/t5/GitHub-Actions/docker-pull-from-public-GitHub-Package-Registry-fail-with-quot/m-p/32888#M1294) authentication to read
 > even publicly available packages. Follow the steps from Kubernetes [documentation](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry)
-> to configure image pull secret if you want to use `ghcr.io/argoproj/athena/athena` image.
+> to configure image pull secret if you want to use `ghcr.io/useryege/athena/athena` image.
 
-The image is automatically deployed to the dev Athena instance: [https://cd.apps.argoproj.io/](https://cd.apps.argoproj.io/)
+The image is automatically deployed to the dev Athena instance: [https://cd.apps.useryege.io/](https://cd.apps.useryege.io/)

@@ -17,9 +17,9 @@ import (
 // 	"strings"
 // 	"time"
 
-// 	"github.com/argoproj/gitops-engine/pkg/cache"
-// 	"github.com/argoproj/gitops-engine/pkg/sync/common"
-// 	"github.com/argoproj/gitops-engine/pkg/utils/kube"
+// 	"github.com/useryege/gitops-engine/pkg/cache"
+// 	"github.com/useryege/gitops-engine/pkg/sync/common"
+// 	"github.com/useryege/gitops-engine/pkg/utils/kube"
 // 	"github.com/r3labs/diff/v3"
 // 	log "github.com/sirupsen/logrus"
 // 	"google.golang.org/grpc/codes"
@@ -30,16 +30,16 @@ import (
 // 	"k8s.io/apimachinery/pkg/runtime/schema"
 // 	"k8s.io/apimachinery/pkg/types"
 
-// 	"github.com/argoproj/argo-cd/v3/util/gpg"
+// 	"github.com/useryege/athena/v3/util/gpg"
 
-// 	argoappv1 "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
-// 	"github.com/argoproj/argo-cd/v3/pkg/client/clientset/versioned/typed/application/v1alpha1"
-// 	applicationsv1 "github.com/argoproj/argo-cd/v3/pkg/client/listers/application/v1alpha1"
-// 	"github.com/argoproj/argo-cd/v3/reposerver/apiclient"
-// 	"github.com/argoproj/argo-cd/v3/util/db"
-// 	"github.com/argoproj/argo-cd/v3/util/glob"
-// 	utilio "github.com/argoproj/argo-cd/v3/util/io"
-// 	"github.com/argoproj/argo-cd/v3/util/settings"
+// 	argoappv1 "github.com/useryege/athena/v3/pkg/apis/application/v1alpha1"
+// 	"github.com/useryege/athena/v3/pkg/client/clientset/versioned/typed/application/v1alpha1"
+// 	applicationsv1 "github.com/useryege/athena/v3/pkg/client/listers/application/v1alpha1"
+// 	"github.com/useryege/athena/v3/reposerver/apiclient"
+// 	"github.com/useryege/athena/v3/util/db"
+// 	"github.com/useryege/athena/v3/util/glob"
+// 	utilio "github.com/useryege/athena/v3/util/io"
+// 	"github.com/useryege/athena/v3/util/settings"
 // )
 
 // const (
@@ -1268,10 +1268,10 @@ func APIResourcesToStrings(resources []kube.APIResourceInfo, includeKinds bool) 
 // }
 
 // // GetAppEventLabels returns a map of labels to add to a K8s event.
-// // The Application and its AppProject labels are compared against the `resource.includeEventLabelKeys` key in argocd-cm.
+// // The Application and its AppProject labels are compared against the `resource.includeEventLabelKeys` key in athena-cm.
 // // If matched, the corresponding labels are returned to be added to the generated event. In case of a conflict
 // // between labels on the Application and AppProject, the Application label values are prioritized and added to the event.
-// // Furthermore, labels specified in `resource.excludeEventLabelKeys` in argocd-cm are removed from the event labels, if they were included.
+// // Furthermore, labels specified in `resource.excludeEventLabelKeys` in athena-cm are removed from the event labels, if they were included.
 // func GetAppEventLabels(ctx context.Context, app *argoappv1.Application, projLister applicationsv1.AppProjectLister, ns string, settingsManager *settings.SettingsManager, db db.ArgoDB) map[string]string {
 // 	eventLabels := make(map[string]string)
 

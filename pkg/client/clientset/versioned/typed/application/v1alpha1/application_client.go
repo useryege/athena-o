@@ -15,7 +15,7 @@ type ArgoprojV1alpha1Interface interface {
 	ApplicationsGetter
 }
 
-// ArgoprojV1alpha1Client is used to interact with features provided by the argoproj.io group.
+// ArgoprojV1alpha1Client is used to interact with features provided by the useryege.io group.
 type ArgoprojV1alpha1Client struct {
 	restClient rest.Interface
 }

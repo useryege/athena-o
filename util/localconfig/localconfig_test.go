@@ -26,7 +26,7 @@ func TestFilePermission(t *testing.T) {
 	dirPath := "testfolder/"
 
 	err := os.MkdirAll(path.Dir(dirPath), 0o700)
-	require.NoError(t, err, "Could not create argocd folder with 0700 permission: %v", err)
+	require.NoError(t, err, "Could not create athena folder with 0700 permission: %v", err)
 
 	t.Cleanup(func() {
 		err := os.RemoveAll(dirPath)
@@ -124,7 +124,7 @@ const testConfigFilePath = "./testdata/local.config"
 
 func loadOpts(t *testing.T, opts string) {
 	t.Helper()
-	t.Setenv("ARGOCD_OPTS", opts)
+	t.Setenv("ATHENA_OPTS", opts)
 	assert.NoError(t, config.LoadFlags())
 }
 

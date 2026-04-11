@@ -112,7 +112,7 @@ func IsWorse(current, new HealthStatusCode) bool {
 // 		if gvk.Kind == kube.IngressKind {
 // 			return getIngressHealth
 // 		}
-// 	case "argoproj.io":
+// 	case "useryege.io":
 // 		if gvk.Kind == "Workflow" {
 // 			return getArgoWorkflowHealth
 // 		}

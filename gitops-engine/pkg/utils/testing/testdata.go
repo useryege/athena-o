@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	FakeArgoCDNamespace = "fake-argocd-ns"
+	FakeArgoCDNamespace = "fake-athena-ns"
 )
 
 func HelmHook(obj *unstructured.Unstructured, hookType string) *unstructured.Unstructured {
@@ -80,9 +80,9 @@ func NewCRD() *unstructured.Unstructured {
 	return Unstructured(`apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: testcrds.argoproj.io
+  name: testcrds.useryege.io
 spec:
-  group: argoproj.io
+  group: useryege.io
   version: v1
   scope: Namespaced
   names:
