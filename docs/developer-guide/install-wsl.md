@@ -171,6 +171,8 @@ yarn -v
 
 ### 7.3 Install the goreman
 
+Your must install go first
+
 ```bash
 # Install goreman
 go install github.com/mattn/goreman@latest
