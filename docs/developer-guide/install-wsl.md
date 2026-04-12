@@ -89,7 +89,8 @@ That means you are now inside the Linux environment.
 Keep the project in the WSL Linux filesystem and use this path format consistently:
 
 ```bash
-~/work/athena
+mkdir ~/work/athena
+cd ~/work/athena
 ```
 
 Do not use a Windows-mounted path such as:
