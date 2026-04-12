@@ -38,6 +38,12 @@ Expected output looks like this:
   docker-desktop    Running         2
 ```
 
+Set the default connect:
+
+```powershell
+wsl --set-default Ubuntu-24.04
+```
+
 ---
 
 ## 2. Check the Linux Version
