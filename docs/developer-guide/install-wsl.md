@@ -208,7 +208,7 @@ buf --version
 
 ## 8. Open the Project in Cursor
 
-From the WSL terminal, go to the project directory:
+Your must install cursor first. From the WSL terminal, go to the project directory:
 
 ```bash
 cd ~/work/athena
