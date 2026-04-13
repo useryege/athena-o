@@ -3,9 +3,15 @@ package e2e
 import (
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/useryege/athena/cmd/athena/commands/headless"
 	"github.com/useryege/athena/pkg/apiclient/account"
 	"github.com/useryege/athena/pkg/apiclient/session"
+	"github.com/useryege/athena/util/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	// "testing"
 	// "github.com/spf13/cobra"
@@ -19,7 +25,8 @@ import (
 	// . "github.com/useryege/athena/v3/test/e2e/fixture"
 	accountFixture "github.com/useryege/athena/test/e2e/fixture/account"
 	// "github.com/useryege/athena/v3/util/errors"
-	// utilio "github.com/useryege/athena/v3/util/io"
+	. "github.com/useryege/athena/test/e2e/fixture"
+	utilio "github.com/useryege/athena/util/io"
 )
 
 func TestCreateAndUseAccount(t *testing.T) {
@@ -42,103 +49,103 @@ func TestCreateAndUseAccount(t *testing.T) {
 		})
 }
 
-// func TestCanIGetLogsAllow(t *testing.T) {
-// 	ctx := accountFixture.Given(t)
-// 	ctx.
-// 		Name("test").
-// 		Project(ProjectName).
-// 		When().
-// 		Create().
-// 		Login().
-// 		SetPermissions([]ACL{
-// 			{
-// 				Resource: "logs",
-// 				Action:   "get",
-// 				Scope:    ProjectName + "/*",
-// 			},
-// 			{
-// 				Resource: "apps",
-// 				Action:   "get",
-// 				Scope:    ProjectName + "/*",
-// 			},
-// 		}, "log-viewer").
-// 		CanIGetLogs().
-// 		Then().
-// 		AndCLIOutput(func(output string, _ error) {
-// 			assert.Contains(t, output, "yes")
-// 		})
-// }
+func TestCanIGetLogsAllow(t *testing.T) {
+	ctx := accountFixture.Given(t)
+	ctx.
+		Name("test").
+		Project(ProjectName).
+		When().
+		Create().
+		Login().
+		SetPermissions([]ACL{
+			{
+				Resource: "logs",
+				Action:   "get",
+				Scope:    ProjectName + "/*",
+			},
+			{
+				Resource: "apps",
+				Action:   "get",
+				Scope:    ProjectName + "/*",
+			},
+		}, "log-viewer").
+		CanIGetLogs().
+		Then().
+		AndCLIOutput(func(output string, _ error) {
+			assert.Contains(t, output, "yes")
+		})
+}
 
-// func TestCanIGetLogsDeny(t *testing.T) {
-// 	ctx := accountFixture.Given(t)
-// 	ctx.
-// 		Name("test").
-// 		When().
-// 		Create().
-// 		Login().
-// 		CanIGetLogs().
-// 		Then().
-// 		AndCLIOutput(func(output string, _ error) {
-// 			assert.Contains(t, output, "no")
-// 		})
-// }
+func TestCanIGetLogsDeny(t *testing.T) {
+	ctx := accountFixture.Given(t)
+	ctx.
+		Name("test").
+		When().
+		Create().
+		Login().
+		CanIGetLogs().
+		Then().
+		AndCLIOutput(func(output string, _ error) {
+			assert.Contains(t, output, "no")
+		})
+}
 
-// func TestCreateAndUseAccountCLI(t *testing.T) {
-// 	EnsureCleanState(t)
+func TestCreateAndUseAccountCLI(t *testing.T) {
+	EnsureCleanState(t)
 
-// 	output, err := RunCli("account", "list")
-// 	errors.CheckError(err)
+	output, err := RunCli("account", "list")
+	errors.CheckError(err)
 
-// 	assert.Equal(t, `NAME   ENABLED  CAPABILITIES
-// admin  true     login`, output)
+	assert.Equal(t, `NAME   ENABLED  CAPABILITIES
+admin  true     login`, output)
 
-// 	errors.CheckError(SetAccounts(map[string][]string{
-// 		"test": {"login", "apiKey"},
-// 	}))
+	errors.CheckError(SetAccounts(map[string][]string{
+		"test": {"login", "apiKey"},
+	}))
 
-// 	output, err = RunCli("account", "list")
-// 	errors.CheckError(err)
+	output, err = RunCli("account", "list")
+	errors.CheckError(err)
 
-// 	assert.Equal(t, `NAME   ENABLED  CAPABILITIES
-// admin  true     login
-// test   true     login, apiKey`, output)
+	assert.Equal(t, `NAME   ENABLED  CAPABILITIES
+admin  true     login
+test   true     login, apiKey`, output)
 
-// 	token, err := RunCli("account", "generate-token", "--account", "test")
-// 	errors.CheckError(err)
+	token, err := RunCli("account", "generate-token", "--account", "test")
+	errors.CheckError(err)
 
-// 	clientOpts := ArgoCDClientset.ClientOptions()
-// 	clientOpts.AuthToken = token
-// 	testAccountClientset := headless.NewClientOrDie(&clientOpts, &cobra.Command{})
+	clientOpts := ArgoCDClientset.ClientOptions()
+	clientOpts.AuthToken = token
+	testAccountClientset := headless.NewClientOrDie(&clientOpts, &cobra.Command{})
 
-// 	closer, client := testAccountClientset.NewSessionClientOrDie()
-// 	defer utilio.Close(closer)
+	closer, client := testAccountClientset.NewSessionClientOrDie()
+	defer utilio.Close(closer)
 
-// 	info, err := client.GetUserInfo(t.Context(), &session.GetUserInfoRequest{})
-// 	require.NoError(t, err)
+	info, err := client.GetUserInfo(t.Context(), &session.GetUserInfoRequest{})
+	require.NoError(t, err)
 
-// 	assert.Equal(t, "test", info.Username)
-// }
+	assert.Equal(t, "test", info.Username)
+}
 
-// func TestLoginBadCredentials(t *testing.T) {
-// 	EnsureCleanState(t)
+func TestLoginBadCredentials(t *testing.T) {
+	EnsureCleanState(t)
 
-// 	closer, sessionClient := ArgoCDClientset.NewSessionClientOrDie()
-// 	defer utilio.Close(closer)
+	closer, sessionClient := ArgoCDClientset.NewSessionClientOrDie()
+	defer utilio.Close(closer)
 
-// 	requests := []session.SessionCreateRequest{{
-// 		Username: "user-does-not-exist", Password: "some-password",
-// 	}, {
-// 		Username: "admin", Password: "bad-password",
-// 	}}
+	requests := []session.SessionCreateRequest{{
+		Username: "user-does-not-exist", Password: "some-password",
+	}, {
+		Username: "admin", Password: "bad-password",
+	}}
 
-// 	for _, r := range requests {
-// 		_, err := sessionClient.Create(t.Context(), &r)
-// 		require.Error(t, err)
-// 		errStatus, ok := status.FromError(err)
-// 		if !assert.True(t, ok) {
-// 			return
-// 		}
-// 		assert.Equal(t, codes.Unauthenticated, errStatus.Code())
-// 		assert.Equal(t, "Invalid username or password", errStatus.Message())
-// 	}
-// }
+	for _, r := range requests {
+		_, err := sessionClient.Create(t.Context(), &r)
+		require.Error(t, err)
+		errStatus, ok := status.FromError(err)
+		if !assert.True(t, ok) {
+			return
+		}
+		assert.Equal(t, codes.Unauthenticated, errStatus.Code())
+		assert.Equal(t, "Invalid username or password", errStatus.Message())
+	}
+}

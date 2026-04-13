@@ -90,6 +90,7 @@ wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 ```shell
 k3d cluster create athena
+kubectl config set-context --current --namespace=athena
 ```
 
 You can then verify the cluster is reachable with:
