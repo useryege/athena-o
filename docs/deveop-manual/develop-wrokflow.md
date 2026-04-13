@@ -2,29 +2,41 @@
 
 ```mermaid
 flowchart TD
-    A[Requirements Review (Clarification, Estimation, and Scheduling)]
+    %% Development Phase
+    A[Requirements Review<br/>Clarification / Estimation / Scheduling]
     B[Technical Solution Breakdown]
-    C[Test Case Design (Unit Tests and E2E Tests)]
+    C[Test Case Design<br/>Unit Tests / Integration Tests / E2E Tests]
     D[Implementation]
-    E[Validation Testing]
-    F{Meets Acceptance Criteria?}
-    G[Pre-release]
+    E[Validation Testing<br/>Functional / Regression / Fix Verification]
+    F{Acceptance Criteria Met?}
+
+    %% Release Phase
+    G[Pre-release Verification]
     H[Canary Release]
-    I[Monitoring and Retrospective]
+    I{Canary Stable?}
     J[Gradual Full Rollout]
-    K[Monitoring and Retrospective]
+
+    %% Post-release Phase
+    K[Post-release Monitoring]
+    L[Retrospective & Follow-up Actions]
 
     A --> B
     B --> C
     C --> D
     D --> E
     E --> F
+
     F -- No --> C
     F -- Yes --> G
+
     G --> H
     H --> I
-    I --> J
+
+    I -- No --> E
+    I -- Yes --> J
+
     J --> K
+    K --> L
 ```
 
 ## Notes
