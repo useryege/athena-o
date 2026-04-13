@@ -2,22 +2,9 @@
 
 ## Document Metadata
 - Feature name:
-- Feature ID / Ticket:
-- Project:
-- Owner:
-- Collaborators:
 - Priority: `P0 / P1 / P2 / P3`
 - Status: `Draft / In Progress / In Testing / Ready for Release / Released / Closed`
-- Version:
 - Created date:
-- Last updated:
-- Related links:
-  - Requirement doc:
-  - Design doc:
-  - PR / Commit:
-  - Test report:
-  - Release record:
-  - Monitoring dashboard:
 
 ---
 
