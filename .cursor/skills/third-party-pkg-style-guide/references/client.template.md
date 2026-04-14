@@ -5,7 +5,7 @@ Use this file for client state, constructor logic, and shared request helpers.
 Read this template when the package needs a central `Client` type.
 
 ```go
-package <platform>
+package <third-party-name>
 
 import (
 	"context"

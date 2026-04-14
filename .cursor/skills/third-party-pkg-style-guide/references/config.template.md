@@ -3,7 +3,7 @@
 Use this file when constructor input or defaulting logic becomes large enough to deserve its own file.
 
 ```go
-package <platform>
+package <third-party-name>
 
 import (
 	"time"

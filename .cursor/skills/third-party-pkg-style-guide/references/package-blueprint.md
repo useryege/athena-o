@@ -1,15 +1,15 @@
 # Package Blueprint
 
-Use this reference when implementing a reusable Go wrapper for an external platform.
+Use this reference when implementing a reusable Go wrapper for a third-party HTTP service.
 
-The goal is to keep transport details inside `util/<platform>` and expose a small, business-facing API to the rest of the codebase.
+The goal is to keep transport details inside `util/third-party-name` and expose a small, business-facing API to the rest of the codebase.
 
 ## Minimal Layout
 
 Start with the smallest layout that matches the current scope:
 
 ```text
-util/<platform>/
+util/third-party-name/
 ├── config.go
 └── client.go
 ```
@@ -50,7 +50,7 @@ Keep business code limited to typed inputs, typed outputs, and package-defined e
 
 Use this checklist before considering the integration complete:
 
-- The package lives in `util/<platform>`.
+- The package lives in `util/third-party-name`.
 - Business code no longer contains raw platform request construction.
 - Configuration is injected instead of hardcoded.
 - Public methods represent business capabilities, not protocol primitives.
