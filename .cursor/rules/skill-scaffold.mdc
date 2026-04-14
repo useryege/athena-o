@@ -1,0 +1,83 @@
+---
+description: Enforce the required scaffold when creating Cursor skills
+alwaysApply: true
+---
+
+# Skill Scaffold Standard
+
+When creating a Cursor skill, the generated skill directory must use this structure:
+
+```text
+skill-name/
+├── SKILL.md
+├── scripts/
+│   └── .gitkeep
+├── references/
+│   └── .gitkeep
+└── assets/
+    └── .gitkeep
+```
+
+## Requirements
+
+* `SKILL.md` is required.
+* `scripts/`, `references/`, and `assets/` are required even when empty.
+* Empty directories must include a placeholder file such as `.gitkeep`.
+* This scaffold applies to both personal skills and project skills.
+
+## Language Requirements
+
+* Any generated skill content files, including `SKILL.md`, script files, reference documents, and asset-related text metadata, must be written in pure English.
+* Do not generate Chinese or mixed Chinese-English content in these files unless the user explicitly overrides this rule.
+
+## Progressive Disclosure Principle
+
+Apply progressive disclosure when structuring the skill.
+
+* Keep `SKILL.md` focused on the minimum core instructions needed to understand and run the skill.
+* Do not overload `SKILL.md` with large reference material, long examples, or exhaustive edge-case documentation.
+* Put detailed documentation, domain knowledge, schemas, policies, long examples, and specialized guidance into `references/`.
+* Put deterministic or repeatable operations into `scripts/` instead of describing them in excessive procedural detail inside `SKILL.md`.
+* Put templates, boilerplate files, static resources, and output-facing materials into `assets/`.
+* Treat `SKILL.md` as the control layer: it should explain what to do, when to use supporting resources, and how to choose the next step.
+* Supporting files should be consulted only when relevant to the current task.
+* Avoid deeply nested instruction chains. Prefer linking directly from `SKILL.md` to the specific supporting file that should be used.
+* If a skill may grow large, keep `SKILL.md` compact and move expandable detail into dedicated files under `references/`.
+
+## `SKILL.md` Authoring Framework
+
+Use the following structure when generating a new `SKILL.md` file unless the user explicitly requests a different format:
+
+```markdown
+---
+name: your-skill-name
+description: concise lowercase description of what the skill does and when to use it.
+---
+
+# Your Skill Title
+
+## Overview
+Use 1-2 sentences to explain what the skill does.
+
+## Main Section 1
+Describe the core operations, rules, workflow, and decision logic.
+
+## Main Section 2
+Describe the second key capability. Add examples when helpful.
+
+## Resources
+List the reusable resources included in the skill, such as:
+- `scripts/`
+- `references/`
+- `assets/`
+```
+
+## Additional `SKILL.md` Rules
+
+* Keep section names clear and task-oriented.
+* Write procedural guidance as actionable instructions, not vague summaries.
+* Mention reusable assets only when they exist or are intentionally scaffolded for later use.
+* Use `SKILL.md` to describe workflow entry points, decision logic, and resource routing, not to store all possible implementation details.
+* When additional detail is needed, explicitly point to the relevant file in `references/`, `scripts/`, or `assets/`.
+* Keep the main file concise enough to remain readable and maintainable as the skill grows.
+
