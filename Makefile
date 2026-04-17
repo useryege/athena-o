@@ -143,7 +143,6 @@ define run-in-test-server
 		-e ATHENA_TLS_DATA_PATH=${ATHENA_TLS_DATA_PATH:-/tmp/athena-local/tls} \
 		-e ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} \
 		-e ATHENA_GPG_DATA_PATH=${ATHENA_GPG_DATA_PATH:-/tmp/athena-local/gpg/source} \
-		-e ATHENA_APPLICATION_NAMESPACES \
 		-e GITHUB_TOKEN \
 		-v ${DOCKER_SRC_MOUNT} \
 		-v ${GOPATH}/pkg/mod:/go/pkg/mod${VOLUME_MOUNT} \
@@ -393,6 +392,10 @@ verify-kube-connect: test-tools-image
 .PHONY: pre-commit
 pre-commit: codegen build lint test
 
+# Runs pre-commit validation with the local toolchain
+.PHONY: pre-commit-local
+pre-commit-local: codegen-local build-local lint-local test-local
+
 
 .PHONY: serve-docs
 serve-docs:
@@ -410,6 +413,7 @@ start-local: mod-vendor-local dep-ui-local cli-local
 	# check we can connect to Docker to start Redis
 	killall goreman || true
 	kubectl create ns athena || true
+	kubectl config set-context --current --namespace=athena || true
 	rm -rf /tmp/athena-local
 	mkdir -p /tmp/athena-local
 	mkdir -p /tmp/athena-local/gpg/keys && chmod 0700 /tmp/athena-local/gpg/keys
@@ -420,7 +424,6 @@ start-local: mod-vendor-local dep-ui-local cli-local
 	ATHENA_GPG_ENABLED=$(ATHENA_GPG_ENABLED) \
 	BIN_MODE=$(ATHENA_BIN_MODE) \
 	ATHENA_E2E_TEST=false \
-	ATHENA_APPLICATION_NAMESPACES=$(ATHENA_APPLICATION_NAMESPACES) \
 		goreman -f $(ATHENA_PROCFILE) start ${ATHENA_START}
 
 
@@ -542,7 +545,6 @@ start-e2e-local: mod-vendor-local dep-ui-local cli-local
 	ATHENA_ZJWT_FEATURE_FLAG=always \
 	ATHENA_IN_CI=$(ATHENA_IN_CI) \
 	BIN_MODE=$(ATHENA_BIN_MODE) \
-	# ATHENA_APPLICATION_NAMESPACES=athena-e2e-external,athena-e2e-external-2 \
 	# ATHENA_APPLICATIONSET_CONTROLLER_NAMESPACES=athena-e2e-external,athena-e2e-external-2 \
 	# ATHENA_APPLICATIONSET_CONTROLLER_TOKENREF_STRICT_MODE=true \
 	# ATHENA_APPLICATIONSET_CONTROLLER_ALLOWED_SCM_PROVIDERS=http://127.0.0.1:8341,http://127.0.0.1:8342,http://127.0.0.1:8343,http://127.0.0.1:8344 \
