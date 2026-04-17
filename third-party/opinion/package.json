@@ -1,18 +1,22 @@
 {
-  "name": "opinion-clob-sdk",
+  "name": "opinion-sidecar",
   "version": "1.0.0",
   "license": "Apache-2.0",
-  "scripts": {
-    "start": "tsx app.ts"
-  },
   "type": "module",
+  "scripts": {
+    "dev": "tsx watch cmd/server/main.ts",
+    "build": "tsc --project tsconfig.build.json",
+    "start": "tsx cmd/server/main.js"
+  },
   "dependencies": {
-    "@opinion-labs/opinion-clob-sdk": "^0.6.0"
+    "@fastify/sensible": "^6.0.4",
+    "@opinion-labs/opinion-clob-sdk": "^0.6.0",
+    "fastify": "^5.3.3"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
-    "dotenv": "^17.4.2",
+    "@types/node": "^22.19.17",
+    "dotenv": "^16.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "typescript": "^5.8.0"
   }
 }
