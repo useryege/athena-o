@@ -5,8 +5,7 @@ package opinion;
 import "google/protobuf/struct.proto";
 
 // Opinion gRPC surface for `@opinion-labs/opinion-clob-sdk` market, market-data, and trading APIs.
-// Field naming: snake_case in proto; generated TS uses camelCase per ts-proto defaults.
-// See docs/references/sdk-to-proto-market-query.md for mapping rules.
+// Message field names follow the TS SDK and `@opinion-labs/opinion-api` OpenAPI types (camelCase identifiers).
 
 service OpinionService {
   rpc GetMarkets(GetMarketsRequest) returns (GetMarketsResponse);
@@ -79,21 +78,21 @@ enum SdkOrderType {
 // --- Requests ---
 
 message GetMarketsRequest {
-  optional MarketTopicType topic_type = 1;
+  optional MarketTopicType topicType = 1;
   optional int32 page = 2;
   optional int32 limit = 3;
   optional MarketStatusFilter status = 4;
-  optional MarketSortBy sort_by = 5;
+  optional MarketSortBy sortBy = 5;
 }
 
 message GetMarketRequest {
-  // Market / topic id (string to avoid JS Number precision loss on large ids).
-  string market_id = 1;
-  optional bool use_cache = 2;
+  // String decimal so callers avoid JS Number precision loss on large ids; adapters parse to SDK number.
+  string marketId = 1;
+  optional bool useCache = 2;
 }
 
 message GetCategoricalMarketRequest {
-  string market_id = 1;
+  string marketId = 1;
 }
 
 message GetMarketBySlugRequest {
@@ -101,61 +100,61 @@ message GetMarketBySlugRequest {
 }
 
 message GetQuoteTokensRequest {
-  optional bool use_cache = 1;
+  optional bool useCache = 1;
 }
 
 message GetOrderbookRequest {
-  string token_id = 1;
+  string tokenId = 1;
 }
 
 message GetLatestPriceRequest {
-  string token_id = 1;
+  string tokenId = 1;
 }
 
 message GetPriceHistoryRequest {
-  string token_id = 1;
+  string tokenId = 1;
   optional PriceHistoryInterval interval = 2;
-  optional int64 start_at = 3;
-  optional int64 end_at = 4;
+  optional int64 startAt = 3;
+  optional int64 endAt = 4;
 }
 
 message GetFeeRatesRequest {
-  string token_id = 1;
+  string tokenId = 1;
 }
 
 // Mirrors SDK `PlaceOrderDataInput` (`src/models/order.ts`).
 message PlaceOrderData {
-  int32 market_id = 1;
-  string token_id = 2;
+  int32 marketId = 1;
+  string tokenId = 2;
   SdkOrderSide side = 3;
-  SdkOrderType order_type = 4;
+  SdkOrderType orderType = 4;
   string price = 5;
-  optional string maker_amount_in_quote_token = 6;
-  optional string maker_amount_in_base_token = 7;
+  optional string makerAmountInQuoteToken = 6;
+  optional string makerAmountInBaseToken = 7;
 }
 
-// `placeOrder(data, checkApproval)` — `check_approval` is the second SDK argument (default false).
+// `placeOrder(data, checkApproval)` — first RPC field matches the SDK parameter name `data`.
 message PlaceOrderRequest {
-  PlaceOrderData order = 1;
-  optional bool check_approval = 2;
+  PlaceOrderData data = 1;
+  optional bool checkApproval = 2;
 }
 
 message PlaceOrdersBatchRequest {
   repeated PlaceOrderData orders = 1;
-  optional bool check_approval = 2;
+  optional bool checkApproval = 2;
 }
 
 message CancelOrderRequest {
-  string order_id = 1;
+  string orderId = 1;
 }
 
 message CancelOrdersBatchRequest {
-  repeated string order_ids = 1;
+  repeated string orderIds = 1;
 }
 
 // Optional filters match `Client.cancelAllOrders` options; unset means no filter.
 message CancelAllOrdersRequest {
-  optional int32 market_id = 1;
+  optional int32 marketId = 1;
   optional SdkOrderSide side = 2;
 }
 
@@ -165,20 +164,20 @@ message GetMarketsResponse {
   int32 errno = 1;
   string errmsg = 2;
   int32 total = 3;
-  repeated Market markets = 4;
+  repeated Market list = 4;
 }
 
 message GetMarketResponse {
   int32 errno = 1;
   string errmsg = 2;
-  Market market = 3;
+  optional Market data = 3;
 }
 
 message GetQuoteTokensResponse {
   int32 errno = 1;
   string errmsg = 2;
   int32 total = 3;
-  repeated QuoteToken quote_tokens = 4;
+  repeated QuoteToken list = 4;
 }
 
 message GetOrderbookResponse {
@@ -188,7 +187,7 @@ message GetOrderbookResponse {
   repeated OrderbookLevel bids = 4;
   optional string market = 5;
   optional int64 timestamp = 6;
-  optional string token_id = 7;
+  optional string tokenId = 7;
 }
 
 message GetLatestPriceResponse {
@@ -198,7 +197,7 @@ message GetLatestPriceResponse {
   optional string side = 4;
   optional string size = 5;
   optional int64 timestamp = 6;
-  optional string token_id = 7;
+  optional string tokenId = 7;
 }
 
 message GetPriceHistoryResponse {
@@ -207,19 +206,18 @@ message GetPriceHistoryResponse {
   repeated PricePoint history = 3;
 }
 
-// Mirrors chain FeeRateSettings; SDK returns this directly (not ApiResponse).
-// Rates are the SDK-computed max fee percentage (see ContractCaller.getFeeRateSettings).
+// Mirrors chain `FeeRateSettings`; SDK returns this directly (not ApiResponse).
 message GetFeeRatesResponse {
-  double maker_max_fee_rate = 1;
-  double taker_max_fee_rate = 2;
+  double makerMaxFeeRate = 1;
+  double takerMaxFeeRate = 2;
   bool enabled = 3;
 }
 
-// `ApiResponse<CreateOrderResponse>`: flatten `result.orderData` to `order_data` (same as other RPCs flattening `result`).
+// `ApiResponse<CreateOrderResponse>` with `result.orderData` surfaced as `orderData` (flattened like other RPCs).
 message PlaceOrderResponse {
   int32 errno = 1;
   string errmsg = 2;
-  optional OrderApiData order_data = 3;
+  optional OrderApiData orderData = 3;
 }
 
 message PlaceOrdersBatchResponse {
@@ -234,12 +232,11 @@ message PlaceOrderBatchItem {
   optional string error = 4;
 }
 
-// Full SDK `ApiResponse<OpenapiCancelOrderRespOpenApi>` (`errno` / `errmsg` / nested openapi body).
+// Full SDK `ApiResponse<OpenapiCancelOrderRespOpenApi>` (`errno` / `errmsg` / `result` boolean).
 message CancelOrderApiResponse {
   int32 errno = 1;
   string errmsg = 2;
-  // OpenAPI `OpenapiCancelOrderRespOpenApi.result` (boolean). Renamed to avoid confusion with gRPC `result` wrappers.
-  optional bool openapi_cancel_result = 3;
+  optional bool result = 3;
 }
 
 message CancelOrdersBatchResponse {
@@ -255,7 +252,7 @@ message CancelOrderBatchItem {
 
 // Return type of `Client.cancelAllOrders`.
 message CancelAllOrdersResponse {
-  int32 total_orders = 1;
+  int32 totalOrders = 1;
   int32 cancelled = 2;
   int32 failed = 3;
   repeated CancelOrderBatchItem results = 4;
@@ -264,58 +261,58 @@ message CancelAllOrdersResponse {
 // Mirrors `@opinion-labs/opinion-api` `OpenapiTradeDataOpenApi`.
 message OrderTradeApiData {
   optional string amount = 1;
-  optional string chain_id = 2;
-  optional int64 created_at = 3;
+  optional string chainId = 2;
+  optional int64 createdAt = 3;
   optional double fee = 4;
-  optional string fee_formatted = 5;
-  optional int32 market_id = 6;
-  optional string market_title = 7;
-  optional string order_no = 8;
+  optional string feeFormatted = 5;
+  optional int32 marketId = 6;
+  optional string marketTitle = 7;
+  optional string orderNo = 8;
   optional string outcome = 9;
-  optional int32 outcome_side = 10;
-  optional string outcome_side_enum = 11;
+  optional int32 outcomeSide = 10;
+  optional string outcomeSideEnum = 11;
   optional string price = 12;
   optional string profit = 13;
-  optional string quote_token = 14;
-  optional string quote_token_usd_price = 15;
-  optional int32 root_market_id = 16;
-  optional string root_market_title = 17;
+  optional string quoteToken = 14;
+  optional string quoteTokenUsdPrice = 15;
+  optional int32 rootMarketId = 16;
+  optional string rootMarketTitle = 17;
   optional string shares = 18;
   optional string side = 19;
   optional int32 status = 20;
-  optional string status_enum = 21;
-  optional string trade_no = 22;
-  optional string tx_hash = 23;
-  optional string usd_amount = 24;
+  optional string statusEnum = 21;
+  optional string tradeNo = 22;
+  optional string txHash = 23;
+  optional string usdAmount = 24;
 }
 
 // Mirrors `@opinion-labs/opinion-api` `OpenapiOrderDataOpenApi` / SDK create-order payload.
 message OrderApiData {
-  optional int64 created_at = 1;
-  optional int64 expires_at = 2;
-  optional string filled_amount = 3;
-  optional string filled_shares = 4;
-  optional int32 market_id = 5;
-  optional string market_title = 6;
-  optional string order_amount = 7;
-  optional string order_id = 8;
-  optional string order_shares = 9;
+  optional int64 createdAt = 1;
+  optional int64 expiresAt = 2;
+  optional string filledAmount = 3;
+  optional string filledShares = 4;
+  optional int32 marketId = 5;
+  optional string marketTitle = 6;
+  optional string orderAmount = 7;
+  optional string orderId = 8;
+  optional string orderShares = 9;
   optional string outcome = 10;
-  optional int32 outcome_side = 11;
-  optional string outcome_side_enum = 12;
+  optional int32 outcomeSide = 11;
+  optional string outcomeSideEnum = 12;
   optional string price = 13;
   optional string profit = 14;
-  optional string quote_token = 15;
-  optional int32 root_market_id = 16;
-  optional string root_market_title = 17;
+  optional string quoteToken = 15;
+  optional int32 rootMarketId = 16;
+  optional string rootMarketTitle = 17;
   optional int32 side = 18;
-  optional string side_enum = 19;
+  optional string sideEnum = 19;
   optional int32 status = 20;
-  optional string status_enum = 21;
+  optional string statusEnum = 21;
   repeated OrderTradeApiData trades = 22;
-  optional int32 trading_method = 23;
-  optional string trading_method_enum = 24;
-  optional string trans_no = 25;
+  optional int32 tradingMethod = 23;
+  optional string tradingMethodEnum = 24;
+  optional string transNo = 25;
 }
 
 // OpenAPI order book / candle types (@opinion-labs/opinion-api).
@@ -325,69 +322,70 @@ message OrderbookLevel {
   optional string size = 2;
 }
 
+// OpenAPI `OpenapiPricePoint`: `p` (price), `t` (unix seconds).
 message PricePoint {
-  optional string price = 1;
-  optional int64 time_unix_sec = 2;
+  optional string p = 1;
+  optional int64 t = 2;
 }
 
 // --- Domain messages (aligned with SDK transformMarketData / transformChildMarketData output) ---
 
 message Market {
-  string market_id = 1;
-  string market_title = 2;
+  string marketId = 1;
+  string marketTitle = 2;
   string slug = 3;
-  string condition_id = 4;
-  string chain_id = 5;
-  string quote_token = 6;
+  string conditionId = 4;
+  string chainId = 5;
+  string quoteToken = 6;
   int32 status = 7;
-  string status_enum = 8;
+  string statusEnum = 8;
   // API may return unix ms numbers; adapter normalizes to string for stable wire format.
-  string created_at = 9;
-  string cutoff_at = 10;
-  string resolved_at = 11;
-  string yes_token_id = 12;
-  string no_token_id = 13;
-  string result_token_id = 14;
-  string yes_label = 15;
-  string no_label = 16;
+  string createdAt = 9;
+  string cutoffAt = 10;
+  string resolvedAt = 11;
+  string yesTokenId = 12;
+  string noTokenId = 13;
+  string resultTokenId = 14;
+  string yesLabel = 15;
+  string noLabel = 16;
   string volume = 17;
-  bool is_incentivized = 18;
-  repeated ChildMarket child_markets = 19;
-  string question_id = 20;
+  bool isIncentivized = 18;
+  repeated ChildMarket childMarkets = 19;
+  string questionId = 20;
   string rules = 21;
   google.protobuf.Struct collection = 22;
 }
 
 message ChildMarket {
-  string market_id = 1;
-  string market_title = 2;
+  string marketId = 1;
+  string marketTitle = 2;
   string slug = 3;
-  string condition_id = 4;
-  string chain_id = 5;
-  string quote_token = 6;
+  string conditionId = 4;
+  string chainId = 5;
+  string quoteToken = 6;
   int32 status = 7;
-  string status_enum = 8;
-  string created_at = 9;
-  string cutoff_at = 10;
-  string resolved_at = 11;
-  string yes_token_id = 12;
-  string no_token_id = 13;
-  string result_token_id = 14;
-  string yes_label = 15;
-  string no_label = 16;
+  string statusEnum = 8;
+  string createdAt = 9;
+  string cutoffAt = 10;
+  string resolvedAt = 11;
+  string yesTokenId = 12;
+  string noTokenId = 13;
+  string resultTokenId = 14;
+  string yesLabel = 15;
+  string noLabel = 16;
   string volume = 17;
-  string question_id = 18;
+  string questionId = 18;
   string rules = 19;
 }
 
 // Mirrors OpenapiQuoteTokenDataOpenApi / SDK QuoteTokenData.
 message QuoteToken {
-  string chain_id = 1;
-  string created_at = 2;
-  string ctf_exchange_address = 3;
+  string chainId = 1;
+  string createdAt = 2;
+  string ctfExchangeAddress = 3;
   int32 decimal = 4;
   string id = 5;
-  string quote_token_address = 6;
-  string quote_token_name = 7;
+  string quoteTokenAddress = 6;
+  string quoteTokenName = 7;
   string symbol = 8;
 }

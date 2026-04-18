@@ -1,5 +1,6 @@
+import { status as grpcStatus } from '@grpc/grpc-js';
 import type { OpinionServiceServer } from './gen/opinion/opinion.js';
-import { toGrpcError } from './grpc-error.js';
+import { createServiceError, toGrpcError } from './grpc-error.js';
 import { getOpinionClient, assertSdkSuccess } from './client.js';
 import {
   parseGetCategoricalMarketRequest,
@@ -69,6 +70,42 @@ export function createOpinionService(): OpinionServiceServer {
       } catch (error) {
         callback(toGrpcError(error));
       }
+    },
+
+    async getOrderbook(_call, callback) {
+      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'getOrderbook is not implemented'));
+    },
+
+    async getLatestPrice(_call, callback) {
+      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'getLatestPrice is not implemented'));
+    },
+
+    async getPriceHistory(_call, callback) {
+      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'getPriceHistory is not implemented'));
+    },
+
+    async getFeeRates(_call, callback) {
+      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'getFeeRates is not implemented'));
+    },
+
+    async placeOrder(_call, callback) {
+      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'placeOrder is not implemented'));
+    },
+
+    async placeOrdersBatch(_call, callback) {
+      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'placeOrdersBatch is not implemented'));
+    },
+
+    async cancelOrder(_call, callback) {
+      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'cancelOrder is not implemented'));
+    },
+
+    async cancelOrdersBatch(_call, callback) {
+      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'cancelOrdersBatch is not implemented'));
+    },
+
+    async cancelAllOrders(_call, callback) {
+      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'cancelAllOrders is not implemented'));
     },
   };
 }

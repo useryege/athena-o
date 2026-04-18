@@ -95,7 +95,7 @@ function toSdkTopicType(value: MarketTopicType): TopicType {
     case MarketTopicType.MARKET_TOPIC_TYPE_ALL:
       return TopicType.ALL;
     default:
-      throw createServiceError(grpcStatus.INVALID_ARGUMENT, `unsupported topic_type: ${value}`);
+      throw createServiceError(grpcStatus.INVALID_ARGUMENT, `unsupported topicType: ${value}`);
   }
 }
 
@@ -137,14 +137,14 @@ function toSdkSortBy(value: MarketSortBy): TopicSortType {
     case MarketSortBy.MARKET_SORT_BY_VOLUME_7D_ASC:
       return TopicSortType.BY_VOLUME_7D_ASC;
     default:
-      throw createServiceError(grpcStatus.INVALID_ARGUMENT, `unsupported sort_by: ${value}`);
+      throw createServiceError(grpcStatus.INVALID_ARGUMENT, `unsupported sortBy: ${value}`);
   }
 }
 
 // ─── Market id parsing (string → SDK number, safe integer only) ────────────
 
 export function parseMarketIdForSdk(request: GetMarketRequest | GetCategoricalMarketRequest): number {
-  return parseDecimalStringToSafePositiveInt(request.marketId, 'market_id');
+  return parseDecimalStringToSafePositiveInt(request.marketId, 'marketId');
 }
 
 function parseDecimalStringToSafePositiveInt(raw: string, field: string): number {
@@ -199,17 +199,17 @@ export function toGetMarketsResponse(response: SdkApiResponse<SdkMarketListResul
     errno: 0,
     errmsg: '',
     total: typeof result.total === 'number' ? result.total : 0,
-    markets: list.filter(isRecord).map(mapSdkMarketRecordToProto),
+    list: list.filter(isRecord).map(mapSdkMarketRecordToProto),
   });
 }
 
 export function toGetMarketDetailResponse(response: SdkApiResponse<SdkMarketDetailResult>): GetMarketResponse {
   const data = response.result?.data;
-  const market = data && isRecord(data) ? mapSdkMarketRecordToProto(data) : undefined;
+  const marketData = data && isRecord(data) ? mapSdkMarketRecordToProto(data) : undefined;
   return GetMarketResponse.fromPartial({
     errno: 0,
     errmsg: '',
-    market,
+    data: marketData,
   });
 }
 
@@ -222,7 +222,7 @@ export function toGetQuoteTokensResponse(
     errno: 0,
     errmsg: '',
     total: typeof result.total === 'number' ? result.total : 0,
-    quoteTokens: list.filter(isRecord).map(mapSdkQuoteTokenRecordToProto),
+    list: list.filter(isRecord).map(mapSdkQuoteTokenRecordToProto),
   });
 }
 
