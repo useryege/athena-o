@@ -1,6 +1,5 @@
-import { status as grpcStatus } from '@grpc/grpc-js';
 import type { OpinionServiceServer } from './gen/opinion/opinion.js';
-import { createServiceError, toGrpcError } from './grpc-error.js';
+import { toGrpcError } from './grpc-error.js';
 import { getOpinionClient, assertSdkSuccess } from './client.js';
 import {
   parseGetCategoricalMarketRequest,
@@ -8,9 +7,27 @@ import {
   parseGetMarketRequest,
   parseGetMarketsRequest,
   parseGetQuoteTokensRequest,
+  parseGetOrderbookRequest,
+  parseGetLatestPriceRequest,
+  parseGetPriceHistoryRequest,
+  parseGetFeeRatesRequest,
+  parsePlaceOrderRequest,
+  parsePlaceOrdersBatchRequest,
+  parseCancelOrderRequest,
+  parseCancelOrdersBatchRequest,
+  parseCancelAllOrdersRequest,
   toGetMarketDetailResponse,
   toGetMarketsResponse,
   toGetQuoteTokensResponse,
+  toGetOrderbookResponse,
+  toGetLatestPriceResponse,
+  toGetPriceHistoryResponse,
+  toGetFeeRatesResponse,
+  toPlaceOrderResponse,
+  toPlaceOrdersBatchResponse,
+  toCancelOrderApiResponse,
+  toCancelOrdersBatchResponse,
+  toCancelAllOrdersResponse,
 } from './common.js';
 
 export function createOpinionService(): OpinionServiceServer {
@@ -72,40 +89,97 @@ export function createOpinionService(): OpinionServiceServer {
       }
     },
 
-    async getOrderbook(_call, callback) {
-      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'getOrderbook is not implemented'));
+    async getOrderbook(call, callback) {
+      try {
+        const tokenId = parseGetOrderbookRequest(call.request);
+        const response = await client.getOrderbook(tokenId);
+        assertSdkSuccess(response.errno, response.errmsg);
+        callback(null, toGetOrderbookResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
     },
 
-    async getLatestPrice(_call, callback) {
-      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'getLatestPrice is not implemented'));
+    async getLatestPrice(call, callback) {
+      try {
+        const tokenId = parseGetLatestPriceRequest(call.request);
+        const response = await client.getLatestPrice(tokenId);
+        assertSdkSuccess(response.errno, response.errmsg);
+        callback(null, toGetLatestPriceResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
     },
 
-    async getPriceHistory(_call, callback) {
-      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'getPriceHistory is not implemented'));
+    async getPriceHistory(call, callback) {
+      try {
+        const { tokenId, options } = parseGetPriceHistoryRequest(call.request);
+        const response = await client.getPriceHistory(tokenId, options);
+        assertSdkSuccess(response.errno, response.errmsg);
+        callback(null, toGetPriceHistoryResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
     },
 
-    async getFeeRates(_call, callback) {
-      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'getFeeRates is not implemented'));
+    async getFeeRates(call, callback) {
+      try {
+        const tokenId = parseGetFeeRatesRequest(call.request);
+        const settings = await client.getFeeRates(tokenId);
+        callback(null, toGetFeeRatesResponse(settings));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
     },
 
-    async placeOrder(_call, callback) {
-      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'placeOrder is not implemented'));
+    async placeOrder(call, callback) {
+      try {
+        const { data, checkApproval } = parsePlaceOrderRequest(call.request);
+        const response = await client.placeOrder(data, checkApproval);
+        callback(null, toPlaceOrderResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
     },
 
-    async placeOrdersBatch(_call, callback) {
-      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'placeOrdersBatch is not implemented'));
+    async placeOrdersBatch(call, callback) {
+      try {
+        const { orders, checkApproval } = parsePlaceOrdersBatchRequest(call.request);
+        const results = await client.placeOrdersBatch(orders, checkApproval);
+        callback(null, toPlaceOrdersBatchResponse(results));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
     },
 
-    async cancelOrder(_call, callback) {
-      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'cancelOrder is not implemented'));
+    async cancelOrder(call, callback) {
+      try {
+        const orderId = parseCancelOrderRequest(call.request);
+        const response = await client.cancelOrder(orderId);
+        callback(null, toCancelOrderApiResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
     },
 
-    async cancelOrdersBatch(_call, callback) {
-      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'cancelOrdersBatch is not implemented'));
+    async cancelOrdersBatch(call, callback) {
+      try {
+        const orderIds = parseCancelOrdersBatchRequest(call.request);
+        const results = await client.cancelOrdersBatch(orderIds);
+        callback(null, toCancelOrdersBatchResponse(results));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
     },
 
-    async cancelAllOrders(_call, callback) {
-      callback(createServiceError(grpcStatus.UNIMPLEMENTED, 'cancelAllOrders is not implemented'));
+    async cancelAllOrders(call, callback) {
+      try {
+        const options = parseCancelAllOrdersRequest(call.request);
+        const result = await client.cancelAllOrders(options);
+        callback(null, toCancelAllOrdersResponse(result));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
     },
   };
 }

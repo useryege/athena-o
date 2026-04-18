@@ -1,4 +1,4 @@
-import { InvalidParamError } from '@opinion-labs/opinion-clob-sdk';
+import { InvalidParamError, OpenApiError } from '@opinion-labs/opinion-clob-sdk';
 import type { ServiceError } from '@grpc/grpc-js';
 import { status as grpcStatus } from '@grpc/grpc-js';
 
@@ -16,6 +16,10 @@ export function toGrpcError(error: unknown): ServiceError {
 
   if (error instanceof InvalidParamError) {
     return createServiceError(grpcStatus.INVALID_ARGUMENT, error.message);
+  }
+
+  if (error instanceof OpenApiError) {
+    return createServiceError(grpcStatus.INTERNAL, error.message);
   }
 
   if (error instanceof Error) {
