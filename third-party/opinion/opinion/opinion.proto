@@ -22,6 +22,20 @@ service OpinionService {
   rpc CancelOrder(CancelOrderRequest) returns (CancelOrderApiResponse);
   rpc CancelOrdersBatch(CancelOrdersBatchRequest) returns (CancelOrdersBatchResponse);
   rpc CancelAllOrders(CancelAllOrdersRequest) returns (CancelAllOrdersResponse);
+
+  // User & wallet (`Client.getMy*` / `getUserAuth`).
+  rpc GetMyOrders(GetMyOrdersRequest) returns (GetMyOrdersResponse);
+  rpc GetOrderById(GetOrderByIdRequest) returns (GetOrderByIdResponse);
+  rpc GetMyBalances(GetMyBalancesRequest) returns (GetMyBalancesResponse);
+  rpc GetMyPositions(GetMyPositionsRequest) returns (GetMyPositionsResponse);
+  rpc GetMyTrades(GetMyTradesRequest) returns (GetMyTradesResponse);
+  rpc GetUserAuth(GetUserAuthRequest) returns (GetUserAuthResponse);
+
+  // On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — return type is SDK `TransactionResult`.
+  rpc EnableTrading(EnableTradingRequest) returns (TransactionResult);
+  rpc Split(SplitRequest) returns (TransactionResult);
+  rpc Merge(MergeRequest) returns (TransactionResult);
+  rpc Redeem(RedeemRequest) returns (TransactionResult);
 }
 
 // --- Enums (proto numbers are stable; map to SDK enums in adapters) ---
@@ -158,6 +172,55 @@ message CancelAllOrdersRequest {
   optional SdkOrderSide side = 2;
 }
 
+// `getMyOrders(options)` — field names match the options object (`src/client.ts`).
+message GetMyOrdersRequest {
+  optional int32 marketId = 1;
+  optional string status = 2;
+  optional int32 page = 3;
+  optional int32 limit = 4;
+}
+
+message GetOrderByIdRequest {
+  string orderId = 1;
+}
+
+message GetMyBalancesRequest {}
+
+// `getMyPositions` / `getMyTrades` options.
+message GetMyPositionsRequest {
+  optional int32 marketId = 1;
+  optional int32 page = 2;
+  optional int32 limit = 3;
+}
+
+message GetMyTradesRequest {
+  optional int32 marketId = 1;
+  optional int32 page = 2;
+  optional int32 limit = 3;
+}
+
+message GetUserAuthRequest {}
+
+message EnableTradingRequest {}
+
+// `split` / `merge(marketId, amount, checkApproval?)`.
+message SplitRequest {
+  int32 marketId = 1;
+  string amount = 2;
+  optional bool checkApproval = 3;
+}
+
+message MergeRequest {
+  int32 marketId = 1;
+  string amount = 2;
+  optional bool checkApproval = 3;
+}
+
+message RedeemRequest {
+  int32 marketId = 1;
+  optional bool checkApproval = 2;
+}
+
 // --- Responses (errno/errmsg mirror SDK ApiResponse; omitted fields mean unset in partial updates) ---
 
 message GetMarketsResponse {
@@ -256,6 +319,126 @@ message CancelAllOrdersResponse {
   int32 cancelled = 2;
   int32 failed = 3;
   repeated CancelOrderBatchItem results = 4;
+}
+
+// `ApiResponse<OpenapiOrderListRespOpenApi>` flattened (`errno` / `errmsg` / `total` / `list`).
+message GetMyOrdersResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  optional int32 total = 3;
+  repeated OrderApiData list = 4;
+}
+
+// `ApiResponse<OpenapiOrderDetailRespOpenApi>` flattened (`errno` / `errmsg` / `orderData`).
+message GetOrderByIdResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  optional OrderApiData orderData = 3;
+}
+
+// `OpenapiQuoteTokenBalance` (`@opinion-labs/opinion-api` `types.gen.ts`).
+message QuoteTokenBalance {
+  optional string availableBalance = 1;
+  optional string frozenBalance = 2;
+  optional string quoteToken = 3;
+  optional int32 tokenDecimals = 4;
+  optional string totalBalance = 5;
+}
+
+// `ApiResponse<OpenapiBalanceRespOpenApi>` flattened.
+message GetMyBalancesResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  repeated QuoteTokenBalance balances = 3;
+  optional string chainId = 4;
+  optional string multiSignAddress = 5;
+  optional string walletAddress = 6;
+}
+
+// `OpenapiPositionDataOpenApi`.
+message PositionApiData {
+  optional string avgEntryPrice = 1;
+  optional int32 claimStatus = 2;
+  optional string claimStatusEnum = 3;
+  optional string conditionId = 4;
+  optional string currentValueInQuoteToken = 5;
+  optional string dailyPnlChange = 6;
+  optional string dailyPnlChangePercent = 7;
+  optional int64 marketCutoffAt = 8;
+  optional int32 marketId = 9;
+  optional int32 marketStatus = 10;
+  optional string marketStatusEnum = 11;
+  optional string marketTitle = 12;
+  optional string outcome = 13;
+  optional int32 outcomeSide = 14;
+  optional string outcomeSideEnum = 15;
+  optional string quoteToken = 16;
+  optional int32 rootMarketId = 17;
+  optional string rootMarketTitle = 18;
+  optional string sharesFrozen = 19;
+  optional string sharesOwned = 20;
+  optional string tokenId = 21;
+  optional string unrealizedPnl = 22;
+  optional string unrealizedPnlPercent = 23;
+}
+
+// `ApiResponse<OpenapiPositionsRespOpenApi>` flattened.
+message GetMyPositionsResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  optional int32 total = 3;
+  repeated PositionApiData list = 4;
+}
+
+// Runtime shape after `getMyTrades` post-processing: `fee` is set from `feeFormatted` (string) and `feeFormatted` is removed.
+message UserTradeApiData {
+  optional string amount = 1;
+  optional string chainId = 2;
+  optional int64 createdAt = 3;
+  optional string fee = 4;
+  optional int32 marketId = 5;
+  optional string marketTitle = 6;
+  optional string orderNo = 7;
+  optional string outcome = 8;
+  optional int32 outcomeSide = 9;
+  optional string outcomeSideEnum = 10;
+  optional string price = 11;
+  optional string profit = 12;
+  optional string quoteToken = 13;
+  optional string quoteTokenUsdPrice = 14;
+  optional int32 rootMarketId = 15;
+  optional string rootMarketTitle = 16;
+  optional string shares = 17;
+  optional string side = 18;
+  optional int32 status = 19;
+  optional string statusEnum = 20;
+  optional string tradeNo = 21;
+  optional string txHash = 22;
+  optional string usdAmount = 23;
+}
+
+// `ApiResponse<OpenapiTradeListRespOpenApi>` flattened; list items match `UserTradeApiData` (SDK-transformed trades).
+message GetMyTradesResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  optional int32 total = 3;
+  repeated UserTradeApiData list = 4;
+}
+
+// `ApiResponse<V2GetApiKeyResp>` flattened (`walletUsers` matches OpenAPI map).
+message GetUserAuthResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  optional string apiKey = 3;
+  optional string walletAddress = 4;
+  map<string, string> walletUsers = 5;
+}
+
+// SDK `TransactionResult` (`src/chain/contract_caller.ts`); returned by `enableTrading`, `split`, `merge`, `redeem`.
+message TransactionResult {
+  optional string txHash = 1;
+  optional string safeTxHash = 2;
+  optional string returnValue = 3;
 }
 
 // Mirrors `@opinion-labs/opinion-api` `OpenapiTradeDataOpenApi`.
