@@ -6,10 +6,14 @@
   "scripts": {
     "dev": "tsx watch cmd/server/main.ts",
     "build": "tsc --project tsconfig.build.json",
-    "start": "tsx cmd/server/main.js"
+    "start": "node dist/cmd/server/main.js",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "grpc:test": "tsx scripts/get-markets.ts"
   },
   "dependencies": {
     "@fastify/sensible": "^6.0.4",
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.0",
     "@opinion-labs/opinion-clob-sdk": "^0.6.0",
     "fastify": "^5.3.3"
   },

@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package opinion.v1;
+
+service OpinionService {
+  rpc GetMarkets(GetMarketsRequest) returns (GetMarketsResponse);
+}
+
+enum MarketTopicType {
+  MARKET_TOPIC_TYPE_UNSPECIFIED = 0;
+  MARKET_TOPIC_TYPE_BINARY = 1;
+  MARKET_TOPIC_TYPE_CATEGORICAL = 2;
+  MARKET_TOPIC_TYPE_ALL = 3;
+}
+
+enum MarketStatusFilter {
+  MARKET_STATUS_FILTER_UNSPECIFIED = 0;
+  MARKET_STATUS_FILTER_ALL = 1;
+  MARKET_STATUS_FILTER_ACTIVATED = 2;
+  MARKET_STATUS_FILTER_RESOLVED = 3;
+}
+
+enum MarketSortBy {
+  MARKET_SORT_BY_UNSPECIFIED = 0;
+  MARKET_SORT_BY_TIME_DESC = 1;
+  MARKET_SORT_BY_CUTOFF_TIME_ASC = 2;
+  MARKET_SORT_BY_VOLUME_DESC = 3;
+  MARKET_SORT_BY_VOLUME_ASC = 4;
+  MARKET_SORT_BY_VOLUME_24H_DESC = 5;
+  MARKET_SORT_BY_VOLUME_24H_ASC = 6;
+  MARKET_SORT_BY_VOLUME_7D_DESC = 7;
+  MARKET_SORT_BY_VOLUME_7D_ASC = 8;
+}
+
+message GetMarketsRequest {
+  MarketTopicType topic_type = 1;
+  int32 page = 2;
+  int32 limit = 3;
+  MarketStatusFilter status = 4;
+  MarketSortBy sort_by = 5;
+}
+
+message GetMarketsResponse {
+  int32 total = 1;
+  repeated Market markets = 2;
+}
+
+message Market {
+  uint64 market_id = 1;
+  string market_title = 2;
+  string slug = 3;
+  string condition_id = 4;
+  string chain_id = 5;
+  string quote_token = 6;
+  int32 status = 7;
+  string status_enum = 8;
+  string created_at = 9;
+  string cutoff_at = 10;
+  string resolved_at = 11;
+  string yes_token_id = 12;
+  string no_token_id = 13;
+  string result_token_id = 14;
+  string yes_label = 15;
+  string no_label = 16;
+  string volume = 17;
+  bool is_incentivized = 18;
+  repeated Market child_markets = 19;
+}
