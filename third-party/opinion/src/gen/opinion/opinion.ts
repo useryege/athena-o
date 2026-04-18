@@ -187,6 +187,138 @@ export function marketSortByToJSON(object: MarketSortBy): string {
   }
 }
 
+/** Maps to SDK getPriceHistory `interval`; UNSPECIFIED → omit so SDK defaults to 1h. */
+export enum PriceHistoryInterval {
+  PRICE_HISTORY_INTERVAL_UNSPECIFIED = 0,
+  PRICE_HISTORY_INTERVAL_1M = 1,
+  PRICE_HISTORY_INTERVAL_1H = 2,
+  PRICE_HISTORY_INTERVAL_1D = 3,
+  PRICE_HISTORY_INTERVAL_1W = 4,
+  PRICE_HISTORY_INTERVAL_MAX = 5,
+  UNRECOGNIZED = -1,
+}
+
+export function priceHistoryIntervalFromJSON(object: any): PriceHistoryInterval {
+  switch (object) {
+    case 0:
+    case "PRICE_HISTORY_INTERVAL_UNSPECIFIED":
+      return PriceHistoryInterval.PRICE_HISTORY_INTERVAL_UNSPECIFIED;
+    case 1:
+    case "PRICE_HISTORY_INTERVAL_1M":
+      return PriceHistoryInterval.PRICE_HISTORY_INTERVAL_1M;
+    case 2:
+    case "PRICE_HISTORY_INTERVAL_1H":
+      return PriceHistoryInterval.PRICE_HISTORY_INTERVAL_1H;
+    case 3:
+    case "PRICE_HISTORY_INTERVAL_1D":
+      return PriceHistoryInterval.PRICE_HISTORY_INTERVAL_1D;
+    case 4:
+    case "PRICE_HISTORY_INTERVAL_1W":
+      return PriceHistoryInterval.PRICE_HISTORY_INTERVAL_1W;
+    case 5:
+    case "PRICE_HISTORY_INTERVAL_MAX":
+      return PriceHistoryInterval.PRICE_HISTORY_INTERVAL_MAX;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return PriceHistoryInterval.UNRECOGNIZED;
+  }
+}
+
+export function priceHistoryIntervalToJSON(object: PriceHistoryInterval): string {
+  switch (object) {
+    case PriceHistoryInterval.PRICE_HISTORY_INTERVAL_UNSPECIFIED:
+      return "PRICE_HISTORY_INTERVAL_UNSPECIFIED";
+    case PriceHistoryInterval.PRICE_HISTORY_INTERVAL_1M:
+      return "PRICE_HISTORY_INTERVAL_1M";
+    case PriceHistoryInterval.PRICE_HISTORY_INTERVAL_1H:
+      return "PRICE_HISTORY_INTERVAL_1H";
+    case PriceHistoryInterval.PRICE_HISTORY_INTERVAL_1D:
+      return "PRICE_HISTORY_INTERVAL_1D";
+    case PriceHistoryInterval.PRICE_HISTORY_INTERVAL_1W:
+      return "PRICE_HISTORY_INTERVAL_1W";
+    case PriceHistoryInterval.PRICE_HISTORY_INTERVAL_MAX:
+      return "PRICE_HISTORY_INTERVAL_MAX";
+    case PriceHistoryInterval.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/** SDK `OrderSide` (`src/models/enums.ts`). */
+export enum SdkOrderSide {
+  SDK_ORDER_SIDE_BUY = 0,
+  SDK_ORDER_SIDE_SELL = 1,
+  UNRECOGNIZED = -1,
+}
+
+export function sdkOrderSideFromJSON(object: any): SdkOrderSide {
+  switch (object) {
+    case 0:
+    case "SDK_ORDER_SIDE_BUY":
+      return SdkOrderSide.SDK_ORDER_SIDE_BUY;
+    case 1:
+    case "SDK_ORDER_SIDE_SELL":
+      return SdkOrderSide.SDK_ORDER_SIDE_SELL;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return SdkOrderSide.UNRECOGNIZED;
+  }
+}
+
+export function sdkOrderSideToJSON(object: SdkOrderSide): string {
+  switch (object) {
+    case SdkOrderSide.SDK_ORDER_SIDE_BUY:
+      return "SDK_ORDER_SIDE_BUY";
+    case SdkOrderSide.SDK_ORDER_SIDE_SELL:
+      return "SDK_ORDER_SIDE_SELL";
+    case SdkOrderSide.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/** SDK `OrderType` (`src/models/enums.ts`). 0 reserved / do not use for valid orders. */
+export enum SdkOrderType {
+  SDK_ORDER_TYPE_UNSPECIFIED = 0,
+  SDK_ORDER_TYPE_MARKET_ORDER = 1,
+  SDK_ORDER_TYPE_LIMIT_ORDER = 2,
+  UNRECOGNIZED = -1,
+}
+
+export function sdkOrderTypeFromJSON(object: any): SdkOrderType {
+  switch (object) {
+    case 0:
+    case "SDK_ORDER_TYPE_UNSPECIFIED":
+      return SdkOrderType.SDK_ORDER_TYPE_UNSPECIFIED;
+    case 1:
+    case "SDK_ORDER_TYPE_MARKET_ORDER":
+      return SdkOrderType.SDK_ORDER_TYPE_MARKET_ORDER;
+    case 2:
+    case "SDK_ORDER_TYPE_LIMIT_ORDER":
+      return SdkOrderType.SDK_ORDER_TYPE_LIMIT_ORDER;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return SdkOrderType.UNRECOGNIZED;
+  }
+}
+
+export function sdkOrderTypeToJSON(object: SdkOrderType): string {
+  switch (object) {
+    case SdkOrderType.SDK_ORDER_TYPE_UNSPECIFIED:
+      return "SDK_ORDER_TYPE_UNSPECIFIED";
+    case SdkOrderType.SDK_ORDER_TYPE_MARKET_ORDER:
+      return "SDK_ORDER_TYPE_MARKET_ORDER";
+    case SdkOrderType.SDK_ORDER_TYPE_LIMIT_ORDER:
+      return "SDK_ORDER_TYPE_LIMIT_ORDER";
+    case SdkOrderType.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 export interface GetMarketsRequest {
   topicType?: MarketTopicType | undefined;
   page?: number | undefined;
@@ -213,6 +345,61 @@ export interface GetQuoteTokensRequest {
   useCache?: boolean | undefined;
 }
 
+export interface GetOrderbookRequest {
+  tokenId: string;
+}
+
+export interface GetLatestPriceRequest {
+  tokenId: string;
+}
+
+export interface GetPriceHistoryRequest {
+  tokenId: string;
+  interval?: PriceHistoryInterval | undefined;
+  startAt?: string | undefined;
+  endAt?: string | undefined;
+}
+
+export interface GetFeeRatesRequest {
+  tokenId: string;
+}
+
+/** Mirrors SDK `PlaceOrderDataInput` (`src/models/order.ts`). */
+export interface PlaceOrderData {
+  marketId: number;
+  tokenId: string;
+  side: SdkOrderSide;
+  orderType: SdkOrderType;
+  price: string;
+  makerAmountInQuoteToken?: string | undefined;
+  makerAmountInBaseToken?: string | undefined;
+}
+
+/** `placeOrder(data, checkApproval)` — `check_approval` is the second SDK argument (default false). */
+export interface PlaceOrderRequest {
+  order: PlaceOrderData | undefined;
+  checkApproval?: boolean | undefined;
+}
+
+export interface PlaceOrdersBatchRequest {
+  orders: PlaceOrderData[];
+  checkApproval?: boolean | undefined;
+}
+
+export interface CancelOrderRequest {
+  orderId: string;
+}
+
+export interface CancelOrdersBatchRequest {
+  orderIds: string[];
+}
+
+/** Optional filters match `Client.cancelAllOrders` options; unset means no filter. */
+export interface CancelAllOrdersRequest {
+  marketId?: number | undefined;
+  side?: SdkOrderSide | undefined;
+}
+
 export interface GetMarketsResponse {
   errno: number;
   errmsg: string;
@@ -231,6 +418,155 @@ export interface GetQuoteTokensResponse {
   errmsg: string;
   total: number;
   quoteTokens: QuoteToken[];
+}
+
+export interface GetOrderbookResponse {
+  errno: number;
+  errmsg: string;
+  asks: OrderbookLevel[];
+  bids: OrderbookLevel[];
+  market?: string | undefined;
+  timestamp?: string | undefined;
+  tokenId?: string | undefined;
+}
+
+export interface GetLatestPriceResponse {
+  errno: number;
+  errmsg: string;
+  price?: string | undefined;
+  side?: string | undefined;
+  size?: string | undefined;
+  timestamp?: string | undefined;
+  tokenId?: string | undefined;
+}
+
+export interface GetPriceHistoryResponse {
+  errno: number;
+  errmsg: string;
+  history: PricePoint[];
+}
+
+/**
+ * Mirrors chain FeeRateSettings; SDK returns this directly (not ApiResponse).
+ * Rates are the SDK-computed max fee percentage (see ContractCaller.getFeeRateSettings).
+ */
+export interface GetFeeRatesResponse {
+  makerMaxFeeRate: number;
+  takerMaxFeeRate: number;
+  enabled: boolean;
+}
+
+/** `ApiResponse<CreateOrderResponse>`: flatten `result.orderData` to `order_data` (same as other RPCs flattening `result`). */
+export interface PlaceOrderResponse {
+  errno: number;
+  errmsg: string;
+  orderData?: OrderApiData | undefined;
+}
+
+export interface PlaceOrdersBatchResponse {
+  items: PlaceOrderBatchItem[];
+}
+
+/** One entry per input order; `result` is the full SDK `ApiResponse<CreateOrderResponse>` shape. */
+export interface PlaceOrderBatchItem {
+  index: number;
+  success: boolean;
+  result?: PlaceOrderResponse | undefined;
+  error?: string | undefined;
+}
+
+/** Full SDK `ApiResponse<OpenapiCancelOrderRespOpenApi>` (`errno` / `errmsg` / nested openapi body). */
+export interface CancelOrderApiResponse {
+  errno: number;
+  errmsg: string;
+  /** OpenAPI `OpenapiCancelOrderRespOpenApi.result` (boolean). Renamed to avoid confusion with gRPC `result` wrappers. */
+  openapiCancelResult?: boolean | undefined;
+}
+
+export interface CancelOrdersBatchResponse {
+  items: CancelOrderBatchItem[];
+}
+
+export interface CancelOrderBatchItem {
+  index: number;
+  success: boolean;
+  result?: CancelOrderApiResponse | undefined;
+  error?: string | undefined;
+}
+
+/** Return type of `Client.cancelAllOrders`. */
+export interface CancelAllOrdersResponse {
+  totalOrders: number;
+  cancelled: number;
+  failed: number;
+  results: CancelOrderBatchItem[];
+}
+
+/** Mirrors `@opinion-labs/opinion-api` `OpenapiTradeDataOpenApi`. */
+export interface OrderTradeApiData {
+  amount?: string | undefined;
+  chainId?: string | undefined;
+  createdAt?: string | undefined;
+  fee?: number | undefined;
+  feeFormatted?: string | undefined;
+  marketId?: number | undefined;
+  marketTitle?: string | undefined;
+  orderNo?: string | undefined;
+  outcome?: string | undefined;
+  outcomeSide?: number | undefined;
+  outcomeSideEnum?: string | undefined;
+  price?: string | undefined;
+  profit?: string | undefined;
+  quoteToken?: string | undefined;
+  quoteTokenUsdPrice?: string | undefined;
+  rootMarketId?: number | undefined;
+  rootMarketTitle?: string | undefined;
+  shares?: string | undefined;
+  side?: string | undefined;
+  status?: number | undefined;
+  statusEnum?: string | undefined;
+  tradeNo?: string | undefined;
+  txHash?: string | undefined;
+  usdAmount?: string | undefined;
+}
+
+/** Mirrors `@opinion-labs/opinion-api` `OpenapiOrderDataOpenApi` / SDK create-order payload. */
+export interface OrderApiData {
+  createdAt?: string | undefined;
+  expiresAt?: string | undefined;
+  filledAmount?: string | undefined;
+  filledShares?: string | undefined;
+  marketId?: number | undefined;
+  marketTitle?: string | undefined;
+  orderAmount?: string | undefined;
+  orderId?: string | undefined;
+  orderShares?: string | undefined;
+  outcome?: string | undefined;
+  outcomeSide?: number | undefined;
+  outcomeSideEnum?: string | undefined;
+  price?: string | undefined;
+  profit?: string | undefined;
+  quoteToken?: string | undefined;
+  rootMarketId?: number | undefined;
+  rootMarketTitle?: string | undefined;
+  side?: number | undefined;
+  sideEnum?: string | undefined;
+  status?: number | undefined;
+  statusEnum?: string | undefined;
+  trades: OrderTradeApiData[];
+  tradingMethod?: number | undefined;
+  tradingMethodEnum?: string | undefined;
+  transNo?: string | undefined;
+}
+
+export interface OrderbookLevel {
+  price?: string | undefined;
+  size?: string | undefined;
+}
+
+export interface PricePoint {
+  price?: string | undefined;
+  timeUnixSec?: string | undefined;
 }
 
 export interface Market {
@@ -695,6 +1031,872 @@ export const GetQuoteTokensRequest: MessageFns<GetQuoteTokensRequest> = {
   },
 };
 
+function createBaseGetOrderbookRequest(): GetOrderbookRequest {
+  return { tokenId: "" };
+}
+
+export const GetOrderbookRequest: MessageFns<GetOrderbookRequest> = {
+  encode(message: GetOrderbookRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.tokenId !== "") {
+      writer.uint32(10).string(message.tokenId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetOrderbookRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetOrderbookRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.tokenId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetOrderbookRequest {
+    return {
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : "",
+    };
+  },
+
+  toJSON(message: GetOrderbookRequest): unknown {
+    const obj: any = {};
+    if (message.tokenId !== "") {
+      obj.tokenId = message.tokenId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetOrderbookRequest>, I>>(base?: I): GetOrderbookRequest {
+    return GetOrderbookRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetOrderbookRequest>, I>>(object: I): GetOrderbookRequest {
+    const message = createBaseGetOrderbookRequest();
+    message.tokenId = object.tokenId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetLatestPriceRequest(): GetLatestPriceRequest {
+  return { tokenId: "" };
+}
+
+export const GetLatestPriceRequest: MessageFns<GetLatestPriceRequest> = {
+  encode(message: GetLatestPriceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.tokenId !== "") {
+      writer.uint32(10).string(message.tokenId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetLatestPriceRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetLatestPriceRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.tokenId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetLatestPriceRequest {
+    return {
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : "",
+    };
+  },
+
+  toJSON(message: GetLatestPriceRequest): unknown {
+    const obj: any = {};
+    if (message.tokenId !== "") {
+      obj.tokenId = message.tokenId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetLatestPriceRequest>, I>>(base?: I): GetLatestPriceRequest {
+    return GetLatestPriceRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetLatestPriceRequest>, I>>(object: I): GetLatestPriceRequest {
+    const message = createBaseGetLatestPriceRequest();
+    message.tokenId = object.tokenId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetPriceHistoryRequest(): GetPriceHistoryRequest {
+  return { tokenId: "", interval: undefined, startAt: undefined, endAt: undefined };
+}
+
+export const GetPriceHistoryRequest: MessageFns<GetPriceHistoryRequest> = {
+  encode(message: GetPriceHistoryRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.tokenId !== "") {
+      writer.uint32(10).string(message.tokenId);
+    }
+    if (message.interval !== undefined) {
+      writer.uint32(16).int32(message.interval);
+    }
+    if (message.startAt !== undefined) {
+      writer.uint32(24).int64(message.startAt);
+    }
+    if (message.endAt !== undefined) {
+      writer.uint32(32).int64(message.endAt);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetPriceHistoryRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetPriceHistoryRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.tokenId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.interval = reader.int32() as any;
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.startAt = reader.int64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.endAt = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetPriceHistoryRequest {
+    return {
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : "",
+      interval: isSet(object.interval) ? priceHistoryIntervalFromJSON(object.interval) : undefined,
+      startAt: isSet(object.startAt)
+        ? globalThis.String(object.startAt)
+        : isSet(object.start_at)
+        ? globalThis.String(object.start_at)
+        : undefined,
+      endAt: isSet(object.endAt)
+        ? globalThis.String(object.endAt)
+        : isSet(object.end_at)
+        ? globalThis.String(object.end_at)
+        : undefined,
+    };
+  },
+
+  toJSON(message: GetPriceHistoryRequest): unknown {
+    const obj: any = {};
+    if (message.tokenId !== "") {
+      obj.tokenId = message.tokenId;
+    }
+    if (message.interval !== undefined) {
+      obj.interval = priceHistoryIntervalToJSON(message.interval);
+    }
+    if (message.startAt !== undefined) {
+      obj.startAt = message.startAt;
+    }
+    if (message.endAt !== undefined) {
+      obj.endAt = message.endAt;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetPriceHistoryRequest>, I>>(base?: I): GetPriceHistoryRequest {
+    return GetPriceHistoryRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetPriceHistoryRequest>, I>>(object: I): GetPriceHistoryRequest {
+    const message = createBaseGetPriceHistoryRequest();
+    message.tokenId = object.tokenId ?? "";
+    message.interval = object.interval ?? undefined;
+    message.startAt = object.startAt ?? undefined;
+    message.endAt = object.endAt ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetFeeRatesRequest(): GetFeeRatesRequest {
+  return { tokenId: "" };
+}
+
+export const GetFeeRatesRequest: MessageFns<GetFeeRatesRequest> = {
+  encode(message: GetFeeRatesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.tokenId !== "") {
+      writer.uint32(10).string(message.tokenId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetFeeRatesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetFeeRatesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.tokenId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetFeeRatesRequest {
+    return {
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : "",
+    };
+  },
+
+  toJSON(message: GetFeeRatesRequest): unknown {
+    const obj: any = {};
+    if (message.tokenId !== "") {
+      obj.tokenId = message.tokenId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetFeeRatesRequest>, I>>(base?: I): GetFeeRatesRequest {
+    return GetFeeRatesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetFeeRatesRequest>, I>>(object: I): GetFeeRatesRequest {
+    const message = createBaseGetFeeRatesRequest();
+    message.tokenId = object.tokenId ?? "";
+    return message;
+  },
+};
+
+function createBasePlaceOrderData(): PlaceOrderData {
+  return {
+    marketId: 0,
+    tokenId: "",
+    side: 0,
+    orderType: 0,
+    price: "",
+    makerAmountInQuoteToken: undefined,
+    makerAmountInBaseToken: undefined,
+  };
+}
+
+export const PlaceOrderData: MessageFns<PlaceOrderData> = {
+  encode(message: PlaceOrderData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== 0) {
+      writer.uint32(8).int32(message.marketId);
+    }
+    if (message.tokenId !== "") {
+      writer.uint32(18).string(message.tokenId);
+    }
+    if (message.side !== 0) {
+      writer.uint32(24).int32(message.side);
+    }
+    if (message.orderType !== 0) {
+      writer.uint32(32).int32(message.orderType);
+    }
+    if (message.price !== "") {
+      writer.uint32(42).string(message.price);
+    }
+    if (message.makerAmountInQuoteToken !== undefined) {
+      writer.uint32(50).string(message.makerAmountInQuoteToken);
+    }
+    if (message.makerAmountInBaseToken !== undefined) {
+      writer.uint32(58).string(message.makerAmountInBaseToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PlaceOrderData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePlaceOrderData();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.tokenId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.side = reader.int32() as any;
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.orderType = reader.int32() as any;
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.price = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.makerAmountInQuoteToken = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.makerAmountInBaseToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PlaceOrderData {
+    return {
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : 0,
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : "",
+      side: isSet(object.side) ? sdkOrderSideFromJSON(object.side) : 0,
+      orderType: isSet(object.orderType)
+        ? sdkOrderTypeFromJSON(object.orderType)
+        : isSet(object.order_type)
+        ? sdkOrderTypeFromJSON(object.order_type)
+        : 0,
+      price: isSet(object.price) ? globalThis.String(object.price) : "",
+      makerAmountInQuoteToken: isSet(object.makerAmountInQuoteToken)
+        ? globalThis.String(object.makerAmountInQuoteToken)
+        : isSet(object.maker_amount_in_quote_token)
+        ? globalThis.String(object.maker_amount_in_quote_token)
+        : undefined,
+      makerAmountInBaseToken: isSet(object.makerAmountInBaseToken)
+        ? globalThis.String(object.makerAmountInBaseToken)
+        : isSet(object.maker_amount_in_base_token)
+        ? globalThis.String(object.maker_amount_in_base_token)
+        : undefined,
+    };
+  },
+
+  toJSON(message: PlaceOrderData): unknown {
+    const obj: any = {};
+    if (message.marketId !== 0) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.tokenId !== "") {
+      obj.tokenId = message.tokenId;
+    }
+    if (message.side !== 0) {
+      obj.side = sdkOrderSideToJSON(message.side);
+    }
+    if (message.orderType !== 0) {
+      obj.orderType = sdkOrderTypeToJSON(message.orderType);
+    }
+    if (message.price !== "") {
+      obj.price = message.price;
+    }
+    if (message.makerAmountInQuoteToken !== undefined) {
+      obj.makerAmountInQuoteToken = message.makerAmountInQuoteToken;
+    }
+    if (message.makerAmountInBaseToken !== undefined) {
+      obj.makerAmountInBaseToken = message.makerAmountInBaseToken;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PlaceOrderData>, I>>(base?: I): PlaceOrderData {
+    return PlaceOrderData.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PlaceOrderData>, I>>(object: I): PlaceOrderData {
+    const message = createBasePlaceOrderData();
+    message.marketId = object.marketId ?? 0;
+    message.tokenId = object.tokenId ?? "";
+    message.side = object.side ?? 0;
+    message.orderType = object.orderType ?? 0;
+    message.price = object.price ?? "";
+    message.makerAmountInQuoteToken = object.makerAmountInQuoteToken ?? undefined;
+    message.makerAmountInBaseToken = object.makerAmountInBaseToken ?? undefined;
+    return message;
+  },
+};
+
+function createBasePlaceOrderRequest(): PlaceOrderRequest {
+  return { order: undefined, checkApproval: undefined };
+}
+
+export const PlaceOrderRequest: MessageFns<PlaceOrderRequest> = {
+  encode(message: PlaceOrderRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.order !== undefined) {
+      PlaceOrderData.encode(message.order, writer.uint32(10).fork()).join();
+    }
+    if (message.checkApproval !== undefined) {
+      writer.uint32(16).bool(message.checkApproval);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PlaceOrderRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePlaceOrderRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.order = PlaceOrderData.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.checkApproval = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PlaceOrderRequest {
+    return {
+      order: isSet(object.order) ? PlaceOrderData.fromJSON(object.order) : undefined,
+      checkApproval: isSet(object.checkApproval)
+        ? globalThis.Boolean(object.checkApproval)
+        : isSet(object.check_approval)
+        ? globalThis.Boolean(object.check_approval)
+        : undefined,
+    };
+  },
+
+  toJSON(message: PlaceOrderRequest): unknown {
+    const obj: any = {};
+    if (message.order !== undefined) {
+      obj.order = PlaceOrderData.toJSON(message.order);
+    }
+    if (message.checkApproval !== undefined) {
+      obj.checkApproval = message.checkApproval;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PlaceOrderRequest>, I>>(base?: I): PlaceOrderRequest {
+    return PlaceOrderRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PlaceOrderRequest>, I>>(object: I): PlaceOrderRequest {
+    const message = createBasePlaceOrderRequest();
+    message.order = (object.order !== undefined && object.order !== null)
+      ? PlaceOrderData.fromPartial(object.order)
+      : undefined;
+    message.checkApproval = object.checkApproval ?? undefined;
+    return message;
+  },
+};
+
+function createBasePlaceOrdersBatchRequest(): PlaceOrdersBatchRequest {
+  return { orders: [], checkApproval: undefined };
+}
+
+export const PlaceOrdersBatchRequest: MessageFns<PlaceOrdersBatchRequest> = {
+  encode(message: PlaceOrdersBatchRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.orders) {
+      PlaceOrderData.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.checkApproval !== undefined) {
+      writer.uint32(16).bool(message.checkApproval);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PlaceOrdersBatchRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePlaceOrdersBatchRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.orders.push(PlaceOrderData.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.checkApproval = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PlaceOrdersBatchRequest {
+    return {
+      orders: globalThis.Array.isArray(object?.orders) ? object.orders.map((e: any) => PlaceOrderData.fromJSON(e)) : [],
+      checkApproval: isSet(object.checkApproval)
+        ? globalThis.Boolean(object.checkApproval)
+        : isSet(object.check_approval)
+        ? globalThis.Boolean(object.check_approval)
+        : undefined,
+    };
+  },
+
+  toJSON(message: PlaceOrdersBatchRequest): unknown {
+    const obj: any = {};
+    if (message.orders?.length) {
+      obj.orders = message.orders.map((e) => PlaceOrderData.toJSON(e));
+    }
+    if (message.checkApproval !== undefined) {
+      obj.checkApproval = message.checkApproval;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PlaceOrdersBatchRequest>, I>>(base?: I): PlaceOrdersBatchRequest {
+    return PlaceOrdersBatchRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PlaceOrdersBatchRequest>, I>>(object: I): PlaceOrdersBatchRequest {
+    const message = createBasePlaceOrdersBatchRequest();
+    message.orders = object.orders?.map((e) => PlaceOrderData.fromPartial(e)) || [];
+    message.checkApproval = object.checkApproval ?? undefined;
+    return message;
+  },
+};
+
+function createBaseCancelOrderRequest(): CancelOrderRequest {
+  return { orderId: "" };
+}
+
+export const CancelOrderRequest: MessageFns<CancelOrderRequest> = {
+  encode(message: CancelOrderRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.orderId !== "") {
+      writer.uint32(10).string(message.orderId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CancelOrderRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCancelOrderRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.orderId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CancelOrderRequest {
+    return {
+      orderId: isSet(object.orderId)
+        ? globalThis.String(object.orderId)
+        : isSet(object.order_id)
+        ? globalThis.String(object.order_id)
+        : "",
+    };
+  },
+
+  toJSON(message: CancelOrderRequest): unknown {
+    const obj: any = {};
+    if (message.orderId !== "") {
+      obj.orderId = message.orderId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CancelOrderRequest>, I>>(base?: I): CancelOrderRequest {
+    return CancelOrderRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CancelOrderRequest>, I>>(object: I): CancelOrderRequest {
+    const message = createBaseCancelOrderRequest();
+    message.orderId = object.orderId ?? "";
+    return message;
+  },
+};
+
+function createBaseCancelOrdersBatchRequest(): CancelOrdersBatchRequest {
+  return { orderIds: [] };
+}
+
+export const CancelOrdersBatchRequest: MessageFns<CancelOrdersBatchRequest> = {
+  encode(message: CancelOrdersBatchRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.orderIds) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CancelOrdersBatchRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCancelOrdersBatchRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.orderIds.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CancelOrdersBatchRequest {
+    return {
+      orderIds: globalThis.Array.isArray(object?.orderIds)
+        ? object.orderIds.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.order_ids)
+        ? object.order_ids.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: CancelOrdersBatchRequest): unknown {
+    const obj: any = {};
+    if (message.orderIds?.length) {
+      obj.orderIds = message.orderIds;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CancelOrdersBatchRequest>, I>>(base?: I): CancelOrdersBatchRequest {
+    return CancelOrdersBatchRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CancelOrdersBatchRequest>, I>>(object: I): CancelOrdersBatchRequest {
+    const message = createBaseCancelOrdersBatchRequest();
+    message.orderIds = object.orderIds?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseCancelAllOrdersRequest(): CancelAllOrdersRequest {
+  return { marketId: undefined, side: undefined };
+}
+
+export const CancelAllOrdersRequest: MessageFns<CancelAllOrdersRequest> = {
+  encode(message: CancelAllOrdersRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== undefined) {
+      writer.uint32(8).int32(message.marketId);
+    }
+    if (message.side !== undefined) {
+      writer.uint32(16).int32(message.side);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CancelAllOrdersRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCancelAllOrdersRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.side = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CancelAllOrdersRequest {
+    return {
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
+      side: isSet(object.side) ? sdkOrderSideFromJSON(object.side) : undefined,
+    };
+  },
+
+  toJSON(message: CancelAllOrdersRequest): unknown {
+    const obj: any = {};
+    if (message.marketId !== undefined) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.side !== undefined) {
+      obj.side = sdkOrderSideToJSON(message.side);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CancelAllOrdersRequest>, I>>(base?: I): CancelAllOrdersRequest {
+    return CancelAllOrdersRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CancelAllOrdersRequest>, I>>(object: I): CancelAllOrdersRequest {
+    const message = createBaseCancelAllOrdersRequest();
+    message.marketId = object.marketId ?? undefined;
+    message.side = object.side ?? undefined;
+    return message;
+  },
+};
+
 function createBaseGetMarketsResponse(): GetMarketsResponse {
   return { errno: 0, errmsg: "", total: 0, markets: [] };
 }
@@ -1005,6 +2207,2399 @@ export const GetQuoteTokensResponse: MessageFns<GetQuoteTokensResponse> = {
     message.errmsg = object.errmsg ?? "";
     message.total = object.total ?? 0;
     message.quoteTokens = object.quoteTokens?.map((e) => QuoteToken.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGetOrderbookResponse(): GetOrderbookResponse {
+  return { errno: 0, errmsg: "", asks: [], bids: [], market: undefined, timestamp: undefined, tokenId: undefined };
+}
+
+export const GetOrderbookResponse: MessageFns<GetOrderbookResponse> = {
+  encode(message: GetOrderbookResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    for (const v of message.asks) {
+      OrderbookLevel.encode(v!, writer.uint32(26).fork()).join();
+    }
+    for (const v of message.bids) {
+      OrderbookLevel.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.market !== undefined) {
+      writer.uint32(42).string(message.market);
+    }
+    if (message.timestamp !== undefined) {
+      writer.uint32(48).int64(message.timestamp);
+    }
+    if (message.tokenId !== undefined) {
+      writer.uint32(58).string(message.tokenId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetOrderbookResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetOrderbookResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.asks.push(OrderbookLevel.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.bids.push(OrderbookLevel.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.market = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.timestamp = reader.int64().toString();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.tokenId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetOrderbookResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      asks: globalThis.Array.isArray(object?.asks) ? object.asks.map((e: any) => OrderbookLevel.fromJSON(e)) : [],
+      bids: globalThis.Array.isArray(object?.bids) ? object.bids.map((e: any) => OrderbookLevel.fromJSON(e)) : [],
+      market: isSet(object.market) ? globalThis.String(object.market) : undefined,
+      timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : undefined,
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : undefined,
+    };
+  },
+
+  toJSON(message: GetOrderbookResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.asks?.length) {
+      obj.asks = message.asks.map((e) => OrderbookLevel.toJSON(e));
+    }
+    if (message.bids?.length) {
+      obj.bids = message.bids.map((e) => OrderbookLevel.toJSON(e));
+    }
+    if (message.market !== undefined) {
+      obj.market = message.market;
+    }
+    if (message.timestamp !== undefined) {
+      obj.timestamp = message.timestamp;
+    }
+    if (message.tokenId !== undefined) {
+      obj.tokenId = message.tokenId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetOrderbookResponse>, I>>(base?: I): GetOrderbookResponse {
+    return GetOrderbookResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetOrderbookResponse>, I>>(object: I): GetOrderbookResponse {
+    const message = createBaseGetOrderbookResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.asks = object.asks?.map((e) => OrderbookLevel.fromPartial(e)) || [];
+    message.bids = object.bids?.map((e) => OrderbookLevel.fromPartial(e)) || [];
+    message.market = object.market ?? undefined;
+    message.timestamp = object.timestamp ?? undefined;
+    message.tokenId = object.tokenId ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetLatestPriceResponse(): GetLatestPriceResponse {
+  return {
+    errno: 0,
+    errmsg: "",
+    price: undefined,
+    side: undefined,
+    size: undefined,
+    timestamp: undefined,
+    tokenId: undefined,
+  };
+}
+
+export const GetLatestPriceResponse: MessageFns<GetLatestPriceResponse> = {
+  encode(message: GetLatestPriceResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.price !== undefined) {
+      writer.uint32(26).string(message.price);
+    }
+    if (message.side !== undefined) {
+      writer.uint32(34).string(message.side);
+    }
+    if (message.size !== undefined) {
+      writer.uint32(42).string(message.size);
+    }
+    if (message.timestamp !== undefined) {
+      writer.uint32(48).int64(message.timestamp);
+    }
+    if (message.tokenId !== undefined) {
+      writer.uint32(58).string(message.tokenId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetLatestPriceResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetLatestPriceResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.price = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.side = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.size = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.timestamp = reader.int64().toString();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.tokenId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetLatestPriceResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      price: isSet(object.price) ? globalThis.String(object.price) : undefined,
+      side: isSet(object.side) ? globalThis.String(object.side) : undefined,
+      size: isSet(object.size) ? globalThis.String(object.size) : undefined,
+      timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : undefined,
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : undefined,
+    };
+  },
+
+  toJSON(message: GetLatestPriceResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.price !== undefined) {
+      obj.price = message.price;
+    }
+    if (message.side !== undefined) {
+      obj.side = message.side;
+    }
+    if (message.size !== undefined) {
+      obj.size = message.size;
+    }
+    if (message.timestamp !== undefined) {
+      obj.timestamp = message.timestamp;
+    }
+    if (message.tokenId !== undefined) {
+      obj.tokenId = message.tokenId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetLatestPriceResponse>, I>>(base?: I): GetLatestPriceResponse {
+    return GetLatestPriceResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetLatestPriceResponse>, I>>(object: I): GetLatestPriceResponse {
+    const message = createBaseGetLatestPriceResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.price = object.price ?? undefined;
+    message.side = object.side ?? undefined;
+    message.size = object.size ?? undefined;
+    message.timestamp = object.timestamp ?? undefined;
+    message.tokenId = object.tokenId ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetPriceHistoryResponse(): GetPriceHistoryResponse {
+  return { errno: 0, errmsg: "", history: [] };
+}
+
+export const GetPriceHistoryResponse: MessageFns<GetPriceHistoryResponse> = {
+  encode(message: GetPriceHistoryResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    for (const v of message.history) {
+      PricePoint.encode(v!, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetPriceHistoryResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetPriceHistoryResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.history.push(PricePoint.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetPriceHistoryResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      history: globalThis.Array.isArray(object?.history) ? object.history.map((e: any) => PricePoint.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: GetPriceHistoryResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.history?.length) {
+      obj.history = message.history.map((e) => PricePoint.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetPriceHistoryResponse>, I>>(base?: I): GetPriceHistoryResponse {
+    return GetPriceHistoryResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetPriceHistoryResponse>, I>>(object: I): GetPriceHistoryResponse {
+    const message = createBaseGetPriceHistoryResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.history = object.history?.map((e) => PricePoint.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGetFeeRatesResponse(): GetFeeRatesResponse {
+  return { makerMaxFeeRate: 0, takerMaxFeeRate: 0, enabled: false };
+}
+
+export const GetFeeRatesResponse: MessageFns<GetFeeRatesResponse> = {
+  encode(message: GetFeeRatesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.makerMaxFeeRate !== 0) {
+      writer.uint32(9).double(message.makerMaxFeeRate);
+    }
+    if (message.takerMaxFeeRate !== 0) {
+      writer.uint32(17).double(message.takerMaxFeeRate);
+    }
+    if (message.enabled !== false) {
+      writer.uint32(24).bool(message.enabled);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetFeeRatesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetFeeRatesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 9) {
+            break;
+          }
+
+          message.makerMaxFeeRate = reader.double();
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.takerMaxFeeRate = reader.double();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.enabled = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetFeeRatesResponse {
+    return {
+      makerMaxFeeRate: isSet(object.makerMaxFeeRate)
+        ? globalThis.Number(object.makerMaxFeeRate)
+        : isSet(object.maker_max_fee_rate)
+        ? globalThis.Number(object.maker_max_fee_rate)
+        : 0,
+      takerMaxFeeRate: isSet(object.takerMaxFeeRate)
+        ? globalThis.Number(object.takerMaxFeeRate)
+        : isSet(object.taker_max_fee_rate)
+        ? globalThis.Number(object.taker_max_fee_rate)
+        : 0,
+      enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false,
+    };
+  },
+
+  toJSON(message: GetFeeRatesResponse): unknown {
+    const obj: any = {};
+    if (message.makerMaxFeeRate !== 0) {
+      obj.makerMaxFeeRate = message.makerMaxFeeRate;
+    }
+    if (message.takerMaxFeeRate !== 0) {
+      obj.takerMaxFeeRate = message.takerMaxFeeRate;
+    }
+    if (message.enabled !== false) {
+      obj.enabled = message.enabled;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetFeeRatesResponse>, I>>(base?: I): GetFeeRatesResponse {
+    return GetFeeRatesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetFeeRatesResponse>, I>>(object: I): GetFeeRatesResponse {
+    const message = createBaseGetFeeRatesResponse();
+    message.makerMaxFeeRate = object.makerMaxFeeRate ?? 0;
+    message.takerMaxFeeRate = object.takerMaxFeeRate ?? 0;
+    message.enabled = object.enabled ?? false;
+    return message;
+  },
+};
+
+function createBasePlaceOrderResponse(): PlaceOrderResponse {
+  return { errno: 0, errmsg: "", orderData: undefined };
+}
+
+export const PlaceOrderResponse: MessageFns<PlaceOrderResponse> = {
+  encode(message: PlaceOrderResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.orderData !== undefined) {
+      OrderApiData.encode(message.orderData, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PlaceOrderResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePlaceOrderResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.orderData = OrderApiData.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PlaceOrderResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      orderData: isSet(object.orderData)
+        ? OrderApiData.fromJSON(object.orderData)
+        : isSet(object.order_data)
+        ? OrderApiData.fromJSON(object.order_data)
+        : undefined,
+    };
+  },
+
+  toJSON(message: PlaceOrderResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.orderData !== undefined) {
+      obj.orderData = OrderApiData.toJSON(message.orderData);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PlaceOrderResponse>, I>>(base?: I): PlaceOrderResponse {
+    return PlaceOrderResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PlaceOrderResponse>, I>>(object: I): PlaceOrderResponse {
+    const message = createBasePlaceOrderResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.orderData = (object.orderData !== undefined && object.orderData !== null)
+      ? OrderApiData.fromPartial(object.orderData)
+      : undefined;
+    return message;
+  },
+};
+
+function createBasePlaceOrdersBatchResponse(): PlaceOrdersBatchResponse {
+  return { items: [] };
+}
+
+export const PlaceOrdersBatchResponse: MessageFns<PlaceOrdersBatchResponse> = {
+  encode(message: PlaceOrdersBatchResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.items) {
+      PlaceOrderBatchItem.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PlaceOrdersBatchResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePlaceOrdersBatchResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.items.push(PlaceOrderBatchItem.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PlaceOrdersBatchResponse {
+    return {
+      items: globalThis.Array.isArray(object?.items)
+        ? object.items.map((e: any) => PlaceOrderBatchItem.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PlaceOrdersBatchResponse): unknown {
+    const obj: any = {};
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => PlaceOrderBatchItem.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PlaceOrdersBatchResponse>, I>>(base?: I): PlaceOrdersBatchResponse {
+    return PlaceOrdersBatchResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PlaceOrdersBatchResponse>, I>>(object: I): PlaceOrdersBatchResponse {
+    const message = createBasePlaceOrdersBatchResponse();
+    message.items = object.items?.map((e) => PlaceOrderBatchItem.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBasePlaceOrderBatchItem(): PlaceOrderBatchItem {
+  return { index: 0, success: false, result: undefined, error: undefined };
+}
+
+export const PlaceOrderBatchItem: MessageFns<PlaceOrderBatchItem> = {
+  encode(message: PlaceOrderBatchItem, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.index !== 0) {
+      writer.uint32(8).int32(message.index);
+    }
+    if (message.success !== false) {
+      writer.uint32(16).bool(message.success);
+    }
+    if (message.result !== undefined) {
+      PlaceOrderResponse.encode(message.result, writer.uint32(26).fork()).join();
+    }
+    if (message.error !== undefined) {
+      writer.uint32(34).string(message.error);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PlaceOrderBatchItem {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePlaceOrderBatchItem();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.index = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.result = PlaceOrderResponse.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.error = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PlaceOrderBatchItem {
+    return {
+      index: isSet(object.index) ? globalThis.Number(object.index) : 0,
+      success: isSet(object.success) ? globalThis.Boolean(object.success) : false,
+      result: isSet(object.result) ? PlaceOrderResponse.fromJSON(object.result) : undefined,
+      error: isSet(object.error) ? globalThis.String(object.error) : undefined,
+    };
+  },
+
+  toJSON(message: PlaceOrderBatchItem): unknown {
+    const obj: any = {};
+    if (message.index !== 0) {
+      obj.index = Math.round(message.index);
+    }
+    if (message.success !== false) {
+      obj.success = message.success;
+    }
+    if (message.result !== undefined) {
+      obj.result = PlaceOrderResponse.toJSON(message.result);
+    }
+    if (message.error !== undefined) {
+      obj.error = message.error;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PlaceOrderBatchItem>, I>>(base?: I): PlaceOrderBatchItem {
+    return PlaceOrderBatchItem.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PlaceOrderBatchItem>, I>>(object: I): PlaceOrderBatchItem {
+    const message = createBasePlaceOrderBatchItem();
+    message.index = object.index ?? 0;
+    message.success = object.success ?? false;
+    message.result = (object.result !== undefined && object.result !== null)
+      ? PlaceOrderResponse.fromPartial(object.result)
+      : undefined;
+    message.error = object.error ?? undefined;
+    return message;
+  },
+};
+
+function createBaseCancelOrderApiResponse(): CancelOrderApiResponse {
+  return { errno: 0, errmsg: "", openapiCancelResult: undefined };
+}
+
+export const CancelOrderApiResponse: MessageFns<CancelOrderApiResponse> = {
+  encode(message: CancelOrderApiResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.openapiCancelResult !== undefined) {
+      writer.uint32(24).bool(message.openapiCancelResult);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CancelOrderApiResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCancelOrderApiResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.openapiCancelResult = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CancelOrderApiResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      openapiCancelResult: isSet(object.openapiCancelResult)
+        ? globalThis.Boolean(object.openapiCancelResult)
+        : isSet(object.openapi_cancel_result)
+        ? globalThis.Boolean(object.openapi_cancel_result)
+        : undefined,
+    };
+  },
+
+  toJSON(message: CancelOrderApiResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.openapiCancelResult !== undefined) {
+      obj.openapiCancelResult = message.openapiCancelResult;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CancelOrderApiResponse>, I>>(base?: I): CancelOrderApiResponse {
+    return CancelOrderApiResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CancelOrderApiResponse>, I>>(object: I): CancelOrderApiResponse {
+    const message = createBaseCancelOrderApiResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.openapiCancelResult = object.openapiCancelResult ?? undefined;
+    return message;
+  },
+};
+
+function createBaseCancelOrdersBatchResponse(): CancelOrdersBatchResponse {
+  return { items: [] };
+}
+
+export const CancelOrdersBatchResponse: MessageFns<CancelOrdersBatchResponse> = {
+  encode(message: CancelOrdersBatchResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.items) {
+      CancelOrderBatchItem.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CancelOrdersBatchResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCancelOrdersBatchResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.items.push(CancelOrderBatchItem.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CancelOrdersBatchResponse {
+    return {
+      items: globalThis.Array.isArray(object?.items)
+        ? object.items.map((e: any) => CancelOrderBatchItem.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: CancelOrdersBatchResponse): unknown {
+    const obj: any = {};
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => CancelOrderBatchItem.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CancelOrdersBatchResponse>, I>>(base?: I): CancelOrdersBatchResponse {
+    return CancelOrdersBatchResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CancelOrdersBatchResponse>, I>>(object: I): CancelOrdersBatchResponse {
+    const message = createBaseCancelOrdersBatchResponse();
+    message.items = object.items?.map((e) => CancelOrderBatchItem.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseCancelOrderBatchItem(): CancelOrderBatchItem {
+  return { index: 0, success: false, result: undefined, error: undefined };
+}
+
+export const CancelOrderBatchItem: MessageFns<CancelOrderBatchItem> = {
+  encode(message: CancelOrderBatchItem, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.index !== 0) {
+      writer.uint32(8).int32(message.index);
+    }
+    if (message.success !== false) {
+      writer.uint32(16).bool(message.success);
+    }
+    if (message.result !== undefined) {
+      CancelOrderApiResponse.encode(message.result, writer.uint32(26).fork()).join();
+    }
+    if (message.error !== undefined) {
+      writer.uint32(34).string(message.error);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CancelOrderBatchItem {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCancelOrderBatchItem();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.index = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.result = CancelOrderApiResponse.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.error = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CancelOrderBatchItem {
+    return {
+      index: isSet(object.index) ? globalThis.Number(object.index) : 0,
+      success: isSet(object.success) ? globalThis.Boolean(object.success) : false,
+      result: isSet(object.result) ? CancelOrderApiResponse.fromJSON(object.result) : undefined,
+      error: isSet(object.error) ? globalThis.String(object.error) : undefined,
+    };
+  },
+
+  toJSON(message: CancelOrderBatchItem): unknown {
+    const obj: any = {};
+    if (message.index !== 0) {
+      obj.index = Math.round(message.index);
+    }
+    if (message.success !== false) {
+      obj.success = message.success;
+    }
+    if (message.result !== undefined) {
+      obj.result = CancelOrderApiResponse.toJSON(message.result);
+    }
+    if (message.error !== undefined) {
+      obj.error = message.error;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CancelOrderBatchItem>, I>>(base?: I): CancelOrderBatchItem {
+    return CancelOrderBatchItem.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CancelOrderBatchItem>, I>>(object: I): CancelOrderBatchItem {
+    const message = createBaseCancelOrderBatchItem();
+    message.index = object.index ?? 0;
+    message.success = object.success ?? false;
+    message.result = (object.result !== undefined && object.result !== null)
+      ? CancelOrderApiResponse.fromPartial(object.result)
+      : undefined;
+    message.error = object.error ?? undefined;
+    return message;
+  },
+};
+
+function createBaseCancelAllOrdersResponse(): CancelAllOrdersResponse {
+  return { totalOrders: 0, cancelled: 0, failed: 0, results: [] };
+}
+
+export const CancelAllOrdersResponse: MessageFns<CancelAllOrdersResponse> = {
+  encode(message: CancelAllOrdersResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.totalOrders !== 0) {
+      writer.uint32(8).int32(message.totalOrders);
+    }
+    if (message.cancelled !== 0) {
+      writer.uint32(16).int32(message.cancelled);
+    }
+    if (message.failed !== 0) {
+      writer.uint32(24).int32(message.failed);
+    }
+    for (const v of message.results) {
+      CancelOrderBatchItem.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CancelAllOrdersResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCancelAllOrdersResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.totalOrders = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.cancelled = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.failed = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.results.push(CancelOrderBatchItem.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CancelAllOrdersResponse {
+    return {
+      totalOrders: isSet(object.totalOrders)
+        ? globalThis.Number(object.totalOrders)
+        : isSet(object.total_orders)
+        ? globalThis.Number(object.total_orders)
+        : 0,
+      cancelled: isSet(object.cancelled) ? globalThis.Number(object.cancelled) : 0,
+      failed: isSet(object.failed) ? globalThis.Number(object.failed) : 0,
+      results: globalThis.Array.isArray(object?.results)
+        ? object.results.map((e: any) => CancelOrderBatchItem.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: CancelAllOrdersResponse): unknown {
+    const obj: any = {};
+    if (message.totalOrders !== 0) {
+      obj.totalOrders = Math.round(message.totalOrders);
+    }
+    if (message.cancelled !== 0) {
+      obj.cancelled = Math.round(message.cancelled);
+    }
+    if (message.failed !== 0) {
+      obj.failed = Math.round(message.failed);
+    }
+    if (message.results?.length) {
+      obj.results = message.results.map((e) => CancelOrderBatchItem.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CancelAllOrdersResponse>, I>>(base?: I): CancelAllOrdersResponse {
+    return CancelAllOrdersResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CancelAllOrdersResponse>, I>>(object: I): CancelAllOrdersResponse {
+    const message = createBaseCancelAllOrdersResponse();
+    message.totalOrders = object.totalOrders ?? 0;
+    message.cancelled = object.cancelled ?? 0;
+    message.failed = object.failed ?? 0;
+    message.results = object.results?.map((e) => CancelOrderBatchItem.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseOrderTradeApiData(): OrderTradeApiData {
+  return {
+    amount: undefined,
+    chainId: undefined,
+    createdAt: undefined,
+    fee: undefined,
+    feeFormatted: undefined,
+    marketId: undefined,
+    marketTitle: undefined,
+    orderNo: undefined,
+    outcome: undefined,
+    outcomeSide: undefined,
+    outcomeSideEnum: undefined,
+    price: undefined,
+    profit: undefined,
+    quoteToken: undefined,
+    quoteTokenUsdPrice: undefined,
+    rootMarketId: undefined,
+    rootMarketTitle: undefined,
+    shares: undefined,
+    side: undefined,
+    status: undefined,
+    statusEnum: undefined,
+    tradeNo: undefined,
+    txHash: undefined,
+    usdAmount: undefined,
+  };
+}
+
+export const OrderTradeApiData: MessageFns<OrderTradeApiData> = {
+  encode(message: OrderTradeApiData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.amount !== undefined) {
+      writer.uint32(10).string(message.amount);
+    }
+    if (message.chainId !== undefined) {
+      writer.uint32(18).string(message.chainId);
+    }
+    if (message.createdAt !== undefined) {
+      writer.uint32(24).int64(message.createdAt);
+    }
+    if (message.fee !== undefined) {
+      writer.uint32(33).double(message.fee);
+    }
+    if (message.feeFormatted !== undefined) {
+      writer.uint32(42).string(message.feeFormatted);
+    }
+    if (message.marketId !== undefined) {
+      writer.uint32(48).int32(message.marketId);
+    }
+    if (message.marketTitle !== undefined) {
+      writer.uint32(58).string(message.marketTitle);
+    }
+    if (message.orderNo !== undefined) {
+      writer.uint32(66).string(message.orderNo);
+    }
+    if (message.outcome !== undefined) {
+      writer.uint32(74).string(message.outcome);
+    }
+    if (message.outcomeSide !== undefined) {
+      writer.uint32(80).int32(message.outcomeSide);
+    }
+    if (message.outcomeSideEnum !== undefined) {
+      writer.uint32(90).string(message.outcomeSideEnum);
+    }
+    if (message.price !== undefined) {
+      writer.uint32(98).string(message.price);
+    }
+    if (message.profit !== undefined) {
+      writer.uint32(106).string(message.profit);
+    }
+    if (message.quoteToken !== undefined) {
+      writer.uint32(114).string(message.quoteToken);
+    }
+    if (message.quoteTokenUsdPrice !== undefined) {
+      writer.uint32(122).string(message.quoteTokenUsdPrice);
+    }
+    if (message.rootMarketId !== undefined) {
+      writer.uint32(128).int32(message.rootMarketId);
+    }
+    if (message.rootMarketTitle !== undefined) {
+      writer.uint32(138).string(message.rootMarketTitle);
+    }
+    if (message.shares !== undefined) {
+      writer.uint32(146).string(message.shares);
+    }
+    if (message.side !== undefined) {
+      writer.uint32(154).string(message.side);
+    }
+    if (message.status !== undefined) {
+      writer.uint32(160).int32(message.status);
+    }
+    if (message.statusEnum !== undefined) {
+      writer.uint32(170).string(message.statusEnum);
+    }
+    if (message.tradeNo !== undefined) {
+      writer.uint32(178).string(message.tradeNo);
+    }
+    if (message.txHash !== undefined) {
+      writer.uint32(186).string(message.txHash);
+    }
+    if (message.usdAmount !== undefined) {
+      writer.uint32(194).string(message.usdAmount);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): OrderTradeApiData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseOrderTradeApiData();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.amount = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.chainId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.createdAt = reader.int64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 33) {
+            break;
+          }
+
+          message.fee = reader.double();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.feeFormatted = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.marketTitle = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.orderNo = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.outcome = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.outcomeSide = reader.int32();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.outcomeSideEnum = reader.string();
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.price = reader.string();
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.profit = reader.string();
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.quoteToken = reader.string();
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.quoteTokenUsdPrice = reader.string();
+          continue;
+        }
+        case 16: {
+          if (tag !== 128) {
+            break;
+          }
+
+          message.rootMarketId = reader.int32();
+          continue;
+        }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.rootMarketTitle = reader.string();
+          continue;
+        }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.shares = reader.string();
+          continue;
+        }
+        case 19: {
+          if (tag !== 154) {
+            break;
+          }
+
+          message.side = reader.string();
+          continue;
+        }
+        case 20: {
+          if (tag !== 160) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.statusEnum = reader.string();
+          continue;
+        }
+        case 22: {
+          if (tag !== 178) {
+            break;
+          }
+
+          message.tradeNo = reader.string();
+          continue;
+        }
+        case 23: {
+          if (tag !== 186) {
+            break;
+          }
+
+          message.txHash = reader.string();
+          continue;
+        }
+        case 24: {
+          if (tag !== 194) {
+            break;
+          }
+
+          message.usdAmount = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): OrderTradeApiData {
+    return {
+      amount: isSet(object.amount) ? globalThis.String(object.amount) : undefined,
+      chainId: isSet(object.chainId)
+        ? globalThis.String(object.chainId)
+        : isSet(object.chain_id)
+        ? globalThis.String(object.chain_id)
+        : undefined,
+      createdAt: isSet(object.createdAt)
+        ? globalThis.String(object.createdAt)
+        : isSet(object.created_at)
+        ? globalThis.String(object.created_at)
+        : undefined,
+      fee: isSet(object.fee) ? globalThis.Number(object.fee) : undefined,
+      feeFormatted: isSet(object.feeFormatted)
+        ? globalThis.String(object.feeFormatted)
+        : isSet(object.fee_formatted)
+        ? globalThis.String(object.fee_formatted)
+        : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
+      marketTitle: isSet(object.marketTitle)
+        ? globalThis.String(object.marketTitle)
+        : isSet(object.market_title)
+        ? globalThis.String(object.market_title)
+        : undefined,
+      orderNo: isSet(object.orderNo)
+        ? globalThis.String(object.orderNo)
+        : isSet(object.order_no)
+        ? globalThis.String(object.order_no)
+        : undefined,
+      outcome: isSet(object.outcome) ? globalThis.String(object.outcome) : undefined,
+      outcomeSide: isSet(object.outcomeSide)
+        ? globalThis.Number(object.outcomeSide)
+        : isSet(object.outcome_side)
+        ? globalThis.Number(object.outcome_side)
+        : undefined,
+      outcomeSideEnum: isSet(object.outcomeSideEnum)
+        ? globalThis.String(object.outcomeSideEnum)
+        : isSet(object.outcome_side_enum)
+        ? globalThis.String(object.outcome_side_enum)
+        : undefined,
+      price: isSet(object.price) ? globalThis.String(object.price) : undefined,
+      profit: isSet(object.profit) ? globalThis.String(object.profit) : undefined,
+      quoteToken: isSet(object.quoteToken)
+        ? globalThis.String(object.quoteToken)
+        : isSet(object.quote_token)
+        ? globalThis.String(object.quote_token)
+        : undefined,
+      quoteTokenUsdPrice: isSet(object.quoteTokenUsdPrice)
+        ? globalThis.String(object.quoteTokenUsdPrice)
+        : isSet(object.quote_token_usd_price)
+        ? globalThis.String(object.quote_token_usd_price)
+        : undefined,
+      rootMarketId: isSet(object.rootMarketId)
+        ? globalThis.Number(object.rootMarketId)
+        : isSet(object.root_market_id)
+        ? globalThis.Number(object.root_market_id)
+        : undefined,
+      rootMarketTitle: isSet(object.rootMarketTitle)
+        ? globalThis.String(object.rootMarketTitle)
+        : isSet(object.root_market_title)
+        ? globalThis.String(object.root_market_title)
+        : undefined,
+      shares: isSet(object.shares) ? globalThis.String(object.shares) : undefined,
+      side: isSet(object.side) ? globalThis.String(object.side) : undefined,
+      status: isSet(object.status) ? globalThis.Number(object.status) : undefined,
+      statusEnum: isSet(object.statusEnum)
+        ? globalThis.String(object.statusEnum)
+        : isSet(object.status_enum)
+        ? globalThis.String(object.status_enum)
+        : undefined,
+      tradeNo: isSet(object.tradeNo)
+        ? globalThis.String(object.tradeNo)
+        : isSet(object.trade_no)
+        ? globalThis.String(object.trade_no)
+        : undefined,
+      txHash: isSet(object.txHash)
+        ? globalThis.String(object.txHash)
+        : isSet(object.tx_hash)
+        ? globalThis.String(object.tx_hash)
+        : undefined,
+      usdAmount: isSet(object.usdAmount)
+        ? globalThis.String(object.usdAmount)
+        : isSet(object.usd_amount)
+        ? globalThis.String(object.usd_amount)
+        : undefined,
+    };
+  },
+
+  toJSON(message: OrderTradeApiData): unknown {
+    const obj: any = {};
+    if (message.amount !== undefined) {
+      obj.amount = message.amount;
+    }
+    if (message.chainId !== undefined) {
+      obj.chainId = message.chainId;
+    }
+    if (message.createdAt !== undefined) {
+      obj.createdAt = message.createdAt;
+    }
+    if (message.fee !== undefined) {
+      obj.fee = message.fee;
+    }
+    if (message.feeFormatted !== undefined) {
+      obj.feeFormatted = message.feeFormatted;
+    }
+    if (message.marketId !== undefined) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.marketTitle !== undefined) {
+      obj.marketTitle = message.marketTitle;
+    }
+    if (message.orderNo !== undefined) {
+      obj.orderNo = message.orderNo;
+    }
+    if (message.outcome !== undefined) {
+      obj.outcome = message.outcome;
+    }
+    if (message.outcomeSide !== undefined) {
+      obj.outcomeSide = Math.round(message.outcomeSide);
+    }
+    if (message.outcomeSideEnum !== undefined) {
+      obj.outcomeSideEnum = message.outcomeSideEnum;
+    }
+    if (message.price !== undefined) {
+      obj.price = message.price;
+    }
+    if (message.profit !== undefined) {
+      obj.profit = message.profit;
+    }
+    if (message.quoteToken !== undefined) {
+      obj.quoteToken = message.quoteToken;
+    }
+    if (message.quoteTokenUsdPrice !== undefined) {
+      obj.quoteTokenUsdPrice = message.quoteTokenUsdPrice;
+    }
+    if (message.rootMarketId !== undefined) {
+      obj.rootMarketId = Math.round(message.rootMarketId);
+    }
+    if (message.rootMarketTitle !== undefined) {
+      obj.rootMarketTitle = message.rootMarketTitle;
+    }
+    if (message.shares !== undefined) {
+      obj.shares = message.shares;
+    }
+    if (message.side !== undefined) {
+      obj.side = message.side;
+    }
+    if (message.status !== undefined) {
+      obj.status = Math.round(message.status);
+    }
+    if (message.statusEnum !== undefined) {
+      obj.statusEnum = message.statusEnum;
+    }
+    if (message.tradeNo !== undefined) {
+      obj.tradeNo = message.tradeNo;
+    }
+    if (message.txHash !== undefined) {
+      obj.txHash = message.txHash;
+    }
+    if (message.usdAmount !== undefined) {
+      obj.usdAmount = message.usdAmount;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<OrderTradeApiData>, I>>(base?: I): OrderTradeApiData {
+    return OrderTradeApiData.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<OrderTradeApiData>, I>>(object: I): OrderTradeApiData {
+    const message = createBaseOrderTradeApiData();
+    message.amount = object.amount ?? undefined;
+    message.chainId = object.chainId ?? undefined;
+    message.createdAt = object.createdAt ?? undefined;
+    message.fee = object.fee ?? undefined;
+    message.feeFormatted = object.feeFormatted ?? undefined;
+    message.marketId = object.marketId ?? undefined;
+    message.marketTitle = object.marketTitle ?? undefined;
+    message.orderNo = object.orderNo ?? undefined;
+    message.outcome = object.outcome ?? undefined;
+    message.outcomeSide = object.outcomeSide ?? undefined;
+    message.outcomeSideEnum = object.outcomeSideEnum ?? undefined;
+    message.price = object.price ?? undefined;
+    message.profit = object.profit ?? undefined;
+    message.quoteToken = object.quoteToken ?? undefined;
+    message.quoteTokenUsdPrice = object.quoteTokenUsdPrice ?? undefined;
+    message.rootMarketId = object.rootMarketId ?? undefined;
+    message.rootMarketTitle = object.rootMarketTitle ?? undefined;
+    message.shares = object.shares ?? undefined;
+    message.side = object.side ?? undefined;
+    message.status = object.status ?? undefined;
+    message.statusEnum = object.statusEnum ?? undefined;
+    message.tradeNo = object.tradeNo ?? undefined;
+    message.txHash = object.txHash ?? undefined;
+    message.usdAmount = object.usdAmount ?? undefined;
+    return message;
+  },
+};
+
+function createBaseOrderApiData(): OrderApiData {
+  return {
+    createdAt: undefined,
+    expiresAt: undefined,
+    filledAmount: undefined,
+    filledShares: undefined,
+    marketId: undefined,
+    marketTitle: undefined,
+    orderAmount: undefined,
+    orderId: undefined,
+    orderShares: undefined,
+    outcome: undefined,
+    outcomeSide: undefined,
+    outcomeSideEnum: undefined,
+    price: undefined,
+    profit: undefined,
+    quoteToken: undefined,
+    rootMarketId: undefined,
+    rootMarketTitle: undefined,
+    side: undefined,
+    sideEnum: undefined,
+    status: undefined,
+    statusEnum: undefined,
+    trades: [],
+    tradingMethod: undefined,
+    tradingMethodEnum: undefined,
+    transNo: undefined,
+  };
+}
+
+export const OrderApiData: MessageFns<OrderApiData> = {
+  encode(message: OrderApiData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.createdAt !== undefined) {
+      writer.uint32(8).int64(message.createdAt);
+    }
+    if (message.expiresAt !== undefined) {
+      writer.uint32(16).int64(message.expiresAt);
+    }
+    if (message.filledAmount !== undefined) {
+      writer.uint32(26).string(message.filledAmount);
+    }
+    if (message.filledShares !== undefined) {
+      writer.uint32(34).string(message.filledShares);
+    }
+    if (message.marketId !== undefined) {
+      writer.uint32(40).int32(message.marketId);
+    }
+    if (message.marketTitle !== undefined) {
+      writer.uint32(50).string(message.marketTitle);
+    }
+    if (message.orderAmount !== undefined) {
+      writer.uint32(58).string(message.orderAmount);
+    }
+    if (message.orderId !== undefined) {
+      writer.uint32(66).string(message.orderId);
+    }
+    if (message.orderShares !== undefined) {
+      writer.uint32(74).string(message.orderShares);
+    }
+    if (message.outcome !== undefined) {
+      writer.uint32(82).string(message.outcome);
+    }
+    if (message.outcomeSide !== undefined) {
+      writer.uint32(88).int32(message.outcomeSide);
+    }
+    if (message.outcomeSideEnum !== undefined) {
+      writer.uint32(98).string(message.outcomeSideEnum);
+    }
+    if (message.price !== undefined) {
+      writer.uint32(106).string(message.price);
+    }
+    if (message.profit !== undefined) {
+      writer.uint32(114).string(message.profit);
+    }
+    if (message.quoteToken !== undefined) {
+      writer.uint32(122).string(message.quoteToken);
+    }
+    if (message.rootMarketId !== undefined) {
+      writer.uint32(128).int32(message.rootMarketId);
+    }
+    if (message.rootMarketTitle !== undefined) {
+      writer.uint32(138).string(message.rootMarketTitle);
+    }
+    if (message.side !== undefined) {
+      writer.uint32(144).int32(message.side);
+    }
+    if (message.sideEnum !== undefined) {
+      writer.uint32(154).string(message.sideEnum);
+    }
+    if (message.status !== undefined) {
+      writer.uint32(160).int32(message.status);
+    }
+    if (message.statusEnum !== undefined) {
+      writer.uint32(170).string(message.statusEnum);
+    }
+    for (const v of message.trades) {
+      OrderTradeApiData.encode(v!, writer.uint32(178).fork()).join();
+    }
+    if (message.tradingMethod !== undefined) {
+      writer.uint32(184).int32(message.tradingMethod);
+    }
+    if (message.tradingMethodEnum !== undefined) {
+      writer.uint32(194).string(message.tradingMethodEnum);
+    }
+    if (message.transNo !== undefined) {
+      writer.uint32(202).string(message.transNo);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): OrderApiData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseOrderApiData();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.createdAt = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.expiresAt = reader.int64().toString();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.filledAmount = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.filledShares = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.marketTitle = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.orderAmount = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.orderId = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.orderShares = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.outcome = reader.string();
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.outcomeSide = reader.int32();
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.outcomeSideEnum = reader.string();
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.price = reader.string();
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.profit = reader.string();
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.quoteToken = reader.string();
+          continue;
+        }
+        case 16: {
+          if (tag !== 128) {
+            break;
+          }
+
+          message.rootMarketId = reader.int32();
+          continue;
+        }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.rootMarketTitle = reader.string();
+          continue;
+        }
+        case 18: {
+          if (tag !== 144) {
+            break;
+          }
+
+          message.side = reader.int32();
+          continue;
+        }
+        case 19: {
+          if (tag !== 154) {
+            break;
+          }
+
+          message.sideEnum = reader.string();
+          continue;
+        }
+        case 20: {
+          if (tag !== 160) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.statusEnum = reader.string();
+          continue;
+        }
+        case 22: {
+          if (tag !== 178) {
+            break;
+          }
+
+          message.trades.push(OrderTradeApiData.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 23: {
+          if (tag !== 184) {
+            break;
+          }
+
+          message.tradingMethod = reader.int32();
+          continue;
+        }
+        case 24: {
+          if (tag !== 194) {
+            break;
+          }
+
+          message.tradingMethodEnum = reader.string();
+          continue;
+        }
+        case 25: {
+          if (tag !== 202) {
+            break;
+          }
+
+          message.transNo = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): OrderApiData {
+    return {
+      createdAt: isSet(object.createdAt)
+        ? globalThis.String(object.createdAt)
+        : isSet(object.created_at)
+        ? globalThis.String(object.created_at)
+        : undefined,
+      expiresAt: isSet(object.expiresAt)
+        ? globalThis.String(object.expiresAt)
+        : isSet(object.expires_at)
+        ? globalThis.String(object.expires_at)
+        : undefined,
+      filledAmount: isSet(object.filledAmount)
+        ? globalThis.String(object.filledAmount)
+        : isSet(object.filled_amount)
+        ? globalThis.String(object.filled_amount)
+        : undefined,
+      filledShares: isSet(object.filledShares)
+        ? globalThis.String(object.filledShares)
+        : isSet(object.filled_shares)
+        ? globalThis.String(object.filled_shares)
+        : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
+      marketTitle: isSet(object.marketTitle)
+        ? globalThis.String(object.marketTitle)
+        : isSet(object.market_title)
+        ? globalThis.String(object.market_title)
+        : undefined,
+      orderAmount: isSet(object.orderAmount)
+        ? globalThis.String(object.orderAmount)
+        : isSet(object.order_amount)
+        ? globalThis.String(object.order_amount)
+        : undefined,
+      orderId: isSet(object.orderId)
+        ? globalThis.String(object.orderId)
+        : isSet(object.order_id)
+        ? globalThis.String(object.order_id)
+        : undefined,
+      orderShares: isSet(object.orderShares)
+        ? globalThis.String(object.orderShares)
+        : isSet(object.order_shares)
+        ? globalThis.String(object.order_shares)
+        : undefined,
+      outcome: isSet(object.outcome) ? globalThis.String(object.outcome) : undefined,
+      outcomeSide: isSet(object.outcomeSide)
+        ? globalThis.Number(object.outcomeSide)
+        : isSet(object.outcome_side)
+        ? globalThis.Number(object.outcome_side)
+        : undefined,
+      outcomeSideEnum: isSet(object.outcomeSideEnum)
+        ? globalThis.String(object.outcomeSideEnum)
+        : isSet(object.outcome_side_enum)
+        ? globalThis.String(object.outcome_side_enum)
+        : undefined,
+      price: isSet(object.price) ? globalThis.String(object.price) : undefined,
+      profit: isSet(object.profit) ? globalThis.String(object.profit) : undefined,
+      quoteToken: isSet(object.quoteToken)
+        ? globalThis.String(object.quoteToken)
+        : isSet(object.quote_token)
+        ? globalThis.String(object.quote_token)
+        : undefined,
+      rootMarketId: isSet(object.rootMarketId)
+        ? globalThis.Number(object.rootMarketId)
+        : isSet(object.root_market_id)
+        ? globalThis.Number(object.root_market_id)
+        : undefined,
+      rootMarketTitle: isSet(object.rootMarketTitle)
+        ? globalThis.String(object.rootMarketTitle)
+        : isSet(object.root_market_title)
+        ? globalThis.String(object.root_market_title)
+        : undefined,
+      side: isSet(object.side) ? globalThis.Number(object.side) : undefined,
+      sideEnum: isSet(object.sideEnum)
+        ? globalThis.String(object.sideEnum)
+        : isSet(object.side_enum)
+        ? globalThis.String(object.side_enum)
+        : undefined,
+      status: isSet(object.status) ? globalThis.Number(object.status) : undefined,
+      statusEnum: isSet(object.statusEnum)
+        ? globalThis.String(object.statusEnum)
+        : isSet(object.status_enum)
+        ? globalThis.String(object.status_enum)
+        : undefined,
+      trades: globalThis.Array.isArray(object?.trades)
+        ? object.trades.map((e: any) => OrderTradeApiData.fromJSON(e))
+        : [],
+      tradingMethod: isSet(object.tradingMethod)
+        ? globalThis.Number(object.tradingMethod)
+        : isSet(object.trading_method)
+        ? globalThis.Number(object.trading_method)
+        : undefined,
+      tradingMethodEnum: isSet(object.tradingMethodEnum)
+        ? globalThis.String(object.tradingMethodEnum)
+        : isSet(object.trading_method_enum)
+        ? globalThis.String(object.trading_method_enum)
+        : undefined,
+      transNo: isSet(object.transNo)
+        ? globalThis.String(object.transNo)
+        : isSet(object.trans_no)
+        ? globalThis.String(object.trans_no)
+        : undefined,
+    };
+  },
+
+  toJSON(message: OrderApiData): unknown {
+    const obj: any = {};
+    if (message.createdAt !== undefined) {
+      obj.createdAt = message.createdAt;
+    }
+    if (message.expiresAt !== undefined) {
+      obj.expiresAt = message.expiresAt;
+    }
+    if (message.filledAmount !== undefined) {
+      obj.filledAmount = message.filledAmount;
+    }
+    if (message.filledShares !== undefined) {
+      obj.filledShares = message.filledShares;
+    }
+    if (message.marketId !== undefined) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.marketTitle !== undefined) {
+      obj.marketTitle = message.marketTitle;
+    }
+    if (message.orderAmount !== undefined) {
+      obj.orderAmount = message.orderAmount;
+    }
+    if (message.orderId !== undefined) {
+      obj.orderId = message.orderId;
+    }
+    if (message.orderShares !== undefined) {
+      obj.orderShares = message.orderShares;
+    }
+    if (message.outcome !== undefined) {
+      obj.outcome = message.outcome;
+    }
+    if (message.outcomeSide !== undefined) {
+      obj.outcomeSide = Math.round(message.outcomeSide);
+    }
+    if (message.outcomeSideEnum !== undefined) {
+      obj.outcomeSideEnum = message.outcomeSideEnum;
+    }
+    if (message.price !== undefined) {
+      obj.price = message.price;
+    }
+    if (message.profit !== undefined) {
+      obj.profit = message.profit;
+    }
+    if (message.quoteToken !== undefined) {
+      obj.quoteToken = message.quoteToken;
+    }
+    if (message.rootMarketId !== undefined) {
+      obj.rootMarketId = Math.round(message.rootMarketId);
+    }
+    if (message.rootMarketTitle !== undefined) {
+      obj.rootMarketTitle = message.rootMarketTitle;
+    }
+    if (message.side !== undefined) {
+      obj.side = Math.round(message.side);
+    }
+    if (message.sideEnum !== undefined) {
+      obj.sideEnum = message.sideEnum;
+    }
+    if (message.status !== undefined) {
+      obj.status = Math.round(message.status);
+    }
+    if (message.statusEnum !== undefined) {
+      obj.statusEnum = message.statusEnum;
+    }
+    if (message.trades?.length) {
+      obj.trades = message.trades.map((e) => OrderTradeApiData.toJSON(e));
+    }
+    if (message.tradingMethod !== undefined) {
+      obj.tradingMethod = Math.round(message.tradingMethod);
+    }
+    if (message.tradingMethodEnum !== undefined) {
+      obj.tradingMethodEnum = message.tradingMethodEnum;
+    }
+    if (message.transNo !== undefined) {
+      obj.transNo = message.transNo;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<OrderApiData>, I>>(base?: I): OrderApiData {
+    return OrderApiData.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<OrderApiData>, I>>(object: I): OrderApiData {
+    const message = createBaseOrderApiData();
+    message.createdAt = object.createdAt ?? undefined;
+    message.expiresAt = object.expiresAt ?? undefined;
+    message.filledAmount = object.filledAmount ?? undefined;
+    message.filledShares = object.filledShares ?? undefined;
+    message.marketId = object.marketId ?? undefined;
+    message.marketTitle = object.marketTitle ?? undefined;
+    message.orderAmount = object.orderAmount ?? undefined;
+    message.orderId = object.orderId ?? undefined;
+    message.orderShares = object.orderShares ?? undefined;
+    message.outcome = object.outcome ?? undefined;
+    message.outcomeSide = object.outcomeSide ?? undefined;
+    message.outcomeSideEnum = object.outcomeSideEnum ?? undefined;
+    message.price = object.price ?? undefined;
+    message.profit = object.profit ?? undefined;
+    message.quoteToken = object.quoteToken ?? undefined;
+    message.rootMarketId = object.rootMarketId ?? undefined;
+    message.rootMarketTitle = object.rootMarketTitle ?? undefined;
+    message.side = object.side ?? undefined;
+    message.sideEnum = object.sideEnum ?? undefined;
+    message.status = object.status ?? undefined;
+    message.statusEnum = object.statusEnum ?? undefined;
+    message.trades = object.trades?.map((e) => OrderTradeApiData.fromPartial(e)) || [];
+    message.tradingMethod = object.tradingMethod ?? undefined;
+    message.tradingMethodEnum = object.tradingMethodEnum ?? undefined;
+    message.transNo = object.transNo ?? undefined;
+    return message;
+  },
+};
+
+function createBaseOrderbookLevel(): OrderbookLevel {
+  return { price: undefined, size: undefined };
+}
+
+export const OrderbookLevel: MessageFns<OrderbookLevel> = {
+  encode(message: OrderbookLevel, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.price !== undefined) {
+      writer.uint32(10).string(message.price);
+    }
+    if (message.size !== undefined) {
+      writer.uint32(18).string(message.size);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): OrderbookLevel {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseOrderbookLevel();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.price = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.size = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): OrderbookLevel {
+    return {
+      price: isSet(object.price) ? globalThis.String(object.price) : undefined,
+      size: isSet(object.size) ? globalThis.String(object.size) : undefined,
+    };
+  },
+
+  toJSON(message: OrderbookLevel): unknown {
+    const obj: any = {};
+    if (message.price !== undefined) {
+      obj.price = message.price;
+    }
+    if (message.size !== undefined) {
+      obj.size = message.size;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<OrderbookLevel>, I>>(base?: I): OrderbookLevel {
+    return OrderbookLevel.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<OrderbookLevel>, I>>(object: I): OrderbookLevel {
+    const message = createBaseOrderbookLevel();
+    message.price = object.price ?? undefined;
+    message.size = object.size ?? undefined;
+    return message;
+  },
+};
+
+function createBasePricePoint(): PricePoint {
+  return { price: undefined, timeUnixSec: undefined };
+}
+
+export const PricePoint: MessageFns<PricePoint> = {
+  encode(message: PricePoint, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.price !== undefined) {
+      writer.uint32(10).string(message.price);
+    }
+    if (message.timeUnixSec !== undefined) {
+      writer.uint32(16).int64(message.timeUnixSec);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PricePoint {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePricePoint();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.price = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.timeUnixSec = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PricePoint {
+    return {
+      price: isSet(object.price) ? globalThis.String(object.price) : undefined,
+      timeUnixSec: isSet(object.timeUnixSec)
+        ? globalThis.String(object.timeUnixSec)
+        : isSet(object.time_unix_sec)
+        ? globalThis.String(object.time_unix_sec)
+        : undefined,
+    };
+  },
+
+  toJSON(message: PricePoint): unknown {
+    const obj: any = {};
+    if (message.price !== undefined) {
+      obj.price = message.price;
+    }
+    if (message.timeUnixSec !== undefined) {
+      obj.timeUnixSec = message.timeUnixSec;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PricePoint>, I>>(base?: I): PricePoint {
+    return PricePoint.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PricePoint>, I>>(object: I): PricePoint {
+    const message = createBasePricePoint();
+    message.price = object.price ?? undefined;
+    message.timeUnixSec = object.timeUnixSec ?? undefined;
     return message;
   },
 };
@@ -2176,6 +5771,99 @@ export const OpinionServiceService = {
       Buffer.from(GetQuoteTokensResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): GetQuoteTokensResponse => GetQuoteTokensResponse.decode(value),
   },
+  getOrderbook: {
+    path: "/opinion.OpinionService/GetOrderbook" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetOrderbookRequest): Buffer => Buffer.from(GetOrderbookRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetOrderbookRequest => GetOrderbookRequest.decode(value),
+    responseSerialize: (value: GetOrderbookResponse): Buffer =>
+      Buffer.from(GetOrderbookResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetOrderbookResponse => GetOrderbookResponse.decode(value),
+  },
+  getLatestPrice: {
+    path: "/opinion.OpinionService/GetLatestPrice" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetLatestPriceRequest): Buffer =>
+      Buffer.from(GetLatestPriceRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetLatestPriceRequest => GetLatestPriceRequest.decode(value),
+    responseSerialize: (value: GetLatestPriceResponse): Buffer =>
+      Buffer.from(GetLatestPriceResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetLatestPriceResponse => GetLatestPriceResponse.decode(value),
+  },
+  getPriceHistory: {
+    path: "/opinion.OpinionService/GetPriceHistory" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetPriceHistoryRequest): Buffer =>
+      Buffer.from(GetPriceHistoryRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetPriceHistoryRequest => GetPriceHistoryRequest.decode(value),
+    responseSerialize: (value: GetPriceHistoryResponse): Buffer =>
+      Buffer.from(GetPriceHistoryResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetPriceHistoryResponse => GetPriceHistoryResponse.decode(value),
+  },
+  getFeeRates: {
+    path: "/opinion.OpinionService/GetFeeRates" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetFeeRatesRequest): Buffer => Buffer.from(GetFeeRatesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetFeeRatesRequest => GetFeeRatesRequest.decode(value),
+    responseSerialize: (value: GetFeeRatesResponse): Buffer => Buffer.from(GetFeeRatesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetFeeRatesResponse => GetFeeRatesResponse.decode(value),
+  },
+  placeOrder: {
+    path: "/opinion.OpinionService/PlaceOrder" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: PlaceOrderRequest): Buffer => Buffer.from(PlaceOrderRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): PlaceOrderRequest => PlaceOrderRequest.decode(value),
+    responseSerialize: (value: PlaceOrderResponse): Buffer => Buffer.from(PlaceOrderResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): PlaceOrderResponse => PlaceOrderResponse.decode(value),
+  },
+  placeOrdersBatch: {
+    path: "/opinion.OpinionService/PlaceOrdersBatch" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: PlaceOrdersBatchRequest): Buffer =>
+      Buffer.from(PlaceOrdersBatchRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): PlaceOrdersBatchRequest => PlaceOrdersBatchRequest.decode(value),
+    responseSerialize: (value: PlaceOrdersBatchResponse): Buffer =>
+      Buffer.from(PlaceOrdersBatchResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): PlaceOrdersBatchResponse => PlaceOrdersBatchResponse.decode(value),
+  },
+  cancelOrder: {
+    path: "/opinion.OpinionService/CancelOrder" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: CancelOrderRequest): Buffer => Buffer.from(CancelOrderRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CancelOrderRequest => CancelOrderRequest.decode(value),
+    responseSerialize: (value: CancelOrderApiResponse): Buffer =>
+      Buffer.from(CancelOrderApiResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CancelOrderApiResponse => CancelOrderApiResponse.decode(value),
+  },
+  cancelOrdersBatch: {
+    path: "/opinion.OpinionService/CancelOrdersBatch" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: CancelOrdersBatchRequest): Buffer =>
+      Buffer.from(CancelOrdersBatchRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CancelOrdersBatchRequest => CancelOrdersBatchRequest.decode(value),
+    responseSerialize: (value: CancelOrdersBatchResponse): Buffer =>
+      Buffer.from(CancelOrdersBatchResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CancelOrdersBatchResponse => CancelOrdersBatchResponse.decode(value),
+  },
+  cancelAllOrders: {
+    path: "/opinion.OpinionService/CancelAllOrders" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: CancelAllOrdersRequest): Buffer =>
+      Buffer.from(CancelAllOrdersRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CancelAllOrdersRequest => CancelAllOrdersRequest.decode(value),
+    responseSerialize: (value: CancelAllOrdersResponse): Buffer =>
+      Buffer.from(CancelAllOrdersResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CancelAllOrdersResponse => CancelAllOrdersResponse.decode(value),
+  },
 } as const;
 
 export interface OpinionServiceServer extends UntypedServiceImplementation {
@@ -2184,6 +5872,15 @@ export interface OpinionServiceServer extends UntypedServiceImplementation {
   getCategoricalMarket: handleUnaryCall<GetCategoricalMarketRequest, GetMarketResponse>;
   getMarketBySlug: handleUnaryCall<GetMarketBySlugRequest, GetMarketResponse>;
   getQuoteTokens: handleUnaryCall<GetQuoteTokensRequest, GetQuoteTokensResponse>;
+  getOrderbook: handleUnaryCall<GetOrderbookRequest, GetOrderbookResponse>;
+  getLatestPrice: handleUnaryCall<GetLatestPriceRequest, GetLatestPriceResponse>;
+  getPriceHistory: handleUnaryCall<GetPriceHistoryRequest, GetPriceHistoryResponse>;
+  getFeeRates: handleUnaryCall<GetFeeRatesRequest, GetFeeRatesResponse>;
+  placeOrder: handleUnaryCall<PlaceOrderRequest, PlaceOrderResponse>;
+  placeOrdersBatch: handleUnaryCall<PlaceOrdersBatchRequest, PlaceOrdersBatchResponse>;
+  cancelOrder: handleUnaryCall<CancelOrderRequest, CancelOrderApiResponse>;
+  cancelOrdersBatch: handleUnaryCall<CancelOrdersBatchRequest, CancelOrdersBatchResponse>;
+  cancelAllOrders: handleUnaryCall<CancelAllOrdersRequest, CancelAllOrdersResponse>;
 }
 
 export interface OpinionServiceClient extends Client {
@@ -2261,6 +5958,141 @@ export interface OpinionServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetQuoteTokensResponse) => void,
+  ): ClientUnaryCall;
+  getOrderbook(
+    request: GetOrderbookRequest,
+    callback: (error: ServiceError | null, response: GetOrderbookResponse) => void,
+  ): ClientUnaryCall;
+  getOrderbook(
+    request: GetOrderbookRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetOrderbookResponse) => void,
+  ): ClientUnaryCall;
+  getOrderbook(
+    request: GetOrderbookRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetOrderbookResponse) => void,
+  ): ClientUnaryCall;
+  getLatestPrice(
+    request: GetLatestPriceRequest,
+    callback: (error: ServiceError | null, response: GetLatestPriceResponse) => void,
+  ): ClientUnaryCall;
+  getLatestPrice(
+    request: GetLatestPriceRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetLatestPriceResponse) => void,
+  ): ClientUnaryCall;
+  getLatestPrice(
+    request: GetLatestPriceRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetLatestPriceResponse) => void,
+  ): ClientUnaryCall;
+  getPriceHistory(
+    request: GetPriceHistoryRequest,
+    callback: (error: ServiceError | null, response: GetPriceHistoryResponse) => void,
+  ): ClientUnaryCall;
+  getPriceHistory(
+    request: GetPriceHistoryRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetPriceHistoryResponse) => void,
+  ): ClientUnaryCall;
+  getPriceHistory(
+    request: GetPriceHistoryRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetPriceHistoryResponse) => void,
+  ): ClientUnaryCall;
+  getFeeRates(
+    request: GetFeeRatesRequest,
+    callback: (error: ServiceError | null, response: GetFeeRatesResponse) => void,
+  ): ClientUnaryCall;
+  getFeeRates(
+    request: GetFeeRatesRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetFeeRatesResponse) => void,
+  ): ClientUnaryCall;
+  getFeeRates(
+    request: GetFeeRatesRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetFeeRatesResponse) => void,
+  ): ClientUnaryCall;
+  placeOrder(
+    request: PlaceOrderRequest,
+    callback: (error: ServiceError | null, response: PlaceOrderResponse) => void,
+  ): ClientUnaryCall;
+  placeOrder(
+    request: PlaceOrderRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: PlaceOrderResponse) => void,
+  ): ClientUnaryCall;
+  placeOrder(
+    request: PlaceOrderRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: PlaceOrderResponse) => void,
+  ): ClientUnaryCall;
+  placeOrdersBatch(
+    request: PlaceOrdersBatchRequest,
+    callback: (error: ServiceError | null, response: PlaceOrdersBatchResponse) => void,
+  ): ClientUnaryCall;
+  placeOrdersBatch(
+    request: PlaceOrdersBatchRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: PlaceOrdersBatchResponse) => void,
+  ): ClientUnaryCall;
+  placeOrdersBatch(
+    request: PlaceOrdersBatchRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: PlaceOrdersBatchResponse) => void,
+  ): ClientUnaryCall;
+  cancelOrder(
+    request: CancelOrderRequest,
+    callback: (error: ServiceError | null, response: CancelOrderApiResponse) => void,
+  ): ClientUnaryCall;
+  cancelOrder(
+    request: CancelOrderRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: CancelOrderApiResponse) => void,
+  ): ClientUnaryCall;
+  cancelOrder(
+    request: CancelOrderRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: CancelOrderApiResponse) => void,
+  ): ClientUnaryCall;
+  cancelOrdersBatch(
+    request: CancelOrdersBatchRequest,
+    callback: (error: ServiceError | null, response: CancelOrdersBatchResponse) => void,
+  ): ClientUnaryCall;
+  cancelOrdersBatch(
+    request: CancelOrdersBatchRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: CancelOrdersBatchResponse) => void,
+  ): ClientUnaryCall;
+  cancelOrdersBatch(
+    request: CancelOrdersBatchRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: CancelOrdersBatchResponse) => void,
+  ): ClientUnaryCall;
+  cancelAllOrders(
+    request: CancelAllOrdersRequest,
+    callback: (error: ServiceError | null, response: CancelAllOrdersResponse) => void,
+  ): ClientUnaryCall;
+  cancelAllOrders(
+    request: CancelAllOrdersRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: CancelAllOrdersResponse) => void,
+  ): ClientUnaryCall;
+  cancelAllOrders(
+    request: CancelAllOrdersRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: CancelAllOrdersResponse) => void,
   ): ClientUnaryCall;
 }
 

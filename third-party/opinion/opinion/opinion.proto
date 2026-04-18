@@ -4,7 +4,7 @@ package opinion;
 
 import "google/protobuf/struct.proto";
 
-// Opinion gRPC surface for `@opinion-labs/opinion-clob-sdk` market-query APIs.
+// Opinion gRPC surface for `@opinion-labs/opinion-clob-sdk` market, market-data, and trading APIs.
 // Field naming: snake_case in proto; generated TS uses camelCase per ts-proto defaults.
 // See docs/references/sdk-to-proto-market-query.md for mapping rules.
 
@@ -14,6 +14,15 @@ service OpinionService {
   rpc GetCategoricalMarket(GetCategoricalMarketRequest) returns (GetMarketResponse);
   rpc GetMarketBySlug(GetMarketBySlugRequest) returns (GetMarketResponse);
   rpc GetQuoteTokens(GetQuoteTokensRequest) returns (GetQuoteTokensResponse);
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
+  rpc GetLatestPrice(GetLatestPriceRequest) returns (GetLatestPriceResponse);
+  rpc GetPriceHistory(GetPriceHistoryRequest) returns (GetPriceHistoryResponse);
+  rpc GetFeeRates(GetFeeRatesRequest) returns (GetFeeRatesResponse);
+  rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse);
+  rpc PlaceOrdersBatch(PlaceOrdersBatchRequest) returns (PlaceOrdersBatchResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderApiResponse);
+  rpc CancelOrdersBatch(CancelOrdersBatchRequest) returns (CancelOrdersBatchResponse);
+  rpc CancelAllOrders(CancelAllOrdersRequest) returns (CancelAllOrdersResponse);
 }
 
 // --- Enums (proto numbers are stable; map to SDK enums in adapters) ---
@@ -44,6 +53,29 @@ enum MarketSortBy {
   MARKET_SORT_BY_VOLUME_7D_ASC = 8;
 }
 
+// Maps to SDK getPriceHistory `interval`; UNSPECIFIED → omit so SDK defaults to 1h.
+enum PriceHistoryInterval {
+  PRICE_HISTORY_INTERVAL_UNSPECIFIED = 0;
+  PRICE_HISTORY_INTERVAL_1M = 1;
+  PRICE_HISTORY_INTERVAL_1H = 2;
+  PRICE_HISTORY_INTERVAL_1D = 3;
+  PRICE_HISTORY_INTERVAL_1W = 4;
+  PRICE_HISTORY_INTERVAL_MAX = 5;
+}
+
+// SDK `OrderSide` (`src/models/enums.ts`).
+enum SdkOrderSide {
+  SDK_ORDER_SIDE_BUY = 0;
+  SDK_ORDER_SIDE_SELL = 1;
+}
+
+// SDK `OrderType` (`src/models/enums.ts`). 0 reserved / do not use for valid orders.
+enum SdkOrderType {
+  SDK_ORDER_TYPE_UNSPECIFIED = 0;
+  SDK_ORDER_TYPE_MARKET_ORDER = 1;
+  SDK_ORDER_TYPE_LIMIT_ORDER = 2;
+}
+
 // --- Requests ---
 
 message GetMarketsRequest {
@@ -72,6 +104,61 @@ message GetQuoteTokensRequest {
   optional bool use_cache = 1;
 }
 
+message GetOrderbookRequest {
+  string token_id = 1;
+}
+
+message GetLatestPriceRequest {
+  string token_id = 1;
+}
+
+message GetPriceHistoryRequest {
+  string token_id = 1;
+  optional PriceHistoryInterval interval = 2;
+  optional int64 start_at = 3;
+  optional int64 end_at = 4;
+}
+
+message GetFeeRatesRequest {
+  string token_id = 1;
+}
+
+// Mirrors SDK `PlaceOrderDataInput` (`src/models/order.ts`).
+message PlaceOrderData {
+  int32 market_id = 1;
+  string token_id = 2;
+  SdkOrderSide side = 3;
+  SdkOrderType order_type = 4;
+  string price = 5;
+  optional string maker_amount_in_quote_token = 6;
+  optional string maker_amount_in_base_token = 7;
+}
+
+// `placeOrder(data, checkApproval)` — `check_approval` is the second SDK argument (default false).
+message PlaceOrderRequest {
+  PlaceOrderData order = 1;
+  optional bool check_approval = 2;
+}
+
+message PlaceOrdersBatchRequest {
+  repeated PlaceOrderData orders = 1;
+  optional bool check_approval = 2;
+}
+
+message CancelOrderRequest {
+  string order_id = 1;
+}
+
+message CancelOrdersBatchRequest {
+  repeated string order_ids = 1;
+}
+
+// Optional filters match `Client.cancelAllOrders` options; unset means no filter.
+message CancelAllOrdersRequest {
+  optional int32 market_id = 1;
+  optional SdkOrderSide side = 2;
+}
+
 // --- Responses (errno/errmsg mirror SDK ApiResponse; omitted fields mean unset in partial updates) ---
 
 message GetMarketsResponse {
@@ -92,6 +179,155 @@ message GetQuoteTokensResponse {
   string errmsg = 2;
   int32 total = 3;
   repeated QuoteToken quote_tokens = 4;
+}
+
+message GetOrderbookResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  repeated OrderbookLevel asks = 3;
+  repeated OrderbookLevel bids = 4;
+  optional string market = 5;
+  optional int64 timestamp = 6;
+  optional string token_id = 7;
+}
+
+message GetLatestPriceResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  optional string price = 3;
+  optional string side = 4;
+  optional string size = 5;
+  optional int64 timestamp = 6;
+  optional string token_id = 7;
+}
+
+message GetPriceHistoryResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  repeated PricePoint history = 3;
+}
+
+// Mirrors chain FeeRateSettings; SDK returns this directly (not ApiResponse).
+// Rates are the SDK-computed max fee percentage (see ContractCaller.getFeeRateSettings).
+message GetFeeRatesResponse {
+  double maker_max_fee_rate = 1;
+  double taker_max_fee_rate = 2;
+  bool enabled = 3;
+}
+
+// `ApiResponse<CreateOrderResponse>`: flatten `result.orderData` to `order_data` (same as other RPCs flattening `result`).
+message PlaceOrderResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  optional OrderApiData order_data = 3;
+}
+
+message PlaceOrdersBatchResponse {
+  repeated PlaceOrderBatchItem items = 1;
+}
+
+// One entry per input order; `result` is the full SDK `ApiResponse<CreateOrderResponse>` shape.
+message PlaceOrderBatchItem {
+  int32 index = 1;
+  bool success = 2;
+  optional PlaceOrderResponse result = 3;
+  optional string error = 4;
+}
+
+// Full SDK `ApiResponse<OpenapiCancelOrderRespOpenApi>` (`errno` / `errmsg` / nested openapi body).
+message CancelOrderApiResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  // OpenAPI `OpenapiCancelOrderRespOpenApi.result` (boolean). Renamed to avoid confusion with gRPC `result` wrappers.
+  optional bool openapi_cancel_result = 3;
+}
+
+message CancelOrdersBatchResponse {
+  repeated CancelOrderBatchItem items = 1;
+}
+
+message CancelOrderBatchItem {
+  int32 index = 1;
+  bool success = 2;
+  optional CancelOrderApiResponse result = 3;
+  optional string error = 4;
+}
+
+// Return type of `Client.cancelAllOrders`.
+message CancelAllOrdersResponse {
+  int32 total_orders = 1;
+  int32 cancelled = 2;
+  int32 failed = 3;
+  repeated CancelOrderBatchItem results = 4;
+}
+
+// Mirrors `@opinion-labs/opinion-api` `OpenapiTradeDataOpenApi`.
+message OrderTradeApiData {
+  optional string amount = 1;
+  optional string chain_id = 2;
+  optional int64 created_at = 3;
+  optional double fee = 4;
+  optional string fee_formatted = 5;
+  optional int32 market_id = 6;
+  optional string market_title = 7;
+  optional string order_no = 8;
+  optional string outcome = 9;
+  optional int32 outcome_side = 10;
+  optional string outcome_side_enum = 11;
+  optional string price = 12;
+  optional string profit = 13;
+  optional string quote_token = 14;
+  optional string quote_token_usd_price = 15;
+  optional int32 root_market_id = 16;
+  optional string root_market_title = 17;
+  optional string shares = 18;
+  optional string side = 19;
+  optional int32 status = 20;
+  optional string status_enum = 21;
+  optional string trade_no = 22;
+  optional string tx_hash = 23;
+  optional string usd_amount = 24;
+}
+
+// Mirrors `@opinion-labs/opinion-api` `OpenapiOrderDataOpenApi` / SDK create-order payload.
+message OrderApiData {
+  optional int64 created_at = 1;
+  optional int64 expires_at = 2;
+  optional string filled_amount = 3;
+  optional string filled_shares = 4;
+  optional int32 market_id = 5;
+  optional string market_title = 6;
+  optional string order_amount = 7;
+  optional string order_id = 8;
+  optional string order_shares = 9;
+  optional string outcome = 10;
+  optional int32 outcome_side = 11;
+  optional string outcome_side_enum = 12;
+  optional string price = 13;
+  optional string profit = 14;
+  optional string quote_token = 15;
+  optional int32 root_market_id = 16;
+  optional string root_market_title = 17;
+  optional int32 side = 18;
+  optional string side_enum = 19;
+  optional int32 status = 20;
+  optional string status_enum = 21;
+  repeated OrderTradeApiData trades = 22;
+  optional int32 trading_method = 23;
+  optional string trading_method_enum = 24;
+  optional string trans_no = 25;
+}
+
+// OpenAPI order book / candle types (@opinion-labs/opinion-api).
+
+message OrderbookLevel {
+  optional string price = 1;
+  optional string size = 2;
+}
+
+message PricePoint {
+  optional string price = 1;
+  optional int64 time_unix_sec = 2;
 }
 
 // --- Domain messages (aligned with SDK transformMarketData / transformChildMarketData output) ---
