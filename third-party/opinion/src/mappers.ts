@@ -1,5 +1,11 @@
 import type { GetMarketsResponse, Market } from './gen/opinion/opinion.js';
 
+type RawRecord = Record<string, unknown>;
+type RawGetMarketsResult = {
+  total?: number;
+  list?: unknown;
+};
+
 function asString(value: unknown): string {
   if (value === null || value === undefined) {
     return '';
@@ -27,15 +33,15 @@ function asBoolean(value: unknown): boolean {
   return value === true;
 }
 
-function asMarketList(value: unknown): Record<string, unknown>[] {
+function asRecordList(value: unknown): RawRecord[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null);
+  return value.filter((item): item is RawRecord => typeof item === 'object' && item !== null);
 }
 
-export function mapMarket(raw: Record<string, unknown>): Market {
+export function mapMarket(raw: RawRecord): Market {
   return {
     marketId: asString(raw.marketId),
     marketTitle: asString(raw.marketTitle),
@@ -55,16 +61,13 @@ export function mapMarket(raw: Record<string, unknown>): Market {
     noLabel: asString(raw.noLabel),
     volume: asString(raw.volume),
     isIncentivized: asBoolean(raw.isIncentivized),
-    childMarkets: asMarketList(raw.childMarkets).map(mapMarket),
+    childMarkets: asRecordList(raw.childMarkets).map(mapMarket),
   };
 }
 
-export function mapGetMarketsResponse(result: {
-  total?: number;
-  list?: unknown;
-}): GetMarketsResponse {
+export function mapGetMarketsResponse(result: RawGetMarketsResult): GetMarketsResponse {
   return {
     total: typeof result.total === 'number' ? result.total : 0,
-    markets: asMarketList(result.list).map(mapMarket),
+    markets: asRecordList(result.list).map(mapMarket),
   };
 }

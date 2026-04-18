@@ -1,8 +1,19 @@
 import { Client } from '@opinion-labs/opinion-clob-sdk';
 
-import { loadRuntimeConfig } from './config.js';
+import { type OpinionSdkConfig, loadRuntimeConfig } from './config.js';
 
 let opinionClient: Client | undefined;
+
+export function createOpinionClient(config: OpinionSdkConfig): Client {
+  return new Client({
+    host: config.host,
+    apiKey: config.apiKey,
+    chainId: config.chainId,
+    rpcUrl: config.rpcUrl,
+    privateKey: config.privateKey,
+    multiSigAddress: config.multiSigAddress,
+  });
+}
 
 export function getOpinionClient(): Client {
   if (opinionClient) {
@@ -11,14 +22,7 @@ export function getOpinionClient(): Client {
 
   const { sdk } = loadRuntimeConfig();
 
-  opinionClient = new Client({
-    host: sdk.host,
-    apiKey: sdk.apiKey,
-    chainId: sdk.chainId,
-    rpcUrl: sdk.rpcUrl,
-    privateKey: sdk.privateKey,
-    multiSigAddress: sdk.multiSigAddress,
-  });
+  opinionClient = createOpinionClient(sdk);
 
   return opinionClient;
 }

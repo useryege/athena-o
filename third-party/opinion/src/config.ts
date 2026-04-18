@@ -23,6 +23,10 @@ export interface OpinionRuntimeConfig {
   sdk: OpinionSdkConfig;
 }
 
+const DEFAULT_GRPC_HOST = '0.0.0.0';
+const DEFAULT_GRPC_PORT = '50051';
+const DEFAULT_RPC_URL = 'https://bsc-dataseed.binance.org/';
+
 function getRequiredEnv(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) {
@@ -54,21 +58,31 @@ function parseChainId(value: string): SupportedChainId {
   return CHAIN_ID_BNB_MAINNET;
 }
 
-export function loadRuntimeConfig(): OpinionRuntimeConfig {
-  const apiHost = process.env.API_HOST?.trim() || process.env.OPINION_HOST?.trim() || DEFAULT_API_HOST;
+function resolveApiHost(): string {
+  return process.env.API_HOST?.trim() || process.env.OPINION_HOST?.trim() || DEFAULT_API_HOST;
+}
 
+export function loadGrpcServerConfig(): GrpcServerConfig {
   return {
-    grpc: {
-      host: getOptionalEnv('GRPC_HOST', '0.0.0.0'),
-      port: parsePort(getOptionalEnv('GRPC_PORT', '50051')),
-    },
-    sdk: {
-      host: apiHost,
-      apiKey: getRequiredEnv('API_KEY'),
-      chainId: parseChainId(getOptionalEnv('CHAIN_ID', String(CHAIN_ID_BNB_MAINNET))),
-      rpcUrl: getOptionalEnv('RPC_URL', 'https://bsc-dataseed.binance.org/'),
-      privateKey: getRequiredEnv('PRIVATE_KEY') as `0x${string}`,
-      multiSigAddress: getRequiredEnv('MULTI_SIG_ADDRESS') as `0x${string}`,
-    },
+    host: getOptionalEnv('GRPC_HOST', DEFAULT_GRPC_HOST),
+    port: parsePort(getOptionalEnv('GRPC_PORT', DEFAULT_GRPC_PORT)),
+  };
+}
+
+export function loadOpinionSdkConfig(): OpinionSdkConfig {
+  return {
+    host: resolveApiHost(),
+    apiKey: getRequiredEnv('API_KEY'),
+    chainId: parseChainId(getOptionalEnv('CHAIN_ID', String(CHAIN_ID_BNB_MAINNET))),
+    rpcUrl: getOptionalEnv('RPC_URL', DEFAULT_RPC_URL),
+    privateKey: getRequiredEnv('PRIVATE_KEY') as `0x${string}`,
+    multiSigAddress: getRequiredEnv('MULTI_SIG_ADDRESS') as `0x${string}`,
+  };
+}
+
+export function loadRuntimeConfig(): OpinionRuntimeConfig {
+  return {
+    grpc: loadGrpcServerConfig(),
+    sdk: loadOpinionSdkConfig(),
   };
 }
