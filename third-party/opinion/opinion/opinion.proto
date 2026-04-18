@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package opinion.v1;
+package opinion;
 
 service OpinionService {
   rpc GetMarkets(GetMarketsRequest) returns (GetMarketsResponse);

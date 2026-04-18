@@ -1,4 +1,4 @@
-import type { GetMarketsResponse, MarketMessage } from './types.js';
+import type { GetMarketsResponse, Market } from './gen/opinion/opinion.js';
 
 function asString(value: unknown): string {
   if (value === null || value === undefined) {
@@ -35,27 +35,27 @@ function asMarketList(value: unknown): Record<string, unknown>[] {
   return value.filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null);
 }
 
-export function mapMarket(raw: Record<string, unknown>): MarketMessage {
+export function mapMarket(raw: Record<string, unknown>): Market {
   return {
-    market_id: asString(raw.marketId),
-    market_title: asString(raw.marketTitle),
+    marketId: asString(raw.marketId),
+    marketTitle: asString(raw.marketTitle),
     slug: asString(raw.slug),
-    condition_id: asString(raw.conditionId),
-    chain_id: asString(raw.chainId),
-    quote_token: asString(raw.quoteToken),
+    conditionId: asString(raw.conditionId),
+    chainId: asString(raw.chainId),
+    quoteToken: asString(raw.quoteToken),
     status: asNumber(raw.status),
-    status_enum: asString(raw.statusEnum),
-    created_at: asString(raw.createdAt),
-    cutoff_at: asString(raw.cutoffAt),
-    resolved_at: asString(raw.resolvedAt),
-    yes_token_id: asString(raw.yesTokenId),
-    no_token_id: asString(raw.noTokenId),
-    result_token_id: asString(raw.resultTokenId),
-    yes_label: asString(raw.yesLabel),
-    no_label: asString(raw.noLabel),
+    statusEnum: asString(raw.statusEnum),
+    createdAt: asString(raw.createdAt),
+    cutoffAt: asString(raw.cutoffAt),
+    resolvedAt: asString(raw.resolvedAt),
+    yesTokenId: asString(raw.yesTokenId),
+    noTokenId: asString(raw.noTokenId),
+    resultTokenId: asString(raw.resultTokenId),
+    yesLabel: asString(raw.yesLabel),
+    noLabel: asString(raw.noLabel),
     volume: asString(raw.volume),
-    is_incentivized: asBoolean(raw.isIncentivized),
-    child_markets: asMarketList(raw.childMarkets).map(mapMarket),
+    isIncentivized: asBoolean(raw.isIncentivized),
+    childMarkets: asMarketList(raw.childMarkets).map(mapMarket),
   };
 }
 

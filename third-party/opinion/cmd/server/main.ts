@@ -2,8 +2,8 @@ import 'dotenv/config';
 
 import { Server, ServerCredentials } from '@grpc/grpc-js';
 
+import { OpinionServiceService } from '../../src/gen/opinion/opinion.js';
 import { loadRuntimeConfig } from '../../src/config.js';
-import { loadOpinionProto } from '../../src/proto.js';
 import { createOpinionService } from '../../src/service.js';
 
 async function bindServer(server: Server, address: string): Promise<number> {
@@ -21,15 +21,13 @@ async function bindServer(server: Server, address: string): Promise<number> {
 
 async function main() {
   const config = loadRuntimeConfig();
-  const opinionProto = loadOpinionProto();
   const server = new Server();
 
-  server.addService(opinionProto.OpinionService.service, createOpinionService());
+  server.addService(OpinionServiceService, createOpinionService());
 
   const address = `${config.grpc.host}:${config.grpc.port}`;
   const boundPort = await bindServer(server, address);
 
-  server.start();
   console.log(`Opinion gRPC server listening on ${config.grpc.host}:${boundPort}`);
 
   let shuttingDown = false;

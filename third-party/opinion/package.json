@@ -4,22 +4,25 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
+    "proto:gen": "mkdir -p src/gen && grpc_tools_node_protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=src/gen --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,importSuffix=.js,forceLong=string --proto_path=. opinion/opinion.proto",
     "dev": "tsx watch cmd/server/main.ts",
     "build": "tsc --project tsconfig.build.json",
     "start": "node dist/cmd/server/main.js",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "grpc:test": "tsx scripts/get-markets.ts"
+    "grpc:test": "tsx test/get-markets.ts"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.11.0",
     "@fastify/sensible": "^6.0.4",
     "@grpc/grpc-js": "^1.14.3",
-    "@grpc/proto-loader": "^0.8.0",
     "@opinion-labs/opinion-clob-sdk": "^0.6.0",
     "fastify": "^5.3.3"
   },
   "devDependencies": {
     "@types/node": "^22.19.17",
     "dotenv": "^16.0.0",
+    "grpc-tools": "^1.13.1",
+    "ts-proto": "^2.11.6",
     "tsx": "^4.21.0",
     "typescript": "^5.8.0"
   }

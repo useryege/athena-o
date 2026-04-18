@@ -4,7 +4,10 @@ import { status as grpcStatus } from '@grpc/grpc-js';
 
 import { getOpinionClient } from './client.js';
 import { mapGetMarketsResponse } from './mappers.js';
-import type { GetMarketsRequest, OpinionServiceHandlers } from './types.js';
+import type {
+  GetMarketsRequest,
+  OpinionServiceServer,
+} from './gen/opinion/opinion.js';
 
 function createServiceError(code: number, message: string): ServiceError {
   const error = new Error(message) as ServiceError;
@@ -84,9 +87,9 @@ function toSdkSortBy(value: number | undefined): TopicSortType | undefined {
 function buildGetMarketsOptions(request: GetMarketsRequest) {
   const page = normalizePositiveInteger('page', request.page);
   const limit = normalizePositiveInteger('limit', request.limit);
-  const topicType = toSdkTopicType(request.topic_type);
+  const topicType = toSdkTopicType(request.topicType);
   const status = toSdkStatusFilter(request.status);
-  const sortBy = toSdkSortBy(request.sort_by);
+  const sortBy = toSdkSortBy(request.sortBy);
 
   return {
     topicType,
@@ -113,7 +116,7 @@ function toGrpcError(error: unknown): ServiceError {
   return createServiceError(grpcStatus.INTERNAL, 'unknown opinion service error');
 }
 
-export function createOpinionService(): OpinionServiceHandlers {
+export function createOpinionService(): OpinionServiceServer {
   return {
     async getMarkets(call, callback) {
       try {
