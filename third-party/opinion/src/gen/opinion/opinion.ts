@@ -18,6 +18,7 @@ import {
   type ServiceError,
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
+import { Struct } from "../google/protobuf/struct.js";
 
 export const protobufPackage = "opinion";
 
@@ -187,27 +188,78 @@ export function marketSortByToJSON(object: MarketSortBy): string {
 }
 
 export interface GetMarketsRequest {
-  topicType: MarketTopicType;
-  page: number;
-  limit: number;
-  status: MarketStatusFilter;
-  sortBy: MarketSortBy;
+  topicType?: MarketTopicType | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
+  status?: MarketStatusFilter | undefined;
+  sortBy?: MarketSortBy | undefined;
+}
+
+export interface GetMarketRequest {
+  /** Market / topic id (string to avoid JS Number precision loss on large ids). */
+  marketId: string;
+  useCache?: boolean | undefined;
+}
+
+export interface GetCategoricalMarketRequest {
+  marketId: string;
+}
+
+export interface GetMarketBySlugRequest {
+  slug: string;
+}
+
+export interface GetQuoteTokensRequest {
+  useCache?: boolean | undefined;
 }
 
 export interface GetMarketsResponse {
+  errno: number;
+  errmsg: string;
   total: number;
   markets: Market[];
 }
 
-export interface GetMarketRequest {
-  marketId: string;
-}
-
 export interface GetMarketResponse {
+  errno: number;
+  errmsg: string;
   market: Market | undefined;
 }
 
+export interface GetQuoteTokensResponse {
+  errno: number;
+  errmsg: string;
+  total: number;
+  quoteTokens: QuoteToken[];
+}
+
 export interface Market {
+  marketId: string;
+  marketTitle: string;
+  slug: string;
+  conditionId: string;
+  chainId: string;
+  quoteToken: string;
+  status: number;
+  statusEnum: string;
+  /** API may return unix ms numbers; adapter normalizes to string for stable wire format. */
+  createdAt: string;
+  cutoffAt: string;
+  resolvedAt: string;
+  yesTokenId: string;
+  noTokenId: string;
+  resultTokenId: string;
+  yesLabel: string;
+  noLabel: string;
+  volume: string;
+  isIncentivized: boolean;
+  childMarkets: ChildMarket[];
+  questionId: string;
+  rules: string;
+  collection: { [key: string]: any } | undefined;
+}
+
+export interface ChildMarket {
   marketId: string;
   marketTitle: string;
   slug: string;
@@ -225,29 +277,41 @@ export interface Market {
   yesLabel: string;
   noLabel: string;
   volume: string;
-  isIncentivized: boolean;
-  childMarkets: Market[];
+  questionId: string;
+  rules: string;
+}
+
+/** Mirrors OpenapiQuoteTokenDataOpenApi / SDK QuoteTokenData. */
+export interface QuoteToken {
+  chainId: string;
+  createdAt: string;
+  ctfExchangeAddress: string;
+  decimal: number;
+  id: string;
+  quoteTokenAddress: string;
+  quoteTokenName: string;
+  symbol: string;
 }
 
 function createBaseGetMarketsRequest(): GetMarketsRequest {
-  return { topicType: 0, page: 0, limit: 0, status: 0, sortBy: 0 };
+  return { topicType: undefined, page: undefined, limit: undefined, status: undefined, sortBy: undefined };
 }
 
 export const GetMarketsRequest: MessageFns<GetMarketsRequest> = {
   encode(message: GetMarketsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.topicType !== 0) {
+    if (message.topicType !== undefined) {
       writer.uint32(8).int32(message.topicType);
     }
-    if (message.page !== 0) {
+    if (message.page !== undefined) {
       writer.uint32(16).int32(message.page);
     }
-    if (message.limit !== 0) {
+    if (message.limit !== undefined) {
       writer.uint32(24).int32(message.limit);
     }
-    if (message.status !== 0) {
+    if (message.status !== undefined) {
       writer.uint32(32).int32(message.status);
     }
-    if (message.sortBy !== 0) {
+    if (message.sortBy !== undefined) {
       writer.uint32(40).int32(message.sortBy);
     }
     return writer;
@@ -315,33 +379,33 @@ export const GetMarketsRequest: MessageFns<GetMarketsRequest> = {
         ? marketTopicTypeFromJSON(object.topicType)
         : isSet(object.topic_type)
         ? marketTopicTypeFromJSON(object.topic_type)
-        : 0,
-      page: isSet(object.page) ? globalThis.Number(object.page) : 0,
-      limit: isSet(object.limit) ? globalThis.Number(object.limit) : 0,
-      status: isSet(object.status) ? marketStatusFilterFromJSON(object.status) : 0,
+        : undefined,
+      page: isSet(object.page) ? globalThis.Number(object.page) : undefined,
+      limit: isSet(object.limit) ? globalThis.Number(object.limit) : undefined,
+      status: isSet(object.status) ? marketStatusFilterFromJSON(object.status) : undefined,
       sortBy: isSet(object.sortBy)
         ? marketSortByFromJSON(object.sortBy)
         : isSet(object.sort_by)
         ? marketSortByFromJSON(object.sort_by)
-        : 0,
+        : undefined,
     };
   },
 
   toJSON(message: GetMarketsRequest): unknown {
     const obj: any = {};
-    if (message.topicType !== 0) {
+    if (message.topicType !== undefined) {
       obj.topicType = marketTopicTypeToJSON(message.topicType);
     }
-    if (message.page !== 0) {
+    if (message.page !== undefined) {
       obj.page = Math.round(message.page);
     }
-    if (message.limit !== 0) {
+    if (message.limit !== undefined) {
       obj.limit = Math.round(message.limit);
     }
-    if (message.status !== 0) {
+    if (message.status !== undefined) {
       obj.status = marketStatusFilterToJSON(message.status);
     }
-    if (message.sortBy !== 0) {
+    if (message.sortBy !== undefined) {
       obj.sortBy = marketSortByToJSON(message.sortBy);
     }
     return obj;
@@ -352,99 +416,26 @@ export const GetMarketsRequest: MessageFns<GetMarketsRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<GetMarketsRequest>, I>>(object: I): GetMarketsRequest {
     const message = createBaseGetMarketsRequest();
-    message.topicType = object.topicType ?? 0;
-    message.page = object.page ?? 0;
-    message.limit = object.limit ?? 0;
-    message.status = object.status ?? 0;
-    message.sortBy = object.sortBy ?? 0;
-    return message;
-  },
-};
-
-function createBaseGetMarketsResponse(): GetMarketsResponse {
-  return { total: 0, markets: [] };
-}
-
-export const GetMarketsResponse: MessageFns<GetMarketsResponse> = {
-  encode(message: GetMarketsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.total !== 0) {
-      writer.uint32(8).int32(message.total);
-    }
-    for (const v of message.markets) {
-      Market.encode(v!, writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): GetMarketsResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetMarketsResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.total = reader.int32();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.markets.push(Market.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetMarketsResponse {
-    return {
-      total: isSet(object.total) ? globalThis.Number(object.total) : 0,
-      markets: globalThis.Array.isArray(object?.markets) ? object.markets.map((e: any) => Market.fromJSON(e)) : [],
-    };
-  },
-
-  toJSON(message: GetMarketsResponse): unknown {
-    const obj: any = {};
-    if (message.total !== 0) {
-      obj.total = Math.round(message.total);
-    }
-    if (message.markets?.length) {
-      obj.markets = message.markets.map((e) => Market.toJSON(e));
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<GetMarketsResponse>, I>>(base?: I): GetMarketsResponse {
-    return GetMarketsResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<GetMarketsResponse>, I>>(object: I): GetMarketsResponse {
-    const message = createBaseGetMarketsResponse();
-    message.total = object.total ?? 0;
-    message.markets = object.markets?.map((e) => Market.fromPartial(e)) || [];
+    message.topicType = object.topicType ?? undefined;
+    message.page = object.page ?? undefined;
+    message.limit = object.limit ?? undefined;
+    message.status = object.status ?? undefined;
+    message.sortBy = object.sortBy ?? undefined;
     return message;
   },
 };
 
 function createBaseGetMarketRequest(): GetMarketRequest {
-  return { marketId: "0" };
+  return { marketId: "", useCache: undefined };
 }
 
 export const GetMarketRequest: MessageFns<GetMarketRequest> = {
   encode(message: GetMarketRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.marketId !== "0") {
-      writer.uint32(8).uint64(message.marketId);
+    if (message.marketId !== "") {
+      writer.uint32(10).string(message.marketId);
+    }
+    if (message.useCache !== undefined) {
+      writer.uint32(16).bool(message.useCache);
     }
     return writer;
   },
@@ -457,11 +448,19 @@ export const GetMarketRequest: MessageFns<GetMarketRequest> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
             break;
           }
 
-          message.marketId = reader.uint64().toString();
+          message.marketId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.useCache = reader.bool();
           continue;
         }
       }
@@ -479,14 +478,22 @@ export const GetMarketRequest: MessageFns<GetMarketRequest> = {
         ? globalThis.String(object.marketId)
         : isSet(object.market_id)
         ? globalThis.String(object.market_id)
-        : "0",
+        : "",
+      useCache: isSet(object.useCache)
+        ? globalThis.Boolean(object.useCache)
+        : isSet(object.use_cache)
+        ? globalThis.Boolean(object.use_cache)
+        : undefined,
     };
   },
 
   toJSON(message: GetMarketRequest): unknown {
     const obj: any = {};
-    if (message.marketId !== "0") {
+    if (message.marketId !== "") {
       obj.marketId = message.marketId;
+    }
+    if (message.useCache !== undefined) {
+      obj.useCache = message.useCache;
     }
     return obj;
   },
@@ -496,19 +503,320 @@ export const GetMarketRequest: MessageFns<GetMarketRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<GetMarketRequest>, I>>(object: I): GetMarketRequest {
     const message = createBaseGetMarketRequest();
-    message.marketId = object.marketId ?? "0";
+    message.marketId = object.marketId ?? "";
+    message.useCache = object.useCache ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetCategoricalMarketRequest(): GetCategoricalMarketRequest {
+  return { marketId: "" };
+}
+
+export const GetCategoricalMarketRequest: MessageFns<GetCategoricalMarketRequest> = {
+  encode(message: GetCategoricalMarketRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== "") {
+      writer.uint32(10).string(message.marketId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetCategoricalMarketRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetCategoricalMarketRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.marketId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetCategoricalMarketRequest {
+    return {
+      marketId: isSet(object.marketId)
+        ? globalThis.String(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.String(object.market_id)
+        : "",
+    };
+  },
+
+  toJSON(message: GetCategoricalMarketRequest): unknown {
+    const obj: any = {};
+    if (message.marketId !== "") {
+      obj.marketId = message.marketId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetCategoricalMarketRequest>, I>>(base?: I): GetCategoricalMarketRequest {
+    return GetCategoricalMarketRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetCategoricalMarketRequest>, I>>(object: I): GetCategoricalMarketRequest {
+    const message = createBaseGetCategoricalMarketRequest();
+    message.marketId = object.marketId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetMarketBySlugRequest(): GetMarketBySlugRequest {
+  return { slug: "" };
+}
+
+export const GetMarketBySlugRequest: MessageFns<GetMarketBySlugRequest> = {
+  encode(message: GetMarketBySlugRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.slug !== "") {
+      writer.uint32(10).string(message.slug);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMarketBySlugRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMarketBySlugRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.slug = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMarketBySlugRequest {
+    return { slug: isSet(object.slug) ? globalThis.String(object.slug) : "" };
+  },
+
+  toJSON(message: GetMarketBySlugRequest): unknown {
+    const obj: any = {};
+    if (message.slug !== "") {
+      obj.slug = message.slug;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMarketBySlugRequest>, I>>(base?: I): GetMarketBySlugRequest {
+    return GetMarketBySlugRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMarketBySlugRequest>, I>>(object: I): GetMarketBySlugRequest {
+    const message = createBaseGetMarketBySlugRequest();
+    message.slug = object.slug ?? "";
+    return message;
+  },
+};
+
+function createBaseGetQuoteTokensRequest(): GetQuoteTokensRequest {
+  return { useCache: undefined };
+}
+
+export const GetQuoteTokensRequest: MessageFns<GetQuoteTokensRequest> = {
+  encode(message: GetQuoteTokensRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.useCache !== undefined) {
+      writer.uint32(8).bool(message.useCache);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetQuoteTokensRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetQuoteTokensRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.useCache = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetQuoteTokensRequest {
+    return {
+      useCache: isSet(object.useCache)
+        ? globalThis.Boolean(object.useCache)
+        : isSet(object.use_cache)
+        ? globalThis.Boolean(object.use_cache)
+        : undefined,
+    };
+  },
+
+  toJSON(message: GetQuoteTokensRequest): unknown {
+    const obj: any = {};
+    if (message.useCache !== undefined) {
+      obj.useCache = message.useCache;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetQuoteTokensRequest>, I>>(base?: I): GetQuoteTokensRequest {
+    return GetQuoteTokensRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetQuoteTokensRequest>, I>>(object: I): GetQuoteTokensRequest {
+    const message = createBaseGetQuoteTokensRequest();
+    message.useCache = object.useCache ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetMarketsResponse(): GetMarketsResponse {
+  return { errno: 0, errmsg: "", total: 0, markets: [] };
+}
+
+export const GetMarketsResponse: MessageFns<GetMarketsResponse> = {
+  encode(message: GetMarketsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.total !== 0) {
+      writer.uint32(24).int32(message.total);
+    }
+    for (const v of message.markets) {
+      Market.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMarketsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMarketsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.total = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.markets.push(Market.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMarketsResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      total: isSet(object.total) ? globalThis.Number(object.total) : 0,
+      markets: globalThis.Array.isArray(object?.markets) ? object.markets.map((e: any) => Market.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: GetMarketsResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.total !== 0) {
+      obj.total = Math.round(message.total);
+    }
+    if (message.markets?.length) {
+      obj.markets = message.markets.map((e) => Market.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMarketsResponse>, I>>(base?: I): GetMarketsResponse {
+    return GetMarketsResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMarketsResponse>, I>>(object: I): GetMarketsResponse {
+    const message = createBaseGetMarketsResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.total = object.total ?? 0;
+    message.markets = object.markets?.map((e) => Market.fromPartial(e)) || [];
     return message;
   },
 };
 
 function createBaseGetMarketResponse(): GetMarketResponse {
-  return { market: undefined };
+  return { errno: 0, errmsg: "", market: undefined };
 }
 
 export const GetMarketResponse: MessageFns<GetMarketResponse> = {
   encode(message: GetMarketResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
     if (message.market !== undefined) {
-      Market.encode(message.market, writer.uint32(10).fork()).join();
+      Market.encode(message.market, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -521,7 +829,23 @@ export const GetMarketResponse: MessageFns<GetMarketResponse> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 10) {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
             break;
           }
 
@@ -538,11 +862,21 @@ export const GetMarketResponse: MessageFns<GetMarketResponse> = {
   },
 
   fromJSON(object: any): GetMarketResponse {
-    return { market: isSet(object.market) ? Market.fromJSON(object.market) : undefined };
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      market: isSet(object.market) ? Market.fromJSON(object.market) : undefined,
+    };
   },
 
   toJSON(message: GetMarketResponse): unknown {
     const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
     if (message.market !== undefined) {
       obj.market = Market.toJSON(message.market);
     }
@@ -554,6 +888,8 @@ export const GetMarketResponse: MessageFns<GetMarketResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<GetMarketResponse>, I>>(object: I): GetMarketResponse {
     const message = createBaseGetMarketResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
     message.market = (object.market !== undefined && object.market !== null)
       ? Market.fromPartial(object.market)
       : undefined;
@@ -561,9 +897,121 @@ export const GetMarketResponse: MessageFns<GetMarketResponse> = {
   },
 };
 
+function createBaseGetQuoteTokensResponse(): GetQuoteTokensResponse {
+  return { errno: 0, errmsg: "", total: 0, quoteTokens: [] };
+}
+
+export const GetQuoteTokensResponse: MessageFns<GetQuoteTokensResponse> = {
+  encode(message: GetQuoteTokensResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.total !== 0) {
+      writer.uint32(24).int32(message.total);
+    }
+    for (const v of message.quoteTokens) {
+      QuoteToken.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetQuoteTokensResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetQuoteTokensResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.total = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.quoteTokens.push(QuoteToken.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetQuoteTokensResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      total: isSet(object.total) ? globalThis.Number(object.total) : 0,
+      quoteTokens: globalThis.Array.isArray(object?.quoteTokens)
+        ? object.quoteTokens.map((e: any) => QuoteToken.fromJSON(e))
+        : globalThis.Array.isArray(object?.quote_tokens)
+        ? object.quote_tokens.map((e: any) => QuoteToken.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetQuoteTokensResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.total !== 0) {
+      obj.total = Math.round(message.total);
+    }
+    if (message.quoteTokens?.length) {
+      obj.quoteTokens = message.quoteTokens.map((e) => QuoteToken.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetQuoteTokensResponse>, I>>(base?: I): GetQuoteTokensResponse {
+    return GetQuoteTokensResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetQuoteTokensResponse>, I>>(object: I): GetQuoteTokensResponse {
+    const message = createBaseGetQuoteTokensResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.total = object.total ?? 0;
+    message.quoteTokens = object.quoteTokens?.map((e) => QuoteToken.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 function createBaseMarket(): Market {
   return {
-    marketId: "0",
+    marketId: "",
     marketTitle: "",
     slug: "",
     conditionId: "",
@@ -582,13 +1030,16 @@ function createBaseMarket(): Market {
     volume: "",
     isIncentivized: false,
     childMarkets: [],
+    questionId: "",
+    rules: "",
+    collection: undefined,
   };
 }
 
 export const Market: MessageFns<Market> = {
   encode(message: Market, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.marketId !== "0") {
-      writer.uint32(8).uint64(message.marketId);
+    if (message.marketId !== "") {
+      writer.uint32(10).string(message.marketId);
     }
     if (message.marketTitle !== "") {
       writer.uint32(18).string(message.marketTitle);
@@ -642,7 +1093,16 @@ export const Market: MessageFns<Market> = {
       writer.uint32(144).bool(message.isIncentivized);
     }
     for (const v of message.childMarkets) {
-      Market.encode(v!, writer.uint32(154).fork()).join();
+      ChildMarket.encode(v!, writer.uint32(154).fork()).join();
+    }
+    if (message.questionId !== "") {
+      writer.uint32(162).string(message.questionId);
+    }
+    if (message.rules !== "") {
+      writer.uint32(170).string(message.rules);
+    }
+    if (message.collection !== undefined) {
+      Struct.encode(Struct.wrap(message.collection), writer.uint32(178).fork()).join();
     }
     return writer;
   },
@@ -655,11 +1115,11 @@ export const Market: MessageFns<Market> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
             break;
           }
 
-          message.marketId = reader.uint64().toString();
+          message.marketId = reader.string();
           continue;
         }
         case 2: {
@@ -803,7 +1263,31 @@ export const Market: MessageFns<Market> = {
             break;
           }
 
-          message.childMarkets.push(Market.decode(reader, reader.uint32()));
+          message.childMarkets.push(ChildMarket.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.questionId = reader.string();
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.rules = reader.string();
+          continue;
+        }
+        case 22: {
+          if (tag !== 178) {
+            break;
+          }
+
+          message.collection = Struct.unwrap(Struct.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -821,7 +1305,7 @@ export const Market: MessageFns<Market> = {
         ? globalThis.String(object.marketId)
         : isSet(object.market_id)
         ? globalThis.String(object.market_id)
-        : "0",
+        : "",
       marketTitle: isSet(object.marketTitle)
         ? globalThis.String(object.marketTitle)
         : isSet(object.market_title)
@@ -896,16 +1380,23 @@ export const Market: MessageFns<Market> = {
         ? globalThis.Boolean(object.is_incentivized)
         : false,
       childMarkets: globalThis.Array.isArray(object?.childMarkets)
-        ? object.childMarkets.map((e: any) => Market.fromJSON(e))
+        ? object.childMarkets.map((e: any) => ChildMarket.fromJSON(e))
         : globalThis.Array.isArray(object?.child_markets)
-        ? object.child_markets.map((e: any) => Market.fromJSON(e))
+        ? object.child_markets.map((e: any) => ChildMarket.fromJSON(e))
         : [],
+      questionId: isSet(object.questionId)
+        ? globalThis.String(object.questionId)
+        : isSet(object.question_id)
+        ? globalThis.String(object.question_id)
+        : "",
+      rules: isSet(object.rules) ? globalThis.String(object.rules) : "",
+      collection: isObject(object.collection) ? object.collection : undefined,
     };
   },
 
   toJSON(message: Market): unknown {
     const obj: any = {};
-    if (message.marketId !== "0") {
+    if (message.marketId !== "") {
       obj.marketId = message.marketId;
     }
     if (message.marketTitle !== "") {
@@ -960,7 +1451,16 @@ export const Market: MessageFns<Market> = {
       obj.isIncentivized = message.isIncentivized;
     }
     if (message.childMarkets?.length) {
-      obj.childMarkets = message.childMarkets.map((e) => Market.toJSON(e));
+      obj.childMarkets = message.childMarkets.map((e) => ChildMarket.toJSON(e));
+    }
+    if (message.questionId !== "") {
+      obj.questionId = message.questionId;
+    }
+    if (message.rules !== "") {
+      obj.rules = message.rules;
+    }
+    if (message.collection !== undefined) {
+      obj.collection = message.collection;
     }
     return obj;
   },
@@ -970,7 +1470,7 @@ export const Market: MessageFns<Market> = {
   },
   fromPartial<I extends Exact<DeepPartial<Market>, I>>(object: I): Market {
     const message = createBaseMarket();
-    message.marketId = object.marketId ?? "0";
+    message.marketId = object.marketId ?? "";
     message.marketTitle = object.marketTitle ?? "";
     message.slug = object.slug ?? "";
     message.conditionId = object.conditionId ?? "";
@@ -988,7 +1488,639 @@ export const Market: MessageFns<Market> = {
     message.noLabel = object.noLabel ?? "";
     message.volume = object.volume ?? "";
     message.isIncentivized = object.isIncentivized ?? false;
-    message.childMarkets = object.childMarkets?.map((e) => Market.fromPartial(e)) || [];
+    message.childMarkets = object.childMarkets?.map((e) => ChildMarket.fromPartial(e)) || [];
+    message.questionId = object.questionId ?? "";
+    message.rules = object.rules ?? "";
+    message.collection = object.collection ?? undefined;
+    return message;
+  },
+};
+
+function createBaseChildMarket(): ChildMarket {
+  return {
+    marketId: "",
+    marketTitle: "",
+    slug: "",
+    conditionId: "",
+    chainId: "",
+    quoteToken: "",
+    status: 0,
+    statusEnum: "",
+    createdAt: "",
+    cutoffAt: "",
+    resolvedAt: "",
+    yesTokenId: "",
+    noTokenId: "",
+    resultTokenId: "",
+    yesLabel: "",
+    noLabel: "",
+    volume: "",
+    questionId: "",
+    rules: "",
+  };
+}
+
+export const ChildMarket: MessageFns<ChildMarket> = {
+  encode(message: ChildMarket, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== "") {
+      writer.uint32(10).string(message.marketId);
+    }
+    if (message.marketTitle !== "") {
+      writer.uint32(18).string(message.marketTitle);
+    }
+    if (message.slug !== "") {
+      writer.uint32(26).string(message.slug);
+    }
+    if (message.conditionId !== "") {
+      writer.uint32(34).string(message.conditionId);
+    }
+    if (message.chainId !== "") {
+      writer.uint32(42).string(message.chainId);
+    }
+    if (message.quoteToken !== "") {
+      writer.uint32(50).string(message.quoteToken);
+    }
+    if (message.status !== 0) {
+      writer.uint32(56).int32(message.status);
+    }
+    if (message.statusEnum !== "") {
+      writer.uint32(66).string(message.statusEnum);
+    }
+    if (message.createdAt !== "") {
+      writer.uint32(74).string(message.createdAt);
+    }
+    if (message.cutoffAt !== "") {
+      writer.uint32(82).string(message.cutoffAt);
+    }
+    if (message.resolvedAt !== "") {
+      writer.uint32(90).string(message.resolvedAt);
+    }
+    if (message.yesTokenId !== "") {
+      writer.uint32(98).string(message.yesTokenId);
+    }
+    if (message.noTokenId !== "") {
+      writer.uint32(106).string(message.noTokenId);
+    }
+    if (message.resultTokenId !== "") {
+      writer.uint32(114).string(message.resultTokenId);
+    }
+    if (message.yesLabel !== "") {
+      writer.uint32(122).string(message.yesLabel);
+    }
+    if (message.noLabel !== "") {
+      writer.uint32(130).string(message.noLabel);
+    }
+    if (message.volume !== "") {
+      writer.uint32(138).string(message.volume);
+    }
+    if (message.questionId !== "") {
+      writer.uint32(146).string(message.questionId);
+    }
+    if (message.rules !== "") {
+      writer.uint32(154).string(message.rules);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ChildMarket {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseChildMarket();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.marketId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.marketTitle = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.slug = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.conditionId = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.chainId = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.quoteToken = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.statusEnum = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.createdAt = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.cutoffAt = reader.string();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.resolvedAt = reader.string();
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.yesTokenId = reader.string();
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.noTokenId = reader.string();
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.resultTokenId = reader.string();
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.yesLabel = reader.string();
+          continue;
+        }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.noLabel = reader.string();
+          continue;
+        }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.volume = reader.string();
+          continue;
+        }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.questionId = reader.string();
+          continue;
+        }
+        case 19: {
+          if (tag !== 154) {
+            break;
+          }
+
+          message.rules = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ChildMarket {
+    return {
+      marketId: isSet(object.marketId)
+        ? globalThis.String(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.String(object.market_id)
+        : "",
+      marketTitle: isSet(object.marketTitle)
+        ? globalThis.String(object.marketTitle)
+        : isSet(object.market_title)
+        ? globalThis.String(object.market_title)
+        : "",
+      slug: isSet(object.slug) ? globalThis.String(object.slug) : "",
+      conditionId: isSet(object.conditionId)
+        ? globalThis.String(object.conditionId)
+        : isSet(object.condition_id)
+        ? globalThis.String(object.condition_id)
+        : "",
+      chainId: isSet(object.chainId)
+        ? globalThis.String(object.chainId)
+        : isSet(object.chain_id)
+        ? globalThis.String(object.chain_id)
+        : "",
+      quoteToken: isSet(object.quoteToken)
+        ? globalThis.String(object.quoteToken)
+        : isSet(object.quote_token)
+        ? globalThis.String(object.quote_token)
+        : "",
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+      statusEnum: isSet(object.statusEnum)
+        ? globalThis.String(object.statusEnum)
+        : isSet(object.status_enum)
+        ? globalThis.String(object.status_enum)
+        : "",
+      createdAt: isSet(object.createdAt)
+        ? globalThis.String(object.createdAt)
+        : isSet(object.created_at)
+        ? globalThis.String(object.created_at)
+        : "",
+      cutoffAt: isSet(object.cutoffAt)
+        ? globalThis.String(object.cutoffAt)
+        : isSet(object.cutoff_at)
+        ? globalThis.String(object.cutoff_at)
+        : "",
+      resolvedAt: isSet(object.resolvedAt)
+        ? globalThis.String(object.resolvedAt)
+        : isSet(object.resolved_at)
+        ? globalThis.String(object.resolved_at)
+        : "",
+      yesTokenId: isSet(object.yesTokenId)
+        ? globalThis.String(object.yesTokenId)
+        : isSet(object.yes_token_id)
+        ? globalThis.String(object.yes_token_id)
+        : "",
+      noTokenId: isSet(object.noTokenId)
+        ? globalThis.String(object.noTokenId)
+        : isSet(object.no_token_id)
+        ? globalThis.String(object.no_token_id)
+        : "",
+      resultTokenId: isSet(object.resultTokenId)
+        ? globalThis.String(object.resultTokenId)
+        : isSet(object.result_token_id)
+        ? globalThis.String(object.result_token_id)
+        : "",
+      yesLabel: isSet(object.yesLabel)
+        ? globalThis.String(object.yesLabel)
+        : isSet(object.yes_label)
+        ? globalThis.String(object.yes_label)
+        : "",
+      noLabel: isSet(object.noLabel)
+        ? globalThis.String(object.noLabel)
+        : isSet(object.no_label)
+        ? globalThis.String(object.no_label)
+        : "",
+      volume: isSet(object.volume) ? globalThis.String(object.volume) : "",
+      questionId: isSet(object.questionId)
+        ? globalThis.String(object.questionId)
+        : isSet(object.question_id)
+        ? globalThis.String(object.question_id)
+        : "",
+      rules: isSet(object.rules) ? globalThis.String(object.rules) : "",
+    };
+  },
+
+  toJSON(message: ChildMarket): unknown {
+    const obj: any = {};
+    if (message.marketId !== "") {
+      obj.marketId = message.marketId;
+    }
+    if (message.marketTitle !== "") {
+      obj.marketTitle = message.marketTitle;
+    }
+    if (message.slug !== "") {
+      obj.slug = message.slug;
+    }
+    if (message.conditionId !== "") {
+      obj.conditionId = message.conditionId;
+    }
+    if (message.chainId !== "") {
+      obj.chainId = message.chainId;
+    }
+    if (message.quoteToken !== "") {
+      obj.quoteToken = message.quoteToken;
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    if (message.statusEnum !== "") {
+      obj.statusEnum = message.statusEnum;
+    }
+    if (message.createdAt !== "") {
+      obj.createdAt = message.createdAt;
+    }
+    if (message.cutoffAt !== "") {
+      obj.cutoffAt = message.cutoffAt;
+    }
+    if (message.resolvedAt !== "") {
+      obj.resolvedAt = message.resolvedAt;
+    }
+    if (message.yesTokenId !== "") {
+      obj.yesTokenId = message.yesTokenId;
+    }
+    if (message.noTokenId !== "") {
+      obj.noTokenId = message.noTokenId;
+    }
+    if (message.resultTokenId !== "") {
+      obj.resultTokenId = message.resultTokenId;
+    }
+    if (message.yesLabel !== "") {
+      obj.yesLabel = message.yesLabel;
+    }
+    if (message.noLabel !== "") {
+      obj.noLabel = message.noLabel;
+    }
+    if (message.volume !== "") {
+      obj.volume = message.volume;
+    }
+    if (message.questionId !== "") {
+      obj.questionId = message.questionId;
+    }
+    if (message.rules !== "") {
+      obj.rules = message.rules;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ChildMarket>, I>>(base?: I): ChildMarket {
+    return ChildMarket.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ChildMarket>, I>>(object: I): ChildMarket {
+    const message = createBaseChildMarket();
+    message.marketId = object.marketId ?? "";
+    message.marketTitle = object.marketTitle ?? "";
+    message.slug = object.slug ?? "";
+    message.conditionId = object.conditionId ?? "";
+    message.chainId = object.chainId ?? "";
+    message.quoteToken = object.quoteToken ?? "";
+    message.status = object.status ?? 0;
+    message.statusEnum = object.statusEnum ?? "";
+    message.createdAt = object.createdAt ?? "";
+    message.cutoffAt = object.cutoffAt ?? "";
+    message.resolvedAt = object.resolvedAt ?? "";
+    message.yesTokenId = object.yesTokenId ?? "";
+    message.noTokenId = object.noTokenId ?? "";
+    message.resultTokenId = object.resultTokenId ?? "";
+    message.yesLabel = object.yesLabel ?? "";
+    message.noLabel = object.noLabel ?? "";
+    message.volume = object.volume ?? "";
+    message.questionId = object.questionId ?? "";
+    message.rules = object.rules ?? "";
+    return message;
+  },
+};
+
+function createBaseQuoteToken(): QuoteToken {
+  return {
+    chainId: "",
+    createdAt: "",
+    ctfExchangeAddress: "",
+    decimal: 0,
+    id: "",
+    quoteTokenAddress: "",
+    quoteTokenName: "",
+    symbol: "",
+  };
+}
+
+export const QuoteToken: MessageFns<QuoteToken> = {
+  encode(message: QuoteToken, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.chainId !== "") {
+      writer.uint32(10).string(message.chainId);
+    }
+    if (message.createdAt !== "") {
+      writer.uint32(18).string(message.createdAt);
+    }
+    if (message.ctfExchangeAddress !== "") {
+      writer.uint32(26).string(message.ctfExchangeAddress);
+    }
+    if (message.decimal !== 0) {
+      writer.uint32(32).int32(message.decimal);
+    }
+    if (message.id !== "") {
+      writer.uint32(42).string(message.id);
+    }
+    if (message.quoteTokenAddress !== "") {
+      writer.uint32(50).string(message.quoteTokenAddress);
+    }
+    if (message.quoteTokenName !== "") {
+      writer.uint32(58).string(message.quoteTokenName);
+    }
+    if (message.symbol !== "") {
+      writer.uint32(66).string(message.symbol);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QuoteToken {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuoteToken();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.chainId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.createdAt = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.ctfExchangeAddress = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.decimal = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.quoteTokenAddress = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.quoteTokenName = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.symbol = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QuoteToken {
+    return {
+      chainId: isSet(object.chainId)
+        ? globalThis.String(object.chainId)
+        : isSet(object.chain_id)
+        ? globalThis.String(object.chain_id)
+        : "",
+      createdAt: isSet(object.createdAt)
+        ? globalThis.String(object.createdAt)
+        : isSet(object.created_at)
+        ? globalThis.String(object.created_at)
+        : "",
+      ctfExchangeAddress: isSet(object.ctfExchangeAddress)
+        ? globalThis.String(object.ctfExchangeAddress)
+        : isSet(object.ctf_exchange_address)
+        ? globalThis.String(object.ctf_exchange_address)
+        : "",
+      decimal: isSet(object.decimal) ? globalThis.Number(object.decimal) : 0,
+      id: isSet(object.id) ? globalThis.String(object.id) : "",
+      quoteTokenAddress: isSet(object.quoteTokenAddress)
+        ? globalThis.String(object.quoteTokenAddress)
+        : isSet(object.quote_token_address)
+        ? globalThis.String(object.quote_token_address)
+        : "",
+      quoteTokenName: isSet(object.quoteTokenName)
+        ? globalThis.String(object.quoteTokenName)
+        : isSet(object.quote_token_name)
+        ? globalThis.String(object.quote_token_name)
+        : "",
+      symbol: isSet(object.symbol) ? globalThis.String(object.symbol) : "",
+    };
+  },
+
+  toJSON(message: QuoteToken): unknown {
+    const obj: any = {};
+    if (message.chainId !== "") {
+      obj.chainId = message.chainId;
+    }
+    if (message.createdAt !== "") {
+      obj.createdAt = message.createdAt;
+    }
+    if (message.ctfExchangeAddress !== "") {
+      obj.ctfExchangeAddress = message.ctfExchangeAddress;
+    }
+    if (message.decimal !== 0) {
+      obj.decimal = Math.round(message.decimal);
+    }
+    if (message.id !== "") {
+      obj.id = message.id;
+    }
+    if (message.quoteTokenAddress !== "") {
+      obj.quoteTokenAddress = message.quoteTokenAddress;
+    }
+    if (message.quoteTokenName !== "") {
+      obj.quoteTokenName = message.quoteTokenName;
+    }
+    if (message.symbol !== "") {
+      obj.symbol = message.symbol;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QuoteToken>, I>>(base?: I): QuoteToken {
+    return QuoteToken.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QuoteToken>, I>>(object: I): QuoteToken {
+    const message = createBaseQuoteToken();
+    message.chainId = object.chainId ?? "";
+    message.createdAt = object.createdAt ?? "";
+    message.ctfExchangeAddress = object.ctfExchangeAddress ?? "";
+    message.decimal = object.decimal ?? 0;
+    message.id = object.id ?? "";
+    message.quoteTokenAddress = object.quoteTokenAddress ?? "";
+    message.quoteTokenName = object.quoteTokenName ?? "";
+    message.symbol = object.symbol ?? "";
     return message;
   },
 };
@@ -1013,11 +2145,45 @@ export const OpinionServiceService = {
     responseSerialize: (value: GetMarketResponse): Buffer => Buffer.from(GetMarketResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): GetMarketResponse => GetMarketResponse.decode(value),
   },
+  getCategoricalMarket: {
+    path: "/opinion.OpinionService/GetCategoricalMarket" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetCategoricalMarketRequest): Buffer =>
+      Buffer.from(GetCategoricalMarketRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetCategoricalMarketRequest => GetCategoricalMarketRequest.decode(value),
+    responseSerialize: (value: GetMarketResponse): Buffer => Buffer.from(GetMarketResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetMarketResponse => GetMarketResponse.decode(value),
+  },
+  getMarketBySlug: {
+    path: "/opinion.OpinionService/GetMarketBySlug" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetMarketBySlugRequest): Buffer =>
+      Buffer.from(GetMarketBySlugRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetMarketBySlugRequest => GetMarketBySlugRequest.decode(value),
+    responseSerialize: (value: GetMarketResponse): Buffer => Buffer.from(GetMarketResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetMarketResponse => GetMarketResponse.decode(value),
+  },
+  getQuoteTokens: {
+    path: "/opinion.OpinionService/GetQuoteTokens" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetQuoteTokensRequest): Buffer =>
+      Buffer.from(GetQuoteTokensRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetQuoteTokensRequest => GetQuoteTokensRequest.decode(value),
+    responseSerialize: (value: GetQuoteTokensResponse): Buffer =>
+      Buffer.from(GetQuoteTokensResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetQuoteTokensResponse => GetQuoteTokensResponse.decode(value),
+  },
 } as const;
 
 export interface OpinionServiceServer extends UntypedServiceImplementation {
   getMarkets: handleUnaryCall<GetMarketsRequest, GetMarketsResponse>;
   getMarket: handleUnaryCall<GetMarketRequest, GetMarketResponse>;
+  getCategoricalMarket: handleUnaryCall<GetCategoricalMarketRequest, GetMarketResponse>;
+  getMarketBySlug: handleUnaryCall<GetMarketBySlugRequest, GetMarketResponse>;
+  getQuoteTokens: handleUnaryCall<GetQuoteTokensRequest, GetQuoteTokensResponse>;
 }
 
 export interface OpinionServiceClient extends Client {
@@ -1051,6 +2217,51 @@ export interface OpinionServiceClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetMarketResponse) => void,
   ): ClientUnaryCall;
+  getCategoricalMarket(
+    request: GetCategoricalMarketRequest,
+    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+  ): ClientUnaryCall;
+  getCategoricalMarket(
+    request: GetCategoricalMarketRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+  ): ClientUnaryCall;
+  getCategoricalMarket(
+    request: GetCategoricalMarketRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+  ): ClientUnaryCall;
+  getMarketBySlug(
+    request: GetMarketBySlugRequest,
+    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+  ): ClientUnaryCall;
+  getMarketBySlug(
+    request: GetMarketBySlugRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+  ): ClientUnaryCall;
+  getMarketBySlug(
+    request: GetMarketBySlugRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+  ): ClientUnaryCall;
+  getQuoteTokens(
+    request: GetQuoteTokensRequest,
+    callback: (error: ServiceError | null, response: GetQuoteTokensResponse) => void,
+  ): ClientUnaryCall;
+  getQuoteTokens(
+    request: GetQuoteTokensRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetQuoteTokensResponse) => void,
+  ): ClientUnaryCall;
+  getQuoteTokens(
+    request: GetQuoteTokensRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetQuoteTokensResponse) => void,
+  ): ClientUnaryCall;
 }
 
 export const OpinionServiceClient = makeGenericClientConstructor(
@@ -1073,6 +2284,10 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

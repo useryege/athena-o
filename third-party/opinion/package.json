@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "proto:gen": "mkdir -p src/gen && grpc_tools_node_protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=src/gen --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,importSuffix=.js,forceLong=string --proto_path=. opinion/opinion.proto",
+    "proto:gen": "mkdir -p src/gen && grpc_tools_node_protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=src/gen --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,importSuffix=.js,forceLong=string --proto_path=. --proto_path=node_modules/grpc-tools/bin opinion/opinion.proto",
     "dev": "tsx watch cmd/server/main.ts",
     "build": "tsc --project tsconfig.build.json",
     "start": "node dist/cmd/server/main.js",

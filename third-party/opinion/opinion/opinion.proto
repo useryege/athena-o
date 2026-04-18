@@ -2,9 +2,21 @@ syntax = "proto3";
 
 package opinion;
 
+import "google/protobuf/struct.proto";
+
+// Opinion gRPC surface for `@opinion-labs/opinion-clob-sdk` market-query APIs.
+// Field naming: snake_case in proto; generated TS uses camelCase per ts-proto defaults.
+// See docs/references/sdk-to-proto-market-query.md for mapping rules.
+
 service OpinionService {
   rpc GetMarkets(GetMarketsRequest) returns (GetMarketsResponse);
+  rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
+  rpc GetCategoricalMarket(GetCategoricalMarketRequest) returns (GetMarketResponse);
+  rpc GetMarketBySlug(GetMarketBySlugRequest) returns (GetMarketResponse);
+  rpc GetQuoteTokens(GetQuoteTokensRequest) returns (GetQuoteTokensResponse);
 }
+
+// --- Enums (proto numbers are stable; map to SDK enums in adapters) ---
 
 enum MarketTopicType {
   MARKET_TOPIC_TYPE_UNSPECIFIED = 0;
@@ -32,21 +44,86 @@ enum MarketSortBy {
   MARKET_SORT_BY_VOLUME_7D_ASC = 8;
 }
 
+// --- Requests ---
+
 message GetMarketsRequest {
-  MarketTopicType topic_type = 1;
-  int32 page = 2;
-  int32 limit = 3;
-  MarketStatusFilter status = 4;
-  MarketSortBy sort_by = 5;
+  optional MarketTopicType topic_type = 1;
+  optional int32 page = 2;
+  optional int32 limit = 3;
+  optional MarketStatusFilter status = 4;
+  optional MarketSortBy sort_by = 5;
 }
+
+message GetMarketRequest {
+  // Market / topic id (string to avoid JS Number precision loss on large ids).
+  string market_id = 1;
+  optional bool use_cache = 2;
+}
+
+message GetCategoricalMarketRequest {
+  string market_id = 1;
+}
+
+message GetMarketBySlugRequest {
+  string slug = 1;
+}
+
+message GetQuoteTokensRequest {
+  optional bool use_cache = 1;
+}
+
+// --- Responses (errno/errmsg mirror SDK ApiResponse; omitted fields mean unset in partial updates) ---
 
 message GetMarketsResponse {
-  int32 total = 1;
-  repeated Market markets = 2;
+  int32 errno = 1;
+  string errmsg = 2;
+  int32 total = 3;
+  repeated Market markets = 4;
 }
 
+message GetMarketResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  Market market = 3;
+}
+
+message GetQuoteTokensResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  int32 total = 3;
+  repeated QuoteToken quote_tokens = 4;
+}
+
+// --- Domain messages (aligned with SDK transformMarketData / transformChildMarketData output) ---
+
 message Market {
-  uint64 market_id = 1;
+  string market_id = 1;
+  string market_title = 2;
+  string slug = 3;
+  string condition_id = 4;
+  string chain_id = 5;
+  string quote_token = 6;
+  int32 status = 7;
+  string status_enum = 8;
+  // API may return unix ms numbers; adapter normalizes to string for stable wire format.
+  string created_at = 9;
+  string cutoff_at = 10;
+  string resolved_at = 11;
+  string yes_token_id = 12;
+  string no_token_id = 13;
+  string result_token_id = 14;
+  string yes_label = 15;
+  string no_label = 16;
+  string volume = 17;
+  bool is_incentivized = 18;
+  repeated ChildMarket child_markets = 19;
+  string question_id = 20;
+  string rules = 21;
+  google.protobuf.Struct collection = 22;
+}
+
+message ChildMarket {
+  string market_id = 1;
   string market_title = 2;
   string slug = 3;
   string condition_id = 4;
@@ -63,6 +140,18 @@ message Market {
   string yes_label = 15;
   string no_label = 16;
   string volume = 17;
-  bool is_incentivized = 18;
-  repeated Market child_markets = 19;
+  string question_id = 18;
+  string rules = 19;
+}
+
+// Mirrors OpenapiQuoteTokenDataOpenApi / SDK QuoteTokenData.
+message QuoteToken {
+  string chain_id = 1;
+  string created_at = 2;
+  string ctf_exchange_address = 3;
+  int32 decimal = 4;
+  string id = 5;
+  string quote_token_address = 6;
+  string quote_token_name = 7;
+  string symbol = 8;
 }

@@ -35,17 +35,11 @@
 npm run proto:gen
 ```
 
-该命令会根据 `opinion/opinion.proto` 重新生成 `src/gen/opinion/opinion.ts`。
+该命令会根据 `opinion/opinion.proto` 重新生成 `src/gen/opinion/opinion.ts`，并在使用 `import "google/protobuf/struct.proto"` 时同步生成 `src/gen/google/protobuf/struct.ts`（第二组 `--proto_path` 指向 `grpc-tools` 自带的 Well-Known Types）。
 
-`package.json` 中对应脚本如下：
+`package.json` 中对应脚本以仓库内实际内容为准；运行 `npm run proto:gen` 即可。
 
-```json
-{
-  "scripts": {
-    "proto:gen": "mkdir -p src/gen && grpc_tools_node_protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=src/gen --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,importSuffix=.js,forceLong=string --proto_path=. opinion/opinion.proto"
-  }
-}
-```
+Market Query 的字段级映射与契约说明见 [`docs/references/sdk-to-proto-market-query.md`](../references/sdk-to-proto-market-query.md)。
 
 ### 3. 更新服务实现
 
