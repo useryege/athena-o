@@ -19,6 +19,6 @@
     "skipLibCheck": true,
     "esModuleInterop": true
   },
-  "include": ["cmd", "src"],
-  "exclude": ["node_modules", "dist"]
+  // "include": ["cmd", "src"],
+  // "exclude": ["node_modules", "dist"]
 }
