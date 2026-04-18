@@ -11,7 +11,7 @@ import {
   toGetMarketDetailResponse,
   toGetMarketsResponse,
   toGetQuoteTokensResponse,
-} from './market.js';
+} from './common.js';
 
 export function createOpinionService(): OpinionServiceServer {
   const client = getOpinionClient();

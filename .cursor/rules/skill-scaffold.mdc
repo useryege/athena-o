@@ -44,32 +44,65 @@ Apply progressive disclosure when structuring the skill.
 * Avoid deeply nested instruction chains. Prefer linking directly from `SKILL.md` to the specific supporting file that should be used.
 * If a skill may grow large, keep `SKILL.md` compact and move expandable detail into dedicated files under `references/`.
 
+## `SKILL.md` content dimensions (template)
+
+When authoring `SKILL.md`, include the dimensions below as needed. Not every skill needs every section; add **Mandatory intake**, **Verification**, and **Checklists** when the task has blocking inputs, a defined quality bar, or repeatable gates.
+
+### Frontmatter (required)
+
+* **`name`**: Skill identifier (e.g. kebab-case), stable and unique within the skills set.
+* **`description`**: One concise paragraph in lowercase (or conventional style) that states what the skill does, **non-negotiable constraints**, and **when to apply it** (trigger phrases, user intents, or task types). Cursor uses this for matching; be explicit about triggers and hard rules.
+
+### Body: recommended sections
+
+1. **`#` Title** — Human-readable name aligned with `name`.
+2. **Overview** — One or two sentences: scope, authority (what counts as source of truth), and any hard stop (e.g. do not proceed until intake is complete).
+3. **Mandatory intake (blocking)** — Numbered list of inputs that must be collected **before** main work. For each item: definition, valid examples, invalid or open-ended cases to reject, and what to do if missing (e.g. stop and reply using a file under `assets/`). Optional: a short **copy-paste template** for the user to fill (markdown bullet list or form).
+4. **Workflow** — Ordered steps: authoritative sources, scope boundaries (do not expand beyond the list), alignment with repo conventions vs. when to ask the user, and when the task is considered done.
+5. **Hard rules / standards** — Bullet rules that must not be violated; short normative examples where naming or structure matters; document required exceptions (e.g. reserved keywords) instead of silently diverging.
+6. **Verification and reporting** — **When** to verify (e.g. immediately after changing artifacts). **Standard** for pass/fail (what to compare, field-by-field or semantic checks). **If pass**: brief confirmation. **If fail**: mandatory user-visible report (what diverged, where, and a short hypothesis for acceptable tradeoffs if applicable). Do not leave drift undocumented.
+7. **Preflight checklist** — Checkboxes: inputs known, scope bounded, paths explicit, no scope creep.
+8. **Postflight checklist** — Checkboxes: verification done, rules satisfied or deviations reported, user informed of mismatches.
+9. **Resources** — Link `scripts/`, `references/`, and `assets/` with one-line roles; call out templates in `assets/` and long reads in `references/`.
+
 ## `SKILL.md` Authoring Framework
 
-Use the following structure when generating a new `SKILL.md` file unless the user explicitly requests a different format:
+Use the following structure when generating a new `SKILL.md` file unless the user explicitly requests a different format. Extend **Main sections** with the dimensions above (intake, workflow, hard rules, verification, checklists) when the skill needs them.
 
 ```markdown
 ---
 name: your-skill-name
-description: concise lowercase description of what the skill does and when to use it.
+description: what it does; non-negotiable constraints; when to use it (triggers, user phrases, task types).
 ---
 
 # Your Skill Title
 
 ## Overview
-Use 1-2 sentences to explain what the skill does.
+1–2 sentences: purpose, source of truth, and any hard stop before work begins.
 
-## Main Section 1
-Describe the core operations, rules, workflow, and decision logic.
+## Mandatory intake (blocking) — optional
+Numbered prerequisites. If anything is missing, stop and use [assets/…](assets/…).
+Include a short copy-paste template for the user when helpful.
 
-## Main Section 2
-Describe the second key capability. Add examples when helpful.
+## Workflow — or split into Main Section 1 / 2
+Ordered steps, scope limits, convention alignment, definition of done.
+
+## Hard rules / standards — optional
+Normative rules; minimal examples; how to document exceptions.
+
+## Verification and reporting — optional
+When to verify; pass criteria; required failure report structure.
+
+## Preflight checklist — optional
+- [ ] …
+
+## Postflight checklist — optional
+- [ ] …
 
 ## Resources
-List the reusable resources included in the skill, such as:
-- `scripts/`
-- `references/`
-- `assets/`
+- `scripts/` — …
+- `references/` — …
+- `assets/` — …
 ```
 
 ## Additional `SKILL.md` Rules
@@ -80,4 +113,3 @@ List the reusable resources included in the skill, such as:
 * Use `SKILL.md` to describe workflow entry points, decision logic, and resource routing, not to store all possible implementation details.
 * When additional detail is needed, explicitly point to the relevant file in `references/`, `scripts/`, or `assets/`.
 * Keep the main file concise enough to remain readable and maintainable as the skill grows.
-
