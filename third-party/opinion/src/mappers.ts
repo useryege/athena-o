@@ -1,4 +1,4 @@
-import type { GetMarketsResponse, Market } from './gen/opinion/opinion.js';
+import type { GetMarketResponse, GetMarketsResponse, Market } from './gen/opinion/opinion.js';
 
 type RawRecord = Record<string, unknown>;
 type RawGetMarketsResult = {
@@ -69,5 +69,16 @@ export function mapGetMarketsResponse(result: RawGetMarketsResult): GetMarketsRe
   return {
     total: typeof result.total === 'number' ? result.total : 0,
     markets: asRecordList(result.list).map(mapMarket),
+  };
+}
+
+type RawGetMarketResult = {
+  data?: unknown;
+};
+
+export function mapGetMarketResponse(result: RawGetMarketResult): GetMarketResponse {
+  const raw = result.data;
+  return {
+    market: raw !== null && typeof raw === 'object' ? mapMarket(raw as RawRecord) : undefined,
   };
 }

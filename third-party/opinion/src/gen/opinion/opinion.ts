@@ -199,6 +199,14 @@ export interface GetMarketsResponse {
   markets: Market[];
 }
 
+export interface GetMarketRequest {
+  marketId: string;
+}
+
+export interface GetMarketResponse {
+  market: Market | undefined;
+}
+
 export interface Market {
   marketId: string;
   marketTitle: string;
@@ -425,6 +433,130 @@ export const GetMarketsResponse: MessageFns<GetMarketsResponse> = {
     const message = createBaseGetMarketsResponse();
     message.total = object.total ?? 0;
     message.markets = object.markets?.map((e) => Market.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGetMarketRequest(): GetMarketRequest {
+  return { marketId: "0" };
+}
+
+export const GetMarketRequest: MessageFns<GetMarketRequest> = {
+  encode(message: GetMarketRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== "0") {
+      writer.uint32(8).uint64(message.marketId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMarketRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMarketRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.marketId = reader.uint64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMarketRequest {
+    return {
+      marketId: isSet(object.marketId)
+        ? globalThis.String(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.String(object.market_id)
+        : "0",
+    };
+  },
+
+  toJSON(message: GetMarketRequest): unknown {
+    const obj: any = {};
+    if (message.marketId !== "0") {
+      obj.marketId = message.marketId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMarketRequest>, I>>(base?: I): GetMarketRequest {
+    return GetMarketRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMarketRequest>, I>>(object: I): GetMarketRequest {
+    const message = createBaseGetMarketRequest();
+    message.marketId = object.marketId ?? "0";
+    return message;
+  },
+};
+
+function createBaseGetMarketResponse(): GetMarketResponse {
+  return { market: undefined };
+}
+
+export const GetMarketResponse: MessageFns<GetMarketResponse> = {
+  encode(message: GetMarketResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.market !== undefined) {
+      Market.encode(message.market, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMarketResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMarketResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.market = Market.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMarketResponse {
+    return { market: isSet(object.market) ? Market.fromJSON(object.market) : undefined };
+  },
+
+  toJSON(message: GetMarketResponse): unknown {
+    const obj: any = {};
+    if (message.market !== undefined) {
+      obj.market = Market.toJSON(message.market);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMarketResponse>, I>>(base?: I): GetMarketResponse {
+    return GetMarketResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMarketResponse>, I>>(object: I): GetMarketResponse {
+    const message = createBaseGetMarketResponse();
+    message.market = (object.market !== undefined && object.market !== null)
+      ? Market.fromPartial(object.market)
+      : undefined;
     return message;
   },
 };
@@ -872,10 +1004,20 @@ export const OpinionServiceService = {
     responseSerialize: (value: GetMarketsResponse): Buffer => Buffer.from(GetMarketsResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): GetMarketsResponse => GetMarketsResponse.decode(value),
   },
+  getMarket: {
+    path: "/opinion.OpinionService/GetMarket" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetMarketRequest): Buffer => Buffer.from(GetMarketRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetMarketRequest => GetMarketRequest.decode(value),
+    responseSerialize: (value: GetMarketResponse): Buffer => Buffer.from(GetMarketResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetMarketResponse => GetMarketResponse.decode(value),
+  },
 } as const;
 
 export interface OpinionServiceServer extends UntypedServiceImplementation {
   getMarkets: handleUnaryCall<GetMarketsRequest, GetMarketsResponse>;
+  getMarket: handleUnaryCall<GetMarketRequest, GetMarketResponse>;
 }
 
 export interface OpinionServiceClient extends Client {
@@ -893,6 +1035,21 @@ export interface OpinionServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetMarketsResponse) => void,
+  ): ClientUnaryCall;
+  getMarket(
+    request: GetMarketRequest,
+    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+  ): ClientUnaryCall;
+  getMarket(
+    request: GetMarketRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+  ): ClientUnaryCall;
+  getMarket(
+    request: GetMarketRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
   ): ClientUnaryCall;
 }
 
