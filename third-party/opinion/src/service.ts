@@ -16,6 +16,13 @@ import {
   parseCancelOrderRequest,
   parseCancelOrdersBatchRequest,
   parseCancelAllOrdersRequest,
+  parseGetMyOrdersRequest,
+  parseGetOrderByIdRequest,
+  parseGetMyPositionsRequest,
+  parseGetMyTradesRequest,
+  parseSplitRequest,
+  parseMergeRequest,
+  parseRedeemRequest,
   toGetMarketDetailResponse,
   toGetMarketsResponse,
   toGetQuoteTokensResponse,
@@ -28,6 +35,13 @@ import {
   toCancelOrderApiResponse,
   toCancelOrdersBatchResponse,
   toCancelAllOrdersResponse,
+  toGetMyOrdersResponse,
+  toGetOrderByIdResponse,
+  toGetMyBalancesResponse,
+  toGetMyPositionsResponse,
+  toGetMyTradesResponse,
+  toGetUserAuthResponse,
+  sdkTransactionResultToProto,
 } from './common.js';
 
 export function createOpinionService(): OpinionServiceServer {
@@ -177,6 +191,110 @@ export function createOpinionService(): OpinionServiceServer {
         const options = parseCancelAllOrdersRequest(call.request);
         const result = await client.cancelAllOrders(options);
         callback(null, toCancelAllOrdersResponse(result));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
+    },
+
+    async getMyOrders(call, callback) {
+      try {
+        const options = parseGetMyOrdersRequest(call.request);
+        const response = await client.getMyOrders(options);
+        assertSdkSuccess(response.errno, response.errmsg);
+        callback(null, toGetMyOrdersResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
+    },
+
+    async getOrderById(call, callback) {
+      try {
+        const orderId = parseGetOrderByIdRequest(call.request);
+        const response = await client.getOrderById(orderId);
+        assertSdkSuccess(response.errno, response.errmsg);
+        callback(null, toGetOrderByIdResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
+    },
+
+    async getMyBalances(call, callback) {
+      try {
+        const response = await client.getMyBalances();
+        assertSdkSuccess(response.errno, response.errmsg);
+        callback(null, toGetMyBalancesResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
+    },
+
+    async getMyPositions(call, callback) {
+      try {
+        const options = parseGetMyPositionsRequest(call.request);
+        const response = await client.getMyPositions(options);
+        assertSdkSuccess(response.errno, response.errmsg);
+        callback(null, toGetMyPositionsResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
+    },
+
+    async getMyTrades(call, callback) {
+      try {
+        const options = parseGetMyTradesRequest(call.request);
+        const response = await client.getMyTrades(options);
+        assertSdkSuccess(response.errno, response.errmsg);
+        callback(null, toGetMyTradesResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
+    },
+
+    async getUserAuth(call, callback) {
+      try {
+        const response = await client.getUserAuth();
+        assertSdkSuccess(response.errno, response.errmsg);
+        callback(null, toGetUserAuthResponse(response));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
+    },
+
+    async enableTrading(call, callback) {
+      try {
+        void call;
+        const result = await client.enableTrading();
+        callback(null, sdkTransactionResultToProto(result));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
+    },
+
+    async split(call, callback) {
+      try {
+        const { marketId, amount, checkApproval } = parseSplitRequest(call.request);
+        const result = await client.split(marketId, amount, checkApproval);
+        callback(null, sdkTransactionResultToProto(result));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
+    },
+
+    async merge(call, callback) {
+      try {
+        const { marketId, amount, checkApproval } = parseMergeRequest(call.request);
+        const result = await client.merge(marketId, amount, checkApproval);
+        callback(null, sdkTransactionResultToProto(result));
+      } catch (error) {
+        callback(toGrpcError(error));
+      }
+    },
+
+    async redeem(call, callback) {
+      try {
+        const { marketId, checkApproval } = parseRedeemRequest(call.request);
+        const result = await client.redeem(marketId, checkApproval);
+        callback(null, sdkTransactionResultToProto(result));
       } catch (error) {
         callback(toGrpcError(error));
       }

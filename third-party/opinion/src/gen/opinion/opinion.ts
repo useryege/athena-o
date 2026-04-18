@@ -400,6 +400,58 @@ export interface CancelAllOrdersRequest {
   side?: SdkOrderSide | undefined;
 }
 
+/** `getMyOrders(options)` — field names match the options object (`src/client.ts`). */
+export interface GetMyOrdersRequest {
+  marketId?: number | undefined;
+  status?: string | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
+}
+
+export interface GetOrderByIdRequest {
+  orderId: string;
+}
+
+export interface GetMyBalancesRequest {
+}
+
+/** `getMyPositions` / `getMyTrades` options. */
+export interface GetMyPositionsRequest {
+  marketId?: number | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
+}
+
+export interface GetMyTradesRequest {
+  marketId?: number | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
+}
+
+export interface GetUserAuthRequest {
+}
+
+export interface EnableTradingRequest {
+}
+
+/** `split` / `merge(marketId, amount, checkApproval?)`. */
+export interface SplitRequest {
+  marketId: number;
+  amount: string;
+  checkApproval?: boolean | undefined;
+}
+
+export interface MergeRequest {
+  marketId: number;
+  amount: string;
+  checkApproval?: boolean | undefined;
+}
+
+export interface RedeemRequest {
+  marketId: number;
+  checkApproval?: boolean | undefined;
+}
+
 export interface GetMarketsResponse {
   errno: number;
   errmsg: string;
@@ -496,6 +548,131 @@ export interface CancelAllOrdersResponse {
   cancelled: number;
   failed: number;
   results: CancelOrderBatchItem[];
+}
+
+/** `ApiResponse<OpenapiOrderListRespOpenApi>` flattened (`errno` / `errmsg` / `total` / `list`). */
+export interface GetMyOrdersResponse {
+  errno: number;
+  errmsg: string;
+  total?: number | undefined;
+  list: OrderApiData[];
+}
+
+/** `ApiResponse<OpenapiOrderDetailRespOpenApi>` flattened (`errno` / `errmsg` / `orderData`). */
+export interface GetOrderByIdResponse {
+  errno: number;
+  errmsg: string;
+  orderData?: OrderApiData | undefined;
+}
+
+/** `OpenapiQuoteTokenBalance` (`@opinion-labs/opinion-api` `types.gen.ts`). */
+export interface QuoteTokenBalance {
+  availableBalance?: string | undefined;
+  frozenBalance?: string | undefined;
+  quoteToken?: string | undefined;
+  tokenDecimals?: number | undefined;
+  totalBalance?: string | undefined;
+}
+
+/** `ApiResponse<OpenapiBalanceRespOpenApi>` flattened. */
+export interface GetMyBalancesResponse {
+  errno: number;
+  errmsg: string;
+  balances: QuoteTokenBalance[];
+  chainId?: string | undefined;
+  multiSignAddress?: string | undefined;
+  walletAddress?: string | undefined;
+}
+
+/** `OpenapiPositionDataOpenApi`. */
+export interface PositionApiData {
+  avgEntryPrice?: string | undefined;
+  claimStatus?: number | undefined;
+  claimStatusEnum?: string | undefined;
+  conditionId?: string | undefined;
+  currentValueInQuoteToken?: string | undefined;
+  dailyPnlChange?: string | undefined;
+  dailyPnlChangePercent?: string | undefined;
+  marketCutoffAt?: string | undefined;
+  marketId?: number | undefined;
+  marketStatus?: number | undefined;
+  marketStatusEnum?: string | undefined;
+  marketTitle?: string | undefined;
+  outcome?: string | undefined;
+  outcomeSide?: number | undefined;
+  outcomeSideEnum?: string | undefined;
+  quoteToken?: string | undefined;
+  rootMarketId?: number | undefined;
+  rootMarketTitle?: string | undefined;
+  sharesFrozen?: string | undefined;
+  sharesOwned?: string | undefined;
+  tokenId?: string | undefined;
+  unrealizedPnl?: string | undefined;
+  unrealizedPnlPercent?: string | undefined;
+}
+
+/** `ApiResponse<OpenapiPositionsRespOpenApi>` flattened. */
+export interface GetMyPositionsResponse {
+  errno: number;
+  errmsg: string;
+  total?: number | undefined;
+  list: PositionApiData[];
+}
+
+/** Runtime shape after `getMyTrades` post-processing: `fee` is set from `feeFormatted` (string) and `feeFormatted` is removed. */
+export interface UserTradeApiData {
+  amount?: string | undefined;
+  chainId?: string | undefined;
+  createdAt?: string | undefined;
+  fee?: string | undefined;
+  marketId?: number | undefined;
+  marketTitle?: string | undefined;
+  orderNo?: string | undefined;
+  outcome?: string | undefined;
+  outcomeSide?: number | undefined;
+  outcomeSideEnum?: string | undefined;
+  price?: string | undefined;
+  profit?: string | undefined;
+  quoteToken?: string | undefined;
+  quoteTokenUsdPrice?: string | undefined;
+  rootMarketId?: number | undefined;
+  rootMarketTitle?: string | undefined;
+  shares?: string | undefined;
+  side?: string | undefined;
+  status?: number | undefined;
+  statusEnum?: string | undefined;
+  tradeNo?: string | undefined;
+  txHash?: string | undefined;
+  usdAmount?: string | undefined;
+}
+
+/** `ApiResponse<OpenapiTradeListRespOpenApi>` flattened; list items match `UserTradeApiData` (SDK-transformed trades). */
+export interface GetMyTradesResponse {
+  errno: number;
+  errmsg: string;
+  total?: number | undefined;
+  list: UserTradeApiData[];
+}
+
+/** `ApiResponse<V2GetApiKeyResp>` flattened (`walletUsers` matches OpenAPI map). */
+export interface GetUserAuthResponse {
+  errno: number;
+  errmsg: string;
+  apiKey?: string | undefined;
+  walletAddress?: string | undefined;
+  walletUsers: { [key: string]: string };
+}
+
+export interface GetUserAuthResponse_WalletUsersEntry {
+  key: string;
+  value: string;
+}
+
+/** SDK `TransactionResult` (`src/chain/contract_caller.ts`); returned by `enableTrading`, `split`, `merge`, `redeem`. */
+export interface TransactionResult {
+  txHash?: string | undefined;
+  safeTxHash?: string | undefined;
+  returnValue?: string | undefined;
 }
 
 /** Mirrors `@opinion-labs/opinion-api` `OpenapiTradeDataOpenApi`. */
@@ -1794,6 +1971,745 @@ export const CancelAllOrdersRequest: MessageFns<CancelAllOrdersRequest> = {
     const message = createBaseCancelAllOrdersRequest();
     message.marketId = object.marketId ?? undefined;
     message.side = object.side ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetMyOrdersRequest(): GetMyOrdersRequest {
+  return { marketId: undefined, status: undefined, page: undefined, limit: undefined };
+}
+
+export const GetMyOrdersRequest: MessageFns<GetMyOrdersRequest> = {
+  encode(message: GetMyOrdersRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== undefined) {
+      writer.uint32(8).int32(message.marketId);
+    }
+    if (message.status !== undefined) {
+      writer.uint32(18).string(message.status);
+    }
+    if (message.page !== undefined) {
+      writer.uint32(24).int32(message.page);
+    }
+    if (message.limit !== undefined) {
+      writer.uint32(32).int32(message.limit);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMyOrdersRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMyOrdersRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.status = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.page = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.limit = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMyOrdersRequest {
+    return {
+      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
+      status: isSet(object.status) ? globalThis.String(object.status) : undefined,
+      page: isSet(object.page) ? globalThis.Number(object.page) : undefined,
+      limit: isSet(object.limit) ? globalThis.Number(object.limit) : undefined,
+    };
+  },
+
+  toJSON(message: GetMyOrdersRequest): unknown {
+    const obj: any = {};
+    if (message.marketId !== undefined) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.status !== undefined) {
+      obj.status = message.status;
+    }
+    if (message.page !== undefined) {
+      obj.page = Math.round(message.page);
+    }
+    if (message.limit !== undefined) {
+      obj.limit = Math.round(message.limit);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMyOrdersRequest>, I>>(base?: I): GetMyOrdersRequest {
+    return GetMyOrdersRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMyOrdersRequest>, I>>(object: I): GetMyOrdersRequest {
+    const message = createBaseGetMyOrdersRequest();
+    message.marketId = object.marketId ?? undefined;
+    message.status = object.status ?? undefined;
+    message.page = object.page ?? undefined;
+    message.limit = object.limit ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetOrderByIdRequest(): GetOrderByIdRequest {
+  return { orderId: "" };
+}
+
+export const GetOrderByIdRequest: MessageFns<GetOrderByIdRequest> = {
+  encode(message: GetOrderByIdRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.orderId !== "") {
+      writer.uint32(10).string(message.orderId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetOrderByIdRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetOrderByIdRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.orderId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetOrderByIdRequest {
+    return { orderId: isSet(object.orderId) ? globalThis.String(object.orderId) : "" };
+  },
+
+  toJSON(message: GetOrderByIdRequest): unknown {
+    const obj: any = {};
+    if (message.orderId !== "") {
+      obj.orderId = message.orderId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetOrderByIdRequest>, I>>(base?: I): GetOrderByIdRequest {
+    return GetOrderByIdRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetOrderByIdRequest>, I>>(object: I): GetOrderByIdRequest {
+    const message = createBaseGetOrderByIdRequest();
+    message.orderId = object.orderId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetMyBalancesRequest(): GetMyBalancesRequest {
+  return {};
+}
+
+export const GetMyBalancesRequest: MessageFns<GetMyBalancesRequest> = {
+  encode(_: GetMyBalancesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMyBalancesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMyBalancesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetMyBalancesRequest {
+    return {};
+  },
+
+  toJSON(_: GetMyBalancesRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMyBalancesRequest>, I>>(base?: I): GetMyBalancesRequest {
+    return GetMyBalancesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMyBalancesRequest>, I>>(_: I): GetMyBalancesRequest {
+    const message = createBaseGetMyBalancesRequest();
+    return message;
+  },
+};
+
+function createBaseGetMyPositionsRequest(): GetMyPositionsRequest {
+  return { marketId: undefined, page: undefined, limit: undefined };
+}
+
+export const GetMyPositionsRequest: MessageFns<GetMyPositionsRequest> = {
+  encode(message: GetMyPositionsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== undefined) {
+      writer.uint32(8).int32(message.marketId);
+    }
+    if (message.page !== undefined) {
+      writer.uint32(16).int32(message.page);
+    }
+    if (message.limit !== undefined) {
+      writer.uint32(24).int32(message.limit);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMyPositionsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMyPositionsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.page = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.limit = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMyPositionsRequest {
+    return {
+      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
+      page: isSet(object.page) ? globalThis.Number(object.page) : undefined,
+      limit: isSet(object.limit) ? globalThis.Number(object.limit) : undefined,
+    };
+  },
+
+  toJSON(message: GetMyPositionsRequest): unknown {
+    const obj: any = {};
+    if (message.marketId !== undefined) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.page !== undefined) {
+      obj.page = Math.round(message.page);
+    }
+    if (message.limit !== undefined) {
+      obj.limit = Math.round(message.limit);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMyPositionsRequest>, I>>(base?: I): GetMyPositionsRequest {
+    return GetMyPositionsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMyPositionsRequest>, I>>(object: I): GetMyPositionsRequest {
+    const message = createBaseGetMyPositionsRequest();
+    message.marketId = object.marketId ?? undefined;
+    message.page = object.page ?? undefined;
+    message.limit = object.limit ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetMyTradesRequest(): GetMyTradesRequest {
+  return { marketId: undefined, page: undefined, limit: undefined };
+}
+
+export const GetMyTradesRequest: MessageFns<GetMyTradesRequest> = {
+  encode(message: GetMyTradesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== undefined) {
+      writer.uint32(8).int32(message.marketId);
+    }
+    if (message.page !== undefined) {
+      writer.uint32(16).int32(message.page);
+    }
+    if (message.limit !== undefined) {
+      writer.uint32(24).int32(message.limit);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMyTradesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMyTradesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.page = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.limit = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMyTradesRequest {
+    return {
+      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
+      page: isSet(object.page) ? globalThis.Number(object.page) : undefined,
+      limit: isSet(object.limit) ? globalThis.Number(object.limit) : undefined,
+    };
+  },
+
+  toJSON(message: GetMyTradesRequest): unknown {
+    const obj: any = {};
+    if (message.marketId !== undefined) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.page !== undefined) {
+      obj.page = Math.round(message.page);
+    }
+    if (message.limit !== undefined) {
+      obj.limit = Math.round(message.limit);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMyTradesRequest>, I>>(base?: I): GetMyTradesRequest {
+    return GetMyTradesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMyTradesRequest>, I>>(object: I): GetMyTradesRequest {
+    const message = createBaseGetMyTradesRequest();
+    message.marketId = object.marketId ?? undefined;
+    message.page = object.page ?? undefined;
+    message.limit = object.limit ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetUserAuthRequest(): GetUserAuthRequest {
+  return {};
+}
+
+export const GetUserAuthRequest: MessageFns<GetUserAuthRequest> = {
+  encode(_: GetUserAuthRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetUserAuthRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetUserAuthRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetUserAuthRequest {
+    return {};
+  },
+
+  toJSON(_: GetUserAuthRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetUserAuthRequest>, I>>(base?: I): GetUserAuthRequest {
+    return GetUserAuthRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetUserAuthRequest>, I>>(_: I): GetUserAuthRequest {
+    const message = createBaseGetUserAuthRequest();
+    return message;
+  },
+};
+
+function createBaseEnableTradingRequest(): EnableTradingRequest {
+  return {};
+}
+
+export const EnableTradingRequest: MessageFns<EnableTradingRequest> = {
+  encode(_: EnableTradingRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EnableTradingRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEnableTradingRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): EnableTradingRequest {
+    return {};
+  },
+
+  toJSON(_: EnableTradingRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EnableTradingRequest>, I>>(base?: I): EnableTradingRequest {
+    return EnableTradingRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EnableTradingRequest>, I>>(_: I): EnableTradingRequest {
+    const message = createBaseEnableTradingRequest();
+    return message;
+  },
+};
+
+function createBaseSplitRequest(): SplitRequest {
+  return { marketId: 0, amount: "", checkApproval: undefined };
+}
+
+export const SplitRequest: MessageFns<SplitRequest> = {
+  encode(message: SplitRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== 0) {
+      writer.uint32(8).int32(message.marketId);
+    }
+    if (message.amount !== "") {
+      writer.uint32(18).string(message.amount);
+    }
+    if (message.checkApproval !== undefined) {
+      writer.uint32(24).bool(message.checkApproval);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SplitRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSplitRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.amount = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.checkApproval = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SplitRequest {
+    return {
+      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : 0,
+      amount: isSet(object.amount) ? globalThis.String(object.amount) : "",
+      checkApproval: isSet(object.checkApproval) ? globalThis.Boolean(object.checkApproval) : undefined,
+    };
+  },
+
+  toJSON(message: SplitRequest): unknown {
+    const obj: any = {};
+    if (message.marketId !== 0) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.amount !== "") {
+      obj.amount = message.amount;
+    }
+    if (message.checkApproval !== undefined) {
+      obj.checkApproval = message.checkApproval;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SplitRequest>, I>>(base?: I): SplitRequest {
+    return SplitRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SplitRequest>, I>>(object: I): SplitRequest {
+    const message = createBaseSplitRequest();
+    message.marketId = object.marketId ?? 0;
+    message.amount = object.amount ?? "";
+    message.checkApproval = object.checkApproval ?? undefined;
+    return message;
+  },
+};
+
+function createBaseMergeRequest(): MergeRequest {
+  return { marketId: 0, amount: "", checkApproval: undefined };
+}
+
+export const MergeRequest: MessageFns<MergeRequest> = {
+  encode(message: MergeRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== 0) {
+      writer.uint32(8).int32(message.marketId);
+    }
+    if (message.amount !== "") {
+      writer.uint32(18).string(message.amount);
+    }
+    if (message.checkApproval !== undefined) {
+      writer.uint32(24).bool(message.checkApproval);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MergeRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMergeRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.amount = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.checkApproval = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MergeRequest {
+    return {
+      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : 0,
+      amount: isSet(object.amount) ? globalThis.String(object.amount) : "",
+      checkApproval: isSet(object.checkApproval) ? globalThis.Boolean(object.checkApproval) : undefined,
+    };
+  },
+
+  toJSON(message: MergeRequest): unknown {
+    const obj: any = {};
+    if (message.marketId !== 0) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.amount !== "") {
+      obj.amount = message.amount;
+    }
+    if (message.checkApproval !== undefined) {
+      obj.checkApproval = message.checkApproval;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MergeRequest>, I>>(base?: I): MergeRequest {
+    return MergeRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MergeRequest>, I>>(object: I): MergeRequest {
+    const message = createBaseMergeRequest();
+    message.marketId = object.marketId ?? 0;
+    message.amount = object.amount ?? "";
+    message.checkApproval = object.checkApproval ?? undefined;
+    return message;
+  },
+};
+
+function createBaseRedeemRequest(): RedeemRequest {
+  return { marketId: 0, checkApproval: undefined };
+}
+
+export const RedeemRequest: MessageFns<RedeemRequest> = {
+  encode(message: RedeemRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.marketId !== 0) {
+      writer.uint32(8).int32(message.marketId);
+    }
+    if (message.checkApproval !== undefined) {
+      writer.uint32(16).bool(message.checkApproval);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RedeemRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRedeemRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.checkApproval = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RedeemRequest {
+    return {
+      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : 0,
+      checkApproval: isSet(object.checkApproval) ? globalThis.Boolean(object.checkApproval) : undefined,
+    };
+  },
+
+  toJSON(message: RedeemRequest): unknown {
+    const obj: any = {};
+    if (message.marketId !== 0) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.checkApproval !== undefined) {
+      obj.checkApproval = message.checkApproval;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RedeemRequest>, I>>(base?: I): RedeemRequest {
+    return RedeemRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RedeemRequest>, I>>(object: I): RedeemRequest {
+    const message = createBaseRedeemRequest();
+    message.marketId = object.marketId ?? 0;
+    message.checkApproval = object.checkApproval ?? undefined;
     return message;
   },
 };
@@ -3246,6 +4162,1902 @@ export const CancelAllOrdersResponse: MessageFns<CancelAllOrdersResponse> = {
     message.cancelled = object.cancelled ?? 0;
     message.failed = object.failed ?? 0;
     message.results = object.results?.map((e) => CancelOrderBatchItem.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGetMyOrdersResponse(): GetMyOrdersResponse {
+  return { errno: 0, errmsg: "", total: undefined, list: [] };
+}
+
+export const GetMyOrdersResponse: MessageFns<GetMyOrdersResponse> = {
+  encode(message: GetMyOrdersResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.total !== undefined) {
+      writer.uint32(24).int32(message.total);
+    }
+    for (const v of message.list) {
+      OrderApiData.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMyOrdersResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMyOrdersResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.total = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.list.push(OrderApiData.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMyOrdersResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      total: isSet(object.total) ? globalThis.Number(object.total) : undefined,
+      list: globalThis.Array.isArray(object?.list) ? object.list.map((e: any) => OrderApiData.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: GetMyOrdersResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.total !== undefined) {
+      obj.total = Math.round(message.total);
+    }
+    if (message.list?.length) {
+      obj.list = message.list.map((e) => OrderApiData.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMyOrdersResponse>, I>>(base?: I): GetMyOrdersResponse {
+    return GetMyOrdersResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMyOrdersResponse>, I>>(object: I): GetMyOrdersResponse {
+    const message = createBaseGetMyOrdersResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.total = object.total ?? undefined;
+    message.list = object.list?.map((e) => OrderApiData.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGetOrderByIdResponse(): GetOrderByIdResponse {
+  return { errno: 0, errmsg: "", orderData: undefined };
+}
+
+export const GetOrderByIdResponse: MessageFns<GetOrderByIdResponse> = {
+  encode(message: GetOrderByIdResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.orderData !== undefined) {
+      OrderApiData.encode(message.orderData, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetOrderByIdResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetOrderByIdResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.orderData = OrderApiData.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetOrderByIdResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      orderData: isSet(object.orderData) ? OrderApiData.fromJSON(object.orderData) : undefined,
+    };
+  },
+
+  toJSON(message: GetOrderByIdResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.orderData !== undefined) {
+      obj.orderData = OrderApiData.toJSON(message.orderData);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetOrderByIdResponse>, I>>(base?: I): GetOrderByIdResponse {
+    return GetOrderByIdResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetOrderByIdResponse>, I>>(object: I): GetOrderByIdResponse {
+    const message = createBaseGetOrderByIdResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.orderData = (object.orderData !== undefined && object.orderData !== null)
+      ? OrderApiData.fromPartial(object.orderData)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseQuoteTokenBalance(): QuoteTokenBalance {
+  return {
+    availableBalance: undefined,
+    frozenBalance: undefined,
+    quoteToken: undefined,
+    tokenDecimals: undefined,
+    totalBalance: undefined,
+  };
+}
+
+export const QuoteTokenBalance: MessageFns<QuoteTokenBalance> = {
+  encode(message: QuoteTokenBalance, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.availableBalance !== undefined) {
+      writer.uint32(10).string(message.availableBalance);
+    }
+    if (message.frozenBalance !== undefined) {
+      writer.uint32(18).string(message.frozenBalance);
+    }
+    if (message.quoteToken !== undefined) {
+      writer.uint32(26).string(message.quoteToken);
+    }
+    if (message.tokenDecimals !== undefined) {
+      writer.uint32(32).int32(message.tokenDecimals);
+    }
+    if (message.totalBalance !== undefined) {
+      writer.uint32(42).string(message.totalBalance);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QuoteTokenBalance {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuoteTokenBalance();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.availableBalance = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.frozenBalance = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.quoteToken = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.tokenDecimals = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.totalBalance = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QuoteTokenBalance {
+    return {
+      availableBalance: isSet(object.availableBalance) ? globalThis.String(object.availableBalance) : undefined,
+      frozenBalance: isSet(object.frozenBalance) ? globalThis.String(object.frozenBalance) : undefined,
+      quoteToken: isSet(object.quoteToken) ? globalThis.String(object.quoteToken) : undefined,
+      tokenDecimals: isSet(object.tokenDecimals) ? globalThis.Number(object.tokenDecimals) : undefined,
+      totalBalance: isSet(object.totalBalance) ? globalThis.String(object.totalBalance) : undefined,
+    };
+  },
+
+  toJSON(message: QuoteTokenBalance): unknown {
+    const obj: any = {};
+    if (message.availableBalance !== undefined) {
+      obj.availableBalance = message.availableBalance;
+    }
+    if (message.frozenBalance !== undefined) {
+      obj.frozenBalance = message.frozenBalance;
+    }
+    if (message.quoteToken !== undefined) {
+      obj.quoteToken = message.quoteToken;
+    }
+    if (message.tokenDecimals !== undefined) {
+      obj.tokenDecimals = Math.round(message.tokenDecimals);
+    }
+    if (message.totalBalance !== undefined) {
+      obj.totalBalance = message.totalBalance;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QuoteTokenBalance>, I>>(base?: I): QuoteTokenBalance {
+    return QuoteTokenBalance.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QuoteTokenBalance>, I>>(object: I): QuoteTokenBalance {
+    const message = createBaseQuoteTokenBalance();
+    message.availableBalance = object.availableBalance ?? undefined;
+    message.frozenBalance = object.frozenBalance ?? undefined;
+    message.quoteToken = object.quoteToken ?? undefined;
+    message.tokenDecimals = object.tokenDecimals ?? undefined;
+    message.totalBalance = object.totalBalance ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetMyBalancesResponse(): GetMyBalancesResponse {
+  return {
+    errno: 0,
+    errmsg: "",
+    balances: [],
+    chainId: undefined,
+    multiSignAddress: undefined,
+    walletAddress: undefined,
+  };
+}
+
+export const GetMyBalancesResponse: MessageFns<GetMyBalancesResponse> = {
+  encode(message: GetMyBalancesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    for (const v of message.balances) {
+      QuoteTokenBalance.encode(v!, writer.uint32(26).fork()).join();
+    }
+    if (message.chainId !== undefined) {
+      writer.uint32(34).string(message.chainId);
+    }
+    if (message.multiSignAddress !== undefined) {
+      writer.uint32(42).string(message.multiSignAddress);
+    }
+    if (message.walletAddress !== undefined) {
+      writer.uint32(50).string(message.walletAddress);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMyBalancesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMyBalancesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.balances.push(QuoteTokenBalance.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.chainId = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.multiSignAddress = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.walletAddress = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMyBalancesResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      balances: globalThis.Array.isArray(object?.balances)
+        ? object.balances.map((e: any) => QuoteTokenBalance.fromJSON(e))
+        : [],
+      chainId: isSet(object.chainId) ? globalThis.String(object.chainId) : undefined,
+      multiSignAddress: isSet(object.multiSignAddress) ? globalThis.String(object.multiSignAddress) : undefined,
+      walletAddress: isSet(object.walletAddress) ? globalThis.String(object.walletAddress) : undefined,
+    };
+  },
+
+  toJSON(message: GetMyBalancesResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.balances?.length) {
+      obj.balances = message.balances.map((e) => QuoteTokenBalance.toJSON(e));
+    }
+    if (message.chainId !== undefined) {
+      obj.chainId = message.chainId;
+    }
+    if (message.multiSignAddress !== undefined) {
+      obj.multiSignAddress = message.multiSignAddress;
+    }
+    if (message.walletAddress !== undefined) {
+      obj.walletAddress = message.walletAddress;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMyBalancesResponse>, I>>(base?: I): GetMyBalancesResponse {
+    return GetMyBalancesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMyBalancesResponse>, I>>(object: I): GetMyBalancesResponse {
+    const message = createBaseGetMyBalancesResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.balances = object.balances?.map((e) => QuoteTokenBalance.fromPartial(e)) || [];
+    message.chainId = object.chainId ?? undefined;
+    message.multiSignAddress = object.multiSignAddress ?? undefined;
+    message.walletAddress = object.walletAddress ?? undefined;
+    return message;
+  },
+};
+
+function createBasePositionApiData(): PositionApiData {
+  return {
+    avgEntryPrice: undefined,
+    claimStatus: undefined,
+    claimStatusEnum: undefined,
+    conditionId: undefined,
+    currentValueInQuoteToken: undefined,
+    dailyPnlChange: undefined,
+    dailyPnlChangePercent: undefined,
+    marketCutoffAt: undefined,
+    marketId: undefined,
+    marketStatus: undefined,
+    marketStatusEnum: undefined,
+    marketTitle: undefined,
+    outcome: undefined,
+    outcomeSide: undefined,
+    outcomeSideEnum: undefined,
+    quoteToken: undefined,
+    rootMarketId: undefined,
+    rootMarketTitle: undefined,
+    sharesFrozen: undefined,
+    sharesOwned: undefined,
+    tokenId: undefined,
+    unrealizedPnl: undefined,
+    unrealizedPnlPercent: undefined,
+  };
+}
+
+export const PositionApiData: MessageFns<PositionApiData> = {
+  encode(message: PositionApiData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.avgEntryPrice !== undefined) {
+      writer.uint32(10).string(message.avgEntryPrice);
+    }
+    if (message.claimStatus !== undefined) {
+      writer.uint32(16).int32(message.claimStatus);
+    }
+    if (message.claimStatusEnum !== undefined) {
+      writer.uint32(26).string(message.claimStatusEnum);
+    }
+    if (message.conditionId !== undefined) {
+      writer.uint32(34).string(message.conditionId);
+    }
+    if (message.currentValueInQuoteToken !== undefined) {
+      writer.uint32(42).string(message.currentValueInQuoteToken);
+    }
+    if (message.dailyPnlChange !== undefined) {
+      writer.uint32(50).string(message.dailyPnlChange);
+    }
+    if (message.dailyPnlChangePercent !== undefined) {
+      writer.uint32(58).string(message.dailyPnlChangePercent);
+    }
+    if (message.marketCutoffAt !== undefined) {
+      writer.uint32(64).int64(message.marketCutoffAt);
+    }
+    if (message.marketId !== undefined) {
+      writer.uint32(72).int32(message.marketId);
+    }
+    if (message.marketStatus !== undefined) {
+      writer.uint32(80).int32(message.marketStatus);
+    }
+    if (message.marketStatusEnum !== undefined) {
+      writer.uint32(90).string(message.marketStatusEnum);
+    }
+    if (message.marketTitle !== undefined) {
+      writer.uint32(98).string(message.marketTitle);
+    }
+    if (message.outcome !== undefined) {
+      writer.uint32(106).string(message.outcome);
+    }
+    if (message.outcomeSide !== undefined) {
+      writer.uint32(112).int32(message.outcomeSide);
+    }
+    if (message.outcomeSideEnum !== undefined) {
+      writer.uint32(122).string(message.outcomeSideEnum);
+    }
+    if (message.quoteToken !== undefined) {
+      writer.uint32(130).string(message.quoteToken);
+    }
+    if (message.rootMarketId !== undefined) {
+      writer.uint32(136).int32(message.rootMarketId);
+    }
+    if (message.rootMarketTitle !== undefined) {
+      writer.uint32(146).string(message.rootMarketTitle);
+    }
+    if (message.sharesFrozen !== undefined) {
+      writer.uint32(154).string(message.sharesFrozen);
+    }
+    if (message.sharesOwned !== undefined) {
+      writer.uint32(162).string(message.sharesOwned);
+    }
+    if (message.tokenId !== undefined) {
+      writer.uint32(170).string(message.tokenId);
+    }
+    if (message.unrealizedPnl !== undefined) {
+      writer.uint32(178).string(message.unrealizedPnl);
+    }
+    if (message.unrealizedPnlPercent !== undefined) {
+      writer.uint32(186).string(message.unrealizedPnlPercent);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PositionApiData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePositionApiData();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.avgEntryPrice = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.claimStatus = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.claimStatusEnum = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.conditionId = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.currentValueInQuoteToken = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.dailyPnlChange = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.dailyPnlChangePercent = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.marketCutoffAt = reader.int64().toString();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.marketStatus = reader.int32();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.marketStatusEnum = reader.string();
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.marketTitle = reader.string();
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.outcome = reader.string();
+          continue;
+        }
+        case 14: {
+          if (tag !== 112) {
+            break;
+          }
+
+          message.outcomeSide = reader.int32();
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.outcomeSideEnum = reader.string();
+          continue;
+        }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.quoteToken = reader.string();
+          continue;
+        }
+        case 17: {
+          if (tag !== 136) {
+            break;
+          }
+
+          message.rootMarketId = reader.int32();
+          continue;
+        }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.rootMarketTitle = reader.string();
+          continue;
+        }
+        case 19: {
+          if (tag !== 154) {
+            break;
+          }
+
+          message.sharesFrozen = reader.string();
+          continue;
+        }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.sharesOwned = reader.string();
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.tokenId = reader.string();
+          continue;
+        }
+        case 22: {
+          if (tag !== 178) {
+            break;
+          }
+
+          message.unrealizedPnl = reader.string();
+          continue;
+        }
+        case 23: {
+          if (tag !== 186) {
+            break;
+          }
+
+          message.unrealizedPnlPercent = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PositionApiData {
+    return {
+      avgEntryPrice: isSet(object.avgEntryPrice) ? globalThis.String(object.avgEntryPrice) : undefined,
+      claimStatus: isSet(object.claimStatus) ? globalThis.Number(object.claimStatus) : undefined,
+      claimStatusEnum: isSet(object.claimStatusEnum) ? globalThis.String(object.claimStatusEnum) : undefined,
+      conditionId: isSet(object.conditionId) ? globalThis.String(object.conditionId) : undefined,
+      currentValueInQuoteToken: isSet(object.currentValueInQuoteToken)
+        ? globalThis.String(object.currentValueInQuoteToken)
+        : undefined,
+      dailyPnlChange: isSet(object.dailyPnlChange) ? globalThis.String(object.dailyPnlChange) : undefined,
+      dailyPnlChangePercent: isSet(object.dailyPnlChangePercent)
+        ? globalThis.String(object.dailyPnlChangePercent)
+        : undefined,
+      marketCutoffAt: isSet(object.marketCutoffAt) ? globalThis.String(object.marketCutoffAt) : undefined,
+      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
+      marketStatus: isSet(object.marketStatus) ? globalThis.Number(object.marketStatus) : undefined,
+      marketStatusEnum: isSet(object.marketStatusEnum) ? globalThis.String(object.marketStatusEnum) : undefined,
+      marketTitle: isSet(object.marketTitle) ? globalThis.String(object.marketTitle) : undefined,
+      outcome: isSet(object.outcome) ? globalThis.String(object.outcome) : undefined,
+      outcomeSide: isSet(object.outcomeSide) ? globalThis.Number(object.outcomeSide) : undefined,
+      outcomeSideEnum: isSet(object.outcomeSideEnum) ? globalThis.String(object.outcomeSideEnum) : undefined,
+      quoteToken: isSet(object.quoteToken) ? globalThis.String(object.quoteToken) : undefined,
+      rootMarketId: isSet(object.rootMarketId) ? globalThis.Number(object.rootMarketId) : undefined,
+      rootMarketTitle: isSet(object.rootMarketTitle) ? globalThis.String(object.rootMarketTitle) : undefined,
+      sharesFrozen: isSet(object.sharesFrozen) ? globalThis.String(object.sharesFrozen) : undefined,
+      sharesOwned: isSet(object.sharesOwned) ? globalThis.String(object.sharesOwned) : undefined,
+      tokenId: isSet(object.tokenId) ? globalThis.String(object.tokenId) : undefined,
+      unrealizedPnl: isSet(object.unrealizedPnl) ? globalThis.String(object.unrealizedPnl) : undefined,
+      unrealizedPnlPercent: isSet(object.unrealizedPnlPercent)
+        ? globalThis.String(object.unrealizedPnlPercent)
+        : undefined,
+    };
+  },
+
+  toJSON(message: PositionApiData): unknown {
+    const obj: any = {};
+    if (message.avgEntryPrice !== undefined) {
+      obj.avgEntryPrice = message.avgEntryPrice;
+    }
+    if (message.claimStatus !== undefined) {
+      obj.claimStatus = Math.round(message.claimStatus);
+    }
+    if (message.claimStatusEnum !== undefined) {
+      obj.claimStatusEnum = message.claimStatusEnum;
+    }
+    if (message.conditionId !== undefined) {
+      obj.conditionId = message.conditionId;
+    }
+    if (message.currentValueInQuoteToken !== undefined) {
+      obj.currentValueInQuoteToken = message.currentValueInQuoteToken;
+    }
+    if (message.dailyPnlChange !== undefined) {
+      obj.dailyPnlChange = message.dailyPnlChange;
+    }
+    if (message.dailyPnlChangePercent !== undefined) {
+      obj.dailyPnlChangePercent = message.dailyPnlChangePercent;
+    }
+    if (message.marketCutoffAt !== undefined) {
+      obj.marketCutoffAt = message.marketCutoffAt;
+    }
+    if (message.marketId !== undefined) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.marketStatus !== undefined) {
+      obj.marketStatus = Math.round(message.marketStatus);
+    }
+    if (message.marketStatusEnum !== undefined) {
+      obj.marketStatusEnum = message.marketStatusEnum;
+    }
+    if (message.marketTitle !== undefined) {
+      obj.marketTitle = message.marketTitle;
+    }
+    if (message.outcome !== undefined) {
+      obj.outcome = message.outcome;
+    }
+    if (message.outcomeSide !== undefined) {
+      obj.outcomeSide = Math.round(message.outcomeSide);
+    }
+    if (message.outcomeSideEnum !== undefined) {
+      obj.outcomeSideEnum = message.outcomeSideEnum;
+    }
+    if (message.quoteToken !== undefined) {
+      obj.quoteToken = message.quoteToken;
+    }
+    if (message.rootMarketId !== undefined) {
+      obj.rootMarketId = Math.round(message.rootMarketId);
+    }
+    if (message.rootMarketTitle !== undefined) {
+      obj.rootMarketTitle = message.rootMarketTitle;
+    }
+    if (message.sharesFrozen !== undefined) {
+      obj.sharesFrozen = message.sharesFrozen;
+    }
+    if (message.sharesOwned !== undefined) {
+      obj.sharesOwned = message.sharesOwned;
+    }
+    if (message.tokenId !== undefined) {
+      obj.tokenId = message.tokenId;
+    }
+    if (message.unrealizedPnl !== undefined) {
+      obj.unrealizedPnl = message.unrealizedPnl;
+    }
+    if (message.unrealizedPnlPercent !== undefined) {
+      obj.unrealizedPnlPercent = message.unrealizedPnlPercent;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PositionApiData>, I>>(base?: I): PositionApiData {
+    return PositionApiData.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PositionApiData>, I>>(object: I): PositionApiData {
+    const message = createBasePositionApiData();
+    message.avgEntryPrice = object.avgEntryPrice ?? undefined;
+    message.claimStatus = object.claimStatus ?? undefined;
+    message.claimStatusEnum = object.claimStatusEnum ?? undefined;
+    message.conditionId = object.conditionId ?? undefined;
+    message.currentValueInQuoteToken = object.currentValueInQuoteToken ?? undefined;
+    message.dailyPnlChange = object.dailyPnlChange ?? undefined;
+    message.dailyPnlChangePercent = object.dailyPnlChangePercent ?? undefined;
+    message.marketCutoffAt = object.marketCutoffAt ?? undefined;
+    message.marketId = object.marketId ?? undefined;
+    message.marketStatus = object.marketStatus ?? undefined;
+    message.marketStatusEnum = object.marketStatusEnum ?? undefined;
+    message.marketTitle = object.marketTitle ?? undefined;
+    message.outcome = object.outcome ?? undefined;
+    message.outcomeSide = object.outcomeSide ?? undefined;
+    message.outcomeSideEnum = object.outcomeSideEnum ?? undefined;
+    message.quoteToken = object.quoteToken ?? undefined;
+    message.rootMarketId = object.rootMarketId ?? undefined;
+    message.rootMarketTitle = object.rootMarketTitle ?? undefined;
+    message.sharesFrozen = object.sharesFrozen ?? undefined;
+    message.sharesOwned = object.sharesOwned ?? undefined;
+    message.tokenId = object.tokenId ?? undefined;
+    message.unrealizedPnl = object.unrealizedPnl ?? undefined;
+    message.unrealizedPnlPercent = object.unrealizedPnlPercent ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetMyPositionsResponse(): GetMyPositionsResponse {
+  return { errno: 0, errmsg: "", total: undefined, list: [] };
+}
+
+export const GetMyPositionsResponse: MessageFns<GetMyPositionsResponse> = {
+  encode(message: GetMyPositionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.total !== undefined) {
+      writer.uint32(24).int32(message.total);
+    }
+    for (const v of message.list) {
+      PositionApiData.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMyPositionsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMyPositionsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.total = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.list.push(PositionApiData.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMyPositionsResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      total: isSet(object.total) ? globalThis.Number(object.total) : undefined,
+      list: globalThis.Array.isArray(object?.list) ? object.list.map((e: any) => PositionApiData.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: GetMyPositionsResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.total !== undefined) {
+      obj.total = Math.round(message.total);
+    }
+    if (message.list?.length) {
+      obj.list = message.list.map((e) => PositionApiData.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMyPositionsResponse>, I>>(base?: I): GetMyPositionsResponse {
+    return GetMyPositionsResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMyPositionsResponse>, I>>(object: I): GetMyPositionsResponse {
+    const message = createBaseGetMyPositionsResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.total = object.total ?? undefined;
+    message.list = object.list?.map((e) => PositionApiData.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseUserTradeApiData(): UserTradeApiData {
+  return {
+    amount: undefined,
+    chainId: undefined,
+    createdAt: undefined,
+    fee: undefined,
+    marketId: undefined,
+    marketTitle: undefined,
+    orderNo: undefined,
+    outcome: undefined,
+    outcomeSide: undefined,
+    outcomeSideEnum: undefined,
+    price: undefined,
+    profit: undefined,
+    quoteToken: undefined,
+    quoteTokenUsdPrice: undefined,
+    rootMarketId: undefined,
+    rootMarketTitle: undefined,
+    shares: undefined,
+    side: undefined,
+    status: undefined,
+    statusEnum: undefined,
+    tradeNo: undefined,
+    txHash: undefined,
+    usdAmount: undefined,
+  };
+}
+
+export const UserTradeApiData: MessageFns<UserTradeApiData> = {
+  encode(message: UserTradeApiData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.amount !== undefined) {
+      writer.uint32(10).string(message.amount);
+    }
+    if (message.chainId !== undefined) {
+      writer.uint32(18).string(message.chainId);
+    }
+    if (message.createdAt !== undefined) {
+      writer.uint32(24).int64(message.createdAt);
+    }
+    if (message.fee !== undefined) {
+      writer.uint32(34).string(message.fee);
+    }
+    if (message.marketId !== undefined) {
+      writer.uint32(40).int32(message.marketId);
+    }
+    if (message.marketTitle !== undefined) {
+      writer.uint32(50).string(message.marketTitle);
+    }
+    if (message.orderNo !== undefined) {
+      writer.uint32(58).string(message.orderNo);
+    }
+    if (message.outcome !== undefined) {
+      writer.uint32(66).string(message.outcome);
+    }
+    if (message.outcomeSide !== undefined) {
+      writer.uint32(72).int32(message.outcomeSide);
+    }
+    if (message.outcomeSideEnum !== undefined) {
+      writer.uint32(82).string(message.outcomeSideEnum);
+    }
+    if (message.price !== undefined) {
+      writer.uint32(90).string(message.price);
+    }
+    if (message.profit !== undefined) {
+      writer.uint32(98).string(message.profit);
+    }
+    if (message.quoteToken !== undefined) {
+      writer.uint32(106).string(message.quoteToken);
+    }
+    if (message.quoteTokenUsdPrice !== undefined) {
+      writer.uint32(114).string(message.quoteTokenUsdPrice);
+    }
+    if (message.rootMarketId !== undefined) {
+      writer.uint32(120).int32(message.rootMarketId);
+    }
+    if (message.rootMarketTitle !== undefined) {
+      writer.uint32(130).string(message.rootMarketTitle);
+    }
+    if (message.shares !== undefined) {
+      writer.uint32(138).string(message.shares);
+    }
+    if (message.side !== undefined) {
+      writer.uint32(146).string(message.side);
+    }
+    if (message.status !== undefined) {
+      writer.uint32(152).int32(message.status);
+    }
+    if (message.statusEnum !== undefined) {
+      writer.uint32(162).string(message.statusEnum);
+    }
+    if (message.tradeNo !== undefined) {
+      writer.uint32(170).string(message.tradeNo);
+    }
+    if (message.txHash !== undefined) {
+      writer.uint32(178).string(message.txHash);
+    }
+    if (message.usdAmount !== undefined) {
+      writer.uint32(186).string(message.usdAmount);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserTradeApiData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserTradeApiData();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.amount = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.chainId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.createdAt = reader.int64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.fee = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.marketId = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.marketTitle = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.orderNo = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.outcome = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.outcomeSide = reader.int32();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.outcomeSideEnum = reader.string();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.price = reader.string();
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.profit = reader.string();
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.quoteToken = reader.string();
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.quoteTokenUsdPrice = reader.string();
+          continue;
+        }
+        case 15: {
+          if (tag !== 120) {
+            break;
+          }
+
+          message.rootMarketId = reader.int32();
+          continue;
+        }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.rootMarketTitle = reader.string();
+          continue;
+        }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.shares = reader.string();
+          continue;
+        }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.side = reader.string();
+          continue;
+        }
+        case 19: {
+          if (tag !== 152) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.statusEnum = reader.string();
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.tradeNo = reader.string();
+          continue;
+        }
+        case 22: {
+          if (tag !== 178) {
+            break;
+          }
+
+          message.txHash = reader.string();
+          continue;
+        }
+        case 23: {
+          if (tag !== 186) {
+            break;
+          }
+
+          message.usdAmount = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserTradeApiData {
+    return {
+      amount: isSet(object.amount) ? globalThis.String(object.amount) : undefined,
+      chainId: isSet(object.chainId) ? globalThis.String(object.chainId) : undefined,
+      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : undefined,
+      fee: isSet(object.fee) ? globalThis.String(object.fee) : undefined,
+      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
+      marketTitle: isSet(object.marketTitle) ? globalThis.String(object.marketTitle) : undefined,
+      orderNo: isSet(object.orderNo) ? globalThis.String(object.orderNo) : undefined,
+      outcome: isSet(object.outcome) ? globalThis.String(object.outcome) : undefined,
+      outcomeSide: isSet(object.outcomeSide) ? globalThis.Number(object.outcomeSide) : undefined,
+      outcomeSideEnum: isSet(object.outcomeSideEnum) ? globalThis.String(object.outcomeSideEnum) : undefined,
+      price: isSet(object.price) ? globalThis.String(object.price) : undefined,
+      profit: isSet(object.profit) ? globalThis.String(object.profit) : undefined,
+      quoteToken: isSet(object.quoteToken) ? globalThis.String(object.quoteToken) : undefined,
+      quoteTokenUsdPrice: isSet(object.quoteTokenUsdPrice) ? globalThis.String(object.quoteTokenUsdPrice) : undefined,
+      rootMarketId: isSet(object.rootMarketId) ? globalThis.Number(object.rootMarketId) : undefined,
+      rootMarketTitle: isSet(object.rootMarketTitle) ? globalThis.String(object.rootMarketTitle) : undefined,
+      shares: isSet(object.shares) ? globalThis.String(object.shares) : undefined,
+      side: isSet(object.side) ? globalThis.String(object.side) : undefined,
+      status: isSet(object.status) ? globalThis.Number(object.status) : undefined,
+      statusEnum: isSet(object.statusEnum) ? globalThis.String(object.statusEnum) : undefined,
+      tradeNo: isSet(object.tradeNo) ? globalThis.String(object.tradeNo) : undefined,
+      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
+      usdAmount: isSet(object.usdAmount) ? globalThis.String(object.usdAmount) : undefined,
+    };
+  },
+
+  toJSON(message: UserTradeApiData): unknown {
+    const obj: any = {};
+    if (message.amount !== undefined) {
+      obj.amount = message.amount;
+    }
+    if (message.chainId !== undefined) {
+      obj.chainId = message.chainId;
+    }
+    if (message.createdAt !== undefined) {
+      obj.createdAt = message.createdAt;
+    }
+    if (message.fee !== undefined) {
+      obj.fee = message.fee;
+    }
+    if (message.marketId !== undefined) {
+      obj.marketId = Math.round(message.marketId);
+    }
+    if (message.marketTitle !== undefined) {
+      obj.marketTitle = message.marketTitle;
+    }
+    if (message.orderNo !== undefined) {
+      obj.orderNo = message.orderNo;
+    }
+    if (message.outcome !== undefined) {
+      obj.outcome = message.outcome;
+    }
+    if (message.outcomeSide !== undefined) {
+      obj.outcomeSide = Math.round(message.outcomeSide);
+    }
+    if (message.outcomeSideEnum !== undefined) {
+      obj.outcomeSideEnum = message.outcomeSideEnum;
+    }
+    if (message.price !== undefined) {
+      obj.price = message.price;
+    }
+    if (message.profit !== undefined) {
+      obj.profit = message.profit;
+    }
+    if (message.quoteToken !== undefined) {
+      obj.quoteToken = message.quoteToken;
+    }
+    if (message.quoteTokenUsdPrice !== undefined) {
+      obj.quoteTokenUsdPrice = message.quoteTokenUsdPrice;
+    }
+    if (message.rootMarketId !== undefined) {
+      obj.rootMarketId = Math.round(message.rootMarketId);
+    }
+    if (message.rootMarketTitle !== undefined) {
+      obj.rootMarketTitle = message.rootMarketTitle;
+    }
+    if (message.shares !== undefined) {
+      obj.shares = message.shares;
+    }
+    if (message.side !== undefined) {
+      obj.side = message.side;
+    }
+    if (message.status !== undefined) {
+      obj.status = Math.round(message.status);
+    }
+    if (message.statusEnum !== undefined) {
+      obj.statusEnum = message.statusEnum;
+    }
+    if (message.tradeNo !== undefined) {
+      obj.tradeNo = message.tradeNo;
+    }
+    if (message.txHash !== undefined) {
+      obj.txHash = message.txHash;
+    }
+    if (message.usdAmount !== undefined) {
+      obj.usdAmount = message.usdAmount;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UserTradeApiData>, I>>(base?: I): UserTradeApiData {
+    return UserTradeApiData.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UserTradeApiData>, I>>(object: I): UserTradeApiData {
+    const message = createBaseUserTradeApiData();
+    message.amount = object.amount ?? undefined;
+    message.chainId = object.chainId ?? undefined;
+    message.createdAt = object.createdAt ?? undefined;
+    message.fee = object.fee ?? undefined;
+    message.marketId = object.marketId ?? undefined;
+    message.marketTitle = object.marketTitle ?? undefined;
+    message.orderNo = object.orderNo ?? undefined;
+    message.outcome = object.outcome ?? undefined;
+    message.outcomeSide = object.outcomeSide ?? undefined;
+    message.outcomeSideEnum = object.outcomeSideEnum ?? undefined;
+    message.price = object.price ?? undefined;
+    message.profit = object.profit ?? undefined;
+    message.quoteToken = object.quoteToken ?? undefined;
+    message.quoteTokenUsdPrice = object.quoteTokenUsdPrice ?? undefined;
+    message.rootMarketId = object.rootMarketId ?? undefined;
+    message.rootMarketTitle = object.rootMarketTitle ?? undefined;
+    message.shares = object.shares ?? undefined;
+    message.side = object.side ?? undefined;
+    message.status = object.status ?? undefined;
+    message.statusEnum = object.statusEnum ?? undefined;
+    message.tradeNo = object.tradeNo ?? undefined;
+    message.txHash = object.txHash ?? undefined;
+    message.usdAmount = object.usdAmount ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetMyTradesResponse(): GetMyTradesResponse {
+  return { errno: 0, errmsg: "", total: undefined, list: [] };
+}
+
+export const GetMyTradesResponse: MessageFns<GetMyTradesResponse> = {
+  encode(message: GetMyTradesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.total !== undefined) {
+      writer.uint32(24).int32(message.total);
+    }
+    for (const v of message.list) {
+      UserTradeApiData.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMyTradesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMyTradesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.total = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.list.push(UserTradeApiData.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMyTradesResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      total: isSet(object.total) ? globalThis.Number(object.total) : undefined,
+      list: globalThis.Array.isArray(object?.list) ? object.list.map((e: any) => UserTradeApiData.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: GetMyTradesResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.total !== undefined) {
+      obj.total = Math.round(message.total);
+    }
+    if (message.list?.length) {
+      obj.list = message.list.map((e) => UserTradeApiData.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMyTradesResponse>, I>>(base?: I): GetMyTradesResponse {
+    return GetMyTradesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMyTradesResponse>, I>>(object: I): GetMyTradesResponse {
+    const message = createBaseGetMyTradesResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.total = object.total ?? undefined;
+    message.list = object.list?.map((e) => UserTradeApiData.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGetUserAuthResponse(): GetUserAuthResponse {
+  return { errno: 0, errmsg: "", apiKey: undefined, walletAddress: undefined, walletUsers: {} };
+}
+
+export const GetUserAuthResponse: MessageFns<GetUserAuthResponse> = {
+  encode(message: GetUserAuthResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.apiKey !== undefined) {
+      writer.uint32(26).string(message.apiKey);
+    }
+    if (message.walletAddress !== undefined) {
+      writer.uint32(34).string(message.walletAddress);
+    }
+    globalThis.Object.entries(message.walletUsers).forEach(([key, value]: [string, string]) => {
+      GetUserAuthResponse_WalletUsersEntry.encode({ key: key as any, value }, writer.uint32(42).fork()).join();
+    });
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetUserAuthResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetUserAuthResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.walletAddress = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          const entry5 = GetUserAuthResponse_WalletUsersEntry.decode(reader, reader.uint32());
+          if (entry5.value !== undefined) {
+            message.walletUsers[entry5.key] = entry5.value;
+          }
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetUserAuthResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      apiKey: isSet(object.apiKey) ? globalThis.String(object.apiKey) : undefined,
+      walletAddress: isSet(object.walletAddress) ? globalThis.String(object.walletAddress) : undefined,
+      walletUsers: isObject(object.walletUsers)
+        ? (globalThis.Object.entries(object.walletUsers) as [string, any][]).reduce(
+          (acc: { [key: string]: string }, [key, value]: [string, any]) => {
+            acc[key] = globalThis.String(value);
+            return acc;
+          },
+          {},
+        )
+        : {},
+    };
+  },
+
+  toJSON(message: GetUserAuthResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.apiKey !== undefined) {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.walletAddress !== undefined) {
+      obj.walletAddress = message.walletAddress;
+    }
+    if (message.walletUsers) {
+      const entries = globalThis.Object.entries(message.walletUsers) as [string, string][];
+      if (entries.length > 0) {
+        obj.walletUsers = {};
+        entries.forEach(([k, v]) => {
+          obj.walletUsers[k] = v;
+        });
+      }
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetUserAuthResponse>, I>>(base?: I): GetUserAuthResponse {
+    return GetUserAuthResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetUserAuthResponse>, I>>(object: I): GetUserAuthResponse {
+    const message = createBaseGetUserAuthResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.apiKey = object.apiKey ?? undefined;
+    message.walletAddress = object.walletAddress ?? undefined;
+    message.walletUsers = (globalThis.Object.entries(object.walletUsers ?? {}) as [string, string][]).reduce(
+      (acc: { [key: string]: string }, [key, value]: [string, string]) => {
+        if (value !== undefined) {
+          acc[key] = globalThis.String(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    return message;
+  },
+};
+
+function createBaseGetUserAuthResponse_WalletUsersEntry(): GetUserAuthResponse_WalletUsersEntry {
+  return { key: "", value: "" };
+}
+
+export const GetUserAuthResponse_WalletUsersEntry: MessageFns<GetUserAuthResponse_WalletUsersEntry> = {
+  encode(message: GetUserAuthResponse_WalletUsersEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetUserAuthResponse_WalletUsersEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetUserAuthResponse_WalletUsersEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetUserAuthResponse_WalletUsersEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: GetUserAuthResponse_WalletUsersEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetUserAuthResponse_WalletUsersEntry>, I>>(
+    base?: I,
+  ): GetUserAuthResponse_WalletUsersEntry {
+    return GetUserAuthResponse_WalletUsersEntry.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetUserAuthResponse_WalletUsersEntry>, I>>(
+    object: I,
+  ): GetUserAuthResponse_WalletUsersEntry {
+    const message = createBaseGetUserAuthResponse_WalletUsersEntry();
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
+    return message;
+  },
+};
+
+function createBaseTransactionResult(): TransactionResult {
+  return { txHash: undefined, safeTxHash: undefined, returnValue: undefined };
+}
+
+export const TransactionResult: MessageFns<TransactionResult> = {
+  encode(message: TransactionResult, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.txHash !== undefined) {
+      writer.uint32(10).string(message.txHash);
+    }
+    if (message.safeTxHash !== undefined) {
+      writer.uint32(18).string(message.safeTxHash);
+    }
+    if (message.returnValue !== undefined) {
+      writer.uint32(26).string(message.returnValue);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TransactionResult {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTransactionResult();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.txHash = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.safeTxHash = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.returnValue = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TransactionResult {
+    return {
+      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
+      safeTxHash: isSet(object.safeTxHash) ? globalThis.String(object.safeTxHash) : undefined,
+      returnValue: isSet(object.returnValue) ? globalThis.String(object.returnValue) : undefined,
+    };
+  },
+
+  toJSON(message: TransactionResult): unknown {
+    const obj: any = {};
+    if (message.txHash !== undefined) {
+      obj.txHash = message.txHash;
+    }
+    if (message.safeTxHash !== undefined) {
+      obj.safeTxHash = message.safeTxHash;
+    }
+    if (message.returnValue !== undefined) {
+      obj.returnValue = message.returnValue;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TransactionResult>, I>>(base?: I): TransactionResult {
+    return TransactionResult.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TransactionResult>, I>>(object: I): TransactionResult {
+    const message = createBaseTransactionResult();
+    message.txHash = object.txHash ?? undefined;
+    message.safeTxHash = object.safeTxHash ?? undefined;
+    message.returnValue = object.returnValue ?? undefined;
     return message;
   },
 };
@@ -5441,6 +8253,102 @@ export const OpinionServiceService = {
       Buffer.from(CancelAllOrdersResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): CancelAllOrdersResponse => CancelAllOrdersResponse.decode(value),
   },
+  /** User & wallet (`Client.getMy*` / `getUserAuth`). */
+  getMyOrders: {
+    path: "/opinion.OpinionService/GetMyOrders" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetMyOrdersRequest): Buffer => Buffer.from(GetMyOrdersRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetMyOrdersRequest => GetMyOrdersRequest.decode(value),
+    responseSerialize: (value: GetMyOrdersResponse): Buffer => Buffer.from(GetMyOrdersResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetMyOrdersResponse => GetMyOrdersResponse.decode(value),
+  },
+  getOrderById: {
+    path: "/opinion.OpinionService/GetOrderById" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetOrderByIdRequest): Buffer => Buffer.from(GetOrderByIdRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetOrderByIdRequest => GetOrderByIdRequest.decode(value),
+    responseSerialize: (value: GetOrderByIdResponse): Buffer =>
+      Buffer.from(GetOrderByIdResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetOrderByIdResponse => GetOrderByIdResponse.decode(value),
+  },
+  getMyBalances: {
+    path: "/opinion.OpinionService/GetMyBalances" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetMyBalancesRequest): Buffer => Buffer.from(GetMyBalancesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetMyBalancesRequest => GetMyBalancesRequest.decode(value),
+    responseSerialize: (value: GetMyBalancesResponse): Buffer =>
+      Buffer.from(GetMyBalancesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetMyBalancesResponse => GetMyBalancesResponse.decode(value),
+  },
+  getMyPositions: {
+    path: "/opinion.OpinionService/GetMyPositions" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetMyPositionsRequest): Buffer =>
+      Buffer.from(GetMyPositionsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetMyPositionsRequest => GetMyPositionsRequest.decode(value),
+    responseSerialize: (value: GetMyPositionsResponse): Buffer =>
+      Buffer.from(GetMyPositionsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetMyPositionsResponse => GetMyPositionsResponse.decode(value),
+  },
+  getMyTrades: {
+    path: "/opinion.OpinionService/GetMyTrades" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetMyTradesRequest): Buffer => Buffer.from(GetMyTradesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetMyTradesRequest => GetMyTradesRequest.decode(value),
+    responseSerialize: (value: GetMyTradesResponse): Buffer => Buffer.from(GetMyTradesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetMyTradesResponse => GetMyTradesResponse.decode(value),
+  },
+  getUserAuth: {
+    path: "/opinion.OpinionService/GetUserAuth" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: GetUserAuthRequest): Buffer => Buffer.from(GetUserAuthRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetUserAuthRequest => GetUserAuthRequest.decode(value),
+    responseSerialize: (value: GetUserAuthResponse): Buffer => Buffer.from(GetUserAuthResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetUserAuthResponse => GetUserAuthResponse.decode(value),
+  },
+  /** On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — return type is SDK `TransactionResult`. */
+  enableTrading: {
+    path: "/opinion.OpinionService/EnableTrading" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: EnableTradingRequest): Buffer => Buffer.from(EnableTradingRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): EnableTradingRequest => EnableTradingRequest.decode(value),
+    responseSerialize: (value: TransactionResult): Buffer => Buffer.from(TransactionResult.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TransactionResult => TransactionResult.decode(value),
+  },
+  split: {
+    path: "/opinion.OpinionService/Split" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: SplitRequest): Buffer => Buffer.from(SplitRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): SplitRequest => SplitRequest.decode(value),
+    responseSerialize: (value: TransactionResult): Buffer => Buffer.from(TransactionResult.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TransactionResult => TransactionResult.decode(value),
+  },
+  merge: {
+    path: "/opinion.OpinionService/Merge" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: MergeRequest): Buffer => Buffer.from(MergeRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): MergeRequest => MergeRequest.decode(value),
+    responseSerialize: (value: TransactionResult): Buffer => Buffer.from(TransactionResult.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TransactionResult => TransactionResult.decode(value),
+  },
+  redeem: {
+    path: "/opinion.OpinionService/Redeem" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: RedeemRequest): Buffer => Buffer.from(RedeemRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): RedeemRequest => RedeemRequest.decode(value),
+    responseSerialize: (value: TransactionResult): Buffer => Buffer.from(TransactionResult.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TransactionResult => TransactionResult.decode(value),
+  },
 } as const;
 
 export interface OpinionServiceServer extends UntypedServiceImplementation {
@@ -5458,6 +8366,18 @@ export interface OpinionServiceServer extends UntypedServiceImplementation {
   cancelOrder: handleUnaryCall<CancelOrderRequest, CancelOrderApiResponse>;
   cancelOrdersBatch: handleUnaryCall<CancelOrdersBatchRequest, CancelOrdersBatchResponse>;
   cancelAllOrders: handleUnaryCall<CancelAllOrdersRequest, CancelAllOrdersResponse>;
+  /** User & wallet (`Client.getMy*` / `getUserAuth`). */
+  getMyOrders: handleUnaryCall<GetMyOrdersRequest, GetMyOrdersResponse>;
+  getOrderById: handleUnaryCall<GetOrderByIdRequest, GetOrderByIdResponse>;
+  getMyBalances: handleUnaryCall<GetMyBalancesRequest, GetMyBalancesResponse>;
+  getMyPositions: handleUnaryCall<GetMyPositionsRequest, GetMyPositionsResponse>;
+  getMyTrades: handleUnaryCall<GetMyTradesRequest, GetMyTradesResponse>;
+  getUserAuth: handleUnaryCall<GetUserAuthRequest, GetUserAuthResponse>;
+  /** On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — return type is SDK `TransactionResult`. */
+  enableTrading: handleUnaryCall<EnableTradingRequest, TransactionResult>;
+  split: handleUnaryCall<SplitRequest, TransactionResult>;
+  merge: handleUnaryCall<MergeRequest, TransactionResult>;
+  redeem: handleUnaryCall<RedeemRequest, TransactionResult>;
 }
 
 export interface OpinionServiceClient extends Client {
@@ -5670,6 +8590,158 @@ export interface OpinionServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: CancelAllOrdersResponse) => void,
+  ): ClientUnaryCall;
+  /** User & wallet (`Client.getMy*` / `getUserAuth`). */
+  getMyOrders(
+    request: GetMyOrdersRequest,
+    callback: (error: ServiceError | null, response: GetMyOrdersResponse) => void,
+  ): ClientUnaryCall;
+  getMyOrders(
+    request: GetMyOrdersRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetMyOrdersResponse) => void,
+  ): ClientUnaryCall;
+  getMyOrders(
+    request: GetMyOrdersRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetMyOrdersResponse) => void,
+  ): ClientUnaryCall;
+  getOrderById(
+    request: GetOrderByIdRequest,
+    callback: (error: ServiceError | null, response: GetOrderByIdResponse) => void,
+  ): ClientUnaryCall;
+  getOrderById(
+    request: GetOrderByIdRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetOrderByIdResponse) => void,
+  ): ClientUnaryCall;
+  getOrderById(
+    request: GetOrderByIdRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetOrderByIdResponse) => void,
+  ): ClientUnaryCall;
+  getMyBalances(
+    request: GetMyBalancesRequest,
+    callback: (error: ServiceError | null, response: GetMyBalancesResponse) => void,
+  ): ClientUnaryCall;
+  getMyBalances(
+    request: GetMyBalancesRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetMyBalancesResponse) => void,
+  ): ClientUnaryCall;
+  getMyBalances(
+    request: GetMyBalancesRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetMyBalancesResponse) => void,
+  ): ClientUnaryCall;
+  getMyPositions(
+    request: GetMyPositionsRequest,
+    callback: (error: ServiceError | null, response: GetMyPositionsResponse) => void,
+  ): ClientUnaryCall;
+  getMyPositions(
+    request: GetMyPositionsRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetMyPositionsResponse) => void,
+  ): ClientUnaryCall;
+  getMyPositions(
+    request: GetMyPositionsRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetMyPositionsResponse) => void,
+  ): ClientUnaryCall;
+  getMyTrades(
+    request: GetMyTradesRequest,
+    callback: (error: ServiceError | null, response: GetMyTradesResponse) => void,
+  ): ClientUnaryCall;
+  getMyTrades(
+    request: GetMyTradesRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetMyTradesResponse) => void,
+  ): ClientUnaryCall;
+  getMyTrades(
+    request: GetMyTradesRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetMyTradesResponse) => void,
+  ): ClientUnaryCall;
+  getUserAuth(
+    request: GetUserAuthRequest,
+    callback: (error: ServiceError | null, response: GetUserAuthResponse) => void,
+  ): ClientUnaryCall;
+  getUserAuth(
+    request: GetUserAuthRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetUserAuthResponse) => void,
+  ): ClientUnaryCall;
+  getUserAuth(
+    request: GetUserAuthRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetUserAuthResponse) => void,
+  ): ClientUnaryCall;
+  /** On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — return type is SDK `TransactionResult`. */
+  enableTrading(
+    request: EnableTradingRequest,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  enableTrading(
+    request: EnableTradingRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  enableTrading(
+    request: EnableTradingRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  split(
+    request: SplitRequest,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  split(
+    request: SplitRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  split(
+    request: SplitRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  merge(
+    request: MergeRequest,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  merge(
+    request: MergeRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  merge(
+    request: MergeRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  redeem(
+    request: RedeemRequest,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  redeem(
+    request: RedeemRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
+  ): ClientUnaryCall;
+  redeem(
+    request: RedeemRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TransactionResult) => void,
   ): ClientUnaryCall;
 }
 

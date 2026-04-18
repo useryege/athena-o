@@ -7,6 +7,7 @@ import {
   type Client,
   type FeeRateSettings,
   type PlaceOrderDataInput,
+  type TransactionResult as SdkTransactionResult,
 } from '@opinion-labs/opinion-clob-sdk';
 import { status as grpcStatus } from '@grpc/grpc-js';
 
@@ -53,6 +54,24 @@ import {
   type CancelOrdersBatchRequest,
   type PlaceOrderRequest,
   type PlaceOrdersBatchRequest,
+  GetMyBalancesResponse,
+  GetMyOrdersResponse,
+  GetMyPositionsResponse,
+  GetMyTradesResponse,
+  GetOrderByIdResponse,
+  GetUserAuthResponse,
+  PositionApiData,
+  QuoteTokenBalance,
+  TransactionResult,
+  UserTradeApiData,
+  type GetMyBalancesRequest,
+  type GetMyOrdersRequest,
+  type GetMyPositionsRequest,
+  type GetMyTradesRequest,
+  type GetOrderByIdRequest,
+  type MergeRequest,
+  type RedeemRequest,
+  type SplitRequest,
 } from './gen/opinion/opinion.js';
 import { Struct } from './gen/google/protobuf/struct.js';
 import { createServiceError } from './grpc-error.js';
@@ -834,5 +853,306 @@ function mapOrderTradeRecordToProto(raw: Record<string, unknown>): OrderTradeApi
     tradeNo: optionalString(raw.tradeNo),
     txHash: optionalString(raw.txHash),
     usdAmount: optionalString(raw.usdAmount),
+  });
+}
+
+// ─── User & wallet: proto → SDK ────────────────────────────────────────────
+
+function parseOptionalPageLimit(
+  page: number | undefined,
+  limit: number | undefined,
+  label: string,
+): {
+  page?: number;
+  limit?: number;
+} {
+  const out: { page?: number; limit?: number } = {};
+  if (page !== undefined) {
+    if (!Number.isInteger(page) || page < 1) {
+      throw createServiceError(grpcStatus.INVALID_ARGUMENT, `${label}.page must be >= 1`);
+    }
+    out.page = page;
+  }
+  if (limit !== undefined) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 20) {
+      throw createServiceError(
+        grpcStatus.INVALID_ARGUMENT,
+        `${label}.limit must be between 1 and 20`,
+      );
+    }
+    out.limit = limit;
+  }
+  return out;
+}
+
+export function parseGetMyOrdersRequest(request: GetMyOrdersRequest): Parameters<Client['getMyOrders']>[0] {
+  const options: Parameters<Client['getMyOrders']>[0] = {
+    ...parseOptionalPageLimit(request.page, request.limit, 'getMyOrders'),
+  };
+  if (request.marketId !== undefined) {
+    const mid = request.marketId;
+    if (!Number.isInteger(mid) || mid < 1) {
+      throw createServiceError(grpcStatus.INVALID_ARGUMENT, 'marketId must be a positive integer when set');
+    }
+    options.marketId = mid;
+  }
+  if (request.status !== undefined && request.status.trim() !== '') {
+    options.status = request.status.trim();
+  }
+  return options;
+}
+
+export function parseGetOrderByIdRequest(request: GetOrderByIdRequest): string {
+  return parseCancelOrderRequest(request as CancelOrderRequest);
+}
+
+export function parseGetMyPositionsRequest(
+  request: GetMyPositionsRequest,
+): Parameters<Client['getMyPositions']>[0] {
+  const options: Parameters<Client['getMyPositions']>[0] = {
+    ...parseOptionalPageLimit(request.page, request.limit, 'getMyPositions'),
+  };
+  if (request.marketId !== undefined) {
+    const mid = request.marketId;
+    if (!Number.isInteger(mid) || mid < 1) {
+      throw createServiceError(grpcStatus.INVALID_ARGUMENT, 'marketId must be a positive integer when set');
+    }
+    options.marketId = mid;
+  }
+  return options;
+}
+
+export function parseGetMyTradesRequest(request: GetMyTradesRequest): Parameters<Client['getMyTrades']>[0] {
+  const options: Parameters<Client['getMyTrades']>[0] = {
+    ...parseOptionalPageLimit(request.page, request.limit, 'getMyTrades'),
+  };
+  if (request.marketId !== undefined) {
+    const mid = request.marketId;
+    if (!Number.isInteger(mid) || mid < 1) {
+      throw createServiceError(grpcStatus.INVALID_ARGUMENT, 'marketId must be a positive integer when set');
+    }
+    options.marketId = mid;
+  }
+  return options;
+}
+
+function parsePositiveMarketId32(marketId: number, label: string): number {
+  if (!Number.isInteger(marketId) || marketId < 1) {
+    throw createServiceError(grpcStatus.INVALID_ARGUMENT, `${label} must be a positive integer`);
+  }
+  return marketId;
+}
+
+function parseAmountStringToBigInt(raw: string, field: string): bigint {
+  const trimmed = raw.trim();
+  if (!/^\d+$/.test(trimmed)) {
+    throw createServiceError(
+      grpcStatus.INVALID_ARGUMENT,
+      `${field} must be a non-empty decimal integer string`,
+    );
+  }
+  return BigInt(trimmed);
+}
+
+export function parseSplitRequest(request: SplitRequest): {
+  marketId: number;
+  amount: bigint;
+  checkApproval: boolean;
+} {
+  return {
+    marketId: parsePositiveMarketId32(request.marketId, 'marketId'),
+    amount: parseAmountStringToBigInt(request.amount, 'amount'),
+    checkApproval: request.checkApproval ?? true,
+  };
+}
+
+export function parseMergeRequest(request: MergeRequest): {
+  marketId: number;
+  amount: bigint;
+  checkApproval: boolean;
+} {
+  return {
+    marketId: parsePositiveMarketId32(request.marketId, 'marketId'),
+    amount: parseAmountStringToBigInt(request.amount, 'amount'),
+    checkApproval: request.checkApproval ?? true,
+  };
+}
+
+export function parseRedeemRequest(request: RedeemRequest): {
+  marketId: number;
+  checkApproval: boolean;
+} {
+  return {
+    marketId: parsePositiveMarketId32(request.marketId, 'marketId'),
+    checkApproval: request.checkApproval ?? true,
+  };
+}
+
+// ─── User & wallet: SDK → proto ────────────────────────────────────────────
+
+export function toGetMyOrdersResponse(
+  response: SdkApiResponse<{ list?: Record<string, unknown>[]; total?: number }>,
+): GetMyOrdersResponse {
+  const result = response.result ?? {};
+  const list = Array.isArray(result.list) ? result.list : [];
+  return GetMyOrdersResponse.fromPartial({
+    errno: 0,
+    errmsg: '',
+    total: typeof result.total === 'number' ? result.total : undefined,
+    list: list.filter(isRecord).map(mapOrderRecordToOrderApiData),
+  });
+}
+
+export function toGetOrderByIdResponse(
+  response: SdkApiResponse<{ orderData?: Record<string, unknown> }>,
+): GetOrderByIdResponse {
+  const od = response.result?.orderData;
+  return GetOrderByIdResponse.fromPartial({
+    errno: 0,
+    errmsg: '',
+    orderData: od && isRecord(od) ? mapOrderRecordToOrderApiData(od) : undefined,
+  });
+}
+
+function mapQuoteTokenBalanceRecord(raw: Record<string, unknown>): QuoteTokenBalance {
+  return QuoteTokenBalance.fromPartial({
+    availableBalance: optionalString(raw.availableBalance),
+    frozenBalance: optionalString(raw.frozenBalance),
+    quoteToken: optionalString(raw.quoteToken),
+    tokenDecimals: optionalInt32(raw.tokenDecimals),
+    totalBalance: optionalString(raw.totalBalance),
+  });
+}
+
+export function toGetMyBalancesResponse(
+  response: SdkApiResponse<Record<string, unknown>>,
+): GetMyBalancesResponse {
+  const result = response.result ?? {};
+  const balances = Array.isArray(result.balances) ? result.balances : [];
+  return GetMyBalancesResponse.fromPartial({
+    errno: 0,
+    errmsg: '',
+    balances: balances.filter(isRecord).map(mapQuoteTokenBalanceRecord),
+    chainId: optionalString(result.chainId),
+    multiSignAddress: optionalString(result.multiSignAddress),
+    walletAddress: optionalString(result.walletAddress),
+  });
+}
+
+function mapPositionRecordToProto(raw: Record<string, unknown>): PositionApiData {
+  return PositionApiData.fromPartial({
+    avgEntryPrice: optionalString(raw.avgEntryPrice),
+    claimStatus: optionalInt32(raw.claimStatus),
+    claimStatusEnum: optionalString(raw.claimStatusEnum),
+    conditionId: optionalString(raw.conditionId),
+    currentValueInQuoteToken: optionalString(raw.currentValueInQuoteToken),
+    dailyPnlChange: optionalString(raw.dailyPnlChange),
+    dailyPnlChangePercent: optionalString(raw.dailyPnlChangePercent),
+    marketCutoffAt: int64LikeToProtoString(raw.marketCutoffAt),
+    marketId: optionalInt32(raw.marketId),
+    marketStatus: optionalInt32(raw.marketStatus),
+    marketStatusEnum: optionalString(raw.marketStatusEnum),
+    marketTitle: optionalString(raw.marketTitle),
+    outcome: optionalString(raw.outcome),
+    outcomeSide: optionalInt32(raw.outcomeSide),
+    outcomeSideEnum: optionalString(raw.outcomeSideEnum),
+    quoteToken: optionalString(raw.quoteToken),
+    rootMarketId: optionalInt32(raw.rootMarketId),
+    rootMarketTitle: optionalString(raw.rootMarketTitle),
+    sharesFrozen: optionalString(raw.sharesFrozen),
+    sharesOwned: optionalString(raw.sharesOwned),
+    tokenId: optionalString(raw.tokenId),
+    unrealizedPnl: optionalString(raw.unrealizedPnl),
+    unrealizedPnlPercent: optionalString(raw.unrealizedPnlPercent),
+  });
+}
+
+export function toGetMyPositionsResponse(
+  response: SdkApiResponse<{ list?: Record<string, unknown>[]; total?: number }>,
+): GetMyPositionsResponse {
+  const result = response.result ?? {};
+  const list = Array.isArray(result.list) ? result.list : [];
+  return GetMyPositionsResponse.fromPartial({
+    errno: 0,
+    errmsg: '',
+    total: typeof result.total === 'number' ? result.total : undefined,
+    list: list.filter(isRecord).map(mapPositionRecordToProto),
+  });
+}
+
+function mapUserTradeRecordToProto(raw: Record<string, unknown>): UserTradeApiData {
+  const feeStr =
+    typeof raw.fee === 'string'
+      ? raw.fee
+      : typeof raw.fee === 'number' && Number.isFinite(raw.fee)
+        ? String(raw.fee)
+        : undefined;
+  return UserTradeApiData.fromPartial({
+    amount: optionalString(raw.amount),
+    chainId: optionalString(raw.chainId),
+    createdAt: int64LikeToProtoString(raw.createdAt),
+    fee: feeStr,
+    marketId: optionalInt32(raw.marketId),
+    marketTitle: optionalString(raw.marketTitle),
+    orderNo: optionalString(raw.orderNo),
+    outcome: optionalString(raw.outcome),
+    outcomeSide: optionalInt32(raw.outcomeSide),
+    outcomeSideEnum: optionalString(raw.outcomeSideEnum),
+    price: optionalString(raw.price),
+    profit: optionalString(raw.profit),
+    quoteToken: optionalString(raw.quoteToken),
+    quoteTokenUsdPrice: optionalString(raw.quoteTokenUsdPrice),
+    rootMarketId: optionalInt32(raw.rootMarketId),
+    rootMarketTitle: optionalString(raw.rootMarketTitle),
+    shares: optionalString(raw.shares),
+    side: optionalString(raw.side),
+    status: optionalInt32(raw.status),
+    statusEnum: optionalString(raw.statusEnum),
+    tradeNo: optionalString(raw.tradeNo),
+    txHash: optionalString(raw.txHash),
+    usdAmount: optionalString(raw.usdAmount),
+  });
+}
+
+export function toGetMyTradesResponse(
+  response: SdkApiResponse<{ list?: Record<string, unknown>[]; total?: number }>,
+): GetMyTradesResponse {
+  const result = response.result ?? {};
+  const list = Array.isArray(result.list) ? result.list : [];
+  return GetMyTradesResponse.fromPartial({
+    errno: 0,
+    errmsg: '',
+    total: typeof result.total === 'number' ? result.total : undefined,
+    list: list.filter(isRecord).map(mapUserTradeRecordToProto),
+  });
+}
+
+export function toGetUserAuthResponse(response: SdkApiResponse<Record<string, unknown>>): GetUserAuthResponse {
+  const result = response.result ?? {};
+  const wu = result.walletUsers;
+  const walletUsers: Record<string, string> =
+    wu !== undefined && wu !== null && typeof wu === 'object' && !Array.isArray(wu)
+      ? Object.fromEntries(
+          Object.entries(wu as Record<string, unknown>).map(([k, v]) => [k, v === undefined || v === null ? '' : String(v)]),
+        )
+      : {};
+  return GetUserAuthResponse.fromPartial({
+    errno: 0,
+    errmsg: '',
+    apiKey: optionalString(result.apiKey),
+    walletAddress: optionalString(result.walletAddress),
+    walletUsers,
+  });
+}
+
+export function sdkTransactionResultToProto(result: SdkTransactionResult): TransactionResult {
+  return TransactionResult.fromPartial({
+    txHash: result.txHash === null || result.txHash === undefined ? undefined : String(result.txHash),
+    safeTxHash:
+      result.safeTxHash === null || result.safeTxHash === undefined ? undefined : String(result.safeTxHash),
+    returnValue:
+      result.returnValue === null || result.returnValue === undefined
+        ? undefined
+        : String(result.returnValue),
   });
 }
