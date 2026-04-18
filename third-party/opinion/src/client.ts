@@ -1,8 +1,8 @@
 import { Client } from '@opinion-labs/opinion-clob-sdk';
+import { status as grpcStatus } from '@grpc/grpc-js';
 
 import { type OpinionSdkConfig, loadRuntimeConfig } from './config.js';
-
-let opinionClient: Client | undefined;
+import { createServiceError } from './grpc-error.js';
 
 export function createOpinionClient(config: OpinionSdkConfig): Client {
   return new Client({
@@ -15,14 +15,24 @@ export function createOpinionClient(config: OpinionSdkConfig): Client {
   });
 }
 
+// ─── Singleton ────────────────────────────────────────────────────────────
+
+let opinionClient: Client | undefined;
+
 export function getOpinionClient(): Client {
-  if (opinionClient) {
-    return opinionClient;
-  }
-
+  if (opinionClient) return opinionClient;
   const { sdk } = loadRuntimeConfig();
-
   opinionClient = createOpinionClient(sdk);
-
   return opinionClient;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+
+export function assertSdkSuccess(errno: number, errmsg: string): void {
+  if (errno !== 0) {
+    throw createServiceError(
+      grpcStatus.INTERNAL,
+      errmsg || `opinion sdk returned errno ${errno}`,
+    );
+  }
 }

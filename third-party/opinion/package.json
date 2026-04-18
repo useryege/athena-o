@@ -8,8 +8,7 @@
     "dev": "tsx watch cmd/server/main.ts",
     "build": "tsc --project tsconfig.build.json",
     "start": "node dist/cmd/server/main.js",
-    "typecheck": "tsc --project tsconfig.json --noEmit",
-    "grpc:test": "tsx test/get-markets.ts"
+    "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.11.0",
