@@ -11,6 +11,8 @@ export interface OpinionSdkConfig {
   rpcUrl: string;
   privateKey: `0x${string}`;
   multiSigAddress: `0x${string}`;
+  /** HTTP(S) proxy for SDK; empty string means no proxy. */
+  proxyUrl: string;
 }
 
 export interface GrpcServerConfig {
@@ -26,6 +28,7 @@ export interface OpinionRuntimeConfig {
 const DEFAULT_GRPC_HOST = '0.0.0.0';
 const DEFAULT_GRPC_PORT = '50051';
 const DEFAULT_RPC_URL = 'https://bsc-dataseed.binance.org/';
+const DEFAULT_PROXY_URL = 'http://172.30.160.1:10809';
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name]?.trim();
@@ -77,6 +80,7 @@ export function loadOpinionSdkConfig(): OpinionSdkConfig {
     rpcUrl: getOptionalEnv('RPC_URL', DEFAULT_RPC_URL),
     privateKey: getRequiredEnv('PRIVATE_KEY') as `0x${string}`,
     multiSigAddress: getRequiredEnv('MULTI_SIG_ADDRESS') as `0x${string}`,
+    proxyUrl: getOptionalEnv('PROXY_URL', DEFAULT_PROXY_URL),
   };
 }
 

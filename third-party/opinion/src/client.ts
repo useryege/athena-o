@@ -12,6 +12,7 @@ export function createOpinionClient(config: OpinionSdkConfig): Client {
     rpcUrl: config.rpcUrl,
     privateKey: config.privateKey,
     multiSigAddress: config.multiSigAddress,
+    ...(config.proxyUrl ? { proxyUrl: config.proxyUrl } : {}),
   });
 }
 
