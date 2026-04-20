@@ -7,7 +7,7 @@ import type { TestContext } from 'node:test';
 
 import assert from 'node:assert/strict';
 
-import { GetMarketsResponse } from '../../src/gen/opinion/opinion.js';
+import { GetMarketResponse, GetMarketsResponse } from '../../src/gen/opinion/opinion.js';
 
 export function getE2EGrpcAddress(): string {
   return process.env.OPINION_E2E_GRPC_ADDR?.trim() || '127.0.0.1:50051';
@@ -55,6 +55,19 @@ export function assertGetMarketsResponsesEqual(
 ): void {
   const a = GetMarketsResponse.encode(expected).finish();
   const b = GetMarketsResponse.encode(actual).finish();
+  assert.deepStrictEqual(a, b, message);
+}
+
+/**
+ * 使用 protobuf 二进制比较两条 GetMarketResponse（与侧链 `toGetMarketDetailResponse` 输出对照时使用）。
+ */
+export function assertGetMarketResponsesEqual(
+  expected: import('../../src/gen/opinion/opinion.js').GetMarketResponse,
+  actual: import('../../src/gen/opinion/opinion.js').GetMarketResponse,
+  message?: string,
+): void {
+  const a = GetMarketResponse.encode(expected).finish();
+  const b = GetMarketResponse.encode(actual).finish();
   assert.deepStrictEqual(a, b, message);
 }
 
