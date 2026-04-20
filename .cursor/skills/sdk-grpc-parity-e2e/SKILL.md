@@ -38,6 +38,14 @@ Parity tests assert that **the same logical response** reaches callers whether t
 - **Document** in the test file header when the scenario performs **two upstream HTTP calls** (SDK + sidecar); list snapshots may drift and cause rare flakes—use small `limit`/fixed `page` when possible and mention the limitation in assertion messages on failure.
 - **Share** region-block heuristics between SDK-path (`errno` + `errmsg`) and gRPC-path (`INTERNAL` + details/message) via one regex or helper so wording stays aligned.
 
+## Test file layout (one RPC per file)
+
+- **One E2E file per gRPC method** — Do not bundle parity tests for multiple RPCs in a single file. Each file is dedicated to exactly one unary RPC (and may contain more than one `test()` block for that RPC, e.g. smoke + parity, if the repo does both).
+- **Naming** — Match the package’s existing E2E convention: convert the **gRPC method name** (`PascalCase`) to **kebab-case**, suffix **`.e2e.ts`**, under the project’s E2E directory (e.g. `test/e2e/`).
+  - Examples (Opinion sidecar): `GetMarkets` → `get-markets.e2e.ts`; `GetCategoricalMarket` → `get-categorical-market.e2e.ts`; `GetMarketBySlug` → `get-market-by-slug.e2e.ts`; `GetQuoteTokens` → `get-quote-tokens.e2e.ts`.
+- **File header** — Mirror the style of sibling files: service + RPC identifier, how to start the server, `OPINION_E2E_GRPC_ADDR` (or project equivalent), shared `.env` / `loadRuntimeConfig`, and oracle path (`parse*Request` → SDK → `to*Response`).
+- **Shared code** — Unary Promise wrappers, region/skip helpers, and `assert*ResponsesEqual` (wire-byte helpers) stay in **`helpers.ts`** (or the repo’s shared E2E helper module), not duplicated across every file unless the project already inlines them per test file.
+
 ## Verification and reporting
 
 - **When**: Immediately after adding or changing a parity test or mapper.
@@ -49,6 +57,7 @@ Parity tests assert that **the same logical response** reaches callers whether t
 - [ ] Parser, SDK method, and `to*Response` for this RPC are identified.
 - [ ] Test loads env the same way as the sidecar process.
 - [ ] gRPC listen address and test client address conventions match.
+- [ ] New or moved parity tests use **one file per RPC** and **kebab-case `*.e2e.ts`** naming consistent with existing E2E files in that package.
 
 ## Postflight checklist
 
