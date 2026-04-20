@@ -5,8 +5,29 @@ import { status } from '@grpc/grpc-js';
 import type { ServiceError } from '@grpc/grpc-js';
 import type { TestContext } from 'node:test';
 
+import assert from 'node:assert/strict';
+
+import { GetMarketsResponse } from '../../src/gen/opinion/opinion.js';
+
 export function getE2EGrpcAddress(): string {
   return process.env.OPINION_E2E_GRPC_ADDR?.trim() || '127.0.0.1:50051';
+}
+
+const UPSTREAM_REGION_BLOCK_RE =
+  /restricted jurisdiction|United States|located in China|not available to persons/i;
+
+/** 与 gRPC INTERNAL 地域提示、官方 SDK `errmsg` 中可能出现的文案对齐。 */
+export function isLikelyUpstreamRegionBlockMessage(msg: string): boolean {
+  return UPSTREAM_REGION_BLOCK_RE.test(msg);
+}
+
+/** 官方 SDK 直连失败时，`errno !== 0` 且 `errmsg` 可能含地域限制文案。 */
+export function isLikelySdkUpstreamRegionBlock(response: { errno: number; errmsg?: string }): boolean {
+  if (response.errno === 0) {
+    return false;
+  }
+
+  return isLikelyUpstreamRegionBlockMessage(`${response.errmsg ?? ''}`);
 }
 
 /** 上游 HTTP API 在部分国家/地区不可用，侧链会映射为 gRPC INTERNAL。 */
@@ -21,7 +42,20 @@ export function isLikelyUpstreamRegionBlock(error: unknown): boolean {
   }
 
   const msg = `${e.details ?? ''}${e.message ?? ''}`;
-  return /restricted jurisdiction|United States|located in China|not available to persons/i.test(msg);
+  return isLikelyUpstreamRegionBlockMessage(msg);
+}
+
+/**
+ * 使用 protobuf 二进制比较两条 GetMarketsResponse（与侧链 `toGetMarketsResponse` 输出对照时使用）。
+ */
+export function assertGetMarketsResponsesEqual(
+  expected: import('../../src/gen/opinion/opinion.js').GetMarketsResponse,
+  actual: import('../../src/gen/opinion/opinion.js').GetMarketsResponse,
+  message?: string,
+): void {
+  const a = GetMarketsResponse.encode(expected).finish();
+  const b = GetMarketsResponse.encode(actual).finish();
+  assert.deepStrictEqual(a, b, message);
 }
 
 /**
