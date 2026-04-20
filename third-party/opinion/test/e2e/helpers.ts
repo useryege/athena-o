@@ -9,15 +9,21 @@ import assert from 'node:assert/strict';
 
 import type { Client } from '@opinion-labs/opinion-clob-sdk';
 
-import { parseGetMarketsRequest } from '../../src/common.js';
+import { parseGetMarketsRequest, parseGetMyOrdersRequest } from '../../src/common.js';
 import {
   GetFeeRatesResponse,
   GetLatestPriceResponse,
   GetMarketResponse,
   GetMarketsResponse,
+  GetMyBalancesResponse,
+  GetMyOrdersResponse,
+  GetMyPositionsResponse,
+  GetMyTradesResponse,
+  GetOrderByIdResponse,
   GetOrderbookResponse,
   GetPriceHistoryResponse,
   GetQuoteTokensResponse,
+  GetUserAuthResponse,
 } from '../../src/gen/opinion/opinion.js';
 
 export function getE2EGrpcAddress(): string {
@@ -39,6 +45,46 @@ export function isLikelySdkUpstreamRegionBlock(response: { errno: number; errmsg
   }
 
   return isLikelyUpstreamRegionBlockMessage(`${response.errmsg ?? ''}`);
+}
+
+const SDK_AUTH_OR_CONFIG_RE =
+  /unauthorized|invalid.*key|apikey|api key|401|403|forbidden|signature|not.*authenticated|authentication required|wallet|credential/i;
+
+/** 用户类接口在无 API key 或配置不全时，`errno !== 0` 且 `errmsg` 常含认证相关提示（启发式，用于 E2E skip）。 */
+export function isLikelySdkAuthOrConfigFailure(response: { errno: number; errmsg?: string }): boolean {
+  if (response.errno === 0) {
+    return false;
+  }
+
+  return SDK_AUTH_OR_CONFIG_RE.test(`${response.errmsg ?? ''}`);
+}
+
+/**
+ * 用户类 RPC 的 SDK 路径：非 0 时区分地域限制、认证/配置问题与其它错误（其它错误会 `assert.fail` 抛出）。
+ * @returns errno=0 时为 false；已 `t.skip` 时为 true。
+ */
+export function handleSdkUserEndpointResponse(
+  sdkResp: { errno: number; errmsg?: string },
+  t: TestContext,
+  label: string,
+): boolean {
+  if (sdkResp.errno === 0) {
+    return false;
+  }
+
+  if (isLikelySdkUpstreamRegionBlock(sdkResp)) {
+    t.skip(`${label}：上游 Opinion API 当前区域不可用（SDK errno）`);
+    return true;
+  }
+
+  if (isLikelySdkAuthOrConfigFailure(sdkResp)) {
+    t.skip(
+      `${label}：SDK 返回认证或配置相关错误，跳过（请检查 .env 中 API key、链 ID 等；无订单时可设置 OPINION_E2E_ORDER_ID）`,
+    );
+    return true;
+  }
+
+  assert.fail(`官方 SDK ${label} 失败：errno=${sdkResp.errno} errmsg=${sdkResp.errmsg}`);
 }
 
 /** 上游 HTTP API 在部分国家/地区不可用，侧链会映射为 gRPC INTERNAL。 */
@@ -147,6 +193,66 @@ export function assertGetFeeRatesResponsesEqual(
   assert.deepStrictEqual(a, b, message);
 }
 
+export function assertGetMyOrdersResponsesEqual(
+  expected: GetMyOrdersResponse,
+  actual: GetMyOrdersResponse,
+  message?: string,
+): void {
+  const a = GetMyOrdersResponse.encode(expected).finish();
+  const b = GetMyOrdersResponse.encode(actual).finish();
+  assert.deepStrictEqual(a, b, message);
+}
+
+export function assertGetOrderByIdResponsesEqual(
+  expected: GetOrderByIdResponse,
+  actual: GetOrderByIdResponse,
+  message?: string,
+): void {
+  const a = GetOrderByIdResponse.encode(expected).finish();
+  const b = GetOrderByIdResponse.encode(actual).finish();
+  assert.deepStrictEqual(a, b, message);
+}
+
+export function assertGetMyBalancesResponsesEqual(
+  expected: GetMyBalancesResponse,
+  actual: GetMyBalancesResponse,
+  message?: string,
+): void {
+  const a = GetMyBalancesResponse.encode(expected).finish();
+  const b = GetMyBalancesResponse.encode(actual).finish();
+  assert.deepStrictEqual(a, b, message);
+}
+
+export function assertGetMyPositionsResponsesEqual(
+  expected: GetMyPositionsResponse,
+  actual: GetMyPositionsResponse,
+  message?: string,
+): void {
+  const a = GetMyPositionsResponse.encode(expected).finish();
+  const b = GetMyPositionsResponse.encode(actual).finish();
+  assert.deepStrictEqual(a, b, message);
+}
+
+export function assertGetMyTradesResponsesEqual(
+  expected: GetMyTradesResponse,
+  actual: GetMyTradesResponse,
+  message?: string,
+): void {
+  const a = GetMyTradesResponse.encode(expected).finish();
+  const b = GetMyTradesResponse.encode(actual).finish();
+  assert.deepStrictEqual(a, b, message);
+}
+
+export function assertGetUserAuthResponsesEqual(
+  expected: GetUserAuthResponse,
+  actual: GetUserAuthResponse,
+  message?: string,
+): void {
+  const a = GetUserAuthResponse.encode(expected).finish();
+  const b = GetUserAuthResponse.encode(actual).finish();
+  assert.deepStrictEqual(a, b, message);
+}
+
 /**
  * 解析 E2E 用的 outcome tokenId：`OPINION_E2E_TOKEN_ID`，否则从官方 SDK `getMarkets(limit:1)` 首条的 `yesTokenId` 取值（与 `parseGetMarketsRequest` 一致）。
  */
@@ -187,6 +293,52 @@ export async function resolveE2eTokenId(sdk: Client, t: TestContext): Promise<st
   }
 
   return tokenId;
+}
+
+/**
+ * 解析 E2E 用的订单 ID：`OPINION_E2E_ORDER_ID`，否则在 SDK 已可用时 `getMyOrders(page:1,limit:1)` 取首条 `orderId`（与 `parseGetMyOrdersRequest` 一致）。
+ */
+export async function resolveE2eOrderId(sdk: Client, t: TestContext): Promise<string | undefined> {
+  const fromEnv = process.env.OPINION_E2E_ORDER_ID?.trim();
+  if (fromEnv) {
+    return fromEnv;
+  }
+
+  const listQuery = parseGetMyOrdersRequest({ page: 1, limit: 1 });
+  let listResp: Awaited<ReturnType<Client['getMyOrders']>>;
+  try {
+    listResp = await sdk.getMyOrders(listQuery);
+  } catch (error) {
+    throw new Error('官方 SDK getMyOrders（解析 E2E orderId）抛错', { cause: error });
+  }
+
+  if (listResp.errno !== 0) {
+    if (isLikelySdkUpstreamRegionBlock(listResp)) {
+      t.skip('上游 Opinion API 当前区域不可用（SDK errno），无法解析 E2E orderId');
+      return undefined;
+    }
+    if (isLikelySdkAuthOrConfigFailure(listResp)) {
+      t.skip('无法解析 E2E orderId：SDK 认证/配置错误（可设置 OPINION_E2E_ORDER_ID）');
+      return undefined;
+    }
+
+    assert.fail(`官方 SDK getMyOrders 失败：errno=${listResp.errno} errmsg=${listResp.errmsg}`);
+  }
+
+  const first = listResp.result?.list?.[0];
+  if (!first || typeof first !== 'object') {
+    t.skip('订单列表为空，无法解析 E2E orderId（可设置 OPINION_E2E_ORDER_ID）');
+    return undefined;
+  }
+
+  const raw = (first as Record<string, unknown>).orderId;
+  const orderId = raw == null ? '' : String(raw).trim();
+  if (!orderId) {
+    t.skip('首条订单缺少 orderId（可设置 OPINION_E2E_ORDER_ID）');
+    return undefined;
+  }
+
+  return orderId;
 }
 
 /**
