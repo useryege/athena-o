@@ -1,9 +1,14 @@
 ---
 name: sdk-grpc-parity-e2e
-description: Defines how to write end-to-end tests that prove an official HTTP/SDK client and a thin gRPC sidecar return semantically identical payloads. Use when adding or reviewing parity tests between upstream SDK responses and grpc-js unary responses, third-party sidecar validation, or when the user asks to compare SDK output to wrapped gRPC output field-by-field.
+description: Defines how to write end-to-end tests that prove an official HTTP/SDK client and a thin gRPC sidecar return semantically identical payloads. Use when the user asks to generate or add E2E tests for a gRPC RPC in TypeScript sidecar code, when adding or reviewing parity tests between upstream SDK responses and grpc-js unary responses, for third-party sidecar validation, or when comparing SDK output to wrapped gRPC output field-by-field.
 ---
 
 # SDK vs gRPC response parity (E2E)
+
+## When to use
+
+- The user wants **E2E tests for a specific gRPC RPC** implemented in TS (thin sidecar / grpc-js), not generic unit tests of mappers alone.
+- Same scope as the description: parity coverage, sidecar validation, or field-by-field SDK vs gRPC comparison.
 
 ## Overview
 
