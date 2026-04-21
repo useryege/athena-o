@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package polymarket;
+
+// Polymarket gRPC surface placeholder.
+// Expand RPCs and messages to mirror `@polymarket/clob-client-v2` as the sidecar grows.
+
+service PolymarketService {
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+}
