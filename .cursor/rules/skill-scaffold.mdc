@@ -1,8 +1,6 @@
 ---
-description: Enforce the required scaffold when creating Cursor skills
-alwaysApply: true
+alwaysApply: false
 ---
-
 # Skill Scaffold Standard
 
 When creating a Cursor skill, the generated skill directory must use this structure:
