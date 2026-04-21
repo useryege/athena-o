@@ -61,8 +61,8 @@ message Example {
 
 ## RPC request/response constraints (mandatory)
 
-- **No shared RPC envelope messages**: do not reuse the same request or response message type across multiple RPC methods. Define RPC-specific messages even when payload fields are identical. This avoids `RPC_REQUEST_RESPONSE_UNIQUE` style lint failures such as `"pkg.FooResponse" is used as the request or response type for multiple RPCs`.
-- **Response naming must follow RPC name**: each RPC response message should be named `<RpcName>Response` (or `<ServiceName><RpcName>Response` if project conventions require service-prefixed names). Avoid generic names like `CancelOrderApiResponse` when the RPC is `CancelOrder`.
+- **Strict RPC signature format is required**: every RPC must be declared exactly as `rpc FuncName(FuncNameRequest) returns (FuncNameResponse);`. Do not use alternative request/response naming patterns.
+- **No shared RPC envelope messages**: do not reuse the same request message type across multiple RPC methods, and do not reuse the same response message type across multiple RPC methods. Define RPC-specific request/response messages even when payload fields are identical. This avoids `RPC_REQUEST_RESPONSE_UNIQUE` style lint failures such as `"pkg.EmptyRequest" is used as the request or response type for multiple RPCs`.
 
 ## Enum constraints (mandatory)
 
@@ -76,7 +76,7 @@ message Example {
 
 **Standard:** For each modeled RPC, the gRPC **request** and **response** must match the TypeScript SDK’s observable **inputs** and **outputs** for the corresponding method or function (including wrapper types such as `ApiResponse<T>`, query/path/body splits, and nested `result` payloads). Compare semantics field-by-field: **proto fields must be `lower_snake_case` and preserve a 1:1 mapping to SDK fields** unless a documented exception applies ([Field naming (mandatory)](#field-naming-mandatory)). Also check optional vs required and flattening vs nesting.
 
-In the same verification pass, ensure RPC envelopes satisfy [RPC request/response constraints (mandatory)](#rpc-requestresponse-constraints-mandatory), especially uniqueness-per-RPC and `<RpcName>Response` naming.
+In the same verification pass, ensure RPC envelopes satisfy [RPC request/response constraints (mandatory)](#rpc-requestresponse-constraints-mandatory), especially strict `rpc FuncName(FuncNameRequest) returns (FuncNameResponse);` format and uniqueness-per-RPC for both request and response message types.
 
 Also verify enums satisfy [Enum constraints (mandatory)](#enum-constraints-mandatory), especially zero-value `_UNSPECIFIED` and non-zero business values.
 
@@ -101,12 +101,14 @@ Absence of a mismatch does not require a long explanation; a mismatch **always**
 
 - [ ] Verification ran against the TS SDK for every scoped RPC (request + response).
 - [ ] Proto field names are `lower_snake_case` per [Field naming (mandatory)](#field-naming-mandatory), and SDK-to-proto field mappings are explicitly verified.
-- [ ] RPC request/response message types are unique per RPC and response message naming follows `<RpcName>Response` (or approved service-prefixed form).
+- [ ] Every RPC strictly follows `rpc FuncName(FuncNameRequest) returns (FuncNameResponse);`.
+- [ ] Request and response message types are both unique per RPC (no `XXXRequest` reuse, no `XXXResponse` reuse).
 - [ ] Every enum uses `_UNSPECIFIED = 0`, business values start at `1+`, and adapter logic does not silently map UNSPECIFIED to a concrete SDK value.
 - [ ] Any mismatch is documented to the user with concrete diffs and possible non-error rationale.
 
 ## Resources
 
 - [assets/intake-reply-template.md](assets/intake-reply-template.md) — message to send when intake is incomplete.
+- `scripts/verify-proto-rules.js` — validates proto field snake_case, strict RPC signature format (`FuncNameRequest`/`FuncNameResponse`), and request/response non-reuse across RPCs.
 - `scripts/` — reserved for repeatable automation.
 - `references/` — reserved for extended notes, examples, or policies.

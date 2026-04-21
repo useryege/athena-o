@@ -6,78 +6,78 @@ import "google/protobuf/struct.proto";
 
 // Polymarket gRPC surface derived from selected `ClobClient` methods in
 // `@polymarket/clob-client-v2/dist/client.d.ts` (39-124).
-// Field identifiers mirror the TS SDK parameter/property names exactly.
+// Proto field identifiers use lower_snake_case and map 1:1 to TS SDK fields.
 
 service PolymarketService {
   rpc Health(HealthRequest) returns (HealthResponse);
-  rpc GetOk(EmptyRequest) returns (JsonObject);
+  rpc GetOk(GetOkRequest) returns (GetOkResponse);
   rpc PostHeartbeat(PostHeartbeatRequest) returns (PostHeartbeatResponse);
-  rpc GetVersion(EmptyRequest) returns (NumberResponse);
-  rpc GetServerTime(EmptyRequest) returns (NumberResponse);
-  rpc GetSamplingSimplifiedMarkets(NextCursorRequest) returns (JsonObject);
-  rpc GetSamplingMarkets(NextCursorRequest) returns (JsonObject);
-  rpc GetSimplifiedMarkets(NextCursorRequest) returns (JsonObject);
-  rpc GetMarkets(NextCursorRequest) returns (JsonObject);
-  rpc GetMarket(ConditionIDRequest) returns (JsonObject);
-  rpc GetClobMarketInfo(ConditionIDRequest) returns (JsonObject);
-  rpc GetOrderBook(TokenIDRequest) returns (JsonObject);
-  rpc GetOrderBooks(BookParamsListRequest) returns (JsonObjectList);
-  rpc GetTickSize(TokenIDRequest) returns (JsonObject);
-  rpc GetNegRisk(TokenIDRequest) returns (BoolResponse);
-  rpc GetFeeRateBps(TokenIDRequest) returns (NumberResponse);
-  rpc GetFeeExponent(TokenIDRequest) returns (NumberResponse);
-  rpc GetOrderBookHash(GetOrderBookHashRequest) returns (StringResponse);
-  rpc GetMidpoint(TokenIDRequest) returns (JsonObject);
-  rpc GetMidpoints(BookParamsListRequest) returns (JsonObject);
-  rpc GetPrice(GetPriceRequest) returns (JsonObject);
-  rpc GetPrices(BookParamsListRequest) returns (JsonObject);
-  rpc GetSpread(TokenIDRequest) returns (JsonObject);
-  rpc GetSpreads(BookParamsListRequest) returns (JsonObject);
-  rpc GetLastTradePrice(TokenIDRequest) returns (JsonObject);
-  rpc GetLastTradesPrices(BookParamsListRequest) returns (JsonObject);
-  rpc GetPricesHistory(GetPricesHistoryRequest) returns (JsonObjectList);
-  rpc CreateApiKey(NonceRequest) returns (JsonObject);
-  rpc DeriveApiKey(NonceRequest) returns (JsonObject);
-  rpc CreateOrDeriveApiKey(NonceRequest) returns (JsonObject);
-  rpc GetApiKeys(EmptyRequest) returns (JsonObject);
-  rpc GetClosedOnlyMode(EmptyRequest) returns (JsonObject);
-  rpc DeleteApiKey(EmptyRequest) returns (JsonObject);
-  rpc CreateReadonlyApiKey(EmptyRequest) returns (JsonObject);
-  rpc GetReadonlyApiKeys(EmptyRequest) returns (StringListResponse);
-  rpc DeleteReadonlyApiKey(DeleteReadonlyApiKeyRequest) returns (BoolResponse);
-  rpc GetOrder(OrderIDRequest) returns (JsonObject);
-  rpc GetTrades(GetTradesRequest) returns (JsonObjectList);
-  rpc GetTradesPaginated(GetTradesPaginatedRequest) returns (JsonObject);
-  rpc GetBuilderTrades(GetBuilderTradesRequest) returns (JsonObject);
-  rpc GetNotifications(EmptyRequest) returns (JsonObjectList);
-  rpc DropNotifications(DropNotificationsRequest) returns (EmptyResponse);
-  rpc GetBalanceAllowance(BalanceAllowanceParamsRequest) returns (JsonObject);
-  rpc UpdateBalanceAllowance(BalanceAllowanceParamsRequest) returns (EmptyResponse);
-  rpc CreateOrder(CreateOrderRequest) returns (JsonObject);
-  rpc CreateMarketOrder(CreateMarketOrderRequest) returns (JsonObject);
-  rpc CreateAndPostOrder(CreateAndPostOrderRequest) returns (JsonObject);
-  rpc CreateAndPostMarketOrder(CreateAndPostMarketOrderRequest) returns (JsonObject);
-  rpc GetOpenOrders(GetOpenOrdersRequest) returns (JsonObject);
-  rpc GetPreMigrationOrders(GetPreMigrationOrdersRequest) returns (JsonObject);
-  rpc PostOrder(PostOrderRequest) returns (JsonObject);
-  rpc PostOrders(PostOrdersRequest) returns (JsonObject);
-  rpc CancelOrder(CancelOrderRequest) returns (JsonObject);
-  rpc CancelOrders(CancelOrdersRequest) returns (JsonObject);
-  rpc CancelAll(EmptyRequest) returns (JsonObject);
-  rpc CancelMarketOrders(CancelMarketOrdersRequest) returns (JsonObject);
-  rpc IsOrderScoring(IsOrderScoringRequest) returns (JsonObject);
-  rpc AreOrdersScoring(AreOrdersScoringRequest) returns (JsonObject);
-  rpc GetEarningsForUserForDay(DateRequest) returns (JsonObjectList);
-  rpc GetTotalEarningsForUserForDay(DateRequest) returns (JsonObjectList);
-  rpc GetUserEarningsAndMarketsConfig(UserEarningsAndMarketsConfigRequest) returns (JsonObjectList);
-  rpc GetRewardPercentages(EmptyRequest) returns (JsonObject);
-  rpc GetCurrentRewards(EmptyRequest) returns (JsonObjectList);
-  rpc GetRawRewardsForMarket(RawRewardsForMarketRequest) returns (JsonObjectList);
-  rpc CalculateMarketPrice(CalculateMarketPriceRequest) returns (NumberResponse);
-  rpc CreateBuilderApiKey(EmptyRequest) returns (JsonObject);
-  rpc GetBuilderApiKeys(EmptyRequest) returns (JsonObjectList);
-  rpc RevokeBuilderApiKey(EmptyRequest) returns (JsonObject);
-  rpc GetMarketTradesEvents(ConditionIDRequest) returns (JsonObjectList);
+  rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
+  rpc GetServerTime(GetServerTimeRequest) returns (GetServerTimeResponse);
+  rpc GetSamplingSimplifiedMarkets(GetSamplingSimplifiedMarketsRequest) returns (GetSamplingSimplifiedMarketsResponse);
+  rpc GetSamplingMarkets(GetSamplingMarketsRequest) returns (GetSamplingMarketsResponse);
+  rpc GetSimplifiedMarkets(GetSimplifiedMarketsRequest) returns (GetSimplifiedMarketsResponse);
+  rpc GetMarkets(GetMarketsRequest) returns (GetMarketsResponse);
+  rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
+  rpc GetClobMarketInfo(GetClobMarketInfoRequest) returns (GetClobMarketInfoResponse);
+  rpc GetOrderBook(GetOrderBookRequest) returns (GetOrderBookResponse);
+  rpc GetOrderBooks(GetOrderBooksRequest) returns (GetOrderBooksResponse);
+  rpc GetTickSize(GetTickSizeRequest) returns (GetTickSizeResponse);
+  rpc GetNegRisk(GetNegRiskRequest) returns (GetNegRiskResponse);
+  rpc GetFeeRateBps(GetFeeRateBpsRequest) returns (GetFeeRateBpsResponse);
+  rpc GetFeeExponent(GetFeeExponentRequest) returns (GetFeeExponentResponse);
+  rpc GetOrderBookHash(GetOrderBookHashRequest) returns (GetOrderBookHashResponse);
+  rpc GetMidpoint(GetMidpointRequest) returns (GetMidpointResponse);
+  rpc GetMidpoints(GetMidpointsRequest) returns (GetMidpointsResponse);
+  rpc GetPrice(GetPriceRequest) returns (GetPriceResponse);
+  rpc GetPrices(GetPricesRequest) returns (GetPricesResponse);
+  rpc GetSpread(GetSpreadRequest) returns (GetSpreadResponse);
+  rpc GetSpreads(GetSpreadsRequest) returns (GetSpreadsResponse);
+  rpc GetLastTradePrice(GetLastTradePriceRequest) returns (GetLastTradePriceResponse);
+  rpc GetLastTradesPrices(GetLastTradesPricesRequest) returns (GetLastTradesPricesResponse);
+  rpc GetPricesHistory(GetPricesHistoryRequest) returns (GetPricesHistoryResponse);
+  rpc CreateApiKey(CreateApiKeyRequest) returns (CreateApiKeyResponse);
+  rpc DeriveApiKey(DeriveApiKeyRequest) returns (DeriveApiKeyResponse);
+  rpc CreateOrDeriveApiKey(CreateOrDeriveApiKeyRequest) returns (CreateOrDeriveApiKeyResponse);
+  rpc GetApiKeys(GetApiKeysRequest) returns (GetApiKeysResponse);
+  rpc GetClosedOnlyMode(GetClosedOnlyModeRequest) returns (GetClosedOnlyModeResponse);
+  rpc DeleteApiKey(DeleteApiKeyRequest) returns (DeleteApiKeyResponse);
+  rpc CreateReadonlyApiKey(CreateReadonlyApiKeyRequest) returns (CreateReadonlyApiKeyResponse);
+  rpc GetReadonlyApiKeys(GetReadonlyApiKeysRequest) returns (GetReadonlyApiKeysResponse);
+  rpc DeleteReadonlyApiKey(DeleteReadonlyApiKeyRequest) returns (DeleteReadonlyApiKeyResponse);
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  rpc GetTrades(GetTradesRequest) returns (GetTradesResponse);
+  rpc GetTradesPaginated(GetTradesPaginatedRequest) returns (GetTradesPaginatedResponse);
+  rpc GetBuilderTrades(GetBuilderTradesRequest) returns (GetBuilderTradesResponse);
+  rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse);
+  rpc DropNotifications(DropNotificationsRequest) returns (DropNotificationsResponse);
+  rpc GetBalanceAllowance(GetBalanceAllowanceRequest) returns (GetBalanceAllowanceResponse);
+  rpc UpdateBalanceAllowance(UpdateBalanceAllowanceRequest) returns (UpdateBalanceAllowanceResponse);
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc CreateMarketOrder(CreateMarketOrderRequest) returns (CreateMarketOrderResponse);
+  rpc CreateAndPostOrder(CreateAndPostOrderRequest) returns (CreateAndPostOrderResponse);
+  rpc CreateAndPostMarketOrder(CreateAndPostMarketOrderRequest) returns (CreateAndPostMarketOrderResponse);
+  rpc GetOpenOrders(GetOpenOrdersRequest) returns (GetOpenOrdersResponse);
+  rpc GetPreMigrationOrders(GetPreMigrationOrdersRequest) returns (GetPreMigrationOrdersResponse);
+  rpc PostOrder(PostOrderRequest) returns (PostOrderResponse);
+  rpc PostOrders(PostOrdersRequest) returns (PostOrdersResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+  rpc CancelOrders(CancelOrdersRequest) returns (CancelOrdersResponse);
+  rpc CancelAll(CancelAllRequest) returns (CancelAllResponse);
+  rpc CancelMarketOrders(CancelMarketOrdersRequest) returns (CancelMarketOrdersResponse);
+  rpc IsOrderScoring(IsOrderScoringRequest) returns (IsOrderScoringResponse);
+  rpc AreOrdersScoring(AreOrdersScoringRequest) returns (AreOrdersScoringResponse);
+  rpc GetEarningsForUserForDay(GetEarningsForUserForDayRequest) returns (GetEarningsForUserForDayResponse);
+  rpc GetTotalEarningsForUserForDay(GetTotalEarningsForUserForDayRequest) returns (GetTotalEarningsForUserForDayResponse);
+  rpc GetUserEarningsAndMarketsConfig(GetUserEarningsAndMarketsConfigRequest) returns (GetUserEarningsAndMarketsConfigResponse);
+  rpc GetRewardPercentages(GetRewardPercentagesRequest) returns (GetRewardPercentagesResponse);
+  rpc GetCurrentRewards(GetCurrentRewardsRequest) returns (GetCurrentRewardsResponse);
+  rpc GetRawRewardsForMarket(GetRawRewardsForMarketRequest) returns (GetRawRewardsForMarketResponse);
+  rpc CalculateMarketPrice(CalculateMarketPriceRequest) returns (CalculateMarketPriceResponse);
+  rpc CreateBuilderApiKey(CreateBuilderApiKeyRequest) returns (CreateBuilderApiKeyResponse);
+  rpc GetBuilderApiKeys(GetBuilderApiKeysRequest) returns (GetBuilderApiKeysResponse);
+  rpc RevokeBuilderApiKey(RevokeBuilderApiKeyRequest) returns (RevokeBuilderApiKeyResponse);
+  rpc GetMarketTradesEvents(GetMarketTradesEventsRequest) returns (GetMarketTradesEventsResponse);
 }
 
 message HealthRequest {}
@@ -114,8 +114,425 @@ message StringListResponse {
   repeated string items = 1;
 }
 
+message GetOkResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetVersionResponse {
+  double value = 1;
+}
+
+message GetServerTimeResponse {
+  double value = 1;
+}
+
+message GetSamplingSimplifiedMarketsResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetSamplingMarketsResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetSimplifiedMarketsResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetMarketsResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetMarketResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetClobMarketInfoResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetOrderBookResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetOrderBooksResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message GetTickSizeResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetNegRiskResponse {
+  bool value = 1;
+}
+
+message GetFeeRateBpsResponse {
+  double value = 1;
+}
+
+message GetFeeExponentResponse {
+  double value = 1;
+}
+
+message GetOrderBookHashResponse {
+  string value = 1;
+}
+
+message GetMidpointResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetMidpointsResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetPriceResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetPricesResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetSpreadResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetSpreadsResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetLastTradePriceResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetLastTradesPricesResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetPricesHistoryResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message CreateApiKeyResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message DeriveApiKeyResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message CreateOrDeriveApiKeyResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetApiKeysResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetClosedOnlyModeResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message DeleteApiKeyResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message CreateReadonlyApiKeyResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetReadonlyApiKeysResponse {
+  repeated string items = 1;
+}
+
+message DeleteReadonlyApiKeyResponse {
+  bool value = 1;
+}
+
+message GetOrderResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetTradesResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message GetTradesPaginatedResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetBuilderTradesResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetNotificationsResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message DropNotificationsResponse {}
+
+message GetBalanceAllowanceResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message UpdateBalanceAllowanceResponse {}
+
+message CreateOrderResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message CreateMarketOrderResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message CreateAndPostOrderResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message CreateAndPostMarketOrderResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetOpenOrdersResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetPreMigrationOrdersResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message PostOrderResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message PostOrdersResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message CancelOrderResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message CancelOrdersResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message CancelAllResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message CancelMarketOrdersResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message IsOrderScoringResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message AreOrdersScoringResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetEarningsForUserForDayResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message GetTotalEarningsForUserForDayResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message GetUserEarningsAndMarketsConfigResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message GetRewardPercentagesResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetCurrentRewardsResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message GetRawRewardsForMarketResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message CalculateMarketPriceResponse {
+  double value = 1;
+}
+
+message CreateBuilderApiKeyResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetBuilderApiKeysResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message RevokeBuilderApiKeyResponse {
+  google.protobuf.Struct data = 1;
+}
+
+message GetMarketTradesEventsResponse {
+  repeated google.protobuf.Struct items = 1;
+}
+
+message GetOkRequest {}
+
+message GetVersionRequest {}
+
+message GetServerTimeRequest {}
+
+message GetSamplingSimplifiedMarketsRequest {
+  optional string next_cursor = 1;
+}
+
+message GetSamplingMarketsRequest {
+  optional string next_cursor = 1;
+}
+
+message GetSimplifiedMarketsRequest {
+  optional string next_cursor = 1;
+}
+
+message GetMarketsRequest {
+  optional string next_cursor = 1;
+}
+
+message GetMarketRequest {
+  string condition_id = 1;
+}
+
+message GetClobMarketInfoRequest {
+  string condition_id = 1;
+}
+
+message GetOrderBookRequest {
+  string token_id = 1;
+}
+
+message GetOrderBooksRequest {
+  repeated google.protobuf.Struct params = 1;
+}
+
+message GetTickSizeRequest {
+  string token_id = 1;
+}
+
+message GetNegRiskRequest {
+  string token_id = 1;
+}
+
+message GetFeeRateBpsRequest {
+  string token_id = 1;
+}
+
+message GetFeeExponentRequest {
+  string token_id = 1;
+}
+
+message GetMidpointRequest {
+  string token_id = 1;
+}
+
+message GetMidpointsRequest {
+  repeated google.protobuf.Struct params = 1;
+}
+
+message GetPricesRequest {
+  repeated google.protobuf.Struct params = 1;
+}
+
+message GetSpreadRequest {
+  string token_id = 1;
+}
+
+message GetSpreadsRequest {
+  repeated google.protobuf.Struct params = 1;
+}
+
+message GetLastTradePriceRequest {
+  string token_id = 1;
+}
+
+message GetLastTradesPricesRequest {
+  repeated google.protobuf.Struct params = 1;
+}
+
+message CreateApiKeyRequest {
+  optional int64 nonce = 1;
+}
+
+message DeriveApiKeyRequest {
+  optional int64 nonce = 1;
+}
+
+message CreateOrDeriveApiKeyRequest {
+  optional int64 nonce = 1;
+}
+
+message GetApiKeysRequest {}
+
+message GetClosedOnlyModeRequest {}
+
+message DeleteApiKeyRequest {}
+
+message CreateReadonlyApiKeyRequest {}
+
+message GetReadonlyApiKeysRequest {}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message GetNotificationsRequest {}
+
+message GetBalanceAllowanceRequest {
+  optional google.protobuf.Struct params = 1;
+}
+
+message UpdateBalanceAllowanceRequest {
+  optional google.protobuf.Struct params = 1;
+}
+
+message CancelAllRequest {}
+
+message GetEarningsForUserForDayRequest {
+  string date = 1;
+}
+
+message GetTotalEarningsForUserForDayRequest {
+  string date = 1;
+}
+
+message GetUserEarningsAndMarketsConfigRequest {
+  string date = 1;
+  optional string order_by = 2;
+  optional string position = 3;
+  optional bool no_competition = 4;
+}
+
+message GetRewardPercentagesRequest {}
+
+message GetCurrentRewardsRequest {}
+
+message GetRawRewardsForMarketRequest {
+  string condition_id = 1;
+}
+
+message CreateBuilderApiKeyRequest {}
+
+message GetBuilderApiKeysRequest {}
+
+message RevokeBuilderApiKeyRequest {}
+
+message GetMarketTradesEventsRequest {
+  string condition_id = 1;
+}
+
 message PostHeartbeatRequest {
-  optional string heartbeatId = 1;
+  optional string heartbeat_id = 1;
 }
 
 message PostHeartbeatResponse {
@@ -128,11 +545,11 @@ message NextCursorRequest {
 }
 
 message ConditionIDRequest {
-  string conditionID = 1;
+  string condition_id = 1;
 }
 
 message TokenIDRequest {
-  string tokenID = 1;
+  string token_id = 1;
 }
 
 message BookParamsListRequest {
@@ -144,7 +561,7 @@ message GetOrderBookHashRequest {
 }
 
 message GetPriceRequest {
-  string tokenID = 1;
+  string token_id = 1;
   string side = 2;
 }
 
@@ -161,7 +578,7 @@ message DeleteReadonlyApiKeyRequest {
 }
 
 message OrderIDRequest {
-  string orderID = 1;
+  string order_id = 1;
 }
 
 message GetTradesRequest {
@@ -189,28 +606,28 @@ message BalanceAllowanceParamsRequest {
 }
 
 message CreateOrderRequest {
-  google.protobuf.Struct userOrder = 1;
+  google.protobuf.Struct user_order = 1;
   optional google.protobuf.Struct options = 2;
 }
 
 message CreateMarketOrderRequest {
-  google.protobuf.Struct userMarketOrder = 1;
+  google.protobuf.Struct user_market_order = 1;
   optional google.protobuf.Struct options = 2;
 }
 
 message CreateAndPostOrderRequest {
-  google.protobuf.Struct userOrder = 1;
+  google.protobuf.Struct user_order = 1;
   optional google.protobuf.Struct options = 2;
-  optional string orderType = 3;
-  optional bool postOnly = 4;
-  optional bool deferExec = 5;
+  optional string order_type = 3;
+  optional bool post_only = 4;
+  optional bool defer_exec = 5;
 }
 
 message CreateAndPostMarketOrderRequest {
-  google.protobuf.Struct userMarketOrder = 1;
+  google.protobuf.Struct user_market_order = 1;
   optional google.protobuf.Struct options = 2;
-  optional string orderType = 3;
-  optional bool deferExec = 4;
+  optional string order_type = 3;
+  optional bool defer_exec = 4;
 }
 
 message GetOpenOrdersRequest {
@@ -226,15 +643,15 @@ message GetPreMigrationOrdersRequest {
 
 message PostOrderRequest {
   google.protobuf.Struct order = 1;
-  optional string orderType = 2;
-  optional bool postOnly = 3;
-  optional bool deferExec = 4;
+  optional string order_type = 2;
+  optional bool post_only = 3;
+  optional bool defer_exec = 4;
 }
 
 message PostOrdersRequest {
   repeated google.protobuf.Struct args = 1;
-  optional bool postOnly = 2;
-  optional bool deferExec = 3;
+  optional bool post_only = 2;
+  optional bool defer_exec = 3;
 }
 
 message CancelOrderRequest {
@@ -242,7 +659,7 @@ message CancelOrderRequest {
 }
 
 message CancelOrdersRequest {
-  repeated string ordersHashes = 1;
+  repeated string orders_hashes = 1;
 }
 
 message CancelMarketOrdersRequest {
@@ -269,12 +686,12 @@ message UserEarningsAndMarketsConfigRequest {
 }
 
 message RawRewardsForMarketRequest {
-  string conditionId = 1;
+  string condition_id = 1;
 }
 
 message CalculateMarketPriceRequest {
-  string tokenID = 1;
+  string token_id = 1;
   string side = 2;
   double amount = 3;
-  optional string orderType = 4;
+  optional string order_type = 4;
 }
