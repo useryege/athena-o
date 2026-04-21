@@ -1,6 +1,8 @@
 /**
  * Shared E2E helpers (gRPC address, unary error handling).
  */
+import assert from 'node:assert/strict';
+
 import { status } from '@grpc/grpc-js';
 import type { ServiceError } from '@grpc/grpc-js';
 
@@ -18,4 +20,19 @@ export function handleE2EUnaryError(error: unknown, address: string): never {
   }
 
   throw error;
+}
+
+type Encoder<T> = { encode(message: T): { finish(): Uint8Array } };
+
+export function assertEncodedEqual<T>(
+  messageType: Encoder<T>,
+  actual: T,
+  expected: T,
+  failureMessage?: string,
+): void {
+  assert.deepStrictEqual(
+    messageType.encode(actual).finish(),
+    messageType.encode(expected).finish(),
+    failureMessage,
+  );
 }

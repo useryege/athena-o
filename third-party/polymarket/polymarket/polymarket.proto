@@ -234,7 +234,7 @@ message PaginationPayloadData {
   double limit = 1;
   double count = 2;
   string next_cursor = 3;
-  repeated google.protobuf.Value data = 4;
+  repeated google.protobuf.Struct data = 4;
 }
 
 message TradeParams {
@@ -282,7 +282,7 @@ message DropNotificationParams {
 message Notification {
   double type = 1;
   string owner = 2;
-  google.protobuf.Value payload = 3;
+  google.protobuf.Struct payload = 3;
 }
 
 message BalanceAllowanceParams {
@@ -565,7 +565,7 @@ message BuilderTradesData {
 }
 
 message GetOkResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetVersionResponse {
@@ -593,7 +593,7 @@ message GetMarketsResponse {
 }
 
 message GetMarketResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetClobMarketInfoResponse {
@@ -629,35 +629,35 @@ message GetOrderBookHashResponse {
 }
 
 message GetMidpointResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetMidpointsResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetPriceResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetPricesResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetSpreadResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetSpreadsResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetLastTradePriceResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetLastTradesPricesResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetPricesHistoryResponse {
@@ -685,7 +685,7 @@ message GetClosedOnlyModeResponse {
 }
 
 message DeleteApiKeyResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message CreateReadonlyApiKeyResponse {
@@ -775,7 +775,7 @@ message CancelOrdersResponse {
 }
 
 message CancelAllResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message CancelMarketOrdersResponse {
@@ -828,7 +828,7 @@ message GetBuilderApiKeysResponse {
 }
 
 message RevokeBuilderApiKeyResponse {
-  google.protobuf.Value data = 1;
+  google.protobuf.Struct data = 1;
 }
 
 message GetMarketTradesEventsResponse {
