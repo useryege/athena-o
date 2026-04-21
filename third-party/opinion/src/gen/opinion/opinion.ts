@@ -247,17 +247,21 @@ export function priceHistoryIntervalToJSON(object: PriceHistoryInterval): string
 
 /** SDK `OrderSide` (`src/models/enums.ts`). */
 export enum SdkOrderSide {
-  SDK_ORDER_SIDE_BUY = 0,
-  SDK_ORDER_SIDE_SELL = 1,
+  SDK_ORDER_SIDE_UNSPECIFIED = 0,
+  SDK_ORDER_SIDE_BUY = 1,
+  SDK_ORDER_SIDE_SELL = 2,
   UNRECOGNIZED = -1,
 }
 
 export function sdkOrderSideFromJSON(object: any): SdkOrderSide {
   switch (object) {
     case 0:
+    case "SDK_ORDER_SIDE_UNSPECIFIED":
+      return SdkOrderSide.SDK_ORDER_SIDE_UNSPECIFIED;
+    case 1:
     case "SDK_ORDER_SIDE_BUY":
       return SdkOrderSide.SDK_ORDER_SIDE_BUY;
-    case 1:
+    case 2:
     case "SDK_ORDER_SIDE_SELL":
       return SdkOrderSide.SDK_ORDER_SIDE_SELL;
     case -1:
@@ -269,6 +273,8 @@ export function sdkOrderSideFromJSON(object: any): SdkOrderSide {
 
 export function sdkOrderSideToJSON(object: SdkOrderSide): string {
   switch (object) {
+    case SdkOrderSide.SDK_ORDER_SIDE_UNSPECIFIED:
+      return "SDK_ORDER_SIDE_UNSPECIFIED";
     case SdkOrderSide.SDK_ORDER_SIDE_BUY:
       return "SDK_ORDER_SIDE_BUY";
     case SdkOrderSide.SDK_ORDER_SIDE_SELL:
@@ -465,6 +471,18 @@ export interface GetMarketResponse {
   data?: Market | undefined;
 }
 
+export interface GetCategoricalMarketResponse {
+  errno: number;
+  errmsg: string;
+  data?: Market | undefined;
+}
+
+export interface GetMarketBySlugResponse {
+  errno: number;
+  errmsg: string;
+  data?: Market | undefined;
+}
+
 export interface GetQuoteTokensResponse {
   errno: number;
   errmsg: string;
@@ -525,7 +543,7 @@ export interface PlaceOrderBatchItem {
 }
 
 /** Full SDK `ApiResponse<OpenapiCancelOrderRespOpenApi>` (`errno` / `errmsg` / `result` boolean). */
-export interface CancelOrderApiResponse {
+export interface CancelOrderResponse {
   errno: number;
   errmsg: string;
   result?: boolean | undefined;
@@ -538,7 +556,7 @@ export interface CancelOrdersBatchResponse {
 export interface CancelOrderBatchItem {
   index: number;
   success: boolean;
-  result?: CancelOrderApiResponse | undefined;
+  result?: CancelOrderResponse | undefined;
   error?: string | undefined;
 }
 
@@ -668,8 +686,29 @@ export interface GetUserAuthResponse_WalletUsersEntry {
   value: string;
 }
 
-/** SDK `TransactionResult` (`src/chain/contract_caller.ts`); returned by `enableTrading`, `split`, `merge`, `redeem`. */
-export interface TransactionResult {
+/** SDK `TransactionResult` shape (`src/chain/contract_caller.ts`) for `enableTrading`. */
+export interface EnableTradingResponse {
+  txHash?: string | undefined;
+  safeTxHash?: string | undefined;
+  returnValue?: string | undefined;
+}
+
+/** SDK `TransactionResult` shape (`src/chain/contract_caller.ts`) for `split`. */
+export interface SplitResponse {
+  txHash?: string | undefined;
+  safeTxHash?: string | undefined;
+  returnValue?: string | undefined;
+}
+
+/** SDK `TransactionResult` shape (`src/chain/contract_caller.ts`) for `merge`. */
+export interface MergeResponse {
+  txHash?: string | undefined;
+  safeTxHash?: string | undefined;
+  returnValue?: string | undefined;
+}
+
+/** SDK `TransactionResult` shape (`src/chain/contract_caller.ts`) for `redeem`. */
+export interface RedeemResponse {
   txHash?: string | undefined;
   safeTxHash?: string | undefined;
   returnValue?: string | undefined;
@@ -2914,6 +2953,190 @@ export const GetMarketResponse: MessageFns<GetMarketResponse> = {
   },
 };
 
+function createBaseGetCategoricalMarketResponse(): GetCategoricalMarketResponse {
+  return { errno: 0, errmsg: "", data: undefined };
+}
+
+export const GetCategoricalMarketResponse: MessageFns<GetCategoricalMarketResponse> = {
+  encode(message: GetCategoricalMarketResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.data !== undefined) {
+      Market.encode(message.data, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetCategoricalMarketResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetCategoricalMarketResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.data = Market.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetCategoricalMarketResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      data: isSet(object.data) ? Market.fromJSON(object.data) : undefined,
+    };
+  },
+
+  toJSON(message: GetCategoricalMarketResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.data !== undefined) {
+      obj.data = Market.toJSON(message.data);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetCategoricalMarketResponse>, I>>(base?: I): GetCategoricalMarketResponse {
+    return GetCategoricalMarketResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetCategoricalMarketResponse>, I>>(object: I): GetCategoricalMarketResponse {
+    const message = createBaseGetCategoricalMarketResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.data = (object.data !== undefined && object.data !== null) ? Market.fromPartial(object.data) : undefined;
+    return message;
+  },
+};
+
+function createBaseGetMarketBySlugResponse(): GetMarketBySlugResponse {
+  return { errno: 0, errmsg: "", data: undefined };
+}
+
+export const GetMarketBySlugResponse: MessageFns<GetMarketBySlugResponse> = {
+  encode(message: GetMarketBySlugResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.errno !== 0) {
+      writer.uint32(8).int32(message.errno);
+    }
+    if (message.errmsg !== "") {
+      writer.uint32(18).string(message.errmsg);
+    }
+    if (message.data !== undefined) {
+      Market.encode(message.data, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetMarketBySlugResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetMarketBySlugResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errno = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errmsg = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.data = Market.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetMarketBySlugResponse {
+    return {
+      errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
+      errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
+      data: isSet(object.data) ? Market.fromJSON(object.data) : undefined,
+    };
+  },
+
+  toJSON(message: GetMarketBySlugResponse): unknown {
+    const obj: any = {};
+    if (message.errno !== 0) {
+      obj.errno = Math.round(message.errno);
+    }
+    if (message.errmsg !== "") {
+      obj.errmsg = message.errmsg;
+    }
+    if (message.data !== undefined) {
+      obj.data = Market.toJSON(message.data);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetMarketBySlugResponse>, I>>(base?: I): GetMarketBySlugResponse {
+    return GetMarketBySlugResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetMarketBySlugResponse>, I>>(object: I): GetMarketBySlugResponse {
+    const message = createBaseGetMarketBySlugResponse();
+    message.errno = object.errno ?? 0;
+    message.errmsg = object.errmsg ?? "";
+    message.data = (object.data !== undefined && object.data !== null) ? Market.fromPartial(object.data) : undefined;
+    return message;
+  },
+};
+
 function createBaseGetQuoteTokensResponse(): GetQuoteTokensResponse {
   return { errno: 0, errmsg: "", total: 0, list: [] };
 }
@@ -3792,12 +4015,12 @@ export const PlaceOrderBatchItem: MessageFns<PlaceOrderBatchItem> = {
   },
 };
 
-function createBaseCancelOrderApiResponse(): CancelOrderApiResponse {
+function createBaseCancelOrderResponse(): CancelOrderResponse {
   return { errno: 0, errmsg: "", result: undefined };
 }
 
-export const CancelOrderApiResponse: MessageFns<CancelOrderApiResponse> = {
-  encode(message: CancelOrderApiResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const CancelOrderResponse: MessageFns<CancelOrderResponse> = {
+  encode(message: CancelOrderResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.errno !== 0) {
       writer.uint32(8).int32(message.errno);
     }
@@ -3810,10 +4033,10 @@ export const CancelOrderApiResponse: MessageFns<CancelOrderApiResponse> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): CancelOrderApiResponse {
+  decode(input: BinaryReader | Uint8Array, length?: number): CancelOrderResponse {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseCancelOrderApiResponse();
+    const message = createBaseCancelOrderResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -3850,7 +4073,7 @@ export const CancelOrderApiResponse: MessageFns<CancelOrderApiResponse> = {
     return message;
   },
 
-  fromJSON(object: any): CancelOrderApiResponse {
+  fromJSON(object: any): CancelOrderResponse {
     return {
       errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
       errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
@@ -3858,7 +4081,7 @@ export const CancelOrderApiResponse: MessageFns<CancelOrderApiResponse> = {
     };
   },
 
-  toJSON(message: CancelOrderApiResponse): unknown {
+  toJSON(message: CancelOrderResponse): unknown {
     const obj: any = {};
     if (message.errno !== 0) {
       obj.errno = Math.round(message.errno);
@@ -3872,11 +4095,11 @@ export const CancelOrderApiResponse: MessageFns<CancelOrderApiResponse> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CancelOrderApiResponse>, I>>(base?: I): CancelOrderApiResponse {
-    return CancelOrderApiResponse.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<CancelOrderResponse>, I>>(base?: I): CancelOrderResponse {
+    return CancelOrderResponse.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<CancelOrderApiResponse>, I>>(object: I): CancelOrderApiResponse {
-    const message = createBaseCancelOrderApiResponse();
+  fromPartial<I extends Exact<DeepPartial<CancelOrderResponse>, I>>(object: I): CancelOrderResponse {
+    const message = createBaseCancelOrderResponse();
     message.errno = object.errno ?? 0;
     message.errmsg = object.errmsg ?? "";
     message.result = object.result ?? undefined;
@@ -3959,7 +4182,7 @@ export const CancelOrderBatchItem: MessageFns<CancelOrderBatchItem> = {
       writer.uint32(16).bool(message.success);
     }
     if (message.result !== undefined) {
-      CancelOrderApiResponse.encode(message.result, writer.uint32(26).fork()).join();
+      CancelOrderResponse.encode(message.result, writer.uint32(26).fork()).join();
     }
     if (message.error !== undefined) {
       writer.uint32(34).string(message.error);
@@ -3995,7 +4218,7 @@ export const CancelOrderBatchItem: MessageFns<CancelOrderBatchItem> = {
             break;
           }
 
-          message.result = CancelOrderApiResponse.decode(reader, reader.uint32());
+          message.result = CancelOrderResponse.decode(reader, reader.uint32());
           continue;
         }
         case 4: {
@@ -4019,7 +4242,7 @@ export const CancelOrderBatchItem: MessageFns<CancelOrderBatchItem> = {
     return {
       index: isSet(object.index) ? globalThis.Number(object.index) : 0,
       success: isSet(object.success) ? globalThis.Boolean(object.success) : false,
-      result: isSet(object.result) ? CancelOrderApiResponse.fromJSON(object.result) : undefined,
+      result: isSet(object.result) ? CancelOrderResponse.fromJSON(object.result) : undefined,
       error: isSet(object.error) ? globalThis.String(object.error) : undefined,
     };
   },
@@ -4033,7 +4256,7 @@ export const CancelOrderBatchItem: MessageFns<CancelOrderBatchItem> = {
       obj.success = message.success;
     }
     if (message.result !== undefined) {
-      obj.result = CancelOrderApiResponse.toJSON(message.result);
+      obj.result = CancelOrderResponse.toJSON(message.result);
     }
     if (message.error !== undefined) {
       obj.error = message.error;
@@ -4049,7 +4272,7 @@ export const CancelOrderBatchItem: MessageFns<CancelOrderBatchItem> = {
     message.index = object.index ?? 0;
     message.success = object.success ?? false;
     message.result = (object.result !== undefined && object.result !== null)
-      ? CancelOrderApiResponse.fromPartial(object.result)
+      ? CancelOrderResponse.fromPartial(object.result)
       : undefined;
     message.error = object.error ?? undefined;
     return message;
@@ -5970,12 +6193,12 @@ export const GetUserAuthResponse_WalletUsersEntry: MessageFns<GetUserAuthRespons
   },
 };
 
-function createBaseTransactionResult(): TransactionResult {
+function createBaseEnableTradingResponse(): EnableTradingResponse {
   return { txHash: undefined, safeTxHash: undefined, returnValue: undefined };
 }
 
-export const TransactionResult: MessageFns<TransactionResult> = {
-  encode(message: TransactionResult, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const EnableTradingResponse: MessageFns<EnableTradingResponse> = {
+  encode(message: EnableTradingResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.txHash !== undefined) {
       writer.uint32(10).string(message.txHash);
     }
@@ -5988,10 +6211,10 @@ export const TransactionResult: MessageFns<TransactionResult> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): TransactionResult {
+  decode(input: BinaryReader | Uint8Array, length?: number): EnableTradingResponse {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTransactionResult();
+    const message = createBaseEnableTradingResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -6028,7 +6251,7 @@ export const TransactionResult: MessageFns<TransactionResult> = {
     return message;
   },
 
-  fromJSON(object: any): TransactionResult {
+  fromJSON(object: any): EnableTradingResponse {
     return {
       txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
       safeTxHash: isSet(object.safeTxHash) ? globalThis.String(object.safeTxHash) : undefined,
@@ -6036,7 +6259,7 @@ export const TransactionResult: MessageFns<TransactionResult> = {
     };
   },
 
-  toJSON(message: TransactionResult): unknown {
+  toJSON(message: EnableTradingResponse): unknown {
     const obj: any = {};
     if (message.txHash !== undefined) {
       obj.txHash = message.txHash;
@@ -6050,11 +6273,287 @@ export const TransactionResult: MessageFns<TransactionResult> = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TransactionResult>, I>>(base?: I): TransactionResult {
-    return TransactionResult.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<EnableTradingResponse>, I>>(base?: I): EnableTradingResponse {
+    return EnableTradingResponse.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<TransactionResult>, I>>(object: I): TransactionResult {
-    const message = createBaseTransactionResult();
+  fromPartial<I extends Exact<DeepPartial<EnableTradingResponse>, I>>(object: I): EnableTradingResponse {
+    const message = createBaseEnableTradingResponse();
+    message.txHash = object.txHash ?? undefined;
+    message.safeTxHash = object.safeTxHash ?? undefined;
+    message.returnValue = object.returnValue ?? undefined;
+    return message;
+  },
+};
+
+function createBaseSplitResponse(): SplitResponse {
+  return { txHash: undefined, safeTxHash: undefined, returnValue: undefined };
+}
+
+export const SplitResponse: MessageFns<SplitResponse> = {
+  encode(message: SplitResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.txHash !== undefined) {
+      writer.uint32(10).string(message.txHash);
+    }
+    if (message.safeTxHash !== undefined) {
+      writer.uint32(18).string(message.safeTxHash);
+    }
+    if (message.returnValue !== undefined) {
+      writer.uint32(26).string(message.returnValue);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SplitResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSplitResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.txHash = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.safeTxHash = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.returnValue = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SplitResponse {
+    return {
+      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
+      safeTxHash: isSet(object.safeTxHash) ? globalThis.String(object.safeTxHash) : undefined,
+      returnValue: isSet(object.returnValue) ? globalThis.String(object.returnValue) : undefined,
+    };
+  },
+
+  toJSON(message: SplitResponse): unknown {
+    const obj: any = {};
+    if (message.txHash !== undefined) {
+      obj.txHash = message.txHash;
+    }
+    if (message.safeTxHash !== undefined) {
+      obj.safeTxHash = message.safeTxHash;
+    }
+    if (message.returnValue !== undefined) {
+      obj.returnValue = message.returnValue;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SplitResponse>, I>>(base?: I): SplitResponse {
+    return SplitResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SplitResponse>, I>>(object: I): SplitResponse {
+    const message = createBaseSplitResponse();
+    message.txHash = object.txHash ?? undefined;
+    message.safeTxHash = object.safeTxHash ?? undefined;
+    message.returnValue = object.returnValue ?? undefined;
+    return message;
+  },
+};
+
+function createBaseMergeResponse(): MergeResponse {
+  return { txHash: undefined, safeTxHash: undefined, returnValue: undefined };
+}
+
+export const MergeResponse: MessageFns<MergeResponse> = {
+  encode(message: MergeResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.txHash !== undefined) {
+      writer.uint32(10).string(message.txHash);
+    }
+    if (message.safeTxHash !== undefined) {
+      writer.uint32(18).string(message.safeTxHash);
+    }
+    if (message.returnValue !== undefined) {
+      writer.uint32(26).string(message.returnValue);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MergeResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMergeResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.txHash = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.safeTxHash = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.returnValue = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MergeResponse {
+    return {
+      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
+      safeTxHash: isSet(object.safeTxHash) ? globalThis.String(object.safeTxHash) : undefined,
+      returnValue: isSet(object.returnValue) ? globalThis.String(object.returnValue) : undefined,
+    };
+  },
+
+  toJSON(message: MergeResponse): unknown {
+    const obj: any = {};
+    if (message.txHash !== undefined) {
+      obj.txHash = message.txHash;
+    }
+    if (message.safeTxHash !== undefined) {
+      obj.safeTxHash = message.safeTxHash;
+    }
+    if (message.returnValue !== undefined) {
+      obj.returnValue = message.returnValue;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MergeResponse>, I>>(base?: I): MergeResponse {
+    return MergeResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MergeResponse>, I>>(object: I): MergeResponse {
+    const message = createBaseMergeResponse();
+    message.txHash = object.txHash ?? undefined;
+    message.safeTxHash = object.safeTxHash ?? undefined;
+    message.returnValue = object.returnValue ?? undefined;
+    return message;
+  },
+};
+
+function createBaseRedeemResponse(): RedeemResponse {
+  return { txHash: undefined, safeTxHash: undefined, returnValue: undefined };
+}
+
+export const RedeemResponse: MessageFns<RedeemResponse> = {
+  encode(message: RedeemResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.txHash !== undefined) {
+      writer.uint32(10).string(message.txHash);
+    }
+    if (message.safeTxHash !== undefined) {
+      writer.uint32(18).string(message.safeTxHash);
+    }
+    if (message.returnValue !== undefined) {
+      writer.uint32(26).string(message.returnValue);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RedeemResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRedeemResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.txHash = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.safeTxHash = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.returnValue = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RedeemResponse {
+    return {
+      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
+      safeTxHash: isSet(object.safeTxHash) ? globalThis.String(object.safeTxHash) : undefined,
+      returnValue: isSet(object.returnValue) ? globalThis.String(object.returnValue) : undefined,
+    };
+  },
+
+  toJSON(message: RedeemResponse): unknown {
+    const obj: any = {};
+    if (message.txHash !== undefined) {
+      obj.txHash = message.txHash;
+    }
+    if (message.safeTxHash !== undefined) {
+      obj.safeTxHash = message.safeTxHash;
+    }
+    if (message.returnValue !== undefined) {
+      obj.returnValue = message.returnValue;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RedeemResponse>, I>>(base?: I): RedeemResponse {
+    return RedeemResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RedeemResponse>, I>>(object: I): RedeemResponse {
+    const message = createBaseRedeemResponse();
     message.txHash = object.txHash ?? undefined;
     message.safeTxHash = object.safeTxHash ?? undefined;
     message.returnValue = object.returnValue ?? undefined;
@@ -8136,8 +8635,9 @@ export const OpinionServiceService = {
     requestSerialize: (value: GetCategoricalMarketRequest): Buffer =>
       Buffer.from(GetCategoricalMarketRequest.encode(value).finish()),
     requestDeserialize: (value: Buffer): GetCategoricalMarketRequest => GetCategoricalMarketRequest.decode(value),
-    responseSerialize: (value: GetMarketResponse): Buffer => Buffer.from(GetMarketResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): GetMarketResponse => GetMarketResponse.decode(value),
+    responseSerialize: (value: GetCategoricalMarketResponse): Buffer =>
+      Buffer.from(GetCategoricalMarketResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetCategoricalMarketResponse => GetCategoricalMarketResponse.decode(value),
   },
   getMarketBySlug: {
     path: "/opinion.OpinionService/GetMarketBySlug" as const,
@@ -8146,8 +8646,9 @@ export const OpinionServiceService = {
     requestSerialize: (value: GetMarketBySlugRequest): Buffer =>
       Buffer.from(GetMarketBySlugRequest.encode(value).finish()),
     requestDeserialize: (value: Buffer): GetMarketBySlugRequest => GetMarketBySlugRequest.decode(value),
-    responseSerialize: (value: GetMarketResponse): Buffer => Buffer.from(GetMarketResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): GetMarketResponse => GetMarketResponse.decode(value),
+    responseSerialize: (value: GetMarketBySlugResponse): Buffer =>
+      Buffer.from(GetMarketBySlugResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetMarketBySlugResponse => GetMarketBySlugResponse.decode(value),
   },
   getQuoteTokens: {
     path: "/opinion.OpinionService/GetQuoteTokens" as const,
@@ -8227,9 +8728,8 @@ export const OpinionServiceService = {
     responseStream: false as const,
     requestSerialize: (value: CancelOrderRequest): Buffer => Buffer.from(CancelOrderRequest.encode(value).finish()),
     requestDeserialize: (value: Buffer): CancelOrderRequest => CancelOrderRequest.decode(value),
-    responseSerialize: (value: CancelOrderApiResponse): Buffer =>
-      Buffer.from(CancelOrderApiResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): CancelOrderApiResponse => CancelOrderApiResponse.decode(value),
+    responseSerialize: (value: CancelOrderResponse): Buffer => Buffer.from(CancelOrderResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CancelOrderResponse => CancelOrderResponse.decode(value),
   },
   cancelOrdersBatch: {
     path: "/opinion.OpinionService/CancelOrdersBatch" as const,
@@ -8312,15 +8812,16 @@ export const OpinionServiceService = {
     responseSerialize: (value: GetUserAuthResponse): Buffer => Buffer.from(GetUserAuthResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): GetUserAuthResponse => GetUserAuthResponse.decode(value),
   },
-  /** On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — return type is SDK `TransactionResult`. */
+  /** On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — SDK return shape is `TransactionResult`. */
   enableTrading: {
     path: "/opinion.OpinionService/EnableTrading" as const,
     requestStream: false as const,
     responseStream: false as const,
     requestSerialize: (value: EnableTradingRequest): Buffer => Buffer.from(EnableTradingRequest.encode(value).finish()),
     requestDeserialize: (value: Buffer): EnableTradingRequest => EnableTradingRequest.decode(value),
-    responseSerialize: (value: TransactionResult): Buffer => Buffer.from(TransactionResult.encode(value).finish()),
-    responseDeserialize: (value: Buffer): TransactionResult => TransactionResult.decode(value),
+    responseSerialize: (value: EnableTradingResponse): Buffer =>
+      Buffer.from(EnableTradingResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): EnableTradingResponse => EnableTradingResponse.decode(value),
   },
   split: {
     path: "/opinion.OpinionService/Split" as const,
@@ -8328,8 +8829,8 @@ export const OpinionServiceService = {
     responseStream: false as const,
     requestSerialize: (value: SplitRequest): Buffer => Buffer.from(SplitRequest.encode(value).finish()),
     requestDeserialize: (value: Buffer): SplitRequest => SplitRequest.decode(value),
-    responseSerialize: (value: TransactionResult): Buffer => Buffer.from(TransactionResult.encode(value).finish()),
-    responseDeserialize: (value: Buffer): TransactionResult => TransactionResult.decode(value),
+    responseSerialize: (value: SplitResponse): Buffer => Buffer.from(SplitResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): SplitResponse => SplitResponse.decode(value),
   },
   merge: {
     path: "/opinion.OpinionService/Merge" as const,
@@ -8337,8 +8838,8 @@ export const OpinionServiceService = {
     responseStream: false as const,
     requestSerialize: (value: MergeRequest): Buffer => Buffer.from(MergeRequest.encode(value).finish()),
     requestDeserialize: (value: Buffer): MergeRequest => MergeRequest.decode(value),
-    responseSerialize: (value: TransactionResult): Buffer => Buffer.from(TransactionResult.encode(value).finish()),
-    responseDeserialize: (value: Buffer): TransactionResult => TransactionResult.decode(value),
+    responseSerialize: (value: MergeResponse): Buffer => Buffer.from(MergeResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): MergeResponse => MergeResponse.decode(value),
   },
   redeem: {
     path: "/opinion.OpinionService/Redeem" as const,
@@ -8346,16 +8847,16 @@ export const OpinionServiceService = {
     responseStream: false as const,
     requestSerialize: (value: RedeemRequest): Buffer => Buffer.from(RedeemRequest.encode(value).finish()),
     requestDeserialize: (value: Buffer): RedeemRequest => RedeemRequest.decode(value),
-    responseSerialize: (value: TransactionResult): Buffer => Buffer.from(TransactionResult.encode(value).finish()),
-    responseDeserialize: (value: Buffer): TransactionResult => TransactionResult.decode(value),
+    responseSerialize: (value: RedeemResponse): Buffer => Buffer.from(RedeemResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): RedeemResponse => RedeemResponse.decode(value),
   },
 } as const;
 
 export interface OpinionServiceServer extends UntypedServiceImplementation {
   getMarkets: handleUnaryCall<GetMarketsRequest, GetMarketsResponse>;
   getMarket: handleUnaryCall<GetMarketRequest, GetMarketResponse>;
-  getCategoricalMarket: handleUnaryCall<GetCategoricalMarketRequest, GetMarketResponse>;
-  getMarketBySlug: handleUnaryCall<GetMarketBySlugRequest, GetMarketResponse>;
+  getCategoricalMarket: handleUnaryCall<GetCategoricalMarketRequest, GetCategoricalMarketResponse>;
+  getMarketBySlug: handleUnaryCall<GetMarketBySlugRequest, GetMarketBySlugResponse>;
   getQuoteTokens: handleUnaryCall<GetQuoteTokensRequest, GetQuoteTokensResponse>;
   getOrderbook: handleUnaryCall<GetOrderbookRequest, GetOrderbookResponse>;
   getLatestPrice: handleUnaryCall<GetLatestPriceRequest, GetLatestPriceResponse>;
@@ -8363,7 +8864,7 @@ export interface OpinionServiceServer extends UntypedServiceImplementation {
   getFeeRates: handleUnaryCall<GetFeeRatesRequest, GetFeeRatesResponse>;
   placeOrder: handleUnaryCall<PlaceOrderRequest, PlaceOrderResponse>;
   placeOrdersBatch: handleUnaryCall<PlaceOrdersBatchRequest, PlaceOrdersBatchResponse>;
-  cancelOrder: handleUnaryCall<CancelOrderRequest, CancelOrderApiResponse>;
+  cancelOrder: handleUnaryCall<CancelOrderRequest, CancelOrderResponse>;
   cancelOrdersBatch: handleUnaryCall<CancelOrdersBatchRequest, CancelOrdersBatchResponse>;
   cancelAllOrders: handleUnaryCall<CancelAllOrdersRequest, CancelAllOrdersResponse>;
   /** User & wallet (`Client.getMy*` / `getUserAuth`). */
@@ -8373,11 +8874,11 @@ export interface OpinionServiceServer extends UntypedServiceImplementation {
   getMyPositions: handleUnaryCall<GetMyPositionsRequest, GetMyPositionsResponse>;
   getMyTrades: handleUnaryCall<GetMyTradesRequest, GetMyTradesResponse>;
   getUserAuth: handleUnaryCall<GetUserAuthRequest, GetUserAuthResponse>;
-  /** On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — return type is SDK `TransactionResult`. */
-  enableTrading: handleUnaryCall<EnableTradingRequest, TransactionResult>;
-  split: handleUnaryCall<SplitRequest, TransactionResult>;
-  merge: handleUnaryCall<MergeRequest, TransactionResult>;
-  redeem: handleUnaryCall<RedeemRequest, TransactionResult>;
+  /** On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — SDK return shape is `TransactionResult`. */
+  enableTrading: handleUnaryCall<EnableTradingRequest, EnableTradingResponse>;
+  split: handleUnaryCall<SplitRequest, SplitResponse>;
+  merge: handleUnaryCall<MergeRequest, MergeResponse>;
+  redeem: handleUnaryCall<RedeemRequest, RedeemResponse>;
 }
 
 export interface OpinionServiceClient extends Client {
@@ -8413,33 +8914,33 @@ export interface OpinionServiceClient extends Client {
   ): ClientUnaryCall;
   getCategoricalMarket(
     request: GetCategoricalMarketRequest,
-    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+    callback: (error: ServiceError | null, response: GetCategoricalMarketResponse) => void,
   ): ClientUnaryCall;
   getCategoricalMarket(
     request: GetCategoricalMarketRequest,
     metadata: Metadata,
-    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+    callback: (error: ServiceError | null, response: GetCategoricalMarketResponse) => void,
   ): ClientUnaryCall;
   getCategoricalMarket(
     request: GetCategoricalMarketRequest,
     metadata: Metadata,
     options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+    callback: (error: ServiceError | null, response: GetCategoricalMarketResponse) => void,
   ): ClientUnaryCall;
   getMarketBySlug(
     request: GetMarketBySlugRequest,
-    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+    callback: (error: ServiceError | null, response: GetMarketBySlugResponse) => void,
   ): ClientUnaryCall;
   getMarketBySlug(
     request: GetMarketBySlugRequest,
     metadata: Metadata,
-    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+    callback: (error: ServiceError | null, response: GetMarketBySlugResponse) => void,
   ): ClientUnaryCall;
   getMarketBySlug(
     request: GetMarketBySlugRequest,
     metadata: Metadata,
     options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: GetMarketResponse) => void,
+    callback: (error: ServiceError | null, response: GetMarketBySlugResponse) => void,
   ): ClientUnaryCall;
   getQuoteTokens(
     request: GetQuoteTokensRequest,
@@ -8548,18 +9049,18 @@ export interface OpinionServiceClient extends Client {
   ): ClientUnaryCall;
   cancelOrder(
     request: CancelOrderRequest,
-    callback: (error: ServiceError | null, response: CancelOrderApiResponse) => void,
+    callback: (error: ServiceError | null, response: CancelOrderResponse) => void,
   ): ClientUnaryCall;
   cancelOrder(
     request: CancelOrderRequest,
     metadata: Metadata,
-    callback: (error: ServiceError | null, response: CancelOrderApiResponse) => void,
+    callback: (error: ServiceError | null, response: CancelOrderResponse) => void,
   ): ClientUnaryCall;
   cancelOrder(
     request: CancelOrderRequest,
     metadata: Metadata,
     options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: CancelOrderApiResponse) => void,
+    callback: (error: ServiceError | null, response: CancelOrderResponse) => void,
   ): ClientUnaryCall;
   cancelOrdersBatch(
     request: CancelOrdersBatchRequest,
@@ -8682,66 +9183,66 @@ export interface OpinionServiceClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetUserAuthResponse) => void,
   ): ClientUnaryCall;
-  /** On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — return type is SDK `TransactionResult`. */
+  /** On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — SDK return shape is `TransactionResult`. */
   enableTrading(
     request: EnableTradingRequest,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
-  ): ClientUnaryCall;
-  enableTrading(
-    request: EnableTradingRequest,
-    metadata: Metadata,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: EnableTradingResponse) => void,
   ): ClientUnaryCall;
   enableTrading(
     request: EnableTradingRequest,
     metadata: Metadata,
+    callback: (error: ServiceError | null, response: EnableTradingResponse) => void,
+  ): ClientUnaryCall;
+  enableTrading(
+    request: EnableTradingRequest,
+    metadata: Metadata,
     options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: EnableTradingResponse) => void,
   ): ClientUnaryCall;
   split(
     request: SplitRequest,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: SplitResponse) => void,
   ): ClientUnaryCall;
   split(
     request: SplitRequest,
     metadata: Metadata,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: SplitResponse) => void,
   ): ClientUnaryCall;
   split(
     request: SplitRequest,
     metadata: Metadata,
     options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: SplitResponse) => void,
   ): ClientUnaryCall;
   merge(
     request: MergeRequest,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: MergeResponse) => void,
   ): ClientUnaryCall;
   merge(
     request: MergeRequest,
     metadata: Metadata,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: MergeResponse) => void,
   ): ClientUnaryCall;
   merge(
     request: MergeRequest,
     metadata: Metadata,
     options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: MergeResponse) => void,
   ): ClientUnaryCall;
   redeem(
     request: RedeemRequest,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: RedeemResponse) => void,
   ): ClientUnaryCall;
   redeem(
     request: RedeemRequest,
     metadata: Metadata,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: RedeemResponse) => void,
   ): ClientUnaryCall;
   redeem(
     request: RedeemRequest,
     metadata: Metadata,
     options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: TransactionResult) => void,
+    callback: (error: ServiceError | null, response: RedeemResponse) => void,
   ): ClientUnaryCall;
 }
 

@@ -32,7 +32,7 @@ import {
   toGetFeeRatesResponse,
   toPlaceOrderResponse,
   toPlaceOrdersBatchResponse,
-  toCancelOrderApiResponse,
+  toCancelOrderResponse,
   toCancelOrdersBatchResponse,
   toCancelAllOrdersResponse,
   toGetMyOrdersResponse,
@@ -41,7 +41,10 @@ import {
   toGetMyPositionsResponse,
   toGetMyTradesResponse,
   toGetUserAuthResponse,
-  sdkTransactionResultToProto,
+  toEnableTradingResponse,
+  toSplitResponse,
+  toMergeResponse,
+  toRedeemResponse,
 } from './common.js';
 
 export function createOpinionService(): OpinionServiceServer {
@@ -170,7 +173,7 @@ export function createOpinionService(): OpinionServiceServer {
       try {
         const orderId = parseCancelOrderRequest(call.request);
         const response = await client.cancelOrder(orderId);
-        callback(null, toCancelOrderApiResponse(response));
+        callback(null, toCancelOrderResponse(response));
       } catch (error) {
         callback(toGrpcError(error));
       }
@@ -264,7 +267,7 @@ export function createOpinionService(): OpinionServiceServer {
       try {
         void call;
         const result = await client.enableTrading();
-        callback(null, sdkTransactionResultToProto(result));
+        callback(null, toEnableTradingResponse(result));
       } catch (error) {
         callback(toGrpcError(error));
       }
@@ -274,7 +277,7 @@ export function createOpinionService(): OpinionServiceServer {
       try {
         const { marketId, amount, checkApproval } = parseSplitRequest(call.request);
         const result = await client.split(marketId, amount, checkApproval);
-        callback(null, sdkTransactionResultToProto(result));
+        callback(null, toSplitResponse(result));
       } catch (error) {
         callback(toGrpcError(error));
       }
@@ -284,7 +287,7 @@ export function createOpinionService(): OpinionServiceServer {
       try {
         const { marketId, amount, checkApproval } = parseMergeRequest(call.request);
         const result = await client.merge(marketId, amount, checkApproval);
-        callback(null, sdkTransactionResultToProto(result));
+        callback(null, toMergeResponse(result));
       } catch (error) {
         callback(toGrpcError(error));
       }
@@ -294,7 +297,7 @@ export function createOpinionService(): OpinionServiceServer {
       try {
         const { marketId, checkApproval } = parseRedeemRequest(call.request);
         const result = await client.redeem(marketId, checkApproval);
-        callback(null, sdkTransactionResultToProto(result));
+        callback(null, toRedeemResponse(result));
       } catch (error) {
         callback(toGrpcError(error));
       }

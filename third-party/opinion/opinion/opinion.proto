@@ -10,8 +10,8 @@ import "google/protobuf/struct.proto";
 service OpinionService {
   rpc GetMarkets(GetMarketsRequest) returns (GetMarketsResponse);
   rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
-  rpc GetCategoricalMarket(GetCategoricalMarketRequest) returns (GetMarketResponse);
-  rpc GetMarketBySlug(GetMarketBySlugRequest) returns (GetMarketResponse);
+  rpc GetCategoricalMarket(GetCategoricalMarketRequest) returns (GetCategoricalMarketResponse);
+  rpc GetMarketBySlug(GetMarketBySlugRequest) returns (GetMarketBySlugResponse);
   rpc GetQuoteTokens(GetQuoteTokensRequest) returns (GetQuoteTokensResponse);
   rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
   rpc GetLatestPrice(GetLatestPriceRequest) returns (GetLatestPriceResponse);
@@ -19,7 +19,7 @@ service OpinionService {
   rpc GetFeeRates(GetFeeRatesRequest) returns (GetFeeRatesResponse);
   rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse);
   rpc PlaceOrdersBatch(PlaceOrdersBatchRequest) returns (PlaceOrdersBatchResponse);
-  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderApiResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
   rpc CancelOrdersBatch(CancelOrdersBatchRequest) returns (CancelOrdersBatchResponse);
   rpc CancelAllOrders(CancelAllOrdersRequest) returns (CancelAllOrdersResponse);
 
@@ -31,11 +31,11 @@ service OpinionService {
   rpc GetMyTrades(GetMyTradesRequest) returns (GetMyTradesResponse);
   rpc GetUserAuth(GetUserAuthRequest) returns (GetUserAuthResponse);
 
-  // On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — return type is SDK `TransactionResult`.
-  rpc EnableTrading(EnableTradingRequest) returns (TransactionResult);
-  rpc Split(SplitRequest) returns (TransactionResult);
-  rpc Merge(MergeRequest) returns (TransactionResult);
-  rpc Redeem(RedeemRequest) returns (TransactionResult);
+  // On-chain trading prep & CTF (`enableTrading`, `split`, `merge`, `redeem`) — SDK return shape is `TransactionResult`.
+  rpc EnableTrading(EnableTradingRequest) returns (EnableTradingResponse);
+  rpc Split(SplitRequest) returns (SplitResponse);
+  rpc Merge(MergeRequest) returns (MergeResponse);
+  rpc Redeem(RedeemRequest) returns (RedeemResponse);
 }
 
 // --- Enums (proto numbers are stable; map to SDK enums in adapters) ---
@@ -78,8 +78,9 @@ enum PriceHistoryInterval {
 
 // SDK `OrderSide` (`src/models/enums.ts`).
 enum SdkOrderSide {
-  SDK_ORDER_SIDE_BUY = 0;
-  SDK_ORDER_SIDE_SELL = 1;
+  SDK_ORDER_SIDE_UNSPECIFIED = 0;
+  SDK_ORDER_SIDE_BUY = 1;
+  SDK_ORDER_SIDE_SELL = 2;
 }
 
 // SDK `OrderType` (`src/models/enums.ts`). 0 reserved / do not use for valid orders.
@@ -236,6 +237,18 @@ message GetMarketResponse {
   optional Market data = 3;
 }
 
+message GetCategoricalMarketResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  optional Market data = 3;
+}
+
+message GetMarketBySlugResponse {
+  int32 errno = 1;
+  string errmsg = 2;
+  optional Market data = 3;
+}
+
 message GetQuoteTokensResponse {
   int32 errno = 1;
   string errmsg = 2;
@@ -296,7 +309,7 @@ message PlaceOrderBatchItem {
 }
 
 // Full SDK `ApiResponse<OpenapiCancelOrderRespOpenApi>` (`errno` / `errmsg` / `result` boolean).
-message CancelOrderApiResponse {
+message CancelOrderResponse {
   int32 errno = 1;
   string errmsg = 2;
   optional bool result = 3;
@@ -309,7 +322,7 @@ message CancelOrdersBatchResponse {
 message CancelOrderBatchItem {
   int32 index = 1;
   bool success = 2;
-  optional CancelOrderApiResponse result = 3;
+  optional CancelOrderResponse result = 3;
   optional string error = 4;
 }
 
@@ -434,8 +447,29 @@ message GetUserAuthResponse {
   map<string, string> walletUsers = 5;
 }
 
-// SDK `TransactionResult` (`src/chain/contract_caller.ts`); returned by `enableTrading`, `split`, `merge`, `redeem`.
-message TransactionResult {
+// SDK `TransactionResult` shape (`src/chain/contract_caller.ts`) for `enableTrading`.
+message EnableTradingResponse {
+  optional string txHash = 1;
+  optional string safeTxHash = 2;
+  optional string returnValue = 3;
+}
+
+// SDK `TransactionResult` shape (`src/chain/contract_caller.ts`) for `split`.
+message SplitResponse {
+  optional string txHash = 1;
+  optional string safeTxHash = 2;
+  optional string returnValue = 3;
+}
+
+// SDK `TransactionResult` shape (`src/chain/contract_caller.ts`) for `merge`.
+message MergeResponse {
+  optional string txHash = 1;
+  optional string safeTxHash = 2;
+  optional string returnValue = 3;
+}
+
+// SDK `TransactionResult` shape (`src/chain/contract_caller.ts`) for `redeem`.
+message RedeemResponse {
   optional string txHash = 1;
   optional string safeTxHash = 2;
   optional string returnValue = 3;

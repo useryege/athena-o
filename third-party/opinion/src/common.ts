@@ -13,7 +13,7 @@ import { status as grpcStatus } from '@grpc/grpc-js';
 
 import {
   CancelAllOrdersResponse,
-  CancelOrderApiResponse,
+  CancelOrderResponse,
   CancelOrderBatchItem,
   CancelOrdersBatchResponse,
   ChildMarket,
@@ -60,9 +60,12 @@ import {
   GetMyTradesResponse,
   GetOrderByIdResponse,
   GetUserAuthResponse,
+  EnableTradingResponse,
+  SplitResponse,
+  MergeResponse,
+  RedeemResponse,
   PositionApiData,
   QuoteTokenBalance,
-  TransactionResult,
   UserTradeApiData,
   type GetMyBalancesRequest,
   type GetMyOrdersRequest,
@@ -653,10 +656,10 @@ export function toPlaceOrderResponse(
   });
 }
 
-export function toCancelOrderApiResponse(
+export function toCancelOrderResponse(
   response: SdkApiResponse<{ result?: boolean }>,
-): CancelOrderApiResponse {
-  return CancelOrderApiResponse.fromPartial({
+): CancelOrderResponse {
+  return CancelOrderResponse.fromPartial({
     errno: response.errno,
     errmsg: response.errmsg ?? '',
     result: response.result?.result,
@@ -709,7 +712,7 @@ function toCancelOrderBatchItem(item: {
     return CancelOrderBatchItem.fromPartial({
       index: item.index,
       success: true,
-      result: toCancelOrderApiResponse(item.result as SdkApiResponse<{ result?: boolean }>),
+      result: toCancelOrderResponse(item.result as SdkApiResponse<{ result?: boolean }>),
     });
   }
   return CancelOrderBatchItem.fromPartial({
@@ -1145,8 +1148,12 @@ export function toGetUserAuthResponse(response: SdkApiResponse<Record<string, un
   });
 }
 
-export function sdkTransactionResultToProto(result: SdkTransactionResult): TransactionResult {
-  return TransactionResult.fromPartial({
+function sdkTransactionResultBase(result: SdkTransactionResult): {
+  txHash?: string | undefined;
+  safeTxHash?: string | undefined;
+  returnValue?: string | undefined;
+} {
+  return {
     txHash: result.txHash === null || result.txHash === undefined ? undefined : String(result.txHash),
     safeTxHash:
       result.safeTxHash === null || result.safeTxHash === undefined ? undefined : String(result.safeTxHash),
@@ -1154,5 +1161,21 @@ export function sdkTransactionResultToProto(result: SdkTransactionResult): Trans
       result.returnValue === null || result.returnValue === undefined
         ? undefined
         : String(result.returnValue),
-  });
+  };
+}
+
+export function toEnableTradingResponse(result: SdkTransactionResult): EnableTradingResponse {
+  return EnableTradingResponse.fromPartial(sdkTransactionResultBase(result));
+}
+
+export function toSplitResponse(result: SdkTransactionResult): SplitResponse {
+  return SplitResponse.fromPartial(sdkTransactionResultBase(result));
+}
+
+export function toMergeResponse(result: SdkTransactionResult): MergeResponse {
+  return MergeResponse.fromPartial(sdkTransactionResultBase(result));
+}
+
+export function toRedeemResponse(result: SdkTransactionResult): RedeemResponse {
+  return RedeemResponse.fromPartial(sdkTransactionResultBase(result));
 }
