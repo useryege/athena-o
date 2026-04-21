@@ -924,11 +924,19 @@ export const GetMarketsRequest: MessageFns<GetMarketsRequest> = {
 
   fromJSON(object: any): GetMarketsRequest {
     return {
-      topicType: isSet(object.topicType) ? marketTopicTypeFromJSON(object.topicType) : undefined,
+      topicType: isSet(object.topicType)
+        ? marketTopicTypeFromJSON(object.topicType)
+        : isSet(object.topic_type)
+        ? marketTopicTypeFromJSON(object.topic_type)
+        : undefined,
       page: isSet(object.page) ? globalThis.Number(object.page) : undefined,
       limit: isSet(object.limit) ? globalThis.Number(object.limit) : undefined,
       status: isSet(object.status) ? marketStatusFilterFromJSON(object.status) : undefined,
-      sortBy: isSet(object.sortBy) ? marketSortByFromJSON(object.sortBy) : undefined,
+      sortBy: isSet(object.sortBy)
+        ? marketSortByFromJSON(object.sortBy)
+        : isSet(object.sort_by)
+        ? marketSortByFromJSON(object.sort_by)
+        : undefined,
     };
   },
 
@@ -1015,8 +1023,16 @@ export const GetMarketRequest: MessageFns<GetMarketRequest> = {
 
   fromJSON(object: any): GetMarketRequest {
     return {
-      marketId: isSet(object.marketId) ? globalThis.String(object.marketId) : "",
-      useCache: isSet(object.useCache) ? globalThis.Boolean(object.useCache) : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.String(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.String(object.market_id)
+        : "",
+      useCache: isSet(object.useCache)
+        ? globalThis.Boolean(object.useCache)
+        : isSet(object.use_cache)
+        ? globalThis.Boolean(object.use_cache)
+        : undefined,
     };
   },
 
@@ -1079,7 +1095,13 @@ export const GetCategoricalMarketRequest: MessageFns<GetCategoricalMarketRequest
   },
 
   fromJSON(object: any): GetCategoricalMarketRequest {
-    return { marketId: isSet(object.marketId) ? globalThis.String(object.marketId) : "" };
+    return {
+      marketId: isSet(object.marketId)
+        ? globalThis.String(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.String(object.market_id)
+        : "",
+    };
   },
 
   toJSON(message: GetCategoricalMarketRequest): unknown {
@@ -1195,7 +1217,13 @@ export const GetQuoteTokensRequest: MessageFns<GetQuoteTokensRequest> = {
   },
 
   fromJSON(object: any): GetQuoteTokensRequest {
-    return { useCache: isSet(object.useCache) ? globalThis.Boolean(object.useCache) : undefined };
+    return {
+      useCache: isSet(object.useCache)
+        ? globalThis.Boolean(object.useCache)
+        : isSet(object.use_cache)
+        ? globalThis.Boolean(object.use_cache)
+        : undefined,
+    };
   },
 
   toJSON(message: GetQuoteTokensRequest): unknown {
@@ -1253,7 +1281,13 @@ export const GetOrderbookRequest: MessageFns<GetOrderbookRequest> = {
   },
 
   fromJSON(object: any): GetOrderbookRequest {
-    return { tokenId: isSet(object.tokenId) ? globalThis.String(object.tokenId) : "" };
+    return {
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : "",
+    };
   },
 
   toJSON(message: GetOrderbookRequest): unknown {
@@ -1311,7 +1345,13 @@ export const GetLatestPriceRequest: MessageFns<GetLatestPriceRequest> = {
   },
 
   fromJSON(object: any): GetLatestPriceRequest {
-    return { tokenId: isSet(object.tokenId) ? globalThis.String(object.tokenId) : "" };
+    return {
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : "",
+    };
   },
 
   toJSON(message: GetLatestPriceRequest): unknown {
@@ -1403,10 +1443,22 @@ export const GetPriceHistoryRequest: MessageFns<GetPriceHistoryRequest> = {
 
   fromJSON(object: any): GetPriceHistoryRequest {
     return {
-      tokenId: isSet(object.tokenId) ? globalThis.String(object.tokenId) : "",
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : "",
       interval: isSet(object.interval) ? priceHistoryIntervalFromJSON(object.interval) : undefined,
-      startAt: isSet(object.startAt) ? globalThis.String(object.startAt) : undefined,
-      endAt: isSet(object.endAt) ? globalThis.String(object.endAt) : undefined,
+      startAt: isSet(object.startAt)
+        ? globalThis.String(object.startAt)
+        : isSet(object.start_at)
+        ? globalThis.String(object.start_at)
+        : undefined,
+      endAt: isSet(object.endAt)
+        ? globalThis.String(object.endAt)
+        : isSet(object.end_at)
+        ? globalThis.String(object.end_at)
+        : undefined,
     };
   },
 
@@ -1477,7 +1529,13 @@ export const GetFeeRatesRequest: MessageFns<GetFeeRatesRequest> = {
   },
 
   fromJSON(object: any): GetFeeRatesRequest {
-    return { tokenId: isSet(object.tokenId) ? globalThis.String(object.tokenId) : "" };
+    return {
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : "",
+    };
   },
 
   toJSON(message: GetFeeRatesRequest): unknown {
@@ -1610,16 +1668,32 @@ export const PlaceOrderData: MessageFns<PlaceOrderData> = {
 
   fromJSON(object: any): PlaceOrderData {
     return {
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : 0,
-      tokenId: isSet(object.tokenId) ? globalThis.String(object.tokenId) : "",
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : 0,
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : "",
       side: isSet(object.side) ? sdkOrderSideFromJSON(object.side) : 0,
-      orderType: isSet(object.orderType) ? sdkOrderTypeFromJSON(object.orderType) : 0,
+      orderType: isSet(object.orderType)
+        ? sdkOrderTypeFromJSON(object.orderType)
+        : isSet(object.order_type)
+        ? sdkOrderTypeFromJSON(object.order_type)
+        : 0,
       price: isSet(object.price) ? globalThis.String(object.price) : "",
       makerAmountInQuoteToken: isSet(object.makerAmountInQuoteToken)
         ? globalThis.String(object.makerAmountInQuoteToken)
+        : isSet(object.maker_amount_in_quote_token)
+        ? globalThis.String(object.maker_amount_in_quote_token)
         : undefined,
       makerAmountInBaseToken: isSet(object.makerAmountInBaseToken)
         ? globalThis.String(object.makerAmountInBaseToken)
+        : isSet(object.maker_amount_in_base_token)
+        ? globalThis.String(object.maker_amount_in_base_token)
         : undefined,
     };
   },
@@ -1716,7 +1790,11 @@ export const PlaceOrderRequest: MessageFns<PlaceOrderRequest> = {
   fromJSON(object: any): PlaceOrderRequest {
     return {
       data: isSet(object.data) ? PlaceOrderData.fromJSON(object.data) : undefined,
-      checkApproval: isSet(object.checkApproval) ? globalThis.Boolean(object.checkApproval) : undefined,
+      checkApproval: isSet(object.checkApproval)
+        ? globalThis.Boolean(object.checkApproval)
+        : isSet(object.check_approval)
+        ? globalThis.Boolean(object.check_approval)
+        : undefined,
     };
   },
 
@@ -1794,7 +1872,11 @@ export const PlaceOrdersBatchRequest: MessageFns<PlaceOrdersBatchRequest> = {
   fromJSON(object: any): PlaceOrdersBatchRequest {
     return {
       orders: globalThis.Array.isArray(object?.orders) ? object.orders.map((e: any) => PlaceOrderData.fromJSON(e)) : [],
-      checkApproval: isSet(object.checkApproval) ? globalThis.Boolean(object.checkApproval) : undefined,
+      checkApproval: isSet(object.checkApproval)
+        ? globalThis.Boolean(object.checkApproval)
+        : isSet(object.check_approval)
+        ? globalThis.Boolean(object.check_approval)
+        : undefined,
     };
   },
 
@@ -1857,7 +1939,13 @@ export const CancelOrderRequest: MessageFns<CancelOrderRequest> = {
   },
 
   fromJSON(object: any): CancelOrderRequest {
-    return { orderId: isSet(object.orderId) ? globalThis.String(object.orderId) : "" };
+    return {
+      orderId: isSet(object.orderId)
+        ? globalThis.String(object.orderId)
+        : isSet(object.order_id)
+        ? globalThis.String(object.order_id)
+        : "",
+    };
   },
 
   toJSON(message: CancelOrderRequest): unknown {
@@ -1916,7 +2004,11 @@ export const CancelOrdersBatchRequest: MessageFns<CancelOrdersBatchRequest> = {
 
   fromJSON(object: any): CancelOrdersBatchRequest {
     return {
-      orderIds: globalThis.Array.isArray(object?.orderIds) ? object.orderIds.map((e: any) => globalThis.String(e)) : [],
+      orderIds: globalThis.Array.isArray(object?.orderIds)
+        ? object.orderIds.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.order_ids)
+        ? object.order_ids.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -1987,7 +2079,11 @@ export const CancelAllOrdersRequest: MessageFns<CancelAllOrdersRequest> = {
 
   fromJSON(object: any): CancelAllOrdersRequest {
     return {
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
       side: isSet(object.side) ? sdkOrderSideFromJSON(object.side) : undefined,
     };
   },
@@ -2085,7 +2181,11 @@ export const GetMyOrdersRequest: MessageFns<GetMyOrdersRequest> = {
 
   fromJSON(object: any): GetMyOrdersRequest {
     return {
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
       status: isSet(object.status) ? globalThis.String(object.status) : undefined,
       page: isSet(object.page) ? globalThis.Number(object.page) : undefined,
       limit: isSet(object.limit) ? globalThis.Number(object.limit) : undefined,
@@ -2159,7 +2259,13 @@ export const GetOrderByIdRequest: MessageFns<GetOrderByIdRequest> = {
   },
 
   fromJSON(object: any): GetOrderByIdRequest {
-    return { orderId: isSet(object.orderId) ? globalThis.String(object.orderId) : "" };
+    return {
+      orderId: isSet(object.orderId)
+        ? globalThis.String(object.orderId)
+        : isSet(object.order_id)
+        ? globalThis.String(object.order_id)
+        : "",
+    };
   },
 
   toJSON(message: GetOrderByIdRequest): unknown {
@@ -2283,7 +2389,11 @@ export const GetMyPositionsRequest: MessageFns<GetMyPositionsRequest> = {
 
   fromJSON(object: any): GetMyPositionsRequest {
     return {
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
       page: isSet(object.page) ? globalThis.Number(object.page) : undefined,
       limit: isSet(object.limit) ? globalThis.Number(object.limit) : undefined,
     };
@@ -2375,7 +2485,11 @@ export const GetMyTradesRequest: MessageFns<GetMyTradesRequest> = {
 
   fromJSON(object: any): GetMyTradesRequest {
     return {
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
       page: isSet(object.page) ? globalThis.Number(object.page) : undefined,
       limit: isSet(object.limit) ? globalThis.Number(object.limit) : undefined,
     };
@@ -2553,9 +2667,17 @@ export const SplitRequest: MessageFns<SplitRequest> = {
 
   fromJSON(object: any): SplitRequest {
     return {
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : 0,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : 0,
       amount: isSet(object.amount) ? globalThis.String(object.amount) : "",
-      checkApproval: isSet(object.checkApproval) ? globalThis.Boolean(object.checkApproval) : undefined,
+      checkApproval: isSet(object.checkApproval)
+        ? globalThis.Boolean(object.checkApproval)
+        : isSet(object.check_approval)
+        ? globalThis.Boolean(object.check_approval)
+        : undefined,
     };
   },
 
@@ -2645,9 +2767,17 @@ export const MergeRequest: MessageFns<MergeRequest> = {
 
   fromJSON(object: any): MergeRequest {
     return {
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : 0,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : 0,
       amount: isSet(object.amount) ? globalThis.String(object.amount) : "",
-      checkApproval: isSet(object.checkApproval) ? globalThis.Boolean(object.checkApproval) : undefined,
+      checkApproval: isSet(object.checkApproval)
+        ? globalThis.Boolean(object.checkApproval)
+        : isSet(object.check_approval)
+        ? globalThis.Boolean(object.check_approval)
+        : undefined,
     };
   },
 
@@ -2726,8 +2856,16 @@ export const RedeemRequest: MessageFns<RedeemRequest> = {
 
   fromJSON(object: any): RedeemRequest {
     return {
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : 0,
-      checkApproval: isSet(object.checkApproval) ? globalThis.Boolean(object.checkApproval) : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : 0,
+      checkApproval: isSet(object.checkApproval)
+        ? globalThis.Boolean(object.checkApproval)
+        : isSet(object.check_approval)
+        ? globalThis.Boolean(object.check_approval)
+        : undefined,
     };
   },
 
@@ -3355,7 +3493,11 @@ export const GetOrderbookResponse: MessageFns<GetOrderbookResponse> = {
       bids: globalThis.Array.isArray(object?.bids) ? object.bids.map((e: any) => OrderbookLevel.fromJSON(e)) : [],
       market: isSet(object.market) ? globalThis.String(object.market) : undefined,
       timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : undefined,
-      tokenId: isSet(object.tokenId) ? globalThis.String(object.tokenId) : undefined,
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : undefined,
     };
   },
 
@@ -3519,7 +3661,11 @@ export const GetLatestPriceResponse: MessageFns<GetLatestPriceResponse> = {
       side: isSet(object.side) ? globalThis.String(object.side) : undefined,
       size: isSet(object.size) ? globalThis.String(object.size) : undefined,
       timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : undefined,
-      tokenId: isSet(object.tokenId) ? globalThis.String(object.tokenId) : undefined,
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : undefined,
     };
   },
 
@@ -3717,8 +3863,16 @@ export const GetFeeRatesResponse: MessageFns<GetFeeRatesResponse> = {
 
   fromJSON(object: any): GetFeeRatesResponse {
     return {
-      makerMaxFeeRate: isSet(object.makerMaxFeeRate) ? globalThis.Number(object.makerMaxFeeRate) : 0,
-      takerMaxFeeRate: isSet(object.takerMaxFeeRate) ? globalThis.Number(object.takerMaxFeeRate) : 0,
+      makerMaxFeeRate: isSet(object.makerMaxFeeRate)
+        ? globalThis.Number(object.makerMaxFeeRate)
+        : isSet(object.maker_max_fee_rate)
+        ? globalThis.Number(object.maker_max_fee_rate)
+        : 0,
+      takerMaxFeeRate: isSet(object.takerMaxFeeRate)
+        ? globalThis.Number(object.takerMaxFeeRate)
+        : isSet(object.taker_max_fee_rate)
+        ? globalThis.Number(object.taker_max_fee_rate)
+        : 0,
       enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false,
     };
   },
@@ -3811,7 +3965,11 @@ export const PlaceOrderResponse: MessageFns<PlaceOrderResponse> = {
     return {
       errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
       errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
-      orderData: isSet(object.orderData) ? OrderApiData.fromJSON(object.orderData) : undefined,
+      orderData: isSet(object.orderData)
+        ? OrderApiData.fromJSON(object.orderData)
+        : isSet(object.order_data)
+        ? OrderApiData.fromJSON(object.order_data)
+        : undefined,
     };
   },
 
@@ -4350,7 +4508,11 @@ export const CancelAllOrdersResponse: MessageFns<CancelAllOrdersResponse> = {
 
   fromJSON(object: any): CancelAllOrdersResponse {
     return {
-      totalOrders: isSet(object.totalOrders) ? globalThis.Number(object.totalOrders) : 0,
+      totalOrders: isSet(object.totalOrders)
+        ? globalThis.Number(object.totalOrders)
+        : isSet(object.total_orders)
+        ? globalThis.Number(object.total_orders)
+        : 0,
       cancelled: isSet(object.cancelled) ? globalThis.Number(object.cancelled) : 0,
       failed: isSet(object.failed) ? globalThis.Number(object.failed) : 0,
       results: globalThis.Array.isArray(object?.results)
@@ -4559,7 +4721,11 @@ export const GetOrderByIdResponse: MessageFns<GetOrderByIdResponse> = {
     return {
       errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
       errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
-      orderData: isSet(object.orderData) ? OrderApiData.fromJSON(object.orderData) : undefined,
+      orderData: isSet(object.orderData)
+        ? OrderApiData.fromJSON(object.orderData)
+        : isSet(object.order_data)
+        ? OrderApiData.fromJSON(object.order_data)
+        : undefined,
     };
   },
 
@@ -4679,11 +4845,31 @@ export const QuoteTokenBalance: MessageFns<QuoteTokenBalance> = {
 
   fromJSON(object: any): QuoteTokenBalance {
     return {
-      availableBalance: isSet(object.availableBalance) ? globalThis.String(object.availableBalance) : undefined,
-      frozenBalance: isSet(object.frozenBalance) ? globalThis.String(object.frozenBalance) : undefined,
-      quoteToken: isSet(object.quoteToken) ? globalThis.String(object.quoteToken) : undefined,
-      tokenDecimals: isSet(object.tokenDecimals) ? globalThis.Number(object.tokenDecimals) : undefined,
-      totalBalance: isSet(object.totalBalance) ? globalThis.String(object.totalBalance) : undefined,
+      availableBalance: isSet(object.availableBalance)
+        ? globalThis.String(object.availableBalance)
+        : isSet(object.available_balance)
+        ? globalThis.String(object.available_balance)
+        : undefined,
+      frozenBalance: isSet(object.frozenBalance)
+        ? globalThis.String(object.frozenBalance)
+        : isSet(object.frozen_balance)
+        ? globalThis.String(object.frozen_balance)
+        : undefined,
+      quoteToken: isSet(object.quoteToken)
+        ? globalThis.String(object.quoteToken)
+        : isSet(object.quote_token)
+        ? globalThis.String(object.quote_token)
+        : undefined,
+      tokenDecimals: isSet(object.tokenDecimals)
+        ? globalThis.Number(object.tokenDecimals)
+        : isSet(object.token_decimals)
+        ? globalThis.Number(object.token_decimals)
+        : undefined,
+      totalBalance: isSet(object.totalBalance)
+        ? globalThis.String(object.totalBalance)
+        : isSet(object.total_balance)
+        ? globalThis.String(object.total_balance)
+        : undefined,
     };
   },
 
@@ -4826,9 +5012,21 @@ export const GetMyBalancesResponse: MessageFns<GetMyBalancesResponse> = {
       balances: globalThis.Array.isArray(object?.balances)
         ? object.balances.map((e: any) => QuoteTokenBalance.fromJSON(e))
         : [],
-      chainId: isSet(object.chainId) ? globalThis.String(object.chainId) : undefined,
-      multiSignAddress: isSet(object.multiSignAddress) ? globalThis.String(object.multiSignAddress) : undefined,
-      walletAddress: isSet(object.walletAddress) ? globalThis.String(object.walletAddress) : undefined,
+      chainId: isSet(object.chainId)
+        ? globalThis.String(object.chainId)
+        : isSet(object.chain_id)
+        ? globalThis.String(object.chain_id)
+        : undefined,
+      multiSignAddress: isSet(object.multiSignAddress)
+        ? globalThis.String(object.multiSignAddress)
+        : isSet(object.multi_sign_address)
+        ? globalThis.String(object.multi_sign_address)
+        : undefined,
+      walletAddress: isSet(object.walletAddress)
+        ? globalThis.String(object.walletAddress)
+        : isSet(object.wallet_address)
+        ? globalThis.String(object.wallet_address)
+        : undefined,
     };
   },
 
@@ -5174,34 +5372,116 @@ export const PositionApiData: MessageFns<PositionApiData> = {
 
   fromJSON(object: any): PositionApiData {
     return {
-      avgEntryPrice: isSet(object.avgEntryPrice) ? globalThis.String(object.avgEntryPrice) : undefined,
-      claimStatus: isSet(object.claimStatus) ? globalThis.Number(object.claimStatus) : undefined,
-      claimStatusEnum: isSet(object.claimStatusEnum) ? globalThis.String(object.claimStatusEnum) : undefined,
-      conditionId: isSet(object.conditionId) ? globalThis.String(object.conditionId) : undefined,
+      avgEntryPrice: isSet(object.avgEntryPrice)
+        ? globalThis.String(object.avgEntryPrice)
+        : isSet(object.avg_entry_price)
+        ? globalThis.String(object.avg_entry_price)
+        : undefined,
+      claimStatus: isSet(object.claimStatus)
+        ? globalThis.Number(object.claimStatus)
+        : isSet(object.claim_status)
+        ? globalThis.Number(object.claim_status)
+        : undefined,
+      claimStatusEnum: isSet(object.claimStatusEnum)
+        ? globalThis.String(object.claimStatusEnum)
+        : isSet(object.claim_status_enum)
+        ? globalThis.String(object.claim_status_enum)
+        : undefined,
+      conditionId: isSet(object.conditionId)
+        ? globalThis.String(object.conditionId)
+        : isSet(object.condition_id)
+        ? globalThis.String(object.condition_id)
+        : undefined,
       currentValueInQuoteToken: isSet(object.currentValueInQuoteToken)
         ? globalThis.String(object.currentValueInQuoteToken)
+        : isSet(object.current_value_in_quote_token)
+        ? globalThis.String(object.current_value_in_quote_token)
         : undefined,
-      dailyPnlChange: isSet(object.dailyPnlChange) ? globalThis.String(object.dailyPnlChange) : undefined,
+      dailyPnlChange: isSet(object.dailyPnlChange)
+        ? globalThis.String(object.dailyPnlChange)
+        : isSet(object.daily_pnl_change)
+        ? globalThis.String(object.daily_pnl_change)
+        : undefined,
       dailyPnlChangePercent: isSet(object.dailyPnlChangePercent)
         ? globalThis.String(object.dailyPnlChangePercent)
+        : isSet(object.daily_pnl_change_percent)
+        ? globalThis.String(object.daily_pnl_change_percent)
         : undefined,
-      marketCutoffAt: isSet(object.marketCutoffAt) ? globalThis.String(object.marketCutoffAt) : undefined,
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
-      marketStatus: isSet(object.marketStatus) ? globalThis.Number(object.marketStatus) : undefined,
-      marketStatusEnum: isSet(object.marketStatusEnum) ? globalThis.String(object.marketStatusEnum) : undefined,
-      marketTitle: isSet(object.marketTitle) ? globalThis.String(object.marketTitle) : undefined,
+      marketCutoffAt: isSet(object.marketCutoffAt)
+        ? globalThis.String(object.marketCutoffAt)
+        : isSet(object.market_cutoff_at)
+        ? globalThis.String(object.market_cutoff_at)
+        : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
+      marketStatus: isSet(object.marketStatus)
+        ? globalThis.Number(object.marketStatus)
+        : isSet(object.market_status)
+        ? globalThis.Number(object.market_status)
+        : undefined,
+      marketStatusEnum: isSet(object.marketStatusEnum)
+        ? globalThis.String(object.marketStatusEnum)
+        : isSet(object.market_status_enum)
+        ? globalThis.String(object.market_status_enum)
+        : undefined,
+      marketTitle: isSet(object.marketTitle)
+        ? globalThis.String(object.marketTitle)
+        : isSet(object.market_title)
+        ? globalThis.String(object.market_title)
+        : undefined,
       outcome: isSet(object.outcome) ? globalThis.String(object.outcome) : undefined,
-      outcomeSide: isSet(object.outcomeSide) ? globalThis.Number(object.outcomeSide) : undefined,
-      outcomeSideEnum: isSet(object.outcomeSideEnum) ? globalThis.String(object.outcomeSideEnum) : undefined,
-      quoteToken: isSet(object.quoteToken) ? globalThis.String(object.quoteToken) : undefined,
-      rootMarketId: isSet(object.rootMarketId) ? globalThis.Number(object.rootMarketId) : undefined,
-      rootMarketTitle: isSet(object.rootMarketTitle) ? globalThis.String(object.rootMarketTitle) : undefined,
-      sharesFrozen: isSet(object.sharesFrozen) ? globalThis.String(object.sharesFrozen) : undefined,
-      sharesOwned: isSet(object.sharesOwned) ? globalThis.String(object.sharesOwned) : undefined,
-      tokenId: isSet(object.tokenId) ? globalThis.String(object.tokenId) : undefined,
-      unrealizedPnl: isSet(object.unrealizedPnl) ? globalThis.String(object.unrealizedPnl) : undefined,
+      outcomeSide: isSet(object.outcomeSide)
+        ? globalThis.Number(object.outcomeSide)
+        : isSet(object.outcome_side)
+        ? globalThis.Number(object.outcome_side)
+        : undefined,
+      outcomeSideEnum: isSet(object.outcomeSideEnum)
+        ? globalThis.String(object.outcomeSideEnum)
+        : isSet(object.outcome_side_enum)
+        ? globalThis.String(object.outcome_side_enum)
+        : undefined,
+      quoteToken: isSet(object.quoteToken)
+        ? globalThis.String(object.quoteToken)
+        : isSet(object.quote_token)
+        ? globalThis.String(object.quote_token)
+        : undefined,
+      rootMarketId: isSet(object.rootMarketId)
+        ? globalThis.Number(object.rootMarketId)
+        : isSet(object.root_market_id)
+        ? globalThis.Number(object.root_market_id)
+        : undefined,
+      rootMarketTitle: isSet(object.rootMarketTitle)
+        ? globalThis.String(object.rootMarketTitle)
+        : isSet(object.root_market_title)
+        ? globalThis.String(object.root_market_title)
+        : undefined,
+      sharesFrozen: isSet(object.sharesFrozen)
+        ? globalThis.String(object.sharesFrozen)
+        : isSet(object.shares_frozen)
+        ? globalThis.String(object.shares_frozen)
+        : undefined,
+      sharesOwned: isSet(object.sharesOwned)
+        ? globalThis.String(object.sharesOwned)
+        : isSet(object.shares_owned)
+        ? globalThis.String(object.shares_owned)
+        : undefined,
+      tokenId: isSet(object.tokenId)
+        ? globalThis.String(object.tokenId)
+        : isSet(object.token_id)
+        ? globalThis.String(object.token_id)
+        : undefined,
+      unrealizedPnl: isSet(object.unrealizedPnl)
+        ? globalThis.String(object.unrealizedPnl)
+        : isSet(object.unrealized_pnl)
+        ? globalThis.String(object.unrealized_pnl)
+        : undefined,
       unrealizedPnlPercent: isSet(object.unrealizedPnlPercent)
         ? globalThis.String(object.unrealizedPnlPercent)
+        : isSet(object.unrealized_pnl_percent)
+        ? globalThis.String(object.unrealized_pnl_percent)
         : undefined,
     };
   },
@@ -5725,28 +6005,88 @@ export const UserTradeApiData: MessageFns<UserTradeApiData> = {
   fromJSON(object: any): UserTradeApiData {
     return {
       amount: isSet(object.amount) ? globalThis.String(object.amount) : undefined,
-      chainId: isSet(object.chainId) ? globalThis.String(object.chainId) : undefined,
-      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : undefined,
+      chainId: isSet(object.chainId)
+        ? globalThis.String(object.chainId)
+        : isSet(object.chain_id)
+        ? globalThis.String(object.chain_id)
+        : undefined,
+      createdAt: isSet(object.createdAt)
+        ? globalThis.String(object.createdAt)
+        : isSet(object.created_at)
+        ? globalThis.String(object.created_at)
+        : undefined,
       fee: isSet(object.fee) ? globalThis.String(object.fee) : undefined,
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
-      marketTitle: isSet(object.marketTitle) ? globalThis.String(object.marketTitle) : undefined,
-      orderNo: isSet(object.orderNo) ? globalThis.String(object.orderNo) : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
+      marketTitle: isSet(object.marketTitle)
+        ? globalThis.String(object.marketTitle)
+        : isSet(object.market_title)
+        ? globalThis.String(object.market_title)
+        : undefined,
+      orderNo: isSet(object.orderNo)
+        ? globalThis.String(object.orderNo)
+        : isSet(object.order_no)
+        ? globalThis.String(object.order_no)
+        : undefined,
       outcome: isSet(object.outcome) ? globalThis.String(object.outcome) : undefined,
-      outcomeSide: isSet(object.outcomeSide) ? globalThis.Number(object.outcomeSide) : undefined,
-      outcomeSideEnum: isSet(object.outcomeSideEnum) ? globalThis.String(object.outcomeSideEnum) : undefined,
+      outcomeSide: isSet(object.outcomeSide)
+        ? globalThis.Number(object.outcomeSide)
+        : isSet(object.outcome_side)
+        ? globalThis.Number(object.outcome_side)
+        : undefined,
+      outcomeSideEnum: isSet(object.outcomeSideEnum)
+        ? globalThis.String(object.outcomeSideEnum)
+        : isSet(object.outcome_side_enum)
+        ? globalThis.String(object.outcome_side_enum)
+        : undefined,
       price: isSet(object.price) ? globalThis.String(object.price) : undefined,
       profit: isSet(object.profit) ? globalThis.String(object.profit) : undefined,
-      quoteToken: isSet(object.quoteToken) ? globalThis.String(object.quoteToken) : undefined,
-      quoteTokenUsdPrice: isSet(object.quoteTokenUsdPrice) ? globalThis.String(object.quoteTokenUsdPrice) : undefined,
-      rootMarketId: isSet(object.rootMarketId) ? globalThis.Number(object.rootMarketId) : undefined,
-      rootMarketTitle: isSet(object.rootMarketTitle) ? globalThis.String(object.rootMarketTitle) : undefined,
+      quoteToken: isSet(object.quoteToken)
+        ? globalThis.String(object.quoteToken)
+        : isSet(object.quote_token)
+        ? globalThis.String(object.quote_token)
+        : undefined,
+      quoteTokenUsdPrice: isSet(object.quoteTokenUsdPrice)
+        ? globalThis.String(object.quoteTokenUsdPrice)
+        : isSet(object.quote_token_usd_price)
+        ? globalThis.String(object.quote_token_usd_price)
+        : undefined,
+      rootMarketId: isSet(object.rootMarketId)
+        ? globalThis.Number(object.rootMarketId)
+        : isSet(object.root_market_id)
+        ? globalThis.Number(object.root_market_id)
+        : undefined,
+      rootMarketTitle: isSet(object.rootMarketTitle)
+        ? globalThis.String(object.rootMarketTitle)
+        : isSet(object.root_market_title)
+        ? globalThis.String(object.root_market_title)
+        : undefined,
       shares: isSet(object.shares) ? globalThis.String(object.shares) : undefined,
       side: isSet(object.side) ? globalThis.String(object.side) : undefined,
       status: isSet(object.status) ? globalThis.Number(object.status) : undefined,
-      statusEnum: isSet(object.statusEnum) ? globalThis.String(object.statusEnum) : undefined,
-      tradeNo: isSet(object.tradeNo) ? globalThis.String(object.tradeNo) : undefined,
-      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
-      usdAmount: isSet(object.usdAmount) ? globalThis.String(object.usdAmount) : undefined,
+      statusEnum: isSet(object.statusEnum)
+        ? globalThis.String(object.statusEnum)
+        : isSet(object.status_enum)
+        ? globalThis.String(object.status_enum)
+        : undefined,
+      tradeNo: isSet(object.tradeNo)
+        ? globalThis.String(object.tradeNo)
+        : isSet(object.trade_no)
+        ? globalThis.String(object.trade_no)
+        : undefined,
+      txHash: isSet(object.txHash)
+        ? globalThis.String(object.txHash)
+        : isSet(object.tx_hash)
+        ? globalThis.String(object.tx_hash)
+        : undefined,
+      usdAmount: isSet(object.usdAmount)
+        ? globalThis.String(object.usdAmount)
+        : isSet(object.usd_amount)
+        ? globalThis.String(object.usd_amount)
+        : undefined,
     };
   },
 
@@ -6051,10 +6391,26 @@ export const GetUserAuthResponse: MessageFns<GetUserAuthResponse> = {
     return {
       errno: isSet(object.errno) ? globalThis.Number(object.errno) : 0,
       errmsg: isSet(object.errmsg) ? globalThis.String(object.errmsg) : "",
-      apiKey: isSet(object.apiKey) ? globalThis.String(object.apiKey) : undefined,
-      walletAddress: isSet(object.walletAddress) ? globalThis.String(object.walletAddress) : undefined,
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : undefined,
+      walletAddress: isSet(object.walletAddress)
+        ? globalThis.String(object.walletAddress)
+        : isSet(object.wallet_address)
+        ? globalThis.String(object.wallet_address)
+        : undefined,
       walletUsers: isObject(object.walletUsers)
         ? (globalThis.Object.entries(object.walletUsers) as [string, any][]).reduce(
+          (acc: { [key: string]: string }, [key, value]: [string, any]) => {
+            acc[key] = globalThis.String(value);
+            return acc;
+          },
+          {},
+        )
+        : isObject(object.wallet_users)
+        ? (globalThis.Object.entries(object.wallet_users) as [string, any][]).reduce(
           (acc: { [key: string]: string }, [key, value]: [string, any]) => {
             acc[key] = globalThis.String(value);
             return acc;
@@ -6253,9 +6609,21 @@ export const EnableTradingResponse: MessageFns<EnableTradingResponse> = {
 
   fromJSON(object: any): EnableTradingResponse {
     return {
-      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
-      safeTxHash: isSet(object.safeTxHash) ? globalThis.String(object.safeTxHash) : undefined,
-      returnValue: isSet(object.returnValue) ? globalThis.String(object.returnValue) : undefined,
+      txHash: isSet(object.txHash)
+        ? globalThis.String(object.txHash)
+        : isSet(object.tx_hash)
+        ? globalThis.String(object.tx_hash)
+        : undefined,
+      safeTxHash: isSet(object.safeTxHash)
+        ? globalThis.String(object.safeTxHash)
+        : isSet(object.safe_tx_hash)
+        ? globalThis.String(object.safe_tx_hash)
+        : undefined,
+      returnValue: isSet(object.returnValue)
+        ? globalThis.String(object.returnValue)
+        : isSet(object.return_value)
+        ? globalThis.String(object.return_value)
+        : undefined,
     };
   },
 
@@ -6345,9 +6713,21 @@ export const SplitResponse: MessageFns<SplitResponse> = {
 
   fromJSON(object: any): SplitResponse {
     return {
-      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
-      safeTxHash: isSet(object.safeTxHash) ? globalThis.String(object.safeTxHash) : undefined,
-      returnValue: isSet(object.returnValue) ? globalThis.String(object.returnValue) : undefined,
+      txHash: isSet(object.txHash)
+        ? globalThis.String(object.txHash)
+        : isSet(object.tx_hash)
+        ? globalThis.String(object.tx_hash)
+        : undefined,
+      safeTxHash: isSet(object.safeTxHash)
+        ? globalThis.String(object.safeTxHash)
+        : isSet(object.safe_tx_hash)
+        ? globalThis.String(object.safe_tx_hash)
+        : undefined,
+      returnValue: isSet(object.returnValue)
+        ? globalThis.String(object.returnValue)
+        : isSet(object.return_value)
+        ? globalThis.String(object.return_value)
+        : undefined,
     };
   },
 
@@ -6437,9 +6817,21 @@ export const MergeResponse: MessageFns<MergeResponse> = {
 
   fromJSON(object: any): MergeResponse {
     return {
-      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
-      safeTxHash: isSet(object.safeTxHash) ? globalThis.String(object.safeTxHash) : undefined,
-      returnValue: isSet(object.returnValue) ? globalThis.String(object.returnValue) : undefined,
+      txHash: isSet(object.txHash)
+        ? globalThis.String(object.txHash)
+        : isSet(object.tx_hash)
+        ? globalThis.String(object.tx_hash)
+        : undefined,
+      safeTxHash: isSet(object.safeTxHash)
+        ? globalThis.String(object.safeTxHash)
+        : isSet(object.safe_tx_hash)
+        ? globalThis.String(object.safe_tx_hash)
+        : undefined,
+      returnValue: isSet(object.returnValue)
+        ? globalThis.String(object.returnValue)
+        : isSet(object.return_value)
+        ? globalThis.String(object.return_value)
+        : undefined,
     };
   },
 
@@ -6529,9 +6921,21 @@ export const RedeemResponse: MessageFns<RedeemResponse> = {
 
   fromJSON(object: any): RedeemResponse {
     return {
-      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
-      safeTxHash: isSet(object.safeTxHash) ? globalThis.String(object.safeTxHash) : undefined,
-      returnValue: isSet(object.returnValue) ? globalThis.String(object.returnValue) : undefined,
+      txHash: isSet(object.txHash)
+        ? globalThis.String(object.txHash)
+        : isSet(object.tx_hash)
+        ? globalThis.String(object.tx_hash)
+        : undefined,
+      safeTxHash: isSet(object.safeTxHash)
+        ? globalThis.String(object.safeTxHash)
+        : isSet(object.safe_tx_hash)
+        ? globalThis.String(object.safe_tx_hash)
+        : undefined,
+      returnValue: isSet(object.returnValue)
+        ? globalThis.String(object.returnValue)
+        : isSet(object.return_value)
+        ? globalThis.String(object.return_value)
+        : undefined,
     };
   },
 
@@ -6878,29 +7282,93 @@ export const OrderTradeApiData: MessageFns<OrderTradeApiData> = {
   fromJSON(object: any): OrderTradeApiData {
     return {
       amount: isSet(object.amount) ? globalThis.String(object.amount) : undefined,
-      chainId: isSet(object.chainId) ? globalThis.String(object.chainId) : undefined,
-      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : undefined,
+      chainId: isSet(object.chainId)
+        ? globalThis.String(object.chainId)
+        : isSet(object.chain_id)
+        ? globalThis.String(object.chain_id)
+        : undefined,
+      createdAt: isSet(object.createdAt)
+        ? globalThis.String(object.createdAt)
+        : isSet(object.created_at)
+        ? globalThis.String(object.created_at)
+        : undefined,
       fee: isSet(object.fee) ? globalThis.Number(object.fee) : undefined,
-      feeFormatted: isSet(object.feeFormatted) ? globalThis.String(object.feeFormatted) : undefined,
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
-      marketTitle: isSet(object.marketTitle) ? globalThis.String(object.marketTitle) : undefined,
-      orderNo: isSet(object.orderNo) ? globalThis.String(object.orderNo) : undefined,
+      feeFormatted: isSet(object.feeFormatted)
+        ? globalThis.String(object.feeFormatted)
+        : isSet(object.fee_formatted)
+        ? globalThis.String(object.fee_formatted)
+        : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
+      marketTitle: isSet(object.marketTitle)
+        ? globalThis.String(object.marketTitle)
+        : isSet(object.market_title)
+        ? globalThis.String(object.market_title)
+        : undefined,
+      orderNo: isSet(object.orderNo)
+        ? globalThis.String(object.orderNo)
+        : isSet(object.order_no)
+        ? globalThis.String(object.order_no)
+        : undefined,
       outcome: isSet(object.outcome) ? globalThis.String(object.outcome) : undefined,
-      outcomeSide: isSet(object.outcomeSide) ? globalThis.Number(object.outcomeSide) : undefined,
-      outcomeSideEnum: isSet(object.outcomeSideEnum) ? globalThis.String(object.outcomeSideEnum) : undefined,
+      outcomeSide: isSet(object.outcomeSide)
+        ? globalThis.Number(object.outcomeSide)
+        : isSet(object.outcome_side)
+        ? globalThis.Number(object.outcome_side)
+        : undefined,
+      outcomeSideEnum: isSet(object.outcomeSideEnum)
+        ? globalThis.String(object.outcomeSideEnum)
+        : isSet(object.outcome_side_enum)
+        ? globalThis.String(object.outcome_side_enum)
+        : undefined,
       price: isSet(object.price) ? globalThis.String(object.price) : undefined,
       profit: isSet(object.profit) ? globalThis.String(object.profit) : undefined,
-      quoteToken: isSet(object.quoteToken) ? globalThis.String(object.quoteToken) : undefined,
-      quoteTokenUsdPrice: isSet(object.quoteTokenUsdPrice) ? globalThis.String(object.quoteTokenUsdPrice) : undefined,
-      rootMarketId: isSet(object.rootMarketId) ? globalThis.Number(object.rootMarketId) : undefined,
-      rootMarketTitle: isSet(object.rootMarketTitle) ? globalThis.String(object.rootMarketTitle) : undefined,
+      quoteToken: isSet(object.quoteToken)
+        ? globalThis.String(object.quoteToken)
+        : isSet(object.quote_token)
+        ? globalThis.String(object.quote_token)
+        : undefined,
+      quoteTokenUsdPrice: isSet(object.quoteTokenUsdPrice)
+        ? globalThis.String(object.quoteTokenUsdPrice)
+        : isSet(object.quote_token_usd_price)
+        ? globalThis.String(object.quote_token_usd_price)
+        : undefined,
+      rootMarketId: isSet(object.rootMarketId)
+        ? globalThis.Number(object.rootMarketId)
+        : isSet(object.root_market_id)
+        ? globalThis.Number(object.root_market_id)
+        : undefined,
+      rootMarketTitle: isSet(object.rootMarketTitle)
+        ? globalThis.String(object.rootMarketTitle)
+        : isSet(object.root_market_title)
+        ? globalThis.String(object.root_market_title)
+        : undefined,
       shares: isSet(object.shares) ? globalThis.String(object.shares) : undefined,
       side: isSet(object.side) ? globalThis.String(object.side) : undefined,
       status: isSet(object.status) ? globalThis.Number(object.status) : undefined,
-      statusEnum: isSet(object.statusEnum) ? globalThis.String(object.statusEnum) : undefined,
-      tradeNo: isSet(object.tradeNo) ? globalThis.String(object.tradeNo) : undefined,
-      txHash: isSet(object.txHash) ? globalThis.String(object.txHash) : undefined,
-      usdAmount: isSet(object.usdAmount) ? globalThis.String(object.usdAmount) : undefined,
+      statusEnum: isSet(object.statusEnum)
+        ? globalThis.String(object.statusEnum)
+        : isSet(object.status_enum)
+        ? globalThis.String(object.status_enum)
+        : undefined,
+      tradeNo: isSet(object.tradeNo)
+        ? globalThis.String(object.tradeNo)
+        : isSet(object.trade_no)
+        ? globalThis.String(object.trade_no)
+        : undefined,
+      txHash: isSet(object.txHash)
+        ? globalThis.String(object.txHash)
+        : isSet(object.tx_hash)
+        ? globalThis.String(object.tx_hash)
+        : undefined,
+      usdAmount: isSet(object.usdAmount)
+        ? globalThis.String(object.usdAmount)
+        : isSet(object.usd_amount)
+        ? globalThis.String(object.usd_amount)
+        : undefined,
     };
   },
 
@@ -7342,33 +7810,109 @@ export const OrderApiData: MessageFns<OrderApiData> = {
 
   fromJSON(object: any): OrderApiData {
     return {
-      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : undefined,
-      expiresAt: isSet(object.expiresAt) ? globalThis.String(object.expiresAt) : undefined,
-      filledAmount: isSet(object.filledAmount) ? globalThis.String(object.filledAmount) : undefined,
-      filledShares: isSet(object.filledShares) ? globalThis.String(object.filledShares) : undefined,
-      marketId: isSet(object.marketId) ? globalThis.Number(object.marketId) : undefined,
-      marketTitle: isSet(object.marketTitle) ? globalThis.String(object.marketTitle) : undefined,
-      orderAmount: isSet(object.orderAmount) ? globalThis.String(object.orderAmount) : undefined,
-      orderId: isSet(object.orderId) ? globalThis.String(object.orderId) : undefined,
-      orderShares: isSet(object.orderShares) ? globalThis.String(object.orderShares) : undefined,
+      createdAt: isSet(object.createdAt)
+        ? globalThis.String(object.createdAt)
+        : isSet(object.created_at)
+        ? globalThis.String(object.created_at)
+        : undefined,
+      expiresAt: isSet(object.expiresAt)
+        ? globalThis.String(object.expiresAt)
+        : isSet(object.expires_at)
+        ? globalThis.String(object.expires_at)
+        : undefined,
+      filledAmount: isSet(object.filledAmount)
+        ? globalThis.String(object.filledAmount)
+        : isSet(object.filled_amount)
+        ? globalThis.String(object.filled_amount)
+        : undefined,
+      filledShares: isSet(object.filledShares)
+        ? globalThis.String(object.filledShares)
+        : isSet(object.filled_shares)
+        ? globalThis.String(object.filled_shares)
+        : undefined,
+      marketId: isSet(object.marketId)
+        ? globalThis.Number(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.Number(object.market_id)
+        : undefined,
+      marketTitle: isSet(object.marketTitle)
+        ? globalThis.String(object.marketTitle)
+        : isSet(object.market_title)
+        ? globalThis.String(object.market_title)
+        : undefined,
+      orderAmount: isSet(object.orderAmount)
+        ? globalThis.String(object.orderAmount)
+        : isSet(object.order_amount)
+        ? globalThis.String(object.order_amount)
+        : undefined,
+      orderId: isSet(object.orderId)
+        ? globalThis.String(object.orderId)
+        : isSet(object.order_id)
+        ? globalThis.String(object.order_id)
+        : undefined,
+      orderShares: isSet(object.orderShares)
+        ? globalThis.String(object.orderShares)
+        : isSet(object.order_shares)
+        ? globalThis.String(object.order_shares)
+        : undefined,
       outcome: isSet(object.outcome) ? globalThis.String(object.outcome) : undefined,
-      outcomeSide: isSet(object.outcomeSide) ? globalThis.Number(object.outcomeSide) : undefined,
-      outcomeSideEnum: isSet(object.outcomeSideEnum) ? globalThis.String(object.outcomeSideEnum) : undefined,
+      outcomeSide: isSet(object.outcomeSide)
+        ? globalThis.Number(object.outcomeSide)
+        : isSet(object.outcome_side)
+        ? globalThis.Number(object.outcome_side)
+        : undefined,
+      outcomeSideEnum: isSet(object.outcomeSideEnum)
+        ? globalThis.String(object.outcomeSideEnum)
+        : isSet(object.outcome_side_enum)
+        ? globalThis.String(object.outcome_side_enum)
+        : undefined,
       price: isSet(object.price) ? globalThis.String(object.price) : undefined,
       profit: isSet(object.profit) ? globalThis.String(object.profit) : undefined,
-      quoteToken: isSet(object.quoteToken) ? globalThis.String(object.quoteToken) : undefined,
-      rootMarketId: isSet(object.rootMarketId) ? globalThis.Number(object.rootMarketId) : undefined,
-      rootMarketTitle: isSet(object.rootMarketTitle) ? globalThis.String(object.rootMarketTitle) : undefined,
+      quoteToken: isSet(object.quoteToken)
+        ? globalThis.String(object.quoteToken)
+        : isSet(object.quote_token)
+        ? globalThis.String(object.quote_token)
+        : undefined,
+      rootMarketId: isSet(object.rootMarketId)
+        ? globalThis.Number(object.rootMarketId)
+        : isSet(object.root_market_id)
+        ? globalThis.Number(object.root_market_id)
+        : undefined,
+      rootMarketTitle: isSet(object.rootMarketTitle)
+        ? globalThis.String(object.rootMarketTitle)
+        : isSet(object.root_market_title)
+        ? globalThis.String(object.root_market_title)
+        : undefined,
       side: isSet(object.side) ? globalThis.Number(object.side) : undefined,
-      sideEnum: isSet(object.sideEnum) ? globalThis.String(object.sideEnum) : undefined,
+      sideEnum: isSet(object.sideEnum)
+        ? globalThis.String(object.sideEnum)
+        : isSet(object.side_enum)
+        ? globalThis.String(object.side_enum)
+        : undefined,
       status: isSet(object.status) ? globalThis.Number(object.status) : undefined,
-      statusEnum: isSet(object.statusEnum) ? globalThis.String(object.statusEnum) : undefined,
+      statusEnum: isSet(object.statusEnum)
+        ? globalThis.String(object.statusEnum)
+        : isSet(object.status_enum)
+        ? globalThis.String(object.status_enum)
+        : undefined,
       trades: globalThis.Array.isArray(object?.trades)
         ? object.trades.map((e: any) => OrderTradeApiData.fromJSON(e))
         : [],
-      tradingMethod: isSet(object.tradingMethod) ? globalThis.Number(object.tradingMethod) : undefined,
-      tradingMethodEnum: isSet(object.tradingMethodEnum) ? globalThis.String(object.tradingMethodEnum) : undefined,
-      transNo: isSet(object.transNo) ? globalThis.String(object.transNo) : undefined,
+      tradingMethod: isSet(object.tradingMethod)
+        ? globalThis.Number(object.tradingMethod)
+        : isSet(object.trading_method)
+        ? globalThis.Number(object.trading_method)
+        : undefined,
+      tradingMethodEnum: isSet(object.tradingMethodEnum)
+        ? globalThis.String(object.tradingMethodEnum)
+        : isSet(object.trading_method_enum)
+        ? globalThis.String(object.trading_method_enum)
+        : undefined,
+      transNo: isSet(object.transNo)
+        ? globalThis.String(object.transNo)
+        : isSet(object.trans_no)
+        ? globalThis.String(object.trans_no)
+        : undefined,
     };
   },
 
@@ -7930,28 +8474,94 @@ export const Market: MessageFns<Market> = {
 
   fromJSON(object: any): Market {
     return {
-      marketId: isSet(object.marketId) ? globalThis.String(object.marketId) : "",
-      marketTitle: isSet(object.marketTitle) ? globalThis.String(object.marketTitle) : "",
+      marketId: isSet(object.marketId)
+        ? globalThis.String(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.String(object.market_id)
+        : "",
+      marketTitle: isSet(object.marketTitle)
+        ? globalThis.String(object.marketTitle)
+        : isSet(object.market_title)
+        ? globalThis.String(object.market_title)
+        : "",
       slug: isSet(object.slug) ? globalThis.String(object.slug) : "",
-      conditionId: isSet(object.conditionId) ? globalThis.String(object.conditionId) : "",
-      chainId: isSet(object.chainId) ? globalThis.String(object.chainId) : "",
-      quoteToken: isSet(object.quoteToken) ? globalThis.String(object.quoteToken) : "",
+      conditionId: isSet(object.conditionId)
+        ? globalThis.String(object.conditionId)
+        : isSet(object.condition_id)
+        ? globalThis.String(object.condition_id)
+        : "",
+      chainId: isSet(object.chainId)
+        ? globalThis.String(object.chainId)
+        : isSet(object.chain_id)
+        ? globalThis.String(object.chain_id)
+        : "",
+      quoteToken: isSet(object.quoteToken)
+        ? globalThis.String(object.quoteToken)
+        : isSet(object.quote_token)
+        ? globalThis.String(object.quote_token)
+        : "",
       status: isSet(object.status) ? globalThis.Number(object.status) : 0,
-      statusEnum: isSet(object.statusEnum) ? globalThis.String(object.statusEnum) : "",
-      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : "",
-      cutoffAt: isSet(object.cutoffAt) ? globalThis.String(object.cutoffAt) : "",
-      resolvedAt: isSet(object.resolvedAt) ? globalThis.String(object.resolvedAt) : "",
-      yesTokenId: isSet(object.yesTokenId) ? globalThis.String(object.yesTokenId) : "",
-      noTokenId: isSet(object.noTokenId) ? globalThis.String(object.noTokenId) : "",
-      resultTokenId: isSet(object.resultTokenId) ? globalThis.String(object.resultTokenId) : "",
-      yesLabel: isSet(object.yesLabel) ? globalThis.String(object.yesLabel) : "",
-      noLabel: isSet(object.noLabel) ? globalThis.String(object.noLabel) : "",
+      statusEnum: isSet(object.statusEnum)
+        ? globalThis.String(object.statusEnum)
+        : isSet(object.status_enum)
+        ? globalThis.String(object.status_enum)
+        : "",
+      createdAt: isSet(object.createdAt)
+        ? globalThis.String(object.createdAt)
+        : isSet(object.created_at)
+        ? globalThis.String(object.created_at)
+        : "",
+      cutoffAt: isSet(object.cutoffAt)
+        ? globalThis.String(object.cutoffAt)
+        : isSet(object.cutoff_at)
+        ? globalThis.String(object.cutoff_at)
+        : "",
+      resolvedAt: isSet(object.resolvedAt)
+        ? globalThis.String(object.resolvedAt)
+        : isSet(object.resolved_at)
+        ? globalThis.String(object.resolved_at)
+        : "",
+      yesTokenId: isSet(object.yesTokenId)
+        ? globalThis.String(object.yesTokenId)
+        : isSet(object.yes_token_id)
+        ? globalThis.String(object.yes_token_id)
+        : "",
+      noTokenId: isSet(object.noTokenId)
+        ? globalThis.String(object.noTokenId)
+        : isSet(object.no_token_id)
+        ? globalThis.String(object.no_token_id)
+        : "",
+      resultTokenId: isSet(object.resultTokenId)
+        ? globalThis.String(object.resultTokenId)
+        : isSet(object.result_token_id)
+        ? globalThis.String(object.result_token_id)
+        : "",
+      yesLabel: isSet(object.yesLabel)
+        ? globalThis.String(object.yesLabel)
+        : isSet(object.yes_label)
+        ? globalThis.String(object.yes_label)
+        : "",
+      noLabel: isSet(object.noLabel)
+        ? globalThis.String(object.noLabel)
+        : isSet(object.no_label)
+        ? globalThis.String(object.no_label)
+        : "",
       volume: isSet(object.volume) ? globalThis.String(object.volume) : "",
-      isIncentivized: isSet(object.isIncentivized) ? globalThis.Boolean(object.isIncentivized) : false,
+      isIncentivized: isSet(object.isIncentivized)
+        ? globalThis.Boolean(object.isIncentivized)
+        : isSet(object.is_incentivized)
+        ? globalThis.Boolean(object.is_incentivized)
+        : false,
       childMarkets: globalThis.Array.isArray(object?.childMarkets)
         ? object.childMarkets.map((e: any) => ChildMarket.fromJSON(e))
+        : globalThis.Array.isArray(object?.child_markets)
+        ? object.child_markets.map((e: any) => ChildMarket.fromJSON(e))
         : [],
-      questionId: isSet(object.questionId) ? globalThis.String(object.questionId) : "",
+      questionId: isSet(object.questionId)
+        ? globalThis.String(object.questionId)
+        : isSet(object.question_id)
+        ? globalThis.String(object.question_id)
+        : "",
       rules: isSet(object.rules) ? globalThis.String(object.rules) : "",
       collection: isObject(object.collection) ? object.collection : undefined,
     };
@@ -8315,24 +8925,84 @@ export const ChildMarket: MessageFns<ChildMarket> = {
 
   fromJSON(object: any): ChildMarket {
     return {
-      marketId: isSet(object.marketId) ? globalThis.String(object.marketId) : "",
-      marketTitle: isSet(object.marketTitle) ? globalThis.String(object.marketTitle) : "",
+      marketId: isSet(object.marketId)
+        ? globalThis.String(object.marketId)
+        : isSet(object.market_id)
+        ? globalThis.String(object.market_id)
+        : "",
+      marketTitle: isSet(object.marketTitle)
+        ? globalThis.String(object.marketTitle)
+        : isSet(object.market_title)
+        ? globalThis.String(object.market_title)
+        : "",
       slug: isSet(object.slug) ? globalThis.String(object.slug) : "",
-      conditionId: isSet(object.conditionId) ? globalThis.String(object.conditionId) : "",
-      chainId: isSet(object.chainId) ? globalThis.String(object.chainId) : "",
-      quoteToken: isSet(object.quoteToken) ? globalThis.String(object.quoteToken) : "",
+      conditionId: isSet(object.conditionId)
+        ? globalThis.String(object.conditionId)
+        : isSet(object.condition_id)
+        ? globalThis.String(object.condition_id)
+        : "",
+      chainId: isSet(object.chainId)
+        ? globalThis.String(object.chainId)
+        : isSet(object.chain_id)
+        ? globalThis.String(object.chain_id)
+        : "",
+      quoteToken: isSet(object.quoteToken)
+        ? globalThis.String(object.quoteToken)
+        : isSet(object.quote_token)
+        ? globalThis.String(object.quote_token)
+        : "",
       status: isSet(object.status) ? globalThis.Number(object.status) : 0,
-      statusEnum: isSet(object.statusEnum) ? globalThis.String(object.statusEnum) : "",
-      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : "",
-      cutoffAt: isSet(object.cutoffAt) ? globalThis.String(object.cutoffAt) : "",
-      resolvedAt: isSet(object.resolvedAt) ? globalThis.String(object.resolvedAt) : "",
-      yesTokenId: isSet(object.yesTokenId) ? globalThis.String(object.yesTokenId) : "",
-      noTokenId: isSet(object.noTokenId) ? globalThis.String(object.noTokenId) : "",
-      resultTokenId: isSet(object.resultTokenId) ? globalThis.String(object.resultTokenId) : "",
-      yesLabel: isSet(object.yesLabel) ? globalThis.String(object.yesLabel) : "",
-      noLabel: isSet(object.noLabel) ? globalThis.String(object.noLabel) : "",
+      statusEnum: isSet(object.statusEnum)
+        ? globalThis.String(object.statusEnum)
+        : isSet(object.status_enum)
+        ? globalThis.String(object.status_enum)
+        : "",
+      createdAt: isSet(object.createdAt)
+        ? globalThis.String(object.createdAt)
+        : isSet(object.created_at)
+        ? globalThis.String(object.created_at)
+        : "",
+      cutoffAt: isSet(object.cutoffAt)
+        ? globalThis.String(object.cutoffAt)
+        : isSet(object.cutoff_at)
+        ? globalThis.String(object.cutoff_at)
+        : "",
+      resolvedAt: isSet(object.resolvedAt)
+        ? globalThis.String(object.resolvedAt)
+        : isSet(object.resolved_at)
+        ? globalThis.String(object.resolved_at)
+        : "",
+      yesTokenId: isSet(object.yesTokenId)
+        ? globalThis.String(object.yesTokenId)
+        : isSet(object.yes_token_id)
+        ? globalThis.String(object.yes_token_id)
+        : "",
+      noTokenId: isSet(object.noTokenId)
+        ? globalThis.String(object.noTokenId)
+        : isSet(object.no_token_id)
+        ? globalThis.String(object.no_token_id)
+        : "",
+      resultTokenId: isSet(object.resultTokenId)
+        ? globalThis.String(object.resultTokenId)
+        : isSet(object.result_token_id)
+        ? globalThis.String(object.result_token_id)
+        : "",
+      yesLabel: isSet(object.yesLabel)
+        ? globalThis.String(object.yesLabel)
+        : isSet(object.yes_label)
+        ? globalThis.String(object.yes_label)
+        : "",
+      noLabel: isSet(object.noLabel)
+        ? globalThis.String(object.noLabel)
+        : isSet(object.no_label)
+        ? globalThis.String(object.no_label)
+        : "",
       volume: isSet(object.volume) ? globalThis.String(object.volume) : "",
-      questionId: isSet(object.questionId) ? globalThis.String(object.questionId) : "",
+      questionId: isSet(object.questionId)
+        ? globalThis.String(object.questionId)
+        : isSet(object.question_id)
+        ? globalThis.String(object.question_id)
+        : "",
       rules: isSet(object.rules) ? globalThis.String(object.rules) : "",
     };
   },
@@ -8551,13 +9221,33 @@ export const QuoteToken: MessageFns<QuoteToken> = {
 
   fromJSON(object: any): QuoteToken {
     return {
-      chainId: isSet(object.chainId) ? globalThis.String(object.chainId) : "",
-      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : "",
-      ctfExchangeAddress: isSet(object.ctfExchangeAddress) ? globalThis.String(object.ctfExchangeAddress) : "",
+      chainId: isSet(object.chainId)
+        ? globalThis.String(object.chainId)
+        : isSet(object.chain_id)
+        ? globalThis.String(object.chain_id)
+        : "",
+      createdAt: isSet(object.createdAt)
+        ? globalThis.String(object.createdAt)
+        : isSet(object.created_at)
+        ? globalThis.String(object.created_at)
+        : "",
+      ctfExchangeAddress: isSet(object.ctfExchangeAddress)
+        ? globalThis.String(object.ctfExchangeAddress)
+        : isSet(object.ctf_exchange_address)
+        ? globalThis.String(object.ctf_exchange_address)
+        : "",
       decimal: isSet(object.decimal) ? globalThis.Number(object.decimal) : 0,
       id: isSet(object.id) ? globalThis.String(object.id) : "",
-      quoteTokenAddress: isSet(object.quoteTokenAddress) ? globalThis.String(object.quoteTokenAddress) : "",
-      quoteTokenName: isSet(object.quoteTokenName) ? globalThis.String(object.quoteTokenName) : "",
+      quoteTokenAddress: isSet(object.quoteTokenAddress)
+        ? globalThis.String(object.quoteTokenAddress)
+        : isSet(object.quote_token_address)
+        ? globalThis.String(object.quote_token_address)
+        : "",
+      quoteTokenName: isSet(object.quoteTokenName)
+        ? globalThis.String(object.quoteTokenName)
+        : isSet(object.quote_token_name)
+        ? globalThis.String(object.quote_token_name)
+        : "",
       symbol: isSet(object.symbol) ? globalThis.String(object.symbol) : "",
     };
   },

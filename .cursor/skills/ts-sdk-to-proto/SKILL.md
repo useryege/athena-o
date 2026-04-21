@@ -1,6 +1,6 @@
 ---
 name: ts-sdk-to-proto
-description: defines mandatory prerequisites and scope rules when converting a typescript sdk under node_modules to protocol buffers (.proto), requires proto field identifiers to match TS SDK field naming per-field (camelCase, PascalCase, etc.), plus mandatory post-generation verification that gRPC request/response match the TS SDK; any mismatch must be reported to the user with possible non-error rationale. requires an explicit node_modules subdirectory as sdk context, a bounded list of sdk methods or functions to model, and the target output .proto path. use when the user mentions ts-sdk to proto, typescript sdk to protobuf, or generating proto from a node sdk.
+description: defines mandatory prerequisites and scope rules when converting a typescript sdk under node_modules to protocol buffers (.proto), requires proto field identifiers to use lower_snake_case with explicit SDK-to-proto field mapping verification, plus mandatory post-generation verification that gRPC request/response match the TS SDK; any mismatch must be reported to the user with possible non-error rationale. requires an explicit node_modules subdirectory as sdk context, a bounded list of sdk methods or functions to model, and the target output .proto path. use when the user mentions ts-sdk to proto, typescript sdk to protobuf, or generating proto from a node sdk.
 ---
 
 # TypeScript SDK to Protocol Buffers
@@ -32,17 +32,18 @@ Please convert TS SDK → proto.
 ## Conversion workflow
 
 1. Treat the given `node_modules/...` tree as the **only** authoritative SDK source. Use that package’s `package.json` (`main`, `types`, `exports`) to locate entry points when needed.
-2. For **listed symbols only**, derive request/response shapes (including errors and async where relevant) and map them to `service` and `message` definitions. **Field names must align with the TS SDK** (see [Field naming (mandatory)](#field-naming-mandatory)). Follow existing project proto conventions for **field numbering** and other non-name rules; if none exist, confirm with the user before inventing patterns.
+2. For **listed symbols only**, derive request/response shapes (including errors and async where relevant) and map them to `service` and `message` definitions. **Field names must be `lower_snake_case` in `.proto`** (see [Field naming (mandatory)](#field-naming-mandatory)). Follow existing project proto conventions for **field numbering** and other non-name rules; if none exist, confirm with the user before inventing patterns.
 3. Do not pull in unlisted symbols from the same file or dependency chain.
 4. **After** `.proto` changes are written, **run verification** (see below). Do not treat the task as finished until verification is done and any findings are communicated.
 
 ## Field naming (mandatory)
 
-- **Align with the TS SDK per field**: For every property taken from a TypeScript interface, class field, or response object, the corresponding `.proto` field **must use the same identifier spelling and casing** as in the SDK (e.g. `camelCase`, `PascalCase`, `snake_case` if the SDK uses it). Do not rename for “proto style” alone when that diverges from the source.
-- **Consistency**: Prefer **the same field names** as the SDK; only differ when a proto keyword/reserved name forces a change—then document the mapping and call it out in verification.
-- **Mixed casing in one message is allowed** when the SDK does the same.
+- **Proto fields must be `lower_snake_case`**: Every message field identifier in `.proto` must follow lower snake case (for example `topic_type`, `sort_by`, `market_id`, `use_cache`).
+- **Do not mirror SDK camelCase/PascalCase into proto fields**: SDK/source naming can be `camelCase`/`PascalCase`, but proto fields still must remain `lower_snake_case`.
+- **Mapping must remain semantically exact**: Renaming is style-only; each snake_case field must map 1:1 to the original SDK property semantics. No dropping, merging, or reinterpretation of fields during rename.
+- **Reserved-name exceptions must be explicit**: If a direct snake_case name conflicts with proto keywords or project constraints, choose a safe snake_case alternative and document the mapping in verification.
 
-**Example** — if the SDK shape uses `GoodBoy` and `smallGirl`, the proto message should use those exact field names (types depend on the real SDK mapping):
+**Example** — if the SDK shape uses `GoodBoy` and `smallGirl`, proto fields must still be lower snake case:
 
 ```text
 // TS (conceptual)
@@ -51,10 +52,10 @@ interface Example {
   smallGirl: string;
 }
 
-// .proto — names and casing match the SDK
+// .proto — names use lower_snake_case with semantic 1:1 mapping
 message Example {
-  string GoodBoy = 1;
-  string smallGirl = 2;
+  string good_boy = 1;
+  string small_girl = 2;
 }
 ```
 
@@ -73,7 +74,7 @@ message Example {
 
 **When:** Immediately after generating or updating the target `.proto` for the scoped symbols.
 
-**Standard:** For each modeled RPC, the gRPC **request** and **response** must match the TypeScript SDK’s observable **inputs** and **outputs** for the corresponding method or function (including wrapper types such as `ApiResponse<T>`, query/path/body splits, and nested `result` payloads). Compare semantics field-by-field: **field names and casing must match the SDK** unless a documented exception applies ([Field naming (mandatory)](#field-naming-mandatory)). Also check optional vs required and flattening vs nesting.
+**Standard:** For each modeled RPC, the gRPC **request** and **response** must match the TypeScript SDK’s observable **inputs** and **outputs** for the corresponding method or function (including wrapper types such as `ApiResponse<T>`, query/path/body splits, and nested `result` payloads). Compare semantics field-by-field: **proto fields must be `lower_snake_case` and preserve a 1:1 mapping to SDK fields** unless a documented exception applies ([Field naming (mandatory)](#field-naming-mandatory)). Also check optional vs required and flattening vs nesting.
 
 In the same verification pass, ensure RPC envelopes satisfy [RPC request/response constraints (mandatory)](#rpc-requestresponse-constraints-mandatory), especially uniqueness-per-RPC and `<RpcName>Response` naming.
 
@@ -99,7 +100,7 @@ Absence of a mismatch does not require a long explanation; a mismatch **always**
 ## Postflight checklist
 
 - [ ] Verification ran against the TS SDK for every scoped RPC (request + response).
-- [ ] Field names/casing match the SDK per [Field naming (mandatory)](#field-naming-mandatory), or divergences are explicitly reported.
+- [ ] Proto field names are `lower_snake_case` per [Field naming (mandatory)](#field-naming-mandatory), and SDK-to-proto field mappings are explicitly verified.
 - [ ] RPC request/response message types are unique per RPC and response message naming follows `<RpcName>Response` (or approved service-prefixed form).
 - [ ] Every enum uses `_UNSPECIFIED = 0`, business values start at `1+`, and adapter logic does not silently map UNSPECIFIED to a concrete SDK value.
 - [ ] Any mismatch is documented to the user with concrete diffs and possible non-error rationale.
