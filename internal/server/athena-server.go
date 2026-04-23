@@ -8,6 +8,7 @@ import (
 	"fmt"
 	goio "io"
 	"io/fs"
+	"math"
 	"net"
 	"net/http"
 	"net/url"
@@ -59,6 +60,7 @@ import (
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/db"
 	dexutil "github.com/useryege/athena/util/dex"
+	"github.com/useryege/athena/util/env"
 	errorsutil "github.com/useryege/athena/util/errors"
 	grpc_util "github.com/useryege/athena/util/grpc"
 	"github.com/useryege/athena/util/healthz"
@@ -66,7 +68,6 @@ import (
 	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/io/files"
 	jwtutil "github.com/useryege/athena/util/jwt"
-	"github.com/useryege/athena/util/notification/k8s"
 	"github.com/useryege/athena/util/oidc"
 	"github.com/useryege/athena/util/rbac"
 	util_session "github.com/useryege/athena/util/session"
@@ -91,11 +92,66 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
 
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 )
+
+const (
+	maxConcurrentLoginRequestsCountEnv = "ATHENA_MAX_CONCURRENT_LOGIN_REQUESTS_COUNT"
+	replicasCountEnv                   = "ATHENA_API_SERVER_REPLICAS"
+	renewTokenKey                      = "renew-token"
+)
+
+// ErrNoSession indicates no auth token was supplied as part of a request
+var ErrNoSession = status.Errorf(codes.Unauthenticated, "no session information")
+
+// noCacheHeaders is a map of headers that use to tell the browser not to cache the response
+var noCacheHeaders = map[string]string{
+	"Expires":         time.Unix(0, 0).Format(time.RFC1123),
+	"Cache-Control":   "no-cache, private, max-age=0",
+	"Pragma":          "no-cache",
+	"X-Accel-Expires": "0",
+}
+
+// backoff is a backoff strategy for retrying operations
+var backoff = wait.Backoff{
+	Steps:    5,
+	Duration: 500 * time.Millisecond,
+	Factor:   1.0,
+	Jitter:   0.1,
+}
+
+var (
+	clientConstraint = ">= " + common.MinClientVersion
+	baseHRefRegex    = regexp.MustCompile(`<base href="(.*?)">`)
+	// limits number of concurrent login requests to prevent password brute forcing. If set to 0 then no limit is enforced.
+	maxConcurrentLoginRequestsCount = 50
+	replicasCount                   = 1
+	enableGRPCTimeHistogram         = true
+)
+
+func init() {
+	// parse the max concurrent login requests count from the environment variable
+	maxConcurrentLoginRequestsCount = env.ParseNumFromEnv(maxConcurrentLoginRequestsCountEnv, maxConcurrentLoginRequestsCount, 0, math.MaxInt32)
+	replicasCount = env.ParseNumFromEnv(replicasCountEnv, replicasCount, 0, math.MaxInt32)
+	if replicasCount > 0 {
+		maxConcurrentLoginRequestsCount = maxConcurrentLoginRequestsCount / replicasCount
+	}
+	// enableGRPCTimeHistogram = env.ParseBoolFromEnv(common.EnvEnableGRPCTimeHistogramEnv, false)
+}
+
+// HTTPMetricsRegistry exposes operations to update http metrics in the Athena
+// API server.
+type HTTPMetricsRegistry interface {
+	// IncExtensionRequestCounter will increase the request counter for the given
+	// extension with the given status.
+	IncExtensionRequestCounter(extension string, status int)
+	// ObserveExtensionRequestDuration will register the request roundtrip duration
+	// between Athena API Server and the extension backend service for the given
+	// extension.
+	ObserveExtensionRequestDuration(extension string, duration time.Duration)
+}
 
 // AthenaServer is the API server for Athena
 type AthenaServer struct {
@@ -112,7 +168,7 @@ type AthenaServer struct {
 	// appLister      applisters.ApplicationLister
 	// appsetInformer cache.SharedIndexInformer
 	// appsetLister   applisters.ApplicationSetLister
-	db db.ArgoDB
+	// db db.ArgoDB
 
 	// stopCh is the channel which when closed, will shutdown the Athena server
 	stopCh           chan os.Signal
@@ -122,9 +178,9 @@ type AthenaServer struct {
 	indexDataErr     error
 	staticAssets     http.FileSystem
 	// apiFactory         api.Factory
-	secretInformer    cache.SharedIndexInformer
-	configMapInformer cache.SharedIndexInformer
-	serviceSet        *AthenaServiceSet
+	// secretInformer    cache.SharedIndexInformer
+	// configMapInformer cache.SharedIndexInformer
+	serviceSet *AthenaServiceSet
 	// extensionManager   *extension.Manager
 	Shutdown           func()
 	terminateRequested atomic.Bool
@@ -165,25 +221,19 @@ type AthenaServerOpts struct {
 	SyncWithReplaceAllowed bool
 }
 
-// initializeDefaultProject creates the default project if it does not already exist
-func initializeDefaultProject(opts AthenaServerOpts) error {
-	// TODO: implement
-	return nil
-}
-
 // NewServer returns a new instance of the Athena API server
 func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	settingsMgr := settings_util.NewSettingsManager(ctx, opts.KubeClientset, opts.Namespace)
 	settings, err := settingsMgr.InitializeSettings(opts.Insecure)
 	errorsutil.CheckError(err)
 
-	err = initializeDefaultProject(opts)
-	errorsutil.CheckError(err)
-
 	userStateStorage := util_session.NewUserStateStorage(opts.RedisClient)
+
 	ssoClientApp, err := oidc.NewClientApp(settings, opts.DexServerAddr, opts.DexTLSConfig, opts.BaseHRef, cacheutil.NewRedisCache(opts.RedisClient, settings.UserInfoCacheExpiration(), cacheutil.RedisCompressionNone))
 	errorsutil.CheckError(err)
+
 	sessionMgr := util_session.NewSessionManager(settingsMgr, opts.DexServerAddr, opts.DexTLSConfig, userStateStorage)
+
 	enf := rbac.NewEnforcer(opts.KubeClientset, opts.Namespace, common.ArgoCDRBACConfigMapName, nil)
 	enf.EnableEnforce(!opts.DisableAuth)
 	err = enf.SetBuiltinPolicy(assets.BuiltinPolicyCSV)
@@ -192,6 +242,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	policyEnf := rbacpolicy.NewRBACPolicyEnforcer(enf)
 	enf.SetClaimsEnforcerFunc(policyEnf.EnforceClaims)
 
+	// static assets
 	staticFS, err := fs.Sub(ui.Embedded, "dist/app")
 	errorsutil.CheckError(err)
 
@@ -206,10 +257,10 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		staticFS = utilio.NewComposableFS(staticFS, root.FS())
 	}
 
-	secretInformer := k8s.NewSecretInformer(opts.KubeClientset, opts.Namespace, "athena-notifications-secret")
-	configMapInformer := k8s.NewConfigMapInformer(opts.KubeClientset, opts.Namespace, "athena-notifications-cm")
+	// secretInformer := k8s.NewSecretInformer(opts.KubeClientset, opts.Namespace, "athena-notifications-secret")
+	// configMapInformer := k8s.NewConfigMapInformer(opts.KubeClientset, opts.Namespace, "athena-notifications-cm")
 
-	dbInstance := db.NewDB(opts.Namespace, settingsMgr, opts.KubeClientset)
+	// dbInstance := db.NewDB(opts.Namespace, opts.KubeClientset)
 	logger := log.NewEntry(log.StandardLogger())
 
 	noopShutdown := func() {
@@ -233,10 +284,10 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		policyEnforcer:   policyEnf,
 		userStateStorage: userStateStorage,
 		staticAssets:     http.FS(staticFS),
-		db:               dbInstance,
+		// db:               dbInstance,
 		// apiFactory:        apiFactory,
-		secretInformer:    secretInformer,
-		configMapInformer: configMapInformer,
+		// secretInformer:    secretInformer,
+		// configMapInformer: configMapInformer,
 		// extensionManager: em,
 		Shutdown: noopShutdown,
 		stopCh:   make(chan os.Signal, 1),
@@ -377,8 +428,8 @@ func (server *AthenaServer) Init(ctx context.Context) {
 	// go server.projInformer.Run(ctx.Done())
 	// go server.appInformer.Run(ctx.Done())
 	// go server.appsetInformer.Run(ctx.Done())
-	go server.configMapInformer.Run(ctx.Done())
-	go server.secretInformer.Run(ctx.Done())
+	// go server.configMapInformer.Run(ctx.Done())
+	// go server.secretInformer.Run(ctx.Done())
 }
 
 func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registry) *grpc.Server {
@@ -1003,6 +1054,45 @@ func withRootPath(handler http.Handler, a *AthenaServer) http.Handler {
 // 	}
 // 	bf.handler.ServeHTTP(w, r)
 // }
+
+type Listeners struct {
+	Main        net.Listener
+	Metrics     net.Listener
+	GatewayConn *grpc.ClientConn
+}
+
+func (l *Listeners) Close() error {
+	if l.Main != nil {
+		if err := l.Main.Close(); err != nil {
+			return err
+		}
+		l.Main = nil
+	}
+	if l.Metrics != nil {
+		if err := l.Metrics.Close(); err != nil {
+			return err
+		}
+		l.Metrics = nil
+	}
+	if l.GatewayConn != nil {
+		if err := l.GatewayConn.Close(); err != nil {
+			return err
+		}
+		l.GatewayConn = nil
+	}
+	return nil
+}
+
+// GracefulRestartSignal implements a signal to be used for a graceful restart trigger.
+type GracefulRestartSignal struct{}
+
+// String is a part of os.Signal interface to represent a signal as a string.
+func (g GracefulRestartSignal) String() string {
+	return "GracefulRestartSignal"
+}
+
+// Signal is a part of os.Signal interface doing nothing.
+func (g GracefulRestartSignal) Signal() {}
 
 // Run runs the API Server
 // We use k8s.io/code-generator/cmd/go-to-protobuf to generate the .proto files from the API types.
