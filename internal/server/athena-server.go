@@ -54,11 +54,9 @@ import (
 	"github.com/useryege/athena/pkg/apiclient"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
-	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/ui"
 	"github.com/useryege/athena/util/assets"
 	cacheutil "github.com/useryege/athena/util/cache"
-	"github.com/useryege/athena/util/db"
 	dexutil "github.com/useryege/athena/util/dex"
 	"github.com/useryege/athena/util/env"
 	errorsutil "github.com/useryege/athena/util/errors"
@@ -88,8 +86,6 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 
@@ -123,8 +119,8 @@ var backoff = wait.Backoff{
 }
 
 var (
-	clientConstraint = ">= " + common.MinClientVersion
-	baseHRefRegex    = regexp.MustCompile(`<base href="(.*?)">`)
+	// clientConstraint = ">= " + common.MinClientVersion
+	baseHRefRegex = regexp.MustCompile(`<base href="(.*?)">`)
 	// limits number of concurrent login requests to prevent password brute forcing. If set to 0 then no limit is enforced.
 	maxConcurrentLoginRequestsCount = 50
 	replicasCount                   = 1
@@ -229,8 +225,8 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 
 	userStateStorage := util_session.NewUserStateStorage(opts.RedisClient)
 
-	ssoClientApp, err := oidc.NewClientApp(settings, opts.DexServerAddr, opts.DexTLSConfig, opts.BaseHRef, cacheutil.NewRedisCache(opts.RedisClient, settings.UserInfoCacheExpiration(), cacheutil.RedisCompressionNone))
-	errorsutil.CheckError(err)
+	// ssoClientApp, err := oidc.NewClientApp(settings, opts.DexServerAddr, opts.DexTLSConfig, opts.BaseHRef, cacheutil.NewRedisCache(opts.RedisClient, settings.UserInfoCacheExpiration(), cacheutil.RedisCompressionNone))
+	// errorsutil.CheckError(err)
 
 	sessionMgr := util_session.NewSessionManager(settingsMgr, opts.DexServerAddr, opts.DexTLSConfig, userStateStorage)
 
@@ -270,12 +266,12 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	a := &AthenaServer{
 		AthenaServerOpts: opts,
 		// ApplicationSetOpts: appsetOpts,
-		ssoClientApp: ssoClientApp,
-		log:          logger,
-		settings:     settings,
-		sessionMgr:   sessionMgr,
-		settingsMgr:  settingsMgr,
-		enf:          enf,
+		// ssoClientApp: ssoClientApp,
+		log:         logger,
+		settings:    settings,
+		sessionMgr:  sessionMgr,
+		settingsMgr: settingsMgr,
+		enf:         enf,
 		// projInformer:      projInformer,
 		// appInformer:       appInformer,
 		// appLister:         appLister,
@@ -293,56 +289,56 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		stopCh:   make(chan os.Signal, 1),
 	}
 
-	err = a.logInClusterWarnings()
-	if err != nil {
-		// Just log. It's not critical.
-		log.Warnf("Failed to log in-cluster warnings: %v", err)
-	}
+	// err = a.logInClusterWarnings()
+	// if err != nil {
+	// 	// Just log. It's not critical.
+	// 	log.Warnf("Failed to log in-cluster warnings: %v", err)
+	// }
 
 	return a
 
 }
 
 // logInClusterWarnings checks the in-cluster configuration and prints out any warnings.
-func (server *AthenaServer) logInClusterWarnings() error {
-	labelSelector := labels.NewSelector()
-	req, err := labels.NewRequirement(common.LabelKeySecretType, selection.Equals, []string{common.LabelValueSecretTypeCluster})
-	if err != nil {
-		return fmt.Errorf("failed to construct cluster-type label selector: %w", err)
-	}
-	labelSelector = labelSelector.Add(*req)
-	secretsLister, err := server.settingsMgr.GetSecretsLister()
-	if err != nil {
-		return fmt.Errorf("failed to get secrets lister: %w", err)
-	}
-	clusterSecrets, err := secretsLister.Secrets(server.AthenaServerOpts.Namespace).List(labelSelector)
-	if err != nil {
-		return fmt.Errorf("failed to list cluster secrets: %w", err)
-	}
-	var inClusterSecrets []string
-	for _, clusterSecret := range clusterSecrets {
-		cluster, err := db.SecretToCluster(clusterSecret)
-		if err != nil {
-			return fmt.Errorf("could not unmarshal cluster secret %q: %w", clusterSecret.Name, err)
-		}
-		if cluster.Server == v1alpha1.KubernetesInternalAPIServerAddr {
-			inClusterSecrets = append(inClusterSecrets, clusterSecret.Name)
-		}
-	}
-	if len(inClusterSecrets) > 0 {
-		// Don't make this call unless we actually have in-cluster secrets, to save time.
-		dbSettings, err := server.settingsMgr.GetSettings()
-		if err != nil {
-			return fmt.Errorf("could not get DB settings: %w", err)
-		}
-		if !dbSettings.InClusterEnabled {
-			for _, clusterName := range inClusterSecrets {
-				log.Warnf("cluster %q uses in-cluster server address but it's disabled in Athena settings", clusterName)
-			}
-		}
-	}
-	return nil
-}
+// func (server *AthenaServer) logInClusterWarnings() error {
+// 	labelSelector := labels.NewSelector()
+// 	req, err := labels.NewRequirement(common.LabelKeySecretType, selection.Equals, []string{common.LabelValueSecretTypeCluster})
+// 	if err != nil {
+// 		return fmt.Errorf("failed to construct cluster-type label selector: %w", err)
+// 	}
+// 	labelSelector = labelSelector.Add(*req)
+// 	secretsLister, err := server.settingsMgr.GetSecretsLister()
+// 	if err != nil {
+// 		return fmt.Errorf("failed to get secrets lister: %w", err)
+// 	}
+// 	clusterSecrets, err := secretsLister.Secrets(server.AthenaServerOpts.Namespace).List(labelSelector)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to list cluster secrets: %w", err)
+// 	}
+// 	var inClusterSecrets []string
+// 	for _, clusterSecret := range clusterSecrets {
+// 		cluster, err := db.SecretToCluster(clusterSecret)
+// 		if err != nil {
+// 			return fmt.Errorf("could not unmarshal cluster secret %q: %w", clusterSecret.Name, err)
+// 		}
+// 		if cluster.Server == v1alpha1.KubernetesInternalAPIServerAddr {
+// 			inClusterSecrets = append(inClusterSecrets, clusterSecret.Name)
+// 		}
+// 	}
+// 	if len(inClusterSecrets) > 0 {
+// 		// Don't make this call unless we actually have in-cluster secrets, to save time.
+// 		dbSettings, err := server.settingsMgr.GetSettings()
+// 		if err != nil {
+// 			return fmt.Errorf("could not get DB settings: %w", err)
+// 		}
+// 		if !dbSettings.InClusterEnabled {
+// 			for _, clusterName := range inClusterSecrets {
+// 				log.Warnf("cluster %q uses in-cluster server address but it's disabled in Athena settings", clusterName)
+// 			}
+// 		}
+// 	}
+// 	return nil
+// }
 
 func (server *AthenaServer) healthCheck(r *http.Request) error {
 	if server.terminateRequested.Load() {
@@ -899,7 +895,7 @@ func (server *AthenaServer) newStaticAssetsHandler() func(http.ResponseWriter, *
 
 // newHTTPServer returns the HTTP server to serve HTTP/HTTPS requests. This is implemented
 // using grpc-gateway as a proxy to the gRPC server.
-func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWebHandler http.Handler, conn *grpc.ClientConn, metricsReg HTTPMetricsRegistry) *http.Server {
+func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWebHandler http.Handler, conn *grpc.ClientConn, _ HTTPMetricsRegistry) *http.Server {
 	endpoint := fmt.Sprintf("localhost:%d", port)
 	mux := http.NewServeMux()
 	httpS := http.Server{

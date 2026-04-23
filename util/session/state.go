@@ -18,12 +18,12 @@ const (
 )
 
 type userStateStorage struct {
-	attempts            map[string]LoginAttempts
-	redis               *redis.Client
-	revokedTokens       map[string]bool
-	recentRevokedTokens map[string]bool
+	redis               *redis.Client            // db
+	attempts            map[string]LoginAttempts // login attempts
+	revokedTokens       map[string]bool          // revoked tokens
+	recentRevokedTokens map[string]bool          // recent revoked tokens
 	lock                sync.RWMutex
-	resyncDuration      time.Duration
+	resyncDuration      time.Duration // resync duration
 }
 
 var _ UserStateStorage = &userStateStorage{}
@@ -33,8 +33,8 @@ func NewUserStateStorage(redis *redis.Client) *userStateStorage {
 		attempts:            map[string]LoginAttempts{},
 		revokedTokens:       map[string]bool{},
 		recentRevokedTokens: map[string]bool{},
-		resyncDuration:      time.Second * 15,
-		redis:               redis,
+		resyncDuration:      time.Second * 15, // every 15 seconds to resync the revoked tokens
+		redis:               redis,            // db
 	}
 }
 
@@ -42,6 +42,7 @@ func NewUserStateStorage(redis *redis.Client) *userStateStorage {
 // Don't call this until after setting up all hooks on the Redis client, or you might encounter race conditions.
 func (storage *userStateStorage) Init(ctx context.Context) {
 	go storage.watchRevokedTokens(ctx)
+
 	ticker := time.NewTicker(storage.resyncDuration)
 	go func() {
 		storage.loadRevokedTokensSafe()
@@ -76,7 +77,7 @@ func (storage *userStateStorage) watchRevokedTokens(ctx context.Context) {
 func (storage *userStateStorage) loadRevokedTokensSafe() {
 	err := storage.loadRevokedTokens()
 	for err != nil {
-		log.Warnf("Failed to resync revoked tokens. retrying again in 1 minute: %v", err)
+		log.Warnf("Failed to resync revoked tokens. retrying again in 1 minute: %v", err) // every 1 minute to retry
 		time.Sleep(time.Minute)
 		err = storage.loadRevokedTokens()
 	}
