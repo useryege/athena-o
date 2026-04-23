@@ -1,9 +1,7 @@
 package main
 
 import (
-	"errors"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -11,10 +9,8 @@ import (
 
 	athenaControllerCommands "github.com/useryege/athena/cmd/athena-controller/commands"
 	athenaDexCommands "github.com/useryege/athena/cmd/athena-dex/commands"
-	athenaK8sAuthCommands "github.com/useryege/athena/cmd/athena-k8s-auth/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
-	athenaCommands "github.com/useryege/athena/cmd/athena/commands"
 	"github.com/useryege/athena/util/log"
 )
 
@@ -35,7 +31,7 @@ func main() {
 		binaryName = val
 	}
 
-	isAthenaCLI := false
+	// var isAthenaCLI bool
 
 	switch binaryName {
 	case "athena-server":
@@ -46,23 +42,8 @@ func main() {
 		command = athenaDexCommands.NewCommand()
 	case "athena-notification":
 		command = athenaNotificationCommands.NewCommand()
-	case "athena", "athena-linux-amd64", "athena-darwin-amd64", "athena-windows-amd64.exe":
-		command = athenaCommands.NewCommand()
-		isAthenaCLI = true
-	case "athena-k8s-auth":
-		command = athenaK8sAuthCommands.NewCommand()
-		isAthenaCLI = true
 	default:
-		command = athenaCommands.NewCommand()
-		isAthenaCLI = true
-	}
-
-	if isAthenaCLI {
-		// silence errors and usages since we'll be printing them manually.
-		// This is because if we execute a plugin, the initial
-		// errors and usage are always going to get printed that we don't want.
-		command.SilenceErrors = true
-		command.SilenceUsage = true
+		os.Exit(1)
 	}
 
 	err := command.Execute()
@@ -70,15 +51,6 @@ func main() {
 	// such as if the error is from the execution of a normal athena command,
 	// unknown command error or any other.
 	if err != nil {
-		pluginErr := athenaCommands.NewDefaultPluginHandler().HandleCommandExecutionError(err, isAthenaCLI, os.Args)
-		if pluginErr != nil {
-			var exitErr *exec.ExitError
-			if errors.As(pluginErr, &exitErr) {
-				// Return the actual plugin exit code
-				os.Exit(exitErr.ExitCode())
-			}
-			// Fallback to exit code 1 if the error isn't an exec.ExitError
-			os.Exit(1)
-		}
+		os.Exit(1)
 	}
 }
