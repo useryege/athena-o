@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
 
-	athenaApplicationControllerCommands "github.com/useryege/athena/cmd/athena-application-controller/commands"
+	athenaControllerCommands "github.com/useryege/athena/cmd/athena-controller/commands"
 	athenaDexCommands "github.com/useryege/athena/cmd/athena-dex/commands"
 	athenaK8sAuthCommands "github.com/useryege/athena/cmd/athena-k8s-auth/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
@@ -40,8 +40,8 @@ func main() {
 	switch binaryName {
 	case "athena-server":
 		command = athenaServerCommands.NewCommand()
-	case "athena-application-controller":
-		command = athenaApplicationControllerCommands.NewCommand()
+	case "athena-controller":
+		command = athenaControllerCommands.NewCommand()
 	case "athena-dex":
 		command = athenaDexCommands.NewCommand()
 	case "athena-notification":
