@@ -1292,6 +1292,8 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 	signal.Notify(server.stopCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	server.available.Store(true)
 
+	log.Info("API Server started")
+
 	select {
 	case signal := <-server.stopCh:
 		log.Infof("API Server received signal: %s", signal.String())
