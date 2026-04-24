@@ -429,6 +429,7 @@ func (server *AthenaServer) Init(ctx context.Context) {
 }
 
 func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registry) *grpc.Server {
+	// register the prometheus metrics to the gRPC server
 	var serverMetricsOptions []grpc_prometheus.ServerMetricsOption
 	if enableGRPCTimeHistogram {
 		serverMetricsOptions = append(serverMetricsOptions, grpc_prometheus.WithServerHandlingTimeHistogram())
@@ -499,11 +500,11 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpc_util.LoggerRecoveryHandler(server.log))),
 	))
 	sOpts = append(sOpts, grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	// create a new gRPC server
 	grpcS := grpc.NewServer(sOpts...)
 
-	healthService := health.NewServer()
-	grpc_health_v1.RegisterHealthServer(grpcS, healthService)
-
+	// register all the services to the gRPC server
+	grpc_health_v1.RegisterHealthServer(grpcS, server.serviceSet.HealthService)
 	versionpkg.RegisterVersionServiceServer(grpcS, server.serviceSet.VersionService)
 	// clusterpkg.RegisterClusterServiceServer(grpcS, server.serviceSet.ClusterService)
 	// applicationpkg.RegisterApplicationServiceServer(grpcS, server.serviceSet.ApplicationService)
@@ -526,6 +527,7 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 }
 
 type AthenaServiceSet struct {
+	HealthService   *health.Server
 	SessionService  *session.Server
 	SettingsService *settings.Server
 	AccountService  *account.Server
@@ -610,8 +612,10 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		}
 		return sett.AnonymousUserEnabled, err
 	})
+	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
+		HealthService:   healthService,
 		SessionService:  sessionService,
 		SettingsService: settingsService,
 		AccountService:  accountService,
@@ -907,6 +911,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 		Addr: endpoint,
 		Handler: &handlerSwitcher{
 			handler: mux,
+			// do not need to be authenticated methods
 			urlToHandler: map[string]http.Handler{
 				// "/api/badge":          badge.NewHandler(server.AppClientset, server.settingsMgr, server.Namespace, server.ApplicationNamespaces),
 				common.LogoutEndpoint: logout.NewHandler(server.settingsMgr, server.sessionMgr, server.RootPath, server.BaseHRef),
@@ -1119,19 +1124,25 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 
 	// Prepare all services for the athena server
 	svcSet := newAthenaServiceSet(server)
+
+	// register the metrics to the session manager
 	if server.sessionMgr != nil {
 		server.sessionMgr.CollectMetrics(metricsServ)
 	}
+
+	// set the service set to the server
 	server.serviceSet = svcSet
+	// create a new gRPC server
 	grpcS := server.newGRPCServer(metricsServ.PrometheusRegistry)
+	// wrap the gRPC server l(grpc server => http handler)
 	grpcWebS := grpcweb.WrapServer(grpcS)
 	var httpS *http.Server
 	var httpsS *http.Server
 	if server.useTLS() {
-		httpS = newRedirectServer(server.ListenPort, server.RootPath)
-		httpsS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn, metricsServ)
+		httpS = newRedirectServer(server.ListenPort, server.RootPath)                                       // http request => redirect to https
+		httpsS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn, metricsServ) // implement the https server
 	} else {
-		httpS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn, metricsServ)
+		httpS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn, metricsServ) // implement the http server
 	}
 	if server.RootPath != "" {
 		httpS.Handler = withRootPath(httpS.Handler, server)
@@ -1296,17 +1307,17 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 	}
 }
 
-func (server *AthenaServer) Initialized() bool {
-	// TODO: This is the original code for Athena.
-	// return server.projInformer.HasSynced() && server.appInformer.HasSynced()
-	return true
-}
+// func (server *AthenaServer) Initialized() bool {
+// 	// TODO: This is the original code for Athena.
+// 	// return server.projInformer.HasSynced() && server.appInformer.HasSynced()
+// 	return true
+// }
 
 // TerminateRequested returns whether a shutdown was initiated by a signal or context cancel
 // as opposed to a watch.
-func (server *AthenaServer) TerminateRequested() bool {
-	return server.terminateRequested.Load()
-}
+// func (server *AthenaServer) TerminateRequested() bool {
+// 	return server.terminateRequested.Load()
+// }
 
 // checkServeErr checks the error from a .Serve() call to decide if it was a graceful shutdown
 func (server *AthenaServer) checkServeErr(name string, err error) {

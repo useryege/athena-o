@@ -52,14 +52,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var tokenString string
 	var oidcConfig *settings.OIDCConfig
 
-	argoCDSettings, err := h.settingsMgr.GetSettings()
+	athenaSettings, err := h.settingsMgr.GetSettings()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, "Failed to retrieve argoCD settings: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	argoURL, err := argoCDSettings.ArgoURLForRequest(r)
+	argoURL, err := athenaSettings.ArgoURLForRequest(r)
 	if err != nil {
 		log.Warnf("unable to find Athena URL from config: %v", err)
 	}
@@ -114,10 +114,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if argoCDSettings.OIDCConfig() == nil || argoCDSettings.OIDCConfig().LogoutURL == "" || issuer == session.SessionManagerClaimsIssuer {
+	if athenaSettings.OIDCConfig() == nil || athenaSettings.OIDCConfig().LogoutURL == "" || issuer == session.SessionManagerClaimsIssuer {
 		http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
 	} else {
-		oidcConfig = argoCDSettings.OIDCConfig()
+		oidcConfig = athenaSettings.OIDCConfig()
 		logoutURL := constructLogoutURL(oidcConfig.LogoutURL, tokenString, logoutRedirectURL)
 		http.Redirect(w, r, logoutURL, http.StatusSeeOther)
 	}
