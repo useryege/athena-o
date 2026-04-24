@@ -42,47 +42,62 @@ func NewServer(mgr *sessionmgr.SessionManager, settingsMgr *settings.SettingsMan
 // Create generates a JWT token signed by Athena intended for web/CLI logins of the admin user
 // using username/password
 func (s *Server) Create(_ context.Context, q *session.SessionCreateRequest) (*session.SessionResponse, error) {
+	// try to get a rate limiter if it is set
 	if s.limitLoginAttempts != nil {
 		closer, err := s.limitLoginAttempts()
 		if err != nil {
+			// if failed to get a rate limiter, increment the login request counter and return the error
 			s.mgr.IncLoginRequestCounter(failure)
 			return nil, err
 		}
+		// defer the closer to release the rate limiter
 		defer utilio.Close(closer)
 	}
 
+	// if use a token to create a session, return an error
 	if q.Token != "" {
 		s.mgr.IncLoginRequestCounter(failure)
 		return nil, status.Errorf(codes.Unauthenticated, "token-based session creation no longer supported. please upgrade athena cli to v0.7+")
 	}
+
+	// if no username or password is provided, increment the login request counter and return an error
 	if q.Username == "" || q.Password == "" {
 		s.mgr.IncLoginRequestCounter(failure)
 		return nil, status.Errorf(codes.Unauthenticated, "no credentials supplied")
 	}
+
+	// verify the username and password
 	err := s.mgr.VerifyUsernamePassword(q.Username, q.Password)
 	if err != nil {
 		s.mgr.IncLoginRequestCounter(failure)
 		return nil, err
 	}
+	// generate a unique id for the session
 	uniqueId, err := uuid.NewRandom()
 	if err != nil {
 		s.mgr.IncLoginRequestCounter(failure)
 		return nil, err
 	}
-	argoCDSettings, err := s.settingsMgr.GetSettings()
+
+	// get the athena settings from athena-cm and athena-secret
+	athenaSettings, err := s.settingsMgr.GetSettings()
 	if err != nil {
 		s.mgr.IncLoginRequestCounter(failure)
 		return nil, err
 	}
+
+	// create a JWT token for the session
 	jwtToken, err := s.mgr.Create(
 		fmt.Sprintf("%s:%s", q.Username, settings.AccountCapabilityLogin),
-		int64(argoCDSettings.UserSessionDuration.Seconds()),
+		int64(athenaSettings.UserSessionDuration.Seconds()),
 		uniqueId.String())
 	if err != nil {
 		s.mgr.IncLoginRequestCounter(failure)
 		return nil, err
 	}
+	// increment the login request counter for success
 	s.mgr.IncLoginRequestCounter(success)
+	// return the JWT token for the session
 	return &session.SessionResponse{Token: jwtToken}, nil
 }
 

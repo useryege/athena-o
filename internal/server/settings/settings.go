@@ -28,8 +28,7 @@ type Authenticator interface {
 
 // NewServer returns a new instance of the Settings service
 func NewServer(mgr *settings.SettingsManager, authenticator Authenticator, disableAuth bool) *Server {
-	return &Server{mgr: mgr, authenticator: authenticator, disableAuth: disableAuth} // hydratorEnabled: hydratorEnabled, syncWithReplaceAllowed: syncWithReplaceAllowed
-
+	return &Server{mgr: mgr, authenticator: authenticator, disableAuth: disableAuth}
 }
 
 // Get returns Athena settings
@@ -71,14 +70,14 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 		}
 	}
 
-	kustomizeSettings, err := s.mgr.GetKustomizeSettings()
-	if err != nil {
-		return nil, err
-	}
-	var kustomizeVersions []string
-	for i := range kustomizeSettings.Versions {
-		kustomizeVersions = append(kustomizeVersions, kustomizeSettings.Versions[i].Name)
-	}
+	// kustomizeSettings, err := s.mgr.GetKustomizeSettings()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// var kustomizeVersions []string
+	// for i := range kustomizeSettings.Versions {
+	// 	kustomizeVersions = append(kustomizeVersions, kustomizeSettings.Versions[i].Name)
+	// }
 
 	trackingMethod, err := s.mgr.GetTrackingMethod()
 	if err != nil {
@@ -90,7 +89,7 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 		return nil, err
 	}
 
-	set := settingspkg.Settings{
+	settings := settingspkg.Settings{
 		URL:                argoCDSettings.URL,
 		AdditionalURLs:     argoCDSettings.AdditionalURLs,
 		AppLabelKey:        appInstanceLabelKey,
@@ -109,11 +108,11 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 			BinaryUrls: help.BinaryURLs,
 		},
 		UserLoginsDisabled: userLoginsDisabled,
-		KustomizeVersions:  kustomizeVersions,
-		UiCssURL:           argoCDSettings.UiCssURL,
-		TrackingMethod:     trackingMethod,
-		InstallationID:     installationID,
-		ExecEnabled:        argoCDSettings.ExecEnabled,
+		// KustomizeVersions:  kustomizeVersions,
+		UiCssURL:       argoCDSettings.UiCssURL,
+		TrackingMethod: trackingMethod,
+		InstallationID: installationID,
+		ExecEnabled:    argoCDSettings.ExecEnabled,
 		// AppsInAnyNamespaceEnabled: s.appsInAnyNamespaceEnabled,
 		ImpersonationEnabled: argoCDSettings.ImpersonationEnabled,
 		// HydratorEnabled:        s.hydratorEnabled,
@@ -121,25 +120,25 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 	}
 
 	if sessionmgr.LoggedIn(ctx) || s.disableAuth {
-		set.UiBannerContent = argoCDSettings.UiBannerContent
-		set.UiBannerURL = argoCDSettings.UiBannerURL
-		set.UiBannerPermanent = argoCDSettings.UiBannerPermanent
-		set.UiBannerPosition = argoCDSettings.UiBannerPosition
-		set.ControllerNamespace = s.mgr.GetNamespace()
-		set.ResourceOverrides = overrides
+		settings.UiBannerContent = argoCDSettings.UiBannerContent
+		settings.UiBannerURL = argoCDSettings.UiBannerURL
+		settings.UiBannerPermanent = argoCDSettings.UiBannerPermanent
+		settings.UiBannerPosition = argoCDSettings.UiBannerPosition
+		settings.ControllerNamespace = s.mgr.GetNamespace()
+		settings.ResourceOverrides = overrides
 	}
 	if sessionmgr.LoggedIn(ctx) {
-		set.PasswordPattern = argoCDSettings.PasswordPattern
+		settings.PasswordPattern = argoCDSettings.PasswordPattern
 	}
 	if argoCDSettings.DexConfig != "" {
 		var cfg settingspkg.DexConfig
 		err = yaml.Unmarshal([]byte(argoCDSettings.DexConfig), &cfg)
 		if err == nil {
-			set.DexConfig = &cfg
+			settings.DexConfig = &cfg
 		}
 	}
 	if oidcConfig := argoCDSettings.OIDCConfig(); oidcConfig != nil {
-		set.OIDCConfig = &settingspkg.OIDCConfig{
+		settings.OIDCConfig = &settingspkg.OIDCConfig{
 			Name:                     oidcConfig.Name,
 			Issuer:                   oidcConfig.Issuer,
 			ClientID:                 oidcConfig.ClientID,
@@ -148,10 +147,10 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 			EnablePKCEAuthentication: oidcConfig.EnablePKCEAuthentication,
 		}
 		if len(argoCDSettings.OIDCConfig().RequestedIDTokenClaims) > 0 {
-			set.OIDCConfig.IDTokenClaims = argoCDSettings.OIDCConfig().RequestedIDTokenClaims
+			settings.OIDCConfig.IDTokenClaims = argoCDSettings.OIDCConfig().RequestedIDTokenClaims
 		}
 	}
-	return &set, nil
+	return &settings, nil
 }
 
 // AuthFuncOverride disables authentication for settings service

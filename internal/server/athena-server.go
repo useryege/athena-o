@@ -532,7 +532,6 @@ type AthenaServiceSet struct {
 	VersionService  *version.Server
 }
 
-// prepare all services for the athena server
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// kubectl := kubeutil.NewKubectl()
 	// clusterService := cluster.NewServer(a.db, a.enf, a.Cache, kubectl)
@@ -1118,6 +1117,7 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 	// reads those hooks. If this is called first, there may be a data race.
 	server.userStateStorage.Init(ctx)
 
+	// Prepare all services for the athena server
 	svcSet := newAthenaServiceSet(server)
 	if server.sessionMgr != nil {
 		server.sessionMgr.CollectMetrics(metricsServ)

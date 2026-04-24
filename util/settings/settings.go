@@ -1243,13 +1243,13 @@ func addKustomizeVersion(prefix, name, path string, kvMap map[string]v1alpha1.Ku
 }
 
 func (mgr *SettingsManager) GetGoogleAnalytics() (*GoogleAnalytics, error) {
-	argoCDCM, err := mgr.getConfigMap()
+	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving config map: %w", err)
 	}
 	return &GoogleAnalytics{
-		TrackingID:     argoCDCM.Data[gaTrackingID],
-		AnonymizeUsers: argoCDCM.Data[gaAnonymizeUsers] != "false",
+		TrackingID:     athenaCM.Data[gaTrackingID],
+		AnonymizeUsers: athenaCM.Data[gaAnonymizeUsers] != "false",
 	}, nil
 }
 
