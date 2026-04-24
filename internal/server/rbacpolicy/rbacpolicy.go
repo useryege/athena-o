@@ -40,10 +40,10 @@ func (p *RBACPolicyEnforcer) GetScopes() []string {
 	return scopes
 }
 
-func IsProjectSubject(subject string) bool {
-	_, _, ok := GetProjectRoleFromSubject(subject)
-	return ok
-}
+// func IsProjectSubject(subject string) bool {
+// 	_, _, ok := GetProjectRoleFromSubject(subject)
+// 	return ok
+// }
 
 func GetProjectRoleFromSubject(subject string) (string, string, bool) {
 	parts := strings.Split(subject, ":")

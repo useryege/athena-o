@@ -15,7 +15,6 @@ import (
 	"k8s.io/kubectl/pkg/util/slice"
 
 	"github.com/useryege/athena/common"
-	"github.com/useryege/athena/internal/server/rbacpolicy"
 	"github.com/useryege/athena/pkg/apiclient/account"
 	"github.com/useryege/athena/util/password"
 	"github.com/useryege/athena/util/rbac"
@@ -37,6 +36,7 @@ func NewServer(sessionMgr *session.SessionManager, settingsMgr *settings.Setting
 
 // UpdatePassword updates the password of the currently authenticated account or the account specified in the request.
 func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRequest) (*account.UpdatePasswordResponse, error) {
+	// get the user identifier from the context
 	username := session.GetUserIdentifier(ctx)
 
 	updatedUsername := username
@@ -58,9 +58,9 @@ func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRe
 
 		// user is changing own password.
 		// ensure token belongs to a user, not project
-		if q.Name == "" && rbacpolicy.IsProjectSubject(username) {
-			return nil, status.Errorf(codes.InvalidArgument, "password can only be changed for local users, not user %q", username)
-		}
+		// if q.Name == "" && rbacpolicy.IsProjectSubject(username) {
+		// 	return nil, status.Errorf(codes.InvalidArgument, "password can only be changed for local users, not user %q", username)
+		// }
 
 		err := s.sessionMgr.VerifyUsernamePassword(username, q.CurrentPassword)
 		if err != nil {

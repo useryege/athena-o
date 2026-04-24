@@ -1462,14 +1462,16 @@ func (server *AthenaServer) useTLS() bool {
 
 // Authenticate checks for the presence of a valid token when accessing server-side resources.
 func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, error) {
+	// if authentication is disabled, return the context without any changes
 	if server.DisableAuth {
 		return ctx, nil
 	}
+
 	claims, newToken, claimsErr := server.getClaims(ctx)
 	if claims != nil {
 		// Add claims to the context to inspect for RBAC
 		//nolint:staticcheck
-		ctx = context.WithValue(ctx, "claims", claims)
+		ctx = context.WithValue(ctx, "claims", claims) // ctx {data:data, claims:claims}
 		if newToken != "" {
 			// Session tokens that are expiring soon should be regenerated if user stays active.
 			// The renewed token is stored in outgoing ServerMetadata. Metadata is available to grpc-gateway
@@ -1481,19 +1483,21 @@ func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, 
 	}
 	if claimsErr != nil {
 		//nolint:staticcheck
-		ctx = context.WithValue(ctx, util_session.AuthErrorCtxKey, claimsErr)
+		ctx = context.WithValue(ctx, util_session.AuthErrorCtxKey, claimsErr) // ctx {data:data, auth-error:claimsErr}
 	}
 
 	if claimsErr != nil {
-		argoCDSettings, err := server.settingsMgr.GetSettings()
+		// get the athena settings from the settings manager
+		athenaSettings, err := server.settingsMgr.GetSettings()
 		if err != nil {
 			return ctx, status.Errorf(codes.Internal, "unable to load settings: %v", err)
 		}
-		if !argoCDSettings.AnonymousUserEnabled {
+		// if anonymous user is not enabled, return the error
+		if !athenaSettings.AnonymousUserEnabled {
 			return ctx, claimsErr
 		}
 		//nolint:staticcheck
-		ctx = context.WithValue(ctx, "claims", "")
+		ctx = context.WithValue(ctx, "claims", "") // ctx {data:data, claims:""}
 	}
 
 	return ctx, nil

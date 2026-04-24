@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-jsonnet"
 
 	"github.com/useryege/athena/common"
-	"github.com/useryege/athena/internal/server/settings"
 	"github.com/useryege/athena/pkg/apiclient/version"
 	sessionmgr "github.com/useryege/athena/util/session"
 )
@@ -16,11 +15,15 @@ type Server struct {
 	// kustomizeVersion string
 	// helmVersion      string
 	jsonnetVersion string
-	authenticator  settings.Authenticator
+	authenticator  Authenticator
 	disableAuth    func() (bool, error)
 }
 
-func NewServer(authenticator settings.Authenticator, disableAuth func() (bool, error)) *Server {
+type Authenticator interface {
+	Authenticate(ctx context.Context) (context.Context, error)
+}
+
+func NewServer(authenticator Authenticator, disableAuth func() (bool, error)) *Server {
 	return &Server{authenticator: authenticator, disableAuth: disableAuth}
 }
 
