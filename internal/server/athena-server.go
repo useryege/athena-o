@@ -1315,9 +1315,9 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 
 // TerminateRequested returns whether a shutdown was initiated by a signal or context cancel
 // as opposed to a watch.
-// func (server *AthenaServer) TerminateRequested() bool {
-// 	return server.terminateRequested.Load()
-// }
+func (server *AthenaServer) TerminateRequested() bool {
+	return server.terminateRequested.Load()
+}
 
 // checkServeErr checks the error from a .Serve() call to decide if it was a graceful shutdown
 func (server *AthenaServer) checkServeErr(name string, err error) {
