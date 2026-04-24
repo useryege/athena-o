@@ -213,8 +213,8 @@ type AthenaServerOpts struct {
 	// EnableProxyExtension  bool
 	// WebhookParallelism     int
 	// EnableK8sEvent         []string
-	HydratorEnabled        bool
-	SyncWithReplaceAllowed bool
+	// HydratorEnabled        bool
+	// SyncWithReplaceAllowed bool
 }
 
 // NewServer returns a new instance of the Athena API server
@@ -594,7 +594,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// projectService := project.NewServer(a.Namespace, a.KubeClientset, a.AppClientset, a.enf, projectLock, a.sessionMgr, a.policyEnforcer, a.projInformer, a.settingsMgr, a.db, a.EnableK8sEvent)
 	// appsInAnyNamespaceEnabled := len(server.ApplicationNamespaces) > 0
 	// settings service
-	settingsService := settings.NewServer(server.settingsMgr, server, server.DisableAuth, server.HydratorEnabled, server.SyncWithReplaceAllowed)
+	settingsService := settings.NewServer(server.settingsMgr, server, server.DisableAuth)
 	// account service
 	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf)
 
