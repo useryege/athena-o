@@ -15,7 +15,7 @@ import (
 	"github.com/useryege/athena/pkg/apiclient"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
-	"k8s.io/client-go/dynamic"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -38,7 +38,6 @@ import (
 	// 	jsonpatch "github.com/evanphx/json-patch"
 	// 	log "github.com/sirupsen/logrus"
 	// 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	// 	"k8s.io/apimachinery/pkg/runtime/schema"
 	// 	"k8s.io/client-go/dynamic"
@@ -50,7 +49,7 @@ import (
 	// "github.com/useryege/athena/v3/pkg/apiclient"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
 	// "github.com/useryege/athena/v3/pkg/apis/application/v1alpha1"
-	appclientset "github.com/useryege/athena/pkg/client/clientset/versioned"
+
 	// "github.com/useryege/athena/v3/util/env"
 	// "github.com/useryege/athena/v3/util/errors"
 	grpcutil "github.com/useryege/athena/util/grpc"
@@ -95,19 +94,17 @@ const (
 const (
 	EnvAdminUsername          = "ATHENA_E2E_ADMIN_USERNAME"
 	EnvAdminPassword          = "ATHENA_E2E_ADMIN_PASSWORD"
-	EnvArgoCDServerName       = "ATHENA_E2E_SERVER_NAME"
-	EnvArgoCDRedisHAProxyName = "ATHENA_E2E_REDIS_HAPROXY_NAME"
-	EnvArgoCDRedisName        = "ATHENA_E2E_REDIS_NAME"
-	// EnvArgoCDRepoServerName    = "ATHENA_E2E_REPO_SERVER_NAME"
-	// EnvArgoCDAppControllerName = "ATHENA_E2E_APPLICATION_CONTROLLER_NAME"
+	EnvAthenaServerName       = "ATHENA_E2E_SERVER_NAME"
+	EnvAthenaRedisHAProxyName = "ATHENA_E2E_REDIS_HAPROXY_NAME"
+	EnvAthenaRedisName        = "ATHENA_E2E_REDIS_NAME"
 )
 
 var (
-	KubeClientset    kubernetes.Interface
-	KubeConfig       *rest.Config
-	DynamicClientset dynamic.Interface
-	AppClientset     appclientset.Interface
-	ArgoCDClientset  apiclient.Client
+	KubeClientset kubernetes.Interface
+	KubeConfig    *rest.Config
+	// DynamicClientset dynamic.Interface
+	// AppClientset     appclientset.Interface
+	AthenaClientset  apiclient.Client
 	adminUsername    string
 	AdminPassword    string
 	apiServerAddress string
@@ -115,11 +112,9 @@ var (
 
 	plainText              bool
 	testsRun               map[string]bool
-	argoCDServerName       string
-	argoCDRedisHAProxyName string
-	argoCDRedisName        string
-	// argoCDRepoServerName    string
-	// argoCDAppControllerName string
+	athenaServerName       string
+	athenaRedisHAProxyName string
+	athenaRedisName        string
 )
 
 // type RepoURLType string
@@ -208,36 +203,31 @@ func IsLocal() bool {
 func init() {
 	// ensure we log all shell execs
 	log.SetLevel(log.DebugLevel)
-	// set-up variables
+
+	// set up kubernetes clientset
 	config := getKubeConfig("", clientcmd.ConfigOverrides{})
-	AppClientset = appclientset.NewForConfigOrDie(config)
 	KubeClientset = kubernetes.NewForConfigOrDie(config)
-	DynamicClientset = dynamic.NewForConfigOrDie(config)
 	KubeConfig = config
 
+	// load environment variables
 	apiServerAddress = GetEnvWithDefault(apiclient.EnvArgoCDServer, defaultAPIServer)
 	adminUsername = GetEnvWithDefault(EnvAdminUsername, defaultAdminUsername)
 	AdminPassword = GetEnvWithDefault(EnvAdminPassword, defaultAdminPassword)
-
-	argoCDServerName = GetEnvWithDefault(EnvArgoCDServerName, common.DefaultServerName)
-	argoCDRedisHAProxyName = GetEnvWithDefault(EnvArgoCDRedisHAProxyName, common.DefaultRedisHaProxyName)
-	argoCDRedisName = GetEnvWithDefault(EnvArgoCDRedisName, common.DefaultRedisName)
-	// argoCDRepoServerName = GetEnvWithDefault(EnvArgoCDRepoServerName, common.DefaultRepoServerName)
-	// argoCDAppControllerName = GetEnvWithDefault(EnvArgoCDAppControllerName, common.DefaultApplicationControllerName)
+	athenaServerName = GetEnvWithDefault(EnvAthenaServerName, common.DefaultServerName)
+	athenaRedisHAProxyName = GetEnvWithDefault(EnvAthenaRedisHAProxyName, common.DefaultRedisHaProxyName)
+	athenaRedisName = GetEnvWithDefault(EnvAthenaRedisName, common.DefaultRedisName)
 
 	dialTime := 30 * time.Second
 	tlsTestResult, err := grpcutil.TestTLS(apiServerAddress, dialTime)
 	errors.CheckError(err)
 
-	ArgoCDClientset, err = apiclient.NewClient(&apiclient.ClientOptions{
+	AthenaClientset, err = apiclient.NewClient(&apiclient.ClientOptions{
 		Insecure:         true,
 		ServerAddr:       apiServerAddress,
 		PlainText:        !tlsTestResult.TLS,
-		ServerName:       argoCDServerName,
-		RedisHaProxyName: argoCDRedisHAProxyName,
-		RedisName:        argoCDRedisName,
-		// RepoServerName:    argoCDRepoServerName,
-		// AppControllerName: argoCDAppControllerName,
+		ServerName:       athenaServerName,
+		RedisHaProxyName: athenaRedisHAProxyName,
+		RedisName:        athenaRedisName,
 	})
 	errors.CheckError(err)
 
@@ -273,7 +263,7 @@ func init() {
 }
 
 func loginAs(username, password string) error {
-	closer, client, err := ArgoCDClientset.NewSessionClient()
+	closer, client, err := AthenaClientset.NewSessionClient()
 	if err != nil {
 		return err
 	}
@@ -293,16 +283,14 @@ func loginAs(username, password string) error {
 	}
 	token = sessionResponse.Token
 
-	ArgoCDClientset, err = apiclient.NewClient(&apiclient.ClientOptions{
+	AthenaClientset, err = apiclient.NewClient(&apiclient.ClientOptions{
 		Insecure:         true,
 		ServerAddr:       apiServerAddress,
 		AuthToken:        token,
 		PlainText:        plainText,
-		ServerName:       argoCDServerName,
-		RedisHaProxyName: argoCDRedisHAProxyName,
-		RedisName:        argoCDRedisName,
-		// RepoServerName:    argoCDRepoServerName,
-		// AppControllerName: argoCDAppControllerName,
+		ServerName:       athenaServerName,
+		RedisHaProxyName: athenaRedisHAProxyName,
+		RedisName:        athenaRedisName,
 	})
 	return err
 }
@@ -392,9 +380,9 @@ func updateSettingConfigMap(updater func(cm *corev1.ConfigMap) error) error {
 }
 
 // Convenience wrapper for updating athena-notifications-cm
-func updateNotificationsConfigMap(updater func(cm *corev1.ConfigMap) error) error {
-	return updateGenericConfigMap(common.ArgoCDNotificationsConfigMapName, updater)
-}
+// func updateNotificationsConfigMap(updater func(cm *corev1.ConfigMap) error) error {
+// 	return updateGenericConfigMap(common.ArgoCDNotificationsConfigMapName, updater)
+// }
 
 // Convenience wrapper for updating athena-cm-rbac
 func updateRBACConfigMap(updater func(cm *corev1.ConfigMap) error) error {
@@ -601,31 +589,31 @@ func SetParamInSettingConfigMap(key, value string) error {
 // 	})
 // }
 
-type TestOption func(option *testOption)
+// type TestOption func(option *testOption)
 
-type testOption struct {
-	testdata string
-}
+// type testOption struct {
+// 	testdata string
+// }
 
-func newTestOption(opts ...TestOption) *testOption {
-	to := &testOption{
-		testdata: "testdata",
-	}
-	for _, opt := range opts {
-		opt(to)
-	}
-	return to
-}
+// func newTestOption(opts ...TestOption) *testOption {
+// 	to := &testOption{
+// 		testdata: "testdata",
+// 	}
+// 	for _, opt := range opts {
+// 		opt(to)
+// 	}
+// 	return to
+// }
 
-func WithTestData(testdata string) TestOption {
-	return func(option *testOption) {
-		option.testdata = testdata
-	}
-}
+// func WithTestData(testdata string) TestOption {
+// 	return func(option *testOption) {
+// 		option.testdata = testdata
+// 	}
+// }
 
-func EnsureCleanState(t *testing.T, opts ...TestOption) *TestState {
+func EnsureCleanState(t *testing.T) *TestState {
 	t.Helper()
-	// opt := newTestOption(opts...)
+
 	// In large scenarios, we can skip tests that already run
 	SkipIfAlreadyRun(t)
 	// Register this test after it has been run & was successful
@@ -637,172 +625,10 @@ func EnsureCleanState(t *testing.T, opts ...TestOption) *TestState {
 	state := NewTestState(t)
 
 	start := time.Now()
-	// policy := metav1.DeletePropagationBackground
-
-	// deleteNamespaces := func(namespaces []corev1.Namespace, wait bool) error {
-	// 	args := []string{"delete", "ns", "--ignore-not-found=true", fmt.Sprintf("--wait=%t", wait)}
-	// 	for _, namespace := range namespaces {
-	// 		args = append(args, namespace.Name)
-	// 	}
-	// 	_, err := Run("", "kubectl", args...)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	return nil
-	// }
-
-	// deleteResourceWithTestFinalizer := func(namespaces []corev1.Namespace, gvrs []schema.GroupVersionResource) error {
-	// 	for _, namespace := range namespaces {
-	// 		for _, gvr := range gvrs {
-	// 			objects, err := DynamicClientset.Resource(gvr).Namespace(namespace.GetName()).List(t.Context(), metav1.ListOptions{})
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 			for i := range objects.Items {
-	// 				obj := &objects.Items[i]
-	// 				updated := controllerutil.RemoveFinalizer(obj, TestFinalizer)
-	// 				if updated {
-	// 					log.WithFields(log.Fields{
-	// 						"namespace": namespace.GetName(),
-	// 						"resource":  gvr,
-	// 						"name":      obj.GetName(),
-	// 					}).Info("removing test finalizer")
-	// 					_, err := DynamicClientset.Resource(gvr).Namespace(namespace.GetName()).Update(t.Context(), obj, metav1.UpdateOptions{})
-	// 					if err != nil {
-	// 						return err
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// 	return nil
-	// }
 
 	RunFunctionsInParallelAndCheckErrors(t, []func() error{
-		// func() error {
-		// 	// kubectl delete apps ...
-		// 	return AppClientset.ArgoprojV1alpha1().Applications(TestNamespace()).DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{})
-		// },
-		// func() error {
-		// 	// kubectl delete apps ...
-		// 	return AppClientset.ArgoprojV1alpha1().Applications(AppNamespace()).DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{})
-		// },
-		// func() error {
-		// 	// kubectl delete appprojects --field-selector metadata.name!=default
-		// 	return AppClientset.ArgoprojV1alpha1().AppProjects(TestNamespace()).DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{FieldSelector: "metadata.name!=default"})
-		// },
-		// func() error {
-		// 	// kubectl delete secrets -l athena.useryege.io/secret-type=repo-config
-		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepository})
-		// },
-		// func() error {
-		// 	// kubectl delete secrets -l athena.useryege.io/secret-type=repo-creds
-		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepoCreds})
-		// },
-		// func() error {
-		// 	// kubectl delete secrets -l athena.useryege.io/secret-type=repository-write
-		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepositoryWrite})
-		// },
-		// func() error {
-		// 	// kubectl delete secrets -l athena.useryege.io/secret-type=repo-write-creds
-		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeRepoCredsWrite})
-		// },
-		// func() error {
-		// 	// kubectl delete secrets -l athena.useryege.io/secret-type=cluster
-		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{LabelSelector: common.LabelKeySecretType + "=" + common.LabelValueSecretTypeCluster})
-		// },
-		// func() error {
-		// 	// kubectl delete secrets -l e2e.useryege.io=true
-		// 	return KubeClientset.CoreV1().Secrets(TestNamespace()).DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{LabelSelector: TestingLabel + "=true"})
-		// },
-		// func() error {
-		// 	// kubectl delete clusterroles -l e2e.useryege.io=true
-		// 	return KubeClientset.RbacV1().ClusterRoles().DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{LabelSelector: TestingLabel + "=true"})
-		// },
-		// func() error {
-		// 	// kubectl delete clusterrolebindings -l e2e.useryege.io=true
-		// 	return KubeClientset.RbacV1().ClusterRoleBindings().DeleteCollection(
-		// 		t.Context(),
-		// 		metav1.DeleteOptions{PropagationPolicy: &policy},
-		// 		metav1.ListOptions{LabelSelector: TestingLabel + "=true"})
-		// },
-	})
-	RunFunctionsInParallelAndCheckErrors(t, []func() error{
-		// func() error {
-		// 	// delete old namespaces which were created by tests
-		// 	namespaces, err := KubeClientset.CoreV1().Namespaces().List(
-		// 		t.Context(),
-		// 		metav1.ListOptions{
-		// 			LabelSelector: TestingLabel + "=true",
-		// 		},
-		// 	)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	if len(namespaces.Items) > 0 {
-		// 		err = deleteNamespaces(namespaces.Items, false)
-		// 		if err != nil {
-		// 			return err
-		// 		}
-		// 	}
-
-		// 	// Get all namespaces stuck in Terminating state
-		// 	terminatingNamespaces, err := KubeClientset.CoreV1().Namespaces().List(
-		// 		t.Context(),
-		// 		metav1.ListOptions{
-		// 			LabelSelector: TestingLabel + "=true",
-		// 			FieldSelector: "status.phase=Terminating",
-		// 		})
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	if len(terminatingNamespaces.Items) > 0 {
-		// 		err = deleteResourceWithTestFinalizer(terminatingNamespaces.Items, []schema.GroupVersionResource{
-		// 			// If finalizers are added to new resource kinds, they must be added here for a proper cleanup
-		// 			appsv1.SchemeGroupVersion.WithResource("deployments"),
-		// 		})
-		// 		if err != nil {
-		// 			return err
-		// 		}
-		// 	}
-		// 	return nil
-		// },
-		// func() error {
-		// 	// delete old CRDs which were created by tests, doesn't seem to have kube api to get items
-		// 	_, err := Run("", "kubectl", "delete", "crd", "-l", TestingLabel+"=true", "--wait=false")
-		// 	return err
-		// },
 		func() error {
+			// set all config maps to empty
 			err := updateSettingConfigMap(func(cm *corev1.ConfigMap) error {
 				cm.Data = map[string]string{}
 				return nil
@@ -810,13 +636,7 @@ func EnsureCleanState(t *testing.T, opts ...TestOption) *TestState {
 			if err != nil {
 				return err
 			}
-			// err = updateNotificationsConfigMap(func(cm *corev1.ConfigMap) error {
-			// 	cm.Data = map[string]string{}
-			// 	return nil
-			// })
-			// if err != nil {
-			// 	return err
-			// }
+			// set all RBAC config maps to empty
 			err = updateRBACConfigMap(func(cm *corev1.ConfigMap) error {
 				cm.Data = map[string]string{}
 				return nil
@@ -824,15 +644,6 @@ func EnsureCleanState(t *testing.T, opts ...TestOption) *TestState {
 			if err != nil {
 				return err
 			}
-
-			// err = updateGenericConfigMap(common.ArgoCDCmdParamsConfigMapName, func(cm *corev1.ConfigMap) error {
-			// 	cm.Data = map[string]string{}
-			// 	return nil
-			// })
-			// if err != nil {
-			// 	return err
-			// }
-
 			return nil
 		},
 		func() error {
@@ -843,152 +654,38 @@ func EnsureCleanState(t *testing.T, opts ...TestOption) *TestState {
 
 	RunFunctionsInParallelAndCheckErrors(t, []func() error{
 		// func() error {
-		// 	err := SetProjectSpec("default", v1alpha1.AppProjectSpec{
-		// 		OrphanedResources:        nil,
-		// 		SourceRepos:              []string{"*"},
-		// 		Destinations:             []v1alpha1.ApplicationDestination{{Namespace: "*", Server: "*"}},
-		// 		ClusterResourceWhitelist: []v1alpha1.ClusterResourceRestrictionItem{{Group: "*", Kind: "*"}},
-		// 		SourceNamespaces:         []string{AppNamespace()},
-		// 	})
+		// 	tmpDir := TmpDir()
+		// 	err := os.RemoveAll(tmpDir)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	_, err = Run("", "mkdir", "-p", tmpDir)
 		// 	if err != nil {
 		// 		return err
 		// 	}
 
-		// 	// Create separate project for testing gpg signature verification
-		// 	_, err = AppClientset.ArgoprojV1alpha1().AppProjects(TestNamespace()).Create(
-		// 		t.Context(),
-		// 		&v1alpha1.AppProject{
-		// 			ObjectMeta: metav1.ObjectMeta{
-		// 				Name: "gpg",
-		// 			},
-		// 			Spec: v1alpha1.AppProjectSpec{
-		// 				OrphanedResources:        nil,
-		// 				SourceRepos:              []string{"*"},
-		// 				Destinations:             []v1alpha1.ApplicationDestination{{Namespace: "*", Server: "*"}},
-		// 				ClusterResourceWhitelist: []v1alpha1.ClusterResourceRestrictionItem{{Group: "*", Kind: "*"}},
-		// 				SignatureKeys:            []v1alpha1.SignatureKey{{KeyID: GpgGoodKeyID}},
-		// 				SourceNamespaces:         []string{AppNamespace()},
-		// 			},
-		// 		},
-		// 		metav1.CreateOptions{},
-		// 	)
+		// 	// create TLS and SSH certificate directories
+		// 	if IsLocal() {
+		// 		_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/tls")
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 		_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/ssh")
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 	}
+		// 	return nil
+		// },
+		// func() error {
+		// 	// create namespace for this test
+		// 	_, err := Run("", "kubectl", "create", "ns", state.deploymentNamespace)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	_, err = Run("", "kubectl", "label", "ns", state.deploymentNamespace, TestingLabel+"=true")
 		// 	return err
 		// },
-		func() error {
-			tmpDir := TmpDir()
-			err := os.RemoveAll(tmpDir)
-			if err != nil {
-				return err
-			}
-			_, err = Run("", "mkdir", "-p", tmpDir)
-			if err != nil {
-				return err
-			}
-
-			// create TLS and SSH certificate directories
-			if IsLocal() {
-				_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/tls")
-				if err != nil {
-					return err
-				}
-				_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/ssh")
-				if err != nil {
-					return err
-				}
-			}
-
-			// For signing during the tests
-			// _, err = Run("", "mkdir", "-p", tmpDir+"/gpg")
-			// if err != nil {
-			// 	return err
-			// }
-			// _, err = Run("", "chmod", "0700", tmpDir+"/gpg")
-			// if err != nil {
-			// 	return err
-			// }
-			// prevGnuPGHome := os.Getenv("GNUPGHOME")
-			// t.Setenv("GNUPGHOME", tmpDir+"/gpg")
-			// //nolint:errcheck
-			// Run("", "pkill", "-9", "gpg-agent")
-			// _, err = Run("", "gpg", "--import", "../fixture/gpg/signingkey.asc")
-			// if err != nil {
-			// 	return err
-			// }
-			// t.Setenv("GNUPGHOME", prevGnuPGHome)
-
-			// recreate GPG directories
-			// if IsLocal() {
-			// 	_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/gpg/source")
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// 	_, err = Run("", "mkdir", "-p", tmpDir+"/app/config/gpg/keys")
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// 	_, err = Run("", "chmod", "0700", tmpDir+"/app/config/gpg/keys")
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// 	_, err = Run("", "mkdir", "-p", tmpDir+PluginSockFilePath)
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// 	_, err = Run("", "chmod", "0700", tmpDir+PluginSockFilePath)
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// }
-
-			// // set-up tmp repo, must have unique name
-			// _, err = Run("", "cp", "-Rf", opt.testdata, repoDirectory())
-			// if err != nil {
-			// 	return err
-			// }
-			// _, err = Run(repoDirectory(), "chmod", "777", ".")
-			// if err != nil {
-			// 	return err
-			// }
-			// _, err = Run(repoDirectory(), "git", "init", "-b", "master")
-			// if err != nil {
-			// 	return err
-			// }
-			// // Configure git to create files with more permissive permissions to avoid
-			// // issues when cleaning up. By default git creates object files as 0444.
-			// _, err = Run(repoDirectory(), "git", "config", "core.sharedRepository", "0666")
-			// if err != nil {
-			// 	return err
-			// }
-			// _, err = Run(repoDirectory(), "git", "add", ".")
-			// if err != nil {
-			// 	return err
-			// }
-			// _, err = Run(repoDirectory(), "git", "commit", "-q", "-m", "initial commit")
-			// if err != nil {
-			// 	return err
-			// }
-
-			// if IsRemote() {
-			// 	_, err = Run(repoDirectory(), "git", "remote", "add", "origin", os.Getenv("ATHENA_E2E_GIT_SERVICE"))
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// 	_, err = Run(repoDirectory(), "git", "push", "origin", "master", "-f")
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// }
-			return nil
-		},
-		func() error {
-			// create namespace for this test
-			_, err := Run("", "kubectl", "create", "ns", state.deploymentNamespace)
-			if err != nil {
-				return err
-			}
-			_, err = Run("", "kubectl", "label", "ns", state.deploymentNamespace, TestingLabel+"=true")
-			return err
-		},
 	})
 
 	log.WithFields(log.Fields{
@@ -1017,36 +714,36 @@ func EnsureCleanState(t *testing.T, opts ...TestOption) *TestState {
 // }
 
 // RunCli executes an Argo CD CLI command with no stdin input and default server authentication.
-func RunCli(args ...string) (string, error) {
-	return RunCliWithStdin("", false, args...)
-}
+// func RunCli(args ...string) (string, error) {
+// 	return RunCliWithStdin("", false, args...)
+// }
 
 // RunCliWithStdin executes an Argo CD CLI command with optional stdin input and authentication.
-func RunCliWithStdin(stdin string, isKubeConextOnlyCli bool, args ...string) (string, error) {
-	if plainText {
-		args = append(args, "--plaintext")
-	}
+// func RunCliWithStdin(stdin string, isKubeConextOnlyCli bool, args ...string) (string, error) {
+// 	if plainText {
+// 		args = append(args, "--plaintext")
+// 	}
 
-	// For commands executed with Kubernetes context server argument causes a conflict (for those commands server argument is for KubeAPI server), also authentication is not required
-	if !isKubeConextOnlyCli {
-		args = append(args, "--server", apiServerAddress, "--auth-token", token)
-	}
+// 	// For commands executed with Kubernetes context server argument causes a conflict (for those commands server argument is for KubeAPI server), also authentication is not required
+// 	if !isKubeConextOnlyCli {
+// 		args = append(args, "--server", apiServerAddress, "--auth-token", token)
+// 	}
 
-	args = append(args, "--insecure")
+// 	args = append(args, "--insecure")
 
-	// Create a redactor that only redacts the auth token value
-	redactor := func(text string) string {
-		if token == "" {
-			return text
-		}
-		// Use a more precise approach to only redact the exact auth token
-		// Look for --auth-token followed by the exact token value
-		authTokenPattern := "--auth-token " + token
-		return strings.ReplaceAll(text, authTokenPattern, "--auth-token ******")
-	}
+// 	// Create a redactor that only redacts the auth token value
+// 	redactor := func(text string) string {
+// 		if token == "" {
+// 			return text
+// 		}
+// 		// Use a more precise approach to only redact the exact auth token
+// 		// Look for --auth-token followed by the exact token value
+// 		authTokenPattern := "--auth-token " + token
+// 		return strings.ReplaceAll(text, authTokenPattern, "--auth-token ******")
+// 	}
 
-	return RunWithStdinWithRedactor(stdin, "", "../../dist/athena", redactor, args...)
-}
+// 	return RunWithStdinWithRedactor(stdin, "", "../../dist/athena", redactor, args...)
+// }
 
 // // RunPluginCli executes an Argo CD CLI plugin with optional stdin input.
 // func RunPluginCli(stdin string, args ...string) (string, error) {

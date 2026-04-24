@@ -368,11 +368,11 @@ const (
 // Constants represent the pod selector labels of the Athena component names. These values are determined by the
 // installation manifests.
 const (
-	DefaultServerName                = "athena-server"
-	DefaultRepoServerName            = "athena-repo-server"
-	DefaultApplicationControllerName = "athena-application-controller"
-	DefaultRedisName                 = "athena-redis"
-	DefaultRedisHaProxyName          = "athena-redis-ha-haproxy"
+	DefaultServerName = "athena-server"
+	// DefaultRepoServerName            = "athena-repo-server"
+	// DefaultApplicationControllerName = "athena-application-controller"
+	DefaultRedisName        = "athena-redis"
+	DefaultRedisHaProxyName = "athena-redis-ha-haproxy"
 )
 
 // GetGnuPGHomePath retrieves the path to use for GnuPG home directory, which is either taken from GNUPGHOME environment or a default value

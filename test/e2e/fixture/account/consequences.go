@@ -32,6 +32,12 @@ func (c *Consequences) AndCLIOutput(block func(output string, err error)) *Conse
 	return c
 }
 
+func (c *Consequences) CanIResult(block func(response *account.CanIResponse, err error)) *Consequences {
+	c.context.T().Helper()
+	block(c.actions.lastCanI, c.actions.lastError)
+	return c
+}
+
 func (c *Consequences) CurrentUser(block func(user *session.GetUserInfoResponse, err error)) *Consequences {
 	c.context.T().Helper()
 	block(c.getCurrentUser())
@@ -39,7 +45,9 @@ func (c *Consequences) CurrentUser(block func(user *session.GetUserInfoResponse,
 }
 
 func (c *Consequences) get() (*account.Account, error) {
-	_, accountClient, _ := fixture.ArgoCDClientset.NewAccountClient()
+	closer, accountClient, err := fixture.AthenaClientset.NewAccountClient()
+	require.NoError(c.context.T(), err)
+	defer utilio.Close(closer)
 	accList, err := accountClient.ListAccounts(context.Background(), &account.ListAccountRequest{})
 	if err != nil {
 		return nil, err
@@ -54,7 +62,7 @@ func (c *Consequences) get() (*account.Account, error) {
 
 func (c *Consequences) getCurrentUser() (*session.GetUserInfoResponse, error) {
 	c.context.T().Helper()
-	closer, client, err := fixture.ArgoCDClientset.NewSessionClient()
+	closer, client, err := fixture.AthenaClientset.NewSessionClient()
 	require.NoError(c.context.T(), err)
 	defer utilio.Close(closer)
 	return client.GetUserInfo(context.Background(), &session.GetUserInfoRequest{})

@@ -1,36 +1,27 @@
 package fixture
 
-import (
-	"context"
-	"os"
-	"os/exec"
-	"strings"
+// func Run(workDir, name string, args ...string) (string, error) {
+// 	return RunWithStdin("", workDir, name, args...)
+// }
 
-	argoexec "github.com/useryege/athena/util/exec"
-)
+// func RunWithStdin(stdin, workDir, name string, args ...string) (string, error) {
+// 	cmd := exec.CommandContext(context.Background(), name, args...)
+// 	if stdin != "" {
+// 		cmd.Stdin = strings.NewReader(stdin)
+// 	}
+// 	cmd.Env = os.Environ()
+// 	cmd.Dir = workDir
 
-func Run(workDir, name string, args ...string) (string, error) {
-	return RunWithStdin("", workDir, name, args...)
-}
+// 	return argoexec.RunCommandExt(cmd, argoexec.CmdOpts{})
+// }
 
-func RunWithStdin(stdin, workDir, name string, args ...string) (string, error) {
-	cmd := exec.CommandContext(context.Background(), name, args...)
-	if stdin != "" {
-		cmd.Stdin = strings.NewReader(stdin)
-	}
-	cmd.Env = os.Environ()
-	cmd.Dir = workDir
+// func RunWithStdinWithRedactor(stdin, workDir, name string, redactor func(string) string, args ...string) (string, error) {
+// 	cmd := exec.CommandContext(context.Background(), name, args...)
+// 	if stdin != "" {
+// 		cmd.Stdin = strings.NewReader(stdin)
+// 	}
+// 	cmd.Env = os.Environ()
+// 	cmd.Dir = workDir
 
-	return argoexec.RunCommandExt(cmd, argoexec.CmdOpts{})
-}
-
-func RunWithStdinWithRedactor(stdin, workDir, name string, redactor func(string) string, args ...string) (string, error) {
-	cmd := exec.CommandContext(context.Background(), name, args...)
-	if stdin != "" {
-		cmd.Stdin = strings.NewReader(stdin)
-	}
-	cmd.Env = os.Environ()
-	cmd.Dir = workDir
-
-	return argoexec.RunCommandExt(cmd, argoexec.CmdOpts{Redactor: redactor})
-}
+// 	return argoexec.RunCommandExt(cmd, argoexec.CmdOpts{Redactor: redactor})
+// }
