@@ -25,6 +25,8 @@ type MetricsServer struct {
 }
 
 var (
+
+	// redis request metrics
 	redisRequestCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "athena_redis_request_total",
@@ -40,21 +42,22 @@ var (
 		},
 		[]string{"initiator"},
 	)
-	extensionRequestCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "athena_proxy_extension_request_total",
-			Help: "Number of requests sent to configured proxy extensions.",
-		},
-		[]string{"extension", "status"},
-	)
-	extensionRequestDuration = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "athena_proxy_extension_request_duration_seconds",
-			Help:    "Request duration in seconds between the Athena API server and the extension backend.",
-			Buckets: []float64{0.1, 0.25, .5, 1, 2, 5, 10},
-		},
-		[]string{"extension"},
-	)
+
+	// extensionRequestCounter = prometheus.NewCounterVec(
+	// 	prometheus.CounterOpts{
+	// 		Name: "athena_proxy_extension_request_total",
+	// 		Help: "Number of requests sent to configured proxy extensions.",
+	// 	},
+	// 	[]string{"extension", "status"},
+	// )
+	// extensionRequestDuration = prometheus.NewHistogramVec(
+	// 	prometheus.HistogramOpts{
+	// 		Name:    "athena_proxy_extension_request_duration_seconds",
+	// 		Help:    "Request duration in seconds between the Athena API server and the extension backend.",
+	// 		Buckets: []float64{0.1, 0.25, .5, 1, 2, 5, 10},
+	// 	},
+	// 	[]string{"extension"},
+	// )
 	loginRequestCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "athena_login_request_total",
@@ -62,7 +65,7 @@ var (
 		},
 		[]string{"status"},
 	)
-	argoVersion = prometheus.NewGaugeVec(
+	athenaVersion = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "athena_info",
 			Help: "Athena version information",
@@ -73,22 +76,26 @@ var (
 
 // NewMetricsServer returns a new prometheus server which collects api server metrics
 func NewMetricsServer(host string, port int) *MetricsServer {
+	// create a new mux
 	mux := http.NewServeMux()
+	// create a new registry
 	registry := prometheus.NewRegistry()
+	// register the metrics handler
 	mux.Handle("/metrics", promhttp.HandlerFor(prometheus.Gatherers{
 		registry,
 		prometheus.DefaultGatherer,
 	}, promhttp.HandlerOpts{}))
-	argoVersion.WithLabelValues(common.GetVersion().Version).Set(1)
+	// set the athena version
+	athenaVersion.WithLabelValues(common.GetVersion().Version).Set(1)
 
 	profile.RegisterProfiler(mux)
 
 	registry.MustRegister(redisRequestCounter)
 	registry.MustRegister(redisRequestHistogram)
-	registry.MustRegister(extensionRequestCounter)
-	registry.MustRegister(extensionRequestDuration)
+	// registry.MustRegister(extensionRequestCounter)
+	// registry.MustRegister(extensionRequestDuration)
 	registry.MustRegister(loginRequestCounter)
-	registry.MustRegister(argoVersion)
+	registry.MustRegister(athenaVersion)
 
 	kubectl.RegisterWithClientGo()
 	kubectl.RegisterWithPrometheus(registry)
@@ -98,12 +105,12 @@ func NewMetricsServer(host string, port int) *MetricsServer {
 			Addr:    fmt.Sprintf("%s:%d", host, port),
 			Handler: mux,
 		},
-		redisRequestCounter:      redisRequestCounter,
-		redisRequestHistogram:    redisRequestHistogram,
-		extensionRequestCounter:  extensionRequestCounter,
-		extensionRequestDuration: extensionRequestDuration,
-		loginRequestCounter:      loginRequestCounter,
-		PrometheusRegistry:       registry,
+		redisRequestCounter:   redisRequestCounter,
+		redisRequestHistogram: redisRequestHistogram,
+		// extensionRequestCounter:  extensionRequestCounter,
+		// extensionRequestDuration: extensionRequestDuration,
+		loginRequestCounter: loginRequestCounter,
+		PrometheusRegistry:  registry,
 	}
 }
 

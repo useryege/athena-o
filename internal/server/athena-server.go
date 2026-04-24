@@ -209,7 +209,7 @@ type AthenaServerOpts struct {
 	TLSConfigCustomizer   tlsutil.ConfigCustomizer
 	XFrameOptions         string
 	ContentSecurityPolicy string
-	ApplicationNamespaces []string
+	// ApplicationNamespaces []string
 	// EnableProxyExtension  bool
 	// WebhookParallelism     int
 	// EnableK8sEvent         []string
@@ -532,16 +532,22 @@ type AthenaServiceSet struct {
 	VersionService  *version.Server
 }
 
-func newAthenaServiceSet(a *AthenaServer) *AthenaServiceSet {
+// prepare all services for the athena server
+func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// kubectl := kubeutil.NewKubectl()
 	// clusterService := cluster.NewServer(a.db, a.enf, a.Cache, kubectl)
 	// repoService := repository.NewServer(a.RepoClientset, a.db, a.enf, a.Cache, a.appLister, a.projInformer, a.Namespace, a.settingsMgr, a.HydratorEnabled)
 	// repoCredsService := repocreds.NewServer(a.db, a.enf)
+
+	// create a login rate limiter
+	// used by the session service
 	var loginRateLimiter func() (utilio.Closer, error)
 	if maxConcurrentLoginRequestsCount > 0 {
 		loginRateLimiter = session.NewLoginRateLimiter(maxConcurrentLoginRequestsCount)
 	}
-	sessionService := session.NewServer(a.sessionMgr, a.settingsMgr, a, a.policyEnforcer, loginRateLimiter)
+
+	// session service
+	sessionService := session.NewServer(server.sessionMgr, server.settingsMgr, server, server.policyEnforcer, loginRateLimiter)
 	// projectLock := sync.NewKeyLock()
 	// applicationService, appResourceTreeFn := application.NewServer(
 	// 	a.Namespace,
@@ -586,45 +592,45 @@ func newAthenaServiceSet(a *AthenaServer) *AthenaServiceSet {
 	// )
 
 	// projectService := project.NewServer(a.Namespace, a.KubeClientset, a.AppClientset, a.enf, projectLock, a.sessionMgr, a.policyEnforcer, a.projInformer, a.settingsMgr, a.db, a.EnableK8sEvent)
-	appsInAnyNamespaceEnabled := len(a.ApplicationNamespaces) > 0
-	settingsService := settings.NewServer(a.settingsMgr, a, a.DisableAuth, appsInAnyNamespaceEnabled, a.HydratorEnabled, a.SyncWithReplaceAllowed)
-	accountService := account.NewServer(a.sessionMgr, a.settingsMgr, a.enf)
+	// appsInAnyNamespaceEnabled := len(server.ApplicationNamespaces) > 0
+	// settings service
+	settingsService := settings.NewServer(server.settingsMgr, server, server.DisableAuth, server.HydratorEnabled, server.SyncWithReplaceAllowed)
+	// account service
+	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf)
 
 	// notificationService := notification.NewServer(a.apiFactory)
 	// certificateService := certificate.NewServer(a.db, a.enf)
 	// gpgkeyService := gpgkey.NewServer(a.db, a.enf)
-	versionService := version.NewServer(a, func() (bool, error) {
-		if a.DisableAuth {
+	versionService := version.NewServer(server, func() (bool, error) {
+		if server.DisableAuth {
 			return true, nil
 		}
-		sett, err := a.settingsMgr.GetSettings()
+		sett, err := server.settingsMgr.GetSettings()
 		if err != nil {
 			return false, err
 		}
 		return sett.AnonymousUserEnabled, err
 	})
 
-	// return &ArgoCDServiceSet{
-	// 	ClusterService:        clusterService,
-	// 	RepoService:           repoService,
-	// 	RepoCredsService:      repoCredsService,
-	// 	SessionService:        sessionService,
-	// 	ApplicationService:    applicationService,
-	// 	AppResourceTreeFn:     appResourceTreeFn,
-	// 	ApplicationSetService: applicationSetService,
-	// 	ProjectService:        projectService,
-	// 	SettingsService:       settingsService,
-	// 	AccountService:        accountService,
-	// 	NotificationService:   notificationService,
-	// 	CertificateService:    certificateService,
-	// 	GpgkeyService:         gpgkeyService,
-	// 	VersionService:        versionService,
-	// }
 	return &AthenaServiceSet{
 		SessionService:  sessionService,
 		SettingsService: settingsService,
 		AccountService:  accountService,
 		VersionService:  versionService,
+		// 	ClusterService:        clusterService,
+		// 	RepoService:           repoService,
+		// 	RepoCredsService:      repoCredsService,
+		// 	SessionService:        sessionService,
+		// 	ApplicationService:    applicationService,
+		// 	AppResourceTreeFn:     appResourceTreeFn,
+		// 	ApplicationSetService: applicationSetService,
+		// 	ProjectService:        projectService,
+		// 	SettingsService:       settingsService,
+		// 	AccountService:        accountService,
+		// 	NotificationService:   notificationService,
+		// 	CertificateService:    certificateService,
+		// 	GpgkeyService:         gpgkeyService,
+		// 	VersionService:        versionService,
 	}
 }
 
@@ -1102,6 +1108,7 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 			server.Shutdown()
 		}
 	}()
+
 	metricsServ := metrics.NewMetricsServer(server.MetricsHost, server.MetricsPort)
 	if server.RedisClient != nil {
 		cacheutil.CollectMetrics(server.RedisClient, metricsServ, server.userStateStorage.GetLockObject())
@@ -1177,7 +1184,7 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 	// Start the muxed listeners for our servers
 	log.Infof("athena %s serving on port %d (url: %s, tls: %v, namespace: %s, sso: %v)",
 		common.GetVersion(), server.ListenPort, server.settings.URL, server.useTLS(), server.Namespace, server.settings.IsSSOConfigured())
-	log.Infof("Enabled application namespace patterns: %s", server.allowedApplicationNamespacesAsString())
+	// log.Infof("Enabled application namespace patterns: %s", server.allowedApplicationNamespacesAsString())
 
 	go func() { server.checkServeErr("grpcS", grpcS.Serve(grpcL)) }()
 	go func() { server.checkServeErr("httpS", httpS.Serve(httpL)) }()
@@ -1444,14 +1451,14 @@ func (server *AthenaServer) useTLS() bool {
 
 // allowedApplicationNamespacesAsString returns a string containing comma-separated list
 // of allowed application namespaces
-func (server *AthenaServer) allowedApplicationNamespacesAsString() string {
-	ns := server.Namespace
-	if len(server.ApplicationNamespaces) > 0 {
-		ns += ", "
-		ns += strings.Join(server.ApplicationNamespaces, ", ")
-	}
-	return ns
-}
+// func (server *AthenaServer) allowedApplicationNamespacesAsString() string {
+// 	ns := server.Namespace
+// 	if len(server.ApplicationNamespaces) > 0 {
+// 		ns += ", "
+// 		ns += strings.Join(server.ApplicationNamespaces, ", ")
+// 	}
+// 	return ns
+// }
 
 // Authenticate checks for the presence of a valid token when accessing server-side resources.
 func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, error) {

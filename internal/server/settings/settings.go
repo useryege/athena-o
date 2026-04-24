@@ -14,12 +14,12 @@ import (
 
 // Server provides a Settings service
 type Server struct {
-	mgr                       *settings.SettingsManager
-	authenticator             Authenticator
-	disableAuth               bool
-	appsInAnyNamespaceEnabled bool
-	hydratorEnabled           bool
-	syncWithReplaceAllowed    bool
+	mgr           *settings.SettingsManager
+	authenticator Authenticator
+	disableAuth   bool
+	// appsInAnyNamespaceEnabled bool
+	hydratorEnabled        bool
+	syncWithReplaceAllowed bool
 }
 
 type Authenticator interface {
@@ -27,8 +27,9 @@ type Authenticator interface {
 }
 
 // NewServer returns a new instance of the Settings service
-func NewServer(mgr *settings.SettingsManager, authenticator Authenticator, disableAuth, appsInAnyNamespaceEnabled bool, hydratorEnabled bool, syncWithReplaceAllowed bool) *Server {
-	return &Server{mgr: mgr, authenticator: authenticator, disableAuth: disableAuth, appsInAnyNamespaceEnabled: appsInAnyNamespaceEnabled, hydratorEnabled: hydratorEnabled, syncWithReplaceAllowed: syncWithReplaceAllowed}
+func NewServer(mgr *settings.SettingsManager, authenticator Authenticator, disableAuth, hydratorEnabled bool, syncWithReplaceAllowed bool) *Server {
+	return &Server{mgr: mgr, authenticator: authenticator, disableAuth: disableAuth,
+		hydratorEnabled: hydratorEnabled, syncWithReplaceAllowed: syncWithReplaceAllowed}
 }
 
 // Get returns Athena settings
@@ -107,16 +108,16 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 			ChatText:   help.ChatText,
 			BinaryUrls: help.BinaryURLs,
 		},
-		UserLoginsDisabled:        userLoginsDisabled,
-		KustomizeVersions:         kustomizeVersions,
-		UiCssURL:                  argoCDSettings.UiCssURL,
-		TrackingMethod:            trackingMethod,
-		InstallationID:            installationID,
-		ExecEnabled:               argoCDSettings.ExecEnabled,
-		AppsInAnyNamespaceEnabled: s.appsInAnyNamespaceEnabled,
-		ImpersonationEnabled:      argoCDSettings.ImpersonationEnabled,
-		HydratorEnabled:           s.hydratorEnabled,
-		SyncWithReplaceAllowed:    s.syncWithReplaceAllowed,
+		UserLoginsDisabled: userLoginsDisabled,
+		KustomizeVersions:  kustomizeVersions,
+		UiCssURL:           argoCDSettings.UiCssURL,
+		TrackingMethod:     trackingMethod,
+		InstallationID:     installationID,
+		ExecEnabled:        argoCDSettings.ExecEnabled,
+		// AppsInAnyNamespaceEnabled: s.appsInAnyNamespaceEnabled,
+		ImpersonationEnabled:   argoCDSettings.ImpersonationEnabled,
+		HydratorEnabled:        s.hydratorEnabled,
+		SyncWithReplaceAllowed: s.syncWithReplaceAllowed,
 	}
 
 	if sessionmgr.LoggedIn(ctx) || s.disableAuth {
