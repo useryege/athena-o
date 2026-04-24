@@ -22,17 +22,8 @@ type Actions struct {
 	lastCanI   *account.CanIResponse
 }
 
-// func (a *Actions) prepareCanIGetLogsArgs() []string {
-// 	a.context.T().Helper()
-// 	return []string{
-// 		"account", "can-i", "get", "logs", a.context.project + "/*",
-// 	}
-// }
-
 func (a *Actions) CanIGetLogs() *Actions {
 	a.context.T().Helper()
-	// TODO: implement this
-	// a.runCli(a.prepareCanIGetLogsArgs()...)
 
 	closer, accountClient, err := fixture.AthenaClientset.NewAccountClient()
 	require.NoError(a.context.T(), err)
@@ -53,20 +44,11 @@ func (a *Actions) CanIGetLogs() *Actions {
 	return a
 }
 
-// func (a *Actions) prepareSetPasswordArgs(account string) []string {
-// 	a.context.T().Helper()
-// 	return []string{
-// 		"account", "update-password", "--account", account, "--current-password", fixture.AdminPassword, "--new-password", fixture.DefaultTestUserPassword,
-// 	}
-// }
-
 func (a *Actions) Create() *Actions {
 	a.context.T().Helper()
 	require.NoError(a.context.T(), fixture.SetAccounts(map[string][]string{
 		a.context.GetName(): {"login"},
 	}))
-	// TODO: implement this
-	// _, _ = fixture.RunCli(a.prepareSetPasswordArgs(a.context.GetName())...)
 
 	closer, accountClient, err := fixture.AthenaClientset.NewAccountClient()
 	require.NoError(a.context.T(), err)

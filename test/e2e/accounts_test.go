@@ -58,11 +58,6 @@ func TestCanIGetLogsAllow(t *testing.T) {
 				Action:   "get",
 				Scope:    ProjectName + "/*",
 			},
-			{
-				Resource: "apps",
-				Action:   "get",
-				Scope:    ProjectName + "/*",
-			},
 		}, "log-viewer").
 		CanIGetLogs().
 		Then().
