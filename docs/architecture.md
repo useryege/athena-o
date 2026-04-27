@@ -8,6 +8,159 @@ Athena is an automated trading system designed for blockchain transaction scenar
 
 ![Athena Architecture](assets/athena-architecture.png)
 
+# Athena Overall Workflow Overview
+
+Athena is an automated trading system designed for blockchain transaction scenarios. It continuously monitors on-chain data, maintains project data, and automatically determines buy and sell timing based on user-configured strategies. When strategy conditions are met, the system creates transactions through the Swap Server and, when necessary, accelerates confirmation through the Tx Speed Up Server. At the same time, the Protect Server continuously monitors user assets and order status, triggering protective sell actions when risks are detected to reduce potential losses.
+
+The system can be divided into five core workflows:
+
+1. Project Data Synchronization Workflow
+2. Automated Buy Workflow
+3. Automated Sell Workflow
+4. Manual Trading Workflow
+5. Risk Control and Protection Workflow
+
+Athena first uses the Block Sniffer to monitor real-time blockchain transactions and log events. 
+When target events are detected, the Block Sniffer emits a sync event to the Project Controller. 
+The Project Controller fetches the latest project data from the blockchain or external sources and maintains it in memory. 
+The Projects module stores token and project information used by the strategy engines.
+
+The Buy Strategy Engine subscribes to project data and decides when to buy based on the user's buy strategy. 
+The Sell Strategy Engine also subscribes to project data and decides when to sell based on the user's sell strategy. 
+When a buy or sell condition is met, the strategy engine sends a trade signal to the Swap Server. 
+The Swap Server creates the swap transaction and calls the Tx Speed Up Server when transaction acceleration is required.
+
+The API Server acts as the entry point of the system. 
+It connects the UI with backend services, allows users to start or stop the Block Sniffer, manually trigger trades, query project and order status, and open or close the Protect Server.
+
+The Order Controller manages the full lifecycle of orders and synchronizes order data into Orders. 
+Orders store the user's wallet token information, balances, prices, transaction history, and other data needed for trading decisions.
+
+The Protect Server monitors order and asset status. 
+When it detects potential risks, such as a sharp price drop or an unsafe token state, it triggers an automatic sell through the Swap Server and may use the Tx Speed Up Server to accelerate the protective transaction.
+
+---
+
+## Project Data Synchronization Workflow
+
+This is the foundational workflow of the entire system.
+
+The **Block Sniffer** listens to the latest block height and monitors on-chain transactions and log events in real time. When it detects transactions or log events that the system is interested in, it sends a sync event to the **Project Controller**.
+
+The flow is:
+
+```text
+Block Sniffer
+  -> Emit Sync Event
+Project Controller
+  -> Sync
+Projects
+```
+
+Specifically:
+
+* Block Sniffer subscribes to the latest block height.
+* Block Sniffer monitors real-time on-chain transactions and log events.
+* When target events are detected, it triggers a sync event.
+* Project Controller receives the sync event.
+* Project Controller fetches the latest project data from the blockchain or external data sources.
+* Project Controller updates project data in memory.
+* Projects stores project information used by strategy engines for decision-making.
+
+Here, **Projects** can be understood as the system's internal project data collection, including token information, on-chain status, liquidity, prices, transaction history, and external data. The subsequent buy and sell strategies both rely on this dataset.
+
+---
+
+## Automated Buy Workflow
+
+The automated buy workflow is handled by the **Buy Strategy Engine**.
+
+It subscribes to project data and evaluates whether a token should be bought based on user-configured buy strategies. If buy conditions are met, it sends a buy signal to the **Swap Server**, which then creates the buy transaction.
+
+The flow is:
+
+```text
+Projects
+  -> Subscribe
+Buy Strategy Engine
+  -> Emit Order Created Signal
+  -> Emit Buy Signal
+  -> Emit Order Status Changed Signal(Status: Waiting to Create the Buy Transaction)
+Swap Server
+  -> Emit Order Status Changed Signal(Status: Started to Create the Buy Transaction)
+  -> Create Buy Transaction
+  -> Emit Order Status Changed Signal(Status: Create the Buy Transaction Success and Waiting to Speed Up the Transaction)
+  -> Emit Speed Up Transaction Signal
+Tx Speed Up Server
+  -> Emit Order Status Changed Signal(Status: Started to Speed Up the Transaction)
+  -> Speed Up the Transaction
+Order Controller
+  -> Wait for the Transaction to be confirmed
+  -> Emit Order Status Changed Signal(Status: Transaction Confirmed)
+```
+
+Specifically:
+
+* The Buy Strategy Engine subscribes to updates from Projects.
+* When buy conditions are met, the Buy Strategy Engine emits an `Order Created` signal.
+* The Buy Strategy Engine emits a `Buy` signal.
+* The Buy Strategy Engine emits an order status update: `Waiting to Create the Buy Transaction`.
+* The Swap Server emits an order status update: `Started to Create the Buy Transaction`.
+* The Swap Server creates the buy transaction.
+* The Swap Server emits an order status update: `Create the Buy Transaction Success and Waiting to Speed Up the Transaction`.
+* The Swap Server emits a `Speed Up Transaction` signal.
+* The Tx Speed Up Server emits an order status update: `Started to Speed Up the Transaction`.
+* The Tx Speed Up Server speeds up the transaction.
+* The Order Controller waits for transaction confirmation.
+* The Order Controller emits an order status update: `Transaction Confirmed`.
+
+---
+
+## Automated Sell Workflow
+
+The automated sell workflow is handled by the **Sell Strategy Engine**.
+
+It also subscribes to project data, but focuses on whether a token that has already been bought or held has reached the sell timing. It will decide whether to trigger a sell based on user-configured sell strategies, such as profit-taking, price changes, time windows, project risk changes, and other conditions.
+
+The flow is:
+
+```text
+Projects
+  -> Subscribe
+Sell Strategy Engine
+  -> Emit Order Created Signal
+  -> Emit Sell Signal
+  -> Emit Order Status Changed Signal(Status: Waiting to Create the Sell Transaction)
+Swap Server
+  -> Emit Order Status Changed Signal(Status: Started to Create the Sell Transaction)
+  -> Create Sell Transaction
+  -> Emit Order Status Changed Signal(Status: Create the Sell Transaction Success and Waiting to Speed Up the Transaction)
+  -> Emit Speed Up Transaction Signal
+Tx Speed Up Server
+  -> Emit Order Status Changed Signal(Status: Started to Speed Up the Transaction)
+  -> Speed Up the Transaction
+Order Controller
+  -> Wait for the Transaction to be confirmed
+  -> Emit Order Status Changed Signal(Status: Transaction Confirmed)
+```
+
+Specifically:
+
+* The Sell Strategy Engine subscribes to updates from Projects.
+* When sell conditions are met, the Sell Strategy Engine emits an `Order Created` signal.
+* The Sell Strategy Engine emits a `Sell` signal.
+* The Sell Strategy Engine emits an order status update: `Waiting to Create the Sell Transaction`.
+* The Swap Server emits an order status update: `Started to Create the Sell Transaction`.
+* The Swap Server creates the sell transaction.
+* The Swap Server emits an order status update: `Create the Sell Transaction Success and Waiting to Speed Up the Transaction`.
+* The Swap Server emits a `Speed Up Transaction` signal.
+* The Tx Speed Up Server emits an order status update: `Started to Speed Up the Transaction`.
+* The Tx Speed Up Server speeds up the transaction.
+* The Order Controller waits for transaction confirmation.
+* The Order Controller emits an order status update: `Transaction Confirmed`.
+
+---
+
 ## Core Components
 
 ### Block Sniffer
@@ -141,162 +294,5 @@ Orders = user-owned order/position data used to decide whether to continue holdi
 ```
 
 This distinction is critical.
-
----
-
-
-# Athena Overall Workflow Overview
-
-Athena is an automated trading system designed for blockchain transaction scenarios. It continuously monitors on-chain data, maintains project data, and automatically determines buy and sell timing based on user-configured strategies. When strategy conditions are met, the system creates transactions through the Swap Server and, when necessary, accelerates confirmation through the Tx Speed Up Server. At the same time, the Protect Server continuously monitors user assets and order status, triggering protective sell actions when risks are detected to reduce potential losses.
-
-The system can be divided into five core workflows:
-
-1. Project Data Synchronization Workflow
-2. Automated Buy Workflow
-3. Automated Sell Workflow
-4. Manual Trading Workflow
-5. Risk Control and Protection Workflow
-
----
-
-## Project Data Synchronization Workflow
-
-This is the foundational workflow of the entire system.
-
-The **Block Sniffer** listens to the latest block height and monitors on-chain transactions and log events in real time. When it detects transactions or log events that the system is interested in, it sends a sync event to the **Project Controller**.
-
-The flow is:
-
-```text
-Block Sniffer
-  -> Emit Sync Event
-Project Controller
-  -> Sync
-Projects
-```
-
-Specifically:
-
-* Block Sniffer subscribes to the latest block height.
-* Block Sniffer monitors real-time on-chain transactions and log events.
-* When target events are detected, it triggers a sync event.
-* Project Controller receives the sync event.
-* Project Controller fetches the latest project data from the blockchain or external data sources.
-* Project Controller updates project data in memory.
-* Projects stores project information used by strategy engines for decision-making.
-
-Here, **Projects** can be understood as the system's internal project data collection, including token information, on-chain status, liquidity, prices, transaction history, and external data. The subsequent buy and sell strategies both rely on this dataset.
-
----
-
-## Automated Buy Workflow
-
-The automated buy workflow is handled by the **Buy Strategy Engine**.
-
-It subscribes to project data and evaluates whether a token should be bought based on user-configured buy strategies. If buy conditions are met, it sends a buy signal to the **Swap Server**, which then creates the buy transaction.
-
-The flow is:
-
-```text
-Projects
-  -> Subscribe
-Buy Strategy Engine
-  -> Emit Order Created Signal
-  -> Emit Buy Signal
-  -> Emit Order Status Changed Signal(Status: Waiting to Create the Buy Transaction)
-Swap Server
-  -> Emit Order Status Changed Signal(Status: Started to Create the Buy Transaction)
-  -> Create Buy Transaction
-  -> Emit Order Status Changed Signal(Status: Create the Buy Transaction Success and Waiting to Speed Up the Transaction)
-  -> Emit Speed Up Transaction Signal
-Tx Speed Up Server
-  -> Emit Order Status Changed Signal(Status: Started to Speed Up the Transaction)
-  -> Speed Up the Transaction
-Order Controller
-  -> Wait for the Transaction to be confirmed
-  -> Emit Order Status Changed Signal(Status: Transaction Confirmed)
-```
-
-Specifically:
-
-* The Buy Strategy Engine subscribes to updates from Projects.
-* When buy conditions are met, the Buy Strategy Engine emits an `Order Created` signal.
-* The Buy Strategy Engine emits a `Buy` signal.
-* The Buy Strategy Engine emits an order status update: `Waiting to Create the Buy Transaction`.
-* The Swap Server emits an order status update: `Started to Create the Buy Transaction`.
-* The Swap Server creates the buy transaction.
-* The Swap Server emits an order status update: `Create the Buy Transaction Success and Waiting to Speed Up the Transaction`.
-* The Swap Server emits a `Speed Up Transaction` signal.
-* The Tx Speed Up Server emits an order status update: `Started to Speed Up the Transaction`.
-* The Tx Speed Up Server speeds up the transaction.
-* The Order Controller waits for transaction confirmation.
-* The Order Controller emits an order status update: `Transaction Confirmed`.
-
----
-
-## Automated Sell Workflow
-
-The automated sell workflow is handled by the **Sell Strategy Engine**.
-
-It also subscribes to project data, but focuses on whether a token that has already been bought or held has reached the sell timing. It will decide whether to trigger a sell based on user-configured sell strategies, such as profit-taking, price changes, time windows, project risk changes, and other conditions.
-
-The flow is:
-
-```text
-Projects
-  -> Subscribe
-Sell Strategy Engine
-  -> Emit Order Created Signal
-  -> Emit Sell Signal
-  -> Emit Order Status Changed Signal(Status: Waiting to Create the Sell Transaction)
-Swap Server
-  -> Emit Order Status Changed Signal(Status: Started to Create the Sell Transaction)
-  -> Create Sell Transaction
-  -> Emit Order Status Changed Signal(Status: Create the Sell Transaction Success and Waiting to Speed Up the Transaction)
-  -> Emit Speed Up Transaction Signal
-Tx Speed Up Server
-  -> Emit Order Status Changed Signal(Status: Started to Speed Up the Transaction)
-  -> Speed Up the Transaction
-Order Controller
-  -> Wait for the Transaction to be confirmed
-  -> Emit Order Status Changed Signal(Status: Transaction Confirmed)
-```
-
-Specifically:
-
-* The Sell Strategy Engine subscribes to updates from Projects.
-* When sell conditions are met, the Sell Strategy Engine emits an `Order Created` signal.
-* The Sell Strategy Engine emits a `Sell` signal.
-* The Sell Strategy Engine emits an order status update: `Waiting to Create the Sell Transaction`.
-* The Swap Server emits an order status update: `Started to Create the Sell Transaction`.
-* The Swap Server creates the sell transaction.
-* The Swap Server emits an order status update: `Create the Sell Transaction Success and Waiting to Speed Up the Transaction`.
-* The Swap Server emits a `Speed Up Transaction` signal.
-* The Tx Speed Up Server emits an order status update: `Started to Speed Up the Transaction`.
-* The Tx Speed Up Server speeds up the transaction.
-* The Order Controller waits for transaction confirmation.
-* The Order Controller emits an order status update: `Transaction Confirmed`.
-
----
-
-
-Athena first uses the Block Sniffer to monitor real-time blockchain transactions and log events. 
-When target events are detected, the Block Sniffer emits a sync event to the Project Controller. 
-The Project Controller fetches the latest project data from the blockchain or external sources and maintains it in memory. 
-The Projects module stores token and project information used by the strategy engines.
-
-The Buy Strategy Engine subscribes to project data and decides when to buy based on the user's buy strategy. 
-The Sell Strategy Engine also subscribes to project data and decides when to sell based on the user's sell strategy. 
-When a buy or sell condition is met, the strategy engine sends a trade signal to the Swap Server. 
-The Swap Server creates the swap transaction and calls the Tx Speed Up Server when transaction acceleration is required.
-
-The API Server acts as the entry point of the system. 
-It connects the UI with backend services, allows users to start or stop the Block Sniffer, manually trigger trades, query project and order status, and open or close the Protect Server.
-
-The Order Controller manages the full lifecycle of orders and synchronizes order data into Orders. 
-Orders store the user's wallet token information, balances, prices, transaction history, and other data needed for trading decisions.
-
-The Protect Server monitors order and asset status. 
-When it detects potential risks, such as a sharp price drop or an unsafe token state, it triggers an automatic sell through the Swap Server and may use the Tx Speed Up Server to accelerate the protective transaction.
 
 ---
