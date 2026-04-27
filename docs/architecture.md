@@ -214,7 +214,7 @@ It is used to protect the user's assets from the loss.It will detect the token p
 
 ### Tx Speed Up Server
 
-**Tx Speed Up Server** is a low-level supporting service. It does not make strategy decisions and does not create transactions; it is only responsible for accelerating transaction confirmation.
+It is a low-level supporting service. It does not make strategy decisions and does not create transactions; it is only responsible for accelerating transaction confirmation.
 
 It can be called by:
 
