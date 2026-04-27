@@ -1,0 +1,8 @@
+---
+alwaysApply: true
+---
+
+# Ruls
+
+- Design and development across the entire project must prioritize runtime performance above all else.
+- This is a blockchain development context; any avoidable performance degradation can cause economic loss.
