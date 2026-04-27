@@ -6,3 +6,4 @@ alwaysApply: true
 
 - Design and development across the entire project must prioritize runtime performance above all else.
 - This is a blockchain development context; any avoidable performance degradation can cause economic loss.
+- The primary ecosystem focus is EVM, with Ethereum (ETH) as the default reference chain for design and implementation decisions.

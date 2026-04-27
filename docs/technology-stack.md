@@ -1,143 +1,973 @@
-下面是我建议的 **Athena 技术栈**。我会按你的性能优先原则来选：**交易热路径低延迟、事件可回放、状态强一致、链上数据高吞吐写入、行情查询快、故障后可恢复**。
+
+# Athena 技术选型总结：Rust、Go 与整体架构建议
+
+## 1. 背景
+
+Athena 是一个面向区块链交易场景的自动化交易系统，核心能力包括：
+
+- 实时监听链上区块、交易和日志事件
+- 维护 Project 市场数据
+- 根据用户策略自动判断买入、卖出时机
+- 创建 swap 交易
+- 对 pending transaction 进行加速
+- 维护订单生命周期
+- 在风险出现时自动触发保护性卖出
+
+由于 Athena 直接参与链上交易，系统设计必须遵循以下原则：
+
+```text
+Design and development across the entire project must prioritize runtime performance above all else.
+```
+
+也就是说：
+
+```text
+整个项目的设计和开发必须优先考虑运行时性能。
+在区块链交易场景中，任何可避免的性能损耗都可能造成经济损失。
+```
+
+因此，技术选型不能只看开发效率，还要重点考虑：
+
+* 运行时性能
+* 延迟稳定性
+* 并发安全
+* 内存安全
+* 交易执行可靠性
+* 链上生态兼容性
+* 长期可维护性
 
 ---
 
-# 一句话结论
+# 2. 总体结论
 
-我建议 Athena 第一版使用：
+Athena 不建议简单地在 Rust 和 Go 之间二选一。
+
+对于一个以 EVM / ETH 为主要目标的自动化交易系统，最合理的技术路线是：
 
 ```text
-Backend Language: Rust / Go
-Primary DB: PostgreSQL
-Cache / Hot State: Redis
-MQ / Event Stream: Kafka / Redpanda
-Analytics DB: ClickHouse
-RPC / Internal Communication: gRPC
-API Layer: REST + WebSocket
-Deployment: Docker + Kubernetes
-Observability: Prometheus + Grafana + OpenTelemetry
+Go 做 EVM 生态适配和业务控制
+Rust 做性能敏感的交易核心
+TypeScript 做前端和管理后台
 ```
 
-如果团队规模较小、想降低运维复杂度，可以先用：
+原因是：
 
 ```text
-PostgreSQL + Redis + NATS JetStream + ClickHouse
+Go 更贴近 EVM / Geth 生态
+Rust 更适合低延迟、高性能、无 GC 抖动的核心交易链路
+TypeScript 更适合 UI、管理后台和策略配置界面
 ```
 
-但如果你们明确追求高吞吐、事件回放和后续扩展，我更推荐：
+最终推荐：
 
 ```text
-PostgreSQL + Redis + Kafka/Redpanda + ClickHouse
+MVP 阶段：
+  Go + PostgreSQL + Redis + Redpanda + REST/WebSocket
+
+长期高性能生产版：
+  Go + Rust + PostgreSQL + Redis + Redpanda/Kafka + ClickHouse + gRPC + WebSocket
+```
+
+一句话总结：
+
+```text
+MVP 用 Go 快速跑通 EVM 交易闭环；
+长期用 Rust 承担慢一步就可能亏钱的核心模块。
 ```
 
 ---
 
-# 1. 后端语言：Rust 优先，其次 Go
+# 3. 为什么 Athena 核心模块适合 Rust
 
-## 推荐
+优先考虑 Rust，不是因为 Rust 更高级，也不是因为 Rust 更流行，而是因为 Athena 的核心链路里：
 
 ```text
-Rust：Block Sniffer / Strategy Engine / Swap Server / Tx Speed Up Server
-Go：API Server / Admin Service / Worker Service
-TypeScript：前端和部分后台管理服务
+运行时性能
+延迟稳定性
+内存安全
+并发可靠性
 ```
 
-## 原因
+都会直接影响收益和风险。
 
-Athena 是区块链自动交易系统，**低延迟和稳定性直接影响收益**。核心模块不建议用 Node.js / Python 作为主执行层。
+一句话：
 
-### Rust 适合：
+```text
+Athena 的核心模块适合 Rust，因为它能在没有 GC 暂停的前提下，提供接近 C/C++ 的性能，同时显著降低内存错误和并发错误。
+```
+
+---
+
+## 3.1 Rust 没有 GC，延迟更稳定
+
+Athena 的关键交易链路是：
 
 ```text
 Block Sniffer
-Buy Strategy Engine
-Sell Strategy Engine
+-> Project Controller
+-> Strategy Engine
+-> Swap Server
+-> Tx Speed Up Server
+```
+
+这些模块都对延迟非常敏感。
+
+如果使用 Go、Java、Node.js 这类带 GC 的语言，虽然平均性能也可以很好，但在极端情况下可能出现：
+
+```text
+GC pause
+内存回收抖动
+tail latency 变高
+p99 / p999 延迟不稳定
+```
+
+对于普通 Web 系统，这可能只是请求慢几十毫秒。
+
+但对自动交易系统来说，几十毫秒可能意味着：
+
+```text
+更差的买入价格
+错过最佳卖出窗口
+保护性卖出慢一步
+交易被别人抢先
+gas 策略失效
+```
+
+Rust 没有 GC，内存释放由编译期所有权系统管理，因此更适合低延迟、延迟可控的交易热路径。
+
+---
+
+## 3.2 Rust 性能接近 C/C++，适合高吞吐链上事件处理
+
+Block Sniffer 和 Project Controller 会持续处理大量链上数据：
+
+```text
+新区块
+交易
+logs
+pending tx
+price update
+liquidity update
+pool state
+```
+
+这些数据量可能非常大。
+
+Rust 的优势包括：
+
+```text
+零成本抽象
+高效内存布局
+无运行时依赖
+编译期优化强
+CPU 利用率高
+```
+
+这意味着可以写出抽象良好的代码，同时不会像一些高级语言那样付出明显运行时成本。
+
+对 Athena 来说，以下能力都属于 Rust 的优势区间：
+
+```text
+事件过滤
+策略规则匹配
+交易构造
+交易签名
+序列化 / 反序列化
+RPC 批量请求
+内存状态维护
+高频数据结构更新
+```
+
+---
+
+## 3.3 Rust 内存安全强，适合长期运行服务
+
+Athena 不是跑一次就结束的脚本，而是长期运行的资金相关系统。
+
+例如：
+
+```text
+Block Sniffer 需要 24/7 监听链上事件
+Strategy Engine 需要持续维护 project state
+Protect Server 需要持续监控用户资产风险
+Tx Speed Up Server 需要持续跟踪 pending tx
+```
+
+长期运行服务最怕：
+
+```text
+内存泄漏
+野指针
+数据竞争
+状态错乱
+偶发崩溃
+```
+
+C++ 性能很强，但内存安全风险更高。
+
+Go / Java 内存安全也不错，但有 GC 和更高运行时成本。
+
+Rust 的价值在于：
+
+```text
+接近 C++ 的性能
+更强的内存安全
+没有 GC
+并发错误更容易在编译期暴露
+```
+
+对交易系统来说，很多 bug 不是马上爆，而是在高并发、高压力、长期运行之后才出现。
+
+Rust 的编译期约束可以提前拦截大量潜在问题。
+
+---
+
+## 3.4 Rust 并发模型更安全，适合多任务事件系统
+
+Athena 会有大量并发任务：
+
+```text
+多个 chain 同时监听
+多个 token 同时更新
+多个 strategy 同时判断
+多个 wallet 同时交易
+多个 pending tx 同时加速
+多个 order 同时状态流转
+```
+
+这些地方容易出现：
+
+```text
+重复买入
+重复卖出
+nonce 冲突
+订单状态覆盖
+缓存状态不一致
+同一个 token 被重复 sync
+同一个 order 被多个 worker 同时处理
+```
+
+Rust 的类型系统和所有权模型会强制开发者认真处理：
+
+```text
+共享状态能不能被多个线程同时访问
+可变引用是否唯一
+跨线程数据是否 Send / Sync
+异步任务里的生命周期是否安全
+```
+
+在交易系统中，这类约束不是负担，而是保护。
+
+因为一次并发 bug 可能导致：
+
+```text
+多发一笔交易
+错过卖出
+错误加速 nonce
+资产状态错乱
+订单状态错误
+```
+
+这些问题都可能带来真实经济损失。
+
+---
+
+## 3.5 Rust 适合构建高性能本地内存状态
+
+Athena 的策略判断不应该每次都访问数据库。
+
+更合理的设计是：
+
+```text
+Projects runtime state = 内存 + Redis
+Orders hot state = Redis + 内存缓存
+Strategy Engine 本地维护 project state
+```
+
+Strategy Engine 应该：
+
+```text
+订阅 project.updated
+本地维护 HashMap / DashMap / lock-free structure
+策略判断直接读内存
+必要时才访问 Redis / PostgreSQL
+```
+
+Rust 很适合这种模式，因为它可以高效管理：
+
+```text
+HashMap
+BTreeMap
+DashMap
+Arc
+RwLock
+channel
+async stream
+zero-copy buffer
+```
+
+这对低延迟策略判断非常关键。
+
+---
+
+## 3.6 Rust 适合交易构造、签名和底层链交互
+
+Swap Server 和 Tx Speed Up Server 处理的是底层交易逻辑：
+
+```text
+构造 swap transaction
+估算 gas
+设置 nonce
+签名交易
+广播交易
+替换 pending transaction
+重发交易
+处理 receipt
+解析 revert reason
+```
+
+这些逻辑对正确性和性能要求都非常高。
+
+Rust 在这类场景中的优势包括：
+
+```text
+强类型适合表达交易结构
+错误处理显式
+序列化效率高
+适合写底层 SDK / client
+适合控制内存分配
+适合精细优化 RPC 请求
+```
+
+尤其是错误处理，Rust 要求显式处理：
+
+```text
+Result<T, E>
+Option<T>
+```
+
+这比很多语言里随手抛异常、返回 null 更适合交易系统。
+
+交易系统里“没处理的异常”很危险，可能导致：
+
+```text
+订单状态没更新
+交易已发但系统认为失败
+保护逻辑没继续执行
+pending tx 没进入加速队列
+```
+
+Rust 会强制开发者把这些状态设计清楚。
+
+---
+
+## 3.7 Rust 更符合 Athena 的性能优先文化
+
+Athena 已经明确要求：
+
+```text
+Design and development across the entire project must prioritize runtime performance above all else.
+```
+
+Rust 和这个原则高度匹配。
+
+Rust 会让团队自然关注：
+
+```text
+内存分配
+数据结构
+锁竞争
+拷贝成本
+异步任务调度
+错误边界
+状态所有权
+```
+
+这和 Athena 的项目性质一致。
+
+如果用 Node.js / Python，团队很容易写出开发快但运行成本高的代码。
+
+如果用 Go，整体性能不错，但在极致低延迟和内存控制方面不如 Rust。
+
+因此可以这样判断：
+
+```text
+Go 适合效率优先的服务
+Rust 适合性能优先的核心交易链路
+```
+
+Athena 的核心路径显然更偏后者。
+
+---
+
+# 4. 为什么不是全项目 Go
+
+Go 是非常优秀的工程语言，尤其适合 EVM 生态和服务端业务开发。
+
+但如果把 Go 作为所有核心热路径的第一选择，需要注意它的一些限制。
+
+---
+
+## 4.1 Go 的优势
+
+Go 的优势包括：
+
+```text
+开发快
+部署简单
+并发模型友好
+生态成熟
+团队招聘容易
+写 API 和 worker 很舒服
+和 go-ethereum 集成方便
+```
+
+Go 很适合：
+
+```text
+API Server
+Order Controller
+Admin Service
+内部后台服务
+普通异步任务
+配置管理服务
+WebSocket Gateway
+EVM Adapter
+Project Controller
+```
+
+---
+
+## 4.2 Go 在交易热路径上的不足
+
+对 Athena 核心交易链路来说，Go 的不足包括：
+
+```text
+有 GC
+内存布局控制弱于 Rust
+泛型和类型表达能力弱于 Rust
+极致性能优化空间小于 Rust
+并发数据竞争仍需要非常小心
+```
+
+Go 可以做交易系统，而且在 MVP 阶段非常适合快速落地。
+
+但如果第一原则是：
+
+```text
+runtime performance above all else
+```
+
+那么交易热路径上 Rust 更合适。
+
+---
+
+# 5. 为什么不是 C++
+
+C++ 性能也非常强，甚至在某些场景可以做到极致。
+
+但 Athena 不优先推荐 C++，主要原因是：
+
+```text
+内存安全风险更高
+并发 bug 更难排查
+工程复杂度更高
+长期维护成本更高
+新人写出危险代码的概率更高
+```
+
+Athena 是资金相关系统，不只是要跑得快，还要稳定、可维护、少出错。
+
+可以理解为：
+
+```text
+C++：性能很强，但安全成本高
+Go：工程效率高，但极致性能和延迟控制弱一些
+Rust：性能强，延迟稳定，安全性好，但开发门槛更高
+```
+
+所以核心链路更适合 Rust，而不是 C++。
+
+---
+
+# 6. 为什么不是 Node.js / TypeScript 做核心后端
+
+TypeScript 很适合：
+
+```text
+前端
+管理后台
+配置平台
+非核心 API
+内部工具
+```
+
+但不适合作为 Athena 的核心交易路径语言。
+
+原因包括：
+
+```text
+单线程事件循环容易被阻塞
+GC 带来延迟抖动
+CPU 密集任务能力弱
+内存控制弱
+高频链上事件处理压力大
+```
+
+如果用 Node.js 写：
+
+```text
+Block Sniffer
+Strategy Engine
 Swap Server
 Tx Speed Up Server
 Protect Server
 ```
 
-原因：
+早期 MVP 可能能跑，但一旦事件量上来，容易遇到性能瓶颈。
 
-* 性能强，延迟低。
-* 内存控制好，没有 GC 暂停。
-* 适合处理高频事件流、交易构造、签名、RPC 调用。
-* 更适合写对性能敏感的 blockchain runtime 服务。
-
-### Go 适合：
-
-```text
-API Server
-Order Controller
-后台任务服务
-管理服务
-运维服务
-```
-
-原因：
-
-* 开发效率高。
-* 并发模型简单。
-* 生态成熟。
-* 写 API、worker、控制服务很舒服。
-
-### 不建议：
-
-```text
-Node.js / Python 作为交易热路径主语言
-```
-
-可以用于后台脚本、数据分析、内部工具，但不建议负责抢交易、加速交易、保护性卖出这种核心链路。
+尤其是 Protect Server 这种模块，慢一步可能就是损失。
 
 ---
 
-# 2. 主数据库：PostgreSQL
+# 7. EVM / ETH 场景下为什么 Go 权重要提高
 
-## 推荐用途
+如果 Athena 当前主要面向 EVM / ETH，那么 Go 的权重确实要提高。
 
-```text
-用户配置
-用户钱包配置
-策略配置
-订单主表
-订单生命周期状态
-交易记录
-系统配置
-审计日志
-```
-
-## 为什么选 PostgreSQL
-
-Athena 里的 `Orders` 是强状态对象，涉及：
+原因是：
 
 ```text
-Order Created
-Waiting to Create Transaction
-Transaction Created
-Waiting for Confirmation
-Transaction Confirmed
-Transaction Failed
-Position Updated
-Closed
+Geth / go-ethereum 是 Go 生态
 ```
 
-这些状态必须可靠，不能只放缓存里。
+Geth 是 Ethereum 非常核心的 execution client，而 go-ethereum 生态提供了非常成熟的 EVM 工程能力。
 
-PostgreSQL 的优势是：
+这意味着 Go 在 EVM 应用层有明显优势。
 
-* 事务能力强。
-* 数据一致性好。
-* 适合订单、用户、策略、交易记录这种关系型数据。
-* 支持 MVCC 并发控制，在并发读写下保证数据完整性。PostgreSQL 官方文档也强调其并发控制目标是在多 session 并发访问时同时保证高效访问和严格数据完整性。([PostgreSQL][1])
-* 后续可以很方便做审计、回溯、报表、后台查询。
+---
 
-## 推荐表分层
+## 7.1 Go 在 EVM 生态的优势
+
+Go 可以直接使用 go-ethereum 中的能力，例如：
+
+```text
+ethclient
+rpc
+core/types
+common.Address
+crypto
+accounts/abi
+event filters
+transaction / receipt types
+```
+
+因此在这些场景里 Go 非常顺手：
+
+```text
+监听 logs
+解析 receipt
+解析 event ABI
+调用 debug_traceTransaction
+调用 txpool_content
+读取 pending nonce
+构造 EIP-1559 transaction
+处理 access list / blob tx 等 EVM transaction type
+```
+
+所以对于 EVM / ETH 生态，Go 很适合：
+
+```text
+Block Sniffer
+EVM Adapter
+Project Controller
+Order Controller
+API Server
+WebSocket Gateway
+Swap Server 第一版
+```
+
+原因是：
+
+```text
+1. 直接使用 go-ethereum
+2. 解析 block / tx / logs / receipt 更自然
+3. ABI decode、交易构造、签名、RPC 调用更成熟
+4. 和 Geth 的对象模型更贴近
+5. 工程落地速度快
+```
+
+---
+
+## 7.2 但 Geth 是 Go 写的，不代表 Athena 必须全 Go
+
+Geth 是 execution client，主要职责是：
+
+```text
+区块同步
+交易池
+EVM 执行
+状态管理
+区块验证
+JSON-RPC 服务
+```
+
+Athena 是上层自动交易系统，主要职责是：
+
+```text
+监听链上事件
+维护项目状态
+判断买卖时机
+构造交易
+管理订单
+加速交易
+保护性卖出
+```
+
+两者相邻，但不是同一个问题。
+
+Geth 用 Go 写，说明：
+
+```text
+Go 在 EVM 节点实现和 EVM 工程生态里很成熟
+```
+
+但 Athena 还要解决：
+
+```text
+低延迟策略判断
+高频事件处理
+订单状态一致性
+nonce 管理
+交易广播竞争
+保护性退出速度
+```
+
+这些问题里，Rust 仍然有明显优势，尤其是在低延迟和无 GC 抖动方面。
+
+---
+
+# 8. Rust 对区块链开发是否全面
+
+结论：
+
+```text
+Rust 对区块链开发非常全面，但不是在所有生态里都是最省事的选择。
+```
+
+更准确地说：
+
+```text
+Rust 在区块链底层、节点、执行客户端、高性能交易系统、Solana/Substrate/CosmWasm 等生态里非常强。
+
+但在 EVM 应用层，Go 和 TypeScript 仍然有一些工程便利性优势。
+```
+
+---
+
+## 8.1 Rust 在区块链开发中的覆盖范围
+
+Rust 已经覆盖很多区块链核心场景：
+
+```text
+区块链节点 / execution client
+RPC client
+交易构造与签名
+智能合约开发
+链上程序开发
+高频链上数据处理
+本地开发工具链
+MEV / trading bot / indexer
+跨链 / Cosmos / Polkadot / Solana 生态
+高性能后端服务
+```
+
+所以如果问：
+
+```text
+Rust 能不能做区块链开发？
+```
+
+答案是：
+
+```text
+能，而且非常适合。
+```
+
+但如果问：
+
+```text
+Rust 是不是所有区块链场景最成熟、最方便？
+```
+
+答案是：
+
+```text
+不是，要看具体生态。
+```
+
+---
+
+## 8.2 Rust 在非 EVM 生态非常强
+
+Rust 在以下生态中非常核心：
+
+```text
+Solana
+Substrate / Polkadot
+CosmWasm
+```
+
+如果 Athena 未来支持 Solana，那么 Rust 权重应该明显提高。
+
+如果 Athena 未来支持多链，更合理的设计是：
+
+```text
+Core Engine: Rust
+EVM Adapter: Go 或 Rust Alloy
+Solana Adapter: Rust
+Cosmos Adapter: Rust
+API / Admin: Go
+Frontend: TypeScript
+```
+
+也就是：
+
+```text
+Core trading engine 用 Rust
+不同链的 adapter 按生态选择语言
+```
+
+---
+
+## 8.3 Rust 在 EVM 生态也越来越成熟
+
+虽然 EVM 生态传统上更偏：
+
+```text
+Go：节点 / geth / 后端集成
+TypeScript：dApp / 脚本 / ethers.js / hardhat
+Solidity：智能合约
+```
+
+但 Rust 在 EVM 生态也已经非常重要。
+
+代表性项目包括：
+
+```text
+Reth：Rust 实现的 Ethereum execution client
+Foundry：Rust 写的 Ethereum 开发工具链
+Alloy：Rust 版 Ethereum / EVM 交互库
+revm：Rust EVM implementation
+```
+
+所以 Rust 不是不能做 EVM，实际上已经可以做得很深。
+
+只是 EVM 应用层如果大量依赖 Geth 语义，Go 仍然会更顺手。
+
+---
+
+# 9. 推荐语言分层
+
+## 9.1 Athena EVM 第一版
+
+如果 Athena 当前主要做 ETH / EVM，第一版建议：
+
+```text
+Go:
+  Block Sniffer
+  EVM Adapter
+  Project Controller
+  Order Controller
+  API Server
+  WebSocket Gateway
+  Swap Server
+
+Rust:
+  Buy Strategy Engine
+  Sell Strategy Engine
+  Protect Engine
+  Tx Speed Up Scheduler
+  Hot State Runtime
+
+TypeScript:
+  Frontend
+  Admin Dashboard
+```
+
+这个方案的重点是：
+
+```text
+Go 快速打通 EVM 交易闭环
+Rust 承担性能敏感核心逻辑
+TypeScript 负责前端和配置界面
+```
+
+---
+
+## 9.2 长期高性能生产版
+
+长期高性能版本建议：
+
+```text
+Go:
+  EVM Adapter
+  Project Controller
+  Order Controller
+  API Server
+  WebSocket Gateway
+
+Rust:
+  Core Trading Engine
+  Strategy Engine
+  Protect Engine
+  Swap Execution Worker
+  Tx Speed Up Engine
+  Hot State Runtime
+  Gas / Nonce Manager
+
+TypeScript:
+  UI
+  Strategy Config Panel
+```
+
+长期架构的核心思想是：
+
+```text
+EVM 生态接入层：Go
+业务控制层：Go
+交易决策核心：Rust
+风控保护核心：Rust
+热状态和高频执行：Rust
+前端和后台：TypeScript
+```
+
+---
+
+## 9.3 如果只能选一种后端语言
+
+如果团队只能接受一种后端语言，那么建议按阶段判断。
+
+### MVP 阶段
+
+如果当前目标是快速验证 Athena 闭环，并且主要做 EVM：
+
+```text
+优先选 Go
+```
+
+原因：
+
+```text
+1. Geth / go-ethereum 是 Go 生态，集成更顺手
+2. ethclient、types、abi、crypto、txpool、debug API 等工具成熟
+3. 开发速度快
+4. 团队招聘和维护成本低
+5. 更适合快速验证业务闭环
+```
+
+### 高性能生产阶段
+
+如果团队 Rust 能力强，并且目标是极致性能：
+
+```text
+核心交易路径优先 Rust
+```
+
+尤其适用于：
+
+```text
+高频交易
+MEV-like 场景
+对 p99 / p999 延迟极度敏感
+愿意接受更高开发成本
+核心交易路径要长期极致优化
+```
+
+---
+
+# 10. 模块级语言选择标准
+
+最核心的判断标准是：
+
+```text
+如果这个模块慢 50ms 会影响交易收益或风险，就优先 Rust。
+如果这个模块只是管理、查询、配置、展示，就可以 Go / TypeScript。
+```
+
+按照这个标准：
+
+```text
+Block Sniffer：
+  EVM 第一版可用 Go
+  高频多链或极致性能场景可用 Rust
+
+Project Controller：
+  EVM 数据适配用 Go 更自然
+  核心同步 worker 可后续 Rust 优化
+
+Buy Strategy Engine：
+  Rust
+
+Sell Strategy Engine：
+  Rust
+
+Protect Server / Protect Engine：
+  Rust
+
+Swap Server：
+  第一版 Go
+  后续高性能交易执行 worker 可 Rust
+
+Tx Speed Up Server：
+  调度和核心执行建议 Rust
+
+Order Controller：
+  Go
+
+API Server：
+  Go
+
+WebSocket Gateway：
+  Go
+
+Admin Backend：
+  Go / TypeScript
+
+Frontend：
+  TypeScript
+```
+
+---
+
+# 11. 数据库、缓存、MQ 与基础设施选型
+
+除了语言，Athena 还需要合理的数据和消息架构。
+
+推荐技术栈：
+
+```text
+Primary DB: PostgreSQL
+Cache: Redis
+MQ / Event Stream: Redpanda 或 Kafka
+Analytics DB: ClickHouse
+Internal RPC: gRPC
+External API: REST + WebSocket
+Observability: Prometheus + Grafana + OpenTelemetry
+Deployment: Docker / Kubernetes
+```
+
+---
+
+## 11.1 PostgreSQL：主数据库
+
+PostgreSQL 用于可靠落库，适合保存强一致状态。
+
+推荐存储：
 
 ```text
 users
 wallets
 strategies
-projects_snapshot
 orders
 order_events
 transactions
@@ -145,183 +975,71 @@ risk_events
 system_configs
 ```
 
-其中我强烈建议：
+重点区分：
 
 ```text
-orders = 当前订单状态表
-order_events = 订单事件流水表，只追加，不覆盖
-transactions = 链上交易记录表
+orders = 当前订单状态
+order_events = 订单事件流水
+transactions = 链上交易记录
 ```
 
-不要只维护一个 `orders.status`，还要有 `order_events`。
+订单状态、交易历史、策略配置不能只放缓存。
 
-因为交易系统后续一定会遇到：
-
-```text
-为什么这个订单买了？
-为什么没卖？
-为什么保护卖出触发了？
-哪个服务发出了信号？
-交易卡在哪一步？
-```
-
-这些都需要事件流水回放。
-
-## PostgreSQL 不适合做什么
-
-不建议把所有链上 tick、log、price update 都直接高频写 PostgreSQL。
-
-例如：
-
-```text
-每个 block 的所有 logs
-每个 token 的秒级价格
-大量 pending tx 状态
-高频行情快照
-```
-
-这些更适合 Kafka + ClickHouse。
+Athena 应该使用 PostgreSQL 作为事实状态来源之一，尤其是订单和交易相关数据。
 
 ---
 
-# 3. 缓存与热状态：Redis
+## 11.2 Redis：缓存和热状态
 
-## 推荐用途
+Redis 用于低延迟读取和热状态维护。
+
+适合存储：
 
 ```text
-Projects 热数据缓存
+Project 最新状态
 token 最新价格
-token 最新流动性
 最新 block height
-策略运行中的临时状态
-订单热状态
-分布式锁
-限流
+pending tx 状态
+nonce lock
+order hot state
 RPC 节点健康状态
-pending transaction 状态
+分布式锁
 ```
 
-Redis 官方文档定位它可作为 cache、primary database、streams/pubsub 等用途，适合低延迟的内存数据访问场景。([Redis][2])
-
-## Athena 里 Redis 应该放什么
-
-### 1. Project 热数据
+Redis 的定位是：
 
 ```text
-project:{chain_id}:{token_address}
+热状态 / 缓存 / 短期状态 / 分布式锁
 ```
 
-内容包括：
+但 Redis 不应该作为订单和交易的唯一事实源。
+
+正确边界是：
 
 ```text
-price
-liquidity
-volume
-holder_count
-risk_score
-last_block
-last_updated_at
+Redis = 性能加速层
+PostgreSQL = 订单和配置事实数据
+Kafka/Redpanda = 事件事实流
+ClickHouse = 历史分析数据
 ```
-
-Strategy Engine 读取 Redis，比每次查 DB 快很多。
-
-### 2. 最新 block height
-
-```text
-chain:{chain_id}:latest_block
-```
-
-Block Sniffer、Project Controller、Protect Server 都可能用。
-
-### 3. pending tx 状态
-
-```text
-tx:{chain_id}:{tx_hash}
-```
-
-内容包括：
-
-```text
-nonce
-gas_price
-status
-created_at
-last_speed_up_at
-speed_up_count
-```
-
-Tx Speed Up Server 可以快速判断是否需要替换交易。
-
-### 4. 分布式锁
-
-例如：
-
-```text
-lock:order:{order_id}:sell
-lock:wallet:{wallet_address}:nonce
-lock:token:{token_address}:sync
-```
-
-尤其是 nonce 管理和防止重复卖出，Redis 锁非常有用。
-
-## Redis 注意点
-
-Redis 不应该作为唯一数据源。
-
-正确方式：
-
-```text
-Redis = 热状态 / 缓存 / 短期状态
-PostgreSQL = 订单事实数据
-Kafka = 事件事实流
-ClickHouse = 链上和行情分析数据
-```
-
-对于订单核心状态，Redis 只能加速，不能替代 PostgreSQL。
 
 ---
 
-# 4. MQ：推荐 Kafka 或 Redpanda，不优先 RabbitMQ
+## 11.3 Kafka / Redpanda：事件流
 
-## 结论
+Athena 更适合使用 Kafka / Redpanda，而不是 RabbitMQ 作为主事件流。
 
-对于 Athena，我推荐：
-
-```text
-首选：Kafka / Redpanda
-备选：NATS JetStream
-不优先：RabbitMQ
-```
-
-## 为什么 Kafka 更适合 Athena
-
-Athena 本质上不是普通业务消息队列，而是 **事件驱动交易系统**。
-
-你们需要的是：
+原因是 Athena 需要：
 
 ```text
-block event stream
-project sync event stream
-strategy signal stream
-order event stream
-transaction event stream
-risk event stream
+高吞吐
+事件保留
+事件回放
+多个 consumer group
+故障后 offset 恢复
 ```
 
-这些事件有几个特点：
-
-* 吞吐量高。
-* 需要保留历史。
-* 需要重放。
-* 需要多个 consumer group 并行消费。
-* 需要故障后从 offset 继续。
-* 后续可能接入风控、回测、监控、分析多个下游。
-
-Kafka 官方定义就是高性能数据管道、流式分析、数据集成、关键业务应用使用的分布式事件流平台。([Apache Kafka][3])
-
-所以 Athena 里 Kafka 很合适。
-
-## 推荐 topic 设计
+推荐事件 topic：
 
 ```text
 chain.block.detected
@@ -349,136 +1067,37 @@ risk.detected
 protect.sell.requested
 ```
 
-## Kafka 的核心价值
+RabbitMQ 更适合普通任务队列，而 Athena 更需要事件流、回放和高吞吐 fanout，因此不建议作为主 MQ。
 
-### 1. 可回放
-
-如果 Strategy Engine 出 bug，可以从某个 offset 重新消费历史事件，重新计算策略结果。
-
-这对交易系统很重要。
-
-### 2. 多消费者独立消费
-
-同一个 `project.updated` 可以同时给：
-
-```text
-Buy Strategy Engine
-Sell Strategy Engine
-Protect Server
-Analytics Worker
-WebSocket Push Service
-```
-
-互不影响。
-
-### 3. 适合高吞吐链上事件
-
-Block Sniffer 可能瞬间产生大量事件，Kafka 比 RabbitMQ 更适合这种持续事件流。
-
-## Kafka vs RabbitMQ
-
-RabbitMQ 更适合：
-
-```text
-任务队列
-复杂路由
-后台 job
-邮件/通知
-普通业务异步任务
-```
-
-RabbitMQ 官方文档重点围绕 broker 管理、monitoring、exchange、queue、binding 等传统消息代理模型展开，exchange + queue 的路由模型很灵活。([RabbitMQ][4])
-
-但 Athena 需要的不是简单“把任务投递给某个 worker”，而是：
-
-```text
-事件流
-事件保留
-事件回放
-高吞吐 fanout
-按 offset 恢复
-```
-
-所以我不建议用 RabbitMQ 作为主 MQ。
-
-## Kafka 还是 Redpanda？
-
-如果你们想要 Kafka 生态，但希望运维更简单，可以考虑：
+如果团队希望降低 Kafka 运维复杂度，可以优先考虑：
 
 ```text
 Redpanda
 ```
 
-它兼容 Kafka API，架构更轻，通常部署和维护会比传统 Kafka 简单。
-
-我的建议：
-
-```text
-团队有 Kafka 运维经验：Kafka
-团队没有 Kafka 运维经验，但要 Kafka 能力：Redpanda
-MVP 阶段追求简单：NATS JetStream
-```
+它保留 Kafka 生态能力，同时部署和维护相对更轻。
 
 ---
 
-# 5. NATS JetStream：MVP 可选，但不是最终首选
+## 11.4 ClickHouse：链上历史和分析
 
-NATS JetStream 也可以做持久化消息流。NATS 官方文档说明 JetStream 是内置持久化引擎，可以存储消息并在之后 replay 给消费者。([NATS Docs][5])
+ClickHouse 用于大量 append-only 历史数据和分析查询。
 
-它适合：
-
-```text
-MVP
-低运维复杂度
-服务间低延迟消息
-中等规模事件流
-```
-
-但如果后续你们要做：
-
-```text
-大量链上日志消费
-多策略回放
-历史数据重算
-复杂数据管道
-数据分析接入
-```
-
-Kafka / Redpanda 更稳。
-
-我的建议：
-
-```text
-MVP：NATS JetStream 可以接受
-生产高吞吐版：Kafka / Redpanda 更合适
-```
-
----
-
-# 6. 分析数据库：ClickHouse
-
-## 推荐用途
+适合存储：
 
 ```text
 链上 logs
-交易事件
 价格历史
-token 行情快照
+交易事件
 策略信号历史
 风控事件
 回测数据
-系统性能指标的业务侧分析
+token 行情快照
 ```
 
-ClickHouse 官方文档和项目说明都强调其 column-oriented DBMS 适合实时分析报告；它非常适合大规模事件、日志、行情、时间序列类分析。([ClickHouse][6])
+例如这些查询更适合 ClickHouse：
 
-## 为什么 Athena 需要 ClickHouse
-
-PostgreSQL 适合订单和配置，不适合大量 append-only 链上事件分析。
-
-比如这些查询：
-
-```sql
+```text
 过去 24 小时哪些 token 交易量突然放大？
 某个 token 在买入前 10 分钟的流动性变化？
 某个策略过去 7 天胜率是多少？
@@ -486,118 +1105,15 @@ PostgreSQL 适合订单和配置，不适合大量 append-only 链上事件分�
 某个钱包最近 1000 笔交易的确认延迟分布？
 ```
 
-这些放 ClickHouse 更合适。
+PostgreSQL 存关键状态。
 
-## 数据流推荐
-
-```text
-Block Sniffer
-  -> Kafka
-  -> ClickHouse Sink
-
-Strategy Engine
-  -> Kafka
-  -> ClickHouse Sink
-
-Order Controller
-  -> PostgreSQL
-  -> Kafka
-  -> ClickHouse Sink
-```
-
-ClickHouse 用来查历史、分析、回测，不作为交易热路径依赖。
+ClickHouse 存大量历史分析数据。
 
 ---
 
-# 7. Projects 数据存储设计
+## 11.5 gRPC：内部服务通信
 
-你的架构里 `Projects` 是核心热数据源。
-
-我建议：
-
-```text
-Projects runtime state：内存 + Redis
-Projects snapshot：PostgreSQL
-Projects history：ClickHouse
-```
-
-也就是：
-
-```text
-内存：策略引擎本地最快访问
-Redis：跨服务共享最新状态
-PostgreSQL：保存关键快照
-ClickHouse：保存完整历史变化
-```
-
-## 示例
-
-```text
-Project Controller
-  -> 更新本地内存 map
-  -> 写 Redis 最新 project state
-  -> 定期写 PostgreSQL snapshot
-  -> 发 project.updated 到 Kafka
-  -> Kafka sink 写 ClickHouse history
-```
-
-不要让 Strategy Engine 每次判断都查 PostgreSQL。
-
-正确方式是：
-
-```text
-Strategy Engine 订阅 project.updated
-维护本地内存状态
-必要时从 Redis 补数据
-几乎不访问 PostgreSQL
-```
-
-这符合你的性能优先原则。
-
----
-
-# 8. Orders 数据存储设计
-
-`Orders` 是用户资产和订单状态，必须可靠。
-
-推荐：
-
-```text
-orders 当前态：PostgreSQL
-order_events 事件流水：PostgreSQL + Kafka
-orders 热状态：Redis
-订单历史分析：ClickHouse
-```
-
-## 状态更新方式
-
-不要到处直接改 `orders.status`。
-
-建议统一通过：
-
-```text
-Order Controller
-```
-
-由它负责：
-
-```text
-校验状态流转是否合法
-写 order_events
-更新 orders 当前态
-发 order.status.changed 事件
-同步 Redis 热状态
-```
-
-这样可以避免多个服务乱改订单状态。
-
----
-
-# 9. RPC 和服务通信：gRPC + Protobuf
-
-## 推荐
-
-服务之间使用：
+内部服务之间建议使用：
 
 ```text
 gRPC + Protobuf
@@ -613,77 +1129,34 @@ API Server -> Order Controller
 API Server -> Project Controller
 ```
 
-## 原因
+优势：
 
-* 性能比 JSON REST 更好。
-* schema 明确。
-* 适合内部服务调用。
-* 多语言支持好，Rust / Go / TypeScript 都能接。
-* 比 HTTP JSON 更适合低延迟内部通信。
+```text
+性能比 JSON REST 更好
+schema 明确
+适合内部服务调用
+多语言支持好
+Rust / Go / TypeScript 都能接
+```
 
-## 外部 API
+---
 
-给前端用：
+## 11.6 REST + WebSocket：外部 API
+
+前端和管理后台建议使用：
 
 ```text
 REST：普通查询和控制接口
 WebSocket：订单状态、价格、项目更新实时推送
 ```
 
-不要让前端直接消费 Kafka。
+不要让前端直接消费 Kafka / Redpanda。
 
 ---
 
-# 10. 区块链 RPC 层
+## 11.7 Observability：必须做
 
-建议单独抽象一层：
-
-```text
-Chain RPC Client / Provider Manager
-```
-
-它负责：
-
-```text
-多 RPC 节点管理
-健康检查
-延迟统计
-失败重试
-限流
-请求熔断
-按 chain 分组
-自动切换最快节点
-```
-
-## 推荐设计
-
-```text
-Block Sniffer
-Swap Server
-Tx Speed Up Server
-Project Controller
-```
-
-都不要直接裸调用某个 RPC URL，而是通过统一 RPC provider manager。
-
-## 需要缓存的数据
-
-```text
-latest_block
-gas_price
-base_fee
-priority_fee
-token metadata
-pair address
-pool state
-wallet nonce
-```
-
-尤其 nonce 不要乱查，交易系统里 nonce 管理很容易出事故。
-
----
-
-# 11. Observability：必须做，不是可选
+Athena 必须建设完整可观测性，不是可选项。
 
 推荐：
 
@@ -700,7 +1173,7 @@ Sentry
 ```text
 block delay
 event lag
-Kafka consumer lag
+Kafka / Redpanda consumer lag
 strategy decision latency
 swap create latency
 tx confirmation latency
@@ -713,17 +1186,17 @@ PostgreSQL slow query
 ClickHouse insert lag
 ```
 
-对 Athena 来说，最重要的性能指标不是普通 QPS，而是：
+对 Athena 来说，最重要的性能指标是：
 
 ```text
 从链上事件出现 -> 策略判断 -> 交易创建 -> 广播成功
 ```
 
-这个端到端延迟要打点。
+这个端到端延迟必须打点。
 
 ---
 
-# 12. 推荐最终架构图
+# 12. 推荐整体架构
 
 ```text
                     UI
@@ -740,7 +1213,7 @@ ClickHouse insert lag
        |      Order Controller  Tx Speed Up Server
        |           ^
        v           |
-Block Sniffer -> Kafka / Redpanda -> Strategy Engines
+Block Sniffer -> Redpanda/Kafka -> Strategy Engines
        |              |              |
        |              |              v
        |              |          Swap Server
@@ -763,62 +1236,130 @@ Protect Server
 
 ---
 
-# 13. 推荐技术栈表
+# 13. Projects 与 Orders 的存储边界
 
-| 模块                 | 推荐技术                 | 原因                |
-| ------------------ | -------------------- | ----------------- |
-| Block Sniffer      | Rust                 | 高吞吐、低延迟、无 GC      |
-| Project Controller | Rust / Go            | 数据同步频繁，要求稳定       |
-| Strategy Engine    | Rust                 | 交易判断热路径，性能优先      |
-| API Server         | Go / TypeScript      | 开发效率、生态成熟         |
-| Order Controller   | Go / Rust            | 状态一致性重要           |
-| Swap Server        | Rust                 | 交易创建、签名、广播属于核心热路径 |
-| Tx Speed Up Server | Rust                 | 对延迟敏感             |
-| Protect Server     | Rust / Go            | 风控需要低延迟，但业务逻辑也较复杂 |
-| Primary DB         | PostgreSQL           | 订单、策略、用户配置强一致     |
-| Cache              | Redis                | 热状态、锁、低延迟读取       |
-| MQ                 | Kafka / Redpanda     | 事件流、回放、高吞吐        |
-| Analytics DB       | ClickHouse           | 链上事件、行情、策略历史分析    |
-| Internal RPC       | gRPC                 | 高性能、schema 明确     |
-| Frontend Realtime  | WebSocket            | 推送订单和行情状态         |
-| Metrics            | Prometheus + Grafana | 性能监控              |
-| Tracing            | OpenTelemetry        | 端到端延迟追踪           |
-| Logs               | Loki / Vector        | 日志采集与排查           |
-| Deployment         | Kubernetes           | 服务编排、扩缩容、容灾       |
+## 13.1 Projects
+
+Projects 是 token / project 级别的市场数据，用于策略判断。
+
+推荐存储方式：
+
+```text
+Projects runtime state：内存 + Redis
+Projects snapshot：PostgreSQL
+Projects history：ClickHouse
+```
+
+数据流：
+
+```text
+Project Controller
+  -> 更新本地内存 map
+  -> 写 Redis 最新 project state
+  -> 定期写 PostgreSQL snapshot
+  -> 发 project.updated 到 Redpanda/Kafka
+  -> Sink 写 ClickHouse history
+```
+
+Strategy Engine 不应该每次判断都查 PostgreSQL。
+
+正确方式是：
+
+```text
+Strategy Engine 订阅 project.updated
+维护本地内存状态
+必要时从 Redis 补数据
+几乎不访问 PostgreSQL
+```
+
+---
+
+## 13.2 Orders
+
+Orders 是用户资产和订单状态，必须可靠。
+
+推荐存储方式：
+
+```text
+orders 当前态：PostgreSQL
+order_events 事件流水：PostgreSQL + Redpanda/Kafka
+orders 热状态：Redis
+订单历史分析：ClickHouse
+```
+
+状态更新应统一通过：
+
+```text
+Order Controller
+```
+
+Order Controller 负责：
+
+```text
+校验状态流转是否合法
+写 order_events
+更新 orders 当前态
+发 order.status.changed 事件
+同步 Redis 热状态
+```
+
+不要让多个服务直接随意修改 `orders.status`。
 
 ---
 
 # 14. MVP 版本建议
 
-如果你们现在还在早期，不建议一上来堆太多东西。
+如果当前还在早期阶段，不建议一开始就把架构做得过重。
 
-## MVP 可以这样选
+MVP 推荐：
 
 ```text
-Backend: Go + Rust
-DB: PostgreSQL
-Cache: Redis
-MQ: NATS JetStream 或 Redpanda
-Analytics: 暂时 PostgreSQL 分区表，后续迁 ClickHouse
-Deploy: Docker Compose / 单机 Kubernetes
+Language:
+  Go 为主
+  Rust 用于最核心策略模块，或先预留边界
+
+Database:
+  PostgreSQL
+
+Cache:
+  Redis
+
+MQ:
+  Redpanda
+
+API:
+  REST + WebSocket
+
+Deployment:
+  Docker Compose / 单机 Kubernetes
 ```
 
-## MVP 不建议一开始就做太复杂
+MVP 先跑通：
 
-可以先不要：
+```text
+监听链上事件
+同步 Project
+触发策略
+创建交易
+加速交易
+更新订单
+保护性卖出
+```
+
+MVP 阶段可以暂缓：
 
 ```text
 复杂 Kafka 集群
 复杂 ClickHouse 集群
 多区域部署
 过度微服务拆分
+全量 Rust 化
 ```
 
-但要保留架构边界。
-
-也就是说，即使用单体或轻量服务，也要保留：
+但必须保留逻辑边界：
 
 ```text
+Block Sniffer
 Project Controller
 Strategy Engine
 Order Controller
@@ -827,21 +1368,21 @@ Tx Speed Up Server
 Protect Server
 ```
 
-这些逻辑边界。
+即使早期是单体或轻量服务，也要保留这些边界，方便后续拆分和优化。
 
 ---
 
-# 15. 生产版本建议
+# 15. 长期生产版本建议
 
-生产高性能版本：
+长期高性能生产版推荐：
 
 ```text
 Language:
-  Rust + Go
+  Go + Rust + TypeScript
 
 Database:
   PostgreSQL primary
-  read replica optional
+  PostgreSQL read replica optional
 
 Cache:
   Redis Cluster
@@ -860,6 +1401,8 @@ Realtime:
 
 Infra:
   Kubernetes
+
+Observability:
   Prometheus
   Grafana
   OpenTelemetry
@@ -871,55 +1414,129 @@ Infra:
 ```text
 PostgreSQL 只存关键状态
 Redis 存热数据
-Kafka/Redpanda 存事件流
+Redpanda/Kafka 存事件流
 ClickHouse 存历史分析
 Strategy Engine 本地内存做最快判断
 ```
 
 ---
 
-# 16. 我最推荐的组合
+# 16. 最终推荐技术栈
 
-如果只让我选一套，我会选：
-
-```text
-Rust + Go
-PostgreSQL
-Redis
-Redpanda
-ClickHouse
-gRPC
-WebSocket
-Prometheus + Grafana + OpenTelemetry
-Kubernetes
-```
-
-理由：
-
-* Rust 保证交易核心链路性能。
-* Go 保证 API 和控制服务开发效率。
-* PostgreSQL 保证订单和配置一致性。
-* Redis 保证热数据读取低延迟。
-* Redpanda 提供 Kafka 能力但运维更轻。
-* ClickHouse 承接链上事件和策略分析。
-* gRPC 降低内部通信开销。
-* WebSocket 满足前端实时状态。
-* Observability 能帮助定位延迟和交易失败原因。
-
-最终原则：
+如果只选一套长期目标技术栈，建议：
 
 ```text
-交易热路径：内存 + Redis + gRPC
-事实状态：PostgreSQL
-事件流：Kafka / Redpanda
-历史分析：ClickHouse
+Backend:
+  Go + Rust
+
+Frontend:
+  TypeScript
+
+Primary DB:
+  PostgreSQL
+
+Cache:
+  Redis
+
+Event Stream:
+  Redpanda / Kafka
+
+Analytics DB:
+  ClickHouse
+
+Internal Communication:
+  gRPC + Protobuf
+
+External API:
+  REST + WebSocket
+
+Observability:
+  Prometheus + Grafana + OpenTelemetry + Loki
+
+Deployment:
+  Docker + Kubernetes
 ```
 
-这是比较适合 Athena 的技术栈边界。
+模块分工：
 
-[1]: https://www.postgresql.org/docs/current/mvcc.html?utm_source=chatgpt.com "PostgreSQL: Documentation: 18: Chapter 13. Concurrency Control"
-[2]: https://redis.io/docs/latest/?utm_source=chatgpt.com "Docs - Redis"
-[3]: https://kafka.apache.org/?utm_source=chatgpt.com "Apache Kafka"
-[4]: https://www.rabbitmq.com/docs?utm_source=chatgpt.com "RabbitMQ Documentation | RabbitMQ"
-[5]: https://docs.nats.io/nats-concepts/jetstream?utm_source=chatgpt.com "JetStream | NATS Docs"
-[6]: https://clickhouse.com/docs?utm_source=chatgpt.com "ClickHouse Docs | ClickHouse Docs"
+```text
+Go:
+  EVM Adapter
+  Block Sniffer 第一版
+  Project Controller
+  Order Controller
+  API Server
+  WebSocket Gateway
+  Swap Server 第一版
+
+Rust:
+  Core Trading Engine
+  Buy Strategy Engine
+  Sell Strategy Engine
+  Protect Engine
+  Tx Speed Up Engine
+  Hot State Runtime
+  Gas Manager
+  Nonce Manager
+  高频事件过滤器
+  后续高性能 Swap Execution Worker
+
+TypeScript:
+  Frontend
+  Admin Dashboard
+  Strategy Config UI
+```
+
+---
+
+# 17. 最终结论
+
+Athena 当前如果主要做 EVM / ETH：
+
+```text
+第一版建议 Go 为主。
+```
+
+原因是：
+
+```text
+Go 更贴近 Geth / go-ethereum 生态
+EVM RPC、ABI、receipt、txpool、debug API 集成更顺手
+开发速度更快
+更适合 MVP 快速落地
+```
+
+但从长期高性能交易系统角度：
+
+```text
+Rust 应该作为核心性能模块语言。
+```
+
+原因是：
+
+```text
+Rust 没有 GC，延迟更稳定
+Rust 性能接近 C/C++
+Rust 内存安全强
+Rust 并发模型更安全
+Rust 更适合本地高性能内存状态
+Rust 更适合慢一步就可能亏钱的交易热路径
+```
+
+最终架构建议：
+
+```text
+EVM 生态接入层：Go
+业务控制层：Go
+交易决策核心：Rust
+风控保护核心：Rust
+热状态和高频执行：Rust
+前端和后台：TypeScript
+```
+
+一句话总结：
+
+```text
+MVP 用 Go 快速跑通 EVM 交易闭环；
+长期用 Rust 承担慢一步就可能亏钱的核心模块。
+```
