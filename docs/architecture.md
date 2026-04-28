@@ -22,7 +22,7 @@ The system can be divided into five core workflows:
 
 Athena first uses the Block Sniffer to monitor real-time blockchain transactions and log events. 
 When target events are detected, the Block Sniffer emits a sync event to the Project Controller. 
-The Project Controller fetches the latest project data from the blockchain or external sources and maintains it in memory. 
+The Project Controller fetches the lastest project data from the blockchain or external sources and maintains it in memory. 
 The Projects module stores token and project information used by the strategy engines.
 
 The Buy Strategy Engine subscribes to project data and decides when to buy based on the user's buy strategy. 
@@ -45,25 +45,23 @@ When it detects potential risks, such as a sharp price drop or an unsafe token s
 
 This is the foundational workflow of the entire system.
 
-The **Block Sniffer** listens to the latest block height and monitors on-chain transactions and log events in real time. When it detects transactions or log events that the system is interested in, it sends a sync event to the **Project Controller**.
+The **Block Sniffer** listens to the lastest block height and monitors on-chain transactions and log events in real time. When it detects transactions or log events that the system is interested in, it sends a sync event to the **Project Controller**.
 
 The flow is:
 
-```text
 Block Sniffer
   -> Emit Sync Event
 Project Controller
   -> Sync
 Projects
-```
 
 Specifically:
 
-* Block Sniffer subscribes to the latest block height.
+* Block Sniffer subscribes to the lastest block height.
 * Block Sniffer monitors real-time on-chain transactions and log events.
 * When target events are detected, it triggers a sync event.
 * Project Controller receives the sync event.
-* Project Controller fetches the latest project data from the blockchain or external data sources.
+* Project Controller fetches the lastest project data from the blockchain or external data sources.
 * Project Controller updates project data in memory.
 * Projects stores project information used by strategy engines for decision-making.
 
@@ -79,7 +77,6 @@ It subscribes to project data and evaluates whether a token should be bought bas
 
 The flow is:
 
-```text
 Projects
   -> Subscribe
 Buy Strategy Engine
@@ -97,7 +94,6 @@ Tx Speed Up Server
 Order Controller
   -> Wait for the Transaction to be confirmed
   -> Emit Order Status Changed Signal(Status: Transaction Confirmed)
-```
 
 Specifically:
 
@@ -124,7 +120,6 @@ It also subscribes to project data, but focuses on whether a token that has alre
 
 The flow is:
 
-```text
 Projects
   -> Subscribe
 Sell Strategy Engine
@@ -142,7 +137,7 @@ Tx Speed Up Server
 Order Controller
   -> Wait for the Transaction to be confirmed
   -> Emit Order Status Changed Signal(Status: Transaction Confirmed)
-```
+
 
 Specifically:
 
@@ -165,17 +160,53 @@ Specifically:
 
 ### Block Sniffer
 
-Subscribe the lastest block height and use it to monitor the blockchain real-time tx and logs events.
+Subscribe the lastest block height and use it to monitor the blockchain real-time tx and logs events.When the tx and the logs events that we interested in are detected, it will emit a sync event to the **Project Controller**.
 
-When the tx and the logs events that we interested in are detected, it will emit a sync event to the **Project Controller**.
+Maintain Target Pair Address
+  -> Maintain the lastest target Pair Address in the momory. Fetch the target Pair data from the **Project Controller**
+
+Sniffer For Swap Events
+  -> Subscribe the lastest block height form evm node.
+  -> Filter the logs by the target Pair Address and the swap events.
+  -> When the target logs are detected, it will emit a sync event to the **Project Controller**.
+
+Sniffer For Sepcial Tx OR Logs
+  -> Subscribe the lastest block height form evm node.
+  -> Filter the tx or logs by the block height.
+  -> Tx:
+    -> Create the ERC20 New Token
+  -> Logs:
 
 ---
 
 ### Project Controller
 
-Receive the sync event from the **Block Sniffer** and fetch the latest project data from the blockchain or external sources. maintain the project data in the memory. refresh the project data periodically to keep the project data up to date.
+Receive the sync event from the **Block Sniffer** and fetch the lastest project data from the blockchain or external sources. maintain the project data in the memory. refresh the project data periodically to keep the project data up to date.
+
+Sync Project Data
+  -> Fetch the lastest project data from the blockchain or external sources.
+  -> Maintain the project data in the memory.
+  -> Refresh the project data periodically to keep the project data up to date.
+
+Sync Target Pair Address
+  -> Filter the target pair address from the project data.
 
 ---
+
+
+## Project
+
+A **Project** represents the important token, pool and wallet data used by strategy engines which is used to decide whether a trade is worth executing.
+
+Token data includes:
+
+Pool data includes:
+
+Wallet data includes:
+
+
+---
+
 
 ### Buy Strategy Engine
 
@@ -218,10 +249,8 @@ It is a low-level supporting service. It does not make strategy decisions and do
 
 It can be called by:
 
-```text
 Swap Server -> Tx Speed Up Server
 Protect Server -> Tx Speed Up Server
-```
 
 Its main use cases include:
 
@@ -234,10 +263,8 @@ Its main use cases include:
 
 From a responsibility boundary perspective, the cleanest design is:
 
-```text
 Swap Server handles all transaction creation
 Tx Speed Up Server handles all transaction acceleration
-```
 
 Protect Server should normally notify Swap Server to execute protective sells instead of directly handling transaction logic. Only in highly urgent scenarios should Protect Server call Tx Speed Up Server directly.
 
@@ -272,27 +299,5 @@ A typical lifecycle includes:
 * Waiting for Transaction Confirmation
 * Transaction Confirmed / Transaction Failed
 * Position Updated (holding, partial sell, full sell, closed)
-
----
-
-## Project
-
-A **Project** represents tradable token-level market and context data used by strategy engines to decide whether a trade is worth executing.
-
-Typical project data includes:
-
-* token metadata
-* on-chain state
-* liquidity data
-* price and volatility signals
-* transaction activity
-* external data sources
-
-```text
-Projects = token/project market data used to decide whether a trade is worth taking
-Orders = user-owned order/position data used to decide whether to continue holding or sell
-```
-
-This distinction is critical.
 
 ---
