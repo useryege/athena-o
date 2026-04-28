@@ -44,6 +44,7 @@ import (
 	"github.com/stretchr/testify/assert/yaml"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/server/account"
+	"github.com/useryege/athena/internal/server/blocksniffer"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/internal/server/logout"
 	"github.com/useryege/athena/internal/server/metrics"
@@ -91,6 +92,8 @@ import (
 
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
+
+	blocksnifferserverpkg "github.com/useryege/athena/pkg/apiclient/blocksniffer"
 )
 
 const (
@@ -506,6 +509,7 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 	// register all the services to the gRPC server
 	grpc_health_v1.RegisterHealthServer(grpcS, server.serviceSet.HealthService)
 	versionpkg.RegisterVersionServiceServer(grpcS, server.serviceSet.VersionService)
+	// blocksnifferpkg.RegisterBlockSnifferServiceServer(grpcS, server.serviceSet.BlockSnifferService)
 	// clusterpkg.RegisterClusterServiceServer(grpcS, server.serviceSet.ClusterService)
 	// applicationpkg.RegisterApplicationServiceServer(grpcS, server.serviceSet.ApplicationService)
 	// applicationsetpkg.RegisterApplicationSetServiceServer(grpcS, server.serviceSet.ApplicationSetService)
@@ -518,6 +522,8 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
 	// certificatepkg.RegisterCertificateServiceServer(grpcS, server.serviceSet.CertificateService)
 	// gpgkeypkg.RegisterGPGKeyServiceServer(grpcS, server.serviceSet.GpgkeyService)
+
+	blocksnifferserverpkg.RegisterBlockSnifferServiceServer(grpcS, server.serviceSet.BlockSnifferService)
 	// Register reflection service on gRPC server.
 	reflection.Register(grpcS)
 	serverMetrics.InitializeMetrics(grpcS)
@@ -527,11 +533,12 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 }
 
 type AthenaServiceSet struct {
-	HealthService   *health.Server
-	SessionService  *session.Server
-	SettingsService *settings.Server
-	AccountService  *account.Server
-	VersionService  *version.Server
+	HealthService       *health.Server
+	SessionService      *session.Server
+	SettingsService     *settings.Server
+	AccountService      *account.Server
+	VersionService      *version.Server
+	BlockSnifferService *blocksniffer.Server
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
@@ -599,6 +606,9 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// account service
 	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf)
 
+	// block sniffer service
+	blockSnifferService := blocksniffer.NewServer()
+
 	// notificationService := notification.NewServer(a.apiFactory)
 	// certificateService := certificate.NewServer(a.db, a.enf)
 	// gpgkeyService := gpgkey.NewServer(a.db, a.enf)
@@ -615,11 +625,12 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
-		HealthService:   healthService,
-		SessionService:  sessionService,
-		SettingsService: settingsService,
-		AccountService:  accountService,
-		VersionService:  versionService,
+		HealthService:       healthService,
+		SessionService:      sessionService,
+		SettingsService:     settingsService,
+		AccountService:      accountService,
+		VersionService:      versionService,
+		BlockSnifferService: blockSnifferService,
 		// 	ClusterService:        clusterService,
 		// 	RepoService:           repoService,
 		// 	RepoCredsService:      repoCredsService,

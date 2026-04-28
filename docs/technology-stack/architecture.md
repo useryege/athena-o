@@ -176,7 +176,6 @@ Sniffer For Sepcial Tx OR Logs
   -> Tx:
     -> Create the ERC20 New Token
   -> Logs:
-
 ---
 
 ### Project Controller

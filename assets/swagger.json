@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-68-g9372c10-dirty"
+    "version": "v1.0.0-70-gf50040f-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -207,6 +207,58 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountEmptyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/blocksniffer/node-grpc-url": {
+      "get": {
+        "tags": [
+          "BlockSnifferService"
+        ],
+        "operationId": "BlockSnifferService_GetNodeGrpcURL",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/blocksnifferGetNodeGrpcURLResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "BlockSnifferService"
+        ],
+        "operationId": "BlockSnifferService_SetNodeGrpcURL",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/blocksnifferSetNodeGrpcURLRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/blocksnifferSetNodeGrpcURLResponse"
             }
           },
           "default": {
@@ -444,6 +496,30 @@
     },
     "accountUpdatePasswordResponse": {
       "type": "object"
+    },
+    "blocksnifferGetNodeGrpcURLResponse": {
+      "type": "object",
+      "properties": {
+        "node_grpc_url": {
+          "type": "string"
+        }
+      }
+    },
+    "blocksnifferSetNodeGrpcURLRequest": {
+      "type": "object",
+      "properties": {
+        "node_grpc_url": {
+          "type": "string"
+        }
+      }
+    },
+    "blocksnifferSetNodeGrpcURLResponse": {
+      "type": "object",
+      "properties": {
+        "node_grpc_url": {
+          "type": "string"
+        }
+      }
     },
     "clusterConnector": {
       "type": "object",

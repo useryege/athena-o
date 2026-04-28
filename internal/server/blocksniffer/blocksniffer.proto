@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package blocksniffer;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/blocksniffer";
+
+service BlockSnifferService {
+  rpc SetNodeGrpcURL(SetNodeGrpcURLRequest) returns (SetNodeGrpcURLResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/blocksniffer/node-grpc-url"
+      body: "*"
+    };
+  }
+  rpc GetNodeGrpcURL(GetNodeGrpcURLRequest) returns (GetNodeGrpcURLResponse) {
+    option (google.api.http) = {get: "/api/v1/blocksniffer/node-grpc-url"};
+  }
+}
+
+message SetNodeGrpcURLRequest {
+  string node_grpc_url = 1;
+}
+
+message SetNodeGrpcURLResponse {
+  string node_grpc_url = 1;
+}
+
+message GetNodeGrpcURLRequest {}
+
+message GetNodeGrpcURLResponse {
+  string node_grpc_url = 1;
+}
