@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package nodescanner;
+
+option go_package = "github.com/useryege/athena/internal/nodescanner/apiclient";
+
+// NodeScannerService exposes node scanning operations over gRPC.
+service NodeScannerService {
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+message PingRequest {
+  string client_id = 1;
+}
+
+message PingResponse {
+  string message = 1;
+}

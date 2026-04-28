@@ -9,6 +9,7 @@ import (
 
 	athenaBlockSnifferCommands "github.com/useryege/athena/cmd/athena-block-sniffer/commands"
 	athenaDexCommands "github.com/useryege/athena/cmd/athena-dex/commands"
+	athenaNodeScannerCommands "github.com/useryege/athena/cmd/athena-node-scanner/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
 	athenaProjectControllerCommands "github.com/useryege/athena/cmd/athena-project-controller/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
@@ -45,6 +46,8 @@ func main() {
 		command = athenaProjectControllerCommands.NewCommand()
 	case "athena-block-sniffer":
 		command = athenaBlockSnifferCommands.NewCommand()
+	case "athena-node-scanner":
+		command = athenaNodeScannerCommands.NewCommand()
 	default:
 		os.Exit(1)
 	}

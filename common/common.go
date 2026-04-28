@@ -71,6 +71,8 @@ const (
 	DefaultPortBlockSnifferMetrics      = 8089
 	DefaultPortProjectController        = 8090
 	DefaultPortProjectControllerMetrics = 8091
+	DefaultPortNodeScanner              = 8092
+	DefaultPortNodeScannerMetrics       = 8093
 )
 
 // DefaultAddressAPIServer for Athena components
@@ -86,6 +88,8 @@ const (
 	DefaultAddressBlockSnifferMetrics      = "0.0.0.0"
 	DefaultAddressProjectController        = "0.0.0.0"
 	DefaultAddressProjectControllerMetrics = "0.0.0.0"
+	DefaultAddressNodeScanner              = "0.0.0.0"
+	DefaultAddressNodeScannerMetrics       = "0.0.0.0"
 )
 
 // Default paths on the pod's file system
