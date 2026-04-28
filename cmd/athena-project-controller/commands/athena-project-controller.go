@@ -109,10 +109,10 @@ func NewCommand() *cobra.Command {
 
 	command.Flags().StringVar(&cmdutil.LogFormat, "logformat", env.StringFromEnv("ATHENA_PROJECT_CONTROLLER_LOGFORMAT", "json"), "Set the logging format. One of: json|text")
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv("ATHENA_PROJECT_CONTROLLER_LOGLEVEL", "info"), "Set the logging level. One of: debug|info|warn|error")
-	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_PROJECT_CONTROLLER_LISTEN_ADDRESS", common.DefaultAddressBlockSniffer), "Listen on given address for incoming connections")
-	command.Flags().IntVar(&listenPort, "port", 8090, "Listen on given port for incoming connections")
-	command.Flags().StringVar(&metricsHost, "metrics-address", env.StringFromEnv("ATHENA_PROJECT_CONTROLLER_METRICS_LISTEN_ADDRESS", common.DefaultAddressBlockSnifferMetrics), "Listen on given address for metrics and health checks")
-	command.Flags().IntVar(&metricsPort, "metrics-port", 8091, "Start metrics server on given port")
+	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_PROJECT_CONTROLLER_LISTEN_ADDRESS", common.DefaultAddressProjectController), "Listen on given address for incoming connections")
+	command.Flags().IntVar(&listenPort, "port", common.DefaultPortProjectController, "Listen on given port for incoming connections")
+	command.Flags().StringVar(&metricsHost, "metrics-address", env.StringFromEnv("ATHENA_PROJECT_CONTROLLER_METRICS_LISTEN_ADDRESS", common.DefaultAddressProjectControllerMetrics), "Listen on given address for metrics and health checks")
+	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortProjectControllerMetrics, "Start metrics server on given port")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

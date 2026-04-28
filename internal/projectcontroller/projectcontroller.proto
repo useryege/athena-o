@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package projectcontroller;
+
 option go_package = "github.com/useryege/athena/internal/projectcontroller/apiclient";
 
 service ProjectControllerService {

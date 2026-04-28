@@ -14,3 +14,7 @@ redis: hack/start-redis-with-password.sh
 # notification: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/notification} FORCE_LOG_COLORS=4 ATHENA_FAKE_IN_CLUSTER=true ATHENA_TLS_DATA_PATH=${ATHENA_TLS_DATA_PATH:-/tmp/athena-local/tls} ATHENA_BINARY_NAME=athena-notifications $COMMAND --loglevel debug --application-namespaces=${ATHENA_APPLICATION_NAMESPACES:-''} --self-service-notification-enabled=${ATHENA_NOTIFICATION_CONTROLLER_SELF_SERVICE_NOTIFICATION_ENABLED:-'false'}"
 
 # opinion: sh -c "cd third-party/opinion && API_KEY=\"${ATHENA_OPINION_API_KEY}\" RPC_URL=\"${ATHENA_OPINION_RPC_URL}\" PRIVATE_KEY=\"${ATHENA_OPINION_PRIVATE_KEY}\" MULTI_SIG_ADDRESS=\"${ATHENA_OPINION_MULTI_SIG_ADDRESS}\" npm run start"
+
+
+block-sniffer: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-block-sniffer} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-block-sniffer $COMMAND --loglevel debug --port ${ATHENA_E2E_BLOCKSNIFFER_PORT:-8088}"
+project-controller: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-project-controller} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-project-controller $COMMAND --loglevel debug --port ${ATHENA_E2E_PROJECTCONTROLLER_PORT:-8090}"

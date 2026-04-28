@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package blocksniffer;
+
 option go_package = "github.com/useryege/athena/internal/blocksniffer/apiclient";
 
 service BlockSnifferService {
