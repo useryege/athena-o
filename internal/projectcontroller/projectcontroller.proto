@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "github.com/useryege/athena/internal/projectcontroller/apiclient";
+
+service ProjectControllerService {
+  rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
+}
+
+message SubscribeRequest {
+  string project_id = 1;
+}
+
+message SubscribeResponse {
+  string event = 1;
+}
