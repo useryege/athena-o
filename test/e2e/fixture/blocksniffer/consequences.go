@@ -10,13 +10,13 @@ type Consequences struct {
 	actions *Actions
 }
 
-func (c *Consequences) SetNodeGrpcURLResult(block func(response *blocksnifferpb.SetNodeGrpcURLResponse, err error)) *Consequences {
+func (c *Consequences) SetEvmNodeWsURLResult(block func(response *blocksnifferpb.SetEvmNodeWsURLResponse, err error)) *Consequences {
 	c.context.T().Helper()
 	block(c.actions.lastSetResult, c.actions.lastError)
 	return c
 }
 
-func (c *Consequences) GetNodeGrpcURLResult(block func(response *blocksnifferpb.GetNodeGrpcURLResponse, err error)) *Consequences {
+func (c *Consequences) GetEvmNodeWsURLResult(block func(response *blocksnifferpb.GetEvmNodeWsURLResponse, err error)) *Consequences {
 	c.context.T().Helper()
 	block(c.actions.lastGetResult, c.actions.lastError)
 	return c

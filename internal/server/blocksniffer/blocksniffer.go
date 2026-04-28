@@ -12,40 +12,40 @@ import (
 )
 
 type Server struct {
-	mu          sync.RWMutex
-	nodeGrpcURL string
+	mu           sync.RWMutex
+	evmNodeWsURL string
 }
 
 func NewServer() *Server {
 	return &Server{}
 }
 
-func (s *Server) SetNodeGrpcURL(_ context.Context, req *blocksnifferpkg.SetNodeGrpcURLRequest) (*blocksnifferpkg.SetNodeGrpcURLResponse, error) {
-	raw := strings.TrimSpace(req.GetNodeGrpcUrl())
+func (s *Server) SetEvmNodeWsURL(_ context.Context, req *blocksnifferpkg.SetEvmNodeWsURLRequest) (*blocksnifferpkg.SetEvmNodeWsURLResponse, error) {
+	raw := strings.TrimSpace(req.GetEvmNodeWsURL())
 	if raw == "" {
-		return nil, status.Error(codes.InvalidArgument, "node_grpc_url is required")
+		return nil, status.Error(codes.InvalidArgument, "evm_node_ws_url is required")
 	}
 
 	parsed, err := url.ParseRequestURI(raw)
 	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
-		return nil, status.Error(codes.InvalidArgument, "invalid node_grpc_url")
+		return nil, status.Error(codes.InvalidArgument, "invalid evm_node_ws_url")
 	}
 
 	s.mu.Lock()
-	s.nodeGrpcURL = raw
+	s.evmNodeWsURL = raw
 	s.mu.Unlock()
 
-	return &blocksnifferpkg.SetNodeGrpcURLResponse{
-		NodeGrpcUrl: raw,
+	return &blocksnifferpkg.SetEvmNodeWsURLResponse{
+		EvmNodeWsURL: raw,
 	}, nil
 }
 
-func (s *Server) GetNodeGrpcURL(_ context.Context, _ *blocksnifferpkg.GetNodeGrpcURLRequest) (*blocksnifferpkg.GetNodeGrpcURLResponse, error) {
+func (s *Server) GetEvmNodeWsURL(_ context.Context, _ *blocksnifferpkg.GetEvmNodeWsURLRequest) (*blocksnifferpkg.GetEvmNodeWsURLResponse, error) {
 	s.mu.RLock()
-	current := s.nodeGrpcURL
+	current := s.evmNodeWsURL
 	s.mu.RUnlock()
 
-	return &blocksnifferpkg.GetNodeGrpcURLResponse{
-		NodeGrpcUrl: current,
+	return &blocksnifferpkg.GetEvmNodeWsURLResponse{
+		EvmNodeWsURL: current,
 	}, nil
 }

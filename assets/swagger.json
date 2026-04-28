@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-70-gf50040f-dirty"
+    "version": "v1.0.0-77-g44ca9b3-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -218,17 +218,17 @@
         }
       }
     },
-    "/api/v1/blocksniffer/node-grpc-url": {
+    "/api/v1/blocksniffer/evm-node-ws-url": {
       "get": {
         "tags": [
           "BlockSnifferService"
         ],
-        "operationId": "BlockSnifferService_GetNodeGrpcURL",
+        "operationId": "BlockSnifferService_GetEvmNodeWsURL",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/blocksnifferGetNodeGrpcURLResponse"
+              "$ref": "#/definitions/blocksnifferGetEvmNodeWsURLResponse"
             }
           },
           "default": {
@@ -243,14 +243,14 @@
         "tags": [
           "BlockSnifferService"
         ],
-        "operationId": "BlockSnifferService_SetNodeGrpcURL",
+        "operationId": "BlockSnifferService_SetEvmNodeWsURL",
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/blocksnifferSetNodeGrpcURLRequest"
+              "$ref": "#/definitions/blocksnifferSetEvmNodeWsURLRequest"
             }
           }
         ],
@@ -258,7 +258,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/blocksnifferSetNodeGrpcURLResponse"
+              "$ref": "#/definitions/blocksnifferSetEvmNodeWsURLResponse"
             }
           },
           "default": {
@@ -497,26 +497,26 @@
     "accountUpdatePasswordResponse": {
       "type": "object"
     },
-    "blocksnifferGetNodeGrpcURLResponse": {
+    "blocksnifferGetEvmNodeWsURLResponse": {
       "type": "object",
       "properties": {
-        "node_grpc_url": {
+        "evmNodeWsURL": {
           "type": "string"
         }
       }
     },
-    "blocksnifferSetNodeGrpcURLRequest": {
+    "blocksnifferSetEvmNodeWsURLRequest": {
       "type": "object",
       "properties": {
-        "node_grpc_url": {
+        "evmNodeWsURL": {
           "type": "string"
         }
       }
     },
-    "blocksnifferSetNodeGrpcURLResponse": {
+    "blocksnifferSetEvmNodeWsURLResponse": {
       "type": "object",
       "properties": {
-        "node_grpc_url": {
+        "evmNodeWsURL": {
           "type": "string"
         }
       }

@@ -27,25 +27,25 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type SetNodeGrpcURLRequest struct {
-	NodeGrpcUrl          string   `protobuf:"bytes,1,opt,name=node_grpc_url,json=nodeGrpcUrl,proto3" json:"node_grpc_url,omitempty"`
+type SetEvmNodeWsURLRequest struct {
+	EvmNodeWsURL         string   `protobuf:"bytes,1,opt,name=evmNodeWsURL,proto3" json:"evmNodeWsURL,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SetNodeGrpcURLRequest) Reset()         { *m = SetNodeGrpcURLRequest{} }
-func (m *SetNodeGrpcURLRequest) String() string { return proto.CompactTextString(m) }
-func (*SetNodeGrpcURLRequest) ProtoMessage()    {}
-func (*SetNodeGrpcURLRequest) Descriptor() ([]byte, []int) {
+func (m *SetEvmNodeWsURLRequest) Reset()         { *m = SetEvmNodeWsURLRequest{} }
+func (m *SetEvmNodeWsURLRequest) String() string { return proto.CompactTextString(m) }
+func (*SetEvmNodeWsURLRequest) ProtoMessage()    {}
+func (*SetEvmNodeWsURLRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_316608fd3bed6105, []int{0}
 }
-func (m *SetNodeGrpcURLRequest) XXX_Unmarshal(b []byte) error {
+func (m *SetEvmNodeWsURLRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SetNodeGrpcURLRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SetEvmNodeWsURLRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_SetNodeGrpcURLRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_SetEvmNodeWsURLRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -55,44 +55,44 @@ func (m *SetNodeGrpcURLRequest) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-func (m *SetNodeGrpcURLRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SetNodeGrpcURLRequest.Merge(m, src)
+func (m *SetEvmNodeWsURLRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetEvmNodeWsURLRequest.Merge(m, src)
 }
-func (m *SetNodeGrpcURLRequest) XXX_Size() int {
+func (m *SetEvmNodeWsURLRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *SetNodeGrpcURLRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_SetNodeGrpcURLRequest.DiscardUnknown(m)
+func (m *SetEvmNodeWsURLRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SetEvmNodeWsURLRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SetNodeGrpcURLRequest proto.InternalMessageInfo
+var xxx_messageInfo_SetEvmNodeWsURLRequest proto.InternalMessageInfo
 
-func (m *SetNodeGrpcURLRequest) GetNodeGrpcUrl() string {
+func (m *SetEvmNodeWsURLRequest) GetEvmNodeWsURL() string {
 	if m != nil {
-		return m.NodeGrpcUrl
+		return m.EvmNodeWsURL
 	}
 	return ""
 }
 
-type SetNodeGrpcURLResponse struct {
-	NodeGrpcUrl          string   `protobuf:"bytes,1,opt,name=node_grpc_url,json=nodeGrpcUrl,proto3" json:"node_grpc_url,omitempty"`
+type SetEvmNodeWsURLResponse struct {
+	EvmNodeWsURL         string   `protobuf:"bytes,1,opt,name=evmNodeWsURL,proto3" json:"evmNodeWsURL,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SetNodeGrpcURLResponse) Reset()         { *m = SetNodeGrpcURLResponse{} }
-func (m *SetNodeGrpcURLResponse) String() string { return proto.CompactTextString(m) }
-func (*SetNodeGrpcURLResponse) ProtoMessage()    {}
-func (*SetNodeGrpcURLResponse) Descriptor() ([]byte, []int) {
+func (m *SetEvmNodeWsURLResponse) Reset()         { *m = SetEvmNodeWsURLResponse{} }
+func (m *SetEvmNodeWsURLResponse) String() string { return proto.CompactTextString(m) }
+func (*SetEvmNodeWsURLResponse) ProtoMessage()    {}
+func (*SetEvmNodeWsURLResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_316608fd3bed6105, []int{1}
 }
-func (m *SetNodeGrpcURLResponse) XXX_Unmarshal(b []byte) error {
+func (m *SetEvmNodeWsURLResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SetNodeGrpcURLResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SetEvmNodeWsURLResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_SetNodeGrpcURLResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_SetEvmNodeWsURLResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -102,43 +102,43 @@ func (m *SetNodeGrpcURLResponse) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *SetNodeGrpcURLResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SetNodeGrpcURLResponse.Merge(m, src)
+func (m *SetEvmNodeWsURLResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetEvmNodeWsURLResponse.Merge(m, src)
 }
-func (m *SetNodeGrpcURLResponse) XXX_Size() int {
+func (m *SetEvmNodeWsURLResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *SetNodeGrpcURLResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_SetNodeGrpcURLResponse.DiscardUnknown(m)
+func (m *SetEvmNodeWsURLResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SetEvmNodeWsURLResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SetNodeGrpcURLResponse proto.InternalMessageInfo
+var xxx_messageInfo_SetEvmNodeWsURLResponse proto.InternalMessageInfo
 
-func (m *SetNodeGrpcURLResponse) GetNodeGrpcUrl() string {
+func (m *SetEvmNodeWsURLResponse) GetEvmNodeWsURL() string {
 	if m != nil {
-		return m.NodeGrpcUrl
+		return m.EvmNodeWsURL
 	}
 	return ""
 }
 
-type GetNodeGrpcURLRequest struct {
+type GetEvmNodeWsURLRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetNodeGrpcURLRequest) Reset()         { *m = GetNodeGrpcURLRequest{} }
-func (m *GetNodeGrpcURLRequest) String() string { return proto.CompactTextString(m) }
-func (*GetNodeGrpcURLRequest) ProtoMessage()    {}
-func (*GetNodeGrpcURLRequest) Descriptor() ([]byte, []int) {
+func (m *GetEvmNodeWsURLRequest) Reset()         { *m = GetEvmNodeWsURLRequest{} }
+func (m *GetEvmNodeWsURLRequest) String() string { return proto.CompactTextString(m) }
+func (*GetEvmNodeWsURLRequest) ProtoMessage()    {}
+func (*GetEvmNodeWsURLRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_316608fd3bed6105, []int{2}
 }
-func (m *GetNodeGrpcURLRequest) XXX_Unmarshal(b []byte) error {
+func (m *GetEvmNodeWsURLRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNodeGrpcURLRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetEvmNodeWsURLRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_GetNodeGrpcURLRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_GetEvmNodeWsURLRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -148,37 +148,37 @@ func (m *GetNodeGrpcURLRequest) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-func (m *GetNodeGrpcURLRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetNodeGrpcURLRequest.Merge(m, src)
+func (m *GetEvmNodeWsURLRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetEvmNodeWsURLRequest.Merge(m, src)
 }
-func (m *GetNodeGrpcURLRequest) XXX_Size() int {
+func (m *GetEvmNodeWsURLRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *GetNodeGrpcURLRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetNodeGrpcURLRequest.DiscardUnknown(m)
+func (m *GetEvmNodeWsURLRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetEvmNodeWsURLRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetNodeGrpcURLRequest proto.InternalMessageInfo
+var xxx_messageInfo_GetEvmNodeWsURLRequest proto.InternalMessageInfo
 
-type GetNodeGrpcURLResponse struct {
-	NodeGrpcUrl          string   `protobuf:"bytes,1,opt,name=node_grpc_url,json=nodeGrpcUrl,proto3" json:"node_grpc_url,omitempty"`
+type GetEvmNodeWsURLResponse struct {
+	EvmNodeWsURL         string   `protobuf:"bytes,1,opt,name=evmNodeWsURL,proto3" json:"evmNodeWsURL,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetNodeGrpcURLResponse) Reset()         { *m = GetNodeGrpcURLResponse{} }
-func (m *GetNodeGrpcURLResponse) String() string { return proto.CompactTextString(m) }
-func (*GetNodeGrpcURLResponse) ProtoMessage()    {}
-func (*GetNodeGrpcURLResponse) Descriptor() ([]byte, []int) {
+func (m *GetEvmNodeWsURLResponse) Reset()         { *m = GetEvmNodeWsURLResponse{} }
+func (m *GetEvmNodeWsURLResponse) String() string { return proto.CompactTextString(m) }
+func (*GetEvmNodeWsURLResponse) ProtoMessage()    {}
+func (*GetEvmNodeWsURLResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_316608fd3bed6105, []int{3}
 }
-func (m *GetNodeGrpcURLResponse) XXX_Unmarshal(b []byte) error {
+func (m *GetEvmNodeWsURLResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNodeGrpcURLResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetEvmNodeWsURLResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_GetNodeGrpcURLResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_GetEvmNodeWsURLResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -188,30 +188,30 @@ func (m *GetNodeGrpcURLResponse) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *GetNodeGrpcURLResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetNodeGrpcURLResponse.Merge(m, src)
+func (m *GetEvmNodeWsURLResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetEvmNodeWsURLResponse.Merge(m, src)
 }
-func (m *GetNodeGrpcURLResponse) XXX_Size() int {
+func (m *GetEvmNodeWsURLResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *GetNodeGrpcURLResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetNodeGrpcURLResponse.DiscardUnknown(m)
+func (m *GetEvmNodeWsURLResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetEvmNodeWsURLResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetNodeGrpcURLResponse proto.InternalMessageInfo
+var xxx_messageInfo_GetEvmNodeWsURLResponse proto.InternalMessageInfo
 
-func (m *GetNodeGrpcURLResponse) GetNodeGrpcUrl() string {
+func (m *GetEvmNodeWsURLResponse) GetEvmNodeWsURL() string {
 	if m != nil {
-		return m.NodeGrpcUrl
+		return m.EvmNodeWsURL
 	}
 	return ""
 }
 
 func init() {
-	proto.RegisterType((*SetNodeGrpcURLRequest)(nil), "blocksniffer.SetNodeGrpcURLRequest")
-	proto.RegisterType((*SetNodeGrpcURLResponse)(nil), "blocksniffer.SetNodeGrpcURLResponse")
-	proto.RegisterType((*GetNodeGrpcURLRequest)(nil), "blocksniffer.GetNodeGrpcURLRequest")
-	proto.RegisterType((*GetNodeGrpcURLResponse)(nil), "blocksniffer.GetNodeGrpcURLResponse")
+	proto.RegisterType((*SetEvmNodeWsURLRequest)(nil), "blocksniffer.SetEvmNodeWsURLRequest")
+	proto.RegisterType((*SetEvmNodeWsURLResponse)(nil), "blocksniffer.SetEvmNodeWsURLResponse")
+	proto.RegisterType((*GetEvmNodeWsURLRequest)(nil), "blocksniffer.GetEvmNodeWsURLRequest")
+	proto.RegisterType((*GetEvmNodeWsURLResponse)(nil), "blocksniffer.GetEvmNodeWsURLResponse")
 }
 
 func init() {
@@ -219,28 +219,28 @@ func init() {
 }
 
 var fileDescriptor_316608fd3bed6105 = []byte{
-	// 326 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x92, 0xb1, 0x4a, 0x73, 0x31,
-	0x18, 0x86, 0x49, 0x87, 0x1f, 0xfe, 0xa8, 0x1d, 0x22, 0x55, 0x29, 0x52, 0x24, 0x16, 0x94, 0x42,
-	0x1b, 0x54, 0x5c, 0xd4, 0xa9, 0x0e, 0x67, 0x11, 0x87, 0x16, 0x17, 0x97, 0x92, 0xa6, 0x5f, 0xd3,
-	0xd0, 0x98, 0xc4, 0x24, 0xa7, 0xe0, 0xea, 0x22, 0xb8, 0x7a, 0x1b, 0x5e, 0x88, 0xa3, 0xe0, 0x0d,
-	0x48, 0xf1, 0x42, 0xe4, 0xb4, 0x08, 0x9e, 0x52, 0xca, 0xc1, 0x31, 0xe1, 0xfd, 0xde, 0x3c, 0x3c,
-	0xf9, 0x30, 0x53, 0x26, 0x82, 0x37, 0x5c, 0xb3, 0x00, 0x7e, 0x02, 0x9e, 0xf5, 0xb5, 0x15, 0xe3,
-	0x60, 0xd4, 0x70, 0xb8, 0x70, 0x68, 0x39, 0x6f, 0xa3, 0x25, 0xeb, 0xbf, 0xef, 0xaa, 0xbb, 0xd2,
-	0x5a, 0xa9, 0x81, 0x71, 0xa7, 0x18, 0x37, 0xc6, 0x46, 0x1e, 0x95, 0x35, 0x61, 0x9e, 0xa5, 0xe7,
-	0xb8, 0xd2, 0x85, 0x78, 0x6d, 0x07, 0x90, 0x78, 0x27, 0x6e, 0x3a, 0x57, 0x1d, 0xb8, 0x4f, 0x21,
-	0x44, 0x42, 0xf1, 0x86, 0xb1, 0x03, 0xe8, 0x49, 0xef, 0x44, 0x2f, 0xf5, 0x7a, 0x07, 0xed, 0xa1,
-	0xc3, 0xff, 0x9d, 0x35, 0xf3, 0x13, 0xf5, 0x9a, 0x5e, 0xe0, 0xad, 0xc5, 0xe1, 0xe0, 0xac, 0x09,
-	0x50, 0x68, 0x7a, 0x1b, 0x57, 0x92, 0x65, 0x4f, 0x67, 0xb5, 0xc9, 0x9f, 0x6b, 0x8f, 0x5f, 0x4b,
-	0x78, 0xb3, 0x9d, 0x09, 0xe8, 0xce, 0x05, 0x74, 0xc1, 0x4f, 0x94, 0x00, 0xf2, 0x8c, 0x70, 0x39,
-	0x4f, 0x4b, 0xf6, 0x5b, 0x39, 0x7b, 0x4b, 0x45, 0x54, 0xeb, 0xab, 0x43, 0x73, 0x32, 0xda, 0x7c,
-	0xfc, 0xf8, 0x7a, 0x29, 0x1d, 0x54, 0xe9, 0xcc, 0xf3, 0xe4, 0x28, 0xff, 0x49, 0x19, 0x5f, 0x33,
-	0x83, 0x6e, 0xa6, 0x5e, 0x9f, 0xa1, 0x06, 0x79, 0x42, 0xb8, 0x9c, 0xac, 0x84, 0x49, 0x8a, 0xc0,
-	0x2c, 0xd7, 0x44, 0x1b, 0x33, 0x98, 0x3a, 0x29, 0x00, 0xd3, 0xbe, 0x7c, 0x9b, 0xd6, 0xd0, 0xfb,
-	0xb4, 0x86, 0x3e, 0xa7, 0x35, 0x74, 0x7b, 0x2a, 0x55, 0x1c, 0xa5, 0xfd, 0x96, 0xb0, 0x77, 0x2c,
-	0x0d, 0xe0, 0x1f, 0x40, 0x02, 0xe3, 0x71, 0x04, 0x86, 0x33, 0x37, 0x96, 0x59, 0x9f, 0xd0, 0x0a,
-	0x4c, 0xcc, 0x55, 0xf6, 0xff, 0xcd, 0x96, 0xe9, 0xe4, 0x3b, 0x00, 0x00, 0xff, 0xff, 0x09, 0x2b,
-	0x0f, 0x7f, 0xab, 0x02, 0x00, 0x00,
+	// 321 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0xcf, 0xcc, 0x2b, 0x49,
+	0x2d, 0xca, 0x4b, 0xcc, 0xd1, 0x2f, 0x4e, 0x2d, 0x2a, 0x4b, 0x2d, 0xd2, 0x4f, 0xca, 0xc9, 0x4f,
+	0xce, 0x2e, 0xce, 0xcb, 0x4c, 0x4b, 0x43, 0xe3, 0xe8, 0x15, 0x14, 0xe5, 0x97, 0xe4, 0x0b, 0xf1,
+	0x20, 0x8b, 0x49, 0xc9, 0xa4, 0xe7, 0xe7, 0xa7, 0xe7, 0xa4, 0xea, 0x27, 0x16, 0x64, 0xea, 0x27,
+	0xe6, 0xe5, 0xe5, 0x97, 0x24, 0x96, 0x64, 0xe6, 0xe7, 0x15, 0x43, 0xd4, 0x2a, 0xd9, 0x70, 0x89,
+	0x05, 0xa7, 0x96, 0xb8, 0x96, 0xe5, 0xfa, 0xe5, 0xa7, 0xa4, 0x86, 0x17, 0x87, 0x06, 0xf9, 0x04,
+	0xa5, 0x16, 0x96, 0xa6, 0x16, 0x97, 0x08, 0x29, 0x71, 0xf1, 0xa4, 0x22, 0x09, 0x4b, 0x30, 0x2a,
+	0x30, 0x6a, 0x70, 0x06, 0xa1, 0x88, 0x29, 0xd9, 0x72, 0x89, 0x63, 0xe8, 0x2e, 0x2e, 0xc8, 0xcf,
+	0x2b, 0x4e, 0x25, 0x4a, 0xbb, 0x04, 0x97, 0x98, 0x3b, 0x56, 0xcb, 0x41, 0x06, 0xbb, 0x93, 0x6f,
+	0xb0, 0xd1, 0x36, 0x26, 0x2e, 0x61, 0x27, 0x50, 0x20, 0x04, 0x43, 0x02, 0x21, 0x38, 0xb5, 0xa8,
+	0x2c, 0x33, 0x39, 0x55, 0xa8, 0x9f, 0x91, 0x8b, 0x1f, 0xcd, 0xc1, 0x42, 0x2a, 0x7a, 0x28, 0x41,
+	0x88, 0x3d, 0x34, 0xa4, 0x54, 0x09, 0xa8, 0x82, 0x38, 0x4e, 0x49, 0xbf, 0xe9, 0xf2, 0x93, 0xc9,
+	0x4c, 0x9a, 0x52, 0x2a, 0xe0, 0xe0, 0x2e, 0x33, 0x44, 0x8d, 0xab, 0xd4, 0xb2, 0x5c, 0xdd, 0xbc,
+	0xfc, 0x94, 0x54, 0xdd, 0xf2, 0x62, 0xdd, 0xd2, 0xa2, 0x1c, 0x2b, 0x46, 0x2d, 0xa1, 0x1e, 0x46,
+	0x2e, 0x7e, 0x77, 0xfc, 0x2e, 0x72, 0x27, 0xca, 0x45, 0x38, 0x82, 0x4b, 0x49, 0x07, 0xec, 0x22,
+	0x35, 0x21, 0xa2, 0x5c, 0xe4, 0xe4, 0x7c, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f,
+	0x1e, 0xc9, 0x31, 0x46, 0x99, 0xa6, 0x67, 0x96, 0x64, 0x94, 0x26, 0xe9, 0x25, 0xe7, 0xe7, 0xea,
+	0x97, 0x16, 0xa7, 0x16, 0x55, 0xa6, 0xa6, 0xa7, 0xea, 0x27, 0x96, 0x64, 0xa4, 0xe6, 0x25, 0xea,
+	0x17, 0x64, 0xa7, 0x83, 0x4c, 0x4c, 0xce, 0xc9, 0x4c, 0xcd, 0x2b, 0x41, 0x31, 0x34, 0x89, 0x0d,
+	0x9c, 0xb4, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x6f, 0xeb, 0x85, 0xed, 0xb9, 0x02, 0x00,
+	0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -255,8 +255,8 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type BlockSnifferServiceClient interface {
-	SetNodeGrpcURL(ctx context.Context, in *SetNodeGrpcURLRequest, opts ...grpc.CallOption) (*SetNodeGrpcURLResponse, error)
-	GetNodeGrpcURL(ctx context.Context, in *GetNodeGrpcURLRequest, opts ...grpc.CallOption) (*GetNodeGrpcURLResponse, error)
+	SetEvmNodeWsURL(ctx context.Context, in *SetEvmNodeWsURLRequest, opts ...grpc.CallOption) (*SetEvmNodeWsURLResponse, error)
+	GetEvmNodeWsURL(ctx context.Context, in *GetEvmNodeWsURLRequest, opts ...grpc.CallOption) (*GetEvmNodeWsURLResponse, error)
 }
 
 type blockSnifferServiceClient struct {
@@ -267,18 +267,18 @@ func NewBlockSnifferServiceClient(cc *grpc.ClientConn) BlockSnifferServiceClient
 	return &blockSnifferServiceClient{cc}
 }
 
-func (c *blockSnifferServiceClient) SetNodeGrpcURL(ctx context.Context, in *SetNodeGrpcURLRequest, opts ...grpc.CallOption) (*SetNodeGrpcURLResponse, error) {
-	out := new(SetNodeGrpcURLResponse)
-	err := c.cc.Invoke(ctx, "/blocksniffer.BlockSnifferService/SetNodeGrpcURL", in, out, opts...)
+func (c *blockSnifferServiceClient) SetEvmNodeWsURL(ctx context.Context, in *SetEvmNodeWsURLRequest, opts ...grpc.CallOption) (*SetEvmNodeWsURLResponse, error) {
+	out := new(SetEvmNodeWsURLResponse)
+	err := c.cc.Invoke(ctx, "/blocksniffer.BlockSnifferService/SetEvmNodeWsURL", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *blockSnifferServiceClient) GetNodeGrpcURL(ctx context.Context, in *GetNodeGrpcURLRequest, opts ...grpc.CallOption) (*GetNodeGrpcURLResponse, error) {
-	out := new(GetNodeGrpcURLResponse)
-	err := c.cc.Invoke(ctx, "/blocksniffer.BlockSnifferService/GetNodeGrpcURL", in, out, opts...)
+func (c *blockSnifferServiceClient) GetEvmNodeWsURL(ctx context.Context, in *GetEvmNodeWsURLRequest, opts ...grpc.CallOption) (*GetEvmNodeWsURLResponse, error) {
+	out := new(GetEvmNodeWsURLResponse)
+	err := c.cc.Invoke(ctx, "/blocksniffer.BlockSnifferService/GetEvmNodeWsURL", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -287,57 +287,57 @@ func (c *blockSnifferServiceClient) GetNodeGrpcURL(ctx context.Context, in *GetN
 
 // BlockSnifferServiceServer is the server API for BlockSnifferService service.
 type BlockSnifferServiceServer interface {
-	SetNodeGrpcURL(context.Context, *SetNodeGrpcURLRequest) (*SetNodeGrpcURLResponse, error)
-	GetNodeGrpcURL(context.Context, *GetNodeGrpcURLRequest) (*GetNodeGrpcURLResponse, error)
+	SetEvmNodeWsURL(context.Context, *SetEvmNodeWsURLRequest) (*SetEvmNodeWsURLResponse, error)
+	GetEvmNodeWsURL(context.Context, *GetEvmNodeWsURLRequest) (*GetEvmNodeWsURLResponse, error)
 }
 
 // UnimplementedBlockSnifferServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedBlockSnifferServiceServer struct {
 }
 
-func (*UnimplementedBlockSnifferServiceServer) SetNodeGrpcURL(ctx context.Context, req *SetNodeGrpcURLRequest) (*SetNodeGrpcURLResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetNodeGrpcURL not implemented")
+func (*UnimplementedBlockSnifferServiceServer) SetEvmNodeWsURL(ctx context.Context, req *SetEvmNodeWsURLRequest) (*SetEvmNodeWsURLResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetEvmNodeWsURL not implemented")
 }
-func (*UnimplementedBlockSnifferServiceServer) GetNodeGrpcURL(ctx context.Context, req *GetNodeGrpcURLRequest) (*GetNodeGrpcURLResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetNodeGrpcURL not implemented")
+func (*UnimplementedBlockSnifferServiceServer) GetEvmNodeWsURL(ctx context.Context, req *GetEvmNodeWsURLRequest) (*GetEvmNodeWsURLResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEvmNodeWsURL not implemented")
 }
 
 func RegisterBlockSnifferServiceServer(s *grpc.Server, srv BlockSnifferServiceServer) {
 	s.RegisterService(&_BlockSnifferService_serviceDesc, srv)
 }
 
-func _BlockSnifferService_SetNodeGrpcURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetNodeGrpcURLRequest)
+func _BlockSnifferService_SetEvmNodeWsURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetEvmNodeWsURLRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BlockSnifferServiceServer).SetNodeGrpcURL(ctx, in)
+		return srv.(BlockSnifferServiceServer).SetEvmNodeWsURL(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/blocksniffer.BlockSnifferService/SetNodeGrpcURL",
+		FullMethod: "/blocksniffer.BlockSnifferService/SetEvmNodeWsURL",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlockSnifferServiceServer).SetNodeGrpcURL(ctx, req.(*SetNodeGrpcURLRequest))
+		return srv.(BlockSnifferServiceServer).SetEvmNodeWsURL(ctx, req.(*SetEvmNodeWsURLRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BlockSnifferService_GetNodeGrpcURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetNodeGrpcURLRequest)
+func _BlockSnifferService_GetEvmNodeWsURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEvmNodeWsURLRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BlockSnifferServiceServer).GetNodeGrpcURL(ctx, in)
+		return srv.(BlockSnifferServiceServer).GetEvmNodeWsURL(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/blocksniffer.BlockSnifferService/GetNodeGrpcURL",
+		FullMethod: "/blocksniffer.BlockSnifferService/GetEvmNodeWsURL",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlockSnifferServiceServer).GetNodeGrpcURL(ctx, req.(*GetNodeGrpcURLRequest))
+		return srv.(BlockSnifferServiceServer).GetEvmNodeWsURL(ctx, req.(*GetEvmNodeWsURLRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -347,19 +347,19 @@ var _BlockSnifferService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*BlockSnifferServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SetNodeGrpcURL",
-			Handler:    _BlockSnifferService_SetNodeGrpcURL_Handler,
+			MethodName: "SetEvmNodeWsURL",
+			Handler:    _BlockSnifferService_SetEvmNodeWsURL_Handler,
 		},
 		{
-			MethodName: "GetNodeGrpcURL",
-			Handler:    _BlockSnifferService_GetNodeGrpcURL_Handler,
+			MethodName: "GetEvmNodeWsURL",
+			Handler:    _BlockSnifferService_GetEvmNodeWsURL_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "internal/server/blocksniffer/blocksniffer.proto",
 }
 
-func (m *SetNodeGrpcURLRequest) Marshal() (dAtA []byte, err error) {
+func (m *SetEvmNodeWsURLRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -369,12 +369,12 @@ func (m *SetNodeGrpcURLRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SetNodeGrpcURLRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *SetEvmNodeWsURLRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *SetNodeGrpcURLRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *SetEvmNodeWsURLRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -383,17 +383,17 @@ func (m *SetNodeGrpcURLRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.NodeGrpcUrl) > 0 {
-		i -= len(m.NodeGrpcUrl)
-		copy(dAtA[i:], m.NodeGrpcUrl)
-		i = encodeVarintBlocksniffer(dAtA, i, uint64(len(m.NodeGrpcUrl)))
+	if len(m.EvmNodeWsURL) > 0 {
+		i -= len(m.EvmNodeWsURL)
+		copy(dAtA[i:], m.EvmNodeWsURL)
+		i = encodeVarintBlocksniffer(dAtA, i, uint64(len(m.EvmNodeWsURL)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *SetNodeGrpcURLResponse) Marshal() (dAtA []byte, err error) {
+func (m *SetEvmNodeWsURLResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -403,12 +403,12 @@ func (m *SetNodeGrpcURLResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SetNodeGrpcURLResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *SetEvmNodeWsURLResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *SetNodeGrpcURLResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *SetEvmNodeWsURLResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -417,17 +417,17 @@ func (m *SetNodeGrpcURLResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.NodeGrpcUrl) > 0 {
-		i -= len(m.NodeGrpcUrl)
-		copy(dAtA[i:], m.NodeGrpcUrl)
-		i = encodeVarintBlocksniffer(dAtA, i, uint64(len(m.NodeGrpcUrl)))
+	if len(m.EvmNodeWsURL) > 0 {
+		i -= len(m.EvmNodeWsURL)
+		copy(dAtA[i:], m.EvmNodeWsURL)
+		i = encodeVarintBlocksniffer(dAtA, i, uint64(len(m.EvmNodeWsURL)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNodeGrpcURLRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetEvmNodeWsURLRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -437,12 +437,12 @@ func (m *GetNodeGrpcURLRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetNodeGrpcURLRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetEvmNodeWsURLRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *GetNodeGrpcURLRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *GetEvmNodeWsURLRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -454,7 +454,7 @@ func (m *GetNodeGrpcURLRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNodeGrpcURLResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetEvmNodeWsURLResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -464,12 +464,12 @@ func (m *GetNodeGrpcURLResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetNodeGrpcURLResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetEvmNodeWsURLResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *GetNodeGrpcURLResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *GetEvmNodeWsURLResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -478,10 +478,10 @@ func (m *GetNodeGrpcURLResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.NodeGrpcUrl) > 0 {
-		i -= len(m.NodeGrpcUrl)
-		copy(dAtA[i:], m.NodeGrpcUrl)
-		i = encodeVarintBlocksniffer(dAtA, i, uint64(len(m.NodeGrpcUrl)))
+	if len(m.EvmNodeWsURL) > 0 {
+		i -= len(m.EvmNodeWsURL)
+		copy(dAtA[i:], m.EvmNodeWsURL)
+		i = encodeVarintBlocksniffer(dAtA, i, uint64(len(m.EvmNodeWsURL)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -499,13 +499,13 @@ func encodeVarintBlocksniffer(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *SetNodeGrpcURLRequest) Size() (n int) {
+func (m *SetEvmNodeWsURLRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.NodeGrpcUrl)
+	l = len(m.EvmNodeWsURL)
 	if l > 0 {
 		n += 1 + l + sovBlocksniffer(uint64(l))
 	}
@@ -515,13 +515,13 @@ func (m *SetNodeGrpcURLRequest) Size() (n int) {
 	return n
 }
 
-func (m *SetNodeGrpcURLResponse) Size() (n int) {
+func (m *SetEvmNodeWsURLResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.NodeGrpcUrl)
+	l = len(m.EvmNodeWsURL)
 	if l > 0 {
 		n += 1 + l + sovBlocksniffer(uint64(l))
 	}
@@ -531,7 +531,7 @@ func (m *SetNodeGrpcURLResponse) Size() (n int) {
 	return n
 }
 
-func (m *GetNodeGrpcURLRequest) Size() (n int) {
+func (m *GetEvmNodeWsURLRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -543,13 +543,13 @@ func (m *GetNodeGrpcURLRequest) Size() (n int) {
 	return n
 }
 
-func (m *GetNodeGrpcURLResponse) Size() (n int) {
+func (m *GetEvmNodeWsURLResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.NodeGrpcUrl)
+	l = len(m.EvmNodeWsURL)
 	if l > 0 {
 		n += 1 + l + sovBlocksniffer(uint64(l))
 	}
@@ -565,7 +565,7 @@ func sovBlocksniffer(x uint64) (n int) {
 func sozBlocksniffer(x uint64) (n int) {
 	return sovBlocksniffer(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SetNodeGrpcURLRequest) Unmarshal(dAtA []byte) error {
+func (m *SetEvmNodeWsURLRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -588,15 +588,15 @@ func (m *SetNodeGrpcURLRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: SetNodeGrpcURLRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: SetEvmNodeWsURLRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SetNodeGrpcURLRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SetEvmNodeWsURLRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NodeGrpcUrl", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EvmNodeWsURL", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -624,7 +624,7 @@ func (m *SetNodeGrpcURLRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.NodeGrpcUrl = string(dAtA[iNdEx:postIndex])
+			m.EvmNodeWsURL = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -648,7 +648,7 @@ func (m *SetNodeGrpcURLRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SetNodeGrpcURLResponse) Unmarshal(dAtA []byte) error {
+func (m *SetEvmNodeWsURLResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -671,15 +671,15 @@ func (m *SetNodeGrpcURLResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: SetNodeGrpcURLResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: SetEvmNodeWsURLResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SetNodeGrpcURLResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SetEvmNodeWsURLResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NodeGrpcUrl", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EvmNodeWsURL", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -707,7 +707,7 @@ func (m *SetNodeGrpcURLResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.NodeGrpcUrl = string(dAtA[iNdEx:postIndex])
+			m.EvmNodeWsURL = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -731,7 +731,7 @@ func (m *SetNodeGrpcURLResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetNodeGrpcURLRequest) Unmarshal(dAtA []byte) error {
+func (m *GetEvmNodeWsURLRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -754,10 +754,10 @@ func (m *GetNodeGrpcURLRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetNodeGrpcURLRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetEvmNodeWsURLRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetNodeGrpcURLRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetEvmNodeWsURLRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -782,7 +782,7 @@ func (m *GetNodeGrpcURLRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetNodeGrpcURLResponse) Unmarshal(dAtA []byte) error {
+func (m *GetEvmNodeWsURLResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -805,15 +805,15 @@ func (m *GetNodeGrpcURLResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetNodeGrpcURLResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetEvmNodeWsURLResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetNodeGrpcURLResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetEvmNodeWsURLResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NodeGrpcUrl", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EvmNodeWsURL", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -841,7 +841,7 @@ func (m *GetNodeGrpcURLResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.NodeGrpcUrl = string(dAtA[iNdEx:postIndex])
+			m.EvmNodeWsURL = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

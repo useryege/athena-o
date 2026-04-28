@@ -43,9 +43,9 @@ const settings = [
         path: './appearance'
     },
     {
-        title: 'Node gRPC URL',
-        description: 'Configure node gRPC endpoint used by BlockSniffer',
-        path: './node-grpc-url'
+        title: 'EVM Node WS URL',
+        description: 'Configure EVM node WebSocket endpoint used by BlockSniffer',
+        path: './evm-node-ws-url'
     }
 ];
 
