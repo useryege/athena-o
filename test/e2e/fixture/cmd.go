@@ -12,7 +12,7 @@ package fixture
 // 	cmd.Env = os.Environ()
 // 	cmd.Dir = workDir
 
-// 	return argoexec.RunCommandExt(cmd, argoexec.CmdOpts{})
+// 	return athenaexec.RunCommandExt(cmd, athenaexec.CmdOpts{})
 // }
 
 // func RunWithStdinWithRedactor(stdin, workDir, name string, redactor func(string) string, args ...string) (string, error) {
@@ -23,5 +23,5 @@ package fixture
 // 	cmd.Env = os.Environ()
 // 	cmd.Dir = workDir
 
-// 	return argoexec.RunCommandExt(cmd, argoexec.CmdOpts{Redactor: redactor})
+// 	return athenaexec.RunCommandExt(cmd, athenaexec.CmdOpts{Redactor: redactor})
 // }

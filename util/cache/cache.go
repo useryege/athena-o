@@ -59,7 +59,7 @@ func buildRedisClient(redisAddress, password, username string, redisDB, maxRetri
 
 	client := redis.NewClient(opts)
 
-	client.AddHook(redis.Hook(NewArgoRedisHook(func() {
+	client.AddHook(redis.Hook(NewAthenaRedisHook(func() {
 		*client = *buildRedisClient(redisAddress, password, username, redisDB, maxRetries, tlsConfig)
 	})))
 
@@ -81,7 +81,7 @@ func buildFailoverRedisClient(sentinelMaster, sentinelUsername, sentinelPassword
 
 	client := redis.NewFailoverClient(opts)
 
-	client.AddHook(redis.Hook(NewArgoRedisHook(func() {
+	client.AddHook(redis.Hook(NewAthenaRedisHook(func() {
 		*client = *buildFailoverRedisClient(sentinelMaster, sentinelUsername, sentinelPassword, password, username, redisDB, maxRetries, tlsConfig, sentinelAddresses)
 	})))
 

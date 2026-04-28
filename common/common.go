@@ -35,19 +35,19 @@ const (
 
 // Kubernetes ConfigMap and Secret resource names which hold Athena settings
 const (
-	ArgoCDConfigMapName              = "athena-cm"
-	ArgoCDSecretName                 = "athena-secret"
-	ArgoCDNotificationsConfigMapName = "athena-notifications-cm"
-	ArgoCDNotificationsSecretName    = "athena-notifications-secret"
-	ArgoCDRBACConfigMapName          = "athena-rbac-cm"
-	// ArgoCDKnownHostsConfigMapName contains SSH known hosts data for connecting repositories. Will get mounted as volume to pods
-	ArgoCDKnownHostsConfigMapName = "athena-ssh-known-hosts-cm"
-	// ArgoCDTLSCertsConfigMapName contains TLS certificate data for connecting repositories. Will get mounted as volume to pods
-	ArgoCDTLSCertsConfigMapName = "athena-tls-certs-cm"
-	ArgoCDGPGKeysConfigMapName  = "athena-gpg-keys-cm"
-	// ArgoCDAppControllerShardConfigMapName contains the application controller to shard mapping
-	ArgoCDAppControllerShardConfigMapName = "athena-app-controller-shard-cm"
-	ArgoCDCmdParamsConfigMapName          = "athena-cmd-params-cm"
+	AthenaConfigMapName              = "athena-cm"
+	AthenaSecretName                 = "athena-secret"
+	AthenaNotificationsConfigMapName = "athena-notifications-cm"
+	AthenaNotificationsSecretName    = "athena-notifications-secret"
+	AthenaRBACConfigMapName          = "athena-rbac-cm"
+	// AthenaKnownHostsConfigMapName contains SSH known hosts data for connecting repositories. Will get mounted as volume to pods
+	AthenaKnownHostsConfigMapName = "athena-ssh-known-hosts-cm"
+	// AthenaTLSCertsConfigMapName contains TLS certificate data for connecting repositories. Will get mounted as volume to pods
+	AthenaTLSCertsConfigMapName = "athena-tls-certs-cm"
+	AthenaGPGKeysConfigMapName  = "athena-gpg-keys-cm"
+	// AthenaAppControllerShardConfigMapName contains the application controller to shard mapping
+	AthenaAppControllerShardConfigMapName = "athena-app-controller-shard-cm"
+	AthenaCmdParamsConfigMapName          = "athena-cmd-params-cm"
 )
 
 // Some default configurables
@@ -58,10 +58,12 @@ const (
 
 // Default listener ports for Athena components
 const (
-	DefaultPortAPIServer                = 8080
-	DefaultPortRepoServer               = 8081
-	DefaultPortArgoCDMetrics            = 8082
-	DefaultPortArgoCDAPIServerMetrics   = 8083
+	DefaultPortAPIServer  = 8080
+	DefaultPortRepoServer = 8081
+
+	DefaultPortAthenaMetrics          = 8082
+	DefaultPortAthenaAPIServerMetrics = 8083
+
 	DefaultPortRepoServerMetrics        = 8084
 	DefaultPortCommitServer             = 8086
 	DefaultPortCommitServerMetrics      = 8087
@@ -115,12 +117,12 @@ const (
 // Athena application related constants
 const (
 
-	// ArgoCDAdminUsername is the username of the 'admin' user
-	ArgoCDAdminUsername = "admin"
-	// ArgoCDUserAgentName is the default user-agent name used by the gRPC API client library and grpc-gateway
-	ArgoCDUserAgentName = "athena-client"
-	// ArgoCDSSAManager is the default athena manager name used by server-side apply syncs
-	ArgoCDSSAManager = "athena-controller"
+	// AthenaAdminUsername is the username of the 'admin' user
+	AthenaAdminUsername = "admin"
+	// AthenaUserAgentName is the default user-agent name used by the gRPC API client library and grpc-gateway
+	AthenaUserAgentName = "athena-client"
+	// AthenaSSAManager is the default athena manager name used by server-side apply syncs
+	AthenaSSAManager = "athena-controller"
 	// AuthCookieName is the HTTP cookie name where we store our auth token
 	AuthCookieName = "athena.token"
 	// StateCookieName is the HTTP cookie name that holds temporary nonce tokens for CSRF protection
@@ -163,14 +165,14 @@ const (
 	CallbackEndpoint = "/auth/callback"
 	// DexCallbackEndpoint is Athena's final callback endpoint when Dex is configured
 	DexCallbackEndpoint = "/api/dex/callback"
-	// ArgoCDClientAppName is name of the Oauth client app used when registering our web app to dex
-	ArgoCDClientAppName = "Athena"
-	// ArgoCDClientAppID is the Oauth client ID we will use when registering our app to dex
-	ArgoCDClientAppID = "athena"
-	// ArgoCDCLIClientAppName is name of the Oauth client app used when registering our CLI to dex
-	ArgoCDCLIClientAppName = "Athena CLI"
-	// ArgoCDCLIClientAppID is the Oauth client ID we will use when registering our CLI to dex
-	ArgoCDCLIClientAppID = "athena-cli"
+	// AthenaClientAppName is name of the Oauth client app used when registering our web app to dex
+	AthenaClientAppName = "Athena"
+	// AthenaClientAppID is the Oauth client ID we will use when registering our app to dex
+	AthenaClientAppID = "athena"
+	// AthenaCLIClientAppName is name of the Oauth client app used when registering our CLI to dex
+	AthenaCLIClientAppName = "Athena CLI"
+	// AthenaCLIClientAppID is the Oauth client ID we will use when registering our CLI to dex
+	AthenaCLIClientAppID = "athena-cli"
 	// DexFederatedScope allows to receive the federated_claims from Dex. https://dexidp.io/docs/configuration/custom-scopes-claims-clients/
 	DexFederatedScope = "federated:id"
 )
@@ -219,8 +221,8 @@ const (
 
 	// AnnotationKeyManagedBy is annotation name which indicates that k8s resource is managed by an application.
 	AnnotationKeyManagedBy = "managed-by"
-	// AnnotationValueManagedByArgoCD is a 'managed-by' annotation value for resources managed by Athena
-	AnnotationValueManagedByArgoCD = "athena.useryege.io"
+	// AnnotationValueManagedByAthena is a 'managed-by' annotation value for resources managed by Athena
+	AnnotationValueManagedByAthena = "athena.useryege.io"
 
 	// AnnotationKeyLinkPrefix tells the UI to add an external link icon to the application node
 	// that links to the value given in the annotation.

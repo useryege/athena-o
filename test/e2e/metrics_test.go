@@ -28,7 +28,7 @@ func TestKubectlMetrics(t *testing.T) {
 	// 		assert.Equal(t, ctx.DeploymentNamespace(), app.Spec.Destination.Namespace)
 	// 		assert.Equal(t, KubernetesInternalAPIServerAddr, app.Spec.Destination.Server)
 	// 	}).
-	// 	Expect(Event(argo.EventReasonResourceCreated, "create")).
+	// 	Expect(Event(athena.EventReasonResourceCreated, "create")).
 	// 	And(func(_ *Application) {
 	// 		// app should be listed
 	// 		output, err := fixture.RunCli("app", "list")

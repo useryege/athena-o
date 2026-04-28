@@ -199,7 +199,7 @@ func saveAccount(secret *corev1.Secret, cm *corev1.ConfigMap, name string, accou
 	if err != nil {
 		return err
 	}
-	if name == common.ArgoCDAdminUsername {
+	if name == common.AthenaAdminUsername {
 		updateAccountSecret(secret, settingAdminPasswordHashKey, account.PasswordHash, "")
 		updateAccountSecret(secret, settingAdminPasswordMtimeKey, account.FormatPasswordMtime(), "")
 		updateAccountSecret(secret, settingAdminTokensKey, string(tokens), "[]")
@@ -249,7 +249,7 @@ func parseAccounts(secret *corev1.Secret, cm *corev1.ConfigMap) (map[string]Acco
 		return nil, err
 	}
 	accounts := map[string]Account{
-		common.ArgoCDAdminUsername: *adminAccount,
+		common.AthenaAdminUsername: *adminAccount,
 	}
 
 	for key, v := range cm.Data {
@@ -304,7 +304,7 @@ func parseAccounts(secret *corev1.Secret, cm *corev1.ConfigMap) (map[string]Acco
 	}
 
 	for name, account := range accounts {
-		if name == common.ArgoCDAdminUsername {
+		if name == common.AthenaAdminUsername {
 			continue
 		}
 

@@ -147,7 +147,7 @@ func TestInstallClusterManagerRBAC(t *testing.T) {
 	}
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ArgoCDManagerServiceAccount,
+			Name:      AthenaManagerServiceAccount,
 			Namespace: "test",
 		},
 		Secrets: []corev1.ObjectReference{
@@ -296,13 +296,13 @@ func Test_getOrCreateServiceAccountTokenSecret_NoSecretForSA(t *testing.T) {
 	}
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ArgoCDManagerServiceAccount,
+			Name:      AthenaManagerServiceAccount,
 			Namespace: ns.Name,
 		},
 	}
 	manualSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ArgoCDManagerServiceAccount + SATokenSecretSuffix,
+			Name:      AthenaManagerServiceAccount + SATokenSecretSuffix,
 			Namespace: ns.Name,
 			Annotations: map[string]string{
 				corev1.ServiceAccountNameKey: sa.Name,
@@ -313,9 +313,9 @@ func Test_getOrCreateServiceAccountTokenSecret_NoSecretForSA(t *testing.T) {
 
 	assertOnlyOneTokenExists := func(t *testing.T, cs *fake.Clientset) {
 		t.Helper()
-		got, err := getOrCreateServiceAccountTokenSecret(cs, ArgoCDManagerServiceAccount, ns.Name)
+		got, err := getOrCreateServiceAccountTokenSecret(cs, AthenaManagerServiceAccount, ns.Name)
 		require.NoError(t, err)
-		assert.Equal(t, ArgoCDManagerServiceAccount+SATokenSecretSuffix, got)
+		assert.Equal(t, AthenaManagerServiceAccount+SATokenSecretSuffix, got)
 
 		list, err := cs.Tracker().List(schema.GroupVersionResource{Version: "v1", Resource: "secrets"},
 			schema.GroupVersionKind{Version: "v1", Kind: "Secret"}, ns.Name, metav1.ListOptions{})
@@ -324,8 +324,8 @@ func Test_getOrCreateServiceAccountTokenSecret_NoSecretForSA(t *testing.T) {
 		require.True(t, ok)
 		assert.Len(t, secretList.Items, 1)
 		obj, err := cs.Tracker().Get(schema.GroupVersionResource{Version: "v1", Resource: "serviceaccounts"},
-			ns.Name, ArgoCDManagerServiceAccount)
-		require.NoError(t, err, "ServiceAccount %s not found but was expected to be found", ArgoCDManagerServiceAccount)
+			ns.Name, AthenaManagerServiceAccount)
+		require.NoError(t, err, "ServiceAccount %s not found but was expected to be found", AthenaManagerServiceAccount)
 
 		assert.Empty(t, obj.(*corev1.ServiceAccount).Secrets, 0)
 	}
@@ -344,7 +344,7 @@ func Test_getOrCreateServiceAccountTokenSecret_NoSecretForSA(t *testing.T) {
 		cs.PrependReactor("create", "secrets", func(kubetesting.Action) (handled bool, ret runtime.Object, err error) {
 			return true, &corev1.Secret{}, errors.New("testing error case")
 		})
-		got, err := getOrCreateServiceAccountTokenSecret(cs, ArgoCDManagerServiceAccount, ns.Name)
+		got, err := getOrCreateServiceAccountTokenSecret(cs, AthenaManagerServiceAccount, ns.Name)
 		require.Error(t, err)
 		assert.Empty(t, got)
 	})
@@ -370,7 +370,7 @@ func Test_getOrCreateServiceAccountTokenSecret_SAHasSecret(t *testing.T) {
 
 	saWithSecret := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ArgoCDManagerServiceAccount,
+			Name:      AthenaManagerServiceAccount,
 			Namespace: ns.Name,
 		},
 		Secrets: []corev1.ObjectReference{
@@ -387,13 +387,13 @@ func Test_getOrCreateServiceAccountTokenSecret_SAHasSecret(t *testing.T) {
 
 	cs := fake.NewClientset(ns, saWithSecret, secret)
 
-	got, err := getOrCreateServiceAccountTokenSecret(cs, ArgoCDManagerServiceAccount, ns.Name)
+	got, err := getOrCreateServiceAccountTokenSecret(cs, AthenaManagerServiceAccount, ns.Name)
 	require.NoError(t, err)
-	assert.Equal(t, ArgoCDManagerServiceAccount+SATokenSecretSuffix, got)
+	assert.Equal(t, AthenaManagerServiceAccount+SATokenSecretSuffix, got)
 
 	obj, err := cs.Tracker().Get(schema.GroupVersionResource{Version: "v1", Resource: "serviceaccounts"},
-		ns.Name, ArgoCDManagerServiceAccount)
-	require.NoError(t, err, "ServiceAccount %s not found but was expected to be found", ArgoCDManagerServiceAccount)
+		ns.Name, AthenaManagerServiceAccount)
+	require.NoError(t, err, "ServiceAccount %s not found but was expected to be found", AthenaManagerServiceAccount)
 
 	sa := obj.(*corev1.ServiceAccount)
 	assert.Len(t, sa.Secrets, 1)

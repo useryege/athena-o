@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	FakeArgoCDNamespace = "fake-athena-ns"
+	FakeAthenaNamespace = "fake-athena-ns"
 )
 
 func HelmHook(obj *unstructured.Unstructured, hookType string) *unstructured.Unstructured {

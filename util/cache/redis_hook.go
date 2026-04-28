@@ -9,22 +9,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type argoRedisHooks struct {
+type athenaRedisHooks struct {
 	reconnectCallback func()
 }
 
-func NewArgoRedisHook(reconnectCallback func()) *argoRedisHooks {
-	return &argoRedisHooks{reconnectCallback: reconnectCallback}
+func NewAthenaRedisHook(reconnectCallback func()) *athenaRedisHooks {
+	return &athenaRedisHooks{reconnectCallback: reconnectCallback}
 }
 
-func (hook *argoRedisHooks) DialHook(next redis.DialHook) redis.DialHook {
+func (hook *athenaRedisHooks) DialHook(next redis.DialHook) redis.DialHook {
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
 		conn, err := next(ctx, network, addr)
 		return conn, err
 	}
 }
 
-func (hook *argoRedisHooks) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
+func (hook *athenaRedisHooks) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
 	return func(ctx context.Context, cmd redis.Cmder) error {
 		var dnsError *net.DNSError
 		err := next(ctx, cmd)
@@ -36,6 +36,6 @@ func (hook *argoRedisHooks) ProcessHook(next redis.ProcessHook) redis.ProcessHoo
 	}
 }
 
-func (hook *argoRedisHooks) ProcessPipelineHook(_ redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+func (hook *athenaRedisHooks) ProcessPipelineHook(_ redis.ProcessPipelineHook) redis.ProcessPipelineHook {
 	return nil
 }

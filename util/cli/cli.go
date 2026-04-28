@@ -1,4 +1,4 @@
-// Package cmd provides functionally common to various argo CLIs
+// Package cmd provides functionally common to various athena CLIs
 
 package cli
 

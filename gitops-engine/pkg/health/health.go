@@ -114,7 +114,7 @@ func IsWorse(current, new HealthStatusCode) bool {
 // 		}
 // 	case "useryege.io":
 // 		if gvk.Kind == "Workflow" {
-// 			return getArgoWorkflowHealth
+// 			return getAthenaWorkflowHealth
 // 		}
 // 	case "apiregistration.k8s.io":
 // 		if gvk.Kind == kube.APIServiceKind {

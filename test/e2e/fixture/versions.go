@@ -28,5 +28,5 @@ func (v Version) String() string {
 // 	t.Helper()
 // 	kubectl := kubeutil.NewKubectl()
 // 	resources := errors.NewHandler(t).FailOnErr(kubectl.GetAPIResources(KubeConfig, false, cache.NewNoopSettings())).([]kube.APIResourceInfo)
-// 	return strings.Join(argo.APIResourcesToStrings(resources, true), ",")
+// 	return strings.Join(athena.APIResourcesToStrings(resources, true), ",")
 // }

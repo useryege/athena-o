@@ -256,7 +256,7 @@ func removeWebhookMutation(predictedLive, live *unstructured.Unstructured, gvkPa
 	}
 
 	// Remove fields from predicted live that are not managed by the provided manager
-	nonArgoFieldsSet := predictedLiveFieldSet.Difference(managerFieldsSet)
+	nonAthenaFieldsSet := predictedLiveFieldSet.Difference(managerFieldsSet)
 
 	// Compare the predicted live with the live resource
 	comparison, err := typedLive.Compare(typedPredictedLive)
@@ -266,12 +266,12 @@ func removeWebhookMutation(predictedLive, live *unstructured.Unstructured, gvkPa
 
 	if comparison.Removed != nil && !comparison.Removed.Empty() {
 		// exclude the removed fields not owned by this manager from the comparison
-		comparison.Removed = comparison.Removed.Difference(nonArgoFieldsSet)
+		comparison.Removed = comparison.Removed.Difference(nonAthenaFieldsSet)
 	}
 
 	// In case any of the removed fields cause schema violations, we will keep those fields
-	nonArgoFieldsSet = filterOutCompositeKeyFields(typedPredictedLive, nonArgoFieldsSet)
-	typedPredictedLive = typedPredictedLive.RemoveItems(nonArgoFieldsSet)
+	nonAthenaFieldsSet = filterOutCompositeKeyFields(typedPredictedLive, nonAthenaFieldsSet)
+	typedPredictedLive = typedPredictedLive.RemoveItems(nonAthenaFieldsSet)
 
 	// Apply the predicted live state to the live state to get a diff without mutation webhook fields
 	typedPredictedLive, err = typedLive.Merge(typedPredictedLive)

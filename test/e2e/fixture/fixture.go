@@ -63,8 +63,8 @@ const (
 	defaultAdminUsername    = "admin"
 	DefaultTestUserPassword = "password"
 	TestingLabel            = "e2e.useryege.io"
-	ArgoCDNamespace         = "athena-e2e"
-	ArgoCDAppNamespace      = "athena-e2e-external"
+	AthenaNamespace         = "athena-e2e"
+	AthenaAppNamespace      = "athena-e2e-external"
 
 	// notifications controller, metrics server port
 	// defaultNotificationServer = "localhost:9001"
@@ -152,14 +152,14 @@ type ACL struct {
 // 	AuthenticatedOCIHostURL         = "oci://localhost:5001"
 // )
 
-// TestNamespace returns the namespace where Argo CD E2E test instance will be
+// TestNamespace returns the namespace where Athena E2E test instance will be
 // running in.
 func TestNamespace() string {
-	return GetEnvWithDefault("ATHENA_E2E_NAMESPACE", ArgoCDNamespace)
+	return GetEnvWithDefault("ATHENA_E2E_NAMESPACE", AthenaNamespace)
 }
 
 func AppNamespace() string {
-	return GetEnvWithDefault("ATHENA_E2E_APP_NAMESPACE", ArgoCDAppNamespace)
+	return GetEnvWithDefault("ATHENA_E2E_APP_NAMESPACE", AthenaAppNamespace)
 }
 
 // TmpDir returns the base directory for e2e test data.
@@ -210,7 +210,7 @@ func init() {
 	KubeConfig = config
 
 	// load environment variables
-	apiServerAddress = GetEnvWithDefault(apiclient.EnvArgoCDServer, defaultAPIServer)
+	apiServerAddress = GetEnvWithDefault(apiclient.EnvAthenaServer, defaultAPIServer)
 	adminUsername = GetEnvWithDefault(EnvAdminUsername, defaultAdminUsername)
 	AdminPassword = GetEnvWithDefault(EnvAdminPassword, defaultAdminPassword)
 	athenaServerName = GetEnvWithDefault(EnvAthenaServerName, common.DefaultServerName)
@@ -376,17 +376,17 @@ func LoginAs(username string) error {
 
 // Convenience wrapper for updating athena-cm
 func updateSettingConfigMap(updater func(cm *corev1.ConfigMap) error) error {
-	return updateGenericConfigMap(common.ArgoCDConfigMapName, updater)
+	return updateGenericConfigMap(common.AthenaConfigMapName, updater)
 }
 
 // Convenience wrapper for updating athena-notifications-cm
 // func updateNotificationsConfigMap(updater func(cm *corev1.ConfigMap) error) error {
-// 	return updateGenericConfigMap(common.ArgoCDNotificationsConfigMapName, updater)
+// 	return updateGenericConfigMap(common.AthenaNotificationsConfigMapName, updater)
 // }
 
 // Convenience wrapper for updating athena-cm-rbac
 func updateRBACConfigMap(updater func(cm *corev1.ConfigMap) error) error {
-	return updateGenericConfigMap(common.ArgoCDRBACConfigMapName, updater)
+	return updateGenericConfigMap(common.AthenaRBACConfigMapName, updater)
 }
 
 func configMapsEquivalent(a *corev1.ConfigMap, b *corev1.ConfigMap) bool {
@@ -565,16 +565,6 @@ func SetPermissions(permissions []ACL, username string, roleName string) error {
 // 	})
 // }
 
-// func SetProjectSpec(project string, spec v1alpha1.AppProjectSpec) error {
-// 	proj, err := AppClientset.ArgoprojV1alpha1().AppProjects(TestNamespace()).Get(context.Background(), project, metav1.GetOptions{})
-// 	if err != nil {
-// 		return err
-// 	}
-// 	proj.Spec = spec
-// 	_, err = AppClientset.ArgoprojV1alpha1().AppProjects(TestNamespace()).Update(context.Background(), proj, metav1.UpdateOptions{})
-// 	return err
-// }
-
 func SetParamInSettingConfigMap(key, value string) error {
 	return updateSettingConfigMap(func(cm *corev1.ConfigMap) error {
 		cm.Data[key] = value
@@ -699,7 +689,7 @@ func EnsureCleanState(t *testing.T) *TestState {
 	return state
 }
 
-// // RunCliWithRetry executes an Argo CD CLI command with retry logic.
+// // RunCliWithRetry executes an Athena CLI command with retry logic.
 // func RunCliWithRetry(maxRetries int, args ...string) (string, error) {
 // 	var out string
 // 	var err error
@@ -713,12 +703,12 @@ func EnsureCleanState(t *testing.T) *TestState {
 // 	return out, err
 // }
 
-// RunCli executes an Argo CD CLI command with no stdin input and default server authentication.
+// RunCli executes an Athena CLI command with no stdin input and default server authentication.
 // func RunCli(args ...string) (string, error) {
 // 	return RunCliWithStdin("", false, args...)
 // }
 
-// RunCliWithStdin executes an Argo CD CLI command with optional stdin input and authentication.
+// RunCliWithStdin executes an Athena CLI command with optional stdin input and authentication.
 // func RunCliWithStdin(stdin string, isKubeConextOnlyCli bool, args ...string) (string, error) {
 // 	if plainText {
 // 		args = append(args, "--plaintext")
@@ -745,7 +735,7 @@ func EnsureCleanState(t *testing.T) *TestState {
 // 	return RunWithStdinWithRedactor(stdin, "", "../../dist/athena", redactor, args...)
 // }
 
-// // RunPluginCli executes an Argo CD CLI plugin with optional stdin input.
+// // RunPluginCli executes an Athena CLI plugin with optional stdin input.
 // func RunPluginCli(stdin string, args ...string) (string, error) {
 // 	return RunWithStdin(stdin, "", "../../dist/athena", args...)
 // }

@@ -153,7 +153,7 @@ type HTTPMetricsRegistry interface {
 type AthenaServer struct {
 	AthenaServerOpts
 	ssoClientApp *oidc.ClientApp
-	settings     *settings_util.ArgoCDSettings
+	settings     *settings_util.AthenaSettings
 	log          *log.Entry
 	sessionMgr   *util_session.SessionManager
 	settingsMgr  *settings_util.SettingsManager
@@ -164,7 +164,7 @@ type AthenaServer struct {
 	// appLister      applisters.ApplicationLister
 	// appsetInformer cache.SharedIndexInformer
 	// appsetLister   applisters.ApplicationSetLister
-	// db db.ArgoDB
+	// db db.AthenaDB
 
 	// stopCh is the channel which when closed, will shutdown the Athena server
 	stopCh           chan os.Signal
@@ -230,7 +230,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 
 	sessionMgr := util_session.NewSessionManager(settingsMgr, opts.DexServerAddr, opts.DexTLSConfig, userStateStorage)
 
-	enf := rbac.NewEnforcer(opts.KubeClientset, opts.Namespace, common.ArgoCDRBACConfigMapName, nil)
+	enf := rbac.NewEnforcer(opts.KubeClientset, opts.Namespace, common.AthenaRBACConfigMapName, nil)
 	enf.EnableEnforce(!opts.DisableAuth)
 	err = enf.SetBuiltinPolicy(assets.BuiltinPolicyCSV)
 	errorsutil.CheckError(err)
@@ -381,7 +381,7 @@ func (server *AthenaServer) Listen() (*Listeners, error) {
 	}
 	log.Debugf("Started metrics listener on %s:%d", server.ListenHost, server.MetricsPort)
 	var dOpts []grpc.DialOption
-	userAgent := fmt.Sprintf("%s/%s", common.ArgoCDUserAgentName, common.GetVersion().Version)
+	userAgent := fmt.Sprintf("%s/%s", common.AthenaUserAgentName, common.GetVersion().Version)
 	log.Debugf("Configuring gRPC gateway dial options (maxRecvMsgSize=%d, userAgent=%s)", apiclient.MaxGRPCMessageSize, userAgent)
 	dOpts = append(dOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(apiclient.MaxGRPCMessageSize)))
 	dOpts = append(dOpts, grpc.WithUserAgent(userAgent))
@@ -478,7 +478,7 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 		logging.StreamServerInterceptor(grpc_util.InterceptorLogger(server.log)),
 		serverMetrics.StreamServerInterceptor(),
 		grpc_auth.StreamServerInterceptor(server.Authenticate),
-		// grpc_util.UserAgentStreamServerInterceptor(common.ArgoCDUserAgentName, clientConstraint),
+		// grpc_util.UserAgentStreamServerInterceptor(common.AthenaUserAgentName, clientConstraint),
 		// grpc_util.PayloadStreamServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
 		// 	return !sensitiveMethods[c.FullMethod()]
 		// }),
@@ -491,7 +491,7 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 		logging.UnaryServerInterceptor(grpc_util.InterceptorLogger(server.log)),
 		serverMetrics.UnaryServerInterceptor(),
 		grpc_auth.UnaryServerInterceptor(server.Authenticate),
-		// grpc_util.UserAgentUnaryServerInterceptor(common.ArgoCDUserAgentName, clientConstraint),
+		// grpc_util.UserAgentUnaryServerInterceptor(common.AthenaUserAgentName, clientConstraint),
 		// grpc_util.PayloadUnaryServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
 		// 	return !sensitiveMethods[c.FullMethod()]
 		// }),
@@ -992,8 +992,8 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	server.registerDexHandlers(mux)
 
 	// // Webhook handler for git events (Note: cache timeouts are hardcoded because API server does not write to cache and not really using them)
-	// argoDB := db.NewDB(server.Namespace, server.settingsMgr, server.KubeClientset)
-	// acdWebhookHandler := webhook.NewHandler(server.Namespace, server.ApplicationNamespaces, server.WebhookParallelism, server.AppClientset, server.appLister, server.settings, server.settingsMgr, server.RepoServerCache, server.Cache, argoDB, server.settingsMgr.GetMaxWebhookPayloadSize())
+	// athenaDB := db.NewDB(server.Namespace, server.settingsMgr, server.KubeClientset)
+	// acdWebhookHandler := webhook.NewHandler(server.Namespace, server.ApplicationNamespaces, server.WebhookParallelism, server.AppClientset, server.appLister, server.settings, server.settingsMgr, server.RepoServerCache, server.Cache, athenaDB, server.settingsMgr.GetMaxWebhookPayloadSize())
 
 	// mux.HandleFunc("/api/webhook", acdWebhookHandler.Handler)
 
@@ -1330,8 +1330,8 @@ func (server *AthenaServer) checkServeErr(name string, err error) {
 	}
 }
 
-func checkOIDCConfigChange(currentOIDCConfig *settings_util.OIDCConfig, newArgoCDSettings *settings_util.ArgoCDSettings) bool {
-	newOIDCConfig := newArgoCDSettings.OIDCConfig()
+func checkOIDCConfigChange(currentOIDCConfig *settings_util.OIDCConfig, newAthenaSettings *settings_util.AthenaSettings) bool {
+	newOIDCConfig := newAthenaSettings.OIDCConfig()
 
 	if (currentOIDCConfig != nil && newOIDCConfig == nil) || (currentOIDCConfig == nil && newOIDCConfig != nil) {
 		return true
@@ -1349,7 +1349,7 @@ func checkOIDCConfigChange(currentOIDCConfig *settings_util.OIDCConfig, newArgoC
 // watchSettings watches the configmap and secret for any setting updates that would warrant a
 // restart of the API server.
 func (server *AthenaServer) watchSettings() {
-	updateCh := make(chan *settings_util.ArgoCDSettings, 1)
+	updateCh := make(chan *settings_util.AthenaSettings, 1)
 	server.settingsMgr.Subscribe(updateCh)
 
 	prevURL := server.settings.URL

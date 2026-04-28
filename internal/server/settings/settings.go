@@ -46,7 +46,7 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 	if err != nil {
 		return nil, err
 	}
-	argoCDSettings, err := s.mgr.GetSettings()
+	athenaSettings, err := s.mgr.GetSettings()
 	if err != nil {
 		return nil, err
 	}
@@ -90,13 +90,13 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 	}
 
 	settings := settingspkg.Settings{
-		URL:                argoCDSettings.URL,
-		AdditionalURLs:     argoCDSettings.AdditionalURLs,
+		URL:                athenaSettings.URL,
+		AdditionalURLs:     athenaSettings.AdditionalURLs,
 		AppLabelKey:        appInstanceLabelKey,
-		StatusBadgeEnabled: argoCDSettings.StatusBadgeEnabled,
-		StatusBadgeRootUrl: argoCDSettings.StatusBadgeRootUrl,
+		StatusBadgeEnabled: athenaSettings.StatusBadgeEnabled,
+		StatusBadgeRootUrl: athenaSettings.StatusBadgeRootUrl,
 		KustomizeOptions: &v1alpha1.KustomizeOptions{
-			BuildOptions: argoCDSettings.KustomizeBuildOptions,
+			BuildOptions: athenaSettings.KustomizeBuildOptions,
 		},
 		GoogleAnalytics: &settingspkg.GoogleAnalyticsConfig{
 			TrackingID:     gaSettings.TrackingID,
@@ -109,35 +109,35 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 		},
 		UserLoginsDisabled: userLoginsDisabled,
 		// KustomizeVersions:  kustomizeVersions,
-		UiCssURL:       argoCDSettings.UiCssURL,
+		UiCssURL:       athenaSettings.UiCssURL,
 		TrackingMethod: trackingMethod,
 		InstallationID: installationID,
-		ExecEnabled:    argoCDSettings.ExecEnabled,
+		ExecEnabled:    athenaSettings.ExecEnabled,
 		// AppsInAnyNamespaceEnabled: s.appsInAnyNamespaceEnabled,
-		ImpersonationEnabled: argoCDSettings.ImpersonationEnabled,
+		ImpersonationEnabled: athenaSettings.ImpersonationEnabled,
 		// HydratorEnabled:        s.hydratorEnabled,
 		// SyncWithReplaceAllowed: s.syncWithReplaceAllowed,
 	}
 
 	if sessionmgr.LoggedIn(ctx) || s.disableAuth {
-		settings.UiBannerContent = argoCDSettings.UiBannerContent
-		settings.UiBannerURL = argoCDSettings.UiBannerURL
-		settings.UiBannerPermanent = argoCDSettings.UiBannerPermanent
-		settings.UiBannerPosition = argoCDSettings.UiBannerPosition
+		settings.UiBannerContent = athenaSettings.UiBannerContent
+		settings.UiBannerURL = athenaSettings.UiBannerURL
+		settings.UiBannerPermanent = athenaSettings.UiBannerPermanent
+		settings.UiBannerPosition = athenaSettings.UiBannerPosition
 		settings.ControllerNamespace = s.mgr.GetNamespace()
 		settings.ResourceOverrides = overrides
 	}
 	if sessionmgr.LoggedIn(ctx) {
-		settings.PasswordPattern = argoCDSettings.PasswordPattern
+		settings.PasswordPattern = athenaSettings.PasswordPattern
 	}
-	if argoCDSettings.DexConfig != "" {
+	if athenaSettings.DexConfig != "" {
 		var cfg settingspkg.DexConfig
-		err = yaml.Unmarshal([]byte(argoCDSettings.DexConfig), &cfg)
+		err = yaml.Unmarshal([]byte(athenaSettings.DexConfig), &cfg)
 		if err == nil {
 			settings.DexConfig = &cfg
 		}
 	}
-	if oidcConfig := argoCDSettings.OIDCConfig(); oidcConfig != nil {
+	if oidcConfig := athenaSettings.OIDCConfig(); oidcConfig != nil {
 		settings.OIDCConfig = &settingspkg.OIDCConfig{
 			Name:                     oidcConfig.Name,
 			Issuer:                   oidcConfig.Issuer,
@@ -146,8 +146,8 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 			Scopes:                   oidcConfig.RequestedScopes,
 			EnablePKCEAuthentication: oidcConfig.EnablePKCEAuthentication,
 		}
-		if len(argoCDSettings.OIDCConfig().RequestedIDTokenClaims) > 0 {
-			settings.OIDCConfig.IDTokenClaims = argoCDSettings.OIDCConfig().RequestedIDTokenClaims
+		if len(athenaSettings.OIDCConfig().RequestedIDTokenClaims) > 0 {
+			settings.OIDCConfig.IDTokenClaims = athenaSettings.OIDCConfig().RequestedIDTokenClaims
 		}
 	}
 	return &settings, nil

@@ -74,7 +74,7 @@ import (
 
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	// "github.com/useryege/athena/v3/pkg/apis/application/v1alpha1"
-	// "github.com/useryege/athena/v3/util/argo"
+	// "github.com/useryege/athena/v3/util/athena"
 	// "github.com/useryege/athena/v3/util/env"
 	grpc_util "github.com/useryege/athena/util/grpc"
 	http_util "github.com/useryege/athena/util/http"
@@ -88,16 +88,16 @@ import (
 
 const (
 	MetaDataTokenKey = "token"
-	// EnvArgoCDServer is the environment variable to look for an Argo CD server address
-	EnvArgoCDServer = "ATHENA_SERVER"
-	// EnvArgoCDAuthToken is the environment variable to look for an Argo CD auth token
-	EnvArgoCDAuthToken = "ATHENA_AUTH_TOKEN"
+	// EnvAthenaServer is the environment variable to look for an Athena server address
+	EnvAthenaServer = "ATHENA_SERVER"
+	// EnvAthenaAuthToken is the environment variable to look for an Athena auth token
+	EnvAthenaAuthToken = "ATHENA_AUTH_TOKEN"
 )
 
 // MaxGRPCMessageSize contains max grpc message size
 var MaxGRPCMessageSize = env.ParseNumFromEnv(common.EnvGRPCMaxSizeMB, 200, 0, math.MaxInt32) * 1024 * 1024
 
-// Client defines an interface for interaction with an Argo CD server.
+// Client defines an interface for interaction with an Athena server.
 type Client interface {
 	ClientOptions() ClientOptions
 	HTTPClient() (*http.Client, error)
@@ -231,10 +231,10 @@ func NewClient(opts *ClientOptions) (Client, error) {
 	if opts.UserAgent != "" {
 		c.UserAgent = opts.UserAgent
 	} else {
-		c.UserAgent = fmt.Sprintf("%s/%s", common.ArgoCDUserAgentName, common.GetVersion().Version)
+		c.UserAgent = fmt.Sprintf("%s/%s", common.AthenaUserAgentName, common.GetVersion().Version)
 	}
 	// Override server address if specified in env or CLI flag
-	c.ServerAddr = env.StringFromEnv(EnvArgoCDServer, c.ServerAddr)
+	c.ServerAddr = env.StringFromEnv(EnvAthenaServer, c.ServerAddr)
 	if opts.PortForward || opts.PortForwardNamespace != "" {
 		if opts.KubeOverrides == nil {
 			opts.KubeOverrides = &clientcmd.ConfigOverrides{}
@@ -253,10 +253,10 @@ func NewClient(opts *ClientOptions) (Client, error) {
 	// Make sure we got the server address and auth token from somewhere
 	if c.ServerAddr == "" {
 		//nolint:staticcheck // First letter of error is intentionally capitalized.
-		return nil, errors.New("Argo CD server address unspecified")
+		return nil, errors.New("Athena server address unspecified")
 	}
 	// Override auth-token if specified in env variable or CLI flag
-	c.AuthToken = env.StringFromEnv(EnvArgoCDAuthToken, c.AuthToken)
+	c.AuthToken = env.StringFromEnv(EnvAthenaAuthToken, c.AuthToken)
 	if opts.AuthToken != "" {
 		c.AuthToken = strings.TrimSpace(opts.AuthToken)
 	}
@@ -345,7 +345,7 @@ func NewClient(opts *ClientOptions) (Client, error) {
 	return &c, nil
 }
 
-// OIDCConfig returns OAuth2 client config and a OpenID Provider based on Argo CD settings
+// OIDCConfig returns OAuth2 client config and a OpenID Provider based on Athena settings
 // ctx can hold an appropriate http.Client to use for the exchange
 func (c *client) OIDCConfig(ctx context.Context, set *settingspkg.Settings) (*oauth2.Config, *oidc.Provider, error) {
 	var clientID string
@@ -361,7 +361,7 @@ func (c *client) OIDCConfig(ctx context.Context, set *settingspkg.Settings) (*oa
 		issuerURL = set.OIDCConfig.Issuer
 		scopes = oidcutil.GetScopesOrDefault(set.OIDCConfig.Scopes)
 	case set.DexConfig != nil && len(set.DexConfig.Connectors) > 0:
-		clientID = common.ArgoCDCLIClientAppID
+		clientID = common.AthenaCLIClientAppID
 		scopes = append(oidcutil.GetScopesOrDefault(nil), common.DexFederatedScope)
 		issuerURL = fmt.Sprintf("%s%s", set.URL, common.DexAPIEndpoint)
 	default:
@@ -837,7 +837,7 @@ func (c *client) NewAccountClientOrDie() (io.Closer, accountpkg.AccountServiceCl
 // func (c *client) WatchApplicationWithRetry(ctx context.Context, appName string, revision string) chan *v1alpha1.ApplicationWatchEvent {
 // 	appEventsCh := make(chan *v1alpha1.ApplicationWatchEvent)
 // 	cancelled := false
-// 	appName, appNs := argo.ParseFromQualifiedName(appName, "")
+// 	appName, appNs := athena.ParseFromQualifiedName(appName, "")
 // 	go func() {
 // 		defer close(appEventsCh)
 // 		for !cancelled {

@@ -85,7 +85,7 @@ func Test_resolveK8sRequestVerb(t *testing.T) {
 		{
 			testName: "ClusterRole Get",
 			method:   "GET",
-			url:      "https://127.0.0.1/apis/rbac.authorization.k8s.io/v1/clusterroles/argo-rollouts-clusterrole",
+			url:      "https://127.0.0.1/apis/rbac.authorization.k8s.io/v1/clusterroles/athena-rollouts-clusterrole",
 			expected: "Get",
 		},
 		{

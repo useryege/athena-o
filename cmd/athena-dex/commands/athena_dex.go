@@ -102,7 +102,7 @@ func NewRunDexCommand() *cobra.Command {
 			settingsMgr := settings.NewSettingsManager(ctx, kubeClientset, namespace)
 			prevSettings, err := settingsMgr.GetSettings()
 			errors.CheckError(err)
-			updateCh := make(chan *settings.ArgoCDSettings, 1)
+			updateCh := make(chan *settings.AthenaSettings, 1)
 			settingsMgr.Subscribe(updateCh)
 
 			for {

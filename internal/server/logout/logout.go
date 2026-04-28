@@ -55,22 +55,22 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	athenaSettings, err := h.settingsMgr.GetSettings()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, "Failed to retrieve argoCD settings: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to retrieve Athena settings: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	argoURL, err := athenaSettings.ArgoURLForRequest(r)
+	athenaURL, err := athenaSettings.AthenaURLForRequest(r)
 	if err != nil {
 		log.Warnf("unable to find Athena URL from config: %v", err)
 	}
-	if argoURL == "" {
+	if athenaURL == "" {
 		// golang does not provide any easy way to determine scheme of current request
 		// so redirecting ot http which will auto-redirect too https if necessary
 		host := strings.TrimRight(r.Host, "/")
-		argoURL = "http://" + host + "/" + strings.TrimRight(strings.TrimLeft(h.rootPath, "/"), "/")
+		athenaURL = "http://" + host + "/" + strings.TrimRight(strings.TrimLeft(h.rootPath, "/"), "/")
 	}
 
-	logoutRedirectURL := strings.TrimRight(strings.TrimLeft(argoURL, "/"), "/")
+	logoutRedirectURL := strings.TrimRight(strings.TrimLeft(athenaURL, "/"), "/")
 
 	cookies := r.Cookies()
 	tokenString, err = httputil.JoinCookies(common.AuthCookieName, cookies)

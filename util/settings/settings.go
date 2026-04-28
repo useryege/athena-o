@@ -56,8 +56,8 @@ import (
 // {{- end }}
 // `
 
-// ArgoCDSettings holds in-memory runtime configuration options.
-type ArgoCDSettings struct {
+// AthenaSettings holds in-memory runtime configuration options.
+type AthenaSettings struct {
 	// URL is the externally facing URL users will visit to reach Athena.
 	// The value here is used when configuring SSO. Omitting this value will disable SSO.
 	URL string `json:"url,omitempty"`
@@ -167,8 +167,8 @@ type Help struct {
 
 // oidcConfig is the same as the public OIDCConfig, except the public one excludes the AllowedAudiences and the
 // SkipAudienceCheckWhenTokenHasNoAudience fields.
-// AllowedAudiences should be accessed via ArgoCDSettings.OAuth2AllowedAudiences.
-// SkipAudienceCheckWhenTokenHasNoAudience should be accessed via ArgoCDSettings.SkipAudienceCheckWhenTokenHasNoAudience.
+// AllowedAudiences should be accessed via AthenaSettings.OAuth2AllowedAudiences.
+// SkipAudienceCheckWhenTokenHasNoAudience should be accessed via AthenaSettings.SkipAudienceCheckWhenTokenHasNoAudience.
 type oidcConfig struct {
 	OIDCConfig
 	AllowedAudiences                        []string `json:"allowedAudiences,omitempty"`
@@ -513,8 +513,8 @@ const (
 
 	// externalServerTLSSecretName defines the name of the external secret holding the server's TLS certificate
 	externalServerTLSSecretName = "athena-server-tls"
-	// partOfArgoCDSelector holds label selector that should be applied to config maps and secrets used to manage Athena
-	partOfArgoCDSelector = "app.kubernetes.io/part-of=athena"
+	// partOfAthenaSelector holds label selector that should be applied to config maps and secrets used to manage Athena
+	partOfAthenaSelector = "app.kubernetes.io/part-of=athena"
 
 	// settingsPasswordPatternKey is the key to configure user password regular expression
 	settingsPasswordPatternKey = "passwordPattern"
@@ -572,7 +572,7 @@ type SettingsManager struct {
 	configmaps      v1listers.ConfigMapLister
 	namespace       string
 	// subscribers is a list of subscribers to settings updates
-	subscribers []chan<- *ArgoCDSettings
+	subscribers []chan<- *AthenaSettings
 	// mutex protects concurrency sensitive parts of settings manager: access to subscribers list and initialization flag
 	mutex                     *sync.Mutex
 	initContextCancel         func()
@@ -600,7 +600,7 @@ const (
 	IgnoreResourceStatusInNone IgnoreStatus = "none"
 )
 
-type ArgoCDDiffOptions struct {
+type AthenaCDDiffOptions struct {
 	IgnoreAggregatedRoles bool `json:"ignoreAggregatedRoles,omitempty"`
 
 	// If set to true then differences caused by status are ignored.
@@ -662,35 +662,35 @@ func (mgr *SettingsManager) GetSecretsLister() (v1listers.SecretLister, error) {
 // }
 
 func (mgr *SettingsManager) updateSecret(callback func(*corev1.Secret) error) error {
-	argoCDSecret, err := mgr.getSecret()
+	athenaSecret, err := mgr.getSecret()
 	createSecret := false
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
-		argoCDSecret = &corev1.Secret{
+		athenaSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: common.ArgoCDSecretName,
+				Name: common.AthenaSecretName,
 			},
 			Data: make(map[string][]byte),
 		}
 		createSecret = true
 	}
 
-	beforeUpdate := argoCDSecret.DeepCopy()
-	err = callback(argoCDSecret)
+	beforeUpdate := athenaSecret.DeepCopy()
+	err = callback(athenaSecret)
 	if err != nil {
 		return err
 	}
 
-	if !createSecret && reflect.DeepEqual(beforeUpdate.Data, argoCDSecret.Data) {
+	if !createSecret && reflect.DeepEqual(beforeUpdate.Data, athenaSecret.Data) {
 		return nil
 	}
 
 	if createSecret {
-		_, err = mgr.clientset.CoreV1().Secrets(mgr.namespace).Create(context.Background(), argoCDSecret, metav1.CreateOptions{})
+		_, err = mgr.clientset.CoreV1().Secrets(mgr.namespace).Create(context.Background(), athenaSecret, metav1.CreateOptions{})
 	} else {
-		_, err = mgr.clientset.CoreV1().Secrets(mgr.namespace).Update(context.Background(), argoCDSecret, metav1.UpdateOptions{})
+		_, err = mgr.clientset.CoreV1().Secrets(mgr.namespace).Update(context.Background(), athenaSecret, metav1.UpdateOptions{})
 	}
 	if err != nil {
 		return err
@@ -700,34 +700,34 @@ func (mgr *SettingsManager) updateSecret(callback func(*corev1.Secret) error) er
 }
 
 func (mgr *SettingsManager) updateConfigMap(callback func(*corev1.ConfigMap) error) error {
-	argoCDCM, err := mgr.getConfigMap()
+	athenaCM, err := mgr.getConfigMap()
 	createCM := false
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
-		argoCDCM = &corev1.ConfigMap{
+		athenaCM = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: common.ArgoCDConfigMapName,
+				Name: common.AthenaConfigMapName,
 			},
 			Data: make(map[string]string),
 		}
 		createCM = true
 	}
 
-	beforeUpdate := argoCDCM.DeepCopy()
-	err = callback(argoCDCM)
+	beforeUpdate := athenaCM.DeepCopy()
+	err = callback(athenaCM)
 	if err != nil {
 		return err
 	}
-	if !createCM && reflect.DeepEqual(beforeUpdate.Data, argoCDCM.Data) {
+	if !createCM && reflect.DeepEqual(beforeUpdate.Data, athenaCM.Data) {
 		return nil
 	}
 
 	if createCM {
-		_, err = mgr.clientset.CoreV1().ConfigMaps(mgr.namespace).Create(context.Background(), argoCDCM, metav1.CreateOptions{})
+		_, err = mgr.clientset.CoreV1().ConfigMaps(mgr.namespace).Create(context.Background(), athenaCM, metav1.CreateOptions{})
 	} else {
-		_, err = mgr.clientset.CoreV1().ConfigMaps(mgr.namespace).Update(context.Background(), argoCDCM, metav1.UpdateOptions{})
+		_, err = mgr.clientset.CoreV1().ConfigMaps(mgr.namespace).Update(context.Background(), athenaCM, metav1.UpdateOptions{})
 	}
 
 	if err != nil {
@@ -738,7 +738,7 @@ func (mgr *SettingsManager) updateConfigMap(callback func(*corev1.ConfigMap) err
 }
 
 func (mgr *SettingsManager) getConfigMap() (*corev1.ConfigMap, error) {
-	return mgr.GetConfigMapByName(common.ArgoCDConfigMapName)
+	return mgr.GetConfigMapByName(common.AthenaConfigMapName)
 }
 
 // Returns the ConfigMap with the given name from the cluster.
@@ -761,7 +761,7 @@ func (mgr *SettingsManager) GetConfigMapByName(configMapName string) (*corev1.Co
 }
 
 func (mgr *SettingsManager) getSecret() (*corev1.Secret, error) {
-	return mgr.GetSecretByName(common.ArgoCDSecretName)
+	return mgr.GetSecretByName(common.AthenaSecretName)
 }
 
 // GetSecretByName returns the Secret with the given name from the cluster.
@@ -787,7 +787,7 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 		return nil, err
 	}
 
-	selector, err := labels.Parse(partOfArgoCDSelector)
+	selector, err := labels.Parse(partOfAthenaSelector)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing Athena selector %w", err)
 	}
@@ -803,12 +803,12 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 }
 
 // func (mgr *SettingsManager) GetResourcesFilter() (*ResourcesFilter, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
 // 	}
 // 	rf := &ResourcesFilter{}
-// 	if value, ok := argoCDCM.Data[resourceInclusionsKey]; ok {
+// 	if value, ok := athenaCM.Data[resourceInclusionsKey]; ok {
 // 		includedResources := make([]FilteredResource, 0)
 // 		err := yaml.Unmarshal([]byte(value), &includedResources)
 // 		if err != nil {
@@ -817,7 +817,7 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // 		rf.ResourceInclusions = includedResources
 // 	}
 
-// 	if value, ok := argoCDCM.Data[resourceExclusionsKey]; ok {
+// 	if value, ok := athenaCM.Data[resourceExclusionsKey]; ok {
 // 		excludedResources := make([]FilteredResource, 0)
 // 		err := yaml.Unmarshal([]byte(value), &excludedResources)
 // 		if err != nil {
@@ -829,11 +829,11 @@ func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
 // }
 
 func (mgr *SettingsManager) GetAppInstanceLabelKey() (string, error) {
-	argoCDCM, err := mgr.getConfigMap()
+	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
 		return "", err
 	}
-	label := argoCDCM.Data[settingsApplicationInstanceLabelKey]
+	label := athenaCM.Data[settingsApplicationInstanceLabelKey]
 	if label == "" {
 		return common.LabelKeyAppInstance, nil
 	}
@@ -841,11 +841,11 @@ func (mgr *SettingsManager) GetAppInstanceLabelKey() (string, error) {
 }
 
 func (mgr *SettingsManager) GetTrackingMethod() (string, error) {
-	argoCDCM, err := mgr.getConfigMap()
+	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
 		return "", err
 	}
-	tm := argoCDCM.Data[settingsResourceTrackingMethodKey]
+	tm := athenaCM.Data[settingsResourceTrackingMethodKey]
 	if tm == "" {
 		return string(v1alpha1.TrackingMethodAnnotation), nil
 	}
@@ -853,19 +853,19 @@ func (mgr *SettingsManager) GetTrackingMethod() (string, error) {
 }
 
 func (mgr *SettingsManager) GetInstallationID() (string, error) {
-	argoCDCM, err := mgr.getConfigMap()
+	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
 		return "", err
 	}
-	return argoCDCM.Data[settingsInstallationID], nil
+	return athenaCM.Data[settingsInstallationID], nil
 }
 
 func (mgr *SettingsManager) GetPasswordPattern() (string, error) {
-	argoCDCM, err := mgr.getConfigMap()
+	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
 		return "", err
 	}
-	label := argoCDCM.Data[settingsPasswordPatternKey]
+	label := athenaCM.Data[settingsPasswordPatternKey]
 	if label == "" {
 		return common.PasswordPatten, nil
 	}
@@ -873,38 +873,38 @@ func (mgr *SettingsManager) GetPasswordPattern() (string, error) {
 }
 
 // func (mgr *SettingsManager) ApplicationFineGrainedRBACInheritanceDisabled() (bool, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return false, err
 // 	}
 
-// 	if argoCDCM.Data[settingsServerRBACDisableFineGrainedInheritance] == "" {
+// 	if athenaCM.Data[settingsServerRBACDisableFineGrainedInheritance] == "" {
 // 		return true, nil
 // 	}
 
-// 	return strconv.ParseBool(argoCDCM.Data[settingsServerRBACDisableFineGrainedInheritance])
+// 	return strconv.ParseBool(athenaCM.Data[settingsServerRBACDisableFineGrainedInheritance])
 // }
 
 // func (mgr *SettingsManager) GetMaxPodLogsToRender() (int64, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return 10, err
 // 	}
 
-// 	if argoCDCM.Data[settingsMaxPodLogsToRender] == "" {
+// 	if athenaCM.Data[settingsMaxPodLogsToRender] == "" {
 // 		return 10, nil
 // 	}
 
-// 	return strconv.ParseInt(argoCDCM.Data[settingsMaxPodLogsToRender], 10, 64)
+// 	return strconv.ParseInt(athenaCM.Data[settingsMaxPodLogsToRender], 10, 64)
 // }
 
 // func (mgr *SettingsManager) GetDeepLinks(deeplinkType string) ([]DeepLink, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
 // 	}
 // 	deepLinks := make([]DeepLink, 0)
-// 	if value, ok := argoCDCM.Data[deeplinkType]; ok {
+// 	if value, ok := athenaCM.Data[deeplinkType]; ok {
 // 		err := yaml.Unmarshal([]byte(value), &deepLinks)
 // 		if err != nil {
 // 			return nil, fmt.Errorf("error unmarshalling deep links %w", err)
@@ -914,7 +914,7 @@ func (mgr *SettingsManager) GetPasswordPattern() (string, error) {
 // }
 
 // func (mgr *SettingsManager) GetEnabledSourceTypes() (map[string]bool, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return nil, fmt.Errorf("failed to get athena config map: %w", err)
 // 	}
@@ -923,7 +923,7 @@ func (mgr *SettingsManager) GetPasswordPattern() (string, error) {
 // 		res[string(sourceType)] = true
 // 	}
 // 	for sourceType, key := range sourceTypeToEnableGenerationKey {
-// 		if val, ok := argoCDCM.Data[key]; ok && val != "" {
+// 		if val, ok := athenaCM.Data[key]; ok && val != "" {
 // 			res[string(sourceType)] = val == "true"
 // 		}
 // 	}
@@ -968,33 +968,33 @@ func (mgr *SettingsManager) GetPasswordPattern() (string, error) {
 // }
 
 // func (mgr *SettingsManager) GetIsIgnoreResourceUpdatesEnabled() (bool, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return false, fmt.Errorf("error retrieving config map: %w", err)
 // 	}
 
-// 	if argoCDCM.Data[resourceIgnoreResourceUpdatesEnabledKey] == "" {
+// 	if athenaCM.Data[resourceIgnoreResourceUpdatesEnabledKey] == "" {
 // 		return true, nil
 // 	}
 
-// 	return strconv.ParseBool(argoCDCM.Data[resourceIgnoreResourceUpdatesEnabledKey])
+// 	return strconv.ParseBool(athenaCM.Data[resourceIgnoreResourceUpdatesEnabledKey])
 // }
 
 // GetResourceOverrides loads Resource Overrides from athena-cm ConfigMap
 func (mgr *SettingsManager) GetResourceOverrides() (map[string]v1alpha1.ResourceOverride, error) {
-	argoCDCM, err := mgr.getConfigMap()
+	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving config map: %w", err)
 	}
 	resourceOverrides := map[string]v1alpha1.ResourceOverride{}
-	if value, ok := argoCDCM.Data[resourceCustomizationsKey]; ok && value != "" {
+	if value, ok := athenaCM.Data[resourceCustomizationsKey]; ok && value != "" {
 		err := yaml.Unmarshal([]byte(value), &resourceOverrides)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	err = mgr.appendResourceOverridesFromSplitKeys(argoCDCM.Data, resourceOverrides)
+	err = mgr.appendResourceOverridesFromSplitKeys(athenaCM.Data, resourceOverrides)
 	if err != nil {
 		return nil, err
 	}
@@ -1027,14 +1027,14 @@ func (mgr *SettingsManager) GetResourceOverrides() (map[string]v1alpha1.Resource
 }
 
 // func (mgr *SettingsManager) GetSourceHydratorCommitMessageTemplate() (string, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return "", err
 // 	}
-// 	if argoCDCM.Data[settingsSourceHydratorCommitMessageTemplateKey] == "" {
+// 	if athenaCM.Data[settingsSourceHydratorCommitMessageTemplateKey] == "" {
 // 		return CommitMessageTemplate, nil // in case template is not defined return default
 // 	}
-// 	return argoCDCM.Data[settingsSourceHydratorCommitMessageTemplateKey], nil
+// 	return athenaCM.Data[settingsSourceHydratorCommitMessageTemplateKey], nil
 // }
 
 func addStatusOverrideToGK(resourceOverrides map[string]v1alpha1.ResourceOverride, groupKind string) {
@@ -1139,21 +1139,21 @@ func convertToOverrideKey(groupKind string) (string, error) {
 	return "", fmt.Errorf("group kind should be in format `resource.customizations.<type>.<group_kind>` or resource.customizations.<type>.<kind>`, got group kind: '%s'", groupKind)
 }
 
-func GetDefaultDiffOptions() ArgoCDDiffOptions {
-	return ArgoCDDiffOptions{IgnoreAggregatedRoles: false, IgnoreResourceStatusField: IgnoreResourceStatusInAll, IgnoreDifferencesOnResourceUpdates: true}
+func GetDefaultDiffOptions() AthenaCDDiffOptions {
+	return AthenaCDDiffOptions{IgnoreAggregatedRoles: false, IgnoreResourceStatusField: IgnoreResourceStatusInAll, IgnoreDifferencesOnResourceUpdates: true}
 }
 
 // GetResourceCompareOptions loads the resource compare options settings from the ConfigMap
-func (mgr *SettingsManager) GetResourceCompareOptions() (ArgoCDDiffOptions, error) {
+func (mgr *SettingsManager) GetResourceCompareOptions() (AthenaCDDiffOptions, error) {
 	// We have a sane set of default diff options
 	diffOptions := GetDefaultDiffOptions()
 
-	argoCDCM, err := mgr.getConfigMap()
+	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
 		return diffOptions, err
 	}
 
-	if value, ok := argoCDCM.Data[resourceCompareOptionsKey]; ok {
+	if value, ok := athenaCM.Data[resourceCompareOptionsKey]; ok {
 		err := yaml.Unmarshal([]byte(value), &diffOptions)
 		if err != nil {
 			return diffOptions, err
@@ -1165,12 +1165,12 @@ func (mgr *SettingsManager) GetResourceCompareOptions() (ArgoCDDiffOptions, erro
 
 // // GetHelmSettings returns helm settings
 // func (mgr *SettingsManager) GetHelmSettings() (*v1alpha1.HelmOptions, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return nil, fmt.Errorf("failed to get athena config map: %w", err)
 // 	}
 // 	helmOptions := &v1alpha1.HelmOptions{}
-// 	if value, ok := argoCDCM.Data[helmValuesFileSchemesKey]; ok {
+// 	if value, ok := athenaCM.Data[helmValuesFileSchemesKey]; ok {
 // 		for _, item := range strings.Split(value, ",") {
 // 			if item := strings.TrimSpace(item); item != "" {
 // 				helmOptions.ValuesFileSchemes = append(helmOptions.ValuesFileSchemes, item)
@@ -1184,7 +1184,7 @@ func (mgr *SettingsManager) GetResourceCompareOptions() (ArgoCDDiffOptions, erro
 
 // GetKustomizeSettings loads the kustomize settings from athena-cm ConfigMap
 func (mgr *SettingsManager) GetKustomizeSettings() (*v1alpha1.KustomizeOptions, error) {
-	argoCDCM, err := mgr.getConfigMap()
+	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
 	}
@@ -1193,12 +1193,12 @@ func (mgr *SettingsManager) GetKustomizeSettings() (*v1alpha1.KustomizeOptions, 
 	settings := &v1alpha1.KustomizeOptions{}
 
 	// extract build options for the default version
-	if options, ok := argoCDCM.Data[kustomizeBuildOptionsKey]; ok {
+	if options, ok := athenaCM.Data[kustomizeBuildOptionsKey]; ok {
 		settings.BuildOptions = options
 	}
 
 	// extract per-version binary paths and build options
-	for k, v := range argoCDCM.Data {
+	for k, v := range athenaCM.Data {
 		// extract version and path from kustomize.version.<version>
 		if strings.HasPrefix(k, kustomizeVersionKeyPrefix) {
 			err = addKustomizeVersion(kustomizeVersionKeyPrefix, k, v, kustomizeVersionsMap)
@@ -1254,38 +1254,38 @@ func (mgr *SettingsManager) GetGoogleAnalytics() (*GoogleAnalytics, error) {
 }
 
 func (mgr *SettingsManager) GetHelp() (*Help, error) {
-	argoCDCM, err := mgr.getConfigMap()
+	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving config map: %w", err)
 	}
-	chatText, ok := argoCDCM.Data[helpChatText]
+	chatText, ok := athenaCM.Data[helpChatText]
 	if !ok {
 		chatText = "Chat now!"
 	}
-	chatURL, ok := argoCDCM.Data[helpChatURL]
+	chatURL, ok := athenaCM.Data[helpChatURL]
 	if !ok {
 		chatText = ""
 	}
 	return &Help{
 		ChatURL:    chatURL,
 		ChatText:   chatText,
-		BinaryURLs: getDownloadBinaryUrlsFromConfigMap(argoCDCM),
+		BinaryURLs: getDownloadBinaryUrlsFromConfigMap(athenaCM),
 	}, nil
 }
 
 // func (mgr *SettingsManager) RequireOverridePrivilegeForRevisionSync() (bool, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return false, err
 // 	}
 
 // 	// false is default in order to not break existing installations
-// 	if argoCDCM.Data[requireOverridePrivilegeForRevisionSyncKey] == "" {
+// 	if athenaCM.Data[requireOverridePrivilegeForRevisionSyncKey] == "" {
 // 		return false, nil
 // 	}
 
 // 	maybeBooleanFlagValue, err2 := strconv.ParseBool(
-// 		argoCDCM.Data[requireOverridePrivilegeForRevisionSyncKey])
+// 		athenaCM.Data[requireOverridePrivilegeForRevisionSyncKey])
 // 	if err2 != nil {
 // 		return false, fmt.Errorf("error parsing %s value: %w, expected true or false",
 // 			requireOverridePrivilegeForRevisionSyncKey, err2)
@@ -1293,13 +1293,13 @@ func (mgr *SettingsManager) GetHelp() (*Help, error) {
 // 	return maybeBooleanFlagValue, nil
 // }
 
-// GetSettings retrieves settings from the ArgoCDConfigMap and secret.
-func (mgr *SettingsManager) GetSettings() (*ArgoCDSettings, error) {
-	argoCDCM, err := mgr.getConfigMap()
+// GetSettings retrieves settings from the AthenaConfigMap and secret.
+func (mgr *SettingsManager) GetSettings() (*AthenaSettings, error) {
+	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
 	}
-	argoCDSecret, err := mgr.getSecret()
+	athenaSecret, err := mgr.getSecret()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving athena-secret: %w", err)
 	}
@@ -1308,22 +1308,22 @@ func (mgr *SettingsManager) GetSettings() (*ArgoCDSettings, error) {
 		return nil, fmt.Errorf("error retrieving athena secrets: %w", err)
 	}
 
-	var settings ArgoCDSettings
+	var settings AthenaSettings
 	var errs []error
-	if err := mgr.updateSettingsFromSecret(&settings, argoCDSecret, secrets); err != nil {
+	if err := mgr.updateSettingsFromSecret(&settings, athenaSecret, secrets); err != nil {
 		errs = append(errs, err)
 	}
 	if len(errs) > 0 {
 		return &settings, errors.Join(errs...)
 	}
-	updateSettingsFromConfigMap(&settings, argoCDCM)
+	updateSettingsFromConfigMap(&settings, athenaCM)
 
 	return &settings, nil
 }
 
 func (mgr *SettingsManager) initialize(ctx context.Context) error {
 	tweakConfigMap := func(options *metav1.ListOptions) {
-		cmLabelSelector := fields.ParseSelectorOrDie(partOfArgoCDSelector)
+		cmLabelSelector := fields.ParseSelectorOrDie(partOfAthenaSelector)
 		options.LabelSelector = cmLabelSelector.String()
 	}
 
@@ -1445,38 +1445,38 @@ func (mgr *SettingsManager) ensureSynced(forceResync bool) error {
 	return mgr.initialize(ctx)
 }
 
-func getDownloadBinaryUrlsFromConfigMap(argoCDCM *corev1.ConfigMap) map[string]string {
+func getDownloadBinaryUrlsFromConfigMap(athenaCM *corev1.ConfigMap) map[string]string {
 	binaryUrls := map[string]string{}
 	for _, archType := range []string{"darwin-amd64", "darwin-arm64", "windows-amd64", "linux-amd64", "linux-arm64", "linux-ppc64le", "linux-s390x"} {
-		if val, ok := argoCDCM.Data[settingsBinaryUrlsKey+"."+archType]; ok {
+		if val, ok := athenaCM.Data[settingsBinaryUrlsKey+"."+archType]; ok {
 			binaryUrls[archType] = val
 		}
 	}
 	return binaryUrls
 }
 
-// updateSettingsFromConfigMap transfers settings from a Kubernetes configmap into an ArgoCDSettings struct.
-func updateSettingsFromConfigMap(settings *ArgoCDSettings, argoCDCM *corev1.ConfigMap) {
-	settings.DexConfig = argoCDCM.Data[settingDexConfigKey]
-	settings.OIDCConfigRAW = argoCDCM.Data[settingsOIDCConfigKey]
-	settings.KustomizeBuildOptions = argoCDCM.Data[kustomizeBuildOptionsKey]
-	settings.StatusBadgeEnabled = argoCDCM.Data[statusBadgeEnabledKey] == "true"
-	settings.StatusBadgeRootUrl = argoCDCM.Data[statusBadgeRootURLKey]
-	settings.AnonymousUserEnabled = argoCDCM.Data[anonymousUserEnabledKey] == "true"
-	settings.UiCssURL = argoCDCM.Data[settingUICSSURLKey]
-	settings.UiBannerContent = argoCDCM.Data[settingUIBannerContentKey]
-	settings.UiBannerPermanent = argoCDCM.Data[settingUIBannerPermanentKey] == "true"
-	settings.UiBannerPosition = argoCDCM.Data[settingUIBannerPositionKey]
-	settings.BinaryUrls = getDownloadBinaryUrlsFromConfigMap(argoCDCM)
-	if err := ValidateExternalURL(argoCDCM.Data[settingURLKey]); err != nil {
+// updateSettingsFromConfigMap transfers settings from a Kubernetes configmap into an AthenaSettings struct.
+func updateSettingsFromConfigMap(settings *AthenaSettings, athenaCM *corev1.ConfigMap) {
+	settings.DexConfig = athenaCM.Data[settingDexConfigKey]
+	settings.OIDCConfigRAW = athenaCM.Data[settingsOIDCConfigKey]
+	settings.KustomizeBuildOptions = athenaCM.Data[kustomizeBuildOptionsKey]
+	settings.StatusBadgeEnabled = athenaCM.Data[statusBadgeEnabledKey] == "true"
+	settings.StatusBadgeRootUrl = athenaCM.Data[statusBadgeRootURLKey]
+	settings.AnonymousUserEnabled = athenaCM.Data[anonymousUserEnabledKey] == "true"
+	settings.UiCssURL = athenaCM.Data[settingUICSSURLKey]
+	settings.UiBannerContent = athenaCM.Data[settingUIBannerContentKey]
+	settings.UiBannerPermanent = athenaCM.Data[settingUIBannerPermanentKey] == "true"
+	settings.UiBannerPosition = athenaCM.Data[settingUIBannerPositionKey]
+	settings.BinaryUrls = getDownloadBinaryUrlsFromConfigMap(athenaCM)
+	if err := ValidateExternalURL(athenaCM.Data[settingURLKey]); err != nil {
 		log.Warnf("Failed to validate URL in configmap: %v", err)
 	}
-	settings.URL = argoCDCM.Data[settingURLKey]
-	if err := ValidateExternalURL(argoCDCM.Data[settingUIBannerURLKey]); err != nil {
+	settings.URL = athenaCM.Data[settingURLKey]
+	if err := ValidateExternalURL(athenaCM.Data[settingUIBannerURLKey]); err != nil {
 		log.Warnf("Failed to validate UI banner URL in configmap: %v", err)
 	}
-	if argoCDCM.Data[settingAdditionalUrlsKey] != "" {
-		if err := yaml.Unmarshal([]byte(argoCDCM.Data[settingAdditionalUrlsKey]), &settings.AdditionalURLs); err != nil {
+	if athenaCM.Data[settingAdditionalUrlsKey] != "" {
+		if err := yaml.Unmarshal([]byte(athenaCM.Data[settingAdditionalUrlsKey]), &settings.AdditionalURLs); err != nil {
 			log.Warnf("Failed to decode all additional URLs in configmap: %v", err)
 		}
 	}
@@ -1485,40 +1485,40 @@ func updateSettingsFromConfigMap(settings *ArgoCDSettings, argoCDCM *corev1.Conf
 			log.Warnf("Failed to validate external URL in configmap: %v", err)
 		}
 	}
-	settings.UiBannerURL = argoCDCM.Data[settingUIBannerURLKey]
+	settings.UiBannerURL = athenaCM.Data[settingUIBannerURLKey]
 	settings.UserSessionDuration = time.Hour * 24
-	if userSessionDurationStr, ok := argoCDCM.Data[userSessionDurationKey]; ok {
+	if userSessionDurationStr, ok := athenaCM.Data[userSessionDurationKey]; ok {
 		if val, err := timeutil.ParseDuration(userSessionDurationStr); err != nil {
 			log.Warnf("Failed to parse '%s' key: %v", userSessionDurationKey, err)
 		} else {
 			settings.UserSessionDuration = *val
 		}
 	}
-	settings.PasswordPattern = argoCDCM.Data[settingsPasswordPatternKey]
+	settings.PasswordPattern = athenaCM.Data[settingsPasswordPatternKey]
 	if settings.PasswordPattern == "" {
 		settings.PasswordPattern = common.PasswordPatten
 	}
-	if maxPodLogsToRenderStr, ok := argoCDCM.Data[settingsMaxPodLogsToRender]; ok {
+	if maxPodLogsToRenderStr, ok := athenaCM.Data[settingsMaxPodLogsToRender]; ok {
 		if val, err := strconv.ParseInt(maxPodLogsToRenderStr, 10, 64); err != nil {
 			log.Warnf("Failed to parse '%s' key: %v", settingsMaxPodLogsToRender, err)
 		} else {
 			settings.MaxPodLogsToRender = val
 		}
 	}
-	settings.InClusterEnabled = argoCDCM.Data[inClusterEnabledKey] != "false"
-	settings.ExecEnabled = argoCDCM.Data[execEnabledKey] == "true"
-	execShells := argoCDCM.Data[execShellsKey]
+	settings.InClusterEnabled = athenaCM.Data[inClusterEnabledKey] != "false"
+	settings.ExecEnabled = athenaCM.Data[execEnabledKey] == "true"
+	execShells := athenaCM.Data[execShellsKey]
 	if execShells != "" {
 		settings.ExecShells = strings.Split(execShells, ",")
 	} else {
 		// Fall back to default. If you change this list, also change docs/operator-manual/athena-cm.yaml.
 		settings.ExecShells = []string{"bash", "sh", "powershell", "cmd"}
 	}
-	settings.TrackingMethod = argoCDCM.Data[settingsResourceTrackingMethodKey]
-	settings.OIDCTLSInsecureSkipVerify = argoCDCM.Data[oidcTLSInsecureSkipVerifyKey] == "true"
-	settings.ExtensionConfig = getExtensionConfigs(argoCDCM.Data)
-	settings.ImpersonationEnabled = argoCDCM.Data[impersonationEnabledKey] == "true"
-	settings.RequireOverridePrivilegeForRevisionSync = argoCDCM.Data[requireOverridePrivilegeForRevisionSyncKey] == "true"
+	settings.TrackingMethod = athenaCM.Data[settingsResourceTrackingMethodKey]
+	settings.OIDCTLSInsecureSkipVerify = athenaCM.Data[oidcTLSInsecureSkipVerifyKey] == "true"
+	settings.ExtensionConfig = getExtensionConfigs(athenaCM.Data)
+	settings.ImpersonationEnabled = athenaCM.Data[impersonationEnabledKey] == "true"
+	settings.RequireOverridePrivilegeForRevisionSync = athenaCM.Data[requireOverridePrivilegeForRevisionSyncKey] == "true"
 }
 
 func getExtensionConfigs(cmData map[string]string) map[string]string {
@@ -1547,10 +1547,10 @@ func ValidateExternalURL(u string) error {
 	return nil
 }
 
-// updateSettingsFromSecret transfers settings from a Kubernetes secret into an ArgoCDSettings struct.
-func (mgr *SettingsManager) updateSettingsFromSecret(settings *ArgoCDSettings, argoCDSecret *corev1.Secret, secrets []*corev1.Secret) error {
+// updateSettingsFromSecret transfers settings from a Kubernetes secret into an AthenaSettings struct.
+func (mgr *SettingsManager) updateSettingsFromSecret(settings *AthenaSettings, athenaSecret *corev1.Secret, secrets []*corev1.Secret) error {
 	var errs []error
-	secretKey, ok := argoCDSecret.Data[settingServerSignatureKey]
+	secretKey, ok := athenaSecret.Data[settingServerSignatureKey]
 	if ok {
 		settings.ServerSignature = secretKey
 	} else {
@@ -1564,30 +1564,30 @@ func (mgr *SettingsManager) updateSettingsFromSecret(settings *ArgoCDSettings, a
 	if err != nil && !apierrors.IsNotFound(err) {
 		errs = append(errs, &incompleteSettingsError{message: fmt.Sprintf("could not read from secret %s/%s: %v", mgr.namespace, externalServerTLSSecretName, err)})
 	} else {
-		err = mgr.loadTLSCertificate(settings, externalSecret, argoCDSecret)
+		err = mgr.loadTLSCertificate(settings, externalSecret, athenaSecret)
 		if err != nil {
 			errs = append(errs, err)
 		}
 	}
 
-	secretValues := make(map[string]string, len(argoCDSecret.Data))
+	secretValues := make(map[string]string, len(athenaSecret.Data))
 	for _, s := range secrets {
 		for k, v := range s.Data {
 			secretValues[fmt.Sprintf("%s:%s", s.Name, k)] = string(v)
 		}
 	}
-	for k, v := range argoCDSecret.Data {
+	for k, v := range athenaSecret.Data {
 		secretValues[k] = string(v)
 	}
 	settings.Secrets = secretValues
 
-	settings.WebhookGitHubSecret = string(argoCDSecret.Data[settingsWebhookGitHubSecretKey])
-	settings.WebhookGitLabSecret = string(argoCDSecret.Data[settingsWebhookGitLabSecretKey])
-	settings.WebhookBitbucketUUID = string(argoCDSecret.Data[settingsWebhookBitbucketUUIDKey])
-	settings.WebhookBitbucketServerSecret = string(argoCDSecret.Data[settingsWebhookBitbucketServerSecretKey])
-	settings.WebhookGogsSecret = string(argoCDSecret.Data[settingsWebhookGogsSecretKey])
-	settings.WebhookAzureDevOpsUsername = string(argoCDSecret.Data[settingsWebhookAzureDevOpsUsernameKey])
-	settings.WebhookAzureDevOpsPassword = string(argoCDSecret.Data[settingsWebhookAzureDevOpsPasswordKey])
+	settings.WebhookGitHubSecret = string(athenaSecret.Data[settingsWebhookGitHubSecretKey])
+	settings.WebhookGitLabSecret = string(athenaSecret.Data[settingsWebhookGitLabSecretKey])
+	settings.WebhookBitbucketUUID = string(athenaSecret.Data[settingsWebhookBitbucketUUIDKey])
+	settings.WebhookBitbucketServerSecret = string(athenaSecret.Data[settingsWebhookBitbucketServerSecretKey])
+	settings.WebhookGogsSecret = string(athenaSecret.Data[settingsWebhookGogsSecretKey])
+	settings.WebhookAzureDevOpsUsername = string(athenaSecret.Data[settingsWebhookAzureDevOpsUsernameKey])
+	settings.WebhookAzureDevOpsPassword = string(athenaSecret.Data[settingsWebhookAzureDevOpsPasswordKey])
 
 	if len(errs) > 0 {
 		return errors.Join(errs...)
@@ -1596,7 +1596,7 @@ func (mgr *SettingsManager) updateSettingsFromSecret(settings *ArgoCDSettings, a
 	return nil
 }
 
-func (mgr *SettingsManager) loadTLSCertificate(settings *ArgoCDSettings, externalSecret *corev1.Secret, argoCDSecret *corev1.Secret) error {
+func (mgr *SettingsManager) loadTLSCertificate(settings *AthenaSettings, externalSecret *corev1.Secret, athenaSecret *corev1.Secret) error {
 	mgr.mutex.Lock()
 	defer mgr.mutex.Unlock()
 	if externalSecret != nil {
@@ -1611,7 +1611,7 @@ func (mgr *SettingsManager) loadTLSCertificate(settings *ArgoCDSettings, externa
 	}
 	// if there was no external cert found, check internal
 	if !settings.CertificateIsExternal {
-		cert, err := mgr.loadTLSCertificateFromSecret(argoCDSecret)
+		cert, err := mgr.loadTLSCertificateFromSecret(athenaSecret)
 
 		if err != nil {
 			return err
@@ -1647,19 +1647,19 @@ func (mgr *SettingsManager) loadTLSCertificateFromSecret(secret *corev1.Secret) 
 	return &cert, nil
 }
 
-// saveSignatureAndCertificate serializes the server Signature and Certificate ArgoCDSettings and upserts it into the secret
-func (mgr *SettingsManager) saveSignatureAndCertificate(settings *ArgoCDSettings) error {
-	return mgr.updateSecret(func(argoCDSecret *corev1.Secret) error {
-		argoCDSecret.Data[settingServerSignatureKey] = settings.ServerSignature
+// saveSignatureAndCertificate serializes the server Signature and Certificate AthenaSettings and upserts it into the secret
+func (mgr *SettingsManager) saveSignatureAndCertificate(settings *AthenaSettings) error {
+	return mgr.updateSecret(func(athenaSecret *corev1.Secret) error {
+		athenaSecret.Data[settingServerSignatureKey] = settings.ServerSignature
 		// we only write the certificate to the secret if it's not externally
 		// managed.
 		if settings.Certificate != nil && !settings.CertificateIsExternal {
 			cert, key := tlsutil.EncodeX509KeyPair(*settings.Certificate)
-			argoCDSecret.Data[settingServerCertificate] = cert
-			argoCDSecret.Data[settingServerPrivateKey] = key
+			athenaSecret.Data[settingServerCertificate] = cert
+			athenaSecret.Data[settingServerPrivateKey] = key
 		} else {
-			delete(argoCDSecret.Data, settingServerCertificate)
-			delete(argoCDSecret.Data, settingServerPrivateKey)
+			delete(athenaSecret.Data, settingServerCertificate)
+			delete(athenaSecret.Data, settingServerPrivateKey)
 		}
 		return nil
 	})
@@ -1667,7 +1667,7 @@ func (mgr *SettingsManager) saveSignatureAndCertificate(settings *ArgoCDSettings
 
 // // Save the SSH known host data into the corresponding ConfigMap
 // func (mgr *SettingsManager) SaveSSHKnownHostsData(ctx context.Context, knownHostsList []string) error {
-// 	certCM, err := mgr.GetConfigMapByName(common.ArgoCDKnownHostsConfigMapName)
+// 	certCM, err := mgr.GetConfigMapByName(common.AthenaKnownHostsConfigMapName)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -1683,7 +1683,7 @@ func (mgr *SettingsManager) saveSignatureAndCertificate(settings *ArgoCDSettings
 // }
 
 // func (mgr *SettingsManager) SaveTLSCertificateData(ctx context.Context, tlsCertificates map[string]string) error {
-// 	certCM, err := mgr.GetConfigMapByName(common.ArgoCDTLSCertsConfigMapName)
+// 	certCM, err := mgr.GetConfigMapByName(common.AthenaTLSCertsConfigMapName)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -1698,7 +1698,7 @@ func (mgr *SettingsManager) saveSignatureAndCertificate(settings *ArgoCDSettings
 // }
 
 // func (mgr *SettingsManager) SaveGPGPublicKeyData(ctx context.Context, gpgPublicKeys map[string]string) error {
-// 	keysCM, err := mgr.GetConfigMapByName(common.ArgoCDGPGKeysConfigMapName)
+// 	keysCM, err := mgr.GetConfigMapByName(common.AthenaGPGKeysConfigMapName)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -1741,7 +1741,7 @@ func (mgr *SettingsManager) ResyncInformers() error {
 }
 
 // IsSSOConfigured returns whether or not single-sign-on is configured
-func (a *ArgoCDSettings) IsSSOConfigured() bool {
+func (a *AthenaSettings) IsSSOConfigured() bool {
 	if a.IsDexConfigured() {
 		return true
 	}
@@ -1751,7 +1751,7 @@ func (a *ArgoCDSettings) IsSSOConfigured() bool {
 	return false
 }
 
-func (a *ArgoCDSettings) IsDexConfigured() bool {
+func (a *AthenaSettings) IsDexConfigured() bool {
 	if a.URL == "" {
 		return false
 	}
@@ -1764,7 +1764,7 @@ func (a *ArgoCDSettings) IsDexConfigured() bool {
 }
 
 // GetServerEncryptionKey generates a new server encryption key using the server signature as a passphrase
-func (a *ArgoCDSettings) GetServerEncryptionKey() ([]byte, error) {
+func (a *AthenaSettings) GetServerEncryptionKey() ([]byte, error) {
 	return crypto.KeyFromPassphrase(string(a.ServerSignature))
 }
 
@@ -1774,7 +1774,7 @@ func UnmarshalDexConfig(config string) (map[string]any, error) {
 	return dexCfg, err
 }
 
-func (a *ArgoCDSettings) oidcConfig() *oidcConfig {
+func (a *AthenaSettings) oidcConfig() *oidcConfig {
 	if a.OIDCConfigRAW == "" {
 		return nil
 	}
@@ -1801,7 +1801,7 @@ func (a *ArgoCDSettings) oidcConfig() *oidcConfig {
 	return &config
 }
 
-func (a *ArgoCDSettings) OIDCConfig() *OIDCConfig {
+func (a *AthenaSettings) OIDCConfig() *OIDCConfig {
 	config := a.oidcConfig()
 	if config == nil {
 		return nil
@@ -1810,37 +1810,37 @@ func (a *ArgoCDSettings) OIDCConfig() *OIDCConfig {
 }
 
 // // GetWebhookGitHubSecret returns the resolved GitHub webhook secret
-// func (a *ArgoCDSettings) GetWebhookGitHubSecret() string {
+// func (a *AthenaSettings) GetWebhookGitHubSecret() string {
 // 	return ReplaceStringSecret(a.WebhookGitHubSecret, a.Secrets)
 // }
 
 // // GetWebhookGitLabSecret returns the resolved GitLab webhook secret
-// func (a *ArgoCDSettings) GetWebhookGitLabSecret() string {
+// func (a *AthenaSettings) GetWebhookGitLabSecret() string {
 // 	return ReplaceStringSecret(a.WebhookGitLabSecret, a.Secrets)
 // }
 
 // // GetWebhookBitbucketUUID returns the resolved Bitbucket webhook UUID
-// func (a *ArgoCDSettings) GetWebhookBitbucketUUID() string {
+// func (a *AthenaSettings) GetWebhookBitbucketUUID() string {
 // 	return ReplaceStringSecret(a.WebhookBitbucketUUID, a.Secrets)
 // }
 
 // // GetWebhookBitbucketServerSecret returns the resolved Bitbucket Server webhook secret
-// func (a *ArgoCDSettings) GetWebhookBitbucketServerSecret() string {
+// func (a *AthenaSettings) GetWebhookBitbucketServerSecret() string {
 // 	return ReplaceStringSecret(a.WebhookBitbucketServerSecret, a.Secrets)
 // }
 
 // // GetWebhookGogsSecret returns the resolved Gogs webhook secret
-// func (a *ArgoCDSettings) GetWebhookGogsSecret() string {
+// func (a *AthenaSettings) GetWebhookGogsSecret() string {
 // 	return ReplaceStringSecret(a.WebhookGogsSecret, a.Secrets)
 // }
 
 // // GetWebhookAzureDevOpsUsername returns the resolved Azure DevOps webhook username
-// func (a *ArgoCDSettings) GetWebhookAzureDevOpsUsername() string {
+// func (a *AthenaSettings) GetWebhookAzureDevOpsUsername() string {
 // 	return ReplaceStringSecret(a.WebhookAzureDevOpsUsername, a.Secrets)
 // }
 
 // // GetWebhookAzureDevOpsPassword returns the resolved Azure DevOps webhook password
-// func (a *ArgoCDSettings) GetWebhookAzureDevOpsPassword() string {
+// func (a *AthenaSettings) GetWebhookAzureDevOpsPassword() string {
 // 	return ReplaceStringSecret(a.WebhookAzureDevOpsPassword, a.Secrets)
 // }
 
@@ -1856,7 +1856,7 @@ func ValidateOIDCConfig(configStr string) error {
 }
 
 // TLSConfig returns a tls.Config with the configured certificates
-func (a *ArgoCDSettings) TLSConfig() *tls.Config {
+func (a *AthenaSettings) TLSConfig() *tls.Config {
 	if a.Certificate == nil {
 		return nil
 	}
@@ -1871,7 +1871,7 @@ func (a *ArgoCDSettings) TLSConfig() *tls.Config {
 	}
 }
 
-func (a *ArgoCDSettings) IssuerURL() string {
+func (a *AthenaSettings) IssuerURL() string {
 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
 		return oidcConfig.Issuer
 	}
@@ -1882,7 +1882,7 @@ func (a *ArgoCDSettings) IssuerURL() string {
 }
 
 // UserInfoGroupsEnabled returns whether group claims should be fetch from UserInfo endpoint
-func (a *ArgoCDSettings) UserInfoGroupsEnabled() bool {
+func (a *AthenaSettings) UserInfoGroupsEnabled() bool {
 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
 		return oidcConfig.EnableUserInfoGroups
 	}
@@ -1890,7 +1890,7 @@ func (a *ArgoCDSettings) UserInfoGroupsEnabled() bool {
 }
 
 // UserInfoPath returns the sub-path on which the IDP exposes the UserInfo endpoint
-func (a *ArgoCDSettings) UserInfoPath() string {
+func (a *AthenaSettings) UserInfoPath() string {
 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
 		return oidcConfig.UserInfoPath
 	}
@@ -1898,7 +1898,7 @@ func (a *ArgoCDSettings) UserInfoPath() string {
 }
 
 // UserInfoCacheExpiration returns the expiry time of the UserInfo cache
-func (a *ArgoCDSettings) UserInfoCacheExpiration() time.Duration {
+func (a *AthenaSettings) UserInfoCacheExpiration() time.Duration {
 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil && oidcConfig.UserInfoCacheExpiration != "" {
 		userInfoCacheExpiration, err := time.ParseDuration(oidcConfig.UserInfoCacheExpiration)
 		if err != nil {
@@ -1910,12 +1910,12 @@ func (a *ArgoCDSettings) UserInfoCacheExpiration() time.Duration {
 }
 
 // RefreshTokenThreshold returns the duration before token expiration that a token should be refreshed by the server
-func (a *ArgoCDSettings) RefreshTokenThreshold() time.Duration {
+func (a *AthenaSettings) RefreshTokenThreshold() time.Duration {
 	return a.RefreshTokenThresholdWithConfig(a.OIDCConfig())
 }
 
 // RefreshTokenThresholdWithConfig takes oidcConfig as param and returns the duration before token expiration that a token should be refreshed by the server
-func (a *ArgoCDSettings) RefreshTokenThresholdWithConfig(oidcConfig *OIDCConfig) time.Duration {
+func (a *AthenaSettings) RefreshTokenThresholdWithConfig(oidcConfig *OIDCConfig) time.Duration {
 	if oidcConfig != nil && oidcConfig.RefreshTokenThreshold != "" {
 		refreshTokenThreshold, err := time.ParseDuration(oidcConfig.RefreshTokenThreshold)
 		if err != nil {
@@ -1926,12 +1926,12 @@ func (a *ArgoCDSettings) RefreshTokenThresholdWithConfig(oidcConfig *OIDCConfig)
 	return 0
 }
 
-func (a *ArgoCDSettings) OAuth2ClientID() string {
+func (a *AthenaSettings) OAuth2ClientID() string {
 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
 		return oidcConfig.ClientID
 	}
 	if a.DexConfig != "" {
-		return common.ArgoCDClientAppID
+		return common.AthenaClientAppID
 	}
 	return ""
 }
@@ -1939,7 +1939,7 @@ func (a *ArgoCDSettings) OAuth2ClientID() string {
 // OAuth2AllowedAudiences returns a list of audiences that are allowed for the OAuth2 client. If the user has not
 // explicitly configured the list of audiences (or has configured an empty list), then the OAuth2 client ID is returned
 // as the only allowed audience. When using the bundled Dex, that client ID is always "athena".
-func (a *ArgoCDSettings) OAuth2AllowedAudiences() []string {
+func (a *AthenaSettings) OAuth2AllowedAudiences() []string {
 	if config := a.oidcConfig(); config != nil {
 		if len(config.AllowedAudiences) == 0 {
 			allowedAudiences := []string{config.ClientID}
@@ -1951,12 +1951,12 @@ func (a *ArgoCDSettings) OAuth2AllowedAudiences() []string {
 		return config.AllowedAudiences
 	}
 	if a.DexConfig != "" {
-		return []string{common.ArgoCDClientAppID, common.ArgoCDCLIClientAppID}
+		return []string{common.AthenaClientAppID, common.AthenaCLIClientAppID}
 	}
 	return nil
 }
 
-func (a *ArgoCDSettings) SkipAudienceCheckWhenTokenHasNoAudience() bool {
+func (a *AthenaSettings) SkipAudienceCheckWhenTokenHasNoAudience() bool {
 	if config := a.oidcConfig(); config != nil {
 		if config.SkipAudienceCheckWhenTokenHasNoAudience != nil {
 			return *config.SkipAudienceCheckWhenTokenHasNoAudience
@@ -1967,7 +1967,7 @@ func (a *ArgoCDSettings) SkipAudienceCheckWhenTokenHasNoAudience() bool {
 	return false
 }
 
-func (a *ArgoCDSettings) OAuth2ClientSecret() string {
+func (a *AthenaSettings) OAuth2ClientSecret() string {
 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
 		return oidcConfig.ClientSecret
 	}
@@ -1977,14 +1977,14 @@ func (a *ArgoCDSettings) OAuth2ClientSecret() string {
 	return ""
 }
 
-func (a *ArgoCDSettings) OAuth2UsePKCE() bool {
+func (a *AthenaSettings) OAuth2UsePKCE() bool {
 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil {
 		return oidcConfig.EnablePKCEAuthentication
 	}
 	return false
 }
 
-func (a *ArgoCDSettings) UseAzureWorkloadIdentity() bool {
+func (a *AthenaSettings) UseAzureWorkloadIdentity() bool {
 	if oidcConfig := a.OIDCConfig(); oidcConfig != nil && oidcConfig.Azure != nil {
 		return oidcConfig.Azure.UseWorkloadIdentity
 	}
@@ -1994,7 +1994,7 @@ func (a *ArgoCDSettings) UseAzureWorkloadIdentity() bool {
 // OIDCTLSConfig returns the TLS config for the OIDC provider. If an external provider is configured, returns a TLS
 // config using the root CAs (if any) specified in the OIDC config. If an external OIDC provider is not configured,
 // returns the API server TLS config, because the API server proxies requests to Dex.
-func (a *ArgoCDSettings) OIDCTLSConfig() *tls.Config {
+func (a *AthenaSettings) OIDCTLSConfig() *tls.Config {
 	var tlsConfig *tls.Config
 
 	oidcConfig := a.OIDCConfig()
@@ -2027,11 +2027,11 @@ func appendURLPath(inputURL string, inputPath string) (string, error) {
 	return u.String(), nil
 }
 
-func (a *ArgoCDSettings) RedirectURL() (string, error) {
+func (a *AthenaSettings) RedirectURL() (string, error) {
 	return appendURLPath(a.URL, common.CallbackEndpoint)
 }
 
-func (a *ArgoCDSettings) ArgoURLForRequest(r *http.Request) (string, error) {
+func (a *AthenaSettings) AthenaURLForRequest(r *http.Request) (string, error) {
 	for _, candidateURL := range append([]string{a.URL}, a.AdditionalURLs...) {
 		u, err := url.Parse(candidateURL)
 		if err != nil {
@@ -2044,18 +2044,18 @@ func (a *ArgoCDSettings) ArgoURLForRequest(r *http.Request) (string, error) {
 	return a.URL, nil
 }
 
-func (a *ArgoCDSettings) RedirectURLForRequest(r *http.Request) (string, error) {
+func (a *AthenaSettings) RedirectURLForRequest(r *http.Request) (string, error) {
 	if r == nil {
 		return "", errors.New("request is nil")
 	}
-	base, err := a.ArgoURLForRequest(r)
+	base, err := a.AthenaURLForRequest(r)
 	if err != nil {
 		return "", err
 	}
 	return appendURLPath(base, common.CallbackEndpoint)
 }
 
-func (a *ArgoCDSettings) RedirectAdditionalURLs() ([]string, error) {
+func (a *AthenaSettings) RedirectAdditionalURLs() ([]string, error) {
 	RedirectAdditionalURLs := []string{}
 	for _, url := range a.AdditionalURLs {
 		redirectURL, err := appendURLPath(url, common.CallbackEndpoint)
@@ -2067,7 +2067,7 @@ func (a *ArgoCDSettings) RedirectAdditionalURLs() ([]string, error) {
 	return RedirectAdditionalURLs, nil
 }
 
-func (a *ArgoCDSettings) DexRedirectURL() (string, error) {
+func (a *AthenaSettings) DexRedirectURL() (string, error) {
 	return appendURLPath(a.URL, common.DexCallbackEndpoint)
 }
 
@@ -2075,7 +2075,7 @@ func (a *ArgoCDSettings) DexRedirectURL() (string, error) {
 // from the server secret. This is called by the dex startup wrapper (athena-dex rundex), as well
 // as the API server, such that they both independently come to the same conclusion of what the
 // OAuth2 shared client secret should be.
-func (a *ArgoCDSettings) DexOAuth2ClientSecret() string {
+func (a *AthenaSettings) DexOAuth2ClientSecret() string {
 	h := sha256.New()
 	_, err := h.Write(a.ServerSignature)
 	if err != nil {
@@ -2086,7 +2086,7 @@ func (a *ArgoCDSettings) DexOAuth2ClientSecret() string {
 }
 
 // Subscribe registers a channel in which to subscribe to settings updates
-func (mgr *SettingsManager) Subscribe(subCh chan<- *ArgoCDSettings) {
+func (mgr *SettingsManager) Subscribe(subCh chan<- *AthenaSettings) {
 	mgr.mutex.Lock()
 	defer mgr.mutex.Unlock()
 	mgr.subscribers = append(mgr.subscribers, subCh)
@@ -2094,7 +2094,7 @@ func (mgr *SettingsManager) Subscribe(subCh chan<- *ArgoCDSettings) {
 }
 
 // Unsubscribe unregisters a channel from receiving of settings updates
-func (mgr *SettingsManager) Unsubscribe(subCh chan<- *ArgoCDSettings) {
+func (mgr *SettingsManager) Unsubscribe(subCh chan<- *AthenaSettings) {
 	mgr.mutex.Lock()
 	defer mgr.mutex.Unlock()
 	for i, ch := range mgr.subscribers {
@@ -2106,11 +2106,11 @@ func (mgr *SettingsManager) Unsubscribe(subCh chan<- *ArgoCDSettings) {
 	}
 }
 
-func (mgr *SettingsManager) notifySubscribers(newSettings *ArgoCDSettings) {
+func (mgr *SettingsManager) notifySubscribers(newSettings *AthenaSettings) {
 	mgr.mutex.Lock()
 	defer mgr.mutex.Unlock()
 	if len(mgr.subscribers) > 0 {
-		subscribers := make([]chan<- *ArgoCDSettings, len(mgr.subscribers))
+		subscribers := make([]chan<- *AthenaSettings, len(mgr.subscribers))
 		copy(subscribers, mgr.subscribers)
 		// make sure subscribes are notified in a separate thread to avoid potential deadlock
 		go func() {
@@ -2128,10 +2128,10 @@ func isIncompleteSettingsError(err error) bool {
 }
 
 // InitializeSettings is used to initialize empty admin password, signature, certificate etc if missing
-func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoCDSettings, error) {
+func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*AthenaSettings, error) {
 	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 	log.Debugf("InitializeSettings started (namespace=%s, insecureModeEnabled=%t)", mgr.namespace, insecureModeEnabled)
-	err := mgr.UpdateAccount(common.ArgoCDAdminUsername, func(adminAccount *Account) error {
+	err := mgr.UpdateAccount(common.AthenaAdminUsername, func(adminAccount *Account) error {
 		log.Debugf("Processing admin account settings (enabled=%t, hasPasswordHash=%t, hasPasswordMtime=%t)", adminAccount.Enabled, adminAccount.PasswordHash != "", adminAccount.PasswordMtime != nil && !adminAccount.PasswordMtime.IsZero())
 		if adminAccount.Enabled {
 			now := time.Now().UTC()
@@ -2185,7 +2185,7 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*ArgoC
 	}
 	if cdSettings == nil {
 		log.Debug("Settings not found, creating empty settings struct")
-		cdSettings = &ArgoCDSettings{}
+		cdSettings = &AthenaSettings{}
 	} else {
 		log.Debugf("Loaded existing settings (hasServerSignature=%t, hasCertificate=%t)", cdSettings.ServerSignature != nil, cdSettings.Certificate != nil)
 	}
@@ -2294,12 +2294,12 @@ func ReplaceStringSecret(val string, secretValues map[string]string) string {
 
 // // GetGlobalProjectsSettings loads the global project settings from athena-cm ConfigMap
 // func (mgr *SettingsManager) GetGlobalProjectsSettings() ([]GlobalProjectSettings, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
 // 	}
 // 	globalProjectSettings := make([]GlobalProjectSettings, 0)
-// 	if value, ok := argoCDCM.Data[globalProjectsKey]; ok {
+// 	if value, ok := athenaCM.Data[globalProjectsKey]; ok {
 // 		if value != "" {
 // 			err := yaml.Unmarshal([]byte(value), &globalProjectSettings)
 // 			if err != nil {
@@ -2315,11 +2315,11 @@ func (mgr *SettingsManager) GetNamespace() string {
 }
 
 // func (mgr *SettingsManager) GetResourceCustomLabels() ([]string, error) {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return []string{}, fmt.Errorf("failed getting configmap: %w", err)
 // 	}
-// 	labels := argoCDCM.Data[resourceCustomLabelsKey]
+// 	labels := athenaCM.Data[resourceCustomLabelsKey]
 // 	if labels != "" {
 // 		return strings.Split(labels, ","), nil
 // 	}
@@ -2328,12 +2328,12 @@ func (mgr *SettingsManager) GetNamespace() string {
 
 // func (mgr *SettingsManager) GetIncludeEventLabelKeys() []string {
 // 	labelKeys := []string{}
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		log.Error(fmt.Errorf("failed getting configmap: %w", err))
 // 		return labelKeys
 // 	}
-// 	if value, ok := argoCDCM.Data[resourceIncludeEventLabelKeys]; ok {
+// 	if value, ok := athenaCM.Data[resourceIncludeEventLabelKeys]; ok {
 // 		if value != "" {
 // 			value = strings.ReplaceAll(value, " ", "")
 // 			labelKeys = strings.Split(value, ",")
@@ -2344,12 +2344,12 @@ func (mgr *SettingsManager) GetNamespace() string {
 
 // func (mgr *SettingsManager) GetExcludeEventLabelKeys() []string {
 // 	labelKeys := []string{}
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		log.Error(fmt.Errorf("failed getting configmap: %w", err))
 // 		return labelKeys
 // 	}
-// 	if value, ok := argoCDCM.Data[resourceExcludeEventLabelKeys]; ok {
+// 	if value, ok := athenaCM.Data[resourceExcludeEventLabelKeys]; ok {
 // 		if value != "" {
 // 			value = strings.ReplaceAll(value, " ", "")
 // 			labelKeys = strings.Split(value, ",")
@@ -2361,13 +2361,13 @@ func (mgr *SettingsManager) GetNamespace() string {
 // func (mgr *SettingsManager) GetSensitiveAnnotations() map[string]bool {
 // 	annotationKeys := make(map[string]bool)
 
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		log.Error(fmt.Errorf("failed getting configmap: %w", err))
 // 		return annotationKeys
 // 	}
 
-// 	value, ok := argoCDCM.Data[resourceSensitiveAnnotationsKey]
+// 	value, ok := athenaCM.Data[resourceSensitiveAnnotationsKey]
 // 	if !ok || value == "" {
 // 		return annotationKeys
 // 	}
@@ -2381,16 +2381,16 @@ func (mgr *SettingsManager) GetNamespace() string {
 // }
 
 // func (mgr *SettingsManager) GetMaxWebhookPayloadSize() int64 {
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		return defaultMaxWebhookPayloadSize
 // 	}
 
-// 	if argoCDCM.Data[settingsWebhookMaxPayloadSizeMB] == "" {
+// 	if athenaCM.Data[settingsWebhookMaxPayloadSizeMB] == "" {
 // 		return defaultMaxWebhookPayloadSize
 // 	}
 
-// 	maxPayloadSizeMB, err := strconv.ParseInt(argoCDCM.Data[settingsWebhookMaxPayloadSizeMB], 10, 64)
+// 	maxPayloadSizeMB, err := strconv.ParseInt(athenaCM.Data[settingsWebhookMaxPayloadSizeMB], 10, 64)
 // 	if err != nil {
 // 		log.Warnf("Failed to parse '%s' key: %v", settingsWebhookMaxPayloadSizeMB, err)
 // 		return defaultMaxWebhookPayloadSize
@@ -2410,12 +2410,12 @@ func (mgr *SettingsManager) GetNamespace() string {
 
 // func (mgr *SettingsManager) GetAllowedNodeLabels() []string {
 // 	labelKeys := []string{}
-// 	argoCDCM, err := mgr.getConfigMap()
+// 	athenaCM, err := mgr.getConfigMap()
 // 	if err != nil {
 // 		log.Error(fmt.Errorf("failed getting allowedNodeLabels from configmap: %w", err))
 // 		return labelKeys
 // 	}
-// 	value, ok := argoCDCM.Data[allowedNodeLabelsKey]
+// 	value, ok := athenaCM.Data[allowedNodeLabelsKey]
 // 	if !ok || value == "" {
 // 		return labelKeys
 // 	}

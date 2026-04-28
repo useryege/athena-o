@@ -78,7 +78,7 @@ type ClientApp struct {
 	// only ever be sent over HTTPS. This value is inferred by the scheme of the redirectURI.
 	secureCookie bool
 	// settings holds Athena settings
-	settings *settings.ArgoCDSettings
+	settings *settings.AthenaSettings
 	// encryptionKey holds server encryption key
 	encryptionKey []byte
 	// provider is the OIDC provider
@@ -166,7 +166,7 @@ func GetScopesOrDefault(scopes []string) []string {
 
 // NewClientApp will register the Athena client app (either via Dex or external OIDC) and return an
 // object which has HTTP handlers for handling the HTTP responses for login and callback
-func NewClientApp(settings *settings.ArgoCDSettings, dexServerAddr string, dexTLSConfig *dex.DexTLSConfig, baseHRef string, cacheClient cache.CacheClient) (*ClientApp, error) {
+func NewClientApp(settings *settings.AthenaSettings, dexServerAddr string, dexTLSConfig *dex.DexTLSConfig, baseHRef string, cacheClient cache.CacheClient) (*ClientApp, error) {
 	redirectURL, err := settings.RedirectURL()
 	if err != nil {
 		return nil, err

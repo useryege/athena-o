@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GenerateDexConfigYAML(athenaSettings *settings.ArgoCDSettings, disableTLS bool) ([]byte, error) {
+func GenerateDexConfigYAML(athenaSettings *settings.AthenaSettings, disableTLS bool) ([]byte, error) {
 	if !athenaSettings.IsDexConfigured() {
 		return nil, nil
 	}
@@ -77,13 +77,13 @@ func GenerateDexConfigYAML(athenaSettings *settings.ArgoCDSettings, disableTLS b
 	if err != nil {
 		return nil, fmt.Errorf("failed to infer additional redirect urls from config: %w", err)
 	}
-	argoCDStaticClient := map[string]any{
-		"id":           common.ArgoCDClientAppID,
-		"name":         common.ArgoCDClientAppName,
+	athenaCDStaticClient := map[string]any{
+		"id":           common.AthenaClientAppID,
+		"name":         common.AthenaClientAppName,
 		"secret":       athenaSettings.DexOAuth2ClientSecret(),
 		"redirectURIs": append([]string{redirectURL}, additionalRedirectURLs...),
 	}
-	argoCDPKCEStaticClient := map[string]any{
+	athenaPKCEStaticClient := map[string]any{
 		"id":   "athena-pkce",
 		"name": "Athena PKCE",
 		"redirectURIs": []string{
@@ -91,9 +91,9 @@ func GenerateDexConfigYAML(athenaSettings *settings.ArgoCDSettings, disableTLS b
 		},
 		"public": true,
 	}
-	argoCDCLIStaticClient := map[string]any{
-		"id":     common.ArgoCDCLIClientAppID,
-		"name":   common.ArgoCDCLIClientAppName,
+	athenaCLIStaticClient := map[string]any{
+		"id":     common.AthenaCLIClientAppID,
+		"name":   common.AthenaCLIClientAppName,
 		"public": true,
 		"redirectURIs": []string{
 			"http://localhost",
@@ -103,9 +103,9 @@ func GenerateDexConfigYAML(athenaSettings *settings.ArgoCDSettings, disableTLS b
 
 	staticClients, ok := dexCfg["staticClients"].([]any)
 	if ok {
-		dexCfg["staticClients"] = append([]any{argoCDStaticClient, argoCDCLIStaticClient, argoCDPKCEStaticClient}, staticClients...)
+		dexCfg["staticClients"] = append([]any{athenaCDStaticClient, athenaCLIStaticClient, athenaPKCEStaticClient}, staticClients...)
 	} else {
-		dexCfg["staticClients"] = []any{argoCDStaticClient, argoCDCLIStaticClient, argoCDPKCEStaticClient}
+		dexCfg["staticClients"] = []any{athenaCDStaticClient, athenaCLIStaticClient, athenaPKCEStaticClient}
 	}
 
 	dexRedirectURL, err := athenaSettings.DexRedirectURL()

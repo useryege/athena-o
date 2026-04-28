@@ -12,7 +12,7 @@ type SecretMaperValidation struct {
 	Transform func(string) string
 }
 
-type ArgoDB interface {
+type AthenaDB interface {
 	// // ListClusters lists configured clusters
 	// ListClusters(ctx context.Context) (*appv1.ClusterList, error)
 	// // CreateCluster creates a cluster
@@ -120,8 +120,8 @@ type db struct {
 	settingsMgr   *settings.SettingsManager
 }
 
-// NewDB returns a new instance of the argo database
-func NewDB(namespace string, settingsMgr *settings.SettingsManager, kubeclientset kubernetes.Interface) ArgoDB {
+// NewDB returns a new instance of the athena database
+func NewDB(namespace string, settingsMgr *settings.SettingsManager, kubeclientset kubernetes.Interface) AthenaDB {
 	return &db{
 		settingsMgr:   settingsMgr,
 		ns:            namespace,
