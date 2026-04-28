@@ -8,7 +8,7 @@ import {Subscription} from 'rxjs';
 // import applications from './applications';
 import help from './help';
 import login from './login';
-// import settings from './settings';
+import settings from './settings';
 import {Layout, ThemeWrapper} from './shared/components/layout/layout';
 import {Page} from './shared/components/page/page';
 import {VersionPanel} from './shared/components/version-info/version-info-panel';
@@ -32,7 +32,7 @@ type Routes = {[path: string]: {component: React.ComponentType<RouteComponentPro
 const routes: Routes = {
     '/login': {component: login.component as any, noLayout: true},
     // '/applications': {component: applications.component},
-    // '/settings': {component: settings.component},
+    '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
     '/help': {component: help.component}
 };
@@ -51,12 +51,12 @@ const navItems: NavItem[] = [
     //     path: '/applications',
     //     iconClassName: 'argo-icon argo-icon-application'
     // },
-    // {
-    //     title: 'Settings',
-    //     tooltip: 'Manage your repositories, projects, settings',
-    //     path: '/settings',
-    //     iconClassName: 'argo-icon argo-icon-settings'
-    // },
+    {
+        title: 'Settings',
+        tooltip: 'Manage your repositories, projects, settings',
+        path: '/settings',
+        iconClassName: 'argo-icon argo-icon-settings'
+    },
     {
         title: 'User Info',
         path: '/user-info',
