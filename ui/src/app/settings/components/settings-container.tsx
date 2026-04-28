@@ -7,6 +7,7 @@ import {CertsList} from './certs-list/certs-list';
 import {ClusterDetails} from './cluster-details/cluster-details';
 import {ClustersList} from './clusters-list/clusters-list';
 import {GpgKeysList} from './gpgkeys-list/gpgkeys-list';
+import {NodeGrpcURL} from './node-grpc-url/node-grpc-url';
 import {ProjectDetails} from './project-details/project-details';
 import {ProjectsList} from './projects-list/projects-list';
 import {ReposList} from './repos-list/repos-list';
@@ -26,6 +27,7 @@ export const SettingsContainer = (props: RouteComponentProps<any>) => (
         <Route exact={true} path={`${props.match.path}/accounts`} component={AccountsList} />
         <Route exact={true} path={`${props.match.path}/accounts/:name`} component={AccountDetails} />
         <Route exact={true} path={`${props.match.path}/appearance`} component={AppearanceList} />
+        <Route exact={true} path={`${props.match.path}/node-grpc-url`} component={NodeGrpcURL} />
         <Redirect path='*' to={`${props.match.path}`} />
     </Switch>
 );

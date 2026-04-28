@@ -41,6 +41,11 @@ const settings = [
         title: 'Appearance',
         description: 'Configure themes in UI',
         path: './appearance'
+    },
+    {
+        title: 'Node gRPC URL',
+        description: 'Configure node gRPC endpoint used by BlockSniffer',
+        path: './node-grpc-url'
     }
 ];
 

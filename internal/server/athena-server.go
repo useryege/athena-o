@@ -995,6 +995,8 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// mustRegisterGWHandler(ctx, certificatepkg.RegisterCertificateServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, gpgkeypkg.RegisterGPGKeyServiceHandler, gwmux, conn)
 
+	mustRegisterGWHandler(ctx, blocksnifferserverpkg.RegisterBlockSnifferServiceHandler, gwmux, conn)
+
 	// Swagger UI
 	swagger.ServeSwaggerUI(mux, assets.SwaggerJSON, "/swagger-ui", server.RootPath)
 	healthz.ServeHealthCheck(mux, server.healthCheck)
