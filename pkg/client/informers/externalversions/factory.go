@@ -239,9 +239,9 @@ type SharedInformerFactory interface {
 	// client.
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
-	Argoproj() application.Interface
+	Useryege() application.Interface
 }
 
-func (f *sharedInformerFactory) Argoproj() application.Interface {
+func (f *sharedInformerFactory) Useryege() application.Interface {
 	return application.New(f, f.namespace, f.tweakListOptions)
 }

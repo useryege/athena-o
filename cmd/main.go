@@ -7,9 +7,10 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
 
-	athenaControllerCommands "github.com/useryege/athena/cmd/athena-controller/commands"
+	athenaBlockSnifferCommands "github.com/useryege/athena/cmd/athena-block-sniffer/commands"
 	athenaDexCommands "github.com/useryege/athena/cmd/athena-dex/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
+	athenaProjectControllerCommands "github.com/useryege/athena/cmd/athena-project-controller/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
 	"github.com/useryege/athena/util/log"
 )
@@ -36,12 +37,14 @@ func main() {
 	switch binaryName {
 	case "athena-server":
 		command = athenaServerCommands.NewCommand()
-	case "athena-controller":
-		command = athenaControllerCommands.NewCommand()
 	case "athena-dex":
 		command = athenaDexCommands.NewCommand()
 	case "athena-notification":
 		command = athenaNotificationCommands.NewCommand()
+	case "athena-project-controller":
+		command = athenaProjectControllerCommands.NewCommand()
+	case "athena-block-sniffer":
+		command = athenaBlockSnifferCommands.NewCommand()
 	default:
 		os.Exit(1)
 	}

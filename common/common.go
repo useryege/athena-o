@@ -11,8 +11,6 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -67,6 +65,8 @@ const (
 	DefaultPortRepoServerMetrics      = 8084
 	DefaultPortCommitServer           = 8086
 	DefaultPortCommitServerMetrics    = 8087
+	DefaultPortBlockSniffer           = 8088
+	DefaultPortBlockSnifferMetrics    = 8089
 )
 
 // DefaultAddressAPIServer for Athena components
@@ -78,6 +78,8 @@ const (
 	DefaultAddressRepoServerMetrics   = "0.0.0.0"
 	DefaultAddressCommitServer        = "0.0.0.0"
 	DefaultAddressCommitServerMetrics = "0.0.0.0"
+	DefaultAddressBlockSniffer        = "0.0.0.0"
+	DefaultAddressBlockSnifferMetrics = "0.0.0.0"
 )
 
 // Default paths on the pod's file system
@@ -462,7 +464,7 @@ const TokenVerificationError = "failed to verify the token"
 
 var ErrTokenVerification = errors.New(TokenVerificationError)
 
-var PermissionDeniedAPIError = status.Error(codes.PermissionDenied, "permission denied")
+// var PermissionDeniedAPIError = status.Error(codes.PermissionDenied, "permission denied")
 
 // Redis password consts
 const (
