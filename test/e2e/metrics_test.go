@@ -7,8 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	// . "github.com/useryege/athena/pkg/apis/application/v1alpha1"
-	// . "github.com/useryege/athena/test/e2e/fixture/app"
 )
 
 func TestKubectlMetrics(t *testing.T) {

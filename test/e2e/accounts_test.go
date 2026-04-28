@@ -60,8 +60,7 @@ func TestCanIGetLogsAllow(t *testing.T) {
 			},
 		}, "log-viewer").
 		CanIGetLogs().
-		Then().
-		CanIResult(func(response *account.CanIResponse, err error) {
+		Then(func(response *account.CanIResponse, err error) {
 			assert.NoError(t, err)
 			if assert.NotNil(t, response) {
 				assert.Equal(t, "no", response.Value)
@@ -77,8 +76,7 @@ func TestCanIGetLogsDeny(t *testing.T) {
 		Create().
 		Login().
 		CanIGetLogs().
-		Then().
-		CanIResult(func(response *account.CanIResponse, err error) {
+		Then(func(response *account.CanIResponse, err error) {
 			assert.NoError(t, err)
 			if assert.NotNil(t, response) {
 				assert.Equal(t, "no", response.Value)

@@ -16,13 +16,16 @@ import (
 // none of the func implement error checks, and that is complete intended, you should check for errors
 // using the Then()
 type Actions struct {
-	context    *Context
-	lastOutput string
-	lastError  error
-	lastCanI   *account.CanIResponse
+	context *Context
 }
 
-func (a *Actions) CanIGetLogs() *Actions {
+type CanIGetLogsResult struct {
+	context  *Context
+	response *account.CanIResponse
+	err      error
+}
+
+func (a *Actions) CanIGetLogs() *CanIGetLogsResult {
 	a.context.T().Helper()
 
 	closer, accountClient, err := fixture.AthenaClientset.NewAccountClient()
@@ -33,15 +36,18 @@ func (a *Actions) CanIGetLogs() *Actions {
 		Action:      "get",
 		Subresource: "*/*",
 	})
-	a.lastCanI = canIResponse
-	a.lastError = err
-	if canIResponse != nil {
-		a.lastOutput = canIResponse.Value
-	} else {
-		a.lastOutput = ""
+	return &CanIGetLogsResult{
+		context:  a.context,
+		response: canIResponse,
+		err:      err,
 	}
+}
 
-	return a
+func (r *CanIGetLogsResult) Then(block func(response *account.CanIResponse, err error)) *Context {
+	r.context.T().Helper()
+	time.Sleep(fixture.WhenThenSleepInterval)
+	block(r.response, r.err)
+	return r.context
 }
 
 func (a *Actions) Create() *Actions {

@@ -6,10 +6,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/useryege/athena/pkg/apiclient/session"
-
 	"github.com/useryege/athena/pkg/apiclient/account"
+	"github.com/useryege/athena/pkg/apiclient/session"
 	"github.com/useryege/athena/test/e2e/fixture"
 	utilio "github.com/useryege/athena/util/io"
 )
@@ -23,18 +21,6 @@ type Consequences struct {
 func (c *Consequences) And(block func(account *account.Account, err error)) *Consequences {
 	c.context.T().Helper()
 	block(c.get())
-	return c
-}
-
-func (c *Consequences) AndCLIOutput(block func(output string, err error)) *Consequences {
-	c.context.T().Helper()
-	block(c.actions.lastOutput, c.actions.lastError)
-	return c
-}
-
-func (c *Consequences) CanIResult(block func(response *account.CanIResponse, err error)) *Consequences {
-	c.context.T().Helper()
-	block(c.actions.lastCanI, c.actions.lastError)
 	return c
 }
 

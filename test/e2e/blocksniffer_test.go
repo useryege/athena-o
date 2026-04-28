@@ -16,16 +16,14 @@ func TestSetAndGetEvmNodeWsURL(t *testing.T) {
 	ctx.
 		When().
 		SetEvmNodeWsURL(expectedURL).
-		Then().
-		SetEvmNodeWsURLResult(func(response *blocksnifferpb.SetEvmNodeWsURLResponse, err error) {
+		Then(func(response *blocksnifferpb.SetEvmNodeWsURLResponse, err error) {
 			require.NoError(t, err)
 			require.NotNil(t, response)
 			assert.Equal(t, expectedURL, response.GetEvmNodeWsURL())
 		}).
 		When().
 		GetEvmNodeWsURL().
-		Then().
-		GetEvmNodeWsURLResult(func(response *blocksnifferpb.GetEvmNodeWsURLResponse, err error) {
+		Then(func(response *blocksnifferpb.GetEvmNodeWsURLResponse, err error) {
 			require.NoError(t, err)
 			require.NotNil(t, response)
 			assert.Equal(t, expectedURL, response.GetEvmNodeWsURL())
