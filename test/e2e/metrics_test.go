@@ -12,48 +12,6 @@ import (
 )
 
 func TestKubectlMetrics(t *testing.T) {
-	// Sync an app so that there are metrics to scrape.
-	// ctx := Given(t)
-	// ctx.When()
-	// ctx.
-	// 	Path(guestbookPath).
-	// 	When().
-	// 	CreateApp().
-	// 	Then().
-	// 	Expect(SyncStatusIs(SyncStatusCodeOutOfSync)).
-	// 	And(func(app *Application) {
-	// 		assert.Equal(t, ctx.GetName(), app.Name)
-	// 		assert.Equal(t, fixture.RepoURL(fixture.RepoURLTypeFile), app.Spec.GetSource().RepoURL)
-	// 		assert.Equal(t, guestbookPath, app.Spec.GetSource().Path)
-	// 		assert.Equal(t, ctx.DeploymentNamespace(), app.Spec.Destination.Namespace)
-	// 		assert.Equal(t, KubernetesInternalAPIServerAddr, app.Spec.Destination.Server)
-	// 	}).
-	// 	Expect(Event(athena.EventReasonResourceCreated, "create")).
-	// 	And(func(_ *Application) {
-	// 		// app should be listed
-	// 		output, err := fixture.RunCli("app", "list")
-	// 		require.NoError(t, err)
-	// 		assert.Contains(t, output, ctx.GetName())
-	// 	}).
-	// 	When().
-	// 	// ensure that create is idempotent
-	// 	CreateApp().
-	// 	Then().
-	// 	Given().
-	// 	Revision("master").
-	// 	When().
-	// 	// ensure that update replaces spec and merge labels and annotations
-	// 	And(func() {
-	// 		errors.NewHandler(t).FailOnErr(fixture.AppClientset.ArgoprojV1alpha1().Applications(fixture.TestNamespace()).Patch(t.Context(),
-	// 			ctx.GetName(), types.MergePatchType, []byte(`{"metadata": {"labels": { "test": "label" }, "annotations": { "test": "annotation" }}}`), metav1.PatchOptions{}))
-	// 	}).
-	// 	CreateApp("--upsert").
-	// 	Then().
-	// 	And(func(app *Application) {
-	// 		assert.Equal(t, "label", app.Labels["test"])
-	// 		assert.Equal(t, "annotation", app.Annotations["test"])
-	// 		assert.Equal(t, "master", app.Spec.GetSource().TargetRevision)
-	// 	})
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://127.0.0.1:8083/metrics", http.NoBody)
 	require.NoError(t, err)
