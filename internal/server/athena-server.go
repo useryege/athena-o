@@ -92,8 +92,6 @@ import (
 
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
-
-	blocksnifferserverpkg "github.com/useryege/athena/pkg/apiclient/blocksniffer"
 )
 
 const (
@@ -509,7 +507,6 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 	// register all the services to the gRPC server
 	grpc_health_v1.RegisterHealthServer(grpcS, server.serviceSet.HealthService)
 	versionpkg.RegisterVersionServiceServer(grpcS, server.serviceSet.VersionService)
-	// blocksnifferpkg.RegisterBlockSnifferServiceServer(grpcS, server.serviceSet.BlockSnifferService)
 	// clusterpkg.RegisterClusterServiceServer(grpcS, server.serviceSet.ClusterService)
 	// applicationpkg.RegisterApplicationServiceServer(grpcS, server.serviceSet.ApplicationService)
 	// applicationsetpkg.RegisterApplicationSetServiceServer(grpcS, server.serviceSet.ApplicationSetService)
@@ -523,7 +520,6 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 	// certificatepkg.RegisterCertificateServiceServer(grpcS, server.serviceSet.CertificateService)
 	// gpgkeypkg.RegisterGPGKeyServiceServer(grpcS, server.serviceSet.GpgkeyService)
 
-	blocksnifferserverpkg.RegisterBlockSnifferServiceServer(grpcS, server.serviceSet.BlockSnifferService)
 	// Register reflection service on gRPC server.
 	reflection.Register(grpcS)
 	serverMetrics.InitializeMetrics(grpcS)
@@ -994,8 +990,6 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, accountpkg.RegisterAccountServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, certificatepkg.RegisterCertificateServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, gpgkeypkg.RegisterGPGKeyServiceHandler, gwmux, conn)
-
-	mustRegisterGWHandler(ctx, blocksnifferserverpkg.RegisterBlockSnifferServiceHandler, gwmux, conn)
 
 	// Swagger UI
 	swagger.ServeSwaggerUI(mux, assets.SwaggerJSON, "/swagger-ui", server.RootPath)

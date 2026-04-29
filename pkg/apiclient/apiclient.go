@@ -60,7 +60,6 @@ import (
 	// "k8s.io/client-go/tools/clientcmd"
 	// "github.com/useryege/athena/v3/common"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
-	blocksnifferpkg "github.com/useryege/athena/pkg/apiclient/blocksniffer"
 
 	// applicationsetpkg "github.com/useryege/athena/v3/pkg/apiclient/applicationset"
 	// certificatepkg "github.com/useryege/athena/v3/pkg/apiclient/certificate"
@@ -129,8 +128,6 @@ type Client interface {
 	// NewProjectClientOrDie() (io.Closer, projectpkg.ProjectServiceClient)
 	NewAccountClient() (io.Closer, accountpkg.AccountServiceClient, error)
 	NewAccountClientOrDie() (io.Closer, accountpkg.AccountServiceClient)
-	NewBlockSnifferClient() (io.Closer, blocksnifferpkg.BlockSnifferServiceClient, error)
-	NewBlockSnifferClientOrDie() (io.Closer, blocksnifferpkg.BlockSnifferServiceClient)
 	// WatchApplicationWithRetry(ctx context.Context, appName string, revision string) chan *v1alpha1.ApplicationWatchEvent
 }
 
@@ -833,23 +830,6 @@ func (c *client) NewAccountClientOrDie() (io.Closer, accountpkg.AccountServiceCl
 		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
 	}
 	return conn, usrIf
-}
-
-func (c *client) NewBlockSnifferClient() (io.Closer, blocksnifferpkg.BlockSnifferServiceClient, error) {
-	conn, closer, err := c.newConn(context.Background())
-	if err != nil {
-		return nil, nil, err
-	}
-	blockSnifferIf := blocksnifferpkg.NewBlockSnifferServiceClient(conn)
-	return closer, blockSnifferIf, nil
-}
-
-func (c *client) NewBlockSnifferClientOrDie() (io.Closer, blocksnifferpkg.BlockSnifferServiceClient) {
-	conn, blockSnifferIf, err := c.NewBlockSnifferClient()
-	if err != nil {
-		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
-	}
-	return conn, blockSnifferIf
 }
 
 // WatchApplicationWithRetry returns a channel of watch events for an application, retrying the

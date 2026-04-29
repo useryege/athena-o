@@ -41,11 +41,6 @@ const settings = [
         title: 'Appearance',
         description: 'Configure themes in UI',
         path: './appearance'
-    },
-    {
-        title: 'EVM Node WS URL',
-        description: 'Configure EVM node WebSocket endpoint used by BlockSniffer',
-        path: './evm-node-ws-url'
     }
 ];
 

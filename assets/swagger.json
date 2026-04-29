@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-77-g44ca9b3-dirty"
+    "version": "v1.0.0-84-ge077788-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -207,58 +207,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountEmptyResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/blocksniffer/evm-node-ws-url": {
-      "get": {
-        "tags": [
-          "BlockSnifferService"
-        ],
-        "operationId": "BlockSnifferService_GetEvmNodeWsURL",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/blocksnifferGetEvmNodeWsURLResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "BlockSnifferService"
-        ],
-        "operationId": "BlockSnifferService_SetEvmNodeWsURL",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/blocksnifferSetEvmNodeWsURLRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/blocksnifferSetEvmNodeWsURLResponse"
             }
           },
           "default": {
@@ -496,30 +444,6 @@
     },
     "accountUpdatePasswordResponse": {
       "type": "object"
-    },
-    "blocksnifferGetEvmNodeWsURLResponse": {
-      "type": "object",
-      "properties": {
-        "evmNodeWsURL": {
-          "type": "string"
-        }
-      }
-    },
-    "blocksnifferSetEvmNodeWsURLRequest": {
-      "type": "object",
-      "properties": {
-        "evmNodeWsURL": {
-          "type": "string"
-        }
-      }
-    },
-    "blocksnifferSetEvmNodeWsURLResponse": {
-      "type": "object",
-      "properties": {
-        "evmNodeWsURL": {
-          "type": "string"
-        }
-      }
     },
     "clusterConnector": {
       "type": "object",

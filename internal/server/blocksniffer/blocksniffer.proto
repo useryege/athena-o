@@ -6,28 +6,4 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/blocksniffer";
 
-message SetEvmNodeWsURLRequest {
-  string evmNodeWsURL = 1;
-}
-
-message SetEvmNodeWsURLResponse {
-  string evmNodeWsURL = 1;
-}
-
-message GetEvmNodeWsURLRequest {}
-
-message GetEvmNodeWsURLResponse {
-  string evmNodeWsURL = 1;
-}
-
-service BlockSnifferService {
-  rpc SetEvmNodeWsURL(SetEvmNodeWsURLRequest) returns (SetEvmNodeWsURLResponse) {
-    option (google.api.http) = {
-      put: "/api/v1/blocksniffer/evm-node-ws-url"
-      body: "*"
-    };
-  }
-  rpc GetEvmNodeWsURL(GetEvmNodeWsURLRequest) returns (GetEvmNodeWsURLResponse) {
-    option (google.api.http) = {get: "/api/v1/blocksniffer/evm-node-ws-url"};
-  }
-}
+service BlockSnifferService {}

@@ -1,7 +1,6 @@
 import {AccountsService} from './accounts-service';
 import {ApplicationsService} from './applications-service';
 import {AuthService} from './auth-service';
-import {BlocksnifferService} from './blocksniffer-service';
 import {CertificatesService} from './cert-service';
 import {ClustersService} from './clusters-service';
 import {ExtensionsService} from './extensions-service';
@@ -28,7 +27,6 @@ export interface Services {
     gpgkeys: GnuPGPublicKeyService;
     extensions: ExtensionsService;
     notification: NotificationService;
-    blocksniffer: BlocksnifferService;
 }
 
 export const services: Services = {
@@ -45,8 +43,7 @@ export const services: Services = {
     accounts: new AccountsService(),
     gpgkeys: new GnuPGPublicKeyService(),
     extensions: new ExtensionsService(),
-    notification: new NotificationService(),
-    blocksniffer: new BlocksnifferService()
+    notification: new NotificationService()
 };
 
 export * from './projects-service';
