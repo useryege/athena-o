@@ -2,10 +2,12 @@ package blocksniffer
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 	"sync"
 
+	ethclient "github.com/ethereum/go-ethereum/ethclient"
 	blocksnifferpkg "github.com/useryege/athena/pkg/apiclient/blocksniffer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -48,4 +50,19 @@ func (s *Server) GetEvmNodeWsURL(_ context.Context, _ *blocksnifferpkg.GetEvmNod
 	return &blocksnifferpkg.GetEvmNodeWsURLResponse{
 		EvmNodeWsURL: current,
 	}, nil
+}
+
+func (s *Server) SniffLatestBlock() error {
+	client, err := ethclient.Dial(s.evmNodeWsURL)
+	if err != nil {
+		return err
+	}
+
+	chainID, err := client.ChainID(context.Background())
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("chainID", chainID)
+	return nil
 }

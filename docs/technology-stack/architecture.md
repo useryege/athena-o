@@ -165,17 +165,16 @@ Subscribe the lastest block height and use it to monitor the blockchain real-tim
 Maintain Target Pair Address
   -> Maintain the lastest target Pair Address in the momory. Fetch the target Pair data from the **Project Controller**
 
-Sniffer For Swap Events
+Sniffer For Swap Events(Here Must be as Fast as Possible)
   -> Subscribe the lastest block height form evm node.
   -> Filter the logs by the target Pair Address and the swap events.
   -> When the target logs are detected, it will emit a sync event to the **Project Controller**.
 
-Sniffer For Sepcial Tx OR Logs
+Sniffer For Create Token Tx
   -> Subscribe the lastest block height form evm node.
-  -> Filter the tx or logs by the block height.
+  -> Filter the tx by the block height.
   -> Tx:
     -> Create the ERC20 New Token
-  -> Logs:
 ---
 
 ### Project Controller

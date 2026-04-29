@@ -9,6 +9,7 @@ import (
 
 	athenaDexCommands "github.com/useryege/athena/cmd/athena-dex/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
+
 	athenaProjectControllerCommands "github.com/useryege/athena/cmd/athena-project-controller/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
 	"github.com/useryege/athena/util/log"
