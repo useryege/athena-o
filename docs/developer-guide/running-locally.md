@@ -97,6 +97,19 @@ cd athena
 make run ATHENA_GPG_ENABLED=false
 ```
 
+#### Optional: start PostgreSQL with local stack
+The local `Procfile` now includes a `postgres` process that follows the same startup pattern as Redis.
+
+PostgreSQL runs in Docker (`athena-postgres` container) in this local flow.
+
+Supported PostgreSQL env vars for local development:
+
+- `ATHENA_E2E_POSTGRES_PORT` (default: `5432`)
+- `POSTGRES_USER` (default: `athena`)
+- `POSTGRES_PASSWORD` (default: empty; Docker mode falls back to trust auth if empty)
+- `POSTGRES_DB` (default: `athena`)
+- `ATHENA_POSTGRES_IMAGE_TAG` (default: `16`)
+
 #### With "goreman start"
 ```shell
 cd athena
