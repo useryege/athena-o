@@ -44,7 +44,6 @@ import (
 	"github.com/stretchr/testify/assert/yaml"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/server/account"
-	"github.com/useryege/athena/internal/server/blocksniffer"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/internal/server/logout"
 	"github.com/useryege/athena/internal/server/metrics"
@@ -529,12 +528,11 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 }
 
 type AthenaServiceSet struct {
-	HealthService       *health.Server
-	SessionService      *session.Server
-	SettingsService     *settings.Server
-	AccountService      *account.Server
-	VersionService      *version.Server
-	BlockSnifferService *blocksniffer.Server
+	HealthService   *health.Server
+	SessionService  *session.Server
+	SettingsService *settings.Server
+	AccountService  *account.Server
+	VersionService  *version.Server
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
@@ -602,9 +600,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// account service
 	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf)
 
-	// block sniffer service
-	blockSnifferService := blocksniffer.NewServer()
-
 	// notificationService := notification.NewServer(a.apiFactory)
 	// certificateService := certificate.NewServer(a.db, a.enf)
 	// gpgkeyService := gpgkey.NewServer(a.db, a.enf)
@@ -621,12 +616,11 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
-		HealthService:       healthService,
-		SessionService:      sessionService,
-		SettingsService:     settingsService,
-		AccountService:      accountService,
-		VersionService:      versionService,
-		BlockSnifferService: blockSnifferService,
+		HealthService:   healthService,
+		SessionService:  sessionService,
+		SettingsService: settingsService,
+		AccountService:  accountService,
+		VersionService:  versionService,
 		// 	ClusterService:        clusterService,
 		// 	RepoService:           repoService,
 		// 	RepoCredsService:      repoCredsService,

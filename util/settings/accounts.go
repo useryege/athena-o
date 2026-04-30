@@ -16,22 +16,6 @@ import (
 	"github.com/useryege/athena/common"
 )
 
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"strconv"
-// 	"strings"
-// 	"time"
-
-// 	log "github.com/sirupsen/logrus"
-// 	"google.golang.org/grpc/codes"
-// 	"google.golang.org/grpc/status"
-// 	corev1 "k8s.io/api/core/v1"
-// 	"k8s.io/client-go/util/retry"
-
-// 	"github.com/useryege/athena/common"
-// )
-
 const (
 	accountsKeyPrefix          = "accounts"
 	accountPasswordSuffix      = "password"

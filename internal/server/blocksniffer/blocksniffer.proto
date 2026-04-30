@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package blocksniffer;
-
-import "google/api/annotations.proto";
-
-option go_package = "github.com/useryege/athena/pkg/apiclient/blocksniffer";
-
-service BlockSnifferService {}
