@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -13,8 +12,8 @@ type Server struct {
 	handler  http.Handler
 	registry *prometheus.Registry
 
-	activeProjectCount       *prometheus.GaugeVec
-	reconcileDurationSeconds *prometheus.HistogramVec
+	// activeProjectCount       *prometheus.GaugeVec
+	// reconcileDurationSeconds *prometheus.HistogramVec
 }
 
 // NewMetricsServer creates a metrics server skeleton.
@@ -40,33 +39,33 @@ func (s *Server) GetHandler() http.Handler {
 }
 
 func (s *Server) registerBusinessMetrics() {
-	s.activeProjectCount = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "athena_project_controller_active_project_count",
-			Help: "Current number of active projects tracked by project controller.",
-		},
-		[]string{"chain_id"},
-	)
+	// s.activeProjectCount = prometheus.NewGaugeVec(
+	// 	prometheus.GaugeOpts{
+	// 		Name: "athena_project_controller_active_project_count",
+	// 		Help: "Current number of active projects tracked by project controller.",
+	// 	},
+	// 	[]string{"chain_id"},
+	// )
 
-	s.reconcileDurationSeconds = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "athena_project_controller_reconcile_duration_seconds",
-			Help:    "Duration for one reconcile cycle in project controller hot path.",
-			Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2},
-		},
-		[]string{"chain_id"},
-	)
+	// s.reconcileDurationSeconds = prometheus.NewHistogramVec(
+	// 	prometheus.HistogramOpts{
+	// 		Name:    "athena_project_controller_reconcile_duration_seconds",
+	// 		Help:    "Duration for one reconcile cycle in project controller hot path.",
+	// 		Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2},
+	// 	},
+	// 	[]string{"chain_id"},
+	// )
 
-	s.registry.MustRegister(
-		s.activeProjectCount,
-		s.reconcileDurationSeconds,
-	)
+	// s.registry.MustRegister(
+	// 	s.activeProjectCount,
+	// 	s.reconcileDurationSeconds,
+	// )
 }
 
-func (s *Server) SetActiveProjectCount(chainID string, count uint64) {
-	s.activeProjectCount.WithLabelValues(chainID).Set(float64(count))
-}
+// func (s *Server) SetActiveProjectCount(chainID string, count uint64) {
+// 	s.activeProjectCount.WithLabelValues(chainID).Set(float64(count))
+// }
 
-func (s *Server) ObserveReconcileDuration(chainID string, d time.Duration) {
-	s.reconcileDurationSeconds.WithLabelValues(chainID).Observe(d.Seconds())
-}
+// func (s *Server) ObserveReconcileDuration(chainID string, d time.Duration) {
+// 	s.reconcileDurationSeconds.WithLabelValues(chainID).Observe(d.Seconds())
+// }

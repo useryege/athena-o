@@ -30,7 +30,7 @@ func (a *ProjectControllerServer) CreateGRPC() *grpc.Server {
 	versionpkg.RegisterVersionServiceServer(server, versionService)
 
 	// register the project controller service to the gRPC server
-	apiclient.RegisterProjectControllerServiceServer(server, a.service)
+	// apiclient.RegisterProjectControllerServiceServer(server, a.service)
 
 	// register the health service to the gRPC server
 	healthService := health.NewServer()

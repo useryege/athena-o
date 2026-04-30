@@ -11,18 +11,15 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc/health/grpc_health_v1"
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/application"
-	"github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/application/metrics"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/healthz"
-	utilio "github.com/useryege/athena/util/io"
 )
 
 const cliName = "athena-application"
@@ -68,19 +65,19 @@ func NewCommand() *cobra.Command {
 				if val, ok := r.URL.Query()["full"]; ok && len(val) > 0 && val[0] == "true" {
 					// connect to itself to make sure project controller is able to serve connection
 					// used by liveness probe to auto restart project controller
-					conn, err := apiclient.NewConnection(fmt.Sprintf("localhost:%d", listenPort))
-					if err != nil {
-						return err
-					}
-					defer utilio.Close(conn)
-					client := grpc_health_v1.NewHealthClient(conn)
-					res, err := client.Check(r.Context(), &grpc_health_v1.HealthCheckRequest{})
-					if err != nil {
-						return err
-					}
-					if res.Status != grpc_health_v1.HealthCheckResponse_SERVING {
-						return fmt.Errorf("grpc health check status is '%v'", res.Status)
-					}
+					// conn, err := apiclient.NewConnection(fmt.Sprintf("localhost:%d", listenPort))
+					// if err != nil {
+					// 	return err
+					// }
+					// defer utilio.Close(conn)
+					// client := grpc_health_v1.NewHealthClient(conn)
+					// res, err := client.Check(r.Context(), &grpc_health_v1.HealthCheckRequest{})
+					// if err != nil {
+					// 	return err
+					// }
+					// if res.Status != grpc_health_v1.HealthCheckResponse_SERVING {
+					// 	return fmt.Errorf("grpc health check status is '%v'", res.Status)
+					// }
 					return nil
 				}
 				return nil

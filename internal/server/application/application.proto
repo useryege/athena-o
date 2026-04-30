@@ -1,8 +1,0 @@
-syntax = "proto2";
-
-// Application Service
-//
-// Application Service API performs CRUD actions against application resources
-package application;
-
-option go_package = "github.com/useryege/athena/pkg/apiclient/application";

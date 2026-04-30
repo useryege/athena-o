@@ -7,9 +7,9 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
 
+	athenaApplicationCommands "github.com/useryege/athena/cmd/athena-application/commands"
 	athenaDexCommands "github.com/useryege/athena/cmd/athena-dex/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
-
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
 	"github.com/useryege/athena/util/log"
 )
@@ -40,6 +40,8 @@ func main() {
 		command = athenaDexCommands.NewCommand()
 	case "athena-notification":
 		command = athenaNotificationCommands.NewCommand()
+	case "athena-application":
+		command = athenaApplicationCommands.NewCommand()
 	default:
 		os.Exit(1)
 	}
