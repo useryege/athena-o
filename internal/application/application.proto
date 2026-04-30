@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package application;
+
+option go_package = "github.com/useryege/athena/internal/application/apiclient";
+
+service ApplicationService {}

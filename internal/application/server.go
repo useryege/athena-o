@@ -1,7 +1,7 @@
 package application
 
 import (
-	"github.com/useryege/athena/internal/application/apiclient"
+	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/server/version"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"google.golang.org/grpc"
@@ -9,19 +9,19 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
-type ProjectControllerServer struct {
+type ApplicationServer struct {
 	service *Service
 }
 
-func NewServer() *ProjectControllerServer {
-	return &ProjectControllerServer{
+func NewServer() *ApplicationServer {
+	return &ApplicationServer{
 		service: NewService(),
 	}
 }
 
 // CreateGRPC creates a new gRPC server.
-func (a *ProjectControllerServer) CreateGRPC() *grpc.Server {
-	server := grpc.NewServer(grpc.MaxRecvMsgSize(apiclient.MaxGRPCMessageSize))
+func (a *ApplicationServer) CreateGRPC() *grpc.Server {
+	server := grpc.NewServer(grpc.MaxRecvMsgSize(applicationpkg.MaxGRPCMessageSize))
 
 	// register the version service to the gRPC server
 	versionService := version.NewServer(nil, func() (bool, error) {
@@ -30,7 +30,7 @@ func (a *ProjectControllerServer) CreateGRPC() *grpc.Server {
 	versionpkg.RegisterVersionServiceServer(server, versionService)
 
 	// register the project controller service to the gRPC server
-	// apiclient.RegisterProjectControllerServiceServer(server, a.service)
+	applicationpkg.RegisterApplicationServiceServer(server, a.service)
 
 	// register the health service to the gRPC server
 	healthService := health.NewServer()
