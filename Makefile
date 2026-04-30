@@ -68,7 +68,6 @@ endif
 # You can change the ports where Athena components will be listening on by
 # setting the appropriate environment variables before running make.
 ATHENA_E2E_APISERVER_PORT?=8080
-ATHENA_E2E_REPOSERVER_PORT?=8081
 ATHENA_E2E_REDIS_PORT?=6379
 ATHENA_E2E_POSTGRES_PORT?=5432
 ATHENA_E2E_DEX_PORT?=5556

@@ -42,7 +42,6 @@ You can observe the tests by using the UI [http://localhost:4000/applications](h
 The Makefile's `start-e2e` target starts instances of Athena on your local machine, of which the most will require a network listener. If, for any reason, your machine already has network services listening on the same ports, then the e2e tests will not run. You can derive from the defaults by setting the following environment variables before you run `make start-e2e`:
 
 - `ATHENA_E2E_APISERVER_PORT`: Listener port for `athena-server` (default: `8080`)
-- `ATHENA_E2E_REPOSERVER_PORT`: Listener port for `athena-reposerver` (default: `8081`)
 - `ATHENA_E2E_DEX_PORT`: Listener port for `dex` (default: `5556`)
 - `ATHENA_E2E_REDIS_PORT`: Listener port for `redis` (default: `6379`)
 - `ATHENA_E2E_YARN_CMD`: Command to use for starting the UI via Yarn (default: `yarn`)

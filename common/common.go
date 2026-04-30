@@ -23,10 +23,6 @@ const (
 
 // Default service addresses and URLS of Athena internal services
 const (
-	// DefaultRepoServerAddr is the gRPC address of the Athena repo server
-	// DefaultRepoServerAddr = "athena-repo-server:8081"
-	// DefaultCommitServerAddr is the gRPC address of the Athena commit server
-	// DefaultCommitServerAddr = "athena-commit-server:8086"
 	// DefaultDexServerAddr is the HTTP address of the Dex OIDC server, which we run a reverse proxy against
 	DefaultDexServerAddr = "athena-dex-server:5556"
 	// DefaultRedisAddr is the default redis address
@@ -58,38 +54,21 @@ const (
 
 // Default listener ports for Athena components
 const (
-	DefaultPortAPIServer  = 8080
-	DefaultPortRepoServer = 8081
-
-	DefaultPortAthenaMetrics          = 8082
-	DefaultPortAthenaAPIServerMetrics = 8083
-
-	DefaultPortRepoServerMetrics        = 8084
-	DefaultPortCommitServer             = 8086
-	DefaultPortCommitServerMetrics      = 8087
-	DefaultPortBlockSniffer             = 8088
-	DefaultPortBlockSnifferMetrics      = 8089
-	DefaultPortProjectController        = 8090
-	DefaultPortProjectControllerMetrics = 8091
-	DefaultPortNodeScanner              = 8092
-	DefaultPortNodeScannerMetrics       = 8093
+	// Athena API Server
+	DefaultPortAthenaAPIServer        = 8080
+	DefaultPortAthenaAPIServerMetrics = 8081
+	// Athena Application
+	DefaultPortApplication        = 8082
+	DefaultPortApplicationMetrics = 8083
 )
 
 // DefaultAddressAPIServer for Athena components
 const (
-	DefaultAddressAdminDashboard           = "localhost"
-	DefaultAddressAPIServer                = "0.0.0.0"
-	DefaultAddressAPIServerMetrics         = "0.0.0.0"
-	DefaultAddressRepoServer               = "0.0.0.0"
-	DefaultAddressRepoServerMetrics        = "0.0.0.0"
-	DefaultAddressCommitServer             = "0.0.0.0"
-	DefaultAddressCommitServerMetrics      = "0.0.0.0"
-	DefaultAddressBlockSniffer             = "0.0.0.0"
-	DefaultAddressBlockSnifferMetrics      = "0.0.0.0"
-	DefaultAddressProjectController        = "0.0.0.0"
-	DefaultAddressProjectControllerMetrics = "0.0.0.0"
-	DefaultAddressNodeScanner              = "0.0.0.0"
-	DefaultAddressNodeScannerMetrics       = "0.0.0.0"
+	DefaultAddressAdminDashboard     = "localhost"
+	DefaultAddressAPIServer          = "0.0.0.0"
+	DefaultAddressAPIServerMetrics   = "0.0.0.0"
+	DefaultAddressApplication        = "0.0.0.0"
+	DefaultAddressApplicationMetrics = "0.0.0.0"
 )
 
 // Default paths on the pod's file system

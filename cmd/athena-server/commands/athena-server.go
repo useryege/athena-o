@@ -219,7 +219,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().BoolVar(&enableGZip, "enable-gzip", env.ParseBoolFromEnv("ATHENA_SERVER_ENABLE_GZIP", true), "Enable GZIP compression")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_SERVER_LISTEN_ADDRESS", common.DefaultAddressAPIServer), "Listen on given address")
-	command.Flags().IntVar(&listenPort, "port", common.DefaultPortAPIServer, "Listen on given port")
+	command.Flags().IntVar(&listenPort, "port", common.DefaultPortAthenaAPIServer, "Listen on given port")
 	command.Flags().StringVar(&metricsHost, env.StringFromEnv("ATHENA_SERVER_METRICS_LISTEN_ADDRESS", "metrics-address"), common.DefaultAddressAPIServerMetrics, "Listen for metrics on given address")
 	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortAthenaAPIServerMetrics, "Start metrics on given port")
 	command.Flags().StringVar(&otlpAddress, "otlp-address", env.StringFromEnv("ATHENA_SERVER_OTLP_ADDRESS", ""), "OpenTelemetry collector address to send traces to")

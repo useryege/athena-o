@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package controller;
+
+option go_package = "github.com/useryege/athena/internal/application/apiclient";
+
+service ApplicationControllerService {
+  rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
+}
+
+message GetApplicationRequest {
+  string application_id = 1;
+}
+
+message GetApplicationResponse {
+  string application = 1;
+}
