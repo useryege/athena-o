@@ -23,7 +23,7 @@ message Settings {
   map<string, github.com.useryege.athena.pkg.apis.application.v1alpha1.ResourceOverride> resourceOverrides = 5;
   bool statusBadgeEnabled = 6;
   GoogleAnalyticsConfig googleAnalytics = 7;
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.KustomizeOptions kustomizeOptions = 8;
+  // github.com.useryege.athena.pkg.apis.application.v1alpha1.KustomizeOptions kustomizeOptions = 8;
   // Help settings
   Help help = 9;
   repeated Plugin plugins = 10;

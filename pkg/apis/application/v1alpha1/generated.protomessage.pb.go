@@ -39,10 +39,6 @@ func (*InfoItem) ProtoMessage() {}
 
 func (*KnownTypeField) ProtoMessage() {}
 
-func (*KustomizeOptions) ProtoMessage() {}
-
-func (*KustomizeVersion) ProtoMessage() {}
-
 func (*OverrideIgnoreDiff) ProtoMessage() {}
 
 func (*ResourceNetworkingInfo) ProtoMessage() {}

@@ -1183,64 +1183,64 @@ func (mgr *SettingsManager) GetResourceCompareOptions() (AthenaCDDiffOptions, er
 // }
 
 // GetKustomizeSettings loads the kustomize settings from athena-cm ConfigMap
-func (mgr *SettingsManager) GetKustomizeSettings() (*v1alpha1.KustomizeOptions, error) {
-	athenaCM, err := mgr.getConfigMap()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
-	}
-	kustomizeVersionsMap := map[string]v1alpha1.KustomizeVersion{}
-	buildOptions := map[string]string{}
-	settings := &v1alpha1.KustomizeOptions{}
+// func (mgr *SettingsManager) GetKustomizeSettings() (*v1alpha1.KustomizeOptions, error) {
+// 	athenaCM, err := mgr.getConfigMap()
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
+// 	}
+// 	kustomizeVersionsMap := map[string]v1alpha1.KustomizeVersion{}
+// 	buildOptions := map[string]string{}
+// 	settings := &v1alpha1.KustomizeOptions{}
 
-	// extract build options for the default version
-	if options, ok := athenaCM.Data[kustomizeBuildOptionsKey]; ok {
-		settings.BuildOptions = options
-	}
+// 	// extract build options for the default version
+// 	if options, ok := athenaCM.Data[kustomizeBuildOptionsKey]; ok {
+// 		settings.BuildOptions = options
+// 	}
 
-	// extract per-version binary paths and build options
-	for k, v := range athenaCM.Data {
-		// extract version and path from kustomize.version.<version>
-		if strings.HasPrefix(k, kustomizeVersionKeyPrefix) {
-			err = addKustomizeVersion(kustomizeVersionKeyPrefix, k, v, kustomizeVersionsMap)
-			if err != nil {
-				return nil, fmt.Errorf("failed to add kustomize version from %q: %w", k, err)
-			}
-		}
+// 	// extract per-version binary paths and build options
+// 	for k, v := range athenaCM.Data {
+// 		// extract version and path from kustomize.version.<version>
+// 		if strings.HasPrefix(k, kustomizeVersionKeyPrefix) {
+// 			err = addKustomizeVersion(kustomizeVersionKeyPrefix, k, v, kustomizeVersionsMap)
+// 			if err != nil {
+// 				return nil, fmt.Errorf("failed to add kustomize version from %q: %w", k, err)
+// 			}
+// 		}
 
-		// extract version and path from kustomize.path.<version>
-		if strings.HasPrefix(k, kustomizePathPrefixKey) {
-			err = addKustomizeVersion(kustomizePathPrefixKey, k, v, kustomizeVersionsMap)
-			if err != nil {
-				return nil, fmt.Errorf("failed to add kustomize version from %q: %w", k, err)
-			}
-		}
+// 		// extract version and path from kustomize.path.<version>
+// 		if strings.HasPrefix(k, kustomizePathPrefixKey) {
+// 			err = addKustomizeVersion(kustomizePathPrefixKey, k, v, kustomizeVersionsMap)
+// 			if err != nil {
+// 				return nil, fmt.Errorf("failed to add kustomize version from %q: %w", k, err)
+// 			}
+// 		}
 
-		// extract version and build options from kustomize.buildOptions.<version>
-		if strings.HasPrefix(k, kustomizeBuildOptionsKey) && k != kustomizeBuildOptionsKey {
-			buildOptions[k[len(kustomizeBuildOptionsKey)+1:]] = v
-		}
-	}
+// 		// extract version and build options from kustomize.buildOptions.<version>
+// 		if strings.HasPrefix(k, kustomizeBuildOptionsKey) && k != kustomizeBuildOptionsKey {
+// 			buildOptions[k[len(kustomizeBuildOptionsKey)+1:]] = v
+// 		}
+// 	}
 
-	for _, v := range kustomizeVersionsMap {
-		if _, ok := buildOptions[v.Name]; ok {
-			v.BuildOptions = buildOptions[v.Name]
-		}
-		settings.Versions = append(settings.Versions, v)
-	}
-	return settings, nil
-}
+// 	for _, v := range kustomizeVersionsMap {
+// 		if _, ok := buildOptions[v.Name]; ok {
+// 			v.BuildOptions = buildOptions[v.Name]
+// 		}
+// 		settings.Versions = append(settings.Versions, v)
+// 	}
+// 	return settings, nil
+// }
 
-func addKustomizeVersion(prefix, name, path string, kvMap map[string]v1alpha1.KustomizeVersion) error {
-	version := name[len(prefix)+1:]
-	if _, ok := kvMap[version]; ok {
-		return fmt.Errorf("found duplicate kustomize version: %s", version)
-	}
-	kvMap[version] = v1alpha1.KustomizeVersion{
-		Name: version,
-		Path: path,
-	}
-	return nil
-}
+// func addKustomizeVersion(prefix, name, path string, kvMap map[string]v1alpha1.KustomizeVersion) error {
+// 	version := name[len(prefix)+1:]
+// 	if _, ok := kvMap[version]; ok {
+// 		return fmt.Errorf("found duplicate kustomize version: %s", version)
+// 	}
+// 	kvMap[version] = v1alpha1.KustomizeVersion{
+// 		Name: version,
+// 		Path: path,
+// 	}
+// 	return nil
+// }
 
 func (mgr *SettingsManager) GetGoogleAnalytics() (*GoogleAnalytics, error) {
 	athenaCM, err := mgr.getConfigMap()

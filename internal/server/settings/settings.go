@@ -95,9 +95,9 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 		AppLabelKey:        appInstanceLabelKey,
 		StatusBadgeEnabled: athenaSettings.StatusBadgeEnabled,
 		StatusBadgeRootUrl: athenaSettings.StatusBadgeRootUrl,
-		KustomizeOptions: &v1alpha1.KustomizeOptions{
-			BuildOptions: athenaSettings.KustomizeBuildOptions,
-		},
+		// KustomizeOptions: &v1alpha1.KustomizeOptions{
+		// 	BuildOptions: athenaSettings.KustomizeBuildOptions,
+		// },
 		GoogleAnalytics: &settingspkg.GoogleAnalyticsConfig{
 			TrackingID:     gaSettings.TrackingID,
 			AnonymizeUsers: gaSettings.AnonymizeUsers,
