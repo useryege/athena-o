@@ -100,7 +100,7 @@ func NewCommand() *cobra.Command {
 			})
 
 			// start the background services
-			if err := server.StartBackgroundServices(); err != nil {
+			if err := server.Start(); err != nil {
 				return err
 			}
 
@@ -113,7 +113,7 @@ func NewCommand() *cobra.Command {
 				s := <-sigCh
 				log.Printf("got signal %v, attempting graceful shutdown", s)
 				applicationGrpc.GracefulStop()
-				server.Shutdown(ctx)
+				server.Stop()
 				wg.Done()
 			}()
 

@@ -4,17 +4,4 @@ package application;
 
 option go_package = "github.com/useryege/athena/internal/application/apiclient";
 
-service ApplicationService {
-  rpc StartChainWatcher(StartChainWatcherRequest) returns (StartChainWatcherResponse);
-  rpc StopChainWatcher(StopChainWatcherRequest) returns (StopChainWatcherResponse);
-}
-
-message TestChainWatcherResponse {}
-
-message StartChainWatcherRequest {}
-
-message StartChainWatcherResponse {}
-
-message StopChainWatcherRequest {}
-
-message StopChainWatcherResponse {}
+service ApplicationService {}

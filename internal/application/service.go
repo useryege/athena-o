@@ -1,34 +1,37 @@
 package application
 
 import (
-	"context"
-
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/useryege/athena/internal/application/chainwatcher"
-
-	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 )
 
 type Service struct {
-	chainwatcher *chainwatcher.Server
+	watcher        *Watcher
+	projectManager *ProjectManager
 }
 
 func NewService(nodeClient *ethclient.Client) *Service {
 	return &Service{
-		chainwatcher: chainwatcher.NewServer(nodeClient),
+		watcher:        NewWatcher(nodeClient),
+		projectManager: NewProjectManager(nodeClient),
 	}
 }
 
-func (s *Service) StartChainWatcher(ctx context.Context, req *applicationpkg.StartChainWatcherRequest) (*applicationpkg.StartChainWatcherResponse, error) {
-	if err := s.chainwatcher.Start(); err != nil {
-		return nil, err
+func (s *Service) Start() error {
+	if err := s.watcher.Start(); err != nil {
+		return err
 	}
-	return &applicationpkg.StartChainWatcherResponse{}, nil
+	if err := s.projectManager.Start(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (s *Service) StopChainWatcher(ctx context.Context, req *applicationpkg.StopChainWatcherRequest) (*applicationpkg.StopChainWatcherResponse, error) {
-	if err := s.chainwatcher.Stop(); err != nil {
-		return nil, err
+func (s *Service) Stop() error {
+	if err := s.watcher.Stop(); err != nil {
+		return err
 	}
-	return &applicationpkg.StopChainWatcherResponse{}, nil
+	if err := s.projectManager.Stop(); err != nil {
+		return err
+	}
+	return nil
 }
