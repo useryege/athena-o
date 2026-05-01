@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -9,17 +10,21 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc/health/grpc_health_v1"
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/application"
+	"github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/application/metrics"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/healthz"
+	utilio "github.com/useryege/athena/util/io"
 )
 
 const cliName = "athena-application"
@@ -30,6 +35,7 @@ func NewCommand() *cobra.Command {
 		listenPort  int
 		metricsHost string
 		metricsPort int
+		nodewsurl   string
 	)
 
 	command := &cobra.Command{
@@ -53,31 +59,44 @@ func NewCommand() *cobra.Command {
 			http.Handle("/metrics", metricsServer.GetHandler())
 			go func() { errors.CheckError(http.ListenAndServe(fmt.Sprintf("%s:%d", metricsHost, metricsPort), nil)) }()
 
-			server := application.NewServer()
+			// create a new node client
+			nodeClient, err := ethclient.Dial(nodewsurl)
+			if err != nil {
+				log.Fatalf("failed to connect to node websocket: %v", err)
+			}
+
+			server := application.NewServer(application.ApplicationServerOpts{
+				NodeClient: nodeClient,
+			})
+
 			grpc := server.CreateGRPC()
-			ctx := cmd.Context()
+			ctx, cancel := context.WithCancel(cmd.Context())
+			defer cancel()
 
 			lc := &net.ListenConfig{}
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
 			errors.CheckError(err)
 
+			// start the background services
+			server.Init(ctx)
+
 			healthz.ServeHealthCheck(http.DefaultServeMux, func(r *http.Request) error {
 				if val, ok := r.URL.Query()["full"]; ok && len(val) > 0 && val[0] == "true" {
 					// connect to itself to make sure project controller is able to serve connection
 					// used by liveness probe to auto restart project controller
-					// conn, err := apiclient.NewConnection(fmt.Sprintf("localhost:%d", listenPort))
-					// if err != nil {
-					// 	return err
-					// }
-					// defer utilio.Close(conn)
-					// client := grpc_health_v1.NewHealthClient(conn)
-					// res, err := client.Check(r.Context(), &grpc_health_v1.HealthCheckRequest{})
-					// if err != nil {
-					// 	return err
-					// }
-					// if res.Status != grpc_health_v1.HealthCheckResponse_SERVING {
-					// 	return fmt.Errorf("grpc health check status is '%v'", res.Status)
-					// }
+					conn, err := apiclient.NewConnection(fmt.Sprintf("localhost:%d", listenPort))
+					if err != nil {
+						return err
+					}
+					defer utilio.Close(conn)
+					client := grpc_health_v1.NewHealthClient(conn)
+					res, err := client.Check(r.Context(), &grpc_health_v1.HealthCheckRequest{})
+					if err != nil {
+						return err
+					}
+					if res.Status != grpc_health_v1.HealthCheckResponse_SERVING {
+						return fmt.Errorf("grpc health check status is '%v'", res.Status)
+					}
 					return nil
 				}
 				return nil
@@ -91,6 +110,7 @@ func NewCommand() *cobra.Command {
 			go func() {
 				s := <-sigCh
 				log.Printf("got signal %v, attempting graceful shutdown", s)
+				cancel()
 				grpc.GracefulStop()
 				wg.Done()
 			}()
@@ -110,6 +130,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortApplication, "Listen on given port for incoming connections")
 	command.Flags().StringVar(&metricsHost, "metrics-address", env.StringFromEnv("ATHENA_APPLICATION_METRICS_LISTEN_ADDRESS", common.DefaultAddressApplicationMetrics), "Listen on given address for metrics and health checks")
 	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortApplicationMetrics, "Start metrics server on given port")
+	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_APPLICATION_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
