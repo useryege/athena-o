@@ -19,10 +19,16 @@ func NewService(nodeClient *ethclient.Client) *Service {
 	}
 }
 
-func (s *Service) TestChainWatcher(ctx context.Context, req *applicationpkg.TestChainWatcherRequest) (*applicationpkg.TestChainWatcherResponse, error) {
-	err := s.chainwatcher.TestChainWatcher(ctx, req.StartBlock, req.EndBlock)
-	if err != nil {
+func (s *Service) StartChainWatcher(ctx context.Context, req *applicationpkg.StartChainWatcherRequest) (*applicationpkg.StartChainWatcherResponse, error) {
+	if err := s.chainwatcher.Start(); err != nil {
 		return nil, err
 	}
-	return &applicationpkg.TestChainWatcherResponse{}, nil
+	return &applicationpkg.StartChainWatcherResponse{}, nil
+}
+
+func (s *Service) StopChainWatcher(ctx context.Context, req *applicationpkg.StopChainWatcherRequest) (*applicationpkg.StopChainWatcherResponse, error) {
+	if err := s.chainwatcher.Stop(); err != nil {
+		return nil, err
+	}
+	return &applicationpkg.StopChainWatcherResponse{}, nil
 }

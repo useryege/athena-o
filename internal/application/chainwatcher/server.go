@@ -8,16 +8,19 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	log "github.com/sirupsen/logrus"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
 )
 
 type Server struct {
-	nodeClient  *ethclient.Client
-	started     bool
-	stopped     bool
-	startedLock sync.Mutex
+	nodeClient *ethclient.Client
+
+	started bool
+	stopped bool
+	cancel  context.CancelFunc
+	doneCh  chan struct{}
+	mu      sync.Mutex
 }
 
 func NewServer(nodeClient *ethclient.Client) *Server {
@@ -65,39 +68,20 @@ func (s *Server) TestChainWatcher(ctx context.Context, startBlock uint64, endBlo
 		}
 		for _, tx := range block.Transactions() {
 			if tx.To() == nil {
-				fmt.Println("Transaction:", tx.Hash())
+				log.WithFields(log.Fields{
+					"blockNumber": blockNumber,
+					"transaction": tx.Hash(),
+				}).Info("transaction is a contract creation")
 			}
 		}
 	}
 	return nil
 }
 
-func (s *Server) Run(stopCh <-chan struct{}) {
-	s.RunWithContext(wait.ContextForChannel(stopCh))
-}
-
 func (s *Server) RunWithContext(ctx context.Context) {
 	// recover from panic and log the error using the configured logger instead of the default.
 	defer utilruntime.HandleCrashWithContext(ctx)
 	logger := klog.FromContext(ctx)
-
-	// check if the chainwatcher has started
-	if s.HasStarted() {
-		logger.Info("Warning: the chainwatcher has started, run more than once is not allowed")
-		return
-	}
-
-	// maintain the started and stopped status
-	func() {
-		s.startedLock.Lock()
-		defer s.startedLock.Unlock()
-		s.started = true
-	}()
-	defer func() {
-		s.startedLock.Lock()
-		defer s.startedLock.Unlock()
-		s.stopped = true
-	}()
 
 	// main logic
 	if s.nodeClient == nil {
@@ -111,14 +95,58 @@ func (s *Server) RunWithContext(ctx context.Context) {
 }
 
 func (s *Server) HasStarted() bool {
-	s.startedLock.Lock()
-	defer s.startedLock.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	return s.started
 }
 
 func (s *Server) Start() error {
+	s.mu.Lock()
+	if s.started {
+		s.mu.Unlock()
+		return nil
+	}
+
+	runCtx, cancel := context.WithCancel(context.Background())
+	doneCh := make(chan struct{})
+	s.cancel = cancel
+	s.doneCh = doneCh
+	s.started = true
+	s.stopped = false
+	s.mu.Unlock()
+
+	go func() {
+		defer close(doneCh)
+		defer func() {
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			s.started = false
+			s.stopped = true
+			s.cancel = nil
+		}()
+		s.RunWithContext(runCtx)
+	}()
+
 	return nil
 }
+
 func (s *Server) Stop() error {
+	s.mu.Lock()
+	if !s.started {
+		s.mu.Unlock()
+		return nil
+	}
+
+	cancel := s.cancel
+	doneCh := s.doneCh
+	s.mu.Unlock()
+
+	if cancel != nil {
+		cancel()
+	}
+	if doneCh != nil {
+		<-doneCh
+	}
+
 	return nil
 }

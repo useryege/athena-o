@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"context"
+	stderrors "errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
 
 	cmdutil "github.com/useryege/athena/cmd/util"
@@ -69,16 +70,12 @@ func NewCommand() *cobra.Command {
 				NodeClient: nodeClient,
 			})
 
-			grpc := server.CreateGRPC()
-			ctx, cancel := context.WithCancel(cmd.Context())
-			defer cancel()
+			applicationGrpc := server.CreateGRPC()
+			ctx := cmd.Context()
 
 			lc := &net.ListenConfig{}
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
 			errors.CheckError(err)
-
-			// start the background services
-			server.Init(ctx)
 
 			healthz.ServeHealthCheck(http.DefaultServeMux, func(r *http.Request) error {
 				if val, ok := r.URL.Query()["full"]; ok && len(val) > 0 && val[0] == "true" {
@@ -102,6 +99,11 @@ func NewCommand() *cobra.Command {
 				return nil
 			})
 
+			// start the background services
+			if err := server.StartBackgroundServices(); err != nil {
+				return err
+			}
+
 			// Graceful shutdown code adapted from here: https://gist.github.com/embano1/e0bf49d24f1cdd07cffad93097c04f0a
 			sigCh := make(chan os.Signal, 1)
 			signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
@@ -110,14 +112,17 @@ func NewCommand() *cobra.Command {
 			go func() {
 				s := <-sigCh
 				log.Printf("got signal %v, attempting graceful shutdown", s)
-				cancel()
-				grpc.GracefulStop()
+				applicationGrpc.GracefulStop()
+				server.Shutdown(ctx)
 				wg.Done()
 			}()
 
 			log.Println("starting grpc server")
-			err = grpc.Serve(listener)
-			errors.CheckError(err)
+			err = applicationGrpc.Serve(listener)
+			if err != nil && !stderrors.Is(err, grpc.ErrServerStopped) {
+				errors.CheckError(err)
+			}
+
 			wg.Wait()
 			log.Println("clean shutdown")
 			return nil

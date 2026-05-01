@@ -26,61 +26,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type TestChainWatcherRequest struct {
-	StartBlock           uint64   `protobuf:"varint,1,opt,name=startBlock,proto3" json:"startBlock,omitempty"`
-	EndBlock             uint64   `protobuf:"varint,2,opt,name=endBlock,proto3" json:"endBlock,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *TestChainWatcherRequest) Reset()         { *m = TestChainWatcherRequest{} }
-func (m *TestChainWatcherRequest) String() string { return proto.CompactTextString(m) }
-func (*TestChainWatcherRequest) ProtoMessage()    {}
-func (*TestChainWatcherRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{0}
-}
-func (m *TestChainWatcherRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *TestChainWatcherRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_TestChainWatcherRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *TestChainWatcherRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TestChainWatcherRequest.Merge(m, src)
-}
-func (m *TestChainWatcherRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *TestChainWatcherRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_TestChainWatcherRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TestChainWatcherRequest proto.InternalMessageInfo
-
-func (m *TestChainWatcherRequest) GetStartBlock() uint64 {
-	if m != nil {
-		return m.StartBlock
-	}
-	return 0
-}
-
-func (m *TestChainWatcherRequest) GetEndBlock() uint64 {
-	if m != nil {
-		return m.EndBlock
-	}
-	return 0
-}
-
 type TestChainWatcherResponse struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -91,7 +36,7 @@ func (m *TestChainWatcherResponse) Reset()         { *m = TestChainWatcherRespon
 func (m *TestChainWatcherResponse) String() string { return proto.CompactTextString(m) }
 func (*TestChainWatcherResponse) ProtoMessage()    {}
 func (*TestChainWatcherResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{1}
+	return fileDescriptor_8ec0c1410c6c3952, []int{0}
 }
 func (m *TestChainWatcherResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -120,9 +65,168 @@ func (m *TestChainWatcherResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_TestChainWatcherResponse proto.InternalMessageInfo
 
+type StartChainWatcherRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *StartChainWatcherRequest) Reset()         { *m = StartChainWatcherRequest{} }
+func (m *StartChainWatcherRequest) String() string { return proto.CompactTextString(m) }
+func (*StartChainWatcherRequest) ProtoMessage()    {}
+func (*StartChainWatcherRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8ec0c1410c6c3952, []int{1}
+}
+func (m *StartChainWatcherRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *StartChainWatcherRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_StartChainWatcherRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *StartChainWatcherRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StartChainWatcherRequest.Merge(m, src)
+}
+func (m *StartChainWatcherRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *StartChainWatcherRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_StartChainWatcherRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StartChainWatcherRequest proto.InternalMessageInfo
+
+type StartChainWatcherResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *StartChainWatcherResponse) Reset()         { *m = StartChainWatcherResponse{} }
+func (m *StartChainWatcherResponse) String() string { return proto.CompactTextString(m) }
+func (*StartChainWatcherResponse) ProtoMessage()    {}
+func (*StartChainWatcherResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8ec0c1410c6c3952, []int{2}
+}
+func (m *StartChainWatcherResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *StartChainWatcherResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_StartChainWatcherResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *StartChainWatcherResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StartChainWatcherResponse.Merge(m, src)
+}
+func (m *StartChainWatcherResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *StartChainWatcherResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_StartChainWatcherResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StartChainWatcherResponse proto.InternalMessageInfo
+
+type StopChainWatcherRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *StopChainWatcherRequest) Reset()         { *m = StopChainWatcherRequest{} }
+func (m *StopChainWatcherRequest) String() string { return proto.CompactTextString(m) }
+func (*StopChainWatcherRequest) ProtoMessage()    {}
+func (*StopChainWatcherRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8ec0c1410c6c3952, []int{3}
+}
+func (m *StopChainWatcherRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *StopChainWatcherRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_StopChainWatcherRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *StopChainWatcherRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StopChainWatcherRequest.Merge(m, src)
+}
+func (m *StopChainWatcherRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *StopChainWatcherRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_StopChainWatcherRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StopChainWatcherRequest proto.InternalMessageInfo
+
+type StopChainWatcherResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *StopChainWatcherResponse) Reset()         { *m = StopChainWatcherResponse{} }
+func (m *StopChainWatcherResponse) String() string { return proto.CompactTextString(m) }
+func (*StopChainWatcherResponse) ProtoMessage()    {}
+func (*StopChainWatcherResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8ec0c1410c6c3952, []int{4}
+}
+func (m *StopChainWatcherResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *StopChainWatcherResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_StopChainWatcherResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *StopChainWatcherResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StopChainWatcherResponse.Merge(m, src)
+}
+func (m *StopChainWatcherResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *StopChainWatcherResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_StopChainWatcherResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StopChainWatcherResponse proto.InternalMessageInfo
+
 func init() {
-	proto.RegisterType((*TestChainWatcherRequest)(nil), "application.TestChainWatcherRequest")
 	proto.RegisterType((*TestChainWatcherResponse)(nil), "application.TestChainWatcherResponse")
+	proto.RegisterType((*StartChainWatcherRequest)(nil), "application.StartChainWatcherRequest")
+	proto.RegisterType((*StartChainWatcherResponse)(nil), "application.StartChainWatcherResponse")
+	proto.RegisterType((*StopChainWatcherRequest)(nil), "application.StopChainWatcherRequest")
+	proto.RegisterType((*StopChainWatcherResponse)(nil), "application.StopChainWatcherResponse")
 }
 
 func init() {
@@ -130,22 +234,22 @@ func init() {
 }
 
 var fileDescriptor_8ec0c1410c6c3952 = []byte{
-	// 227 bytes of a gzipped FileDescriptorProto
+	// 236 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0xcb, 0xcc, 0x2b, 0x49,
 	0x2d, 0xca, 0x4b, 0xcc, 0xd1, 0x4f, 0x2c, 0x28, 0xc8, 0xc9, 0x4c, 0x4e, 0x2c, 0xc9, 0xcc, 0xcf,
-	0x43, 0x66, 0xeb, 0x15, 0x14, 0xe5, 0x97, 0xe4, 0x0b, 0x71, 0x23, 0x09, 0x29, 0x85, 0x72, 0x89,
-	0x87, 0xa4, 0x16, 0x97, 0x38, 0x67, 0x24, 0x66, 0xe6, 0x85, 0x27, 0x96, 0x24, 0x67, 0xa4, 0x16,
-	0x05, 0xa5, 0x16, 0x96, 0xa6, 0x16, 0x97, 0x08, 0xc9, 0x71, 0x71, 0x15, 0x97, 0x24, 0x16, 0x95,
-	0x38, 0xe5, 0xe4, 0x27, 0x67, 0x4b, 0x30, 0x2a, 0x30, 0x6a, 0xb0, 0x04, 0x21, 0x89, 0x08, 0x49,
-	0x71, 0x71, 0xa4, 0xe6, 0xa5, 0x40, 0x64, 0x99, 0xc0, 0xb2, 0x70, 0xbe, 0x92, 0x14, 0x97, 0x04,
-	0xa6, 0xb1, 0xc5, 0x05, 0xf9, 0x79, 0xc5, 0xa9, 0x46, 0xa5, 0x5c, 0x42, 0x8e, 0x08, 0x17, 0x04,
-	0xa7, 0x16, 0x95, 0x65, 0x26, 0xa7, 0x0a, 0xc5, 0x73, 0x09, 0xa0, 0xeb, 0x10, 0x52, 0xd1, 0x43,
-	0x76, 0x3d, 0x0e, 0x77, 0x4a, 0xa9, 0x12, 0x50, 0x05, 0xb1, 0xd6, 0xc9, 0xfd, 0xc4, 0x23, 0x39,
-	0xc6, 0x0b, 0x8f, 0xe4, 0x18, 0x1f, 0x3c, 0x92, 0x63, 0x8c, 0xb2, 0x4c, 0xcf, 0x2c, 0xc9, 0x28,
-	0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0x2f, 0x2d, 0x4e, 0x2d, 0xaa, 0x4c, 0x4d, 0x4f, 0xd5, 0x4f,
-	0x2c, 0xc9, 0x48, 0xcd, 0x4b, 0xd4, 0xc7, 0x11, 0x8e, 0x99, 0xc9, 0x39, 0x99, 0xa9, 0x79, 0x25,
-	0x49, 0x6c, 0xe0, 0x60, 0x34, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x95, 0xed, 0x83, 0xfd, 0x70,
-	0x01, 0x00, 0x00,
+	0x43, 0x66, 0xeb, 0x15, 0x14, 0xe5, 0x97, 0xe4, 0x0b, 0x71, 0x23, 0x09, 0x29, 0x49, 0x71, 0x49,
+	0x84, 0xa4, 0x16, 0x97, 0x38, 0x67, 0x24, 0x66, 0xe6, 0x85, 0x27, 0x96, 0x24, 0x67, 0xa4, 0x16,
+	0x05, 0xa5, 0x16, 0x17, 0xe4, 0xe7, 0x15, 0xa7, 0x82, 0xe4, 0x82, 0x4b, 0x12, 0x8b, 0xd0, 0x24,
+	0x0b, 0x4b, 0x53, 0x8b, 0x4b, 0x94, 0xa4, 0xb9, 0x24, 0xb1, 0xc8, 0x41, 0x35, 0x4a, 0x72, 0x89,
+	0x07, 0x97, 0xe4, 0x17, 0x60, 0xd3, 0x07, 0x36, 0x13, 0x5d, 0x0a, 0xa2, 0xcd, 0xe8, 0x26, 0x23,
+	0x97, 0x90, 0x23, 0xc2, 0x6d, 0xc1, 0xa9, 0x45, 0x65, 0x99, 0xc9, 0xa9, 0x42, 0x49, 0x5c, 0x82,
+	0x18, 0x56, 0x09, 0xa9, 0xea, 0x21, 0x7b, 0x0c, 0x97, 0x33, 0xa5, 0xd4, 0x08, 0x29, 0x83, 0x58,
+	0x2d, 0x14, 0xcf, 0x25, 0x80, 0xee, 0x2c, 0x21, 0x15, 0x34, 0xbd, 0x58, 0x3d, 0x24, 0xa5, 0x4a,
+	0x40, 0x15, 0xc4, 0x02, 0x27, 0xf7, 0x13, 0x8f, 0xe4, 0x18, 0x2f, 0x3c, 0x92, 0x63, 0x7c, 0xf0,
+	0x48, 0x8e, 0x31, 0xca, 0x32, 0x3d, 0xb3, 0x24, 0xa3, 0x34, 0x49, 0x2f, 0x39, 0x3f, 0x57, 0xbf,
+	0xb4, 0x38, 0xb5, 0xa8, 0x32, 0x35, 0x3d, 0x55, 0x3f, 0xb1, 0x24, 0x23, 0x35, 0x2f, 0x51, 0x1f,
+	0x47, 0x2c, 0x66, 0x26, 0xe7, 0x64, 0xa6, 0xe6, 0x95, 0x24, 0xb1, 0x81, 0x23, 0xd1, 0x18, 0x10,
+	0x00, 0x00, 0xff, 0xff, 0xc5, 0x95, 0xe2, 0xf9, 0xee, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -160,7 +264,8 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ApplicationServiceClient interface {
-	TestChainWatcher(ctx context.Context, in *TestChainWatcherRequest, opts ...grpc.CallOption) (*TestChainWatcherResponse, error)
+	StartChainWatcher(ctx context.Context, in *StartChainWatcherRequest, opts ...grpc.CallOption) (*StartChainWatcherResponse, error)
+	StopChainWatcher(ctx context.Context, in *StopChainWatcherRequest, opts ...grpc.CallOption) (*StopChainWatcherResponse, error)
 }
 
 type applicationServiceClient struct {
@@ -171,9 +276,18 @@ func NewApplicationServiceClient(cc *grpc.ClientConn) ApplicationServiceClient {
 	return &applicationServiceClient{cc}
 }
 
-func (c *applicationServiceClient) TestChainWatcher(ctx context.Context, in *TestChainWatcherRequest, opts ...grpc.CallOption) (*TestChainWatcherResponse, error) {
-	out := new(TestChainWatcherResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/TestChainWatcher", in, out, opts...)
+func (c *applicationServiceClient) StartChainWatcher(ctx context.Context, in *StartChainWatcherRequest, opts ...grpc.CallOption) (*StartChainWatcherResponse, error) {
+	out := new(StartChainWatcherResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/StartChainWatcher", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) StopChainWatcher(ctx context.Context, in *StopChainWatcherRequest, opts ...grpc.CallOption) (*StopChainWatcherResponse, error) {
+	out := new(StopChainWatcherResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/StopChainWatcher", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -182,35 +296,57 @@ func (c *applicationServiceClient) TestChainWatcher(ctx context.Context, in *Tes
 
 // ApplicationServiceServer is the server API for ApplicationService service.
 type ApplicationServiceServer interface {
-	TestChainWatcher(context.Context, *TestChainWatcherRequest) (*TestChainWatcherResponse, error)
+	StartChainWatcher(context.Context, *StartChainWatcherRequest) (*StartChainWatcherResponse, error)
+	StopChainWatcher(context.Context, *StopChainWatcherRequest) (*StopChainWatcherResponse, error)
 }
 
 // UnimplementedApplicationServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedApplicationServiceServer struct {
 }
 
-func (*UnimplementedApplicationServiceServer) TestChainWatcher(ctx context.Context, req *TestChainWatcherRequest) (*TestChainWatcherResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TestChainWatcher not implemented")
+func (*UnimplementedApplicationServiceServer) StartChainWatcher(ctx context.Context, req *StartChainWatcherRequest) (*StartChainWatcherResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartChainWatcher not implemented")
+}
+func (*UnimplementedApplicationServiceServer) StopChainWatcher(ctx context.Context, req *StopChainWatcherRequest) (*StopChainWatcherResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopChainWatcher not implemented")
 }
 
 func RegisterApplicationServiceServer(s *grpc.Server, srv ApplicationServiceServer) {
 	s.RegisterService(&_ApplicationService_serviceDesc, srv)
 }
 
-func _ApplicationService_TestChainWatcher_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TestChainWatcherRequest)
+func _ApplicationService_StartChainWatcher_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartChainWatcherRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServiceServer).TestChainWatcher(ctx, in)
+		return srv.(ApplicationServiceServer).StartChainWatcher(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/application.ApplicationService/TestChainWatcher",
+		FullMethod: "/application.ApplicationService/StartChainWatcher",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).TestChainWatcher(ctx, req.(*TestChainWatcherRequest))
+		return srv.(ApplicationServiceServer).StartChainWatcher(ctx, req.(*StartChainWatcherRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_StopChainWatcher_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StopChainWatcherRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).StopChainWatcher(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/StopChainWatcher",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).StopChainWatcher(ctx, req.(*StopChainWatcherRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -220,49 +356,16 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ApplicationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "TestChainWatcher",
-			Handler:    _ApplicationService_TestChainWatcher_Handler,
+			MethodName: "StartChainWatcher",
+			Handler:    _ApplicationService_StartChainWatcher_Handler,
+		},
+		{
+			MethodName: "StopChainWatcher",
+			Handler:    _ApplicationService_StopChainWatcher_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "internal/application/application.proto",
-}
-
-func (m *TestChainWatcherRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *TestChainWatcherRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *TestChainWatcherRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.EndBlock != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.EndBlock))
-		i--
-		dAtA[i] = 0x10
-	}
-	if m.StartBlock != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.StartBlock))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
 }
 
 func (m *TestChainWatcherResponse) Marshal() (dAtA []byte, err error) {
@@ -292,6 +395,114 @@ func (m *TestChainWatcherResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
+func (m *StartChainWatcherRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *StartChainWatcherRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *StartChainWatcherRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *StartChainWatcherResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *StartChainWatcherResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *StartChainWatcherResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *StopChainWatcherRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *StopChainWatcherRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *StopChainWatcherRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *StopChainWatcherResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *StopChainWatcherResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *StopChainWatcherResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintApplication(dAtA []byte, offset int, v uint64) int {
 	offset -= sovApplication(v)
 	base := offset
@@ -303,25 +514,55 @@ func encodeVarintApplication(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *TestChainWatcherRequest) Size() (n int) {
+func (m *TestChainWatcherResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.StartBlock != 0 {
-		n += 1 + sovApplication(uint64(m.StartBlock))
-	}
-	if m.EndBlock != 0 {
-		n += 1 + sovApplication(uint64(m.EndBlock))
-	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
 	return n
 }
 
-func (m *TestChainWatcherResponse) Size() (n int) {
+func (m *StartChainWatcherRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *StartChainWatcherResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *StopChainWatcherRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *StopChainWatcherResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -338,95 +579,6 @@ func sovApplication(x uint64) (n int) {
 }
 func sozApplication(x uint64) (n int) {
 	return sovApplication(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *TestChainWatcherRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: TestChainWatcherRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TestChainWatcherRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StartBlock", wireType)
-			}
-			m.StartBlock = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.StartBlock |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EndBlock", wireType)
-			}
-			m.EndBlock = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.EndBlock |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *TestChainWatcherResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -455,6 +607,210 @@ func (m *TestChainWatcherResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: TestChainWatcherResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *StartChainWatcherRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: StartChainWatcherRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: StartChainWatcherRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *StartChainWatcherResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: StartChainWatcherResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: StartChainWatcherResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *StopChainWatcherRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: StopChainWatcherRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: StopChainWatcherRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *StopChainWatcherResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: StopChainWatcherResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: StopChainWatcherResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
