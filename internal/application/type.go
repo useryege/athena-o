@@ -6,15 +6,22 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/google/uuid"
 )
 
 // CreationTxEvent carries minimal data for contract creation transactions.
 type Project struct {
+	ProjectID     uuid.UUID
 	BlockTime     uint64
 	BlockNumber   uint64
 	Tx            *types.Transaction
-	TokenMetadata *TokenMetadata
 	PerfTrace     *PerfTrace
+	TokenMetadata *TokenMetadata
+	Creator       *Wallet
+}
+
+type Wallet struct {
+	Address common.Address
 }
 
 type TokenMetadata struct {
@@ -23,6 +30,9 @@ type TokenMetadata struct {
 	Decimals    uint8
 	TotalSupply *big.Int
 	Address     common.Address
+
+	SourceCode    string
+	SourceCodeABI string
 }
 
 type PerfTrace struct {

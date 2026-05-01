@@ -38,6 +38,9 @@ func (p *ProjectManager) Start(ctx context.Context) error {
 				managerStartedAt := time.Now()
 
 				event.PerfTrace.ManagerStartedAt = managerStartedAt
+				// TODO: implement project manager logic
+				// p.Projects[event.TokenMetadata.Address] = event
+
 				event.PerfTrace.ManagerCompletedAt = time.Now()
 
 				log.WithFields(log.Fields{
