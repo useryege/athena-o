@@ -12,15 +12,15 @@ import (
 )
 
 type Watcher struct {
-	nodeClient   *ethclient.Client
-	creationTxCh chan<- CreationTxEvent
-	wg           sync.WaitGroup
+	nodeClient *ethclient.Client
+	outputCh   chan<- Project
+	wg         sync.WaitGroup
 }
 
-func NewWatcher(nodeClient *ethclient.Client, creationTxCh chan<- CreationTxEvent) *Watcher {
+func NewWatcher(nodeClient *ethclient.Client, outputCh chan<- Project) *Watcher {
 	return &Watcher{
-		nodeClient:   nodeClient,
-		creationTxCh: creationTxCh,
+		nodeClient: nodeClient,
+		outputCh:   outputCh,
 	}
 }
 
@@ -77,7 +77,7 @@ func (s *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBl
 		}
 		for _, tx := range block.Transactions() {
 			if tx.To() == nil {
-				s.creationTxCh <- CreationTxEvent{
+				s.outputCh <- Project{
 					BlockNumber: blockNumber,
 					Tx:          tx,
 				}

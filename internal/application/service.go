@@ -10,8 +10,8 @@ import (
 
 type Service struct {
 	watcher        *Watcher
+	projectFilter  *ProjectFilter
 	projectManager *ProjectManager
-	creationTxCh   chan CreationTxEvent
 
 	startStopMu   sync.Mutex
 	lifecycleCtx  context.Context
@@ -20,11 +20,14 @@ type Service struct {
 }
 
 func NewService(nodeClient *ethclient.Client) *Service {
-	creationTxCh := make(chan CreationTxEvent, 1024)
+
+	watcherToProjectFilterCh := make(chan Project, 1024)
+	projectFilterToProjectManagerCh := make(chan Project, 1024)
+
 	return &Service{
-		watcher:        NewWatcher(nodeClient, creationTxCh),
-		projectManager: NewProjectManager(nodeClient, creationTxCh),
-		creationTxCh:   creationTxCh,
+		watcher:        NewWatcher(nodeClient, watcherToProjectFilterCh),
+		projectFilter:  NewProjectFilter(nodeClient, watcherToProjectFilterCh, projectFilterToProjectManagerCh),
+		projectManager: NewProjectManager(nodeClient, projectFilterToProjectManagerCh),
 	}
 }
 
@@ -40,8 +43,14 @@ func (s *Service) Start() error {
 		cancel()
 		return err
 	}
+	if err := s.projectFilter.Start(ctx); err != nil {
+		cancel()
+		_ = s.watcher.Stop()
+		return err
+	}
 	if err := s.projectManager.Start(ctx); err != nil {
 		cancel()
+		_ = s.projectFilter.Stop()
 		_ = s.watcher.Stop()
 		return err
 	}
@@ -69,6 +78,7 @@ func (s *Service) Stop() error {
 	}
 
 	watcherErr := s.watcher.Stop()
+	projectFilterErr := s.projectFilter.Stop()
 	projectManagerErr := s.projectManager.Stop()
-	return errors.Join(watcherErr, projectManagerErr)
+	return errors.Join(watcherErr, projectFilterErr, projectManagerErr)
 }
