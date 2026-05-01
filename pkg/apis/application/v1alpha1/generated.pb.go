@@ -7,16 +7,15 @@ import (
 	fmt "fmt"
 
 	io "io"
+	math_bits "math/bits"
+	reflect "reflect"
 	"sort"
+	strings "strings"
 
 	github_com_useryege_athena_gitops_engine_pkg_health "github.com/useryege/athena/gitops-engine/pkg/health"
 	k8s_io_api_core_v1 "k8s.io/api/core/v1"
 	v11 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	math_bits "math/bits"
-	reflect "reflect"
-	strings "strings"
 )
 
 func (m *AWSAuthConfig) Reset() { *m = AWSAuthConfig{} }

@@ -43,11 +43,11 @@ sed -i.bak -e 's#${GOBIN}/##g' ${TARGET_SCRIPT}
 . ${TARGET_SCRIPT}
 
 kube::codegen::gen_helpers pkg/apis/application/v1alpha1
-kube::codegen::gen_client pkg/apis \
-  --output-dir pkg/client \
-  --output-pkg github.com/useryege/athena/pkg/client \
-  --boilerplate "${PROJECT_ROOT}/hack/custom-boilerplate.go.txt" \
-  --with-watch
+# kube::codegen::gen_client pkg/apis \
+#   --output-dir pkg/client \
+#   --output-pkg github.com/useryege/athena/pkg/client \
+#   --boilerplate "${PROJECT_ROOT}/hack/custom-boilerplate.go.txt" \
+#   --with-watch
 
 rm ${TARGET_SCRIPT}
 rm ${TARGET_SCRIPT}.bak
