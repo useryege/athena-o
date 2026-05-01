@@ -79,10 +79,10 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 	// 	kustomizeVersions = append(kustomizeVersions, kustomizeSettings.Versions[i].Name)
 	// }
 
-	trackingMethod, err := s.mgr.GetTrackingMethod()
-	if err != nil {
-		return nil, err
-	}
+	// trackingMethod, err := s.mgr.GetTrackingMethod()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	installationID, err := s.mgr.GetInstallationID()
 	if err != nil {
@@ -109,8 +109,8 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 		},
 		UserLoginsDisabled: userLoginsDisabled,
 		// KustomizeVersions:  kustomizeVersions,
-		UiCssURL:       athenaSettings.UiCssURL,
-		TrackingMethod: trackingMethod,
+		UiCssURL: athenaSettings.UiCssURL,
+		// TrackingMethod: trackingMethod,
 		InstallationID: installationID,
 		ExecEnabled:    athenaSettings.ExecEnabled,
 		// AppsInAnyNamespaceEnabled: s.appsInAnyNamespaceEnabled,

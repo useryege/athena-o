@@ -76,13 +76,13 @@ type Application struct {
 // 	return reflect.DeepEqual(id, other)
 // }
 
-type TrackingMethod string
+// type TrackingMethod string
 
-const (
-	TrackingMethodAnnotation TrackingMethod = "annotation"
-	// TrackingMethodLabel              TrackingMethod = "label"
-	// TrackingMethodAnnotationAndLabel TrackingMethod = "annotation+label"
-)
+// const (
+// 	TrackingMethodAnnotation TrackingMethod = "annotation"
+// 	// TrackingMethodLabel              TrackingMethod = "label"
+// 	// TrackingMethodAnnotationAndLabel TrackingMethod = "annotation+label"
+// )
 
 // // ResourceIgnoreDifferences contains resource filter and list of json paths which should be ignored during comparison with live state.
 // type ResourceIgnoreDifferences struct {

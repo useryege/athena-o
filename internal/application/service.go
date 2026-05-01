@@ -1,37 +1,74 @@
 package application
 
 import (
+	"context"
+	"errors"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 type Service struct {
 	watcher        *Watcher
 	projectManager *ProjectManager
+	creationTxCh   chan CreationTxEvent
+
+	startStopMu   sync.Mutex
+	lifecycleCtx  context.Context
+	lifecycleStop context.CancelFunc
+	started       bool
 }
 
 func NewService(nodeClient *ethclient.Client) *Service {
+	creationTxCh := make(chan CreationTxEvent, 256)
 	return &Service{
-		watcher:        NewWatcher(nodeClient),
-		projectManager: NewProjectManager(nodeClient),
+		watcher:        NewWatcher(nodeClient, creationTxCh),
+		projectManager: NewProjectManager(nodeClient, creationTxCh),
+		creationTxCh:   creationTxCh,
 	}
 }
 
 func (s *Service) Start() error {
-	if err := s.watcher.Start(); err != nil {
+	s.startStopMu.Lock()
+	defer s.startStopMu.Unlock()
+	if s.started {
+		return nil
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := s.watcher.Start(ctx); err != nil {
+		cancel()
 		return err
 	}
-	if err := s.projectManager.Start(); err != nil {
+	if err := s.projectManager.Start(ctx); err != nil {
+		cancel()
+		_ = s.watcher.Stop()
 		return err
 	}
+
+	s.lifecycleCtx = ctx
+	s.lifecycleStop = cancel
+	s.started = true
 	return nil
 }
 
 func (s *Service) Stop() error {
-	if err := s.watcher.Stop(); err != nil {
-		return err
+	s.startStopMu.Lock()
+	if !s.started {
+		s.startStopMu.Unlock()
+		return nil
 	}
-	if err := s.projectManager.Stop(); err != nil {
-		return err
+	stop := s.lifecycleStop
+	s.lifecycleCtx = nil
+	s.lifecycleStop = nil
+	s.started = false
+	s.startStopMu.Unlock()
+
+	if stop != nil {
+		stop()
 	}
-	return nil
+
+	watcherErr := s.watcher.Stop()
+	projectManagerErr := s.projectManager.Stop()
+	return errors.Join(watcherErr, projectManagerErr)
 }

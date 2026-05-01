@@ -5,21 +5,34 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 )
 
 type Watcher struct {
-	nodeClient *ethclient.Client
+	nodeClient   *ethclient.Client
+	creationTxCh chan<- CreationTxEvent
+	wg           sync.WaitGroup
 }
 
-func NewWatcher(nodeClient *ethclient.Client) *Watcher {
-	return &Watcher{nodeClient: nodeClient}
+func NewWatcher(nodeClient *ethclient.Client, creationTxCh chan<- CreationTxEvent) *Watcher {
+	return &Watcher{
+		nodeClient:   nodeClient,
+		creationTxCh: creationTxCh,
+	}
 }
 
-func (w *Watcher) Start() error {
-	go w.TestChainWatcher(context.Background(), 0, 0)
+func (w *Watcher) Start(ctx context.Context) error {
+	w.wg.Add(1)
+	go func() {
+		defer w.wg.Done()
+		err := w.TestChainWatcher(ctx, 0, 0)
+		if err != nil {
+			log.Errorf("failed to test chain watcher: %v", err)
+		}
+	}()
 	return nil
 }
 
@@ -64,10 +77,10 @@ func (s *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBl
 		}
 		for _, tx := range block.Transactions() {
 			if tx.To() == nil {
-				log.WithFields(log.Fields{
-					"blockNumber": blockNumber,
-					"transaction": tx.Hash(),
-				}).Info("transaction is a contract creation")
+				s.creationTxCh <- CreationTxEvent{
+					BlockNumber: blockNumber,
+					TxHash:      tx.Hash(),
+				}
 			}
 		}
 	}
@@ -75,5 +88,6 @@ func (s *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBl
 }
 
 func (w *Watcher) Stop() error {
+	w.wg.Wait()
 	return nil
 }

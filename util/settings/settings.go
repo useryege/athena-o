@@ -479,9 +479,9 @@ const (
 	// kustomizeBuildOptionsKey is a string of kustomize build parameters
 	kustomizeBuildOptionsKey = "kustomize.buildOptions"
 	// kustomizeVersionKeyPrefix is a kustomize version key prefix
-	kustomizeVersionKeyPrefix = "kustomize.version"
+	// kustomizeVersionKeyPrefix = "kustomize.version"
 	// kustomizePathPrefixKey is a kustomize path for a specific version
-	kustomizePathPrefixKey = "kustomize.path"
+	// kustomizePathPrefixKey = "kustomize.path"
 	// anonymousUserEnabledKey is the key which enables or disables anonymous user
 	anonymousUserEnabledKey = "users.anonymous.enabled"
 	// userSessionDurationKey is the key which specifies token expiration duration
@@ -840,17 +840,17 @@ func (mgr *SettingsManager) GetAppInstanceLabelKey() (string, error) {
 	return label, nil
 }
 
-func (mgr *SettingsManager) GetTrackingMethod() (string, error) {
-	athenaCM, err := mgr.getConfigMap()
-	if err != nil {
-		return "", err
-	}
-	tm := athenaCM.Data[settingsResourceTrackingMethodKey]
-	if tm == "" {
-		return string(v1alpha1.TrackingMethodAnnotation), nil
-	}
-	return tm, nil
-}
+// func (mgr *SettingsManager) GetTrackingMethod() (string, error) {
+// 	athenaCM, err := mgr.getConfigMap()
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	tm := athenaCM.Data[settingsResourceTrackingMethodKey]
+// 	if tm == "" {
+// 		return string(v1alpha1.TrackingMethodAnnotation), nil
+// 	}
+// 	return tm, nil
+// }
 
 func (mgr *SettingsManager) GetInstallationID() (string, error) {
 	athenaCM, err := mgr.getConfigMap()
