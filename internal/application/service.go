@@ -20,7 +20,7 @@ type Service struct {
 }
 
 func NewService(nodeClient *ethclient.Client) *Service {
-	creationTxCh := make(chan CreationTxEvent, 256)
+	creationTxCh := make(chan CreationTxEvent, 1024)
 	return &Service{
 		watcher:        NewWatcher(nodeClient, creationTxCh),
 		projectManager: NewProjectManager(nodeClient, creationTxCh),

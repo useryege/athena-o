@@ -36,7 +36,7 @@ func (p *ProjectManager) Start(ctx context.Context) error {
 				}
 				log.WithFields(log.Fields{
 					"blockNumber": event.BlockNumber,
-					"transaction": event.TxHash,
+					"transaction": event.Tx.Hash(),
 				}).Info("project manager received contract creation transaction")
 			}
 		}

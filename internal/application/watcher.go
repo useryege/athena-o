@@ -79,7 +79,7 @@ func (s *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBl
 			if tx.To() == nil {
 				s.creationTxCh <- CreationTxEvent{
 					BlockNumber: blockNumber,
-					TxHash:      tx.Hash(),
+					Tx:          tx,
 				}
 			}
 		}

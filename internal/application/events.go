@@ -1,9 +1,9 @@
 package application
 
-import "github.com/ethereum/go-ethereum/common"
+import "github.com/ethereum/go-ethereum/core/types"
 
 // CreationTxEvent carries minimal data for contract creation transactions.
 type CreationTxEvent struct {
 	BlockNumber uint64
-	TxHash      common.Hash
+	Tx          *types.Transaction
 }
