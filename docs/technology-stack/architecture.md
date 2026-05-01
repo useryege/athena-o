@@ -160,34 +160,75 @@ Specifically:
 
 ### Block Sniffer
 
-Subscribe the lastest block height and use it to monitor the blockchain real-time tx and logs events.When the tx and the logs events that we interested in are detected, it will emit a sync event to the **Project Controller**.
+The Block Sniffer is an ultra-hot-path component. It must only do event detection and event emission, and must not execute heavy project synchronization logic.
 
-Maintain Target Pair Address
-  -> Maintain the lastest target Pair Address in the momory. Fetch the target Pair data from the **Project Controller**
+Responsibilities:
 
-Sniffer For Swap Events(Here Must be as Fast as Possible)
-  -> Subscribe the lastest block height form evm node.
-  -> Filter the logs by the target Pair Address and the swap events.
-  -> When the target logs are detected, it will emit a sync event to the **Project Controller**.
+* Subscribe latest block headers from EVM node (Only WS Not HTTP).
+* Decode and filter:
+  * New token create tx patterns tx.to == nil.
+* Emit normalized sync events to the high-throughput event queue for **project sync**.
 
-Sniffer For Create Token Tx
-  -> Subscribe the lastest block height form evm node.
-  -> Filter the tx by the block height.
-  -> Tx:
-    -> Create the ERC20 New Token
+Performance design:
+
+* Use lock-minimized snapshots (`atomic.Pointer` to immutable filter set) for read path.
+* Keep event payload minimal (`block_number`, `tx_hash`, `log_index`, `pair_address`, `event_type`, `event_key`).
+* Never block on downstream I/O:
+  * Push event into bounded queue.
+  * If queue is full, apply configured backpressure strategy (drop/coalesce/block-with-timeout).
+* Avoid duplicate work using dedup key: `chain_id:block_number:tx_hash:log_index:event_type`.
+
+Internal pipelines:
+
+* Header Consumer -> Block Task Dispatcher.
+* Log Scanner Worker Pool -> Swap/CreateToken detector.
+* Event Normalizer -> Event Queue Producer.
+
+Output contract:
+
+* Emit `ProjectSyncEvent` to Project Controller through in-process bounded channel (high throughput, low overhead, decoupled execution).
 ---
 
 ### Project Controller
 
-Receive the sync event from the **Block Sniffer** and fetch the lastest project data from the blockchain or external sources. maintain the project data in the memory. refresh the project data periodically to keep the project data up to date.
+The Project Controller is an event-driven state synchronization component. It consumes sync events from Block Sniffer and updates project state asynchronously.
 
-Sync Project Data
-  -> Fetch the lastest project data from the blockchain or external sources.
-  -> Maintain the project data in the memory.
-  -> Refresh the project data periodically to keep the project data up to date.
+Responsibilities:
 
-Sync Target Pair Address
-  -> Filter the target pair address from the project data.
+* Consume `ProjectSyncEvent` from queue.
+* Group/coalesce events by project key (pair/token/factory) in short windows.
+* Pull fresh project data from chain/indexer/external sources.
+* Maintain the latest project state in memory (read-optimized).
+* Publish updated target pair snapshot back to Block Sniffer.
+* Periodically reconcile full state to avoid drift.
+
+Concurrency and decoupling model:
+
+* One bounded input queue from Block Sniffer.
+* Event Router dispatches by sharding key (for example `pair_address % N`) to shard workers.
+* Each shard worker processes events sequentially for same key, preventing state races.
+* Different shards run in parallel for throughput.
+
+State management model:
+
+* Write path: shard-local mutable state + periodic snapshot publish.
+* Read path: immutable snapshot served via `atomic.Pointer` to avoid mutex contention.
+* Snapshot versions increase monotonically to support observability and rollback.
+
+Reliability and backpressure:
+
+* Queue overflow policies:
+  * `coalesce`: merge repeated events for same key in pending window.
+  * `drop_low_priority`: keep critical event types first.
+  * `timeout_block`: short bounded wait, then fallback policy.
+* Retry external fetch with jittered exponential backoff.
+* On persistent failure, send event to internal dead-letter stream with reason metadata.
+
+Integration contract with Block Sniffer:
+
+* Upstream (Sniffer -> Controller): `ProjectSyncEvent` via bounded in-process queue.
+* Downstream (Controller -> Sniffer): `TargetPairSnapshot` periodic + delta updates.
+* This forms a closed-loop, high-throughput, loosely coupled architecture for real-time chain monitoring.
 
 ---
 
