@@ -21,8 +21,8 @@ type Service struct {
 
 func NewService(nodeClient *ethclient.Client) *Service {
 
-	watcherToProjectFilterCh := make(chan Project, 1024)
-	projectFilterToProjectManagerCh := make(chan Project, 1024)
+	watcherToProjectFilterCh := make(chan *Project, 512)
+	projectFilterToProjectManagerCh := make(chan *Project, 512)
 
 	return &Service{
 		watcher:        NewWatcher(nodeClient, watcherToProjectFilterCh),

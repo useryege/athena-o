@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
@@ -10,11 +11,11 @@ import (
 
 type ProjectManager struct {
 	nodeClient *ethclient.Client
-	inputCh    <-chan Project
+	inputCh    <-chan *Project
 	wg         sync.WaitGroup
 }
 
-func NewProjectManager(nodeClient *ethclient.Client, inputCh <-chan Project) *ProjectManager {
+func NewProjectManager(nodeClient *ethclient.Client, inputCh <-chan *Project) *ProjectManager {
 	return &ProjectManager{
 		nodeClient: nodeClient,
 		inputCh:    inputCh,
@@ -34,9 +35,18 @@ func (p *ProjectManager) Start(ctx context.Context) error {
 				if !ok {
 					return
 				}
+				managerStartedAt := time.Now()
+
+				event.PerfTrace.ManagerStartedAt = managerStartedAt
+				event.PerfTrace.ManagerCompletedAt = time.Now()
+
 				log.WithFields(log.Fields{
-					"blockNumber": event.BlockNumber,
-					"transaction": event.Tx.Hash(),
+					"component":         "Project Manager",
+					"blockNumber":       event.BlockNumber,
+					"blockTime":         event.BlockTime,
+					"transaction":       event.Tx.Hash(),
+					"tokenMetadata":     event.TokenMetadata,
+					"executionDuration": event.PerfTrace.ManagerCompletedAt.Sub(event.PerfTrace.ManagerStartedAt).Milliseconds(),
 				}).Info("project manager received contract creation transaction")
 			}
 		}
