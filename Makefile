@@ -568,7 +568,12 @@ test-e2e-local: cli-local
 	DIST_DIR=${DIST_DIR} RERUN_FAILS=$(ATHENA_E2E_RERUN_FAILS) PACKAGES="./test/e2e" ATHENA_E2E_RECORD=${ATHENA_E2E_RECORD} ATHENA_CONFIG_DIR=$(HOME)/.config/athena-e2e ATHENA_GPG_ENABLED=true TEST_E2E_DEBUG=$(TEST_E2E_DEBUG) NO_PROXY=* ./hack/test.sh -timeout $(ATHENA_E2E_TEST_TIMEOUT) -v -args -test.gocoverdir="$(CURDIR)/test-results"
 
 
-# Remote run the application on the remote VPS
-.PHONY: remote-run-application
-remote-run-application:
+# Upload the application to the remote VPS
+.PHONY: upload-application-remote
+upload-application-remote:
+	./hack/app-remote-vps-upload.sh
+
+# Run the application on the remote VPS
+.PHONY: run-application-remote
+run-application-remote:
 	./hack/app-remote-vps-run.sh
