@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LOCAL_BIN="dist/athena"
 REMOTE_USER="root"
 REMOTE_HOST="46.225.214.200"
 
@@ -26,15 +25,12 @@ if [[ -z "${NODE_WS_URL}" ]]; then
   exit 1
 fi
 
-echo "Uploading ${LOCAL_BIN} to ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_TMP_PATH}"
-scp "${LOCAL_BIN}" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_TMP_PATH}"
-
 echo "Starting athena on remote VPS..."
 START_RESULT="$(ssh "${REMOTE_USER}@${REMOTE_HOST}" "
   set -e
 
-  mv \"${REMOTE_TMP_PATH}\" \"${REMOTE_APPLICATION_PATH}\"
-  chmod +x \"${REMOTE_APPLICATION_PATH}\"
+  mv \"${REMOTE_TMP_PATH}\" \"${REMOTE_APPLICATION_PATH}\" || true
+  chmod +x \"${REMOTE_APPLICATION_PATH}\" || true
 
   export ATHENA_APPLICATION_NODE_WS_URL=\"${NODE_WS_URL}\"
 
