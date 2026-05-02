@@ -1,7 +1,6 @@
 package rbac
 
 import (
-	"context"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -24,12 +23,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	informersv1 "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -125,14 +118,14 @@ var ProjectScoped = map[string]bool{
 // * supports a user-defined policy
 // * supports a custom JWT claims enforce function
 type Enforcer struct {
-	lock               sync.Mutex
-	enforcerCache      *gocache.Cache
-	adapter            *athenaAdapter
-	enableLog          bool
-	enabled            bool
-	clientset          kubernetes.Interface
-	namespace          string
-	configmap          string
+	lock          sync.Mutex
+	enforcerCache *gocache.Cache
+	adapter       *athenaAdapter
+	enableLog     bool
+	enabled       bool
+	// clientset          kubernetes.Interface
+	// namespace          string
+	// configmap          string
 	claimsEnforcerFunc ClaimsEnforcerFunc
 	model              model.Model
 	defaultRole        string
@@ -222,15 +215,15 @@ func newEnforcerSafe(matchFunction govaluate.ExpressionFunction, params ...any) 
 	return enfs, nil
 }
 
-func NewEnforcer(clientset kubernetes.Interface, namespace, configmap string, claimsEnforcer ClaimsEnforcerFunc) *Enforcer {
+func NewEnforcer(claimsEnforcer ClaimsEnforcerFunc) *Enforcer {
 	adapter := newAdapter("", "", "")
 	builtInModel := newBuiltInModel()
 	return &Enforcer{
-		enforcerCache:      gocache.New(time.Hour, time.Hour),
-		adapter:            adapter,
-		clientset:          clientset,
-		namespace:          namespace,
-		configmap:          configmap,
+		enforcerCache: gocache.New(time.Hour, time.Hour),
+		adapter:       adapter,
+		// clientset:          clientset,
+		// namespace:          namespace,
+		// configmap:          configmap,
 		model:              builtInModel,
 		claimsEnforcerFunc: claimsEnforcer,
 		enabled:            true,
@@ -422,69 +415,69 @@ func (e *Enforcer) SetUserPolicy(policy string) error {
 	return e.LoadPolicy()
 }
 
-// newInformer returns an informer which watches updates on the rbac configmap
-func (e *Enforcer) newInformer() cache.SharedIndexInformer {
-	tweakConfigMap := func(options *metav1.ListOptions) {
-		cmFieldSelector := fields.ParseSelectorOrDie("metadata.name=" + e.configmap)
-		options.FieldSelector = cmFieldSelector.String()
-	}
-	indexers := cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}
-	return informersv1.NewFilteredConfigMapInformer(e.clientset, e.namespace, defaultRBACSyncPeriod, indexers, tweakConfigMap)
-}
+// // newInformer returns an informer which watches updates on the rbac configmap
+// func (e *Enforcer) newInformer() cache.SharedIndexInformer {
+// 	tweakConfigMap := func(options *metav1.ListOptions) {
+// 		cmFieldSelector := fields.ParseSelectorOrDie("metadata.name=" + e.configmap)
+// 		options.FieldSelector = cmFieldSelector.String()
+// 	}
+// 	indexers := cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}
+// 	return informersv1.NewFilteredConfigMapInformer(e.clientset, e.namespace, defaultRBACSyncPeriod, indexers, tweakConfigMap)
+// }
 
-// RunPolicyLoader runs the policy loader which watches policy updates from the configmap and reloads them
-func (e *Enforcer) RunPolicyLoader(ctx context.Context, onUpdated func(cm *corev1.ConfigMap) error) error {
-	cm, err := e.clientset.CoreV1().ConfigMaps(e.namespace).Get(ctx, e.configmap, metav1.GetOptions{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	} else {
-		err = e.syncUpdate(cm, onUpdated)
-		if err != nil {
-			return err
-		}
-	}
-	e.runInformer(ctx, onUpdated)
-	return nil
-}
+// // RunPolicyLoader runs the policy loader which watches policy updates from the configmap and reloads them
+// func (e *Enforcer) RunPolicyLoader(ctx context.Context, onUpdated func(cm *corev1.ConfigMap) error) error {
+// 	cm, err := e.clientset.CoreV1().ConfigMaps(e.namespace).Get(ctx, e.configmap, metav1.GetOptions{})
+// 	if err != nil {
+// 		if !apierrors.IsNotFound(err) {
+// 			return err
+// 		}
+// 	} else {
+// 		err = e.syncUpdate(cm, onUpdated)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
+// 	e.runInformer(ctx, onUpdated)
+// 	return nil
+// }
 
-func (e *Enforcer) runInformer(ctx context.Context, onUpdated func(cm *corev1.ConfigMap) error) {
-	cmInformer := e.newInformer()
-	_, err := cmInformer.AddEventHandler(
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj any) {
-				if cm, ok := obj.(*corev1.ConfigMap); ok {
-					err := e.syncUpdate(cm, onUpdated)
-					if err != nil {
-						log.Error(err)
-					} else {
-						log.Infof("RBAC ConfigMap '%s' added", e.configmap)
-					}
-				}
-			},
-			UpdateFunc: func(old, new any) {
-				oldCM := old.(*corev1.ConfigMap)
-				newCM := new.(*corev1.ConfigMap)
-				if oldCM.ResourceVersion == newCM.ResourceVersion {
-					return
-				}
-				err := e.syncUpdate(newCM, onUpdated)
-				if err != nil {
-					log.Error(err)
-				} else {
-					log.Infof("RBAC ConfigMap '%s' updated", e.configmap)
-				}
-			},
-		},
-	)
-	if err != nil {
-		log.Error(err)
-	}
-	log.Info("Starting rbac config informer")
-	cmInformer.Run(ctx.Done())
-	log.Info("rbac configmap informer cancelled")
-}
+// func (e *Enforcer) runInformer(ctx context.Context, onUpdated func(cm *corev1.ConfigMap) error) {
+// 	cmInformer := e.newInformer()
+// 	_, err := cmInformer.AddEventHandler(
+// 		cache.ResourceEventHandlerFuncs{
+// 			AddFunc: func(obj any) {
+// 				if cm, ok := obj.(*corev1.ConfigMap); ok {
+// 					err := e.syncUpdate(cm, onUpdated)
+// 					if err != nil {
+// 						log.Error(err)
+// 					} else {
+// 						log.Infof("RBAC ConfigMap '%s' added", e.configmap)
+// 					}
+// 				}
+// 			},
+// 			UpdateFunc: func(old, new any) {
+// 				oldCM := old.(*corev1.ConfigMap)
+// 				newCM := new.(*corev1.ConfigMap)
+// 				if oldCM.ResourceVersion == newCM.ResourceVersion {
+// 					return
+// 				}
+// 				err := e.syncUpdate(newCM, onUpdated)
+// 				if err != nil {
+// 					log.Error(err)
+// 				} else {
+// 					log.Infof("RBAC ConfigMap '%s' updated", e.configmap)
+// 				}
+// 			},
+// 		},
+// 	)
+// 	if err != nil {
+// 		log.Error(err)
+// 	}
+// 	log.Info("Starting rbac config informer")
+// 	cmInformer.Run(ctx.Done())
+// 	log.Info("rbac configmap informer cancelled")
+// }
 
 // PolicyCSV will generate the final policy csv to be used
 // by Athena RBAC. It will find entries in the given data

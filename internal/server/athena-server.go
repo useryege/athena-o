@@ -41,7 +41,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
-	"github.com/stretchr/testify/assert/yaml"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/server/account"
 	servercache "github.com/useryege/athena/internal/server/cache"
@@ -85,7 +84,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 
@@ -230,7 +228,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 
 	sessionMgr := util_session.NewSessionManager(settingsMgr, opts.DexServerAddr, opts.DexTLSConfig, userStateStorage)
 
-	enf := rbac.NewEnforcer(opts.KubeClientset, opts.Namespace, common.AthenaRBACConfigMapName, nil)
+	enf := rbac.NewEnforcer(nil)
 	enf.EnableEnforce(!opts.DisableAuth)
 	err = enf.SetBuiltinPolicy(assets.BuiltinPolicyCSV)
 	errorsutil.CheckError(err)
@@ -1205,7 +1203,7 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 		go func() { server.checkServeErr("tlsm", tlsm.Serve()) }()
 	}
 	go server.watchSettings()
-	go server.rbacPolicyLoader(ctx)
+	// go server.rbacPolicyLoader(ctx)
 	go func() { server.checkServeErr("tcpm", tcpm.Serve()) }()
 	go func() { server.checkServeErr("metrics", metricsServ.Serve(listeners.Metrics)) }()
 	// if !cache.WaitForCacheSync(ctx.Done(), server.projInformer.HasSynced, server.appInformer.HasSynced) {
@@ -1439,22 +1437,22 @@ func (server *AthenaServer) watchSettings() {
 
 }
 
-func (server *AthenaServer) rbacPolicyLoader(ctx context.Context) {
-	err := server.enf.RunPolicyLoader(ctx, func(cm *corev1.ConfigMap) error {
-		var scopes []string
-		if scopesStr, ok := cm.Data[rbac.ConfigMapScopesKey]; scopesStr != "" && ok {
-			scopes = make([]string, 0)
-			err := yaml.Unmarshal([]byte(scopesStr), &scopes)
-			if err != nil {
-				return fmt.Errorf("error unmarshalling scopes: %w", err)
-			}
-		}
+// func (server *AthenaServer) rbacPolicyLoader(ctx context.Context) {
+// 	err := server.enf.RunPolicyLoader(ctx, func(cm *corev1.ConfigMap) error {
+// 		var scopes []string
+// 		if scopesStr, ok := cm.Data[rbac.ConfigMapScopesKey]; scopesStr != "" && ok {
+// 			scopes = make([]string, 0)
+// 			err := yaml.Unmarshal([]byte(scopesStr), &scopes)
+// 			if err != nil {
+// 				return fmt.Errorf("error unmarshalling scopes: %w", err)
+// 			}
+// 		}
 
-		server.policyEnforcer.SetScopes(scopes)
-		return nil
-	})
-	errorsutil.CheckError(err)
-}
+// 		server.policyEnforcer.SetScopes(scopes)
+// 		return nil
+// 	})
+// 	errorsutil.CheckError(err)
+// }
 
 func (server *AthenaServer) useTLS() bool {
 	if server.Insecure || server.settings.Certificate == nil {
