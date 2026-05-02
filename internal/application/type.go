@@ -24,15 +24,37 @@ type Wallet struct {
 	Address common.Address
 }
 
-type TokenMetadata struct {
-	Name        string
-	Symbol      string
-	Decimals    uint8
-	TotalSupply *big.Int
-	Address     common.Address
+type StaticMetadataStatus string
 
+const (
+	StaticMetadataPending StaticMetadataStatus = "pending"
+	StaticMetadataReady   StaticMetadataStatus = "ready"
+	StaticMetadataFailed  StaticMetadataStatus = "failed"
+)
+
+type TokenMetadata struct {
+	Static  TokenStaticMetadata
+	Dynamic TokenDynamicState
+}
+
+type TokenStaticMetadata struct {
+	Name          string
+	Symbol        string
+	Decimals      uint8
+	Address       common.Address
 	SourceCode    string
 	SourceCodeABI string
+	TotalSupply   *big.Int
+
+	FetchedAt time.Time
+	Status    StaticMetadataStatus
+}
+
+type TokenDynamicState struct {
+	BlockNumber uint64
+	StateHash   string
+	UpdatedAt   time.Time
+	CheckedAt   time.Time
 }
 
 type PerfTrace struct {

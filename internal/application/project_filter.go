@@ -124,11 +124,13 @@ func (p *ProjectFilter) IsTokenContract(addr common.Address) (TokenMetadata, err
 	}
 
 	return TokenMetadata{
-		Address:     addr,
-		TotalSupply: totalSupply,
-		Decimals:    decimals,
-		Name:        name,
-		Symbol:      symbol,
+		Static: TokenStaticMetadata{
+			Address:     addr,
+			TotalSupply: totalSupply,
+			Decimals:    decimals,
+			Name:        name,
+			Symbol:      symbol,
+		},
 	}, nil
 }
 

@@ -23,18 +23,18 @@ type TokenMetadataSnapshot struct {
 
 func NewTokenMetadataSnapshot(metadata *TokenMetadata) TokenMetadataSnapshot {
 	totalSupply := "0"
-	if metadata.TotalSupply != nil {
-		totalSupply = metadata.TotalSupply.String()
+	if metadata.Static.TotalSupply != nil {
+		totalSupply = metadata.Static.TotalSupply.String()
 	}
 
 	s := TokenMetadataSnapshot{
-		Name:          metadata.Name,
-		Symbol:        metadata.Symbol,
-		Decimals:      metadata.Decimals,
+		Name:          metadata.Static.Name,
+		Symbol:        metadata.Static.Symbol,
+		Decimals:      metadata.Static.Decimals,
 		TotalSupply:   totalSupply,
-		Address:       metadata.Address,
-		SourceCode:    metadata.SourceCode,
-		SourceCodeABI: metadata.SourceCodeABI,
+		Address:       metadata.Static.Address,
+		SourceCode:    metadata.Static.SourceCode,
+		SourceCodeABI: metadata.Static.SourceCodeABI,
 	}
 
 	s.StateHash = s.Hash()
@@ -49,13 +49,15 @@ func (s TokenMetadataSnapshot) ToTokenMetadata() *TokenMetadata {
 	}
 
 	return &TokenMetadata{
-		Name:          s.Name,
-		Symbol:        s.Symbol,
-		Decimals:      s.Decimals,
-		TotalSupply:   totalSupply,
-		Address:       s.Address,
-		SourceCode:    s.SourceCode,
-		SourceCodeABI: s.SourceCodeABI,
+		Static: TokenStaticMetadata{
+			Name:          s.Name,
+			Symbol:        s.Symbol,
+			Decimals:      s.Decimals,
+			TotalSupply:   totalSupply,
+			Address:       s.Address,
+			SourceCode:    s.SourceCode,
+			SourceCodeABI: s.SourceCodeABI,
+		},
 	}
 }
 
