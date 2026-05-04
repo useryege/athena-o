@@ -14,8 +14,7 @@ type StaticFieldFetcher interface {
 	FetchSourceCodeABI(ctx context.Context, projectID uuid.UUID) (string, error)
 }
 
-type staticFieldFetcherImpl struct {
-}
+type staticFieldFetcherImpl struct{}
 
 func NewStaticFieldFetcher() StaticFieldFetcher {
 	return &staticFieldFetcherImpl{}

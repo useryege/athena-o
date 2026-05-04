@@ -6,11 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type StaticFieldStore interface {
-	GetStaticState(ctx context.Context, projectID uuid.UUID) (*ProjectStaticState, error)
-	SaveStaticState(ctx context.Context, projectID uuid.UUID, static *ProjectStaticState) error
-}
-
 type staticFieldStoreImpl struct {
 }
 

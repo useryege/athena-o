@@ -38,20 +38,18 @@ func (w *Watcher) Start(ctx context.Context) error {
 	return nil
 }
 
-func (s *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBlock uint64) error {
-
-	// get latest block number
-	getlatestblock := func() (uint64, error) {
-		latestBlock, err := s.nodeClient.BlockNumber(ctx)
-		if err != nil {
-			return 0, err
-		}
-		return latestBlock, nil
+func (w *Watcher) getLatestBlock(ctx context.Context) (uint64, error) {
+	latestBlock, err := w.nodeClient.BlockNumber(ctx)
+	if err != nil {
+		return 0, err
 	}
+	return latestBlock, nil
+}
 
+func (w *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBlock uint64) error {
 	// if startBlock is 0, get the latest block number and set it to latest - 10000 as default
 	if startBlock == 0 {
-		latestBlock, err := getlatestblock()
+		latestBlock, err := w.getLatestBlock(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get latest block number: %w", err)
 		}
@@ -60,7 +58,7 @@ func (s *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBl
 
 	// if endBlock is 0, get the latest block number and set it to endBlock
 	if endBlock == 0 {
-		latestBlock, err := getlatestblock()
+		latestBlock, err := w.getLatestBlock(ctx)
 		if err != nil {
 			return err
 		}
@@ -74,7 +72,7 @@ func (s *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBl
 
 	// scan blocks from startBlock to endBlock
 	for blockNumber := startBlock; blockNumber <= endBlock; blockNumber++ {
-		block, err := s.nodeClient.BlockByNumber(ctx, big.NewInt(int64(blockNumber)))
+		block, err := w.nodeClient.BlockByNumber(ctx, big.NewInt(int64(blockNumber)))
 		if err != nil {
 			return fmt.Errorf("failed to get block %d: %w", blockNumber, err)
 		}
@@ -94,7 +92,7 @@ func (s *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBl
 						TxDiscoveredAt:    time.Now(),
 					},
 				}
-				s.outputCh <- event
+				w.outputCh <- event
 				log.WithFields(log.Fields{
 					"component":         "Block Watcher",
 					"blockNumber":       blockNumber,
