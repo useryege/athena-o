@@ -11,17 +11,17 @@ type StaticFieldStore interface {
 	SaveStaticState(ctx context.Context, projectID uuid.UUID, static *ProjectStaticState) error
 }
 
-type StaticFieldStoreImpl struct {
+type staticFieldStoreImpl struct {
 }
 
 func NewStaticFieldStore() StaticFieldStore {
-	return &StaticFieldStoreImpl{}
+	return &staticFieldStoreImpl{}
 }
 
-func (s *StaticFieldStoreImpl) GetStaticState(ctx context.Context, projectID uuid.UUID) (*ProjectStaticState, error) {
+func (s *staticFieldStoreImpl) GetStaticState(ctx context.Context, projectID uuid.UUID) (*ProjectStaticState, error) {
 	panic("not implemented")
 }
 
-func (s *StaticFieldStoreImpl) SaveStaticState(ctx context.Context, projectID uuid.UUID, static *ProjectStaticState) error {
+func (s *staticFieldStoreImpl) SaveStaticState(ctx context.Context, projectID uuid.UUID, static *ProjectStaticState) error {
 	panic("not implemented")
 }

@@ -83,14 +83,16 @@ func (s *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBl
 		for _, tx := range block.Transactions() {
 			if tx.To() == nil {
 				event := &Project{
-					ProjectID: uuid.New(),
-					PerfTrace: &PerfTrace{
+					Meta: ProjectMeta{
+						ProjectID:   uuid.New(),
+						BlockTime:   block.Time(),
+						BlockNumber: blockNumber,
+						Tx:          tx,
+					},
+					PerfTrace: PerfTrace{
 						BlockDiscoveredAt: blockDiscoveredAt,
 						TxDiscoveredAt:    time.Now(),
 					},
-					BlockTime:   block.Time(),
-					BlockNumber: blockNumber,
-					Tx:          tx,
 				}
 				s.outputCh <- event
 				log.WithFields(log.Fields{

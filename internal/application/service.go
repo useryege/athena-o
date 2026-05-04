@@ -24,10 +24,12 @@ func NewService(nodeClient *ethclient.Client) *Service {
 	watcherToProjectFilterCh := make(chan *Project, 512)
 	projectFilterToProjectManagerCh := make(chan *Project, 512)
 
+	registry := NewProjectRegistry()
+
 	return &Service{
 		watcher:        NewWatcher(nodeClient, watcherToProjectFilterCh),
 		projectFilter:  NewProjectFilter(nodeClient, watcherToProjectFilterCh, projectFilterToProjectManagerCh),
-		projectManager: NewProjectManager(nodeClient, projectFilterToProjectManagerCh),
+		projectManager: NewProjectManager(nodeClient, projectFilterToProjectManagerCh, registry),
 	}
 }
 

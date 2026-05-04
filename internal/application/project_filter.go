@@ -45,24 +45,24 @@ func (p *ProjectFilter) Start(ctx context.Context) error {
 					filterStartedAt := time.Now()
 
 					// calculate sender from transaction
-					from, err := types.Sender(types.LatestSignerForChainID(event.Tx.ChainId()), event.Tx)
+					from, err := types.Sender(types.LatestSignerForChainID(event.Meta.Tx.ChainId()), event.Meta.Tx)
 					if err != nil {
 						log.WithFields(log.Fields{
 							"component":   "Project Filter",
-							"blockNumber": event.BlockNumber,
-							"transaction": event.Tx.Hash(),
+							"blockNumber": event.Meta.BlockNumber,
+							"transaction": event.Meta.Tx.Hash(),
 							"error":       err,
 						}).Error("failed to get sender from creation transaction")
 						continue
 					}
-					contractAddress := crypto.CreateAddress(from, event.Tx.Nonce())
+					contractAddress := crypto.CreateAddress(from, event.Meta.Tx.Nonce())
 
 					// check if the contract is a token contract
 					// tokenMetadata, err := p.IsTokenContract(contractAddress)
 					// if err != nil {
 					// 	continue
 					// }
-					event.Contract = contractAddress
+					event.Meta.Contract = contractAddress
 
 					// event.TokenMetadata = &tokenMetadata
 					event.PerfTrace.FilterStartedAt = filterStartedAt
@@ -71,9 +71,9 @@ func (p *ProjectFilter) Start(ctx context.Context) error {
 
 					log.WithFields(log.Fields{
 						"component":         "Project Filter",
-						"blockNumber":       event.BlockNumber,
-						"blockTime":         event.BlockTime,
-						"transaction":       event.Tx.Hash(),
+						"blockNumber":       event.Meta.BlockNumber,
+						"blockTime":         event.Meta.BlockTime,
+						"transaction":       event.Meta.Tx.Hash(),
 						"executionDuration": event.PerfTrace.FilterCompletedAt.Sub(event.PerfTrace.FilterStartedAt).Milliseconds(),
 					}).Info("token contract detected")
 				}

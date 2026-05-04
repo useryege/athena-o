@@ -11,7 +11,7 @@ type StaticFieldResolver interface {
 	ResolveField(ctx context.Context, projectID uuid.UUID, field StaticField, force bool) error
 }
 
-type StaticFieldResolverImpl struct {
+type staticFieldResolverImpl struct {
 	fetcher  StaticFieldFetcher
 	store    StaticFieldStore
 	policies map[StaticField]StaticFieldPolicy
@@ -22,10 +22,10 @@ func NewStaticFieldResolver(fetcher StaticFieldFetcher, store StaticFieldStore, 
 		policies = cloneStaticFieldPolicies(DefaultStaticFieldPolicies)
 	}
 
-	return &StaticFieldResolverImpl{fetcher: fetcher, store: store, policies: policies}
+	return &staticFieldResolverImpl{fetcher: fetcher, store: store, policies: policies}
 }
 
-func (r *StaticFieldResolverImpl) ResolveField(ctx context.Context, projectID uuid.UUID, field StaticField, force bool) error {
+func (r *staticFieldResolverImpl) ResolveField(ctx context.Context, projectID uuid.UUID, field StaticField, force bool) error {
 	panic("not implemented")
 }
 

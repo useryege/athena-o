@@ -13,39 +13,39 @@ type ProjectRegistry interface {
 	List() ([]*Project, error)
 }
 
-type projectRegistry struct {
+type projectRegistryImpl struct {
 	mu       sync.RWMutex
 	Projects map[uuid.UUID]*Project
 }
 
 func NewProjectRegistry() ProjectRegistry {
-	return &projectRegistry{
+	return &projectRegistryImpl{
 		Projects: make(map[uuid.UUID]*Project),
 	}
 }
 
-func (r *projectRegistry) Get(projectID uuid.UUID) (*Project, bool, error) {
+func (r *projectRegistryImpl) Get(projectID uuid.UUID) (*Project, bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	project, ok := r.Projects[projectID]
 	return project, ok, nil
 }
 
-func (r *projectRegistry) Set(projectID uuid.UUID, project *Project) error {
+func (r *projectRegistryImpl) Set(projectID uuid.UUID, project *Project) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.Projects[projectID] = project
 	return nil
 }
 
-func (r *projectRegistry) Remove(projectID uuid.UUID) error {
+func (r *projectRegistryImpl) Remove(projectID uuid.UUID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.Projects, projectID)
 	return nil
 }
 
-func (r *projectRegistry) List() ([]*Project, error) {
+func (r *projectRegistryImpl) List() ([]*Project, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	projects := make([]*Project, 0, len(r.Projects))
