@@ -48,7 +48,6 @@ func (p *ProjectManager) Start(ctx context.Context) error {
 					"blockNumber":       event.BlockNumber,
 					"blockTime":         event.BlockTime,
 					"transaction":       event.Tx.Hash(),
-					"tokenMetadata":     event.TokenMetadata,
 					"executionDuration": event.PerfTrace.ManagerCompletedAt.Sub(event.PerfTrace.ManagerStartedAt).Milliseconds(),
 				}).Info("project manager received contract creation transaction")
 			}
