@@ -6,133 +6,128 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/pkg/abi/ERC20"
 )
 
 type ProjectFilter struct {
-	Reader     *bind.CallOpts
-	nodeClient *ethclient.Client
-	inputCh    <-chan *Project
-	outputCh   chan<- *Project
 	wg         sync.WaitGroup
+	nodeClient *ethclient.Client
+	registry   ProjectRegistry
+	inputCh    <-chan *Project
 }
 
-func NewProjectFilter(nodeClient *ethclient.Client, inputCh <-chan *Project, outputCh chan<- *Project) *ProjectFilter {
+func NewProjectFilter(nodeClient *ethclient.Client, registry ProjectRegistry, inputCh <-chan *Project) *ProjectFilter {
 	return &ProjectFilter{
 		nodeClient: nodeClient,
+		registry:   registry,
 		inputCh:    inputCh,
-		outputCh:   outputCh,
-		Reader:     &bind.CallOpts{},
 	}
 }
 
-func (p *ProjectFilter) Start(ctx context.Context) error {
-	for i := 0; i < 10; i++ {
-		p.wg.Add(1)
-		go func() {
-			defer p.wg.Done()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case event, ok := <-p.inputCh:
-					if !ok {
-						return
-					}
-					filterStartedAt := time.Now()
-
-					// calculate sender from transaction
-					from, err := types.Sender(types.LatestSignerForChainID(event.Meta.Tx.ChainId()), event.Meta.Tx)
-					if err != nil {
-						log.WithFields(log.Fields{
-							"component":   "Project Filter",
-							"blockNumber": event.Meta.BlockNumber,
-							"transaction": event.Meta.Tx.Hash(),
-							"error":       err,
-						}).Error("failed to get sender from creation transaction")
-						continue
-					}
-					contractAddress := crypto.CreateAddress(from, event.Meta.Tx.Nonce())
-
-					// check if the contract is a token contract
-					// tokenMetadata, err := p.IsTokenContract(contractAddress)
-					// if err != nil {
-					// 	continue
-					// }
-					event.Meta.Contract = contractAddress
-
-					// event.TokenMetadata = &tokenMetadata
-					event.PerfTrace.FilterStartedAt = filterStartedAt
-					event.PerfTrace.FilterCompletedAt = time.Now()
-					p.outputCh <- event
-
-					log.WithFields(log.Fields{
-						"component":         "Project Filter",
-						"blockNumber":       event.Meta.BlockNumber,
-						"blockTime":         event.Meta.BlockTime,
-						"transaction":       event.Meta.Tx.Hash(),
-						"executionDuration": event.PerfTrace.FilterCompletedAt.Sub(event.PerfTrace.FilterStartedAt).Milliseconds(),
-					}).Info("token contract detected")
-				}
-			}
-		}()
-	}
+func (f *ProjectFilter) Start(ctx context.Context) error {
+	f.wg.Add(1)
+	go func() {
+		defer f.wg.Done()
+		err := f.run(ctx)
+		if err != nil {
+			log.Errorf("failed to test chain watcher: %v", err)
+		}
+	}()
 	return nil
 }
 
-// use to judge if the contract is a token contract
-// func (p *ProjectFilter) IsTokenContract(addr common.Address) (TokenMetadata, error) {
-// 	// create ERC20 instance
-// 	tokenInstance, err := ERC20.NewERC20(addr, p.nodeClient)
-// 	if err != nil {
-// 		return TokenMetadata{}, err
-// 	}
+func (f *ProjectFilter) initProject(event *Project) error {
+	reader := &bind.CallOpts{}
+	// create ERC20 caller instance
+	tokenCaller, err := ERC20.NewERC20Caller(event.Meta.Contract, f.nodeClient)
+	if err != nil {
+		return err
+	}
 
-// 	// try to call totalSupply
-// 	totalSupply, err := tokenInstance.TotalSupply(p.Reader)
-// 	if err != nil {
-// 		return TokenMetadata{}, err
-// 	}
+	// try to call totalSupply
+	totalSupply, err := tokenCaller.TotalSupply(reader)
+	if err != nil {
+		return err
+	}
 
-// 	// try to call balanceOf
-// 	_, err = tokenInstance.BalanceOf(p.Reader, common.HexToAddress("0x0000000000000000000000000000000000000000"))
-// 	if err != nil {
-// 		return TokenMetadata{}, err
-// 	}
+	// try to call balanceOf
+	_, err = tokenCaller.BalanceOf(reader, common.HexToAddress("0x0000000000000000000000000000000000000000"))
+	if err != nil {
+		return err
+	}
 
-// 	// try to call decimals
-// 	decimals, err := tokenInstance.Decimals(p.Reader)
-// 	if err != nil {
-// 		return TokenMetadata{}, err
-// 	}
+	// try to call decimals
+	decimals, err := tokenCaller.Decimals(reader)
+	if err != nil {
+		return err
+	}
 
-// 	// try to call name
-// 	name, err := tokenInstance.Name(p.Reader)
-// 	if err != nil {
-// 		return TokenMetadata{}, err
-// 	}
+	// try to call name
+	name, err := tokenCaller.Name(reader)
+	if err != nil {
+		return err
+	}
 
-// 	// try to call symbol
-// 	symbol, err := tokenInstance.Symbol(p.Reader)
-// 	if err != nil {
-// 		return TokenMetadata{}, err
-// 	}
+	// try to call symbol
+	symbol, err := tokenCaller.Symbol(reader)
+	if err != nil {
+		return err
+	}
 
-// 	return TokenMetadata{
-// 		Static: TokenStaticMetadata{
-// 			Address:     addr,
-// 			TotalSupply: totalSupply,
-// 			Decimals:    decimals,
-// 			Name:        name,
-// 			Symbol:      symbol,
-// 		},
-// 	}, nil
-// }
+	// set the values to the project state
+	event.InitState.Name.Set(name)
+	event.InitState.Symbol.Set(symbol)
+	event.InitState.Decimals.Set(decimals)
+	event.InitState.TotalSupply.Set(totalSupply)
 
-func (p *ProjectFilter) Stop() error {
-	p.wg.Wait()
+	event.PerfTrace.FilterCompletedAt = time.Now()
+	return nil
+
+}
+
+func (f *ProjectFilter) run(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case event, ok := <-f.inputCh:
+			if !ok {
+				return nil
+			}
+
+			// init the project
+			if err := f.initProject(event); err != nil {
+				log.WithFields(log.Fields{
+					"projectID": event.Meta.ProjectID,
+					"error":     err,
+				}).Error("failed to init project")
+				continue
+			}
+
+			// store the project in the registry
+			if err := f.registry.SetProject(ctx, event.Meta.ProjectID, event); err != nil {
+				log.WithFields(log.Fields{
+					"projectID": event.Meta.ProjectID,
+					"error":     err,
+				}).Error("failed to store project")
+				continue
+			}
+
+			log.WithFields(log.Fields{
+				"component":         "Project Filter",
+				"blockNumber":       event.Meta.BlockNumber,
+				"blockTime":         event.Meta.BlockTime,
+				"transaction":       event.Meta.Tx.Hash(),
+				"executionDuration": event.PerfTrace.FilterCompletedAt.Sub(event.PerfTrace.BlockDiscoveredAt).Milliseconds(),
+			}).Info("project filter received contract creation transaction")
+		}
+	}
+}
+
+func (f *ProjectFilter) Stop() error {
+	f.wg.Wait()
 	return nil
 }

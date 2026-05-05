@@ -5,7 +5,26 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
+
+	"github.com/google/uuid"
 )
+
+type StaticResolveReason string
+
+const (
+	StaticResolveReasonProjectCreated StaticResolveReason = "project_created"
+	StaticResolveReasonRetry          StaticResolveReason = "retry"
+	StaticResolveReasonManual         StaticResolveReason = "manual"
+)
+
+type StaticFieldResolveRequest struct {
+	ProjectID uuid.UUID
+	Field     StaticField
+	Force     bool
+	Reason    StaticResolveReason
+	CreatedAt time.Time
+}
 
 type StaticFieldQueue interface {
 	Enqueue(ctx context.Context, req StaticFieldResolveRequest) error

@@ -8,29 +8,31 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
-type Watcher struct {
+type BlockWatcher struct {
 	nodeClient *ethclient.Client
 	outputCh   chan<- *Project
 	wg         sync.WaitGroup
 }
 
-func NewWatcher(nodeClient *ethclient.Client, outputCh chan<- *Project) *Watcher {
-	return &Watcher{
+func NewBlockWatcher(nodeClient *ethclient.Client, outputCh chan<- *Project) *BlockWatcher {
+	return &BlockWatcher{
 		nodeClient: nodeClient,
 		outputCh:   outputCh,
 	}
 }
 
-func (w *Watcher) Start(ctx context.Context) error {
+func (w *BlockWatcher) Start(ctx context.Context) error {
 	w.wg.Add(1)
 	go func() {
 		defer w.wg.Done()
-		err := w.TestChainWatcher(ctx, 24990983, 0)
+		err := w.run(ctx, 24990983, 0)
 		if err != nil {
 			log.Errorf("failed to test chain watcher: %v", err)
 		}
@@ -38,7 +40,7 @@ func (w *Watcher) Start(ctx context.Context) error {
 	return nil
 }
 
-func (w *Watcher) getLatestBlock(ctx context.Context) (uint64, error) {
+func (w *BlockWatcher) getLatestBlock(ctx context.Context) (uint64, error) {
 	latestBlock, err := w.nodeClient.BlockNumber(ctx)
 	if err != nil {
 		return 0, err
@@ -46,7 +48,7 @@ func (w *Watcher) getLatestBlock(ctx context.Context) (uint64, error) {
 	return latestBlock, nil
 }
 
-func (w *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBlock uint64) error {
+func (w *BlockWatcher) run(ctx context.Context, startBlock uint64, endBlock uint64) error {
 	// if startBlock is 0, get the latest block number and set it to latest - 10000 as default
 	if startBlock == 0 {
 		latestBlock, err := w.getLatestBlock(ctx)
@@ -80,12 +82,22 @@ func (w *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBl
 
 		for _, tx := range block.Transactions() {
 			if tx.To() == nil {
+				// query sender from transaction
+				from, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
+				if err != nil {
+					continue
+				}
+				// calculate contract address
+				contractAddress := crypto.CreateAddress(from, tx.Nonce())
+
 				event := &Project{
 					Meta: ProjectMeta{
 						ProjectID:   uuid.New(),
 						BlockTime:   block.Time(),
 						BlockNumber: blockNumber,
 						Tx:          tx,
+						Contract:    contractAddress,
+						Creator:     from,
 					},
 					PerfTrace: PerfTrace{
 						BlockDiscoveredAt: blockDiscoveredAt,
@@ -93,20 +105,13 @@ func (w *Watcher) TestChainWatcher(ctx context.Context, startBlock uint64, endBl
 					},
 				}
 				w.outputCh <- event
-				log.WithFields(log.Fields{
-					"component":         "Block Watcher",
-					"blockNumber":       blockNumber,
-					"blockTime":         block.Time(),
-					"transaction":       tx.Hash(),
-					"executionDuration": event.PerfTrace.TxDiscoveredAt.Sub(event.PerfTrace.BlockDiscoveredAt).Milliseconds(),
-				}).Info("block watcher discovered contract creation transaction")
 			}
 		}
 	}
 	return nil
 }
 
-func (w *Watcher) Stop() error {
+func (w *BlockWatcher) Stop() error {
 	w.wg.Wait()
 	return nil
 }
