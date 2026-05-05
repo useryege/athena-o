@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -16,14 +17,18 @@ type ProjectFilter struct {
 	wg         sync.WaitGroup
 	nodeClient *ethclient.Client
 	registry   ProjectRegistry
+	pool       RetryUntilReadyPool
+	queue      RetryUntilReadyQueue
 	inputCh    <-chan *Project
 }
 
-func NewProjectFilter(nodeClient *ethclient.Client, registry ProjectRegistry, inputCh <-chan *Project) *ProjectFilter {
+func NewProjectFilter(nodeClient *ethclient.Client, registry ProjectRegistry, inputCh <-chan *Project, pool RetryUntilReadyPool, queue RetryUntilReadyQueue) *ProjectFilter {
 	return &ProjectFilter{
 		nodeClient: nodeClient,
 		registry:   registry,
+		pool:       pool,
 		inputCh:    inputCh,
+		queue:      queue,
 	}
 }
 
@@ -32,15 +37,15 @@ func (f *ProjectFilter) Start(ctx context.Context) error {
 	go func() {
 		defer f.wg.Done()
 		err := f.run(ctx)
-		if err != nil {
+		if err != nil && !errors.Is(err, context.Canceled) {
 			log.Errorf("failed to test chain watcher: %v", err)
 		}
 	}()
 	return nil
 }
 
-func (f *ProjectFilter) initProject(event *Project) error {
-	reader := &bind.CallOpts{}
+func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
+	reader := &bind.CallOpts{Context: ctx}
 	// create ERC20 caller instance
 	tokenCaller, err := ERC20.NewERC20Caller(event.Meta.Contract, f.nodeClient)
 	if err != nil {
@@ -88,6 +93,69 @@ func (f *ProjectFilter) initProject(event *Project) error {
 
 }
 
+func isExecutionRevertedError(err error) bool {
+	switch err.Error() {
+	case "execution reverted":
+		return true
+	case "no contract code at given address":
+		return true
+	case "execution reverted: ERC721: address zero is not a valid owner":
+		return true
+	case "abi: attempting to unmarshal an empty string while arguments are expected":
+		return true
+	case "execution reverted: division or modulo by zero":
+		return true
+	default:
+		return false
+	}
+
+}
+
+func (f *ProjectFilter) scheduleInitialRetryResolve(ctx context.Context, event *Project) error {
+	type retryFieldConfig struct {
+		field RetryUntilReadyField
+		name  string
+	}
+
+	retryFields := []retryFieldConfig{
+		{field: RetryUntilReadyFieldSourceCode, name: "source code"},
+		{field: RetryUntilReadyFieldSourceCodeABI, name: "source code ABI"},
+	}
+
+	now := time.Now()
+	deadline := now.Add(1 * time.Minute)
+
+	for _, cfg := range retryFields {
+		if err := f.pool.Add(ctx, RetryUntilReadyFieldKey{
+			ProjectID: event.Meta.ProjectID,
+			Field:     cfg.field,
+		}, deadline); err != nil {
+			log.WithFields(log.Fields{
+				"projectID": event.Meta.ProjectID,
+				"field":     cfg.field,
+				"error":     err,
+			}).Errorf("failed to add %s to retry pool", cfg.name)
+			return err
+		}
+
+		if err := f.queue.Enqueue(ctx, RetryUntilReadyResolveRequest{
+			ProjectID: event.Meta.ProjectID,
+			Field:     cfg.field,
+			Reason:    ResolveReasonProjectCreated,
+			CreatedAt: now,
+		}); err != nil {
+			log.WithFields(log.Fields{
+				"projectID": event.Meta.ProjectID,
+				"field":     cfg.field,
+				"error":     err,
+			}).Errorf("failed to enqueue %s resolve request", cfg.name)
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (f *ProjectFilter) run(ctx context.Context) error {
 	for {
 		select {
@@ -99,9 +167,14 @@ func (f *ProjectFilter) run(ctx context.Context) error {
 			}
 
 			// init the project
-			if err := f.initProject(event); err != nil {
+			if err := f.initProject(ctx, event); err != nil {
+				// execution reverted
+				if isExecutionRevertedError(err) {
+					continue
+				}
 				log.WithFields(log.Fields{
 					"projectID": event.Meta.ProjectID,
+					"contract":  event.Meta.Contract,
 					"error":     err,
 				}).Error("failed to init project")
 				continue
@@ -113,6 +186,11 @@ func (f *ProjectFilter) run(ctx context.Context) error {
 					"projectID": event.Meta.ProjectID,
 					"error":     err,
 				}).Error("failed to store project")
+				continue
+			}
+
+			// schedule the initial retry resolve
+			if err := f.scheduleInitialRetryResolve(ctx, event); err != nil {
 				continue
 			}
 

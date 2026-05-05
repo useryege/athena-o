@@ -113,7 +113,9 @@ func NewCommand() *cobra.Command {
 				s := <-sigCh
 				log.Printf("got signal %v, attempting graceful shutdown", s)
 				applicationGrpc.GracefulStop()
-				server.Stop()
+				if err := server.Stop(); err != nil {
+					log.Printf("failed to stop application server cleanly: %v", err)
+				}
 				wg.Done()
 			}()
 

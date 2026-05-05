@@ -77,13 +77,11 @@ func (q *retryUntilReadyQueueImpl) Enqueue(
 
 	q.queued[key] = req
 
-	q.mu.Unlock()
-
 	select {
 	case q.ch <- req:
+		q.mu.Unlock()
 		return nil
 	case <-ctx.Done():
-		q.mu.Lock()
 		delete(q.queued, key)
 		q.mu.Unlock()
 		return ctx.Err()
@@ -151,7 +149,6 @@ func (q *retryUntilReadyQueueImpl) Dequeue(
 		q.mu.Unlock()
 
 		return req, nil
-
 	case <-ctx.Done():
 		return RetryUntilReadyResolveRequest{}, ctx.Err()
 	}
@@ -180,18 +177,17 @@ func (q *retryUntilReadyQueueImpl) Done(
 		q.queued[key] = pendingReq
 	}
 
-	q.mu.Unlock()
-
 	if !hasPending {
+		q.mu.Unlock()
 		return nil
 	}
 
 	select {
 	case q.ch <- pendingReq:
+		q.mu.Unlock()
 		return nil
 
 	case <-ctx.Done():
-		q.mu.Lock()
 		delete(q.queued, key)
 		q.mu.Unlock()
 		return ctx.Err()

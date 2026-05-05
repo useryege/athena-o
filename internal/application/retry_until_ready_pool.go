@@ -11,8 +11,8 @@ import (
 type RetryUntilReadyField string
 
 const (
-	DelayedFieldSourceCode    RetryUntilReadyField = "source_code"
-	DelayedFieldSourceCodeABI RetryUntilReadyField = "source_code_abi"
+	RetryUntilReadyFieldSourceCode    RetryUntilReadyField = "source_code"
+	RetryUntilReadyFieldSourceCodeABI RetryUntilReadyField = "source_code_abi"
 )
 
 type RetryUntilReadyFieldKey struct {

@@ -19,12 +19,20 @@ type BlockWatcher struct {
 	nodeClient *ethclient.Client
 	outputCh   chan<- *Project
 	wg         sync.WaitGroup
+
+	chainID *big.Int
 }
 
 func NewBlockWatcher(nodeClient *ethclient.Client, outputCh chan<- *Project) *BlockWatcher {
+	chainID, err := nodeClient.ChainID(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
 	return &BlockWatcher{
 		nodeClient: nodeClient,
 		outputCh:   outputCh,
+		chainID:    chainID,
 	}
 }
 
@@ -32,8 +40,8 @@ func (w *BlockWatcher) Start(ctx context.Context) error {
 	w.wg.Add(1)
 	go func() {
 		defer w.wg.Done()
-		err := w.run(ctx, 24990983, 0)
-		if err != nil {
+		err := w.run(ctx, 24991089, 0)
+		if err != nil && !errors.Is(err, context.Canceled) {
 			log.Errorf("failed to test chain watcher: %v", err)
 		}
 	}()
@@ -74,6 +82,12 @@ func (w *BlockWatcher) run(ctx context.Context, startBlock uint64, endBlock uint
 
 	// scan blocks from startBlock to endBlock
 	for blockNumber := startBlock; blockNumber <= endBlock; blockNumber++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		block, err := w.nodeClient.BlockByNumber(ctx, big.NewInt(int64(blockNumber)))
 		if err != nil {
 			return fmt.Errorf("failed to get block %d: %w", blockNumber, err)
@@ -83,7 +97,7 @@ func (w *BlockWatcher) run(ctx context.Context, startBlock uint64, endBlock uint
 		for _, tx := range block.Transactions() {
 			if tx.To() == nil {
 				// query sender from transaction
-				from, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
+				from, err := types.Sender(types.LatestSignerForChainID(w.chainID), tx)
 				if err != nil {
 					continue
 				}
@@ -104,7 +118,11 @@ func (w *BlockWatcher) run(ctx context.Context, startBlock uint64, endBlock uint
 						TxDiscoveredAt:    time.Now(),
 					},
 				}
-				w.outputCh <- event
+				select {
+				case w.outputCh <- event:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 			}
 		}
 	}
