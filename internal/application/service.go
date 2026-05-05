@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -13,13 +14,13 @@ type Service struct {
 	projectFilter *ProjectFilter
 
 	registry ProjectRegistry
-	queue    StaticFieldQueue
-	// resolver  StaticFieldResolver
-	// scheduler StaticFieldRetryScheduler
 
-	workerCount int
-	workerWG    sync.WaitGroup
+	retryQueue     RetryUntilReadyQueue
+	retryPool      RetryUntilReadyPool
+	retryScheduler *RetryScheduler
 
+	workerCount   int
+	workerWG      sync.WaitGroup
 	startStopMu   sync.Mutex
 	lifecycleCtx  context.Context
 	lifecycleStop context.CancelFunc
@@ -32,16 +33,18 @@ func NewService(nodeClient *ethclient.Client) *Service {
 
 	registry := NewProjectRegistry()
 
-	queue := NewStaticFieldQueue(2048)
+	retryQueue := NewRetryUntilReadyQueue(1024)
+	retryPool := NewRetryUntilReadyPool()
+	retryScheduler := NewRetryScheduler(retryPool, retryQueue, 1*time.Minute, 100)
 
 	return &Service{
-		blockWatcher:  NewBlockWatcher(nodeClient, ch1),
-		projectFilter: NewProjectFilter(nodeClient, registry, ch1),
-		registry:      registry,
-		queue:         queue,
-		// resolver:       nil,
-		// scheduler:      nil,
-		workerCount: 4,
+		blockWatcher:   NewBlockWatcher(nodeClient, ch1),
+		projectFilter:  NewProjectFilter(nodeClient, registry, ch1),
+		registry:       registry,
+		workerCount:    4,
+		retryQueue:     retryQueue,
+		retryPool:      retryPool,
+		retryScheduler: retryScheduler,
 	}
 }
 
@@ -89,7 +92,7 @@ func (s *Service) Stop() error {
 
 	watcherErr := s.blockWatcher.Stop()
 	filterErr := s.projectFilter.Stop()
-	queueErr := s.queue.Close()
+	retryQueueErr := s.retryQueue.Close()
 	s.workerWG.Wait()
-	return errors.Join(watcherErr, filterErr, queueErr)
+	return errors.Join(watcherErr, filterErr, retryQueueErr)
 }
