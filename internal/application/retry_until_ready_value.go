@@ -19,7 +19,6 @@ type RetryUntilReadyValue[T any] struct {
 
 	AttemptCount  int
 	LastAttemptAt time.Time
-	NextAttemptAt time.Time
 	ResolvedAt    time.Time
 
 	LastError string
@@ -39,7 +38,7 @@ func (v *RetryUntilReadyValue[T]) IsUnknown() bool {
 	return v.Status == RetryUntilReadyValueStatusUnknown
 }
 
-func (v *RetryUntilReadyValue[T]) ShouldAttempt(now time.Time) bool {
+func (v *RetryUntilReadyValue[T]) ShouldAttempt() bool {
 	if v.Status == RetryUntilReadyValueStatusReady {
 		return false
 	}
@@ -48,11 +47,7 @@ func (v *RetryUntilReadyValue[T]) ShouldAttempt(now time.Time) bool {
 		return false
 	}
 
-	if v.NextAttemptAt.IsZero() {
-		return true
-	}
-
-	return !now.Before(v.NextAttemptAt)
+	return true
 }
 
 func (v *RetryUntilReadyValue[T]) MarkAttempt(now time.Time) {
@@ -70,7 +65,6 @@ func (v *RetryUntilReadyValue[T]) MarkReady(value T, now time.Time) {
 	v.Status = RetryUntilReadyValueStatusReady
 	v.ResolvedAt = now
 	v.LastAttemptAt = now
-	v.NextAttemptAt = time.Time{}
 	v.LastError = ""
 	v.Retryable = false
 }
@@ -79,7 +73,6 @@ func (v *RetryUntilReadyValue[T]) MarkFailed(
 	err error,
 	now time.Time,
 	retryable bool,
-	retryDelay time.Duration,
 ) {
 	v.Status = RetryUntilReadyValueStatusFailed
 	v.LastAttemptAt = now
@@ -92,29 +85,23 @@ func (v *RetryUntilReadyValue[T]) MarkFailed(
 	}
 
 	if !retryable {
-		v.NextAttemptAt = time.Time{}
 		return
 	}
-
-	v.NextAttemptAt = now.Add(retryDelay)
 }
 
 func (v *RetryUntilReadyValue[T]) MarkNotAvailable(
 	now time.Time,
-	retryDelay time.Duration,
 ) {
 	v.Status = RetryUntilReadyValueStatusFailed
 	v.LastAttemptAt = now
 	v.LastError = "not available yet"
 	v.Retryable = true
-	v.NextAttemptAt = now.Add(retryDelay)
 }
 
 func (v *RetryUntilReadyValue[T]) MarkTerminalFailed(err error, now time.Time) {
 	v.Status = RetryUntilReadyValueStatusFailed
 	v.LastAttemptAt = now
 	v.Retryable = false
-	v.NextAttemptAt = time.Time{}
 
 	if err != nil {
 		v.LastError = err.Error()
@@ -137,7 +124,6 @@ func (v *RetryUntilReadyValue[T]) Reset() {
 	v.Status = RetryUntilReadyValueStatusUnknown
 	v.AttemptCount = 0
 	v.LastAttemptAt = time.Time{}
-	v.NextAttemptAt = time.Time{}
 	v.ResolvedAt = time.Time{}
 	v.LastError = ""
 	v.Retryable = true

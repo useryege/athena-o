@@ -6,29 +6,27 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/pkg/abi/ERC20"
 )
 
 type ProjectFilter struct {
-	wg         sync.WaitGroup
-	nodeClient *ethclient.Client
-	registry   ProjectRegistry
-	pool       RetryUntilReadyPool
-	queue      RetryUntilReadyQueue
-	inputCh    <-chan *Project
+	wg       sync.WaitGroup
+	registry ProjectRegistry
+	pool     RetryUntilReadyPool
+	queue    RetryUntilReadyQueue
+	inputCh  <-chan *Project
+
+	fetcher EVMFetcher
 }
 
-func NewProjectFilter(nodeClient *ethclient.Client, registry ProjectRegistry, inputCh <-chan *Project, pool RetryUntilReadyPool, queue RetryUntilReadyQueue) *ProjectFilter {
+func NewProjectFilter(registry ProjectRegistry, inputCh <-chan *Project, pool RetryUntilReadyPool, queue RetryUntilReadyQueue, fetcher EVMFetcher) *ProjectFilter {
 	return &ProjectFilter{
-		nodeClient: nodeClient,
-		registry:   registry,
-		pool:       pool,
-		inputCh:    inputCh,
-		queue:      queue,
+		registry: registry,
+		pool:     pool,
+		inputCh:  inputCh,
+		queue:    queue,
+		fetcher:  fetcher,
 	}
 }
 
@@ -45,39 +43,33 @@ func (f *ProjectFilter) Start(ctx context.Context) error {
 }
 
 func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
-	reader := &bind.CallOpts{Context: ctx}
-	// create ERC20 caller instance
-	tokenCaller, err := ERC20.NewERC20Caller(event.Meta.Contract, f.nodeClient)
-	if err != nil {
-		return err
-	}
 
 	// try to call totalSupply
-	totalSupply, err := tokenCaller.TotalSupply(reader)
+	totalSupply, err := f.fetcher.FetchTotalSupply(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
 
 	// try to call balanceOf
-	_, err = tokenCaller.BalanceOf(reader, common.HexToAddress("0x0000000000000000000000000000000000000000"))
+	_, err = f.fetcher.BalanceOf(ctx, event.Meta.Contract, common.HexToAddress("0x0000000000000000000000000000000000000000"))
 	if err != nil {
 		return err
 	}
 
 	// try to call decimals
-	decimals, err := tokenCaller.Decimals(reader)
+	decimals, err := f.fetcher.FetchDecimals(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
 
 	// try to call name
-	name, err := tokenCaller.Name(reader)
+	name, err := f.fetcher.FetchName(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
 
 	// try to call symbol
-	symbol, err := tokenCaller.Symbol(reader)
+	symbol, err := f.fetcher.FetchSymbol(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}

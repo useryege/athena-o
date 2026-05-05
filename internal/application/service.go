@@ -59,7 +59,9 @@ func (s *Service) Start() error {
 	ch1 := make(chan *Project, 24)
 	s.projectCh = ch1
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, ch1)
-	s.projectFilter = NewProjectFilter(s.nodeClient, s.registry, ch1, s.retryPool, s.retryQueue)
+	evmFetcher := NewEVMFetcher(s.nodeClient, s.registry)
+	apiFetcher := NewAPIFetcher()
+	s.projectFilter = NewProjectFilter(s.registry, ch1, s.retryPool, s.retryQueue, evmFetcher)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	if err := s.blockWatcher.Start(ctx); err != nil {
@@ -83,7 +85,7 @@ func (s *Service) Start() error {
 		s.retryScheduler.Start(ctx)
 	}()
 
-	resolver := NewRetryUntilReadyResolver(s.retryPool)
+	resolver := NewRetryUntilReadyResolver(s.registry, s.retryPool, evmFetcher, apiFetcher)
 	for i := 0; i < s.workerCount; i++ {
 		worker := NewRetryUntilReadyWorker(s.retryQueue, resolver)
 		s.workerWG.Add(1)
