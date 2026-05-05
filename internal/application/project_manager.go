@@ -19,13 +19,20 @@ type ProjectManager struct {
 	wg         sync.WaitGroup
 
 	registry ProjectRegistry
+	queue    StaticFieldQueue
 }
 
-func NewProjectManager(nodeClient *ethclient.Client, inputCh <-chan *Project, registry ProjectRegistry) *ProjectManager {
+func NewProjectManager(
+	nodeClient *ethclient.Client,
+	inputCh <-chan *Project,
+	registry ProjectRegistry,
+	queue StaticFieldQueue,
+) *ProjectManager {
 	return &ProjectManager{
 		nodeClient: nodeClient,
 		inputCh:    inputCh,
 		registry:   registry,
+		queue:      queue,
 	}
 }
 
@@ -76,8 +83,22 @@ func (p *ProjectManager) Start(ctx context.Context) error {
 				managerStartedAt := time.Now()
 
 				event.PerfTrace.ManagerStartedAt = managerStartedAt
-				// TODO: implement project manager logic
-				// p.Projects[event.TokenMetadata.Address] = event
+				if err := p.registry.SetProject(ctx, event.Meta.ProjectID, event); err != nil {
+					log.WithFields(log.Fields{
+						"component": "Project Manager",
+						"projectID": event.Meta.ProjectID,
+						"error":     err,
+					}).Error("failed to store project")
+					continue
+				}
+
+				if err := p.enqueueInitialStaticFieldRequests(ctx, event.Meta.ProjectID); err != nil {
+					log.WithFields(log.Fields{
+						"component": "Project Manager",
+						"projectID": event.Meta.ProjectID,
+						"error":     err,
+					}).Error("failed to enqueue initial static field requests")
+				}
 
 				event.PerfTrace.ManagerCompletedAt = time.Now()
 
@@ -96,5 +117,30 @@ func (p *ProjectManager) Start(ctx context.Context) error {
 
 func (p *ProjectManager) Stop() error {
 	p.wg.Wait()
+	return nil
+}
+
+func (p *ProjectManager) enqueueInitialStaticFieldRequests(ctx context.Context, projectID uuid.UUID) error {
+	initialFields := []StaticField{
+		StaticFieldName,
+		StaticFieldSymbol,
+		StaticFieldDecimals,
+		StaticFieldSourceCode,
+		StaticFieldSourceCodeABI,
+	}
+
+	now := time.Now()
+	for _, field := range initialFields {
+		if err := p.queue.Enqueue(ctx, StaticFieldResolveRequest{
+			ProjectID: projectID,
+			Field:     field,
+			Force:     false,
+			Reason:    StaticResolveReasonProjectCreated,
+			CreatedAt: now,
+		}); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

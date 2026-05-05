@@ -21,6 +21,7 @@ type ProjectRegistry interface {
 	ListProjects(ctx context.Context) ([]*Project, error)
 	GetStaticState(ctx context.Context, projectID uuid.UUID) (*ProjectStaticState, error)
 	SaveStaticState(ctx context.Context, projectID uuid.UUID, static *ProjectStaticState) error
+	ListDueStaticFields(ctx context.Context, now time.Time, limit int) ([]StaticFieldResolveRequest, error)
 }
 
 var _ ProjectRegistry = &projectRegistryImpl{}
@@ -39,8 +40,14 @@ func NewProjectRegistry() ProjectRegistry {
 func (r *projectRegistryImpl) GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+
 	project, ok := r.Projects[projectID]
-	return project, ok, nil
+	if !ok {
+		return nil, false, nil
+	}
+
+	projectCopy := *project
+	return &projectCopy, true, nil
 }
 
 func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error {
@@ -60,10 +67,13 @@ func (r *projectRegistryImpl) RemoveProject(ctx context.Context, projectID uuid.
 func (r *projectRegistryImpl) ListProjects(ctx context.Context) ([]*Project, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+
 	projects := make([]*Project, 0, len(r.Projects))
 	for _, project := range r.Projects {
-		projects = append(projects, project)
+		projectCopy := *project
+		projects = append(projects, &projectCopy)
 	}
+
 	return projects, nil
 }
 
@@ -88,6 +98,10 @@ func (s *projectRegistryImpl) SaveStaticState(
 	projectID uuid.UUID,
 	static *ProjectStaticState,
 ) error {
+	if static == nil {
+		return fmt.Errorf("static state is nil")
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -136,16 +150,22 @@ func (s *projectRegistryImpl) ListDueStaticFields(
 }
 
 func DueStaticFields(static ProjectStaticState, now time.Time) []StaticField {
-	// fields := MissingStaticFields(static)
-
 	due := make([]StaticField, 0, 5)
-
-	// for _, field := range fields {
-	// 	value := GetStaticValue(static, field)
-	// 	if value.ShouldAttempt(now) {
-	// 		due = append(due, field)
-	// 	}
-	// }
+	if static.Name.ShouldAttempt(now) {
+		due = append(due, StaticFieldName)
+	}
+	if static.Symbol.ShouldAttempt(now) {
+		due = append(due, StaticFieldSymbol)
+	}
+	if static.Decimals.ShouldAttempt(now) {
+		due = append(due, StaticFieldDecimals)
+	}
+	if static.SourceCode.ShouldAttempt(now) {
+		due = append(due, StaticFieldSourceCode)
+	}
+	if static.SourceCodeABI.ShouldAttempt(now) {
+		due = append(due, StaticFieldSourceCodeABI)
+	}
 
 	return due
 }
