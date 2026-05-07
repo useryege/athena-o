@@ -41,21 +41,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// var CommitMessageTemplate = `{{.metadata.drySha | trunc 7}}: {{ .metadata.subject }}
-// {{- if .metadata.body }}
-
-// {{ .metadata.body }}
-// {{- end }}
-// {{ range $ref := .metadata.references }}
-// {{- if and $ref.commit $ref.commit.author }}
-// Co-authored-by: {{ $ref.commit.author }}
-// {{- end }}
-// {{- end }}
-// {{- if .metadata.author }}
-// Co-authored-by: {{ .metadata.author }}
-// {{- end }}
-// `
-
 // AthenaSettings holds in-memory runtime configuration options.
 type AthenaSettings struct {
 	// URL is the externally facing URL users will visit to reach Athena.
@@ -280,135 +265,6 @@ var (
 	}
 )
 
-// // KustomizeVersionNotRegisteredError is an error type that indicates a requested Kustomize version is not registered in
-// // the Kustomize options in athena-cm.
-// type KustomizeVersionNotRegisteredError struct {
-// 	// Version is the Kustomize version that is not registered
-// 	Version string
-// }
-
-// func (e KustomizeVersionNotRegisteredError) Error() string {
-// 	return fmt.Sprintf("kustomize version %s is not registered", e.Version)
-// }
-
-// // GetKustomizeBinaryPath returns the path to the kustomize binary based on the provided KustomizeOptions and ApplicationSource.
-// func GetKustomizeBinaryPath(ks *v1alpha1.KustomizeOptions, source v1alpha1.ApplicationSource) (string, error) {
-// 	if ks == nil {
-// 		// No versions or binary path specified, stick with defaults.
-// 		return "", nil
-// 	}
-
-// 	if ks.BinaryPath != "" { // nolint:staticcheck // BinaryPath is deprecated, but still supported for backward compatibility
-// 		log.Warn("kustomizeOptions.binaryPath is deprecated, use KustomizeOptions.versions instead")
-// 		// nolint:staticcheck // BinaryPath is deprecated, but if it's set, we'll use it to ensure backward compatibility
-// 		return ks.BinaryPath, nil
-// 	}
-
-// 	if source.Kustomize != nil && source.Kustomize.Version != "" {
-// 		for _, ver := range ks.Versions {
-// 			if ver.Name == source.Kustomize.Version {
-// 				return ver.Path, nil
-// 			}
-// 		}
-// 		return "", KustomizeVersionNotRegisteredError{Version: source.Kustomize.Version}
-// 	}
-// 	return "", nil
-// }
-
-// // Credentials for accessing a Git repository
-// type Repository struct {
-// 	// The URL to the repository
-// 	URL string `json:"url,omitempty"`
-// 	// the type of the repo, "git" or "helm", assumed to be "git" if empty or absent
-// 	Type string `json:"type,omitempty"`
-// 	// helm only
-// 	Name string `json:"name,omitempty"`
-// 	// Name of the secret storing the username used to access the repo
-// 	UsernameSecret *corev1.SecretKeySelector `json:"usernameSecret,omitempty"`
-// 	// Name of the secret storing the password used to access the repo
-// 	PasswordSecret *corev1.SecretKeySelector `json:"passwordSecret,omitempty"`
-// 	// Name of the secret storing the SSH private key used to access the repo. Git only
-// 	SSHPrivateKeySecret *corev1.SecretKeySelector `json:"sshPrivateKeySecret,omitempty"`
-// 	// Whether to connect the repository in an insecure way (deprecated)
-// 	InsecureIgnoreHostKey bool `json:"insecureIgnoreHostKey,omitempty"`
-// 	// Whether to connect the repository in an insecure way
-// 	Insecure bool `json:"insecure,omitempty"`
-// 	// Whether the repo is git-lfs enabled. Git only.
-// 	EnableLFS bool `json:"enableLfs,omitempty"`
-// 	// Name of the secret storing the TLS client cert data
-// 	TLSClientCertDataSecret *corev1.SecretKeySelector `json:"tlsClientCertDataSecret,omitempty"`
-// 	// Name of the secret storing the TLS client cert's key data
-// 	TLSClientCertKeySecret *corev1.SecretKeySelector `json:"tlsClientCertKeySecret,omitempty"`
-// 	// Whether the repo is helm-oci enabled. Git only.
-// 	EnableOci bool `json:"enableOci,omitempty"`
-// 	// Github App Private Key PEM data
-// 	GithubAppPrivateKeySecret *corev1.SecretKeySelector `json:"githubAppPrivateKeySecret,omitempty"`
-// 	// Github App ID of the app used to access the repo
-// 	GithubAppId int64 `json:"githubAppID,omitempty"`
-// 	// Github App Installation ID of the installed GitHub App
-// 	GithubAppInstallationId int64 `json:"githubAppInstallationID,omitempty"`
-// 	// Github App Enterprise base url if empty will default to https://api.github.com
-// 	GithubAppEnterpriseBaseURL string `json:"githubAppEnterpriseBaseUrl,omitempty"`
-// 	// Proxy specifies the HTTP/HTTPS proxy used to access the repo
-// 	Proxy string `json:"proxy,omitempty"`
-// 	// NoProxy specifies a list of targets where the proxy isn't used, applies only in cases where the proxy is applied
-// 	NoProxy string `json:"noProxy,omitempty"`
-// 	// GCPServiceAccountKey specifies the service account key in JSON format to be used for getting credentials to Google Cloud Source repos
-// 	GCPServiceAccountKey *corev1.SecretKeySelector `json:"gcpServiceAccountKey,omitempty"`
-// 	// ForceHttpBasicAuth determines whether Athena should force use of basic auth for HTTP connected repositories
-// 	ForceHttpBasicAuth bool `json:"forceHttpBasicAuth,omitempty"` //nolint:revive //FIXME(var-naming)
-// 	// UseAzureWorkloadIdentity specifies whether to use Azure Workload Identity for authentication
-// 	UseAzureWorkloadIdentity bool `json:"useAzureWorkloadIdentity,omitempty"`
-// }
-
-// // Credential template for accessing repositories
-// type RepositoryCredentials struct {
-// 	// The URL pattern the repository URL has to match
-// 	URL string `json:"url,omitempty"`
-// 	// Name of the secret storing the username used to access the repo
-// 	UsernameSecret *corev1.SecretKeySelector `json:"usernameSecret,omitempty"`
-// 	// Name of the secret storing the password used to access the repo
-// 	PasswordSecret *corev1.SecretKeySelector `json:"passwordSecret,omitempty"`
-// 	// Name of the secret storing the SSH private key used to access the repo. Git only
-// 	SSHPrivateKeySecret *corev1.SecretKeySelector `json:"sshPrivateKeySecret,omitempty"`
-// 	// Name of the secret storing the TLS client cert data
-// 	TLSClientCertDataSecret *corev1.SecretKeySelector `json:"tlsClientCertDataSecret,omitempty"`
-// 	// Name of the secret storing the TLS client cert's key data
-// 	TLSClientCertKeySecret *corev1.SecretKeySelector `json:"tlsClientCertKeySecret,omitempty"`
-// 	// Github App Private Key PEM data
-// 	GithubAppPrivateKeySecret *corev1.SecretKeySelector `json:"githubAppPrivateKeySecret,omitempty"`
-// 	// Github App ID of the app used to access the repo
-// 	GithubAppId int64 `json:"githubAppID,omitempty"`
-// 	// Github App Installation ID of the installed GitHub App
-// 	GithubAppInstallationId int64 `json:"githubAppInstallationID,omitempty"`
-// 	// Github App Enterprise base url if empty will default to https://api.github.com
-// 	GithubAppEnterpriseBaseURL string `json:"githubAppEnterpriseBaseUrl,omitempty"`
-// 	// EnableOCI specifies whether helm-oci support should be enabled for this repo
-// 	EnableOCI bool `json:"enableOCI,omitempty"`
-// 	// the type of the repositoryCredentials, "git" or "helm", assumed to be "git" if empty or absent
-// 	Type string `json:"type,omitempty"`
-// 	// GCPServiceAccountKey specifies the service account key in JSON format to be used for getting credentials to Google Cloud Source repos
-// 	GCPServiceAccountKey *corev1.SecretKeySelector `json:"gcpServiceAccountKey,omitempty"`
-// 	// ForceHttpBasicAuth determines whether Athena should force use of basic auth for HTTP connected repositories
-// 	ForceHttpBasicAuth bool `json:"forceHttpBasicAuth,omitempty"` //nolint:revive //FIXME(var-naming)
-// 	// UseAzureWorkloadIdentity specifies whether to use Azure Workload Identity for authentication
-// 	UseAzureWorkloadIdentity bool `json:"useAzureWorkloadIdentity,omitempty"`
-// }
-
-// // DeepLink structure
-// type DeepLink struct {
-// 	// URL that the deep link will redirect to
-// 	URL string `json:"url"`
-// 	// Title that will be displayed in the UI corresponding to that link
-// 	Title string `json:"title"`
-// 	// Description (optional) a description for what the deep link is about
-// 	Description *string `json:"description,omitempty"`
-// 	// IconClass (optional) a font-awesome icon class to be used when displaying the links in dropdown menus.
-// 	IconClass *string `json:"icon.class,omitempty"`
-// 	// Condition (optional) a conditional statement depending on which the deep link shall be rendered
-// 	Condition *string `json:"if,omitempty"`
-// }
-
 const (
 	// settingServerSignatureKey designates the key for a server secret key inside a Kubernetes secret.
 	settingServerSignatureKey = "server.secretkey"
@@ -549,20 +405,6 @@ const (
 	requireOverridePrivilegeForRevisionSyncKey = "application.sync.requireOverridePrivilegeForRevisionSync"
 )
 
-// const (
-// 	// default max webhook payload size is 50MB
-// 	defaultMaxWebhookPayloadSize = int64(50) * 1024 * 1024
-
-// 	// application sync with impersonation feature is disabled by default.
-// 	defaultImpersonationEnabledFlag = false
-// )
-
-// var sourceTypeToEnableGenerationKey = map[v1alpha1.ApplicationSourceType]string{
-// 	v1alpha1.ApplicationSourceTypeKustomize: "kustomize.enable",
-// 	v1alpha1.ApplicationSourceTypeHelm:      "helm.enable",
-// 	v1alpha1.ApplicationSourceTypeDirectory: "jsonnet.enable",
-// }
-
 // SettingsManager holds config info for a new manager with which to access Kubernetes ConfigMaps.
 type SettingsManager struct {
 	ctx             context.Context
@@ -614,28 +456,10 @@ func (e *incompleteSettingsError) Error() string {
 	return e.message
 }
 
-func (mgr *SettingsManager) onRepoOrClusterChanged() {
-	if mgr.reposOrClusterChanged != nil {
-		go mgr.reposOrClusterChanged()
-	}
-}
-
-// func (mgr *SettingsManager) RespectRBAC() (int, error) {
-// 	cm, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return enginecache.RespectRbacDisabled, err
+// func (mgr *SettingsManager) onRepoOrClusterChanged() {
+// 	if mgr.reposOrClusterChanged != nil {
+// 		go mgr.reposOrClusterChanged()
 // 	}
-// 	if cm.Data[RespectRBAC] != "" {
-// 		switch cm.Data[RespectRBAC] {
-// 		case RespectRBACValueNormal:
-// 			return enginecache.RespectRbacNormal, nil
-// 		case RespectRBACValueStrict:
-// 			return enginecache.RespectRbacStrict, nil
-// 		default:
-// 			return enginecache.RespectRbacDisabled, fmt.Errorf("invalid value for %s: %s", RespectRBAC, cm.Data[RespectRBAC])
-// 		}
-// 	}
-// 	return enginecache.RespectRbacDisabled, nil
 // }
 
 func (mgr *SettingsManager) GetSecretsLister() (v1listers.SecretLister, error) {
@@ -645,21 +469,6 @@ func (mgr *SettingsManager) GetSecretsLister() (v1listers.SecretLister, error) {
 	}
 	return mgr.secrets, nil
 }
-
-// func (mgr *SettingsManager) GetSecretsInformer() (cache.SharedIndexInformer, error) {
-// 	err := mgr.ensureSynced(false)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error ensuring that the secrets manager is synced: %w", err)
-// 	}
-// 	return mgr.secretsInformer, nil
-// }
-
-// // GetClusterInformer returns the cluster cache for optimized cluster lookups.
-// func (mgr *SettingsManager) GetClusterInformer() *ClusterInformer {
-// 	// Ensure the settings manager is initialized
-// 	_ = mgr.ensureSynced(false)
-// 	return mgr.clusterInformer
-// }
 
 func (mgr *SettingsManager) updateSecret(callback func(*corev1.Secret) error) error {
 	athenaSecret, err := mgr.getSecret()
@@ -872,114 +681,6 @@ func (mgr *SettingsManager) GetPasswordPattern() (string, error) {
 	return label, nil
 }
 
-// func (mgr *SettingsManager) ApplicationFineGrainedRBACInheritanceDisabled() (bool, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return false, err
-// 	}
-
-// 	if athenaCM.Data[settingsServerRBACDisableFineGrainedInheritance] == "" {
-// 		return true, nil
-// 	}
-
-// 	return strconv.ParseBool(athenaCM.Data[settingsServerRBACDisableFineGrainedInheritance])
-// }
-
-// func (mgr *SettingsManager) GetMaxPodLogsToRender() (int64, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return 10, err
-// 	}
-
-// 	if athenaCM.Data[settingsMaxPodLogsToRender] == "" {
-// 		return 10, nil
-// 	}
-
-// 	return strconv.ParseInt(athenaCM.Data[settingsMaxPodLogsToRender], 10, 64)
-// }
-
-// func (mgr *SettingsManager) GetDeepLinks(deeplinkType string) ([]DeepLink, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
-// 	}
-// 	deepLinks := make([]DeepLink, 0)
-// 	if value, ok := athenaCM.Data[deeplinkType]; ok {
-// 		err := yaml.Unmarshal([]byte(value), &deepLinks)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("error unmarshalling deep links %w", err)
-// 		}
-// 	}
-// 	return deepLinks, nil
-// }
-
-// func (mgr *SettingsManager) GetEnabledSourceTypes() (map[string]bool, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to get athena config map: %w", err)
-// 	}
-// 	res := map[string]bool{}
-// 	for sourceType := range sourceTypeToEnableGenerationKey {
-// 		res[string(sourceType)] = true
-// 	}
-// 	for sourceType, key := range sourceTypeToEnableGenerationKey {
-// 		if val, ok := athenaCM.Data[key]; ok && val != "" {
-// 			res[string(sourceType)] = val == "true"
-// 		}
-// 	}
-// 	// plugin based manifest generation cannot be disabled
-// 	res[string(v1alpha1.ApplicationSourceTypePlugin)] = true
-// 	return res, nil
-// }
-
-// func (mgr *SettingsManager) GetIgnoreResourceUpdatesOverrides() (map[string]v1alpha1.ResourceOverride, error) {
-// 	compareOptions, err := mgr.GetResourceCompareOptions()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to get compare options: %w", err)
-// 	}
-
-// 	resourceOverrides, err := mgr.GetResourceOverrides()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to get resource overrides: %w", err)
-// 	}
-
-// 	for k, v := range resourceOverrides {
-// 		resourceUpdates := v.IgnoreResourceUpdates
-// 		if compareOptions.IgnoreDifferencesOnResourceUpdates {
-// 			resourceUpdates.JQPathExpressions = append(resourceUpdates.JQPathExpressions, v.IgnoreDifferences.JQPathExpressions...)
-// 			resourceUpdates.JSONPointers = append(resourceUpdates.JSONPointers, v.IgnoreDifferences.JSONPointers...)
-// 			resourceUpdates.ManagedFieldsManagers = append(resourceUpdates.ManagedFieldsManagers, v.IgnoreDifferences.ManagedFieldsManagers...)
-// 		}
-// 		// Set the IgnoreDifferences because these are the overrides used by Normalizers
-// 		v.IgnoreDifferences = resourceUpdates
-// 		v.IgnoreResourceUpdates = v1alpha1.OverrideIgnoreDiff{}
-// 		resourceOverrides[k] = v
-// 	}
-
-// 	if compareOptions.IgnoreDifferencesOnResourceUpdates {
-// 		log.Info("Using diffing customizations to ignore resource updates")
-// 	}
-
-// 	addIgnoreDiffItemOverrideToGK(resourceOverrides, "*/*", "/metadata/resourceVersion")
-// 	addIgnoreDiffItemOverrideToGK(resourceOverrides, "*/*", "/metadata/generation")
-// 	addIgnoreDiffItemOverrideToGK(resourceOverrides, "*/*", "/metadata/managedFields")
-
-// 	return resourceOverrides, nil
-// }
-
-// func (mgr *SettingsManager) GetIsIgnoreResourceUpdatesEnabled() (bool, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return false, fmt.Errorf("error retrieving config map: %w", err)
-// 	}
-
-// 	if athenaCM.Data[resourceIgnoreResourceUpdatesEnabledKey] == "" {
-// 		return true, nil
-// 	}
-
-// 	return strconv.ParseBool(athenaCM.Data[resourceIgnoreResourceUpdatesEnabledKey])
-// }
-
 // GetResourceOverrides loads Resource Overrides from athena-cm ConfigMap
 func (mgr *SettingsManager) GetResourceOverrides() (map[string]v1alpha1.ResourceOverride, error) {
 	athenaCM, err := mgr.getConfigMap()
@@ -1026,17 +727,6 @@ func (mgr *SettingsManager) GetResourceOverrides() (map[string]v1alpha1.Resource
 	return resourceOverrides, nil
 }
 
-// func (mgr *SettingsManager) GetSourceHydratorCommitMessageTemplate() (string, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	if athenaCM.Data[settingsSourceHydratorCommitMessageTemplateKey] == "" {
-// 		return CommitMessageTemplate, nil // in case template is not defined return default
-// 	}
-// 	return athenaCM.Data[settingsSourceHydratorCommitMessageTemplateKey], nil
-// }
-
 func addStatusOverrideToGK(resourceOverrides map[string]v1alpha1.ResourceOverride, groupKind string) {
 	if val, ok := resourceOverrides[groupKind]; ok {
 		val.IgnoreDifferences.JSONPointers = append(val.IgnoreDifferences.JSONPointers, "/status")
@@ -1047,17 +737,6 @@ func addStatusOverrideToGK(resourceOverrides map[string]v1alpha1.ResourceOverrid
 		}
 	}
 }
-
-// func addIgnoreDiffItemOverrideToGK(resourceOverrides map[string]v1alpha1.ResourceOverride, groupKind, ignoreItem string) {
-// 	if val, ok := resourceOverrides[groupKind]; ok {
-// 		val.IgnoreDifferences.JSONPointers = append(val.IgnoreDifferences.JSONPointers, ignoreItem)
-// 		resourceOverrides[groupKind] = val
-// 	} else {
-// 		resourceOverrides[groupKind] = v1alpha1.ResourceOverride{
-// 			IgnoreDifferences: v1alpha1.OverrideIgnoreDiff{JSONPointers: []string{ignoreItem}},
-// 		}
-// 	}
-// }
 
 func (mgr *SettingsManager) appendResourceOverridesFromSplitKeys(cmData map[string]string, resourceOverrides map[string]v1alpha1.ResourceOverride) error {
 	for k, v := range cmData {
@@ -1163,85 +842,6 @@ func (mgr *SettingsManager) GetResourceCompareOptions() (AthenaCDDiffOptions, er
 	return diffOptions, nil
 }
 
-// // GetHelmSettings returns helm settings
-// func (mgr *SettingsManager) GetHelmSettings() (*v1alpha1.HelmOptions, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to get athena config map: %w", err)
-// 	}
-// 	helmOptions := &v1alpha1.HelmOptions{}
-// 	if value, ok := athenaCM.Data[helmValuesFileSchemesKey]; ok {
-// 		for _, item := range strings.Split(value, ",") {
-// 			if item := strings.TrimSpace(item); item != "" {
-// 				helmOptions.ValuesFileSchemes = append(helmOptions.ValuesFileSchemes, item)
-// 			}
-// 		}
-// 	} else {
-// 		helmOptions.ValuesFileSchemes = []string{"https", "http"}
-// 	}
-// 	return helmOptions, nil
-// }
-
-// GetKustomizeSettings loads the kustomize settings from athena-cm ConfigMap
-// func (mgr *SettingsManager) GetKustomizeSettings() (*v1alpha1.KustomizeOptions, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
-// 	}
-// 	kustomizeVersionsMap := map[string]v1alpha1.KustomizeVersion{}
-// 	buildOptions := map[string]string{}
-// 	settings := &v1alpha1.KustomizeOptions{}
-
-// 	// extract build options for the default version
-// 	if options, ok := athenaCM.Data[kustomizeBuildOptionsKey]; ok {
-// 		settings.BuildOptions = options
-// 	}
-
-// 	// extract per-version binary paths and build options
-// 	for k, v := range athenaCM.Data {
-// 		// extract version and path from kustomize.version.<version>
-// 		if strings.HasPrefix(k, kustomizeVersionKeyPrefix) {
-// 			err = addKustomizeVersion(kustomizeVersionKeyPrefix, k, v, kustomizeVersionsMap)
-// 			if err != nil {
-// 				return nil, fmt.Errorf("failed to add kustomize version from %q: %w", k, err)
-// 			}
-// 		}
-
-// 		// extract version and path from kustomize.path.<version>
-// 		if strings.HasPrefix(k, kustomizePathPrefixKey) {
-// 			err = addKustomizeVersion(kustomizePathPrefixKey, k, v, kustomizeVersionsMap)
-// 			if err != nil {
-// 				return nil, fmt.Errorf("failed to add kustomize version from %q: %w", k, err)
-// 			}
-// 		}
-
-// 		// extract version and build options from kustomize.buildOptions.<version>
-// 		if strings.HasPrefix(k, kustomizeBuildOptionsKey) && k != kustomizeBuildOptionsKey {
-// 			buildOptions[k[len(kustomizeBuildOptionsKey)+1:]] = v
-// 		}
-// 	}
-
-// 	for _, v := range kustomizeVersionsMap {
-// 		if _, ok := buildOptions[v.Name]; ok {
-// 			v.BuildOptions = buildOptions[v.Name]
-// 		}
-// 		settings.Versions = append(settings.Versions, v)
-// 	}
-// 	return settings, nil
-// }
-
-// func addKustomizeVersion(prefix, name, path string, kvMap map[string]v1alpha1.KustomizeVersion) error {
-// 	version := name[len(prefix)+1:]
-// 	if _, ok := kvMap[version]; ok {
-// 		return fmt.Errorf("found duplicate kustomize version: %s", version)
-// 	}
-// 	kvMap[version] = v1alpha1.KustomizeVersion{
-// 		Name: version,
-// 		Path: path,
-// 	}
-// 	return nil
-// }
-
 func (mgr *SettingsManager) GetGoogleAnalytics() (*GoogleAnalytics, error) {
 	athenaCM, err := mgr.getConfigMap()
 	if err != nil {
@@ -1272,26 +872,6 @@ func (mgr *SettingsManager) GetHelp() (*Help, error) {
 		BinaryURLs: getDownloadBinaryUrlsFromConfigMap(athenaCM),
 	}, nil
 }
-
-// func (mgr *SettingsManager) RequireOverridePrivilegeForRevisionSync() (bool, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return false, err
-// 	}
-
-// 	// false is default in order to not break existing installations
-// 	if athenaCM.Data[requireOverridePrivilegeForRevisionSyncKey] == "" {
-// 		return false, nil
-// 	}
-
-// 	maybeBooleanFlagValue, err2 := strconv.ParseBool(
-// 		athenaCM.Data[requireOverridePrivilegeForRevisionSyncKey])
-// 	if err2 != nil {
-// 		return false, fmt.Errorf("error parsing %s value: %w, expected true or false",
-// 			requireOverridePrivilegeForRevisionSyncKey, err2)
-// 	}
-// 	return maybeBooleanFlagValue, nil
-// }
 
 // GetSettings retrieves settings from the AthenaConfigMap and secret.
 func (mgr *SettingsManager) GetSettings() (*AthenaSettings, error) {
@@ -1328,15 +908,15 @@ func (mgr *SettingsManager) initialize(ctx context.Context) error {
 	}
 
 	eventHandler := cache.ResourceEventHandlerFuncs{
-		UpdateFunc: func(_, _ any) {
-			mgr.onRepoOrClusterChanged()
-		},
-		AddFunc: func(_ any) {
-			mgr.onRepoOrClusterChanged()
-		},
-		DeleteFunc: func(_ any) {
-			mgr.onRepoOrClusterChanged()
-		},
+		// UpdateFunc: func(_, _ any) {
+		// 	mgr.onRepoOrClusterChanged()
+		// },
+		// AddFunc: func(_ any) {
+		// 	mgr.onRepoOrClusterChanged()
+		// },
+		// DeleteFunc: func(_ any) {
+		// 	mgr.onRepoOrClusterChanged()
+		// },
 	}
 	indexers := cache.Indexers{
 		cache.NamespaceIndex:      cache.MetaNamespaceIndexFunc,
@@ -1666,60 +1246,7 @@ func (mgr *SettingsManager) saveSignatureAndCertificate(settings *AthenaSettings
 	})
 }
 
-// // Save the SSH known host data into the corresponding ConfigMap
-// func (mgr *SettingsManager) SaveSSHKnownHostsData(ctx context.Context, knownHostsList []string) error {
-// 	certCM, err := mgr.GetConfigMapByName(common.AthenaKnownHostsConfigMapName)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	sshKnownHostsData := strings.Join(knownHostsList, "\n") + "\n"
-// 	certCM.Data["ssh_known_hosts"] = sshKnownHostsData
-// 	_, err = mgr.clientset.CoreV1().ConfigMaps(mgr.namespace).Update(ctx, certCM, metav1.UpdateOptions{})
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return mgr.ResyncInformers()
-// }
-
-// func (mgr *SettingsManager) SaveTLSCertificateData(ctx context.Context, tlsCertificates map[string]string) error {
-// 	certCM, err := mgr.GetConfigMapByName(common.AthenaTLSCertsConfigMapName)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	certCM.Data = tlsCertificates
-// 	_, err = mgr.clientset.CoreV1().ConfigMaps(mgr.namespace).Update(ctx, certCM, metav1.UpdateOptions{})
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return mgr.ResyncInformers()
-// }
-
-// func (mgr *SettingsManager) SaveGPGPublicKeyData(ctx context.Context, gpgPublicKeys map[string]string) error {
-// 	keysCM, err := mgr.GetConfigMapByName(common.AthenaGPGKeysConfigMapName)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	keysCM.Data = gpgPublicKeys
-// 	_, err = mgr.clientset.CoreV1().ConfigMaps(mgr.namespace).Update(ctx, keysCM, metav1.UpdateOptions{})
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return mgr.ResyncInformers()
-// }
-
 type SettingsManagerOpts func(mgs *SettingsManager)
-
-// func WithRepoOrClusterChangedHandler(handler func()) SettingsManagerOpts {
-// 	return func(mgr *SettingsManager) {
-// 		mgr.reposOrClusterChanged = handler
-// 	}
-// }
 
 // NewSettingsManager generates a new SettingsManager pointer and returns it
 func NewSettingsManager(ctx context.Context, clientset kubernetes.Interface, namespace string, opts ...SettingsManagerOpts) *SettingsManager {
@@ -1809,41 +1336,6 @@ func (a *AthenaSettings) OIDCConfig() *OIDCConfig {
 	}
 	return config.toExported()
 }
-
-// // GetWebhookGitHubSecret returns the resolved GitHub webhook secret
-// func (a *AthenaSettings) GetWebhookGitHubSecret() string {
-// 	return ReplaceStringSecret(a.WebhookGitHubSecret, a.Secrets)
-// }
-
-// // GetWebhookGitLabSecret returns the resolved GitLab webhook secret
-// func (a *AthenaSettings) GetWebhookGitLabSecret() string {
-// 	return ReplaceStringSecret(a.WebhookGitLabSecret, a.Secrets)
-// }
-
-// // GetWebhookBitbucketUUID returns the resolved Bitbucket webhook UUID
-// func (a *AthenaSettings) GetWebhookBitbucketUUID() string {
-// 	return ReplaceStringSecret(a.WebhookBitbucketUUID, a.Secrets)
-// }
-
-// // GetWebhookBitbucketServerSecret returns the resolved Bitbucket Server webhook secret
-// func (a *AthenaSettings) GetWebhookBitbucketServerSecret() string {
-// 	return ReplaceStringSecret(a.WebhookBitbucketServerSecret, a.Secrets)
-// }
-
-// // GetWebhookGogsSecret returns the resolved Gogs webhook secret
-// func (a *AthenaSettings) GetWebhookGogsSecret() string {
-// 	return ReplaceStringSecret(a.WebhookGogsSecret, a.Secrets)
-// }
-
-// // GetWebhookAzureDevOpsUsername returns the resolved Azure DevOps webhook username
-// func (a *AthenaSettings) GetWebhookAzureDevOpsUsername() string {
-// 	return ReplaceStringSecret(a.WebhookAzureDevOpsUsername, a.Secrets)
-// }
-
-// // GetWebhookAzureDevOpsPassword returns the resolved Azure DevOps webhook password
-// func (a *AthenaSettings) GetWebhookAzureDevOpsPassword() string {
-// 	return ReplaceStringSecret(a.WebhookAzureDevOpsPassword, a.Secrets)
-// }
 
 func unmarshalOIDCConfig(configStr string) (oidcConfig, error) {
 	var config oidcConfig
@@ -2293,141 +1785,6 @@ func ReplaceStringSecret(val string, secretValues map[string]string) string {
 	return strings.TrimSpace(secretVal)
 }
 
-// // GetGlobalProjectsSettings loads the global project settings from athena-cm ConfigMap
-// func (mgr *SettingsManager) GetGlobalProjectsSettings() ([]GlobalProjectSettings, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
-// 	}
-// 	globalProjectSettings := make([]GlobalProjectSettings, 0)
-// 	if value, ok := athenaCM.Data[globalProjectsKey]; ok {
-// 		if value != "" {
-// 			err := yaml.Unmarshal([]byte(value), &globalProjectSettings)
-// 			if err != nil {
-// 				return nil, fmt.Errorf("error unmarshalling global project settings: %w", err)
-// 			}
-// 		}
-// 	}
-// 	return globalProjectSettings, nil
-// }
-
 func (mgr *SettingsManager) GetNamespace() string {
 	return mgr.namespace
 }
-
-// func (mgr *SettingsManager) GetResourceCustomLabels() ([]string, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return []string{}, fmt.Errorf("failed getting configmap: %w", err)
-// 	}
-// 	labels := athenaCM.Data[resourceCustomLabelsKey]
-// 	if labels != "" {
-// 		return strings.Split(labels, ","), nil
-// 	}
-// 	return []string{}, nil
-// }
-
-// func (mgr *SettingsManager) GetIncludeEventLabelKeys() []string {
-// 	labelKeys := []string{}
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		log.Error(fmt.Errorf("failed getting configmap: %w", err))
-// 		return labelKeys
-// 	}
-// 	if value, ok := athenaCM.Data[resourceIncludeEventLabelKeys]; ok {
-// 		if value != "" {
-// 			value = strings.ReplaceAll(value, " ", "")
-// 			labelKeys = strings.Split(value, ",")
-// 		}
-// 	}
-// 	return labelKeys
-// }
-
-// func (mgr *SettingsManager) GetExcludeEventLabelKeys() []string {
-// 	labelKeys := []string{}
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		log.Error(fmt.Errorf("failed getting configmap: %w", err))
-// 		return labelKeys
-// 	}
-// 	if value, ok := athenaCM.Data[resourceExcludeEventLabelKeys]; ok {
-// 		if value != "" {
-// 			value = strings.ReplaceAll(value, " ", "")
-// 			labelKeys = strings.Split(value, ",")
-// 		}
-// 	}
-// 	return labelKeys
-// }
-
-// func (mgr *SettingsManager) GetSensitiveAnnotations() map[string]bool {
-// 	annotationKeys := make(map[string]bool)
-
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		log.Error(fmt.Errorf("failed getting configmap: %w", err))
-// 		return annotationKeys
-// 	}
-
-// 	value, ok := athenaCM.Data[resourceSensitiveAnnotationsKey]
-// 	if !ok || value == "" {
-// 		return annotationKeys
-// 	}
-
-// 	value = strings.ReplaceAll(value, " ", "")
-// 	keys := strings.Split(value, ",")
-// 	for _, k := range keys {
-// 		annotationKeys[k] = true
-// 	}
-// 	return annotationKeys
-// }
-
-// func (mgr *SettingsManager) GetMaxWebhookPayloadSize() int64 {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return defaultMaxWebhookPayloadSize
-// 	}
-
-// 	if athenaCM.Data[settingsWebhookMaxPayloadSizeMB] == "" {
-// 		return defaultMaxWebhookPayloadSize
-// 	}
-
-// 	maxPayloadSizeMB, err := strconv.ParseInt(athenaCM.Data[settingsWebhookMaxPayloadSizeMB], 10, 64)
-// 	if err != nil {
-// 		log.Warnf("Failed to parse '%s' key: %v", settingsWebhookMaxPayloadSizeMB, err)
-// 		return defaultMaxWebhookPayloadSize
-// 	}
-
-// 	return maxPayloadSizeMB * 1024 * 1024
-// }
-
-// // IsImpersonationEnabled returns true if application sync with impersonation feature is enabled in athena-cm configmap
-// func (mgr *SettingsManager) IsImpersonationEnabled() (bool, error) {
-// 	cm, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return defaultImpersonationEnabledFlag, fmt.Errorf("error checking %s property in configmap: %w", impersonationEnabledKey, err)
-// 	}
-// 	return cm.Data[impersonationEnabledKey] == "true", nil
-// }
-
-// func (mgr *SettingsManager) GetAllowedNodeLabels() []string {
-// 	labelKeys := []string{}
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		log.Error(fmt.Errorf("failed getting allowedNodeLabels from configmap: %w", err))
-// 		return labelKeys
-// 	}
-// 	value, ok := athenaCM.Data[allowedNodeLabelsKey]
-// 	if !ok || value == "" {
-// 		return labelKeys
-// 	}
-// 	value = strings.ReplaceAll(value, " ", "")
-// 	keys := strings.SplitSeq(value, ",")
-// 	for k := range keys {
-// 		if errs := validation.IsQualifiedName(k); len(errs) > 0 {
-// 			log.Warnf("Invalid node label key '%s' in configmap: %v", k, errs)
-// 			continue
-// 		}
-// 		labelKeys = append(labelKeys, k)
-// 	}
-// 	return labelKeys
-// }

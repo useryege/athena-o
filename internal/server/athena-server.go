@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -17,7 +16,6 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	go_runtime "runtime"
 	"runtime/debug"
@@ -230,9 +228,6 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 
 	userStateStorage := util_session.NewUserStateStorage(opts.RedisClient)
 
-	// ssoClientApp, err := oidc.NewClientApp(settings, opts.DexServerAddr, opts.DexTLSConfig, opts.BaseHRef, cacheutil.NewRedisCache(opts.RedisClient, settings.UserInfoCacheExpiration(), cacheutil.RedisCompressionNone))
-	// errorsutil.CheckError(err)
-
 	sessionMgr := util_session.NewSessionManager(settingsMgr, opts.DexServerAddr, opts.DexTLSConfig, userStateStorage)
 
 	enf := rbac.NewEnforcer(nil)
@@ -258,10 +253,6 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		staticFS = utilio.NewComposableFS(staticFS, root.FS())
 	}
 
-	// secretInformer := k8s.NewSecretInformer(opts.KubeClientset, opts.Namespace, "athena-notifications-secret")
-	// configMapInformer := k8s.NewConfigMapInformer(opts.KubeClientset, opts.Namespace, "athena-notifications-cm")
-
-	// dbInstance := db.NewDB(opts.Namespace, opts.KubeClientset)
 	logger := log.NewEntry(log.StandardLogger())
 
 	noopShutdown := func() {
@@ -270,80 +261,21 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 
 	a := &AthenaServer{
 		AthenaServerOpts: opts,
-		// ApplicationSetOpts: appsetOpts,
-		// ssoClientApp: ssoClientApp,
-		log:         logger,
-		settings:    settings,
-		sessionMgr:  sessionMgr,
-		settingsMgr: settingsMgr,
-		enf:         enf,
-		// projInformer:      projInformer,
-		// appInformer:       appInformer,
-		// appLister:         appLister,
-		// appsetInformer:    appsetInformer,
-		// appsetLister:      appsetLister,
+		log:              logger,
+		settings:         settings,
+		sessionMgr:       sessionMgr,
+		settingsMgr:      settingsMgr,
+		enf:              enf,
 		policyEnforcer:   policyEnf,
 		userStateStorage: userStateStorage,
 		staticAssets:     http.FS(staticFS),
-		// db:               dbInstance,
-		// apiFactory:        apiFactory,
-		// secretInformer:    secretInformer,
-		// configMapInformer: configMapInformer,
-		// extensionManager: em,
-		Shutdown: noopShutdown,
-		stopCh:   make(chan os.Signal, 1),
+		Shutdown:         noopShutdown,
+		stopCh:           make(chan os.Signal, 1),
 	}
-
-	// err = a.logInClusterWarnings()
-	// if err != nil {
-	// 	// Just log. It's not critical.
-	// 	log.Warnf("Failed to log in-cluster warnings: %v", err)
-	// }
 
 	return a
 
 }
-
-// logInClusterWarnings checks the in-cluster configuration and prints out any warnings.
-// func (server *AthenaServer) logInClusterWarnings() error {
-// 	labelSelector := labels.NewSelector()
-// 	req, err := labels.NewRequirement(common.LabelKeySecretType, selection.Equals, []string{common.LabelValueSecretTypeCluster})
-// 	if err != nil {
-// 		return fmt.Errorf("failed to construct cluster-type label selector: %w", err)
-// 	}
-// 	labelSelector = labelSelector.Add(*req)
-// 	secretsLister, err := server.settingsMgr.GetSecretsLister()
-// 	if err != nil {
-// 		return fmt.Errorf("failed to get secrets lister: %w", err)
-// 	}
-// 	clusterSecrets, err := secretsLister.Secrets(server.AthenaServerOpts.Namespace).List(labelSelector)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to list cluster secrets: %w", err)
-// 	}
-// 	var inClusterSecrets []string
-// 	for _, clusterSecret := range clusterSecrets {
-// 		cluster, err := db.SecretToCluster(clusterSecret)
-// 		if err != nil {
-// 			return fmt.Errorf("could not unmarshal cluster secret %q: %w", clusterSecret.Name, err)
-// 		}
-// 		if cluster.Server == v1alpha1.KubernetesInternalAPIServerAddr {
-// 			inClusterSecrets = append(inClusterSecrets, clusterSecret.Name)
-// 		}
-// 	}
-// 	if len(inClusterSecrets) > 0 {
-// 		// Don't make this call unless we actually have in-cluster secrets, to save time.
-// 		dbSettings, err := server.settingsMgr.GetSettings()
-// 		if err != nil {
-// 			return fmt.Errorf("could not get DB settings: %w", err)
-// 		}
-// 		if !dbSettings.InClusterEnabled {
-// 			for _, clusterName := range inClusterSecrets {
-// 				log.Warnf("cluster %q uses in-cluster server address but it's disabled in Athena settings", clusterName)
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
 
 func (server *AthenaServer) healthCheck(r *http.Request) error {
 	if server.terminateRequested.Load() {
@@ -549,50 +481,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// session service
 	sessionService := session.NewServer(server.sessionMgr, server.settingsMgr, server, server.policyEnforcer, loginRateLimiter)
 	// projectLock := sync.NewKeyLock()
-	// applicationService, appResourceTreeFn := application.NewServer(
-	// 	a.Namespace,
-	// 	a.KubeClientset,
-	// 	a.AppClientset,
-	// 	a.appLister,
-	// 	a.appInformer,
-	// 	nil,
-	// 	a.RepoClientset,
-	// 	a.Cache,
-	// 	kubectl,
-	// 	a.db,
-	// 	a.enf,
-	// 	projectLock,
-	// 	a.settingsMgr,
-	// 	a.projInformer,
-	// 	a.ApplicationNamespaces,
-	// 	a.EnableK8sEvent,
-	// 	a.SyncWithReplaceAllowed,
-	// )
 
-	// applicationSetService := applicationset.NewServer(
-	// 	a.db,
-	// 	a.KubeClientset,
-	// 	a.DynamicClientset,
-	// 	a.KubeControllerClientset,
-	// 	a.enf,
-	// 	a.RepoClientset,
-	// 	a.AppClientset,
-	// 	a.appsetInformer,
-	// 	a.appsetLister,
-	// 	a.Namespace,
-	// 	projectLock,
-	// 	a.ApplicationNamespaces,
-	// 	a.GitSubmoduleEnabled,
-	// 	a.EnableNewGitFileGlobbing,
-	// 	a.ScmRootCAPath,
-	// 	a.AllowedScmProviders,
-	// 	a.EnableScmProviders,
-	// 	a.EnableGitHubAPIMetrics,
-	// 	a.EnableK8sEvent,
-	// )
-
-	// projectService := project.NewServer(a.Namespace, a.KubeClientset, a.AppClientset, a.enf, projectLock, a.sessionMgr, a.policyEnforcer, a.projInformer, a.settingsMgr, a.db, a.EnableK8sEvent)
-	// appsInAnyNamespaceEnabled := len(server.ApplicationNamespaces) > 0
 	// settings service
 	settingsService := settings.NewServer(server.settingsMgr, server, server.DisableAuth)
 	// account service
@@ -974,10 +863,6 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// Dex reverse proxy and OAuth2 login/callback
 	server.registerDexHandlers(mux)
 
-	// // Webhook handler for git events (Note: cache timeouts are hardcoded because API server does not write to cache and not really using them)
-	// athenaDB := db.NewDB(server.Namespace, server.settingsMgr, server.KubeClientset)
-	// acdWebhookHandler := webhook.NewHandler(server.Namespace, server.ApplicationNamespaces, server.WebhookParallelism, server.AppClientset, server.appLister, server.settings, server.settingsMgr, server.RepoServerCache, server.Cache, athenaDB, server.settingsMgr.GetMaxWebhookPayloadSize())
-
 	// mux.HandleFunc("/api/webhook", acdWebhookHandler.Handler)
 
 	// Serve cli binaries directly from API server
@@ -1018,31 +903,6 @@ func withRootPath(handler http.Handler, a *AthenaServer) http.Handler {
 
 	return mux
 }
-
-// Workaround for https://github.com/golang/go/issues/21955 to support escaped URLs in URL path.
-// Disabled: not needed for this web app.
-// type bug21955Workaround struct {
-// 	handler http.Handler
-// }
-//
-// var pathPatters = []*regexp.Regexp{
-// 	regexp.MustCompile(`/api/v1/clusters/[^/]+`),
-// 	regexp.MustCompile(`/api/v1/repositories/[^/]+`),
-// 	regexp.MustCompile(`/api/v1/repocreds/[^/]+`),
-// 	regexp.MustCompile(`/api/v1/repositories/[^/]+/apps`),
-// 	regexp.MustCompile(`/api/v1/repositories/[^/]+/apps/[^/]+`),
-// 	regexp.MustCompile(`/settings/clusters/[^/]+`),
-// }
-//
-// func (bf *bug21955Workaround) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-// 	for _, pattern := range pathPatters {
-// 		if pattern.MatchString(r.URL.RawPath) {
-// 			r.URL.Path = r.URL.RawPath
-// 			break
-// 		}
-// 	}
-// 	bf.handler.ServeHTTP(w, r)
-// }
 
 type Listeners struct {
 	Main        net.Listener
@@ -1186,7 +1046,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 		go func() { server.checkServeErr("httpsS", httpsS.Serve(httpsL)) }()
 		go func() { server.checkServeErr("tlsm", tlsm.Serve()) }()
 	}
-	go server.watchSettings()
 	// go server.rbacPolicyLoader(ctx)
 	go func() { server.checkServeErr("tcpm", tcpm.Serve()) }()
 	go func() { server.checkServeErr("metrics", metricsServ.Serve(listeners.Metrics)) }()
@@ -1292,12 +1151,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 	}
 }
 
-// func (server *AthenaServer) Initialized() bool {
-// 	// TODO: This is the original code for Athena.
-// 	// return server.projInformer.HasSynced() && server.appInformer.HasSynced()
-// 	return true
-// }
-
 // TerminateRequested returns whether a shutdown was initiated by a signal or context cancel
 // as opposed to a watch.
 func (server *AthenaServer) TerminateRequested() bool {
@@ -1313,148 +1166,12 @@ func (server *AthenaServer) checkServeErr(name string, err error) {
 	}
 }
 
-func checkOIDCConfigChange(currentOIDCConfig *settings_util.OIDCConfig, newAthenaSettings *settings_util.AthenaSettings) bool {
-	newOIDCConfig := newAthenaSettings.OIDCConfig()
-
-	if (currentOIDCConfig != nil && newOIDCConfig == nil) || (currentOIDCConfig == nil && newOIDCConfig != nil) {
-		return true
-	}
-
-	if currentOIDCConfig != nil && newOIDCConfig != nil {
-		if !reflect.DeepEqual(*currentOIDCConfig, *newOIDCConfig) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// watchSettings watches the configmap and secret for any setting updates that would warrant a
-// restart of the API server.
-func (server *AthenaServer) watchSettings() {
-	updateCh := make(chan *settings_util.AthenaSettings, 1)
-	server.settingsMgr.Subscribe(updateCh)
-
-	prevURL := server.settings.URL
-	prevAdditionalURLs := server.settings.AdditionalURLs
-	prevOIDCConfig := server.settings.OIDCConfig()
-	prevDexCfgBytes, err := dexutil.GenerateDexConfigYAML(server.settings, server.DexTLSConfig == nil || server.DexTLSConfig.DisableTLS)
-	errorsutil.CheckError(err)
-	// prevGitHubSecret := server.settings.GetWebhookGitHubSecret()
-	// prevGitLabSecret := server.settings.GetWebhookGitLabSecret()
-	// prevBitbucketUUID := server.settings.GetWebhookBitbucketUUID()
-	// prevBitbucketServerSecret := server.settings.GetWebhookBitbucketServerSecret()
-	// prevGogsSecret := server.settings.GetWebhookGogsSecret()
-	// prevExtConfig := server.settings.ExtensionConfig
-	var prevCert, prevCertKey string
-	if server.settings.Certificate != nil && !server.Insecure {
-		prevCert, prevCertKey = tlsutil.EncodeX509KeyPairString(*server.settings.Certificate)
-	}
-
-	for {
-		newSettings := <-updateCh
-		server.settings = newSettings
-		newDexCfgBytes, err := dexutil.GenerateDexConfigYAML(server.settings, server.DexTLSConfig == nil || server.DexTLSConfig.DisableTLS)
-		errorsutil.CheckError(err)
-		if !bytes.Equal(newDexCfgBytes, prevDexCfgBytes) {
-			log.Infof("dex config modified. restarting")
-			break
-		}
-		if checkOIDCConfigChange(prevOIDCConfig, server.settings) {
-			log.Infof("oidc config modified. restarting")
-			break
-		}
-		if prevURL != server.settings.URL {
-			log.Infof("url modified. restarting")
-			break
-		}
-		if !reflect.DeepEqual(prevAdditionalURLs, server.settings.AdditionalURLs) {
-			log.Infof("additionalURLs modified. restarting")
-			break
-		}
-		// if prevGitHubSecret != server.settings.GetWebhookGitHubSecret() {
-		// 	log.Infof("github secret modified. restarting")
-		// 	break
-		// }
-		// if prevGitLabSecret != server.settings.GetWebhookGitLabSecret() {
-		// 	log.Infof("gitlab secret modified. restarting")
-		// 	break
-		// }
-		// if prevBitbucketUUID != server.settings.GetWebhookBitbucketUUID() {
-		// 	log.Infof("bitbucket uuid modified. restarting")
-		// 	break
-		// }
-		// if prevBitbucketServerSecret != server.settings.GetWebhookBitbucketServerSecret() {
-		// 	log.Infof("bitbucket server secret modified. restarting")
-		// 	break
-		// }
-		// if prevGogsSecret != server.settings.GetWebhookGogsSecret() {
-		// 	log.Infof("gogs secret modified. restarting")
-		// 	break
-		// }
-		// if !reflect.DeepEqual(prevExtConfig, server.settings.ExtensionConfig) {
-		// 	prevExtConfig = server.settings.ExtensionConfig
-		// 	log.Infof("extensions configs modified. Updating proxy registry...")
-		// 	err := server.extensionManager.UpdateExtensionRegistry(server.settings)
-		// 	if err != nil {
-		// 		log.Errorf("error updating extensions configs: %s", err)
-		// 	} else {
-		// 		log.Info("extensions configs updated successfully")
-		// 	}
-		// }
-		if !server.Insecure {
-			var newCert, newCertKey string
-			if server.settings.Certificate != nil {
-				newCert, newCertKey = tlsutil.EncodeX509KeyPairString(*server.settings.Certificate)
-			}
-			if newCert != prevCert || newCertKey != prevCertKey {
-				log.Infof("tls certificate modified. reloading certificate")
-				// No need to break out of this loop since TlsConfig.GetCertificate will automagically reload the cert.
-			}
-		}
-	}
-	log.Info("shutting down settings watch")
-	server.settingsMgr.Unsubscribe(updateCh)
-	close(updateCh)
-	// Triggers server restart
-	server.stopCh <- GracefulRestartSignal{}
-
-}
-
-// func (server *AthenaServer) rbacPolicyLoader(ctx context.Context) {
-// 	err := server.enf.RunPolicyLoader(ctx, func(cm *corev1.ConfigMap) error {
-// 		var scopes []string
-// 		if scopesStr, ok := cm.Data[rbac.ConfigMapScopesKey]; scopesStr != "" && ok {
-// 			scopes = make([]string, 0)
-// 			err := yaml.Unmarshal([]byte(scopesStr), &scopes)
-// 			if err != nil {
-// 				return fmt.Errorf("error unmarshalling scopes: %w", err)
-// 			}
-// 		}
-
-// 		server.policyEnforcer.SetScopes(scopes)
-// 		return nil
-// 	})
-// 	errorsutil.CheckError(err)
-// }
-
 func (server *AthenaServer) useTLS() bool {
 	if server.Insecure || server.settings.Certificate == nil {
 		return false
 	}
 	return true
 }
-
-// allowedApplicationNamespacesAsString returns a string containing comma-separated list
-// of allowed application namespaces
-// func (server *AthenaServer) allowedApplicationNamespacesAsString() string {
-// 	ns := server.Namespace
-// 	if len(server.ApplicationNamespaces) > 0 {
-// 		ns += ", "
-// 		ns += strings.Join(server.ApplicationNamespaces, ", ")
-// 	}
-// 	return ns
-// }
 
 // Authenticate checks for the presence of a valid token when accessing server-side resources.
 func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, error) {
