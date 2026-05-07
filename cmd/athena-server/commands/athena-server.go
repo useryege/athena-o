@@ -15,6 +15,7 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
@@ -43,22 +44,23 @@ func NewCommand() *cobra.Command {
 		rootPath        string
 		glogLevel       int
 		// dexServerAddress      string
-		disableAuth           bool
-		contentTypes          string
-		enableGZip            bool
-		listenHost            string
-		listenPort            int
-		metricsHost           string
-		metricsPort           int
-		otlpAddress           string
-		otlpInsecure          bool
-		otlpHeaders           map[string]string
-		otlpAttrs             []string
-		frameOptions          string
-		contentSecurityPolicy string
-		dexServerAddress      string
-		dexServerPlaintext    bool
-		dexServerStrictTLS    bool
+		disableAuth              bool
+		contentTypes             string
+		enableGZip               bool
+		listenHost               string
+		listenPort               int
+		metricsHost              string
+		metricsPort              int
+		otlpAddress              string
+		otlpInsecure             bool
+		otlpHeaders              map[string]string
+		otlpAttrs                []string
+		frameOptions             string
+		contentSecurityPolicy    string
+		dexServerAddress         string
+		dexServerPlaintext       bool
+		dexServerStrictTLS       bool
+		applicationServerAddress string
 		// hydratorEnabled        bool
 		// syncWithReplaceAllowed bool
 
@@ -142,6 +144,8 @@ func NewCommand() *cobra.Command {
 				contentTypesList = strings.Split(contentTypes, ";")
 			}
 
+			applicationclientset := apiclient.NewApplicationClientset(applicationServerAddress)
+
 			athenaOpts := server.AthenaServerOpts{
 				Namespace:             namespace,
 				KubeClientset:         kubeclientset,
@@ -163,6 +167,7 @@ func NewCommand() *cobra.Command {
 				Cache:                 cache,
 				DexServerAddr:         dexServerAddress,
 				DexTLSConfig:          dexTLSConfig,
+				ApplicationClientset:  applicationclientset,
 				// HydratorEnabled:        hydratorEnabled,
 				// SyncWithReplaceAllowed: syncWithReplaceAllowed,
 			}
@@ -231,6 +236,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&dexServerAddress, "dex-server", env.StringFromEnv("ATHENA_SERVER_DEX_SERVER", common.DefaultDexServerAddr), "Dex server address")
 	command.Flags().BoolVar(&dexServerPlaintext, "dex-server-plaintext", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_PLAINTEXT", false), "Use a plaintext client (non-TLS) to connect to dex server")
 	command.Flags().BoolVar(&dexServerStrictTLS, "dex-server-strict-tls", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_STRICT_TLS", false), "Perform strict validation of TLS certificates when connecting to dex server")
+	command.Flags().StringVar(&applicationServerAddress, "application-server-address", env.StringFromEnv("ATHENA_APPLICATION_SERVER_ADDRESS", "localhost:8082"), "Athena application server address")
 	// command.Flags().BoolVar(&hydratorEnabled, "hydrator-enabled", env.ParseBoolFromEnv("ATHENA_SERVER_HYDRATOR_ENABLED", false), "Feature flag to enable Hydrator. Default (\"false\")")
 	// command.Flags().BoolVar(&syncWithReplaceAllowed, "sync-with-replace-allowed", env.ParseBoolFromEnv("ATHENA_SERVER_SYNC_WITH_REPLACE_ALLOWED", true), "Whether to allow users to select replace for syncs from UI/CLI")
 	tlsConfigCustomizerSrc = tls.AddTLSFlagsToCmd(command)

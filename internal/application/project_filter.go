@@ -16,17 +16,19 @@ type ProjectFilter struct {
 	pool     RetryUntilReadyPool
 	queue    RetryUntilReadyQueue
 	inputCh  <-chan *Project
+	eventHub *ProjectEventHub
 
 	fetcher EVMFetcher
 }
 
-func NewProjectFilter(registry ProjectRegistry, inputCh <-chan *Project, pool RetryUntilReadyPool, queue RetryUntilReadyQueue, fetcher EVMFetcher) *ProjectFilter {
+func NewProjectFilter(registry ProjectRegistry, inputCh <-chan *Project, pool RetryUntilReadyPool, queue RetryUntilReadyQueue, fetcher EVMFetcher, eventHub *ProjectEventHub) *ProjectFilter {
 	return &ProjectFilter{
 		registry: registry,
 		pool:     pool,
 		inputCh:  inputCh,
 		queue:    queue,
 		fetcher:  fetcher,
+		eventHub: eventHub,
 	}
 }
 
@@ -179,6 +181,9 @@ func (f *ProjectFilter) run(ctx context.Context) error {
 					"error":     err,
 				}).Error("failed to store project")
 				continue
+			}
+			if f.eventHub != nil {
+				f.eventHub.PublishProjectCreated(event)
 			}
 
 			// schedule the initial retry resolve

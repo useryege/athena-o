@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/google/uuid"
+	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 )
 
 type Project struct {
@@ -51,4 +52,37 @@ type ProjectDelayedState struct {
 
 type ProjectDynamicState struct {
 	HolderCount DynamicValue[uint64]
+}
+
+func projectToView(project *Project) *applicationpkg.ProjectView {
+	if project == nil {
+		return nil
+	}
+
+	txHash := ""
+	if project.Meta.Tx != nil {
+		txHash = project.Meta.Tx.Hash().Hex()
+	}
+
+	totalSupply := ""
+	if supply := project.InitState.TotalSupply.Get(); supply != nil {
+		totalSupply = supply.String()
+	}
+
+	return &applicationpkg.ProjectView{
+		Meta: &applicationpkg.ProjectMeta{
+			ProjectId:   project.Meta.ProjectID.String(),
+			BlockTime:   project.Meta.BlockTime,
+			BlockNumber: project.Meta.BlockNumber,
+			Contract:    project.Meta.Contract.Hex(),
+			Creator:     project.Meta.Creator.Hex(),
+			TxHash:      txHash,
+		},
+		InitState: &applicationpkg.ProjectInitState{
+			Name:        project.InitState.Name.Get(),
+			Symbol:      project.InitState.Symbol.Get(),
+			Decimals:    uint32(project.InitState.Decimals.Get()),
+			TotalSupply: totalSupply,
+		},
+	}
 }

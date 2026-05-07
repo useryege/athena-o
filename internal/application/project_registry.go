@@ -7,10 +7,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
+	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 )
 
 type ProjectRegistry interface {
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
+	ListProjects(ctx context.Context) ([]*applicationpkg.ProjectView, error)
 	SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error
 	RemoveProject(ctx context.Context, projectID uuid.UUID) error
 }
@@ -40,6 +42,23 @@ func (r *projectRegistryImpl) GetProject(ctx context.Context, projectID uuid.UUI
 	}
 
 	return project, true, nil
+}
+
+func (r *projectRegistryImpl) ListProjects(ctx context.Context) ([]*applicationpkg.ProjectView, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	projects := make([]*applicationpkg.ProjectView, 0, len(r.Projects))
+	for _, project := range r.Projects {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+		projects = append(projects, projectToView(project))
+	}
+
+	return projects, nil
 }
 
 func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error {

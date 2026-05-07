@@ -42,6 +42,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"github.com/useryege/athena/common"
+	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/server/account"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/internal/server/logout"
@@ -176,9 +177,12 @@ type AthenaServer struct {
 	// configMapInformer cache.SharedIndexInformer
 	serviceSet *AthenaServiceSet
 	// extensionManager   *extension.Manager
-	Shutdown           func()
-	terminateRequested atomic.Bool
-	available          atomic.Bool
+	Shutdown            func()
+	terminateRequested  atomic.Bool
+	available           atomic.Bool
+	applicationClientMu gosync.Mutex
+	applicationConn     *grpc.ClientConn
+	applicationClient   applicationpkg.ApplicationServiceClient
 }
 
 type AthenaServerOpts struct {
@@ -207,6 +211,7 @@ type AthenaServerOpts struct {
 	TLSConfigCustomizer   tlsutil.ConfigCustomizer
 	XFrameOptions         string
 	ContentSecurityPolicy string
+	ApplicationClientset  applicationpkg.Clientset
 	// ApplicationNamespaces []string
 	// EnableProxyExtension  bool
 	// WebhookParallelism     int

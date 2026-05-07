@@ -28,6 +28,7 @@ athena-server [flags]
       --address string                                Listen on given address (default "0.0.0.0")
       --api-content-types string                      Semicolon separated list of allowed content types for non GET api requests. Any content type is allowed if empty. (default "application/json")
       --app-state-cache-expiration duration           Cache expiration for app state (default 1h0m0s)
+      --application-server-address string             Athena application server address (default "localhost:8082")
       --as string                                     Username to impersonate for the operation
       --as-group stringArray                          Group to impersonate for the operation, this flag can be repeated to specify multiple groups.
       --as-uid string                                 UID to impersonate for the operation
