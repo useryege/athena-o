@@ -41,6 +41,16 @@ func (*KnownTypeField) ProtoMessage() {}
 
 func (*OverrideIgnoreDiff) ProtoMessage() {}
 
+func (*ProjectCreatedEvent) ProtoMessage() {}
+
+func (*ProjectEvent) ProtoMessage() {}
+
+func (*ProjectInitState) ProtoMessage() {}
+
+func (*ProjectMeta) ProtoMessage() {}
+
+func (*ProjectView) ProtoMessage() {}
+
 func (*ResourceNetworkingInfo) ProtoMessage() {}
 
 func (*ResourceNode) ProtoMessage() {}

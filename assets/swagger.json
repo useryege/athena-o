@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-118-g5ad1027-dirty"
+    "version": "v1.0.0-119-g8cc9947-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -207,6 +207,28 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountEmptyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/list": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_List",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListResponse"
             }
           },
           "default": {
@@ -443,6 +465,10 @@
       }
     },
     "accountUpdatePasswordResponse": {
+      "type": "object"
+    },
+    "applicationListResponse": {
+      "description": "ListResponse returns the list of projects.",
       "type": "object"
     },
     "clusterConnector": {

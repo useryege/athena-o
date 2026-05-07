@@ -42,8 +42,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"github.com/useryege/athena/common"
-	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
+	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/server/account"
+	"github.com/useryege/athena/internal/server/application"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/internal/server/logout"
 	"github.com/useryege/athena/internal/server/metrics"
@@ -89,6 +90,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
+	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 )
 
@@ -182,7 +184,7 @@ type AthenaServer struct {
 	available           atomic.Bool
 	applicationClientMu gosync.Mutex
 	applicationConn     *grpc.ClientConn
-	applicationClient   applicationpkg.ApplicationServiceClient
+	applicationClient   applicationapiclient.ApplicationServiceClient
 }
 
 type AthenaServerOpts struct {
@@ -211,7 +213,7 @@ type AthenaServerOpts struct {
 	TLSConfigCustomizer   tlsutil.ConfigCustomizer
 	XFrameOptions         string
 	ContentSecurityPolicy string
-	ApplicationClientset  applicationpkg.Clientset
+	ApplicationClientset  applicationapiclient.Clientset
 	// ApplicationNamespaces []string
 	// EnableProxyExtension  bool
 	// WebhookParallelism     int
@@ -509,18 +511,10 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 	// register all the services to the gRPC server
 	grpc_health_v1.RegisterHealthServer(grpcS, server.serviceSet.HealthService)
 	versionpkg.RegisterVersionServiceServer(grpcS, server.serviceSet.VersionService)
-	// clusterpkg.RegisterClusterServiceServer(grpcS, server.serviceSet.ClusterService)
-	// applicationpkg.RegisterApplicationServiceServer(grpcS, server.serviceSet.ApplicationService)
-	// applicationsetpkg.RegisterApplicationSetServiceServer(grpcS, server.serviceSet.ApplicationSetService)
-	// notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
-	// repositorypkg.RegisterRepositoryServiceServer(grpcS, server.serviceSet.RepoService)
-	// repocredspkg.RegisterRepoCredsServiceServer(grpcS, server.serviceSet.RepoCredsService)
 	sessionpkg.RegisterSessionServiceServer(grpcS, server.serviceSet.SessionService)
 	settingspkg.RegisterSettingsServiceServer(grpcS, server.serviceSet.SettingsService)
-	// projectpkg.RegisterProjectServiceServer(grpcS, server.serviceSet.ProjectService)
 	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
-	// certificatepkg.RegisterCertificateServiceServer(grpcS, server.serviceSet.CertificateService)
-	// gpgkeypkg.RegisterGPGKeyServiceServer(grpcS, server.serviceSet.GpgkeyService)
+	applicationpkg.RegisterApplicationServiceServer(grpcS, server.serviceSet.ApplicationService)
 
 	// Register reflection service on gRPC server.
 	reflection.Register(grpcS)
@@ -531,11 +525,12 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 }
 
 type AthenaServiceSet struct {
-	HealthService   *health.Server
-	SessionService  *session.Server
-	SettingsService *settings.Server
-	AccountService  *account.Server
-	VersionService  *version.Server
+	HealthService      *health.Server
+	SessionService     *session.Server
+	SettingsService    *settings.Server
+	AccountService     *account.Server
+	VersionService     *version.Server
+	ApplicationService *application.Server
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
@@ -602,6 +597,8 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	settingsService := settings.NewServer(server.settingsMgr, server, server.DisableAuth)
 	// account service
 	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf)
+	// application service
+	applicationService := application.NewServer(server.ApplicationClientset)
 
 	// notificationService := notification.NewServer(a.apiFactory)
 	// certificateService := certificate.NewServer(a.db, a.enf)
@@ -619,25 +616,12 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
-		HealthService:   healthService,
-		SessionService:  sessionService,
-		SettingsService: settingsService,
-		AccountService:  accountService,
-		VersionService:  versionService,
-		// 	ClusterService:        clusterService,
-		// 	RepoService:           repoService,
-		// 	RepoCredsService:      repoCredsService,
-		// 	SessionService:        sessionService,
-		// 	ApplicationService:    applicationService,
-		// 	AppResourceTreeFn:     appResourceTreeFn,
-		// 	ApplicationSetService: applicationSetService,
-		// 	ProjectService:        projectService,
-		// 	SettingsService:       settingsService,
-		// 	AccountService:        accountService,
-		// 	NotificationService:   notificationService,
-		// 	CertificateService:    certificateService,
-		// 	GpgkeyService:         gpgkeyService,
-		// 	VersionService:        versionService,
+		HealthService:      healthService,
+		SessionService:     sessionService,
+		SettingsService:    settingsService,
+		AccountService:     accountService,
+		VersionService:     versionService,
+		ApplicationService: applicationService,
 	}
 }
 
@@ -975,12 +959,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// }
 
 	mustRegisterGWHandler(ctx, versionpkg.RegisterVersionServiceHandler, gwmux, conn)
-	// mustRegisterGWHandler(ctx, clusterpkg.RegisterClusterServiceHandler, gwmux, conn)
-	// mustRegisterGWHandler(ctx, applicationpkg.RegisterApplicationServiceHandler, gwmux, conn)
-	// mustRegisterGWHandler(ctx, applicationsetpkg.RegisterApplicationSetServiceHandler, gwmux, conn)
-	// mustRegisterGWHandler(ctx, notificationpkg.RegisterNotificationServiceHandler, gwmux, conn)
-	// mustRegisterGWHandler(ctx, repositorypkg.RegisterRepositoryServiceHandler, gwmux, conn)
-	// mustRegisterGWHandler(ctx, repocredspkg.RegisterRepoCredsServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, applicationpkg.RegisterApplicationServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, settingspkg.RegisterSettingsServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, projectpkg.RegisterProjectServiceHandler, gwmux, conn)

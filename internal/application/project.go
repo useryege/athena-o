@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/google/uuid"
-	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
 type Project struct {
@@ -54,7 +54,7 @@ type ProjectDynamicState struct {
 	HolderCount DynamicValue[uint64]
 }
 
-func projectToView(project *Project) *applicationpkg.ProjectView {
+func projectToView(project *Project) *v1alpha1.ProjectView {
 	if project == nil {
 		return nil
 	}
@@ -69,16 +69,16 @@ func projectToView(project *Project) *applicationpkg.ProjectView {
 		totalSupply = supply.String()
 	}
 
-	return &applicationpkg.ProjectView{
-		Meta: &applicationpkg.ProjectMeta{
-			ProjectId:   project.Meta.ProjectID.String(),
+	return &v1alpha1.ProjectView{
+		Meta: v1alpha1.ProjectMeta{
+			ProjectID:   project.Meta.ProjectID.String(),
 			BlockTime:   project.Meta.BlockTime,
 			BlockNumber: project.Meta.BlockNumber,
-			Contract:    project.Meta.Contract.Hex(),
-			Creator:     project.Meta.Creator.Hex(),
+			Contract:    project.Meta.Contract.String(),
+			Creator:     project.Meta.Creator.String(),
 			TxHash:      txHash,
 		},
-		InitState: &applicationpkg.ProjectInitState{
+		InitState: v1alpha1.ProjectInitState{
 			Name:        project.InitState.Name.Get(),
 			Symbol:      project.InitState.Symbol.Get(),
 			Decimals:    uint32(project.InitState.Decimals.Get()),

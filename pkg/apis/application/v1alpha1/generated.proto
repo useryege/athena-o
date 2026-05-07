@@ -296,6 +296,50 @@ message OverrideIgnoreDiff {
   repeated string managedFieldsManagers = 3;
 }
 
+message ProjectCreatedEvent {
+  optional ProjectView project = 1;
+}
+
+message ProjectEvent {
+  optional int32 type = 1;
+
+  optional uint64 eventSeq = 2;
+
+  optional int64 eventTime = 3;
+
+  optional ProjectCreatedEvent created = 4;
+}
+
+message ProjectInitState {
+  optional string name = 1;
+
+  optional string symbol = 2;
+
+  optional uint32 decimals = 3;
+
+  optional string totalSupply = 4;
+}
+
+message ProjectMeta {
+  optional string projectID = 1;
+
+  optional uint64 blockTime = 2;
+
+  optional uint64 blockNumber = 3;
+
+  optional string contract = 4;
+
+  optional string creator = 5;
+
+  optional string txHash = 6;
+}
+
+message ProjectView {
+  optional ProjectMeta meta = 1;
+
+  optional ProjectInitState initState = 2;
+}
+
 // ResourceNetworkingInfo holds networking-related information for a resource.
 message ResourceNetworkingInfo {
   // TargetLabels represents labels associated with the target resources that this resource communicates with.

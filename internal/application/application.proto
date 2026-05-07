@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-// Application Service
-//
 // Application Service API exposes project discovery snapshots and updates.
 package application;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
 
 option go_package = "github.com/useryege/athena/internal/application/apiclient";
 
@@ -13,59 +13,14 @@ message ListProjectsRequest {}
 // WatchProjectsRequest subscribes to future project updates.
 message WatchProjectsRequest {}
 
-// ProjectMeta contains lightweight chain metadata for a discovered project.
-message ProjectMeta {
-  string project_id = 1;
-  uint64 block_time = 2;
-  uint64 block_number = 3;
-  string contract = 4;
-  string creator = 5;
-  string tx_hash = 6;
-}
-
-// ProjectInitState contains the initial token metadata needed by the UI.
-message ProjectInitState {
-  string name = 1;
-  string symbol = 2;
-  uint32 decimals = 3;
-  string total_supply = 4;
-}
-
-// ProjectView is the minimal immutable project payload exposed to clients.
-message ProjectView {
-  ProjectMeta meta = 1;
-  ProjectInitState init_state = 2;
-}
-
 // ListProjectsResponse returns the current known project snapshot.
 message ListProjectsResponse {
-  repeated ProjectView items = 1;
-}
-
-enum ProjectEventType {
-  PROJECT_EVENT_TYPE_UNSPECIFIED = 0;
-  PROJECT_EVENT_TYPE_CREATED = 1;
-}
-
-// ProjectCreatedEvent carries a newly discovered project.
-message ProjectCreatedEvent {
-  ProjectView project = 1;
-}
-
-// ProjectEvent contains one project update with a monotonic event sequence.
-message ProjectEvent {
-  ProjectEventType type = 1;
-  uint64 event_seq = 2;
-  int64 event_time = 3;
-
-  oneof payload {
-    ProjectCreatedEvent created = 4;
-  }
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView items = 1;
 }
 
 // WatchProjectsResponse is one streamed project event envelope.
 message WatchProjectsResponse {
-  ProjectEvent event = 1;
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectEvent event = 1;
 }
 
 service ApplicationService {

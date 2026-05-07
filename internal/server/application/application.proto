@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+// Application Service
+//
+// Application Service API returns the list of projects.
+package application;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/application";
+
+// ListRequest requests the list of projects.
+message ListRequest {}
+
+// ListResponse returns the list of projects.
+message ListResponse {}
+
+service ApplicationService {
+  rpc List(ListRequest) returns (ListResponse) {
+    option (google.api.http) = {get: "/api/v1/application/list"};
+  }
+}

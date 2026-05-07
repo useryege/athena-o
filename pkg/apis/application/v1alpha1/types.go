@@ -3878,3 +3878,42 @@ func SetK8SConfigDefaults(config *rest.Config) error {
 // 	}
 // 	return parsedVal.After(since) || parsedVal.Equal(since)
 // }
+
+type ProjectView struct {
+	Meta      ProjectMeta      `protobuf:"bytes,1,opt,name=meta"`
+	InitState ProjectInitState `protobuf:"bytes,2,opt,name=initState"`
+}
+
+type ProjectMeta struct {
+	ProjectID   string `protobuf:"bytes,1,opt,name=projectID"`
+	BlockTime   uint64 `protobuf:"varint,2,opt,name=blockTime"`
+	BlockNumber uint64 `protobuf:"varint,3,opt,name=blockNumber"`
+	Contract    string `protobuf:"bytes,4,opt,name=contract"`
+	Creator     string `protobuf:"bytes,5,opt,name=creator"`
+	TxHash      string `protobuf:"bytes,6,opt,name=txHash"`
+}
+
+type ProjectInitState struct {
+	Name        string `protobuf:"bytes,1,opt,name=name"`
+	Symbol      string `protobuf:"bytes,2,opt,name=symbol"`
+	Decimals    uint32 `protobuf:"varint,3,opt,name=decimals"`
+	TotalSupply string `protobuf:"bytes,4,opt,name=totalSupply"`
+}
+
+type ProjectEventType int32
+
+const (
+	PROJECT_EVENT_TYPE_UNSPECIFIED ProjectEventType = 0
+	PROJECT_EVENT_TYPE_CREATED     ProjectEventType = 1
+)
+
+type ProjectEvent struct {
+	Type      ProjectEventType     `protobuf:"varint,1,opt,name=type,casttype=ProjectEventType"`
+	EventSeq  uint64               `protobuf:"varint,2,opt,name=eventSeq"`
+	EventTime int64                `protobuf:"varint,3,opt,name=eventTime"`
+	Created   *ProjectCreatedEvent `protobuf:"bytes,4,opt,name=created"`
+}
+
+type ProjectCreatedEvent struct {
+	Project *ProjectView `protobuf:"bytes,1,opt,name=project"`
+}

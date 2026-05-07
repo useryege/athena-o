@@ -15,7 +15,7 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
-	"github.com/useryege/athena/internal/application/apiclient"
+	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
@@ -144,7 +144,7 @@ func NewCommand() *cobra.Command {
 				contentTypesList = strings.Split(contentTypes, ";")
 			}
 
-			applicationclientset := apiclient.NewApplicationClientset(applicationServerAddress)
+			applicationclientset := applicationapiclient.NewApplicationClientset(applicationServerAddress)
 
 			athenaOpts := server.AthenaServerOpts{
 				Namespace:             namespace,
