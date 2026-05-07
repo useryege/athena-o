@@ -2,19 +2,16 @@ package settings
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
-	"reflect"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -22,22 +19,12 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/server/settings/oidc"
-	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	timeutil "github.com/useryege/athena/pkg/time"
 	"github.com/useryege/athena/util"
 	"github.com/useryege/athena/util/crypto"
-	kube "github.com/useryege/athena/util/kube"
+	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/password"
 	tlsutil "github.com/useryege/athena/util/tls"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
-	informersv1 "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
-	v1listers "k8s.io/client-go/listers/core/v1"
-	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/yaml"
 )
 
@@ -62,26 +49,8 @@ type AthenaSettings struct {
 	// Certificate holds the certificate/private key for the Athena API server.
 	// If nil, will run insecure without TLS.
 	Certificate *tls.Certificate `json:"-"`
-	// CertificateIsExternal indicates whether Certificate was loaded from external secret
-	CertificateIsExternal bool `json:"-"`
-	// WebhookGitLabSecret holds the shared secret for authenticating GitHub webhook events
-	WebhookGitHubSecret string `json:"webhookGitHubSecret,omitempty"`
-	// WebhookGitLabSecret holds the shared secret for authenticating GitLab webhook events
-	WebhookGitLabSecret string `json:"webhookGitLabSecret,omitempty"`
-	// WebhookBitbucketUUID holds the UUID for authenticating Bitbucket webhook events
-	WebhookBitbucketUUID string `json:"webhookBitbucketUUID,omitempty"`
-	// WebhookBitbucketServerSecret holds the shared secret for authenticating BitbucketServer webhook events
-	WebhookBitbucketServerSecret string `json:"webhookBitbucketServerSecret,omitempty"`
-	// WebhookGogsSecret holds the shared secret for authenticating Gogs webhook events
-	WebhookGogsSecret string `json:"webhookGogsSecret,omitempty"`
-	// WebhookAzureDevOpsUsername holds the username for authenticating Azure DevOps webhook events
-	WebhookAzureDevOpsUsername string `json:"webhookAzureDevOpsUsername,omitempty"`
-	// WebhookAzureDevOpsPassword holds the password for authenticating Azure DevOps webhook events
-	WebhookAzureDevOpsPassword string `json:"webhookAzureDevOpsPassword,omitempty"`
 	// Secrets holds all secrets in athena-secret as a map[string]string
 	Secrets map[string]string `json:"secrets,omitempty"`
-	// KustomizeBuildOptions is a string of kustomize build parameters
-	KustomizeBuildOptions string `json:"kustomizeBuildOptions,omitempty"`
 	// Indicates if anonymous user is enabled or not
 	AnonymousUserEnabled bool `json:"anonymousUserEnabled,omitempty"`
 	// Specifies token expiration duration
@@ -100,44 +69,13 @@ type AthenaSettings struct {
 	PasswordPattern string `json:"passwordPattern,omitempty"`
 	// BinaryUrls contains the URLs for downloading athena binaries
 	BinaryUrls map[string]string `json:"binaryUrls,omitempty"`
-	// InClusterEnabled indicates whether to allow in-cluster server address
-	InClusterEnabled bool `json:"inClusterEnabled"`
-	// ServerRBACLogEnforceEnable temporary var indicates whether rbac will be enforced on logs
-	ServerRBACLogEnforceEnable bool `json:"serverRBACLogEnforceEnable"`
-	// MaxPodLogsToRender the maximum number of pod logs to render
-	MaxPodLogsToRender int64 `json:"maxPodLogsToRender"`
 	// ExecEnabled indicates whether the UI exec feature is enabled
-	ExecEnabled bool `json:"execEnabled"`
-	// ExecShells restricts which shells are allowed for `exec` and in which order they are tried
-	ExecShells []string `json:"execShells"`
-	// TrackingMethod defines the resource tracking method to be used
-	TrackingMethod string `json:"application.resourceTrackingMethod,omitempty"`
+	// ExecEnabled bool `json:"execEnabled"`
 	// OIDCTLSInsecureSkipVerify determines whether certificate verification is skipped when verifying tokens with the
 	// configured OIDC provider (either external or the bundled Dex instance). Setting this to `true` will cause JWT
 	// token verification to pass despite the OIDC provider having an invalid certificate. Only set to `true` if you
 	// understand the risks.
 	OIDCTLSInsecureSkipVerify bool `json:"oidcTLSInsecureSkipVerify"`
-	// AppsInAnyNamespaceEnabled indicates whether applications are allowed to be created in any namespace
-	AppsInAnyNamespaceEnabled bool `json:"appsInAnyNamespaceEnabled"`
-	// ExtensionConfig configurations related to Athena proxy extensions. The keys are the extension name.
-	// The value is a yaml string defined in extension.ExtensionConfigs struct.
-	ExtensionConfig map[string]string `json:"extensionConfig,omitempty"`
-	// ImpersonationEnabled indicates whether Application sync privileges can be decoupled from control plane
-	// privileges using impersonation
-	ImpersonationEnabled bool `json:"impersonationEnabled"`
-	// RequireOverridePrivilegeForRevisionSync indicates whether giving an external revision during snyc is considered an override.
-	// Up to revision 3.2, this was always false. It is now still false by default, in order to not breaking existing usage.
-	RequireOverridePrivilegeForRevisionSync bool `json:"requireOverridePrivilegeForRevisionSync"`
-}
-
-type GoogleAnalytics struct {
-	TrackingID     string `json:"trackingID,omitempty"`
-	AnonymizeUsers bool   `json:"anonymizeUsers,omitempty"`
-}
-
-type GlobalProjectSettings struct {
-	ProjectName   string               `json:"projectName,omitempty"`
-	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
 }
 
 // Help settings
@@ -207,910 +145,132 @@ type AzureOIDCConfig struct {
 	UseWorkloadIdentity bool `json:"useWorkloadIdentity,omitempty"`
 }
 
-var (
-	ByClusterURLIndexer     = "byClusterURL"
-	byClusterURLIndexerFunc = func(obj any) ([]string, error) {
-		s, ok := obj.(*corev1.Secret)
-		if !ok {
-			return nil, nil
-		}
-		if s.Labels == nil || s.Labels[common.LabelKeySecretType] != common.LabelValueSecretTypeCluster {
-			return nil, nil
-		}
-		if s.Data == nil {
-			return nil, nil
-		}
-		if url, ok := s.Data["server"]; ok {
-			return []string{strings.TrimRight(string(url), "/")}, nil
-		}
-		return nil, nil
-	}
-	ByClusterNameIndexer     = "byClusterName"
-	byClusterNameIndexerFunc = func(obj any) ([]string, error) {
-		s, ok := obj.(*corev1.Secret)
-		if !ok {
-			return nil, nil
-		}
-		if s.Labels == nil || s.Labels[common.LabelKeySecretType] != common.LabelValueSecretTypeCluster {
-			return nil, nil
-		}
-		if s.Data == nil {
-			return nil, nil
-		}
-		if name, ok := s.Data["name"]; ok {
-			return []string{string(name)}, nil
-		}
-		return nil, nil
-	}
-	ByProjectClusterIndexer   = "byProjectCluster"
-	ByProjectRepoIndexer      = "byProjectRepo"
-	ByProjectRepoWriteIndexer = "byProjectRepoWrite"
-	byProjectIndexerFunc      = func(secretType string) func(obj any) ([]string, error) {
-		return func(obj any) ([]string, error) {
-			s, ok := obj.(*corev1.Secret)
-			if !ok {
-				return nil, nil
-			}
-			if s.Labels == nil || s.Labels[common.LabelKeySecretType] != secretType {
-				return nil, nil
-			}
-			if s.Data == nil {
-				return nil, nil
-			}
-			if project, ok := s.Data["project"]; ok {
-				return []string{string(project)}, nil
-			}
-			return nil, nil
-		}
-	}
-)
-
 const (
-	// settingServerSignatureKey designates the key for a server secret key inside a Kubernetes secret.
-	settingServerSignatureKey = "server.secretkey"
-	// gaTrackingID holds Google Analytics tracking id
-	gaTrackingID = "ga.trackingid"
-	// the URL for getting chat help, this will typically be your Slack channel for support
-	helpChatURL = "help.chatUrl"
-	// the text for getting chat help, defaults to "Chat now!"
-	helpChatText = "help.chatText"
-	// gaAnonymizeUsers specifies if user ids should be anonymized (hashed) before sending to Google Analytics. True unless value is set to 'false'
-	gaAnonymizeUsers = "ga.anonymizeusers"
-	// settingServerCertificate designates the key for the public cert used in TLS
-	settingServerCertificate = "tls.crt"
-	// settingServerPrivateKey designates the key for the private key used in TLS
-	settingServerPrivateKey = "tls.key"
-	// settingURLKey designates the key where Athena's external URL is set
-	settingURLKey = "url"
-	// settingAdditionalUrlsKey designates the key where Athena's additional external URLs are set
-	settingAdditionalUrlsKey = "additionalUrls"
-	// settingDexConfigKey designates the key for the dex config
-	settingDexConfigKey = "dex.config"
-	// settingsOIDCConfigKey designates the key for OIDC config
-	settingsOIDCConfigKey = "oidc.config"
-	// statusBadgeEnabledKey holds the key which enables of disables status badge feature
-	statusBadgeEnabledKey = "statusbadge.enabled"
-	// statusBadgeRootURLKey holds the key for the root badge URL override
-	statusBadgeRootURLKey = "statusbadge.url"
-	// settingsWebhookGitHubSecret is the key for the GitHub shared webhook secret
-	settingsWebhookGitHubSecretKey = "webhook.github.secret"
-	// settingsWebhookGitLabSecret is the key for the GitLab shared webhook secret
-	settingsWebhookGitLabSecretKey = "webhook.gitlab.secret"
-	// settingsWebhookBitbucketUUID is the key for Bitbucket webhook UUID
-	settingsWebhookBitbucketUUIDKey = "webhook.bitbucket.uuid"
-	// settingsWebhookBitbucketServerSecret is the key for BitbucketServer webhook secret
-	settingsWebhookBitbucketServerSecretKey = "webhook.bitbucketserver.secret"
-	// settingsWebhookGogsSecret is the key for Gogs webhook secret
-	settingsWebhookGogsSecretKey = "webhook.gogs.secret"
-	// settingsWebhookAzureDevOpsUsernameKey is the key for Azure DevOps webhook username
-	settingsWebhookAzureDevOpsUsernameKey = "webhook.azuredevops.username"
-	// settingsWebhookAzureDevOpsPasswordKey is the key for Azure DevOps webhook password
-	settingsWebhookAzureDevOpsPasswordKey = "webhook.azuredevops.password"
-	// // settingsWebhookMaxPayloadSize is the key for the maximum payload size for webhooks in MB
-	// settingsWebhookMaxPayloadSizeMB = "webhook.maxPayloadSizeMB"
-	// settingsApplicationInstanceLabelKey is the key to configure injected app instance label key
-	settingsApplicationInstanceLabelKey = "application.instanceLabelKey"
-	// settingsResourceTrackingMethodKey is the key to configure tracking method for application resources
-	settingsResourceTrackingMethodKey = "application.resourceTrackingMethod"
-	// // allowedNodeLabelsKey is the key to the list of allowed node labels for the application pod view
-	// allowedNodeLabelsKey = "application.allowedNodeLabels"
-	// settingsInstallationID holds the key for the instance installation ID
-	settingsInstallationID = "installationID"
-	// resourcesCustomizationsKey is the key to the map of resource overrides
-	resourceCustomizationsKey = "resource.customizations"
-	// // resourceExclusions is the key to the list of excluded resources
-	// resourceExclusionsKey = "resource.exclusions"
-	// // resourceInclusions is the key to the list of explicitly watched resources
-	// resourceInclusionsKey = "resource.inclusions"
-	// // resourceIgnoreResourceUpdatesEnabledKey is the key to a boolean determining whether the resourceIgnoreUpdates feature is enabled
-	// resourceIgnoreResourceUpdatesEnabledKey = "resource.ignoreResourceUpdatesEnabled"
-	// // resourceSensitiveAnnotationsKey is the key to list of annotations to mask in secret resource
-	// resourceSensitiveAnnotationsKey = "resource.sensitive.mask.annotations"
-	// // resourceCustomLabelKey is the key to a custom label to show in node info, if present
-	// resourceCustomLabelsKey = "resource.customLabels"
-	// // resourceIncludeEventLabelKeys is the key to labels to be added onto Application k8s events if present on an Application or it's AppProject. Supports wildcard.
-	// resourceIncludeEventLabelKeys = "resource.includeEventLabelKeys"
-	// // resourceExcludeEventLabelKeys is the key to labels to be excluded from adding onto Application's k8s events. Supports wildcard.
-	// resourceExcludeEventLabelKeys = "resource.excludeEventLabelKeys"
-	// kustomizeBuildOptionsKey is a string of kustomize build parameters
-	kustomizeBuildOptionsKey = "kustomize.buildOptions"
-	// kustomizeVersionKeyPrefix is a kustomize version key prefix
-	// kustomizeVersionKeyPrefix = "kustomize.version"
-	// kustomizePathPrefixKey is a kustomize path for a specific version
-	// kustomizePathPrefixKey = "kustomize.path"
-	// anonymousUserEnabledKey is the key which enables or disables anonymous user
-	anonymousUserEnabledKey = "users.anonymous.enabled"
-	// userSessionDurationKey is the key which specifies token expiration duration
-	userSessionDurationKey = "users.session.duration"
-	// diffOptions is the key where diff options are configured
-	resourceCompareOptionsKey = "resource.compareoptions"
-	// settingUICSSURLKey designates the key for user-defined CSS URL for UI customization
-	settingUICSSURLKey = "ui.cssurl"
-	// settingUIBannerContentKey designates the key for content of user-defined info banner for UI
-	settingUIBannerContentKey = "ui.bannercontent"
-	// settingUIBannerURLKey designates the key for the link for user-defined info banner for UI
-	settingUIBannerURLKey = "ui.bannerurl"
-	// settingUIBannerPermanentKey designates the key for whether the banner is permanent and not closeable
-	settingUIBannerPermanentKey = "ui.bannerpermanent"
-	// settingUIBannerPositionKey designates the key for the position of the banner
-	settingUIBannerPositionKey = "ui.bannerposition"
-	// settingsBinaryUrlsKey designates the key for the athena binary URLs
-	settingsBinaryUrlsKey = "help.download"
-	// // settingsApplicationInstanceLabelKey is the key to configure injected app instance label key
-	// settingsSourceHydratorCommitMessageTemplateKey = "sourceHydrator.commitMessageTemplate"
-	// // globalProjectsKey designates the key for global project settings
-	// globalProjectsKey = "globalProjects"
-	// initialPasswordSecretName is the name of the secret that will hold the initial admin password
-	initialPasswordSecretName = "athena-initial-admin-secret"
-	// initialPasswordSecretField is the name of the field in initialPasswordSecretName to store the password
-	initialPasswordSecretField = "password"
 	// initialPasswordLength defines the length of the generated initial password
 	initialPasswordLength = 16
-
-	// externalServerTLSSecretName defines the name of the external secret holding the server's TLS certificate
-	externalServerTLSSecretName = "athena-server-tls"
-	// partOfAthenaSelector holds label selector that should be applied to config maps and secrets used to manage Athena
-	partOfAthenaSelector = "app.kubernetes.io/part-of=athena"
-
-	// settingsPasswordPatternKey is the key to configure user password regular expression
-	settingsPasswordPatternKey = "passwordPattern"
-	// inClusterEnabledKey is the key to configure whether to allow in-cluster server address
-	inClusterEnabledKey = "cluster.inClusterEnabled"
-	// // settingsServerRBACEDisableFineGrainedInheritance is the key to configure find-grained RBAC inheritance
-	// settingsServerRBACDisableFineGrainedInheritance = "server.rbac.disableApplicationFineGrainedRBACInheritance"
-	// MaxPodLogsToRender the maximum number of pod logs to render
-	settingsMaxPodLogsToRender = "server.maxPodLogsToRender"
-	// // helmValuesFileSchemesKey is the key to configure the list of supported helm values file schemas
-	// helmValuesFileSchemesKey = "helm.valuesFileSchemes"
-	// execEnabledKey is the key to configure whether the UI exec feature is enabled
-	execEnabledKey = "exec.enabled"
-	// execShellsKey is the key to configure which shells are allowed for `exec` and in what order they are tried
-	execShellsKey = "exec.shells"
-	// oidcTLSInsecureSkipVerifyKey is the key to configure whether TLS cert verification is skipped for OIDC connections
-	oidcTLSInsecureSkipVerifyKey = "oidc.tls.insecure.skip.verify"
-	// ApplicationDeepLinks is the application deep link key
-	ApplicationDeepLinks = "application.links"
-	// ProjectDeepLinks is the project deep link key
-	ProjectDeepLinks = "project.links"
-	// ResourceDeepLinks is the resource deep link key
-	ResourceDeepLinks = "resource.links"
-	extensionConfig   = "extension.config"
-	// RespectRBAC is the key to configure athena to respect rbac while watching for resources
-	RespectRBAC            = "resource.respectRBAC"
-	RespectRBACValueStrict = "strict"
-	RespectRBACValueNormal = "normal"
-	// impersonationEnabledKey is the key to configure whether the application sync decoupling through impersonation feature is enabled
-	impersonationEnabledKey = "application.sync.impersonation.enabled"
-	// requireOverridePrivilegeForRevisionSyncKey is the key to configure whether giving an external revision during sync is considered an override
-	requireOverridePrivilegeForRevisionSyncKey = "application.sync.requireOverridePrivilegeForRevisionSync"
 )
 
-// SettingsManager holds config info for a new manager with which to access Kubernetes ConfigMaps.
+// RawSettings holds secret values loaded during process startup.
+type RawSettings struct {
+	Secrets map[string]string
+}
+
+// SettingsManager holds immutable runtime settings loaded during process startup.
 type SettingsManager struct {
-	ctx             context.Context
-	clientset       kubernetes.Interface
-	secrets         v1listers.SecretLister
-	secretsInformer cache.SharedIndexInformer
-	configmaps      v1listers.ConfigMapLister
-	namespace       string
-	// subscribers is a list of subscribers to settings updates
-	subscribers []chan<- *AthenaSettings
-	// mutex protects concurrency sensitive parts of settings manager: access to subscribers list and initialization flag
-	mutex                     *sync.Mutex
-	initContextCancel         func()
-	reposOrClusterChanged     func()
-	tlsCertParser             func([]byte, []byte) (tls.Certificate, error)
-	tlsCertCache              *tls.Certificate
-	tlsCertCacheSecretName    string
-	tlsCertCacheSecretVersion string
-	// clusterInformer provides optimized cluster lookups using informer transforms
-	// clusterInformer *ClusterInformer
-}
-
-type incompleteSettingsError struct {
-	message string
-}
-
-type IgnoreStatus string
-
-const (
-	// IgnoreResourceStatusInCRD ignores status changes for all CRDs
-	IgnoreResourceStatusInCRD IgnoreStatus = "crd"
-	// IgnoreResourceStatusInAll ignores status changes for all resources
-	IgnoreResourceStatusInAll IgnoreStatus = "all"
-	// IgnoreResourceStatusInNone ignores status changes for no resources
-	IgnoreResourceStatusInNone IgnoreStatus = "none"
-)
-
-type AthenaCDDiffOptions struct {
-	IgnoreAggregatedRoles bool `json:"ignoreAggregatedRoles,omitempty"`
-
-	// If set to true then differences caused by status are ignored.
-	IgnoreResourceStatusField IgnoreStatus `json:"ignoreResourceStatusField,omitempty"`
-
-	// If set to true then ignoreDifferences are applied to ignore application refresh on resource updates.
-	IgnoreDifferencesOnResourceUpdates bool `json:"ignoreDifferencesOnResourceUpdates,omitempty"`
-}
-
-func (e *incompleteSettingsError) Error() string {
-	return e.message
-}
-
-// func (mgr *SettingsManager) onRepoOrClusterChanged() {
-// 	if mgr.reposOrClusterChanged != nil {
-// 		go mgr.reposOrClusterChanged()
-// 	}
-// }
-
-func (mgr *SettingsManager) GetSecretsLister() (v1listers.SecretLister, error) {
-	err := mgr.ensureSynced(false)
-	if err != nil {
-		return nil, err
-	}
-	return mgr.secrets, nil
-}
-
-func (mgr *SettingsManager) updateSecret(callback func(*corev1.Secret) error) error {
-	athenaSecret, err := mgr.getSecret()
-	createSecret := false
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-		athenaSecret = &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: common.AthenaSecretName,
-			},
-			Data: make(map[string][]byte),
-		}
-		createSecret = true
-	}
-
-	beforeUpdate := athenaSecret.DeepCopy()
-	err = callback(athenaSecret)
-	if err != nil {
-		return err
-	}
-
-	if !createSecret && reflect.DeepEqual(beforeUpdate.Data, athenaSecret.Data) {
-		return nil
-	}
-
-	if createSecret {
-		_, err = mgr.clientset.CoreV1().Secrets(mgr.namespace).Create(context.Background(), athenaSecret, metav1.CreateOptions{})
-	} else {
-		_, err = mgr.clientset.CoreV1().Secrets(mgr.namespace).Update(context.Background(), athenaSecret, metav1.UpdateOptions{})
-	}
-	if err != nil {
-		return err
-	}
-
-	return mgr.ResyncInformers()
-}
-
-func (mgr *SettingsManager) updateConfigMap(callback func(*corev1.ConfigMap) error) error {
-	athenaCM, err := mgr.getConfigMap()
-	createCM := false
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-		athenaCM = &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: common.AthenaConfigMapName,
-			},
-			Data: make(map[string]string),
-		}
-		createCM = true
-	}
-
-	beforeUpdate := athenaCM.DeepCopy()
-	err = callback(athenaCM)
-	if err != nil {
-		return err
-	}
-	if !createCM && reflect.DeepEqual(beforeUpdate.Data, athenaCM.Data) {
-		return nil
-	}
-
-	if createCM {
-		_, err = mgr.clientset.CoreV1().ConfigMaps(mgr.namespace).Create(context.Background(), athenaCM, metav1.CreateOptions{})
-	} else {
-		_, err = mgr.clientset.CoreV1().ConfigMaps(mgr.namespace).Update(context.Background(), athenaCM, metav1.UpdateOptions{})
-	}
-
-	if err != nil {
-		return err
-	}
-
-	return mgr.ResyncInformers()
-}
-
-func (mgr *SettingsManager) getConfigMap() (*corev1.ConfigMap, error) {
-	return mgr.GetConfigMapByName(common.AthenaConfigMapName)
-}
-
-// Returns the ConfigMap with the given name from the cluster.
-// The ConfigMap must be labeled with "app.kubernetes.io/part-of: athena" in
-// order to be retrievable.
-func (mgr *SettingsManager) GetConfigMapByName(configMapName string) (*corev1.ConfigMap, error) {
-	err := mgr.ensureSynced(false)
-	if err != nil {
-		return nil, err
-	}
-	configMap, err := mgr.configmaps.ConfigMaps(mgr.namespace).Get(configMapName)
-	if err != nil {
-		return nil, err
-	}
-	cmCopy := configMap.DeepCopy()
-	if cmCopy.Data == nil {
-		cmCopy.Data = make(map[string]string)
-	}
-	return cmCopy, err
-}
-
-func (mgr *SettingsManager) getSecret() (*corev1.Secret, error) {
-	return mgr.GetSecretByName(common.AthenaSecretName)
-}
-
-// GetSecretByName returns the Secret with the given name from the cluster.
-func (mgr *SettingsManager) GetSecretByName(secretName string) (*corev1.Secret, error) {
-	err := mgr.ensureSynced(false)
-	if err != nil {
-		return nil, err
-	}
-	secret, err := mgr.secrets.Secrets(mgr.namespace).Get(secretName)
-	if err != nil {
-		return nil, err
-	}
-	secretCopy := secret.DeepCopy()
-	if secretCopy.Data == nil {
-		secretCopy.Data = make(map[string][]byte)
-	}
-	return secretCopy, err
-}
-
-func (mgr *SettingsManager) getSecrets() ([]*corev1.Secret, error) {
-	err := mgr.ensureSynced(false)
-	if err != nil {
-		return nil, err
-	}
-
-	selector, err := labels.Parse(partOfAthenaSelector)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing Athena selector %w", err)
-	}
-	secrets, err := mgr.secrets.Secrets(mgr.namespace).List(selector)
-	if err != nil {
-		return nil, err
-	}
-	// SecretNamespaceLister lists all Secrets in the indexer for a given namespace.
-	// Objects returned by the lister must be treated as read-only.
-	// To allow us to modify the secrets, make a copy
-	secrets = util.SliceCopy(secrets)
-	return secrets, nil
-}
-
-// func (mgr *SettingsManager) GetResourcesFilter() (*ResourcesFilter, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
-// 	}
-// 	rf := &ResourcesFilter{}
-// 	if value, ok := athenaCM.Data[resourceInclusionsKey]; ok {
-// 		includedResources := make([]FilteredResource, 0)
-// 		err := yaml.Unmarshal([]byte(value), &includedResources)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("error unmarshalling included resources %w", err)
-// 		}
-// 		rf.ResourceInclusions = includedResources
-// 	}
-
-// 	if value, ok := athenaCM.Data[resourceExclusionsKey]; ok {
-// 		excludedResources := make([]FilteredResource, 0)
-// 		err := yaml.Unmarshal([]byte(value), &excludedResources)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("error unmarshalling excluded resources %w", err)
-// 		}
-// 		rf.ResourceExclusions = excludedResources
-// 	}
-// 	return rf, nil
-// }
-
-func (mgr *SettingsManager) GetAppInstanceLabelKey() (string, error) {
-	athenaCM, err := mgr.getConfigMap()
-	if err != nil {
-		return "", err
-	}
-	label := athenaCM.Data[settingsApplicationInstanceLabelKey]
-	if label == "" {
-		return common.LabelKeyAppInstance, nil
-	}
-	return label, nil
-}
-
-// func (mgr *SettingsManager) GetTrackingMethod() (string, error) {
-// 	athenaCM, err := mgr.getConfigMap()
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	tm := athenaCM.Data[settingsResourceTrackingMethodKey]
-// 	if tm == "" {
-// 		return string(v1alpha1.TrackingMethodAnnotation), nil
-// 	}
-// 	return tm, nil
-// }
-
-func (mgr *SettingsManager) GetInstallationID() (string, error) {
-	athenaCM, err := mgr.getConfigMap()
-	if err != nil {
-		return "", err
-	}
-	return athenaCM.Data[settingsInstallationID], nil
+	ctx           context.Context
+	raw           RawSettings
+	settings      AthenaSettings
+	help          Help
+	accounts      map[string]Account
+	mutex         *sync.RWMutex
+	tlsCertParser func([]byte, []byte) (tls.Certificate, error)
 }
 
 func (mgr *SettingsManager) GetPasswordPattern() (string, error) {
-	athenaCM, err := mgr.getConfigMap()
-	if err != nil {
-		return "", err
-	}
-	label := athenaCM.Data[settingsPasswordPatternKey]
-	if label == "" {
+	mgr.mutex.RLock()
+	defer mgr.mutex.RUnlock()
+	pattern := mgr.settings.PasswordPattern
+	if pattern == "" {
 		return common.PasswordPatten, nil
 	}
-	return label, nil
-}
-
-// GetResourceOverrides loads Resource Overrides from athena-cm ConfigMap
-func (mgr *SettingsManager) GetResourceOverrides() (map[string]v1alpha1.ResourceOverride, error) {
-	athenaCM, err := mgr.getConfigMap()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving config map: %w", err)
-	}
-	resourceOverrides := map[string]v1alpha1.ResourceOverride{}
-	if value, ok := athenaCM.Data[resourceCustomizationsKey]; ok && value != "" {
-		err := yaml.Unmarshal([]byte(value), &resourceOverrides)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err = mgr.appendResourceOverridesFromSplitKeys(athenaCM.Data, resourceOverrides)
-	if err != nil {
-		return nil, err
-	}
-
-	diffOptions, err := mgr.GetResourceCompareOptions()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get compare options: %w", err)
-	}
-
-	crdGK := "apiextensions.k8s.io/CustomResourceDefinition"
-
-	switch diffOptions.IgnoreResourceStatusField {
-	case "", IgnoreResourceStatusInAll:
-		addStatusOverrideToGK(resourceOverrides, "*/*")
-		log.Info("Ignore status for all objects")
-	case IgnoreResourceStatusInCRD:
-		addStatusOverrideToGK(resourceOverrides, crdGK)
-	case IgnoreResourceStatusInNone, "off", "false":
-		// Yaml 'off' non-string value can be converted to 'false'
-		// Support these cases because compareoptions is a yaml string in the config
-		// and this misconfiguration can be hard to catch for users.
-		// To prevent this, the default value has been changed to none
-		log.Info("Not ignoring status for any object")
-	default:
-		addStatusOverrideToGK(resourceOverrides, "*/*")
-		log.Warnf("Unrecognized value for ignoreResourceStatusField - %s, ignore status for all resources", diffOptions.IgnoreResourceStatusField)
-	}
-
-	return resourceOverrides, nil
-}
-
-func addStatusOverrideToGK(resourceOverrides map[string]v1alpha1.ResourceOverride, groupKind string) {
-	if val, ok := resourceOverrides[groupKind]; ok {
-		val.IgnoreDifferences.JSONPointers = append(val.IgnoreDifferences.JSONPointers, "/status")
-		resourceOverrides[groupKind] = val
-	} else {
-		resourceOverrides[groupKind] = v1alpha1.ResourceOverride{
-			IgnoreDifferences: v1alpha1.OverrideIgnoreDiff{JSONPointers: []string{"/status"}},
-		}
-	}
-}
-
-func (mgr *SettingsManager) appendResourceOverridesFromSplitKeys(cmData map[string]string, resourceOverrides map[string]v1alpha1.ResourceOverride) error {
-	for k, v := range cmData {
-		if !strings.HasPrefix(k, resourceCustomizationsKey) {
-			continue
-		}
-
-		// config map key should be of format resource.customizations.<type>.<group_kind>
-		parts := strings.SplitN(k, ".", 4)
-		if len(parts) < 4 {
-			continue
-		}
-
-		overrideKey, err := convertToOverrideKey(parts[3])
-		if err != nil {
-			return err
-		}
-
-		if overrideKey == "all" {
-			overrideKey = "*/*"
-		}
-
-		overrideVal, ok := resourceOverrides[overrideKey]
-		if !ok {
-			overrideVal = v1alpha1.ResourceOverride{}
-		}
-
-		customizationType := parts[2]
-		switch customizationType {
-		case "health":
-			overrideVal.HealthLua = v
-		case "useOpenLibs":
-			useOpenLibs, err := strconv.ParseBool(v)
-			if err != nil {
-				return err
-			}
-			overrideVal.UseOpenLibs = useOpenLibs
-		case "actions":
-			overrideVal.Actions = v
-		case "ignoreDifferences":
-			overrideIgnoreDiff := v1alpha1.OverrideIgnoreDiff{}
-			err := yaml.Unmarshal([]byte(v), &overrideIgnoreDiff)
-			if err != nil {
-				return err
-			}
-			overrideVal.IgnoreDifferences = overrideIgnoreDiff
-		case "ignoreResourceUpdates":
-			overrideIgnoreUpdate := v1alpha1.OverrideIgnoreDiff{}
-			err := yaml.Unmarshal([]byte(v), &overrideIgnoreUpdate)
-			if err != nil {
-				return err
-			}
-			overrideVal.IgnoreResourceUpdates = overrideIgnoreUpdate
-		case "knownTypeFields":
-			var knownTypeFields []v1alpha1.KnownTypeField
-			err := yaml.Unmarshal([]byte(v), &knownTypeFields)
-			if err != nil {
-				return err
-			}
-			overrideVal.KnownTypeFields = knownTypeFields
-		default:
-			return fmt.Errorf("resource customization type %s not supported", customizationType)
-		}
-		resourceOverrides[overrideKey] = overrideVal
-	}
-	return nil
-}
-
-// Convert group_kind format to <group/kind>, allowed key format examples
-// resource.customizations.health.cert-manager.io_Certificate
-// resource.customizations.health.Certificate
-func convertToOverrideKey(groupKind string) (string, error) {
-	parts := strings.Split(groupKind, "_")
-	if len(parts) == 2 {
-		return fmt.Sprintf("%s/%s", parts[0], parts[1]), nil
-	} else if len(parts) == 1 && groupKind != "" {
-		return groupKind, nil
-	}
-	return "", fmt.Errorf("group kind should be in format `resource.customizations.<type>.<group_kind>` or resource.customizations.<type>.<kind>`, got group kind: '%s'", groupKind)
-}
-
-func GetDefaultDiffOptions() AthenaCDDiffOptions {
-	return AthenaCDDiffOptions{IgnoreAggregatedRoles: false, IgnoreResourceStatusField: IgnoreResourceStatusInAll, IgnoreDifferencesOnResourceUpdates: true}
-}
-
-// GetResourceCompareOptions loads the resource compare options settings from the ConfigMap
-func (mgr *SettingsManager) GetResourceCompareOptions() (AthenaCDDiffOptions, error) {
-	// We have a sane set of default diff options
-	diffOptions := GetDefaultDiffOptions()
-
-	athenaCM, err := mgr.getConfigMap()
-	if err != nil {
-		return diffOptions, err
-	}
-
-	if value, ok := athenaCM.Data[resourceCompareOptionsKey]; ok {
-		err := yaml.Unmarshal([]byte(value), &diffOptions)
-		if err != nil {
-			return diffOptions, err
-		}
-	}
-
-	return diffOptions, nil
-}
-
-func (mgr *SettingsManager) GetGoogleAnalytics() (*GoogleAnalytics, error) {
-	athenaCM, err := mgr.getConfigMap()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving config map: %w", err)
-	}
-	return &GoogleAnalytics{
-		TrackingID:     athenaCM.Data[gaTrackingID],
-		AnonymizeUsers: athenaCM.Data[gaAnonymizeUsers] != "false",
-	}, nil
+	return pattern, nil
 }
 
 func (mgr *SettingsManager) GetHelp() (*Help, error) {
-	athenaCM, err := mgr.getConfigMap()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving config map: %w", err)
-	}
-	chatText, ok := athenaCM.Data[helpChatText]
-	if !ok {
-		chatText = "Chat now!"
-	}
-	chatURL, ok := athenaCM.Data[helpChatURL]
-	if !ok {
-		chatText = ""
-	}
-	return &Help{
-		ChatURL:    chatURL,
-		ChatText:   chatText,
-		BinaryURLs: getDownloadBinaryUrlsFromConfigMap(athenaCM),
-	}, nil
+	mgr.mutex.RLock()
+	defer mgr.mutex.RUnlock()
+	return &mgr.help, nil
 }
 
-// GetSettings retrieves settings from the AthenaConfigMap and secret.
+// GetSettings returns settings loaded at process startup.
 func (mgr *SettingsManager) GetSettings() (*AthenaSettings, error) {
-	athenaCM, err := mgr.getConfigMap()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving athena-cm: %w", err)
-	}
-	athenaSecret, err := mgr.getSecret()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving athena-secret: %w", err)
-	}
-	secrets, err := mgr.getSecrets()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving athena secrets: %w", err)
-	}
-
-	var settings AthenaSettings
-	var errs []error
-	if err := mgr.updateSettingsFromSecret(&settings, athenaSecret, secrets); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) > 0 {
-		return &settings, errors.Join(errs...)
-	}
-	updateSettingsFromConfigMap(&settings, athenaCM)
-
-	return &settings, nil
+	mgr.mutex.RLock()
+	defer mgr.mutex.RUnlock()
+	return &mgr.settings, nil
 }
 
-func (mgr *SettingsManager) initialize(ctx context.Context) error {
-	tweakConfigMap := func(options *metav1.ListOptions) {
-		cmLabelSelector := fields.ParseSelectorOrDie(partOfAthenaSelector)
-		options.LabelSelector = cmLabelSelector.String()
-	}
-
-	eventHandler := cache.ResourceEventHandlerFuncs{
-		// UpdateFunc: func(_, _ any) {
-		// 	mgr.onRepoOrClusterChanged()
-		// },
-		// AddFunc: func(_ any) {
-		// 	mgr.onRepoOrClusterChanged()
-		// },
-		// DeleteFunc: func(_ any) {
-		// 	mgr.onRepoOrClusterChanged()
-		// },
-	}
-	indexers := cache.Indexers{
-		cache.NamespaceIndex:      cache.MetaNamespaceIndexFunc,
-		ByClusterURLIndexer:       byClusterURLIndexerFunc,
-		ByClusterNameIndexer:      byClusterNameIndexerFunc,
-		ByProjectClusterIndexer:   byProjectIndexerFunc(common.LabelValueSecretTypeCluster),
-		ByProjectRepoIndexer:      byProjectIndexerFunc(common.LabelValueSecretTypeRepository),
-		ByProjectRepoWriteIndexer: byProjectIndexerFunc(common.LabelValueSecretTypeRepositoryWrite),
-	}
-	cmInformer := informersv1.NewFilteredConfigMapInformer(mgr.clientset, mgr.namespace, 3*time.Minute, indexers, tweakConfigMap)
-	secretsInformer := informersv1.NewSecretInformer(mgr.clientset, mgr.namespace, 3*time.Minute, indexers)
-	// clusterInformer, err := NewClusterInformer(mgr.clientset, mgr.namespace)
-	// if err != nil {
-	// 	log.Error(err)
-	// }
-	var err error
-
-	_, err = cmInformer.AddEventHandler(eventHandler)
-	if err != nil {
-		log.Error(err)
-	}
-
-	_, err = secretsInformer.AddEventHandler(eventHandler)
-	if err != nil {
-		log.Error(err)
-	}
-
-	// _, err = clusterInformer.AddEventHandler(eventHandler)
-	// if err != nil {
-	// 	log.Error(err)
-	// }
-
-	log.Info("Starting configmap/secret informers")
-	go func() {
-		cmInformer.Run(ctx.Done())
-		log.Info("configmap informer cancelled")
-	}()
-	go func() {
-		secretsInformer.Run(ctx.Done())
-		log.Info("secrets informer cancelled")
-	}()
-
-	// go func() {
-	// 	clusterInformer.Run(ctx.Done())
-	// 	log.Info("cluster secrets informer cancelled")
-	// }()
-
-	if !cache.WaitForCacheSync(ctx.Done(), cmInformer.HasSynced, secretsInformer.HasSynced) {
-		return errors.New("timed out waiting for settings cache to sync")
-	}
-	log.Info("Configmap/secret informer synced")
-
-	// mgr.clusterInformer = clusterInformer
-	// log.Info("Cluster cache informer synced")
-
-	tryNotify := func() {
-		newSettings, err := mgr.GetSettings()
-		if err != nil {
-			log.Warnf("Unable to parse updated settings: %v", err)
-		} else {
-			mgr.notifySubscribers(newSettings)
-		}
-	}
-	now := time.Now()
-	handler := cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj any) {
-			if metaObj, ok := obj.(metav1.Object); ok {
-				if metaObj.GetCreationTimestamp().After(now) {
-					tryNotify()
-				}
-			}
-		},
-		UpdateFunc: func(oldObj, newObj any) {
-			oldMeta, oldOk := oldObj.(metav1.Common)
-			newMeta, newOk := newObj.(metav1.Common)
-			if oldOk && newOk && oldMeta.GetResourceVersion() != newMeta.GetResourceVersion() {
-				tryNotify()
-			}
-		},
-	}
-	_, err = secretsInformer.AddEventHandler(handler)
-	if err != nil {
-		log.Error(err)
-	}
-	_, err = cmInformer.AddEventHandler(handler)
-	if err != nil {
-		log.Error(err)
-	}
-	mgr.secrets = v1listers.NewSecretLister(secretsInformer.GetIndexer())
-	mgr.secretsInformer = secretsInformer
-	mgr.configmaps = v1listers.NewConfigMapLister(cmInformer.GetIndexer())
-	return nil
-}
-
-func (mgr *SettingsManager) ensureSynced(forceResync bool) error {
-	mgr.mutex.Lock()
-	defer mgr.mutex.Unlock()
-	if !forceResync && mgr.secrets != nil && mgr.configmaps != nil {
-		return nil
-	}
-
-	if mgr.initContextCancel != nil {
-		mgr.initContextCancel()
-	}
-	ctx, cancel := context.WithCancel(mgr.ctx)
-	mgr.initContextCancel = cancel
-	return mgr.initialize(ctx)
-}
-
-func getDownloadBinaryUrlsFromConfigMap(athenaCM *corev1.ConfigMap) map[string]string {
+func getDownloadBinaryUrlsFromEnv() map[string]string {
 	binaryUrls := map[string]string{}
 	for _, archType := range []string{"darwin-amd64", "darwin-arm64", "windows-amd64", "linux-amd64", "linux-arm64", "linux-ppc64le", "linux-s390x"} {
-		if val, ok := athenaCM.Data[settingsBinaryUrlsKey+"."+archType]; ok {
+		envName := "ATHENA_HELP_DOWNLOAD_" + strings.ToUpper(strings.NewReplacer("-", "_").Replace(archType))
+		if val := os.Getenv(envName); val != "" {
 			binaryUrls[archType] = val
 		}
 	}
 	return binaryUrls
 }
 
-// updateSettingsFromConfigMap transfers settings from a Kubernetes configmap into an AthenaSettings struct.
-func updateSettingsFromConfigMap(settings *AthenaSettings, athenaCM *corev1.ConfigMap) {
-	settings.DexConfig = athenaCM.Data[settingDexConfigKey]
-	settings.OIDCConfigRAW = athenaCM.Data[settingsOIDCConfigKey]
-	settings.KustomizeBuildOptions = athenaCM.Data[kustomizeBuildOptionsKey]
-	settings.StatusBadgeEnabled = athenaCM.Data[statusBadgeEnabledKey] == "true"
-	settings.StatusBadgeRootUrl = athenaCM.Data[statusBadgeRootURLKey]
-	settings.AnonymousUserEnabled = athenaCM.Data[anonymousUserEnabledKey] == "true"
-	settings.UiCssURL = athenaCM.Data[settingUICSSURLKey]
-	settings.UiBannerContent = athenaCM.Data[settingUIBannerContentKey]
-	settings.UiBannerPermanent = athenaCM.Data[settingUIBannerPermanentKey] == "true"
-	settings.UiBannerPosition = athenaCM.Data[settingUIBannerPositionKey]
-	settings.BinaryUrls = getDownloadBinaryUrlsFromConfigMap(athenaCM)
-	if err := ValidateExternalURL(athenaCM.Data[settingURLKey]); err != nil {
-		log.Warnf("Failed to validate URL in configmap: %v", err)
+func loadHelpFromEnv() Help {
+	chatURL := os.Getenv("ATHENA_HELP_CHAT_URL")
+	chatText := ""
+	if chatURL != "" {
+		chatText = env.StringFromEnv("ATHENA_HELP_CHAT_TEXT", "Chat now!")
 	}
-	settings.URL = athenaCM.Data[settingURLKey]
-	if err := ValidateExternalURL(athenaCM.Data[settingUIBannerURLKey]); err != nil {
-		log.Warnf("Failed to validate UI banner URL in configmap: %v", err)
+	return Help{
+		ChatURL:    chatURL,
+		ChatText:   chatText,
+		BinaryURLs: getDownloadBinaryUrlsFromEnv(),
 	}
-	if athenaCM.Data[settingAdditionalUrlsKey] != "" {
-		if err := yaml.Unmarshal([]byte(athenaCM.Data[settingAdditionalUrlsKey]), &settings.AdditionalURLs); err != nil {
-			log.Warnf("Failed to decode all additional URLs in configmap: %v", err)
+}
+
+func loadSettingsFromEnv(secrets map[string]string) (AthenaSettings, error) {
+	serverSignature, err := envOrFile("ATHENA_JWT_SECRET")
+	if err != nil {
+		return AthenaSettings{}, err
+	}
+	settings := AthenaSettings{
+		DexConfig:            os.Getenv("ATHENA_DEX_CONFIG"),
+		StatusBadgeEnabled:   env.ParseBoolFromEnv("ATHENA_STATUS_BADGE_ENABLED", false),
+		StatusBadgeRootUrl:   os.Getenv("ATHENA_STATUS_BADGE_ROOT_URL"),
+		AnonymousUserEnabled: env.ParseBoolFromEnv("ATHENA_ANONYMOUS_USER_ENABLED", false),
+		UiCssURL:             os.Getenv("ATHENA_UI_CSS_URL"),
+		UiBannerContent:      os.Getenv("ATHENA_UI_BANNER_CONTENT"),
+		UiBannerPermanent:    env.ParseBoolFromEnv("ATHENA_UI_BANNER_PERMANENT", false),
+		UiBannerPosition:     os.Getenv("ATHENA_UI_BANNER_POSITION"),
+		BinaryUrls:           getDownloadBinaryUrlsFromEnv(),
+		UiBannerURL:          os.Getenv("ATHENA_UI_BANNER_URL"),
+		UserSessionDuration:  time.Hour * 24,
+		PasswordPattern:      env.StringFromEnv("ATHENA_PASSWORD_PATTERN", common.PasswordPatten),
+		// ExecEnabled:               env.ParseBoolFromEnv("ATHENA_EXEC_ENABLED", false),
+		OIDCTLSInsecureSkipVerify: env.ParseBoolFromEnv("ATHENA_OIDC_TLS_INSECURE_SKIP_VERIFY", false),
+		ServerSignature:           []byte(serverSignature),
+		Secrets:                   secrets,
+	}
+
+	oidcConfig, err := loadOIDCConfigFromEnv()
+	if err != nil {
+		return settings, err
+	}
+	settings.OIDCConfigRAW = oidcConfig
+
+	settings.URL = os.Getenv("ATHENA_URL")
+	if err := ValidateExternalURL(settings.URL); err != nil {
+		log.Warnf("Failed to validate URL in settings: %v", err)
+	}
+	if err := ValidateExternalURL(settings.UiBannerURL); err != nil {
+		log.Warnf("Failed to validate UI banner URL in settings: %v", err)
+	}
+
+	additionalURLs := os.Getenv("ATHENA_ADDITIONAL_URLS")
+	if additionalURLs != "" {
+		if err := yaml.Unmarshal([]byte(additionalURLs), &settings.AdditionalURLs); err != nil {
+			settings.AdditionalURLs = splitCommaSeparated(additionalURLs)
 		}
 	}
 	for _, url := range settings.AdditionalURLs {
 		if err := ValidateExternalURL(url); err != nil {
-			log.Warnf("Failed to validate external URL in configmap: %v", err)
+			log.Warnf("Failed to validate external URL in settings: %v", err)
 		}
 	}
-	settings.UiBannerURL = athenaCM.Data[settingUIBannerURLKey]
-	settings.UserSessionDuration = time.Hour * 24
-	if userSessionDurationStr, ok := athenaCM.Data[userSessionDurationKey]; ok {
+
+	if userSessionDurationStr := os.Getenv("ATHENA_SESSION_DURATION"); userSessionDurationStr != "" {
 		if val, err := timeutil.ParseDuration(userSessionDurationStr); err != nil {
-			log.Warnf("Failed to parse '%s' key: %v", userSessionDurationKey, err)
+			log.Warnf("Failed to parse ATHENA_SESSION_DURATION: %v", err)
 		} else {
 			settings.UserSessionDuration = *val
 		}
 	}
-	settings.PasswordPattern = athenaCM.Data[settingsPasswordPatternKey]
-	if settings.PasswordPattern == "" {
-		settings.PasswordPattern = common.PasswordPatten
-	}
-	if maxPodLogsToRenderStr, ok := athenaCM.Data[settingsMaxPodLogsToRender]; ok {
-		if val, err := strconv.ParseInt(maxPodLogsToRenderStr, 10, 64); err != nil {
-			log.Warnf("Failed to parse '%s' key: %v", settingsMaxPodLogsToRender, err)
-		} else {
-			settings.MaxPodLogsToRender = val
-		}
-	}
-	settings.InClusterEnabled = athenaCM.Data[inClusterEnabledKey] != "false"
-	settings.ExecEnabled = athenaCM.Data[execEnabledKey] == "true"
-	execShells := athenaCM.Data[execShellsKey]
-	if execShells != "" {
-		settings.ExecShells = strings.Split(execShells, ",")
-	} else {
-		// Fall back to default. If you change this list, also change docs/operator-manual/athena-cm.yaml.
-		settings.ExecShells = []string{"bash", "sh", "powershell", "cmd"}
-	}
-	settings.TrackingMethod = athenaCM.Data[settingsResourceTrackingMethodKey]
-	settings.OIDCTLSInsecureSkipVerify = athenaCM.Data[oidcTLSInsecureSkipVerifyKey] == "true"
-	settings.ExtensionConfig = getExtensionConfigs(athenaCM.Data)
-	settings.ImpersonationEnabled = athenaCM.Data[impersonationEnabledKey] == "true"
-	settings.RequireOverridePrivilegeForRevisionSync = athenaCM.Data[requireOverridePrivilegeForRevisionSyncKey] == "true"
-}
-
-func getExtensionConfigs(cmData map[string]string) map[string]string {
-	result := make(map[string]string)
-	for k, v := range cmData {
-		if strings.HasPrefix(k, extensionConfig) {
-			extName := strings.TrimPrefix(strings.TrimPrefix(k, extensionConfig), ".")
-			result[extName] = v
-		}
-	}
-	return result
+	return settings, nil
 }
 
 // ValidateExternalURL ensures the external URL that is set on the configmap is valid
@@ -1128,144 +288,151 @@ func ValidateExternalURL(u string) error {
 	return nil
 }
 
-// updateSettingsFromSecret transfers settings from a Kubernetes secret into an AthenaSettings struct.
-func (mgr *SettingsManager) updateSettingsFromSecret(settings *AthenaSettings, athenaSecret *corev1.Secret, secrets []*corev1.Secret) error {
-	var errs []error
-	secretKey, ok := athenaSecret.Data[settingServerSignatureKey]
-	if ok {
-		settings.ServerSignature = secretKey
-	} else {
-		errs = append(errs, &incompleteSettingsError{message: "server.secretkey is missing"})
+func splitCommaSeparated(value string) []string {
+	if strings.TrimSpace(value) == "" {
+		return nil
 	}
-
-	// The TLS certificate may be externally managed. We try to load it from an
-	// external secret first. If the external secret doesn't exist, we either
-	// load it from athena-secret or generate (and persist) a self-signed one.
-	externalSecret, err := mgr.GetSecretByName(externalServerTLSSecretName)
-	if err != nil && !apierrors.IsNotFound(err) {
-		errs = append(errs, &incompleteSettingsError{message: fmt.Sprintf("could not read from secret %s/%s: %v", mgr.namespace, externalServerTLSSecretName, err)})
-	} else {
-		err = mgr.loadTLSCertificate(settings, externalSecret, athenaSecret)
-		if err != nil {
-			errs = append(errs, err)
+	parts := strings.Split(value, ",")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			result = append(result, part)
 		}
 	}
-
-	secretValues := make(map[string]string, len(athenaSecret.Data))
-	for _, s := range secrets {
-		for k, v := range s.Data {
-			secretValues[fmt.Sprintf("%s:%s", s.Name, k)] = string(v)
-		}
-	}
-	for k, v := range athenaSecret.Data {
-		secretValues[k] = string(v)
-	}
-	settings.Secrets = secretValues
-
-	settings.WebhookGitHubSecret = string(athenaSecret.Data[settingsWebhookGitHubSecretKey])
-	settings.WebhookGitLabSecret = string(athenaSecret.Data[settingsWebhookGitLabSecretKey])
-	settings.WebhookBitbucketUUID = string(athenaSecret.Data[settingsWebhookBitbucketUUIDKey])
-	settings.WebhookBitbucketServerSecret = string(athenaSecret.Data[settingsWebhookBitbucketServerSecretKey])
-	settings.WebhookGogsSecret = string(athenaSecret.Data[settingsWebhookGogsSecretKey])
-	settings.WebhookAzureDevOpsUsername = string(athenaSecret.Data[settingsWebhookAzureDevOpsUsernameKey])
-	settings.WebhookAzureDevOpsPassword = string(athenaSecret.Data[settingsWebhookAzureDevOpsPasswordKey])
-
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-
-	return nil
+	return result
 }
 
-func (mgr *SettingsManager) loadTLSCertificate(settings *AthenaSettings, externalSecret *corev1.Secret, athenaSecret *corev1.Secret) error {
-	mgr.mutex.Lock()
-	defer mgr.mutex.Unlock()
-	if externalSecret != nil {
-		cert, err := mgr.loadTLSCertificateFromSecret(externalSecret)
-
-		if err != nil {
-			return err
-		} else if cert != nil {
-			settings.Certificate = cert
-			settings.CertificateIsExternal = true
-		}
+func envOrFile(envName string) (string, error) {
+	if value := os.Getenv(envName); value != "" {
+		return value, nil
 	}
-	// if there was no external cert found, check internal
-	if !settings.CertificateIsExternal {
-		cert, err := mgr.loadTLSCertificateFromSecret(athenaSecret)
-
+	fileName := envName + "_FILE"
+	if filePath := os.Getenv(fileName); filePath != "" {
+		data, err := os.ReadFile(filePath)
 		if err != nil {
-			return err
-		} else if cert != nil {
-			settings.Certificate = cert
-			settings.CertificateIsExternal = false
+			return "", fmt.Errorf("failed reading %s: %w", fileName, err)
 		}
+		return strings.TrimSpace(string(data)), nil
 	}
-	return nil
+	return "", nil
 }
 
-func (mgr *SettingsManager) loadTLSCertificateFromSecret(secret *corev1.Secret) (*tls.Certificate, error) {
-	if mgr.tlsCertCache != nil && mgr.tlsCertCacheSecretName == secret.Name && mgr.tlsCertCacheSecretVersion == secret.ResourceVersion {
-		return mgr.tlsCertCache, nil
+func loadOIDCConfigFromEnv() (string, error) {
+	if config, err := envOrFile("ATHENA_OIDC_CONFIG"); err != nil {
+		return "", err
+	} else if config != "" {
+		return config, nil
 	}
+	issuer := env.StringFromEnv("ATHENA_OIDC_ISSUER", "")
+	clientID := env.StringFromEnv("ATHENA_OIDC_CLIENT_ID", "")
+	clientSecret, err := envOrFile("ATHENA_OIDC_CLIENT_SECRET")
+	if err != nil {
+		return "", err
+	}
+	if issuer == "" && clientID == "" && clientSecret == "" {
+		return "", nil
+	}
+	config := oidcConfig{
+		OIDCConfig: OIDCConfig{
+			Name:                     env.StringFromEnv("ATHENA_OIDC_NAME", "OIDC"),
+			Issuer:                   issuer,
+			ClientID:                 clientID,
+			ClientSecret:             clientSecret,
+			CLIClientID:              env.StringFromEnv("ATHENA_OIDC_CLI_CLIENT_ID", ""),
+			RequestedScopes:          env.StringsFromEnv("ATHENA_OIDC_SCOPES", []string{"openid", "profile", "email"}, ","),
+			LogoutURL:                env.StringFromEnv("ATHENA_OIDC_LOGOUT_URL", ""),
+			EnablePKCEAuthentication: env.ParseBoolFromEnv("ATHENA_OIDC_ENABLE_PKCE", false),
+		},
+	}
+	data, err := yaml.Marshal(config)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
 
-	tlsCert, certOK := secret.Data[settingServerCertificate]
-	tlsKey, keyOK := secret.Data[settingServerPrivateKey]
-	if !certOK || !keyOK {
+func loadRawSettingsFromEnv() (RawSettings, error) {
+	raw := RawSettings{Secrets: map[string]string{}}
+	for _, item := range os.Environ() {
+		key, value, ok := strings.Cut(item, "=")
+		if !ok || !strings.HasPrefix(key, "ATHENA_SECRET_") {
+			continue
+		}
+		raw.Secrets[strings.TrimPrefix(key, "ATHENA_SECRET_")] = value
+	}
+	return raw, nil
+}
+
+func loadTLSCertificateFromEnv(parser func([]byte, []byte) (tls.Certificate, error)) (*tls.Certificate, error) {
+	certFile := os.Getenv("ATHENA_TLS_CERT_FILE")
+	keyFile := os.Getenv("ATHENA_TLS_KEY_FILE")
+	if certFile == "" && keyFile == "" {
 		return nil, nil
 	}
-
-	log.Infof("Loading TLS configuration from secret %s/%s", mgr.namespace, secret.Name)
-	cert, err := mgr.tlsCertParser(tlsCert, tlsKey)
+	if certFile == "" || keyFile == "" {
+		return nil, errors.New("ATHENA_TLS_CERT_FILE and ATHENA_TLS_KEY_FILE must be set together")
+	}
+	certBytes, err := os.ReadFile(certFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed reading ATHENA_TLS_CERT_FILE: %w", err)
+	}
+	keyBytes, err := os.ReadFile(keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed reading ATHENA_TLS_KEY_FILE: %w", err)
+	}
+	cert, err := parser(certBytes, keyBytes)
 	if err != nil {
 		return nil, err
 	}
-
-	mgr.tlsCertCache = &cert
-	mgr.tlsCertCacheSecretName = secret.Name
-	mgr.tlsCertCacheSecretVersion = secret.ResourceVersion
-
 	return &cert, nil
-}
-
-// saveSignatureAndCertificate serializes the server Signature and Certificate AthenaSettings and upserts it into the secret
-func (mgr *SettingsManager) saveSignatureAndCertificate(settings *AthenaSettings) error {
-	return mgr.updateSecret(func(athenaSecret *corev1.Secret) error {
-		athenaSecret.Data[settingServerSignatureKey] = settings.ServerSignature
-		// we only write the certificate to the secret if it's not externally
-		// managed.
-		if settings.Certificate != nil && !settings.CertificateIsExternal {
-			cert, key := tlsutil.EncodeX509KeyPair(*settings.Certificate)
-			athenaSecret.Data[settingServerCertificate] = cert
-			athenaSecret.Data[settingServerPrivateKey] = key
-		} else {
-			delete(athenaSecret.Data, settingServerCertificate)
-			delete(athenaSecret.Data, settingServerPrivateKey)
-		}
-		return nil
-	})
 }
 
 type SettingsManagerOpts func(mgs *SettingsManager)
 
-// NewSettingsManager generates a new SettingsManager pointer and returns it
-func NewSettingsManager(ctx context.Context, clientset kubernetes.Interface, namespace string, opts ...SettingsManagerOpts) *SettingsManager {
+// NewSettingsManagerFromEnv loads settings once from environment variables.
+func NewSettingsManagerFromEnv(ctx context.Context, opts ...SettingsManagerOpts) (*SettingsManager, error) {
+	raw, err := loadRawSettingsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	settings, err := loadSettingsFromEnv(raw.Secrets)
+	if err != nil {
+		return nil, err
+	}
+	accounts, err := parseAccountsFromRaw(raw)
+	if err != nil {
+		return nil, err
+	}
 	mgr := &SettingsManager{
 		ctx:           ctx,
-		clientset:     clientset,
-		namespace:     namespace,
-		mutex:         &sync.Mutex{},
+		raw:           raw,
+		settings:      settings,
+		help:          loadHelpFromEnv(),
+		accounts:      accounts,
+		mutex:         &sync.RWMutex{},
 		tlsCertParser: tls.X509KeyPair,
 	}
 	for i := range opts {
 		opts[i](mgr)
 	}
 
-	return mgr
+	if cert, err := loadTLSCertificateFromEnv(mgr.tlsCertParser); err != nil {
+		return nil, err
+	} else if cert != nil {
+		mgr.settings.Certificate = cert
+	}
+	return mgr, nil
 }
 
-func (mgr *SettingsManager) ResyncInformers() error {
-	return mgr.ensureSynced(true)
+// NewSettingsManager is kept as a compatibility shim for older call sites. The
+// Kubernetes client argument is ignored because settings are now loaded from env.
+func NewSettingsManager(ctx context.Context, _ any, _ string, opts ...SettingsManagerOpts) *SettingsManager {
+	mgr, err := NewSettingsManagerFromEnv(ctx, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return mgr
 }
 
 // IsSSOConfigured returns whether or not single-sign-on is configured
@@ -1578,132 +745,47 @@ func (a *AthenaSettings) DexOAuth2ClientSecret() string {
 	return base64.URLEncoding.EncodeToString(sha)[:40]
 }
 
-// Subscribe registers a channel in which to subscribe to settings updates
-func (mgr *SettingsManager) Subscribe(subCh chan<- *AthenaSettings) {
-	mgr.mutex.Lock()
-	defer mgr.mutex.Unlock()
-	mgr.subscribers = append(mgr.subscribers, subCh)
-	log.Infof("%v subscribed to settings updates", subCh)
-}
-
-// Unsubscribe unregisters a channel from receiving of settings updates
-func (mgr *SettingsManager) Unsubscribe(subCh chan<- *AthenaSettings) {
-	mgr.mutex.Lock()
-	defer mgr.mutex.Unlock()
-	for i, ch := range mgr.subscribers {
-		if ch == subCh {
-			mgr.subscribers = append(mgr.subscribers[:i], mgr.subscribers[i+1:]...)
-			log.Infof("%v unsubscribed from settings updates", subCh)
-			return
-		}
-	}
-}
-
-func (mgr *SettingsManager) notifySubscribers(newSettings *AthenaSettings) {
-	mgr.mutex.Lock()
-	defer mgr.mutex.Unlock()
-	if len(mgr.subscribers) > 0 {
-		subscribers := make([]chan<- *AthenaSettings, len(mgr.subscribers))
-		copy(subscribers, mgr.subscribers)
-		// make sure subscribes are notified in a separate thread to avoid potential deadlock
-		go func() {
-			log.Infof("Notifying %d settings subscribers: %v", len(subscribers), subscribers)
-			for _, sub := range subscribers {
-				sub <- newSettings
-			}
-		}()
-	}
-}
-
-func isIncompleteSettingsError(err error) bool {
-	var incompleteSettingsErr *incompleteSettingsError
-	return errors.As(err, &incompleteSettingsErr)
-}
-
 // InitializeSettings is used to initialize empty admin password, signature, certificate etc if missing
 func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*AthenaSettings, error) {
-	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-	log.Debugf("InitializeSettings started (namespace=%s, insecureModeEnabled=%t)", mgr.namespace, insecureModeEnabled)
-	err := mgr.UpdateAccount(common.AthenaAdminUsername, func(adminAccount *Account) error {
-		log.Debugf("Processing admin account settings (enabled=%t, hasPasswordHash=%t, hasPasswordMtime=%t)", adminAccount.Enabled, adminAccount.PasswordHash != "", adminAccount.PasswordMtime != nil && !adminAccount.PasswordMtime.IsZero())
-		if adminAccount.Enabled {
-			now := time.Now().UTC()
-			if adminAccount.PasswordHash == "" {
-				log.Debug("Admin password hash missing, generating initial password")
-				randBytes := make([]byte, initialPasswordLength)
-				for i := 0; i < initialPasswordLength; i++ {
-					num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
-					if err != nil {
-						return err
-					}
-					randBytes[i] = letters[num.Int64()]
-				}
-				initialPassword := string(randBytes)
-
-				hashedPassword, err := password.HashPassword(initialPassword)
-				if err != nil {
-					return err
-				}
-				ku := kube.NewKubeUtil(mgr.ctx, mgr.clientset)
-				log.Debugf("Persisting generated admin password secret to %s/%s", mgr.namespace, initialPasswordSecretName)
-				err = ku.CreateOrUpdateSecretField(mgr.namespace, initialPasswordSecretName, initialPasswordSecretField, initialPassword)
-				if err != nil {
-					return err
-				}
-				adminAccount.PasswordHash = hashedPassword
-				adminAccount.PasswordMtime = &now
-				log.Debug("Initialized admin password")
-			} else {
-				log.Debug("Admin password hash already exists, skipping password initialization")
-			}
-			if adminAccount.PasswordMtime == nil || adminAccount.PasswordMtime.IsZero() {
-				adminAccount.PasswordMtime = &now
-				log.Debug("Initialized admin mtime")
-			} else {
-				log.Debug("Admin mtime already exists, skipping mtime initialization")
-			}
-		} else {
-			log.Debug("admin disabled")
+	mgr.mutex.Lock()
+	defer mgr.mutex.Unlock()
+	log.Debugf("InitializeSettings started (insecureModeEnabled=%t)", insecureModeEnabled)
+	adminAccount := mgr.accounts[common.AthenaAdminUsername]
+	if adminAccount.Enabled && adminAccount.PasswordHash == "" {
+		initialPasswordBytes, err := util.MakeSignature(initialPasswordLength)
+		if err != nil {
+			return nil, err
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
+		initialPassword := base64.RawURLEncoding.EncodeToString(initialPasswordBytes)
+		hashedPassword, err := password.HashPassword(initialPassword)
+		if err != nil {
+			return nil, err
+		}
+		now := time.Now().UTC()
+		adminAccount.PasswordHash = hashedPassword
+		adminAccount.PasswordMtime = &now
+		mgr.accounts[common.AthenaAdminUsername] = adminAccount
+		log.Warnf("Generated transient admin password because ATHENA_ADMIN_PASSWORD_HASH is not set. It will not persist across restarts: %s", initialPassword)
+	} else if adminAccount.Enabled && (adminAccount.PasswordMtime == nil || adminAccount.PasswordMtime.IsZero()) {
+		now := time.Now().UTC()
+		adminAccount.PasswordMtime = &now
+		mgr.accounts[common.AthenaAdminUsername] = adminAccount
 	}
 
-	log.Debug("Loading existing settings for initialization")
-	cdSettings, err := mgr.GetSettings()
-	if err != nil && !isIncompleteSettingsError(err) {
-		return nil, err
-	}
-	if cdSettings == nil {
-		log.Debug("Settings not found, creating empty settings struct")
-		cdSettings = &AthenaSettings{}
-	} else {
-		log.Debugf("Loaded existing settings (hasServerSignature=%t, hasCertificate=%t)", cdSettings.ServerSignature != nil, cdSettings.Certificate != nil)
-	}
-	if cdSettings.ServerSignature == nil {
-		// set JWT signature
-		log.Debug("Server signature missing, generating new signature")
+	if len(mgr.settings.ServerSignature) == 0 {
 		signature, err := util.MakeSignature(32)
 		if err != nil {
 			return nil, fmt.Errorf("error setting JWT signature: %w", err)
 		}
-		cdSettings.ServerSignature = signature
-		log.Debug("Initialized server signature")
-	} else {
-		log.Debug("Server signature already exists, skipping signature initialization")
+		mgr.settings.ServerSignature = signature
+		log.Warn("Generated transient JWT secret because ATHENA_JWT_SECRET is not set. Existing sessions will be invalid after restart.")
 	}
 
-	if cdSettings.Certificate == nil && !insecureModeEnabled {
-		// generate TLS cert
+	if mgr.settings.Certificate == nil && !insecureModeEnabled {
 		log.Debug("TLS certificate missing and insecure mode disabled, generating TLS certificate")
 		hosts := []string{
 			"localhost",
 			"athena-server",
-			"athena-server." + mgr.namespace,
-			fmt.Sprintf("athena-server.%s.svc", mgr.namespace),
-			fmt.Sprintf("athena-server.%s.svc.cluster.local", mgr.namespace),
 		}
 		certOpts := tlsutil.CertOptions{
 			Hosts:        hosts,
@@ -1714,25 +796,12 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*Athen
 		if err != nil {
 			return nil, err
 		}
-		cdSettings.Certificate = cert
-		log.Debug("Initialized TLS certificate")
-	} else if cdSettings.Certificate != nil {
-		log.Debug("TLS certificate already exists, skipping certificate initialization")
-	} else {
-		log.Debug("Insecure mode enabled, skipping TLS certificate initialization")
+		mgr.settings.Certificate = cert
+		log.Warn("Generated transient TLS certificate because ATHENA_TLS_CERT_FILE/ATHENA_TLS_KEY_FILE are not set.")
 	}
 
-	log.Debug("Saving initialized signature and certificate settings")
-	err = mgr.saveSignatureAndCertificate(cdSettings)
-	if apierrors.IsConflict(err) {
-		// assume settings are initialized by another instance of api server
-		log.Warnf("conflict when initializing settings. assuming updated by another replica")
-		return mgr.GetSettings()
-	}
-	if err == nil {
-		log.Debug("InitializeSettings completed successfully")
-	}
-	return cdSettings, nil
+	log.Debug("InitializeSettings completed successfully")
+	return &mgr.settings, nil
 }
 
 // ReplaceMapSecrets takes a json object and recursively looks for any secret key references in the
@@ -1783,8 +852,4 @@ func ReplaceStringSecret(val string, secretValues map[string]string) string {
 		return val
 	}
 	return strings.TrimSpace(secretVal)
-}
-
-func (mgr *SettingsManager) GetNamespace() string {
-	return mgr.namespace
 }

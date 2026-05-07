@@ -8,8 +8,6 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 
 	log "github.com/sirupsen/logrus"
 
@@ -18,7 +16,6 @@ import (
 	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
-	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/pkg/stats"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
@@ -64,7 +61,6 @@ func NewCommand() *cobra.Command {
 		// hydratorEnabled        bool
 		// syncWithReplaceAllowed bool
 
-		clientConfig           clientcmd.ClientConfig
 		tlsConfigCustomizerSrc func() (tls.ConfigCustomizer, error)
 		redisClient            *redis.Client
 		cacheSrc               func() (*servercache.Cache, error)
@@ -79,14 +75,11 @@ func NewCommand() *cobra.Command {
 
 			// Log the startup information
 			vers := common.GetVersion()
-			namespace, _, err := clientConfig.Namespace()
-			errors.CheckError(err)
 
 			vers.LogStartupInfo(
 				"Athena API Server",
 				map[string]any{
-					"namespace": namespace,
-					"port":      listenPort,
+					"port": listenPort,
 				},
 			)
 
@@ -102,18 +95,12 @@ func NewCommand() *cobra.Command {
 				}
 			}()
 
-			config, err := clientConfig.ClientConfig()
-			errors.CheckError(err)
-			errors.CheckError(v1alpha1.SetK8SConfigDefaults(config))
-
 			// Load the TLS config from the command line flags
 			tlsConfigCustomizer, err := tlsConfigCustomizerSrc()
 			errors.CheckError(err)
 
 			cache, err := cacheSrc()
 			errors.CheckError(err)
-
-			kubeclientset := kubernetes.NewForConfigOrDie(config)
 
 			log.Infof("athena-server/%s (%s)", vers.Version, vers.Platform)
 
@@ -147,8 +134,6 @@ func NewCommand() *cobra.Command {
 			applicationclientset := applicationapiclient.NewApplicationClientset(applicationServerAddress)
 
 			athenaOpts := server.AthenaServerOpts{
-				Namespace:             namespace,
-				KubeClientset:         kubeclientset,
 				TLSConfigCustomizer:   tlsConfigCustomizer,
 				ContentTypes:          contentTypesList,
 				ListenPort:            listenPort,
@@ -211,7 +196,6 @@ func NewCommand() *cobra.Command {
 		`),
 	}
 
-	clientConfig = cli.AddKubectlFlagsToCmd(command)
 	command.Flags().BoolVar(&insecure, "insecure", env.ParseBoolFromEnv("ATHENA_SERVER_INSECURE", false), "Run server without TLS")
 	command.Flags().StringVar(&staticAssetsDir, "staticassets", env.StringFromEnv("ATHENA_SERVER_STATIC_ASSETS", "/shared/app"), "Directory path that contains additional static assets")
 	command.Flags().StringVar(&baseHRef, "basehref", env.StringFromEnv("ATHENA_SERVER_BASEHREF", "/"), "Value for base href in index.html. Used if Athena is running behind reverse proxy under subpath different from /")

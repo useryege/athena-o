@@ -85,7 +85,6 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
 
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
@@ -195,14 +194,12 @@ type AthenaServerOpts struct {
 	ListenHost      string
 	MetricsPort     int
 	MetricsHost     string
-	Namespace       string
 	DexServerAddr   string
 	DexTLSConfig    *dexutil.DexTLSConfig
 	BaseHRef        string
 	RootPath        string
 	// DynamicClientset        dynamic.Interface
 	// KubeControllerClientset client.Client
-	KubeClientset kubernetes.Interface
 	// AppClientset            appclientset.Interface
 	// RepoClientset           repoapiclient.Clientset
 	Cache *servercache.Cache
@@ -222,7 +219,8 @@ type AthenaServerOpts struct {
 
 // NewServer returns a new instance of the Athena API server
 func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
-	settingsMgr := settings_util.NewSettingsManager(ctx, opts.KubeClientset, opts.Namespace)
+	settingsMgr, err := settings_util.NewSettingsManagerFromEnv(ctx)
+	errorsutil.CheckError(err)
 	settings, err := settingsMgr.InitializeSettings(opts.Insecure)
 	errorsutil.CheckError(err)
 
@@ -831,13 +829,6 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	}
 	mux.Handle("/api/", handler)
 
-	// terminalOpts := application.TerminalOptions{DisableAuth: server.DisableAuth, Enf: server.enf}
-
-	// terminal := application.NewHandler(server.appLister, server.Namespace, server.ApplicationNamespaces, server.db, appResourceTreeFn, server.settings.ExecShells, server.sessionMgr, &terminalOpts).
-	// 	WithFeatureFlagMiddleware(server.settingsMgr.GetSettings)
-	// th := util_session.WithAuthMiddleware(server.DisableAuth, server.settings.IsSSOConfigured(), server.ssoClientApp, server.sessionMgr, terminal)
-	// mux.Handle("/terminal", th)
-
 	// // Proxy extension is currently an alpha feature and is disabled
 	// // by default.
 	// if server.EnableProxyExtension {
@@ -1036,8 +1027,8 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 	}
 
 	// Start the muxed listeners for our servers
-	log.Infof("athena %s serving on port %d (url: %s, tls: %v, namespace: %s, sso: %v)",
-		common.GetVersion(), server.ListenPort, server.settings.URL, server.useTLS(), server.Namespace, server.settings.IsSSOConfigured())
+	log.Infof("athena %s serving on port %d (url: %s, tls: %v, sso: %v)",
+		common.GetVersion(), server.ListenPort, server.settings.URL, server.useTLS(), server.settings.IsSSOConfigured())
 	// log.Infof("Enabled application namespace patterns: %s", server.allowedApplicationNamespacesAsString())
 
 	go func() { server.checkServeErr("grpcS", grpcS.Serve(grpcL)) }()

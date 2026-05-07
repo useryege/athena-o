@@ -8,7 +8,6 @@ import (
 	"k8s.io/klog/v2"
 
 	athenaApplicationCommands "github.com/useryege/athena/cmd/athena-application/commands"
-	athenaDexCommands "github.com/useryege/athena/cmd/athena-dex/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
 	"github.com/useryege/athena/util/log"
@@ -36,8 +35,6 @@ func main() {
 	switch binaryName {
 	case "athena-server":
 		command = athenaServerCommands.NewCommand()
-	case "athena-dex":
-		command = athenaDexCommands.NewCommand()
 	case "athena-notification":
 		command = athenaNotificationCommands.NewCommand()
 	case "athena-application":

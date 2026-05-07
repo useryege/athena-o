@@ -2,7 +2,7 @@ package settings
 
 import (
 	"encoding/json"
-	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -10,8 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/util/retry"
 
 	"github.com/useryege/athena/common"
 )
@@ -20,16 +18,7 @@ const (
 	accountsKeyPrefix          = "accounts"
 	accountPasswordSuffix      = "password"
 	accountPasswordMtimeSuffix = "passwordMtime"
-	accountEnabledSuffix       = "enabled"
 	accountTokensSuffix        = "tokens"
-
-	// Admin superuser password storage
-	// settingAdminPasswordHashKey designates the key for a root password hash inside a Kubernetes secret.
-	settingAdminPasswordHashKey = "admin.password"
-	// settingAdminPasswordMtimeKey designates the key for a root password mtime inside a Kubernetes secret.
-	settingAdminPasswordMtimeKey = "admin.passwordMtime"
-	settingAdminEnabledKey       = "admin.enabled"
-	settingAdminTokensKey        = "admin.tokens"
 )
 
 type AccountCapability string
@@ -94,141 +83,119 @@ func (a *Account) HasCapability(capability AccountCapability) bool {
 	return false
 }
 
-func (mgr *SettingsManager) saveAccount(name string, account Account) error {
-	return mgr.updateSecret(func(secret *corev1.Secret) error {
-		return mgr.updateConfigMap(func(cm *corev1.ConfigMap) error {
-			return saveAccount(secret, cm, name, account)
-		})
-	})
-}
-
 // AddAccount save an account with the given name and properties.
 func (mgr *SettingsManager) AddAccount(name string, account Account) error {
-	accounts, err := mgr.GetAccounts()
-	if err != nil {
-		return fmt.Errorf("error getting accounts: %w", err)
-	}
-	if _, ok := accounts[name]; ok {
-		return status.Errorf(codes.AlreadyExists, "account '%s' already exists", name)
-	}
-	return mgr.saveAccount(name, account)
+	return status.Error(codes.FailedPrecondition, "account updates are disabled because settings are loaded from environment variables and are read-only at runtime")
 }
 
 // GetAccount return an account info by the specified name.
 func (mgr *SettingsManager) GetAccount(name string) (*Account, error) {
-	accounts, err := mgr.GetAccounts()
-	if err != nil {
-		return nil, err
-	}
-	account, ok := accounts[name]
+	mgr.mutex.RLock()
+	defer mgr.mutex.RUnlock()
+	account, ok := mgr.accounts[name]
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "account '%s' does not exist", name)
 	}
-	return &account, nil
+	accountCopy := copyAccount(account)
+	return &accountCopy, nil
 }
 
 // UpdateAccount runs the callback function against an account that matches to the specified name
 // and persist changes applied by the callback.
 func (mgr *SettingsManager) UpdateAccount(name string, callback func(account *Account) error) error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		account, err := mgr.GetAccount(name)
-		if err != nil {
-			return err
-		}
-		err = callback(account)
-		if err != nil {
-			return err
-		}
-		return mgr.saveAccount(name, *account)
-	})
+	return status.Error(codes.FailedPrecondition, "account updates are disabled because settings are loaded from environment variables and are read-only at runtime")
 }
 
 // GetAccounts returns list of configured accounts
 func (mgr *SettingsManager) GetAccounts() (map[string]Account, error) {
-	cm, err := mgr.getConfigMap()
-	if err != nil {
-		return nil, err
+	mgr.mutex.RLock()
+	defer mgr.mutex.RUnlock()
+	accounts := make(map[string]Account, len(mgr.accounts))
+	for name, account := range mgr.accounts {
+		accounts[name] = copyAccount(account)
 	}
-	secret, err := mgr.getSecret()
-	if err != nil {
-		return nil, err
-	}
-	return parseAccounts(secret, cm)
+	return accounts, nil
 }
 
-func updateAccountMap(cm *corev1.ConfigMap, key string, val string, defVal string) {
-	existingVal := cm.Data[key]
-	if existingVal != val {
-		if val == "" || val == defVal {
-			delete(cm.Data, key)
-		} else {
-			cm.Data[key] = val
-		}
+func copyAccount(account Account) Account {
+	account.Capabilities = append([]AccountCapability(nil), account.Capabilities...)
+	account.Tokens = append([]Token(nil), account.Tokens...)
+	if account.PasswordMtime != nil {
+		mt := *account.PasswordMtime
+		account.PasswordMtime = &mt
 	}
+	return account
 }
 
-func updateAccountSecret(secret *corev1.Secret, key string, val string, defVal string) {
-	existingVal := string(secret.Data[key])
-	if existingVal != val {
-		if val == "" || val == defVal {
-			delete(secret.Data, key)
-		} else {
-			secret.Data[key] = []byte(val)
-		}
-	}
-}
-
-func saveAccount(secret *corev1.Secret, cm *corev1.ConfigMap, name string, account Account) error {
-	tokens, err := json.Marshal(account.Tokens)
-	if err != nil {
-		return err
-	}
-	if name == common.AthenaAdminUsername {
-		updateAccountSecret(secret, settingAdminPasswordHashKey, account.PasswordHash, "")
-		updateAccountSecret(secret, settingAdminPasswordMtimeKey, account.FormatPasswordMtime(), "")
-		updateAccountSecret(secret, settingAdminTokensKey, string(tokens), "[]")
-		updateAccountMap(cm, settingAdminEnabledKey, strconv.FormatBool(account.Enabled), "true")
-	} else {
-		updateAccountSecret(secret, fmt.Sprintf("%s.%s.%s", accountsKeyPrefix, name, accountPasswordSuffix), account.PasswordHash, "")
-		updateAccountSecret(secret, fmt.Sprintf("%s.%s.%s", accountsKeyPrefix, name, accountPasswordMtimeSuffix), account.FormatPasswordMtime(), "")
-		updateAccountSecret(secret, fmt.Sprintf("%s.%s.%s", accountsKeyPrefix, name, accountTokensSuffix), string(tokens), "[]")
-		updateAccountMap(cm, fmt.Sprintf("%s.%s.%s", accountsKeyPrefix, name, accountEnabledSuffix), strconv.FormatBool(account.Enabled), "true")
-		updateAccountMap(cm, fmt.Sprintf("%s.%s", accountsKeyPrefix, name), account.FormatCapabilities(), "")
-	}
-	return nil
-}
-
-func parseAdminAccount(secret *corev1.Secret, cm *corev1.ConfigMap) (*Account, error) {
+func parseAdminAccount(raw RawSettings) (*Account, error) {
 	adminAccount := &Account{Enabled: true, Capabilities: []AccountCapability{AccountCapabilityLogin}}
-	if adminPasswordHash, ok := secret.Data[settingAdminPasswordHashKey]; ok {
-		adminAccount.PasswordHash = string(adminPasswordHash)
+	if adminPasswordHash, err := envOrFile("ATHENA_ADMIN_PASSWORD_HASH"); err != nil {
+		return nil, err
+	} else if adminPasswordHash != "" {
+		adminAccount.PasswordHash = adminPasswordHash
 	}
-	if adminPasswordMtimeBytes, ok := secret.Data[settingAdminPasswordMtimeKey]; ok {
-		if mTime, err := time.Parse(time.RFC3339, string(adminPasswordMtimeBytes)); err == nil {
+	if adminPasswordMtime := os.Getenv("ATHENA_ADMIN_PASSWORD_MTIME"); adminPasswordMtime != "" {
+		if mTime, err := time.Parse(time.RFC3339, adminPasswordMtime); err == nil {
 			adminAccount.PasswordMtime = &mTime
 		}
 	}
 
 	adminAccount.Tokens = make([]Token, 0)
-	if tokensStr, ok := secret.Data[settingAdminTokensKey]; ok && len(tokensStr) != 0 {
-		if err := json.Unmarshal(tokensStr, &adminAccount.Tokens); err != nil {
+	if tokensStr, err := envOrFile("ATHENA_ADMIN_TOKENS"); err != nil {
+		return nil, err
+	} else if tokensStr != "" {
+		if err := json.Unmarshal([]byte(tokensStr), &adminAccount.Tokens); err != nil {
 			return nil, err
 		}
 	}
 
-	if enabledStr, ok := cm.Data[settingAdminEnabledKey]; ok {
+	if enabledStr := os.Getenv("ATHENA_ADMIN_ENABLED"); enabledStr != "" {
 		if enabled, err := strconv.ParseBool(enabledStr); err == nil {
 			adminAccount.Enabled = enabled
 		} else {
-			log.Warnf("ConfigMap has invalid key %s: %v", settingAdminTokensKey, err)
+			log.Warnf("invalid ATHENA_ADMIN_ENABLED: %v", err)
 		}
 	}
 
 	return adminAccount, nil
 }
 
-func parseAccounts(secret *corev1.Secret, cm *corev1.ConfigMap) (map[string]Account, error) {
-	adminAccount, err := parseAdminAccount(secret, cm)
+func parseAccountCapabilities(value string, key string) []AccountCapability {
+	capabilities := []AccountCapability{}
+	for _, capability := range strings.Split(value, ",") {
+		capability = strings.TrimSpace(capability)
+		if capability == "" {
+			continue
+		}
+
+		switch capability {
+		case string(AccountCapabilityLogin):
+			capabilities = append(capabilities, AccountCapabilityLogin)
+		case string(AccountCapabilityApiKey):
+			capabilities = append(capabilities, AccountCapabilityApiKey)
+		default:
+			log.Warnf("not supported account capability '%s' in %s", capability, key)
+		}
+	}
+	return capabilities
+}
+
+func accountFromEnvKey(key string) (string, string, bool) {
+	const prefix = "ATHENA_ACCOUNT_"
+	if !strings.HasPrefix(key, prefix) {
+		return "", "", false
+	}
+	raw := strings.TrimPrefix(key, prefix)
+	for _, suffix := range []string{"_CAPABILITIES", "_ENABLED", "_PASSWORD_HASH", "_PASSWORD_MTIME", "_TOKENS"} {
+		if strings.HasSuffix(raw, suffix) {
+			return strings.TrimSuffix(raw, suffix), strings.TrimPrefix(suffix, "_"), true
+		}
+	}
+	return "", "", false
+}
+
+func parseAccountsFromRaw(raw RawSettings) (map[string]Account, error) {
+	adminAccount, err := parseAdminAccount(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -236,77 +203,77 @@ func parseAccounts(secret *corev1.Secret, cm *corev1.ConfigMap) (map[string]Acco
 		common.AthenaAdminUsername: *adminAccount,
 	}
 
-	for key, v := range cm.Data {
-		if !strings.HasPrefix(key, accountsKeyPrefix+".") {
+	for _, item := range os.Environ() {
+		key, value, ok := strings.Cut(item, "=")
+		if !ok {
 			continue
 		}
-
-		val := v
-		var accountName, suffix string
-
-		parts := strings.Split(key, ".")
-		switch len(parts) {
-		case 2:
-			accountName = parts[1]
-		case 3:
-			accountName = parts[1]
-			suffix = parts[2]
-		default:
-			log.Warnf("Unexpected key %s in ConfigMap '%s'", key, cm.Name)
+		accountName, suffix, ok := accountFromEnvKey(key)
+		if !ok || accountName == "" {
 			continue
 		}
-
 		account, ok := accounts[accountName]
 		if !ok {
 			account = Account{Enabled: true}
-			accounts[accountName] = account
 		}
 		switch suffix {
-		case "":
-			for _, capability := range strings.Split(val, ",") {
-				capability = strings.TrimSpace(capability)
-				if capability == "" {
-					continue
-				}
-
-				switch capability {
-				case string(AccountCapabilityLogin):
-					account.Capabilities = append(account.Capabilities, AccountCapabilityLogin)
-				case string(AccountCapabilityApiKey):
-					account.Capabilities = append(account.Capabilities, AccountCapabilityApiKey)
-				default:
-					log.Warnf("not supported account capability '%s' in config map key '%s'", capability, key)
-				}
-			}
-		case accountEnabledSuffix:
-			account.Enabled, err = strconv.ParseBool(val)
+		case "CAPABILITIES":
+			account.Capabilities = parseAccountCapabilities(value, key)
+		case "ENABLED":
+			account.Enabled, err = strconv.ParseBool(value)
 			if err != nil {
 				return nil, err
+			}
+		case "PASSWORD_HASH":
+			account.PasswordHash = value
+		case "PASSWORD_MTIME":
+			mTime, err := time.Parse(time.RFC3339, value)
+			if err != nil {
+				return nil, err
+			}
+			account.PasswordMtime = &mTime
+		case "TOKENS":
+			account.Tokens = make([]Token, 0)
+			if value != "" {
+				if err := json.Unmarshal([]byte(value), &account.Tokens); err != nil {
+					log.Errorf("Account '%s' has invalid token in %s", accountName, key)
+				}
 			}
 		}
 		accounts[accountName] = account
 	}
 
-	for name, account := range accounts {
+	for key, value := range raw.Secrets {
+		if !strings.HasPrefix(key, accountsKeyPrefix+".") {
+			continue
+		}
+		parts := strings.Split(key, ".")
+		if len(parts) != 3 {
+			log.Warnf("Unexpected account secret key %s", key)
+			continue
+		}
+		name, suffix := parts[1], parts[2]
 		if name == common.AthenaAdminUsername {
 			continue
 		}
-
-		if passwordHash, ok := secret.Data[fmt.Sprintf("%s.%s.%s", accountsKeyPrefix, name, accountPasswordSuffix)]; ok {
-			account.PasswordHash = string(passwordHash)
+		account, ok := accounts[name]
+		if !ok {
+			account = Account{Enabled: true}
 		}
-		if passwordMtime, ok := secret.Data[fmt.Sprintf("%s.%s.%s", accountsKeyPrefix, name, accountPasswordMtimeSuffix)]; ok {
-			mTime, err := time.Parse(time.RFC3339, string(passwordMtime))
+		switch suffix {
+		case accountPasswordSuffix:
+			account.PasswordHash = value
+		case accountPasswordMtimeSuffix:
+			mTime, err := time.Parse(time.RFC3339, value)
 			if err != nil {
 				return nil, err
 			}
 			account.PasswordMtime = &mTime
-		}
-		if tokensStr, ok := secret.Data[fmt.Sprintf("%s.%s.%s", accountsKeyPrefix, name, accountTokensSuffix)]; ok {
+		case accountTokensSuffix:
 			account.Tokens = make([]Token, 0)
-			if len(tokensStr) != 0 {
-				if err := json.Unmarshal(tokensStr, &account.Tokens); err != nil {
-					log.Errorf("Account '%s' has invalid token in secret '%s'", name, secret.Name)
+			if value != "" {
+				if err := json.Unmarshal([]byte(value), &account.Tokens); err != nil {
+					log.Errorf("Account '%s' has invalid token in settings", name)
 				}
 			}
 		}

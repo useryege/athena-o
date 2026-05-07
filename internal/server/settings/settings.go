@@ -8,7 +8,6 @@ import (
 	sessionmgr "github.com/useryege/athena/util/session"
 
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
-	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/settings"
 )
 
@@ -33,27 +32,14 @@ func NewServer(mgr *settings.SettingsManager, authenticator Authenticator, disab
 
 // Get returns Athena settings
 func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settingspkg.Settings, error) {
-	resourceOverrides, err := s.mgr.GetResourceOverrides()
-	if err != nil {
-		return nil, err
-	}
-	overrides := make(map[string]*v1alpha1.ResourceOverride)
-	for k := range resourceOverrides {
-		val := resourceOverrides[k]
-		overrides[k] = &val
-	}
-	appInstanceLabelKey, err := s.mgr.GetAppInstanceLabelKey()
-	if err != nil {
-		return nil, err
-	}
 	athenaSettings, err := s.mgr.GetSettings()
 	if err != nil {
 		return nil, err
 	}
-	gaSettings, err := s.mgr.GetGoogleAnalytics()
-	if err != nil {
-		return nil, err
-	}
+	// gaSettings, err := s.mgr.GetGoogleAnalytics()
+	// if err != nil {
+	// 	return nil, err
+	// }
 	help, err := s.mgr.GetHelp()
 	if err != nil {
 		return nil, err
@@ -79,28 +65,14 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 	// 	kustomizeVersions = append(kustomizeVersions, kustomizeSettings.Versions[i].Name)
 	// }
 
-	// trackingMethod, err := s.mgr.GetTrackingMethod()
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	installationID, err := s.mgr.GetInstallationID()
-	if err != nil {
-		return nil, err
-	}
-
 	settings := settingspkg.Settings{
 		URL:                athenaSettings.URL,
 		AdditionalURLs:     athenaSettings.AdditionalURLs,
-		AppLabelKey:        appInstanceLabelKey,
 		StatusBadgeEnabled: athenaSettings.StatusBadgeEnabled,
 		StatusBadgeRootUrl: athenaSettings.StatusBadgeRootUrl,
-		// KustomizeOptions: &v1alpha1.KustomizeOptions{
-		// 	BuildOptions: athenaSettings.KustomizeBuildOptions,
-		// },
-		GoogleAnalytics: &settingspkg.GoogleAnalyticsConfig{
-			TrackingID:     gaSettings.TrackingID,
-			AnonymizeUsers: gaSettings.AnonymizeUsers,
+		GoogleAnalytics:    &settingspkg.GoogleAnalyticsConfig{
+			// TrackingID:     gaSettings.TrackingID,
+			// AnonymizeUsers: gaSettings.AnonymizeUsers,
 		},
 		Help: &settingspkg.Help{
 			ChatUrl:    help.ChatURL,
@@ -109,12 +81,8 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 		},
 		UserLoginsDisabled: userLoginsDisabled,
 		// KustomizeVersions:  kustomizeVersions,
-		UiCssURL: athenaSettings.UiCssURL,
-		// TrackingMethod: trackingMethod,
-		InstallationID: installationID,
-		ExecEnabled:    athenaSettings.ExecEnabled,
-		// AppsInAnyNamespaceEnabled: s.appsInAnyNamespaceEnabled,
-		ImpersonationEnabled: athenaSettings.ImpersonationEnabled,
+		UiCssURL:    athenaSettings.UiCssURL,
+		ExecEnabled: athenaSettings.ExecEnabled,
 		// HydratorEnabled:        s.hydratorEnabled,
 		// SyncWithReplaceAllowed: s.syncWithReplaceAllowed,
 	}
@@ -124,8 +92,6 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 		settings.UiBannerURL = athenaSettings.UiBannerURL
 		settings.UiBannerPermanent = athenaSettings.UiBannerPermanent
 		settings.UiBannerPosition = athenaSettings.UiBannerPosition
-		settings.ControllerNamespace = s.mgr.GetNamespace()
-		settings.ResourceOverrides = overrides
 	}
 	if sessionmgr.LoggedIn(ctx) {
 		settings.PasswordPattern = athenaSettings.PasswordPattern
