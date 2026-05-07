@@ -11,36 +11,6 @@ func (*Application) ProtoMessage() {}
 
 func (*ApplicationList) ProtoMessage() {}
 
-func (*ApplicationTree) ProtoMessage() {}
-
-func (*Cluster) ProtoMessage() {}
-
-func (*ClusterCacheInfo) ProtoMessage() {}
-
-func (*ClusterConfig) ProtoMessage() {}
-
-func (*ClusterInfo) ProtoMessage() {}
-
-func (*Command) ProtoMessage() {}
-
-func (*ConfigManagementPlugin) ProtoMessage() {}
-
-func (*ConnectionState) ProtoMessage() {}
-
-func (*ExecProviderConfig) ProtoMessage() {}
-
-func (*HealthStatus) ProtoMessage() {}
-
-func (*HostInfo) ProtoMessage() {}
-
-func (*HostResourceInfo) ProtoMessage() {}
-
-func (*InfoItem) ProtoMessage() {}
-
-func (*KnownTypeField) ProtoMessage() {}
-
-func (*OverrideIgnoreDiff) ProtoMessage() {}
-
 func (*ProjectCreatedEvent) ProtoMessage() {}
 
 func (*ProjectEvent) ProtoMessage() {}
@@ -50,13 +20,3 @@ func (*ProjectInitState) ProtoMessage() {}
 func (*ProjectMeta) ProtoMessage() {}
 
 func (*ProjectView) ProtoMessage() {}
-
-func (*ResourceNetworkingInfo) ProtoMessage() {}
-
-func (*ResourceNode) ProtoMessage() {}
-
-func (*ResourceOverride) ProtoMessage() {}
-
-func (*ResourceRef) ProtoMessage() {}
-
-func (*TLSClientConfig) ProtoMessage() {}
