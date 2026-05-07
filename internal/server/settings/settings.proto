@@ -54,10 +54,6 @@ message GoogleAnalyticsConfig {
   bool anonymizeUsers = 2;
 }
 
-message SettingsPluginsResponse {
-  repeated Plugin plugins = 1;
-}
-
 // Help settings
 message Help {
   // the URL for getting chat help, this will typically be your Slack channel for support
@@ -99,9 +95,4 @@ service SettingsService {
   rpc Get(SettingsQuery) returns (Settings) {
     option (google.api.http).get = "/api/v1/settings";
   }
-
-  // Get returns Athena plugins
-  // rpc GetPlugins(SettingsQuery) returns (SettingsPluginsResponse) {
-  //   option (google.api.http).get = "/api/v1/settings/plugins";
-  // }
 }

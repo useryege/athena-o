@@ -17,6 +17,19 @@ import (
 	settings "github.com/useryege/athena/util/settings"
 )
 
+var (
+	tokenPattern             = regexp.MustCompile(`{{token}}`)
+	logoutRedirectURLPattern = regexp.MustCompile(`{{logoutRedirectURL}}`)
+)
+
+type Handler struct {
+	settingsMgr *settings.SettingsManager
+	rootPath    string
+	verifyToken func(ctx context.Context, tokenString string) (jwt.Claims, string, error)
+	revokeToken func(ctx context.Context, id string, expiringAt time.Duration) error
+	baseHRef    string
+}
+
 // NewHandler creates handler serving to do api/logout endpoint
 func NewHandler(settingsMrg *settings.SettingsManager, sessionMgr *session.SessionManager, rootPath, baseHRef string) *Handler {
 	return &Handler{
@@ -27,19 +40,6 @@ func NewHandler(settingsMrg *settings.SettingsManager, sessionMgr *session.Sessi
 		revokeToken: sessionMgr.RevokeToken,
 	}
 }
-
-type Handler struct {
-	settingsMgr *settings.SettingsManager
-	rootPath    string
-	verifyToken func(ctx context.Context, tokenString string) (jwt.Claims, string, error)
-	revokeToken func(ctx context.Context, id string, expiringAt time.Duration) error
-	baseHRef    string
-}
-
-var (
-	tokenPattern             = regexp.MustCompile(`{{token}}`)
-	logoutRedirectURLPattern = regexp.MustCompile(`{{logoutRedirectURL}}`)
-)
 
 func constructLogoutURL(logoutURL, token, logoutRedirectURL string) string {
 	constructedLogoutURL := tokenPattern.ReplaceAllString(logoutURL, token)
