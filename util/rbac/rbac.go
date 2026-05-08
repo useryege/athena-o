@@ -50,66 +50,27 @@ type CasbinEnforcer interface {
 
 const (
 	// please add new items to Resources
-	ResourceClusters          = "clusters"
-	ResourceProjects          = "projects"
-	ResourceApplications      = "applications"
-	ResourceApplicationSets   = "applicationsets"
-	ResourceRepositories      = "repositories"
-	ResourceWriteRepositories = "write-repositories"
-	ResourceCertificates      = "certificates"
-	ResourceAccounts          = "accounts"
-	ResourceGPGKeys           = "gpgkeys"
-	ResourceLogs              = "logs"
-	ResourceExec              = "exec"
-	ResourceExtensions        = "extensions"
+	ResourceAccounts = "accounts"
+	ResourceLogs     = "logs"
 
 	// please add new items to Actions
-	ActionGet      = "get"
-	ActionCreate   = "create"
-	ActionUpdate   = "update"
-	ActionDelete   = "delete"
-	ActionSync     = "sync"
-	ActionOverride = "override"
-	ActionAction   = "action"
-	ActionInvoke   = "invoke"
+	ActionGet    = "get"
+	ActionUpdate = "update"
+	ActionInvoke = "invoke"
 )
 
 var (
 	DefaultScopes = []string{"groups"}
 	Resources     = []string{
-		ResourceClusters,
-		ResourceProjects,
-		ResourceApplications,
-		ResourceApplicationSets,
-		ResourceRepositories,
-		ResourceWriteRepositories,
-		ResourceCertificates,
 		ResourceAccounts,
-		ResourceGPGKeys,
 		ResourceLogs,
-		ResourceExec,
-		ResourceExtensions,
 	}
 	Actions = []string{
 		ActionGet,
-		ActionCreate,
 		ActionUpdate,
-		ActionDelete,
-		ActionSync,
-		ActionOverride,
-		ActionAction,
 		ActionInvoke,
 	}
 )
-
-var ProjectScoped = map[string]bool{
-	ResourceApplications:    true,
-	ResourceApplicationSets: true,
-	ResourceLogs:            true,
-	ResourceExec:            true,
-	ResourceClusters:        true,
-	ResourceRepositories:    true,
-}
 
 // Enforcer is a wrapper around an Casbin enforcer that:
 // * is backed by a kubernetes config map
