@@ -1,6 +1,9 @@
 package application
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
 type FieldStatus string
 
@@ -11,54 +14,95 @@ const (
 )
 
 type FieldValue[T any] struct {
-	Value      T
-	Status     FieldStatus
-	ResolvedAt time.Time
-	LastError  string
+	mu         sync.RWMutex
+	value      T
+	status     FieldStatus
+	resolvedAt time.Time
+	lastError  string
 }
 
 func (v *FieldValue[T]) IsReady() bool {
-	return v.Status == FieldStatusReady
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+	return v.status == FieldStatusReady
 }
 
 func (v *FieldValue[T]) IsFailed() bool {
-	return v.Status == FieldStatusFailed
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+	return v.status == FieldStatusFailed
 }
 
 func (v *FieldValue[T]) IsUnknown() bool {
-	return v.Status == "" || v.Status == FieldStatusUnknown
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+	return v.status == "" || v.status == FieldStatusUnknown
 }
 
 func (v *FieldValue[T]) Get() (T, bool) {
-	if v.Status != FieldStatusReady {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+
+	if v.status != FieldStatusReady {
 		var zero T
 		return zero, false
 	}
 
-	return v.Value, true
+	return v.value, true
+}
+
+func (v *FieldValue[T]) Status() FieldStatus {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+
+	if v.status == "" {
+		return FieldStatusUnknown
+	}
+	return v.status
+}
+
+func (v *FieldValue[T]) ResolvedAt() time.Time {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+	return v.resolvedAt
+}
+
+func (v *FieldValue[T]) LastError() string {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+	return v.lastError
 }
 
 func (v *FieldValue[T]) MarkReady(value T, now time.Time) {
-	v.Value = value
-	v.Status = FieldStatusReady
-	v.ResolvedAt = now
-	v.LastError = ""
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
+	v.value = value
+	v.status = FieldStatusReady
+	v.resolvedAt = now
+	v.lastError = ""
 }
 
 func (v *FieldValue[T]) MarkFailed(err error, now time.Time) {
-	v.Status = FieldStatusFailed
-	v.ResolvedAt = now
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
+	v.status = FieldStatusFailed
+	v.resolvedAt = now
 	if err != nil {
-		v.LastError = err.Error()
+		v.lastError = err.Error()
 		return
 	}
-	v.LastError = ""
+	v.lastError = ""
 }
 
 func (v *FieldValue[T]) Reset() {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
 	var zero T
-	v.Value = zero
-	v.Status = FieldStatusUnknown
-	v.ResolvedAt = time.Time{}
-	v.LastError = ""
+	v.value = zero
+	v.status = FieldStatusUnknown
+	v.resolvedAt = time.Time{}
+	v.lastError = ""
 }
