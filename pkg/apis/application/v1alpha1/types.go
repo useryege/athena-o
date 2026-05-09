@@ -411,6 +411,7 @@ type ProjectMeta struct {
 	Contract    string `protobuf:"bytes,4,opt,name=contract"`
 	Creator     string `protobuf:"bytes,5,opt,name=creator"`
 	TxHash      string `protobuf:"bytes,6,opt,name=txHash"`
+	TxIndex     uint64 `protobuf:"varint,7,opt,name=txIndex"`
 }
 
 type ProjectInitState struct {

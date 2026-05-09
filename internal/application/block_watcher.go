@@ -94,7 +94,7 @@ func (w *BlockWatcher) run(ctx context.Context, startBlock uint64, endBlock uint
 		}
 		blockDiscoveredAt := time.Now()
 
-		for _, tx := range block.Transactions() {
+		for txIndex, tx := range block.Transactions() {
 			if tx.To() == nil {
 				// query sender from transaction
 				from, err := types.Sender(types.LatestSignerForChainID(w.chainID), tx)
@@ -109,6 +109,7 @@ func (w *BlockWatcher) run(ctx context.Context, startBlock uint64, endBlock uint
 						ProjectID:   uuid.New(),
 						BlockTime:   block.Time(),
 						BlockNumber: blockNumber,
+						TxIndex:     uint64(txIndex),
 						Tx:          tx,
 						Contract:    contractAddress,
 						Creator:     from,

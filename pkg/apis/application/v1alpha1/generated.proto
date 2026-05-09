@@ -54,6 +54,8 @@ message ProjectMeta {
   optional string creator = 5;
 
   optional string txHash = 6;
+
+  optional uint64 txIndex = 7;
 }
 
 message ProjectView {

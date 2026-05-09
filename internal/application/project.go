@@ -26,6 +26,7 @@ type ProjectMeta struct {
 	Contract    common.Address
 	Creator     common.Address
 	Tx          *types.Transaction
+	TxIndex     uint64
 }
 
 type PerfTrace struct {
@@ -89,6 +90,7 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 			Contract:    project.Meta.Contract.String(),
 			Creator:     project.Meta.Creator.String(),
 			TxHash:      txHash,
+			TxIndex:     project.Meta.TxIndex,
 		},
 		InitState: v1alpha1.ProjectInitState{
 			Name:        name,

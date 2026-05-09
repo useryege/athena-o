@@ -163,6 +163,9 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i = encodeVarintGenerated(dAtA, i, uint64(m.TxIndex))
+	i--
+	dAtA[i] = 0x38
 	i -= len(m.TxHash)
 	copy(dAtA[i:], m.TxHash)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TxHash)))
@@ -306,6 +309,7 @@ func (m *ProjectMeta) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.TxHash)
 	n += 1 + l + sovGenerated(uint64(l))
+	n += 1 + sovGenerated(uint64(m.TxIndex))
 	return n
 }
 
@@ -378,6 +382,7 @@ func (this *ProjectMeta) String() string {
 		`Contract:` + fmt.Sprintf("%v", this.Contract) + `,`,
 		`Creator:` + fmt.Sprintf("%v", this.Creator) + `,`,
 		`TxHash:` + fmt.Sprintf("%v", this.TxHash) + `,`,
+		`TxIndex:` + fmt.Sprintf("%v", this.TxIndex) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -961,6 +966,25 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			}
 			m.TxHash = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxIndex", wireType)
+			}
+			m.TxIndex = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TxIndex |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
