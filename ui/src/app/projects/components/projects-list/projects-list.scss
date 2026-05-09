@@ -1,4 +1,32 @@
 .projects-list {
+    &__controls {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        gap: 16px;
+    }
+
+    &__actions {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+
+        button {
+            margin: 0;
+        }
+    }
+
+    &__status {
+        align-items: center;
+        color: #6d7f8b;
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 12px;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
     &__error {
         margin: 20px;
         padding: 15px;
@@ -18,7 +46,7 @@
 
     &__row {
         display: grid;
-        grid-template-columns: 1.4fr 0.8fr 0.7fr 1.2fr 1.4fr 1.4fr 0.9fr 0.8fr 1.4fr;
+        grid-template-columns: 48px 1.4fr 0.8fr 0.7fr 1.2fr 1.4fr 1.4fr 0.9fr 0.8fr 1.4fr;
         column-gap: 12px;
         align-items: center;
         width: 100%;
@@ -28,5 +56,23 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+
+        &--rank {
+            color: #6d7f8b;
+            font-weight: 600;
+        }
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .projects-list {
+        &__controls {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        &__status {
+            justify-content: flex-start;
+        }
     }
 }

@@ -61,12 +61,12 @@ func (r *projectRegistryImpl) ListProjects(ctx context.Context) ([]*v1alpha1.Pro
 
 	sort.SliceStable(projects, func(i, j int) bool {
 		if projects[i].Meta.BlockNumber != projects[j].Meta.BlockNumber {
-			return projects[i].Meta.BlockNumber > projects[j].Meta.BlockNumber
+			return projects[i].Meta.BlockNumber < projects[j].Meta.BlockNumber
 		}
 		if projects[i].Meta.TxIndex != projects[j].Meta.TxIndex {
-			return projects[i].Meta.TxIndex < projects[j].Meta.TxIndex
+			return projects[i].Meta.TxIndex > projects[j].Meta.TxIndex
 		}
-		return projects[i].Meta.ProjectID.String() < projects[j].Meta.ProjectID.String()
+		return projects[i].Meta.ProjectID.String() > projects[j].Meta.ProjectID.String()
 	})
 
 	projectViews := make([]*v1alpha1.ProjectView, 0, len(projects))
