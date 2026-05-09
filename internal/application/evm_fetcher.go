@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -24,6 +25,7 @@ type EVMFetcher interface {
 	FetchV2PairTotalSupply(ctx context.Context, PairContract common.Address) (*big.Int, error)
 	FetchV2PairKLast(ctx context.Context, PairContract common.Address) (*big.Int, error)
 	FetchV2PairReserves(ctx context.Context, PairContract common.Address) (*big.Int, *big.Int, uint32, error)
+	FetchV2PairContractByCallMsg(ctx context.Context, Token0Contract common.Address, Token1Contract common.Address) (common.Address, error)
 }
 
 type evmFetcherImpl struct {
@@ -99,6 +101,29 @@ func (f *evmFetcherImpl) FetchV2PairContract(ctx context.Context, Token0Contract
 	}
 	pairContract, err := factoryCaller.GetPair(reader, Token0Contract, Token1Contract)
 	return pairContract, nil
+}
+
+func (f *evmFetcherImpl) FetchV2PairContractByCallMsg(ctx context.Context, Token0Contract common.Address, Token1Contract common.Address) (common.Address, error) {
+	parsed, err := IUniswapV2Factory.IUniswapV2FactoryMetaData.GetAbi()
+	if err != nil {
+		return common.Address{}, err
+	}
+	data, err := parsed.Pack("createPair", Token0Contract, Token1Contract)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	msg := ethereum.CallMsg{
+		To:   &f.v2FactoryContract,
+		Data: data,
+	}
+
+	pairByte, err := f.nodeClient.CallContract(ctx, msg, nil)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	return common.BytesToAddress(pairByte), nil
 }
 
 func (f *evmFetcherImpl) FetchV2PairToken0(ctx context.Context, PairContract common.Address) (common.Address, error) {

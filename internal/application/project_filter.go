@@ -165,9 +165,10 @@ func (f *ProjectFilter) resolveDelayedFields(ctx context.Context, event *Project
 	const maxDelay = 2 * time.Minute
 
 	for {
+
+		now := time.Now()
 		if !event.Token.SourceCode.IsReady() {
 			sourceCode, err := f.fetchSourceCode(ctx, event)
-			now := time.Now()
 			if err != nil {
 				event.Token.SourceCode.MarkFailed(err, now)
 			} else {
@@ -177,7 +178,6 @@ func (f *ProjectFilter) resolveDelayedFields(ctx context.Context, event *Project
 
 		if !event.Token.SourceCodeABI.IsReady() {
 			sourceCodeABI, err := f.fetchSourceCodeABI(ctx, event)
-			now := time.Now()
 			if err != nil {
 				event.Token.SourceCodeABI.MarkFailed(err, now)
 			} else {
@@ -185,45 +185,44 @@ func (f *ProjectFilter) resolveDelayedFields(ctx context.Context, event *Project
 			}
 		}
 
+		if !event.WethV2Pool.Contract.IsReady() {
+			pairContract, err := f.evmFetcher.FetchV2PairContractByCallMsg(ctx, event.Meta.Contract, f.wethToken)
+			if err != nil {
+				event.WethV2Pool.Contract.MarkFailed(err, now)
+			} else {
+				event.WethV2Pool.Contract.MarkReady(pairContract, now)
+			}
+		}
+
+		if !event.WethV2Pool.Token0.IsReady() {
+
+		}
+		if !event.WethV2Pool.Token1.IsReady() {
+
+		}
+
 		isWethV2PoolCreated, _ := event.WethV2Pool.IsContractCreated.Get()
 		if !isWethV2PoolCreated {
-			pairContract, err := f.evmFetcher.FetchV2PairContract(ctx, event.Meta.Contract, f.wethToken)
-			now := time.Now()
+			_, err := f.evmFetcher.FetchV2PairContract(ctx, event.Meta.Contract, f.wethToken)
 			if err != nil {
 				event.WethV2Pool.IsContractCreated.MarkFailed(err, now)
 			} else {
 				event.WethV2Pool.IsContractCreated.MarkReady(true, now)
-				event.WethV2Pool.Contract.MarkReady(pairContract, now)
-				isWethV2PoolCreated = true
-
-				token0, err := f.evmFetcher.FetchV2PairToken0(ctx, pairContract)
-				if err != nil {
-					event.WethV2Pool.Token0.MarkFailed(err, now)
-				} else {
-					event.WethV2Pool.Token0.MarkReady(token0, now)
-				}
-				token1, err := f.evmFetcher.FetchV2PairToken1(ctx, pairContract)
-				if err != nil {
-					event.WethV2Pool.Token1.MarkFailed(err, now)
-				} else {
-					event.WethV2Pool.Token1.MarkReady(token1, now)
-				}
 			}
 		}
 
 		if isWethV2PoolCreated {
 			pairContract, _ := event.WethV2Pool.Contract.Get()
-
 			totalSupply, err := f.evmFetcher.FetchV2PairTotalSupply(ctx, pairContract)
 			if err == nil {
-				event.WethV2Pool.TotalSupply.Set(totalSupply)
+				event.WethV2Pool.TotalSupply.MarkReady(totalSupply, now)
 			}
 
 			reserve0, reserve1, blockTimestampLast, err := f.evmFetcher.FetchV2PairReserves(ctx, pairContract)
 			if err == nil {
-				event.WethV2Pool.Reserve0.Set(reserve0)
-				event.WethV2Pool.Reserve1.Set(reserve1)
-				event.WethV2Pool.BlockTimestampLast.Set(blockTimestampLast)
+				event.WethV2Pool.Reserve0.MarkReady(reserve0, now)
+				event.WethV2Pool.Reserve1.MarkReady(reserve1, now)
+				event.WethV2Pool.BlockTimestampLast.MarkReady(blockTimestampLast, now)
 			}
 		}
 

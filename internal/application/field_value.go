@@ -51,13 +51,6 @@ func (v *FieldValue[T]) Get() (T, bool) {
 	return v.value, true
 }
 
-func (v *FieldValue[T]) Set(value T) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-
-	v.value = value
-}
-
 func (v *FieldValue[T]) Status() FieldStatus {
 	v.mu.RLock()
 	defer v.mu.RUnlock()
