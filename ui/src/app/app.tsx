@@ -8,6 +8,7 @@ import {Subscription} from 'rxjs';
 // import applications from './applications';
 import help from './help';
 import login from './login';
+import projects from './projects';
 import settings from './settings';
 import {Layout, ThemeWrapper} from './shared/components/layout/layout';
 import {Page} from './shared/components/page/page';
@@ -31,6 +32,7 @@ type Routes = {[path: string]: {component: React.ComponentType<RouteComponentPro
 
 const routes: Routes = {
     '/login': {component: login.component as any, noLayout: true},
+    '/projects': {component: projects.component},
     // '/applications': {component: applications.component},
     '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
@@ -45,6 +47,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+    {
+        title: 'Projects',
+        tooltip: 'View Athena projects',
+        path: '/projects',
+        iconClassName: 'fa fa-cubes'
+    },
     // {
     //     title: 'Applications',
     //     tooltip: 'Manage your applications, and diagnose health problems.',

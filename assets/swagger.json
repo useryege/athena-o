@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-130-g2af4ce2-dirty"
+    "version": "v1.0.0-133-g2ad9463-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -218,17 +218,17 @@
         }
       }
     },
-    "/api/v1/application/list": {
+    "/api/v1/project/list": {
       "get": {
         "tags": [
           "ApplicationService"
         ],
-        "operationId": "ApplicationService_List",
+        "operationId": "ApplicationService_ListProjects",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/applicationListResponse"
+              "$ref": "#/definitions/applicationListProjectsResponse"
             }
           },
           "default": {
@@ -467,9 +467,17 @@
     "accountUpdatePasswordResponse": {
       "type": "object"
     },
-    "applicationListResponse": {
-      "description": "ListResponse returns the list of projects.",
-      "type": "object"
+    "applicationListProjectsResponse": {
+      "description": "ListProjectsResponse returns the current known project snapshot.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1ProjectView"
+          }
+        }
+      }
     },
     "clusterConnector": {
       "type": "object",
@@ -753,6 +761,64 @@
       "properties": {
         "token": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1ProjectInitState": {
+      "type": "object",
+      "properties": {
+        "decimals": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "totalSupply": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1ProjectMeta": {
+      "type": "object",
+      "properties": {
+        "blockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "blockTime": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "contract": {
+          "type": "string"
+        },
+        "creator": {
+          "type": "string"
+        },
+        "projectID": {
+          "type": "string"
+        },
+        "txHash": {
+          "type": "string"
+        },
+        "txIndex": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "v1alpha1ProjectView": {
+      "type": "object",
+      "properties": {
+        "initState": {
+          "$ref": "#/definitions/v1alpha1ProjectInitState"
+        },
+        "meta": {
+          "$ref": "#/definitions/v1alpha1ProjectMeta"
         }
       }
     },

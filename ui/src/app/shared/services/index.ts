@@ -1,5 +1,6 @@
 import {AccountsService} from './accounts-service';
 import {ApplicationsService} from './applications-service';
+import {AthenaApplicationService} from './athena-application-service';
 import {AuthService} from './auth-service';
 import {CertificatesService} from './cert-service';
 import {ClustersService} from './clusters-service';
@@ -13,6 +14,7 @@ import {UserService} from './user-service';
 import {VersionService} from './version-service';
 import {ViewPreferencesService} from './view-preferences-service';
 export interface Services {
+    athenaApplication: AthenaApplicationService;
     applications: ApplicationsService;
     users: UserService;
     authService: AuthService;
@@ -30,6 +32,7 @@ export interface Services {
 }
 
 export const services: Services = {
+    athenaApplication: new AthenaApplicationService(),
     applications: new ApplicationsService(),
     authService: new AuthService(),
     clusters: new ClustersService(),

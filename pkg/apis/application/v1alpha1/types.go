@@ -400,23 +400,23 @@ type ApplicationList struct {
 // }
 
 type ProjectView struct {
-	Meta      ProjectMeta      `protobuf:"bytes,1,opt,name=meta"`
-	InitState ProjectInitState `protobuf:"bytes,2,opt,name=initState"`
+	Meta      ProjectMeta      `protobuf:"bytes,1,opt,name=meta" json:"meta"`
+	InitState ProjectInitState `protobuf:"bytes,2,opt,name=initState" json:"initState"`
 }
 
 type ProjectMeta struct {
-	ProjectID   string `protobuf:"bytes,1,opt,name=projectID"`
-	BlockTime   uint64 `protobuf:"varint,2,opt,name=blockTime"`
-	BlockNumber uint64 `protobuf:"varint,3,opt,name=blockNumber"`
-	Contract    string `protobuf:"bytes,4,opt,name=contract"`
-	Creator     string `protobuf:"bytes,5,opt,name=creator"`
-	TxHash      string `protobuf:"bytes,6,opt,name=txHash"`
-	TxIndex     uint64 `protobuf:"varint,7,opt,name=txIndex"`
+	ProjectID   string `protobuf:"bytes,1,opt,name=projectID" json:"projectID"`
+	BlockTime   uint64 `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
+	BlockNumber uint64 `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
+	Contract    string `protobuf:"bytes,4,opt,name=contract" json:"contract"`
+	Creator     string `protobuf:"bytes,5,opt,name=creator" json:"creator"`
+	TxHash      string `protobuf:"bytes,6,opt,name=txHash" json:"txHash"`
+	TxIndex     uint64 `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
 }
 
 type ProjectInitState struct {
-	Name        string `protobuf:"bytes,1,opt,name=name"`
-	Symbol      string `protobuf:"bytes,2,opt,name=symbol"`
-	Decimals    uint32 `protobuf:"varint,3,opt,name=decimals"`
-	TotalSupply string `protobuf:"bytes,4,opt,name=totalSupply"`
+	Name        string `protobuf:"bytes,1,opt,name=name" json:"name"`
+	Symbol      string `protobuf:"bytes,2,opt,name=symbol" json:"symbol"`
+	Decimals    uint32 `protobuf:"varint,3,opt,name=decimals" json:"decimals"`
+	TotalSupply string `protobuf:"bytes,4,opt,name=totalSupply" json:"totalSupply"`
 }

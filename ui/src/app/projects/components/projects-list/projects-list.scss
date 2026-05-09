@@ -1,0 +1,32 @@
+.projects-list {
+    &__error {
+        margin: 20px;
+        padding: 15px;
+        background-color: #fdf2f2;
+        color: #d9534f;
+        border: 1px solid #d9534f;
+        border-radius: 4px;
+
+        i {
+            margin-right: 10px;
+        }
+    }
+
+    &__table {
+        min-width: 1120px;
+    }
+
+    &__row {
+        display: grid;
+        grid-template-columns: 1.4fr 0.8fr 0.7fr 1.2fr 1.4fr 1.4fr 0.9fr 0.8fr 1.4fr;
+        column-gap: 12px;
+        align-items: center;
+        width: 100%;
+    }
+
+    &__cell {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
