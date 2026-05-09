@@ -20,7 +20,6 @@ type Service struct {
 	projectFilter *ProjectFilter
 
 	registry ProjectRegistry
-	eventHub *ProjectEventHub
 
 	retryQueue     RetryUntilReadyQueue
 	retryPool      RetryUntilReadyPool
@@ -43,7 +42,6 @@ func NewService(nodeClient *ethclient.Client) *Service {
 	return &Service{
 		nodeClient:     nodeClient,
 		registry:       registry,
-		eventHub:       NewProjectEventHub(),
 		retryQueue:     retryQueue,
 		retryPool:      retryPool,
 		retryScheduler: retryScheduler,
@@ -66,7 +64,7 @@ func (s *Service) Start() error {
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, ch1)
 	evmFetcher := NewEVMFetcher(s.nodeClient, s.registry)
 	apiFetcher := NewAPIFetcher()
-	s.projectFilter = NewProjectFilter(s.registry, ch1, s.retryPool, s.retryQueue, evmFetcher, s.eventHub)
+	s.projectFilter = NewProjectFilter(s.registry, ch1, s.retryPool, s.retryQueue, evmFetcher)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	if err := s.blockWatcher.Start(ctx); err != nil {
@@ -160,24 +158,4 @@ func (s *Service) ListProjects(ctx context.Context, _ *applicationpkg.ListProjec
 	}
 
 	return &applicationpkg.ListProjectsResponse{Items: projects}, nil
-}
-
-func (s *Service) WatchProjects(_ *applicationpkg.WatchProjectsRequest, stream applicationpkg.ApplicationService_WatchProjectsServer) error {
-	events, unsubscribe := s.eventHub.Subscribe()
-	defer unsubscribe()
-
-	for {
-		select {
-		case <-stream.Context().Done():
-			return stream.Context().Err()
-		case event, ok := <-events:
-			if !ok {
-				return nil
-			}
-			resp := &applicationpkg.WatchProjectsResponse{Event: event}
-			if err := stream.Send(resp); err != nil {
-				return err
-			}
-		}
-	}
 }

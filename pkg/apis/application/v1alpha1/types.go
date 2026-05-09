@@ -218,16 +218,16 @@ type ApplicationList struct {
 // }
 
 // AWSAuthConfig is an AWS IAM authentication configuration
-type AWSAuthConfig struct {
-	// ClusterName contains AWS cluster name
-	ClusterName string `json:"clusterName,omitempty" protobuf:"bytes,1,opt,name=clusterName"`
+// type AWSAuthConfig struct {
+// 	// ClusterName contains AWS cluster name
+// 	ClusterName string `json:"clusterName,omitempty" protobuf:"bytes,1,opt,name=clusterName"`
 
-	// RoleARN contains optional role ARN. If set then AWS IAM Authenticator assume a role to perform cluster operations instead of the default AWS credential provider chain.
-	RoleARN string `json:"roleARN,omitempty" protobuf:"bytes,2,opt,name=roleARN"`
+// 	// RoleARN contains optional role ARN. If set then AWS IAM Authenticator assume a role to perform cluster operations instead of the default AWS credential provider chain.
+// 	RoleARN string `json:"roleARN,omitempty" protobuf:"bytes,2,opt,name=roleARN"`
 
-	// Profile contains optional role ARN. If set then AWS IAM Authenticator uses the profile to perform cluster operations instead of the default AWS credential provider chain.
-	Profile string `json:"profile,omitempty" protobuf:"bytes,3,opt,name=profile"`
-}
+// 	// Profile contains optional role ARN. If set then AWS IAM Authenticator uses the profile to perform cluster operations instead of the default AWS credential provider chain.
+// 	Profile string `json:"profile,omitempty" protobuf:"bytes,3,opt,name=profile"`
+// }
 
 // ExecProviderConfig is config used to call an external command to perform cluster authentication
 // See: https://godoc.org/k8s.io/client-go/tools/clientcmd/api#ExecConfig
@@ -418,22 +418,4 @@ type ProjectInitState struct {
 	Symbol      string `protobuf:"bytes,2,opt,name=symbol"`
 	Decimals    uint32 `protobuf:"varint,3,opt,name=decimals"`
 	TotalSupply string `protobuf:"bytes,4,opt,name=totalSupply"`
-}
-
-type ProjectEventType int32
-
-const (
-	PROJECT_EVENT_TYPE_UNSPECIFIED ProjectEventType = 0
-	PROJECT_EVENT_TYPE_CREATED     ProjectEventType = 1
-)
-
-type ProjectEvent struct {
-	Type      ProjectEventType     `protobuf:"varint,1,opt,name=type,casttype=ProjectEventType"`
-	EventSeq  uint64               `protobuf:"varint,2,opt,name=eventSeq"`
-	EventTime int64                `protobuf:"varint,3,opt,name=eventTime"`
-	Created   *ProjectCreatedEvent `protobuf:"bytes,4,opt,name=created"`
-}
-
-type ProjectCreatedEvent struct {
-	Project *ProjectView `protobuf:"bytes,1,opt,name=project"`
 }

@@ -5,15 +5,9 @@
 
 package v1alpha1
 
-func (*AWSAuthConfig) ProtoMessage() {}
-
 func (*Application) ProtoMessage() {}
 
 func (*ApplicationList) ProtoMessage() {}
-
-func (*ProjectCreatedEvent) ProtoMessage() {}
-
-func (*ProjectEvent) ProtoMessage() {}
 
 func (*ProjectInitState) ProtoMessage() {}
 

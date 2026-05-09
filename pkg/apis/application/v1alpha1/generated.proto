@@ -10,18 +10,6 @@ import "k8s.io/apimachinery/pkg/apis/meta/v1/generated.proto";
 // Package-wide variables from generator "generated".
 option go_package = "github.com/useryege/athena/pkg/apis/application/v1alpha1";
 
-// AWSAuthConfig is an AWS IAM authentication configuration
-message AWSAuthConfig {
-  // ClusterName contains AWS cluster name
-  optional string clusterName = 1;
-
-  // RoleARN contains optional role ARN. If set then AWS IAM Authenticator assume a role to perform cluster operations instead of the default AWS credential provider chain.
-  optional string roleARN = 2;
-
-  // Profile contains optional role ARN. If set then AWS IAM Authenticator uses the profile to perform cluster operations instead of the default AWS credential provider chain.
-  optional string profile = 3;
-}
-
 // Application is a definition of Application resource.
 // +genclient
 // +genclient:noStatus
@@ -42,20 +30,6 @@ message ApplicationList {
   optional .k8s.io.apimachinery.pkg.apis.meta.v1.ListMeta metadata = 1;
 
   repeated Application items = 2;
-}
-
-message ProjectCreatedEvent {
-  optional ProjectView project = 1;
-}
-
-message ProjectEvent {
-  optional int32 type = 1;
-
-  optional uint64 eventSeq = 2;
-
-  optional int64 eventTime = 3;
-
-  optional ProjectCreatedEvent created = 4;
 }
 
 message ProjectInitState {
