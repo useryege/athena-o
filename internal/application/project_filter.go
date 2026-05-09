@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"math/big"
 	"math/rand"
 	"sync"
 	"time"
@@ -54,12 +55,23 @@ func (f *ProjectFilter) Start(ctx context.Context) error {
 	return nil
 }
 
-func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
+var ErrTotalSupplyIsNil = errors.New("totalSupply is nil")
+var ErrTotalSupplyIsZero = errors.New("totalSupply is 0")
+var ErrNameIsEmpty = errors.New("name is empty")
+var ErrSymbolIsEmpty = errors.New("symbol is empty")
+var ErrDecimalsIsZero = errors.New("decimals is 0")
 
+func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 	// try to call totalSupply
 	totalSupply, err := f.evmFetcher.FetchTotalSupply(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
+	}
+	if totalSupply == nil {
+		return ErrTotalSupplyIsNil
+	}
+	if totalSupply.Cmp(big.NewInt(0)) == 0 {
+		return ErrTotalSupplyIsZero
 	}
 
 	// try to call balanceOf
@@ -73,17 +85,26 @@ func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 	if err != nil {
 		return err
 	}
+	if decimals == 0 {
+		return ErrDecimalsIsZero
+	}
 
 	// try to call name
 	name, err := f.evmFetcher.FetchName(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
+	if name == "" {
+		return ErrNameIsEmpty
+	}
 
 	// try to call symbol
 	symbol, err := f.evmFetcher.FetchSymbol(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
+	}
+	if symbol == "" {
+		return ErrSymbolIsEmpty
 	}
 
 	// set the values to the project state
@@ -99,6 +120,19 @@ func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 }
 
 func isExecutionRevertedError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Internal validation failures should be treated as ignorable init errors.
+	if errors.Is(err, ErrTotalSupplyIsNil) ||
+		errors.Is(err, ErrTotalSupplyIsZero) ||
+		errors.Is(err, ErrNameIsEmpty) ||
+		errors.Is(err, ErrSymbolIsEmpty) ||
+		errors.Is(err, ErrDecimalsIsZero) {
+		return true
+	}
+
 	switch err.Error() {
 	case "execution reverted":
 		return true
@@ -113,7 +147,6 @@ func isExecutionRevertedError(err error) bool {
 	default:
 		return false
 	}
-
 }
 
 func (f *ProjectFilter) startDelayedFieldResolve(ctx context.Context, event *Project) {
