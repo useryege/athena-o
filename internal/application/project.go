@@ -14,9 +14,8 @@ type Project struct {
 	Meta      ProjectMeta
 	PerfTrace PerfTrace
 
-	InitState    ProjectInitState
-	DelayedState ProjectDelayedState
-	DynamicState ProjectDynamicState
+	Token      TokenState
+	WethV2Pool PairV2State
 }
 
 type ProjectMeta struct {
@@ -35,32 +34,27 @@ type PerfTrace struct {
 	FilterCompletedAt time.Time
 }
 
-type ProjectInitState struct {
+type TokenState struct {
 	Name        FieldValue[string]
 	Symbol      FieldValue[string]
 	Decimals    FieldValue[uint8]
 	TotalSupply FieldValue[*big.Int]
-}
 
-func (s *ProjectInitState) IsReady() bool {
-	return s.Name.IsReady() && s.Symbol.IsReady() && s.Decimals.IsReady() && s.TotalSupply.IsReady()
-}
-
-type ProjectDelayedState struct {
 	SourceCode    FieldValue[string]
 	SourceCodeABI FieldValue[string]
 }
 
-func (s *ProjectDelayedState) IsReady() bool {
-	return s.SourceCode.IsReady() && s.SourceCodeABI.IsReady()
-}
+type PairV2State struct {
+	IsContractCreated FieldValue[bool]
+	Contract          FieldValue[common.Address]
+	Token0            FieldValue[common.Address]
+	Token1            FieldValue[common.Address]
 
-type ProjectDynamicState struct {
-	HolderCount FieldValue[uint64]
-}
-
-func (s *ProjectDynamicState) IsReady() bool {
-	return s.HolderCount.IsReady()
+	TotalSupply FieldValue[*big.Int]
+	// reserves
+	Reserve0           FieldValue[*big.Int]
+	Reserve1           FieldValue[*big.Int]
+	BlockTimestampLast FieldValue[uint32]
 }
 
 func projectToView(project *Project) *v1alpha1.ProjectView {
@@ -74,13 +68,13 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 	}
 
 	totalSupply := ""
-	if supply, ok := project.InitState.TotalSupply.Get(); ok && supply != nil {
+	if supply, ok := project.Token.TotalSupply.Get(); ok && supply != nil {
 		totalSupply = supply.String()
 	}
 
-	name, _ := project.InitState.Name.Get()
-	symbol, _ := project.InitState.Symbol.Get()
-	decimals, _ := project.InitState.Decimals.Get()
+	name, _ := project.Token.Name.Get()
+	symbol, _ := project.Token.Symbol.Get()
+	decimals, _ := project.Token.Decimals.Get()
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{

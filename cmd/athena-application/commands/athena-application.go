@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
 
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/application"
@@ -32,11 +33,13 @@ const cliName = "athena-application"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost  string
-		listenPort  int
-		metricsHost string
-		metricsPort int
-		nodewsurl   string
+		listenHost        string
+		listenPort        int
+		metricsHost       string
+		metricsPort       int
+		nodewsurl         string
+		v2FactoryContract string
+		wethContract      string
 	)
 
 	command := &cobra.Command{
@@ -67,7 +70,9 @@ func NewCommand() *cobra.Command {
 			}
 
 			server := application.NewServer(application.ApplicationServerOpts{
-				NodeClient: nodeClient,
+				NodeClient:        nodeClient,
+				V2FactoryContract: ethcommon.HexToAddress(v2FactoryContract),
+				WethContract:      ethcommon.HexToAddress(wethContract),
 			})
 
 			applicationGrpc := server.CreateGRPC()
@@ -138,7 +143,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&metricsHost, "metrics-address", env.StringFromEnv("ATHENA_APPLICATION_METRICS_LISTEN_ADDRESS", common.DefaultAddressApplicationMetrics), "Listen on given address for metrics and health checks")
 	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortApplicationMetrics, "Start metrics server on given port")
 	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_APPLICATION_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
-
+	command.Flags().StringVar(&v2FactoryContract, "v2-factory-contract", env.StringFromEnv("ATHENA_APPLICATION_V2_FACTORY_CONTRACT", "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"), "V2 Factory contract address")
+	command.Flags().StringVar(&wethContract, "weth-contract", env.StringFromEnv("ATHENA_APPLICATION_WETH_CONTRACT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"), "WETH contract address")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
 }

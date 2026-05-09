@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 )
@@ -13,7 +14,9 @@ import (
 type Service struct {
 	applicationpkg.UnimplementedApplicationServiceServer
 
-	nodeClient *ethclient.Client
+	nodeClient        *ethclient.Client
+	v2FactoryContract common.Address
+	wethContract      common.Address
 
 	projectCh     chan *Project
 	blockWatcher  *BlockWatcher
@@ -28,13 +31,15 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client) *Service {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address) *Service {
 	registry := NewProjectRegistry()
 
 	return &Service{
-		nodeClient:      nodeClient,
-		registry:        registry,
-		delayedFetchSem: make(chan struct{}, defaultDelayedFetchConcurrency),
+		nodeClient:        nodeClient,
+		registry:          registry,
+		delayedFetchSem:   make(chan struct{}, defaultDelayedFetchConcurrency),
+		v2FactoryContract: v2FactoryContract,
+		wethContract:      wethContract,
 	}
 }
 
@@ -49,9 +54,9 @@ func (s *Service) Start() error {
 	ch1 := make(chan *Project, 24)
 	s.projectCh = ch1
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, ch1)
-	evmFetcher := NewEVMFetcher(s.nodeClient, s.registry)
+	evmFetcher := NewEVMFetcher(s.nodeClient, s.v2FactoryContract)
 	apiFetcher := NewAPIFetcher()
-	s.projectFilter = NewProjectFilter(s.registry, ch1, evmFetcher, apiFetcher, s.delayedFetchSem)
+	s.projectFilter = NewProjectFilter(s.registry, ch1, evmFetcher, apiFetcher, s.delayedFetchSem, s.wethContract)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	if err := s.blockWatcher.Start(ctx); err != nil {

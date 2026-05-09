@@ -18,6 +18,7 @@ type ProjectFilter struct {
 	inputCh         <-chan *Project
 	evmFetcher      EVMFetcher
 	apiFetcher      APIFetcher
+	wethToken       common.Address
 	delayedFetchSem chan struct{}
 }
 
@@ -29,6 +30,7 @@ func NewProjectFilter(
 	evmFetcher EVMFetcher,
 	apiFetcher APIFetcher,
 	delayedFetchSem chan struct{},
+	wethToken common.Address,
 ) *ProjectFilter {
 	if delayedFetchSem == nil {
 		delayedFetchSem = make(chan struct{}, defaultDelayedFetchConcurrency)
@@ -40,6 +42,7 @@ func NewProjectFilter(
 		evmFetcher:      evmFetcher,
 		apiFetcher:      apiFetcher,
 		delayedFetchSem: delayedFetchSem,
+		wethToken:       wethToken,
 	}
 }
 
@@ -63,7 +66,7 @@ var ErrDecimalsIsZero = errors.New("decimals is 0")
 
 func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 	// try to call totalSupply
-	totalSupply, err := f.evmFetcher.FetchTotalSupply(ctx, event.Meta.Contract)
+	totalSupply, err := f.evmFetcher.FetchTokenTotalSupply(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
@@ -75,13 +78,13 @@ func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 	}
 
 	// try to call balanceOf
-	_, err = f.evmFetcher.BalanceOf(ctx, event.Meta.Contract, common.HexToAddress("0x0000000000000000000000000000000000000000"))
+	_, err = f.evmFetcher.FetchTokenBalanceOf(ctx, event.Meta.Contract, common.HexToAddress("0x0000000000000000000000000000000000000000"))
 	if err != nil {
 		return err
 	}
 
 	// try to call decimals
-	decimals, err := f.evmFetcher.FetchDecimals(ctx, event.Meta.Contract)
+	decimals, err := f.evmFetcher.FetchTokenDecimals(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
@@ -90,7 +93,7 @@ func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 	}
 
 	// try to call name
-	name, err := f.evmFetcher.FetchName(ctx, event.Meta.Contract)
+	name, err := f.evmFetcher.FetchTokenName(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
@@ -99,7 +102,7 @@ func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 	}
 
 	// try to call symbol
-	symbol, err := f.evmFetcher.FetchSymbol(ctx, event.Meta.Contract)
+	symbol, err := f.evmFetcher.FetchTokenSymbol(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
@@ -109,10 +112,10 @@ func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 
 	// set the values to the project state
 	now := time.Now()
-	event.InitState.Name.MarkReady(name, now)
-	event.InitState.Symbol.MarkReady(symbol, now)
-	event.InitState.Decimals.MarkReady(decimals, now)
-	event.InitState.TotalSupply.MarkReady(totalSupply, now)
+	event.Token.Name.MarkReady(name, now)
+	event.Token.Symbol.MarkReady(symbol, now)
+	event.Token.Decimals.MarkReady(decimals, now)
+	event.Token.TotalSupply.MarkReady(totalSupply, now)
 
 	event.PerfTrace.FilterCompletedAt = now
 	return nil
@@ -162,50 +165,66 @@ func (f *ProjectFilter) resolveDelayedFields(ctx context.Context, event *Project
 	const maxDelay = 2 * time.Minute
 
 	for {
-		if event.DelayedState.SourceCode.IsReady() && event.DelayedState.SourceCodeABI.IsReady() {
-			return
-		}
-
-		if !event.DelayedState.SourceCode.IsReady() {
+		if !event.Token.SourceCode.IsReady() {
 			sourceCode, err := f.fetchSourceCode(ctx, event)
 			now := time.Now()
 			if err != nil {
-				event.DelayedState.SourceCode.MarkFailed(err, now)
-				log.WithFields(log.Fields{
-					"projectID": event.Meta.ProjectID,
-					"contract":  event.Meta.Contract,
-					"error":     err,
-				}).Debug("failed to resolve source code")
+				event.Token.SourceCode.MarkFailed(err, now)
 			} else {
-				event.DelayedState.SourceCode.MarkReady(sourceCode, now)
-				log.WithFields(log.Fields{
-					"projectID": event.Meta.ProjectID,
-					"contract":  event.Meta.Contract,
-				}).Info("source code resolved")
+				event.Token.SourceCode.MarkReady(sourceCode, now)
 			}
 		}
 
-		if !event.DelayedState.SourceCodeABI.IsReady() {
+		if !event.Token.SourceCodeABI.IsReady() {
 			sourceCodeABI, err := f.fetchSourceCodeABI(ctx, event)
 			now := time.Now()
 			if err != nil {
-				event.DelayedState.SourceCodeABI.MarkFailed(err, now)
-				log.WithFields(log.Fields{
-					"projectID": event.Meta.ProjectID,
-					"contract":  event.Meta.Contract,
-					"error":     err,
-				}).Debug("failed to resolve source code ABI")
+				event.Token.SourceCodeABI.MarkFailed(err, now)
 			} else {
-				event.DelayedState.SourceCodeABI.MarkReady(sourceCodeABI, now)
-				log.WithFields(log.Fields{
-					"projectID": event.Meta.ProjectID,
-					"contract":  event.Meta.Contract,
-				}).Info("source code ABI resolved")
+				event.Token.SourceCodeABI.MarkReady(sourceCodeABI, now)
 			}
 		}
 
-		if event.DelayedState.SourceCode.IsReady() && event.DelayedState.SourceCodeABI.IsReady() {
-			return
+		isWethV2PoolCreated, _ := event.WethV2Pool.IsContractCreated.Get()
+		if !isWethV2PoolCreated {
+			pairContract, err := f.evmFetcher.FetchV2PairContract(ctx, event.Meta.Contract, f.wethToken)
+			now := time.Now()
+			if err != nil {
+				event.WethV2Pool.IsContractCreated.MarkFailed(err, now)
+			} else {
+				event.WethV2Pool.IsContractCreated.MarkReady(true, now)
+				event.WethV2Pool.Contract.MarkReady(pairContract, now)
+				isWethV2PoolCreated = true
+
+				token0, err := f.evmFetcher.FetchV2PairToken0(ctx, pairContract)
+				if err != nil {
+					event.WethV2Pool.Token0.MarkFailed(err, now)
+				} else {
+					event.WethV2Pool.Token0.MarkReady(token0, now)
+				}
+				token1, err := f.evmFetcher.FetchV2PairToken1(ctx, pairContract)
+				if err != nil {
+					event.WethV2Pool.Token1.MarkFailed(err, now)
+				} else {
+					event.WethV2Pool.Token1.MarkReady(token1, now)
+				}
+			}
+		}
+
+		if isWethV2PoolCreated {
+			pairContract, _ := event.WethV2Pool.Contract.Get()
+
+			totalSupply, err := f.evmFetcher.FetchV2PairTotalSupply(ctx, pairContract)
+			if err == nil {
+				event.WethV2Pool.TotalSupply.Set(totalSupply)
+			}
+
+			reserve0, reserve1, blockTimestampLast, err := f.evmFetcher.FetchV2PairReserves(ctx, pairContract)
+			if err == nil {
+				event.WethV2Pool.Reserve0.Set(reserve0)
+				event.WethV2Pool.Reserve1.Set(reserve1)
+				event.WethV2Pool.BlockTimestampLast.Set(blockTimestampLast)
+			}
 		}
 
 		select {

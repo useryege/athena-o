@@ -1,6 +1,7 @@
 package application
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/server/version"
@@ -16,13 +17,22 @@ type ApplicationServer struct {
 }
 
 type ApplicationServerOpts struct {
-	NodeClient *ethclient.Client
+	NodeClient        *ethclient.Client
+	V2FactoryContract common.Address
+	WethContract      common.Address
 }
 
 func NewServer(opts ApplicationServerOpts) *ApplicationServer {
+	if opts.WethContract == (common.Address{}) {
+		panic("WETH contract address is required.Set it by --weth-contract flag or ATHENA_APPLICATION_WETH_CONTRACT environment variable")
+	}
+	if opts.V2FactoryContract == (common.Address{}) {
+		panic("V2 Factory contract address is required.Set it by --v2-factory-contract flag or ATHENA_APPLICATION_V2_FACTORY_CONTRACT environment variable")
+	}
+
 	return &ApplicationServer{
 		ApplicationServerOpts: opts,
-		service:               NewService(opts.NodeClient),
+		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract),
 	}
 }
 
