@@ -2,21 +2,23 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {services} from '../../../shared/services';
 import {ProjectView} from '../../../shared/services/athena-application-service';
+import {ProjectListRow} from '../project-list-row/project-list-row';
 
 require('./projects-list.scss');
-
-const renderValue = (value: string | number | undefined) => (value === undefined || value === '' ? '-' : value);
-
-const renderShortValue = (value: string | undefined, maxLength = 12) => {
-    if (!value) {
-        return '-';
-    }
-    return value.length > maxLength ? `${value.substring(0, maxLength)}...` : value;
-};
 
 const AUTO_REFRESH_INTERVAL_MS = 3000;
 
 const renderLastUpdatedAt = (value: Date | null) => (value ? value.toLocaleTimeString() : 'Never');
+
+const getProjectRowKey = (project: ProjectView, index: number) => {
+    if (project.meta?.projectID) {
+        return project.meta.projectID;
+    }
+    if (project.meta?.blockNumber !== undefined && project.meta?.txIndex !== undefined) {
+        return `${project.meta.blockNumber}-${project.meta.txIndex}`;
+    }
+    return `project-${index}`;
+};
 
 export const ProjectsList = () => {
     const [projects, setProjects] = React.useState<ProjectView[]>([]);
@@ -151,32 +153,7 @@ export const ProjectsList = () => {
                                         </div>
                                     </div>
                                 ) : (
-                                    projects.map((p, index) => (
-                                        <div className='argo-table-list__row' key={p.meta?.projectID || `${p.meta?.blockNumber}-${p.meta?.txIndex}`}>
-                                            <div className='projects-list__row'>
-                                                <div className='projects-list__cell projects-list__cell--rank'>#{index + 1}</div>
-                                                <div className='projects-list__cell' title={p.token?.name || ''}>
-                                                    {renderValue(p.token?.name)}
-                                                </div>
-                                                <div className='projects-list__cell'>{renderValue(p.token?.symbol)}</div>
-                                                <div className='projects-list__cell'>{renderValue(p.token?.decimals)}</div>
-                                                <div className='projects-list__cell' title={p.token?.totalSupply || ''}>
-                                                    {renderShortValue(p.token?.totalSupply)}
-                                                </div>
-                                                <div className='projects-list__cell' title={p.meta?.contract || ''}>
-                                                    {renderShortValue(p.meta?.contract)}
-                                                </div>
-                                                <div className='projects-list__cell' title={p.meta?.creator || ''}>
-                                                    {renderShortValue(p.meta?.creator)}
-                                                </div>
-                                                <div className='projects-list__cell'>{renderValue(p.meta?.blockNumber)}</div>
-                                                <div className='projects-list__cell'>{renderValue(p.meta?.txIndex)}</div>
-                                                <div className='projects-list__cell' title={p.meta?.txHash || ''}>
-                                                    {renderShortValue(p.meta?.txHash)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
+                                    projects.map((project, index) => <ProjectListRow key={getProjectRowKey(project, index)} project={project} index={index} />)
                                 )}
                             </div>
                         </div>
