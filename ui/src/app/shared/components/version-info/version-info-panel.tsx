@@ -19,14 +19,14 @@ export function VersionPanel({isShown, onClose, version}: VersionPanelProps) {
     const buildVersionTable = (version: VersionMessage): JSX.Element => {
         const formattedVersion = {
             'Athena': version.Version,
-            'Build Date': version.BuildDate,
-            'Go Version': version.GoVersion,
-            'Go Compiler': version.Compiler,
-            'Platform': version.Platform,
-            'jsonnet': version.JsonnetVersion,
-            'kustomize': version.KustomizeVersion,
-            'Helm': version.HelmVersion,
-            'kubectl': version.KubectlVersion
+            // 'Build Date': version.BuildDate,
+            // 'Go Version': version.GoVersion,
+            // 'Go Compiler': version.Compiler,
+            // 'Platform': version.Platform,
+            // 'jsonnet': version.JsonnetVersion,
+            // 'kustomize': version.KustomizeVersion,
+            // 'Helm': version.HelmVersion,
+            // 'kubectl': version.KubectlVersion
         };
 
         return (

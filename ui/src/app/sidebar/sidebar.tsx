@@ -57,7 +57,7 @@ export const Sidebar = (props: SidebarProps) => {
                             <img
                                 onClick={() => context.history.push('/')}
                                 title={'Go to start page'}
-                                src='assets/images/argologo.svg'
+                                src='assets/images/athenalogo.svg'
                                 alt='Argo'
                                 className='sidebar__logo__text-logo'
                             />

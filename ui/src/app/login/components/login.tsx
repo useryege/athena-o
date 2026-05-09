@@ -65,7 +65,7 @@ export function Login(props: RouteComponentProps<{}>) {
             </div>
             <div className='login__box'>
                 <div className='login__logo width-control'>
-                    <img className='logo-image' src='assets/images/argo_o.svg' alt='argo' />
+                    <img className='logo-image' src='assets/images/athena_o.svg' alt='argo' />
                 </div>
                 {ssoConfigured && (
                     <div className='login__box_saml width-control'>
@@ -127,7 +127,7 @@ export function Login(props: RouteComponentProps<{}>) {
                 )}
                 <div className='login__footer'>
                     <a href='https://argoproj.io' target='_blank'>
-                        <img className='logo-image' src='assets/images/argologo.svg' alt='argo' />
+                        <img className='logo-image' src='assets/images/athenalogo.svg' alt='argo' />
                     </a>
                 </div>
             </div>
