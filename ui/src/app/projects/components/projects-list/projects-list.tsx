@@ -1,5 +1,6 @@
 import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
+import {history} from '../../../app';
 import {services} from '../../../shared/services';
 import {ProjectView} from '../../../shared/services/athena-application-service';
 import {ProjectListRow} from '../project-list-row/project-list-row';
@@ -27,29 +28,33 @@ export const ProjectsList = () => {
     const [autoRefresh, setAutoRefresh] = React.useState(false);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
-    const requestInFlight = React.useRef(false);
+    const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
 
-    const clearRefreshTimer = React.useCallback(() => {
-        if (intervalRef.current === undefined) {
-            return;
+    const cleanupRequests = React.useCallback(() => {
+        if (intervalRef.current !== undefined) {
+            window.clearInterval(intervalRef.current);
+            intervalRef.current = undefined;
         }
-        window.clearInterval(intervalRef.current);
-        intervalRef.current = undefined;
+        if (requestRef.current?.abort) {
+            requestRef.current.abort();
+            requestRef.current = null;
+        }
     }, []);
 
     const loadProjects = React.useCallback(async () => {
-        if (requestInFlight.current) {
+        if (requestRef.current) {
             return;
         }
-        requestInFlight.current = true;
         if (isMountedRef.current) {
             setRefreshing(true);
         }
 
         try {
-            const data = await services.athenaApplication.listProjects();
+            const req = services.athenaApplication.listProjects();
+            requestRef.current = req;
+            const data = await req;
             if (isMountedRef.current) {
                 setProjects(data);
                 setLastUpdatedAt(new Date());
@@ -64,7 +69,7 @@ export const ProjectsList = () => {
                 setLoading(false);
                 setRefreshing(false);
             }
-            requestInFlight.current = false;
+            requestRef.current = null;
         }
     }, []);
 
@@ -74,9 +79,9 @@ export const ProjectsList = () => {
 
         return () => {
             isMountedRef.current = false;
-            clearRefreshTimer();
+            cleanupRequests();
         };
-    }, [clearRefreshTimer, loadProjects]);
+    }, [cleanupRequests, loadProjects]);
 
     const handleStart = React.useCallback(() => {
         if (intervalRef.current !== undefined) {
@@ -88,9 +93,9 @@ export const ProjectsList = () => {
     }, [loadProjects]);
 
     const handleStop = React.useCallback(() => {
-        clearRefreshTimer();
+        cleanupRequests();
         setAutoRefresh(false);
-    }, [clearRefreshTimer]);
+    }, [cleanupRequests]);
 
     const handleRefresh = React.useCallback(() => {
         if (autoRefresh) {
@@ -153,7 +158,14 @@ export const ProjectsList = () => {
                                         </div>
                                     </div>
                                 ) : (
-                                    projects.map((project, index) => <ProjectListRow key={getProjectRowKey(project, index)} project={project} index={index} />)
+                                    projects.map((project, index) => (
+                                        <ProjectListRow
+                                            key={getProjectRowKey(project, index)}
+                                            project={project}
+                                            index={index}
+                                            onClick={project.meta?.projectID ? () => history.push(`/projects/${project.meta!.projectID}`) : undefined}
+                                        />
+                                    ))
                                 )}
                             </div>
                         </div>

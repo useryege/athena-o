@@ -18,7 +18,7 @@ export function VersionPanel({isShown, onClose, version}: VersionPanelProps) {
 
     const buildVersionTable = (version: VersionMessage): JSX.Element => {
         const formattedVersion = {
-            'Athena': version.Version,
+            Athena: version.Version
             // 'Build Date': version.BuildDate,
             // 'Go Version': version.GoVersion,
             // 'Go Compiler': version.Compiler,

@@ -40,8 +40,22 @@ export interface ListProjectsResponse {
     items?: ProjectView[];
 }
 
+export interface GetProjectResponse {
+    item?: ProjectView;
+}
+
 export class AthenaApplicationService {
-    public listProjects(): Promise<ProjectView[]> {
-        return requests.get('/project/list').then(res => (res.body as ListProjectsResponse).items || []);
+    public listProjects(): Promise<ProjectView[]> & {abort?: () => void} {
+        const req = requests.get('/project/list');
+        const promise = req.then(res => (res.body as ListProjectsResponse).items || []) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getProject(projectID: string): Promise<ProjectView> & {abort?: () => void} {
+        const req = requests.get(`/project/${encodeURIComponent(projectID)}`);
+        const promise = req.then(res => (res.body as GetProjectResponse).item) as any;
+        promise.abort = () => req.abort();
+        return promise;
     }
 }

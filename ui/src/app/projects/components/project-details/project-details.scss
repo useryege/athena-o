@@ -1,0 +1,52 @@
+.project-details {
+    &__box {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    &__section-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #363c43;
+        border-bottom: 1px solid #e1e4e5;
+        padding-bottom: 8px;
+    }
+
+    &__field {
+        margin-bottom: 12px;
+        display: flex;
+        flex-direction: column;
+
+        &-label {
+            font-size: 12px;
+            color: #6d7f8b;
+            margin-bottom: 4px;
+        }
+
+        &-value {
+            font-size: 14px;
+            color: #363c43;
+            word-break: break-all;
+        }
+    }
+
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+    }
+
+    &__error {
+        margin: 20px;
+        padding: 15px;
+        background-color: #fdf2f2;
+        color: #d9534f;
+        border: 1px solid #d9534f;
+        border-radius: 4px;
+
+        i {
+            margin-right: 10px;
+        }
+    }
+}
