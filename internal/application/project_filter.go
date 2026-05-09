@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/util/ethereumapi"
 )
 
 type ProjectFilter struct {
@@ -17,7 +18,7 @@ type ProjectFilter struct {
 	registry        ProjectRegistry
 	inputCh         <-chan *Project
 	evmFetcher      EVMFetcher
-	apiFetcher      APIFetcher
+	apiFetcher      ethereumapi.EthereumAPI
 	wethToken       common.Address
 	delayedFetchSem chan struct{}
 }
@@ -28,7 +29,7 @@ func NewProjectFilter(
 	registry ProjectRegistry,
 	inputCh <-chan *Project,
 	evmFetcher EVMFetcher,
-	apiFetcher APIFetcher,
+	apiFetcher ethereumapi.EthereumAPI,
 	delayedFetchSem chan struct{},
 	wethToken common.Address,
 ) *ProjectFilter {
@@ -165,22 +166,14 @@ func (f *ProjectFilter) resolveDelayedFields(ctx context.Context, event *Project
 	const maxDelay = 2 * time.Minute
 
 	for {
-
 		now := time.Now()
-		if !event.Token.SourceCode.IsReady() {
-			sourceCode, err := f.fetchSourceCode(ctx, event)
+		if !event.Token.SourceCode.IsReady() || !event.Token.SourceCodeABI.IsReady() {
+			sourceCode, sourceCodeABI, err := f.fetchSourceCode(ctx, event)
 			if err != nil {
 				event.Token.SourceCode.MarkFailed(err, now)
-			} else {
-				event.Token.SourceCode.MarkReady(sourceCode, now)
-			}
-		}
-
-		if !event.Token.SourceCodeABI.IsReady() {
-			sourceCodeABI, err := f.fetchSourceCodeABI(ctx, event)
-			if err != nil {
 				event.Token.SourceCodeABI.MarkFailed(err, now)
 			} else {
+				event.Token.SourceCode.MarkReady(sourceCode, now)
 				event.Token.SourceCodeABI.MarkReady(sourceCodeABI, now)
 			}
 		}
@@ -239,22 +232,17 @@ func (f *ProjectFilter) resolveDelayedFields(ctx context.Context, event *Project
 	}
 }
 
-func (f *ProjectFilter) fetchSourceCode(ctx context.Context, event *Project) (string, error) {
+func (f *ProjectFilter) fetchSourceCode(ctx context.Context, event *Project) (string, string, error) {
 	if err := f.acquireDelayedFetch(ctx); err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer f.releaseDelayedFetch()
 
-	return f.apiFetcher.FetchSourceCode(ctx, event.Meta.Contract)
-}
-
-func (f *ProjectFilter) fetchSourceCodeABI(ctx context.Context, event *Project) (string, error) {
-	if err := f.acquireDelayedFetch(ctx); err != nil {
-		return "", err
+	response, err := f.apiFetcher.GetSourceCode(ctx, event.Meta.Contract.String())
+	if err != nil {
+		return "", "", err
 	}
-	defer f.releaseDelayedFetch()
-
-	return f.apiFetcher.FetchSourceCodeABI(ctx, event.Meta.Contract)
+	return response.Result[0].SourceCode, response.Result[0].ABI, nil
 }
 
 func (f *ProjectFilter) acquireDelayedFetch(ctx context.Context) error {

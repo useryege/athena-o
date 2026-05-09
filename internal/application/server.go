@@ -17,9 +17,11 @@ type ApplicationServer struct {
 }
 
 type ApplicationServerOpts struct {
-	NodeClient        *ethclient.Client
-	V2FactoryContract common.Address
-	WethContract      common.Address
+	NodeClient          *ethclient.Client
+	V2FactoryContract   common.Address
+	WethContract        common.Address
+	EtherscanAPIBaseURL string
+	EtherscanAPIKey     string
 }
 
 func NewServer(opts ApplicationServerOpts) *ApplicationServer {
@@ -29,10 +31,16 @@ func NewServer(opts ApplicationServerOpts) *ApplicationServer {
 	if opts.V2FactoryContract == (common.Address{}) {
 		panic("V2 Factory contract address is required.Set it by --v2-factory-contract flag or ATHENA_APPLICATION_V2_FACTORY_CONTRACT environment variable")
 	}
+	if opts.EtherscanAPIBaseURL == "" {
+		panic("Etherscan API base URL is required.Set it by --etherscan-api-base-url flag or ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL environment variable")
+	}
+	if opts.EtherscanAPIKey == "" {
+		panic("Etherscan API key is required.Set it by --etherscan-api-key flag or ATHENA_APPLICATION_ETHERSCAN_API_KEY environment variable")
+	}
 
 	return &ApplicationServer{
 		ApplicationServerOpts: opts,
-		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract),
+		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey),
 	}
 }
 

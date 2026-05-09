@@ -33,13 +33,15 @@ const cliName = "athena-application"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost        string
-		listenPort        int
-		metricsHost       string
-		metricsPort       int
-		nodewsurl         string
-		v2FactoryContract string
-		wethContract      string
+		listenHost          string
+		listenPort          int
+		metricsHost         string
+		metricsPort         int
+		nodewsurl           string
+		v2FactoryContract   string
+		wethContract        string
+		etherscanAPIBaseURL string
+		etherscanAPIKey     string
 	)
 
 	command := &cobra.Command{
@@ -70,9 +72,11 @@ func NewCommand() *cobra.Command {
 			}
 
 			server := application.NewServer(application.ApplicationServerOpts{
-				NodeClient:        nodeClient,
-				V2FactoryContract: ethcommon.HexToAddress(v2FactoryContract),
-				WethContract:      ethcommon.HexToAddress(wethContract),
+				NodeClient:          nodeClient,
+				V2FactoryContract:   ethcommon.HexToAddress(v2FactoryContract),
+				WethContract:        ethcommon.HexToAddress(wethContract),
+				EtherscanAPIBaseURL: etherscanAPIBaseURL,
+				EtherscanAPIKey:     etherscanAPIKey,
 			})
 
 			applicationGrpc := server.CreateGRPC()
@@ -145,6 +149,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_APPLICATION_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
 	command.Flags().StringVar(&v2FactoryContract, "v2-factory-contract", env.StringFromEnv("ATHENA_APPLICATION_V2_FACTORY_CONTRACT", "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"), "V2 Factory contract address")
 	command.Flags().StringVar(&wethContract, "weth-contract", env.StringFromEnv("ATHENA_APPLICATION_WETH_CONTRACT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"), "WETH contract address")
+	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
+	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
 }

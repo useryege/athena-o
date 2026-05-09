@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
+	"github.com/useryege/athena/util/ethereumapi"
 )
 
 type Service struct {
@@ -17,6 +18,9 @@ type Service struct {
 	nodeClient        *ethclient.Client
 	v2FactoryContract common.Address
 	wethContract      common.Address
+
+	etherscanAPIBaseURL string
+	etherscanAPIKey     string
 
 	projectCh     chan *Project
 	blockWatcher  *BlockWatcher
@@ -31,15 +35,17 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address) *Service {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string) *Service {
 	registry := NewProjectRegistry()
 
 	return &Service{
-		nodeClient:        nodeClient,
-		registry:          registry,
-		delayedFetchSem:   make(chan struct{}, defaultDelayedFetchConcurrency),
-		v2FactoryContract: v2FactoryContract,
-		wethContract:      wethContract,
+		nodeClient:          nodeClient,
+		registry:            registry,
+		delayedFetchSem:     make(chan struct{}, defaultDelayedFetchConcurrency),
+		v2FactoryContract:   v2FactoryContract,
+		wethContract:        wethContract,
+		etherscanAPIBaseURL: etherscanAPIBaseURL,
+		etherscanAPIKey:     etherscanAPIKey,
 	}
 }
 
@@ -55,7 +61,14 @@ func (s *Service) Start() error {
 	s.projectCh = ch1
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, ch1)
 	evmFetcher := NewEVMFetcher(s.nodeClient, s.v2FactoryContract)
-	apiFetcher := NewAPIFetcher()
+
+	chainID, err := s.nodeClient.ChainID(context.Background())
+	if err != nil {
+		return err
+	}
+
+	apiFetcher := ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
+
 	s.projectFilter = NewProjectFilter(s.registry, ch1, evmFetcher, apiFetcher, s.delayedFetchSem, s.wethContract)
 
 	ctx, cancel := context.WithCancel(context.Background())
