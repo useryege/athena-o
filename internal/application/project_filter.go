@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -11,22 +12,33 @@ import (
 )
 
 type ProjectFilter struct {
-	wg       sync.WaitGroup
-	registry ProjectRegistry
-	pool     RetryUntilReadyPool
-	queue    RetryUntilReadyQueue
-	inputCh  <-chan *Project
-
-	fetcher EVMFetcher
+	wg              sync.WaitGroup
+	registry        ProjectRegistry
+	inputCh         <-chan *Project
+	evmFetcher      EVMFetcher
+	apiFetcher      APIFetcher
+	delayedFetchSem chan struct{}
 }
 
-func NewProjectFilter(registry ProjectRegistry, inputCh <-chan *Project, pool RetryUntilReadyPool, queue RetryUntilReadyQueue, fetcher EVMFetcher) *ProjectFilter {
+const defaultDelayedFetchConcurrency = 10
+
+func NewProjectFilter(
+	registry ProjectRegistry,
+	inputCh <-chan *Project,
+	evmFetcher EVMFetcher,
+	apiFetcher APIFetcher,
+	delayedFetchSem chan struct{},
+) *ProjectFilter {
+	if delayedFetchSem == nil {
+		delayedFetchSem = make(chan struct{}, defaultDelayedFetchConcurrency)
+	}
+
 	return &ProjectFilter{
-		registry: registry,
-		pool:     pool,
-		inputCh:  inputCh,
-		queue:    queue,
-		fetcher:  fetcher,
+		registry:        registry,
+		inputCh:         inputCh,
+		evmFetcher:      evmFetcher,
+		apiFetcher:      apiFetcher,
+		delayedFetchSem: delayedFetchSem,
 	}
 }
 
@@ -45,42 +57,43 @@ func (f *ProjectFilter) Start(ctx context.Context) error {
 func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 
 	// try to call totalSupply
-	totalSupply, err := f.fetcher.FetchTotalSupply(ctx, event.Meta.Contract)
+	totalSupply, err := f.evmFetcher.FetchTotalSupply(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
 
 	// try to call balanceOf
-	_, err = f.fetcher.BalanceOf(ctx, event.Meta.Contract, common.HexToAddress("0x0000000000000000000000000000000000000000"))
+	_, err = f.evmFetcher.BalanceOf(ctx, event.Meta.Contract, common.HexToAddress("0x0000000000000000000000000000000000000000"))
 	if err != nil {
 		return err
 	}
 
 	// try to call decimals
-	decimals, err := f.fetcher.FetchDecimals(ctx, event.Meta.Contract)
+	decimals, err := f.evmFetcher.FetchDecimals(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
 
 	// try to call name
-	name, err := f.fetcher.FetchName(ctx, event.Meta.Contract)
+	name, err := f.evmFetcher.FetchName(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
 
 	// try to call symbol
-	symbol, err := f.fetcher.FetchSymbol(ctx, event.Meta.Contract)
+	symbol, err := f.evmFetcher.FetchSymbol(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
 
 	// set the values to the project state
-	event.InitState.Name.Set(name)
-	event.InitState.Symbol.Set(symbol)
-	event.InitState.Decimals.Set(decimals)
-	event.InitState.TotalSupply.Set(totalSupply)
+	now := time.Now()
+	event.InitState.Name.MarkReady(name, now)
+	event.InitState.Symbol.MarkReady(symbol, now)
+	event.InitState.Decimals.MarkReady(decimals, now)
+	event.InitState.TotalSupply.MarkReady(totalSupply, now)
 
-	event.PerfTrace.FilterCompletedAt = time.Now()
+	event.PerfTrace.FilterCompletedAt = now
 	return nil
 
 }
@@ -103,49 +116,120 @@ func isExecutionRevertedError(err error) bool {
 
 }
 
-func (f *ProjectFilter) scheduleInitialRetryResolve(ctx context.Context, event *Project) error {
-	type retryFieldConfig struct {
-		field RetryUntilReadyField
-		name  string
-	}
+func (f *ProjectFilter) startDelayedFieldResolve(ctx context.Context, event *Project) {
+	f.wg.Add(1)
+	go func() {
+		defer f.wg.Done()
+		f.resolveDelayedFields(ctx, event)
+	}()
+}
 
-	retryFields := []retryFieldConfig{
-		{field: RetryUntilReadyFieldSourceCode, name: "source code"},
-		{field: RetryUntilReadyFieldSourceCodeABI, name: "source code ABI"},
-	}
+func (f *ProjectFilter) resolveDelayedFields(ctx context.Context, event *Project) {
+	delay := 10 * time.Second
+	const maxDelay = 2 * time.Minute
 
-	now := time.Now()
-	deadline := now.Add(1 * time.Minute)
-
-	for _, cfg := range retryFields {
-		if err := f.pool.Add(ctx, RetryUntilReadyFieldKey{
-			ProjectID: event.Meta.ProjectID,
-			Field:     cfg.field,
-		}, deadline); err != nil {
-			log.WithFields(log.Fields{
-				"projectID": event.Meta.ProjectID,
-				"field":     cfg.field,
-				"error":     err,
-			}).Errorf("failed to add %s to retry pool", cfg.name)
-			return err
+	for {
+		if event.DelayedState.SourceCode.IsReady() && event.DelayedState.SourceCodeABI.IsReady() {
+			return
 		}
 
-		if err := f.queue.Enqueue(ctx, RetryUntilReadyResolveRequest{
-			ProjectID: event.Meta.ProjectID,
-			Field:     cfg.field,
-			Reason:    ResolveReasonProjectCreated,
-			CreatedAt: now,
-		}); err != nil {
-			log.WithFields(log.Fields{
-				"projectID": event.Meta.ProjectID,
-				"field":     cfg.field,
-				"error":     err,
-			}).Errorf("failed to enqueue %s resolve request", cfg.name)
-			return err
+		if !event.DelayedState.SourceCode.IsReady() {
+			sourceCode, err := f.fetchSourceCode(ctx, event)
+			now := time.Now()
+			if err != nil {
+				event.DelayedState.SourceCode.MarkFailed(err, now)
+				log.WithFields(log.Fields{
+					"projectID": event.Meta.ProjectID,
+					"contract":  event.Meta.Contract,
+					"error":     err,
+				}).Debug("failed to resolve source code")
+			} else {
+				event.DelayedState.SourceCode.MarkReady(sourceCode, now)
+				log.WithFields(log.Fields{
+					"projectID": event.Meta.ProjectID,
+					"contract":  event.Meta.Contract,
+				}).Info("source code resolved")
+			}
+		}
+
+		if !event.DelayedState.SourceCodeABI.IsReady() {
+			sourceCodeABI, err := f.fetchSourceCodeABI(ctx, event)
+			now := time.Now()
+			if err != nil {
+				event.DelayedState.SourceCodeABI.MarkFailed(err, now)
+				log.WithFields(log.Fields{
+					"projectID": event.Meta.ProjectID,
+					"contract":  event.Meta.Contract,
+					"error":     err,
+				}).Debug("failed to resolve source code ABI")
+			} else {
+				event.DelayedState.SourceCodeABI.MarkReady(sourceCodeABI, now)
+				log.WithFields(log.Fields{
+					"projectID": event.Meta.ProjectID,
+					"contract":  event.Meta.Contract,
+				}).Info("source code ABI resolved")
+			}
+		}
+
+		if event.DelayedState.SourceCode.IsReady() && event.DelayedState.SourceCodeABI.IsReady() {
+			return
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(withJitter(delay)):
+		}
+
+		delay *= 2
+		if delay > maxDelay {
+			delay = maxDelay
 		}
 	}
+}
 
-	return nil
+func (f *ProjectFilter) fetchSourceCode(ctx context.Context, event *Project) (string, error) {
+	if err := f.acquireDelayedFetch(ctx); err != nil {
+		return "", err
+	}
+	defer f.releaseDelayedFetch()
+
+	return f.apiFetcher.FetchSourceCode(ctx, event.Meta.Contract)
+}
+
+func (f *ProjectFilter) fetchSourceCodeABI(ctx context.Context, event *Project) (string, error) {
+	if err := f.acquireDelayedFetch(ctx); err != nil {
+		return "", err
+	}
+	defer f.releaseDelayedFetch()
+
+	return f.apiFetcher.FetchSourceCodeABI(ctx, event.Meta.Contract)
+}
+
+func (f *ProjectFilter) acquireDelayedFetch(ctx context.Context) error {
+	select {
+	case f.delayedFetchSem <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (f *ProjectFilter) releaseDelayedFetch() {
+	<-f.delayedFetchSem
+}
+
+func withJitter(delay time.Duration) time.Duration {
+	if delay <= 0 {
+		return 0
+	}
+
+	jitterRange := delay / 2
+	if jitterRange <= 0 {
+		return delay
+	}
+
+	return delay + time.Duration(rand.Int63n(int64(jitterRange)))
 }
 
 func (f *ProjectFilter) run(ctx context.Context) error {
@@ -181,10 +265,8 @@ func (f *ProjectFilter) run(ctx context.Context) error {
 				continue
 			}
 
-			// schedule the initial retry resolve
-			if err := f.scheduleInitialRetryResolve(ctx, event); err != nil {
-				continue
-			}
+			// resolve delayed fields in the background after the project becomes visible.
+			f.startDelayedFieldResolve(ctx, event)
 
 			log.WithFields(log.Fields{
 				"component":         "Project Filter",

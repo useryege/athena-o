@@ -21,31 +21,20 @@ type Service struct {
 
 	registry ProjectRegistry
 
-	retryQueue     RetryUntilReadyQueue
-	retryPool      RetryUntilReadyPool
-	retryScheduler *RetryScheduler
-
-	workerCount   int
-	workerWG      sync.WaitGroup
-	startStopMu   sync.Mutex
-	lifecycleCtx  context.Context
-	lifecycleStop context.CancelFunc
-	started       bool
+	delayedFetchSem chan struct{}
+	startStopMu     sync.Mutex
+	lifecycleCtx    context.Context
+	lifecycleStop   context.CancelFunc
+	started         bool
 }
 
 func NewService(nodeClient *ethclient.Client) *Service {
 	registry := NewProjectRegistry()
-	retryQueue := NewRetryUntilReadyQueue(1024)
-	retryPool := NewRetryUntilReadyPool()
-	retryScheduler := NewRetryScheduler(retryPool, retryQueue, 1*time.Minute, 100)
 
 	return &Service{
-		nodeClient:     nodeClient,
-		registry:       registry,
-		retryQueue:     retryQueue,
-		retryPool:      retryPool,
-		retryScheduler: retryScheduler,
-		workerCount:    10,
+		nodeClient:      nodeClient,
+		registry:        registry,
+		delayedFetchSem: make(chan struct{}, defaultDelayedFetchConcurrency),
 	}
 }
 
@@ -56,15 +45,13 @@ func (s *Service) Start() error {
 		return nil
 	}
 
-	s.ensureRetryRuntimeLocked()
-
 	// channel 1 is used by block watcher and project filter
 	ch1 := make(chan *Project, 24)
 	s.projectCh = ch1
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, ch1)
 	evmFetcher := NewEVMFetcher(s.nodeClient, s.registry)
 	apiFetcher := NewAPIFetcher()
-	s.projectFilter = NewProjectFilter(s.registry, ch1, s.retryPool, s.retryQueue, evmFetcher)
+	s.projectFilter = NewProjectFilter(s.registry, ch1, evmFetcher, apiFetcher, s.delayedFetchSem)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	if err := s.blockWatcher.Start(ctx); err != nil {
@@ -80,22 +67,6 @@ func (s *Service) Start() error {
 		close(ch1)
 		s.clearPipelineLocked()
 		return err
-	}
-
-	s.workerWG.Add(1)
-	go func() {
-		defer s.workerWG.Done()
-		s.retryScheduler.Start(ctx)
-	}()
-
-	resolver := NewRetryUntilReadyResolver(s.registry, s.retryPool, evmFetcher, apiFetcher)
-	for i := 0; i < s.workerCount; i++ {
-		worker := NewRetryUntilReadyWorker(s.retryQueue, resolver)
-		s.workerWG.Add(1)
-		go func() {
-			defer s.workerWG.Done()
-			worker.Run(ctx)
-		}()
 	}
 
 	s.lifecycleCtx = ctx
@@ -123,24 +94,13 @@ func (s *Service) Stop() error {
 		close(s.projectCh)
 	}
 	filterErr := s.projectFilter.Stop()
-	s.workerWG.Wait()
-	retryQueueErr := s.retryQueue.Close()
 
 	s.lifecycleCtx = nil
 	s.lifecycleStop = nil
 	s.started = false
 	s.clearPipelineLocked()
 
-	return errors.Join(watcherErr, filterErr, retryQueueErr)
-}
-
-func (s *Service) ensureRetryRuntimeLocked() {
-	if s.retryQueue != nil && !s.retryQueue.Stats().Closed {
-		return
-	}
-
-	s.retryQueue = NewRetryUntilReadyQueue(1024)
-	s.retryScheduler = NewRetryScheduler(s.retryPool, s.retryQueue, 1*time.Minute, 100)
+	return errors.Join(watcherErr, filterErr)
 }
 
 func (s *Service) clearPipelineLocked() {

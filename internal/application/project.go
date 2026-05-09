@@ -35,10 +35,10 @@ type PerfTrace struct {
 }
 
 type ProjectInitState struct {
-	Name        OnceValue[string]
-	Symbol      OnceValue[string]
-	Decimals    OnceValue[uint8]
-	TotalSupply OnceValue[*big.Int]
+	Name        FieldValue[string]
+	Symbol      FieldValue[string]
+	Decimals    FieldValue[uint8]
+	TotalSupply FieldValue[*big.Int]
 }
 
 func (s *ProjectInitState) IsReady() bool {
@@ -46,12 +46,20 @@ func (s *ProjectInitState) IsReady() bool {
 }
 
 type ProjectDelayedState struct {
-	SourceCode    RetryUntilReadyValue[string]
-	SourceCodeABI RetryUntilReadyValue[string]
+	SourceCode    FieldValue[string]
+	SourceCodeABI FieldValue[string]
+}
+
+func (s *ProjectDelayedState) IsReady() bool {
+	return s.SourceCode.IsReady() && s.SourceCodeABI.IsReady()
 }
 
 type ProjectDynamicState struct {
-	HolderCount DynamicValue[uint64]
+	HolderCount FieldValue[uint64]
+}
+
+func (s *ProjectDynamicState) IsReady() bool {
+	return s.HolderCount.IsReady()
 }
 
 func projectToView(project *Project) *v1alpha1.ProjectView {
@@ -65,9 +73,13 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 	}
 
 	totalSupply := ""
-	if supply := project.InitState.TotalSupply.Get(); supply != nil {
+	if supply, ok := project.InitState.TotalSupply.Get(); ok && supply != nil {
 		totalSupply = supply.String()
 	}
+
+	name, _ := project.InitState.Name.Get()
+	symbol, _ := project.InitState.Symbol.Get()
+	decimals, _ := project.InitState.Decimals.Get()
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{
@@ -79,9 +91,9 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 			TxHash:      txHash,
 		},
 		InitState: v1alpha1.ProjectInitState{
-			Name:        project.InitState.Name.Get(),
-			Symbol:      project.InitState.Symbol.Get(),
-			Decimals:    uint32(project.InitState.Decimals.Get()),
+			Name:        name,
+			Symbol:      symbol,
+			Decimals:    uint32(decimals),
 			TotalSupply: totalSupply,
 		},
 	}
