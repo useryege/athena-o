@@ -8,8 +8,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/google/uuid"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/util/ethereumapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Service struct {
@@ -136,4 +139,23 @@ func (s *Service) ListProjects(ctx context.Context, _ *applicationpkg.ListProjec
 	}
 
 	return &applicationpkg.ListProjectsResponse{Items: projects}, nil
+}
+
+func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProjectRequest) (*applicationpkg.GetProjectResponse, error) {
+	projectID, err := uuid.Parse(req.GetProjectID())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid projectID %q: %v", req.GetProjectID(), err)
+	}
+
+	startedAt := time.Now()
+	project, ok, err := s.registry.GetProject(ctx, projectID)
+	projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
+	}
+
+	return &applicationpkg.GetProjectResponse{Item: projectToView(project)}, nil
 }

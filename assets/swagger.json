@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-145-g61e1b05-dirty"
+    "version": "v1.0.0-147-g7623132-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -223,12 +223,44 @@
         "tags": [
           "ApplicationService"
         ],
+        "summary": "ListProjects returns the current known project snapshot.",
         "operationId": "ApplicationService_ListProjects",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationListProjectsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/project/{projectID}": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "GetProject returns the project snapshot for a given project ID.",
+        "operationId": "ApplicationService_GetProject",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "projectID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetProjectResponse"
             }
           },
           "default": {
@@ -466,6 +498,15 @@
     },
     "accountUpdatePasswordResponse": {
       "type": "object"
+    },
+    "applicationGetProjectResponse": {
+      "description": "GetProjectResponse returns the project snapshot for a given project ID.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1ProjectView"
+        }
+      }
     },
     "applicationListProjectsResponse": {
       "description": "ListProjectsResponse returns the current known project snapshot.",

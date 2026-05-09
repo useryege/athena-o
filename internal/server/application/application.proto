@@ -18,8 +18,24 @@ message ListProjectsResponse {
   repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView items = 1;
 }
 
+// GetProjectRequest queries the project snapshot for a given project ID.
+message GetProjectRequest {
+  string projectID = 1;
+}
+
+// GetProjectResponse returns the project snapshot for a given project ID.
+message GetProjectResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView item = 1;
+}
+
 service ApplicationService {
+  // ListProjects returns the current known project snapshot.
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {
     option (google.api.http) = {get: "/api/v1/project/list"};
+  }
+
+  // GetProject returns the project snapshot for a given project ID.
+  rpc GetProject(GetProjectRequest) returns (GetProjectResponse) {
+    option (google.api.http) = {get: "/api/v1/project/{projectID}"};
   }
 }

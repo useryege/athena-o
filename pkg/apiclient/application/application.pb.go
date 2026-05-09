@@ -120,9 +120,107 @@ func (m *ListProjectsResponse) GetItems() []*v1alpha1.ProjectView {
 	return nil
 }
 
+// GetProjectRequest queries the project snapshot for a given project ID.
+type GetProjectRequest struct {
+	ProjectID            string   `protobuf:"bytes,1,opt,name=projectID,proto3" json:"projectID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetProjectRequest) Reset()         { *m = GetProjectRequest{} }
+func (m *GetProjectRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProjectRequest) ProtoMessage()    {}
+func (*GetProjectRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{2}
+}
+func (m *GetProjectRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectRequest.Merge(m, src)
+}
+func (m *GetProjectRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectRequest proto.InternalMessageInfo
+
+func (m *GetProjectRequest) GetProjectID() string {
+	if m != nil {
+		return m.ProjectID
+	}
+	return ""
+}
+
+// GetProjectResponse returns the project snapshot for a given project ID.
+type GetProjectResponse struct {
+	Item                 *v1alpha1.ProjectView `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *GetProjectResponse) Reset()         { *m = GetProjectResponse{} }
+func (m *GetProjectResponse) String() string { return proto.CompactTextString(m) }
+func (*GetProjectResponse) ProtoMessage()    {}
+func (*GetProjectResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{3}
+}
+func (m *GetProjectResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectResponse.Merge(m, src)
+}
+func (m *GetProjectResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectResponse proto.InternalMessageInfo
+
+func (m *GetProjectResponse) GetItem() *v1alpha1.ProjectView {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*ListProjectsRequest)(nil), "application.ListProjectsRequest")
 	proto.RegisterType((*ListProjectsResponse)(nil), "application.ListProjectsResponse")
+	proto.RegisterType((*GetProjectRequest)(nil), "application.GetProjectRequest")
+	proto.RegisterType((*GetProjectResponse)(nil), "application.GetProjectResponse")
 }
 
 func init() {
@@ -130,27 +228,32 @@ func init() {
 }
 
 var fileDescriptor_dbb8cd1a14781c7f = []byte{
-	// 309 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x91, 0x41, 0x4a, 0x43, 0x31,
-	0x10, 0x86, 0x79, 0x8a, 0x2e, 0x52, 0x57, 0xb1, 0x8a, 0x94, 0x52, 0x6a, 0x57, 0x6e, 0x4c, 0x68,
-	0xf5, 0x02, 0x16, 0x04, 0x17, 0x2e, 0xa4, 0x82, 0x0b, 0x5d, 0xa5, 0xcf, 0x21, 0x8d, 0x4d, 0x93,
-	0x34, 0x33, 0x7d, 0xe2, 0xd6, 0x8d, 0x07, 0xf0, 0x52, 0x2e, 0x05, 0x2f, 0x20, 0xc5, 0x83, 0x48,
-	0x1b, 0x4b, 0xdf, 0x03, 0xd1, 0x5d, 0x98, 0xfc, 0xf3, 0xf1, 0xcd, 0x0c, 0x3b, 0x36, 0x8e, 0x20,
-	0x3a, 0x65, 0x25, 0x42, 0x2c, 0x20, 0x4a, 0x15, 0x82, 0x35, 0xb9, 0x22, 0xe3, 0x5d, 0xf9, 0x2d,
-	0x42, 0xf4, 0xe4, 0x79, 0xad, 0x54, 0x6a, 0x5c, 0x68, 0x43, 0xa3, 0xd9, 0x50, 0xe4, 0x7e, 0x22,
-	0x67, 0x08, 0xf1, 0x09, 0x34, 0x48, 0x45, 0x23, 0x70, 0x4a, 0x86, 0xb1, 0x96, 0x2a, 0x18, 0xac,
-	0xf0, 0x8a, 0xae, 0xb2, 0x61, 0xa4, 0xba, 0x52, 0x83, 0x83, 0xa8, 0x08, 0xee, 0x13, 0xb6, 0xd1,
-	0xd4, 0xde, 0x6b, 0x0b, 0x8b, 0x0e, 0xa9, 0x9c, 0xf3, 0xb4, 0xcc, 0x63, 0xfa, 0xed, 0xec, 0xb1,
-	0xdd, 0x4b, 0x83, 0x74, 0x15, 0xfd, 0x03, 0xe4, 0x84, 0x03, 0x98, 0xce, 0x00, 0xa9, 0x83, 0xac,
-	0x5e, 0x2d, 0x63, 0xf0, 0x0e, 0x81, 0xdf, 0xb1, 0x2d, 0x43, 0x30, 0xc1, 0x83, 0xac, 0xbd, 0x79,
-	0x54, 0xeb, 0x9d, 0x8b, 0xb5, 0xa6, 0x58, 0x69, 0x8a, 0xa4, 0x29, 0xc2, 0x58, 0x8b, 0x85, 0xa6,
-	0x28, 0x8f, 0xba, 0xd2, 0x14, 0x3f, 0xe8, 0x1b, 0x03, 0x8f, 0x83, 0xc4, 0xec, 0xbd, 0x64, 0x8c,
-	0x9f, 0xad, 0xb3, 0xd7, 0x10, 0x0b, 0x93, 0x03, 0x9f, 0xb2, 0x9d, 0xb2, 0x0b, 0x6f, 0x57, 0x80,
-	0xbf, 0xd8, 0x37, 0x0e, 0xff, 0x48, 0xa4, 0x41, 0x3a, 0xcd, 0xe7, 0x8f, 0xaf, 0xd7, 0x8d, 0x7d,
-	0x5e, 0x5f, 0xee, 0xa5, 0xe8, 0xca, 0x90, 0x12, 0xd2, 0x1a, 0xa4, 0x7e, 0xff, 0x6d, 0xde, 0xca,
-	0xde, 0xe7, 0xad, 0xec, 0x73, 0xde, 0xca, 0x6e, 0x4f, 0xff, 0xbf, 0x45, 0x6e, 0x0d, 0x38, 0x2a,
-	0x1f, 0x64, 0xb8, 0xbd, 0x5c, 0xf0, 0xc9, 0x77, 0x00, 0x00, 0x00, 0xff, 0xff, 0x5b, 0xfb, 0x08,
-	0x22, 0x06, 0x02, 0x00, 0x00,
+	// 391 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x92, 0xcd, 0x4e, 0xe3, 0x30,
+	0x10, 0x80, 0x95, 0xfd, 0x93, 0xea, 0xee, 0x65, 0xbd, 0xdd, 0x55, 0x95, 0xed, 0x66, 0xbb, 0xd9,
+	0x4b, 0x2f, 0x6b, 0x2b, 0x85, 0x17, 0xa0, 0x02, 0x01, 0x12, 0x07, 0x54, 0x24, 0x24, 0xe0, 0xe4,
+	0x86, 0x51, 0x6a, 0x9a, 0xda, 0xae, 0xed, 0x06, 0x21, 0xc4, 0x85, 0x57, 0xe0, 0xa5, 0x38, 0x22,
+	0xf1, 0x02, 0xa8, 0xe2, 0x2d, 0xb8, 0xa0, 0x26, 0x29, 0x49, 0xf8, 0xbd, 0x70, 0x8b, 0xc6, 0x33,
+	0xdf, 0x7c, 0x33, 0x19, 0xf4, 0x9f, 0x0b, 0x0b, 0x5a, 0xb0, 0x98, 0x1a, 0xd0, 0x09, 0x68, 0xca,
+	0x94, 0x8a, 0x79, 0xc8, 0x2c, 0x97, 0xa2, 0xfc, 0x4d, 0x94, 0x96, 0x56, 0xe2, 0x7a, 0x29, 0xe4,
+	0x6e, 0x44, 0xdc, 0x0e, 0xa7, 0x03, 0x12, 0xca, 0x31, 0x9d, 0x1a, 0xd0, 0x27, 0x10, 0x01, 0x65,
+	0x76, 0x08, 0x82, 0x51, 0x35, 0x8a, 0x28, 0x53, 0xdc, 0x54, 0x78, 0x49, 0xc0, 0x62, 0x35, 0x64,
+	0x01, 0x8d, 0x40, 0x80, 0x66, 0x16, 0x0e, 0x33, 0xac, 0xdb, 0x8a, 0xa4, 0x8c, 0x62, 0x98, 0x57,
+	0x50, 0x26, 0x84, 0xb4, 0x69, 0xbe, 0xc9, 0x5e, 0xfd, 0x1f, 0xe8, 0xfb, 0x16, 0x37, 0x76, 0x5b,
+	0xcb, 0x23, 0x08, 0xad, 0xe9, 0xc3, 0x64, 0x0a, 0xc6, 0xfa, 0x06, 0x35, 0xaa, 0x61, 0xa3, 0xa4,
+	0x30, 0x80, 0x0f, 0xd0, 0x67, 0x6e, 0x61, 0x6c, 0x9a, 0x4e, 0xfb, 0x63, 0xa7, 0xde, 0x5d, 0x23,
+	0x85, 0x26, 0x59, 0x68, 0x92, 0x4c, 0x93, 0xa8, 0x51, 0x44, 0xe6, 0x9a, 0xa4, 0x3c, 0xea, 0x42,
+	0x93, 0xe4, 0xe8, 0x5d, 0x0e, 0xc7, 0xfd, 0x8c, 0xe9, 0x07, 0xe8, 0xdb, 0x3a, 0x2c, 0x7a, 0xe6,
+	0x26, 0xb8, 0x85, 0x6a, 0x2a, 0x8b, 0x6c, 0xae, 0x36, 0x9d, 0xb6, 0xd3, 0xa9, 0xf5, 0x8b, 0x80,
+	0x2f, 0x11, 0x2e, 0x97, 0xe4, 0x96, 0x7b, 0xe8, 0xd3, 0x9c, 0x98, 0xa6, 0xbf, 0x9b, 0x64, 0x8a,
+	0xec, 0xde, 0x39, 0x08, 0xaf, 0x14, 0xa9, 0x3b, 0xa0, 0x13, 0x1e, 0x02, 0x9e, 0xa0, 0xaf, 0xe5,
+	0x7d, 0xe1, 0x76, 0x85, 0xf7, 0xcc, 0x86, 0xdd, 0xbf, 0xaf, 0x64, 0x64, 0x63, 0xf8, 0xad, 0xf3,
+	0xeb, 0xdb, 0x8b, 0x0f, 0x3f, 0x71, 0x23, 0xfd, 0x77, 0x49, 0x40, 0xf3, 0xb9, 0x69, 0xcc, 0x8d,
+	0xc5, 0x1a, 0xa1, 0x62, 0x74, 0xec, 0x55, 0x70, 0x4f, 0xd6, 0xe8, 0xfe, 0x79, 0xf1, 0x3d, 0x6f,
+	0xf6, 0x2f, 0x6d, 0xf6, 0x1b, 0xff, 0x7a, 0xdc, 0xec, 0xf4, 0x61, 0xdb, 0x67, 0xbd, 0xde, 0xe5,
+	0xcc, 0x73, 0xae, 0x66, 0x9e, 0x73, 0x33, 0xf3, 0x9c, 0xfd, 0xe5, 0xb7, 0x6f, 0x34, 0x8c, 0x39,
+	0x08, 0x5b, 0x3e, 0xd4, 0xc1, 0x97, 0xf4, 0xf0, 0x96, 0xee, 0x03, 0x00, 0x00, 0xff, 0xff, 0x82,
+	0x49, 0xb7, 0x94, 0x1e, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -165,7 +268,10 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ApplicationServiceClient interface {
+	// ListProjects returns the current known project snapshot.
 	ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error)
+	// GetProject returns the project snapshot for a given project ID.
+	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
 }
 
 type applicationServiceClient struct {
@@ -185,9 +291,21 @@ func (c *applicationServiceClient) ListProjects(ctx context.Context, in *ListPro
 	return out, nil
 }
 
+func (c *applicationServiceClient) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error) {
+	out := new(GetProjectResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProject", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApplicationServiceServer is the server API for ApplicationService service.
 type ApplicationServiceServer interface {
+	// ListProjects returns the current known project snapshot.
 	ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error)
+	// GetProject returns the project snapshot for a given project ID.
+	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
 }
 
 // UnimplementedApplicationServiceServer can be embedded to have forward compatible implementations.
@@ -196,6 +314,9 @@ type UnimplementedApplicationServiceServer struct {
 
 func (*UnimplementedApplicationServiceServer) ListProjects(ctx context.Context, req *ListProjectsRequest) (*ListProjectsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProjects not implemented")
+}
+func (*UnimplementedApplicationServiceServer) GetProject(ctx context.Context, req *GetProjectRequest) (*GetProjectResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProject not implemented")
 }
 
 func RegisterApplicationServiceServer(s *grpc.Server, srv ApplicationServiceServer) {
@@ -220,6 +341,24 @@ func _ApplicationService_ListProjects_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApplicationService_GetProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).GetProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/GetProject",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).GetProject(ctx, req.(*GetProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "application.ApplicationService",
 	HandlerType: (*ApplicationServiceServer)(nil),
@@ -227,6 +366,10 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListProjects",
 			Handler:    _ApplicationService_ListProjects_Handler,
+		},
+		{
+			MethodName: "GetProject",
+			Handler:    _ApplicationService_GetProject_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -301,6 +444,79 @@ func (m *ListProjectsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *GetProjectRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ProjectID) > 0 {
+		i -= len(m.ProjectID)
+		copy(dAtA[i:], m.ProjectID)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.ProjectID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintApplication(dAtA []byte, offset int, v uint64) int {
 	offset -= sovApplication(v)
 	base := offset
@@ -335,6 +551,38 @@ func (m *ListProjectsResponse) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovApplication(uint64(l))
 		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ProjectID)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -459,6 +707,176 @@ func (m *ListProjectsResponse) Unmarshal(dAtA []byte) error {
 			}
 			m.Items = append(m.Items, &v1alpha1.ProjectView{})
 			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProjectID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ProjectID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.ProjectView{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

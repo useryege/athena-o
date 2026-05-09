@@ -117,9 +117,107 @@ func (m *ListProjectsResponse) GetItems() []*v1alpha1.ProjectView {
 	return nil
 }
 
+// GetProjectRequest queries the project snapshot for a given project ID.
+type GetProjectRequest struct {
+	ProjectID            string   `protobuf:"bytes,1,opt,name=projectID,proto3" json:"projectID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetProjectRequest) Reset()         { *m = GetProjectRequest{} }
+func (m *GetProjectRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProjectRequest) ProtoMessage()    {}
+func (*GetProjectRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8ec0c1410c6c3952, []int{2}
+}
+func (m *GetProjectRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectRequest.Merge(m, src)
+}
+func (m *GetProjectRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectRequest proto.InternalMessageInfo
+
+func (m *GetProjectRequest) GetProjectID() string {
+	if m != nil {
+		return m.ProjectID
+	}
+	return ""
+}
+
+// GetProjectResponse returns the project snapshot for a given project ID.
+type GetProjectResponse struct {
+	Item                 *v1alpha1.ProjectView `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *GetProjectResponse) Reset()         { *m = GetProjectResponse{} }
+func (m *GetProjectResponse) String() string { return proto.CompactTextString(m) }
+func (*GetProjectResponse) ProtoMessage()    {}
+func (*GetProjectResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8ec0c1410c6c3952, []int{3}
+}
+func (m *GetProjectResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectResponse.Merge(m, src)
+}
+func (m *GetProjectResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectResponse proto.InternalMessageInfo
+
+func (m *GetProjectResponse) GetItem() *v1alpha1.ProjectView {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*ListProjectsRequest)(nil), "application.ListProjectsRequest")
 	proto.RegisterType((*ListProjectsResponse)(nil), "application.ListProjectsResponse")
+	proto.RegisterType((*GetProjectRequest)(nil), "application.GetProjectRequest")
+	proto.RegisterType((*GetProjectResponse)(nil), "application.GetProjectResponse")
 }
 
 func init() {
@@ -127,24 +225,28 @@ func init() {
 }
 
 var fileDescriptor_8ec0c1410c6c3952 = []byte{
-	// 264 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x91, 0x31, 0x4b, 0x03, 0x31,
-	0x14, 0xc7, 0x39, 0x44, 0x87, 0xd4, 0x29, 0x2a, 0x48, 0x87, 0xa3, 0x76, 0x10, 0xa7, 0x84, 0xd6,
-	0xc9, 0x51, 0x41, 0x74, 0x70, 0x90, 0x16, 0x1c, 0x74, 0x4a, 0xe3, 0x23, 0xf7, 0xec, 0x35, 0x89,
-	0x79, 0xef, 0x2a, 0x7e, 0x43, 0x47, 0x3f, 0x82, 0xdc, 0x27, 0x11, 0x3d, 0x4b, 0xef, 0xc0, 0x76,
-	0x0b, 0x8f, 0x3f, 0x3f, 0x7e, 0xff, 0x7f, 0xc4, 0x29, 0x7a, 0x86, 0xe4, 0x4d, 0xa9, 0x4d, 0x8c,
-	0x25, 0x5a, 0xc3, 0x18, 0x7c, 0xfb, 0xad, 0x62, 0x0a, 0x1c, 0x64, 0xaf, 0x75, 0xea, 0xdf, 0x3a,
-	0xe4, 0xa2, 0x9a, 0x29, 0x1b, 0x16, 0xba, 0x22, 0x48, 0xef, 0xe0, 0x40, 0x1b, 0x2e, 0xc0, 0x1b,
-	0x1d, 0xe7, 0x4e, 0x9b, 0x88, 0xd4, 0xe1, 0x2d, 0x47, 0xa6, 0x8c, 0x85, 0x19, 0x69, 0x07, 0x1e,
-	0x92, 0x61, 0x78, 0x6e, 0xb0, 0xc3, 0x23, 0x71, 0x70, 0x87, 0xc4, 0xf7, 0x29, 0xbc, 0x80, 0x65,
-	0x9a, 0xc0, 0x6b, 0x05, 0xc4, 0x43, 0x12, 0x87, 0xdd, 0x33, 0xc5, 0xe0, 0x09, 0xe4, 0x93, 0xd8,
-	0x45, 0x86, 0x05, 0x1d, 0x67, 0x83, 0x9d, 0xb3, 0xde, 0xf8, 0x5a, 0xad, 0x45, 0xd4, 0x4a, 0x44,
-	0x35, 0x22, 0x2a, 0xce, 0x9d, 0xfa, 0x11, 0x51, 0xed, 0x32, 0x2b, 0x11, 0xf5, 0x87, 0x7e, 0x40,
-	0x78, 0x9b, 0x34, 0xcc, 0x31, 0x0a, 0x79, 0xb9, 0x8e, 0x4e, 0x21, 0x2d, 0xd1, 0x82, 0x9c, 0x8a,
-	0xfd, 0xb6, 0x8a, 0x1c, 0x74, 0x78, 0xff, 0xc8, 0xf7, 0x4f, 0xb6, 0x24, 0x9a, 0x1e, 0x57, 0x37,
-	0x1f, 0x75, 0x9e, 0x7d, 0xd6, 0x79, 0xf6, 0x55, 0xe7, 0xd9, 0xe3, 0xc5, 0x96, 0x39, 0x37, 0x7c,
-	0x0f, 0xda, 0x12, 0xc1, 0xf3, 0x6c, 0xef, 0x77, 0xc6, 0xf3, 0xef, 0x00, 0x00, 0x00, 0xff, 0xff,
-	0x0f, 0x91, 0xf3, 0x08, 0xc7, 0x01, 0x00, 0x00,
+	// 330 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x92, 0xc1, 0x4a, 0xf3, 0x40,
+	0x10, 0xc7, 0x59, 0xbe, 0x4f, 0xa1, 0x53, 0x2f, 0xae, 0x0a, 0xa5, 0x48, 0xac, 0x39, 0x48, 0x4f,
+	0xbb, 0xb4, 0x9e, 0x3c, 0x2a, 0x4a, 0x15, 0x14, 0xa4, 0x05, 0x41, 0x3d, 0x6d, 0xe3, 0x90, 0xae,
+	0x4d, 0x77, 0xd7, 0xdd, 0x6d, 0xc5, 0x37, 0xf3, 0x11, 0x3c, 0xfa, 0x08, 0xd2, 0x27, 0x91, 0x36,
+	0x09, 0x49, 0xd0, 0xf6, 0xe4, 0x2d, 0xfc, 0x33, 0xf3, 0xdb, 0xdf, 0x0c, 0x03, 0x47, 0x52, 0x79,
+	0xb4, 0x4a, 0x24, 0x5c, 0x18, 0x93, 0xc8, 0x48, 0x78, 0xa9, 0x55, 0xf9, 0x9b, 0x19, 0xab, 0xbd,
+	0xa6, 0xf5, 0x52, 0xd4, 0xbc, 0x8c, 0xa5, 0x1f, 0x4d, 0x87, 0x2c, 0xd2, 0x13, 0x3e, 0x75, 0x68,
+	0xdf, 0x30, 0x46, 0x2e, 0xfc, 0x08, 0x95, 0xe0, 0x66, 0x1c, 0x73, 0x61, 0xa4, 0xab, 0xf0, 0x66,
+	0x1d, 0x91, 0x98, 0x91, 0xe8, 0xf0, 0x18, 0x15, 0x5a, 0xe1, 0xf1, 0x29, 0xc5, 0x86, 0x7b, 0xb0,
+	0x73, 0x2d, 0x9d, 0xbf, 0xb5, 0xfa, 0x19, 0x23, 0xef, 0xfa, 0xf8, 0x32, 0x45, 0xe7, 0x43, 0x07,
+	0xbb, 0xd5, 0xd8, 0x19, 0xad, 0x1c, 0xd2, 0x47, 0xd8, 0x90, 0x1e, 0x27, 0xae, 0x41, 0x5a, 0xff,
+	0xda, 0xf5, 0xee, 0x05, 0x2b, 0x44, 0x58, 0x2e, 0xc2, 0x52, 0x11, 0x66, 0xc6, 0x31, 0x5b, 0x88,
+	0xb0, 0xf2, 0x30, 0xb9, 0x08, 0xcb, 0xd0, 0x77, 0x12, 0x5f, 0xfb, 0x29, 0x33, 0xec, 0xc0, 0x76,
+	0x0f, 0xf3, 0x37, 0x33, 0x13, 0xba, 0x0f, 0x35, 0x93, 0x26, 0x57, 0xe7, 0x0d, 0xd2, 0x22, 0xed,
+	0x5a, 0xbf, 0x08, 0x42, 0x0d, 0xb4, 0xdc, 0x92, 0x59, 0xde, 0xc3, 0xff, 0x05, 0x71, 0x59, 0xfe,
+	0x67, 0x92, 0x4b, 0x64, 0xf7, 0x9d, 0x00, 0x3d, 0x2d, 0x4a, 0x07, 0x68, 0x67, 0x32, 0x42, 0x3a,
+	0x80, 0xad, 0xf2, 0xbe, 0x68, 0xab, 0xc2, 0xfb, 0x65, 0xc3, 0xcd, 0xc3, 0x35, 0x15, 0xd9, 0x18,
+	0x37, 0x00, 0xc5, 0x70, 0x34, 0xa8, 0x34, 0xfc, 0x58, 0x54, 0xf3, 0x60, 0xe5, 0xff, 0x14, 0x77,
+	0xd6, 0xfb, 0x98, 0x07, 0xe4, 0x73, 0x1e, 0x90, 0xaf, 0x79, 0x40, 0x1e, 0x4e, 0xd6, 0x9c, 0xd0,
+	0x8a, 0x93, 0x94, 0x51, 0x22, 0x51, 0xf9, 0xe1, 0xe6, 0xf2, 0x74, 0x8e, 0xbf, 0x03, 0x00, 0x00,
+	0xff, 0xff, 0x0d, 0x5e, 0x91, 0x60, 0xbb, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -161,6 +263,8 @@ const _ = grpc.SupportPackageIsVersion4
 type ApplicationServiceClient interface {
 	// ListProjects returns the current known project snapshot.
 	ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error)
+	// GetProject returns the project snapshot for a given project ID.
+	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
 }
 
 type applicationServiceClient struct {
@@ -180,10 +284,21 @@ func (c *applicationServiceClient) ListProjects(ctx context.Context, in *ListPro
 	return out, nil
 }
 
+func (c *applicationServiceClient) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error) {
+	out := new(GetProjectResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProject", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApplicationServiceServer is the server API for ApplicationService service.
 type ApplicationServiceServer interface {
 	// ListProjects returns the current known project snapshot.
 	ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error)
+	// GetProject returns the project snapshot for a given project ID.
+	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
 }
 
 // UnimplementedApplicationServiceServer can be embedded to have forward compatible implementations.
@@ -192,6 +307,9 @@ type UnimplementedApplicationServiceServer struct {
 
 func (*UnimplementedApplicationServiceServer) ListProjects(ctx context.Context, req *ListProjectsRequest) (*ListProjectsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProjects not implemented")
+}
+func (*UnimplementedApplicationServiceServer) GetProject(ctx context.Context, req *GetProjectRequest) (*GetProjectResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProject not implemented")
 }
 
 func RegisterApplicationServiceServer(s *grpc.Server, srv ApplicationServiceServer) {
@@ -216,6 +334,24 @@ func _ApplicationService_ListProjects_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApplicationService_GetProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).GetProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/GetProject",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).GetProject(ctx, req.(*GetProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "application.ApplicationService",
 	HandlerType: (*ApplicationServiceServer)(nil),
@@ -223,6 +359,10 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListProjects",
 			Handler:    _ApplicationService_ListProjects_Handler,
+		},
+		{
+			MethodName: "GetProject",
+			Handler:    _ApplicationService_GetProject_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -297,6 +437,79 @@ func (m *ListProjectsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *GetProjectRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ProjectID) > 0 {
+		i -= len(m.ProjectID)
+		copy(dAtA[i:], m.ProjectID)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.ProjectID)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintApplication(dAtA []byte, offset int, v uint64) int {
 	offset -= sovApplication(v)
 	base := offset
@@ -331,6 +544,38 @@ func (m *ListProjectsResponse) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovApplication(uint64(l))
 		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ProjectID)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -455,6 +700,176 @@ func (m *ListProjectsResponse) Unmarshal(dAtA []byte) error {
 			}
 			m.Items = append(m.Items, &v1alpha1.ProjectView{})
 			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProjectID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ProjectID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.ProjectView{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
