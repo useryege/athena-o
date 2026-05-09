@@ -75,6 +75,11 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 	name, _ := project.Token.Name.Get()
 	symbol, _ := project.Token.Symbol.Get()
 	decimals, _ := project.Token.Decimals.Get()
+	sourceCode, _ := project.Token.SourceCode.Get()
+	sourceCodeABI, _ := project.Token.SourceCodeABI.Get()
+
+	isWethV2PoolContractCreated, _ := project.WethV2Pool.IsContractCreated.Get()
+	wethV2PoolBlockTimestampLast, _ := project.WethV2Pool.BlockTimestampLast.Get()
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{
@@ -86,11 +91,39 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 			TxHash:      txHash,
 			TxIndex:     project.Meta.TxIndex,
 		},
-		InitState: v1alpha1.ProjectInitState{
-			Name:        name,
-			Symbol:      symbol,
-			Decimals:    uint32(decimals),
-			TotalSupply: totalSupply,
+		Token: v1alpha1.TokenState{
+			Name:          name,
+			Symbol:        symbol,
+			Decimals:      uint32(decimals),
+			TotalSupply:   totalSupply,
+			SourceCode:    sourceCode,
+			SourceCodeABI: sourceCodeABI,
+		},
+		WethV2Pool: v1alpha1.PairV2State{
+			IsContractCreated:  isWethV2PoolContractCreated,
+			Contract:           addressFieldToString(&project.WethV2Pool.Contract),
+			Token0:             addressFieldToString(&project.WethV2Pool.Token0),
+			Token1:             addressFieldToString(&project.WethV2Pool.Token1),
+			TotalSupply:        bigIntFieldToString(&project.WethV2Pool.TotalSupply),
+			Reserve0:           bigIntFieldToString(&project.WethV2Pool.Reserve0),
+			Reserve1:           bigIntFieldToString(&project.WethV2Pool.Reserve1),
+			BlockTimestampLast: wethV2PoolBlockTimestampLast,
 		},
 	}
+}
+
+func bigIntFieldToString(field *FieldValue[*big.Int]) string {
+	value, ok := field.Get()
+	if !ok || value == nil {
+		return ""
+	}
+	return value.String()
+}
+
+func addressFieldToString(field *FieldValue[common.Address]) string {
+	value, ok := field.Get()
+	if !ok {
+		return ""
+	}
+	return value.String()
 }

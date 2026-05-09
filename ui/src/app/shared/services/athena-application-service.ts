@@ -2,7 +2,8 @@ import requests from './requests';
 
 export interface ProjectView {
     meta?: ProjectMeta;
-    initState?: ProjectInitState;
+    token?: TokenState;
+    wethV2Pool?: PairV2State;
 }
 
 export interface ProjectMeta {
@@ -15,11 +16,24 @@ export interface ProjectMeta {
     txIndex?: number;
 }
 
-export interface ProjectInitState {
+export interface TokenState {
     name?: string;
     symbol?: string;
     decimals?: number;
     totalSupply?: string;
+    sourceCode?: string;
+    sourceCodeABI?: string;
+}
+
+export interface PairV2State {
+    isContractCreated?: boolean;
+    contract?: string;
+    token0?: string;
+    token1?: string;
+    totalSupply?: string;
+    reserve0?: string;
+    reserve1?: string;
+    blockTimestampLast?: number;
 }
 
 export interface ListProjectsResponse {

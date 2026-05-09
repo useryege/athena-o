@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-133-g2ad9463-dirty"
+    "version": "v1.0.0-145-g61e1b05-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -764,17 +764,29 @@
         }
       }
     },
-    "v1alpha1ProjectInitState": {
+    "v1alpha1PairV2State": {
       "type": "object",
       "properties": {
-        "decimals": {
+        "blockTimestampLast": {
           "type": "integer",
           "format": "int64"
         },
-        "name": {
+        "contract": {
           "type": "string"
         },
-        "symbol": {
+        "isContractCreated": {
+          "type": "boolean"
+        },
+        "reserve0": {
+          "type": "string"
+        },
+        "reserve1": {
+          "type": "string"
+        },
+        "token0": {
+          "type": "string"
+        },
+        "token1": {
           "type": "string"
         },
         "totalSupply": {
@@ -814,11 +826,38 @@
     "v1alpha1ProjectView": {
       "type": "object",
       "properties": {
-        "initState": {
-          "$ref": "#/definitions/v1alpha1ProjectInitState"
-        },
         "meta": {
           "$ref": "#/definitions/v1alpha1ProjectMeta"
+        },
+        "token": {
+          "$ref": "#/definitions/v1alpha1TokenState"
+        },
+        "wethV2Pool": {
+          "$ref": "#/definitions/v1alpha1PairV2State"
+        }
+      }
+    },
+    "v1alpha1TokenState": {
+      "type": "object",
+      "properties": {
+        "decimals": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "sourceCode": {
+          "type": "string"
+        },
+        "sourceCodeABI": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "totalSupply": {
+          "type": "string"
         }
       }
     },

@@ -32,14 +32,22 @@ message ApplicationList {
   repeated Application items = 2;
 }
 
-message ProjectInitState {
-  optional string name = 1;
+message PairV2State {
+  optional bool isContractCreated = 1;
 
-  optional string symbol = 2;
+  optional string contract = 2;
 
-  optional uint32 decimals = 3;
+  optional string token0 = 3;
 
-  optional string totalSupply = 4;
+  optional string token1 = 4;
+
+  optional string totalSupply = 5;
+
+  optional string reserve0 = 6;
+
+  optional string reserve1 = 7;
+
+  optional uint32 blockTimestampLast = 8;
 }
 
 message ProjectMeta {
@@ -61,6 +69,22 @@ message ProjectMeta {
 message ProjectView {
   optional ProjectMeta meta = 1;
 
-  optional ProjectInitState initState = 2;
+  optional TokenState token = 2;
+
+  optional PairV2State wethV2Pool = 3;
+}
+
+message TokenState {
+  optional string name = 1;
+
+  optional string symbol = 2;
+
+  optional uint32 decimals = 3;
+
+  optional string totalSupply = 4;
+
+  optional string sourceCode = 5;
+
+  optional string sourceCodeABI = 6;
 }
 

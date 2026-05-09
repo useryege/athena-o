@@ -9,8 +9,10 @@ func (*Application) ProtoMessage() {}
 
 func (*ApplicationList) ProtoMessage() {}
 
-func (*ProjectInitState) ProtoMessage() {}
+func (*PairV2State) ProtoMessage() {}
 
 func (*ProjectMeta) ProtoMessage() {}
 
 func (*ProjectView) ProtoMessage() {}
+
+func (*TokenState) ProtoMessage() {}

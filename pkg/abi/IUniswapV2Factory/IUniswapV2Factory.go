@@ -364,10 +364,6 @@ func (_IUniswapV2Factory *IUniswapV2FactoryTransactor) CreatePair(opts *bind.Tra
 	return _IUniswapV2Factory.contract.Transact(opts, "createPair", tokenA, tokenB)
 }
 
-func (_IUniswapV2Factory *IUniswapV2FactoryTransactor) GetData(funcName string, params ...interface{}) ([]byte, error) {
-	return _IUniswapV2Factory.contract.GetInput(funcName, params...)
-}
-
 // CreatePair is a paid mutator transaction binding the contract method 0xc9c65396.
 //
 // Solidity: function createPair(address tokenA, address tokenB) returns(address pair)

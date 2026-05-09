@@ -155,13 +155,13 @@ export const ProjectsList = () => {
                                         <div className='argo-table-list__row' key={p.meta?.projectID || `${p.meta?.blockNumber}-${p.meta?.txIndex}`}>
                                             <div className='projects-list__row'>
                                                 <div className='projects-list__cell projects-list__cell--rank'>#{index + 1}</div>
-                                                <div className='projects-list__cell' title={p.initState?.name || ''}>
-                                                    {renderValue(p.initState?.name)}
+                                                <div className='projects-list__cell' title={p.token?.name || ''}>
+                                                    {renderValue(p.token?.name)}
                                                 </div>
-                                                <div className='projects-list__cell'>{renderValue(p.initState?.symbol)}</div>
-                                                <div className='projects-list__cell'>{renderValue(p.initState?.decimals)}</div>
-                                                <div className='projects-list__cell' title={p.initState?.totalSupply || ''}>
-                                                    {renderShortValue(p.initState?.totalSupply)}
+                                                <div className='projects-list__cell'>{renderValue(p.token?.symbol)}</div>
+                                                <div className='projects-list__cell'>{renderValue(p.token?.decimals)}</div>
+                                                <div className='projects-list__cell' title={p.token?.totalSupply || ''}>
+                                                    {renderShortValue(p.token?.totalSupply)}
                                                 </div>
                                                 <div className='projects-list__cell' title={p.meta?.contract || ''}>
                                                     {renderShortValue(p.meta?.contract)}

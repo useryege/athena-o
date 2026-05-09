@@ -400,8 +400,9 @@ type ApplicationList struct {
 // }
 
 type ProjectView struct {
-	Meta      ProjectMeta      `protobuf:"bytes,1,opt,name=meta" json:"meta"`
-	InitState ProjectInitState `protobuf:"bytes,2,opt,name=initState" json:"initState"`
+	Meta       ProjectMeta `protobuf:"bytes,1,opt,name=meta" json:"meta"`
+	Token      TokenState  `protobuf:"bytes,2,opt,name=token" json:"token"`
+	WethV2Pool PairV2State `protobuf:"bytes,3,opt,name=wethV2Pool" json:"wethV2Pool"`
 }
 
 type ProjectMeta struct {
@@ -414,9 +415,22 @@ type ProjectMeta struct {
 	TxIndex     uint64 `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
 }
 
-type ProjectInitState struct {
-	Name        string `protobuf:"bytes,1,opt,name=name" json:"name"`
-	Symbol      string `protobuf:"bytes,2,opt,name=symbol" json:"symbol"`
-	Decimals    uint32 `protobuf:"varint,3,opt,name=decimals" json:"decimals"`
-	TotalSupply string `protobuf:"bytes,4,opt,name=totalSupply" json:"totalSupply"`
+type TokenState struct {
+	Name          string `protobuf:"bytes,1,opt,name=name" json:"name"`
+	Symbol        string `protobuf:"bytes,2,opt,name=symbol" json:"symbol"`
+	Decimals      uint32 `protobuf:"varint,3,opt,name=decimals" json:"decimals"`
+	TotalSupply   string `protobuf:"bytes,4,opt,name=totalSupply" json:"totalSupply"`
+	SourceCode    string `protobuf:"bytes,5,opt,name=sourceCode" json:"sourceCode"`
+	SourceCodeABI string `protobuf:"bytes,6,opt,name=sourceCodeABI" json:"sourceCodeABI"`
+}
+
+type PairV2State struct {
+	IsContractCreated  bool   `protobuf:"varint,1,opt,name=isContractCreated" json:"isContractCreated"`
+	Contract           string `protobuf:"bytes,2,opt,name=contract" json:"contract"`
+	Token0             string `protobuf:"bytes,3,opt,name=token0" json:"token0"`
+	Token1             string `protobuf:"bytes,4,opt,name=token1" json:"token1"`
+	TotalSupply        string `protobuf:"bytes,5,opt,name=totalSupply" json:"totalSupply"`
+	Reserve0           string `protobuf:"bytes,6,opt,name=reserve0" json:"reserve0"`
+	Reserve1           string `protobuf:"bytes,7,opt,name=reserve1" json:"reserve1"`
+	BlockTimestampLast uint32 `protobuf:"varint,8,opt,name=blockTimestampLast" json:"blockTimestampLast"`
 }
