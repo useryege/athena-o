@@ -110,7 +110,7 @@ export const ProjectsList = () => {
                     <MockupList height={50} marginTop={30} />
                 ) : (
                     <div className='argo-container'>
-                        <div className='white-box'>
+                        <div className='white-box projects-list__box'>
                             <div className='projects-list__controls'>
                                 <div className='projects-list__actions'>
                                     <button type='button' className='argo-button argo-button--base' disabled={autoRefresh} onClick={handleStart}>

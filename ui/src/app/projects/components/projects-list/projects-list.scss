@@ -1,4 +1,9 @@
 .projects-list {
+    &__box {
+        min-width: 100%;
+        width: max-content;
+    }
+
     &__controls {
         align-items: center;
         display: flex;
@@ -41,7 +46,7 @@
     }
 
     &__table {
-        min-width: 1120px;
+        min-width: 1180px;
     }
 
     &__row {
