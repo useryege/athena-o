@@ -146,10 +146,18 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                     <span className='project-details__field-label'>Total Supply</span>
                                     <span className='project-details__field-value'>{renderValue(project.token?.totalSupply)}</span>
                                 </div>
-                            </div>
-
-                            {(project.token?.sourceCode || project.token?.sourceCodeABI) && (
+                            </div>                            {(project.token?.sourceCode || project.token?.sourceCodeABI) && (
                                 <div style={{marginTop: '20px'}}>
+                                    {project.token?.sourceCode && (
+                                        <div className='project-details__field' style={{marginBottom: '20px'}}>
+                                            <span className='project-details__field-label'>Source Code</span>
+                                            <div
+                                                className='project-details__field-value'
+                                                style={{maxHeight: '150px', overflowY: 'auto', background: '#f4f4f4', padding: '10px', fontSize: '12px', fontFamily: 'monospace'}}>
+                                                {project.token.sourceCode}
+                                            </div>
+                                        </div>
+                                    )}
                                     {project.token?.sourceCodeABI && (
                                         <div className='project-details__field'>
                                             <span className='project-details__field-label'>Source Code ABI</span>
