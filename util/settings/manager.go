@@ -134,7 +134,7 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*Athen
 		}
 
 		mgr.settings.ServerSignature = signature
-		log.Warn("Generated transient JWT secret because ATHENA_JWT_SECRET is not set. Existing sessions will be invalid after restart.")
+		log.Warnf("Generated transient JWT secret because ATHENA_JWT_SECRET is not set, existing sessions will be invalid after restart: %s", string(signature))
 	}
 
 	if mgr.settings.Certificate == nil && !insecureModeEnabled {
