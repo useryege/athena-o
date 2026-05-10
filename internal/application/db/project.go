@@ -18,6 +18,11 @@ type projectMetaStore struct {
 	db *sql.DB
 }
 
+const (
+	postgresPingAttempts = 5
+	postgresPingInterval = time.Second
+)
+
 func AddProjectMetaStoreFlagsToCmd(cmd *cobra.Command) func(context.Context) (application.ProjectMetaStore, error) {
 	var postgresDSN string
 	defaultDSN := fmt.Sprintf("host=127.0.0.1 port=%s user=%s dbname=%s sslmode=disable",
@@ -29,7 +34,7 @@ func AddProjectMetaStoreFlagsToCmd(cmd *cobra.Command) func(context.Context) (ap
 
 	return func(ctx context.Context) (application.ProjectMetaStore, error) {
 		if postgresDSN == "" {
-			return application.NewNoopProjectMetaStore(), nil
+			return nil, errors.New("PostgreSQL DSN is required. Set it by --postgres-dsn flag or ATHENA_APPLICATION_POSTGRES_DSN environment variable")
 		}
 
 		log.Info("connecting to postgres database")
@@ -38,22 +43,37 @@ func AddProjectMetaStoreFlagsToCmd(cmd *cobra.Command) func(context.Context) (ap
 			return nil, fmt.Errorf("failed to open postgres database: %w", err)
 		}
 
-		pingCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-		if err := db.PingContext(pingCtx); err != nil {
-			_ = db.Close()
-			return nil, fmt.Errorf("failed to ping postgres database: %w", err)
+		var pingErr error
+		for attempt := 1; attempt <= postgresPingAttempts; attempt++ {
+			pingCtx, cancel := context.WithTimeout(ctx, postgresPingInterval)
+			pingErr = db.PingContext(pingCtx)
+			cancel()
+			if pingErr == nil {
+				log.Info("successfully connected to postgres database")
+				return NewProjectMetaStore(db), nil
+			}
+
+			log.Warnf("failed to ping postgres database, attempt %d/%d: %v", attempt, postgresPingAttempts, pingErr)
+			if attempt < postgresPingAttempts {
+				select {
+				case <-ctx.Done():
+					_ = db.Close()
+					return nil, fmt.Errorf("postgres database ping interrupted: %w", ctx.Err())
+				case <-time.After(postgresPingInterval):
+				}
+			}
 		}
 
-		log.Info("successfully connected to postgres database")
+		if pingErr != nil {
+			_ = db.Close()
+			return nil, fmt.Errorf("failed to ping postgres database after %d attempts: %w", postgresPingAttempts, pingErr)
+		}
+
 		return NewProjectMetaStore(db), nil
 	}
 }
 
 func NewProjectMetaStore(db *sql.DB) application.ProjectMetaStore {
-	if db == nil {
-		return application.NewNoopProjectMetaStore()
-	}
 	return &projectMetaStore{db: db}
 }
 
