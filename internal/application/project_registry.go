@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"errors"
-	"sort"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -54,28 +53,13 @@ func (r *projectRegistryImpl) ListProjects(ctx context.Context) ([]*v1alpha1.Pro
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	projects := make([]*Project, 0, len(r.Projects))
+	projectViews := make([]*v1alpha1.ProjectView, 0, len(r.Projects))
 	for _, project := range r.Projects {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
 		}
-		projects = append(projects, project)
-	}
-
-	sort.SliceStable(projects, func(i, j int) bool {
-		if projects[i].Meta.BlockNumber != projects[j].Meta.BlockNumber {
-			return projects[i].Meta.BlockNumber < projects[j].Meta.BlockNumber
-		}
-		if projects[i].Meta.TxIndex != projects[j].Meta.TxIndex {
-			return projects[i].Meta.TxIndex > projects[j].Meta.TxIndex
-		}
-		return projects[i].Meta.ProjectID.String() > projects[j].Meta.ProjectID.String()
-	})
-
-	projectViews := make([]*v1alpha1.ProjectView, 0, len(projects))
-	for _, project := range projects {
 		projectViews = append(projectViews, projectToView(project))
 	}
 

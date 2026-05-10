@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"sort"
 
 	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
@@ -29,6 +30,16 @@ func (s *Server) ListProjects(ctx context.Context, req *applicationpkg.ListProje
 	if err != nil {
 		return nil, err
 	}
+
+	sort.SliceStable(resp.Items, func(i, j int) bool {
+		if resp.Items[i].Meta.BlockNumber != resp.Items[j].Meta.BlockNumber {
+			return resp.Items[i].Meta.BlockNumber < resp.Items[j].Meta.BlockNumber
+		}
+		if resp.Items[i].Meta.TxIndex != resp.Items[j].Meta.TxIndex {
+			return resp.Items[i].Meta.TxIndex > resp.Items[j].Meta.TxIndex
+		}
+		return resp.Items[i].Meta.ProjectID > resp.Items[j].Meta.ProjectID
+	})
 
 	return &applicationpkg.ListProjectsResponse{Items: resp.Items}, nil
 }
