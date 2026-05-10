@@ -30,8 +30,8 @@ type Service struct {
 	blockWatcher  *BlockWatcher
 	projectFilter *ProjectFilter
 
-	registry         ProjectRegistry
-	projectMetaStore ProjectMetaStore
+	registry     ProjectRegistry
+	projectStore ProjectStore
 
 	delayedFetchSem chan struct{}
 	startStopMu     sync.Mutex
@@ -40,13 +40,13 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, projectMetaStore ProjectMetaStore) *Service {
-	registry := NewProjectRegistry()
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, projectStore ProjectStore) *Service {
+	registry := NewProjectRegistry(projectStore)
 
 	return &Service{
 		nodeClient:          nodeClient,
 		registry:            registry,
-		projectMetaStore:    projectMetaStore,
+		projectStore:        projectStore,
 		delayedFetchSem:     make(chan struct{}, defaultDelayedFetchConcurrency),
 		v2FactoryContract:   v2FactoryContract,
 		wethContract:        wethContract,
@@ -75,7 +75,7 @@ func (s *Service) Start() error {
 
 	apiFetcher := ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
 
-	s.projectFilter = NewProjectFilter(s.registry, s.projectMetaStore, ch1, evmFetcher, apiFetcher, s.delayedFetchSem, s.wethContract)
+	s.projectFilter = NewProjectFilter(s.registry, ch1, evmFetcher, apiFetcher, s.delayedFetchSem, s.wethContract)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	if err := s.blockWatcher.Start(ctx); err != nil {

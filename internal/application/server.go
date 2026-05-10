@@ -22,7 +22,7 @@ type ApplicationServerOpts struct {
 	WethContract        common.Address
 	EtherscanAPIBaseURL string
 	EtherscanAPIKey     string
-	ProjectMetaStore    ProjectMetaStore
+	ProjectStore        ProjectStore
 }
 
 func NewServer(opts ApplicationServerOpts) *ApplicationServer {
@@ -41,7 +41,7 @@ func NewServer(opts ApplicationServerOpts) *ApplicationServer {
 
 	return &ApplicationServer{
 		ApplicationServerOpts: opts,
-		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, opts.ProjectMetaStore),
+		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, opts.ProjectStore),
 	}
 }
 

@@ -11,6 +11,9 @@ import (
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
+type ProjectStore interface {
+	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
+}
 type ProjectRegistry interface {
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
 	ListProjects(ctx context.Context) ([]*v1alpha1.ProjectView, error)
@@ -24,12 +27,14 @@ type projectRegistryImpl struct {
 	mu                 sync.RWMutex
 	ProjectsByContract map[common.Address]struct{}
 	Projects           map[uuid.UUID]*Project
+	store              ProjectStore
 }
 
-func NewProjectRegistry() ProjectRegistry {
+func NewProjectRegistry(store ProjectStore) ProjectRegistry {
 	return &projectRegistryImpl{
 		Projects:           make(map[uuid.UUID]*Project),
 		ProjectsByContract: make(map[common.Address]struct{}),
+		store:              store,
 	}
 }
 

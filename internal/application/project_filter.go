@@ -15,26 +15,20 @@ import (
 	"github.com/useryege/athena/util/evmtool"
 )
 
-type ProjectMetaStore interface {
-	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
-}
-
 type ProjectFilter struct {
-	wg               sync.WaitGroup
-	registry         ProjectRegistry
-	projectMetaStore ProjectMetaStore
-	inputCh          <-chan *Project
-	evmFetcher       evm.EVMFetcher
-	apiFetcher       ethereumapi.EthereumAPI
-	wethToken        common.Address
-	delayedFetchSem  chan struct{}
+	wg              sync.WaitGroup
+	registry        ProjectRegistry
+	inputCh         <-chan *Project
+	evmFetcher      evm.EVMFetcher
+	apiFetcher      ethereumapi.EthereumAPI
+	wethToken       common.Address
+	delayedFetchSem chan struct{}
 }
 
 const defaultDelayedFetchConcurrency = 10
 
 func NewProjectFilter(
 	registry ProjectRegistry,
-	projectMetaStore ProjectMetaStore,
 	inputCh <-chan *Project,
 	evmFetcher evm.EVMFetcher,
 	apiFetcher ethereumapi.EthereumAPI,
@@ -46,13 +40,12 @@ func NewProjectFilter(
 	}
 
 	return &ProjectFilter{
-		registry:         registry,
-		projectMetaStore: projectMetaStore,
-		inputCh:          inputCh,
-		evmFetcher:       evmFetcher,
-		apiFetcher:       apiFetcher,
-		delayedFetchSem:  delayedFetchSem,
-		wethToken:        wethToken,
+		registry:        registry,
+		inputCh:         inputCh,
+		evmFetcher:      evmFetcher,
+		apiFetcher:      apiFetcher,
+		delayedFetchSem: delayedFetchSem,
+		wethToken:       wethToken,
 	}
 }
 
@@ -327,14 +320,6 @@ func (f *ProjectFilter) run(ctx context.Context) error {
 					"error":     err,
 				}).Error("failed to store project")
 				continue
-			}
-
-			if err := f.projectMetaStore.SaveProjectMeta(ctx, event.Meta); err != nil {
-				log.WithFields(log.Fields{
-					"projectID": event.Meta.ProjectID,
-					"contract":  event.Meta.Contract,
-					"error":     err,
-				}).Error("failed to persist project metadata")
 			}
 
 			// resolve delayed fields in the background after the project becomes visible.

@@ -14,16 +14,20 @@ import (
 	"github.com/useryege/athena/util/env"
 )
 
-type projectMetaStore struct {
-	db *sql.DB
-}
-
 const (
 	postgresPingAttempts = 5
 	postgresPingInterval = time.Second
 )
 
-func AddProjectMetaStoreFlagsToCmd(cmd *cobra.Command) func(context.Context) (application.ProjectMetaStore, error) {
+type projectMetaStore struct {
+	db *sql.DB
+}
+
+func NewProjectMetaStore(db *sql.DB) application.ProjectStore {
+	return &projectMetaStore{db: db}
+}
+
+func AddProjectMetaStoreFlagsToCmd(cmd *cobra.Command) func(context.Context) (application.ProjectStore, error) {
 	var postgresDSN string
 	defaultDSN := fmt.Sprintf("host=127.0.0.1 port=%s user=%s dbname=%s sslmode=disable",
 		env.StringFromEnv("ATHENA_POSTGRES_PORT", "5432"),
@@ -32,7 +36,7 @@ func AddProjectMetaStoreFlagsToCmd(cmd *cobra.Command) func(context.Context) (ap
 	)
 	cmd.Flags().StringVar(&postgresDSN, "postgres-dsn", env.StringFromEnv("ATHENA_APPLICATION_POSTGRES_DSN", defaultDSN), "PostgreSQL DSN")
 
-	return func(ctx context.Context) (application.ProjectMetaStore, error) {
+	return func(ctx context.Context) (application.ProjectStore, error) {
 		if postgresDSN == "" {
 			return nil, errors.New("PostgreSQL DSN is required. Set it by --postgres-dsn flag or ATHENA_APPLICATION_POSTGRES_DSN environment variable")
 		}
@@ -71,10 +75,6 @@ func AddProjectMetaStoreFlagsToCmd(cmd *cobra.Command) func(context.Context) (ap
 
 		return NewProjectMetaStore(db), nil
 	}
-}
-
-func NewProjectMetaStore(db *sql.DB) application.ProjectMetaStore {
-	return &projectMetaStore{db: db}
 }
 
 func (s *projectMetaStore) Close() error {
