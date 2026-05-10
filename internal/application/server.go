@@ -1,8 +1,6 @@
 package application
 
 import (
-	"database/sql"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
@@ -24,7 +22,7 @@ type ApplicationServerOpts struct {
 	WethContract        common.Address
 	EtherscanAPIBaseURL string
 	EtherscanAPIKey     string
-	PostgresDB          *sql.DB
+	ProjectMetaStore    ProjectMetaStore
 }
 
 func NewServer(opts ApplicationServerOpts) *ApplicationServer {
@@ -43,7 +41,7 @@ func NewServer(opts ApplicationServerOpts) *ApplicationServer {
 
 	return &ApplicationServer{
 		ApplicationServerOpts: opts,
-		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, NewProjectMetaStore(opts.PostgresDB)),
+		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, opts.ProjectMetaStore),
 	}
 }
 

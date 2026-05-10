@@ -39,9 +39,6 @@ func NewProjectFilter(
 	if delayedFetchSem == nil {
 		delayedFetchSem = make(chan struct{}, defaultDelayedFetchConcurrency)
 	}
-	if projectMetaStore == nil {
-		projectMetaStore = noopProjectMetaStore{}
-	}
 
 	return &ProjectFilter{
 		registry:         registry,

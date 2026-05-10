@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"database/sql"
 	stderrors "errors"
 	"fmt"
 	"net"
@@ -11,10 +10,8 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -25,6 +22,7 @@ import (
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/application"
 	"github.com/useryege/athena/internal/application/apiclient"
+	applicationdb "github.com/useryege/athena/internal/application/db"
 	"github.com/useryege/athena/internal/application/metrics"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
@@ -46,7 +44,7 @@ func NewCommand() *cobra.Command {
 		wethContract        string
 		etherscanAPIBaseURL string
 		etherscanAPIKey     string
-		postgresDSN         string
+		projectMetaStoreSrc func(context.Context) (application.ProjectMetaStore, error)
 	)
 
 	command := &cobra.Command{
@@ -66,23 +64,12 @@ func NewCommand() *cobra.Command {
 			cli.SetLogFormat(cmdutil.LogFormat)
 			cli.SetLogLevel(cmdutil.LogLevel)
 
-			var postgresDB *sql.DB
-			// verify postgres connection
-			if postgresDSN != "" {
-				log.Info("connecting to postgres database")
-				db, err := sql.Open("pgx", postgresDSN)
-				if err != nil {
-					log.Fatalf("failed to open postgres database: %v", err)
-				}
+			ctx := cmd.Context()
 
-				ctx, cancel := context.WithTimeout(cmd.Context(), 10*time.Second)
-				defer cancel()
-				if err := db.PingContext(ctx); err != nil {
-					log.Fatalf("failed to ping postgres database: %v", err)
-				}
-				log.Info("successfully connected to postgres database")
-				postgresDB = db
-				defer db.Close()
+			projectMetaStore, err := projectMetaStoreSrc(ctx)
+			errors.CheckError(err)
+			if closer, ok := projectMetaStore.(utilio.Closer); ok {
+				defer utilio.Close(closer)
 			}
 
 			metricsServer := metrics.NewMetricsServer()
@@ -101,11 +88,10 @@ func NewCommand() *cobra.Command {
 				WethContract:        ethcommon.HexToAddress(wethContract),
 				EtherscanAPIBaseURL: etherscanAPIBaseURL,
 				EtherscanAPIKey:     etherscanAPIKey,
-				PostgresDB:          postgresDB,
+				ProjectMetaStore:    projectMetaStore,
 			})
 
 			applicationGrpc := server.CreateGRPC()
-			ctx := cmd.Context()
 
 			lc := &net.ListenConfig{}
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
@@ -176,13 +162,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&wethContract, "weth-contract", env.StringFromEnv("ATHENA_APPLICATION_WETH_CONTRACT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"), "WETH contract address")
 	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
 	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")
-
-	defaultDSN := fmt.Sprintf("host=127.0.0.1 port=%s user=%s dbname=%s sslmode=disable",
-		env.StringFromEnv("ATHENA_POSTGRES_PORT", "5432"),
-		env.StringFromEnv("POSTGRES_USER", "athena"),
-		env.StringFromEnv("POSTGRES_DB", "athena"),
-	)
-	command.Flags().StringVar(&postgresDSN, "postgres-dsn", env.StringFromEnv("ATHENA_APPLICATION_POSTGRES_DSN", defaultDSN), "PostgreSQL DSN")
+	projectMetaStoreSrc = applicationdb.AddProjectMetaStoreFlagsToCmd(command)
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

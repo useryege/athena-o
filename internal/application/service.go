@@ -41,9 +41,6 @@ type Service struct {
 
 func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, projectMetaStore ProjectMetaStore) *Service {
 	registry := NewProjectRegistry()
-	if projectMetaStore == nil {
-		projectMetaStore = noopProjectMetaStore{}
-	}
 
 	return &Service{
 		nodeClient:          nodeClient,

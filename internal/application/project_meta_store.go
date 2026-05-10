@@ -1,11 +1,6 @@
 package application
 
-import (
-	"context"
-	"database/sql"
-	"errors"
-	"fmt"
-)
+import "context"
 
 type ProjectMetaStore interface {
 	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
@@ -13,40 +8,10 @@ type ProjectMetaStore interface {
 
 type noopProjectMetaStore struct{}
 
-func NewProjectMetaStore(db *sql.DB) ProjectMetaStore {
-	if db == nil {
-		return noopProjectMetaStore{}
-	}
-	return &postgresProjectMetaStore{db: db}
+func NewNoopProjectMetaStore() ProjectMetaStore {
+	return noopProjectMetaStore{}
 }
 
 func (noopProjectMetaStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error {
-	return nil
-}
-
-type postgresProjectMetaStore struct {
-	db *sql.DB
-}
-
-func (s *postgresProjectMetaStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error {
-	if meta.Tx == nil {
-		return errors.New("project meta transaction is nil")
-	}
-
-	_, err := s.db.ExecContext(ctx, `
-INSERT INTO project (
-  project_id,
-  block_number,
-  block_time,
-  contract,
-  creator,
-  tx_hash,
-  tx_index
-) VALUES ($1, $2, $3, $4, $5, $6, $7)
-ON CONFLICT DO NOTHING
-`, meta.ProjectID, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), meta.Tx.Hash().Bytes(), int64(meta.TxIndex))
-	if err != nil {
-		return fmt.Errorf("save project meta: %w", err)
-	}
 	return nil
 }
