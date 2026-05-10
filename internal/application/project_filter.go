@@ -10,16 +10,21 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/util/ethereumapi"
 	"github.com/useryege/athena/util/evmtool"
 )
+
+type ProjectMetaStore interface {
+	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
+}
 
 type ProjectFilter struct {
 	wg               sync.WaitGroup
 	registry         ProjectRegistry
 	projectMetaStore ProjectMetaStore
 	inputCh          <-chan *Project
-	evmFetcher       EVMFetcher
+	evmFetcher       evm.EVMFetcher
 	apiFetcher       ethereumapi.EthereumAPI
 	wethToken        common.Address
 	delayedFetchSem  chan struct{}
@@ -31,7 +36,7 @@ func NewProjectFilter(
 	registry ProjectRegistry,
 	projectMetaStore ProjectMetaStore,
 	inputCh <-chan *Project,
-	evmFetcher EVMFetcher,
+	evmFetcher evm.EVMFetcher,
 	apiFetcher ethereumapi.EthereumAPI,
 	delayedFetchSem chan struct{},
 	wethToken common.Address,

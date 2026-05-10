@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/google/uuid"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
+	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -65,7 +66,7 @@ func (s *Service) Start() error {
 	ch1 := make(chan *Project, 24)
 	s.projectCh = ch1
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, ch1)
-	evmFetcher := NewEVMFetcher(s.nodeClient, s.v2FactoryContract)
+	evmFetcher := evm.NewEVMFetcher(s.nodeClient, s.v2FactoryContract)
 
 	chainID, err := s.nodeClient.ChainID(context.Background())
 	if err != nil {
