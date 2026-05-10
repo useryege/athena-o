@@ -9,12 +9,31 @@ POSTGRES_DB="${POSTGRES_DB:-athena}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
 POSTGRES_IMAGE_TAG="${ATHENA_POSTGRES_IMAGE_TAG:-16}"
 POSTGRES_DATA_DIR="${ATHENA_POSTGRES_DATA_DIR:-/tmp/athena-local/postgres}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+POSTGRES_INIT_DIR="${ATHENA_POSTGRES_INIT_DIR:-$REPO_ROOT/hack/postgres/init}"
 
 perf_opts=(
   "-c" "fsync=off"
   "-c" "full_page_writes=off"
   "-c" "synchronous_commit=off"
 )
+
+run_postgres_init() {
+    local database="$1"
+
+    if [ ! -d "$POSTGRES_INIT_DIR" ]; then
+        return
+    fi
+
+    for init_sql in "$POSTGRES_INIT_DIR"/*.sql; do
+        if [ ! -e "$init_sql" ]; then
+            continue
+        fi
+        echo "Running PostgreSQL init script: $init_sql"
+        PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$database" -v ON_ERROR_STOP=1 -f "$init_sql"
+    done
+}
 
 if [ "${ATHENA_POSTGRES_LOCAL:-false}" = 'true' ]; then
     if ! command -v initdb >/dev/null 2>&1 || ! command -v pg_ctl >/dev/null 2>&1 || ! command -v postgres >/dev/null 2>&1 || ! command -v psql >/dev/null 2>&1; then
@@ -46,28 +65,36 @@ if [ "${ATHENA_POSTGRES_LOCAL:-false}" = 'true' ]; then
                 PGPASSWORD="$POSTGRES_PASSWORD" createdb -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" "$POSTGRES_DB"
             fi
         fi
+        run_postgres_init "$POSTGRES_DB"
         pg_ctl -D "$POSTGRES_DATA_DIR" -m fast -w stop >/dev/null
     fi
 
     echo "Starting local PostgreSQL server on port $POSTGRES_PORT."
     exec postgres -D "$POSTGRES_DATA_DIR" -p "$POSTGRES_PORT" -c listen_addresses=127.0.0.1 "${perf_opts[@]}"
 else
+    docker_args=(
+        "--rm"
+        "--name" "athena-postgres"
+        "-i"
+        "-p" "$POSTGRES_PORT:$POSTGRES_PORT"
+        "-e" "POSTGRES_USER=$POSTGRES_USER"
+        "-e" "POSTGRES_DB=$POSTGRES_DB"
+    )
+
+    if [ -d "$POSTGRES_INIT_DIR" ]; then
+        docker_args+=("-v" "$POSTGRES_INIT_DIR:/docker-entrypoint-initdb.d:ro")
+    fi
+
     if [ -z "$POSTGRES_PASSWORD" ]; then
         echo "Starting Docker PostgreSQL container without password (trust auth)."
-        exec docker run --rm --name athena-postgres -i \
-            -p "$POSTGRES_PORT:$POSTGRES_PORT" \
-            -e POSTGRES_USER="$POSTGRES_USER" \
-            -e POSTGRES_DB="$POSTGRES_DB" \
-            -e POSTGRES_HOST_AUTH_METHOD=trust \
+        docker_args+=("-e" "POSTGRES_HOST_AUTH_METHOD=trust")
+        exec docker run "${docker_args[@]}" \
             docker.io/library/postgres:"$POSTGRES_IMAGE_TAG" \
             -p "$POSTGRES_PORT" "${perf_opts[@]}"
     else
         echo "Starting Docker PostgreSQL container with password."
-        exec docker run --rm --name athena-postgres -i \
-            -p "$POSTGRES_PORT:$POSTGRES_PORT" \
-            -e POSTGRES_USER="$POSTGRES_USER" \
-            -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-            -e POSTGRES_DB="$POSTGRES_DB" \
+        docker_args+=("-e" "POSTGRES_PASSWORD=$POSTGRES_PASSWORD")
+        exec docker run "${docker_args[@]}" \
             docker.io/library/postgres:"$POSTGRES_IMAGE_TAG" \
             -p "$POSTGRES_PORT" "${perf_opts[@]}"
     fi

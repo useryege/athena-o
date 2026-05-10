@@ -109,6 +109,12 @@ Supported PostgreSQL env vars for local development:
 - `POSTGRES_PASSWORD` (default: empty; Docker mode falls back to trust auth if empty)
 - `POSTGRES_DB` (default: `athena`)
 - `ATHENA_POSTGRES_IMAGE_TAG` (default: `16`)
+- `ATHENA_POSTGRES_INIT_DIR` (default: `hack/postgres/init`)
+
+Startup initializes PostgreSQL from SQL files in `ATHENA_POSTGRES_INIT_DIR`.
+The default init directory creates the `project` table used by the application service to persist discovered project metadata.
+Docker mode mounts the init directory into `/docker-entrypoint-initdb.d`, so scripts run when the container initializes its database.
+With `ATHENA_POSTGRES_LOCAL=true`, the startup script runs the same SQL files with `psql` after creating the target database; scripts must be idempotent because the local data directory can be reused across restarts.
 
 #### With "goreman start"
 ```shell

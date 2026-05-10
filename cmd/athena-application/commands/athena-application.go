@@ -66,6 +66,7 @@ func NewCommand() *cobra.Command {
 			cli.SetLogFormat(cmdutil.LogFormat)
 			cli.SetLogLevel(cmdutil.LogLevel)
 
+			var postgresDB *sql.DB
 			// verify postgres connection
 			if postgresDSN != "" {
 				log.Info("connecting to postgres database")
@@ -80,6 +81,7 @@ func NewCommand() *cobra.Command {
 					log.Fatalf("failed to ping postgres database: %v", err)
 				}
 				log.Info("successfully connected to postgres database")
+				postgresDB = db
 				defer db.Close()
 			}
 
@@ -99,6 +101,7 @@ func NewCommand() *cobra.Command {
 				WethContract:        ethcommon.HexToAddress(wethContract),
 				EtherscanAPIBaseURL: etherscanAPIBaseURL,
 				EtherscanAPIKey:     etherscanAPIKey,
+				PostgresDB:          postgresDB,
 			})
 
 			applicationGrpc := server.CreateGRPC()
