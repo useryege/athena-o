@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"math/big"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -16,16 +15,13 @@ import (
 )
 
 type ProjectFilter struct {
-	wg              sync.WaitGroup
-	registry        ProjectRegistry
-	inputCh         <-chan *Project
-	evmFetcher      evm.EVMFetcher
-	apiFetcher      ethereumapi.EthereumAPI
-	wethToken       common.Address
-	delayedFetchSem chan struct{}
+	wg          sync.WaitGroup
+	registry    ProjectRegistry
+	inputCh     <-chan *Project
+	evmFetcher  evm.EVMFetcher
+	wethToken   common.Address
+	projectSync *ProjectSync
 }
-
-const defaultDelayedFetchConcurrency = 10
 
 func NewProjectFilter(
 	registry ProjectRegistry,
@@ -35,17 +31,12 @@ func NewProjectFilter(
 	delayedFetchSem chan struct{},
 	wethToken common.Address,
 ) *ProjectFilter {
-	if delayedFetchSem == nil {
-		delayedFetchSem = make(chan struct{}, defaultDelayedFetchConcurrency)
-	}
-
 	return &ProjectFilter{
-		registry:        registry,
-		inputCh:         inputCh,
-		evmFetcher:      evmFetcher,
-		apiFetcher:      apiFetcher,
-		delayedFetchSem: delayedFetchSem,
-		wethToken:       wethToken,
+		registry:    registry,
+		inputCh:     inputCh,
+		evmFetcher:  evmFetcher,
+		wethToken:   wethToken,
+		projectSync: NewProjectSync(evmFetcher, apiFetcher, delayedFetchSem, wethToken),
 	}
 }
 
@@ -165,128 +156,8 @@ func (f *ProjectFilter) startDelayedFieldResolve(ctx context.Context, event *Pro
 	f.wg.Add(1)
 	go func() {
 		defer f.wg.Done()
-		f.resolveDelayedFields(ctx, event)
+		f.projectSync.ResolveDelayedFields(ctx, event)
 	}()
-}
-
-func (f *ProjectFilter) resolveDelayedFields(ctx context.Context, event *Project) {
-	delay := 10 * time.Second
-	const maxDelay = 2 * time.Minute
-
-	for {
-		now := time.Now()
-		if !event.Token.SourceCode.IsReady() || !event.Token.SourceCodeABI.IsReady() {
-			sourceCode, sourceCodeABI, err := f.fetchSourceCode(ctx, event)
-			if err != nil {
-				event.Token.SourceCode.MarkFailed(err, now)
-				event.Token.SourceCodeABI.MarkFailed(err, now)
-			} else {
-				event.Token.SourceCode.MarkReady(sourceCode, now)
-				event.Token.SourceCodeABI.MarkReady(sourceCodeABI, now)
-			}
-		}
-
-		if !event.WethV2Pool.Contract.IsReady() {
-			pairContract, err := f.evmFetcher.FetchV2PairContract(ctx, event.Meta.Contract, f.wethToken)
-			if err != nil {
-				event.WethV2Pool.Contract.MarkFailed(err, now)
-			} else {
-				if pairContract == common.HexToAddress("0x000000000000000000000000000000000000") {
-					simulatedPairContract, err := f.evmFetcher.FetchV2PairContractByCallMsg(ctx, event.Meta.Contract, f.wethToken)
-					if err != nil {
-						log.WithFields(log.Fields{
-							"projectID": event.Meta.ProjectID,
-							"contract":  event.Meta.Contract,
-							"wethToken": f.wethToken,
-							"error":     err,
-						}).Error("failed to fetch v2 pair contract")
-						event.WethV2Pool.Contract.MarkFailed(err, now)
-					} else {
-						event.WethV2Pool.Contract.MarkReady(simulatedPairContract, now)
-					}
-				} else {
-					event.WethV2Pool.Contract.MarkReady(pairContract, now)
-				}
-			}
-		}
-
-		isWethV2PoolCreated, _ := event.WethV2Pool.IsContractCreated.Get()
-		if !isWethV2PoolCreated {
-			_, err := f.evmFetcher.FetchV2PairContract(ctx, event.Meta.Contract, f.wethToken)
-			if err != nil {
-				event.WethV2Pool.IsContractCreated.MarkFailed(err, now)
-			} else {
-				event.WethV2Pool.IsContractCreated.MarkReady(true, now)
-				isWethV2PoolCreated = true
-			}
-		}
-
-		if isWethV2PoolCreated {
-			pairContract, ok := event.WethV2Pool.Contract.Get()
-			if ok {
-				totalSupply, err := f.evmFetcher.FetchV2PairTotalSupply(ctx, pairContract)
-				if err == nil {
-					event.WethV2Pool.TotalSupply.MarkReady(totalSupply, now)
-				}
-				reserve0, reserve1, blockTimestampLast, err := f.evmFetcher.FetchV2PairReserves(ctx, pairContract)
-				if err == nil {
-					event.WethV2Pool.Reserve0.MarkReady(reserve0, now)
-					event.WethV2Pool.Reserve1.MarkReady(reserve1, now)
-					event.WethV2Pool.BlockTimestampLast.MarkReady(blockTimestampLast, now)
-				}
-			}
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(withJitter(delay)):
-		}
-
-		delay *= 2
-		if delay > maxDelay {
-			delay = maxDelay
-		}
-	}
-}
-
-func (f *ProjectFilter) fetchSourceCode(ctx context.Context, event *Project) (string, string, error) {
-	if err := f.acquireDelayedFetch(ctx); err != nil {
-		return "", "", err
-	}
-	defer f.releaseDelayedFetch()
-
-	response, err := f.apiFetcher.GetSourceCode(ctx, event.Meta.Contract.String())
-	if err != nil {
-		return "", "", err
-	}
-	return response.Result[0].SourceCode, response.Result[0].ABI, nil
-}
-
-func (f *ProjectFilter) acquireDelayedFetch(ctx context.Context) error {
-	select {
-	case f.delayedFetchSem <- struct{}{}:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
-func (f *ProjectFilter) releaseDelayedFetch() {
-	<-f.delayedFetchSem
-}
-
-func withJitter(delay time.Duration) time.Duration {
-	if delay <= 0 {
-		return 0
-	}
-
-	jitterRange := delay / 2
-	if jitterRange <= 0 {
-		return delay
-	}
-
-	return delay + time.Duration(rand.Int63n(int64(jitterRange)))
 }
 
 func (f *ProjectFilter) run(ctx context.Context) error {
