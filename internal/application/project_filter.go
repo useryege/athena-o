@@ -112,12 +112,18 @@ func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 		return ErrSymbolIsEmpty
 	}
 
+	token0 := evmtool.GetToken0(event.Meta.Contract, f.wethToken)
+
+	token1 := evmtool.GetToken1(event.Meta.Contract, f.wethToken)
+
 	// set the values to the project state
 	now := time.Now()
 	event.Token.Name.MarkReady(name, now)
 	event.Token.Symbol.MarkReady(symbol, now)
 	event.Token.Decimals.MarkReady(decimals, now)
 	event.Token.TotalSupply.MarkReady(totalSupply, now)
+	event.WethV2Pool.Token0.MarkReady(token0, now)
+	event.WethV2Pool.Token1.MarkReady(token1, now)
 
 	event.PerfTrace.FilterCompletedAt = now
 	return nil
@@ -201,16 +207,6 @@ func (f *ProjectFilter) resolveDelayedFields(ctx context.Context, event *Project
 					event.WethV2Pool.Contract.MarkReady(pairContract, now)
 				}
 			}
-		}
-
-		if !event.WethV2Pool.Token0.IsReady() {
-			token0 := evmtool.GetToken0(event.Meta.Contract, f.wethToken)
-			event.WethV2Pool.Token0.MarkReady(token0, now)
-
-		}
-		if !event.WethV2Pool.Token1.IsReady() {
-			token1 := evmtool.GetToken1(event.Meta.Contract, f.wethToken)
-			event.WethV2Pool.Token1.MarkReady(token1, now)
 		}
 
 		isWethV2PoolCreated, _ := event.WethV2Pool.IsContractCreated.Get()
