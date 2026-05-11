@@ -79,9 +79,10 @@ func (s *Service) Start() error {
 	}
 
 	apiFetcher := ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
+	projectSimulator := NewProjectSimulator(s.nodeClient)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	s.projectSync = NewProjectSync(evmFetcher, apiFetcher, s.delayedFetchSem, s.wethContract, s.liquidityLocker)
+	s.projectSync = NewProjectSync(evmFetcher, apiFetcher, projectSimulator, s.delayedFetchSem, s.wethContract, s.liquidityLocker)
 	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, ProjectSchedulerOptions{})
 	if err := s.scheduler.Start(ctx); err != nil {
 		cancel()

@@ -24,16 +24,18 @@ type ProjectSync interface {
 var _ ProjectSync = &projectSyncImpl{}
 
 type projectSyncImpl struct {
-	evmFetcher      evm.EVMFetcher
-	apiFetcher      ethereumapi.EthereumAPI
-	wethToken       common.Address
-	delayedFetchSem chan struct{}
-	liquidityLocker []common.Address
+	evmFetcher       evm.EVMFetcher
+	apiFetcher       ethereumapi.EthereumAPI
+	projectSimulator ProjectSimulator
+	wethToken        common.Address
+	delayedFetchSem  chan struct{}
+	liquidityLocker  []common.Address
 }
 
 func NewProjectSync(
 	evmFetcher evm.EVMFetcher,
 	apiFetcher ethereumapi.EthereumAPI,
+	projectSimulator ProjectSimulator,
 	delayedFetchSem chan struct{},
 	wethToken common.Address,
 	liquidityLocker []common.Address,
@@ -43,11 +45,12 @@ func NewProjectSync(
 	}
 
 	return &projectSyncImpl{
-		evmFetcher:      evmFetcher,
-		apiFetcher:      apiFetcher,
-		delayedFetchSem: delayedFetchSem,
-		wethToken:       wethToken,
-		liquidityLocker: liquidityLocker,
+		evmFetcher:       evmFetcher,
+		apiFetcher:       apiFetcher,
+		projectSimulator: projectSimulator,
+		delayedFetchSem:  delayedFetchSem,
+		wethToken:        wethToken,
+		liquidityLocker:  liquidityLocker,
 	}
 }
 
@@ -117,6 +120,14 @@ func (s *projectSyncImpl) SyncPairSnapshotOnce(ctx context.Context, event *Proje
 
 	now := time.Now()
 	var syncErr error
+	simulateResult, err := s.projectSimulator.Simulate(event.Meta.Creator, event.Meta.Contract, pairContract)
+	if err != nil {
+		event.Simulate.CreatorResult.MarkFailed(err, now)
+		syncErr = errors.Join(syncErr, err)
+	} else {
+		event.Simulate.CreatorResult.MarkReady(simulateResult, now)
+	}
+
 	totalSupply, err := s.evmFetcher.FetchV2PairTotalSupply(ctx, pairContract)
 	if err != nil {
 		event.WethV2Pool.TotalSupply.MarkFailed(err, now)

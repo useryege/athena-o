@@ -16,6 +16,8 @@ type Project struct {
 
 	Token      TokenState
 	WethV2Pool PairV2State
+
+	Simulate ProjectSimulateState
 }
 
 type ProjectMeta struct {
@@ -105,6 +107,10 @@ func (p *PairV2State) HasOnlyMinimumLiquidity() bool {
 		return false
 	}
 	return true
+}
+
+type ProjectSimulateState struct {
+	CreatorResult FieldValue[SimulateResult]
 }
 
 func projectToView(project *Project) *v1alpha1.ProjectView {
