@@ -23,25 +23,13 @@ type ApplicationServerOpts struct {
 	EtherscanAPIBaseURL string
 	EtherscanAPIKey     string
 	ProjectStore        ProjectStore
+	LiquidityLocker     []common.Address
 }
 
 func NewServer(opts ApplicationServerOpts) *ApplicationServer {
-	if opts.WethContract == (common.Address{}) {
-		panic("WETH contract address is required.Set it by --weth-contract flag or ATHENA_APPLICATION_WETH_CONTRACT environment variable")
-	}
-	if opts.V2FactoryContract == (common.Address{}) {
-		panic("V2 Factory contract address is required.Set it by --v2-factory-contract flag or ATHENA_APPLICATION_V2_FACTORY_CONTRACT environment variable")
-	}
-	if opts.EtherscanAPIBaseURL == "" {
-		panic("Etherscan API base URL is required.Set it by --etherscan-api-base-url flag or ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL environment variable")
-	}
-	if opts.EtherscanAPIKey == "" {
-		panic("Etherscan API key is required.Set it by --etherscan-api-key flag or ATHENA_APPLICATION_ETHERSCAN_API_KEY environment variable")
-	}
-
 	return &ApplicationServer{
 		ApplicationServerOpts: opts,
-		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, opts.ProjectStore),
+		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, opts.ProjectStore, opts.LiquidityLocker),
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -44,6 +45,7 @@ func NewCommand() *cobra.Command {
 		wethContract        string
 		etherscanAPIBaseURL string
 		etherscanAPIKey     string
+		liquidityLockers    []string
 		projectMetaStoreSrc func(context.Context) (application.ProjectStore, error)
 	)
 
@@ -82,21 +84,37 @@ func NewCommand() *cobra.Command {
 				log.Fatalf("failed to connect to node websocket: %v", err)
 			}
 
-			if wethContract == "" {
-				log.Fatal("WETH contract address is required.Set it by --weth-contract flag or ATHENA_APPLICATION_WETH_CONTRACT environment variable")
+			wethContractAddress, err := parseRequiredAddress("WETH contract address", wethContract, "--weth-contract", "ATHENA_APPLICATION_WETH_CONTRACT")
+			if err != nil {
+				return err
 			}
 
-			if v2FactoryContract == "" {
-				log.Fatal("V2 Factory contract address is required.Set it by --v2-factory-contract flag or ATHENA_APPLICATION_V2_FACTORY_CONTRACT environment variable")
+			v2FactoryContractAddress, err := parseRequiredAddress("V2 Factory contract address", v2FactoryContract, "--v2-factory-contract", "ATHENA_APPLICATION_V2_FACTORY_CONTRACT")
+			if err != nil {
+				return err
+			}
+
+			if err := validateRequiredString("Etherscan API base URL", etherscanAPIBaseURL, "--etherscan-api-base-url", "ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL"); err != nil {
+				return err
+			}
+
+			if err := validateRequiredString("Etherscan API key", etherscanAPIKey, "--etherscan-api-key", "ATHENA_APPLICATION_ETHERSCAN_API_KEY"); err != nil {
+				return err
+			}
+
+			liquidityLockerAddresses, err := parseLiquidityLockerAddresses(liquidityLockers)
+			if err != nil {
+				return err
 			}
 
 			server := application.NewServer(application.ApplicationServerOpts{
 				NodeClient:          nodeClient,
-				V2FactoryContract:   ethcommon.HexToAddress(v2FactoryContract),
-				WethContract:        ethcommon.HexToAddress(wethContract),
+				V2FactoryContract:   v2FactoryContractAddress,
+				WethContract:        wethContractAddress,
 				EtherscanAPIBaseURL: etherscanAPIBaseURL,
 				EtherscanAPIKey:     etherscanAPIKey,
 				ProjectStore:        projectMetaStore,
+				LiquidityLocker:     liquidityLockerAddresses,
 			})
 
 			applicationGrpc := server.CreateGRPC()
@@ -170,8 +188,51 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&wethContract, "weth-contract", env.StringFromEnv("ATHENA_APPLICATION_WETH_CONTRACT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"), "WETH contract address")
 	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
 	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")
+	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")
 	projectMetaStoreSrc = applicationdb.AddProjectMetaStoreFlagsToCmd(command)
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
+}
+
+func parseRequiredAddress(name string, value string, flag string, envVar string) (ethcommon.Address, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ethcommon.Address{}, fmt.Errorf("%s is required.Set it by %s flag or %s environment variable", name, flag, envVar)
+	}
+	if !ethcommon.IsHexAddress(value) {
+		return ethcommon.Address{}, fmt.Errorf("invalid %s %q", name, value)
+	}
+
+	address := ethcommon.HexToAddress(value)
+	if address == (ethcommon.Address{}) {
+		return ethcommon.Address{}, fmt.Errorf("%s cannot be zero address", name)
+	}
+	return address, nil
+}
+
+func validateRequiredString(name string, value string, flag string, envVar string) error {
+	if strings.TrimSpace(value) == "" {
+		return fmt.Errorf("%s is required.Set it by %s flag or %s environment variable", name, flag, envVar)
+	}
+	return nil
+}
+
+func parseLiquidityLockerAddresses(values []string) ([]ethcommon.Address, error) {
+	if len(values) == 0 {
+		return nil, nil
+	}
+
+	addresses := make([]ethcommon.Address, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			return nil, fmt.Errorf("liquidity locker address cannot be empty")
+		}
+		if !ethcommon.IsHexAddress(value) {
+			return nil, fmt.Errorf("invalid liquidity locker address %q", value)
+		}
+		addresses = append(addresses, ethcommon.HexToAddress(value))
+	}
+	return addresses, nil
 }

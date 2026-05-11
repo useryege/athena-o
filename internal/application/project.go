@@ -72,7 +72,8 @@ type PairV2State struct {
 	Reserve1           FieldValue[*big.Int]
 	BlockTimestampLast FieldValue[uint32]
 
-	WethBalance FieldValue[*big.Int] // weth balance of the pool
+	WethBalance     FieldValue[*big.Int] // weth balance of the pool
+	LockedLiquidity FieldValue[*big.Int] // locked liquidity of the pool
 }
 
 func projectToView(project *Project) *v1alpha1.ProjectView {

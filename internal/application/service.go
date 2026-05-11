@@ -26,6 +26,7 @@ type Service struct {
 
 	etherscanAPIBaseURL string
 	etherscanAPIKey     string
+	liquidityLocker     []common.Address
 
 	projectCh     chan *Project
 	blockWatcher  *BlockWatcher
@@ -43,7 +44,7 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, projectStore ProjectStore) *Service {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, projectStore ProjectStore, liquidityLocker []common.Address) *Service {
 	registry := NewProjectRegistry(projectStore)
 
 	return &Service{
@@ -55,6 +56,7 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		wethContract:        wethContract,
 		etherscanAPIBaseURL: etherscanAPIBaseURL,
 		etherscanAPIKey:     etherscanAPIKey,
+		liquidityLocker:     liquidityLocker,
 	}
 }
 
@@ -69,7 +71,7 @@ func (s *Service) Start() error {
 	ch1 := make(chan *Project, 24)
 	s.projectCh = ch1
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, ch1)
-	evmFetcher := evm.NewEVMFetcher(s.nodeClient, s.v2FactoryContract)
+	evmFetcher := evm.NewEVMFetcher(s.nodeClient, s.v2FactoryContract, s.wethContract)
 
 	chainID, err := s.nodeClient.ChainID(context.Background())
 	if err != nil {
@@ -79,7 +81,7 @@ func (s *Service) Start() error {
 	apiFetcher := ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
 
 	ctx, cancel := context.WithCancel(context.Background())
-	s.projectSync = NewProjectSync(evmFetcher, apiFetcher, s.delayedFetchSem, s.wethContract)
+	s.projectSync = NewProjectSync(evmFetcher, apiFetcher, s.delayedFetchSem, s.wethContract, s.liquidityLocker)
 	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, ProjectSchedulerOptions{})
 	if err := s.scheduler.Start(ctx); err != nil {
 		cancel()

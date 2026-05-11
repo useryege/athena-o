@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"math/big"
 	"math/rand"
 	"time"
 
@@ -122,6 +123,25 @@ func (s *projectSyncImpl) SyncPairSnapshotOnce(ctx context.Context, event *Proje
 		syncErr = errors.Join(syncErr, err)
 	} else {
 		event.WethV2Pool.TotalSupply.MarkReady(totalSupply, now)
+	}
+
+	lockedLiquidity := big.NewInt(0)
+	var lockedLiquidityErr error
+	for _, locker := range s.liquidityLocker {
+		balance, err := s.evmFetcher.FetchTokenBalanceOf(ctx, pairContract, locker)
+		if err != nil {
+			lockedLiquidityErr = errors.Join(lockedLiquidityErr, err)
+			continue
+		}
+		if balance != nil {
+			lockedLiquidity.Add(lockedLiquidity, balance)
+		}
+	}
+	if lockedLiquidityErr != nil {
+		event.WethV2Pool.LockedLiquidity.MarkFailed(lockedLiquidityErr, now)
+		syncErr = errors.Join(syncErr, lockedLiquidityErr)
+	} else {
+		event.WethV2Pool.LockedLiquidity.MarkReady(lockedLiquidity, now)
 	}
 
 	balanceOfPool, err := s.evmFetcher.FetchTokenBalanceOf(ctx, event.Meta.Contract, pairContract)
