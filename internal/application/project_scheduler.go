@@ -12,12 +12,12 @@ import (
 )
 
 const (
-	defaultProjectSyncWorkers              = 8
+	defaultProjectSyncWorkers              = 10
 	defaultProjectSyncQueueCapacity        = 4096
 	defaultProjectSyncInitialDelay         = 10 * time.Second
-	defaultProjectSyncMaxDelay             = 2 * time.Minute
-	defaultProjectSourceCodeMaxAttempts    = 8
-	defaultProjectPairDiscoveryMaxAttempts = 12
+	defaultProjectSyncMaxDelay             = 1 * time.Minute
+	defaultProjectSourceCodeMaxAttempts    = 999999999
+	defaultProjectPairDiscoveryMaxAttempts = 999999999
 	defaultProjectPairSnapshotInterval     = time.Minute
 )
 
