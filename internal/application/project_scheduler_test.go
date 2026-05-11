@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
-	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
 type fakeProjectRegistry struct {
@@ -34,7 +33,7 @@ func (r *fakeProjectRegistry) GetProject(ctx context.Context, projectID uuid.UUI
 	return project, ok, nil
 }
 
-func (r *fakeProjectRegistry) ListProjects(ctx context.Context) ([]*v1alpha1.ProjectView, error) {
+func (r *fakeProjectRegistry) ListProjects(ctx context.Context) ([]*Project, error) {
 	return nil, nil
 }
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
-	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
 type ProjectStore interface {
@@ -16,7 +15,7 @@ type ProjectStore interface {
 
 type ProjectRegistry interface {
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
-	ListProjects(ctx context.Context) ([]*v1alpha1.ProjectView, error)
+	ListProjects(ctx context.Context) ([]*Project, error)
 	SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error
 	RemoveProject(ctx context.Context, projectID uuid.UUID) error
 }
@@ -50,21 +49,21 @@ func (r *projectRegistryImpl) GetProject(ctx context.Context, projectID uuid.UUI
 	return project, true, nil
 }
 
-func (r *projectRegistryImpl) ListProjects(ctx context.Context) ([]*v1alpha1.ProjectView, error) {
+func (r *projectRegistryImpl) ListProjects(ctx context.Context) ([]*Project, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	projectViews := make([]*v1alpha1.ProjectView, 0, len(r.Projects))
+	projects := make([]*Project, 0, len(r.Projects))
 	for _, project := range r.Projects {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
 		}
-		projectViews = append(projectViews, projectToView(project))
+		projects = append(projects, project)
 	}
 
-	return projectViews, nil
+	return projects, nil
 }
 
 func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error {

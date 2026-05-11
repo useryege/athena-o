@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/application/evm"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -156,7 +157,12 @@ func (s *Service) ListProjects(ctx context.Context, _ *applicationpkg.ListProjec
 		return nil, err
 	}
 
-	return &applicationpkg.ListProjectsResponse{Items: projects}, nil
+	items := make([]*v1alpha1.ProjectView, 0, len(projects))
+	for _, project := range projects {
+		items = append(items, projectToView(project))
+	}
+
+	return &applicationpkg.ListProjectsResponse{Items: items}, nil
 }
 
 func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProjectRequest) (*applicationpkg.GetProjectResponse, error) {
