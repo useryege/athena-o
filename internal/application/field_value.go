@@ -18,6 +18,7 @@ type FieldValue[T any] struct {
 	value      T
 	status     FieldStatus
 	resolvedAt time.Time
+	updatedAt  time.Time
 	lastError  string
 }
 
@@ -67,6 +68,12 @@ func (v *FieldValue[T]) ResolvedAt() time.Time {
 	return v.resolvedAt
 }
 
+func (v *FieldValue[T]) UpdatedAt() time.Time {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+	return v.updatedAt
+}
+
 func (v *FieldValue[T]) LastError() string {
 	v.mu.RLock()
 	defer v.mu.RUnlock()
@@ -79,7 +86,10 @@ func (v *FieldValue[T]) MarkReady(value T, now time.Time) {
 
 	v.value = value
 	v.status = FieldStatusReady
-	v.resolvedAt = now
+	if v.resolvedAt.IsZero() {
+		v.resolvedAt = now
+	}
+	v.updatedAt = now
 	v.lastError = ""
 }
 
@@ -88,7 +98,7 @@ func (v *FieldValue[T]) MarkFailed(err error, now time.Time) {
 	defer v.mu.Unlock()
 
 	v.status = FieldStatusFailed
-	v.resolvedAt = now
+	v.updatedAt = now
 	if err != nil {
 		v.lastError = err.Error()
 		return
@@ -104,5 +114,6 @@ func (v *FieldValue[T]) Reset() {
 	v.value = zero
 	v.status = FieldStatusUnknown
 	v.resolvedAt = time.Time{}
+	v.updatedAt = time.Time{}
 	v.lastError = ""
 }
