@@ -10,33 +10,31 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/evm"
-	"github.com/useryege/athena/util/ethereumapi"
 	"github.com/useryege/athena/util/evmtool"
 )
 
 type ProjectFilter struct {
-	wg          sync.WaitGroup
-	registry    ProjectRegistry
-	inputCh     <-chan *Project
-	evmFetcher  evm.EVMFetcher
-	wethToken   common.Address
-	projectSync *ProjectSync
+	wg         sync.WaitGroup
+	registry   ProjectRegistry
+	inputCh    <-chan *Project
+	evmFetcher evm.EVMFetcher
+	wethToken  common.Address
+	scheduler  ProjectScheduler
 }
 
 func NewProjectFilter(
 	registry ProjectRegistry,
 	inputCh <-chan *Project,
 	evmFetcher evm.EVMFetcher,
-	apiFetcher ethereumapi.EthereumAPI,
-	delayedFetchSem chan struct{},
+	scheduler ProjectScheduler,
 	wethToken common.Address,
 ) *ProjectFilter {
 	return &ProjectFilter{
-		registry:    registry,
-		inputCh:     inputCh,
-		evmFetcher:  evmFetcher,
-		wethToken:   wethToken,
-		projectSync: NewProjectSync(evmFetcher, apiFetcher, delayedFetchSem, wethToken),
+		registry:   registry,
+		inputCh:    inputCh,
+		evmFetcher: evmFetcher,
+		wethToken:  wethToken,
+		scheduler:  scheduler,
 	}
 }
 
@@ -152,14 +150,6 @@ func isExecutionRevertedError(err error) bool {
 	}
 }
 
-func (f *ProjectFilter) startDelayedFieldResolve(ctx context.Context, event *Project) {
-	f.wg.Add(1)
-	go func() {
-		defer f.wg.Done()
-		f.projectSync.ResolveDelayedFields(ctx, event)
-	}()
-}
-
 func (f *ProjectFilter) run(ctx context.Context) error {
 	for {
 		select {
@@ -193,8 +183,15 @@ func (f *ProjectFilter) run(ctx context.Context) error {
 				continue
 			}
 
-			// resolve delayed fields in the background after the project becomes visible.
-			f.startDelayedFieldResolve(ctx, event)
+			// Schedule delayed fields after the project becomes visible.
+			if f.scheduler != nil {
+				if err := f.scheduler.EnqueueProject(ctx, event); err != nil {
+					log.WithFields(log.Fields{
+						"projectID": event.Meta.ProjectID,
+						"error":     err,
+					}).Error("failed to schedule project sync")
+				}
+			}
 
 			log.WithFields(log.Fields{
 				"component":         "Project Filter",

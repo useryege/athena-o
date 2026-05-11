@@ -29,6 +29,8 @@ type Service struct {
 	projectCh     chan *Project
 	blockWatcher  *BlockWatcher
 	projectFilter *ProjectFilter
+	projectSync   ProjectSync
+	scheduler     ProjectScheduler
 
 	registry     ProjectRegistry
 	projectStore ProjectStore
@@ -75,11 +77,20 @@ func (s *Service) Start() error {
 
 	apiFetcher := ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
 
-	s.projectFilter = NewProjectFilter(s.registry, ch1, evmFetcher, apiFetcher, s.delayedFetchSem, s.wethContract)
-
 	ctx, cancel := context.WithCancel(context.Background())
+	s.projectSync = NewProjectSync(evmFetcher, apiFetcher, s.delayedFetchSem, s.wethContract)
+	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, ProjectSchedulerOptions{})
+	if err := s.scheduler.Start(ctx); err != nil {
+		cancel()
+		close(ch1)
+		s.clearPipelineLocked()
+		return err
+	}
+
+	s.projectFilter = NewProjectFilter(s.registry, ch1, evmFetcher, s.scheduler, s.wethContract)
 	if err := s.blockWatcher.Start(ctx); err != nil {
 		cancel()
+		_ = s.scheduler.Stop()
 		close(ch1)
 		s.clearPipelineLocked()
 		return err
@@ -88,6 +99,7 @@ func (s *Service) Start() error {
 	if err := s.projectFilter.Start(ctx); err != nil {
 		cancel()
 		_ = s.blockWatcher.Stop()
+		_ = s.scheduler.Stop()
 		close(ch1)
 		s.clearPipelineLocked()
 		return err
@@ -118,19 +130,22 @@ func (s *Service) Stop() error {
 		close(s.projectCh)
 	}
 	filterErr := s.projectFilter.Stop()
+	schedulerErr := s.scheduler.Stop()
 
 	s.lifecycleCtx = nil
 	s.lifecycleStop = nil
 	s.started = false
 	s.clearPipelineLocked()
 
-	return errors.Join(watcherErr, filterErr)
+	return errors.Join(watcherErr, filterErr, schedulerErr)
 }
 
 func (s *Service) clearPipelineLocked() {
 	s.projectCh = nil
 	s.blockWatcher = nil
 	s.projectFilter = nil
+	s.projectSync = nil
+	s.scheduler = nil
 }
 
 func (s *Service) ListProjects(ctx context.Context, _ *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {

@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"time"
 
@@ -13,7 +14,15 @@ import (
 
 const defaultDelayedFetchConcurrency = 10
 
-type ProjectSync struct {
+type ProjectSync interface {
+	SyncSourceCodeOnce(ctx context.Context, event *Project) (bool, error)
+	SyncPairDiscoveryOnce(ctx context.Context, event *Project) (bool, bool, error)
+	SyncPairSnapshotOnce(ctx context.Context, event *Project) (bool, error)
+}
+
+var _ ProjectSync = &projectSyncImpl{}
+
+type projectSyncImpl struct {
 	evmFetcher      evm.EVMFetcher
 	apiFetcher      ethereumapi.EthereumAPI
 	wethToken       common.Address
@@ -25,12 +34,12 @@ func NewProjectSync(
 	apiFetcher ethereumapi.EthereumAPI,
 	delayedFetchSem chan struct{},
 	wethToken common.Address,
-) *ProjectSync {
+) ProjectSync {
 	if delayedFetchSem == nil {
 		delayedFetchSem = make(chan struct{}, defaultDelayedFetchConcurrency)
 	}
 
-	return &ProjectSync{
+	return &projectSyncImpl{
 		evmFetcher:      evmFetcher,
 		apiFetcher:      apiFetcher,
 		delayedFetchSem: delayedFetchSem,
@@ -38,88 +47,96 @@ func NewProjectSync(
 	}
 }
 
-func (s *ProjectSync) ResolveDelayedFields(ctx context.Context, event *Project) {
-	delay := 10 * time.Second
-	const maxDelay = 2 * time.Minute
-
-	for {
-		now := time.Now()
-		if !event.Token.SourceCode.IsReady() || !event.Token.SourceCodeABI.IsReady() {
-			sourceCode, sourceCodeABI, err := s.fetchSourceCode(ctx, event)
-			if err != nil {
-				event.Token.SourceCode.MarkFailed(err, now)
-				event.Token.SourceCodeABI.MarkFailed(err, now)
-			} else {
-				event.Token.SourceCode.MarkReady(sourceCode, now)
-				event.Token.SourceCodeABI.MarkReady(sourceCodeABI, now)
-			}
-		}
-
-		if !event.WethV2Pool.Contract.IsReady() {
-			pairContract, err := s.evmFetcher.FetchV2PairContract(ctx, event.Meta.Contract, s.wethToken)
-			if err != nil {
-				event.WethV2Pool.Contract.MarkFailed(err, now)
-			} else {
-				if pairContract == common.HexToAddress("0x000000000000000000000000000000000000") {
-					simulatedPairContract, err := s.evmFetcher.FetchV2PairContractByCallMsg(ctx, event.Meta.Contract, s.wethToken)
-					if err != nil {
-						log.WithFields(log.Fields{
-							"projectID": event.Meta.ProjectID,
-							"contract":  event.Meta.Contract,
-							"wethToken": s.wethToken,
-							"error":     err,
-						}).Error("failed to fetch v2 pair contract")
-						event.WethV2Pool.Contract.MarkFailed(err, now)
-					} else {
-						event.WethV2Pool.Contract.MarkReady(simulatedPairContract, now)
-					}
-				} else {
-					event.WethV2Pool.Contract.MarkReady(pairContract, now)
-				}
-			}
-		}
-
-		isWethV2PoolCreated, _ := event.WethV2Pool.IsContractCreated.Get()
-		if !isWethV2PoolCreated {
-			_, err := s.evmFetcher.FetchV2PairContract(ctx, event.Meta.Contract, s.wethToken)
-			if err != nil {
-				event.WethV2Pool.IsContractCreated.MarkFailed(err, now)
-			} else {
-				event.WethV2Pool.IsContractCreated.MarkReady(true, now)
-				isWethV2PoolCreated = true
-			}
-		}
-
-		if isWethV2PoolCreated {
-			pairContract, ok := event.WethV2Pool.Contract.Get()
-			if ok {
-				totalSupply, err := s.evmFetcher.FetchV2PairTotalSupply(ctx, pairContract)
-				if err == nil {
-					event.WethV2Pool.TotalSupply.MarkReady(totalSupply, now)
-				}
-				reserve0, reserve1, blockTimestampLast, err := s.evmFetcher.FetchV2PairReserves(ctx, pairContract)
-				if err == nil {
-					event.WethV2Pool.Reserve0.MarkReady(reserve0, now)
-					event.WethV2Pool.Reserve1.MarkReady(reserve1, now)
-					event.WethV2Pool.BlockTimestampLast.MarkReady(blockTimestampLast, now)
-				}
-			}
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(withJitter(delay)):
-		}
-
-		delay *= 2
-		if delay > maxDelay {
-			delay = maxDelay
-		}
+func (s *projectSyncImpl) SyncSourceCodeOnce(ctx context.Context, event *Project) (bool, error) {
+	if event.Token.SourceCode.IsReady() && event.Token.SourceCodeABI.IsReady() {
+		return true, nil
 	}
+
+	now := time.Now()
+	sourceCode, sourceCodeABI, err := s.fetchSourceCode(ctx, event)
+	if err != nil {
+		event.Token.SourceCode.MarkFailed(err, now)
+		event.Token.SourceCodeABI.MarkFailed(err, now)
+		return false, err
+	}
+
+	event.Token.SourceCode.MarkReady(sourceCode, now)
+	event.Token.SourceCodeABI.MarkReady(sourceCodeABI, now)
+	return true, nil
 }
 
-func (s *ProjectSync) fetchSourceCode(ctx context.Context, event *Project) (string, string, error) {
+func (s *projectSyncImpl) SyncPairDiscoveryOnce(ctx context.Context, event *Project) (bool, bool, error) {
+	if isWethV2PoolCreated, _ := event.WethV2Pool.IsContractCreated.Get(); isWethV2PoolCreated {
+		return true, true, nil
+	}
+
+	now := time.Now()
+	pairContract, err := s.evmFetcher.FetchV2PairContract(ctx, event.Meta.Contract, s.wethToken)
+	if err != nil {
+		event.WethV2Pool.IsContractCreated.MarkFailed(err, now)
+		return false, false, err
+	}
+
+	if pairContract != (common.Address{}) {
+		event.WethV2Pool.Contract.MarkReady(pairContract, now)
+		event.WethV2Pool.IsContractCreated.MarkReady(true, now)
+		return true, true, nil
+	}
+
+	simulatedPairContract, err := s.evmFetcher.FetchV2PairContractByCallMsg(ctx, event.Meta.Contract, s.wethToken)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"projectID": event.Meta.ProjectID,
+			"contract":  event.Meta.Contract,
+			"wethToken": s.wethToken,
+			"error":     err,
+		}).Error("failed to simulate v2 pair contract")
+		event.WethV2Pool.Contract.MarkFailed(err, now)
+		return false, false, err
+	}
+	if simulatedPairContract != (common.Address{}) {
+		event.WethV2Pool.Contract.MarkReady(simulatedPairContract, now)
+	}
+	return false, false, nil
+}
+
+func (s *projectSyncImpl) SyncPairSnapshotOnce(ctx context.Context, event *Project) (bool, error) {
+	isWethV2PoolCreated, _ := event.WethV2Pool.IsContractCreated.Get()
+	if !isWethV2PoolCreated {
+		return true, nil
+	}
+
+	pairContract, ok := event.WethV2Pool.Contract.Get()
+	if !ok || pairContract == (common.Address{}) {
+		return true, nil
+	}
+
+	now := time.Now()
+	var syncErr error
+	totalSupply, err := s.evmFetcher.FetchV2PairTotalSupply(ctx, pairContract)
+	if err != nil {
+		event.WethV2Pool.TotalSupply.MarkFailed(err, now)
+		syncErr = errors.Join(syncErr, err)
+	} else {
+		event.WethV2Pool.TotalSupply.MarkReady(totalSupply, now)
+	}
+
+	reserve0, reserve1, blockTimestampLast, err := s.evmFetcher.FetchV2PairReserves(ctx, pairContract)
+	if err != nil {
+		event.WethV2Pool.Reserve0.MarkFailed(err, now)
+		event.WethV2Pool.Reserve1.MarkFailed(err, now)
+		event.WethV2Pool.BlockTimestampLast.MarkFailed(err, now)
+		syncErr = errors.Join(syncErr, err)
+	} else {
+		event.WethV2Pool.Reserve0.MarkReady(reserve0, now)
+		event.WethV2Pool.Reserve1.MarkReady(reserve1, now)
+		event.WethV2Pool.BlockTimestampLast.MarkReady(blockTimestampLast, now)
+	}
+
+	return false, syncErr
+}
+
+func (s *projectSyncImpl) fetchSourceCode(ctx context.Context, event *Project) (string, string, error) {
 	if err := s.acquireDelayedFetch(ctx); err != nil {
 		return "", "", err
 	}
@@ -129,10 +146,13 @@ func (s *ProjectSync) fetchSourceCode(ctx context.Context, event *Project) (stri
 	if err != nil {
 		return "", "", err
 	}
+	if len(response.Result) == 0 {
+		return "", "", errors.New("etherscan getsourcecode returned empty result")
+	}
 	return response.Result[0].SourceCode, response.Result[0].ABI, nil
 }
 
-func (s *ProjectSync) acquireDelayedFetch(ctx context.Context) error {
+func (s *projectSyncImpl) acquireDelayedFetch(ctx context.Context) error {
 	select {
 	case s.delayedFetchSem <- struct{}{}:
 		return nil
@@ -141,7 +161,7 @@ func (s *ProjectSync) acquireDelayedFetch(ctx context.Context) error {
 	}
 }
 
-func (s *ProjectSync) releaseDelayedFetch() {
+func (s *projectSyncImpl) releaseDelayedFetch() {
 	<-s.delayedFetchSem
 }
 

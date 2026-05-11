@@ -13,6 +13,7 @@ import (
 type ProjectStore interface {
 	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
 }
+
 type ProjectRegistry interface {
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
 	ListProjects(ctx context.Context) ([]*v1alpha1.ProjectView, error)

@@ -44,7 +44,7 @@ func NewCommand() *cobra.Command {
 		wethContract        string
 		etherscanAPIBaseURL string
 		etherscanAPIKey     string
-		projectMetaStoreSrc func(context.Context) (application.ProjectMetaStore, error)
+		projectMetaStoreSrc func(context.Context) (application.ProjectStore, error)
 	)
 
 	command := &cobra.Command{
@@ -88,7 +88,7 @@ func NewCommand() *cobra.Command {
 				WethContract:        ethcommon.HexToAddress(wethContract),
 				EtherscanAPIBaseURL: etherscanAPIBaseURL,
 				EtherscanAPIKey:     etherscanAPIKey,
-				ProjectMetaStore:    projectMetaStore,
+				ProjectStore:        projectMetaStore,
 			})
 
 			applicationGrpc := server.CreateGRPC()
