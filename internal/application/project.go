@@ -76,6 +76,37 @@ type PairV2State struct {
 	LockedLiquidity FieldValue[*big.Int] // locked liquidity of the pool
 }
 
+func (p *PairV2State) IsLowValuePool() bool {
+	// weth balance of the pool is less than 0.1 WETH
+	wethBalance, ok := p.WethBalance.Get()
+	if !ok || wethBalance == nil {
+		return false
+	}
+	return wethBalance.Cmp(big.NewInt(MinWethValue)) < 0
+}
+
+func (p *PairV2State) HasLiquidity() bool {
+	// Reserve0 != 0 && Reserve1 != 0
+	reserve0, ok := p.Reserve0.Get()
+	if !ok || reserve0.Cmp(big.NewInt(0)) == 0 {
+		return false
+	}
+	reserve1, ok := p.Reserve1.Get()
+	if !ok || reserve1.Cmp(big.NewInt(0)) == 0 {
+		return false
+	}
+	return true
+}
+
+func (p *PairV2State) HasOnlyMinimumLiquidity() bool {
+	// TotalSupply == 1000
+	totalSupply, ok := p.TotalSupply.Get()
+	if !ok || totalSupply.Cmp(big.NewInt(1000)) != 0 {
+		return false
+	}
+	return true
+}
+
 func projectToView(project *Project) *v1alpha1.ProjectView {
 	if project == nil {
 		return nil

@@ -1,0 +1,3 @@
+package application
+
+const MinWethValue = 100000000000000000 // 0.1 WETH
