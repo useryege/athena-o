@@ -82,6 +82,14 @@ func NewCommand() *cobra.Command {
 				log.Fatalf("failed to connect to node websocket: %v", err)
 			}
 
+			if wethContract == "" {
+				log.Fatal("WETH contract address is required.Set it by --weth-contract flag or ATHENA_APPLICATION_WETH_CONTRACT environment variable")
+			}
+
+			if v2FactoryContract == "" {
+				log.Fatal("V2 Factory contract address is required.Set it by --v2-factory-contract flag or ATHENA_APPLICATION_V2_FACTORY_CONTRACT environment variable")
+			}
+
 			server := application.NewServer(application.ApplicationServerOpts{
 				NodeClient:          nodeClient,
 				V2FactoryContract:   ethcommon.HexToAddress(v2FactoryContract),

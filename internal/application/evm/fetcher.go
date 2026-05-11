@@ -11,6 +11,8 @@ import (
 	"github.com/useryege/athena/pkg/abi/ERC20"
 	"github.com/useryege/athena/pkg/abi/IPancakePair"
 	"github.com/useryege/athena/pkg/abi/IUniswapV2Factory"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type EVMFetcher interface {
@@ -26,21 +28,52 @@ type EVMFetcher interface {
 	FetchV2PairKLast(ctx context.Context, PairContract common.Address) (*big.Int, error)
 	FetchV2PairReserves(ctx context.Context, PairContract common.Address) (*big.Int, *big.Int, uint32, error)
 	FetchV2PairContractByCallMsg(ctx context.Context, Token0Contract common.Address, Token1Contract common.Address) (common.Address, error)
+	FetchWethContract() common.Address
+	FetchWethSymbol() string
+	FetchWethDecimals() uint8
 }
 
 type evmFetcherImpl struct {
 	nodeClient        *ethclient.Client
 	v2FactoryContract common.Address
+	wethContract      common.Address
+	wethSymbol        string
+	wethDecimals      uint8
 }
 
-func NewEVMFetcher(nodeClient *ethclient.Client, v2FactoryContract common.Address) EVMFetcher {
-	if v2FactoryContract == (common.Address{}) {
-		panic("V2 Factory contract address is required.Set it by --v2-factory-contract flag or ATHENA_APPLICATION_V2_FACTORY_CONTRACT environment variable")
+func NewEVMFetcher(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address) EVMFetcher {
+	reader := &bind.CallOpts{Context: context.Background()}
+	tokenCaller, err := ERC20.NewERC20Caller(wethContract, nodeClient)
+	if err != nil {
+		log.Fatalf("failed to create ERC20 caller: %v", err)
+	}
+	symbol, err := tokenCaller.Symbol(reader)
+	if err != nil {
+		log.Fatalf("failed to fetch WETH symbol: %v", err)
+	}
+	decimals, err := tokenCaller.Decimals(reader)
+	if err != nil {
+		log.Fatalf("failed to fetch WETH decimals: %v", err)
 	}
 	return &evmFetcherImpl{
 		nodeClient:        nodeClient,
 		v2FactoryContract: v2FactoryContract,
+		wethContract:      wethContract,
+		wethSymbol:        symbol,
+		wethDecimals:      decimals,
 	}
+}
+
+func (f *evmFetcherImpl) FetchWethContract() common.Address {
+	return f.wethContract
+}
+
+func (f *evmFetcherImpl) FetchWethSymbol() string {
+	return f.wethSymbol
+}
+
+func (f *evmFetcherImpl) FetchWethDecimals() uint8 {
+	return f.wethDecimals
 }
 
 func (f *evmFetcherImpl) FetchTokenBalanceOf(ctx context.Context, TokenContract common.Address, WalletAddress common.Address) (*big.Int, error) {

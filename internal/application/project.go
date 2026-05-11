@@ -42,6 +42,22 @@ type TokenState struct {
 
 	SourceCode    FieldValue[string]
 	SourceCodeABI FieldValue[string]
+
+	BalanceOfPool FieldValue[*big.Int]
+}
+
+func (t *TokenState) IsPairBalanceOverSupply() bool {
+	balanceOfPool, ok := t.BalanceOfPool.Get()
+	if !ok {
+		return false
+	}
+
+	totalSupply, ok := t.TotalSupply.Get()
+	if !ok {
+		return false
+	}
+
+	return balanceOfPool.Cmp(totalSupply) > 0
 }
 
 type PairV2State struct {
@@ -55,6 +71,8 @@ type PairV2State struct {
 	Reserve0           FieldValue[*big.Int]
 	Reserve1           FieldValue[*big.Int]
 	BlockTimestampLast FieldValue[uint32]
+
+	WethBalance FieldValue[*big.Int] // weth balance of the pool
 }
 
 func projectToView(project *Project) *v1alpha1.ProjectView {

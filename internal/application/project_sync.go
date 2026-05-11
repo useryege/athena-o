@@ -27,6 +27,7 @@ type projectSyncImpl struct {
 	apiFetcher      ethereumapi.EthereumAPI
 	wethToken       common.Address
 	delayedFetchSem chan struct{}
+	liquidityLocker []common.Address
 }
 
 func NewProjectSync(
@@ -34,6 +35,7 @@ func NewProjectSync(
 	apiFetcher ethereumapi.EthereumAPI,
 	delayedFetchSem chan struct{},
 	wethToken common.Address,
+	liquidityLocker []common.Address,
 ) ProjectSync {
 	if delayedFetchSem == nil {
 		delayedFetchSem = make(chan struct{}, defaultDelayedFetchConcurrency)
@@ -44,6 +46,7 @@ func NewProjectSync(
 		apiFetcher:      apiFetcher,
 		delayedFetchSem: delayedFetchSem,
 		wethToken:       wethToken,
+		liquidityLocker: liquidityLocker,
 	}
 }
 
@@ -119,6 +122,22 @@ func (s *projectSyncImpl) SyncPairSnapshotOnce(ctx context.Context, event *Proje
 		syncErr = errors.Join(syncErr, err)
 	} else {
 		event.WethV2Pool.TotalSupply.MarkReady(totalSupply, now)
+	}
+
+	balanceOfPool, err := s.evmFetcher.FetchTokenBalanceOf(ctx, event.Meta.Contract, pairContract)
+	if err != nil {
+		event.Token.BalanceOfPool.MarkFailed(err, now)
+		syncErr = errors.Join(syncErr, err)
+	} else {
+		event.Token.BalanceOfPool.MarkReady(balanceOfPool, now)
+	}
+
+	wethBalance, err := s.evmFetcher.FetchTokenBalanceOf(ctx, s.wethToken, pairContract)
+	if err != nil {
+		event.WethV2Pool.WethBalance.MarkFailed(err, now)
+		syncErr = errors.Join(syncErr, err)
+	} else {
+		event.WethV2Pool.WethBalance.MarkReady(wethBalance, now)
 	}
 
 	reserve0, reserve1, blockTimestampLast, err := s.evmFetcher.FetchV2PairReserves(ctx, pairContract)
