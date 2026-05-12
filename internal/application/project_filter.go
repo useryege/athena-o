@@ -127,12 +127,12 @@ func (f *ProjectFilter) run(ctx context.Context) error {
 				}
 			}
 
-			log.WithFields(log.Fields{
-				"component":   "Project Filter",
-				"blockNumber": event.Meta.BlockNumber,
-				"blockTime":   event.Meta.BlockTime,
-				"transaction": event.Meta.Tx.Hash(),
-			}).Info("project filter received contract creation transaction")
+			// log.WithFields(log.Fields{
+			// 	"component":   "Project Filter",
+			// 	"blockNumber": event.Meta.BlockNumber,
+			// 	"blockTime":   event.Meta.BlockTime,
+			// 	"transaction": event.Meta.Tx.Hash(),
+			// }).Info("project filter received contract creation transaction")
 		}
 	}
 }

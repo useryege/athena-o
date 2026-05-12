@@ -184,9 +184,9 @@ func (s *projectSchedulerImpl) syncProjectSourceCode(projectID uuid.UUID) {
 		}).Warn("failed to update project source code state")
 	}
 	if done {
-		log.WithFields(log.Fields{
-			"projectID": project.Meta.ProjectID,
-			"contract":  project.Meta.Contract,
-		}).Debug("project source code sync completed")
+		// log.WithFields(log.Fields{
+		// 	"projectID": project.Meta.ProjectID,
+		// 	"contract":  project.Meta.Contract,
+		// }).Debug("project source code sync completed")
 	}
 }

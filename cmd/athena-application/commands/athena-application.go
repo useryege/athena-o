@@ -197,7 +197,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
 	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")
 	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")
-	projectMetaStoreSrc = applicationdb.AddProjectMetaStoreFlagsToCmd(command)
+	projectMetaStoreSrc = applicationdb.NewProjectMetaStoreSource()
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

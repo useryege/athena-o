@@ -5,11 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"github.com/useryege/athena/internal/application"
 	"github.com/useryege/athena/util/env"
 )
@@ -27,22 +28,10 @@ func NewProjectMetaStore(db *sql.DB) application.ProjectStore {
 	return &projectMetaStore{db: db}
 }
 
-func AddProjectMetaStoreFlagsToCmd(cmd *cobra.Command) func(context.Context) (application.ProjectStore, error) {
-	var postgresDSN string
-	defaultDSN := fmt.Sprintf("host=127.0.0.1 port=%s user=%s dbname=%s sslmode=disable",
-		env.StringFromEnv("ATHENA_POSTGRES_PORT", "5432"),
-		env.StringFromEnv("POSTGRES_USER", "athena"),
-		env.StringFromEnv("POSTGRES_DB", "athena"),
-	)
-	cmd.Flags().StringVar(&postgresDSN, "postgres-dsn", env.StringFromEnv("ATHENA_APPLICATION_POSTGRES_DSN", defaultDSN), "PostgreSQL DSN")
-
+func NewProjectMetaStoreSource() func(context.Context) (application.ProjectStore, error) {
 	return func(ctx context.Context) (application.ProjectStore, error) {
-		if postgresDSN == "" {
-			return nil, errors.New("PostgreSQL DSN is required. Set it by --postgres-dsn flag or ATHENA_APPLICATION_POSTGRES_DSN environment variable")
-		}
-
 		log.Info("connecting to postgres database")
-		db, err := sql.Open("pgx", postgresDSN)
+		db, err := sql.Open("pgx", defaultPostgresDSN())
 		if err != nil {
 			return nil, fmt.Errorf("failed to open postgres database: %w", err)
 		}
@@ -75,6 +64,27 @@ func AddProjectMetaStoreFlagsToCmd(cmd *cobra.Command) func(context.Context) (ap
 
 		return NewProjectMetaStore(db), nil
 	}
+}
+
+func defaultPostgresDSN() string {
+	postgresUser := env.StringFromEnv("POSTGRES_USER", "athena")
+	postgresPassword := env.StringFromEnv("POSTGRES_PASSWORD", "")
+
+	postgresURL := url.URL{
+		Scheme: "postgres",
+		User:   url.User(postgresUser),
+		Host:   net.JoinHostPort("127.0.0.1", env.StringFromEnv("ATHENA_POSTGRES_PORT", "5432")),
+		Path:   env.StringFromEnv("POSTGRES_DB", "athena"),
+	}
+	if postgresPassword != "" {
+		postgresURL.User = url.UserPassword(postgresUser, postgresPassword)
+	}
+
+	query := postgresURL.Query()
+	query.Set("sslmode", "disable")
+	postgresURL.RawQuery = query.Encode()
+
+	return postgresURL.String()
 }
 
 func (s *projectMetaStore) Close() error {
