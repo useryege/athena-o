@@ -54,9 +54,8 @@ func (r *fakeProjectRegistry) RemoveProject(ctx context.Context, projectID uuid.
 }
 
 type fakeProjectSyncer struct {
-	sourceCodeFunc    func(context.Context, *Project) (bool, error)
-	pairDiscoveryFunc func(context.Context, *Project) (bool, bool, error)
-	pairSnapshotFunc  func(context.Context, *Project) (bool, error)
+	sourceCodeFunc   func(context.Context, *Project) (bool, error)
+	pairSnapshotFunc func(context.Context, *Project) (bool, error)
 }
 
 var _ ProjectSync = &fakeProjectSyncer{}
@@ -66,13 +65,6 @@ func (s *fakeProjectSyncer) SyncSourceCodeOnce(ctx context.Context, project *Pro
 		return true, nil
 	}
 	return s.sourceCodeFunc(ctx, project)
-}
-
-func (s *fakeProjectSyncer) SyncPairDiscoveryOnce(ctx context.Context, project *Project) (bool, bool, error) {
-	if s.pairDiscoveryFunc == nil {
-		return false, true, nil
-	}
-	return s.pairDiscoveryFunc(ctx, project)
 }
 
 func (s *fakeProjectSyncer) SyncPairSnapshotOnce(ctx context.Context, project *Project) (bool, error) {
@@ -121,14 +113,11 @@ func TestProjectSchedulerStopsSourceCodeAfterMaxAttempts(t *testing.T) {
 	}
 }
 
-func TestProjectSchedulerSchedulesSnapshotAfterPairDiscovery(t *testing.T) {
+func TestProjectSchedulerSchedulesSnapshotAfterEnqueue(t *testing.T) {
 	project := newSchedulerTestProject()
 	registry := newFakeProjectRegistry(project)
 	var snapshotCalls atomic.Int32
 	syncer := &fakeProjectSyncer{
-		pairDiscoveryFunc: func(context.Context, *Project) (bool, bool, error) {
-			return true, true, nil
-		},
 		pairSnapshotFunc: func(context.Context, *Project) (bool, error) {
 			snapshotCalls.Add(1)
 			return true, nil
@@ -158,31 +147,22 @@ func TestProjectSchedulerSchedulesSnapshotAfterPairDiscovery(t *testing.T) {
 	}
 }
 
-func TestProjectSchedulerRetriesPairDiscoveryBeforeSnapshot(t *testing.T) {
+func TestProjectSchedulerRepeatsSnapshotUntilDone(t *testing.T) {
 	project := newSchedulerTestProject()
 	registry := newFakeProjectRegistry(project)
-	var discoveryCalls atomic.Int32
 	var snapshotCalls atomic.Int32
 	syncer := &fakeProjectSyncer{
-		pairDiscoveryFunc: func(context.Context, *Project) (bool, bool, error) {
-			if discoveryCalls.Add(1) < 3 {
-				return false, false, nil
-			}
-			return true, true, nil
-		},
 		pairSnapshotFunc: func(context.Context, *Project) (bool, error) {
-			snapshotCalls.Add(1)
-			return true, nil
+			return snapshotCalls.Add(1) >= 3, nil
 		},
 	}
 	scheduler := NewProjectScheduler(registry, syncer, ProjectSchedulerOptions{
-		WorkerCount:              1,
-		QueueCapacity:            16,
-		InitialDelay:             time.Millisecond,
-		MaxDelay:                 time.Millisecond,
-		PairDiscoveryMaxAttempts: 4,
-		PairSnapshotInterval:     time.Millisecond,
-		SourceCodeMaxAttempts:    1,
+		WorkerCount:           1,
+		QueueCapacity:         16,
+		InitialDelay:          time.Millisecond,
+		MaxDelay:              time.Millisecond,
+		PairSnapshotInterval:  time.Millisecond,
+		SourceCodeMaxAttempts: 1,
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -195,7 +175,7 @@ func TestProjectSchedulerRetriesPairDiscoveryBeforeSnapshot(t *testing.T) {
 	}
 
 	waitForCondition(t, func() bool {
-		return discoveryCalls.Load() == 3 && snapshotCalls.Load() > 0
+		return snapshotCalls.Load() == 3
 	})
 	if err := scheduler.Stop(); err != nil {
 		t.Fatalf("stop scheduler: %v", err)

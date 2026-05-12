@@ -20,6 +20,7 @@ type ApplicationServerOpts struct {
 	NodeClient          *ethclient.Client
 	V2FactoryContract   common.Address
 	WethContract        common.Address
+	AthenaContract      common.Address
 	EtherscanAPIBaseURL string
 	EtherscanAPIKey     string
 	ProjectStore        ProjectStore
@@ -29,7 +30,7 @@ type ApplicationServerOpts struct {
 func NewServer(opts ApplicationServerOpts) *ApplicationServer {
 	return &ApplicationServer{
 		ApplicationServerOpts: opts,
-		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, opts.ProjectStore, opts.LiquidityLocker),
+		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.AthenaContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, opts.ProjectStore, opts.LiquidityLocker),
 	}
 }
 

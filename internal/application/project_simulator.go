@@ -13,8 +13,6 @@ import (
 
 type ProjectSimulator interface {
 	Simulate(msgCaller common.Address, tokenAddress common.Address, pairContract common.Address) (SimulateResult, error)
-	TransferFromMint(msgCaller common.Address, tokenAddress common.Address, mintFrom common.Address) (bool, error)
-	TransferMint(msgCaller common.Address, tokenAddress common.Address, to common.Address) (bool, error)
 }
 
 var _ ProjectSimulator = &projectSimulatorImpl{}

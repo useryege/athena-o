@@ -12,33 +12,30 @@ import (
 )
 
 const (
-	defaultProjectSyncWorkers              = 10
-	defaultProjectSyncQueueCapacity        = 4096
-	defaultProjectSyncInitialDelay         = 10 * time.Second
-	defaultProjectSyncMaxDelay             = 1 * time.Minute
-	defaultProjectSourceCodeMaxAttempts    = 999999999
-	defaultProjectPairDiscoveryMaxAttempts = 999999999
-	defaultProjectPairSnapshotInterval     = time.Minute
+	defaultProjectSyncWorkers           = 10
+	defaultProjectSyncQueueCapacity     = 4096
+	defaultProjectSyncInitialDelay      = 10 * time.Second
+	defaultProjectSyncMaxDelay          = 1 * time.Minute
+	defaultProjectSourceCodeMaxAttempts = 999999999
+	defaultProjectPairSnapshotInterval  = time.Minute
 )
 
 type ProjectSyncTaskKind string
 
 const (
-	sourceCodeTask    ProjectSyncTaskKind = "source_code"
-	pairDiscoveryTask ProjectSyncTaskKind = "pair_discovery"
-	pairSnapshotTask  ProjectSyncTaskKind = "pair_snapshot"
+	sourceCodeTask   ProjectSyncTaskKind = "source_code"
+	pairSnapshotTask ProjectSyncTaskKind = "pair_snapshot"
 )
 
 var ErrProjectSchedulerNotStarted = errors.New("project scheduler is not started")
 
 type ProjectSchedulerOptions struct {
-	WorkerCount              int
-	QueueCapacity            int
-	InitialDelay             time.Duration
-	MaxDelay                 time.Duration
-	SourceCodeMaxAttempts    int
-	PairDiscoveryMaxAttempts int
-	PairSnapshotInterval     time.Duration
+	WorkerCount           int
+	QueueCapacity         int
+	InitialDelay          time.Duration
+	MaxDelay              time.Duration
+	SourceCodeMaxAttempts int
+	PairSnapshotInterval  time.Duration
 }
 
 type ProjectScheduler interface {
@@ -97,9 +94,6 @@ func normalizeProjectSchedulerOptions(opts ProjectSchedulerOptions) ProjectSched
 	}
 	if opts.SourceCodeMaxAttempts <= 0 {
 		opts.SourceCodeMaxAttempts = defaultProjectSourceCodeMaxAttempts
-	}
-	if opts.PairDiscoveryMaxAttempts <= 0 {
-		opts.PairDiscoveryMaxAttempts = defaultProjectPairDiscoveryMaxAttempts
 	}
 	if opts.PairSnapshotInterval <= 0 {
 		opts.PairSnapshotInterval = defaultProjectPairSnapshotInterval
@@ -171,7 +165,7 @@ func (s *projectSchedulerImpl) EnqueueProject(ctx context.Context, project *Proj
 	}
 	return s.schedule(ctx, ProjectSyncTask{
 		projectID: projectID,
-		kind:      pairDiscoveryTask,
+		kind:      pairSnapshotTask,
 		attempt:   1,
 		nextRunAt: time.Now().Add(withJitter(s.opts.InitialDelay)),
 	})
@@ -270,8 +264,6 @@ func (s *projectSchedulerImpl) handleTask(task ProjectSyncTask) {
 	switch task.kind {
 	case sourceCodeTask:
 		s.handleSourceCodeTask(task, project)
-	case pairDiscoveryTask:
-		s.handlePairDiscoveryTask(task, project)
 	case pairSnapshotTask:
 		s.handlePairSnapshotTask(task, project)
 	default:
@@ -290,30 +282,6 @@ func (s *projectSchedulerImpl) handleSourceCodeTask(task ProjectSyncTask, projec
 		}).Warn("failed to sync project source code")
 	}
 	if done || task.attempt >= s.opts.SourceCodeMaxAttempts {
-		return
-	}
-	s.reschedule(task, s.backoff(task.attempt))
-}
-
-func (s *projectSchedulerImpl) handlePairDiscoveryTask(task ProjectSyncTask, project *Project) {
-	created, done, err := s.syncer.SyncPairDiscoveryOnce(s.ctx, project)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"projectID": project.Meta.ProjectID,
-			"contract":  project.Meta.Contract,
-			"attempt":   task.attempt,
-			"error":     err,
-		}).Warn("failed to discover project v2 pair")
-	}
-	if created {
-		s.reschedule(ProjectSyncTask{
-			projectID: project.Meta.ProjectID,
-			kind:      pairSnapshotTask,
-			attempt:   1,
-		}, 0)
-		return
-	}
-	if done || task.attempt >= s.opts.PairDiscoveryMaxAttempts {
 		return
 	}
 	s.reschedule(task, s.backoff(task.attempt))

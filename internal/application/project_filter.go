@@ -3,38 +3,31 @@ package application
 import (
 	"context"
 	"errors"
-	"math/big"
 	"sync"
-	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/evm"
-	"github.com/useryege/athena/util/evmtool"
 )
 
 type ProjectFilter struct {
-	wg         sync.WaitGroup
-	registry   ProjectRegistry
-	inputCh    <-chan *Project
-	evmFetcher evm.EVMFetcher
-	wethToken  common.Address
-	scheduler  ProjectScheduler
+	wg        sync.WaitGroup
+	registry  ProjectRegistry
+	inputCh   <-chan *Project
+	fetcher   evm.AthenaFetcher
+	scheduler ProjectScheduler
 }
 
 func NewProjectFilter(
 	registry ProjectRegistry,
 	inputCh <-chan *Project,
-	evmFetcher evm.EVMFetcher,
+	fetcher evm.AthenaFetcher,
 	scheduler ProjectScheduler,
-	wethToken common.Address,
 ) *ProjectFilter {
 	return &ProjectFilter{
-		registry:   registry,
-		inputCh:    inputCh,
-		evmFetcher: evmFetcher,
-		wethToken:  wethToken,
-		scheduler:  scheduler,
+		registry:  registry,
+		inputCh:   inputCh,
+		fetcher:   fetcher,
+		scheduler: scheduler,
 	}
 }
 
@@ -50,73 +43,19 @@ func (f *ProjectFilter) Start(ctx context.Context) error {
 	return nil
 }
 
-var ErrTotalSupplyIsNil = errors.New("totalSupply is nil")
-var ErrTotalSupplyIsZero = errors.New("totalSupply is 0")
-var ErrNameIsEmpty = errors.New("name is empty")
-var ErrSymbolIsEmpty = errors.New("symbol is empty")
-var ErrDecimalsIsZero = errors.New("decimals is 0")
+var ErrInvalidERC20 = errors.New("invalid ERC20")
 
 func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
-	// try to call totalSupply
-	totalSupply, err := f.evmFetcher.FetchTokenTotalSupply(ctx, event.Meta.Contract)
+	snapshot, err := f.fetcher.FetchProject(ctx, event.Meta.Contract)
 	if err != nil {
 		return err
 	}
-	if totalSupply == nil {
-		return ErrTotalSupplyIsNil
-	}
-	if totalSupply.Cmp(big.NewInt(0)) == 0 {
-		return ErrTotalSupplyIsZero
+	if !snapshot.Token.IsValidERC20 {
+		return ErrInvalidERC20
 	}
 
-	// try to call balanceOf
-	_, err = f.evmFetcher.FetchTokenBalanceOf(ctx, event.Meta.Contract, common.HexToAddress("0x0000000000000000000000000000000000000000"))
-	if err != nil {
-		return err
-	}
-
-	// try to call decimals
-	decimals, err := f.evmFetcher.FetchTokenDecimals(ctx, event.Meta.Contract)
-	if err != nil {
-		return err
-	}
-	if decimals == 0 {
-		return ErrDecimalsIsZero
-	}
-
-	// try to call name
-	name, err := f.evmFetcher.FetchTokenName(ctx, event.Meta.Contract)
-	if err != nil {
-		return err
-	}
-	if name == "" {
-		return ErrNameIsEmpty
-	}
-
-	// try to call symbol
-	symbol, err := f.evmFetcher.FetchTokenSymbol(ctx, event.Meta.Contract)
-	if err != nil {
-		return err
-	}
-	if symbol == "" {
-		return ErrSymbolIsEmpty
-	}
-
-	token0 := evmtool.GetToken0(event.Meta.Contract, f.wethToken)
-
-	token1 := evmtool.GetToken1(event.Meta.Contract, f.wethToken)
-
-	// set the values to the project state
-	now := time.Now()
-	event.Token.Name.MarkReady(name, now)
-	event.Token.Symbol.MarkReady(symbol, now)
-	event.Token.Decimals.MarkReady(decimals, now)
-	event.Token.TotalSupply.MarkReady(totalSupply, now)
-	event.WethV2Pool.Token0.MarkReady(token0, now)
-	event.WethV2Pool.Token1.MarkReady(token1, now)
-
+	event.ChainState = snapshot
 	return nil
-
 }
 
 func isExecutionRevertedError(err error) bool {
@@ -125,11 +64,7 @@ func isExecutionRevertedError(err error) bool {
 	}
 
 	// Internal validation failures should be treated as ignorable init errors.
-	if errors.Is(err, ErrTotalSupplyIsNil) ||
-		errors.Is(err, ErrTotalSupplyIsZero) ||
-		errors.Is(err, ErrNameIsEmpty) ||
-		errors.Is(err, ErrSymbolIsEmpty) ||
-		errors.Is(err, ErrDecimalsIsZero) {
+	if errors.Is(err, ErrInvalidERC20) {
 		return true
 	}
 

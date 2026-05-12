@@ -43,6 +43,7 @@ func NewCommand() *cobra.Command {
 		nodewsurl           string
 		v2FactoryContract   string
 		wethContract        string
+		athenaContract      string
 		etherscanAPIBaseURL string
 		etherscanAPIKey     string
 		liquidityLockers    []string
@@ -94,6 +95,11 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 
+			athenaContractAddress, err := parseRequiredAddress("ATHENA contract address", athenaContract, "--athena-contract", "ATHENA_APPLICATION_ATHENA_CONTRACT")
+			if err != nil {
+				return err
+			}
+
 			if err := validateRequiredString("Etherscan API base URL", etherscanAPIBaseURL, "--etherscan-api-base-url", "ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL"); err != nil {
 				return err
 			}
@@ -111,6 +117,7 @@ func NewCommand() *cobra.Command {
 				NodeClient:          nodeClient,
 				V2FactoryContract:   v2FactoryContractAddress,
 				WethContract:        wethContractAddress,
+				AthenaContract:      athenaContractAddress,
 				EtherscanAPIBaseURL: etherscanAPIBaseURL,
 				EtherscanAPIKey:     etherscanAPIKey,
 				ProjectStore:        projectMetaStore,
@@ -186,6 +193,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_APPLICATION_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
 	command.Flags().StringVar(&v2FactoryContract, "v2-factory-contract", env.StringFromEnv("ATHENA_APPLICATION_V2_FACTORY_CONTRACT", "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"), "V2 Factory contract address")
 	command.Flags().StringVar(&wethContract, "weth-contract", env.StringFromEnv("ATHENA_APPLICATION_WETH_CONTRACT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"), "WETH contract address")
+	command.Flags().StringVar(&athenaContract, "athena-contract", env.StringFromEnv("ATHENA_APPLICATION_ATHENA_CONTRACT", ""), "ATHENA aggregation contract address")
 	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
 	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")
 	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")

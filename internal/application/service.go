@@ -23,6 +23,7 @@ type Service struct {
 	nodeClient        *ethclient.Client
 	v2FactoryContract common.Address
 	wethContract      common.Address
+	athenaContract    common.Address
 
 	etherscanAPIBaseURL string
 	etherscanAPIKey     string
@@ -44,7 +45,7 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, projectStore ProjectStore, liquidityLocker []common.Address) *Service {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, projectStore ProjectStore, liquidityLocker []common.Address) *Service {
 	registry := NewProjectRegistry(projectStore)
 
 	return &Service{
@@ -54,6 +55,7 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		delayedFetchSem:     make(chan struct{}, defaultDelayedFetchConcurrency),
 		v2FactoryContract:   v2FactoryContract,
 		wethContract:        wethContract,
+		athenaContract:      athenaContract,
 		etherscanAPIBaseURL: etherscanAPIBaseURL,
 		etherscanAPIKey:     etherscanAPIKey,
 		liquidityLocker:     liquidityLocker,
@@ -71,10 +73,17 @@ func (s *Service) Start() error {
 	ch1 := make(chan *Project, 24)
 	s.projectCh = ch1
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, ch1)
-	evmFetcher := evm.NewEVMFetcher(s.nodeClient, s.v2FactoryContract, s.wethContract)
+	athenaFetcher, err := evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
+	if err != nil {
+		close(ch1)
+		s.clearPipelineLocked()
+		return err
+	}
 
 	chainID, err := s.nodeClient.ChainID(context.Background())
 	if err != nil {
+		close(ch1)
+		s.clearPipelineLocked()
 		return err
 	}
 
@@ -82,7 +91,7 @@ func (s *Service) Start() error {
 	projectSimulator := NewProjectSimulator(s.nodeClient)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	s.projectSync = NewProjectSync(evmFetcher, apiFetcher, projectSimulator, s.delayedFetchSem, s.wethContract, s.liquidityLocker)
+	s.projectSync = NewProjectSync(athenaFetcher, apiFetcher, projectSimulator, s.delayedFetchSem)
 	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, ProjectSchedulerOptions{})
 	if err := s.scheduler.Start(ctx); err != nil {
 		cancel()
@@ -91,7 +100,7 @@ func (s *Service) Start() error {
 		return err
 	}
 
-	s.projectFilter = NewProjectFilter(s.registry, ch1, evmFetcher, s.scheduler, s.wethContract)
+	s.projectFilter = NewProjectFilter(s.registry, ch1, athenaFetcher, s.scheduler)
 	if err := s.blockWatcher.Start(ctx); err != nil {
 		cancel()
 		_ = s.scheduler.Stop()

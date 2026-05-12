@@ -6,16 +6,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/google/uuid"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
 type Project struct {
-	Meta ProjectMeta
-
-	Token      TokenState
-	WethV2Pool PairV2State
-
-	Simulate ProjectSimulateState
+	Meta       ProjectMeta
+	ChainState athenacontract.AthenaProject
+	SourceCode ProjectSourceCodeState
+	Simulate    ProjectSimulateState
 }
 
 type ProjectMeta struct {
@@ -28,77 +27,37 @@ type ProjectMeta struct {
 	TxIndex     uint64
 }
 
-type TokenState struct {
-	Name        FieldValue[string]
-	Symbol      FieldValue[string]
-	Decimals    FieldValue[uint8]
-	TotalSupply FieldValue[*big.Int]
-
+type ProjectSourceCodeState struct {
 	SourceCode    FieldValue[string]
 	SourceCodeABI FieldValue[string]
-
-	BalanceOfPool FieldValue[*big.Int]
 }
 
-func (t *TokenState) IsPairBalanceOverSupply() bool {
-	balanceOfPool, ok := t.BalanceOfPool.Get()
-	if !ok {
+func (p *Project) IsPairBalanceOverSupply() bool {
+	if p == nil || p.ChainState.Pair.TokenReserveBalance == nil || p.ChainState.Token.TotalSupply == nil {
 		return false
 	}
-
-	totalSupply, ok := t.TotalSupply.Get()
-	if !ok {
-		return false
-	}
-
-	return balanceOfPool.Cmp(totalSupply) > 0
+	return p.ChainState.Pair.TokenReserveBalance.Cmp(p.ChainState.Token.TotalSupply) > 0
 }
 
-type PairV2State struct {
-	IsContractCreated FieldValue[bool]
-	Contract          FieldValue[common.Address]
-	Token0            FieldValue[common.Address]
-	Token1            FieldValue[common.Address]
-
-	TotalSupply FieldValue[*big.Int]
-	// reserves
-	Reserve0           FieldValue[*big.Int]
-	Reserve1           FieldValue[*big.Int]
-	BlockTimestampLast FieldValue[uint32]
-
-	WethBalance     FieldValue[*big.Int] // weth balance of the pool
-	LockedLiquidity FieldValue[*big.Int] // locked liquidity of the pool
+func (p *Project) IsLowValuePool() bool {
+	if p == nil || p.ChainState.Pair.WethReserveBalance == nil {
+		return false
+	}
+	return p.ChainState.Pair.WethReserveBalance.Cmp(big.NewInt(MinWethValue)) < 0
 }
 
-func (p *PairV2State) IsLowValuePool() bool {
-	// weth balance of the pool is less than 0.1 WETH
-	wethBalance, ok := p.WethBalance.Get()
-	if !ok || wethBalance == nil {
+func (p *Project) HasLiquidity() bool {
+	if p == nil || p.ChainState.Pair.Reserve0 == nil || p.ChainState.Pair.Reserve1 == nil {
 		return false
 	}
-	return wethBalance.Cmp(big.NewInt(MinWethValue)) < 0
+	return p.ChainState.Pair.Reserve0.Sign() != 0 && p.ChainState.Pair.Reserve1.Sign() != 0
 }
 
-func (p *PairV2State) HasLiquidity() bool {
-	// Reserve0 != 0 && Reserve1 != 0
-	reserve0, ok := p.Reserve0.Get()
-	if !ok || reserve0.Cmp(big.NewInt(0)) == 0 {
+func (p *Project) HasOnlyMinimumLiquidity() bool {
+	if p == nil || p.ChainState.Pair.TotalSupply == nil {
 		return false
 	}
-	reserve1, ok := p.Reserve1.Get()
-	if !ok || reserve1.Cmp(big.NewInt(0)) == 0 {
-		return false
-	}
-	return true
-}
-
-func (p *PairV2State) HasOnlyMinimumLiquidity() bool {
-	// TotalSupply == 1000
-	totalSupply, ok := p.TotalSupply.Get()
-	if !ok || totalSupply.Cmp(big.NewInt(1000)) != 0 {
-		return false
-	}
-	return true
+	return p.ChainState.Pair.TotalSupply.Cmp(big.NewInt(1000)) == 0
 }
 
 type ProjectSimulateState struct {
@@ -115,19 +74,9 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 		txHash = project.Meta.Tx.Hash().Hex()
 	}
 
-	totalSupply := ""
-	if supply, ok := project.Token.TotalSupply.Get(); ok && supply != nil {
-		totalSupply = supply.String()
-	}
-
-	name, _ := project.Token.Name.Get()
-	symbol, _ := project.Token.Symbol.Get()
-	decimals, _ := project.Token.Decimals.Get()
-	sourceCode, _ := project.Token.SourceCode.Get()
-	sourceCodeABI, _ := project.Token.SourceCodeABI.Get()
-
-	isWethV2PoolContractCreated, _ := project.WethV2Pool.IsContractCreated.Get()
-	wethV2PoolBlockTimestampLast, _ := project.WethV2Pool.BlockTimestampLast.Get()
+	chainState := project.ChainState
+	sourceCode, _ := project.SourceCode.SourceCode.Get()
+	sourceCodeABI, _ := project.SourceCode.SourceCodeABI.Get()
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{
@@ -140,37 +89,35 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 			TxIndex:     project.Meta.TxIndex,
 		},
 		Token: v1alpha1.TokenState{
-			Name:          name,
-			Symbol:        symbol,
-			Decimals:      uint32(decimals),
-			TotalSupply:   totalSupply,
+			Name:          chainState.Token.Name,
+			Symbol:        chainState.Token.Symbol,
+			Decimals:      uint32(chainState.Token.Decimals),
+			TotalSupply:   bigIntToString(chainState.Token.TotalSupply),
 			SourceCode:    sourceCode,
 			SourceCodeABI: sourceCodeABI,
 		},
 		WethV2Pool: v1alpha1.PairV2State{
-			IsContractCreated:  isWethV2PoolContractCreated,
-			Contract:           addressFieldToString(&project.WethV2Pool.Contract),
-			Token0:             addressFieldToString(&project.WethV2Pool.Token0),
-			Token1:             addressFieldToString(&project.WethV2Pool.Token1),
-			TotalSupply:        bigIntFieldToString(&project.WethV2Pool.TotalSupply),
-			Reserve0:           bigIntFieldToString(&project.WethV2Pool.Reserve0),
-			Reserve1:           bigIntFieldToString(&project.WethV2Pool.Reserve1),
-			BlockTimestampLast: wethV2PoolBlockTimestampLast,
+			IsContractCreated:  chainState.Pair.IsCreated,
+			Contract:           addressToString(chainState.Pair.ContractAddress),
+			Token0:             addressToString(chainState.Pair.Token0),
+			Token1:             addressToString(chainState.Pair.Token1),
+			TotalSupply:        bigIntToString(chainState.Pair.TotalSupply),
+			Reserve0:           bigIntToString(chainState.Pair.Reserve0),
+			Reserve1:           bigIntToString(chainState.Pair.Reserve1),
+			BlockTimestampLast: chainState.Pair.BlockTimestampLast,
 		},
 	}
 }
 
-func bigIntFieldToString(field *FieldValue[*big.Int]) string {
-	value, ok := field.Get()
-	if !ok || value == nil {
+func bigIntToString(value *big.Int) string {
+	if value == nil {
 		return ""
 	}
 	return value.String()
 }
 
-func addressFieldToString(field *FieldValue[common.Address]) string {
-	value, ok := field.Get()
-	if !ok {
+func addressToString(value common.Address) string {
+	if value == (common.Address{}) {
 		return ""
 	}
 	return value.String()
