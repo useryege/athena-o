@@ -54,6 +54,9 @@ func (s *BlockEventSubscriber) run(ctx context.Context) error {
 	}
 	defer subscription.Unsubscribe()
 
+	syncDone := make(chan error, 1)
+	syncRunning := false
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -85,7 +88,19 @@ func (s *BlockEventSubscriber) run(ctx context.Context) error {
 				}).Info("received new block header")
 			}
 
-			if err := s.refreshProjectStates(ctx, triggerBlockNumber); err != nil {
+			if syncRunning {
+				continue
+			}
+
+			syncRunning = true
+			s.wg.Add(1)
+			go func() {
+				defer s.wg.Done()
+				syncDone <- s.refreshProjectStates(ctx, triggerBlockNumber)
+			}()
+		case err := <-syncDone:
+			syncRunning = false
+			if err != nil {
 				return err
 			}
 		}

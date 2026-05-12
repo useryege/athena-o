@@ -74,23 +74,29 @@ func (s *projectSyncImpl) SyncSourceCodeOnce(ctx context.Context, event *Project
 }
 
 func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBlockNumber uint64) (syncErr error) {
+	syncStartedAt := time.Now()
+	fields := log.Fields{
+		"blockNumber": triggerBlockNumber,
+	}
+
+	startBlockNumberStartedAt := time.Now()
 	startBlockNumber, err := s.nodeClient.BlockNumber(ctx)
+	fields["startBlockNumberDuration"] = time.Since(startBlockNumberStartedAt)
+	fields["startBlockNumber"] = startBlockNumber
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			return err
 		}
-		log.WithFields(log.Fields{
-			"blockNumber": triggerBlockNumber,
-			"error":       err,
-		}).Warn("failed to get start block number before refreshing project chain states")
+		fields["error"] = err
+		log.WithFields(fields).Warn("failed to get start block number before refreshing project chain states")
+		delete(fields, "error")
 	}
 
-	fields := log.Fields{
-		"blockNumber":      triggerBlockNumber,
-		"startBlockNumber": startBlockNumber,
-	}
 	defer func() {
+		endBlockNumberStartedAt := time.Now()
 		endBlockNumber, err := s.nodeClient.BlockNumber(ctx)
+		fields["endBlockNumberDuration"] = time.Since(endBlockNumberStartedAt)
+		fields["totalDuration"] = time.Since(syncStartedAt)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
 				syncErr = err
@@ -116,7 +122,9 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 		log.WithFields(fields).Info("refreshed project chain states")
 	}()
 
+	listStartedAt := time.Now()
 	refs, err := s.registry.ListProjectContracts(ctx)
+	fields["listProjectContractsDuration"] = time.Since(listStartedAt)
 	if err != nil {
 		return err
 	}
@@ -125,10 +133,12 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 		return nil
 	}
 
+	buildTokenContractsStartedAt := time.Now()
 	tokenContracts := make([]common.Address, 0, len(refs))
 	for _, ref := range refs {
 		tokenContracts = append(tokenContracts, ref.Contract)
 	}
+	fields["buildTokenContractsDuration"] = time.Since(buildTokenContractsStartedAt)
 
 	fetchStartedAt := time.Now()
 	snapshots, err := s.fetcher.FetchProjects(ctx, tokenContracts)
@@ -140,6 +150,7 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 		return fmt.Errorf("athena list returned %d projects for %d token contracts", len(snapshots), len(refs))
 	}
 
+	buildStatesStartedAt := time.Now()
 	states := make(map[uuid.UUID]athenacontract.AthenaProject, len(refs))
 	for i, ref := range refs {
 		snapshot := snapshots[i]
@@ -148,25 +159,43 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 		}
 		states[ref.ProjectID] = snapshot
 	}
+	fields["buildStatesDuration"] = time.Since(buildStatesStartedAt)
+
+	updateStatesStartedAt := time.Now()
 	if err := s.registry.UpdateProjectChainStates(ctx, states); err != nil {
+		fields["updateProjectChainStatesDuration"] = time.Since(updateStatesStartedAt)
 		return err
 	}
+	fields["updateProjectChainStatesDuration"] = time.Since(updateStatesStartedAt)
 
 	if s.projectSimulator != nil {
+		simulateStartedAt := time.Now()
+		var simulateCallsDuration time.Duration
+		var simulateUpdatesDuration time.Duration
 		for i, ref := range refs {
 			now := time.Now()
 			state := ProjectSimulateState{}
+
+			simulateCallStartedAt := time.Now()
 			simulateResult, err := s.projectSimulator.Simulate(ref.Creator, ref.Contract, snapshots[i].Pair.ContractAddress)
+			simulateCallsDuration += time.Since(simulateCallStartedAt)
 			if err != nil {
 				state.CreatorResult.MarkFailed(err, now)
 				syncErr = errors.Join(syncErr, err)
 			} else {
 				state.CreatorResult.MarkReady(simulateResult, now)
 			}
+
+			simulateUpdateStartedAt := time.Now()
 			if err := s.registry.UpdateProjectSimulateState(ctx, ref.ProjectID, &state); err != nil {
 				syncErr = errors.Join(syncErr, err)
 			}
+			simulateUpdatesDuration += time.Since(simulateUpdateStartedAt)
 		}
+		fields["simulateProjectCount"] = len(refs)
+		fields["simulateDuration"] = time.Since(simulateStartedAt)
+		fields["simulateCallsDuration"] = simulateCallsDuration
+		fields["updateProjectSimulateStatesDuration"] = simulateUpdatesDuration
 	}
 
 	return syncErr
