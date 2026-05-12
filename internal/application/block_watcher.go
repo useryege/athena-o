@@ -39,7 +39,7 @@ func (w *BlockWatcher) Start(ctx context.Context) error {
 	w.wg.Add(1)
 	go func() {
 		defer w.wg.Done()
-		err := w.run(ctx, 24991089, 0)
+		err := w.run(ctx, 97781935, 0)
 		if err != nil && !errors.Is(err, context.Canceled) {
 			log.Errorf("failed to test chain watcher: %v", err)
 		}
