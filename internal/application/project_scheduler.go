@@ -11,19 +11,14 @@ import (
 )
 
 const (
-	defaultProjectSourceCodeInterval  = time.Minute
-	defaultBlockRefreshQueueCapacity  = 16
-	defaultInitialStateRefreshTimeout = 10 * time.Second
-	initialStateRefreshBlockNumber    = uint64(0)
-	sourceCodeProjectQueueCapacity    = 1024
+	defaultProjectSourceCodeInterval = time.Minute
+	sourceCodeProjectQueueCapacity   = 1024
 )
 
 var ErrProjectSchedulerNotStarted = errors.New("project scheduler is not started")
 
 type ProjectSchedulerOptions struct {
-	SourceCodeInterval         time.Duration
-	BlockRefreshQueueCapacity  int
-	InitialStateRefreshTimeout time.Duration
+	SourceCodeInterval time.Duration
 }
 
 type ProjectScheduler interface {
@@ -37,7 +32,6 @@ var _ ProjectScheduler = &projectSchedulerImpl{}
 type projectSchedulerImpl struct {
 	registry ProjectRegistry
 	syncer   ProjectSync
-	blockCh  <-chan uint64
 	opts     ProjectSchedulerOptions
 
 	mu              sync.Mutex
@@ -45,31 +39,22 @@ type projectSchedulerImpl struct {
 	cancel          context.CancelFunc
 	started         bool
 	sourceProjectCh chan uuid.UUID
-	refreshCh       chan uint64
 	wg              sync.WaitGroup
 }
 
-func NewProjectScheduler(registry ProjectRegistry, syncer ProjectSync, blockCh <-chan uint64, opts ProjectSchedulerOptions) ProjectScheduler {
+func NewProjectScheduler(registry ProjectRegistry, syncer ProjectSync, opts ProjectSchedulerOptions) ProjectScheduler {
 	opts = normalizeProjectSchedulerOptions(opts)
 	return &projectSchedulerImpl{
 		registry:        registry,
 		syncer:          syncer,
-		blockCh:         blockCh,
 		opts:            opts,
 		sourceProjectCh: make(chan uuid.UUID, sourceCodeProjectQueueCapacity),
-		refreshCh:       make(chan uint64, opts.BlockRefreshQueueCapacity),
 	}
 }
 
 func normalizeProjectSchedulerOptions(opts ProjectSchedulerOptions) ProjectSchedulerOptions {
 	if opts.SourceCodeInterval <= 0 {
 		opts.SourceCodeInterval = defaultProjectSourceCodeInterval
-	}
-	if opts.BlockRefreshQueueCapacity <= 0 {
-		opts.BlockRefreshQueueCapacity = defaultBlockRefreshQueueCapacity
-	}
-	if opts.InitialStateRefreshTimeout <= 0 {
-		opts.InitialStateRefreshTimeout = defaultInitialStateRefreshTimeout
 	}
 	return opts
 }
@@ -84,14 +69,10 @@ func (s *projectSchedulerImpl) Start(ctx context.Context) error {
 	s.ctx, s.cancel = context.WithCancel(ctx)
 	s.started = true
 
-	s.wg.Add(2)
+	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
 		s.sourceCodeLoop()
-	}()
-	go func() {
-		defer s.wg.Done()
-		s.blockRefreshLoop()
 	}()
 	return nil
 }
@@ -138,25 +119,7 @@ func (s *projectSchedulerImpl) EnqueueProject(ctx context.Context, project *Proj
 		return ctx.Err()
 	}
 
-	return s.requestStateRefresh(ctx, initialStateRefreshBlockNumber)
-}
-
-func (s *projectSchedulerImpl) requestStateRefresh(ctx context.Context, blockNumber uint64) error {
-	s.mu.Lock()
-	schedulerCtx := s.ctx
-	s.mu.Unlock()
-	if schedulerCtx == nil {
-		return ErrProjectSchedulerNotStarted
-	}
-
-	select {
-	case s.refreshCh <- blockNumber:
-		return nil
-	case <-schedulerCtx.Done():
-		return schedulerCtx.Err()
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+	return nil
 }
 
 func (s *projectSchedulerImpl) sourceCodeLoop() {
@@ -226,58 +189,4 @@ func (s *projectSchedulerImpl) syncProjectSourceCode(projectID uuid.UUID) {
 			"contract":  project.Meta.Contract,
 		}).Debug("project source code sync completed")
 	}
-}
-
-func (s *projectSchedulerImpl) blockRefreshLoop() {
-	doneCh := make(chan error, 1)
-	blockCh := s.blockCh
-	refreshing := false
-
-	for {
-		select {
-		case <-s.ctx.Done():
-			return
-		case blockNumber, ok := <-blockCh:
-			if !ok {
-				blockCh = nil
-				continue
-			}
-			refreshing = s.handleBlockRefreshTrigger(blockNumber, refreshing, doneCh)
-		case blockNumber := <-s.refreshCh:
-			refreshing = s.handleBlockRefreshTrigger(blockNumber, refreshing, doneCh)
-		case err := <-doneCh:
-			refreshing = false
-			if err != nil && !errors.Is(err, context.Canceled) {
-				log.WithError(err).Warn("failed to refresh project chain states")
-			}
-		}
-	}
-}
-
-func (s *projectSchedulerImpl) handleBlockRefreshTrigger(blockNumber uint64, refreshing bool, doneCh chan<- error) bool {
-	if refreshing {
-		log.WithField("blockNumber", blockNumber).Debug("dropping project state refresh trigger while refresh is running")
-		return true
-	}
-	s.startProjectStateRefresh(blockNumber, doneCh)
-	return true
-}
-
-func (s *projectSchedulerImpl) startProjectStateRefresh(blockNumber uint64, doneCh chan<- error) {
-	refreshCtx := s.ctx
-	cancel := func() {}
-	if blockNumber == initialStateRefreshBlockNumber && s.opts.InitialStateRefreshTimeout > 0 {
-		refreshCtx, cancel = context.WithTimeout(s.ctx, s.opts.InitialStateRefreshTimeout)
-	}
-
-	s.wg.Add(1)
-	go func() {
-		defer s.wg.Done()
-		defer cancel()
-		err := s.syncer.SyncProjectStatesOnce(refreshCtx)
-		select {
-		case doneCh <- err:
-		case <-s.ctx.Done():
-		}
-	}()
 }

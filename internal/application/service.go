@@ -72,10 +72,8 @@ func (s *Service) Start() error {
 
 	// channel 1 is used by block watcher and project filter
 	ch1 := make(chan *Project, 24)
-	blockCh := make(chan uint64, defaultBlockRefreshQueueCapacity)
 	s.projectCh = ch1
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, ch1)
-	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, blockCh)
 	athenaFetcher, err := evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
 	if err != nil {
 		close(ch1)
@@ -95,7 +93,8 @@ func (s *Service) Start() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	s.projectSync = NewProjectSync(s.registry, athenaFetcher, apiFetcher, projectSimulator, s.delayedFetchSem)
-	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, blockCh, ProjectSchedulerOptions{})
+	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, s.projectSync)
+	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, ProjectSchedulerOptions{})
 	if err := s.scheduler.Start(ctx); err != nil {
 		cancel()
 		close(ch1)

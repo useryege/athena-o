@@ -70,6 +70,7 @@ func (s *projectSyncImpl) SyncSourceCodeOnce(ctx context.Context, event *Project
 }
 
 func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context) error {
+
 	refs, err := s.registry.ListProjectContracts(ctx)
 	if err != nil {
 		return err
