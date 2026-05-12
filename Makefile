@@ -284,6 +284,10 @@ protogen-fast:
 	export GO111MODULE=off
 	./hack/generate-proto.sh
 
+.PHONY: abigen-local
+abigen-local:
+	./hack/generate-abi.sh
+
 .PHONY: clientgen
 clientgen:
 	export GO111MODULE=off

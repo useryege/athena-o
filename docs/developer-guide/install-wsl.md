@@ -191,6 +191,16 @@ source ~/.bashrc
 goreman -v
 ```
 
+### 7.4 Install the abigen
+
+```bash
+# Install abigen
+go install github.com/ethereum/go-ethereum/cmd/abigen@v1.17.2
+
+# Check if installation is successful
+abigen -version
+```
+
 ### 7.4 Install the buf
 
 ```bash
@@ -205,6 +215,14 @@ sudo chmod +x /usr/local/bin/buf
 buf --version
 ```
 
+### 7.5 Install the solc 
+
+```bash
+npm install -g solc
+
+# Check if installation is successful
+solc --version
+```
 
 ## 8. Open the Project in Cursor
 
