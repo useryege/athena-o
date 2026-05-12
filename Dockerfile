@@ -1,38 +1,7 @@
 ARG BASE_IMAGE=docker.io/library/ubuntu:25.10@sha256:5922638447b1e3ba114332c896a2c7288c876bb94adec923d70d58a17d2fec5e
-####################################################################################################
-# Builder image
-# Initial stage which pulls prepares build dependencies and CLI tooling we need for our final image
-# Also used as the image in CI jobs so needs all dependencies
-####################################################################################################
-FROM docker.io/library/golang:1.25.5@sha256:31c1e53dfc1cc2d269deec9c83f58729fa3c53dc9a576f6426109d1e319e9e9a AS builder
-
-WORKDIR /tmp
-
-RUN echo 'deb http://archive.debian.org/debian buster-backports main' >> /etc/apt/sources.list
-
-RUN apt-get update && apt-get install --no-install-recommends -y \
-    openssh-server \
-    nginx \
-    unzip \
-    fcgiwrap \
-    git \
-    git-lfs \
-    make \
-    wget \
-    gcc \
-    sudo \
-    zip && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-COPY hack/install.sh hack/tool-versions.sh ./
-COPY hack/installers installers
-
-RUN ./install.sh helm && \
-    INSTALL_PATH=/usr/local/bin ./install.sh kustomize
 
 ####################################################################################################
-# Athena Base - used as the base for both the release and dev  images
+# Athena Base - minimal runtime image
 ####################################################################################################
 FROM $BASE_IMAGE AS athena-base
 
@@ -49,33 +18,15 @@ RUN groupadd -g $ATHENA_USER_ID athena && \
     chown athena:0 /home/athena && \
     chmod g=u /home/athena && \
     apt-get update && \
-    apt-get dist-upgrade -y && \
-    apt-get install -y \
-    git git-lfs tini gpg tzdata connect-proxy && \
+    apt-get install --no-install-recommends -y \
+    ca-certificates \
+    tini \
+    tzdata && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY hack/gpg-wrapper.sh \
-    hack/git-verify-wrapper.sh \
-    entrypoint.sh \
-    /usr/local/bin/
-COPY --from=builder /usr/local/bin/helm /usr/local/bin/helm
-COPY --from=builder /usr/local/bin/kustomize /usr/local/bin/kustomize
-
-# keep uid_entrypoint.sh for backward compatibility
-RUN ln -s /usr/local/bin/entrypoint.sh /usr/local/bin/uid_entrypoint.sh
-
-# support for mounting configuration from a configmap
-WORKDIR /app/config/ssh
-RUN touch ssh_known_hosts && \
-    ln -s /app/config/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts
-
 WORKDIR /app/config
-RUN mkdir -p tls && \
-    mkdir -p gpg/source && \
-    mkdir -p gpg/keys && \
-    chown athena gpg/keys && \
-    chmod 0700 gpg/keys
+RUN mkdir -p tls
 
 ENV USER=athena
 
@@ -136,5 +87,5 @@ ENTRYPOINT ["/usr/bin/tini", "--"]
 COPY --from=athena-build /go/src/github.com/useryege/athena/dist/athena* /usr/local/bin/
 
 USER root
-RUN ln -s /usr/local/bin/athena /usr/local/bin/athena-server 
+RUN ln -s /usr/local/bin/athena /usr/local/bin/athena-server
 USER $ATHENA_USER_ID

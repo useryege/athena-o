@@ -188,6 +188,12 @@ PATH:=$(PATH):$(PWD)/hack
 # docker image publishing options
 DOCKER_PUSH?=false
 IMAGE_NAMESPACE?=
+PROD_IMAGE?=athena:local
+PROD_COMPOSE_FILE?=docker-compose.prod.yml
+PROD_ENV_FILE?=.env
+REMOTE_APP_DIR?=/root/athena
+REMOTE_USER?=root
+PROD_LOG_SERVICE?=
 # perform static compilation
 DEFAULT_STATIC_BUILD:=true
 ifeq ($(IS_DARWIN),true)
@@ -581,3 +587,27 @@ upload-application-remote:
 .PHONY: run-application-remote
 run-application-remote:
 	./hack/app-remote-vps-run.sh
+
+.PHONY: prod-build-local
+prod-build:
+	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -t $(PROD_IMAGE) .
+
+.PHONY: prod-start-local	
+prod-start:
+	$(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) up -d
+
+.PHONY: prod-stop-local
+prod-stop:
+	$(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) down
+
+.PHONY: prod-logs-local
+prod-logs:
+	$(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) logs -f $(PROD_LOG_SERVICE)
+
+.PHONY: prod-deploy-remote
+prod-deploy-remote: 
+	PROD_IMAGE=$(PROD_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) bash ./hack/prod-remote-deploy.sh
+
+.PHONY: prod-logs-remote
+prod-remote-logs:
+	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && docker compose -f docker-compose.prod.yml --env-file .env logs -f $(PROD_LOG_SERVICE)"
