@@ -10,6 +10,7 @@ import (
 
 type AthenaFetcher interface {
 	FetchProject(ctx context.Context, token common.Address) (athenacontract.AthenaProject, error)
+	FetchProjects(ctx context.Context, tokenContracts []common.Address) ([]athenacontract.AthenaProject, error)
 }
 
 type athenaFetcherImpl struct {
@@ -31,4 +32,9 @@ func NewAthenaFetcher(nodeClient bind.ContractBackend, athenaContractAddress com
 func (f *athenaFetcherImpl) FetchProject(ctx context.Context, token common.Address) (athenacontract.AthenaProject, error) {
 	reader := &bind.CallOpts{Context: ctx}
 	return f.caller.Get(reader, token, f.liquidityLocker)
+}
+
+func (f *athenaFetcherImpl) FetchProjects(ctx context.Context, tokenContracts []common.Address) ([]athenacontract.AthenaProject, error) {
+	reader := &bind.CallOpts{Context: ctx}
+	return f.caller.List(reader, tokenContracts, f.liquidityLocker)
 }

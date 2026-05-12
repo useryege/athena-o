@@ -3,10 +3,12 @@ package application
 import (
 	"context"
 	"errors"
+	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 type ProjectStore interface {
@@ -16,24 +18,37 @@ type ProjectStore interface {
 type ProjectRegistry interface {
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
 	ListProjects(ctx context.Context) ([]*Project, error)
+	ListProjectContracts(ctx context.Context) ([]ProjectContractRef, error)
 	SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error
+	UpdateProjectChainStates(ctx context.Context, states map[uuid.UUID]athenacontract.AthenaProject) error
+	UpdateProjectSourceCodeState(ctx context.Context, projectID uuid.UUID, state *ProjectSourceCodeState) error
+	UpdateProjectSimulateState(ctx context.Context, projectID uuid.UUID, state *ProjectSimulateState) error
 	RemoveProject(ctx context.Context, projectID uuid.UUID) error
 }
 
 var _ ProjectRegistry = &projectRegistryImpl{}
 
+type ProjectContractRef struct {
+	ProjectID uuid.UUID
+	Contract  common.Address
+	Creator   common.Address
+}
+
 type projectRegistryImpl struct {
-	mu                 sync.RWMutex
-	ProjectsByContract map[common.Address]struct{}
-	Projects           map[uuid.UUID]*Project
-	store              ProjectStore
+	mu                        sync.RWMutex
+	ProjectsByContract        map[common.Address]struct{}
+	Projects                  map[uuid.UUID]*Project
+	ProjectContractRefs       []ProjectContractRef
+	ProjectContractRefIndexes map[uuid.UUID]int
+	store                     ProjectStore
 }
 
 func NewProjectRegistry(store ProjectStore) ProjectRegistry {
 	return &projectRegistryImpl{
-		Projects:           make(map[uuid.UUID]*Project),
-		ProjectsByContract: make(map[common.Address]struct{}),
-		store:              store,
+		Projects:                  make(map[uuid.UUID]*Project),
+		ProjectsByContract:        make(map[common.Address]struct{}),
+		ProjectContractRefIndexes: make(map[uuid.UUID]int),
+		store:                     store,
 	}
 }
 
@@ -46,7 +61,7 @@ func (r *projectRegistryImpl) GetProject(ctx context.Context, projectID uuid.UUI
 		return nil, false, nil
 	}
 
-	return project, true, nil
+	return cloneProject(project), true, nil
 }
 
 func (r *projectRegistryImpl) ListProjects(ctx context.Context) ([]*Project, error) {
@@ -60,27 +75,183 @@ func (r *projectRegistryImpl) ListProjects(ctx context.Context) ([]*Project, err
 			return nil, ctx.Err()
 		default:
 		}
-		projects = append(projects, project)
+		projects = append(projects, cloneProject(project))
 	}
 
 	return projects, nil
 }
 
+func (r *projectRegistryImpl) ListProjectContracts(ctx context.Context) ([]ProjectContractRef, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	refs := make([]ProjectContractRef, len(r.ProjectContractRefs))
+	copy(refs, r.ProjectContractRefs)
+	return refs, nil
+}
+
 func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if _, ok := r.ProjectsByContract[project.Meta.Contract]; ok {
 		return errors.New("project already exists")
 	}
 	r.ProjectsByContract[project.Meta.Contract] = struct{}{}
-	r.Projects[projectID] = project
+	r.Projects[projectID] = cloneProject(project)
+	r.ProjectContractRefIndexes[projectID] = len(r.ProjectContractRefs)
+	r.ProjectContractRefs = append(r.ProjectContractRefs, ProjectContractRef{
+		ProjectID: project.Meta.ProjectID,
+		Contract:  project.Meta.Contract,
+		Creator:   project.Meta.Creator,
+	})
+	return nil
+}
+
+func (r *projectRegistryImpl) UpdateProjectChainStates(ctx context.Context, states map[uuid.UUID]athenacontract.AthenaProject) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for projectID, state := range states {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		project, ok := r.Projects[projectID]
+		if !ok {
+			continue
+		}
+		project.ChainState = cloneAthenaProject(state)
+	}
+	return nil
+}
+
+func (r *projectRegistryImpl) UpdateProjectSourceCodeState(ctx context.Context, projectID uuid.UUID, state *ProjectSourceCodeState) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	project, ok := r.Projects[projectID]
+	if !ok {
+		return nil
+	}
+	project.SourceCode = cloneProjectSourceCodeState(state)
+	return nil
+}
+
+func (r *projectRegistryImpl) UpdateProjectSimulateState(ctx context.Context, projectID uuid.UUID, state *ProjectSimulateState) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	project, ok := r.Projects[projectID]
+	if !ok {
+		return nil
+	}
+	project.Simulate = cloneProjectSimulateState(state)
 	return nil
 }
 
 func (r *projectRegistryImpl) RemoveProject(ctx context.Context, projectID uuid.UUID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	delete(r.ProjectsByContract, r.Projects[projectID].Meta.Contract)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if project, ok := r.Projects[projectID]; ok {
+		delete(r.ProjectsByContract, project.Meta.Contract)
+	}
 	delete(r.Projects, projectID)
+	r.removeProjectContractRef(projectID)
 	return nil
+}
+
+func (r *projectRegistryImpl) removeProjectContractRef(projectID uuid.UUID) {
+	index, ok := r.ProjectContractRefIndexes[projectID]
+	if !ok {
+		return
+	}
+
+	lastIndex := len(r.ProjectContractRefs) - 1
+	if index != lastIndex {
+		lastRef := r.ProjectContractRefs[lastIndex]
+		r.ProjectContractRefs[index] = lastRef
+		r.ProjectContractRefIndexes[lastRef.ProjectID] = index
+	}
+	r.ProjectContractRefs[lastIndex] = ProjectContractRef{}
+	r.ProjectContractRefs = r.ProjectContractRefs[:lastIndex]
+	delete(r.ProjectContractRefIndexes, projectID)
+}
+
+func cloneProject(project *Project) *Project {
+	if project == nil {
+		return nil
+	}
+	return &Project{
+		Meta:       project.Meta,
+		ChainState: cloneAthenaProject(project.ChainState),
+		SourceCode: cloneProjectSourceCodeState(&project.SourceCode),
+		Simulate:   cloneProjectSimulateState(&project.Simulate),
+	}
+}
+
+func cloneProjectSourceCodeState(state *ProjectSourceCodeState) ProjectSourceCodeState {
+	if state == nil {
+		return ProjectSourceCodeState{}
+	}
+	return ProjectSourceCodeState{
+		SourceCode:    cloneFieldValue(&state.SourceCode),
+		SourceCodeABI: cloneFieldValue(&state.SourceCodeABI),
+	}
+}
+
+func cloneProjectSimulateState(state *ProjectSimulateState) ProjectSimulateState {
+	if state == nil {
+		return ProjectSimulateState{}
+	}
+	return ProjectSimulateState{
+		CreatorResult: cloneFieldValue(&state.CreatorResult),
+	}
+}
+
+func cloneFieldValue[T any](value *FieldValue[T]) FieldValue[T] {
+	if value == nil {
+		return FieldValue[T]{}
+	}
+	value.mu.RLock()
+	defer value.mu.RUnlock()
+	return FieldValue[T]{
+		value:      value.value,
+		status:     value.status,
+		resolvedAt: value.resolvedAt,
+		updatedAt:  value.updatedAt,
+		lastError:  value.lastError,
+	}
+}
+
+func cloneAthenaProject(project athenacontract.AthenaProject) athenacontract.AthenaProject {
+	project.UpdatedAt = cloneBigInt(project.UpdatedAt)
+	project.Token.TotalSupply = cloneBigInt(project.Token.TotalSupply)
+	project.Pair.TotalSupply = cloneBigInt(project.Pair.TotalSupply)
+	project.Pair.Reserve0 = cloneBigInt(project.Pair.Reserve0)
+	project.Pair.Reserve1 = cloneBigInt(project.Pair.Reserve1)
+	project.Pair.TokenReserveBalance = cloneBigInt(project.Pair.TokenReserveBalance)
+	project.Pair.WethReserveBalance = cloneBigInt(project.Pair.WethReserveBalance)
+	project.Pair.LockedLiquidity = cloneBigInt(project.Pair.LockedLiquidity)
+	return project
+}
+
+func cloneBigInt(value *big.Int) *big.Int {
+	if value == nil {
+		return nil
+	}
+	return new(big.Int).Set(value)
 }

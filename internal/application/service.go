@@ -29,11 +29,12 @@ type Service struct {
 	etherscanAPIKey     string
 	liquidityLocker     []common.Address
 
-	projectCh     chan *Project
-	blockWatcher  *BlockWatcher
-	projectFilter *ProjectFilter
-	projectSync   ProjectSync
-	scheduler     ProjectScheduler
+	projectCh       chan *Project
+	blockWatcher    *BlockWatcher
+	blockSubscriber *BlockEventSubscriber
+	projectFilter   *ProjectFilter
+	projectSync     ProjectSync
+	scheduler       ProjectScheduler
 
 	registry     ProjectRegistry
 	projectStore ProjectStore
@@ -71,8 +72,10 @@ func (s *Service) Start() error {
 
 	// channel 1 is used by block watcher and project filter
 	ch1 := make(chan *Project, 24)
+	blockCh := make(chan uint64, defaultBlockRefreshQueueCapacity)
 	s.projectCh = ch1
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, ch1)
+	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, blockCh)
 	athenaFetcher, err := evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
 	if err != nil {
 		close(ch1)
@@ -91,8 +94,8 @@ func (s *Service) Start() error {
 	projectSimulator := NewProjectSimulator(s.nodeClient)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	s.projectSync = NewProjectSync(athenaFetcher, apiFetcher, projectSimulator, s.delayedFetchSem)
-	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, ProjectSchedulerOptions{})
+	s.projectSync = NewProjectSync(s.registry, athenaFetcher, apiFetcher, projectSimulator, s.delayedFetchSem)
+	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, blockCh, ProjectSchedulerOptions{})
 	if err := s.scheduler.Start(ctx); err != nil {
 		cancel()
 		close(ch1)
@@ -101,8 +104,17 @@ func (s *Service) Start() error {
 	}
 
 	s.projectFilter = NewProjectFilter(s.registry, ch1, athenaFetcher, s.scheduler)
+	if err := s.blockSubscriber.Start(ctx); err != nil {
+		cancel()
+		_ = s.scheduler.Stop()
+		close(ch1)
+		s.clearPipelineLocked()
+		return err
+	}
+
 	if err := s.blockWatcher.Start(ctx); err != nil {
 		cancel()
+		_ = s.blockSubscriber.Stop()
 		_ = s.scheduler.Stop()
 		close(ch1)
 		s.clearPipelineLocked()
@@ -112,6 +124,7 @@ func (s *Service) Start() error {
 	if err := s.projectFilter.Start(ctx); err != nil {
 		cancel()
 		_ = s.blockWatcher.Stop()
+		_ = s.blockSubscriber.Stop()
 		_ = s.scheduler.Stop()
 		close(ch1)
 		s.clearPipelineLocked()
@@ -138,6 +151,7 @@ func (s *Service) Stop() error {
 		stop()
 	}
 
+	subscriberErr := s.blockSubscriber.Stop()
 	watcherErr := s.blockWatcher.Stop()
 	if s.projectCh != nil {
 		close(s.projectCh)
@@ -150,12 +164,13 @@ func (s *Service) Stop() error {
 	s.started = false
 	s.clearPipelineLocked()
 
-	return errors.Join(watcherErr, filterErr, schedulerErr)
+	return errors.Join(subscriberErr, watcherErr, filterErr, schedulerErr)
 }
 
 func (s *Service) clearPipelineLocked() {
 	s.projectCh = nil
 	s.blockWatcher = nil
+	s.blockSubscriber = nil
 	s.projectFilter = nil
 	s.projectSync = nil
 	s.scheduler = nil
