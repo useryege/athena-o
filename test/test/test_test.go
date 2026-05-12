@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -182,6 +183,100 @@ func TestMulticall3Aggregate(t *testing.T) {
 	}
 }
 
+func TestMulticall3Aggregate3(t *testing.T) {
+	rpcURL := "ws://65.108.75.55:8546"
+	if rpcURL == "" {
+		t.Skip("set ATHENA_BATCH_RPC_URL to run this Multicall3 aggregate3 example")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	rpcClient, err := rpc.DialContext(ctx, rpcURL)
+	if err != nil {
+		t.Fatalf("dial rpc: %v", err)
+	}
+	defer rpcClient.Close()
+
+	ethClient := ethclient.NewClient(rpcClient)
+
+	multicall3 := common.HexToAddress("0xcA11bde05977b3631167028862bE2a173976CA11")
+	if !hasContractCode(ctx, t, ethClient, multicall3) {
+		t.Skipf("Multicall3 is not deployed at %s on this chain", multicall3)
+	}
+
+	token := common.HexToAddress("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2")
+	if tokenEnv := os.Getenv("ATHENA_MULTICALL_TOKEN"); tokenEnv != "" {
+		token = common.HexToAddress(tokenEnv)
+	}
+	if !hasContractCode(ctx, t, ethClient, token) {
+		t.Skipf("token is not deployed at %s on this chain; set ATHENA_MULTICALL_TOKEN", token)
+	}
+
+	erc20ABI, err := abi.JSON(strings.NewReader(minimalERC20ABI))
+	if err != nil {
+		t.Fatalf("parse erc20 abi: %v", err)
+	}
+	multicallABI, err := abi.JSON(strings.NewReader(minimalMulticall3Aggregate3ABI))
+	if err != nil {
+		t.Fatalf("parse multicall3 aggregate3 abi: %v", err)
+	}
+
+	callPlan := []erc20CallPlan{
+		mustERC20Call(t, erc20ABI, token, "symbol"),
+		mustERC20Call(t, erc20ABI, token, "decimals"),
+		mustERC20Call(t, erc20ABI, token, "totalSupply"),
+		mustERC20Call(t, erc20ABI, token, "balanceOf", token),
+	}
+
+	calls := make([]multicall3Call3, 0, len(callPlan))
+	for _, plan := range callPlan {
+		calls = append(calls, multicall3Call3{
+			Target:       plan.target,
+			AllowFailure: true,
+			CallData:     plan.callData,
+		})
+	}
+
+	// aggregate3 is safer for production refreshes than aggregate:
+	// one failed subcall returns Success=false instead of reverting the whole batch.
+	input, err := multicallABI.Pack("aggregate3", calls)
+	if err != nil {
+		t.Fatalf("pack aggregate3: %v", err)
+	}
+
+	raw, err := ethClient.CallContract(ctx, ethereum.CallMsg{
+		To:   &multicall3,
+		Data: input,
+	}, nil)
+	if err != nil {
+		t.Fatalf("call multicall3 aggregate3: %v", err)
+	}
+
+	values, err := multicallABI.Methods["aggregate3"].Outputs.Unpack(raw)
+	if err != nil {
+		t.Fatalf("decode aggregate3 result: %v", err)
+	}
+
+	results := reflect.ValueOf(values[0])
+	for i := 0; i < results.Len(); i++ {
+		result := results.Index(i)
+		success := result.FieldByName("Success").Bool()
+		returnData := result.FieldByName("ReturnData").Bytes()
+
+		if !success {
+			t.Logf("%s => failed subcall", callPlan[i].name)
+			continue
+		}
+
+		decoded, err := callPlan[i].method.Outputs.Unpack(returnData)
+		if err != nil {
+			t.Fatalf("decode %s: %v", callPlan[i].name, err)
+		}
+		t.Logf("%s => %s", callPlan[i].name, formatABIValues(decoded))
+	}
+}
+
 type erc20CallPlan struct {
 	name       string
 	target     common.Address
@@ -193,6 +288,17 @@ type erc20CallPlan struct {
 type multicall3Call struct {
 	Target   common.Address
 	CallData []byte
+}
+
+type multicall3Call3 struct {
+	Target       common.Address
+	AllowFailure bool
+	CallData     []byte
+}
+
+type multicall3Result struct {
+	Success    bool
+	ReturnData []byte
 }
 
 func mustERC20Call(t *testing.T, erc20ABI abi.ABI, target common.Address, methodName string, args ...any) erc20CallPlan {
@@ -281,6 +387,35 @@ const minimalMulticall3ABI = `[
     "outputs": [
       {"name": "blockNumber", "type": "uint256"},
       {"name": "returnData", "type": "bytes[]"}
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+]`
+
+const minimalMulticall3Aggregate3ABI = `[
+  {
+    "inputs": [
+      {
+        "components": [
+          {"name": "target", "type": "address"},
+          {"name": "allowFailure", "type": "bool"},
+          {"name": "callData", "type": "bytes"}
+        ],
+        "name": "calls",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "aggregate3",
+    "outputs": [
+      {
+        "components": [
+          {"name": "success", "type": "bool"},
+          {"name": "returnData", "type": "bytes"}
+        ],
+        "name": "returnData",
+        "type": "tuple[]"
+      }
     ],
     "stateMutability": "payable",
     "type": "function"

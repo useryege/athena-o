@@ -115,7 +115,6 @@ func (f *ProjectFilter) initProject(ctx context.Context, event *Project) error {
 	event.WethV2Pool.Token0.MarkReady(token0, now)
 	event.WethV2Pool.Token1.MarkReady(token1, now)
 
-	event.PerfTrace.FilterCompletedAt = now
 	return nil
 
 }
@@ -194,11 +193,10 @@ func (f *ProjectFilter) run(ctx context.Context) error {
 			}
 
 			log.WithFields(log.Fields{
-				"component":         "Project Filter",
-				"blockNumber":       event.Meta.BlockNumber,
-				"blockTime":         event.Meta.BlockTime,
-				"transaction":       event.Meta.Tx.Hash(),
-				"executionDuration": event.PerfTrace.FilterCompletedAt.Sub(event.PerfTrace.BlockDiscoveredAt).Milliseconds(),
+				"component":   "Project Filter",
+				"blockNumber": event.Meta.BlockNumber,
+				"blockTime":   event.Meta.BlockTime,
+				"transaction": event.Meta.Tx.Hash(),
 			}).Info("project filter received contract creation transaction")
 		}
 	}

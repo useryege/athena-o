@@ -2,7 +2,6 @@ package application
 
 import (
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -11,8 +10,7 @@ import (
 )
 
 type Project struct {
-	Meta      ProjectMeta
-	PerfTrace PerfTrace
+	Meta ProjectMeta
 
 	Token      TokenState
 	WethV2Pool PairV2State
@@ -28,12 +26,6 @@ type ProjectMeta struct {
 	Creator     common.Address
 	Tx          *types.Transaction
 	TxIndex     uint64
-}
-
-type PerfTrace struct {
-	BlockDiscoveredAt time.Time
-	TxDiscoveredAt    time.Time
-	FilterCompletedAt time.Time
 }
 
 type TokenState struct {

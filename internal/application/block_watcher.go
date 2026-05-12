@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
-	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -92,7 +91,6 @@ func (w *BlockWatcher) run(ctx context.Context, startBlock uint64, endBlock uint
 		if err != nil {
 			return fmt.Errorf("failed to get block %d: %w", blockNumber, err)
 		}
-		blockDiscoveredAt := time.Now()
 
 		for txIndex, tx := range block.Transactions() {
 			if tx.To() == nil {
@@ -113,10 +111,6 @@ func (w *BlockWatcher) run(ctx context.Context, startBlock uint64, endBlock uint
 						Tx:          tx,
 						Contract:    contractAddress,
 						Creator:     from,
-					},
-					PerfTrace: PerfTrace{
-						BlockDiscoveredAt: blockDiscoveredAt,
-						TxDiscoveredAt:    time.Now(),
 					},
 				}
 				select {
