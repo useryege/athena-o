@@ -2,7 +2,6 @@
 set -euo pipefail
 
 REMOTE_USER="root"
-REMOTE_HOST="46.225.214.200"
 
 REMOTE_TMP_PATH="/root/athena.new"
 REMOTE_APPLICATION_PATH="/root/athena-application"
@@ -17,6 +16,12 @@ if [[ -f "${ENV_FILE}" ]]; then
   # shellcheck disable=SC1090
   source "${ENV_FILE}"
   set +a
+fi
+
+REMOTE_HOST="${REMOTE_HOST:-}"
+if [[ -z "${REMOTE_HOST}" ]]; then
+  echo "REMOTE_HOST is required (set it in .env)"
+  exit 1
 fi
 
 NODE_WS_URL="${ATHENA_APPLICATION_NODE_WS_URL:-}"
