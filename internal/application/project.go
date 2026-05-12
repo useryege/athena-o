@@ -14,7 +14,7 @@ type Project struct {
 	Meta       ProjectMeta
 	ChainState athenacontract.AthenaProject
 	SourceCode ProjectSourceCodeState
-	Simulate    ProjectSimulateState
+	Simulate   ProjectSimulateState
 }
 
 type ProjectMeta struct {

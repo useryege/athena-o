@@ -83,6 +83,20 @@ contract Athena {
     }
 
     function Get(address tokenContract, address[] calldata lockers) external view returns (Project memory) {
+        return _get(tokenContract, lockers);
+    }
+
+    function List(address[] calldata tokenContracts, address[] calldata lockers) external view returns (Project[] memory projects) {
+        projects = new Project[](tokenContracts.length);
+        for (uint256 i = 0; i < tokenContracts.length;) {
+            projects[i] = _get(tokenContracts[i], lockers);
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    function _get(address tokenContract, address[] calldata lockers) private view returns (Project memory) {
         Project memory project;
 
         project.tokenContract = tokenContract;
