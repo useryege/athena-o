@@ -82,7 +82,7 @@ contract Athena {
         )))));
     }
 
-    function Get(address tokenContract) external view returns (Project memory) {
+    function Get(address tokenContract, address[] calldata lockers) external view returns (Project memory) {
         Project memory project;
 
         project.tokenContract = tokenContract;
@@ -139,7 +139,16 @@ contract Athena {
 
         (, project.pair.wethReserveBalance) = _safeBalanceOf(wethContract, pairContract);
 
+        project.pair.lockedLiquidity = _lockedLiquidity(pairContract, lockers);
+
         return project;
+    }
+
+    function _lockedLiquidity(address pairContract, address[] calldata lockers) private view returns (uint256 lockedLiquidity) {
+        for (uint256 i = 0; i < lockers.length; i++) {
+            (, uint256 balance) = _safeBalanceOf(pairContract, lockers[i]);
+            lockedLiquidity += balance;
+        }
     }
 
     function _pairFor(address tokenA, address tokenB) private view returns (address pair) {
