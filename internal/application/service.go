@@ -92,7 +92,7 @@ func (s *Service) Start() error {
 	projectSimulator := NewProjectSimulator(s.nodeClient)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	s.projectSync = NewProjectSync(s.registry, athenaFetcher, apiFetcher, projectSimulator, s.delayedFetchSem)
+	s.projectSync = NewProjectSync(s.nodeClient, s.registry, athenaFetcher, apiFetcher, projectSimulator, s.delayedFetchSem)
 	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, s.projectSync)
 	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, ProjectSchedulerOptions{})
 	if err := s.scheduler.Start(ctx); err != nil {

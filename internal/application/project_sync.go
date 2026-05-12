@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/evm"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/util/ethereumapi"
@@ -18,12 +19,13 @@ const defaultDelayedFetchConcurrency = 10
 
 type ProjectSync interface {
 	SyncSourceCodeOnce(ctx context.Context, event *Project) (bool, error)
-	SyncProjectStatesOnce(ctx context.Context) error
+	SyncProjectStatesOnce(ctx context.Context, triggerBlockNumber uint64) error
 }
 
 var _ ProjectSync = &projectSyncImpl{}
 
 type projectSyncImpl struct {
+	nodeClient       *ethclient.Client
 	registry         ProjectRegistry
 	fetcher          evm.AthenaFetcher
 	apiFetcher       ethereumapi.EthereumAPI
@@ -32,6 +34,7 @@ type projectSyncImpl struct {
 }
 
 func NewProjectSync(
+	nodeClient *ethclient.Client,
 	registry ProjectRegistry,
 	fetcher evm.AthenaFetcher,
 	apiFetcher ethereumapi.EthereumAPI,
@@ -43,6 +46,7 @@ func NewProjectSync(
 	}
 
 	return &projectSyncImpl{
+		nodeClient:       nodeClient,
 		registry:         registry,
 		fetcher:          fetcher,
 		apiFetcher:       apiFetcher,
@@ -69,12 +73,54 @@ func (s *projectSyncImpl) SyncSourceCodeOnce(ctx context.Context, event *Project
 	return true, nil
 }
 
-func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context) error {
+func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBlockNumber uint64) (syncErr error) {
+	startBlockNumber, err := s.nodeClient.BlockNumber(ctx)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return err
+		}
+		log.WithFields(log.Fields{
+			"blockNumber": triggerBlockNumber,
+			"error":       err,
+		}).Warn("failed to get start block number before refreshing project chain states")
+	}
+
+	fields := log.Fields{
+		"blockNumber":      triggerBlockNumber,
+		"startBlockNumber": startBlockNumber,
+	}
+	defer func() {
+		endBlockNumber, err := s.nodeClient.BlockNumber(ctx)
+		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				syncErr = err
+				return
+			}
+			log.WithFields(log.Fields{
+				"blockNumber":      triggerBlockNumber,
+				"startBlockNumber": startBlockNumber,
+				"error":            err,
+			}).Warn("failed to get end block number after refreshing project chain states")
+		}
+		fields["endBlockNumber"] = endBlockNumber
+
+		if syncErr != nil {
+			if errors.Is(syncErr, context.Canceled) {
+				return
+			}
+			fields["error"] = syncErr
+			log.WithFields(fields).Warn("failed to refresh project chain states")
+			return
+		}
+
+		log.WithFields(fields).Info("refreshed project chain states")
+	}()
 
 	refs, err := s.registry.ListProjectContracts(ctx)
 	if err != nil {
 		return err
 	}
+	fields["tokenContractCount"] = len(refs)
 	if len(refs) == 0 {
 		return nil
 	}
@@ -84,7 +130,9 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context) error {
 		tokenContracts = append(tokenContracts, ref.Contract)
 	}
 
+	fetchStartedAt := time.Now()
 	snapshots, err := s.fetcher.FetchProjects(ctx, tokenContracts)
+	fields["fetchDuration"] = time.Since(fetchStartedAt)
 	if err != nil {
 		return err
 	}
@@ -104,7 +152,6 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context) error {
 		return err
 	}
 
-	var syncErr error
 	if s.projectSimulator != nil {
 		for i, ref := range refs {
 			now := time.Now()
@@ -152,17 +199,4 @@ func (s *projectSyncImpl) acquireDelayedFetch(ctx context.Context) error {
 
 func (s *projectSyncImpl) releaseDelayedFetch() {
 	<-s.delayedFetchSem
-}
-
-func withJitter(delay time.Duration) time.Duration {
-	if delay <= 0 {
-		return 0
-	}
-
-	jitterRange := delay / 2
-	if jitterRange <= 0 {
-		return delay
-	}
-
-	return delay + time.Duration(rand.Int63n(int64(jitterRange)))
 }

@@ -68,7 +68,24 @@ func (s *BlockEventSubscriber) run(ctx context.Context) error {
 				continue
 			}
 
-			if err := s.refreshProjectStates(ctx, header.Number.Uint64()); err != nil {
+			triggerBlockNumber := header.Number.Uint64()
+			latestBlockNumber, err := s.client.BlockNumber(ctx)
+			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					return err
+				}
+				log.WithFields(log.Fields{
+					"triggerBlockNumber": triggerBlockNumber,
+					"error":              err,
+				}).Warn("failed to get latest block number after new block header")
+			} else {
+				log.WithFields(log.Fields{
+					"triggerBlockNumber": triggerBlockNumber,
+					"latestBlockNumber":  latestBlockNumber,
+				}).Info("received new block header")
+			}
+
+			if err := s.refreshProjectStates(ctx, triggerBlockNumber); err != nil {
 				return err
 			}
 		}
@@ -76,45 +93,11 @@ func (s *BlockEventSubscriber) run(ctx context.Context) error {
 }
 
 func (s *BlockEventSubscriber) refreshProjectStates(ctx context.Context, triggerBlockNumber uint64) error {
-	startBlockNumber, err := s.client.BlockNumber(ctx)
-	if err != nil {
+	if err := s.syncer.SyncProjectStatesOnce(ctx, triggerBlockNumber); err != nil {
 		if errors.Is(err, context.Canceled) {
 			return err
 		}
-		log.WithFields(log.Fields{
-			"blockNumber": triggerBlockNumber,
-			"error":       err,
-		}).Warn("failed to get start block number before refreshing project chain states")
-	}
-
-	syncErr := s.syncer.SyncProjectStatesOnce(ctx)
-
-	endBlockNumber, err := s.client.BlockNumber(ctx)
-	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return err
-		}
-		log.WithFields(log.Fields{
-			"blockNumber":      triggerBlockNumber,
-			"startBlockNumber": startBlockNumber,
-			"error":            err,
-		}).Warn("failed to get end block number after refreshing project chain states")
-	}
-
-	fields := log.Fields{
-		"blockNumber":      triggerBlockNumber,
-		"startBlockNumber": startBlockNumber,
-		"endBlockNumber":   endBlockNumber,
-	}
-	if syncErr != nil {
-		if errors.Is(syncErr, context.Canceled) {
-			return syncErr
-		}
-		fields["error"] = syncErr
-		log.WithFields(fields).Warn("failed to refresh project chain states")
 		return nil
 	}
-
-	log.WithFields(fields).Info("refreshed project chain states")
 	return nil
 }

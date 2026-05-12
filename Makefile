@@ -190,7 +190,7 @@ DOCKER_PUSH?=false
 IMAGE_NAMESPACE?=
 PROD_IMAGE?=athena:local
 PROD_COMPOSE_FILE?=docker-compose.prod.yml
-PROD_ENV_FILE?=.env
+PROD_ENV_FILE?=./.env
 REMOTE_APP_DIR?=/root/athena
 REMOTE_USER?=root
 PROD_LOG_SERVICE?=
@@ -608,6 +608,10 @@ prod-logs:
 prod-deploy-remote: 
 	PROD_IMAGE=$(PROD_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) bash ./hack/prod-remote-deploy.sh
 
+.PHONY: prod-stop-remote
+prod-stop-remote:
+	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && docker compose -f docker-compose.prod.yml --env-file .env down"
+
 .PHONY: prod-logs-remote
-prod-remote-logs:
+prod-logs-remote:
 	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && docker compose -f docker-compose.prod.yml --env-file .env logs -f $(PROD_LOG_SERVICE)"
