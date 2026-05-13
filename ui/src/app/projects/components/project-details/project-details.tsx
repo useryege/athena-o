@@ -146,31 +146,38 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                     <span className='project-details__field-label'>Total Supply</span>
                                     <span className='project-details__field-value'>{renderValue(project.token?.totalSupply)}</span>
                                 </div>
-                            </div>                            {(project.token?.sourceCode || project.token?.sourceCodeABI) && (
-                                <div style={{marginTop: '20px'}}>
-                                    {project.token?.sourceCode && (
-                                        <div className='project-details__field' style={{marginBottom: '20px'}}>
-                                            <span className='project-details__field-label'>Source Code</span>
-                                            <div
-                                                className='project-details__field-value'
-                                                style={{maxHeight: '150px', overflowY: 'auto', background: '#f4f4f4', padding: '10px', fontSize: '12px', fontFamily: 'monospace'}}>
-                                                {project.token.sourceCode}
-                                            </div>
-                                        </div>
-                                    )}
-                                    {project.token?.sourceCodeABI && (
-                                        <div className='project-details__field'>
-                                            <span className='project-details__field-label'>Source Code ABI</span>
-                                            <div
-                                                className='project-details__field-value'
-                                                style={{maxHeight: '150px', overflowY: 'auto', background: '#f4f4f4', padding: '10px', fontSize: '12px', fontFamily: 'monospace'}}>
-                                                {project.token.sourceCodeABI}
-                                            </div>
-                                        </div>
-                                    )}
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Valid ERC20</span>
+                                    <span className='project-details__field-value'>
+                                        {project.token?.isValidERC20 !== undefined ? (
+                                            <span className={`project-details__badge project-details__badge--${project.token.isValidERC20 ? 'positive' : 'negative'}`}>
+                                                {project.token.isValidERC20 ? 'Yes' : 'No'}
+                                            </span>
+                                        ) : (
+                                            '-'
+                                        )}
+                                    </span>
                                 </div>
-                            )}
+                            </div>
                         </div>
+
+                        {(project.sourceCode?.sourceCode || project.token?.sourceCode || project.sourceCode?.sourceCodeABI || project.token?.sourceCodeABI) && (
+                            <div className='white-box project-details__box'>
+                                <div className='project-details__section-title'>Source Code</div>
+                                {(project.sourceCode?.sourceCode || project.token?.sourceCode) && (
+                                    <div className='project-details__field' style={{marginBottom: '20px'}}>
+                                        <span className='project-details__field-label'>Contract Source Code</span>
+                                        <div className='project-details__code-block'>{project.sourceCode?.sourceCode || project.token?.sourceCode}</div>
+                                    </div>
+                                )}
+                                {(project.sourceCode?.sourceCodeABI || project.token?.sourceCodeABI) && (
+                                    <div className='project-details__field'>
+                                        <span className='project-details__field-label'>Source Code ABI</span>
+                                        <div className='project-details__code-block'>{project.sourceCode?.sourceCodeABI || project.token?.sourceCodeABI}</div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>WETH V2 Pool</div>
@@ -207,8 +214,95 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                     <span className='project-details__field-label'>Block Timestamp Last</span>
                                     <span className='project-details__field-value'>{renderValue(project.wethV2Pool?.blockTimestampLast)}</span>
                                 </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Token Reserve Balance</span>
+                                    <span className='project-details__field-value'>{renderValue(project.wethV2Pool?.tokenReserveBalance)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>WETH Reserve Balance</span>
+                                    <span className='project-details__field-value'>{renderValue(project.wethV2Pool?.wethReserveBalance)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Locked Liquidity</span>
+                                    <span className='project-details__field-value'>{renderValue(project.wethV2Pool?.lockedLiquidity)}</span>
+                                </div>
                             </div>
                         </div>
+
+                        {project.simulate?.creatorResult && (
+                            <div className='white-box project-details__box'>
+                                <div className='project-details__section-title'>Simulation</div>
+                                <div className='project-details__grid'>
+                                    <div className='project-details__field'>
+                                        <span className='project-details__field-label'>Mint via Transfer</span>
+                                        <span className='project-details__field-value'>
+                                            <span
+                                                className={`project-details__badge project-details__badge--${project.simulate.creatorResult.canMintViaTransfer ? 'negative' : 'positive'}`}>
+                                                {project.simulate.creatorResult.canMintViaTransfer ? 'Yes' : 'No'}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div className='project-details__field'>
+                                        <span className='project-details__field-label'>Mint from Dead via transferFrom</span>
+                                        <span className='project-details__field-value'>
+                                            <span
+                                                className={`project-details__badge project-details__badge--${project.simulate.creatorResult.canMintFromDeadViaTransferFrom ? 'negative' : 'positive'}`}>
+                                                {project.simulate.creatorResult.canMintFromDeadViaTransferFrom ? 'Yes' : 'No'}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div className='project-details__field'>
+                                        <span className='project-details__field-label'>Mint from Zero via transferFrom</span>
+                                        <span className='project-details__field-value'>
+                                            <span
+                                                className={`project-details__badge project-details__badge--${project.simulate.creatorResult.canMintFromZeroViaTransferFrom ? 'negative' : 'positive'}`}>
+                                                {project.simulate.creatorResult.canMintFromZeroViaTransferFrom ? 'Yes' : 'No'}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div className='project-details__field'>
+                                        <span className='project-details__field-label'>Mint from Pair via transferFrom</span>
+                                        <span className='project-details__field-value'>
+                                            <span
+                                                className={`project-details__badge project-details__badge--${project.simulate.creatorResult.canMintFromPairViaTransferFrom ? 'negative' : 'positive'}`}>
+                                                {project.simulate.creatorResult.canMintFromPairViaTransferFrom ? 'Yes' : 'No'}
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {project.analysis?.sourceCodeBlacklist && (
+                            <div className='white-box project-details__box'>
+                                <div className='project-details__section-title'>Analysis</div>
+                                <div className='project-details__grid'>
+                                    <div className='project-details__field'>
+                                        <span className='project-details__field-label'>Has Blacklist Fields</span>
+                                        <span className='project-details__field-value'>
+                                            <span
+                                                className={`project-details__badge project-details__badge--${project.analysis.sourceCodeBlacklist.hasBlacklistFields ? 'negative' : 'positive'}`}>
+                                                {project.analysis.sourceCodeBlacklist.hasBlacklistFields ? 'Yes' : 'No'}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div className='project-details__field' style={{gridColumn: '1 / -1'}}>
+                                        <span className='project-details__field-label'>Blacklist Fields</span>
+                                        <div className='project-details__chip-list'>
+                                            {project.analysis.sourceCodeBlacklist.blacklistFields && project.analysis.sourceCodeBlacklist.blacklistFields.length > 0 ? (
+                                                project.analysis.sourceCodeBlacklist.blacklistFields.map((field, i) => (
+                                                    <span key={i} className='project-details__chip'>
+                                                        {field}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className='project-details__field-value'>-</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : null}
             </div>

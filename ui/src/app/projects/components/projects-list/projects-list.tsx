@@ -142,12 +142,13 @@ export const ProjectsList = () => {
                                         <div>#</div>
                                         <div>Name</div>
                                         <div>Symbol</div>
-                                        <div>Decimals</div>
+                                        <div>ERC20</div>
+                                        <div>Blacklist</div>
+                                        <div>Mint Risk</div>
                                         <div>Total Supply</div>
                                         <div>Contract</div>
                                         <div>Creator</div>
                                         <div>Block</div>
-                                        <div>Tx Index</div>
                                         <div>Tx Hash</div>
                                     </div>
                                 </div>

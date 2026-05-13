@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-147-g7623132-dirty"
+    "version": "v1.0.0-190-gaec2b4c-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -818,6 +818,9 @@
         "isContractCreated": {
           "type": "boolean"
         },
+        "lockedLiquidity": {
+          "type": "string"
+        },
         "reserve0": {
           "type": "string"
         },
@@ -830,8 +833,22 @@
         "token1": {
           "type": "string"
         },
+        "tokenReserveBalance": {
+          "type": "string"
+        },
         "totalSupply": {
           "type": "string"
+        },
+        "wethReserveBalance": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1ProjectAnalysisState": {
+      "type": "object",
+      "properties": {
+        "sourceCodeBlacklist": {
+          "$ref": "#/definitions/v1alpha1SourceCodeBlacklistState"
         }
       }
     },
@@ -864,11 +881,39 @@
         }
       }
     },
+    "v1alpha1ProjectSimulateState": {
+      "type": "object",
+      "properties": {
+        "creatorResult": {
+          "$ref": "#/definitions/v1alpha1SimulateResult"
+        }
+      }
+    },
+    "v1alpha1ProjectSourceCodeState": {
+      "type": "object",
+      "properties": {
+        "sourceCode": {
+          "type": "string"
+        },
+        "sourceCodeABI": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1ProjectView": {
       "type": "object",
       "properties": {
+        "analysis": {
+          "$ref": "#/definitions/v1alpha1ProjectAnalysisState"
+        },
         "meta": {
           "$ref": "#/definitions/v1alpha1ProjectMeta"
+        },
+        "simulate": {
+          "$ref": "#/definitions/v1alpha1ProjectSimulateState"
+        },
+        "sourceCode": {
+          "$ref": "#/definitions/v1alpha1ProjectSourceCodeState"
         },
         "token": {
           "$ref": "#/definitions/v1alpha1TokenState"
@@ -878,12 +923,46 @@
         }
       }
     },
+    "v1alpha1SimulateResult": {
+      "type": "object",
+      "properties": {
+        "canMintFromDeadViaTransferFrom": {
+          "type": "boolean"
+        },
+        "canMintFromPairViaTransferFrom": {
+          "type": "boolean"
+        },
+        "canMintFromZeroViaTransferFrom": {
+          "type": "boolean"
+        },
+        "canMintViaTransfer": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1alpha1SourceCodeBlacklistState": {
+      "type": "object",
+      "properties": {
+        "blacklistFields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "hasBlacklistFields": {
+          "type": "boolean"
+        }
+      }
+    },
     "v1alpha1TokenState": {
       "type": "object",
       "properties": {
         "decimals": {
           "type": "integer",
           "format": "int64"
+        },
+        "isValidERC20": {
+          "type": "boolean"
         },
         "name": {
           "type": "string"

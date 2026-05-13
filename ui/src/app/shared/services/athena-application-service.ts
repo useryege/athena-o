@@ -4,6 +4,9 @@ export interface ProjectView {
     meta?: ProjectMeta;
     token?: TokenState;
     wethV2Pool?: PairV2State;
+    sourceCode?: ProjectSourceCodeState;
+    simulate?: ProjectSimulateState;
+    analysis?: ProjectAnalysisState;
 }
 
 export interface ProjectMeta {
@@ -23,6 +26,7 @@ export interface TokenState {
     totalSupply?: string;
     sourceCode?: string;
     sourceCodeABI?: string;
+    isValidERC20?: boolean;
 }
 
 export interface PairV2State {
@@ -34,10 +38,38 @@ export interface PairV2State {
     reserve0?: string;
     reserve1?: string;
     blockTimestampLast?: number;
+    tokenReserveBalance?: string;
+    wethReserveBalance?: string;
+    lockedLiquidity?: string;
 }
 
 export interface ListProjectsResponse {
     items?: ProjectView[];
+}
+
+export interface ProjectSourceCodeState {
+    sourceCode?: string;
+    sourceCodeABI?: string;
+}
+
+export interface ProjectSimulateState {
+    creatorResult?: SimulateResult;
+}
+
+export interface SimulateResult {
+    canMintFromDeadViaTransferFrom?: boolean;
+    canMintFromZeroViaTransferFrom?: boolean;
+    canMintFromPairViaTransferFrom?: boolean;
+    canMintViaTransfer?: boolean;
+}
+
+export interface ProjectAnalysisState {
+    sourceCodeBlacklist?: SourceCodeBlacklistState;
+}
+
+export interface SourceCodeBlacklistState {
+    hasBlacklistFields?: boolean;
+    blacklistFields?: string[];
 }
 
 export interface GetProjectResponse {

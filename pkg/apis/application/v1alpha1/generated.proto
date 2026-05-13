@@ -5,32 +5,8 @@ syntax = "proto2";
 
 package github.com.useryege.athena.pkg.apis.application.v1alpha1;
 
-import "k8s.io/apimachinery/pkg/apis/meta/v1/generated.proto";
-
 // Package-wide variables from generator "generated".
 option go_package = "github.com/useryege/athena/pkg/apis/application/v1alpha1";
-
-// Application is a definition of Application resource.
-// +genclient
-// +genclient:noStatus
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:resource:path=applications,shortName=app;apps
-// +kubebuilder:printcolumn:name="Sync Status",type=string,JSONPath=`.status.sync.status`
-// +kubebuilder:printcolumn:name="Health Status",type=string,JSONPath=`.status.health.status`
-// +kubebuilder:printcolumn:name="Revision",type=string,JSONPath=`.status.sync.revision`,priority=10
-// +kubebuilder:printcolumn:name="Project",type=string,JSONPath=`.spec.project`,priority=10
-message Application {
-  // Common: shared with ApplicationSet
-  optional .k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
-}
-
-// ApplicationList is list of Application resources
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-message ApplicationList {
-  optional .k8s.io.apimachinery.pkg.apis.meta.v1.ListMeta metadata = 1;
-
-  repeated Application items = 2;
-}
 
 message PairV2State {
   optional bool isContractCreated = 1;
@@ -48,6 +24,16 @@ message PairV2State {
   optional string reserve1 = 7;
 
   optional uint32 blockTimestampLast = 8;
+
+  optional string tokenReserveBalance = 9;
+
+  optional string wethReserveBalance = 10;
+
+  optional string lockedLiquidity = 11;
+}
+
+message ProjectAnalysisState {
+  optional SourceCodeBlacklistState sourceCodeBlacklist = 1;
 }
 
 message ProjectMeta {
@@ -66,12 +52,44 @@ message ProjectMeta {
   optional uint64 txIndex = 7;
 }
 
+message ProjectSimulateState {
+  optional SimulateResult creatorResult = 1;
+}
+
+message ProjectSourceCodeState {
+  optional string sourceCode = 1;
+
+  optional string sourceCodeABI = 2;
+}
+
 message ProjectView {
   optional ProjectMeta meta = 1;
 
   optional TokenState token = 2;
 
   optional PairV2State wethV2Pool = 3;
+
+  optional ProjectSourceCodeState sourceCode = 4;
+
+  optional ProjectSimulateState simulate = 5;
+
+  optional ProjectAnalysisState analysis = 6;
+}
+
+message SimulateResult {
+  optional bool canMintFromDeadViaTransferFrom = 1;
+
+  optional bool canMintFromZeroViaTransferFrom = 2;
+
+  optional bool canMintFromPairViaTransferFrom = 3;
+
+  optional bool canMintViaTransfer = 4;
+}
+
+message SourceCodeBlacklistState {
+  optional bool hasBlacklistFields = 1;
+
+  repeated string blacklistFields = 2;
 }
 
 message TokenState {
@@ -86,5 +104,7 @@ message TokenState {
   optional string sourceCode = 5;
 
   optional string sourceCodeABI = 6;
+
+  optional bool isValidERC20 = 7;
 }
 

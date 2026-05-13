@@ -33,7 +33,36 @@ export const ProjectListRow = ({project, index, onClick}: {project: ProjectView;
                     {renderValue(project.token?.name)}
                 </div>
                 <div className='projects-list__cell'>{renderValue(project.token?.symbol)}</div>
-                <div className='projects-list__cell'>{renderValue(project.token?.decimals)}</div>
+                <div className='projects-list__cell'>
+                    {project.token?.isValidERC20 !== undefined ? (
+                        <span className={`project-details__badge project-details__badge--${project.token.isValidERC20 ? 'positive' : 'negative'}`}>
+                            {project.token.isValidERC20 ? 'Yes' : 'No'}
+                        </span>
+                    ) : (
+                        '-'
+                    )}
+                </div>
+                <div className='projects-list__cell'>
+                    {project.analysis?.sourceCodeBlacklist?.hasBlacklistFields !== undefined ? (
+                        <span className={`project-details__badge project-details__badge--${project.analysis.sourceCodeBlacklist.hasBlacklistFields ? 'negative' : 'positive'}`}>
+                            {project.analysis.sourceCodeBlacklist.hasBlacklistFields ? 'Yes' : 'No'}
+                        </span>
+                    ) : (
+                        '-'
+                    )}
+                </div>
+                <div className='projects-list__cell'>
+                    {project.simulate?.creatorResult
+                        ? (() => {
+                              const hasRisk =
+                                  project.simulate.creatorResult.canMintViaTransfer ||
+                                  project.simulate.creatorResult.canMintFromDeadViaTransferFrom ||
+                                  project.simulate.creatorResult.canMintFromZeroViaTransferFrom ||
+                                  project.simulate.creatorResult.canMintFromPairViaTransferFrom;
+                              return <span className={`project-details__badge project-details__badge--${hasRisk ? 'negative' : 'positive'}`}>{hasRisk ? 'Yes' : 'No'}</span>;
+                          })()
+                        : '-'}
+                </div>
                 <div className='projects-list__cell' title={project.token?.totalSupply || ''}>
                     {renderShortValue(project.token?.totalSupply)}
                 </div>
@@ -44,7 +73,6 @@ export const ProjectListRow = ({project, index, onClick}: {project: ProjectView;
                     {renderShortValue(project.meta?.creator)}
                 </div>
                 <div className='projects-list__cell'>{renderValue(project.meta?.blockNumber)}</div>
-                <div className='projects-list__cell'>{renderValue(project.meta?.txIndex)}</div>
                 <div className='projects-list__cell' title={project.meta?.txHash || ''}>
                     {renderShortValue(project.meta?.txHash)}
                 </div>

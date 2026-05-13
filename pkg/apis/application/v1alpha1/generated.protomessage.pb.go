@@ -5,14 +5,20 @@
 
 package v1alpha1
 
-func (*Application) ProtoMessage() {}
-
-func (*ApplicationList) ProtoMessage() {}
-
 func (*PairV2State) ProtoMessage() {}
+
+func (*ProjectAnalysisState) ProtoMessage() {}
 
 func (*ProjectMeta) ProtoMessage() {}
 
+func (*ProjectSimulateState) ProtoMessage() {}
+
+func (*ProjectSourceCodeState) ProtoMessage() {}
+
 func (*ProjectView) ProtoMessage() {}
+
+func (*SimulateResult) ProtoMessage() {}
+
+func (*SourceCodeBlacklistState) ProtoMessage() {}
 
 func (*TokenState) ProtoMessage() {}

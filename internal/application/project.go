@@ -83,6 +83,8 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 	chainState := project.ChainState
 	sourceCode, _ := project.SourceCode.SourceCode.Get()
 	sourceCodeABI, _ := project.SourceCode.SourceCodeABI.Get()
+	creatorResult, _ := project.Simulate.CreatorResult.Get()
+	sourceCodeBlacklist, _ := project.Analysis.SourceCodeBlacklist.Get()
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{
@@ -101,16 +103,38 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 			TotalSupply:   bigIntToString(chainState.Token.TotalSupply),
 			SourceCode:    sourceCode,
 			SourceCodeABI: sourceCodeABI,
+			IsValidERC20:  chainState.Token.IsValidERC20,
 		},
 		WethV2Pool: v1alpha1.PairV2State{
-			IsContractCreated:  chainState.Pair.IsCreated,
-			Contract:           addressToString(chainState.Pair.ContractAddress),
-			Token0:             addressToString(chainState.Pair.Token0),
-			Token1:             addressToString(chainState.Pair.Token1),
-			TotalSupply:        bigIntToString(chainState.Pair.TotalSupply),
-			Reserve0:           bigIntToString(chainState.Pair.Reserve0),
-			Reserve1:           bigIntToString(chainState.Pair.Reserve1),
-			BlockTimestampLast: chainState.Pair.BlockTimestampLast,
+			IsContractCreated:   chainState.Pair.IsCreated,
+			Contract:            addressToString(chainState.Pair.ContractAddress),
+			Token0:              addressToString(chainState.Pair.Token0),
+			Token1:              addressToString(chainState.Pair.Token1),
+			TotalSupply:         bigIntToString(chainState.Pair.TotalSupply),
+			Reserve0:            bigIntToString(chainState.Pair.Reserve0),
+			Reserve1:            bigIntToString(chainState.Pair.Reserve1),
+			BlockTimestampLast:  chainState.Pair.BlockTimestampLast,
+			TokenReserveBalance: bigIntToString(chainState.Pair.TokenReserveBalance),
+			WethReserveBalance:  bigIntToString(chainState.Pair.WethReserveBalance),
+			LockedLiquidity:     bigIntToString(chainState.Pair.LockedLiquidity),
+		},
+		SourceCode: v1alpha1.ProjectSourceCodeState{
+			SourceCode:    sourceCode,
+			SourceCodeABI: sourceCodeABI,
+		},
+		Simulate: v1alpha1.ProjectSimulateState{
+			CreatorResult: v1alpha1.SimulateResult{
+				CanMintFromDeadViaTransferFrom: creatorResult.CanMintFromDeadViaTransferFrom,
+				CanMintFromZeroViaTransferFrom: creatorResult.CanMintFromZeroViaTransferFrom,
+				CanMintFromPairViaTransferFrom: creatorResult.CanMintFromPairViaTransferFrom,
+				CanMintViaTransfer:             creatorResult.CanMintViaTransfer,
+			},
+		},
+		Analysis: v1alpha1.ProjectAnalysisState{
+			SourceCodeBlacklist: v1alpha1.SourceCodeBlacklistState{
+				HasBlacklistFields: sourceCodeBlacklist.HasBlacklistFields,
+				BlacklistFields:    cloneStringSlice(sourceCodeBlacklist.BlacklistFields),
+			},
 		},
 	}
 }
