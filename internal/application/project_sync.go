@@ -18,7 +18,7 @@ import (
 
 const (
 	defaultDelayedFetchConcurrency    = 10
-	defaultProjectSimulateConcurrency = 10
+	defaultProjectSimulateConcurrency = 30
 )
 
 type ProjectSync interface {
