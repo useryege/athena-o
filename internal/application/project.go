@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/google/uuid"
+	"github.com/useryege/athena/internal/application/sourcecode"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
@@ -15,6 +16,7 @@ type Project struct {
 	ChainState athenacontract.AthenaProject
 	SourceCode ProjectSourceCodeState
 	Simulate   ProjectSimulateState
+	Analysis   ProjectAnalysisState
 }
 
 type ProjectMeta struct {
@@ -30,6 +32,10 @@ type ProjectMeta struct {
 type ProjectSourceCodeState struct {
 	SourceCode    FieldValue[string]
 	SourceCodeABI FieldValue[string]
+}
+
+type ProjectAnalysisState struct {
+	SourceCodeBlacklist FieldValue[sourcecode.BlacklistReport]
 }
 
 func (p *Project) IsPairBalanceOverSupply() bool {

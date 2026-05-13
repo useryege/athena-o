@@ -8,12 +8,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
+	"github.com/useryege/athena/internal/application/sourcecode"
+	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
-
-type ProjectStore interface {
-	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
-}
 
 type ProjectRegistry interface {
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
@@ -22,6 +20,7 @@ type ProjectRegistry interface {
 	SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error
 	UpdateProjectChainStates(ctx context.Context, states map[uuid.UUID]athenacontract.AthenaProject) error
 	UpdateProjectSourceCodeState(ctx context.Context, projectID uuid.UUID, state *ProjectSourceCodeState) error
+	UpdateProjectAnalysisState(ctx context.Context, projectID uuid.UUID, state *ProjectAnalysisState) error
 	UpdateProjectSimulateState(ctx context.Context, projectID uuid.UUID, state *ProjectSimulateState) error
 	RemoveProject(ctx context.Context, projectID uuid.UUID) error
 }
@@ -40,10 +39,10 @@ type projectRegistryImpl struct {
 	Projects                  map[uuid.UUID]*Project
 	ProjectContractRefs       []ProjectContractRef
 	ProjectContractRefIndexes map[uuid.UUID]int
-	store                     ProjectStore
+	store                     appstore.ProjectStore
 }
 
-func NewProjectRegistry(store ProjectStore) ProjectRegistry {
+func NewProjectRegistry(store appstore.ProjectStore) ProjectRegistry {
 	return &projectRegistryImpl{
 		Projects:                  make(map[uuid.UUID]*Project),
 		ProjectsByContract:        make(map[common.Address]struct{}),
@@ -146,6 +145,20 @@ func (r *projectRegistryImpl) UpdateProjectSourceCodeState(ctx context.Context, 
 	return nil
 }
 
+func (r *projectRegistryImpl) UpdateProjectAnalysisState(ctx context.Context, projectID uuid.UUID, state *ProjectAnalysisState) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	project, ok := r.Projects[projectID]
+	if !ok {
+		return nil
+	}
+	project.Analysis = cloneProjectAnalysisState(state)
+	return nil
+}
+
 func (r *projectRegistryImpl) UpdateProjectSimulateState(ctx context.Context, projectID uuid.UUID, state *ProjectSimulateState) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -200,6 +213,7 @@ func cloneProject(project *Project) *Project {
 		ChainState: cloneAthenaProject(project.ChainState),
 		SourceCode: cloneProjectSourceCodeState(&project.SourceCode),
 		Simulate:   cloneProjectSimulateState(&project.Simulate),
+		Analysis:   cloneProjectAnalysisState(&project.Analysis),
 	}
 }
 
@@ -210,6 +224,33 @@ func cloneProjectSourceCodeState(state *ProjectSourceCodeState) ProjectSourceCod
 	return ProjectSourceCodeState{
 		SourceCode:    cloneFieldValue(&state.SourceCode),
 		SourceCodeABI: cloneFieldValue(&state.SourceCodeABI),
+	}
+}
+
+func cloneProjectAnalysisState(state *ProjectAnalysisState) ProjectAnalysisState {
+	if state == nil {
+		return ProjectAnalysisState{}
+	}
+	return ProjectAnalysisState{
+		SourceCodeBlacklist: cloneSourceCodeBlacklistReportFieldValue(&state.SourceCodeBlacklist),
+	}
+}
+
+func cloneSourceCodeBlacklistReportFieldValue(value *FieldValue[sourcecode.BlacklistReport]) FieldValue[sourcecode.BlacklistReport] {
+	if value == nil {
+		return FieldValue[sourcecode.BlacklistReport]{}
+	}
+	value.mu.RLock()
+	defer value.mu.RUnlock()
+	return FieldValue[sourcecode.BlacklistReport]{
+		value: sourcecode.BlacklistReport{
+			HasBlacklistFields: value.value.HasBlacklistFields,
+			BlacklistFields:    cloneStringSlice(value.value.BlacklistFields),
+		},
+		status:     value.status,
+		resolvedAt: value.resolvedAt,
+		updatedAt:  value.updatedAt,
+		lastError:  value.lastError,
 	}
 }
 
@@ -247,6 +288,15 @@ func cloneAthenaProject(project athenacontract.AthenaProject) athenacontract.Ath
 	project.Pair.WethReserveBalance = cloneBigInt(project.Pair.WethReserveBalance)
 	project.Pair.LockedLiquidity = cloneBigInt(project.Pair.LockedLiquidity)
 	return project
+}
+
+func cloneStringSlice(values []string) []string {
+	if values == nil {
+		return nil
+	}
+	cloned := make([]string, len(values))
+	copy(cloned, values)
+	return cloned
 }
 
 func cloneBigInt(value *big.Int) *big.Int {

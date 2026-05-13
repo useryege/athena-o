@@ -2,10 +2,13 @@ package application
 
 import (
 	"context"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
+	"github.com/useryege/athena/internal/application/sourcecode"
 )
 
 func TestProjectRegistryListProjectContractsUsesCachedRefs(t *testing.T) {
@@ -79,6 +82,52 @@ func TestProjectRegistryRemoveProjectMaintainsCachedRefs(t *testing.T) {
 		if ref.ProjectID == projectB.Meta.ProjectID {
 			t.Fatal("removed project still present in contract refs")
 		}
+	}
+}
+
+func TestProjectRegistryUpdateProjectAnalysisStateReturnsCopy(t *testing.T) {
+	registry := NewProjectRegistry(nil)
+	project := newRegistryTestProject("0x0000000000000000000000000000000000000077")
+	if err := registry.SetProject(context.Background(), project.Meta.ProjectID, project); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	state := ProjectAnalysisState{}
+	state.SourceCodeBlacklist.MarkReady(sourcecode.BlacklistReport{
+		HasBlacklistFields: true,
+		BlacklistFields:    []string{"owner", "blacklist"},
+	}, time.Now())
+	if err := registry.UpdateProjectAnalysisState(context.Background(), project.Meta.ProjectID, &state); err != nil {
+		t.Fatalf("update project analysis state: %v", err)
+	}
+
+	stored, ok, err := registry.GetProject(context.Background(), project.Meta.ProjectID)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok {
+		t.Fatal("project not found")
+	}
+
+	report, ok := stored.Analysis.SourceCodeBlacklist.Get()
+	if !ok {
+		t.Fatal("source code blacklist report is not ready")
+	}
+	report.BlacklistFields[0] = "mutated"
+
+	stored, ok, err = registry.GetProject(context.Background(), project.Meta.ProjectID)
+	if err != nil {
+		t.Fatalf("get project again: %v", err)
+	}
+	if !ok {
+		t.Fatal("project not found on second get")
+	}
+	report, ok = stored.Analysis.SourceCodeBlacklist.Get()
+	if !ok {
+		t.Fatal("source code blacklist report is not ready on second get")
+	}
+	if !reflect.DeepEqual(report.BlacklistFields, []string{"owner", "blacklist"}) {
+		t.Fatalf("report BlacklistFields = %v, want [owner blacklist]", report.BlacklistFields)
 	}
 }
 

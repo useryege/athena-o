@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	appcache "github.com/useryege/athena/internal/application/cache"
+	"github.com/useryege/athena/internal/application/sourcecode"
 )
 
 const (
@@ -30,9 +32,11 @@ type ProjectScheduler interface {
 var _ ProjectScheduler = &projectSchedulerImpl{}
 
 type projectSchedulerImpl struct {
-	registry ProjectRegistry
-	syncer   ProjectSync
-	opts     ProjectSchedulerOptions
+	registry  ProjectRegistry
+	syncer    ProjectSync
+	analyzer  sourcecode.Analyzer
+	blacklist appcache.SourceCodeBlacklistModel
+	opts      ProjectSchedulerOptions
 
 	mu              sync.Mutex
 	ctx             context.Context
@@ -42,11 +46,13 @@ type projectSchedulerImpl struct {
 	wg              sync.WaitGroup
 }
 
-func NewProjectScheduler(registry ProjectRegistry, syncer ProjectSync, opts ProjectSchedulerOptions) ProjectScheduler {
+func NewProjectScheduler(registry ProjectRegistry, syncer ProjectSync, analyzer sourcecode.Analyzer, blacklist appcache.SourceCodeBlacklistModel, opts ProjectSchedulerOptions) ProjectScheduler {
 	opts = normalizeProjectSchedulerOptions(opts)
 	return &projectSchedulerImpl{
 		registry:        registry,
 		syncer:          syncer,
+		analyzer:        analyzer,
+		blacklist:       blacklist,
 		opts:            opts,
 		sourceProjectCh: make(chan uuid.UUID, sourceCodeProjectQueueCapacity),
 	}
@@ -177,16 +183,52 @@ func (s *projectSchedulerImpl) syncProjectSourceCode(projectID uuid.UUID) {
 			"error":     err,
 		}).Warn("failed to sync project source code")
 	}
-	if updateErr := s.registry.UpdateProjectSourceCodeState(s.ctx, project.Meta.ProjectID, &project.SourceCode); updateErr != nil && !errors.Is(updateErr, context.Canceled) {
+	sourceCodeUpdateErr := s.registry.UpdateProjectSourceCodeState(s.ctx, project.Meta.ProjectID, &project.SourceCode)
+	if sourceCodeUpdateErr != nil && !errors.Is(sourceCodeUpdateErr, context.Canceled) {
 		log.WithFields(log.Fields{
 			"projectID": project.Meta.ProjectID,
-			"error":     updateErr,
+			"error":     sourceCodeUpdateErr,
 		}).Warn("failed to update project source code state")
 	}
-	if done {
+	if done && sourceCodeUpdateErr == nil {
+		s.analyzeProjectSourceCode(project)
 		// log.WithFields(log.Fields{
 		// 	"projectID": project.Meta.ProjectID,
 		// 	"contract":  project.Meta.Contract,
 		// }).Debug("project source code sync completed")
 	}
+}
+
+func (s *projectSchedulerImpl) analyzeProjectSourceCode(project *Project) {
+	if s.analyzer == nil || project == nil {
+		return
+	}
+	if !project.SourceCode.SourceCode.IsReady() || project.Analysis.SourceCodeBlacklist.IsReady() {
+		return
+	}
+
+	analysis := cloneProjectAnalysisState(&project.Analysis)
+	sourceCode, ok := project.SourceCode.SourceCode.Get()
+	if !ok {
+		return
+	}
+	fields, err := s.sourceCodeBlacklistFields()
+	if err != nil {
+		analysis.SourceCodeBlacklist.MarkFailed(err, time.Now())
+	} else {
+		analysis.SourceCodeBlacklist.MarkReady(s.analyzer.AnalyzeSourceCode(sourceCode, fields), time.Now())
+	}
+	if updateErr := s.registry.UpdateProjectAnalysisState(s.ctx, project.Meta.ProjectID, &analysis); updateErr != nil && !errors.Is(updateErr, context.Canceled) {
+		log.WithFields(log.Fields{
+			"projectID": project.Meta.ProjectID,
+			"error":     updateErr,
+		}).Warn("failed to update project source code analysis state")
+	}
+}
+
+func (s *projectSchedulerImpl) sourceCodeBlacklistFields() ([]string, error) {
+	if s.blacklist == nil {
+		return nil, nil
+	}
+	return s.blacklist.List(s.ctx)
 }

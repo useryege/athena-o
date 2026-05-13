@@ -1,9 +1,8 @@
-package db
+package store
 
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -11,7 +10,6 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/application"
 	"github.com/useryege/athena/util/env"
 )
 
@@ -20,16 +18,16 @@ const (
 	postgresPingInterval = time.Second
 )
 
-type projectMetaStore struct {
+type SQLStore struct {
 	db *sql.DB
 }
 
-func NewProjectMetaStore(db *sql.DB) application.ProjectStore {
-	return &projectMetaStore{db: db}
+func NewSQLStore(db *sql.DB) *SQLStore {
+	return &SQLStore{db: db}
 }
 
-func NewProjectMetaStoreSource() func(context.Context) (application.ProjectStore, error) {
-	return func(ctx context.Context) (application.ProjectStore, error) {
+func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
+	return func(ctx context.Context) (*SQLStore, error) {
 		log.Info("connecting to postgres database")
 		db, err := sql.Open("pgx", postgresDSN())
 		if err != nil {
@@ -43,7 +41,7 @@ func NewProjectMetaStoreSource() func(context.Context) (application.ProjectStore
 			cancel()
 			if pingErr == nil {
 				log.Info("successfully connected to postgres database")
-				return NewProjectMetaStore(db), nil
+				return NewSQLStore(db), nil
 			}
 
 			log.Warnf("failed to ping postgres database, attempt %d/%d: %v", attempt, postgresPingAttempts, pingErr)
@@ -62,7 +60,7 @@ func NewProjectMetaStoreSource() func(context.Context) (application.ProjectStore
 			return nil, fmt.Errorf("failed to ping postgres database after %d attempts: %w", postgresPingAttempts, pingErr)
 		}
 
-		return NewProjectMetaStore(db), nil
+		return NewSQLStore(db), nil
 	}
 }
 
@@ -94,29 +92,6 @@ func defaultPostgresDSN() string {
 	return postgresURL.String()
 }
 
-func (s *projectMetaStore) Close() error {
+func (s *SQLStore) Close() error {
 	return s.db.Close()
-}
-
-func (s *projectMetaStore) SaveProjectMeta(ctx context.Context, meta application.ProjectMeta) error {
-	if meta.Tx == nil {
-		return errors.New("project meta transaction is nil")
-	}
-
-	_, err := s.db.ExecContext(ctx, `
-INSERT INTO project (
-  project_id,
-  block_number,
-  block_time,
-  contract,
-  creator,
-  tx_hash,
-  tx_index
-) VALUES ($1, $2, $3, $4, $5, $6, $7)
-ON CONFLICT DO NOTHING
-`, meta.ProjectID, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), meta.Tx.Hash().Bytes(), int64(meta.TxIndex))
-	if err != nil {
-		return fmt.Errorf("save project meta: %w", err)
-	}
-	return nil
 }

@@ -23,8 +23,8 @@ import (
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/application"
 	"github.com/useryege/athena/internal/application/apiclient"
-	applicationdb "github.com/useryege/athena/internal/application/db"
 	"github.com/useryege/athena/internal/application/metrics"
+	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
@@ -47,7 +47,7 @@ func NewCommand() *cobra.Command {
 		etherscanAPIBaseURL string
 		etherscanAPIKey     string
 		liquidityLockers    []string
-		projectMetaStoreSrc func(context.Context) (application.ProjectStore, error)
+		storeSrc            func(context.Context) (*appstore.SQLStore, error)
 	)
 
 	command := &cobra.Command{
@@ -69,11 +69,9 @@ func NewCommand() *cobra.Command {
 
 			ctx := cmd.Context()
 
-			projectMetaStore, err := projectMetaStoreSrc(ctx)
+			store, err := storeSrc(ctx)
 			errors.CheckError(err)
-			if closer, ok := projectMetaStore.(utilio.Closer); ok {
-				defer utilio.Close(closer)
-			}
+			defer utilio.Close(store)
 
 			metricsServer := metrics.NewMetricsServer()
 			http.Handle("/metrics", metricsServer.GetHandler())
@@ -120,7 +118,7 @@ func NewCommand() *cobra.Command {
 				AthenaContract:      athenaContractAddress,
 				EtherscanAPIBaseURL: etherscanAPIBaseURL,
 				EtherscanAPIKey:     etherscanAPIKey,
-				ProjectStore:        projectMetaStore,
+				Store:               store,
 				LiquidityLocker:     liquidityLockerAddresses,
 			})
 
@@ -197,7 +195,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
 	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")
 	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")
-	projectMetaStoreSrc = applicationdb.NewProjectMetaStoreSource()
+	storeSrc = appstore.NewSQLStoreSource()
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

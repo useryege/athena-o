@@ -10,7 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/google/uuid"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
+	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/evm"
+	"github.com/useryege/athena/internal/application/sourcecode"
+	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc/codes"
@@ -35,9 +38,10 @@ type Service struct {
 	projectFilter   *ProjectFilter
 	projectSync     ProjectSync
 	scheduler       ProjectScheduler
+	sourceAnalyzer  sourcecode.Analyzer
+	sourceBlacklist appcache.SourceCodeBlacklistModel
 
-	registry     ProjectRegistry
-	projectStore ProjectStore
+	registry ProjectRegistry
 
 	delayedFetchSem chan struct{}
 	startStopMu     sync.Mutex
@@ -46,13 +50,19 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, projectStore ProjectStore, liquidityLocker []common.Address) *Service {
-	registry := NewProjectRegistry(projectStore)
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, store appstore.Store, liquidityLocker []common.Address) *Service {
+	registry := NewProjectRegistry(store)
+	sourceAnalyzer := sourcecode.NewAnalyzer()
+	sourceBlacklist := appcache.NewSourceCodeBlacklistModel(
+		store,
+		appcache.NewLayeredBlacklistCache(appcache.NewLocalBlacklistCache(), nil),
+	)
 
 	return &Service{
 		nodeClient:          nodeClient,
 		registry:            registry,
-		projectStore:        projectStore,
+		sourceAnalyzer:      sourceAnalyzer,
+		sourceBlacklist:     sourceBlacklist,
 		delayedFetchSem:     make(chan struct{}, defaultDelayedFetchConcurrency),
 		v2FactoryContract:   v2FactoryContract,
 		wethContract:        wethContract,
@@ -92,9 +102,18 @@ func (s *Service) Start() error {
 	projectSimulator := NewProjectSimulator(s.nodeClient)
 
 	ctx, cancel := context.WithCancel(context.Background())
+	if s.sourceBlacklist != nil {
+		if err := s.sourceBlacklist.Load(ctx); err != nil {
+			cancel()
+			close(ch1)
+			s.clearPipelineLocked()
+			return err
+		}
+	}
+
 	s.projectSync = NewProjectSync(s.nodeClient, s.registry, athenaFetcher, apiFetcher, projectSimulator, s.delayedFetchSem)
 	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, s.projectSync)
-	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, ProjectSchedulerOptions{})
+	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, s.sourceAnalyzer, s.sourceBlacklist, ProjectSchedulerOptions{})
 	if err := s.scheduler.Start(ctx); err != nil {
 		cancel()
 		close(ch1)
@@ -173,6 +192,31 @@ func (s *Service) clearPipelineLocked() {
 	s.projectFilter = nil
 	s.projectSync = nil
 	s.scheduler = nil
+}
+
+func (s *Service) AddSourceCodeBlacklistField(ctx context.Context, field string) error {
+	if s.sourceBlacklist == nil {
+		return nil
+	}
+	return s.sourceBlacklist.Add(ctx, field)
+}
+
+func (s *Service) DeleteSourceCodeBlacklistField(ctx context.Context, field string) error {
+	if s.sourceBlacklist == nil {
+		return nil
+	}
+	return s.sourceBlacklist.Delete(ctx, field)
+}
+
+func (s *Service) ListSourceCodeBlacklistFields() []string {
+	if s.sourceBlacklist == nil {
+		return nil
+	}
+	fields, err := s.sourceBlacklist.List(context.Background())
+	if err != nil {
+		return nil
+	}
+	return fields
 }
 
 func (s *Service) ListProjects(ctx context.Context, _ *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {

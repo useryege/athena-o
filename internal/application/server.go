@@ -4,6 +4,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
+	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/server/version"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"google.golang.org/grpc"
@@ -23,14 +24,14 @@ type ApplicationServerOpts struct {
 	AthenaContract      common.Address
 	EtherscanAPIBaseURL string
 	EtherscanAPIKey     string
-	ProjectStore        ProjectStore
+	Store               appstore.Store
 	LiquidityLocker     []common.Address
 }
 
 func NewServer(opts ApplicationServerOpts) *ApplicationServer {
 	return &ApplicationServer{
 		ApplicationServerOpts: opts,
-		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.AthenaContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, opts.ProjectStore, opts.LiquidityLocker),
+		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.AthenaContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, opts.Store, opts.LiquidityLocker),
 	}
 }
 
