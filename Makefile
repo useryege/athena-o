@@ -589,19 +589,19 @@ run-application-remote:
 	./hack/app-remote-vps-run.sh
 
 .PHONY: prod-build-local
-prod-build:
+prod-build-local:
 	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -t $(PROD_IMAGE) .
 
 .PHONY: prod-start-local	
-prod-start:
+prod-start-local:
 	$(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) up -d
 
 .PHONY: prod-stop-local
-prod-stop:
+prod-stop-local:
 	$(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) down
 
 .PHONY: prod-logs-local
-prod-logs:
+prod-logs-local:
 	$(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) logs -f $(PROD_LOG_SERVICE)
 
 .PHONY: prod-deploy-remote

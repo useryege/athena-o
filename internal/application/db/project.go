@@ -31,7 +31,7 @@ func NewProjectMetaStore(db *sql.DB) application.ProjectStore {
 func NewProjectMetaStoreSource() func(context.Context) (application.ProjectStore, error) {
 	return func(ctx context.Context) (application.ProjectStore, error) {
 		log.Info("connecting to postgres database")
-		db, err := sql.Open("pgx", defaultPostgresDSN())
+		db, err := sql.Open("pgx", postgresDSN())
 		if err != nil {
 			return nil, fmt.Errorf("failed to open postgres database: %w", err)
 		}
@@ -64,6 +64,13 @@ func NewProjectMetaStoreSource() func(context.Context) (application.ProjectStore
 
 		return NewProjectMetaStore(db), nil
 	}
+}
+
+func postgresDSN() string {
+	if dsn := env.StringFromEnv("ATHENA_APPLICATION_POSTGRES_DSN", ""); dsn != "" {
+		return dsn
+	}
+	return defaultPostgresDSN()
 }
 
 func defaultPostgresDSN() string {
