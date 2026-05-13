@@ -9,6 +9,7 @@ import {Subscription} from 'rxjs';
 import help from './help';
 import login from './login';
 import projects from './projects';
+import sourceCodeBlacklist from './source-code-blacklist';
 import settings from './settings';
 import {Layout, ThemeWrapper} from './shared/components/layout/layout';
 import {Page} from './shared/components/page/page';
@@ -33,6 +34,7 @@ type Routes = {[path: string]: {component: React.ComponentType<RouteComponentPro
 const routes: Routes = {
     '/login': {component: login.component as any, noLayout: true},
     '/projects': {component: projects.component},
+    '/source-code-blacklist': {component: sourceCodeBlacklist.component},
     // '/applications': {component: applications.component},
     '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
@@ -52,6 +54,12 @@ const navItems: NavItem[] = [
         tooltip: 'View Athena projects',
         path: '/projects',
         iconClassName: 'fa fa-cubes'
+    },
+    {
+        title: 'Blacklist',
+        tooltip: 'Manage source-code blacklist fields',
+        path: '/source-code-blacklist',
+        iconClassName: 'fa fa-ban'
     },
     // {
     //     title: 'Applications',

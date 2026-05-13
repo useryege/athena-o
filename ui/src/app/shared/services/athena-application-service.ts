@@ -76,6 +76,19 @@ export interface GetProjectResponse {
     item?: ProjectView;
 }
 
+export interface SourceCodeBlacklistField {
+    id?: number;
+    field?: string;
+}
+
+export interface ListSourceCodeBlacklistFieldsResponse {
+    items?: SourceCodeBlacklistField[];
+}
+
+export interface AddSourceCodeBlacklistFieldResponse {
+    item?: SourceCodeBlacklistField;
+}
+
 export class AthenaApplicationService {
     public listProjects(): Promise<ProjectView[]> & {abort?: () => void} {
         const req = requests.get('/project/list');
@@ -87,6 +100,27 @@ export class AthenaApplicationService {
     public getProject(projectID: string): Promise<ProjectView> & {abort?: () => void} {
         const req = requests.get(`/project/${encodeURIComponent(projectID)}`);
         const promise = req.then(res => (res.body as GetProjectResponse).item) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listSourceCodeBlacklistFields(): Promise<SourceCodeBlacklistField[]> & {abort?: () => void} {
+        const req = requests.get('/source-code/blacklist-fields');
+        const promise = req.then(res => (res.body as ListSourceCodeBlacklistFieldsResponse).items || []) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public addSourceCodeBlacklistField(field: string): Promise<SourceCodeBlacklistField> & {abort?: () => void} {
+        const req = requests.post('/source-code/blacklist-fields').send({field});
+        const promise = req.then(res => (res.body as AddSourceCodeBlacklistFieldResponse).item) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public deleteSourceCodeBlacklistField(field: string): Promise<void> & {abort?: () => void} {
+        const req = requests.delete(`/source-code/blacklist-fields/${encodeURIComponent(field)}`);
+        const promise = req.then(() => {}) as any;
         promise.abort = () => req.abort();
         return promise;
     }
