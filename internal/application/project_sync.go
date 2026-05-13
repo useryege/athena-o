@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -15,7 +16,10 @@ import (
 	"github.com/useryege/athena/util/ethereumapi"
 )
 
-const defaultDelayedFetchConcurrency = 10
+const (
+	defaultDelayedFetchConcurrency    = 10
+	defaultProjectSimulateConcurrency = 10
+)
 
 type ProjectSync interface {
 	SyncSourceCodeOnce(ctx context.Context, event *Project) (bool, error)
@@ -170,35 +174,122 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 
 	if s.projectSimulator != nil {
 		simulateStartedAt := time.Now()
-		var simulateCallsDuration time.Duration
-		var simulateUpdatesDuration time.Duration
-		for i, ref := range refs {
-			now := time.Now()
-			state := ProjectSimulateState{}
-
-			simulateCallStartedAt := time.Now()
-			simulateResult, err := s.projectSimulator.Simulate(ref.Creator, ref.Contract, snapshots[i].Pair.ContractAddress)
-			simulateCallsDuration += time.Since(simulateCallStartedAt)
-			if err != nil {
-				state.CreatorResult.MarkFailed(err, now)
-				syncErr = errors.Join(syncErr, err)
-			} else {
-				state.CreatorResult.MarkReady(simulateResult, now)
-			}
-
-			simulateUpdateStartedAt := time.Now()
-			if err := s.registry.UpdateProjectSimulateState(ctx, ref.ProjectID, &state); err != nil {
-				syncErr = errors.Join(syncErr, err)
-			}
-			simulateUpdatesDuration += time.Since(simulateUpdateStartedAt)
+		stats, err := s.syncProjectSimulateStates(ctx, refs, snapshots)
+		if err != nil {
+			syncErr = errors.Join(syncErr, err)
 		}
-		fields["simulateProjectCount"] = len(refs)
+		fields["simulateProjectCount"] = stats.projectCount
+		fields["simulateConcurrency"] = stats.concurrency
 		fields["simulateDuration"] = time.Since(simulateStartedAt)
-		fields["simulateCallsDuration"] = simulateCallsDuration
-		fields["updateProjectSimulateStatesDuration"] = simulateUpdatesDuration
+		fields["simulateCallsDuration"] = stats.callsDuration
+		fields["updateProjectSimulateStatesDuration"] = stats.updatesDuration
+		fields["simulateErrorCount"] = stats.simulateErrorCount
+		fields["simulateUpdateErrorCount"] = stats.updateErrorCount
 	}
 
 	return syncErr
+}
+
+type projectSimulateStats struct {
+	projectCount       int
+	concurrency        int
+	simulateErrorCount int
+	updateErrorCount   int
+	callsDuration      time.Duration
+	updatesDuration    time.Duration
+}
+
+type projectSimulateJob struct {
+	index int
+	ref   ProjectContractRef
+}
+
+func (s *projectSyncImpl) syncProjectSimulateStates(ctx context.Context, refs []ProjectContractRef, snapshots []athenacontract.AthenaProject) (projectSimulateStats, error) {
+	stats := projectSimulateStats{
+		projectCount: len(refs),
+		concurrency:  defaultProjectSimulateConcurrency,
+	}
+	if stats.projectCount < stats.concurrency {
+		stats.concurrency = stats.projectCount
+	}
+	if stats.concurrency <= 0 {
+		return stats, nil
+	}
+
+	jobs := make(chan projectSimulateJob, stats.concurrency)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var syncErr error
+
+	recordDurations := func(callsDuration time.Duration, updatesDuration time.Duration) {
+		mu.Lock()
+		stats.callsDuration += callsDuration
+		stats.updatesDuration += updatesDuration
+		mu.Unlock()
+	}
+	recordSimulateError := func(err error) {
+		mu.Lock()
+		stats.simulateErrorCount++
+		syncErr = errors.Join(syncErr, err)
+		mu.Unlock()
+	}
+	recordUpdateError := func(err error) {
+		mu.Lock()
+		stats.updateErrorCount++
+		syncErr = errors.Join(syncErr, err)
+		mu.Unlock()
+	}
+	recordError := func(err error) {
+		mu.Lock()
+		syncErr = errors.Join(syncErr, err)
+		mu.Unlock()
+	}
+
+	for worker := 0; worker < stats.concurrency; worker++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for job := range jobs {
+				if err := ctx.Err(); err != nil {
+					return
+				}
+
+				now := time.Now()
+				state := ProjectSimulateState{}
+
+				simulateCallStartedAt := time.Now()
+				simulateResult, err := s.projectSimulator.Simulate(ctx, job.ref.Creator, job.ref.Contract, snapshots[job.index].Pair.ContractAddress)
+				simulateCallsDuration := time.Since(simulateCallStartedAt)
+				if err != nil {
+					state.CreatorResult.MarkFailed(err, now)
+					recordSimulateError(err)
+				} else {
+					state.CreatorResult.MarkReady(simulateResult, now)
+				}
+
+				simulateUpdateStartedAt := time.Now()
+				if err := s.registry.UpdateProjectSimulateState(ctx, job.ref.ProjectID, &state); err != nil {
+					recordUpdateError(err)
+				}
+				simulateUpdatesDuration := time.Since(simulateUpdateStartedAt)
+				recordDurations(simulateCallsDuration, simulateUpdatesDuration)
+			}
+		}()
+	}
+
+enqueueJobs:
+	for i, ref := range refs {
+		select {
+		case jobs <- projectSimulateJob{index: i, ref: ref}:
+		case <-ctx.Done():
+			recordError(ctx.Err())
+			break enqueueJobs
+		}
+	}
+	close(jobs)
+	wg.Wait()
+
+	return stats, syncErr
 }
 
 func (s *projectSyncImpl) fetchSourceCode(ctx context.Context, event *Project) (string, string, error) {
