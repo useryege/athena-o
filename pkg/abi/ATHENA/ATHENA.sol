@@ -56,6 +56,25 @@ contract Athena {
         Pair pair;
     }
 
+    struct ProjectQuery {
+        address tokenContract;
+        address msgCaller;
+    }
+
+    struct SimulationState {
+        uint256 deadAllowance;
+        uint256 zeroAllowance;
+        uint256 pairAllowance;
+        uint256 callerBalance;
+    }
+
+    struct ProjectWithSimulationState {
+        Project project;
+        SimulationState simulationState;
+    }
+
+    address private constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+
     address public immutable factoryContract;
     address public immutable wethContract;
     bytes32 public immutable initCodePairHash;
@@ -94,6 +113,45 @@ contract Athena {
                 i++;
             }
         }
+    }
+
+    function GetWithSimulationState(ProjectQuery calldata query, address[] calldata lockers)
+        external
+        view
+        returns (ProjectWithSimulationState memory)
+    {
+        return _getWithSimulationState(query, lockers);
+    }
+
+    function ListWithSimulationState(ProjectQuery[] calldata queries, address[] calldata lockers)
+        external
+        view
+        returns (ProjectWithSimulationState[] memory projects)
+    {
+        projects = new ProjectWithSimulationState[](queries.length);
+        for (uint256 i = 0; i < queries.length;) {
+            projects[i] = _getWithSimulationState(queries[i], lockers);
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    function _getWithSimulationState(ProjectQuery calldata query, address[] calldata lockers)
+        private
+        view
+        returns (ProjectWithSimulationState memory result)
+    {
+        result.project = _get(query.tokenContract, lockers);
+        if (!result.project.token.isValidERC20 || !result.project.pair.isCreated) {
+            return result;
+        }
+
+        (, result.simulationState.deadAllowance) = _safeAllowance(query.tokenContract, DEAD_ADDRESS, query.msgCaller);
+        (, result.simulationState.zeroAllowance) = _safeAllowance(query.tokenContract, address(0), query.msgCaller);
+        (, result.simulationState.pairAllowance) =
+            _safeAllowance(query.tokenContract, result.project.pair.contractAddress, query.msgCaller);
+        (, result.simulationState.callerBalance) = _safeBalanceOf(query.tokenContract, query.msgCaller);
     }
 
     function _get(address tokenContract, address[] calldata lockers) private view returns (Project memory) {

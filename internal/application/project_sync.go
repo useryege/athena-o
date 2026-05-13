@@ -139,13 +139,34 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 
 	buildTokenContractsStartedAt := time.Now()
 	tokenContracts := make([]common.Address, 0, len(refs))
+	queries := make([]athenacontract.AthenaProjectQuery, 0, len(refs))
 	for _, ref := range refs {
 		tokenContracts = append(tokenContracts, ref.Contract)
+		queries = append(queries, athenacontract.AthenaProjectQuery{
+			TokenContract: ref.Contract,
+			MsgCaller:     ref.Creator,
+		})
 	}
 	fields["buildTokenContractsDuration"] = time.Since(buildTokenContractsStartedAt)
 
 	fetchStartedAt := time.Now()
-	snapshots, err := s.fetcher.FetchProjects(ctx, tokenContracts)
+	var snapshots []athenacontract.AthenaProject
+	var simulationStates []athenacontract.AthenaSimulationState
+	if s.projectSimulator == nil {
+		snapshots, err = s.fetcher.FetchProjects(ctx, tokenContracts)
+	} else {
+		projects, err := s.fetcher.FetchProjectsWithSimulationState(ctx, queries)
+		if err != nil {
+			fields["fetchDuration"] = time.Since(fetchStartedAt)
+			return err
+		}
+		snapshots = make([]athenacontract.AthenaProject, len(projects))
+		simulationStates = make([]athenacontract.AthenaSimulationState, len(projects))
+		for i, project := range projects {
+			snapshots[i] = project.Project
+			simulationStates[i] = project.SimulationState
+		}
+	}
 	fields["fetchDuration"] = time.Since(fetchStartedAt)
 	if err != nil {
 		return err
@@ -174,7 +195,7 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 
 	if s.projectSimulator != nil {
 		simulateStartedAt := time.Now()
-		stats, err := s.syncProjectSimulateStates(ctx, refs, snapshots)
+		stats, err := s.syncProjectSimulateStates(ctx, refs, snapshots, simulationStates)
 		if err != nil {
 			syncErr = errors.Join(syncErr, err)
 		}
@@ -204,10 +225,18 @@ type projectSimulateJob struct {
 	ref   ProjectContractRef
 }
 
-func (s *projectSyncImpl) syncProjectSimulateStates(ctx context.Context, refs []ProjectContractRef, snapshots []athenacontract.AthenaProject) (projectSimulateStats, error) {
+func (s *projectSyncImpl) syncProjectSimulateStates(
+	ctx context.Context,
+	refs []ProjectContractRef,
+	snapshots []athenacontract.AthenaProject,
+	simulationStates []athenacontract.AthenaSimulationState,
+) (projectSimulateStats, error) {
 	stats := projectSimulateStats{
 		projectCount: len(refs),
 		concurrency:  defaultProjectSimulateConcurrency,
+	}
+	if len(simulationStates) != len(refs) {
+		return stats, fmt.Errorf("athena list returned %d simulation states for %d token contracts", len(simulationStates), len(refs))
 	}
 	if stats.projectCount < stats.concurrency {
 		stats.concurrency = stats.projectCount
@@ -258,7 +287,13 @@ func (s *projectSyncImpl) syncProjectSimulateStates(ctx context.Context, refs []
 				state := ProjectSimulateState{}
 
 				simulateCallStartedAt := time.Now()
-				simulateResult, err := s.projectSimulator.Simulate(ctx, job.ref.Creator, job.ref.Contract, snapshots[job.index].Pair.ContractAddress)
+				simulateResult, err := s.projectSimulator.SimulatePrimary(
+					ctx,
+					job.ref.Creator,
+					job.ref.Contract,
+					snapshots[job.index].Pair.ContractAddress,
+					simulationStates[job.index],
+				)
 				simulateCallsDuration := time.Since(simulateCallStartedAt)
 				if err != nil {
 					state.CreatorResult.MarkFailed(err, now)

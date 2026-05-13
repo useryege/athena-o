@@ -11,11 +11,13 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/abi/ERC20"
 )
 
 type ProjectSimulator interface {
 	Simulate(ctx context.Context, msgCaller common.Address, tokenAddress common.Address, pairContract common.Address) (SimulateResult, error)
+	SimulatePrimary(ctx context.Context, msgCaller common.Address, tokenAddress common.Address, pairContract common.Address, state athenacontract.AthenaSimulationState) (SimulateResult, error)
 }
 
 var _ ProjectSimulator = &projectSimulatorImpl{}
@@ -102,6 +104,35 @@ func (s *projectSimulatorImpl) Simulate(ctx context.Context, msgCaller common.Ad
 			result.CanMintFromPairViaTransferFrom = true
 		}
 	}
+
+	return result, nil
+}
+
+func (s *projectSimulatorImpl) SimulatePrimary(ctx context.Context, msgCaller common.Address, tokenAddress common.Address, pairContract common.Address, state athenacontract.AthenaSimulationState) (SimulateResult, error) {
+	var result SimulateResult
+
+	parsed, err := ERC20.ERC20MetaData.GetAbi()
+	if err != nil {
+		return result, err
+	}
+
+	primaryCalls, err := buildPrimarySimulateCalls(parsed, msgCaller, tokenAddress, pairContract, simulateState{
+		deadAllowance: state.DeadAllowance,
+		zeroAllowance: state.ZeroAllowance,
+		pairAllowance: state.PairAllowance,
+		callerBalance: state.CallerBalance,
+	})
+	if err != nil {
+		return result, err
+	}
+	primaryResults, err := s.batchEthCall(ctx, primaryCalls)
+	if err != nil {
+		return result, err
+	}
+	result.CanMintFromDeadViaTransferFrom = primaryResults[0].Error == nil
+	result.CanMintFromZeroViaTransferFrom = primaryResults[1].Error == nil
+	result.CanMintFromPairViaTransferFrom = primaryResults[2].Error == nil
+	result.CanMintViaTransfer = primaryResults[3].Error == nil
 
 	return result, nil
 }

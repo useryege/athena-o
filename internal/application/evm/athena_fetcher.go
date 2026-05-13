@@ -11,6 +11,7 @@ import (
 type AthenaFetcher interface {
 	FetchProject(ctx context.Context, token common.Address) (athenacontract.AthenaProject, error)
 	FetchProjects(ctx context.Context, tokenContracts []common.Address) ([]athenacontract.AthenaProject, error)
+	FetchProjectsWithSimulationState(ctx context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error)
 }
 
 type athenaFetcherImpl struct {
@@ -37,4 +38,9 @@ func (f *athenaFetcherImpl) FetchProject(ctx context.Context, token common.Addre
 func (f *athenaFetcherImpl) FetchProjects(ctx context.Context, tokenContracts []common.Address) ([]athenacontract.AthenaProject, error) {
 	reader := &bind.CallOpts{Context: ctx}
 	return f.caller.List(reader, tokenContracts, f.liquidityLocker)
+}
+
+func (f *athenaFetcherImpl) FetchProjectsWithSimulationState(ctx context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {
+	reader := &bind.CallOpts{Context: ctx}
+	return f.caller.ListWithSimulationState(reader, queries, f.liquidityLocker)
 }
