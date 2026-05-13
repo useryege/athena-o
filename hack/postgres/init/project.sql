@@ -26,7 +26,9 @@ CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (block_number, tx_index, id);
 
 CREATE TABLE IF NOT EXISTS source_code_blacklist_field (
-  field TEXT PRIMARY KEY,
+  id BIGSERIAL PRIMARY KEY,
+  field TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT source_code_blacklist_field_not_empty CHECK (length(btrim(field)) > 0)
+  CONSTRAINT source_code_blacklist_field_not_empty CHECK (length(btrim(field)) > 0),
+  CONSTRAINT source_code_blacklist_field_field_unique UNIQUE (field)
 );

@@ -25,9 +25,47 @@ message GetProjectResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView item = 1;
 }
 
+// SourceCodeBlacklistField is a globally maintained source-code blacklist field.
+message SourceCodeBlacklistField {
+  int64 id = 1;
+  string field = 2;
+}
+
+// ListSourceCodeBlacklistFieldsRequest queries all source-code blacklist fields.
+message ListSourceCodeBlacklistFieldsRequest {}
+
+// ListSourceCodeBlacklistFieldsResponse returns all source-code blacklist fields.
+message ListSourceCodeBlacklistFieldsResponse {
+  repeated SourceCodeBlacklistField items = 1;
+}
+
+// AddSourceCodeBlacklistFieldRequest adds a source-code blacklist field.
+message AddSourceCodeBlacklistFieldRequest {
+  string field = 1;
+}
+
+// AddSourceCodeBlacklistFieldResponse returns the stored source-code blacklist field.
+message AddSourceCodeBlacklistFieldResponse {
+  SourceCodeBlacklistField item = 1;
+}
+
+// DeleteSourceCodeBlacklistFieldRequest deletes a source-code blacklist field.
+message DeleteSourceCodeBlacklistFieldRequest {
+  string field = 1;
+}
+
+// DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.
+message DeleteSourceCodeBlacklistFieldResponse {}
+
 service ApplicationService {
   // ListProjects returns the current known project snapshot.
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
   // GetProject returns the project snapshot for a given project ID.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+  // ListSourceCodeBlacklistFields returns all globally configured source-code blacklist fields.
+  rpc ListSourceCodeBlacklistFields(ListSourceCodeBlacklistFieldsRequest) returns (ListSourceCodeBlacklistFieldsResponse);
+  // AddSourceCodeBlacklistField adds a globally configured source-code blacklist field.
+  rpc AddSourceCodeBlacklistField(AddSourceCodeBlacklistFieldRequest) returns (AddSourceCodeBlacklistFieldResponse);
+  // DeleteSourceCodeBlacklistField deletes a globally configured source-code blacklist field.
+  rpc DeleteSourceCodeBlacklistField(DeleteSourceCodeBlacklistFieldRequest) returns (DeleteSourceCodeBlacklistFieldResponse);
 }

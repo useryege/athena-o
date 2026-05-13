@@ -194,29 +194,42 @@ func (s *Service) clearPipelineLocked() {
 	s.scheduler = nil
 }
 
-func (s *Service) AddSourceCodeBlacklistField(ctx context.Context, field string) error {
+func (s *Service) ListSourceCodeBlacklistFields(ctx context.Context, _ *applicationpkg.ListSourceCodeBlacklistFieldsRequest) (*applicationpkg.ListSourceCodeBlacklistFieldsResponse, error) {
 	if s.sourceBlacklist == nil {
-		return nil
+		return &applicationpkg.ListSourceCodeBlacklistFieldsResponse{}, nil
 	}
-	return s.sourceBlacklist.Add(ctx, field)
-}
 
-func (s *Service) DeleteSourceCodeBlacklistField(ctx context.Context, field string) error {
-	if s.sourceBlacklist == nil {
-		return nil
-	}
-	return s.sourceBlacklist.Delete(ctx, field)
-}
-
-func (s *Service) ListSourceCodeBlacklistFields() []string {
-	if s.sourceBlacklist == nil {
-		return nil
-	}
-	fields, err := s.sourceBlacklist.List(context.Background())
+	fields, err := s.sourceBlacklist.List(ctx)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return fields
+
+	items := make([]*applicationpkg.SourceCodeBlacklistField, 0, len(fields))
+	for _, field := range fields {
+		items = append(items, &applicationpkg.SourceCodeBlacklistField{Field: field})
+	}
+	return &applicationpkg.ListSourceCodeBlacklistFieldsResponse{Items: items}, nil
+}
+
+func (s *Service) AddSourceCodeBlacklistField(ctx context.Context, req *applicationpkg.AddSourceCodeBlacklistFieldRequest) (*applicationpkg.AddSourceCodeBlacklistFieldResponse, error) {
+	if s.sourceBlacklist == nil {
+		return &applicationpkg.AddSourceCodeBlacklistFieldResponse{}, nil
+	}
+	field := req.GetField()
+	if err := s.sourceBlacklist.Add(ctx, field); err != nil {
+		return nil, err
+	}
+	return &applicationpkg.AddSourceCodeBlacklistFieldResponse{Item: &applicationpkg.SourceCodeBlacklistField{Field: field}}, nil
+}
+
+func (s *Service) DeleteSourceCodeBlacklistField(ctx context.Context, req *applicationpkg.DeleteSourceCodeBlacklistFieldRequest) (*applicationpkg.DeleteSourceCodeBlacklistFieldResponse, error) {
+	if s.sourceBlacklist == nil {
+		return &applicationpkg.DeleteSourceCodeBlacklistFieldResponse{}, nil
+	}
+	if err := s.sourceBlacklist.Delete(ctx, req.GetField()); err != nil {
+		return nil, err
+	}
+	return &applicationpkg.DeleteSourceCodeBlacklistFieldResponse{}, nil
 }
 
 func (s *Service) ListProjects(ctx context.Context, _ *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {
