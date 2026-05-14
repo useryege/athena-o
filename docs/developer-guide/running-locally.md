@@ -97,6 +97,22 @@ cd athena
 make run ATHENA_GPG_ENABLED=false
 ```
 
+#### Optional: Local Data Persistence
+By default, Redis and PostgreSQL run with ephemeral data. You can configure them to persist data between runs:
+
+```shell
+export ATHENA_LOCAL_DATA_MODE=persistent
+make run ATHENA_GPG_ENABLED=false
+```
+
+Supported environment variables for data persistence:
+
+- `ATHENA_LOCAL_DATA_MODE` (default: `ephemeral`)
+- `ATHENA_REDIS_DATA_DIR` (default: `/tmp/athena-local/redis`)
+- `ATHENA_POSTGRES_DATA_DIR` (default: `/tmp/athena-local/postgres`)
+
+> **Note**: For PostgreSQL, init scripts in `ATHENA_POSTGRES_INIT_DIR` are only executed upon initial database creation. For `persistent` mode, subsequent runs will skip init scripts, so any schema changes require manual migration or wiping the local data directory.
+
 #### Optional: start PostgreSQL with local stack
 The local `Procfile` now includes a `postgres` process that follows the same startup pattern as Redis.
 

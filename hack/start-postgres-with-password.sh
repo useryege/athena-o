@@ -9,6 +9,7 @@ POSTGRES_DB="${POSTGRES_DB:-athena}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
 POSTGRES_IMAGE_TAG="${ATHENA_POSTGRES_IMAGE_TAG:-16}"
 POSTGRES_DATA_DIR="${ATHENA_POSTGRES_DATA_DIR:-/tmp/athena-local/postgres}"
+ATHENA_LOCAL_DATA_MODE="${ATHENA_LOCAL_DATA_MODE:-ephemeral}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 POSTGRES_INIT_DIR="${ATHENA_POSTGRES_INIT_DIR:-$REPO_ROOT/hack/postgres/init}"
@@ -80,6 +81,11 @@ else
         "-e" "POSTGRES_USER=$POSTGRES_USER"
         "-e" "POSTGRES_DB=$POSTGRES_DB"
     )
+
+    if [ "$ATHENA_LOCAL_DATA_MODE" = "persistent" ]; then
+        mkdir -p "$POSTGRES_DATA_DIR"
+        docker_args+=("-v" "$POSTGRES_DATA_DIR:/var/lib/postgresql/data")
+    fi
 
     if [ -d "$POSTGRES_INIT_DIR" ]; then
         docker_args+=("-v" "$POSTGRES_INIT_DIR:/docker-entrypoint-initdb.d:ro")
