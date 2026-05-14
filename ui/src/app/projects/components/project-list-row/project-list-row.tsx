@@ -4,6 +4,12 @@ import {ProjectView} from '../../../shared/services/athena-application-service';
 
 const renderValue = (value: string | number | undefined) => (value === undefined || value === '' ? '-' : value);
 
+const isOpenSource = (project: ProjectView) => {
+    const sourceCode = project.sourceCode?.sourceCode || project.token?.sourceCode || '';
+    const sourceCodeABI = project.sourceCode?.sourceCodeABI || project.token?.sourceCodeABI || '';
+    return sourceCode.trim().length > 0 || sourceCodeABI.trim().length > 0;
+};
+
 const formatBlockTime = (blockTime: number | undefined) => {
     if (!blockTime || !Number.isFinite(blockTime) || blockTime <= 0) {
         return '-';
@@ -82,6 +88,11 @@ export const ProjectListRow = ({project, index, onClick}: {project: ProjectView;
                               return <span className={`project-details__badge project-details__badge--${hasRisk ? 'negative' : 'positive'}`}>{hasRisk ? 'Yes' : 'No'}</span>;
                           })()
                         : '-'}
+                </div>
+                <div className='projects-list__cell'>
+                    <span className={`project-details__badge project-details__badge--${isOpenSource(project) ? 'positive' : 'negative'}`}>
+                        {isOpenSource(project) ? 'Yes' : 'No'}
+                    </span>
                 </div>
                 <div className='projects-list__cell'>{formatBlockTime(project.meta?.blockTime)}</div>
             </div>

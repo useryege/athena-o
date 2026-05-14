@@ -144,6 +144,7 @@ export const ProjectsList = () => {
                                         <div>Symbol</div>
                                         <div>Blacklist</div>
                                         <div>Mint Risk</div>
+                                        <div>IsOpenSource</div>
                                         <div>区块时间</div>
                                     </div>
                                 </div>
