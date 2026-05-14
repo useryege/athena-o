@@ -247,11 +247,6 @@ func (m *ProjectSourceCodeState) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	_ = i
 	var l int
 	_ = l
-	i -= len(m.SourceCodeABI)
-	copy(dAtA[i:], m.SourceCodeABI)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCodeABI)))
-	i--
-	dAtA[i] = 0x12
 	i -= len(m.SourceCode)
 	copy(dAtA[i:], m.SourceCode)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCode)))
@@ -466,11 +461,6 @@ func (m *TokenState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x38
-	i -= len(m.SourceCodeABI)
-	copy(dAtA[i:], m.SourceCodeABI)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCodeABI)))
-	i--
-	dAtA[i] = 0x32
 	i -= len(m.SourceCode)
 	copy(dAtA[i:], m.SourceCode)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCode)))
@@ -587,8 +577,6 @@ func (m *ProjectSourceCodeState) Size() (n int) {
 	_ = l
 	l = len(m.SourceCode)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.SourceCodeABI)
-	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -656,8 +644,6 @@ func (m *TokenState) Size() (n int) {
 	l = len(m.TotalSupply)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.SourceCode)
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.SourceCodeABI)
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 2
 	return n
@@ -731,7 +717,6 @@ func (this *ProjectSourceCodeState) String() string {
 	}
 	s := strings.Join([]string{`&ProjectSourceCodeState{`,
 		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
-		`SourceCodeABI:` + fmt.Sprintf("%v", this.SourceCodeABI) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -785,7 +770,6 @@ func (this *TokenState) String() string {
 		`Decimals:` + fmt.Sprintf("%v", this.Decimals) + `,`,
 		`TotalSupply:` + fmt.Sprintf("%v", this.TotalSupply) + `,`,
 		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
-		`SourceCodeABI:` + fmt.Sprintf("%v", this.SourceCodeABI) + `,`,
 		`IsValidERC20:` + fmt.Sprintf("%v", this.IsValidERC20) + `,`,
 		`}`,
 	}, "")
@@ -1638,38 +1622,6 @@ func (m *ProjectSourceCodeState) Unmarshal(dAtA []byte) error {
 			}
 			m.SourceCode = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeABI", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SourceCodeABI = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -2346,38 +2298,6 @@ func (m *TokenState) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.SourceCode = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeABI", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SourceCodeABI = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 7:
 			if wireType != 0 {

@@ -58,8 +58,6 @@ message ProjectSimulateState {
 
 message ProjectSourceCodeState {
   optional string sourceCode = 1;
-
-  optional string sourceCodeABI = 2;
 }
 
 message ProjectView {
@@ -102,8 +100,6 @@ message TokenState {
   optional string totalSupply = 4;
 
   optional string sourceCode = 5;
-
-  optional string sourceCodeABI = 6;
 
   optional bool isValidERC20 = 7;
 }

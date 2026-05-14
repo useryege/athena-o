@@ -6,8 +6,7 @@ const renderValue = (value: string | number | undefined) => (value === undefined
 
 const isOpenSource = (project: ProjectView) => {
     const sourceCode = project.sourceCode?.sourceCode || project.token?.sourceCode || '';
-    const sourceCodeABI = project.sourceCode?.sourceCodeABI || project.token?.sourceCodeABI || '';
-    return sourceCode.trim().length > 0 || sourceCodeABI.trim().length > 0;
+    return sourceCode.trim().length > 0;
 };
 
 const formatBlockTime = (blockTime: number | undefined) => {

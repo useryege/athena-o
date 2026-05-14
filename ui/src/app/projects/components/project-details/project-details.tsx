@@ -161,19 +161,13 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             </div>
                         </div>
 
-                        {(project.sourceCode?.sourceCode || project.token?.sourceCode || project.sourceCode?.sourceCodeABI || project.token?.sourceCodeABI) && (
+                        {(project.sourceCode?.sourceCode || project.token?.sourceCode) && (
                             <div className='white-box project-details__box'>
                                 <div className='project-details__section-title'>Source Code</div>
                                 {(project.sourceCode?.sourceCode || project.token?.sourceCode) && (
-                                    <div className='project-details__field' style={{marginBottom: '20px'}}>
+                                    <div className='project-details__field'>
                                         <span className='project-details__field-label'>Contract Source Code</span>
                                         <div className='project-details__code-block'>{project.sourceCode?.sourceCode || project.token?.sourceCode}</div>
-                                    </div>
-                                )}
-                                {(project.sourceCode?.sourceCodeABI || project.token?.sourceCodeABI) && (
-                                    <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Source Code ABI</span>
-                                        <div className='project-details__code-block'>{project.sourceCode?.sourceCodeABI || project.token?.sourceCodeABI}</div>
                                     </div>
                                 )}
                             </div>

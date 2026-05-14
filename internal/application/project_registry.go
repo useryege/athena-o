@@ -320,8 +320,7 @@ func cloneProjectSourceCodeState(state *ProjectSourceCodeState) ProjectSourceCod
 		return ProjectSourceCodeState{}
 	}
 	return ProjectSourceCodeState{
-		SourceCode:    cloneFieldValue(&state.SourceCode),
-		SourceCodeABI: cloneFieldValue(&state.SourceCodeABI),
+		SourceCode: cloneFieldValue(&state.SourceCode),
 	}
 }
 

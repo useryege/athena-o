@@ -60,20 +60,18 @@ func NewProjectSync(
 }
 
 func (s *projectSyncImpl) SyncSourceCodeOnce(ctx context.Context, event *Project) (bool, error) {
-	if event.SourceCode.SourceCode.IsReady() && event.SourceCode.SourceCodeABI.IsReady() {
+	if event.SourceCode.SourceCode.IsReady() {
 		return true, nil
 	}
 
 	now := time.Now()
-	sourceCode, sourceCodeABI, err := s.fetchSourceCode(ctx, event)
+	sourceCode, _, err := s.fetchSourceCode(ctx, event)
 	if err != nil {
 		event.SourceCode.SourceCode.MarkFailed(err, now)
-		event.SourceCode.SourceCodeABI.MarkFailed(err, now)
 		return false, err
 	}
 
 	event.SourceCode.SourceCode.MarkReady(sourceCode, now)
-	event.SourceCode.SourceCodeABI.MarkReady(sourceCodeABI, now)
 	return true, nil
 }
 

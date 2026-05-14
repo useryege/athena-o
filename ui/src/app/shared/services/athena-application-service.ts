@@ -25,7 +25,6 @@ export interface TokenState {
     decimals?: number;
     totalSupply?: string;
     sourceCode?: string;
-    sourceCodeABI?: string;
     isValidERC20?: boolean;
 }
 
@@ -49,7 +48,6 @@ export interface ListProjectsResponse {
 
 export interface ProjectSourceCodeState {
     sourceCode?: string;
-    sourceCodeABI?: string;
 }
 
 export interface ProjectSimulateState {

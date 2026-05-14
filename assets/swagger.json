@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-192-g22b5e32-dirty"
+    "version": "v1.0.0-201-gd297b51-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1026,9 +1026,6 @@
       "properties": {
         "sourceCode": {
           "type": "string"
-        },
-        "sourceCodeABI": {
-          "type": "string"
         }
       }
     },
@@ -1100,9 +1097,6 @@
           "type": "string"
         },
         "sourceCode": {
-          "type": "string"
-        },
-        "sourceCodeABI": {
           "type": "string"
         },
         "symbol": {

@@ -31,8 +31,7 @@ type ProjectMeta struct {
 }
 
 type ProjectSourceCodeState struct {
-	SourceCode    FieldValue[string]
-	SourceCodeABI FieldValue[string]
+	SourceCode FieldValue[string]
 }
 
 type ProjectAnalysisState struct {
@@ -85,7 +84,6 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 
 	chainState := project.ChainState
 	sourceCode, _ := project.SourceCode.SourceCode.Get()
-	sourceCodeABI, _ := project.SourceCode.SourceCodeABI.Get()
 	creatorResult, _ := project.Simulate.CreatorResult.Get()
 	sourceCodeBlacklist, _ := project.Analysis.SourceCodeBlacklist.Get()
 
@@ -100,13 +98,12 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 			TxIndex:     project.Meta.TxIndex,
 		},
 		Token: v1alpha1.TokenState{
-			Name:          chainState.Token.Name,
-			Symbol:        chainState.Token.Symbol,
-			Decimals:      uint32(chainState.Token.Decimals),
-			TotalSupply:   bigIntToString(chainState.Token.TotalSupply),
-			SourceCode:    sourceCode,
-			SourceCodeABI: sourceCodeABI,
-			IsValidERC20:  chainState.Token.IsValidERC20,
+			Name:         chainState.Token.Name,
+			Symbol:       chainState.Token.Symbol,
+			Decimals:     uint32(chainState.Token.Decimals),
+			TotalSupply:  bigIntToString(chainState.Token.TotalSupply),
+			SourceCode:   sourceCode,
+			IsValidERC20: chainState.Token.IsValidERC20,
 		},
 		WethV2Pool: v1alpha1.PairV2State{
 			IsContractCreated:   chainState.Pair.IsCreated,
@@ -122,8 +119,7 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 			LockedLiquidity:     bigIntToString(chainState.Pair.LockedLiquidity),
 		},
 		SourceCode: v1alpha1.ProjectSourceCodeState{
-			SourceCode:    sourceCode,
-			SourceCodeABI: sourceCodeABI,
+			SourceCode: sourceCode,
 		},
 		Simulate: v1alpha1.ProjectSimulateState{
 			CreatorResult: v1alpha1.SimulateResult{

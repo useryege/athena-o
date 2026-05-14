@@ -20,13 +20,12 @@ type ProjectMeta struct {
 }
 
 type TokenState struct {
-	Name          string `protobuf:"bytes,1,opt,name=name" json:"name"`
-	Symbol        string `protobuf:"bytes,2,opt,name=symbol" json:"symbol"`
-	Decimals      uint32 `protobuf:"varint,3,opt,name=decimals" json:"decimals"`
-	TotalSupply   string `protobuf:"bytes,4,opt,name=totalSupply" json:"totalSupply"`
-	SourceCode    string `protobuf:"bytes,5,opt,name=sourceCode" json:"sourceCode"`
-	SourceCodeABI string `protobuf:"bytes,6,opt,name=sourceCodeABI" json:"sourceCodeABI"`
-	IsValidERC20  bool   `protobuf:"varint,7,opt,name=isValidERC20" json:"isValidERC20"`
+	Name         string `protobuf:"bytes,1,opt,name=name" json:"name"`
+	Symbol       string `protobuf:"bytes,2,opt,name=symbol" json:"symbol"`
+	Decimals     uint32 `protobuf:"varint,3,opt,name=decimals" json:"decimals"`
+	TotalSupply  string `protobuf:"bytes,4,opt,name=totalSupply" json:"totalSupply"`
+	SourceCode   string `protobuf:"bytes,5,opt,name=sourceCode" json:"sourceCode"`
+	IsValidERC20 bool   `protobuf:"varint,7,opt,name=isValidERC20" json:"isValidERC20"`
 }
 
 type PairV2State struct {
@@ -44,8 +43,7 @@ type PairV2State struct {
 }
 
 type ProjectSourceCodeState struct {
-	SourceCode    string `protobuf:"bytes,1,opt,name=sourceCode" json:"sourceCode"`
-	SourceCodeABI string `protobuf:"bytes,2,opt,name=sourceCodeABI" json:"sourceCodeABI"`
+	SourceCode string `protobuf:"bytes,1,opt,name=sourceCode" json:"sourceCode"`
 }
 
 type ProjectSimulateState struct {
