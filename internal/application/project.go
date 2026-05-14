@@ -77,14 +77,14 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{
-			ProjectID:  project.Meta.ProjectID.String(),
-			BlockTime:  project.Meta.BlockTime,
+			ProjectID:   project.Meta.ProjectID.String(),
+			BlockTime:   project.Meta.BlockTime,
 			BlockNumber: project.Meta.BlockNumber,
-			Contract:   project.Meta.Contract.String(),
-			Creator:    project.Meta.Creator.String(),
-			TxHash:     txHash,
-			TxIndex:    project.Meta.TxIndex,
-			SourceCode: sourceCode,
+			Contract:    project.Meta.Contract.String(),
+			Creator:     project.Meta.Creator.String(),
+			TxHash:      txHash,
+			TxIndex:     project.Meta.TxIndex,
+			SourceCode:  sourceCode,
 			CreatorResult: v1alpha1.SimulateResult{
 				CanMintFromDeadViaTransferFrom: creatorResult.CanMintFromDeadViaTransferFrom,
 				CanMintFromZeroViaTransferFrom: creatorResult.CanMintFromZeroViaTransferFrom,

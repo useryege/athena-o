@@ -25,17 +25,21 @@ message PairV2State {
 
   optional uint32 blockTimestampLast = 8;
 
-  optional string tokenReserveBalance = 9;
+  optional string baseBalance = 9;
 
-  optional string wethReserveBalance = 10;
+  optional string quoteBalance = 10;
 
-  optional string lockedLiquidity = 11;
+  optional string quoteUsdtValue = 11;
+
+  optional string lockedLiquidity = 12;
 }
 
 message ProjectChainState {
   optional TokenState token = 1;
 
-  optional PairV2State pair = 2;
+  optional PairV2State wethPair = 2;
+
+  optional PairV2State usdtPair = 3;
 }
 
 message ProjectMeta {
@@ -71,9 +75,11 @@ message SimulateResult {
 
   optional bool canMintFromZeroViaTransferFrom = 2;
 
-  optional bool canMintFromPairViaTransferFrom = 3;
+  optional bool canMintFromWethPairViaTransferFrom = 3;
 
   optional bool canMintViaTransfer = 4;
+
+  optional bool canMintFromUsdtPairViaTransferFrom = 5;
 }
 
 message SourceCodeBlacklistState {

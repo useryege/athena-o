@@ -50,15 +50,20 @@ func (m *PairV2State) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	copy(dAtA[i:], m.LockedLiquidity)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LockedLiquidity)))
 	i--
+	dAtA[i] = 0x62
+	i -= len(m.QuoteUsdtValue)
+	copy(dAtA[i:], m.QuoteUsdtValue)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.QuoteUsdtValue)))
+	i--
 	dAtA[i] = 0x5a
-	i -= len(m.WethReserveBalance)
-	copy(dAtA[i:], m.WethReserveBalance)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.WethReserveBalance)))
+	i -= len(m.QuoteBalance)
+	copy(dAtA[i:], m.QuoteBalance)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.QuoteBalance)))
 	i--
 	dAtA[i] = 0x52
-	i -= len(m.TokenReserveBalance)
-	copy(dAtA[i:], m.TokenReserveBalance)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenReserveBalance)))
+	i -= len(m.BaseBalance)
+	copy(dAtA[i:], m.BaseBalance)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.BaseBalance)))
 	i--
 	dAtA[i] = 0x4a
 	i = encodeVarintGenerated(dAtA, i, uint64(m.BlockTimestampLast))
@@ -126,7 +131,17 @@ func (m *ProjectChainState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
-		size, err := m.Pair.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.UsdtPair.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	{
+		size, err := m.WethPair.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -289,6 +304,14 @@ func (m *SimulateResult) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	i--
+	if m.CanMintFromUsdtPairViaTransferFrom {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x28
+	i--
 	if m.CanMintViaTransfer {
 		dAtA[i] = 1
 	} else {
@@ -297,7 +320,7 @@ func (m *SimulateResult) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0x20
 	i--
-	if m.CanMintFromPairViaTransferFrom {
+	if m.CanMintFromWethPairViaTransferFrom {
 		dAtA[i] = 1
 	} else {
 		dAtA[i] = 0
@@ -443,9 +466,11 @@ func (m *PairV2State) Size() (n int) {
 	l = len(m.Reserve1)
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 1 + sovGenerated(uint64(m.BlockTimestampLast))
-	l = len(m.TokenReserveBalance)
+	l = len(m.BaseBalance)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.WethReserveBalance)
+	l = len(m.QuoteBalance)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.QuoteUsdtValue)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.LockedLiquidity)
 	n += 1 + l + sovGenerated(uint64(l))
@@ -460,7 +485,9 @@ func (m *ProjectChainState) Size() (n int) {
 	_ = l
 	l = m.Token.Size()
 	n += 1 + l + sovGenerated(uint64(l))
-	l = m.Pair.Size()
+	l = m.WethPair.Size()
+	n += 1 + l + sovGenerated(uint64(l))
+	l = m.UsdtPair.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -510,6 +537,7 @@ func (m *SimulateResult) Size() (n int) {
 	}
 	var l int
 	_ = l
+	n += 2
 	n += 2
 	n += 2
 	n += 2
@@ -569,8 +597,9 @@ func (this *PairV2State) String() string {
 		`Reserve0:` + fmt.Sprintf("%v", this.Reserve0) + `,`,
 		`Reserve1:` + fmt.Sprintf("%v", this.Reserve1) + `,`,
 		`BlockTimestampLast:` + fmt.Sprintf("%v", this.BlockTimestampLast) + `,`,
-		`TokenReserveBalance:` + fmt.Sprintf("%v", this.TokenReserveBalance) + `,`,
-		`WethReserveBalance:` + fmt.Sprintf("%v", this.WethReserveBalance) + `,`,
+		`BaseBalance:` + fmt.Sprintf("%v", this.BaseBalance) + `,`,
+		`QuoteBalance:` + fmt.Sprintf("%v", this.QuoteBalance) + `,`,
+		`QuoteUsdtValue:` + fmt.Sprintf("%v", this.QuoteUsdtValue) + `,`,
 		`LockedLiquidity:` + fmt.Sprintf("%v", this.LockedLiquidity) + `,`,
 		`}`,
 	}, "")
@@ -582,7 +611,8 @@ func (this *ProjectChainState) String() string {
 	}
 	s := strings.Join([]string{`&ProjectChainState{`,
 		`Token:` + strings.Replace(strings.Replace(this.Token.String(), "TokenState", "TokenState", 1), `&`, ``, 1) + `,`,
-		`Pair:` + strings.Replace(strings.Replace(this.Pair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
+		`WethPair:` + strings.Replace(strings.Replace(this.WethPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
+		`UsdtPair:` + strings.Replace(strings.Replace(this.UsdtPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -624,8 +654,9 @@ func (this *SimulateResult) String() string {
 	s := strings.Join([]string{`&SimulateResult{`,
 		`CanMintFromDeadViaTransferFrom:` + fmt.Sprintf("%v", this.CanMintFromDeadViaTransferFrom) + `,`,
 		`CanMintFromZeroViaTransferFrom:` + fmt.Sprintf("%v", this.CanMintFromZeroViaTransferFrom) + `,`,
-		`CanMintFromPairViaTransferFrom:` + fmt.Sprintf("%v", this.CanMintFromPairViaTransferFrom) + `,`,
+		`CanMintFromWethPairViaTransferFrom:` + fmt.Sprintf("%v", this.CanMintFromWethPairViaTransferFrom) + `,`,
 		`CanMintViaTransfer:` + fmt.Sprintf("%v", this.CanMintViaTransfer) + `,`,
+		`CanMintFromUsdtPairViaTransferFrom:` + fmt.Sprintf("%v", this.CanMintFromUsdtPairViaTransferFrom) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -925,7 +956,7 @@ func (m *PairV2State) Unmarshal(dAtA []byte) error {
 			}
 		case 9:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TokenReserveBalance", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseBalance", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -953,11 +984,11 @@ func (m *PairV2State) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.TokenReserveBalance = string(dAtA[iNdEx:postIndex])
+			m.BaseBalance = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field WethReserveBalance", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field QuoteBalance", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -985,9 +1016,41 @@ func (m *PairV2State) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.WethReserveBalance = string(dAtA[iNdEx:postIndex])
+			m.QuoteBalance = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field QuoteUsdtValue", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.QuoteUsdtValue = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LockedLiquidity", wireType)
 			}
@@ -1104,7 +1167,7 @@ func (m *ProjectChainState) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Pair", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field WethPair", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1131,7 +1194,40 @@ func (m *ProjectChainState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Pair.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.WethPair.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UsdtPair", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.UsdtPair.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1676,7 +1772,7 @@ func (m *SimulateResult) Unmarshal(dAtA []byte) error {
 			m.CanMintFromZeroViaTransferFrom = bool(v != 0)
 		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CanMintFromPairViaTransferFrom", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CanMintFromWethPairViaTransferFrom", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -1693,7 +1789,7 @@ func (m *SimulateResult) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-			m.CanMintFromPairViaTransferFrom = bool(v != 0)
+			m.CanMintFromWethPairViaTransferFrom = bool(v != 0)
 		case 4:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CanMintViaTransfer", wireType)
@@ -1714,6 +1810,26 @@ func (m *SimulateResult) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.CanMintViaTransfer = bool(v != 0)
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CanMintFromUsdtPairViaTransferFrom", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.CanMintFromUsdtPairViaTransferFrom = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

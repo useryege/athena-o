@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-206-g4b22884-dirty"
+    "version": "v1.0.0-208-g7adf5d1-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -940,6 +940,9 @@
     "v1alpha1PairV2State": {
       "type": "object",
       "properties": {
+        "baseBalance": {
+          "type": "string"
+        },
         "blockTimestampLast": {
           "type": "integer",
           "format": "int64"
@@ -951,6 +954,12 @@
           "type": "boolean"
         },
         "lockedLiquidity": {
+          "type": "string"
+        },
+        "quoteBalance": {
+          "type": "string"
+        },
+        "quoteUsdtValue": {
           "type": "string"
         },
         "reserve0": {
@@ -965,13 +974,7 @@
         "token1": {
           "type": "string"
         },
-        "tokenReserveBalance": {
-          "type": "string"
-        },
         "totalSupply": {
-          "type": "string"
-        },
-        "wethReserveBalance": {
           "type": "string"
         }
       }
@@ -979,11 +982,14 @@
     "v1alpha1ProjectChainState": {
       "type": "object",
       "properties": {
-        "pair": {
-          "$ref": "#/definitions/v1alpha1PairV2State"
-        },
         "token": {
           "$ref": "#/definitions/v1alpha1TokenState"
+        },
+        "usdtPair": {
+          "$ref": "#/definitions/v1alpha1PairV2State"
+        },
+        "wethPair": {
+          "$ref": "#/definitions/v1alpha1PairV2State"
         }
       }
     },
@@ -1042,7 +1048,10 @@
         "canMintFromDeadViaTransferFrom": {
           "type": "boolean"
         },
-        "canMintFromPairViaTransferFrom": {
+        "canMintFromUsdtPairViaTransferFrom": {
+          "type": "boolean"
+        },
+        "canMintFromWethPairViaTransferFrom": {
           "type": "boolean"
         },
         "canMintFromZeroViaTransferFrom": {

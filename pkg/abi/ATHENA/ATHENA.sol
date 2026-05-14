@@ -54,9 +54,9 @@ contract Athena {
         uint256 quoteUsdtValue;
         // Whether the pair is created
         bool isCreated;
-        // reserve of the pair
-        uint256 reserve0;
-        uint256 reserve1;
+        // Reserves of the pair
+        uint112 reserve0;
+        uint112 reserve1;
         uint32 blockTimestampLast;
     }
 
@@ -76,7 +76,8 @@ contract Athena {
     struct SimulationState {
         uint256 deadAllowance;
         uint256 zeroAllowance;
-        uint256 pairAllowance;
+        uint256 wethPairAllowance;
+        uint256 usdtPairAllowance;
         uint256 callerBalance;
     }
 
@@ -99,7 +100,7 @@ contract Athena {
             usdtContract = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
         } else if (chainId == 56) {
             factoryContract = 0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73;
-            wethContract = 0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c;
+            wethContract = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
             usdtContract = 0x55d398326f99059fF775485246999027B3197955;
         } else {
             revert("Invalid chain id");
@@ -165,14 +166,20 @@ contract Athena {
         returns (ProjectWithSimulationState memory result)
     {
         result.project = _get(query.tokenContract, lockers);
-        if (!result.project.token.isValidERC20 || !result.project.pair.isCreated) {
+        if (!result.project.token.isValidERC20) {
             return result;
         }
 
         (, result.simulationState.deadAllowance) = _safeAllowance(query.tokenContract, DEAD_ADDRESS, query.msgCaller);
         (, result.simulationState.zeroAllowance) = _safeAllowance(query.tokenContract, address(0), query.msgCaller);
-        (, result.simulationState.pairAllowance) =
-            _safeAllowance(query.tokenContract, result.project.pair.contractAddress, query.msgCaller);
+        if (result.project.wethPair.isCreated) {
+            (, result.simulationState.wethPairAllowance) =
+                _safeAllowance(query.tokenContract, result.project.wethPair.contractAddress, query.msgCaller);
+        }
+        if (result.project.usdtPair.isCreated) {
+            (, result.simulationState.usdtPairAllowance) =
+                _safeAllowance(query.tokenContract, result.project.usdtPair.contractAddress, query.msgCaller);
+        }
         (, result.simulationState.callerBalance) = _safeBalanceOf(query.tokenContract, query.msgCaller);
     }
 
@@ -211,31 +218,60 @@ contract Athena {
             return project;
         }
 
-        address pairContract = _pairFor(tokenContract, wethContract);
-        project.pair.contractAddress = pairContract;
+        project.wethPair = _getPair(tokenContract, wethContract, lockers);
+        project.usdtPair = _getPair(tokenContract, usdtContract, lockers);
 
-        project.pair.isCreated = pairContract.code.length > 0;
-        if (!project.pair.isCreated) {
-            return project;
+        if (project.usdtPair.isCreated) {
+            project.usdtPair.quoteUsdtValue = project.usdtPair.quoteBalance;
+        }
+        if (project.wethPair.isCreated) {
+            project.wethPair.quoteUsdtValue = _quoteToUsdtValue(project.wethPair.quoteBalance, wethContract);
         }
 
-        project.pair.token0 = _safeAddress(pairContract, IUniswapV2PairView.token0.selector);
-        project.pair.token1 = _safeAddress(pairContract, IUniswapV2PairView.token1.selector);
-        (, project.pair.totalSupply) = _safeUint256(pairContract, IUniswapV2PairView.totalSupply.selector);
-
-        (
-            project.pair.reserve0,
-            project.pair.reserve1,
-            project.pair.blockTimestampLast
-        ) = _safeReserves(pairContract);
-
-        (, project.pair.tokenReserveBalance) = _safeBalanceOf(tokenContract, pairContract);
-
-        (, project.pair.wethReserveBalance) = _safeBalanceOf(wethContract, pairContract);
-
-        project.pair.lockedLiquidity = _lockedLiquidity(pairContract, lockers);
-
         return project;
+    }
+
+    function _getPair(address baseTokenContract, address quoteTokenContract, address[] calldata lockers)
+        private
+        view
+        returns (Pair memory pair)
+    {
+        pair.contractAddress = _pairFor(baseTokenContract, quoteTokenContract);
+        pair.isCreated = pair.contractAddress.code.length > 0;
+        if (!pair.isCreated) {
+            return pair;
+        }
+
+        pair.token0 = _safeAddress(pair.contractAddress, IUniswapV2PairView.token0.selector);
+        pair.token1 = _safeAddress(pair.contractAddress, IUniswapV2PairView.token1.selector);
+        (, pair.totalSupply) = _safeUint256(pair.contractAddress, IUniswapV2PairView.totalSupply.selector);
+        (pair.reserve0, pair.reserve1, pair.blockTimestampLast) = _safeReserves(pair.contractAddress);
+
+        (, pair.baseBalance) = _safeBalanceOf(baseTokenContract, pair.contractAddress);
+        (, pair.quoteBalance) = _safeBalanceOf(quoteTokenContract, pair.contractAddress);
+        pair.lockedLiquidity = _lockedLiquidity(pair.contractAddress, lockers);
+    }
+
+    function _quoteToUsdtValue(uint256 quoteAmount, address quoteTokenContract) private view returns (uint256) {
+        if (quoteAmount == 0 || quoteTokenContract == usdtContract) {
+            return quoteAmount;
+        }
+
+        address quoteUsdtPair = _pairFor(quoteTokenContract, usdtContract);
+        if (quoteUsdtPair.code.length == 0) {
+            return 0;
+        }
+
+        address pairToken0 = _safeAddress(quoteUsdtPair, IUniswapV2PairView.token0.selector);
+        (uint256 reserve0, uint256 reserve1,) = _safeReserves(quoteUsdtPair);
+        if (reserve0 == 0 || reserve1 == 0) {
+            return 0;
+        }
+
+        if (pairToken0 == quoteTokenContract) {
+            return quoteAmount * reserve1 / reserve0;
+        }
+        return quoteAmount * reserve0 / reserve1;
     }
 
     function _lockedLiquidity(address pairContract, address[] calldata lockers) private view returns (uint256 lockedLiquidity) {
