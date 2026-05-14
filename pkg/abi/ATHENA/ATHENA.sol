@@ -36,24 +36,36 @@ contract Athena {
     }
 
     struct Pair {
+        // Address of the pair contract
         address contractAddress;
+        // Address of the first token
         address token0;
+        // Address of the second token
         address token1;
+        // Total supply of the pair
         uint256 totalSupply;
-        uint112 reserve0;
-        uint112 reserve1;
-        uint32 blockTimestampLast;
-        uint256 tokenReserveBalance;
-        uint256 wethReserveBalance;
+        // Locked liquidity amount
         uint256 lockedLiquidity;
+        // BalanceOf(tokenContract, pair) baseTokenContract can only be tokenContract
+        uint256 baseBalance;
+        // BalanceOf(quoteTokenContract, pair)  quoteTokenContract can only be weth or usdt
+        uint256 quoteBalance;
+        // QuoteBalance transfer to usdt value
+        uint256 quoteUsdtValue;
+        // Whether the pair is created
         bool isCreated;
+        // reserve of the pair
+        uint256 reserve0;
+        uint256 reserve1;
+        uint32 blockTimestampLast;
     }
 
     struct Project {
         address tokenContract;
         uint256 updatedAt;
         Token token;
-        Pair pair;
+        Pair wethPair;
+        Pair usdtPair;
     }
 
     struct ProjectQuery {
@@ -77,12 +89,22 @@ contract Athena {
 
     address public immutable factoryContract;
     address public immutable wethContract;
+    address public immutable usdtContract;
     bytes32 public immutable initCodePairHash;
 
-    constructor(address factory, address weth) {
-        factoryContract = factory;
-        wethContract = weth;
-        initCodePairHash = IPancakeFactoryView(factory).INIT_CODE_PAIR_HASH();
+    constructor(uint256 chainId) {
+        if (chainId == 1) {
+            factoryContract = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+            wethContract = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+            usdtContract = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+        } else if (chainId == 56) {
+            factoryContract = 0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73;
+            wethContract = 0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c;
+            usdtContract = 0x55d398326f99059fF775485246999027B3197955;
+        } else {
+            revert("Invalid chain id");
+        }
+        initCodePairHash = IPancakeFactoryView(factoryContract).INIT_CODE_PAIR_HASH();
     }
 
     function PairFor(address tokenA, address tokenB) external view returns (address pair) {
