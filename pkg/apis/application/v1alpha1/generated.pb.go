@@ -14,13 +14,9 @@ import (
 
 func (m *PairV2State) Reset() { *m = PairV2State{} }
 
-func (m *ProjectAnalysisState) Reset() { *m = ProjectAnalysisState{} }
+func (m *ProjectChainState) Reset() { *m = ProjectChainState{} }
 
 func (m *ProjectMeta) Reset() { *m = ProjectMeta{} }
-
-func (m *ProjectSimulateState) Reset() { *m = ProjectSimulateState{} }
-
-func (m *ProjectSourceCodeState) Reset() { *m = ProjectSourceCodeState{} }
 
 func (m *ProjectView) Reset() { *m = ProjectView{} }
 
@@ -99,7 +95,7 @@ func (m *PairV2State) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0x12
 	i--
-	if m.IsContractCreated {
+	if m.IsCreated {
 		dAtA[i] = 1
 	} else {
 		dAtA[i] = 0
@@ -109,7 +105,7 @@ func (m *PairV2State) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProjectAnalysisState) Marshal() (dAtA []byte, err error) {
+func (m *ProjectChainState) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -119,18 +115,28 @@ func (m *ProjectAnalysisState) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProjectAnalysisState) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProjectChainState) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ProjectAnalysisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ProjectChainState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	{
-		size, err := m.SourceCodeBlacklist.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.Pair.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size, err := m.Token.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -162,6 +168,31 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	{
+		size, err := m.SourceCodeBlacklist.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x52
+	{
+		size, err := m.CreatorResult.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x4a
+	i -= len(m.SourceCode)
+	copy(dAtA[i:], m.SourceCode)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCode)))
+	i--
+	dAtA[i] = 0x42
 	i = encodeVarintGenerated(dAtA, i, uint64(m.TxIndex))
 	i--
 	dAtA[i] = 0x38
@@ -194,67 +225,6 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProjectSimulateState) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ProjectSimulateState) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ProjectSimulateState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.CreatorResult.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *ProjectSourceCodeState) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ProjectSourceCodeState) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ProjectSourceCodeState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	i -= len(m.SourceCode)
-	copy(dAtA[i:], m.SourceCode)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCode)))
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
 func (m *ProjectView) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -276,47 +246,7 @@ func (m *ProjectView) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
-		size, err := m.Analysis.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x32
-	{
-		size, err := m.Simulate.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x2a
-	{
-		size, err := m.SourceCode.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x22
-	{
-		size, err := m.WethV2Pool.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x1a
-	{
-		size, err := m.Token.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.ChainState.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -460,12 +390,7 @@ func (m *TokenState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0
 	}
 	i--
-	dAtA[i] = 0x38
-	i -= len(m.SourceCode)
-	copy(dAtA[i:], m.SourceCode)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCode)))
-	i--
-	dAtA[i] = 0x2a
+	dAtA[i] = 0x28
 	i -= len(m.TotalSupply)
 	copy(dAtA[i:], m.TotalSupply)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TotalSupply)))
@@ -527,13 +452,15 @@ func (m *PairV2State) Size() (n int) {
 	return n
 }
 
-func (m *ProjectAnalysisState) Size() (n int) {
+func (m *ProjectChainState) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.SourceCodeBlacklist.Size()
+	l = m.Token.Size()
+	n += 1 + l + sovGenerated(uint64(l))
+	l = m.Pair.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -555,27 +482,11 @@ func (m *ProjectMeta) Size() (n int) {
 	l = len(m.TxHash)
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 1 + sovGenerated(uint64(m.TxIndex))
-	return n
-}
-
-func (m *ProjectSimulateState) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
+	l = len(m.SourceCode)
+	n += 1 + l + sovGenerated(uint64(l))
 	l = m.CreatorResult.Size()
 	n += 1 + l + sovGenerated(uint64(l))
-	return n
-}
-
-func (m *ProjectSourceCodeState) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.SourceCode)
+	l = m.SourceCodeBlacklist.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -588,15 +499,7 @@ func (m *ProjectView) Size() (n int) {
 	_ = l
 	l = m.Meta.Size()
 	n += 1 + l + sovGenerated(uint64(l))
-	l = m.Token.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.WethV2Pool.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.SourceCode.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.Simulate.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.Analysis.Size()
+	l = m.ChainState.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -643,8 +546,6 @@ func (m *TokenState) Size() (n int) {
 	n += 1 + sovGenerated(uint64(m.Decimals))
 	l = len(m.TotalSupply)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.SourceCode)
-	n += 1 + l + sovGenerated(uint64(l))
 	n += 2
 	return n
 }
@@ -660,7 +561,7 @@ func (this *PairV2State) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&PairV2State{`,
-		`IsContractCreated:` + fmt.Sprintf("%v", this.IsContractCreated) + `,`,
+		`IsCreated:` + fmt.Sprintf("%v", this.IsCreated) + `,`,
 		`Contract:` + fmt.Sprintf("%v", this.Contract) + `,`,
 		`Token0:` + fmt.Sprintf("%v", this.Token0) + `,`,
 		`Token1:` + fmt.Sprintf("%v", this.Token1) + `,`,
@@ -675,12 +576,13 @@ func (this *PairV2State) String() string {
 	}, "")
 	return s
 }
-func (this *ProjectAnalysisState) String() string {
+func (this *ProjectChainState) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&ProjectAnalysisState{`,
-		`SourceCodeBlacklist:` + strings.Replace(strings.Replace(this.SourceCodeBlacklist.String(), "SourceCodeBlacklistState", "SourceCodeBlacklistState", 1), `&`, ``, 1) + `,`,
+	s := strings.Join([]string{`&ProjectChainState{`,
+		`Token:` + strings.Replace(strings.Replace(this.Token.String(), "TokenState", "TokenState", 1), `&`, ``, 1) + `,`,
+		`Pair:` + strings.Replace(strings.Replace(this.Pair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -697,26 +599,9 @@ func (this *ProjectMeta) String() string {
 		`Creator:` + fmt.Sprintf("%v", this.Creator) + `,`,
 		`TxHash:` + fmt.Sprintf("%v", this.TxHash) + `,`,
 		`TxIndex:` + fmt.Sprintf("%v", this.TxIndex) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *ProjectSimulateState) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&ProjectSimulateState{`,
-		`CreatorResult:` + strings.Replace(strings.Replace(this.CreatorResult.String(), "SimulateResult", "SimulateResult", 1), `&`, ``, 1) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *ProjectSourceCodeState) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&ProjectSourceCodeState{`,
 		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
+		`CreatorResult:` + strings.Replace(strings.Replace(this.CreatorResult.String(), "SimulateResult", "SimulateResult", 1), `&`, ``, 1) + `,`,
+		`SourceCodeBlacklist:` + strings.Replace(strings.Replace(this.SourceCodeBlacklist.String(), "SourceCodeBlacklistState", "SourceCodeBlacklistState", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -727,11 +612,7 @@ func (this *ProjectView) String() string {
 	}
 	s := strings.Join([]string{`&ProjectView{`,
 		`Meta:` + strings.Replace(strings.Replace(this.Meta.String(), "ProjectMeta", "ProjectMeta", 1), `&`, ``, 1) + `,`,
-		`Token:` + strings.Replace(strings.Replace(this.Token.String(), "TokenState", "TokenState", 1), `&`, ``, 1) + `,`,
-		`WethV2Pool:` + strings.Replace(strings.Replace(this.WethV2Pool.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
-		`SourceCode:` + strings.Replace(strings.Replace(this.SourceCode.String(), "ProjectSourceCodeState", "ProjectSourceCodeState", 1), `&`, ``, 1) + `,`,
-		`Simulate:` + strings.Replace(strings.Replace(this.Simulate.String(), "ProjectSimulateState", "ProjectSimulateState", 1), `&`, ``, 1) + `,`,
-		`Analysis:` + strings.Replace(strings.Replace(this.Analysis.String(), "ProjectAnalysisState", "ProjectAnalysisState", 1), `&`, ``, 1) + `,`,
+		`ChainState:` + strings.Replace(strings.Replace(this.ChainState.String(), "ProjectChainState", "ProjectChainState", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -769,7 +650,6 @@ func (this *TokenState) String() string {
 		`Symbol:` + fmt.Sprintf("%v", this.Symbol) + `,`,
 		`Decimals:` + fmt.Sprintf("%v", this.Decimals) + `,`,
 		`TotalSupply:` + fmt.Sprintf("%v", this.TotalSupply) + `,`,
-		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
 		`IsValidERC20:` + fmt.Sprintf("%v", this.IsValidERC20) + `,`,
 		`}`,
 	}, "")
@@ -814,7 +694,7 @@ func (m *PairV2State) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsContractCreated", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IsCreated", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -831,7 +711,7 @@ func (m *PairV2State) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-			m.IsContractCreated = bool(v != 0)
+			m.IsCreated = bool(v != 0)
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
@@ -1160,7 +1040,7 @@ func (m *PairV2State) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProjectAnalysisState) Unmarshal(dAtA []byte) error {
+func (m *ProjectChainState) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1183,15 +1063,15 @@ func (m *ProjectAnalysisState) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ProjectAnalysisState: wiretype end group for non-group")
+			return fmt.Errorf("proto: ProjectChainState: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ProjectAnalysisState: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ProjectChainState: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeBlacklist", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1218,7 +1098,40 @@ func (m *ProjectAnalysisState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.SourceCodeBlacklist.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Token.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pair", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Pair.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1457,57 +1370,39 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceCode", wireType)
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthGenerated
 			}
-			if (iNdEx + skippy) > l {
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ProjectSimulateState) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ProjectSimulateState: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ProjectSimulateState: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
+			m.SourceCode = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CreatorResult", wireType)
 			}
@@ -1540,61 +1435,11 @@ func (m *ProjectSimulateState) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ProjectSourceCodeState) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ProjectSourceCodeState: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ProjectSourceCodeState: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
+		case 10:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceCode", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeBlacklist", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenerated
@@ -1604,23 +1449,24 @@ func (m *ProjectSourceCodeState) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthGenerated
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthGenerated
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.SourceCode = string(dAtA[iNdEx:postIndex])
+			if err := m.SourceCodeBlacklist.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1707,7 +1553,7 @@ func (m *ProjectView) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainState", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1734,139 +1580,7 @@ func (m *ProjectView) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Token.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field WethV2Pool", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.WethV2Pool.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceCode", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.SourceCode.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Simulate", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Simulate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Analysis", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Analysis.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ChainState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2268,38 +1982,6 @@ func (m *TokenState) Unmarshal(dAtA []byte) error {
 			m.TotalSupply = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceCode", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SourceCode = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 7:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field IsValidERC20", wireType)
 			}

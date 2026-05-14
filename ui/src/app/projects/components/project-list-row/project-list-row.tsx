@@ -5,7 +5,7 @@ import {ProjectView} from '../../../shared/services/athena-application-service';
 const renderValue = (value: string | number | undefined) => (value === undefined || value === '' ? '-' : value);
 
 const isOpenSource = (project: ProjectView) => {
-    const sourceCode = project.sourceCode?.sourceCode || project.token?.sourceCode || '';
+    const sourceCode = project.meta?.sourceCode || '';
     return sourceCode.trim().length > 0;
 };
 
@@ -63,27 +63,27 @@ export const ProjectListRow = ({project, index, onClick}: {project: ProjectView;
             style={{cursor: onClick ? 'pointer' : 'default'}}>
             <div className='projects-list__row'>
                 <div className='projects-list__cell projects-list__cell--rank'>#{index + 1}</div>
-                <div className='projects-list__cell' title={project.token?.name || ''}>
-                    {renderValue(project.token?.name)}
+                <div className='projects-list__cell' title={project.chainState?.token?.name || ''}>
+                    {renderValue(project.chainState?.token?.name)}
                 </div>
-                <div className='projects-list__cell'>{renderValue(project.token?.symbol)}</div>
+                <div className='projects-list__cell'>{renderValue(project.chainState?.token?.symbol)}</div>
                 <div className='projects-list__cell'>
-                    {project.analysis?.sourceCodeBlacklist?.hasBlacklistFields !== undefined ? (
-                        <span className={`project-details__badge project-details__badge--${project.analysis.sourceCodeBlacklist.hasBlacklistFields ? 'negative' : 'positive'}`}>
-                            {project.analysis.sourceCodeBlacklist.hasBlacklistFields ? 'Yes' : 'No'}
+                    {project.meta?.sourceCodeBlacklist?.hasBlacklistFields !== undefined ? (
+                        <span className={`project-details__badge project-details__badge--${project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'negative' : 'positive'}`}>
+                            {project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'Yes' : 'No'}
                         </span>
                     ) : (
                         '-'
                     )}
                 </div>
                 <div className='projects-list__cell'>
-                    {project.simulate?.creatorResult
+                    {project.meta?.creatorResult
                         ? (() => {
                               const hasRisk =
-                                  project.simulate.creatorResult.canMintViaTransfer ||
-                                  project.simulate.creatorResult.canMintFromDeadViaTransferFrom ||
-                                  project.simulate.creatorResult.canMintFromZeroViaTransferFrom ||
-                                  project.simulate.creatorResult.canMintFromPairViaTransferFrom;
+                                  project.meta.creatorResult.canMintViaTransfer ||
+                                  project.meta.creatorResult.canMintFromDeadViaTransferFrom ||
+                                  project.meta.creatorResult.canMintFromZeroViaTransferFrom ||
+                                  project.meta.creatorResult.canMintFromPairViaTransferFrom;
                               return <span className={`project-details__badge project-details__badge--${hasRisk ? 'negative' : 'positive'}`}>{hasRisk ? 'Yes' : 'No'}</span>;
                           })()
                         : '-'}

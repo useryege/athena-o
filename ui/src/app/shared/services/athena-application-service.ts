@@ -2,11 +2,7 @@ import requests from './requests';
 
 export interface ProjectView {
     meta?: ProjectMeta;
-    token?: TokenState;
-    wethV2Pool?: PairV2State;
-    sourceCode?: ProjectSourceCodeState;
-    simulate?: ProjectSimulateState;
-    analysis?: ProjectAnalysisState;
+    chainState?: ProjectChainState;
 }
 
 export interface ProjectMeta {
@@ -17,6 +13,14 @@ export interface ProjectMeta {
     creator?: string;
     txHash?: string;
     txIndex?: number;
+    sourceCode?: string;
+    creatorResult?: SimulateResult;
+    sourceCodeBlacklist?: SourceCodeBlacklistState;
+}
+
+export interface ProjectChainState {
+    token?: TokenState;
+    pair?: PairV2State;
 }
 
 export interface TokenState {
@@ -24,12 +28,11 @@ export interface TokenState {
     symbol?: string;
     decimals?: number;
     totalSupply?: string;
-    sourceCode?: string;
     isValidERC20?: boolean;
 }
 
 export interface PairV2State {
-    isContractCreated?: boolean;
+    isCreated?: boolean;
     contract?: string;
     token0?: string;
     token1?: string;
@@ -46,23 +49,11 @@ export interface ListProjectsResponse {
     items?: ProjectView[];
 }
 
-export interface ProjectSourceCodeState {
-    sourceCode?: string;
-}
-
-export interface ProjectSimulateState {
-    creatorResult?: SimulateResult;
-}
-
 export interface SimulateResult {
     canMintFromDeadViaTransferFrom?: boolean;
     canMintFromZeroViaTransferFrom?: boolean;
     canMintFromPairViaTransferFrom?: boolean;
     canMintViaTransfer?: boolean;
-}
-
-export interface ProjectAnalysisState {
-    sourceCodeBlacklist?: SourceCodeBlacklistState;
 }
 
 export interface SourceCodeBlacklistState {

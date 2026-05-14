@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-201-gd297b51-dirty"
+    "version": "v1.0.0-206-g4b22884-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -947,7 +947,7 @@
         "contract": {
           "type": "string"
         },
-        "isContractCreated": {
+        "isCreated": {
           "type": "boolean"
         },
         "lockedLiquidity": {
@@ -976,11 +976,14 @@
         }
       }
     },
-    "v1alpha1ProjectAnalysisState": {
+    "v1alpha1ProjectChainState": {
       "type": "object",
       "properties": {
-        "sourceCodeBlacklist": {
-          "$ref": "#/definitions/v1alpha1SourceCodeBlacklistState"
+        "pair": {
+          "$ref": "#/definitions/v1alpha1PairV2State"
+        },
+        "token": {
+          "$ref": "#/definitions/v1alpha1TokenState"
         }
       }
     },
@@ -1001,8 +1004,17 @@
         "creator": {
           "type": "string"
         },
+        "creatorResult": {
+          "$ref": "#/definitions/v1alpha1SimulateResult"
+        },
         "projectID": {
           "type": "string"
+        },
+        "sourceCode": {
+          "type": "string"
+        },
+        "sourceCodeBlacklist": {
+          "$ref": "#/definitions/v1alpha1SourceCodeBlacklistState"
         },
         "txHash": {
           "type": "string"
@@ -1013,42 +1025,14 @@
         }
       }
     },
-    "v1alpha1ProjectSimulateState": {
-      "type": "object",
-      "properties": {
-        "creatorResult": {
-          "$ref": "#/definitions/v1alpha1SimulateResult"
-        }
-      }
-    },
-    "v1alpha1ProjectSourceCodeState": {
-      "type": "object",
-      "properties": {
-        "sourceCode": {
-          "type": "string"
-        }
-      }
-    },
     "v1alpha1ProjectView": {
       "type": "object",
       "properties": {
-        "analysis": {
-          "$ref": "#/definitions/v1alpha1ProjectAnalysisState"
+        "chainState": {
+          "$ref": "#/definitions/v1alpha1ProjectChainState"
         },
         "meta": {
           "$ref": "#/definitions/v1alpha1ProjectMeta"
-        },
-        "simulate": {
-          "$ref": "#/definitions/v1alpha1ProjectSimulateState"
-        },
-        "sourceCode": {
-          "$ref": "#/definitions/v1alpha1ProjectSourceCodeState"
-        },
-        "token": {
-          "$ref": "#/definitions/v1alpha1TokenState"
-        },
-        "wethV2Pool": {
-          "$ref": "#/definitions/v1alpha1PairV2State"
         }
       }
     },
@@ -1094,9 +1078,6 @@
           "type": "boolean"
         },
         "name": {
-          "type": "string"
-        },
-        "sourceCode": {
           "type": "string"
         },
         "symbol": {

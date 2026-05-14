@@ -7,13 +7,9 @@ package v1alpha1
 
 func (*PairV2State) ProtoMessage() {}
 
-func (*ProjectAnalysisState) ProtoMessage() {}
+func (*ProjectChainState) ProtoMessage() {}
 
 func (*ProjectMeta) ProtoMessage() {}
-
-func (*ProjectSimulateState) ProtoMessage() {}
-
-func (*ProjectSourceCodeState) ProtoMessage() {}
 
 func (*ProjectView) ProtoMessage() {}
 

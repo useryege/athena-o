@@ -1,22 +1,26 @@
 package v1alpha1
 
 type ProjectView struct {
-	Meta       ProjectMeta            `protobuf:"bytes,1,opt,name=meta" json:"meta"`
-	Token      TokenState             `protobuf:"bytes,2,opt,name=token" json:"token"`
-	WethV2Pool PairV2State            `protobuf:"bytes,3,opt,name=wethV2Pool" json:"wethV2Pool"`
-	SourceCode ProjectSourceCodeState `protobuf:"bytes,4,opt,name=sourceCode" json:"sourceCode"`
-	Simulate   ProjectSimulateState   `protobuf:"bytes,5,opt,name=simulate" json:"simulate"`
-	Analysis   ProjectAnalysisState   `protobuf:"bytes,6,opt,name=analysis" json:"analysis"`
+	Meta       ProjectMeta       `protobuf:"bytes,1,opt,name=meta" json:"meta"`
+	ChainState ProjectChainState `protobuf:"bytes,2,opt,name=chainState" json:"chainState"`
 }
 
 type ProjectMeta struct {
-	ProjectID   string `protobuf:"bytes,1,opt,name=projectID" json:"projectID"`
-	BlockTime   uint64 `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
-	BlockNumber uint64 `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
-	Contract    string `protobuf:"bytes,4,opt,name=contract" json:"contract"`
-	Creator     string `protobuf:"bytes,5,opt,name=creator" json:"creator"`
-	TxHash      string `protobuf:"bytes,6,opt,name=txHash" json:"txHash"`
-	TxIndex     uint64 `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
+	ProjectID           string                   `protobuf:"bytes,1,opt,name=projectID" json:"projectID"`
+	BlockTime           uint64                   `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
+	BlockNumber         uint64                   `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
+	Contract            string                   `protobuf:"bytes,4,opt,name=contract" json:"contract"`
+	Creator             string                   `protobuf:"bytes,5,opt,name=creator" json:"creator"`
+	TxHash              string                   `protobuf:"bytes,6,opt,name=txHash" json:"txHash"`
+	TxIndex             uint64                   `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
+	SourceCode          string                   `protobuf:"bytes,8,opt,name=sourceCode" json:"sourceCode"`
+	CreatorResult       SimulateResult           `protobuf:"bytes,9,opt,name=creatorResult" json:"creatorResult"`
+	SourceCodeBlacklist SourceCodeBlacklistState `protobuf:"bytes,10,opt,name=sourceCodeBlacklist" json:"sourceCodeBlacklist"`
+}
+
+type ProjectChainState struct {
+	Token TokenState  `protobuf:"bytes,1,opt,name=token" json:"token"`
+	Pair  PairV2State `protobuf:"bytes,2,opt,name=pair" json:"pair"`
 }
 
 type TokenState struct {
@@ -24,12 +28,11 @@ type TokenState struct {
 	Symbol       string `protobuf:"bytes,2,opt,name=symbol" json:"symbol"`
 	Decimals     uint32 `protobuf:"varint,3,opt,name=decimals" json:"decimals"`
 	TotalSupply  string `protobuf:"bytes,4,opt,name=totalSupply" json:"totalSupply"`
-	SourceCode   string `protobuf:"bytes,5,opt,name=sourceCode" json:"sourceCode"`
-	IsValidERC20 bool   `protobuf:"varint,7,opt,name=isValidERC20" json:"isValidERC20"`
+	IsValidERC20 bool   `protobuf:"varint,5,opt,name=isValidERC20" json:"isValidERC20"`
 }
 
 type PairV2State struct {
-	IsContractCreated   bool   `protobuf:"varint,1,opt,name=isContractCreated" json:"isContractCreated"`
+	IsCreated           bool   `protobuf:"varint,1,opt,name=isCreated" json:"isCreated"`
 	Contract            string `protobuf:"bytes,2,opt,name=contract" json:"contract"`
 	Token0              string `protobuf:"bytes,3,opt,name=token0" json:"token0"`
 	Token1              string `protobuf:"bytes,4,opt,name=token1" json:"token1"`
@@ -42,23 +45,11 @@ type PairV2State struct {
 	LockedLiquidity     string `protobuf:"bytes,11,opt,name=lockedLiquidity" json:"lockedLiquidity"`
 }
 
-type ProjectSourceCodeState struct {
-	SourceCode string `protobuf:"bytes,1,opt,name=sourceCode" json:"sourceCode"`
-}
-
-type ProjectSimulateState struct {
-	CreatorResult SimulateResult `protobuf:"bytes,1,opt,name=creatorResult" json:"creatorResult"`
-}
-
 type SimulateResult struct {
 	CanMintFromDeadViaTransferFrom bool `protobuf:"varint,1,opt,name=canMintFromDeadViaTransferFrom" json:"canMintFromDeadViaTransferFrom"`
 	CanMintFromZeroViaTransferFrom bool `protobuf:"varint,2,opt,name=canMintFromZeroViaTransferFrom" json:"canMintFromZeroViaTransferFrom"`
 	CanMintFromPairViaTransferFrom bool `protobuf:"varint,3,opt,name=canMintFromPairViaTransferFrom" json:"canMintFromPairViaTransferFrom"`
 	CanMintViaTransfer             bool `protobuf:"varint,4,opt,name=canMintViaTransfer" json:"canMintViaTransfer"`
-}
-
-type ProjectAnalysisState struct {
-	SourceCodeBlacklist SourceCodeBlacklistState `protobuf:"bytes,1,opt,name=sourceCodeBlacklist" json:"sourceCodeBlacklist"`
 }
 
 type SourceCodeBlacklistState struct {

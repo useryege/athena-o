@@ -77,50 +77,45 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{
-			ProjectID:   project.Meta.ProjectID.String(),
-			BlockTime:   project.Meta.BlockTime,
+			ProjectID:  project.Meta.ProjectID.String(),
+			BlockTime:  project.Meta.BlockTime,
 			BlockNumber: project.Meta.BlockNumber,
-			Contract:    project.Meta.Contract.String(),
-			Creator:     project.Meta.Creator.String(),
-			TxHash:      txHash,
-			TxIndex:     project.Meta.TxIndex,
-		},
-		Token: v1alpha1.TokenState{
-			Name:         chainState.Token.Name,
-			Symbol:       chainState.Token.Symbol,
-			Decimals:     uint32(chainState.Token.Decimals),
-			TotalSupply:  bigIntToString(chainState.Token.TotalSupply),
-			SourceCode:   sourceCode,
-			IsValidERC20: chainState.Token.IsValidERC20,
-		},
-		WethV2Pool: v1alpha1.PairV2State{
-			IsContractCreated:   chainState.Pair.IsCreated,
-			Contract:            addressToString(chainState.Pair.ContractAddress),
-			Token0:              addressToString(chainState.Pair.Token0),
-			Token1:              addressToString(chainState.Pair.Token1),
-			TotalSupply:         bigIntToString(chainState.Pair.TotalSupply),
-			Reserve0:            bigIntToString(chainState.Pair.Reserve0),
-			Reserve1:            bigIntToString(chainState.Pair.Reserve1),
-			BlockTimestampLast:  chainState.Pair.BlockTimestampLast,
-			TokenReserveBalance: bigIntToString(chainState.Pair.TokenReserveBalance),
-			WethReserveBalance:  bigIntToString(chainState.Pair.WethReserveBalance),
-			LockedLiquidity:     bigIntToString(chainState.Pair.LockedLiquidity),
-		},
-		SourceCode: v1alpha1.ProjectSourceCodeState{
+			Contract:   project.Meta.Contract.String(),
+			Creator:    project.Meta.Creator.String(),
+			TxHash:     txHash,
+			TxIndex:    project.Meta.TxIndex,
 			SourceCode: sourceCode,
-		},
-		Simulate: v1alpha1.ProjectSimulateState{
 			CreatorResult: v1alpha1.SimulateResult{
 				CanMintFromDeadViaTransferFrom: creatorResult.CanMintFromDeadViaTransferFrom,
 				CanMintFromZeroViaTransferFrom: creatorResult.CanMintFromZeroViaTransferFrom,
 				CanMintFromPairViaTransferFrom: creatorResult.CanMintFromPairViaTransferFrom,
 				CanMintViaTransfer:             creatorResult.CanMintViaTransfer,
 			},
-		},
-		Analysis: v1alpha1.ProjectAnalysisState{
 			SourceCodeBlacklist: v1alpha1.SourceCodeBlacklistState{
 				HasBlacklistFields: sourceCodeBlacklist.HasBlacklistFields,
 				BlacklistFields:    cloneStringSlice(sourceCodeBlacklist.BlacklistFields),
+			},
+		},
+		ChainState: v1alpha1.ProjectChainState{
+			Token: v1alpha1.TokenState{
+				Name:         chainState.Token.Name,
+				Symbol:       chainState.Token.Symbol,
+				Decimals:     uint32(chainState.Token.Decimals),
+				TotalSupply:  bigIntToString(chainState.Token.TotalSupply),
+				IsValidERC20: chainState.Token.IsValidERC20,
+			},
+			Pair: v1alpha1.PairV2State{
+				IsCreated:           chainState.Pair.IsCreated,
+				Contract:            addressToString(chainState.Pair.ContractAddress),
+				Token0:              addressToString(chainState.Pair.Token0),
+				Token1:              addressToString(chainState.Pair.Token1),
+				TotalSupply:         bigIntToString(chainState.Pair.TotalSupply),
+				Reserve0:            bigIntToString(chainState.Pair.Reserve0),
+				Reserve1:            bigIntToString(chainState.Pair.Reserve1),
+				BlockTimestampLast:  chainState.Pair.BlockTimestampLast,
+				TokenReserveBalance: bigIntToString(chainState.Pair.TokenReserveBalance),
+				WethReserveBalance:  bigIntToString(chainState.Pair.WethReserveBalance),
+				LockedLiquidity:     bigIntToString(chainState.Pair.LockedLiquidity),
 			},
 		},
 	}

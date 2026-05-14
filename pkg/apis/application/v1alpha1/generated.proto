@@ -9,7 +9,7 @@ package github.com.useryege.athena.pkg.apis.application.v1alpha1;
 option go_package = "github.com/useryege/athena/pkg/apis/application/v1alpha1";
 
 message PairV2State {
-  optional bool isContractCreated = 1;
+  optional bool isCreated = 1;
 
   optional string contract = 2;
 
@@ -32,8 +32,10 @@ message PairV2State {
   optional string lockedLiquidity = 11;
 }
 
-message ProjectAnalysisState {
-  optional SourceCodeBlacklistState sourceCodeBlacklist = 1;
+message ProjectChainState {
+  optional TokenState token = 1;
+
+  optional PairV2State pair = 2;
 }
 
 message ProjectMeta {
@@ -50,28 +52,18 @@ message ProjectMeta {
   optional string txHash = 6;
 
   optional uint64 txIndex = 7;
-}
 
-message ProjectSimulateState {
-  optional SimulateResult creatorResult = 1;
-}
+  optional string sourceCode = 8;
 
-message ProjectSourceCodeState {
-  optional string sourceCode = 1;
+  optional SimulateResult creatorResult = 9;
+
+  optional SourceCodeBlacklistState sourceCodeBlacklist = 10;
 }
 
 message ProjectView {
   optional ProjectMeta meta = 1;
 
-  optional TokenState token = 2;
-
-  optional PairV2State wethV2Pool = 3;
-
-  optional ProjectSourceCodeState sourceCode = 4;
-
-  optional ProjectSimulateState simulate = 5;
-
-  optional ProjectAnalysisState analysis = 6;
+  optional ProjectChainState chainState = 2;
 }
 
 message SimulateResult {
@@ -99,8 +91,6 @@ message TokenState {
 
   optional string totalSupply = 4;
 
-  optional string sourceCode = 5;
-
-  optional bool isValidERC20 = 7;
+  optional bool isValidERC20 = 5;
 }
 
