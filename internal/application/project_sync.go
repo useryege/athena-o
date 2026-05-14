@@ -60,18 +60,16 @@ func NewProjectSync(
 }
 
 func (s *projectSyncImpl) SyncSourceCodeOnce(ctx context.Context, event *Project) (bool, error) {
-	if event.SourceCode.SourceCode.IsReady() {
+	if event.Meta.SourceCode != "" {
 		return true, nil
 	}
 
-	now := time.Now()
 	sourceCode, _, err := s.fetchSourceCode(ctx, event)
 	if err != nil {
-		event.SourceCode.SourceCode.MarkFailed(err, now)
 		return false, err
 	}
 
-	event.SourceCode.SourceCode.MarkReady(sourceCode, now)
+	event.Meta.SourceCode = sourceCode
 	return true, nil
 }
 
@@ -282,7 +280,7 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 				}
 
 				now := time.Now()
-				state := ProjectSimulateState{}
+				metaState := ProjectMeta{}
 
 				simulateCallStartedAt := time.Now()
 				simulateResult, err := s.projectSimulator.SimulatePrimary(
@@ -294,14 +292,14 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 				)
 				simulateCallsDuration := time.Since(simulateCallStartedAt)
 				if err != nil {
-					state.CreatorResult.MarkFailed(err, now)
+					metaState.CreatorResult.MarkFailed(err, now)
 					recordSimulateError(err)
 				} else {
-					state.CreatorResult.MarkReady(simulateResult, now)
+					metaState.CreatorResult.MarkReady(simulateResult, now)
 				}
 
 				simulateUpdateStartedAt := time.Now()
-				if err := s.registry.UpdateProjectSimulateState(ctx, job.ref.ProjectID, &state); err != nil {
+				if err := s.registry.UpdateProjectMetaState(ctx, job.ref.ProjectID, &metaState); err != nil {
 					recordUpdateError(err)
 				}
 				simulateUpdatesDuration := time.Since(simulateUpdateStartedAt)

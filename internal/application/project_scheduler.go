@@ -183,7 +183,7 @@ func (s *projectSchedulerImpl) syncProjectSourceCode(projectID uuid.UUID) {
 			"error":     err,
 		}).Warn("failed to sync project source code")
 	}
-	sourceCodeUpdateErr := s.registry.UpdateProjectSourceCodeState(s.ctx, project.Meta.ProjectID, &project.SourceCode)
+	sourceCodeUpdateErr := s.registry.UpdateProjectMetaState(s.ctx, project.Meta.ProjectID, &project.Meta)
 	if sourceCodeUpdateErr != nil && !errors.Is(sourceCodeUpdateErr, context.Canceled) {
 		log.WithFields(log.Fields{
 			"projectID": project.Meta.ProjectID,
@@ -203,22 +203,19 @@ func (s *projectSchedulerImpl) analyzeProjectSourceCode(project *Project) {
 	if s.analyzer == nil || project == nil {
 		return
 	}
-	if !project.SourceCode.SourceCode.IsReady() || project.Analysis.SourceCodeBlacklist.IsReady() {
+	if project.Meta.SourceCode == "" || project.Meta.SourceCodeBlacklist.IsReady() {
 		return
 	}
 
-	analysis := cloneProjectAnalysisState(&project.Analysis)
-	sourceCode, ok := project.SourceCode.SourceCode.Get()
-	if !ok {
-		return
-	}
+	meta := cloneProjectMeta(project.Meta)
+	sourceCode := project.Meta.SourceCode
 	fields, err := s.sourceCodeBlacklistFields()
 	if err != nil {
-		analysis.SourceCodeBlacklist.MarkFailed(err, time.Now())
+		meta.SourceCodeBlacklist.MarkFailed(err, time.Now())
 	} else {
-		analysis.SourceCodeBlacklist.MarkReady(s.analyzer.AnalyzeSourceCode(sourceCode, fields), time.Now())
+		meta.SourceCodeBlacklist.MarkReady(s.analyzer.AnalyzeSourceCode(sourceCode, fields), time.Now())
 	}
-	if updateErr := s.registry.UpdateProjectAnalysisState(s.ctx, project.Meta.ProjectID, &analysis); updateErr != nil && !errors.Is(updateErr, context.Canceled) {
+	if updateErr := s.registry.UpdateProjectMetaState(s.ctx, project.Meta.ProjectID, &meta); updateErr != nil && !errors.Is(updateErr, context.Canceled) {
 		log.WithFields(log.Fields{
 			"projectID": project.Meta.ProjectID,
 			"error":     updateErr,

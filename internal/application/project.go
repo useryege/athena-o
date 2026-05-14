@@ -14,27 +14,19 @@ import (
 type Project struct {
 	Meta       ProjectMeta
 	ChainState athenacontract.AthenaProject
-	SourceCode ProjectSourceCodeState
-	Simulate   ProjectSimulateState
-	Analysis   ProjectAnalysisState
 }
 
 type ProjectMeta struct {
-	ProjectID   uuid.UUID
-	BlockTime   uint64
-	BlockNumber uint64
-	Contract    common.Address
-	Creator     common.Address
-	Tx          *types.Transaction
-	TxHash      common.Hash
-	TxIndex     uint64
-}
-
-type ProjectSourceCodeState struct {
-	SourceCode FieldValue[string]
-}
-
-type ProjectAnalysisState struct {
+	ProjectID           uuid.UUID
+	BlockTime           uint64
+	BlockNumber         uint64
+	Contract            common.Address
+	Creator             common.Address
+	Tx                  *types.Transaction
+	TxHash              common.Hash
+	TxIndex             uint64
+	SourceCode          string
+	CreatorResult       FieldValue[SimulateResult]
 	SourceCodeBlacklist FieldValue[sourcecode.BlacklistReport]
 }
 
@@ -66,10 +58,6 @@ func (p *Project) HasOnlyMinimumLiquidity() bool {
 	return p.ChainState.Pair.TotalSupply.Cmp(big.NewInt(1000)) == 0
 }
 
-type ProjectSimulateState struct {
-	CreatorResult FieldValue[SimulateResult]
-}
-
 func projectToView(project *Project) *v1alpha1.ProjectView {
 	if project == nil {
 		return nil
@@ -83,9 +71,9 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 	}
 
 	chainState := project.ChainState
-	sourceCode, _ := project.SourceCode.SourceCode.Get()
-	creatorResult, _ := project.Simulate.CreatorResult.Get()
-	sourceCodeBlacklist, _ := project.Analysis.SourceCodeBlacklist.Get()
+	sourceCode := project.Meta.SourceCode
+	creatorResult, _ := project.Meta.CreatorResult.Get()
+	sourceCodeBlacklist, _ := project.Meta.SourceCodeBlacklist.Get()
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{

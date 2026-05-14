@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
@@ -33,7 +32,7 @@ func (m *projectStoreMock) UpdateProjectSourceCode(ctx context.Context, projectI
 	return m.updateSourceCodeErr
 }
 
-func TestUpdateProjectSourceCodeStateReadyPersists(t *testing.T) {
+func TestUpdateProjectMetaStateSourceCodeReadyPersists(t *testing.T) {
 	store := &projectStoreMock{}
 	registry := NewProjectRegistry(store)
 	projectID := uuid.New()
@@ -48,10 +47,9 @@ func TestUpdateProjectSourceCodeStateReadyPersists(t *testing.T) {
 		t.Fatalf("set project: %v", err)
 	}
 
-	state := &ProjectSourceCodeState{}
-	state.SourceCode.MarkReady("contract A {}", time.Now())
-	if err := registry.UpdateProjectSourceCodeState(context.Background(), projectID, state); err != nil {
-		t.Fatalf("update source code state: %v", err)
+	state := &ProjectMeta{SourceCode: "contract A {}"}
+	if err := registry.UpdateProjectMetaState(context.Background(), projectID, state); err != nil {
+		t.Fatalf("update project meta state: %v", err)
 	}
 
 	if store.updateSourceCodeCalls != 1 {
@@ -71,13 +69,12 @@ func TestUpdateProjectSourceCodeStateReadyPersists(t *testing.T) {
 	if !ok {
 		t.Fatal("project not found")
 	}
-	gotSourceCode, gotOK := updated.SourceCode.SourceCode.Get()
-	if !gotOK || gotSourceCode != "contract A {}" {
-		t.Fatalf("source code = %q, ok = %v, want %q, true", gotSourceCode, gotOK, "contract A {}")
+	if updated.Meta.SourceCode != "contract A {}" {
+		t.Fatalf("source code = %q, want %q", updated.Meta.SourceCode, "contract A {}")
 	}
 }
 
-func TestUpdateProjectSourceCodeStateNonReadyDoesNotPersist(t *testing.T) {
+func TestUpdateProjectMetaStateEmptySourceCodeDoesNotPersist(t *testing.T) {
 	store := &projectStoreMock{}
 	registry := NewProjectRegistry(store)
 	projectID := uuid.New()
@@ -92,10 +89,9 @@ func TestUpdateProjectSourceCodeStateNonReadyDoesNotPersist(t *testing.T) {
 		t.Fatalf("set project: %v", err)
 	}
 
-	state := &ProjectSourceCodeState{}
-	state.SourceCode.MarkFailed(errors.New("fetch failed"), time.Now())
-	if err := registry.UpdateProjectSourceCodeState(context.Background(), projectID, state); err != nil {
-		t.Fatalf("update source code state: %v", err)
+	state := &ProjectMeta{SourceCode: ""}
+	if err := registry.UpdateProjectMetaState(context.Background(), projectID, state); err != nil {
+		t.Fatalf("update project meta state: %v", err)
 	}
 
 	if store.updateSourceCodeCalls != 0 {
@@ -103,7 +99,7 @@ func TestUpdateProjectSourceCodeStateNonReadyDoesNotPersist(t *testing.T) {
 	}
 }
 
-func TestUpdateProjectSourceCodeStateStoreErrorReturned(t *testing.T) {
+func TestUpdateProjectMetaStateSourceCodeStoreErrorReturned(t *testing.T) {
 	store := &projectStoreMock{updateSourceCodeErr: errors.New("db failed")}
 	registry := NewProjectRegistry(store)
 	projectID := uuid.New()
@@ -118,9 +114,8 @@ func TestUpdateProjectSourceCodeStateStoreErrorReturned(t *testing.T) {
 		t.Fatalf("set project: %v", err)
 	}
 
-	state := &ProjectSourceCodeState{}
-	state.SourceCode.MarkReady("contract B {}", time.Now())
-	err := registry.UpdateProjectSourceCodeState(context.Background(), projectID, state)
+	state := &ProjectMeta{SourceCode: "contract B {}"}
+	err := registry.UpdateProjectMetaState(context.Background(), projectID, state)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

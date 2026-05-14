@@ -20,9 +20,7 @@ type ProjectRegistry interface {
 	MaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
 	SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error
 	UpdateProjectChainStates(ctx context.Context, states map[uuid.UUID]athenacontract.AthenaProject) error
-	UpdateProjectSourceCodeState(ctx context.Context, projectID uuid.UUID, state *ProjectSourceCodeState) error
-	UpdateProjectAnalysisState(ctx context.Context, projectID uuid.UUID, state *ProjectAnalysisState) error
-	UpdateProjectSimulateState(ctx context.Context, projectID uuid.UUID, state *ProjectSimulateState) error
+	UpdateProjectMetaState(ctx context.Context, projectID uuid.UUID, state *ProjectMeta) error
 	RemoveProject(ctx context.Context, projectID uuid.UUID) error
 }
 
@@ -188,7 +186,7 @@ func (r *projectRegistryImpl) UpdateProjectChainStates(ctx context.Context, stat
 	return nil
 }
 
-func (r *projectRegistryImpl) UpdateProjectSourceCodeState(ctx context.Context, projectID uuid.UUID, state *ProjectSourceCodeState) error {
+func (r *projectRegistryImpl) UpdateProjectMetaState(ctx context.Context, projectID uuid.UUID, state *ProjectMeta) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if err := ctx.Err(); err != nil {
@@ -198,46 +196,18 @@ func (r *projectRegistryImpl) UpdateProjectSourceCodeState(ctx context.Context, 
 	if !ok {
 		return nil
 	}
-	project.SourceCode = cloneProjectSourceCodeState(state)
-	if r.store == nil || state == nil {
-		return nil
+	if state != nil {
+		if state.SourceCode != "" {
+			project.Meta.SourceCode = state.SourceCode
+			if r.store != nil {
+				if err := r.store.UpdateProjectSourceCode(ctx, projectID, state.SourceCode); err != nil {
+					return err
+				}
+			}
+		}
+		project.Meta.CreatorResult = cloneFieldValue(&state.CreatorResult)
+		project.Meta.SourceCodeBlacklist = cloneSourceCodeBlacklistReportFieldValue(&state.SourceCodeBlacklist)
 	}
-
-	sourceCode, ready := state.SourceCode.Get()
-	if !ready {
-		return nil
-	}
-	if err := r.store.UpdateProjectSourceCode(ctx, projectID, sourceCode); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *projectRegistryImpl) UpdateProjectAnalysisState(ctx context.Context, projectID uuid.UUID, state *ProjectAnalysisState) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	project, ok := r.Projects[projectID]
-	if !ok {
-		return nil
-	}
-	project.Analysis = cloneProjectAnalysisState(state)
-	return nil
-}
-
-func (r *projectRegistryImpl) UpdateProjectSimulateState(ctx context.Context, projectID uuid.UUID, state *ProjectSimulateState) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	project, ok := r.Projects[projectID]
-	if !ok {
-		return nil
-	}
-	project.Simulate = cloneProjectSimulateState(state)
 	return nil
 }
 
@@ -277,12 +247,15 @@ func cloneProject(project *Project) *Project {
 		return nil
 	}
 	return &Project{
-		Meta:       project.Meta,
+		Meta:       cloneProjectMeta(project.Meta),
 		ChainState: cloneAthenaProject(project.ChainState),
-		SourceCode: cloneProjectSourceCodeState(&project.SourceCode),
-		Simulate:   cloneProjectSimulateState(&project.Simulate),
-		Analysis:   cloneProjectAnalysisState(&project.Analysis),
 	}
+}
+
+func cloneProjectMeta(meta ProjectMeta) ProjectMeta {
+	meta.CreatorResult = cloneFieldValue(&meta.CreatorResult)
+	meta.SourceCodeBlacklist = cloneSourceCodeBlacklistReportFieldValue(&meta.SourceCodeBlacklist)
+	return meta
 }
 
 func projectMetaToStore(meta ProjectMeta) appstore.ProjectMeta {
@@ -315,24 +288,6 @@ func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 	}
 }
 
-func cloneProjectSourceCodeState(state *ProjectSourceCodeState) ProjectSourceCodeState {
-	if state == nil {
-		return ProjectSourceCodeState{}
-	}
-	return ProjectSourceCodeState{
-		SourceCode: cloneFieldValue(&state.SourceCode),
-	}
-}
-
-func cloneProjectAnalysisState(state *ProjectAnalysisState) ProjectAnalysisState {
-	if state == nil {
-		return ProjectAnalysisState{}
-	}
-	return ProjectAnalysisState{
-		SourceCodeBlacklist: cloneSourceCodeBlacklistReportFieldValue(&state.SourceCodeBlacklist),
-	}
-}
-
 func cloneSourceCodeBlacklistReportFieldValue(value *FieldValue[sourcecode.BlacklistReport]) FieldValue[sourcecode.BlacklistReport] {
 	if value == nil {
 		return FieldValue[sourcecode.BlacklistReport]{}
@@ -348,15 +303,6 @@ func cloneSourceCodeBlacklistReportFieldValue(value *FieldValue[sourcecode.Black
 		resolvedAt: value.resolvedAt,
 		updatedAt:  value.updatedAt,
 		lastError:  value.lastError,
-	}
-}
-
-func cloneProjectSimulateState(state *ProjectSimulateState) ProjectSimulateState {
-	if state == nil {
-		return ProjectSimulateState{}
-	}
-	return ProjectSimulateState{
-		CreatorResult: cloneFieldValue(&state.CreatorResult),
 	}
 }
 
