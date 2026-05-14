@@ -4,11 +4,40 @@ import {ProjectView} from '../../../shared/services/athena-application-service';
 
 const renderValue = (value: string | number | undefined) => (value === undefined || value === '' ? '-' : value);
 
-const renderShortValue = (value: string | undefined, maxLength = 12) => {
-    if (!value) {
+const formatBlockTime = (blockTime: number | undefined) => {
+    if (!blockTime || !Number.isFinite(blockTime) || blockTime <= 0) {
         return '-';
     }
-    return value.length > maxLength ? `${value.substring(0, maxLength)}...` : value;
+
+    const date = new Date(blockTime * 1000);
+    if (Number.isNaN(date.getTime())) {
+        return '-';
+    }
+
+    const formatter = new Intl.DateTimeFormat('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+    const parts = formatter.formatToParts(date);
+    const partValue = (type: Intl.DateTimeFormatPartTypes) => parts.find(part => part.type === type)?.value ?? '';
+
+    const year = partValue('year');
+    const month = partValue('month');
+    const day = partValue('day');
+    const hour = partValue('hour');
+    const minute = partValue('minute');
+    const second = partValue('second');
+    if (!year || !month || !day || !hour || !minute || !second) {
+        return '-';
+    }
+
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 };
 
 export const ProjectListRow = ({project, index, onClick}: {project: ProjectView; index: number; onClick?: () => void}) => {
@@ -34,15 +63,6 @@ export const ProjectListRow = ({project, index, onClick}: {project: ProjectView;
                 </div>
                 <div className='projects-list__cell'>{renderValue(project.token?.symbol)}</div>
                 <div className='projects-list__cell'>
-                    {project.token?.isValidERC20 !== undefined ? (
-                        <span className={`project-details__badge project-details__badge--${project.token.isValidERC20 ? 'positive' : 'negative'}`}>
-                            {project.token.isValidERC20 ? 'Yes' : 'No'}
-                        </span>
-                    ) : (
-                        '-'
-                    )}
-                </div>
-                <div className='projects-list__cell'>
                     {project.analysis?.sourceCodeBlacklist?.hasBlacklistFields !== undefined ? (
                         <span className={`project-details__badge project-details__badge--${project.analysis.sourceCodeBlacklist.hasBlacklistFields ? 'negative' : 'positive'}`}>
                             {project.analysis.sourceCodeBlacklist.hasBlacklistFields ? 'Yes' : 'No'}
@@ -63,19 +83,7 @@ export const ProjectListRow = ({project, index, onClick}: {project: ProjectView;
                           })()
                         : '-'}
                 </div>
-                <div className='projects-list__cell' title={project.token?.totalSupply || ''}>
-                    {renderShortValue(project.token?.totalSupply)}
-                </div>
-                <div className='projects-list__cell' title={project.meta?.contract || ''}>
-                    {renderShortValue(project.meta?.contract)}
-                </div>
-                <div className='projects-list__cell' title={project.meta?.creator || ''}>
-                    {renderShortValue(project.meta?.creator)}
-                </div>
-                <div className='projects-list__cell'>{renderValue(project.meta?.blockNumber)}</div>
-                <div className='projects-list__cell' title={project.meta?.txHash || ''}>
-                    {renderShortValue(project.meta?.txHash)}
-                </div>
+                <div className='projects-list__cell'>{formatBlockTime(project.meta?.blockTime)}</div>
             </div>
         </div>
     );
