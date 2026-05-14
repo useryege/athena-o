@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-208-g7adf5d1-dirty"
+    "version": "v1.0.0-210-gd5390c7-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -230,6 +230,29 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationListProjectsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/project/options": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "GetProjectOptions returns the options.",
+        "operationId": "ApplicationService_GetProjectOptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetProjectOptionsResponse"
             }
           },
           "default": {
@@ -605,6 +628,15 @@
     "applicationDeleteSourceCodeBlacklistFieldResponse": {
       "description": "DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.",
       "type": "object"
+    },
+    "applicationGetProjectOptionsResponse": {
+      "description": "GetProjectOptionsResponse returns the options.",
+      "type": "object",
+      "properties": {
+        "options": {
+          "$ref": "#/definitions/v1alpha1ProjectOption"
+        }
+      }
     },
     "applicationGetProjectResponse": {
       "description": "GetProjectResponse returns the project snapshot for a given project ID.",
@@ -1031,6 +1063,28 @@
         }
       }
     },
+    "v1alpha1ProjectOption": {
+      "type": "object",
+      "properties": {
+        "factoryContract": {
+          "type": "string"
+        },
+        "usdtContract": {
+          "type": "string"
+        },
+        "usdtDecimals": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "wethContract": {
+          "type": "string"
+        },
+        "wethDecimals": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "v1alpha1ProjectView": {
       "type": "object",
       "properties": {
@@ -1058,6 +1112,12 @@
           "type": "boolean"
         },
         "canMintViaTransfer": {
+          "type": "boolean"
+        },
+        "canMintViaTransferToUsdtPair": {
+          "type": "boolean"
+        },
+        "canMintViaTransferToWethPair": {
           "type": "boolean"
         }
       }

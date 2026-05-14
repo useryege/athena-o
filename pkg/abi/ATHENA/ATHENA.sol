@@ -86,22 +86,30 @@ contract Athena {
         SimulationState simulationState;
     }
 
-    address private constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    address public immutable DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    address public immutable ZERO_ADDRESS = address(0);
+
 
     address public immutable factoryContract;
     address public immutable wethContract;
+    uint8 public immutable wethDecimals;
     address public immutable usdtContract;
+    uint8 public immutable usdtDecimals;
     bytes32 public immutable initCodePairHash;
 
     constructor(uint256 chainId) {
         if (chainId == 1) {
             factoryContract = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
             wethContract = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+            wethDecimals = 18;
             usdtContract = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+            usdtDecimals = 6;
         } else if (chainId == 56) {
             factoryContract = 0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73;
             wethContract = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+            wethDecimals = 18;
             usdtContract = 0x55d398326f99059fF775485246999027B3197955;
+            usdtDecimals = 18;
         } else {
             revert("Invalid chain id");
         }

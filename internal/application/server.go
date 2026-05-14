@@ -19,19 +19,34 @@ type ApplicationServer struct {
 
 type ApplicationServerOpts struct {
 	NodeClient          *ethclient.Client
-	V2FactoryContract   common.Address
-	WethContract        common.Address
 	AthenaContract      common.Address
 	EtherscanAPIBaseURL string
 	EtherscanAPIKey     string
 	Store               appstore.Store
 	LiquidityLocker     []common.Address
+
+	// Fetch from Athena contract
+	V2FactoryContract common.Address
+	WethContract      common.Address
+	UsdtContract      common.Address
+	WethDecimals      uint8
+	UsdtDecimals      uint8
 }
 
 func NewServer(opts ApplicationServerOpts) *ApplicationServer {
 	return &ApplicationServer{
 		ApplicationServerOpts: opts,
-		service:               NewService(opts.NodeClient, opts.V2FactoryContract, opts.WethContract, opts.AthenaContract, opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, opts.Store, opts.LiquidityLocker),
+		service: NewService(opts.NodeClient,
+			opts.V2FactoryContract,
+			opts.WethContract,
+			opts.UsdtContract,
+			opts.WethDecimals,
+			opts.UsdtDecimals,
+			opts.AthenaContract,
+			opts.EtherscanAPIBaseURL,
+			opts.EtherscanAPIKey,
+			opts.Store,
+			opts.LiquidityLocker),
 	}
 }
 

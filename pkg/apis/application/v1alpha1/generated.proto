@@ -64,6 +64,18 @@ message ProjectMeta {
   optional SourceCodeBlacklistState sourceCodeBlacklist = 10;
 }
 
+message ProjectOption {
+  optional string factoryContract = 1;
+
+  optional string wethContract = 2;
+
+  optional string usdtContract = 3;
+
+  optional uint32 wethDecimals = 4;
+
+  optional uint32 usdtDecimals = 5;
+}
+
 message ProjectView {
   optional ProjectMeta meta = 1;
 
@@ -80,6 +92,10 @@ message SimulateResult {
   optional bool canMintViaTransfer = 4;
 
   optional bool canMintFromUsdtPairViaTransferFrom = 5;
+
+  optional bool canMintViaTransferToWethPair = 6;
+
+  optional bool canMintViaTransferToUsdtPair = 7;
 }
 
 message SourceCodeBlacklistState {

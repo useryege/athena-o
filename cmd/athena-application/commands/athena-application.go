@@ -12,6 +12,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -30,6 +31,8 @@ import (
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/healthz"
 	utilio "github.com/useryege/athena/util/io"
+
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 const cliName = "athena-application"
@@ -41,8 +44,6 @@ func NewCommand() *cobra.Command {
 		metricsHost         string
 		metricsPort         int
 		nodewsurl           string
-		v2FactoryContract   string
-		wethContract        string
 		athenaContract      string
 		etherscanAPIBaseURL string
 		etherscanAPIKey     string
@@ -83,17 +84,35 @@ func NewCommand() *cobra.Command {
 				log.Fatalf("failed to connect to node websocket: %v", err)
 			}
 
-			wethContractAddress, err := parseRequiredAddress("WETH contract address", wethContract, "--weth-contract", "ATHENA_APPLICATION_WETH_CONTRACT")
-			if err != nil {
-				return err
-			}
-
-			v2FactoryContractAddress, err := parseRequiredAddress("V2 Factory contract address", v2FactoryContract, "--v2-factory-contract", "ATHENA_APPLICATION_V2_FACTORY_CONTRACT")
-			if err != nil {
-				return err
-			}
-
 			athenaContractAddress, err := parseRequiredAddress("ATHENA contract address", athenaContract, "--athena-contract", "ATHENA_APPLICATION_ATHENA_CONTRACT")
+			if err != nil {
+				return err
+			}
+
+			athenaClient, err := athenacontract.NewATHENA(athenaContractAddress, nodeClient)
+			if err != nil {
+				return err
+			}
+
+			wethContractAddress, err := athenaClient.WethContract(&bind.CallOpts{Context: ctx})
+			if err != nil {
+				return err
+			}
+			usdtContractAddress, err := athenaClient.UsdtContract(&bind.CallOpts{Context: ctx})
+			if err != nil {
+				return err
+			}
+
+			wethDecimals, err := athenaClient.WethDecimals(&bind.CallOpts{Context: ctx})
+			if err != nil {
+				return err
+			}
+			usdtDecimals, err := athenaClient.UsdtDecimals(&bind.CallOpts{Context: ctx})
+			if err != nil {
+				return err
+			}
+
+			v2FactoryContractAddress, err := athenaClient.FactoryContract(&bind.CallOpts{Context: ctx})
 			if err != nil {
 				return err
 			}
@@ -113,13 +132,18 @@ func NewCommand() *cobra.Command {
 
 			server := application.NewServer(application.ApplicationServerOpts{
 				NodeClient:          nodeClient,
-				V2FactoryContract:   v2FactoryContractAddress,
-				WethContract:        wethContractAddress,
 				AthenaContract:      athenaContractAddress,
 				EtherscanAPIBaseURL: etherscanAPIBaseURL,
 				EtherscanAPIKey:     etherscanAPIKey,
 				Store:               store,
 				LiquidityLocker:     liquidityLockerAddresses,
+
+				// Fetch from Athena contract
+				V2FactoryContract: v2FactoryContractAddress,
+				WethContract:      wethContractAddress,
+				UsdtContract:      usdtContractAddress,
+				WethDecimals:      wethDecimals,
+				UsdtDecimals:      usdtDecimals,
 			})
 
 			applicationGrpc := server.CreateGRPC()
@@ -189,8 +213,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&metricsHost, "metrics-address", env.StringFromEnv("ATHENA_APPLICATION_METRICS_LISTEN_ADDRESS", common.DefaultAddressApplicationMetrics), "Listen on given address for metrics and health checks")
 	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortApplicationMetrics, "Start metrics server on given port")
 	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_APPLICATION_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
-	command.Flags().StringVar(&v2FactoryContract, "v2-factory-contract", env.StringFromEnv("ATHENA_APPLICATION_V2_FACTORY_CONTRACT", "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"), "V2 Factory contract address")
-	command.Flags().StringVar(&wethContract, "weth-contract", env.StringFromEnv("ATHENA_APPLICATION_WETH_CONTRACT", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"), "WETH contract address")
 	command.Flags().StringVar(&athenaContract, "athena-contract", env.StringFromEnv("ATHENA_APPLICATION_ATHENA_CONTRACT", ""), "ATHENA aggregation contract address")
 	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
 	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")

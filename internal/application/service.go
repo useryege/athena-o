@@ -26,6 +26,9 @@ type Service struct {
 	nodeClient        *ethclient.Client
 	v2FactoryContract common.Address
 	wethContract      common.Address
+	usdtContract      common.Address
+	wethDecimals      uint8
+	usdtDecimals      uint8
 	athenaContract    common.Address
 
 	etherscanAPIBaseURL string
@@ -48,7 +51,7 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, store appstore.Store, liquidityLocker []common.Address) *Service {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, store appstore.Store, liquidityLocker []common.Address) *Service {
 	registry := NewProjectRegistry(store)
 	sourceAnalyzer := sourcecode.NewAnalyzer()
 	sourceBlacklist := appcache.NewSourceCodeBlacklistModel(
@@ -64,6 +67,9 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		delayedFetchSem:     make(chan struct{}, defaultDelayedFetchConcurrency),
 		v2FactoryContract:   v2FactoryContract,
 		wethContract:        wethContract,
+		usdtContract:        usdtContract,
+		wethDecimals:        wethDecimals,
+		usdtDecimals:        usdtDecimals,
 		athenaContract:      athenaContract,
 		etherscanAPIBaseURL: etherscanAPIBaseURL,
 		etherscanAPIKey:     etherscanAPIKey,
@@ -242,4 +248,16 @@ func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProject
 	}
 
 	return &applicationpkg.GetProjectResponse{Item: projectToView(project)}, nil
+}
+
+func (s *Service) GetProjectOptions(context.Context, *applicationpkg.GetProjectOptionsRequest) (*applicationpkg.GetProjectOptionsResponse, error) {
+	return &applicationpkg.GetProjectOptionsResponse{
+		Options: &v1alpha1.ProjectOption{
+			FactoryContract: s.v2FactoryContract.Hex(),
+			WethContract:    s.wethContract.Hex(),
+			UsdtContract:    s.usdtContract.Hex(),
+			WethDecimals:    uint32(s.wethDecimals),
+			UsdtDecimals:    uint32(s.usdtDecimals),
+		},
+	}, nil
 }

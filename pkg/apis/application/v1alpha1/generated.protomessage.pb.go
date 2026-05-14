@@ -11,6 +11,8 @@ func (*ProjectChainState) ProtoMessage() {}
 
 func (*ProjectMeta) ProtoMessage() {}
 
+func (*ProjectOption) ProtoMessage() {}
+
 func (*ProjectView) ProtoMessage() {}
 
 func (*SimulateResult) ProtoMessage() {}

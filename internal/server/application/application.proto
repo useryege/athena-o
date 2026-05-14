@@ -57,6 +57,14 @@ message DeleteSourceCodeBlacklistFieldRequest {
   string field = 1;
 }
 
+// GetProjectOptionsRequest don't need any parameters.
+message GetProjectOptionsRequest {}
+
+// GetProjectOptionsResponse returns the options.
+message GetProjectOptionsResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectOption options = 1;
+}
+
 // DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.
 message DeleteSourceCodeBlacklistFieldResponse {}
 
@@ -87,5 +95,10 @@ service ApplicationService {
   // DeleteSourceCodeBlacklistField deletes a globally configured source-code blacklist field.
   rpc DeleteSourceCodeBlacklistField(DeleteSourceCodeBlacklistFieldRequest) returns (DeleteSourceCodeBlacklistFieldResponse) {
     option (google.api.http) = {delete: "/api/v1/source-code/blacklist-fields/{field}"};
+  }
+
+  // GetProjectOptions returns the options.
+  rpc GetProjectOptions(GetProjectOptionsRequest) returns (GetProjectOptionsResponse) {
+    option (google.api.http) = {get: "/api/v1/project/options"};
   }
 }

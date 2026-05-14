@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	deadAddress            = common.HexToAddress(DeadAddress)
-	zeroAddress            = common.HexToAddress(ZeroAddress)
-	magicAddress           = common.HexToAddress(MagicAddress)
+	deadAddress = common.HexToAddress(DeadAddress)
+	zeroAddress = common.HexToAddress(ZeroAddress)
+	// magicAddress           = common.HexToAddress(MagicAddress)
 	simulateMintBaseAmount = big.NewInt(1000000000000000000)
 	simulateMintMultiplier = big.NewInt(2)
 )

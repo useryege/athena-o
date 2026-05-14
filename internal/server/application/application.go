@@ -105,6 +105,20 @@ func (s *Server) DeleteSourceCodeBlacklistField(ctx context.Context, req *applic
 	return &applicationpkg.DeleteSourceCodeBlacklistFieldResponse{}, nil
 }
 
+func (s *Server) GetProjectOptions(ctx context.Context, _ *applicationpkg.GetProjectOptionsRequest) (*applicationpkg.GetProjectOptionsResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.GetProjectOptions(ctx, &applicationapiclient.GetProjectOptionsRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.GetProjectOptionsResponse{Options: resp.Options}, nil
+}
+
 func sourceCodeBlacklistFieldToAPI(item *applicationapiclient.SourceCodeBlacklistField) *applicationpkg.SourceCodeBlacklistField {
 	if item == nil {
 		return nil
