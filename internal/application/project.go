@@ -26,8 +26,8 @@ type ProjectMeta struct {
 	TxHash              common.Hash
 	TxIndex             uint64
 	SourceCode          string
-	CreatorResult       FieldValue[SimulateResult]
-	SourceCodeBlacklist FieldValue[sourcecode.BlacklistReport]
+	CreatorResult       SimulateResult
+	SourceCodeBlacklist sourcecode.BlacklistReport
 }
 
 func (p *Project) IsPairBalanceOverSupply() bool {
@@ -72,8 +72,8 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 
 	chainState := project.ChainState
 	sourceCode := project.Meta.SourceCode
-	creatorResult, _ := project.Meta.CreatorResult.Get()
-	sourceCodeBlacklist, _ := project.Meta.SourceCodeBlacklist.Get()
+	creatorResult := project.Meta.CreatorResult
+	sourceCodeBlacklist := project.Meta.SourceCodeBlacklist
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{

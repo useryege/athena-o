@@ -205,8 +205,11 @@ func (r *projectRegistryImpl) UpdateProjectMetaState(ctx context.Context, projec
 				}
 			}
 		}
-		project.Meta.CreatorResult = cloneFieldValue(&state.CreatorResult)
-		project.Meta.SourceCodeBlacklist = cloneSourceCodeBlacklistReportFieldValue(&state.SourceCodeBlacklist)
+		project.Meta.CreatorResult = state.CreatorResult
+		project.Meta.SourceCodeBlacklist = sourcecode.BlacklistReport{
+			HasBlacklistFields: state.SourceCodeBlacklist.HasBlacklistFields,
+			BlacklistFields:    cloneStringSlice(state.SourceCodeBlacklist.BlacklistFields),
+		}
 	}
 	return nil
 }
@@ -253,8 +256,10 @@ func cloneProject(project *Project) *Project {
 }
 
 func cloneProjectMeta(meta ProjectMeta) ProjectMeta {
-	meta.CreatorResult = cloneFieldValue(&meta.CreatorResult)
-	meta.SourceCodeBlacklist = cloneSourceCodeBlacklistReportFieldValue(&meta.SourceCodeBlacklist)
+	meta.SourceCodeBlacklist = sourcecode.BlacklistReport{
+		HasBlacklistFields: meta.SourceCodeBlacklist.HasBlacklistFields,
+		BlacklistFields:    cloneStringSlice(meta.SourceCodeBlacklist.BlacklistFields),
+	}
 	return meta
 }
 
@@ -286,39 +291,6 @@ func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 		TxHash:      meta.TxHash,
 		TxIndex:     meta.TxIndex,
 		SourceCode:  meta.SourceCode,
-	}
-}
-
-func cloneSourceCodeBlacklistReportFieldValue(value *FieldValue[sourcecode.BlacklistReport]) FieldValue[sourcecode.BlacklistReport] {
-	if value == nil {
-		return FieldValue[sourcecode.BlacklistReport]{}
-	}
-	value.mu.RLock()
-	defer value.mu.RUnlock()
-	return FieldValue[sourcecode.BlacklistReport]{
-		value: sourcecode.BlacklistReport{
-			HasBlacklistFields: value.value.HasBlacklistFields,
-			BlacklistFields:    cloneStringSlice(value.value.BlacklistFields),
-		},
-		status:     value.status,
-		resolvedAt: value.resolvedAt,
-		updatedAt:  value.updatedAt,
-		lastError:  value.lastError,
-	}
-}
-
-func cloneFieldValue[T any](value *FieldValue[T]) FieldValue[T] {
-	if value == nil {
-		return FieldValue[T]{}
-	}
-	value.mu.RLock()
-	defer value.mu.RUnlock()
-	return FieldValue[T]{
-		value:      value.value,
-		status:     value.status,
-		resolvedAt: value.resolvedAt,
-		updatedAt:  value.updatedAt,
-		lastError:  value.lastError,
 	}
 }
 

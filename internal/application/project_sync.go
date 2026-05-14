@@ -279,9 +279,6 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 					return
 				}
 
-				now := time.Now()
-				metaState := ProjectMeta{}
-
 				simulateCallStartedAt := time.Now()
 				simulateResult, err := s.projectSimulator.SimulatePrimary(
 					ctx,
@@ -292,13 +289,24 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 				)
 				simulateCallsDuration := time.Since(simulateCallStartedAt)
 				if err != nil {
-					metaState.CreatorResult.MarkFailed(err, now)
 					recordSimulateError(err)
-				} else {
-					metaState.CreatorResult.MarkReady(simulateResult, now)
+					recordDurations(simulateCallsDuration, 0)
+					continue
 				}
 
 				simulateUpdateStartedAt := time.Now()
+				project, ok, getErr := s.registry.GetProject(ctx, job.ref.ProjectID)
+				if getErr != nil {
+					recordUpdateError(getErr)
+					recordDurations(simulateCallsDuration, time.Since(simulateUpdateStartedAt))
+					continue
+				}
+				if !ok || project == nil {
+					recordDurations(simulateCallsDuration, time.Since(simulateUpdateStartedAt))
+					continue
+				}
+				metaState := project.Meta
+				metaState.CreatorResult = simulateResult
 				if err := s.registry.UpdateProjectMetaState(ctx, job.ref.ProjectID, &metaState); err != nil {
 					recordUpdateError(err)
 				}

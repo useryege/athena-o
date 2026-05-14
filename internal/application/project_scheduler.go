@@ -203,7 +203,7 @@ func (s *projectSchedulerImpl) analyzeProjectSourceCode(project *Project) {
 	if s.analyzer == nil || project == nil {
 		return
 	}
-	if project.Meta.SourceCode == "" || project.Meta.SourceCodeBlacklist.IsReady() {
+	if project.Meta.SourceCode == "" || project.Meta.SourceCodeBlacklist.BlacklistFields != nil {
 		return
 	}
 
@@ -211,10 +211,13 @@ func (s *projectSchedulerImpl) analyzeProjectSourceCode(project *Project) {
 	sourceCode := project.Meta.SourceCode
 	fields, err := s.sourceCodeBlacklistFields()
 	if err != nil {
-		meta.SourceCodeBlacklist.MarkFailed(err, time.Now())
-	} else {
-		meta.SourceCodeBlacklist.MarkReady(s.analyzer.AnalyzeSourceCode(sourceCode, fields), time.Now())
+		log.WithFields(log.Fields{
+			"projectID": project.Meta.ProjectID,
+			"error":     err,
+		}).Warn("failed to load source code blacklist fields")
+		return
 	}
+	meta.SourceCodeBlacklist = s.analyzer.AnalyzeSourceCode(sourceCode, fields)
 	if updateErr := s.registry.UpdateProjectMetaState(s.ctx, project.Meta.ProjectID, &meta); updateErr != nil && !errors.Is(updateErr, context.Canceled) {
 		log.WithFields(log.Fields{
 			"projectID": project.Meta.ProjectID,
