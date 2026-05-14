@@ -11,6 +11,8 @@ import (
 )
 
 type projectStoreMock struct {
+	listProjectMetas     []appstore.ProjectMeta
+	listProjectMetasErr  error
 	updateSourceCodeCalls int
 	updateProjectID       uuid.UUID
 	updateSourceCode      string
@@ -22,7 +24,7 @@ func (m *projectStoreMock) SaveProjectMeta(ctx context.Context, meta appstore.Pr
 }
 
 func (m *projectStoreMock) ListProjectMetas(ctx context.Context) ([]appstore.ProjectMeta, error) {
-	return nil, nil
+	return m.listProjectMetas, m.listProjectMetasErr
 }
 
 func (m *projectStoreMock) UpdateProjectSourceCode(ctx context.Context, projectID uuid.UUID, sourceCode string) error {
@@ -121,5 +123,40 @@ func TestUpdateProjectMetaStateSourceCodeStoreErrorReturned(t *testing.T) {
 	}
 	if err.Error() != "db failed" {
 		t.Fatalf("error = %v, want db failed", err)
+	}
+}
+
+func TestLoadProjectsLoadsSourceCodeIntoMemory(t *testing.T) {
+	projectID := uuid.New()
+	sourceCode := "contract Loaded {}"
+	store := &projectStoreMock{
+		listProjectMetas: []appstore.ProjectMeta{
+			{
+				ProjectID:   projectID,
+				BlockNumber: 123,
+				BlockTime:   456,
+				Contract:    common.HexToAddress("0x00000000000000000000000000000000000000E1"),
+				Creator:     common.HexToAddress("0x00000000000000000000000000000000000000E2"),
+				TxHash:      common.HexToHash("0x9999"),
+				TxIndex:     7,
+				SourceCode:  sourceCode,
+			},
+		},
+	}
+	registry := NewProjectRegistry(store)
+
+	if err := registry.LoadProjects(context.Background()); err != nil {
+		t.Fatalf("load projects: %v", err)
+	}
+
+	project, ok, err := registry.GetProject(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok {
+		t.Fatal("project not found")
+	}
+	if project.Meta.SourceCode != sourceCode {
+		t.Fatalf("source code = %q, want %q", project.Meta.SourceCode, sourceCode)
 	}
 }

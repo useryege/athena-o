@@ -17,6 +17,7 @@ type ProjectMeta struct {
 	Tx          *types.Transaction
 	TxHash      common.Hash
 	TxIndex     uint64
+	SourceCode  string
 }
 
 type ProjectStore interface {

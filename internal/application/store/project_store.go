@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"math"
@@ -55,7 +56,8 @@ SELECT
   contract,
   creator,
   tx_hash,
-  tx_index
+  tx_index,
+  source_code
 FROM project
 ORDER BY block_number, tx_index, id
 `)
@@ -73,7 +75,8 @@ ORDER BY block_number, tx_index, id
 		var creator []byte
 		var txHash []byte
 		var txIndex int64
-		if err := rows.Scan(&meta.ProjectID, &blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex); err != nil {
+		var sourceCode sql.NullString
+		if err := rows.Scan(&meta.ProjectID, &blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode); err != nil {
 			return nil, fmt.Errorf("scan project meta: %w", err)
 		}
 		if blockNumber < 0 {
@@ -91,6 +94,7 @@ ORDER BY block_number, tx_index, id
 		meta.Creator = common.BytesToAddress(creator)
 		meta.TxHash = common.BytesToHash(txHash)
 		meta.TxIndex = uint64(txIndex)
+		meta.SourceCode = sourceCode.String
 		metas = append(metas, meta)
 	}
 	if err := rows.Err(); err != nil {

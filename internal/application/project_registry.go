@@ -285,6 +285,7 @@ func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 		Tx:          meta.Tx,
 		TxHash:      meta.TxHash,
 		TxIndex:     meta.TxIndex,
+		SourceCode:  meta.SourceCode,
 	}
 }
 
