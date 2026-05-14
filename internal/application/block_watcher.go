@@ -7,22 +7,31 @@ import (
 	"math/big"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/application/evm"
 )
 
 type BlockWatcher struct {
 	nodeClient *ethclient.Client
-	outputCh   chan<- *Project
+	registry   ProjectRegistry
+	fetcher    evm.AthenaFetcher
+	scheduler  ProjectScheduler
 	wg         sync.WaitGroup
 
 	chainID *big.Int
 }
 
-func NewBlockWatcher(nodeClient *ethclient.Client, outputCh chan<- *Project) *BlockWatcher {
+func NewBlockWatcher(
+	nodeClient *ethclient.Client,
+	registry ProjectRegistry,
+	fetcher evm.AthenaFetcher,
+	scheduler ProjectScheduler,
+) *BlockWatcher {
 	chainID, err := nodeClient.ChainID(context.Background())
 	if err != nil {
 		panic(err)
@@ -30,7 +39,9 @@ func NewBlockWatcher(nodeClient *ethclient.Client, outputCh chan<- *Project) *Bl
 
 	return &BlockWatcher{
 		nodeClient: nodeClient,
-		outputCh:   outputCh,
+		registry:   registry,
+		fetcher:    fetcher,
+		scheduler:  scheduler,
 		chainID:    chainID,
 	}
 }
@@ -92,6 +103,8 @@ func (w *BlockWatcher) run(ctx context.Context, startBlock uint64, endBlock uint
 			return fmt.Errorf("failed to get block %d: %w", blockNumber, err)
 		}
 
+		projects := make([]*Project, 0)
+		contracts := make([]common.Address, 0)
 		for txIndex, tx := range block.Transactions() {
 			if tx.To() == nil {
 				// query sender from transaction
@@ -113,11 +126,54 @@ func (w *BlockWatcher) run(ctx context.Context, startBlock uint64, endBlock uint
 						Creator:     from,
 					},
 				}
-				select {
-				case w.outputCh <- event:
-				case <-ctx.Done():
-					return ctx.Err()
-				}
+				projects = append(projects, event)
+				contracts = append(contracts, contractAddress)
+			}
+		}
+		if err := w.syncProjects(ctx, projects, contracts); err != nil {
+			return fmt.Errorf("failed to sync projects for block %d: %w", blockNumber, err)
+		}
+	}
+	return nil
+}
+
+func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project, contracts []common.Address) error {
+	if len(projects) == 0 {
+		return nil
+	}
+
+	snapshots, err := w.fetcher.FetchProjects(ctx, contracts)
+	if err != nil {
+		return err
+	}
+	if len(snapshots) != len(projects) {
+		return fmt.Errorf("athena list returned %d projects for %d token contracts", len(snapshots), len(projects))
+	}
+
+	for i, project := range projects {
+		snapshot := snapshots[i]
+		if snapshot.TokenContract != (common.Address{}) && snapshot.TokenContract != project.Meta.Contract {
+			return fmt.Errorf("athena list result %d token contract = %s, want %s", i, snapshot.TokenContract, project.Meta.Contract)
+		}
+		if !snapshot.Token.IsValidERC20 {
+			continue
+		}
+
+		project.ChainState = snapshot
+		if err := w.registry.SetProject(ctx, project.Meta.ProjectID, project); err != nil {
+			log.WithFields(log.Fields{
+				"projectID": project.Meta.ProjectID,
+				"error":     err,
+			}).Error("failed to store project")
+			continue
+		}
+
+		if w.scheduler != nil {
+			if err := w.scheduler.EnqueueProject(ctx, project); err != nil {
+				log.WithFields(log.Fields{
+					"projectID": project.Meta.ProjectID,
+					"error":     err,
+				}).Error("failed to schedule project sync")
 			}
 		}
 	}
