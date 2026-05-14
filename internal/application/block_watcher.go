@@ -74,6 +74,7 @@ func (w *BlockWatcher) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	log.WithField("cursor", cursor).Info("initialized block watcher cursor")
 	if err := w.catchUpToLatest(ctx, &cursor); err != nil {
 		return err
 	}
@@ -184,6 +185,7 @@ func (w *BlockWatcher) catchUpToLatest(ctx context.Context, cursor *uint64) erro
 		if err := w.processNextBlock(ctx, cursor); err != nil {
 			return err
 		}
+		log.WithField("cursor", *cursor).Info("caught up to latest block")
 	}
 }
 
@@ -217,6 +219,7 @@ func (w *BlockWatcher) followHeads(ctx context.Context, cursor *uint64) error {
 			if err := w.scanBlock(ctx, header.Number.Uint64()); err != nil {
 				return err
 			}
+			log.WithField("cursor", *cursor).Info("scanned block")
 		}
 	}
 }
