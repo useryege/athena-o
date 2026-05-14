@@ -46,7 +46,7 @@
     }
 
     &__table {
-        min-width: 1320px;
+        min-width: 1700px;
     }
 
     &__row {
@@ -58,6 +58,8 @@
             minmax(120px, 0.8fr)
             minmax(120px, 0.8fr)
             minmax(140px, 0.9fr)
+            minmax(150px, 1fr)
+            minmax(150px, 1fr)
             minmax(220px, 1.4fr);
         column-gap: 12px;
         align-items: center;

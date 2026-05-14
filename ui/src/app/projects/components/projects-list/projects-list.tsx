@@ -2,7 +2,7 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {history} from '../../../app';
 import {services} from '../../../shared/services';
-import {ProjectView} from '../../../shared/services/athena-application-service';
+import {ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
 import {ProjectListRow} from '../project-list-row/project-list-row';
 
 require('./projects-list.scss');
@@ -28,7 +28,9 @@ export const ProjectsList = () => {
     const [autoRefresh, setAutoRefresh] = React.useState(false);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
+    const [projectOptions, setProjectOptions] = React.useState<ProjectOptions | null>(null);
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
+    const optionsRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
 
@@ -41,7 +43,31 @@ export const ProjectsList = () => {
             requestRef.current.abort();
             requestRef.current = null;
         }
+        if (optionsRequestRef.current?.abort) {
+            optionsRequestRef.current.abort();
+            optionsRequestRef.current = null;
+        }
     }, []);
+
+    const loadProjectOptions = React.useCallback(async () => {
+        if (projectOptions || optionsRequestRef.current) {
+            return;
+        }
+        try {
+            const req = services.athenaApplication.getProjectOptions();
+            optionsRequestRef.current = req;
+            const options = await req;
+            if (isMountedRef.current) {
+                setProjectOptions(options || null);
+            }
+        } catch (err) {
+            if (isMountedRef.current) {
+                setError(err as Error);
+            }
+        } finally {
+            optionsRequestRef.current = null;
+        }
+    }, [projectOptions]);
 
     const loadProjects = React.useCallback(async () => {
         if (requestRef.current) {
@@ -76,12 +102,13 @@ export const ProjectsList = () => {
     React.useEffect(() => {
         isMountedRef.current = true;
         loadProjects();
+        loadProjectOptions();
 
         return () => {
             isMountedRef.current = false;
             cleanupRequests();
         };
-    }, [cleanupRequests, loadProjects]);
+    }, [cleanupRequests, loadProjectOptions, loadProjects]);
 
     const handleStart = React.useCallback(() => {
         if (intervalRef.current !== undefined) {
@@ -145,6 +172,8 @@ export const ProjectsList = () => {
                                         <div>Blacklist</div>
                                         <div>Mint Risk</div>
                                         <div>IsOpenSource</div>
+                                        <div>WETH Quote USDT</div>
+                                        <div>USDT Quote USDT</div>
                                         <div>区块时间</div>
                                     </div>
                                 </div>
@@ -160,6 +189,9 @@ export const ProjectsList = () => {
                                             key={getProjectRowKey(project, index)}
                                             project={project}
                                             index={index}
+                                            usdtDecimals={
+                                                projectOptions?.usdtDecimals ?? ((projectOptions as unknown as {[key: string]: unknown})?.usdt_decimals as number | undefined)
+                                            }
                                             onClick={project.meta?.projectID ? () => history.push(`/projects/${project.meta!.projectID}`) : undefined}
                                         />
                                     ))

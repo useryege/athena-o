@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-210-gd5390c7-dirty"
+    "version": "v1.0.0-211-g985d9e3-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -241,29 +241,6 @@
         }
       }
     },
-    "/api/v1/project/options": {
-      "get": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "GetProjectOptions returns the options.",
-        "operationId": "ApplicationService_GetProjectOptions",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationGetProjectOptionsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
     "/api/v1/project/{projectID}": {
       "get": {
         "tags": [
@@ -284,6 +261,29 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationGetProjectResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/options": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "GetProjectOptions returns the options.",
+        "operationId": "ApplicationService_GetProjectOptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetProjectOptionsResponse"
             }
           },
           "default": {

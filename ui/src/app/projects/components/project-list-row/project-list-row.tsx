@@ -45,13 +45,58 @@ const formatBlockTime = (blockTime: number | undefined) => {
     return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 };
 
-export const ProjectListRow = ({project, index, onClick}: {project: ProjectView; index: number; onClick?: () => void}) => {
+const normalizeDecimals = (decimals?: number | string) => {
+    if (typeof decimals === 'number' && Number.isInteger(decimals) && decimals >= 0) {
+        return decimals;
+    }
+    if (typeof decimals === 'string' && /^\d+$/.test(decimals)) {
+        return Number(decimals);
+    }
+    return undefined;
+};
+
+const formatQuoteUsdt = (rawValue?: string, decimals?: number | string) => {
+    if (rawValue === undefined || rawValue === null || rawValue === '') {
+        return '-';
+    }
+    const normalizedDecimals = normalizeDecimals(decimals);
+    if (normalizedDecimals === undefined) {
+        return '-';
+    }
+    const normalizedRawValue = rawValue.trim();
+    if (!/^\d+$/.test(normalizedRawValue)) {
+        return '-';
+    }
+
+    try {
+        const oneHundred = BigInt(100);
+        const value = BigInt(normalizedRawValue);
+        let factor = BigInt(1);
+        for (let i = 0; i < normalizedDecimals; i++) {
+            factor *= BigInt(10);
+        }
+        const scaled = value * oneHundred;
+        const rounded = (scaled + factor / BigInt(2)) / factor;
+        const integerPart = rounded / oneHundred;
+        const fractionalPart = rounded % oneHundred;
+        return `${integerPart.toString()}.${fractionalPart.toString().padStart(2, '0')}`;
+    } catch {
+        return '-';
+    }
+};
+
+export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project: ProjectView; index: number; usdtDecimals?: number; onClick?: () => void}) => {
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (onClick && (e.key === 'Enter' || e.key === ' ')) {
             e.preventDefault();
             onClick();
         }
     };
+
+    const wethPair = project.chainState?.wethPair as unknown as {[key: string]: unknown} | undefined;
+    const usdtPair = project.chainState?.usdtPair as unknown as {[key: string]: unknown} | undefined;
+    const wethQuoteUsdtValue = (wethPair?.quoteUsdtValue as string | undefined) ?? (wethPair?.quote_usdt_value as string | undefined);
+    const usdtQuoteUsdtValue = (usdtPair?.quoteUsdtValue as string | undefined) ?? (usdtPair?.quote_usdt_value as string | undefined);
 
     return (
         <div
@@ -95,6 +140,8 @@ export const ProjectListRow = ({project, index, onClick}: {project: ProjectView;
                         {isOpenSource(project) ? 'Yes' : 'No'}
                     </span>
                 </div>
+                <div className='projects-list__cell'>{formatQuoteUsdt(wethQuoteUsdtValue, usdtDecimals)}</div>
+                <div className='projects-list__cell'>{formatQuoteUsdt(usdtQuoteUsdtValue, usdtDecimals)}</div>
                 <div className='projects-list__cell'>{formatBlockTime(project.meta?.blockTime)}</div>
             </div>
         </div>

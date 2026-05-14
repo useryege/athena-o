@@ -69,6 +69,18 @@ export interface GetProjectResponse {
     item?: ProjectView;
 }
 
+export interface ProjectOptions {
+    factoryContract?: string;
+    wethContract?: string;
+    usdtContract?: string;
+    wethDecimals?: number;
+    usdtDecimals?: number;
+}
+
+export interface GetProjectOptionsResponse {
+    options?: ProjectOptions;
+}
+
 export interface SourceCodeBlacklistField {
     id?: number;
     field?: string;
@@ -93,6 +105,26 @@ export class AthenaApplicationService {
     public getProject(projectID: string): Promise<ProjectView> & {abort?: () => void} {
         const req = requests.get(`/project/${encodeURIComponent(projectID)}`);
         const promise = req.then(res => (res.body as GetProjectResponse).item) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getProjectOptions(): Promise<ProjectOptions | undefined> & {abort?: () => void} {
+        const req = requests.get('/projects/options');
+        const promise = req.then(res => {
+            const body = (res.body || {}) as any;
+            const options = (body.options || body) as any;
+            if (!options || typeof options !== 'object') {
+                return undefined;
+            }
+            return {
+                factoryContract: options.factoryContract ?? options.factory_contract,
+                wethContract: options.wethContract ?? options.weth_contract,
+                usdtContract: options.usdtContract ?? options.usdt_contract,
+                wethDecimals: typeof options.wethDecimals === 'number' ? options.wethDecimals : typeof options.weth_decimals === 'number' ? options.weth_decimals : undefined,
+                usdtDecimals: typeof options.usdtDecimals === 'number' ? options.usdtDecimals : typeof options.usdt_decimals === 'number' ? options.usdt_decimals : undefined
+            } as ProjectOptions;
+        }) as any;
         promise.abort = () => req.abort();
         return promise;
     }
