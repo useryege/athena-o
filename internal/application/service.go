@@ -101,6 +101,11 @@ func (s *Service) Start() error {
 			return err
 		}
 	}
+	if err := s.registry.LoadProjects(ctx); err != nil {
+		cancel()
+		s.clearPipelineLocked()
+		return err
+	}
 
 	s.projectSync = NewProjectSync(s.nodeClient, s.registry, athenaFetcher, apiFetcher, projectSimulator, s.delayedFetchSem)
 	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, s.projectSync)

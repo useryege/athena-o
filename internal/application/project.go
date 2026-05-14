@@ -26,6 +26,7 @@ type ProjectMeta struct {
 	Contract    common.Address
 	Creator     common.Address
 	Tx          *types.Transaction
+	TxHash      common.Hash
 	TxIndex     uint64
 }
 
@@ -78,6 +79,8 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 	txHash := ""
 	if project.Meta.Tx != nil {
 		txHash = project.Meta.Tx.Hash().Hex()
+	} else if project.Meta.TxHash != (common.Hash{}) {
+		txHash = project.Meta.TxHash.Hex()
 	}
 
 	chainState := project.ChainState

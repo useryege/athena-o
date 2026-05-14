@@ -15,11 +15,13 @@ type ProjectMeta struct {
 	Contract    common.Address
 	Creator     common.Address
 	Tx          *types.Transaction
+	TxHash      common.Hash
 	TxIndex     uint64
 }
 
 type ProjectStore interface {
 	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
+	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
 }
 
 type SourceCodeBlacklistStore interface {

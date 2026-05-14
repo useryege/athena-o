@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"errors"
 	"math/big"
 	"sync"
 
@@ -14,9 +13,11 @@ import (
 )
 
 type ProjectRegistry interface {
+	LoadProjects(ctx context.Context) error
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
 	ListProjects(ctx context.Context) ([]*Project, error)
 	ListProjectContracts(ctx context.Context) ([]ProjectContractRef, error)
+	MaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
 	SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error
 	UpdateProjectChainStates(ctx context.Context, states map[uuid.UUID]athenacontract.AthenaProject) error
 	UpdateProjectSourceCodeState(ctx context.Context, projectID uuid.UUID, state *ProjectSourceCodeState) error
@@ -49,6 +50,27 @@ func NewProjectRegistry(store appstore.ProjectStore) ProjectRegistry {
 		ProjectContractRefIndexes: make(map[uuid.UUID]int),
 		store:                     store,
 	}
+}
+
+func (r *projectRegistryImpl) LoadProjects(ctx context.Context) error {
+	if r.store == nil {
+		return nil
+	}
+	metas, err := r.store.ListProjectMetas(ctx)
+	if err != nil {
+		return err
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, meta := range metas {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		project := &Project{Meta: projectMetaFromStore(meta)}
+		r.setProjectLocked(project.Meta.ProjectID, project)
+	}
+	return nil
 }
 
 func (r *projectRegistryImpl) GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error) {
@@ -92,6 +114,26 @@ func (r *projectRegistryImpl) ListProjectContracts(ctx context.Context) ([]Proje
 	return refs, nil
 }
 
+func (r *projectRegistryImpl) MaxProjectBlockNumber(ctx context.Context) (uint64, bool, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var maxBlock uint64
+	var ok bool
+	for _, project := range r.Projects {
+		select {
+		case <-ctx.Done():
+			return 0, false, ctx.Err()
+		default:
+		}
+		if !ok || project.Meta.BlockNumber > maxBlock {
+			maxBlock = project.Meta.BlockNumber
+			ok = true
+		}
+	}
+	return maxBlock, ok, nil
+}
+
 func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -99,7 +141,23 @@ func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUI
 		return err
 	}
 	if _, ok := r.ProjectsByContract[project.Meta.Contract]; ok {
-		return errors.New("project already exists")
+		return nil
+	}
+	if r.store != nil {
+		if err := r.store.SaveProjectMeta(ctx, projectMetaToStore(project.Meta)); err != nil {
+			return err
+		}
+	}
+	r.setProjectLocked(projectID, project)
+	return nil
+}
+
+func (r *projectRegistryImpl) setProjectLocked(projectID uuid.UUID, project *Project) {
+	if project == nil {
+		return
+	}
+	if _, ok := r.ProjectsByContract[project.Meta.Contract]; ok {
+		return
 	}
 	r.ProjectsByContract[project.Meta.Contract] = struct{}{}
 	r.Projects[projectID] = cloneProject(project)
@@ -109,7 +167,6 @@ func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUI
 		Contract:  project.Meta.Contract,
 		Creator:   project.Meta.Creator,
 	})
-	return nil
 }
 
 func (r *projectRegistryImpl) UpdateProjectChainStates(ctx context.Context, states map[uuid.UUID]athenacontract.AthenaProject) error {
@@ -214,6 +271,36 @@ func cloneProject(project *Project) *Project {
 		SourceCode: cloneProjectSourceCodeState(&project.SourceCode),
 		Simulate:   cloneProjectSimulateState(&project.Simulate),
 		Analysis:   cloneProjectAnalysisState(&project.Analysis),
+	}
+}
+
+func projectMetaToStore(meta ProjectMeta) appstore.ProjectMeta {
+	txHash := meta.TxHash
+	if meta.Tx != nil {
+		txHash = meta.Tx.Hash()
+	}
+	return appstore.ProjectMeta{
+		ProjectID:   meta.ProjectID,
+		BlockTime:   meta.BlockTime,
+		BlockNumber: meta.BlockNumber,
+		Contract:    meta.Contract,
+		Creator:     meta.Creator,
+		Tx:          meta.Tx,
+		TxHash:      txHash,
+		TxIndex:     meta.TxIndex,
+	}
+}
+
+func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
+	return ProjectMeta{
+		ProjectID:   meta.ProjectID,
+		BlockTime:   meta.BlockTime,
+		BlockNumber: meta.BlockNumber,
+		Contract:    meta.Contract,
+		Creator:     meta.Creator,
+		Tx:          meta.Tx,
+		TxHash:      meta.TxHash,
+		TxIndex:     meta.TxIndex,
 	}
 }
 
