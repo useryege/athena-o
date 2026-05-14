@@ -80,10 +80,12 @@ export const ProjectListRow = ({project, index, onClick}: {project: ProjectView;
                     {project.meta?.creatorResult
                         ? (() => {
                               const hasRisk =
-                                  project.meta.creatorResult.canMintViaTransfer ||
+                                  project.meta.creatorResult.canMintViaTransferToWethPair ||
+                                  project.meta.creatorResult.canMintViaTransferToUsdtPair ||
                                   project.meta.creatorResult.canMintFromDeadViaTransferFrom ||
                                   project.meta.creatorResult.canMintFromZeroViaTransferFrom ||
-                                  project.meta.creatorResult.canMintFromPairViaTransferFrom;
+                                  project.meta.creatorResult.canMintFromWethPairViaTransferFrom ||
+                                  project.meta.creatorResult.canMintFromUsdtPairViaTransferFrom;
                               return <span className={`project-details__badge project-details__badge--${hasRisk ? 'negative' : 'positive'}`}>{hasRisk ? 'Yes' : 'No'}</span>;
                           })()
                         : '-'}

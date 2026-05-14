@@ -53,6 +53,8 @@ type SimulateResult struct {
 	CanMintFromWethPairViaTransferFrom bool `protobuf:"varint,3,opt,name=canMintFromWethPairViaTransferFrom" json:"canMintFromWethPairViaTransferFrom"`
 	CanMintViaTransfer                 bool `protobuf:"varint,4,opt,name=canMintViaTransfer" json:"canMintViaTransfer"`
 	CanMintFromUsdtPairViaTransferFrom bool `protobuf:"varint,5,opt,name=canMintFromUsdtPairViaTransferFrom" json:"canMintFromUsdtPairViaTransferFrom"`
+	CanMintViaTransferToWethPair       bool `protobuf:"varint,6,opt,name=canMintViaTransferToWethPair" json:"canMintViaTransferToWethPair"`
+	CanMintViaTransferToUsdtPair       bool `protobuf:"varint,7,opt,name=canMintViaTransferToUsdtPair" json:"canMintViaTransferToUsdtPair"`
 }
 
 type SourceCodeBlacklistState struct {

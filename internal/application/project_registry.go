@@ -297,12 +297,20 @@ func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 func cloneAthenaProject(project athenacontract.AthenaProject) athenacontract.AthenaProject {
 	project.UpdatedAt = cloneBigInt(project.UpdatedAt)
 	project.Token.TotalSupply = cloneBigInt(project.Token.TotalSupply)
-	project.Pair.TotalSupply = cloneBigInt(project.Pair.TotalSupply)
-	project.Pair.Reserve0 = cloneBigInt(project.Pair.Reserve0)
-	project.Pair.Reserve1 = cloneBigInt(project.Pair.Reserve1)
-	project.Pair.TokenReserveBalance = cloneBigInt(project.Pair.TokenReserveBalance)
-	project.Pair.WethReserveBalance = cloneBigInt(project.Pair.WethReserveBalance)
-	project.Pair.LockedLiquidity = cloneBigInt(project.Pair.LockedLiquidity)
+	project.WethPair.TotalSupply = cloneBigInt(project.WethPair.TotalSupply)
+	project.WethPair.LockedLiquidity = cloneBigInt(project.WethPair.LockedLiquidity)
+	project.WethPair.BaseBalance = cloneBigInt(project.WethPair.BaseBalance)
+	project.WethPair.QuoteBalance = cloneBigInt(project.WethPair.QuoteBalance)
+	project.WethPair.QuoteUsdtValue = cloneBigInt(project.WethPair.QuoteUsdtValue)
+	project.WethPair.Reserve0 = cloneBigInt(project.WethPair.Reserve0)
+	project.WethPair.Reserve1 = cloneBigInt(project.WethPair.Reserve1)
+	project.UsdtPair.TotalSupply = cloneBigInt(project.UsdtPair.TotalSupply)
+	project.UsdtPair.LockedLiquidity = cloneBigInt(project.UsdtPair.LockedLiquidity)
+	project.UsdtPair.BaseBalance = cloneBigInt(project.UsdtPair.BaseBalance)
+	project.UsdtPair.QuoteBalance = cloneBigInt(project.UsdtPair.QuoteBalance)
+	project.UsdtPair.QuoteUsdtValue = cloneBigInt(project.UsdtPair.QuoteUsdtValue)
+	project.UsdtPair.Reserve0 = cloneBigInt(project.UsdtPair.Reserve0)
+	project.UsdtPair.Reserve1 = cloneBigInt(project.UsdtPair.Reserve1)
 	return project
 }
 

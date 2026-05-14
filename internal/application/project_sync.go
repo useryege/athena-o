@@ -284,7 +284,8 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 					ctx,
 					job.ref.Creator,
 					job.ref.Contract,
-					snapshots[job.index].Pair.ContractAddress,
+					snapshots[job.index].WethPair.ContractAddress,
+					snapshots[job.index].UsdtPair.ContractAddress,
 					simulationStates[job.index],
 				)
 				simulateCallsDuration := time.Since(simulateCallStartedAt)

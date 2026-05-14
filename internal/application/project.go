@@ -30,34 +30,6 @@ type ProjectMeta struct {
 	SourceCodeBlacklist sourcecode.BlacklistReport
 }
 
-func (p *Project) IsPairBalanceOverSupply() bool {
-	if p == nil || p.ChainState.Pair.TokenReserveBalance == nil || p.ChainState.Token.TotalSupply == nil {
-		return false
-	}
-	return p.ChainState.Pair.TokenReserveBalance.Cmp(p.ChainState.Token.TotalSupply) > 0
-}
-
-func (p *Project) IsLowValuePool() bool {
-	if p == nil || p.ChainState.Pair.WethReserveBalance == nil {
-		return false
-	}
-	return p.ChainState.Pair.WethReserveBalance.Cmp(big.NewInt(MinWethValue)) < 0
-}
-
-func (p *Project) HasLiquidity() bool {
-	if p == nil || p.ChainState.Pair.Reserve0 == nil || p.ChainState.Pair.Reserve1 == nil {
-		return false
-	}
-	return p.ChainState.Pair.Reserve0.Sign() != 0 && p.ChainState.Pair.Reserve1.Sign() != 0
-}
-
-func (p *Project) HasOnlyMinimumLiquidity() bool {
-	if p == nil || p.ChainState.Pair.TotalSupply == nil {
-		return false
-	}
-	return p.ChainState.Pair.TotalSupply.Cmp(big.NewInt(1000)) == 0
-}
-
 func projectToView(project *Project) *v1alpha1.ProjectView {
 	if project == nil {
 		return nil
@@ -86,10 +58,12 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 			TxIndex:     project.Meta.TxIndex,
 			SourceCode:  sourceCode,
 			CreatorResult: v1alpha1.SimulateResult{
-				CanMintFromDeadViaTransferFrom: creatorResult.CanMintFromDeadViaTransferFrom,
-				CanMintFromZeroViaTransferFrom: creatorResult.CanMintFromZeroViaTransferFrom,
-				CanMintFromPairViaTransferFrom: creatorResult.CanMintFromPairViaTransferFrom,
-				CanMintViaTransfer:             creatorResult.CanMintViaTransfer,
+				CanMintFromDeadViaTransferFrom:     creatorResult.CanMintFromDeadViaTransferFrom,
+				CanMintFromZeroViaTransferFrom:     creatorResult.CanMintFromZeroViaTransferFrom,
+				CanMintFromWethPairViaTransferFrom: creatorResult.CanMintFromWethPairViaTransferFrom,
+				CanMintViaTransferToWethPair:       creatorResult.CanMintViaTransferToWethPair,
+				CanMintViaTransferToUsdtPair:       creatorResult.CanMintViaTransferToUsdtPair,
+				CanMintFromUsdtPairViaTransferFrom: creatorResult.CanMintFromUsdtPairViaTransferFrom,
 			},
 			SourceCodeBlacklist: v1alpha1.SourceCodeBlacklistState{
 				HasBlacklistFields: sourceCodeBlacklist.HasBlacklistFields,
@@ -104,20 +78,26 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 				TotalSupply:  bigIntToString(chainState.Token.TotalSupply),
 				IsValidERC20: chainState.Token.IsValidERC20,
 			},
-			Pair: v1alpha1.PairV2State{
-				IsCreated:           chainState.Pair.IsCreated,
-				Contract:            addressToString(chainState.Pair.ContractAddress),
-				Token0:              addressToString(chainState.Pair.Token0),
-				Token1:              addressToString(chainState.Pair.Token1),
-				TotalSupply:         bigIntToString(chainState.Pair.TotalSupply),
-				Reserve0:            bigIntToString(chainState.Pair.Reserve0),
-				Reserve1:            bigIntToString(chainState.Pair.Reserve1),
-				BlockTimestampLast:  chainState.Pair.BlockTimestampLast,
-				TokenReserveBalance: bigIntToString(chainState.Pair.TokenReserveBalance),
-				WethReserveBalance:  bigIntToString(chainState.Pair.WethReserveBalance),
-				LockedLiquidity:     bigIntToString(chainState.Pair.LockedLiquidity),
-			},
+			WethPair: pairToView(chainState.WethPair),
+			UsdtPair: pairToView(chainState.UsdtPair),
 		},
+	}
+}
+
+func pairToView(pair athenacontract.AthenaPair) v1alpha1.PairV2State {
+	return v1alpha1.PairV2State{
+		IsCreated:          pair.IsCreated,
+		Contract:           addressToString(pair.ContractAddress),
+		Token0:             addressToString(pair.Token0),
+		Token1:             addressToString(pair.Token1),
+		TotalSupply:        bigIntToString(pair.TotalSupply),
+		Reserve0:           bigIntToString(pair.Reserve0),
+		Reserve1:           bigIntToString(pair.Reserve1),
+		BlockTimestampLast: pair.BlockTimestampLast,
+		BaseBalance:        bigIntToString(pair.BaseBalance),
+		QuoteBalance:       bigIntToString(pair.QuoteBalance),
+		QuoteUsdtValue:     bigIntToString(pair.QuoteUsdtValue),
+		LockedLiquidity:    bigIntToString(pair.LockedLiquidity),
 	}
 }
 

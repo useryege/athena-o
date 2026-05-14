@@ -2,7 +2,7 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
 import {services} from '../../../shared/services';
-import {ProjectView} from '../../../shared/services/athena-application-service';
+import {PairV2State, ProjectView} from '../../../shared/services/athena-application-service';
 
 require('./project-details.scss');
 
@@ -14,6 +14,62 @@ const renderValue = (value: string | number | boolean | undefined) => {
     }
     return String(value);
 };
+
+const renderPairSection = (title: string, pair?: PairV2State) => (
+    <div className='white-box project-details__box'>
+        <div className='project-details__section-title'>{title}</div>
+        <div className='project-details__grid'>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Contract Created</span>
+                <span className='project-details__field-value'>{renderValue(pair?.isCreated)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Contract</span>
+                <span className='project-details__field-value'>{renderValue(pair?.contract)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Token 0</span>
+                <span className='project-details__field-value'>{renderValue(pair?.token0)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Token 1</span>
+                <span className='project-details__field-value'>{renderValue(pair?.token1)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Total Supply</span>
+                <span className='project-details__field-value'>{renderValue(pair?.totalSupply)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Reserve 0</span>
+                <span className='project-details__field-value'>{renderValue(pair?.reserve0)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Reserve 1</span>
+                <span className='project-details__field-value'>{renderValue(pair?.reserve1)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Block Timestamp Last</span>
+                <span className='project-details__field-value'>{renderValue(pair?.blockTimestampLast)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Base Balance</span>
+                <span className='project-details__field-value'>{renderValue(pair?.baseBalance)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Quote Balance</span>
+                <span className='project-details__field-value'>{renderValue(pair?.quoteBalance)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Quote USDT Value</span>
+                <span className='project-details__field-value'>{renderValue(pair?.quoteUsdtValue)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Locked Liquidity</span>
+                <span className='project-details__field-value'>{renderValue(pair?.lockedLiquidity)}</span>
+            </div>
+        </div>
+    </div>
+);
 
 interface RouteParams {
     projectID: string;
@@ -173,66 +229,28 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             </div>
                         )}
 
-                        <div className='white-box project-details__box'>
-                            <div className='project-details__section-title'>WETH V2 Pool</div>
-                            <div className='project-details__grid'>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Contract Created</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.isCreated)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Contract</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.contract)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Token 0</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.token0)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Token 1</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.token1)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Total Supply</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.totalSupply)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Reserve 0</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.reserve0)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Reserve 1</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.reserve1)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Block Timestamp Last</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.blockTimestampLast)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Token Reserve Balance</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.tokenReserveBalance)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>WETH Reserve Balance</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.wethReserveBalance)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Locked Liquidity</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.pair?.lockedLiquidity)}</span>
-                                </div>
-                            </div>
-                        </div>
+                        {renderPairSection('WETH V2 Pool', project.chainState?.wethPair)}
+                        {renderPairSection('USDT V2 Pool', project.chainState?.usdtPair)}
 
                         {project.meta?.creatorResult && (
                             <div className='white-box project-details__box'>
                                 <div className='project-details__section-title'>Simulation</div>
                                 <div className='project-details__grid'>
                                     <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Mint via Transfer</span>
+                                        <span className='project-details__field-label'>Mint via Transfer to WETH Pair</span>
                                         <span className='project-details__field-value'>
                                             <span
-                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintViaTransfer ? 'negative' : 'positive'}`}>
-                                                {project.meta.creatorResult.canMintViaTransfer ? 'Yes' : 'No'}
+                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintViaTransferToWethPair ? 'negative' : 'positive'}`}>
+                                                {project.meta.creatorResult.canMintViaTransferToWethPair ? 'Yes' : 'No'}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div className='project-details__field'>
+                                        <span className='project-details__field-label'>Mint via Transfer to USDT Pair</span>
+                                        <span className='project-details__field-value'>
+                                            <span
+                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintViaTransferToUsdtPair ? 'negative' : 'positive'}`}>
+                                                {project.meta.creatorResult.canMintViaTransferToUsdtPair ? 'Yes' : 'No'}
                                             </span>
                                         </span>
                                     </div>
@@ -255,11 +273,20 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                         </span>
                                     </div>
                                     <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Mint from Pair via transferFrom</span>
+                                        <span className='project-details__field-label'>Mint from WETH Pair via transferFrom</span>
                                         <span className='project-details__field-value'>
                                             <span
-                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromPairViaTransferFrom ? 'negative' : 'positive'}`}>
-                                                {project.meta.creatorResult.canMintFromPairViaTransferFrom ? 'Yes' : 'No'}
+                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromWethPairViaTransferFrom ? 'negative' : 'positive'}`}>
+                                                {project.meta.creatorResult.canMintFromWethPairViaTransferFrom ? 'Yes' : 'No'}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div className='project-details__field'>
+                                        <span className='project-details__field-label'>Mint from USDT Pair via transferFrom</span>
+                                        <span className='project-details__field-value'>
+                                            <span
+                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromUsdtPairViaTransferFrom ? 'negative' : 'positive'}`}>
+                                                {project.meta.creatorResult.canMintFromUsdtPairViaTransferFrom ? 'Yes' : 'No'}
                                             </span>
                                         </span>
                                     </div>

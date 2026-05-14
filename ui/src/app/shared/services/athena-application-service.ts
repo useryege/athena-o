@@ -20,7 +20,8 @@ export interface ProjectMeta {
 
 export interface ProjectChainState {
     token?: TokenState;
-    pair?: PairV2State;
+    wethPair?: PairV2State;
+    usdtPair?: PairV2State;
 }
 
 export interface TokenState {
@@ -40,8 +41,9 @@ export interface PairV2State {
     reserve0?: string;
     reserve1?: string;
     blockTimestampLast?: number;
-    tokenReserveBalance?: string;
-    wethReserveBalance?: string;
+    baseBalance?: string;
+    quoteBalance?: string;
+    quoteUsdtValue?: string;
     lockedLiquidity?: string;
 }
 
@@ -52,8 +54,10 @@ export interface ListProjectsResponse {
 export interface SimulateResult {
     canMintFromDeadViaTransferFrom?: boolean;
     canMintFromZeroViaTransferFrom?: boolean;
-    canMintFromPairViaTransferFrom?: boolean;
-    canMintViaTransfer?: boolean;
+    canMintFromWethPairViaTransferFrom?: boolean;
+    canMintFromUsdtPairViaTransferFrom?: boolean;
+    canMintViaTransferToWethPair?: boolean;
+    canMintViaTransferToUsdtPair?: boolean;
 }
 
 export interface SourceCodeBlacklistState {
