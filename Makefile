@@ -70,6 +70,8 @@ endif
 ATHENA_E2E_APISERVER_PORT?=8080
 ATHENA_E2E_REDIS_PORT?=6379
 ATHENA_POSTGRES_PORT?=5432
+# Host directory for local Postgres data (Docker bind mount or ATHENA_POSTGRES_LOCAL); must match hack/start-postgres-with-password.sh default.
+ATHENA_POSTGRES_DATA_DIR?=/tmp/athena-local/postgres
 ATHENA_E2E_DEX_PORT?=5556
 ATHENA_E2E_YARN_HOST?=localhost
 ATHENA_E2E_DISABLE_AUTH?=
@@ -504,6 +506,11 @@ athena-all: clean-debug
 .PHONY: run
 run:
 	bash ./hack/goreman-start.sh
+
+# Delete local PostgreSQL data directory so the next start can re-init (init SQL runs on fresh cluster). Stop goreman/postgres first if it is running.
+.PHONY: clean-postgres-data
+clean-postgres-data:
+	rm -rf "$(ATHENA_POSTGRES_DATA_DIR)"
 
 .PHONY: serve-docs-local
 serve-docs-local:

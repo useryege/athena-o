@@ -199,6 +199,17 @@ func (r *projectRegistryImpl) UpdateProjectSourceCodeState(ctx context.Context, 
 		return nil
 	}
 	project.SourceCode = cloneProjectSourceCodeState(state)
+	if r.store == nil || state == nil {
+		return nil
+	}
+
+	sourceCode, ready := state.SourceCode.Get()
+	if !ready {
+		return nil
+	}
+	if err := r.store.UpdateProjectSourceCode(ctx, projectID, sourceCode); err != nil {
+		return err
+	}
 	return nil
 }
 

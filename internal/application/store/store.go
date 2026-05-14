@@ -22,6 +22,7 @@ type ProjectMeta struct {
 type ProjectStore interface {
 	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
 	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
+	UpdateProjectSourceCode(ctx context.Context, projectID uuid.UUID, sourceCode string) error
 }
 
 type SourceCodeBlacklistStore interface {

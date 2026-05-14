@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS project (
   creator BYTEA NOT NULL,
   tx_hash BYTEA NOT NULL,
   tx_index BIGINT NOT NULL,
+  source_code TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_contract_len CHECK (length(contract) = 20),
   CONSTRAINT project_creator_len CHECK (length(creator) = 20),

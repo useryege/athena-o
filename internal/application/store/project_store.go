@@ -7,6 +7,7 @@ import (
 	"math"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/google/uuid"
 )
 
 func (s *SQLStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error {
@@ -96,4 +97,16 @@ ORDER BY block_number, tx_index, id
 		return nil, fmt.Errorf("iterate project metas: %w", err)
 	}
 	return metas, nil
+}
+
+func (s *SQLStore) UpdateProjectSourceCode(ctx context.Context, projectID uuid.UUID, sourceCode string) error {
+	_, err := s.db.ExecContext(ctx, `
+UPDATE project
+SET source_code = $2
+WHERE project_id = $1
+`, projectID, sourceCode)
+	if err != nil {
+		return fmt.Errorf("update project source code: %w", err)
+	}
+	return nil
 }
