@@ -48,6 +48,24 @@ func (m *PairV2State) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.FeeAddressHoldLiquidityRatio)
+	copy(dAtA[i:], m.FeeAddressHoldLiquidityRatio)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.FeeAddressHoldLiquidityRatio)))
+	i--
+	dAtA[i] = 0x7a
+	i--
+	if m.IsRemoveLiquidity {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x70
+	i -= len(m.FeeAddressHoldLiquidityBalance)
+	copy(dAtA[i:], m.FeeAddressHoldLiquidityBalance)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.FeeAddressHoldLiquidityBalance)))
+	i--
+	dAtA[i] = 0x6a
 	i -= len(m.LockedLiquidity)
 	copy(dAtA[i:], m.LockedLiquidity)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LockedLiquidity)))
@@ -536,6 +554,11 @@ func (m *PairV2State) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.LockedLiquidity)
 	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.FeeAddressHoldLiquidityBalance)
+	n += 1 + l + sovGenerated(uint64(l))
+	n += 2
+	l = len(m.FeeAddressHoldLiquidityRatio)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -682,6 +705,9 @@ func (this *PairV2State) String() string {
 		`QuoteBalance:` + fmt.Sprintf("%v", this.QuoteBalance) + `,`,
 		`QuoteUsdtValue:` + fmt.Sprintf("%v", this.QuoteUsdtValue) + `,`,
 		`LockedLiquidity:` + fmt.Sprintf("%v", this.LockedLiquidity) + `,`,
+		`FeeAddressHoldLiquidityBalance:` + fmt.Sprintf("%v", this.FeeAddressHoldLiquidityBalance) + `,`,
+		`IsRemoveLiquidity:` + fmt.Sprintf("%v", this.IsRemoveLiquidity) + `,`,
+		`FeeAddressHoldLiquidityRatio:` + fmt.Sprintf("%v", this.FeeAddressHoldLiquidityRatio) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1178,6 +1204,90 @@ func (m *PairV2State) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.LockedLiquidity = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FeeAddressHoldLiquidityBalance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FeeAddressHoldLiquidityBalance = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsRemoveLiquidity", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsRemoveLiquidity = bool(v != 0)
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FeeAddressHoldLiquidityRatio", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FeeAddressHoldLiquidityRatio = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -15,6 +15,13 @@ const renderValue = (value: string | number | boolean | undefined) => {
     return String(value);
 };
 
+const renderPercent = (value?: string) => {
+    if (value === undefined || value === null || value === '') {
+        return '-';
+    }
+    return `${value}%`;
+};
+
 const renderPairSection = (title: string, pair?: PairV2State) => (
     <div className='white-box project-details__box'>
         <div className='project-details__section-title'>{title}</div>
@@ -66,6 +73,18 @@ const renderPairSection = (title: string, pair?: PairV2State) => (
             <div className='project-details__field'>
                 <span className='project-details__field-label'>Locked Liquidity</span>
                 <span className='project-details__field-value'>{renderValue(pair?.lockedLiquidity)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Fee Address Hold Liquidity Balance</span>
+                <span className='project-details__field-value'>{renderValue(pair?.feeAddressHoldLiquidityBalance)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Is Remove Liquidity</span>
+                <span className='project-details__field-value'>{renderValue(pair?.isRemoveLiquidity)}</span>
+            </div>
+            <div className='project-details__field'>
+                <span className='project-details__field-label'>Fee Address Hold Liquidity Ratio</span>
+                <span className='project-details__field-value'>{renderPercent(pair?.feeAddressHoldLiquidityRatio)}</span>
             </div>
         </div>
     </div>

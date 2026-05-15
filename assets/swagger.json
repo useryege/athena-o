@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-211-g985d9e3-dirty"
+    "version": "v1.0.0-215-ga1cee15-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -982,7 +982,16 @@
         "contract": {
           "type": "string"
         },
+        "feeAddressHoldLiquidityBalance": {
+          "type": "string"
+        },
+        "feeAddressHoldLiquidityRatio": {
+          "type": "string"
+        },
         "isCreated": {
+          "type": "boolean"
+        },
+        "isRemoveLiquidity": {
           "type": "boolean"
         },
         "lockedLiquidity": {

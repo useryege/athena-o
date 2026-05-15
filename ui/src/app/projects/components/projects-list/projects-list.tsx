@@ -174,6 +174,8 @@ export const ProjectsList = () => {
                                         <div>IsOpenSource</div>
                                         <div>WETH Quote USDT</div>
                                         <div>USDT Quote USDT</div>
+                                        <div>WETH RemoveLiquidity</div>
+                                        <div>USDT RemoveLiquidity</div>
                                         <div>区块时间</div>
                                     </div>
                                 </div>

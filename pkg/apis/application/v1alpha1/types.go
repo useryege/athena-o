@@ -33,18 +33,21 @@ type TokenState struct {
 }
 
 type PairV2State struct {
-	IsCreated          bool   `protobuf:"varint,1,opt,name=isCreated" json:"isCreated"`
-	Contract           string `protobuf:"bytes,2,opt,name=contract" json:"contract"`
-	Token0             string `protobuf:"bytes,3,opt,name=token0" json:"token0"`
-	Token1             string `protobuf:"bytes,4,opt,name=token1" json:"token1"`
-	TotalSupply        string `protobuf:"bytes,5,opt,name=totalSupply" json:"totalSupply"`
-	Reserve0           string `protobuf:"bytes,6,opt,name=reserve0" json:"reserve0"`
-	Reserve1           string `protobuf:"bytes,7,opt,name=reserve1" json:"reserve1"`
-	BlockTimestampLast uint32 `protobuf:"varint,8,opt,name=blockTimestampLast" json:"blockTimestampLast"`
-	BaseBalance        string `protobuf:"bytes,9,opt,name=baseBalance" json:"baseBalance"`
-	QuoteBalance       string `protobuf:"bytes,10,opt,name=quoteBalance" json:"quoteBalance"`
-	QuoteUsdtValue     string `protobuf:"bytes,11,opt,name=quoteUsdtValue" json:"quoteUsdtValue"`
-	LockedLiquidity    string `protobuf:"bytes,12,opt,name=lockedLiquidity" json:"lockedLiquidity"`
+	IsCreated                      bool   `protobuf:"varint,1,opt,name=isCreated" json:"isCreated"`
+	Contract                       string `protobuf:"bytes,2,opt,name=contract" json:"contract"`
+	Token0                         string `protobuf:"bytes,3,opt,name=token0" json:"token0"`
+	Token1                         string `protobuf:"bytes,4,opt,name=token1" json:"token1"`
+	TotalSupply                    string `protobuf:"bytes,5,opt,name=totalSupply" json:"totalSupply"`
+	Reserve0                       string `protobuf:"bytes,6,opt,name=reserve0" json:"reserve0"`
+	Reserve1                       string `protobuf:"bytes,7,opt,name=reserve1" json:"reserve1"`
+	BlockTimestampLast             uint32 `protobuf:"varint,8,opt,name=blockTimestampLast" json:"blockTimestampLast"`
+	BaseBalance                    string `protobuf:"bytes,9,opt,name=baseBalance" json:"baseBalance"`
+	QuoteBalance                   string `protobuf:"bytes,10,opt,name=quoteBalance" json:"quoteBalance"`
+	QuoteUsdtValue                 string `protobuf:"bytes,11,opt,name=quoteUsdtValue" json:"quoteUsdtValue"`
+	LockedLiquidity                string `protobuf:"bytes,12,opt,name=lockedLiquidity" json:"lockedLiquidity"`
+	FeeAddressHoldLiquidityBalance string `protobuf:"bytes,13,opt,name=feeAddressHoldLiquidityBalance" json:"feeAddressHoldLiquidityBalance"`
+	IsRemoveLiquidity              bool   `protobuf:"varint,14,opt,name=isRemoveLiquidity" json:"isRemoveLiquidity"`
+	FeeAddressHoldLiquidityRatio   string `protobuf:"bytes,15,opt,name=feeAddressHoldLiquidityRatio" json:"feeAddressHoldLiquidityRatio"`
 }
 
 type SimulateResult struct {

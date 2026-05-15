@@ -137,6 +137,24 @@ export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project
                 </div>
                 <div className='projects-list__cell'>{formatQuoteUsdt(project.chainState?.wethPair?.quoteUsdtValue, usdtDecimals)}</div>
                 <div className='projects-list__cell'>{formatQuoteUsdt(project.chainState?.usdtPair?.quoteUsdtValue, usdtDecimals)}</div>
+                <div className='projects-list__cell'>
+                    {project.chainState?.wethPair?.isRemoveLiquidity !== undefined ? (
+                        <span className={`project-details__badge project-details__badge--${project.chainState.wethPair.isRemoveLiquidity ? 'negative' : 'positive'}`}>
+                            {project.chainState.wethPair.isRemoveLiquidity ? 'Yes' : 'No'}
+                        </span>
+                    ) : (
+                        '-'
+                    )}
+                </div>
+                <div className='projects-list__cell'>
+                    {project.chainState?.usdtPair?.isRemoveLiquidity !== undefined ? (
+                        <span className={`project-details__badge project-details__badge--${project.chainState.usdtPair.isRemoveLiquidity ? 'negative' : 'positive'}`}>
+                            {project.chainState.usdtPair.isRemoveLiquidity ? 'Yes' : 'No'}
+                        </span>
+                    ) : (
+                        '-'
+                    )}
+                </div>
                 <div className='projects-list__cell'>{formatBlockTime(project.meta?.blockTime)}</div>
             </div>
         </div>

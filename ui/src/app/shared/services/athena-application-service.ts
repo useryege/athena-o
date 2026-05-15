@@ -45,6 +45,9 @@ export interface PairV2State {
     quoteBalance?: string;
     quoteUsdtValue?: string;
     lockedLiquidity?: string;
+    feeAddressHoldLiquidityBalance?: string;
+    isRemoveLiquidity?: boolean;
+    feeAddressHoldLiquidityRatio?: string;
 }
 
 export interface ListProjectsResponse {

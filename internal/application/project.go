@@ -86,18 +86,21 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 
 func pairToView(pair athenacontract.AthenaPair) v1alpha1.PairV2State {
 	return v1alpha1.PairV2State{
-		IsCreated:          pair.IsCreated,
-		Contract:           addressToString(pair.ContractAddress),
-		Token0:             addressToString(pair.Token0),
-		Token1:             addressToString(pair.Token1),
-		TotalSupply:        bigIntToString(pair.TotalSupply),
-		Reserve0:           bigIntToString(pair.Reserve0),
-		Reserve1:           bigIntToString(pair.Reserve1),
-		BlockTimestampLast: pair.BlockTimestampLast,
-		BaseBalance:        bigIntToString(pair.BaseBalance),
-		QuoteBalance:       bigIntToString(pair.QuoteBalance),
-		QuoteUsdtValue:     bigIntToString(pair.QuoteUsdtValue),
-		LockedLiquidity:    bigIntToString(pair.LockedLiquidity),
+		IsCreated:                      pair.IsCreated,
+		Contract:                       addressToString(pair.ContractAddress),
+		Token0:                         addressToString(pair.Token0),
+		Token1:                         addressToString(pair.Token1),
+		TotalSupply:                    bigIntToString(pair.TotalSupply),
+		Reserve0:                       bigIntToString(pair.Reserve0),
+		Reserve1:                       bigIntToString(pair.Reserve1),
+		BlockTimestampLast:             pair.BlockTimestampLast,
+		BaseBalance:                    bigIntToString(pair.BaseBalance),
+		QuoteBalance:                   bigIntToString(pair.QuoteBalance),
+		QuoteUsdtValue:                 bigIntToString(pair.QuoteUsdtValue),
+		LockedLiquidity:                bigIntToString(pair.LockedLiquidity),
+		FeeAddressHoldLiquidityBalance: bigIntToString(pair.FeeAddressHoldLiquidityBalance),
+		IsRemoveLiquidity:              pair.IsRemoveLiquidity,
+		FeeAddressHoldLiquidityRatio:   bigIntToString(pair.FeeAddressHoldLiquidityRatio),
 	}
 }
 
