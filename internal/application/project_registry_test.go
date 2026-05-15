@@ -29,6 +29,10 @@ func (m *projectStoreMock) ListProjectMetas(ctx context.Context) ([]appstore.Pro
 	return m.listProjectMetas, m.listProjectMetasErr
 }
 
+func (m *projectStoreMock) ListAllProjectMetas(ctx context.Context) ([]appstore.ProjectMeta, error) {
+	return m.listProjectMetas, m.listProjectMetasErr
+}
+
 func (m *projectStoreMock) UpdateProjectSourceCode(ctx context.Context, projectID uuid.UUID, sourceCode string) error {
 	m.updateSourceCodeCalls++
 	m.updateProjectID = projectID

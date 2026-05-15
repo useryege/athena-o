@@ -81,6 +81,41 @@ ORDER BY block_number, tx_index, id
 	return metas, nil
 }
 
+func (s *SQLStore) ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, error) {
+	rows, err := s.db.QueryContext(ctx, `
+SELECT
+  project_id,
+  block_number,
+  block_time,
+  contract,
+  creator,
+  tx_hash,
+  tx_index,
+  source_code,
+  is_archived,
+  archived_at
+FROM project
+ORDER BY block_number, tx_index, id
+`)
+	if err != nil {
+		return nil, fmt.Errorf("list all project metas: %w", err)
+	}
+	defer rows.Close()
+
+	metas := make([]ProjectMeta, 0)
+	for rows.Next() {
+		meta, err := scanProjectMetaRow(rows, true)
+		if err != nil {
+			return nil, err
+		}
+		metas = append(metas, meta)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate all project metas: %w", err)
+	}
+	return metas, nil
+}
+
 func (s *SQLStore) UpdateProjectSourceCode(ctx context.Context, projectID uuid.UUID, sourceCode string) error {
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project

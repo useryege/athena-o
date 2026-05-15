@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -15,10 +16,17 @@ import (
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/sourcecode"
 	appstore "github.com/useryege/athena/internal/application/store"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	activeRedisFlushInterval = 3 * time.Second
+	archivedRefreshInterval  = time.Hour
+	bootstrapRetryInterval   = 3 * time.Second
 )
 
 type Service struct {
@@ -43,8 +51,9 @@ type Service struct {
 	sourceAnalyzer  sourcecode.Analyzer
 	sourceBlacklist appcache.SourceCodeBlacklistModel
 
-	registry ProjectRegistry
-	store    appstore.Store
+	registry     ProjectRegistry
+	store        appstore.Store
+	projectCache ProjectSnapshotCache
 
 	delayedFetchSem chan struct{}
 	startStopMu     sync.Mutex
@@ -65,6 +74,7 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		nodeClient:          nodeClient,
 		registry:            registry,
 		store:               store,
+		projectCache:        NewProjectSnapshotCache(redisClient),
 		sourceAnalyzer:      sourceAnalyzer,
 		sourceBlacklist:     sourceBlacklist,
 		delayedFetchSem:     make(chan struct{}, defaultDelayedFetchConcurrency),
@@ -110,7 +120,8 @@ func (s *Service) Start() error {
 			return err
 		}
 	}
-	if err := s.registry.LoadProjects(ctx); err != nil {
+
+	if err := s.bootstrapProjectCaches(ctx, athenaFetcher, projectSimulator); err != nil {
 		cancel()
 		s.clearPipelineLocked()
 		return err
@@ -141,10 +152,163 @@ func (s *Service) Start() error {
 		return err
 	}
 
+	go s.runActiveRedisFlushLoop(ctx)
+	go s.runArchivedRefreshLoop(ctx, athenaFetcher, projectSimulator)
+
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
 	s.started = true
 	return nil
+}
+
+func (s *Service) bootstrapProjectCaches(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) error {
+	store, ok := s.store.(appstore.ProjectStore)
+	if !ok || store == nil {
+		return status.Error(codes.FailedPrecondition, "project store is not configured")
+	}
+
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		metas, err := store.ListAllProjectMetas(ctx)
+		if err != nil {
+			time.Sleep(bootstrapRetryInterval)
+			continue
+		}
+		projects, err := s.buildProjectsFromMetas(ctx, metas, fetcher, simulator)
+		if err != nil {
+			time.Sleep(bootstrapRetryInterval)
+			continue
+		}
+		if err := s.projectCache.ReplaceAll(ctx, projects); err != nil {
+			time.Sleep(bootstrapRetryInterval)
+			continue
+		}
+		activeProjects, err := s.projectCache.ListActiveProjects(ctx)
+		if err != nil {
+			time.Sleep(bootstrapRetryInterval)
+			continue
+		}
+		for _, project := range activeProjects {
+			if err := s.registry.SetProject(ctx, project.Meta.ProjectID, project); err != nil {
+				time.Sleep(bootstrapRetryInterval)
+				continue
+			}
+		}
+		return nil
+	}
+}
+
+func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta, fetcher evm.AthenaFetcher, simulator ProjectSimulator) ([]*Project, error) {
+	projects := make([]*Project, 0, len(metas))
+	if len(metas) == 0 {
+		return projects, nil
+	}
+
+	queries := make([]athenacontract.AthenaProjectQuery, 0, len(metas))
+	for _, meta := range metas {
+		queries = append(queries, athenacontract.AthenaProjectQuery{TokenContract: meta.Contract, MsgCaller: meta.Creator})
+	}
+
+	fetched, err := fetcher.FetchProjectsWithSimulationState(ctx, queries)
+	if err != nil {
+		return nil, err
+	}
+	if len(fetched) != len(metas) {
+		return nil, fmt.Errorf("fetch projects with simulation state size mismatch: got %d want %d", len(fetched), len(metas))
+	}
+
+	for i, meta := range metas {
+		project := &Project{
+			Meta:       projectMetaFromStore(meta),
+			ChainState: fetched[i].Project,
+		}
+		if simulator != nil {
+			result, err := simulator.SimulatePrimary(
+				ctx,
+				meta.Creator,
+				meta.Contract,
+				fetched[i].Project.WethPair.ContractAddress,
+				fetched[i].Project.UsdtPair.ContractAddress,
+				fetched[i].SimulationState,
+			)
+			if err != nil {
+				return nil, err
+			}
+			project.Meta.CreatorResult = result
+		}
+		projects = append(projects, project)
+	}
+	return projects, nil
+}
+
+func (s *Service) runActiveRedisFlushLoop(ctx context.Context) {
+	ticker := time.NewTicker(activeRedisFlushInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			projects, err := s.registry.ListProjects(ctx)
+			if err != nil {
+				continue
+			}
+			for _, project := range projects {
+				_ = s.projectCache.SetProject(ctx, project)
+			}
+		}
+	}
+}
+
+func (s *Service) runArchivedRefreshLoop(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) {
+	ticker := time.NewTicker(archivedRefreshInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_ = s.refreshArchivedProjects(ctx, fetcher, simulator)
+		}
+	}
+}
+
+func (s *Service) refreshArchivedProjects(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) error {
+	page := int32(1)
+	for {
+		items, total, current, pageSize, err := s.projectCache.ListArchivedProjects(ctx, page, 200)
+		if err != nil {
+			return err
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		metas := make([]appstore.ProjectMeta, 0, len(items))
+		for _, item := range items {
+			meta := projectMetaToStore(item.Meta)
+			meta.IsArchived = true
+			meta.ArchivedAt = item.Meta.ArchivedAt
+			metas = append(metas, meta)
+		}
+		updated, err := s.buildProjectsFromMetas(ctx, metas, fetcher, simulator)
+		if err != nil {
+			return err
+		}
+		for _, project := range updated {
+			project.Meta.IsArchived = true
+			if err := s.projectCache.SetProject(ctx, project); err != nil {
+				return err
+			}
+		}
+		if int64(current*pageSize) >= total {
+			return nil
+		}
+		page++
+	}
 }
 
 func (s *Service) Stop() error {
@@ -220,7 +384,7 @@ func (s *Service) DeleteSourceCodeBlacklistField(ctx context.Context, req *appli
 
 func (s *Service) ListProjects(ctx context.Context, _ *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {
 	startedAt := time.Now()
-	projects, err := s.registry.ListProjects(ctx)
+	projects, err := s.projectCache.ListActiveProjects(ctx)
 	projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
 	if err != nil {
 		return nil, err
@@ -241,12 +405,12 @@ func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProject
 	}
 
 	startedAt := time.Now()
-	project, ok, err := s.registry.GetProject(ctx, projectID)
+	project, ok, err := s.projectCache.GetProject(ctx, projectID)
 	projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
+	if !ok || project.Meta.IsArchived {
 		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
 	}
 
@@ -283,6 +447,17 @@ func (s *Service) ArchiveProject(ctx context.Context, req *applicationpkg.Archiv
 	if err := s.store.ArchiveProjectByID(ctx, projectID); err != nil {
 		return nil, err
 	}
+	project, ok, err := s.registry.GetProject(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	if ok && project != nil {
+		project.Meta.IsArchived = true
+		project.Meta.ArchivedAt = time.Now()
+		if err := s.projectCache.SetProject(ctx, project); err != nil {
+			return nil, err
+		}
+	}
 	if err := s.registry.RemoveProject(ctx, projectID); err != nil {
 		return nil, err
 	}
@@ -307,37 +482,34 @@ func (s *Service) UnarchiveProject(ctx context.Context, req *applicationpkg.Unar
 	if err := s.store.UnarchiveProjectByID(ctx, projectID); err != nil {
 		return nil, err
 	}
-	updatedMeta, err := s.store.GetProjectMetaByID(ctx, projectID)
+	project, ok, err := s.projectCache.GetProject(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	if updatedMeta == nil {
-		return nil, status.Errorf(codes.NotFound, "project %q not found after unarchive", req.GetProjectID())
+	if !ok || project == nil {
+		project = &Project{Meta: projectMetaFromStore(*meta)}
 	}
-	if err := s.registry.SetProject(ctx, projectID, &Project{Meta: projectMetaFromStore(*updatedMeta)}); err != nil {
+	project.Meta.IsArchived = false
+	project.Meta.ArchivedAt = time.Time{}
+	if err := s.projectCache.SetProject(ctx, project); err != nil {
+		return nil, err
+	}
+	if err := s.registry.SetProject(ctx, projectID, project); err != nil {
 		return nil, err
 	}
 	return &applicationpkg.UnarchiveProjectResponse{}, nil
 }
 
 func (s *Service) ListArchivedProjects(ctx context.Context, req *applicationpkg.ListArchivedProjectsRequest) (*applicationpkg.ListArchivedProjectsResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "project store is not configured")
-	}
-	metas, total, page, pageSize, err := s.store.ListArchivedProjectMetas(ctx, req.GetPage(), req.GetPageSize())
+	projects, total, page, pageSize, err := s.projectCache.ListArchivedProjects(ctx, req.GetPage(), req.GetPageSize())
 	if err != nil {
 		return nil, err
 	}
-	items := make([]*v1alpha1.ProjectView, 0, len(metas))
-	for _, meta := range metas {
-		items = append(items, projectToView(&Project{Meta: projectMetaFromStore(meta)}))
+	items := make([]*v1alpha1.ProjectView, 0, len(projects))
+	for _, project := range projects {
+		items = append(items, projectToView(project))
 	}
-	return &applicationpkg.ListArchivedProjectsResponse{
-		Items:    items,
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-	}, nil
+	return &applicationpkg.ListArchivedProjectsResponse{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
 func (s *Service) GetArchivedProject(ctx context.Context, req *applicationpkg.GetArchivedProjectRequest) (*applicationpkg.GetArchivedProjectResponse, error) {
@@ -345,17 +517,12 @@ func (s *Service) GetArchivedProject(ctx context.Context, req *applicationpkg.Ge
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid projectID %q: %v", req.GetProjectID(), err)
 	}
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "project store is not configured")
-	}
-	meta, err := s.store.GetArchivedProjectMetaByID(ctx, projectID)
+	project, ok, err := s.projectCache.GetProject(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	if meta == nil {
+	if !ok || !project.Meta.IsArchived {
 		return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetProjectID())
 	}
-	return &applicationpkg.GetArchivedProjectResponse{
-		Item: projectToView(&Project{Meta: projectMetaFromStore(*meta)}),
-	}, nil
+	return &applicationpkg.GetArchivedProjectResponse{Item: projectToView(project)}, nil
 }
