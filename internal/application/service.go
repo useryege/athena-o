@@ -129,7 +129,7 @@ func (s *Service) Start() error {
 
 	s.projectSync = NewProjectSync(s.nodeClient, s.registry, athenaFetcher, apiFetcher, projectSimulator)
 	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, s.projectSync)
-	s.blockWatcher = NewBlockWatcher(s.nodeClient, s.registry, athenaFetcher)
+	s.blockWatcher = NewBlockWatcher(s.nodeClient, s.registry, s.projectCache, athenaFetcher)
 	if err := s.blockSubscriber.Start(ctx); err != nil {
 		cancel()
 		s.clearPipelineLocked()

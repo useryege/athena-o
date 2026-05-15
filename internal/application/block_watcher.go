@@ -20,10 +20,11 @@ import (
 const initialProjectSyncLookback = 30 * 24 * time.Hour
 
 type BlockWatcher struct {
-	nodeClient *ethclient.Client
-	registry   ProjectRegistry
-	fetcher    evm.AthenaFetcher
-	wg         sync.WaitGroup
+	nodeClient   *ethclient.Client
+	registry     ProjectRegistry
+	projectCache ProjectSnapshotCache
+	fetcher      evm.AthenaFetcher
+	wg           sync.WaitGroup
 
 	chainID *big.Int
 }
@@ -31,6 +32,7 @@ type BlockWatcher struct {
 func NewBlockWatcher(
 	nodeClient *ethclient.Client,
 	registry ProjectRegistry,
+	projectCache ProjectSnapshotCache,
 	fetcher evm.AthenaFetcher,
 ) *BlockWatcher {
 	chainID, err := nodeClient.ChainID(context.Background())
@@ -39,10 +41,11 @@ func NewBlockWatcher(
 	}
 
 	return &BlockWatcher{
-		nodeClient: nodeClient,
-		registry:   registry,
-		fetcher:    fetcher,
-		chainID:    chainID,
+		nodeClient:   nodeClient,
+		registry:     registry,
+		projectCache: projectCache,
+		fetcher:      fetcher,
+		chainID:      chainID,
 	}
 }
 
@@ -79,7 +82,7 @@ func (w *BlockWatcher) run(ctx context.Context) error {
 }
 
 func (w *BlockWatcher) loadCursor(ctx context.Context) (uint64, error) {
-	maxBlock, ok, err := w.registry.MaxProjectBlockNumber(ctx)
+	maxBlock, ok, err := w.projectCache.GetMaxProjectBlockNumber(ctx)
 	if err != nil {
 		return 0, err
 	}

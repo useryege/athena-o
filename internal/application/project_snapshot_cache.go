@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,6 +17,7 @@ const (
 	projectDataHashKey   = "project:data"
 	projectIndexActive   = "project:index:active"
 	projectIndexArchived = "project:index:archived"
+	projectMaxBlockKey   = "project:max_block_number"
 )
 
 type ProjectSnapshotCache interface {
@@ -23,6 +25,8 @@ type ProjectSnapshotCache interface {
 	SetProject(ctx context.Context, project *Project) error
 	DeleteProject(ctx context.Context, projectID uuid.UUID) error
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
+	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
+	SetMaxProjectBlockNumber(ctx context.Context, block uint64) error
 	ListActiveProjects(ctx context.Context) ([]*Project, error)
 	ListArchivedProjects(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error)
 }
@@ -43,12 +47,14 @@ func (c *RedisProjectSnapshotCache) ReplaceAll(ctx context.Context, projects []*
 		return nil
 	}
 	pipe := c.client.TxPipeline()
-	pipe.Del(ctx, projectDataHashKey, projectIndexActive, projectIndexArchived)
+	pipe.Del(ctx, projectDataHashKey, projectIndexActive, projectIndexArchived, projectMaxBlockKey)
 	if len(projects) == 0 {
 		_, err := pipe.Exec(ctx)
 		return err
 	}
 
+	var maxBlock uint64
+	var hasMaxBlock bool
 	for _, project := range projects {
 		if project == nil {
 			continue
@@ -63,6 +69,13 @@ func (c *RedisProjectSnapshotCache) ReplaceAll(ctx context.Context, projects []*
 		} else {
 			pipe.ZAdd(ctx, projectIndexActive, redis.Z{Score: activeScore(project), Member: project.Meta.ProjectID.String()})
 		}
+		if !hasMaxBlock || project.Meta.BlockNumber > maxBlock {
+			maxBlock = project.Meta.BlockNumber
+			hasMaxBlock = true
+		}
+	}
+	if hasMaxBlock {
+		pipe.Set(ctx, projectMaxBlockKey, strconv.FormatUint(maxBlock, 10), 0)
 	}
 	_, err := pipe.Exec(ctx)
 	return err
@@ -85,6 +98,10 @@ func (c *RedisProjectSnapshotCache) SetProject(ctx context.Context, project *Pro
 		pipe.ZRem(ctx, projectIndexArchived, project.Meta.ProjectID.String())
 		pipe.ZAdd(ctx, projectIndexActive, redis.Z{Score: activeScore(project), Member: project.Meta.ProjectID.String()})
 	}
+	pipe.SetArgs(ctx, projectMaxBlockKey, strconv.FormatUint(project.Meta.BlockNumber, 10), redis.SetArgs{
+		TTL:  0,
+		Mode: "GT",
+	})
 	_, err = pipe.Exec(ctx)
 	return err
 }
@@ -117,6 +134,34 @@ func (c *RedisProjectSnapshotCache) GetProject(ctx context.Context, projectID uu
 		return nil, false, err
 	}
 	return &project, true, nil
+}
+
+func (c *RedisProjectSnapshotCache) GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error) {
+	if c == nil || c.client == nil {
+		return 0, false, nil
+	}
+	value, err := c.client.Get(ctx, projectMaxBlockKey).Result()
+	if errors.Is(err, redis.Nil) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	maxBlock, err := strconv.ParseUint(value, 10, 64)
+	if err != nil {
+		return 0, false, fmt.Errorf("parse max project block number: %w", err)
+	}
+	return maxBlock, true, nil
+}
+
+func (c *RedisProjectSnapshotCache) SetMaxProjectBlockNumber(ctx context.Context, block uint64) error {
+	if c == nil || c.client == nil {
+		return nil
+	}
+	return c.client.SetArgs(ctx, projectMaxBlockKey, strconv.FormatUint(block, 10), redis.SetArgs{
+		TTL:  0,
+		Mode: "GT",
+	}).Err()
 }
 
 func (c *RedisProjectSnapshotCache) ListActiveProjects(ctx context.Context) ([]*Project, error) {
