@@ -93,11 +93,6 @@ export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project
         }
     };
 
-    const wethPair = project.chainState?.wethPair as unknown as {[key: string]: unknown} | undefined;
-    const usdtPair = project.chainState?.usdtPair as unknown as {[key: string]: unknown} | undefined;
-    const wethQuoteUsdtValue = (wethPair?.quoteUsdtValue as string | undefined) ?? (wethPair?.quote_usdt_value as string | undefined);
-    const usdtQuoteUsdtValue = (usdtPair?.quoteUsdtValue as string | undefined) ?? (usdtPair?.quote_usdt_value as string | undefined);
-
     return (
         <div
             className='argo-table-list__row'
@@ -140,8 +135,8 @@ export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project
                         {isOpenSource(project) ? 'Yes' : 'No'}
                     </span>
                 </div>
-                <div className='projects-list__cell'>{formatQuoteUsdt(wethQuoteUsdtValue, usdtDecimals)}</div>
-                <div className='projects-list__cell'>{formatQuoteUsdt(usdtQuoteUsdtValue, usdtDecimals)}</div>
+                <div className='projects-list__cell'>{formatQuoteUsdt(project.chainState?.wethPair?.quoteUsdtValue, usdtDecimals)}</div>
+                <div className='projects-list__cell'>{formatQuoteUsdt(project.chainState?.usdtPair?.quoteUsdtValue, usdtDecimals)}</div>
                 <div className='projects-list__cell'>{formatBlockTime(project.meta?.blockTime)}</div>
             </div>
         </div>

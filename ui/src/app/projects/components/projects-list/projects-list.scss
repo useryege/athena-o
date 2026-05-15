@@ -1,7 +1,12 @@
 .projects-list {
+    --projects-max-width: 1440px;
+    padding: 0 24px;
+
     &__box {
         min-width: 100%;
-        width: max-content;
+        width: 100%;
+        max-width: var(--projects-max-width);
+        margin: 0 auto;
     }
 
     &__controls {
@@ -46,22 +51,22 @@
     }
 
     &__table {
-        min-width: 1700px;
+        width: 100%;
     }
 
     &__row {
         display: grid;
         grid-template-columns:
             48px
-            minmax(160px, 1.2fr)
-            minmax(140px, 0.9fr)
-            minmax(120px, 0.8fr)
-            minmax(120px, 0.8fr)
-            minmax(140px, 0.9fr)
-            minmax(150px, 1fr)
-            minmax(150px, 1fr)
-            minmax(220px, 1.4fr);
-        column-gap: 12px;
+            minmax(120px, 1.3fr)
+            minmax(80px, 0.8fr)
+            minmax(88px, 0.9fr)
+            minmax(88px, 0.9fr)
+            minmax(88px, 0.9fr)
+            minmax(110px, 1fr)
+            minmax(110px, 1fr)
+            minmax(150px, 1.4fr);
+        column-gap: 10px;
         align-items: center;
         width: 100%;
     }
@@ -80,6 +85,12 @@
 
 @media screen and (max-width: 768px) {
     .projects-list {
+        padding: 0 12px;
+
+        &__box {
+            min-width: 0;
+        }
+
         &__controls {
             align-items: flex-start;
             flex-direction: column;

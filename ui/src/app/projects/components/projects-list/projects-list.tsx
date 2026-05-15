@@ -189,9 +189,7 @@ export const ProjectsList = () => {
                                             key={getProjectRowKey(project, index)}
                                             project={project}
                                             index={index}
-                                            usdtDecimals={
-                                                projectOptions?.usdtDecimals ?? ((projectOptions as unknown as {[key: string]: unknown})?.usdt_decimals as number | undefined)
-                                            }
+                                            usdtDecimals={projectOptions?.usdtDecimals}
                                             onClick={project.meta?.projectID ? () => history.push(`/projects/${project.meta!.projectID}`) : undefined}
                                         />
                                     ))
