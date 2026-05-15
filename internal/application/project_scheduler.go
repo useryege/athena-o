@@ -203,7 +203,7 @@ func (s *projectSchedulerImpl) analyzeProjectSourceCode(project *Project) {
 	if s.analyzer == nil || project == nil {
 		return
 	}
-	if project.Meta.SourceCode == "" || project.Meta.SourceCodeBlacklist.BlacklistFields != nil {
+	if project.Meta.SourceCode == "" || !project.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
 		return
 	}
 

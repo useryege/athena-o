@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
+	"github.com/useryege/athena/internal/application/sourcecode"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -158,5 +160,43 @@ func TestLoadProjectsLoadsSourceCodeIntoMemory(t *testing.T) {
 	}
 	if project.Meta.SourceCode != sourceCode {
 		t.Fatalf("source code = %q, want %q", project.Meta.SourceCode, sourceCode)
+	}
+}
+
+func TestUpdateProjectMetaStatePreservesSourceCodeBlacklistResolvedAt(t *testing.T) {
+	registry := NewProjectRegistry(nil)
+	projectID := uuid.New()
+	project := &Project{
+		Meta: ProjectMeta{
+			ProjectID: projectID,
+			Contract:  common.HexToAddress("0x00000000000000000000000000000000000000A1"),
+			Creator:   common.HexToAddress("0x00000000000000000000000000000000000000A2"),
+		},
+	}
+	if err := registry.SetProject(context.Background(), projectID, project); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	resolvedAt := time.Now().Round(0)
+	state := &ProjectMeta{
+		SourceCodeBlacklist: sourcecode.BlacklistReport{
+			HasBlacklistFields: true,
+			BlacklistFields:    []string{"blacklist"},
+			ResolvedAt:         resolvedAt,
+		},
+	}
+	if err := registry.UpdateProjectMetaState(context.Background(), projectID, state); err != nil {
+		t.Fatalf("update project meta state: %v", err)
+	}
+
+	updated, ok, err := registry.GetProject(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok {
+		t.Fatal("project not found")
+	}
+	if !updated.Meta.SourceCodeBlacklist.ResolvedAt.Equal(resolvedAt) {
+		t.Fatalf("resolvedAt = %v, want %v", updated.Meta.SourceCodeBlacklist.ResolvedAt, resolvedAt)
 	}
 }

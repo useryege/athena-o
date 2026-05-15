@@ -1,5 +1,7 @@
 package sourcecode
 
+import "time"
+
 type Analyzer interface {
 	AnalyzeSourceCode(sourceCode string, blacklistFields []string) BlacklistReport
 }
@@ -13,9 +15,10 @@ func NewAnalyzer() Analyzer {
 }
 
 func (a *analyzerImpl) AnalyzeSourceCode(sourceCode string, blacklistFields []string) BlacklistReport {
+	now := time.Now()
 	blacklist := blacklistSet(blacklistFields)
 	if len(blacklist) == 0 || sourceCode == "" {
-		return BlacklistReport{}
+		return BlacklistReport{ResolvedAt: now}
 	}
 
 	matched := make([]string, 0, len(blacklist))
@@ -45,6 +48,7 @@ func (a *analyzerImpl) AnalyzeSourceCode(sourceCode string, blacklistFields []st
 	return BlacklistReport{
 		HasBlacklistFields: len(matched) > 0,
 		BlacklistFields:    matched,
+		ResolvedAt:         now,
 	}
 }
 

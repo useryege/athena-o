@@ -209,6 +209,7 @@ func (r *projectRegistryImpl) UpdateProjectMetaState(ctx context.Context, projec
 		project.Meta.SourceCodeBlacklist = sourcecode.BlacklistReport{
 			HasBlacklistFields: state.SourceCodeBlacklist.HasBlacklistFields,
 			BlacklistFields:    cloneStringSlice(state.SourceCodeBlacklist.BlacklistFields),
+			ResolvedAt:         state.SourceCodeBlacklist.ResolvedAt,
 		}
 	}
 	return nil
@@ -259,6 +260,7 @@ func cloneProjectMeta(meta ProjectMeta) ProjectMeta {
 	meta.SourceCodeBlacklist = sourcecode.BlacklistReport{
 		HasBlacklistFields: meta.SourceCodeBlacklist.HasBlacklistFields,
 		BlacklistFields:    cloneStringSlice(meta.SourceCodeBlacklist.BlacklistFields),
+		ResolvedAt:         meta.SourceCodeBlacklist.ResolvedAt,
 	}
 	return meta
 }

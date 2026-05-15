@@ -3,11 +3,13 @@ package sourcecode
 import (
 	"sort"
 	"strings"
+	"time"
 )
 
 type BlacklistReport struct {
 	HasBlacklistFields bool
 	BlacklistFields    []string
+	ResolvedAt         time.Time
 }
 
 func NormalizeBlacklistField(field string) string {

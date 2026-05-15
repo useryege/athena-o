@@ -22,6 +22,9 @@ contract Token {
 }
 `, []string{"owner", "blacklist"})
 
+	if report.ResolvedAt.IsZero() {
+		t.Fatal("report ResolvedAt is zero, want non-zero")
+	}
 	if !report.HasBlacklistFields {
 		t.Fatal("report HasBlacklistFields = false, want true")
 	}
@@ -38,6 +41,9 @@ contract Token {
 }
 `, []string{"owner"})
 
+	if report.ResolvedAt.IsZero() {
+		t.Fatal("report ResolvedAt is zero, want non-zero")
+	}
 	if report.HasBlacklistFields {
 		t.Fatalf("report HasBlacklistFields = true, want false: %v", report.BlacklistFields)
 	}
