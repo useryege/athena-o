@@ -17,7 +17,6 @@ import (
 )
 
 const (
-	defaultDelayedFetchConcurrency    = 10
 	defaultProjectSimulateConcurrency = 30
 )
 
@@ -34,7 +33,6 @@ type projectSyncImpl struct {
 	fetcher          evm.AthenaFetcher
 	apiFetcher       ethereumapi.EthereumAPI
 	projectSimulator ProjectSimulator
-	delayedFetchSem  chan struct{}
 }
 
 func NewProjectSync(
@@ -43,19 +41,13 @@ func NewProjectSync(
 	fetcher evm.AthenaFetcher,
 	apiFetcher ethereumapi.EthereumAPI,
 	projectSimulator ProjectSimulator,
-	delayedFetchSem chan struct{},
 ) ProjectSync {
-	if delayedFetchSem == nil {
-		delayedFetchSem = make(chan struct{}, defaultDelayedFetchConcurrency)
-	}
-
 	return &projectSyncImpl{
 		nodeClient:       nodeClient,
 		registry:         registry,
 		fetcher:          fetcher,
 		apiFetcher:       apiFetcher,
 		projectSimulator: projectSimulator,
-		delayedFetchSem:  delayedFetchSem,
 	}
 }
 
@@ -333,11 +325,6 @@ enqueueJobs:
 }
 
 func (s *projectSyncImpl) fetchSourceCode(ctx context.Context, event *Project) (string, string, error) {
-	if err := s.acquireDelayedFetch(ctx); err != nil {
-		return "", "", err
-	}
-	defer s.releaseDelayedFetch()
-
 	response, err := s.apiFetcher.GetSourceCode(ctx, event.Meta.Contract.String())
 	if err != nil {
 		return "", "", err
@@ -346,17 +333,4 @@ func (s *projectSyncImpl) fetchSourceCode(ctx context.Context, event *Project) (
 		return "", "", errors.New("etherscan getsourcecode returned empty result")
 	}
 	return response.Result[0].SourceCode, response.Result[0].ABI, nil
-}
-
-func (s *projectSyncImpl) acquireDelayedFetch(ctx context.Context) error {
-	select {
-	case s.delayedFetchSem <- struct{}{}:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
-func (s *projectSyncImpl) releaseDelayedFetch() {
-	<-s.delayedFetchSem
 }

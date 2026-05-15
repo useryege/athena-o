@@ -24,9 +24,11 @@ import (
 )
 
 const (
-	activeRedisFlushInterval = 3 * time.Second
-	archivedRefreshInterval  = time.Hour
-	bootstrapRetryInterval   = 3 * time.Second
+	activeRedisFlushInterval  = 3 * time.Second
+	archivedRefreshInterval   = time.Hour
+	sourceCodeRefreshInterval = time.Minute
+	sourceCodeScanPageSize    = 200
+	bootstrapRetryInterval    = 3 * time.Second
 )
 
 type Service struct {
@@ -47,7 +49,6 @@ type Service struct {
 	blockWatcher    *BlockWatcher
 	blockSubscriber *BlockEventSubscriber
 	projectSync     ProjectSync
-	scheduler       ProjectScheduler
 	sourceAnalyzer  sourcecode.Analyzer
 	sourceBlacklist appcache.SourceCodeBlacklistModel
 
@@ -77,7 +78,6 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		projectCache:        NewProjectSnapshotCache(redisClient),
 		sourceAnalyzer:      sourceAnalyzer,
 		sourceBlacklist:     sourceBlacklist,
-		delayedFetchSem:     make(chan struct{}, defaultDelayedFetchConcurrency),
 		v2FactoryContract:   v2FactoryContract,
 		wethContract:        wethContract,
 		usdtContract:        usdtContract,
@@ -127,19 +127,11 @@ func (s *Service) Start() error {
 		return err
 	}
 
-	s.projectSync = NewProjectSync(s.nodeClient, s.registry, athenaFetcher, apiFetcher, projectSimulator, s.delayedFetchSem)
+	s.projectSync = NewProjectSync(s.nodeClient, s.registry, athenaFetcher, apiFetcher, projectSimulator)
 	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, s.projectSync)
-	s.scheduler = NewProjectScheduler(s.registry, s.projectSync, s.sourceAnalyzer, s.sourceBlacklist, ProjectSchedulerOptions{})
-	if err := s.scheduler.Start(ctx); err != nil {
-		cancel()
-		s.clearPipelineLocked()
-		return err
-	}
-
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, s.registry, athenaFetcher)
 	if err := s.blockSubscriber.Start(ctx); err != nil {
 		cancel()
-		_ = s.scheduler.Stop()
 		s.clearPipelineLocked()
 		return err
 	}
@@ -147,13 +139,13 @@ func (s *Service) Start() error {
 	if err := s.blockWatcher.Start(ctx); err != nil {
 		cancel()
 		_ = s.blockSubscriber.Stop()
-		_ = s.scheduler.Stop()
 		s.clearPipelineLocked()
 		return err
 	}
 
 	go s.runActiveRedisFlushLoop(ctx)
 	go s.runArchivedRefreshLoop(ctx, athenaFetcher, projectSimulator)
+	go s.runSourceCodeRefreshLoop(ctx)
 
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
@@ -311,6 +303,117 @@ func (s *Service) refreshArchivedProjects(ctx context.Context, fetcher evm.Athen
 	}
 }
 
+func (s *Service) runSourceCodeRefreshLoop(ctx context.Context) {
+	ticker := time.NewTicker(sourceCodeRefreshInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_ = s.refreshAllProjectSourceCodes(ctx)
+		}
+	}
+}
+
+func (s *Service) refreshAllProjectSourceCodes(ctx context.Context) error {
+	fields, err := s.sourceCodeBlacklistFields(ctx)
+	if err != nil {
+		return err
+	}
+
+	activeProjects, err := s.projectCache.ListActiveProjects(ctx)
+	if err != nil {
+		return err
+	}
+	if err := s.processProjectSourceCodeBatch(ctx, activeProjects, true, fields); err != nil {
+		return err
+	}
+
+	page := int32(1)
+	for {
+		archivedProjects, _, _, _, err := s.projectCache.ListArchivedProjects(ctx, page, sourceCodeScanPageSize)
+		if err != nil {
+			return err
+		}
+		if len(archivedProjects) == 0 {
+			return nil
+		}
+		if err := s.processProjectSourceCodeBatch(ctx, archivedProjects, false, fields); err != nil {
+			return err
+		}
+		page++
+	}
+}
+
+func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []*Project, active bool, fields []string) error {
+	for _, project := range projects {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		sourceWasEmpty := project != nil && project.Meta.SourceCode == ""
+		updated, err := s.processProjectSourceCode(ctx, project, fields)
+		if err != nil {
+			continue
+		}
+		if sourceWasEmpty && project != nil && project.Meta.SourceCode != "" {
+			if err := s.persistProjectSourceCode(ctx, project.Meta.ProjectID, project.Meta.SourceCode); err != nil {
+				continue
+			}
+		}
+		if !updated || project == nil {
+			continue
+		}
+		if err := s.projectCache.SetProject(ctx, project); err != nil {
+			continue
+		}
+		if active {
+			_ = s.registry.UpdateProjectMetaState(ctx, project.Meta.ProjectID, &project.Meta)
+		}
+	}
+	return nil
+}
+
+func (s *Service) persistProjectSourceCode(ctx context.Context, projectID uuid.UUID, sourceCode string) error {
+	if sourceCode == "" || s.store == nil {
+		return nil
+	}
+	return s.store.UpdateProjectSourceCode(ctx, projectID, sourceCode)
+}
+
+func (s *Service) processProjectSourceCode(ctx context.Context, project *Project, fields []string) (bool, error) {
+	if project == nil {
+		return false, nil
+	}
+	changed := false
+
+	if project.Meta.SourceCode == "" && s.projectSync != nil {
+		ok, err := s.projectSync.SyncSourceCodeOnce(ctx, project)
+		if err != nil {
+			return false, err
+		}
+		changed = changed || ok
+	}
+
+	if project.Meta.SourceCode == "" {
+		return changed, nil
+	}
+	if s.sourceAnalyzer == nil || !project.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
+		return changed, nil
+	}
+
+	project.Meta.SourceCodeBlacklist = s.sourceAnalyzer.AnalyzeSourceCode(project.Meta.SourceCode, fields)
+	return true, nil
+}
+
+func (s *Service) sourceCodeBlacklistFields(ctx context.Context) ([]string, error) {
+	if s.sourceBlacklist == nil {
+		return nil, nil
+	}
+	return s.sourceBlacklist.List(ctx)
+}
+
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
 	defer s.startStopMu.Unlock()
@@ -327,21 +430,19 @@ func (s *Service) Stop() error {
 
 	subscriberErr := s.blockSubscriber.Stop()
 	watcherErr := s.blockWatcher.Stop()
-	schedulerErr := s.scheduler.Stop()
 
 	s.lifecycleCtx = nil
 	s.lifecycleStop = nil
 	s.started = false
 	s.clearPipelineLocked()
 
-	return errors.Join(subscriberErr, watcherErr, schedulerErr)
+	return errors.Join(subscriberErr, watcherErr)
 }
 
 func (s *Service) clearPipelineLocked() {
 	s.blockWatcher = nil
 	s.blockSubscriber = nil
 	s.projectSync = nil
-	s.scheduler = nil
 }
 
 func (s *Service) ListSourceCodeBlacklistFields(ctx context.Context, _ *applicationpkg.ListSourceCodeBlacklistFieldsRequest) (*applicationpkg.ListSourceCodeBlacklistFieldsResponse, error) {
