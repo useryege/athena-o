@@ -9,14 +9,14 @@ const isOpenSource = (project: ProjectView) => {
     return sourceCode.trim().length > 0;
 };
 
-const formatBlockTime = (blockTime: number | undefined) => {
+const formatBlockTime = (blockTime: number | undefined): {date: string; time: string} | null => {
     if (!blockTime || !Number.isFinite(blockTime) || blockTime <= 0) {
-        return '-';
+        return null;
     }
 
     const date = new Date(blockTime * 1000);
     if (Number.isNaN(date.getTime())) {
-        return '-';
+        return null;
     }
 
     const formatter = new Intl.DateTimeFormat('zh-CN', {
@@ -39,10 +39,10 @@ const formatBlockTime = (blockTime: number | undefined) => {
     const minute = partValue('minute');
     const second = partValue('second');
     if (!year || !month || !day || !hour || !minute || !second) {
-        return '-';
+        return null;
     }
 
-    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+    return {date: `${year}-${month}-${day}`, time: `${hour}:${minute}:${second}`};
 };
 
 const normalizeDecimals = (decimals?: number | string) => {
@@ -86,6 +86,8 @@ const formatQuoteUsdt = (rawValue?: string, decimals?: number | string) => {
 };
 
 export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project: ProjectView; index: number; usdtDecimals?: number; onClick?: () => void}) => {
+    const blockTime = formatBlockTime(project.meta?.blockTime);
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (onClick && (e.key === 'Enter' || e.key === ' ')) {
             e.preventDefault();
@@ -155,7 +157,16 @@ export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project
                         '-'
                     )}
                 </div>
-                <div className='projects-list__cell'>{formatBlockTime(project.meta?.blockTime)}</div>
+                <div className='projects-list__cell projects-list__cell--block-time'>
+                    {blockTime ? (
+                        <>
+                            <span>{blockTime.date}</span>
+                            <span>{blockTime.time}</span>
+                        </>
+                    ) : (
+                        '-'
+                    )}
+                </div>
             </div>
         </div>
     );

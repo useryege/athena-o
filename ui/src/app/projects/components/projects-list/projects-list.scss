@@ -1,11 +1,9 @@
 .projects-list {
-    --projects-max-width: 1440px;
     padding: 0 24px;
 
     &__box {
         min-width: 100%;
         width: 100%;
-        max-width: var(--projects-max-width);
         margin: 0 auto;
     }
 
@@ -57,18 +55,18 @@
     &__row {
         display: grid;
         grid-template-columns:
-            48px
-            minmax(120px, 1.3fr)
-            minmax(80px, 0.8fr)
-            minmax(88px, 0.9fr)
-            minmax(88px, 0.9fr)
-            minmax(88px, 0.9fr)
-            minmax(110px, 1fr)
-            minmax(110px, 1fr)
-            minmax(120px, 1fr)
-            minmax(120px, 1fr)
-            minmax(150px, 1.4fr);
-        column-gap: 10px;
+            minmax(40px, 0.5fr)
+            minmax(140px, 2fr)
+            minmax(70px, 0.9fr)
+            minmax(74px, 0.85fr)
+            minmax(74px, 0.85fr)
+            minmax(74px, 0.85fr)
+            minmax(90px, 1fr)
+            minmax(90px, 1fr)
+            minmax(90px, 1fr)
+            minmax(90px, 1fr)
+            minmax(116px, 1.2fr);
+        column-gap: 8px;
         align-items: center;
         width: 100%;
     }
@@ -81,6 +79,17 @@
         &--rank {
             color: #6d7f8b;
             font-weight: 600;
+        }
+
+        &--block-time {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            line-height: 1.2;
+
+            span {
+                white-space: nowrap;
+            }
         }
     }
 }
@@ -100,6 +109,16 @@
 
         &__status {
             justify-content: flex-start;
+        }
+
+        &__row {
+            grid-template-columns:
+                minmax(36px, 0.45fr)
+                minmax(120px, 1.8fr)
+                minmax(56px, 0.8fr)
+                repeat(6, minmax(70px, 0.9fr))
+                minmax(96px, 1.1fr);
+            column-gap: 6px;
         }
     }
 }
