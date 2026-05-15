@@ -119,6 +119,68 @@ func (s *Server) GetProjectOptions(ctx context.Context, _ *applicationpkg.GetPro
 	return &applicationpkg.GetProjectOptionsResponse{Options: resp.Options}, nil
 }
 
+func (s *Server) ArchiveProject(ctx context.Context, req *applicationpkg.ArchiveProjectRequest) (*applicationpkg.ArchiveProjectResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	if _, err := client.ArchiveProject(ctx, &applicationapiclient.ArchiveProjectRequest{ProjectID: req.GetProjectID()}); err != nil {
+		return nil, err
+	}
+	return &applicationpkg.ArchiveProjectResponse{}, nil
+}
+
+func (s *Server) UnarchiveProject(ctx context.Context, req *applicationpkg.UnarchiveProjectRequest) (*applicationpkg.UnarchiveProjectResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	if _, err := client.UnarchiveProject(ctx, &applicationapiclient.UnarchiveProjectRequest{ProjectID: req.GetProjectID()}); err != nil {
+		return nil, err
+	}
+	return &applicationpkg.UnarchiveProjectResponse{}, nil
+}
+
+func (s *Server) ListArchivedProjects(ctx context.Context, req *applicationpkg.ListArchivedProjectsRequest) (*applicationpkg.ListArchivedProjectsResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListArchivedProjects(ctx, &applicationapiclient.ListArchivedProjectsRequest{
+		Page:     req.GetPage(),
+		PageSize: req.GetPageSize(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.ListArchivedProjectsResponse{
+		Items:    resp.Items,
+		Total:    resp.Total,
+		Page:     resp.Page,
+		PageSize: resp.PageSize,
+	}, nil
+}
+
+func (s *Server) GetArchivedProject(ctx context.Context, req *applicationpkg.GetArchivedProjectRequest) (*applicationpkg.GetArchivedProjectResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.GetArchivedProject(ctx, &applicationapiclient.GetArchivedProjectRequest{ProjectID: req.GetProjectID()})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.GetArchivedProjectResponse{Item: resp.Item}, nil
+}
+
 func sourceCodeBlacklistFieldToAPI(item *applicationapiclient.SourceCodeBlacklistField) *applicationpkg.SourceCodeBlacklistField {
 	if item == nil {
 		return nil

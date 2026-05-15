@@ -147,6 +147,9 @@ export const ProjectsList = () => {
                         <div className='white-box projects-list__box'>
                             <div className='projects-list__controls'>
                                 <div className='projects-list__actions'>
+                                    <button type='button' className='argo-button argo-button--base-o' onClick={() => history.push('/projects/archived')}>
+                                        Archived
+                                    </button>
                                     <button type='button' className='argo-button argo-button--base' disabled={autoRefresh} onClick={handleStart}>
                                         Start
                                     </button>

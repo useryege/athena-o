@@ -43,6 +43,7 @@ type Service struct {
 	sourceBlacklist appcache.SourceCodeBlacklistModel
 
 	registry ProjectRegistry
+	store    appstore.Store
 
 	delayedFetchSem chan struct{}
 	startStopMu     sync.Mutex
@@ -62,6 +63,7 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 	return &Service{
 		nodeClient:          nodeClient,
 		registry:            registry,
+		store:               store,
 		sourceAnalyzer:      sourceAnalyzer,
 		sourceBlacklist:     sourceBlacklist,
 		delayedFetchSem:     make(chan struct{}, defaultDelayedFetchConcurrency),
@@ -122,7 +124,7 @@ func (s *Service) Start() error {
 		return err
 	}
 
-	s.blockWatcher = NewBlockWatcher(s.nodeClient, s.registry, athenaFetcher, s.scheduler)
+	s.blockWatcher = NewBlockWatcher(s.nodeClient, s.registry, athenaFetcher)
 	if err := s.blockSubscriber.Start(ctx); err != nil {
 		cancel()
 		_ = s.scheduler.Stop()
@@ -259,5 +261,100 @@ func (s *Service) GetProjectOptions(context.Context, *applicationpkg.GetProjectO
 			WethDecimals:    uint32(s.wethDecimals),
 			UsdtDecimals:    uint32(s.usdtDecimals),
 		},
+	}, nil
+}
+
+func (s *Service) ArchiveProject(ctx context.Context, req *applicationpkg.ArchiveProjectRequest) (*applicationpkg.ArchiveProjectResponse, error) {
+	projectID, err := uuid.Parse(req.GetProjectID())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid projectID %q: %v", req.GetProjectID(), err)
+	}
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "project store is not configured")
+	}
+	meta, err := s.store.GetProjectMetaByID(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	if meta == nil {
+		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
+	}
+	if err := s.store.ArchiveProjectByID(ctx, projectID); err != nil {
+		return nil, err
+	}
+	if err := s.registry.RemoveProject(ctx, projectID); err != nil {
+		return nil, err
+	}
+	return &applicationpkg.ArchiveProjectResponse{}, nil
+}
+
+func (s *Service) UnarchiveProject(ctx context.Context, req *applicationpkg.UnarchiveProjectRequest) (*applicationpkg.UnarchiveProjectResponse, error) {
+	projectID, err := uuid.Parse(req.GetProjectID())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid projectID %q: %v", req.GetProjectID(), err)
+	}
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "project store is not configured")
+	}
+	meta, err := s.store.GetProjectMetaByID(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	if meta == nil {
+		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
+	}
+	if err := s.store.UnarchiveProjectByID(ctx, projectID); err != nil {
+		return nil, err
+	}
+	updatedMeta, err := s.store.GetProjectMetaByID(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	if updatedMeta == nil {
+		return nil, status.Errorf(codes.NotFound, "project %q not found after unarchive", req.GetProjectID())
+	}
+	if err := s.registry.SetProject(ctx, projectID, &Project{Meta: projectMetaFromStore(*updatedMeta)}); err != nil {
+		return nil, err
+	}
+	return &applicationpkg.UnarchiveProjectResponse{}, nil
+}
+
+func (s *Service) ListArchivedProjects(ctx context.Context, req *applicationpkg.ListArchivedProjectsRequest) (*applicationpkg.ListArchivedProjectsResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "project store is not configured")
+	}
+	metas, total, page, pageSize, err := s.store.ListArchivedProjectMetas(ctx, req.GetPage(), req.GetPageSize())
+	if err != nil {
+		return nil, err
+	}
+	items := make([]*v1alpha1.ProjectView, 0, len(metas))
+	for _, meta := range metas {
+		items = append(items, projectToView(&Project{Meta: projectMetaFromStore(meta)}))
+	}
+	return &applicationpkg.ListArchivedProjectsResponse{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+func (s *Service) GetArchivedProject(ctx context.Context, req *applicationpkg.GetArchivedProjectRequest) (*applicationpkg.GetArchivedProjectResponse, error) {
+	projectID, err := uuid.Parse(req.GetProjectID())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid projectID %q: %v", req.GetProjectID(), err)
+	}
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "project store is not configured")
+	}
+	meta, err := s.store.GetArchivedProjectMetaByID(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	if meta == nil {
+		return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetProjectID())
+	}
+	return &applicationpkg.GetArchivedProjectResponse{
+		Item: projectToView(&Project{Meta: projectMetaFromStore(*meta)}),
 	}, nil
 }

@@ -13,8 +13,8 @@ import (
 )
 
 type projectStoreMock struct {
-	listProjectMetas     []appstore.ProjectMeta
-	listProjectMetasErr  error
+	listProjectMetas      []appstore.ProjectMeta
+	listProjectMetasErr   error
 	updateSourceCodeCalls int
 	updateProjectID       uuid.UUID
 	updateSourceCode      string
@@ -34,6 +34,26 @@ func (m *projectStoreMock) UpdateProjectSourceCode(ctx context.Context, projectI
 	m.updateProjectID = projectID
 	m.updateSourceCode = sourceCode
 	return m.updateSourceCodeErr
+}
+
+func (m *projectStoreMock) ArchiveProjectByID(ctx context.Context, projectID uuid.UUID) error {
+	return nil
+}
+
+func (m *projectStoreMock) UnarchiveProjectByID(ctx context.Context, projectID uuid.UUID) error {
+	return nil
+}
+
+func (m *projectStoreMock) ListArchivedProjectMetas(ctx context.Context, page int32, pageSize int32) ([]appstore.ProjectMeta, int64, int32, int32, error) {
+	return nil, 0, page, pageSize, nil
+}
+
+func (m *projectStoreMock) GetArchivedProjectMetaByID(ctx context.Context, projectID uuid.UUID) (*appstore.ProjectMeta, error) {
+	return nil, nil
+}
+
+func (m *projectStoreMock) GetProjectMetaByID(ctx context.Context, projectID uuid.UUID) (*appstore.ProjectMeta, error) {
+	return nil, nil
 }
 
 func TestUpdateProjectMetaStateSourceCodeReadyPersists(t *testing.T) {

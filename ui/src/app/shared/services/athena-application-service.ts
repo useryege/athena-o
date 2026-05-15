@@ -84,6 +84,13 @@ export interface GetProjectOptionsResponse {
     options?: ProjectOptions;
 }
 
+export interface ListArchivedProjectsResponse {
+    items?: ProjectView[];
+    total?: number;
+    page?: number;
+    pageSize?: number;
+}
+
 export interface SourceCodeBlacklistField {
     id?: number;
     field?: string;
@@ -149,6 +156,42 @@ export class AthenaApplicationService {
     public deleteSourceCodeBlacklistField(field: string): Promise<void> & {abort?: () => void} {
         const req = requests.delete(`/source-code/blacklist-fields/${encodeURIComponent(field)}`);
         const promise = req.then(() => {}) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public archiveProject(projectID: string): Promise<void> & {abort?: () => void} {
+        const req = requests.post(`/project/${encodeURIComponent(projectID)}/archive`).send({projectID});
+        const promise = req.then(() => {}) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public unarchiveProject(projectID: string): Promise<void> & {abort?: () => void} {
+        const req = requests.post(`/project/${encodeURIComponent(projectID)}/unarchive`).send({projectID});
+        const promise = req.then(() => {}) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listArchivedProjects(page = 1, pageSize = 20): Promise<{items: ProjectView[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
+        const req = requests.get('/projects/archived').query({page, pageSize});
+        const promise = req.then(res => {
+            const body = (res.body || {}) as ListArchivedProjectsResponse;
+            return {
+                items: body.items || [],
+                total: body.total || 0,
+                page: body.page || page,
+                pageSize: body.pageSize || pageSize
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getArchivedProject(projectID: string): Promise<ProjectView> & {abort?: () => void} {
+        const req = requests.get(`/projects/archived/${encodeURIComponent(projectID)}`);
+        const promise = req.then(res => (res.body as GetProjectResponse).item) as any;
         promise.abort = () => req.abort();
         return promise;
     }

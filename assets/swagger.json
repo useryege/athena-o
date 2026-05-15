@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-215-ga1cee15-dirty"
+    "version": "v1.0.0-221-gf3ea8b5-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -261,6 +261,152 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationGetProjectResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/project/{projectID}/archive": {
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ArchiveProject archives a project by projectID.",
+        "operationId": "ApplicationService_ArchiveProject",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "projectID",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationArchiveProjectRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationArchiveProjectResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/project/{projectID}/unarchive": {
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "UnarchiveProject unarchives a project by projectID.",
+        "operationId": "ApplicationService_UnarchiveProject",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "projectID",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationUnarchiveProjectRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationUnarchiveProjectResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/archived": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ListArchivedProjects returns archived projects using pagination.",
+        "operationId": "ApplicationService_ListArchivedProjects",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "pageSize",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListArchivedProjectsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/archived/{projectID}": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "GetArchivedProject returns archived project snapshot for a given project ID.",
+        "operationId": "ApplicationService_GetArchivedProject",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "projectID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetArchivedProjectResponse"
             }
           },
           "default": {
@@ -625,9 +771,28 @@
         }
       }
     },
+    "applicationArchiveProjectRequest": {
+      "type": "object",
+      "properties": {
+        "projectID": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationArchiveProjectResponse": {
+      "type": "object"
+    },
     "applicationDeleteSourceCodeBlacklistFieldResponse": {
       "description": "DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.",
       "type": "object"
+    },
+    "applicationGetArchivedProjectResponse": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1ProjectView"
+        }
+      }
     },
     "applicationGetProjectOptionsResponse": {
       "description": "GetProjectOptionsResponse returns the options.",
@@ -644,6 +809,29 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1ProjectView"
+        }
+      }
+    },
+    "applicationListArchivedProjectsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1ProjectView"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -683,6 +871,17 @@
           "format": "int64"
         }
       }
+    },
+    "applicationUnarchiveProjectRequest": {
+      "type": "object",
+      "properties": {
+        "projectID": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationUnarchiveProjectResponse": {
+      "type": "object"
     },
     "clusterConnector": {
       "type": "object",

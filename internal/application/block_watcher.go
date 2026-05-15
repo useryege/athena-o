@@ -23,7 +23,6 @@ type BlockWatcher struct {
 	nodeClient *ethclient.Client
 	registry   ProjectRegistry
 	fetcher    evm.AthenaFetcher
-	scheduler  ProjectScheduler
 	wg         sync.WaitGroup
 
 	chainID *big.Int
@@ -33,7 +32,6 @@ func NewBlockWatcher(
 	nodeClient *ethclient.Client,
 	registry ProjectRegistry,
 	fetcher evm.AthenaFetcher,
-	scheduler ProjectScheduler,
 ) *BlockWatcher {
 	chainID, err := nodeClient.ChainID(context.Background())
 	if err != nil {
@@ -44,7 +42,6 @@ func NewBlockWatcher(
 		nodeClient: nodeClient,
 		registry:   registry,
 		fetcher:    fetcher,
-		scheduler:  scheduler,
 		chainID:    chainID,
 	}
 }

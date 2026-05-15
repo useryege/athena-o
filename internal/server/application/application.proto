@@ -68,6 +68,38 @@ message GetProjectOptionsResponse {
 // DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.
 message DeleteSourceCodeBlacklistFieldResponse {}
 
+message ArchiveProjectRequest {
+  string projectID = 1;
+}
+
+message ArchiveProjectResponse {}
+
+message UnarchiveProjectRequest {
+  string projectID = 1;
+}
+
+message UnarchiveProjectResponse {}
+
+message ListArchivedProjectsRequest {
+  int32 page = 1;
+  int32 pageSize = 2;
+}
+
+message ListArchivedProjectsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 pageSize = 4;
+}
+
+message GetArchivedProjectRequest {
+  string projectID = 1;
+}
+
+message GetArchivedProjectResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView item = 1;
+}
+
 service ApplicationService {
   // ListProjects returns the current known project snapshot.
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {
@@ -100,5 +132,31 @@ service ApplicationService {
   // GetProjectOptions returns the options.
   rpc GetProjectOptions(GetProjectOptionsRequest) returns (GetProjectOptionsResponse) {
     option (google.api.http) = {get: "/api/v1/projects/options"};
+  }
+
+  // ArchiveProject archives a project by projectID.
+  rpc ArchiveProject(ArchiveProjectRequest) returns (ArchiveProjectResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/project/{projectID}/archive"
+      body: "*"
+    };
+  }
+
+  // UnarchiveProject unarchives a project by projectID.
+  rpc UnarchiveProject(UnarchiveProjectRequest) returns (UnarchiveProjectResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/project/{projectID}/unarchive"
+      body: "*"
+    };
+  }
+
+  // ListArchivedProjects returns archived projects using pagination.
+  rpc ListArchivedProjects(ListArchivedProjectsRequest) returns (ListArchivedProjectsResponse) {
+    option (google.api.http) = {get: "/api/v1/projects/archived"};
+  }
+
+  // GetArchivedProject returns archived project snapshot for a given project ID.
+  rpc GetArchivedProject(GetArchivedProjectRequest) returns (GetArchivedProjectResponse) {
+    option (google.api.http) = {get: "/api/v1/projects/archived/{projectID}"};
   }
 }

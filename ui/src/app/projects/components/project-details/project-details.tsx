@@ -1,6 +1,7 @@
 import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
+import {history} from '../../../app';
 import {services} from '../../../shared/services';
 import {PairV2State, ProjectView} from '../../../shared/services/athena-application-service';
 
@@ -98,6 +99,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const projectID = props.match.params.projectID;
     const [project, setProject] = React.useState<ProjectView | null>(null);
     const [loading, setLoading] = React.useState(true);
+    const [archiving, setArchiving] = React.useState(false);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
 
@@ -155,6 +157,22 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
     const breadcrumbs = [{title: 'Projects', path: '/projects'}, {title: projectID}];
 
+    const handleArchive = React.useCallback(async () => {
+        setArchiving(true);
+        try {
+            await services.athenaApplication.archiveProject(projectID);
+            history.push('/projects/archived');
+        } catch (err) {
+            if (isMountedRef.current) {
+                setError(err as Error);
+            }
+        } finally {
+            if (isMountedRef.current) {
+                setArchiving(false);
+            }
+        }
+    }, [projectID]);
+
     return (
         <Page title='Project Details' toolbar={{breadcrumbs}}>
             <div className='project-details'>
@@ -170,6 +188,11 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                     <div className='argo-container'>
                         <div style={{textAlign: 'right', fontSize: '12px', color: '#6d7f8b', marginBottom: '10px'}}>
                             Last updated: {lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : 'Never'}
+                        </div>
+                        <div style={{textAlign: 'right', marginBottom: '10px'}}>
+                            <button type='button' className='argo-button argo-button--base' disabled={archiving} onClick={handleArchive}>
+                                {archiving ? 'Archiving...' : 'Archive Project'}
+                            </button>
                         </div>
 
                         <div className='white-box project-details__box'>

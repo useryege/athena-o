@@ -2,6 +2,7 @@ package application
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -26,6 +27,8 @@ type ProjectMeta struct {
 	TxHash              common.Hash
 	TxIndex             uint64
 	SourceCode          string
+	IsArchived          bool
+	ArchivedAt          time.Time
 	CreatorResult       SimulateResult
 	SourceCodeBlacklist sourcecode.BlacklistReport
 }

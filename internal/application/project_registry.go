@@ -279,6 +279,9 @@ func projectMetaToStore(meta ProjectMeta) appstore.ProjectMeta {
 		Tx:          meta.Tx,
 		TxHash:      txHash,
 		TxIndex:     meta.TxIndex,
+		SourceCode:  meta.SourceCode,
+		IsArchived:  meta.IsArchived,
+		ArchivedAt:  meta.ArchivedAt,
 	}
 }
 
@@ -293,6 +296,8 @@ func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 		TxHash:      meta.TxHash,
 		TxIndex:     meta.TxIndex,
 		SourceCode:  meta.SourceCode,
+		IsArchived:  meta.IsArchived,
+		ArchivedAt:  meta.ArchivedAt,
 	}
 }
 
