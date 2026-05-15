@@ -14,6 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -26,6 +27,7 @@ import (
 	"github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/application/metrics"
 	appstore "github.com/useryege/athena/internal/application/store"
+	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
@@ -49,6 +51,8 @@ func NewCommand() *cobra.Command {
 		etherscanAPIKey     string
 		liquidityLockers    []string
 		storeSrc            func(context.Context) (*appstore.SQLStore, error)
+		redisClient         *redis.Client
+		cacheSrc            func() (*cacheutil.Cache, error)
 	)
 
 	command := &cobra.Command{
@@ -73,6 +77,9 @@ func NewCommand() *cobra.Command {
 			store, err := storeSrc(ctx)
 			errors.CheckError(err)
 			defer utilio.Close(store)
+
+			_, err = cacheSrc()
+			errors.CheckError(err)
 
 			metricsServer := metrics.NewMetricsServer()
 			http.Handle("/metrics", metricsServer.GetHandler())
@@ -137,6 +144,7 @@ func NewCommand() *cobra.Command {
 				EtherscanAPIKey:     etherscanAPIKey,
 				Store:               store,
 				LiquidityLocker:     liquidityLockerAddresses,
+				RedisClient:         redisClient,
 
 				// Fetch from Athena contract
 				V2FactoryContract: v2FactoryContractAddress,
@@ -218,6 +226,11 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")
 	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")
 	storeSrc = appstore.NewSQLStoreSource()
+	cacheSrc = cacheutil.AddCacheFlagsToCmd(command, cacheutil.Options{
+		OnClientCreated: func(client *redis.Client) {
+			redisClient = client
+		},
+	})
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
