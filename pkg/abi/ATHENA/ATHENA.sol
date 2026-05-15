@@ -58,7 +58,12 @@ contract Athena {
         uint112 reserve0;
         uint112 reserve1;
         uint32 blockTimestampLast;
+        // V2FeeToAddress hold balance of the pair _safeBalanceOf(pair.contractAddress, v2pairFeeToAddress)
+        uint256 feeAddressHoldLiquidityBalance;
+        bool isRemoveLiquidity;
     }
+
+
 
     struct Project {
         address tokenContract;
@@ -96,6 +101,7 @@ contract Athena {
     address public immutable usdtContract;
     uint8 public immutable usdtDecimals;
     bytes32 public immutable initCodePairHash;
+    address public immutable v2pairFeeToAddress;
 
     constructor(uint256 chainId) {
         if (chainId == 1) {
@@ -104,12 +110,14 @@ contract Athena {
             wethDecimals = 18;
             usdtContract = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
             usdtDecimals = 6;
+            v2pairFeeToAddress = 0xf38521f130fcCF29dB1961597bc5d2B60F995f85;
         } else if (chainId == 56) {
             factoryContract = 0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73;
             wethContract = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
             wethDecimals = 18;
             usdtContract = 0x55d398326f99059fF775485246999027B3197955;
             usdtDecimals = 18;
+            v2pairFeeToAddress = 0x0ED943Ce24BaEBf257488771759F9BF482C39706;
         } else {
             revert("Invalid chain id");
         }
@@ -258,6 +266,11 @@ contract Athena {
         (, pair.baseBalance) = _safeBalanceOf(baseTokenContract, pair.contractAddress);
         (, pair.quoteBalance) = _safeBalanceOf(quoteTokenContract, pair.contractAddress);
         pair.lockedLiquidity = _lockedLiquidity(pair.contractAddress, lockers);
+
+        (, pair.feeAddressHoldLiquidityBalance) = _safeBalanceOf(pair.contractAddress, v2pairFeeToAddress);
+        if (pair.totalSupply > 0) {
+            pair.isRemoveLiquidity = pair.feeAddressHoldLiquidityBalance * 100 >= pair.totalSupply * 90;
+        }
     }
 
     function _quoteToUsdtValue(uint256 quoteAmount, address quoteTokenContract) private view returns (uint256) {
