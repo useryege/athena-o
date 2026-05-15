@@ -56,15 +56,13 @@
         display: grid;
         grid-template-columns:
             minmax(40px, 0.5fr)
-            minmax(140px, 2fr)
+            minmax(140px, 2.2fr)
             minmax(70px, 0.9fr)
             minmax(74px, 0.85fr)
             minmax(74px, 0.85fr)
             minmax(74px, 0.85fr)
-            minmax(90px, 1fr)
-            minmax(90px, 1fr)
-            minmax(90px, 1fr)
-            minmax(90px, 1fr)
+            minmax(152px, 1.35fr)
+            minmax(152px, 1.35fr)
             minmax(116px, 1.2fr);
         column-gap: 8px;
         align-items: center;
@@ -94,6 +92,35 @@
     }
 }
 
+.pair-metrics-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+
+    &__item {
+        align-items: center;
+        display: flex;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    &__label {
+        color: #6d7f8b;
+        font-size: 11px;
+        font-weight: 600;
+        flex: 0 0 auto;
+        line-height: 1.2;
+    }
+
+    &__value {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
 @media screen and (max-width: 768px) {
     .projects-list {
         padding: 0 12px;
@@ -114,9 +141,11 @@
         &__row {
             grid-template-columns:
                 minmax(36px, 0.45fr)
-                minmax(120px, 1.8fr)
+                minmax(120px, 1.9fr)
                 minmax(56px, 0.8fr)
-                repeat(6, minmax(70px, 0.9fr))
+                repeat(3, minmax(70px, 0.85fr))
+                minmax(132px, 1.2fr)
+                minmax(132px, 1.2fr)
                 minmax(96px, 1.1fr);
             column-gap: 6px;
         }

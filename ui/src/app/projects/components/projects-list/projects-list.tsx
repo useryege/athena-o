@@ -172,10 +172,8 @@ export const ProjectsList = () => {
                                         <div>Blacklist</div>
                                         <div>Mint Risk</div>
                                         <div title='Is Open Source'>Open Src</div>
-                                        <div title='WETH Quote in USDT'>WETH Quote</div>
-                                        <div title='USDT Quote in USDT'>USDT Quote</div>
-                                        <div title='WETH Remove Liquidity'>WETH RmLiq</div>
-                                        <div title='USDT Remove Liquidity'>USDT RmLiq</div>
+                                        <div title='WETH Quote + Remove Liquidity'>WETH Pair</div>
+                                        <div title='USDT Quote + Remove Liquidity'>USDT Pair</div>
                                         <div title='Block Time'>Block Time</div>
                                     </div>
                                 </div>

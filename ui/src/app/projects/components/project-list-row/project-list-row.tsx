@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import {ProjectView} from '../../../shared/services/athena-application-service';
+import {PairMetricsCell} from '../pair-metrics-cell/pair-metrics-cell';
 
 const renderValue = (value: string | number | undefined) => (value === undefined || value === '' ? '-' : value);
 
@@ -43,46 +44,6 @@ const formatBlockTime = (blockTime: number | undefined): {date: string; time: st
     }
 
     return {date: `${year}-${month}-${day}`, time: `${hour}:${minute}:${second}`};
-};
-
-const normalizeDecimals = (decimals?: number | string) => {
-    if (typeof decimals === 'number' && Number.isInteger(decimals) && decimals >= 0) {
-        return decimals;
-    }
-    if (typeof decimals === 'string' && /^\d+$/.test(decimals)) {
-        return Number(decimals);
-    }
-    return undefined;
-};
-
-const formatQuoteUsdt = (rawValue?: string, decimals?: number | string) => {
-    if (rawValue === undefined || rawValue === null || rawValue === '') {
-        return '-';
-    }
-    const normalizedDecimals = normalizeDecimals(decimals);
-    if (normalizedDecimals === undefined) {
-        return '-';
-    }
-    const normalizedRawValue = rawValue.trim();
-    if (!/^\d+$/.test(normalizedRawValue)) {
-        return '-';
-    }
-
-    try {
-        const oneHundred = BigInt(100);
-        const value = BigInt(normalizedRawValue);
-        let factor = BigInt(1);
-        for (let i = 0; i < normalizedDecimals; i++) {
-            factor *= BigInt(10);
-        }
-        const scaled = value * oneHundred;
-        const rounded = (scaled + factor / BigInt(2)) / factor;
-        const integerPart = rounded / oneHundred;
-        const fractionalPart = rounded % oneHundred;
-        return `${integerPart.toString()}.${fractionalPart.toString().padStart(2, '0')}`;
-    } catch {
-        return '-';
-    }
 };
 
 export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project: ProjectView; index: number; usdtDecimals?: number; onClick?: () => void}) => {
@@ -137,25 +98,19 @@ export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project
                         {isOpenSource(project) ? 'Yes' : 'No'}
                     </span>
                 </div>
-                <div className='projects-list__cell'>{formatQuoteUsdt(project.chainState?.wethPair?.quoteUsdtValue, usdtDecimals)}</div>
-                <div className='projects-list__cell'>{formatQuoteUsdt(project.chainState?.usdtPair?.quoteUsdtValue, usdtDecimals)}</div>
                 <div className='projects-list__cell'>
-                    {project.chainState?.wethPair?.isRemoveLiquidity !== undefined ? (
-                        <span className={`project-details__badge project-details__badge--${project.chainState.wethPair.isRemoveLiquidity ? 'negative' : 'positive'}`}>
-                            {project.chainState.wethPair.isRemoveLiquidity ? 'Yes' : 'No'}
-                        </span>
-                    ) : (
-                        '-'
-                    )}
+                    <PairMetricsCell
+                        quoteValue={project.chainState?.wethPair?.quoteUsdtValue}
+                        removeLiquidity={project.chainState?.wethPair?.isRemoveLiquidity}
+                        usdtDecimals={usdtDecimals}
+                    />
                 </div>
                 <div className='projects-list__cell'>
-                    {project.chainState?.usdtPair?.isRemoveLiquidity !== undefined ? (
-                        <span className={`project-details__badge project-details__badge--${project.chainState.usdtPair.isRemoveLiquidity ? 'negative' : 'positive'}`}>
-                            {project.chainState.usdtPair.isRemoveLiquidity ? 'Yes' : 'No'}
-                        </span>
-                    ) : (
-                        '-'
-                    )}
+                    <PairMetricsCell
+                        quoteValue={project.chainState?.usdtPair?.quoteUsdtValue}
+                        removeLiquidity={project.chainState?.usdtPair?.isRemoveLiquidity}
+                        usdtDecimals={usdtDecimals}
+                    />
                 </div>
                 <div className='projects-list__cell projects-list__cell--block-time'>
                     {blockTime ? (
