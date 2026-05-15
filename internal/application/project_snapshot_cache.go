@@ -33,7 +33,7 @@ type RedisProjectSnapshotCache struct {
 
 func NewProjectSnapshotCache(client *redis.Client) ProjectSnapshotCache {
 	if client == nil {
-		return NoopProjectSnapshotCache{}
+		panic("redis client is nil")
 	}
 	return &RedisProjectSnapshotCache{client: client}
 }
@@ -178,21 +178,6 @@ func (c *RedisProjectSnapshotCache) getProjectsByIDs(ctx context.Context, ids []
 		}
 	}
 	return projects, nil
-}
-
-type NoopProjectSnapshotCache struct{}
-
-func (NoopProjectSnapshotCache) ReplaceAll(context.Context, []*Project) error   { return nil }
-func (NoopProjectSnapshotCache) SetProject(context.Context, *Project) error     { return nil }
-func (NoopProjectSnapshotCache) DeleteProject(context.Context, uuid.UUID) error { return nil }
-func (NoopProjectSnapshotCache) GetProject(context.Context, uuid.UUID) (*Project, bool, error) {
-	return nil, false, nil
-}
-func (NoopProjectSnapshotCache) ListActiveProjects(context.Context) ([]*Project, error) {
-	return nil, nil
-}
-func (NoopProjectSnapshotCache) ListArchivedProjects(context.Context, int32, int32) ([]*Project, int64, int32, int32, error) {
-	return nil, 0, 0, 0, nil
 }
 
 func activeScore(project *Project) float64 {

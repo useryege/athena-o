@@ -13,7 +13,6 @@ import (
 )
 
 type ProjectRegistry interface {
-	LoadProjects(ctx context.Context) error
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
 	ListProjects(ctx context.Context) ([]*Project, error)
 	ListProjectContracts(ctx context.Context) ([]ProjectContractRef, error)
@@ -48,27 +47,6 @@ func NewProjectRegistry(store appstore.ProjectStore) ProjectRegistry {
 		ProjectContractRefIndexes: make(map[uuid.UUID]int),
 		store:                     store,
 	}
-}
-
-func (r *projectRegistryImpl) LoadProjects(ctx context.Context) error {
-	if r.store == nil {
-		return nil
-	}
-	metas, err := r.store.ListProjectMetas(ctx)
-	if err != nil {
-		return err
-	}
-
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	for _, meta := range metas {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		project := &Project{Meta: projectMetaFromStore(meta)}
-		r.setProjectLocked(project.Meta.ProjectID, project)
-	}
-	return nil
 }
 
 func (r *projectRegistryImpl) GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error) {
