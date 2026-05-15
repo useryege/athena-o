@@ -510,7 +510,7 @@ run:
 # Delete local PostgreSQL data directory so the next start can re-init (init SQL runs on fresh cluster). Stop goreman/postgres first if it is running.
 .PHONY: clean-postgres-data
 clean-postgres-data:
-	rm -rf "$(ATHENA_POSTGRES_DATA_DIR)"
+	sudo rm -rf "$(ATHENA_POSTGRES_DATA_DIR)"
 
 .PHONY: serve-docs-local
 serve-docs-local:
