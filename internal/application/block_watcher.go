@@ -304,15 +304,6 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project, co
 		if err := w.registry.SetProject(ctx, project.Meta.ProjectID, project); err != nil {
 			return fmt.Errorf("failed to store project %s: %w", project.Meta.ProjectID, err)
 		}
-
-		if w.scheduler != nil {
-			if err := w.scheduler.EnqueueProject(ctx, project); err != nil {
-				log.WithFields(log.Fields{
-					"projectID": project.Meta.ProjectID,
-					"error":     err,
-				}).Error("failed to schedule project sync")
-			}
-		}
 	}
 	return nil
 }
