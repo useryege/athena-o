@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
 	appstore "github.com/useryege/athena/internal/application/store"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 type registryPublisherMock struct {
@@ -143,5 +144,114 @@ func TestProjectRegistryUpdateProjectMetaStatePublishFailureKeepsOldSourceCode(t
 	}
 	if stored.Meta.SourceCode != "old" {
 		t.Fatalf("source code = %q, want %q", stored.Meta.SourceCode, "old")
+	}
+}
+
+func TestProjectRegistryListProjectContractsSnapshotAlignedAfterRemove(t *testing.T) {
+	publisher := &registryPublisherMock{}
+	registry := NewProjectRegistry(publisher)
+
+	projectID1 := uuid.New()
+	projectID2 := uuid.New()
+	projectID3 := uuid.New()
+	contract1 := common.HexToAddress("0x1111111111111111111111111111111111111111")
+	contract2 := common.HexToAddress("0x2222222222222222222222222222222222222222")
+	contract3 := common.HexToAddress("0x3333333333333333333333333333333333333333")
+	creator1 := common.HexToAddress("0xa111111111111111111111111111111111111111")
+	creator2 := common.HexToAddress("0xa222222222222222222222222222222222222222")
+	creator3 := common.HexToAddress("0xa333333333333333333333333333333333333333")
+
+	for _, tc := range []struct {
+		id       uuid.UUID
+		contract common.Address
+		creator  common.Address
+	}{
+		{id: projectID1, contract: contract1, creator: creator1},
+		{id: projectID2, contract: contract2, creator: creator2},
+		{id: projectID3, contract: contract3, creator: creator3},
+	} {
+		if err := registry.LoadProject(context.Background(), tc.id, &Project{
+			Meta: ProjectMeta{
+				ProjectID: tc.id,
+				Contract:  tc.contract,
+				Creator:   tc.creator,
+			},
+		}); err != nil {
+			t.Fatalf("load project %s: %v", tc.id, err)
+		}
+	}
+
+	if err := registry.RemoveProject(context.Background(), projectID2); err != nil {
+		t.Fatalf("remove project: %v", err)
+	}
+
+	snapshot, err := registry.ListProjectContracts(context.Background())
+	if err != nil {
+		t.Fatalf("list project contracts: %v", err)
+	}
+	if len(snapshot.ProjectIDs) != 2 || len(snapshot.ProjectContracts) != 2 || len(snapshot.ProjectQueries) != 2 {
+		t.Fatalf(
+			"unexpected snapshot lengths: ids=%d contracts=%d queries=%d",
+			len(snapshot.ProjectIDs), len(snapshot.ProjectContracts), len(snapshot.ProjectQueries),
+		)
+	}
+	for i, id := range snapshot.ProjectIDs {
+		if snapshot.ProjectQueries[i].TokenContract != snapshot.ProjectContracts[i] {
+			t.Fatalf("query/contract mismatch at %d: query=%s contract=%s", i, snapshot.ProjectQueries[i].TokenContract, snapshot.ProjectContracts[i])
+		}
+		stored, ok, getErr := registry.GetProject(context.Background(), id)
+		if getErr != nil {
+			t.Fatalf("get project %s: %v", id, getErr)
+		}
+		if !ok || stored == nil {
+			t.Fatalf("project %s not found", id)
+		}
+		if stored.Meta.Contract != snapshot.ProjectContracts[i] {
+			t.Fatalf("contract mismatch at %d: meta=%s snapshot=%s", i, stored.Meta.Contract, snapshot.ProjectContracts[i])
+		}
+		if stored.Meta.Creator != snapshot.ProjectQueries[i].MsgCaller {
+			t.Fatalf("creator mismatch at %d: meta=%s query=%s", i, stored.Meta.Creator, snapshot.ProjectQueries[i].MsgCaller)
+		}
+	}
+}
+
+func TestProjectRegistryListProjectContractsReturnsCopy(t *testing.T) {
+	publisher := &registryPublisherMock{}
+	registry := NewProjectRegistry(publisher)
+
+	projectID := uuid.New()
+	contract := common.HexToAddress("0x1111111111111111111111111111111111111111")
+	creator := common.HexToAddress("0xa111111111111111111111111111111111111111")
+	if err := registry.LoadProject(context.Background(), projectID, &Project{
+		Meta: ProjectMeta{
+			ProjectID: projectID,
+			Contract:  contract,
+			Creator:   creator,
+		},
+	}); err != nil {
+		t.Fatalf("load project: %v", err)
+	}
+
+	snapshot, err := registry.ListProjectContracts(context.Background())
+	if err != nil {
+		t.Fatalf("list project contracts: %v", err)
+	}
+
+	snapshot.ProjectIDs[0] = uuid.Nil
+	snapshot.ProjectContracts[0] = common.HexToAddress("0xffffffffffffffffffffffffffffffffffffffff")
+	snapshot.ProjectQueries[0] = athenacontract.AthenaProjectQuery{}
+
+	latest, err := registry.ListProjectContracts(context.Background())
+	if err != nil {
+		t.Fatalf("list project contracts: %v", err)
+	}
+	if latest.ProjectIDs[0] != projectID {
+		t.Fatalf("project id mutated: got %s want %s", latest.ProjectIDs[0], projectID)
+	}
+	if latest.ProjectContracts[0] != contract {
+		t.Fatalf("contract mutated: got %s want %s", latest.ProjectContracts[0], contract)
+	}
+	if latest.ProjectQueries[0].TokenContract != contract || latest.ProjectQueries[0].MsgCaller != creator {
+		t.Fatalf("query mutated: got token=%s caller=%s", latest.ProjectQueries[0].TokenContract, latest.ProjectQueries[0].MsgCaller)
 	}
 }

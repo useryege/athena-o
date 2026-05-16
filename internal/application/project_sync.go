@@ -115,35 +115,31 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 	}()
 
 	listStartedAt := time.Now()
-	refs, err := s.registry.ListProjectContracts(ctx)
+	snapshot, err := s.registry.ListProjectContracts(ctx)
 	fields["listProjectContractsDuration"] = time.Since(listStartedAt)
 	if err != nil {
 		return err
 	}
-	fields["tokenContractCount"] = len(refs)
-	if len(refs) == 0 {
+	if len(snapshot.ProjectIDs) != len(snapshot.ProjectContracts) || len(snapshot.ProjectContracts) != len(snapshot.ProjectQueries) {
+		return fmt.Errorf(
+			"project contract snapshot has inconsistent lengths: ids=%d contracts=%d queries=%d",
+			len(snapshot.ProjectIDs),
+			len(snapshot.ProjectContracts),
+			len(snapshot.ProjectQueries),
+		)
+	}
+	fields["tokenContractCount"] = len(snapshot.ProjectContracts)
+	if len(snapshot.ProjectContracts) == 0 {
 		return nil
 	}
-
-	buildTokenContractsStartedAt := time.Now()
-	tokenContracts := make([]common.Address, 0, len(refs))
-	queries := make([]athenacontract.AthenaProjectQuery, 0, len(refs))
-	for _, ref := range refs {
-		tokenContracts = append(tokenContracts, ref.Contract)
-		queries = append(queries, athenacontract.AthenaProjectQuery{
-			TokenContract: ref.Contract,
-			MsgCaller:     ref.Creator,
-		})
-	}
-	fields["buildTokenContractsDuration"] = time.Since(buildTokenContractsStartedAt)
 
 	fetchStartedAt := time.Now()
 	var snapshots []athenacontract.AthenaProject
 	var simulationStates []athenacontract.AthenaSimulationState
 	if s.projectSimulator == nil {
-		snapshots, err = s.fetcher.FetchProjects(ctx, tokenContracts)
+		snapshots, err = s.fetcher.FetchProjects(ctx, snapshot.ProjectContracts)
 	} else {
-		projects, err := s.fetcher.FetchProjectsWithSimulationState(ctx, queries)
+		projects, err := s.fetcher.FetchProjectsWithSimulationState(ctx, snapshot.ProjectQueries)
 		if err != nil {
 			fields["fetchDuration"] = time.Since(fetchStartedAt)
 			return err
@@ -159,18 +155,19 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 	if err != nil {
 		return err
 	}
-	if len(snapshots) != len(refs) {
-		return fmt.Errorf("athena list returned %d projects for %d token contracts", len(snapshots), len(refs))
+	if len(snapshots) != len(snapshot.ProjectContracts) {
+		return fmt.Errorf("athena list returned %d projects for %d token contracts", len(snapshots), len(snapshot.ProjectContracts))
 	}
 
 	buildStatesStartedAt := time.Now()
-	states := make(map[uuid.UUID]athenacontract.AthenaProject, len(refs))
-	for i, ref := range refs {
-		snapshot := snapshots[i]
-		if snapshot.TokenContract != (common.Address{}) && snapshot.TokenContract != ref.Contract {
-			return fmt.Errorf("athena list result %d token contract = %s, want %s", i, snapshot.TokenContract, ref.Contract)
+	states := make(map[uuid.UUID]athenacontract.AthenaProject, len(snapshot.ProjectIDs))
+	for i, projectID := range snapshot.ProjectIDs {
+		projectSnapshot := snapshots[i]
+		tokenContract := snapshot.ProjectContracts[i]
+		if projectSnapshot.TokenContract != (common.Address{}) && projectSnapshot.TokenContract != tokenContract {
+			return fmt.Errorf("athena list result %d token contract = %s, want %s", i, projectSnapshot.TokenContract, tokenContract)
 		}
-		states[ref.ProjectID] = snapshot
+		states[projectID] = projectSnapshot
 	}
 	fields["buildStatesDuration"] = time.Since(buildStatesStartedAt)
 
@@ -183,7 +180,7 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 
 	if s.projectSimulator != nil {
 		simulateStartedAt := time.Now()
-		stats, err := s.syncProjectSimulateStates(ctx, refs, snapshots, simulationStates)
+		stats, err := s.syncProjectSimulateStates(ctx, snapshot, snapshots, simulationStates)
 		if err != nil {
 			syncErr = errors.Join(syncErr, err)
 		}
@@ -210,21 +207,20 @@ type projectSimulateStats struct {
 
 type projectSimulateJob struct {
 	index int
-	ref   ProjectContractRef
 }
 
 func (s *projectSyncImpl) syncProjectSimulateStates(
 	ctx context.Context,
-	refs []ProjectContractRef,
+	contractSnapshot ProjectContractSnapshot,
 	snapshots []athenacontract.AthenaProject,
 	simulationStates []athenacontract.AthenaSimulationState,
 ) (projectSimulateStats, error) {
 	stats := projectSimulateStats{
-		projectCount: len(refs),
+		projectCount: len(contractSnapshot.ProjectIDs),
 		concurrency:  defaultProjectSimulateConcurrency,
 	}
-	if len(simulationStates) != len(refs) {
-		return stats, fmt.Errorf("athena list returned %d simulation states for %d token contracts", len(simulationStates), len(refs))
+	if len(simulationStates) != len(contractSnapshot.ProjectContracts) {
+		return stats, fmt.Errorf("athena list returned %d simulation states for %d token contracts", len(simulationStates), len(contractSnapshot.ProjectContracts))
 	}
 	if stats.projectCount < stats.concurrency {
 		stats.concurrency = stats.projectCount
@@ -274,8 +270,8 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 				simulateCallStartedAt := time.Now()
 				simulateResult, err := s.projectSimulator.SimulatePrimary(
 					ctx,
-					job.ref.Creator,
-					job.ref.Contract,
+					contractSnapshot.ProjectQueries[job.index].MsgCaller,
+					contractSnapshot.ProjectContracts[job.index],
 					snapshots[job.index].WethPair.ContractAddress,
 					snapshots[job.index].UsdtPair.ContractAddress,
 					simulationStates[job.index],
@@ -288,7 +284,8 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 				}
 
 				simulateUpdateStartedAt := time.Now()
-				project, ok, getErr := s.registry.GetProject(ctx, job.ref.ProjectID)
+				projectID := contractSnapshot.ProjectIDs[job.index]
+				project, ok, getErr := s.registry.GetProject(ctx, projectID)
 				if getErr != nil {
 					recordUpdateError(getErr)
 					recordDurations(simulateCallsDuration, time.Since(simulateUpdateStartedAt))
@@ -300,7 +297,7 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 				}
 				metaState := project.Meta
 				metaState.CreatorResult = simulateResult
-				if err := s.registry.UpdateProjectMetaState(ctx, job.ref.ProjectID, &metaState); err != nil {
+				if err := s.registry.UpdateProjectMetaState(ctx, projectID, &metaState); err != nil {
 					recordUpdateError(err)
 				}
 				simulateUpdatesDuration := time.Since(simulateUpdateStartedAt)
@@ -310,9 +307,9 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 	}
 
 enqueueJobs:
-	for i, ref := range refs {
+	for i := range contractSnapshot.ProjectIDs {
 		select {
-		case jobs <- projectSimulateJob{index: i, ref: ref}:
+		case jobs <- projectSimulateJob{index: i}:
 		case <-ctx.Done():
 			recordError(ctx.Err())
 			break enqueueJobs

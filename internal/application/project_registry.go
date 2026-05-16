@@ -15,7 +15,7 @@ import (
 type ProjectRegistry interface {
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
 	ListProjects(ctx context.Context) ([]*Project, error)
-	ListProjectContracts(ctx context.Context) ([]ProjectContractRef, error)
+	ListProjectContracts(ctx context.Context) (ProjectContractSnapshot, error)
 	SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error
 	LoadProject(ctx context.Context, projectID uuid.UUID, project *Project) error
 	UpdateProjectChainStates(ctx context.Context, states map[uuid.UUID]athenacontract.AthenaProject) error
@@ -25,19 +25,21 @@ type ProjectRegistry interface {
 
 var _ ProjectRegistry = &projectRegistryImpl{}
 
-type ProjectContractRef struct {
-	ProjectID uuid.UUID
-	Contract  common.Address
-	Creator   common.Address
+type ProjectContractSnapshot struct {
+	ProjectIDs       []uuid.UUID
+	ProjectContracts []common.Address
+	ProjectQueries   []athenacontract.AthenaProjectQuery
 }
 
 type projectRegistryImpl struct {
-	mu                        sync.RWMutex
-	ProjectsByContract        map[common.Address]struct{}
-	Projects                  map[uuid.UUID]*Project
-	ProjectContractRefs       []ProjectContractRef
-	ProjectContractRefIndexes map[uuid.UUID]int
-	publisher                 PersistenceEventPublisher
+	mu                 sync.RWMutex
+	ProjectsByContract map[common.Address]struct{}
+	Projects           map[uuid.UUID]*Project
+	ProjectIDs         []uuid.UUID
+	ProjectContracts   []common.Address
+	ProjectQueries     []athenacontract.AthenaProjectQuery
+	ProjectIndexes     map[uuid.UUID]int
+	publisher          PersistenceEventPublisher
 }
 
 func NewProjectRegistry(publisher PersistenceEventPublisher) ProjectRegistry {
@@ -45,10 +47,10 @@ func NewProjectRegistry(publisher PersistenceEventPublisher) ProjectRegistry {
 		panic("persistence publisher is not configured")
 	}
 	return &projectRegistryImpl{
-		Projects:                  make(map[uuid.UUID]*Project),
-		ProjectsByContract:        make(map[common.Address]struct{}),
-		ProjectContractRefIndexes: make(map[uuid.UUID]int),
-		publisher:                 publisher,
+		Projects:           make(map[uuid.UUID]*Project),
+		ProjectsByContract: make(map[common.Address]struct{}),
+		ProjectIndexes:     make(map[uuid.UUID]int),
+		publisher:          publisher,
 	}
 }
 
@@ -81,16 +83,23 @@ func (r *projectRegistryImpl) ListProjects(ctx context.Context) ([]*Project, err
 	return projects, nil
 }
 
-func (r *projectRegistryImpl) ListProjectContracts(ctx context.Context) ([]ProjectContractRef, error) {
+func (r *projectRegistryImpl) ListProjectContracts(ctx context.Context) (ProjectContractSnapshot, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return ProjectContractSnapshot{}, err
 	}
-	refs := make([]ProjectContractRef, len(r.ProjectContractRefs))
-	copy(refs, r.ProjectContractRefs)
-	return refs, nil
+
+	snapshot := ProjectContractSnapshot{
+		ProjectIDs:       make([]uuid.UUID, len(r.ProjectIDs)),
+		ProjectContracts: make([]common.Address, len(r.ProjectContracts)),
+		ProjectQueries:   make([]athenacontract.AthenaProjectQuery, len(r.ProjectQueries)),
+	}
+	copy(snapshot.ProjectIDs, r.ProjectIDs)
+	copy(snapshot.ProjectContracts, r.ProjectContracts)
+	copy(snapshot.ProjectQueries, r.ProjectQueries)
+	return snapshot, nil
 }
 
 func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error {
@@ -134,11 +143,12 @@ func (r *projectRegistryImpl) setProjectLocked(projectID uuid.UUID, project *Pro
 	}
 	r.ProjectsByContract[project.Meta.Contract] = struct{}{}
 	r.Projects[projectID] = cloneProject(project)
-	r.ProjectContractRefIndexes[projectID] = len(r.ProjectContractRefs)
-	r.ProjectContractRefs = append(r.ProjectContractRefs, ProjectContractRef{
-		ProjectID: project.Meta.ProjectID,
-		Contract:  project.Meta.Contract,
-		Creator:   project.Meta.Creator,
+	r.ProjectIndexes[projectID] = len(r.ProjectIDs)
+	r.ProjectIDs = append(r.ProjectIDs, project.Meta.ProjectID)
+	r.ProjectContracts = append(r.ProjectContracts, project.Meta.Contract)
+	r.ProjectQueries = append(r.ProjectQueries, athenacontract.AthenaProjectQuery{
+		TokenContract: project.Meta.Contract,
+		MsgCaller:     project.Meta.Creator,
 	})
 }
 
@@ -193,25 +203,31 @@ func (r *projectRegistryImpl) RemoveProject(ctx context.Context, projectID uuid.
 		delete(r.ProjectsByContract, project.Meta.Contract)
 	}
 	delete(r.Projects, projectID)
-	r.removeProjectContractRef(projectID)
+	r.removeProjectContractSnapshot(projectID)
 	return nil
 }
 
-func (r *projectRegistryImpl) removeProjectContractRef(projectID uuid.UUID) {
-	index, ok := r.ProjectContractRefIndexes[projectID]
+func (r *projectRegistryImpl) removeProjectContractSnapshot(projectID uuid.UUID) {
+	index, ok := r.ProjectIndexes[projectID]
 	if !ok {
 		return
 	}
 
-	lastIndex := len(r.ProjectContractRefs) - 1
+	lastIndex := len(r.ProjectIDs) - 1
 	if index != lastIndex {
-		lastRef := r.ProjectContractRefs[lastIndex]
-		r.ProjectContractRefs[index] = lastRef
-		r.ProjectContractRefIndexes[lastRef.ProjectID] = index
+		lastProjectID := r.ProjectIDs[lastIndex]
+		r.ProjectIDs[index] = lastProjectID
+		r.ProjectContracts[index] = r.ProjectContracts[lastIndex]
+		r.ProjectQueries[index] = r.ProjectQueries[lastIndex]
+		r.ProjectIndexes[lastProjectID] = index
 	}
-	r.ProjectContractRefs[lastIndex] = ProjectContractRef{}
-	r.ProjectContractRefs = r.ProjectContractRefs[:lastIndex]
-	delete(r.ProjectContractRefIndexes, projectID)
+	r.ProjectIDs[lastIndex] = uuid.UUID{}
+	r.ProjectContracts[lastIndex] = common.Address{}
+	r.ProjectQueries[lastIndex] = athenacontract.AthenaProjectQuery{}
+	r.ProjectIDs = r.ProjectIDs[:lastIndex]
+	r.ProjectContracts = r.ProjectContracts[:lastIndex]
+	r.ProjectQueries = r.ProjectQueries[:lastIndex]
+	delete(r.ProjectIndexes, projectID)
 }
 
 func cloneProject(project *Project) *Project {
