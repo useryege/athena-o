@@ -12,7 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/evm"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
-	"github.com/useryege/athena/util/ethereumapi"
 )
 
 const (
@@ -20,7 +19,6 @@ const (
 )
 
 type ProjectSync interface {
-	SyncSourceCodeOnce(ctx context.Context, event *Project) (bool, error)
 	SyncProjectStatesOnce(ctx context.Context, triggerBlockNumber uint64) error
 }
 
@@ -30,7 +28,6 @@ type projectSyncImpl struct {
 	nodeClient       *ethclient.Client
 	registry         ProjectRegistry
 	fetcher          evm.AthenaFetcher
-	apiFetcher       ethereumapi.EthereumAPI
 	projectSimulator ProjectSimulator
 }
 
@@ -38,30 +35,14 @@ func NewProjectSync(
 	nodeClient *ethclient.Client,
 	registry ProjectRegistry,
 	fetcher evm.AthenaFetcher,
-	apiFetcher ethereumapi.EthereumAPI,
 	projectSimulator ProjectSimulator,
 ) ProjectSync {
 	return &projectSyncImpl{
 		nodeClient:       nodeClient,
 		registry:         registry,
 		fetcher:          fetcher,
-		apiFetcher:       apiFetcher,
 		projectSimulator: projectSimulator,
 	}
-}
-
-func (s *projectSyncImpl) SyncSourceCodeOnce(ctx context.Context, event *Project) (bool, error) {
-	if event.Meta.SourceCode != "" {
-		return true, nil
-	}
-
-	sourceCode, _, err := s.fetchSourceCode(ctx, event)
-	if err != nil {
-		return false, err
-	}
-
-	event.Meta.SourceCode = sourceCode
-	return true, nil
 }
 
 func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBlockNumber uint64) (syncErr error) {
@@ -316,15 +297,4 @@ enqueueJobs:
 	wg.Wait()
 
 	return stats, syncErr
-}
-
-func (s *projectSyncImpl) fetchSourceCode(ctx context.Context, event *Project) (string, string, error) {
-	response, err := s.apiFetcher.GetSourceCode(ctx, event.Meta.Contract.String())
-	if err != nil {
-		return "", "", err
-	}
-	if len(response.Result) == 0 {
-		return "", "", errors.New("etherscan getsourcecode returned empty result")
-	}
-	return response.Result[0].SourceCode, response.Result[0].ABI, nil
 }

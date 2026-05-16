@@ -49,6 +49,7 @@ type Service struct {
 	blockWatcher    *BlockWatcher
 	blockSubscriber *BlockEventSubscriber
 	projectSync     ProjectSync
+	apiFetcher      ethereumapi.EthereumAPI
 	sourceAnalyzer  sourcecode.Analyzer
 	sourceBlacklist appcache.SourceCodeBlacklistModel
 
@@ -138,7 +139,8 @@ func (s *Service) Start() error {
 		go s.runPersistenceEventLoop(ctx)
 	}
 
-	s.projectSync = NewProjectSync(s.nodeClient, s.registry, athenaFetcher, apiFetcher, projectSimulator)
+	s.apiFetcher = apiFetcher
+	s.projectSync = NewProjectSync(s.nodeClient, s.registry, athenaFetcher, projectSimulator)
 	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, s.projectSync)
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, s.registry, s.projectCache, athenaFetcher)
 	if err := s.blockSubscriber.Start(ctx); err != nil {
@@ -419,12 +421,13 @@ func (s *Service) processProjectSourceCode(ctx context.Context, project *Project
 	}
 	changed := false
 
-	if project.Meta.SourceCode == "" && s.projectSync != nil {
-		ok, err := s.projectSync.SyncSourceCodeOnce(ctx, project)
+	if project.Meta.SourceCode == "" && s.apiFetcher != nil {
+		sourceCode, _, err := s.fetchSourceCode(ctx, project)
 		if err != nil {
 			return false, err
 		}
-		changed = changed || ok
+		project.Meta.SourceCode = sourceCode
+		changed = true
 	}
 
 	if project.Meta.SourceCode == "" {
@@ -436,6 +439,17 @@ func (s *Service) processProjectSourceCode(ctx context.Context, project *Project
 
 	project.Meta.SourceCodeBlacklist = s.sourceAnalyzer.AnalyzeSourceCode(project.Meta.SourceCode, fields)
 	return true, nil
+}
+
+func (s *Service) fetchSourceCode(ctx context.Context, project *Project) (string, string, error) {
+	response, err := s.apiFetcher.GetSourceCode(ctx, project.Meta.Contract.String())
+	if err != nil {
+		return "", "", err
+	}
+	if len(response.Result) == 0 {
+		return "", "", errors.New("etherscan getsourcecode returned empty result")
+	}
+	return response.Result[0].SourceCode, response.Result[0].ABI, nil
 }
 
 func (s *Service) sourceCodeBlacklistFields(ctx context.Context) ([]string, error) {
@@ -474,6 +488,7 @@ func (s *Service) clearPipelineLocked() {
 	s.blockWatcher = nil
 	s.blockSubscriber = nil
 	s.projectSync = nil
+	s.apiFetcher = nil
 }
 
 func (s *Service) ListSourceCodeBlacklistFields(ctx context.Context, _ *applicationpkg.ListSourceCodeBlacklistFieldsRequest) (*applicationpkg.ListSourceCodeBlacklistFieldsResponse, error) {
