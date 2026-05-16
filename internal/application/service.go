@@ -154,7 +154,7 @@ func (s *Service) Start() error {
 		return err
 	}
 
-	go s.runActiveRedisFlushLoop(ctx)
+	// go s.runActiveRedisFlushLoop(ctx)
 	go s.runArchivedRefreshLoop(ctx, athenaFetcher, projectSimulator)
 	go s.runSourceCodeRefreshLoop(ctx)
 
@@ -246,25 +246,25 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 	return projects, nil
 }
 
-func (s *Service) runActiveRedisFlushLoop(ctx context.Context) {
-	ticker := time.NewTicker(activeRedisFlushInterval)
-	defer ticker.Stop()
+// func (s *Service) runActiveRedisFlushLoop(ctx context.Context) {
+// 	ticker := time.NewTicker(activeRedisFlushInterval)
+// 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			projects, err := s.registry.ListProjects(ctx)
-			if err != nil {
-				continue
-			}
-			for _, project := range projects {
-				_ = s.projectCache.SetProject(ctx, project)
-			}
-		}
-	}
-}
+// 	for {
+// 		select {
+// 		case <-ctx.Done():
+// 			return
+// 		case <-ticker.C:
+// 			projects, err := s.registry.ListProjects(ctx)
+// 			if err != nil {
+// 				continue
+// 			}
+// 			for _, project := range projects {
+// 				_ = s.projectCache.SetProject(ctx, project)
+// 			}
+// 		}
+// 	}
+// }
 
 func (s *Service) runPersistenceEventLoop(ctx context.Context) {
 	for {
