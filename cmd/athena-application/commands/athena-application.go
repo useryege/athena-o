@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -229,6 +230,19 @@ func NewCommand() *cobra.Command {
 	cacheSrc = cacheutil.AddCacheFlagsToCmd(command, cacheutil.Options{
 		OnClientCreated: func(client *redis.Client) {
 			redisClient = client
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			if err := client.Ping(ctx).Err(); err != nil {
+				log.Warnf("failed to ping redis: %v", err)
+				return
+			}
+
+			version, err := getRedisVersion(ctx, client)
+			if err != nil {
+				log.Warnf("connected to redis, but failed to get redis version: %v", err)
+				return
+			}
+			log.Infof("connected to redis, version=%s", version)
 		},
 	})
 
@@ -276,4 +290,18 @@ func parseLiquidityLockerAddresses(values []string) ([]ethcommon.Address, error)
 		addresses = append(addresses, ethcommon.HexToAddress(value))
 	}
 	return addresses, nil
+}
+
+func getRedisVersion(ctx context.Context, client *redis.Client) (string, error) {
+	info, err := client.Info(ctx, "server").Result()
+	if err != nil {
+		return "", err
+	}
+	for _, line := range strings.Split(info, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "redis_version:") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "redis_version:")), nil
+		}
+	}
+	return "", fmt.Errorf("redis_version not found in INFO server response")
 }

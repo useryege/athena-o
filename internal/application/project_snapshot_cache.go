@@ -98,10 +98,7 @@ func (c *RedisProjectSnapshotCache) SetProject(ctx context.Context, project *Pro
 		pipe.ZRem(ctx, projectIndexArchived, project.Meta.ProjectID.String())
 		pipe.ZAdd(ctx, projectIndexActive, redis.Z{Score: activeScore(project), Member: project.Meta.ProjectID.String()})
 	}
-	pipe.SetArgs(ctx, projectMaxBlockKey, strconv.FormatUint(project.Meta.BlockNumber, 10), redis.SetArgs{
-		TTL:  0,
-		Mode: "GT",
-	})
+	pipe.Set(ctx, projectMaxBlockKey, strconv.FormatUint(project.Meta.BlockNumber, 10), 0)
 	_, err = pipe.Exec(ctx)
 	return err
 }
@@ -158,10 +155,7 @@ func (c *RedisProjectSnapshotCache) SetMaxProjectBlockNumber(ctx context.Context
 	if c == nil || c.client == nil {
 		return nil
 	}
-	return c.client.SetArgs(ctx, projectMaxBlockKey, strconv.FormatUint(block, 10), redis.SetArgs{
-		TTL:  0,
-		Mode: "GT",
-	}).Err()
+	return c.client.Set(ctx, projectMaxBlockKey, strconv.FormatUint(block, 10), 0).Err()
 }
 
 func (c *RedisProjectSnapshotCache) ListActiveProjects(ctx context.Context) ([]*Project, error) {
