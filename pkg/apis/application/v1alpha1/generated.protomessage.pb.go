@@ -5,6 +5,8 @@
 
 package v1alpha1
 
+func (*CreatorState) ProtoMessage() {}
+
 func (*PairV2State) ProtoMessage() {}
 
 func (*ProjectChainState) ProtoMessage() {}

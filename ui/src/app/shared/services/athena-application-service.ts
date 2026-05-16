@@ -21,6 +21,7 @@ export interface ProjectChainState {
     token?: TokenState;
     wethPair?: PairV2State;
     usdtPair?: PairV2State;
+    creatorState?: CreatorState;
 }
 
 export interface TokenState {
@@ -47,6 +48,13 @@ export interface PairV2State {
     feeAddressHoldLiquidityBalance?: string;
     isRemoveLiquidity?: boolean;
     feeAddressHoldLiquidityRatio?: string;
+}
+
+export interface CreatorState {
+    tokenBalance?: string;
+    wethBalance?: string;
+    usdtBalance?: string;
+    nativeBalance?: string;
 }
 
 export interface ListProjectsResponse {

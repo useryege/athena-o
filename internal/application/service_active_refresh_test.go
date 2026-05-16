@@ -94,14 +94,17 @@ func (m *activeRefreshCacheMock) ListArchivedProjects(context.Context, int32, in
 }
 
 type activeRefreshFetcherMock struct {
-	projects []athenacontract.AthenaProject
-	states   []athenacontract.AthenaSimulationState
+	projects               []athenacontract.AthenaProject
+	projectsWithSimulation []athenacontract.AthenaProjectWithSimulationState
+	states                 []athenacontract.AthenaSimulationState
 
-	projectErr error
-	stateErr   error
+	projectErr               error
+	projectWithSimulationErr error
+	stateErr                 error
 
-	projectCalls [][]common.Address
-	stateCalls   [][]athenacontract.AthenaProjectQuery
+	projectCalls               [][]common.Address
+	projectWithSimulationCalls [][]athenacontract.AthenaProjectQuery
+	stateCalls                 [][]athenacontract.AthenaProjectQuery
 }
 
 func (m *activeRefreshFetcherMock) FetchProject(context.Context, common.Address) (athenacontract.AthenaProject, error) {
@@ -115,8 +118,11 @@ func (m *activeRefreshFetcherMock) FetchProjects(_ context.Context, tokenContrac
 	return m.projects, m.projectErr
 }
 
-func (m *activeRefreshFetcherMock) FetchProjectsWithSimulationState(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {
-	return nil, nil
+func (m *activeRefreshFetcherMock) FetchProjectsWithSimulationState(_ context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {
+	call := make([]athenacontract.AthenaProjectQuery, len(queries))
+	copy(call, queries)
+	m.projectWithSimulationCalls = append(m.projectWithSimulationCalls, call)
+	return m.projectsWithSimulation, m.projectWithSimulationErr
 }
 
 func (m *activeRefreshFetcherMock) FetchSimulationState(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaSimulationState, error) {
@@ -194,10 +200,12 @@ func TestRefreshActiveProjectStatesUpdatesChainStateAndKeepsMeta(t *testing.T) {
 		},
 	}
 	fetcher := &activeRefreshFetcherMock{
-		projects: []athenacontract.AthenaProject{
+		projectsWithSimulation: []athenacontract.AthenaProjectWithSimulationState{
 			{
-				TokenContract: contract,
-				Token:         athenacontract.AthenaToken{Symbol: "NEW"},
+				Project: athenacontract.AthenaProject{
+					TokenContract: contract,
+					Token:         athenacontract.AthenaToken{Symbol: "NEW"},
+				},
 			},
 		},
 	}
@@ -402,7 +410,9 @@ func TestRefreshActiveProjectStateAndSimulationSkipArchivedOnReRead(t *testing.T
 		},
 	}
 	stateFetcher := &activeRefreshFetcherMock{
-		projects: []athenacontract.AthenaProject{{TokenContract: contract}},
+		projectsWithSimulation: []athenacontract.AthenaProjectWithSimulationState{
+			{Project: athenacontract.AthenaProject{TokenContract: contract}},
+		},
 	}
 	service := &Service{projectCache: stateCache}
 
@@ -464,7 +474,7 @@ func TestRefreshActiveProjectRoundFailsOnSizeMismatch(t *testing.T) {
 				contract.Hex(): {Meta: ProjectMeta{Contract: contract, Creator: creator}},
 			},
 		}
-		fetcher := &activeRefreshFetcherMock{projects: nil}
+		fetcher := &activeRefreshFetcherMock{projectsWithSimulation: nil}
 		service := &Service{projectCache: cache}
 
 		err := service.refreshActiveProjectStates(context.Background(), fetcher)

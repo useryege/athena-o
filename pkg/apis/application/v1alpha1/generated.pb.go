@@ -12,6 +12,8 @@ import (
 	strings "strings"
 )
 
+func (m *CreatorState) Reset() { *m = CreatorState{} }
+
 func (m *PairV2State) Reset() { *m = PairV2State{} }
 
 func (m *ProjectChainState) Reset() { *m = ProjectChainState{} }
@@ -27,6 +29,49 @@ func (m *SimulateResult) Reset() { *m = SimulateResult{} }
 func (m *SourceCodeBlacklistState) Reset() { *m = SourceCodeBlacklistState{} }
 
 func (m *TokenState) Reset() { *m = TokenState{} }
+
+func (m *CreatorState) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CreatorState) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CreatorState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i -= len(m.NativeBalance)
+	copy(dAtA[i:], m.NativeBalance)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.NativeBalance)))
+	i--
+	dAtA[i] = 0x22
+	i -= len(m.UsdtBalance)
+	copy(dAtA[i:], m.UsdtBalance)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UsdtBalance)))
+	i--
+	dAtA[i] = 0x1a
+	i -= len(m.WethBalance)
+	copy(dAtA[i:], m.WethBalance)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.WethBalance)))
+	i--
+	dAtA[i] = 0x12
+	i -= len(m.TokenBalance)
+	copy(dAtA[i:], m.TokenBalance)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenBalance)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
 
 func (m *PairV2State) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
@@ -150,6 +195,16 @@ func (m *ProjectChainState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	{
+		size, err := m.CreatorState.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
 	{
 		size, err := m.UsdtPair.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
@@ -521,6 +576,23 @@ func encodeVarintGenerated(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *CreatorState) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.TokenBalance)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.WethBalance)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.UsdtBalance)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.NativeBalance)
+	n += 1 + l + sovGenerated(uint64(l))
+	return n
+}
+
 func (m *PairV2State) Size() (n int) {
 	if m == nil {
 		return 0
@@ -568,6 +640,8 @@ func (m *ProjectChainState) Size() (n int) {
 	l = m.WethPair.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	l = m.UsdtPair.Size()
+	n += 1 + l + sovGenerated(uint64(l))
+	l = m.CreatorState.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -681,6 +755,19 @@ func sovGenerated(x uint64) (n int) {
 func sozGenerated(x uint64) (n int) {
 	return sovGenerated(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+func (this *CreatorState) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&CreatorState{`,
+		`TokenBalance:` + fmt.Sprintf("%v", this.TokenBalance) + `,`,
+		`WethBalance:` + fmt.Sprintf("%v", this.WethBalance) + `,`,
+		`UsdtBalance:` + fmt.Sprintf("%v", this.UsdtBalance) + `,`,
+		`NativeBalance:` + fmt.Sprintf("%v", this.NativeBalance) + `,`,
+		`}`,
+	}, "")
+	return s
+}
 func (this *PairV2State) String() string {
 	if this == nil {
 		return "nil"
@@ -713,6 +800,7 @@ func (this *ProjectChainState) String() string {
 		`Token:` + strings.Replace(strings.Replace(this.Token.String(), "TokenState", "TokenState", 1), `&`, ``, 1) + `,`,
 		`WethPair:` + strings.Replace(strings.Replace(this.WethPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
 		`UsdtPair:` + strings.Replace(strings.Replace(this.UsdtPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
+		`CreatorState:` + strings.Replace(strings.Replace(this.CreatorState.String(), "CreatorState", "CreatorState", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -808,6 +896,184 @@ func valueToStringGenerated(v interface{}) string {
 	}
 	pv := reflect.Indirect(rv).Interface()
 	return fmt.Sprintf("*%v", pv)
+}
+func (m *CreatorState) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CreatorState: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CreatorState: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenBalance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenBalance = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WethBalance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.WethBalance = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UsdtBalance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UsdtBalance = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NativeBalance", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NativeBalance = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *PairV2State) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1427,6 +1693,39 @@ func (m *ProjectChainState) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.UsdtPair.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatorState", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.CreatorState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

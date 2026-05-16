@@ -275,27 +275,32 @@ func (s *Service) refreshActiveProjectStates(ctx context.Context, fetcher evm.At
 		return nil
 	}
 
+	queries := make([]athenacontract.AthenaProjectQuery, 0, len(activeProjects))
 	contracts := make([]common.Address, 0, len(activeProjects))
 	for _, project := range activeProjects {
 		if project == nil {
 			continue
 		}
+		queries = append(queries, athenacontract.AthenaProjectQuery{
+			TokenContract: project.Meta.Contract,
+			MsgCaller:     project.Meta.Creator,
+		})
 		contracts = append(contracts, project.Meta.Contract)
 	}
-	if len(contracts) == 0 {
+	if len(queries) == 0 {
 		return nil
 	}
 
-	fetched, err := fetcher.FetchProjects(ctx, contracts)
+	fetched, err := fetcher.FetchProjectsWithSimulationState(ctx, queries)
 	if err != nil {
 		return err
 	}
-	if len(fetched) != len(contracts) {
-		return fmt.Errorf("fetch projects size mismatch: got %d want %d", len(fetched), len(contracts))
+	if len(fetched) != len(queries) {
+		return fmt.Errorf("fetch projects with simulation state size mismatch: got %d want %d", len(fetched), len(queries))
 	}
 
 	for i, contract := range contracts {
-		nextState := fetched[i]
+		nextState := fetched[i].Project
 		_, err := s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if !exists || current == nil || current.Meta.IsArchived {
 				return nil, false, nil

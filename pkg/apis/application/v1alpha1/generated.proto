@@ -8,6 +8,16 @@ package github.com.useryege.athena.pkg.apis.application.v1alpha1;
 // Package-wide variables from generator "generated".
 option go_package = "github.com/useryege/athena/pkg/apis/application/v1alpha1";
 
+message CreatorState {
+  optional string tokenBalance = 1;
+
+  optional string wethBalance = 2;
+
+  optional string usdtBalance = 3;
+
+  optional string nativeBalance = 4;
+}
+
 message PairV2State {
   optional bool isCreated = 1;
 
@@ -46,6 +56,8 @@ message ProjectChainState {
   optional PairV2State wethPair = 2;
 
   optional PairV2State usdtPair = 3;
+
+  optional CreatorState creatorState = 4;
 }
 
 message ProjectMeta {

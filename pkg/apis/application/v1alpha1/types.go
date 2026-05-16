@@ -18,9 +18,10 @@ type ProjectMeta struct {
 }
 
 type ProjectChainState struct {
-	Token    TokenState  `protobuf:"bytes,1,opt,name=token" json:"token"`
-	WethPair PairV2State `protobuf:"bytes,2,opt,name=wethPair" json:"wethPair"`
-	UsdtPair PairV2State `protobuf:"bytes,3,opt,name=usdtPair" json:"usdtPair"`
+	Token        TokenState   `protobuf:"bytes,1,opt,name=token" json:"token"`
+	WethPair     PairV2State  `protobuf:"bytes,2,opt,name=wethPair" json:"wethPair"`
+	UsdtPair     PairV2State  `protobuf:"bytes,3,opt,name=usdtPair" json:"usdtPair"`
+	CreatorState CreatorState `protobuf:"bytes,4,opt,name=creatorState" json:"creatorState"`
 }
 
 type TokenState struct {
@@ -47,6 +48,13 @@ type PairV2State struct {
 	FeeAddressHoldLiquidityBalance string `protobuf:"bytes,13,opt,name=feeAddressHoldLiquidityBalance" json:"feeAddressHoldLiquidityBalance"`
 	IsRemoveLiquidity              bool   `protobuf:"varint,14,opt,name=isRemoveLiquidity" json:"isRemoveLiquidity"`
 	FeeAddressHoldLiquidityRatio   string `protobuf:"bytes,15,opt,name=feeAddressHoldLiquidityRatio" json:"feeAddressHoldLiquidityRatio"`
+}
+
+type CreatorState struct {
+	TokenBalance  string `protobuf:"bytes,1,opt,name=tokenBalance" json:"tokenBalance"`
+	WethBalance   string `protobuf:"bytes,2,opt,name=wethBalance" json:"wethBalance"`
+	UsdtBalance   string `protobuf:"bytes,3,opt,name=usdtBalance" json:"usdtBalance"`
+	NativeBalance string `protobuf:"bytes,4,opt,name=nativeBalance" json:"nativeBalance"`
 }
 
 type SimulateResult struct {

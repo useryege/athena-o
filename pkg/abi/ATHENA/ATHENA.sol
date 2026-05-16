@@ -64,7 +64,12 @@ contract Athena {
         uint256 feeAddressHoldLiquidityRatio;
     }
 
-
+    struct CreatorState {
+        uint256 tokenBalance;
+        uint256 wethBalance;
+        uint256 usdtBalance;
+        uint256 nativeBalance;
+    }
 
     struct Project {
         address tokenContract;
@@ -72,6 +77,7 @@ contract Athena {
         Token token;
         Pair wethPair;
         Pair usdtPair;
+        CreatorState creatorState;
     }
 
     struct ProjectQuery {
@@ -142,13 +148,13 @@ contract Athena {
     }
 
     function Get(address tokenContract, address[] calldata lockers) external view returns (Project memory) {
-        return _get(tokenContract, lockers);
+        return _get(tokenContract, ZERO_ADDRESS, lockers);
     }
 
     function List(address[] calldata tokenContracts, address[] calldata lockers) external view returns (Project[] memory projects) {
         projects = new Project[](tokenContracts.length);
         for (uint256 i = 0; i < tokenContracts.length;) {
-            projects[i] = _get(tokenContracts[i], lockers);
+            projects[i] = _get(tokenContracts[i], ZERO_ADDRESS, lockers);
             unchecked {
                 i++;
             }
@@ -182,7 +188,7 @@ contract Athena {
         view
         returns (SimulationState memory)
     {
-        Project memory project = _get(query.tokenContract, lockers);
+        Project memory project = _get(query.tokenContract, query.msgCaller, lockers);
         return _getSimulationState(query, project);
     }
 
@@ -193,7 +199,7 @@ contract Athena {
     {
         states = new SimulationState[](queries.length);
         for (uint256 i = 0; i < queries.length;) {
-            Project memory project = _get(queries[i].tokenContract, lockers);
+            Project memory project = _get(queries[i].tokenContract, queries[i].msgCaller, lockers);
             states[i] = _getSimulationState(queries[i], project);
             unchecked {
                 i++;
@@ -206,7 +212,7 @@ contract Athena {
         view
         returns (ProjectWithSimulationState memory result)
     {
-        result.project = _get(query.tokenContract, lockers);
+        result.project = _get(query.tokenContract, query.msgCaller, lockers);
         result.simulationState = _getSimulationState(query, result.project);
     }
 
@@ -232,7 +238,7 @@ contract Athena {
         (, state.callerBalance) = _safeBalanceOf(query.tokenContract, query.msgCaller);
     }
 
-    function _get(address tokenContract, address[] calldata lockers) private view returns (Project memory) {
+    function _get(address tokenContract, address msgCaller, address[] calldata lockers) private view returns (Project memory) {
         Project memory project;
 
         project.tokenContract = tokenContract;
@@ -262,6 +268,13 @@ contract Athena {
             && bytes(project.token.name).length > 0
             && symbolOk
             && bytes(project.token.symbol).length > 0;
+
+        if (msgCaller != ZERO_ADDRESS) {
+            (, project.creatorState.tokenBalance) = _safeBalanceOf(tokenContract, msgCaller);
+            (, project.creatorState.wethBalance) = _safeBalanceOf(wethContract, msgCaller);
+            (, project.creatorState.usdtBalance) = _safeBalanceOf(usdtContract, msgCaller);
+            project.creatorState.nativeBalance = msgCaller.balance;
+        }
 
         if (!project.token.isValidERC20 || tokenContract == wethContract) {
             return project;

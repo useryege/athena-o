@@ -255,6 +255,28 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             </div>
                         </div>
 
+                        <div className='white-box project-details__box'>
+                            <div className='project-details__section-title'>Creator State</div>
+                            <div className='project-details__grid'>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Token Balance</span>
+                                    <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.tokenBalance)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>WETH Balance</span>
+                                    <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.wethBalance)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>USDT Balance</span>
+                                    <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.usdtBalance)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Native Balance</span>
+                                    <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.nativeBalance)}</span>
+                                </div>
+                            </div>
+                        </div>
+
                         {project.meta?.sourceCode && (
                             <div className='white-box project-details__box'>
                                 <div className='project-details__section-title'>Source Code</div>

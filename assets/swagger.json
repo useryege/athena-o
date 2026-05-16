@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-241-g498516b-dirty"
+    "version": "v1.0.0-253-g59c913e-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1117,6 +1117,23 @@
         "PROJECT_SCOPE_ALL"
       ]
     },
+    "v1alpha1CreatorState": {
+      "type": "object",
+      "properties": {
+        "nativeBalance": {
+          "type": "string"
+        },
+        "tokenBalance": {
+          "type": "string"
+        },
+        "usdtBalance": {
+          "type": "string"
+        },
+        "wethBalance": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1PairV2State": {
       "type": "object",
       "properties": {
@@ -1171,6 +1188,9 @@
     "v1alpha1ProjectChainState": {
       "type": "object",
       "properties": {
+        "creatorState": {
+          "$ref": "#/definitions/v1alpha1CreatorState"
+        },
         "token": {
           "$ref": "#/definitions/v1alpha1TokenState"
         },
