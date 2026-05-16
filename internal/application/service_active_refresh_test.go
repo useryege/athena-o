@@ -102,18 +102,18 @@ type activeRefreshFetcherMock struct {
 	projectWithSimulationErr error
 	stateErr                 error
 
-	projectCalls               [][]common.Address
+	projectCalls               [][]athenacontract.AthenaProjectQuery
 	projectWithSimulationCalls [][]athenacontract.AthenaProjectQuery
 	stateCalls                 [][]athenacontract.AthenaProjectQuery
 }
 
-func (m *activeRefreshFetcherMock) FetchProject(context.Context, common.Address) (athenacontract.AthenaProject, error) {
+func (m *activeRefreshFetcherMock) FetchProject(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaProject, error) {
 	return athenacontract.AthenaProject{}, nil
 }
 
-func (m *activeRefreshFetcherMock) FetchProjects(_ context.Context, tokenContracts []common.Address) ([]athenacontract.AthenaProject, error) {
-	call := make([]common.Address, len(tokenContracts))
-	copy(call, tokenContracts)
+func (m *activeRefreshFetcherMock) FetchProjects(_ context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProject, error) {
+	call := make([]athenacontract.AthenaProjectQuery, len(queries))
+	copy(call, queries)
 	m.projectCalls = append(m.projectCalls, call)
 	return m.projects, m.projectErr
 }

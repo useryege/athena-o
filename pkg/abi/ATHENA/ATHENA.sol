@@ -147,14 +147,14 @@ contract Athena {
         )))));
     }
 
-    function Get(address tokenContract, address[] calldata lockers) external view returns (Project memory) {
-        return _get(tokenContract, ZERO_ADDRESS, lockers);
+    function Get(ProjectQuery calldata query, address[] calldata lockers) external view returns (Project memory) {
+        return _get(query.tokenContract, query.msgCaller, lockers);
     }
 
-    function List(address[] calldata tokenContracts, address[] calldata lockers) external view returns (Project[] memory projects) {
-        projects = new Project[](tokenContracts.length);
-        for (uint256 i = 0; i < tokenContracts.length;) {
-            projects[i] = _get(tokenContracts[i], ZERO_ADDRESS, lockers);
+    function List(ProjectQuery[] calldata queries, address[] calldata lockers) external view returns (Project[] memory projects) {
+        projects = new Project[](queries.length);
+        for (uint256 i = 0; i < queries.length;) {
+            projects[i] = _get(queries[i].tokenContract, queries[i].msgCaller, lockers);
             unchecked {
                 i++;
             }

@@ -9,8 +9,8 @@ import (
 )
 
 type AthenaFetcher interface {
-	FetchProject(ctx context.Context, token common.Address) (athenacontract.AthenaProject, error)
-	FetchProjects(ctx context.Context, tokenContracts []common.Address) ([]athenacontract.AthenaProject, error)
+	FetchProject(ctx context.Context, query athenacontract.AthenaProjectQuery) (athenacontract.AthenaProject, error)
+	FetchProjects(ctx context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProject, error)
 	FetchProjectsWithSimulationState(ctx context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error)
 	FetchSimulationState(ctx context.Context, query athenacontract.AthenaProjectQuery) (athenacontract.AthenaSimulationState, error)
 	FetchSimulationStates(ctx context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaSimulationState, error)
@@ -42,14 +42,14 @@ func (f *athenaFetcherImpl) FetchSimulationStates(ctx context.Context, queries [
 	return f.caller.ListSimulationState(reader, queries, f.liquidityLocker)
 }
 
-func (f *athenaFetcherImpl) FetchProject(ctx context.Context, token common.Address) (athenacontract.AthenaProject, error) {
+func (f *athenaFetcherImpl) FetchProject(ctx context.Context, query athenacontract.AthenaProjectQuery) (athenacontract.AthenaProject, error) {
 	reader := &bind.CallOpts{Context: ctx}
-	return f.caller.Get(reader, token, f.liquidityLocker)
+	return f.caller.Get(reader, query, f.liquidityLocker)
 }
 
-func (f *athenaFetcherImpl) FetchProjects(ctx context.Context, tokenContracts []common.Address) ([]athenacontract.AthenaProject, error) {
+func (f *athenaFetcherImpl) FetchProjects(ctx context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProject, error) {
 	reader := &bind.CallOpts{Context: ctx}
-	return f.caller.List(reader, tokenContracts, f.liquidityLocker)
+	return f.caller.List(reader, queries, f.liquidityLocker)
 }
 
 func (f *athenaFetcherImpl) FetchProjectsWithSimulationState(ctx context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {

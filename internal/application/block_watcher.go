@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/evm"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 const initialProjectSyncLookback = 30 * 24 * time.Hour
@@ -245,7 +246,6 @@ func (w *BlockWatcher) scanBlock(ctx context.Context, blockNumber uint64) error 
 	}
 
 	projects := make([]*Project, 0)
-	contracts := make([]common.Address, 0)
 	for txIndex, tx := range block.Transactions() {
 		if tx.To() != nil {
 			continue
@@ -268,25 +268,38 @@ func (w *BlockWatcher) scanBlock(ctx context.Context, blockNumber uint64) error 
 			},
 		}
 		projects = append(projects, project)
-		contracts = append(contracts, contractAddress)
 	}
-	if err := w.syncProjects(ctx, projects, contracts); err != nil {
+	if err := w.syncProjects(ctx, projects); err != nil {
 		return fmt.Errorf("failed to sync projects for block %d: %w", blockNumber, err)
 	}
 	return nil
 }
 
-func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project, contracts []common.Address) error {
+func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) error {
 	if len(projects) == 0 {
 		return nil
 	}
 
-	snapshots, err := w.fetcher.FetchProjects(ctx, contracts)
+	queries := make([]athenacontract.AthenaProjectQuery, 0, len(projects))
+	for _, project := range projects {
+		if project == nil {
+			continue
+		}
+		queries = append(queries, athenacontract.AthenaProjectQuery{
+			TokenContract: project.Meta.Contract,
+			MsgCaller:     project.Meta.Creator,
+		})
+	}
+	if len(queries) == 0 {
+		return nil
+	}
+
+	snapshots, err := w.fetcher.FetchProjects(ctx, queries)
 	if err != nil {
 		return err
 	}
-	if len(snapshots) != len(projects) {
-		return fmt.Errorf("athena list returned %d projects for %d token contracts", len(snapshots), len(projects))
+	if len(snapshots) != len(queries) {
+		return fmt.Errorf("athena list returned %d projects for %d queries", len(snapshots), len(queries))
 	}
 
 	for i, project := range projects {
