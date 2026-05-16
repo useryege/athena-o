@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"errors"
 
 	"github.com/useryege/athena/internal/application/sourcecode"
 	"github.com/useryege/athena/internal/application/store"
@@ -10,17 +11,19 @@ import (
 var _ SourceCodeBlacklistModel = &sourceCodeBlacklistModel{}
 
 type sourceCodeBlacklistModel struct {
-	store store.SourceCodeBlacklistStore
-	cache SourceCodeBlacklistCache
+	store          store.SourceCodeBlacklistStore
+	cache          SourceCodeBlacklistCache
+	writePublisher SourceCodeBlacklistWritePublisher
 }
 
-func NewSourceCodeBlacklistModel(store store.SourceCodeBlacklistStore, cache SourceCodeBlacklistCache) SourceCodeBlacklistModel {
+func NewSourceCodeBlacklistModel(store store.SourceCodeBlacklistStore, cache SourceCodeBlacklistCache, writePublisher SourceCodeBlacklistWritePublisher) SourceCodeBlacklistModel {
 	if cache == nil {
 		cache = NewLayeredBlacklistCache(NewLocalBlacklistCache(), nil)
 	}
 	return &sourceCodeBlacklistModel{
-		store: store,
-		cache: cache,
+		store:          store,
+		cache:          cache,
+		writePublisher: writePublisher,
 	}
 }
 
@@ -48,15 +51,21 @@ func (m *sourceCodeBlacklistModel) Add(ctx context.Context, field string) error 
 	if field == "" {
 		return nil
 	}
-	if m.store != nil {
-		if err := m.store.AddSourceCodeBlacklistField(ctx, field); err != nil {
-			return err
-		}
-		return m.refresh(ctx)
+	if m.writePublisher == nil {
+		return errors.New("source code blacklist write publisher is not configured")
+	}
+
+	if err := m.writePublisher.PublishAdd(ctx, field); err != nil {
+		return err
 	}
 	fields, err := m.List(ctx)
 	if err != nil {
 		return err
+	}
+	for _, current := range fields {
+		if current == field {
+			return nil
+		}
 	}
 	fields = append(fields, field)
 	return m.cache.Set(ctx, fields)
@@ -70,11 +79,12 @@ func (m *sourceCodeBlacklistModel) Delete(ctx context.Context, field string) err
 	if field == "" {
 		return nil
 	}
-	if m.store != nil {
-		if err := m.store.DeleteSourceCodeBlacklistField(ctx, field); err != nil {
-			return err
-		}
-		return m.refresh(ctx)
+	if m.writePublisher == nil {
+		return errors.New("source code blacklist write publisher is not configured")
+	}
+
+	if err := m.writePublisher.PublishDelete(ctx, field); err != nil {
+		return err
 	}
 	fields, err := m.List(ctx)
 	if err != nil {

@@ -16,8 +16,8 @@ type ProjectRegistry interface {
 	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
 	ListProjects(ctx context.Context) ([]*Project, error)
 	ListProjectContracts(ctx context.Context) ([]ProjectContractRef, error)
-	MaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
 	SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error
+	LoadProject(ctx context.Context, projectID uuid.UUID, project *Project) error
 	UpdateProjectChainStates(ctx context.Context, states map[uuid.UUID]athenacontract.AthenaProject) error
 	UpdateProjectMetaState(ctx context.Context, projectID uuid.UUID, state *ProjectMeta) error
 	RemoveProject(ctx context.Context, projectID uuid.UUID) error
@@ -37,15 +37,18 @@ type projectRegistryImpl struct {
 	Projects                  map[uuid.UUID]*Project
 	ProjectContractRefs       []ProjectContractRef
 	ProjectContractRefIndexes map[uuid.UUID]int
-	store                     appstore.ProjectStore
+	publisher                 PersistenceEventPublisher
 }
 
-func NewProjectRegistry(store appstore.ProjectStore) ProjectRegistry {
+func NewProjectRegistry(publisher PersistenceEventPublisher) ProjectRegistry {
+	if publisher == nil {
+		panic("persistence publisher is not configured")
+	}
 	return &projectRegistryImpl{
 		Projects:                  make(map[uuid.UUID]*Project),
 		ProjectsByContract:        make(map[common.Address]struct{}),
 		ProjectContractRefIndexes: make(map[uuid.UUID]int),
-		store:                     store,
+		publisher:                 publisher,
 	}
 }
 
@@ -90,26 +93,6 @@ func (r *projectRegistryImpl) ListProjectContracts(ctx context.Context) ([]Proje
 	return refs, nil
 }
 
-func (r *projectRegistryImpl) MaxProjectBlockNumber(ctx context.Context) (uint64, bool, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	var maxBlock uint64
-	var ok bool
-	for _, project := range r.Projects {
-		select {
-		case <-ctx.Done():
-			return 0, false, ctx.Err()
-		default:
-		}
-		if !ok || project.Meta.BlockNumber > maxBlock {
-			maxBlock = project.Meta.BlockNumber
-			ok = true
-		}
-	}
-	return maxBlock, ok, nil
-}
-
 func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -119,10 +102,24 @@ func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUI
 	if _, ok := r.ProjectsByContract[project.Meta.Contract]; ok {
 		return nil
 	}
-	if r.store != nil {
-		if err := r.store.SaveProjectMeta(ctx, projectMetaToStore(project.Meta)); err != nil {
-			return err
-		}
+	if err := r.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
+		return err
+	}
+	r.setProjectLocked(projectID, project)
+	return nil
+}
+
+func (r *projectRegistryImpl) LoadProject(ctx context.Context, projectID uuid.UUID, project *Project) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if project == nil {
+		return nil
+	}
+	if _, ok := r.ProjectsByContract[project.Meta.Contract]; ok {
+		return nil
 	}
 	r.setProjectLocked(projectID, project)
 	return nil
@@ -150,11 +147,6 @@ func (r *projectRegistryImpl) UpdateProjectChainStates(ctx context.Context, stat
 	defer r.mu.Unlock()
 
 	for projectID, state := range states {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
 		project, ok := r.Projects[projectID]
 		if !ok {
 			continue
@@ -176,12 +168,10 @@ func (r *projectRegistryImpl) UpdateProjectMetaState(ctx context.Context, projec
 	}
 	if state != nil {
 		if state.SourceCode != "" {
-			project.Meta.SourceCode = state.SourceCode
-			if r.store != nil {
-				if err := r.store.UpdateProjectSourceCode(ctx, projectID, state.SourceCode); err != nil {
-					return err
-				}
+			if err := r.publisher.PublishProjectSourceCodeUpdate(ctx, projectID, state.SourceCode); err != nil {
+				return err
 			}
+			project.Meta.SourceCode = state.SourceCode
 		}
 		project.Meta.CreatorResult = state.CreatorResult
 		project.Meta.SourceCodeBlacklist = sourcecode.BlacklistReport{

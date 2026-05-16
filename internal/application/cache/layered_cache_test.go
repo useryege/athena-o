@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"testing"
 )
@@ -97,8 +96,29 @@ func TestLayeredBlacklistCacheMissLoadsAndBackfills(t *testing.T) {
 
 type sourceCodeBlacklistStoreMock struct {
 	fields []string
-	addErr error
-	added  []string
+}
+
+type sourceCodeBlacklistPublisherMock struct {
+	addErr  error
+	delErr  error
+	added   []string
+	deleted []string
+}
+
+func (p *sourceCodeBlacklistPublisherMock) PublishAdd(ctx context.Context, field string) error {
+	if p.addErr != nil {
+		return p.addErr
+	}
+	p.added = append(p.added, field)
+	return nil
+}
+
+func (p *sourceCodeBlacklistPublisherMock) PublishDelete(ctx context.Context, field string) error {
+	if p.delErr != nil {
+		return p.delErr
+	}
+	p.deleted = append(p.deleted, field)
+	return nil
 }
 
 func (s *sourceCodeBlacklistStoreMock) ListSourceCodeBlacklistFields(ctx context.Context) ([]string, error) {
@@ -106,10 +126,6 @@ func (s *sourceCodeBlacklistStoreMock) ListSourceCodeBlacklistFields(ctx context
 }
 
 func (s *sourceCodeBlacklistStoreMock) AddSourceCodeBlacklistField(ctx context.Context, field string) error {
-	if s.addErr != nil {
-		return s.addErr
-	}
-	s.added = append(s.added, field)
 	return nil
 }
 
@@ -117,28 +133,59 @@ func (s *sourceCodeBlacklistStoreMock) DeleteSourceCodeBlacklistField(ctx contex
 	return nil
 }
 
-func TestSourceCodeBlacklistModelAddWritesStoreBeforeCache(t *testing.T) {
-	addErr := errors.New("add failed")
-	store := &sourceCodeBlacklistStoreMock{addErr: addErr}
+func TestSourceCodeBlacklistModelAddWithoutPublisherReturnsError(t *testing.T) {
+	store := &sourceCodeBlacklistStoreMock{fields: []string{"owner"}}
 	local := NewLocalBlacklistCache()
-	model := NewSourceCodeBlacklistModel(store, NewLayeredBlacklistCache(local, nil))
+	model := NewSourceCodeBlacklistModel(store, NewLayeredBlacklistCache(local, nil), nil)
 
-	if err := model.Add(context.Background(), " owner "); !errors.Is(err, addErr) {
-		t.Fatalf("add error = %v, want %v", err, addErr)
+	err := model.Add(context.Background(), " owner ")
+	if err == nil {
+		t.Fatalf("add error = nil, want non-nil")
+	}
+	if err.Error() != "source code blacklist write publisher is not configured" {
+		t.Fatalf("add error = %v, want missing publisher error", err)
 	}
 	if fields, ok := local.Get(); ok || len(fields) != 0 {
 		t.Fatalf("local fields after failed add = %v, ok = %v, want empty, false", fields, ok)
 	}
+}
 
-	store.addErr = nil
-	store.fields = []string{"owner"}
-	if err := model.Add(context.Background(), " owner "); err != nil {
+func TestSourceCodeBlacklistModelAddPublishesEventAndUpdatesCache(t *testing.T) {
+	publisher := &sourceCodeBlacklistPublisherMock{}
+	local := NewLocalBlacklistCache("owner")
+	model := NewSourceCodeBlacklistModel(nil, NewLayeredBlacklistCache(local, nil), publisher)
+
+	if err := model.Add(context.Background(), " admin "); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	if !reflect.DeepEqual(store.added, []string{"owner"}) {
-		t.Fatalf("store added = %v, want [owner]", store.added)
+	if !reflect.DeepEqual(publisher.added, []string{"admin"}) {
+		t.Fatalf("publisher added = %v, want [admin]", publisher.added)
 	}
-	if fields, ok := local.Get(); !ok || !reflect.DeepEqual(fields, []string{"owner"}) {
-		t.Fatalf("local fields after add = %v, ok = %v, want [owner], true", fields, ok)
+	fields, err := model.List(context.Background())
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if !reflect.DeepEqual(fields, []string{"admin", "owner"}) {
+		t.Fatalf("fields = %v, want [admin owner]", fields)
+	}
+}
+
+func TestSourceCodeBlacklistModelDeletePublishesEventAndUpdatesCache(t *testing.T) {
+	publisher := &sourceCodeBlacklistPublisherMock{}
+	local := NewLocalBlacklistCache("owner", "admin")
+	model := NewSourceCodeBlacklistModel(nil, NewLayeredBlacklistCache(local, nil), publisher)
+
+	if err := model.Delete(context.Background(), " admin "); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	if !reflect.DeepEqual(publisher.deleted, []string{"admin"}) {
+		t.Fatalf("publisher deleted = %v, want [admin]", publisher.deleted)
+	}
+	fields, err := model.List(context.Background())
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if !reflect.DeepEqual(fields, []string{"owner"}) {
+		t.Fatalf("fields = %v, want [owner]", fields)
 	}
 }

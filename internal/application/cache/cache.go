@@ -20,3 +20,8 @@ type SourceCodeBlacklistModel interface {
 	Add(ctx context.Context, field string) error
 	Delete(ctx context.Context, field string) error
 }
+
+type SourceCodeBlacklistWritePublisher interface {
+	PublishAdd(ctx context.Context, field string) error
+	PublishDelete(ctx context.Context, field string) error
+}
