@@ -105,22 +105,16 @@ func (r *projectRegistryImpl) ListProjectContracts(ctx context.Context) (Project
 func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	if _, ok := r.ProjectsByContract[project.Meta.Contract]; ok {
-		return nil
-	}
-	if err := r.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
-		return err
-	}
-	r.setProjectLocked(projectID, project)
-	return nil
+	return r.setProjectWithOptionsLocked(ctx, projectID, project, true)
 }
 
 func (r *projectRegistryImpl) LoadProject(ctx context.Context, projectID uuid.UUID, project *Project) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	return r.setProjectWithOptionsLocked(ctx, projectID, project, false)
+}
+
+func (r *projectRegistryImpl) setProjectWithOptionsLocked(ctx context.Context, projectID uuid.UUID, project *Project, persist bool) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -129,6 +123,11 @@ func (r *projectRegistryImpl) LoadProject(ctx context.Context, projectID uuid.UU
 	}
 	if _, ok := r.ProjectsByContract[project.Meta.Contract]; ok {
 		return nil
+	}
+	if persist {
+		if err := r.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
+			return err
+		}
 	}
 	r.setProjectLocked(projectID, project)
 	return nil
