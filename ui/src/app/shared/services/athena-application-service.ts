@@ -94,7 +94,14 @@ export interface ListArchivedProjectsResponse {
     pageSize?: number;
 }
 
-export type ProjectScope = 'PROJECT_SCOPE_UNSPECIFIED' | 'PROJECT_SCOPE_ACTIVE' | 'PROJECT_SCOPE_ARCHIVED' | 'PROJECT_SCOPE_ALL';
+export const PROJECT_SCOPE = {
+    UNSPECIFIED: 0,
+    ACTIVE: 1,
+    ARCHIVED: 2,
+    ALL: 3
+} as const;
+
+export type ProjectScope = (typeof PROJECT_SCOPE)[keyof typeof PROJECT_SCOPE];
 
 export interface SourceCodeBlacklistField {
     id?: number;
@@ -111,7 +118,7 @@ export interface AddSourceCodeBlacklistFieldResponse {
 
 export class AthenaApplicationService {
     public listProjects(
-        scope: ProjectScope = 'PROJECT_SCOPE_ACTIVE',
+        scope: ProjectScope = PROJECT_SCOPE.ACTIVE,
         page = 1,
         pageSize = 20
     ): Promise<{items: ProjectView[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
@@ -129,7 +136,7 @@ export class AthenaApplicationService {
         return promise;
     }
 
-    public getProject(projectID: string, scope: ProjectScope = 'PROJECT_SCOPE_ACTIVE'): Promise<ProjectView> & {abort?: () => void} {
+    public getProject(projectID: string, scope: ProjectScope = PROJECT_SCOPE.ACTIVE): Promise<ProjectView> & {abort?: () => void} {
         const req = requests.get(`/projects/${encodeURIComponent(projectID)}`).query({scope});
         const promise = req.then(res => (res.body as GetProjectResponse).item) as any;
         promise.abort = () => req.abort();
@@ -192,7 +199,7 @@ export class AthenaApplicationService {
     }
 
     public listArchivedProjects(page = 1, pageSize = 20): Promise<{items: ProjectView[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
-        const req = this.listProjects('PROJECT_SCOPE_ARCHIVED', page, pageSize) as any;
+        const req = this.listProjects(PROJECT_SCOPE.ARCHIVED, page, pageSize) as any;
         const promise = req.then((res: ListArchivedProjectsResponse) => {
             const body = (res || {}) as ListArchivedProjectsResponse;
             return {
@@ -207,7 +214,7 @@ export class AthenaApplicationService {
     }
 
     public getArchivedProject(projectID: string): Promise<ProjectView> & {abort?: () => void} {
-        const req = this.getProject(projectID, 'PROJECT_SCOPE_ARCHIVED') as any;
+        const req = this.getProject(projectID, PROJECT_SCOPE.ARCHIVED) as any;
         const promise = req.then((item: ProjectView) => item) as any;
         promise.abort = () => req.abort();
         return promise;
