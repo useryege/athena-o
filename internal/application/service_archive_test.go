@@ -127,6 +127,35 @@ func (m *archiveProjectCacheMock) SetProject(ctx context.Context, project *Proje
 	return nil
 }
 
+func (m *archiveProjectCacheMock) UpdateProject(ctx context.Context, contract common.Address, updater ProjectUpdater) (bool, error) {
+	if m.getProject != nil && m.getProject.Meta.Contract == (common.Address{}) {
+		m.getProject.Meta.Contract = contract
+	}
+	current := m.getProject
+	exists := m.getOK
+	next, changed, err := updater(current, exists)
+	if err != nil {
+		return false, err
+	}
+	if !changed {
+		return false, nil
+	}
+	if next == nil {
+		m.getProject = nil
+		m.getOK = false
+		return true, nil
+	}
+	if next.Meta.Contract == (common.Address{}) {
+		next.Meta.Contract = contract
+	}
+	if err := m.SetProject(ctx, next); err != nil {
+		return false, err
+	}
+	m.getProject = next
+	m.getOK = true
+	return true, nil
+}
+
 func (m *archiveProjectCacheMock) DeleteProject(ctx context.Context, contract common.Address) error {
 	return nil
 }

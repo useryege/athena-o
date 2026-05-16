@@ -2,12 +2,14 @@ package application
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redis/go-redis/v9"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 func TestSetProject_WritesProjectWithoutUpdatingMaxBlock(t *testing.T) {
@@ -22,6 +24,13 @@ func TestSetProject_WritesProjectWithoutUpdatingMaxBlock(t *testing.T) {
 			BlockNumber: 42,
 			TxIndex:     3,
 			IsArchived:  false,
+			SourceCode:  "contract A {}",
+			CreatorResult: SimulateResult{
+				CanMintViaTransferToUsdtPair: true,
+			},
+		},
+		ChainState: athenacontract.AthenaProject{
+			Token: athenacontract.AthenaToken{Symbol: "ATH"},
 		},
 	}
 
@@ -38,6 +47,15 @@ func TestSetProject_WritesProjectWithoutUpdatingMaxBlock(t *testing.T) {
 	}
 	if got.Meta.Contract != contract {
 		t.Fatalf("project contract = %s, want %s", got.Meta.Contract, contract)
+	}
+	if got.ChainState.Token.Symbol != "ATH" {
+		t.Fatalf("chain state symbol = %q, want ATH", got.ChainState.Token.Symbol)
+	}
+	if got.Meta.SourceCode != "contract A {}" {
+		t.Fatalf("source code = %q, want contract A {}", got.Meta.SourceCode)
+	}
+	if !got.Meta.CreatorResult.CanMintViaTransferToUsdtPair {
+		t.Fatalf("creator result not persisted")
 	}
 
 	maxBlock, ok, err := cache.GetMaxProjectBlockNumber(ctx)
@@ -123,6 +141,71 @@ func TestSetProject_UnarchiveFlowMovesIndexes(t *testing.T) {
 	}
 }
 
+func TestUpdateProject_ConcurrentFieldUpdatesDoNotLoseData(t *testing.T) {
+	ctx := context.Background()
+	cache, _, cleanup := newTestSnapshotCache(t)
+	defer cleanup()
+
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000D1")
+	if err := cache.SetProject(ctx, &Project{
+		Meta: ProjectMeta{
+			Contract: contract,
+		},
+		ChainState: athenacontract.AthenaProject{
+			Token: athenacontract.AthenaToken{Symbol: "OLD"},
+		},
+	}); err != nil {
+		t.Fatalf("seed project: %v", err)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		_, err := cache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+			if !exists || current == nil {
+				return nil, false, nil
+			}
+			current.ChainState.Token.Symbol = "NEW"
+			return current, true, nil
+		})
+		if err != nil {
+			t.Errorf("update chain state: %v", err)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		_, err := cache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+			if !exists || current == nil {
+				return nil, false, nil
+			}
+			current.Meta.CreatorResult = SimulateResult{CanMintViaTransferToWethPair: true}
+			return current, true, nil
+		})
+		if err != nil {
+			t.Errorf("update creator result: %v", err)
+		}
+	}()
+
+	wg.Wait()
+
+	got, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || got == nil {
+		t.Fatalf("project missing after updates")
+	}
+	if got.ChainState.Token.Symbol != "NEW" {
+		t.Fatalf("chain state symbol = %q, want NEW", got.ChainState.Token.Symbol)
+	}
+	if !got.Meta.CreatorResult.CanMintViaTransferToWethPair {
+		t.Fatalf("creator result lost after concurrent update")
+	}
+}
+
 func newTestSnapshotCache(t *testing.T) (*RedisProjectSnapshotCache, *miniredis.Miniredis, func()) {
 	t.Helper()
 
@@ -131,7 +214,10 @@ func newTestSnapshotCache(t *testing.T) (*RedisProjectSnapshotCache, *miniredis.
 		t.Fatalf("start miniredis: %v", err)
 	}
 	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
-	cache := &RedisProjectSnapshotCache{client: client}
+	cache := &RedisProjectSnapshotCache{
+		client:        client,
+		contractLocks: map[string]*sync.Mutex{},
+	}
 
 	cleanup := func() {
 		_ = client.Close()

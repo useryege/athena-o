@@ -35,6 +35,33 @@ func (m *activeRefreshCacheMock) SetProject(_ context.Context, project *Project)
 	return nil
 }
 
+func (m *activeRefreshCacheMock) UpdateProject(ctx context.Context, contract common.Address, updater ProjectUpdater) (bool, error) {
+	current, ok, err := m.GetProject(ctx, contract)
+	if err != nil {
+		return false, err
+	}
+	next, changed, err := updater(current, ok)
+	if err != nil {
+		return false, err
+	}
+	if !changed {
+		return false, nil
+	}
+	if next == nil {
+		if m.getByKey != nil {
+			delete(m.getByKey, contract.Hex())
+		}
+		return true, nil
+	}
+	if next.Meta.Contract == (common.Address{}) {
+		next.Meta.Contract = contract
+	}
+	if err := m.SetProject(ctx, next); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (m *activeRefreshCacheMock) DeleteProject(context.Context, common.Address) error {
 	return nil
 }

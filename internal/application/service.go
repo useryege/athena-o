@@ -295,16 +295,15 @@ func (s *Service) refreshActiveProjectStates(ctx context.Context, fetcher evm.At
 	}
 
 	for i, contract := range contracts {
-		latest, ok, err := s.projectCache.GetProject(ctx, contract)
+		nextState := fetched[i]
+		_, err := s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+			if !exists || current == nil || current.Meta.IsArchived {
+				return nil, false, nil
+			}
+			current.ChainState = nextState
+			return current, true, nil
+		})
 		if err != nil {
-			return err
-		}
-		if !ok || latest == nil || latest.Meta.IsArchived {
-			continue
-		}
-
-		latest.ChainState = fetched[i]
-		if err := s.projectCache.SetProject(ctx, latest); err != nil {
 			return err
 		}
 	}
@@ -389,8 +388,14 @@ func (s *Service) refreshActiveProjectSimulations(ctx context.Context, fetcher e
 			continue
 		}
 
-		latest.Meta.CreatorResult = result
-		if err := s.projectCache.SetProject(ctx, latest); err != nil {
+		_, err = s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+			if !exists || current == nil || current.Meta.IsArchived {
+				return nil, false, nil
+			}
+			current.Meta.CreatorResult = result
+			return current, true, nil
+		})
+		if err != nil {
 			return err
 		}
 	}
@@ -432,21 +437,53 @@ func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		sourceWasEmpty := project != nil && project.Meta.SourceCode == ""
-		updated, err := s.processProjectSourceCode(ctx, project, fields)
+		if project == nil {
+			continue
+		}
+
+		sourceCode := project.Meta.SourceCode
+		if sourceCode == "" && s.apiFetcher != nil {
+			fetchedSourceCode, _, fetchErr := s.fetchSourceCode(ctx, project)
+			if fetchErr != nil {
+				continue
+			}
+			sourceCode = fetchedSourceCode
+		}
+
+		var analyzedSourceCode string
+		var blacklistReport sourcecode.BlacklistReport
+		if sourceCode != "" && s.sourceAnalyzer != nil && project.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
+			analyzedSourceCode = sourceCode
+			blacklistReport = s.sourceAnalyzer.AnalyzeSourceCode(sourceCode, fields)
+		}
+
+		shouldPersistSourceCode := false
+		_, err := s.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
+			if !exists || current == nil || current.Meta.IsArchived {
+				return nil, false, nil
+			}
+
+			changed := false
+			if sourceCode != "" && current.Meta.SourceCode == "" {
+				current.Meta.SourceCode = sourceCode
+				changed = true
+				shouldPersistSourceCode = true
+			}
+
+			if analyzedSourceCode != "" && current.Meta.SourceCode == analyzedSourceCode && current.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
+				current.Meta.SourceCodeBlacklist = blacklistReport
+				changed = true
+			}
+
+			return current, changed, nil
+		})
 		if err != nil {
 			continue
 		}
-		if sourceWasEmpty && project != nil && project.Meta.SourceCode != "" {
-			if err := s.persistProjectSourceCode(ctx, project.Meta.Contract, project.Meta.SourceCode); err != nil {
+		if shouldPersistSourceCode {
+			if err := s.persistProjectSourceCode(ctx, project.Meta.Contract, sourceCode); err != nil {
 				continue
 			}
-		}
-		if !updated || project == nil {
-			continue
-		}
-		if err := s.projectCache.SetProject(ctx, project); err != nil {
-			continue
 		}
 	}
 	return nil
@@ -457,32 +494,6 @@ func (s *Service) persistProjectSourceCode(ctx context.Context, contract common.
 		return nil
 	}
 	return s.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode)
-}
-
-func (s *Service) processProjectSourceCode(ctx context.Context, project *Project, fields []string) (bool, error) {
-	if project == nil {
-		return false, nil
-	}
-	changed := false
-
-	if project.Meta.SourceCode == "" && s.apiFetcher != nil {
-		sourceCode, _, err := s.fetchSourceCode(ctx, project)
-		if err != nil {
-			return false, err
-		}
-		project.Meta.SourceCode = sourceCode
-		changed = true
-	}
-
-	if project.Meta.SourceCode == "" {
-		return changed, nil
-	}
-	if s.sourceAnalyzer == nil || !project.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
-		return changed, nil
-	}
-
-	project.Meta.SourceCodeBlacklist = s.sourceAnalyzer.AnalyzeSourceCode(project.Meta.SourceCode, fields)
-	return true, nil
 }
 
 func (s *Service) fetchSourceCode(ctx context.Context, project *Project) (string, string, error) {
@@ -668,16 +679,15 @@ func (s *Service) ArchiveProject(ctx context.Context, req *applicationpkg.Archiv
 	if err := s.persistencePublisher.PublishProjectArchive(ctx, contract); err != nil {
 		return nil, err
 	}
-	project, ok, err := s.projectCache.GetProject(ctx, contract)
+	_, err = s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+		if !exists || current == nil {
+			current = &Project{Meta: projectMetaFromStore(*meta)}
+		}
+		current.Meta.IsArchived = true
+		current.Meta.ArchivedAt = time.Now().UTC()
+		return current, true, nil
+	})
 	if err != nil {
-		return nil, err
-	}
-	if !ok || project == nil {
-		project = &Project{Meta: projectMetaFromStore(*meta)}
-	}
-	project.Meta.IsArchived = true
-	project.Meta.ArchivedAt = time.Now().UTC()
-	if err := s.projectCache.SetProject(ctx, project); err != nil {
 		return nil, err
 	}
 	return &applicationpkg.ArchiveProjectResponse{}, nil
@@ -704,16 +714,15 @@ func (s *Service) UnarchiveProject(ctx context.Context, req *applicationpkg.Unar
 	if err := s.persistencePublisher.PublishProjectUnarchive(ctx, contract); err != nil {
 		return nil, err
 	}
-	project, ok, err := s.projectCache.GetProject(ctx, contract)
+	_, err = s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+		if !exists || current == nil {
+			current = &Project{Meta: projectMetaFromStore(*meta)}
+		}
+		current.Meta.IsArchived = false
+		current.Meta.ArchivedAt = time.Time{}
+		return current, true, nil
+	})
 	if err != nil {
-		return nil, err
-	}
-	if !ok || project == nil {
-		project = &Project{Meta: projectMetaFromStore(*meta)}
-	}
-	project.Meta.IsArchived = false
-	project.Meta.ArchivedAt = time.Time{}
-	if err := s.projectCache.SetProject(ctx, project); err != nil {
 		return nil, err
 	}
 	return &applicationpkg.UnarchiveProjectResponse{}, nil

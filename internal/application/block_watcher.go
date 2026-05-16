@@ -312,7 +312,13 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project, co
 		if err := w.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
 			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
 		}
-		if err := w.projectCache.SetProject(ctx, project); err != nil {
+		_, err = w.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
+			if exists && current != nil {
+				return nil, false, nil
+			}
+			return project, true, nil
+		})
+		if err != nil {
 			return fmt.Errorf("failed to cache project %s: %w", project.Meta.Contract.Hex(), err)
 		}
 	}
