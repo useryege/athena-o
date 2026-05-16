@@ -153,7 +153,7 @@ func (s *Service) Start() error {
 
 	go s.runActiveProjectStateRefreshLoop(ctx, athenaFetcher)
 	go s.runActiveProjectSimulationRefreshLoop(ctx, athenaFetcher, projectSimulator)
-	go s.runSourceCodeRefreshLoop(ctx)
+	go s.runActiveProjectSourceCodeRefreshLoop(ctx)
 
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
@@ -195,6 +195,8 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		return projects, nil
 	}
 
+	blacklistFields, blacklistFieldsErr := s.sourceCodeBlacklistFields(ctx)
+
 	queries := make([]athenacontract.AthenaProjectQuery, 0, len(metas))
 	for _, meta := range metas {
 		queries = append(queries, athenacontract.AthenaProjectQuery{TokenContract: meta.Contract, MsgCaller: meta.Creator})
@@ -212,6 +214,9 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		project := &Project{
 			Meta:       projectMetaFromStore(meta),
 			ChainState: fetched[i].Project,
+		}
+		if blacklistFieldsErr == nil && meta.SourceCode != "" && s.sourceAnalyzer != nil {
+			project.Meta.SourceCodeBlacklist = s.sourceAnalyzer.AnalyzeSourceCode(meta.SourceCode, blacklistFields)
 		}
 		if simulator != nil {
 			result, err := simulator.SimulatePrimary(
@@ -407,7 +412,7 @@ func (s *Service) refreshActiveProjectSimulations(ctx context.Context, fetcher e
 	return nil
 }
 
-func (s *Service) runSourceCodeRefreshLoop(ctx context.Context) {
+func (s *Service) runActiveProjectSourceCodeRefreshLoop(ctx context.Context) {
 	ticker := time.NewTicker(sourceCodeRefreshInterval)
 	defer ticker.Stop()
 

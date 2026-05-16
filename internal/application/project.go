@@ -28,6 +28,7 @@ type ProjectMeta struct {
 	ArchivedAt  time.Time
 	SourceCode  string
 
+	// extra fields
 	CreatorResult       SimulateResult
 	SourceCodeBlacklist sourcecode.BlacklistReport
 }
