@@ -24,9 +24,9 @@ type ProjectMeta struct {
 	Tx                  *types.Transaction
 	TxHash              common.Hash
 	TxIndex             uint64
-	SourceCode          string
 	IsArchived          bool
 	ArchivedAt          time.Time
+	SourceCode          string
 	CreatorResult       SimulateResult
 	SourceCodeBlacklist sourcecode.BlacklistReport
 }
