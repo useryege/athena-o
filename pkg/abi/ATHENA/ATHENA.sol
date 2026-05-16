@@ -177,27 +177,59 @@ contract Athena {
         }
     }
 
+    function GetSimulationState(ProjectQuery calldata query, address[] calldata lockers)
+        external
+        view
+        returns (SimulationState memory)
+    {
+        Project memory project = _get(query.tokenContract, lockers);
+        return _getSimulationState(query, project);
+    }
+
+    function ListSimulationState(ProjectQuery[] calldata queries, address[] calldata lockers)
+        external
+        view
+        returns (SimulationState[] memory states)
+    {
+        states = new SimulationState[](queries.length);
+        for (uint256 i = 0; i < queries.length;) {
+            Project memory project = _get(queries[i].tokenContract, lockers);
+            states[i] = _getSimulationState(queries[i], project);
+            unchecked {
+                i++;
+            }
+        }
+    }
+
     function _getWithSimulationState(ProjectQuery calldata query, address[] calldata lockers)
         private
         view
         returns (ProjectWithSimulationState memory result)
     {
         result.project = _get(query.tokenContract, lockers);
-        if (!result.project.token.isValidERC20) {
-            return result;
+        result.simulationState = _getSimulationState(query, result.project);
+    }
+
+    function _getSimulationState(ProjectQuery calldata query, Project memory project)
+        private
+        view
+        returns (SimulationState memory state)
+    {
+        if (!project.token.isValidERC20) {
+            return state;
         }
 
-        (, result.simulationState.deadAllowance) = _safeAllowance(query.tokenContract, DEAD_ADDRESS, query.msgCaller);
-        (, result.simulationState.zeroAllowance) = _safeAllowance(query.tokenContract, address(0), query.msgCaller);
-        if (result.project.wethPair.isCreated) {
-            (, result.simulationState.wethPairAllowance) =
-                _safeAllowance(query.tokenContract, result.project.wethPair.contractAddress, query.msgCaller);
+        (, state.deadAllowance) = _safeAllowance(query.tokenContract, DEAD_ADDRESS, query.msgCaller);
+        (, state.zeroAllowance) = _safeAllowance(query.tokenContract, address(0), query.msgCaller);
+        if (project.wethPair.isCreated) {
+            (, state.wethPairAllowance) =
+                _safeAllowance(query.tokenContract, project.wethPair.contractAddress, query.msgCaller);
         }
-        if (result.project.usdtPair.isCreated) {
-            (, result.simulationState.usdtPairAllowance) =
-                _safeAllowance(query.tokenContract, result.project.usdtPair.contractAddress, query.msgCaller);
+        if (project.usdtPair.isCreated) {
+            (, state.usdtPairAllowance) =
+                _safeAllowance(query.tokenContract, project.usdtPair.contractAddress, query.msgCaller);
         }
-        (, result.simulationState.callerBalance) = _safeBalanceOf(query.tokenContract, query.msgCaller);
+        (, state.callerBalance) = _safeBalanceOf(query.tokenContract, query.msgCaller);
     }
 
     function _get(address tokenContract, address[] calldata lockers) private view returns (Project memory) {
