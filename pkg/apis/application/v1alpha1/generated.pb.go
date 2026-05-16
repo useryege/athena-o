@@ -252,11 +252,6 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintGenerated(dAtA, i, uint64(m.BlockTime))
 	i--
 	dAtA[i] = 0x10
-	i -= len(m.ProjectID)
-	copy(dAtA[i:], m.ProjectID)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ProjectID)))
-	i--
-	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
 
@@ -583,8 +578,6 @@ func (m *ProjectMeta) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.ProjectID)
-	n += 1 + l + sovGenerated(uint64(l))
 	n += 1 + sovGenerated(uint64(m.BlockTime))
 	n += 1 + sovGenerated(uint64(m.BlockNumber))
 	l = len(m.Contract)
@@ -729,7 +722,6 @@ func (this *ProjectMeta) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&ProjectMeta{`,
-		`ProjectID:` + fmt.Sprintf("%v", this.ProjectID) + `,`,
 		`BlockTime:` + fmt.Sprintf("%v", this.BlockTime) + `,`,
 		`BlockNumber:` + fmt.Sprintf("%v", this.BlockNumber) + `,`,
 		`Contract:` + fmt.Sprintf("%v", this.Contract) + `,`,
@@ -1488,38 +1480,6 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: ProjectMeta: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProjectID", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ProjectID = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BlockTime", wireType)

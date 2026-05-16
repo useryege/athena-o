@@ -9,7 +9,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	appcache "github.com/useryege/athena/internal/application/cache"
@@ -195,7 +194,7 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context, fetcher evm.Athena
 			continue
 		}
 		for _, project := range activeProjects {
-			if err := s.registry.LoadProject(ctx, project.Meta.ProjectID, project); err != nil {
+			if err := s.registry.LoadProject(ctx, project); err != nil {
 				time.Sleep(bootstrapRetryInterval)
 				continue
 			}
@@ -390,7 +389,7 @@ func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []
 			continue
 		}
 		if sourceWasEmpty && project != nil && project.Meta.SourceCode != "" {
-			if err := s.persistProjectSourceCode(ctx, project.Meta.ProjectID, project.Meta.SourceCode); err != nil {
+			if err := s.persistProjectSourceCode(ctx, project.Meta.Contract, project.Meta.SourceCode); err != nil {
 				continue
 			}
 		}
@@ -401,17 +400,17 @@ func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []
 			continue
 		}
 		if active {
-			_ = s.registry.UpdateProjectMetaState(ctx, project.Meta.ProjectID, &project.Meta)
+			_ = s.registry.UpdateProjectMetaState(ctx, project.Meta.Contract, &project.Meta)
 		}
 	}
 	return nil
 }
 
-func (s *Service) persistProjectSourceCode(ctx context.Context, projectID uuid.UUID, sourceCode string) error {
+func (s *Service) persistProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
 	if sourceCode == "" || s.persistencePublisher == nil {
 		return nil
 	}
-	return s.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, projectID, sourceCode)
+	return s.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode)
 }
 
 func (s *Service) processProjectSourceCode(ctx context.Context, project *Project, fields []string) (bool, error) {
@@ -565,32 +564,32 @@ func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProject
 		return nil, err
 	}
 
-	projectID, err := uuid.Parse(req.GetProjectID())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid projectID %q: %v", req.GetProjectID(), err)
+	if !common.IsHexAddress(req.GetContract()) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
 	}
+	contract := common.HexToAddress(req.GetContract())
 
 	startedAt := time.Now()
-	project, ok, err := s.projectCache.GetProject(ctx, projectID)
+	project, ok, err := s.projectCache.GetProject(ctx, contract)
 	projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		if scope == v1.ProjectScope_PROJECT_SCOPE_ARCHIVED {
-			return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetProjectID())
+			return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetContract())
 		}
-		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
+		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
 	}
 
 	switch scope {
 	case v1.ProjectScope_PROJECT_SCOPE_ACTIVE:
 		if project.Meta.IsArchived {
-			return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
+			return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
 		}
 	case v1.ProjectScope_PROJECT_SCOPE_ARCHIVED:
 		if !project.Meta.IsArchived {
-			return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetProjectID())
+			return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetContract())
 		}
 	default:
 		return nil, status.Errorf(codes.Internal, "unsupported project scope %v", scope)
@@ -612,27 +611,27 @@ func (s *Service) GetProjectOptions(context.Context, *applicationpkg.GetProjectO
 }
 
 func (s *Service) ArchiveProject(ctx context.Context, req *applicationpkg.ArchiveProjectRequest) (*applicationpkg.ArchiveProjectResponse, error) {
-	projectID, err := uuid.Parse(req.GetProjectID())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid projectID %q: %v", req.GetProjectID(), err)
+	if !common.IsHexAddress(req.GetContract()) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
 	}
+	contract := common.HexToAddress(req.GetContract())
 	if s.store == nil {
 		return nil, status.Error(codes.FailedPrecondition, "project store is not configured")
 	}
-	meta, err := s.store.GetProjectMetaByID(ctx, projectID)
+	meta, err := s.store.GetProjectMetaByContract(ctx, contract)
 	if err != nil {
 		return nil, err
 	}
 	if meta == nil {
-		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
+		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
 	}
 	if s.persistencePublisher == nil {
 		return nil, status.Error(codes.FailedPrecondition, "persistence publisher is not configured")
 	}
-	if err := s.persistencePublisher.PublishProjectArchive(ctx, projectID); err != nil {
+	if err := s.persistencePublisher.PublishProjectArchive(ctx, contract); err != nil {
 		return nil, err
 	}
-	project, ok, err := s.registry.GetProject(ctx, projectID)
+	project, ok, err := s.registry.GetProject(ctx, contract)
 	if err != nil {
 		return nil, err
 	}
@@ -643,34 +642,34 @@ func (s *Service) ArchiveProject(ctx context.Context, req *applicationpkg.Archiv
 			return nil, err
 		}
 	}
-	if err := s.registry.RemoveProject(ctx, projectID); err != nil {
+	if err := s.registry.RemoveProject(ctx, contract); err != nil {
 		return nil, err
 	}
 	return &applicationpkg.ArchiveProjectResponse{}, nil
 }
 
 func (s *Service) UnarchiveProject(ctx context.Context, req *applicationpkg.UnarchiveProjectRequest) (*applicationpkg.UnarchiveProjectResponse, error) {
-	projectID, err := uuid.Parse(req.GetProjectID())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid projectID %q: %v", req.GetProjectID(), err)
+	if !common.IsHexAddress(req.GetContract()) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
 	}
+	contract := common.HexToAddress(req.GetContract())
 	if s.store == nil {
 		return nil, status.Error(codes.FailedPrecondition, "project store is not configured")
 	}
-	meta, err := s.store.GetProjectMetaByID(ctx, projectID)
+	meta, err := s.store.GetProjectMetaByContract(ctx, contract)
 	if err != nil {
 		return nil, err
 	}
 	if meta == nil {
-		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
+		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
 	}
 	if s.persistencePublisher == nil {
 		return nil, status.Error(codes.FailedPrecondition, "persistence publisher is not configured")
 	}
-	if err := s.persistencePublisher.PublishProjectUnarchive(ctx, projectID); err != nil {
+	if err := s.persistencePublisher.PublishProjectUnarchive(ctx, contract); err != nil {
 		return nil, err
 	}
-	project, ok, err := s.projectCache.GetProject(ctx, projectID)
+	project, ok, err := s.projectCache.GetProject(ctx, contract)
 	if err != nil {
 		return nil, err
 	}
@@ -682,7 +681,7 @@ func (s *Service) UnarchiveProject(ctx context.Context, req *applicationpkg.Unar
 	if err := s.projectCache.SetProject(ctx, project); err != nil {
 		return nil, err
 	}
-	if err := s.registry.LoadProject(ctx, projectID, project); err != nil {
+	if err := s.registry.LoadProject(ctx, project); err != nil {
 		return nil, err
 	}
 	return &applicationpkg.UnarchiveProjectResponse{}, nil

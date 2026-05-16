@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -23,8 +23,8 @@ const (
 type ProjectSnapshotCache interface {
 	ReplaceAll(ctx context.Context, projects []*Project) error
 	SetProject(ctx context.Context, project *Project) error
-	DeleteProject(ctx context.Context, projectID uuid.UUID) error
-	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
+	DeleteProject(ctx context.Context, contract common.Address) error
+	GetProject(ctx context.Context, contract common.Address) (*Project, bool, error)
 	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
 	SetMaxProjectBlockNumber(ctx context.Context, block uint64) error
 	ListActiveProjects(ctx context.Context) ([]*Project, error)
@@ -61,13 +61,14 @@ func (c *RedisProjectSnapshotCache) ReplaceAll(ctx context.Context, projects []*
 		}
 		payload, err := json.Marshal(project)
 		if err != nil {
-			return fmt.Errorf("marshal project %s: %w", project.Meta.ProjectID, err)
+			return fmt.Errorf("marshal project %s: %w", project.Meta.Contract.Hex(), err)
 		}
-		pipe.HSet(ctx, projectDataHashKey, project.Meta.ProjectID.String(), payload)
+		contractKey := project.Meta.Contract.Hex()
+		pipe.HSet(ctx, projectDataHashKey, contractKey, payload)
 		if project.Meta.IsArchived {
-			pipe.ZAdd(ctx, projectIndexArchived, redis.Z{Score: archivedScore(project.Meta.ArchivedAt), Member: project.Meta.ProjectID.String()})
+			pipe.ZAdd(ctx, projectIndexArchived, redis.Z{Score: archivedScore(project.Meta.ArchivedAt), Member: contractKey})
 		} else {
-			pipe.ZAdd(ctx, projectIndexActive, redis.Z{Score: activeScore(project), Member: project.Meta.ProjectID.String()})
+			pipe.ZAdd(ctx, projectIndexActive, redis.Z{Score: activeScore(project), Member: contractKey})
 		}
 		if !hasMaxBlock || project.Meta.BlockNumber > maxBlock {
 			maxBlock = project.Meta.BlockNumber
@@ -89,37 +90,39 @@ func (c *RedisProjectSnapshotCache) SetProject(ctx context.Context, project *Pro
 	if err != nil {
 		return err
 	}
+	contractKey := project.Meta.Contract.Hex()
 	pipe := c.client.TxPipeline()
-	pipe.HSet(ctx, projectDataHashKey, project.Meta.ProjectID.String(), payload)
+	pipe.HSet(ctx, projectDataHashKey, contractKey, payload)
 	if project.Meta.IsArchived {
-		pipe.ZRem(ctx, projectIndexActive, project.Meta.ProjectID.String())
-		pipe.ZAdd(ctx, projectIndexArchived, redis.Z{Score: archivedScore(project.Meta.ArchivedAt), Member: project.Meta.ProjectID.String()})
+		pipe.ZRem(ctx, projectIndexActive, contractKey)
+		pipe.ZAdd(ctx, projectIndexArchived, redis.Z{Score: archivedScore(project.Meta.ArchivedAt), Member: contractKey})
 	} else {
-		pipe.ZRem(ctx, projectIndexArchived, project.Meta.ProjectID.String())
-		pipe.ZAdd(ctx, projectIndexActive, redis.Z{Score: activeScore(project), Member: project.Meta.ProjectID.String()})
+		pipe.ZRem(ctx, projectIndexArchived, contractKey)
+		pipe.ZAdd(ctx, projectIndexActive, redis.Z{Score: activeScore(project), Member: contractKey})
 	}
 	pipe.Set(ctx, projectMaxBlockKey, strconv.FormatUint(project.Meta.BlockNumber, 10), 0)
 	_, err = pipe.Exec(ctx)
 	return err
 }
 
-func (c *RedisProjectSnapshotCache) DeleteProject(ctx context.Context, projectID uuid.UUID) error {
+func (c *RedisProjectSnapshotCache) DeleteProject(ctx context.Context, contract common.Address) error {
 	if c == nil || c.client == nil {
 		return nil
 	}
+	contractKey := contract.Hex()
 	pipe := c.client.TxPipeline()
-	pipe.HDel(ctx, projectDataHashKey, projectID.String())
-	pipe.ZRem(ctx, projectIndexActive, projectID.String())
-	pipe.ZRem(ctx, projectIndexArchived, projectID.String())
+	pipe.HDel(ctx, projectDataHashKey, contractKey)
+	pipe.ZRem(ctx, projectIndexActive, contractKey)
+	pipe.ZRem(ctx, projectIndexArchived, contractKey)
 	_, err := pipe.Exec(ctx)
 	return err
 }
 
-func (c *RedisProjectSnapshotCache) GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error) {
+func (c *RedisProjectSnapshotCache) GetProject(ctx context.Context, contract common.Address) (*Project, bool, error) {
 	if c == nil || c.client == nil {
 		return nil, false, nil
 	}
-	value, err := c.client.HGet(ctx, projectDataHashKey, projectID.String()).Result()
+	value, err := c.client.HGet(ctx, projectDataHashKey, contract.Hex()).Result()
 	if errors.Is(err, redis.Nil) {
 		return nil, false, nil
 	}
@@ -162,11 +165,11 @@ func (c *RedisProjectSnapshotCache) ListActiveProjects(ctx context.Context) ([]*
 	if c == nil || c.client == nil {
 		return nil, nil
 	}
-	ids, err := c.client.ZRange(ctx, projectIndexActive, 0, -1).Result()
+	contracts, err := c.client.ZRange(ctx, projectIndexActive, 0, -1).Result()
 	if err != nil {
 		return nil, err
 	}
-	projects, err := c.getProjectsByIDs(ctx, ids)
+	projects, err := c.getProjectsByContracts(ctx, contracts)
 	if err != nil {
 		return nil, err
 	}
@@ -190,25 +193,24 @@ func (c *RedisProjectSnapshotCache) ListArchivedProjects(ctx context.Context, pa
 	}
 	start := int64(page-1) * int64(pageSize)
 	stop := start + int64(pageSize) - 1
-	ids, err := c.client.ZRevRange(ctx, projectIndexArchived, start, stop).Result()
+	contracts, err := c.client.ZRevRange(ctx, projectIndexArchived, start, stop).Result()
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
-	projects, err := c.getProjectsByIDs(ctx, ids)
+	projects, err := c.getProjectsByContracts(ctx, contracts)
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
 	return projects, total, page, pageSize, nil
 }
 
-func (c *RedisProjectSnapshotCache) getProjectsByIDs(ctx context.Context, ids []string) ([]*Project, error) {
-	projects := make([]*Project, 0, len(ids))
-	for _, idStr := range ids {
-		projectID, err := uuid.Parse(idStr)
-		if err != nil {
+func (c *RedisProjectSnapshotCache) getProjectsByContracts(ctx context.Context, contracts []string) ([]*Project, error) {
+	projects := make([]*Project, 0, len(contracts))
+	for _, contractStr := range contracts {
+		if !common.IsHexAddress(contractStr) {
 			continue
 		}
-		project, ok, err := c.GetProject(ctx, projectID)
+		project, ok, err := c.GetProject(ctx, common.HexToAddress(contractStr))
 		if err != nil {
 			return nil, err
 		}

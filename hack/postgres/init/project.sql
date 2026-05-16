@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS project (
   id BIGSERIAL PRIMARY KEY,
-  project_id UUID NOT NULL,
   block_number BIGINT NOT NULL,
   block_time BIGINT NOT NULL,
   contract BYTEA NOT NULL,
@@ -15,9 +14,6 @@ CREATE TABLE IF NOT EXISTS project (
   CONSTRAINT project_creator_len CHECK (length(creator) = 20),
   CONSTRAINT project_tx_hash_len CHECK (length(tx_hash) = 32)
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS project_project_id_idx
-  ON project (project_id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS project_contract_idx
   ON project (contract);

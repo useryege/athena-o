@@ -8,7 +8,6 @@ import (
 	"math"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/google/uuid"
 )
 
 func (s *SQLStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error {
@@ -31,16 +30,15 @@ func (s *SQLStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error 
 
 	_, err := s.db.ExecContext(ctx, `
 INSERT INTO project (
-  project_id,
   block_number,
   block_time,
   contract,
   creator,
   tx_hash,
   tx_index
-) VALUES ($1, $2, $3, $4, $5, $6, $7)
+) VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT DO NOTHING
-`, meta.ProjectID, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), txHash.Bytes(), int64(meta.TxIndex))
+`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), txHash.Bytes(), int64(meta.TxIndex))
 	if err != nil {
 		return fmt.Errorf("save project meta: %w", err)
 	}
@@ -50,7 +48,6 @@ ON CONFLICT DO NOTHING
 func (s *SQLStore) ListProjectMetas(ctx context.Context) ([]ProjectMeta, error) {
 	rows, err := s.db.QueryContext(ctx, `
 SELECT
-  project_id,
   block_number,
   block_time,
   contract,
@@ -84,7 +81,6 @@ ORDER BY block_number, tx_index, id
 func (s *SQLStore) ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, error) {
 	rows, err := s.db.QueryContext(ctx, `
 SELECT
-  project_id,
   block_number,
   block_time,
   contract,
@@ -116,36 +112,36 @@ ORDER BY block_number, tx_index, id
 	return metas, nil
 }
 
-func (s *SQLStore) UpdateProjectSourceCode(ctx context.Context, projectID uuid.UUID, sourceCode string) error {
+func (s *SQLStore) UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project
 SET source_code = $2
-WHERE project_id = $1
-`, projectID, sourceCode)
+WHERE contract = $1
+`, contract.Bytes(), sourceCode)
 	if err != nil {
 		return fmt.Errorf("update project source code: %w", err)
 	}
 	return nil
 }
 
-func (s *SQLStore) ArchiveProjectByID(ctx context.Context, projectID uuid.UUID) error {
+func (s *SQLStore) ArchiveProjectByContract(ctx context.Context, contract common.Address) error {
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project
 SET is_archived = TRUE, archived_at = now()
-WHERE project_id = $1
-`, projectID)
+WHERE contract = $1
+`, contract.Bytes())
 	if err != nil {
 		return fmt.Errorf("archive project: %w", err)
 	}
 	return nil
 }
 
-func (s *SQLStore) UnarchiveProjectByID(ctx context.Context, projectID uuid.UUID) error {
+func (s *SQLStore) UnarchiveProjectByContract(ctx context.Context, contract common.Address) error {
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project
 SET is_archived = FALSE, archived_at = NULL
-WHERE project_id = $1
-`, projectID)
+WHERE contract = $1
+`, contract.Bytes())
 	if err != nil {
 		return fmt.Errorf("unarchive project: %w", err)
 	}
@@ -163,7 +159,6 @@ func (s *SQLStore) ListArchivedProjectMetas(ctx context.Context, page int32, pag
 	offset := int64(page-1) * int64(pageSize)
 	rows, err := s.db.QueryContext(ctx, `
 SELECT
-  project_id,
   block_number,
   block_time,
   contract,
@@ -197,10 +192,9 @@ LIMIT $1 OFFSET $2
 	return metas, total, page, pageSize, nil
 }
 
-func (s *SQLStore) GetArchivedProjectMetaByID(ctx context.Context, projectID uuid.UUID) (*ProjectMeta, error) {
+func (s *SQLStore) GetArchivedProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error) {
 	row := s.db.QueryRowContext(ctx, `
 SELECT
-  project_id,
   block_number,
   block_time,
   contract,
@@ -211,8 +205,8 @@ SELECT
   is_archived,
   archived_at
 FROM project
-WHERE project_id = $1 AND is_archived = TRUE
-`, projectID)
+WHERE contract = $1 AND is_archived = TRUE
+`, contract.Bytes())
 	meta, err := scanProjectMetaRow(row, true)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -223,10 +217,9 @@ WHERE project_id = $1 AND is_archived = TRUE
 	return &meta, nil
 }
 
-func (s *SQLStore) GetProjectMetaByID(ctx context.Context, projectID uuid.UUID) (*ProjectMeta, error) {
+func (s *SQLStore) GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error) {
 	row := s.db.QueryRowContext(ctx, `
 SELECT
-  project_id,
   block_number,
   block_time,
   contract,
@@ -237,8 +230,8 @@ SELECT
   is_archived,
   archived_at
 FROM project
-WHERE project_id = $1
-`, projectID)
+WHERE contract = $1
+`, contract.Bytes())
 	meta, err := scanProjectMetaRow(row, true)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -267,9 +260,9 @@ func scanProjectMetaRow(scanner rowScanner, withArchiveFields bool) (ProjectMeta
 
 	var err error
 	if withArchiveFields {
-		err = scanner.Scan(&meta.ProjectID, &blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &isArchived, &archivedAt)
+		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &isArchived, &archivedAt)
 	} else {
-		err = scanner.Scan(&meta.ProjectID, &blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode)
+		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode)
 	}
 	if err != nil {
 		return ProjectMeta{}, fmt.Errorf("scan project meta: %w", err)

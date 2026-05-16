@@ -6,7 +6,6 @@ export interface ProjectView {
 }
 
 export interface ProjectMeta {
-    projectID?: string;
     blockTime?: number;
     blockNumber?: number;
     contract?: string;
@@ -136,8 +135,8 @@ export class AthenaApplicationService {
         return promise;
     }
 
-    public getProject(projectID: string, scope: ProjectScope = PROJECT_SCOPE.ACTIVE): Promise<ProjectView> & {abort?: () => void} {
-        const req = requests.get(`/projects/${encodeURIComponent(projectID)}`).query({scope});
+    public getProject(contract: string, scope: ProjectScope = PROJECT_SCOPE.ACTIVE): Promise<ProjectView> & {abort?: () => void} {
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}`).query({scope});
         const promise = req.then(res => (res.body as GetProjectResponse).item) as any;
         promise.abort = () => req.abort();
         return promise;
@@ -184,15 +183,15 @@ export class AthenaApplicationService {
         return promise;
     }
 
-    public archiveProject(projectID: string): Promise<void> & {abort?: () => void} {
-        const req = requests.post(`/project/${encodeURIComponent(projectID)}/archive`).send({projectID});
+    public archiveProject(contract: string): Promise<void> & {abort?: () => void} {
+        const req = requests.post(`/project/${encodeURIComponent(contract)}/archive`).send({contract});
         const promise = req.then(() => {}) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
-    public unarchiveProject(projectID: string): Promise<void> & {abort?: () => void} {
-        const req = requests.post(`/project/${encodeURIComponent(projectID)}/unarchive`).send({projectID});
+    public unarchiveProject(contract: string): Promise<void> & {abort?: () => void} {
+        const req = requests.post(`/project/${encodeURIComponent(contract)}/unarchive`).send({contract});
         const promise = req.then(() => {}) as any;
         promise.abort = () => req.abort();
         return promise;
@@ -213,8 +212,8 @@ export class AthenaApplicationService {
         return promise;
     }
 
-    public getArchivedProject(projectID: string): Promise<ProjectView> & {abort?: () => void} {
-        const req = this.getProject(projectID, PROJECT_SCOPE.ARCHIVED) as any;
+    public getArchivedProject(contract: string): Promise<ProjectView> & {abort?: () => void} {
+        const req = this.getProject(contract, PROJECT_SCOPE.ARCHIVED) as any;
         const promise = req.then((item: ProjectView) => item) as any;
         promise.abort = () => req.abort();
         return promise;

@@ -9,7 +9,7 @@ require('../projects-list/projects-list.scss');
 
 const PAGE_SIZE = 20;
 
-const getProjectRowKey = (project: ProjectView, index: number) => project.meta?.projectID || `archived-project-${index}`;
+const getProjectRowKey = (project: ProjectView, index: number) => project.meta?.contract || `archived-project-${index}`;
 
 export const ArchivedProjectsList = () => {
     const [projects, setProjects] = React.useState<ProjectView[]>([]);
@@ -106,7 +106,7 @@ export const ArchivedProjectsList = () => {
                                             key={getProjectRowKey(project, index)}
                                             project={project}
                                             index={(page - 1) * PAGE_SIZE + index}
-                                            onClick={project.meta?.projectID ? () => history.push(`/projects/archived/${project.meta!.projectID}`) : undefined}
+                                            onClick={project.meta?.contract ? () => history.push(`/projects/archived/${project.meta!.contract}`) : undefined}
                                         />
                                     ))
                                 )}

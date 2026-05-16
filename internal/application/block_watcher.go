@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/evm"
 )
@@ -259,7 +258,6 @@ func (w *BlockWatcher) scanBlock(ctx context.Context, blockNumber uint64) error 
 
 		project := &Project{
 			Meta: ProjectMeta{
-				ProjectID:   uuid.New(),
 				BlockTime:   block.Time(),
 				BlockNumber: blockNumber,
 				TxIndex:     uint64(txIndex),
@@ -301,8 +299,8 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project, co
 		}
 
 		project.ChainState = snapshot
-		if err := w.registry.SetProject(ctx, project.Meta.ProjectID, project); err != nil {
-			return fmt.Errorf("failed to store project %s: %w", project.Meta.ProjectID, err)
+		if err := w.registry.SetProject(ctx, project); err != nil {
+			return fmt.Errorf("failed to store project %s: %w", project.Meta.Contract.Hex(), err)
 		}
 	}
 	return nil

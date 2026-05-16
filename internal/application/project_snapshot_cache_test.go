@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/google/uuid"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -15,10 +15,10 @@ func TestSetProject_WritesProjectAndMaxBlock(t *testing.T) {
 	cache, _, cleanup := newTestSnapshotCache(t)
 	defer cleanup()
 
-	projectID := uuid.New()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000A1")
 	project := &Project{
 		Meta: ProjectMeta{
-			ProjectID:   projectID,
+			Contract:    contract,
 			BlockNumber: 42,
 			TxIndex:     3,
 			IsArchived:  false,
@@ -29,15 +29,15 @@ func TestSetProject_WritesProjectAndMaxBlock(t *testing.T) {
 		t.Fatalf("set project: %v", err)
 	}
 
-	got, ok, err := cache.GetProject(ctx, projectID)
+	got, ok, err := cache.GetProject(ctx, contract)
 	if err != nil {
 		t.Fatalf("get project: %v", err)
 	}
 	if !ok || got == nil {
 		t.Fatalf("project not found in cache")
 	}
-	if got.Meta.ProjectID != projectID {
-		t.Fatalf("project id = %s, want %s", got.Meta.ProjectID, projectID)
+	if got.Meta.Contract != contract {
+		t.Fatalf("project contract = %s, want %s", got.Meta.Contract, contract)
 	}
 
 	maxBlock, ok, err := cache.GetMaxProjectBlockNumber(ctx)
@@ -81,10 +81,10 @@ func TestSetProject_UnarchiveFlowMovesIndexes(t *testing.T) {
 	cache, redisServer, cleanup := newTestSnapshotCache(t)
 	defer cleanup()
 
-	projectID := uuid.New()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000B2")
 	archived := &Project{
 		Meta: ProjectMeta{
-			ProjectID:   projectID,
+			Contract:    contract,
 			BlockNumber: 8,
 			TxIndex:     1,
 			IsArchived:  true,
@@ -97,7 +97,7 @@ func TestSetProject_UnarchiveFlowMovesIndexes(t *testing.T) {
 
 	unarchived := &Project{
 		Meta: ProjectMeta{
-			ProjectID:   projectID,
+			Contract:    contract,
 			BlockNumber: 9,
 			TxIndex:     2,
 			IsArchived:  false,
@@ -111,8 +111,8 @@ func TestSetProject_UnarchiveFlowMovesIndexes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read active index: %v", err)
 	}
-	if len(activeIDs) != 1 || activeIDs[0] != projectID.String() {
-		t.Fatalf("active index = %v, want [%s]", activeIDs, projectID)
+	if len(activeIDs) != 1 || activeIDs[0] != contract.Hex() {
+		t.Fatalf("active index = %v, want [%s]", activeIDs, contract.Hex())
 	}
 
 	archivedIDs, err := redisServer.ZMembers(projectIndexArchived)

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
@@ -38,14 +37,13 @@ const (
 type PersistenceEvent struct {
 	Version    int             `json:"version"`
 	Op         string          `json:"op"`
-	ProjectID  string          `json:"project_id,omitempty"`
+	Contract   string          `json:"contract,omitempty"`
 	Field      string          `json:"field,omitempty"`
 	Payload    json.RawMessage `json:"payload,omitempty"`
 	OccurredAt time.Time       `json:"occurred_at"`
 }
 
 type projectMetaSavePayload struct {
-	ProjectID   string `json:"project_id"`
 	BlockTime   uint64 `json:"block_time"`
 	BlockNumber uint64 `json:"block_number"`
 	Contract    string `json:"contract"`
@@ -58,7 +56,7 @@ type projectMetaSavePayload struct {
 }
 
 type projectSourceCodeUpdatePayload struct {
-	ProjectID  string `json:"project_id"`
+	Contract   string `json:"contract"`
 	SourceCode string `json:"source_code"`
 }
 
@@ -69,18 +67,18 @@ type blacklistFieldPayload struct {
 type PersistenceEventPublisher interface {
 	Publish(ctx context.Context, event PersistenceEvent) error
 	PublishProjectMetaSave(ctx context.Context, meta appstore.ProjectMeta) error
-	PublishProjectSourceCodeUpdate(ctx context.Context, projectID uuid.UUID, sourceCode string) error
-	PublishProjectArchive(ctx context.Context, projectID uuid.UUID) error
-	PublishProjectUnarchive(ctx context.Context, projectID uuid.UUID) error
+	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error
+	PublishProjectArchive(ctx context.Context, contract common.Address) error
+	PublishProjectUnarchive(ctx context.Context, contract common.Address) error
 	PublishSourceCodeBlacklistAdd(ctx context.Context, field string) error
 	PublishSourceCodeBlacklistDelete(ctx context.Context, field string) error
 }
 
 type PersistenceEventWriter interface {
 	WriteProjectMeta(ctx context.Context, meta appstore.ProjectMeta) error
-	WriteProjectSourceCode(ctx context.Context, projectID uuid.UUID, sourceCode string) error
-	ArchiveProject(ctx context.Context, projectID uuid.UUID) error
-	UnarchiveProject(ctx context.Context, projectID uuid.UUID) error
+	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
+	ArchiveProject(ctx context.Context, contract common.Address) error
+	UnarchiveProject(ctx context.Context, contract common.Address) error
 	AddSourceCodeBlacklistField(ctx context.Context, field string) error
 	DeleteSourceCodeBlacklistField(ctx context.Context, field string) error
 }
@@ -140,7 +138,6 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 		txHash = meta.Tx.Hash()
 	}
 	payload := projectMetaSavePayload{
-		ProjectID:   meta.ProjectID.String(),
 		BlockTime:   meta.BlockTime,
 		BlockNumber: meta.BlockNumber,
 		Contract:    meta.Contract.Hex(),
@@ -160,14 +157,14 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectMetaSave,
-		ProjectID:  meta.ProjectID.String(),
+		Contract:   meta.Contract.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
 	})
 }
 
-func (b *RedisPersistenceEventBus) PublishProjectSourceCodeUpdate(ctx context.Context, projectID uuid.UUID, sourceCode string) error {
-	payload := projectSourceCodeUpdatePayload{ProjectID: projectID.String(), SourceCode: sourceCode}
+func (b *RedisPersistenceEventBus) PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error {
+	payload := projectSourceCodeUpdatePayload{Contract: contract.Hex(), SourceCode: sourceCode}
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshal project source code payload: %w", err)
@@ -175,26 +172,26 @@ func (b *RedisPersistenceEventBus) PublishProjectSourceCodeUpdate(ctx context.Co
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectSourceCode,
-		ProjectID:  projectID.String(),
+		Contract:   contract.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
 	})
 }
 
-func (b *RedisPersistenceEventBus) PublishProjectArchive(ctx context.Context, projectID uuid.UUID) error {
+func (b *RedisPersistenceEventBus) PublishProjectArchive(ctx context.Context, contract common.Address) error {
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectArchive,
-		ProjectID:  projectID.String(),
+		Contract:   contract.Hex(),
 		OccurredAt: time.Now().UTC(),
 	})
 }
 
-func (b *RedisPersistenceEventBus) PublishProjectUnarchive(ctx context.Context, projectID uuid.UUID) error {
+func (b *RedisPersistenceEventBus) PublishProjectUnarchive(ctx context.Context, contract common.Address) error {
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectUnarchive,
-		ProjectID:  projectID.String(),
+		Contract:   contract.Hex(),
 		OccurredAt: time.Now().UTC(),
 	})
 }
@@ -329,15 +326,13 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
 			return fmt.Errorf("unmarshal project meta payload: %w", err)
 		}
-		projectID, err := uuid.Parse(payload.ProjectID)
-		if err != nil {
-			return fmt.Errorf("parse project id %q: %w", payload.ProjectID, err)
+		if !common.IsHexAddress(payload.Contract) {
+			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
 		contract := common.HexToAddress(payload.Contract)
 		creator := common.HexToAddress(payload.Creator)
 		txHash := common.HexToHash(payload.TxHash)
 		meta := appstore.ProjectMeta{
-			ProjectID:   projectID,
 			BlockTime:   payload.BlockTime,
 			BlockNumber: payload.BlockNumber,
 			Contract:    contract,
@@ -360,23 +355,20 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
 			return fmt.Errorf("unmarshal project source code payload: %w", err)
 		}
-		projectID, err := uuid.Parse(payload.ProjectID)
-		if err != nil {
-			return fmt.Errorf("parse project id %q: %w", payload.ProjectID, err)
+		if !common.IsHexAddress(payload.Contract) {
+			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
-		return writer.WriteProjectSourceCode(ctx, projectID, payload.SourceCode)
+		return writer.WriteProjectSourceCode(ctx, common.HexToAddress(payload.Contract), payload.SourceCode)
 	case PersistenceOpProjectArchive:
-		projectID, err := uuid.Parse(event.ProjectID)
-		if err != nil {
-			return fmt.Errorf("parse project id %q: %w", event.ProjectID, err)
+		if !common.IsHexAddress(event.Contract) {
+			return fmt.Errorf("invalid contract %q", event.Contract)
 		}
-		return writer.ArchiveProject(ctx, projectID)
+		return writer.ArchiveProject(ctx, common.HexToAddress(event.Contract))
 	case PersistenceOpProjectUnarchive:
-		projectID, err := uuid.Parse(event.ProjectID)
-		if err != nil {
-			return fmt.Errorf("parse project id %q: %w", event.ProjectID, err)
+		if !common.IsHexAddress(event.Contract) {
+			return fmt.Errorf("invalid contract %q", event.Contract)
 		}
-		return writer.UnarchiveProject(ctx, projectID)
+		return writer.UnarchiveProject(ctx, common.HexToAddress(event.Contract))
 	case PersistenceOpSourceBlacklistAdd:
 		field := event.Field
 		if len(event.Payload) > 0 {
@@ -432,16 +424,16 @@ func (w *storePersistenceWriter) WriteProjectMeta(ctx context.Context, meta apps
 	return w.store.SaveProjectMeta(ctx, meta)
 }
 
-func (w *storePersistenceWriter) WriteProjectSourceCode(ctx context.Context, projectID uuid.UUID, sourceCode string) error {
-	return w.store.UpdateProjectSourceCode(ctx, projectID, sourceCode)
+func (w *storePersistenceWriter) WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
+	return w.store.UpdateProjectSourceCode(ctx, contract, sourceCode)
 }
 
-func (w *storePersistenceWriter) ArchiveProject(ctx context.Context, projectID uuid.UUID) error {
-	return w.store.ArchiveProjectByID(ctx, projectID)
+func (w *storePersistenceWriter) ArchiveProject(ctx context.Context, contract common.Address) error {
+	return w.store.ArchiveProjectByContract(ctx, contract)
 }
 
-func (w *storePersistenceWriter) UnarchiveProject(ctx context.Context, projectID uuid.UUID) error {
-	return w.store.UnarchiveProjectByID(ctx, projectID)
+func (w *storePersistenceWriter) UnarchiveProject(ctx context.Context, contract common.Address) error {
+	return w.store.UnarchiveProjectByContract(ctx, contract)
 }
 
 func (w *storePersistenceWriter) AddSourceCodeBlacklistField(ctx context.Context, field string) error {

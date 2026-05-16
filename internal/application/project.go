@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/google/uuid"
 	"github.com/useryege/athena/internal/application/sourcecode"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
@@ -18,7 +17,6 @@ type Project struct {
 }
 
 type ProjectMeta struct {
-	ProjectID           uuid.UUID
 	BlockTime           uint64
 	BlockNumber         uint64
 	Contract            common.Address
@@ -52,7 +50,6 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{
-			ProjectID:   project.Meta.ProjectID.String(),
 			BlockTime:   project.Meta.BlockTime,
 			BlockNumber: project.Meta.BlockNumber,
 			Contract:    project.Meta.Contract.String(),

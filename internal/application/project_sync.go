@@ -9,7 +9,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/evm"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
@@ -120,10 +119,9 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 	if err != nil {
 		return err
 	}
-	if len(snapshot.ProjectIDs) != len(snapshot.ProjectContracts) || len(snapshot.ProjectContracts) != len(snapshot.ProjectQueries) {
+	if len(snapshot.ProjectContracts) != len(snapshot.ProjectQueries) {
 		return fmt.Errorf(
-			"project contract snapshot has inconsistent lengths: ids=%d contracts=%d queries=%d",
-			len(snapshot.ProjectIDs),
+			"project contract snapshot has inconsistent lengths: contracts=%d queries=%d",
 			len(snapshot.ProjectContracts),
 			len(snapshot.ProjectQueries),
 		)
@@ -160,14 +158,13 @@ func (s *projectSyncImpl) SyncProjectStatesOnce(ctx context.Context, triggerBloc
 	}
 
 	buildStatesStartedAt := time.Now()
-	states := make(map[uuid.UUID]athenacontract.AthenaProject, len(snapshot.ProjectIDs))
-	for i, projectID := range snapshot.ProjectIDs {
+	states := make(map[common.Address]athenacontract.AthenaProject, len(snapshot.ProjectContracts))
+	for i, contract := range snapshot.ProjectContracts {
 		projectSnapshot := snapshots[i]
-		tokenContract := snapshot.ProjectContracts[i]
-		if projectSnapshot.TokenContract != (common.Address{}) && projectSnapshot.TokenContract != tokenContract {
-			return fmt.Errorf("athena list result %d token contract = %s, want %s", i, projectSnapshot.TokenContract, tokenContract)
+		if projectSnapshot.TokenContract != (common.Address{}) && projectSnapshot.TokenContract != contract {
+			return fmt.Errorf("athena list result %d token contract = %s, want %s", i, projectSnapshot.TokenContract, contract)
 		}
-		states[projectID] = projectSnapshot
+		states[contract] = projectSnapshot
 	}
 	fields["buildStatesDuration"] = time.Since(buildStatesStartedAt)
 
@@ -216,7 +213,7 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 	simulationStates []athenacontract.AthenaSimulationState,
 ) (projectSimulateStats, error) {
 	stats := projectSimulateStats{
-		projectCount: len(contractSnapshot.ProjectIDs),
+		projectCount: len(contractSnapshot.ProjectContracts),
 		concurrency:  defaultProjectSimulateConcurrency,
 	}
 	if len(simulationStates) != len(contractSnapshot.ProjectContracts) {
@@ -284,8 +281,8 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 				}
 
 				simulateUpdateStartedAt := time.Now()
-				projectID := contractSnapshot.ProjectIDs[job.index]
-				project, ok, getErr := s.registry.GetProject(ctx, projectID)
+				contract := contractSnapshot.ProjectContracts[job.index]
+				project, ok, getErr := s.registry.GetProject(ctx, contract)
 				if getErr != nil {
 					recordUpdateError(getErr)
 					recordDurations(simulateCallsDuration, time.Since(simulateUpdateStartedAt))
@@ -297,7 +294,7 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 				}
 				metaState := project.Meta
 				metaState.CreatorResult = simulateResult
-				if err := s.registry.UpdateProjectMetaState(ctx, projectID, &metaState); err != nil {
+				if err := s.registry.UpdateProjectMetaState(ctx, contract, &metaState); err != nil {
 					recordUpdateError(err)
 				}
 				simulateUpdatesDuration := time.Since(simulateUpdateStartedAt)
@@ -307,7 +304,7 @@ func (s *projectSyncImpl) syncProjectSimulateStates(
 	}
 
 enqueueJobs:
-	for i := range contractSnapshot.ProjectIDs {
+	for i := range contractSnapshot.ProjectContracts {
 		select {
 		case jobs <- projectSimulateJob{index: i}:
 		case <-ctx.Done():

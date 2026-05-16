@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/google/uuid"
 	"github.com/useryege/athena/internal/application/sourcecode"
 	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
@@ -14,33 +13,30 @@ import (
 type ProjectRegistry interface {
 	// Returned projects/snapshots are shared mutable references.
 	// Callers must avoid uncontrolled concurrent writes.
-	GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error)
+	GetProject(ctx context.Context, contract common.Address) (*Project, bool, error)
 	ListProjects(ctx context.Context) ([]*Project, error)
 	ListProjectContracts(ctx context.Context) (ProjectContractSnapshot, error)
-	SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error
-	LoadProject(ctx context.Context, projectID uuid.UUID, project *Project) error
-	UpdateProjectChainStates(ctx context.Context, states map[uuid.UUID]athenacontract.AthenaProject) error
-	UpdateProjectMetaState(ctx context.Context, projectID uuid.UUID, state *ProjectMeta) error
-	RemoveProject(ctx context.Context, projectID uuid.UUID) error
+	SetProject(ctx context.Context, project *Project) error
+	LoadProject(ctx context.Context, project *Project) error
+	UpdateProjectChainStates(ctx context.Context, states map[common.Address]athenacontract.AthenaProject) error
+	UpdateProjectMetaState(ctx context.Context, contract common.Address, state *ProjectMeta) error
+	RemoveProject(ctx context.Context, contract common.Address) error
 }
 
 var _ ProjectRegistry = &projectRegistryImpl{}
 
 type ProjectContractSnapshot struct {
-	ProjectIDs       []uuid.UUID
 	ProjectContracts []common.Address
 	ProjectQueries   []athenacontract.AthenaProjectQuery
 }
 
 type projectRegistryImpl struct {
-	mu                 sync.RWMutex
-	ProjectsByContract map[common.Address]struct{}
-	Projects           map[uuid.UUID]*Project
-	ProjectIDs         []uuid.UUID
-	ProjectContracts   []common.Address
-	ProjectQueries     []athenacontract.AthenaProjectQuery
-	ProjectIndexes     map[uuid.UUID]int
-	publisher          PersistenceEventPublisher
+	mu               sync.RWMutex
+	Projects         map[common.Address]*Project
+	ProjectContracts []common.Address
+	ProjectQueries   []athenacontract.AthenaProjectQuery
+	ProjectIndexes   map[common.Address]int
+	publisher        PersistenceEventPublisher
 }
 
 func NewProjectRegistry(publisher PersistenceEventPublisher) ProjectRegistry {
@@ -48,22 +44,20 @@ func NewProjectRegistry(publisher PersistenceEventPublisher) ProjectRegistry {
 		panic("persistence publisher is not configured")
 	}
 	return &projectRegistryImpl{
-		Projects:           make(map[uuid.UUID]*Project),
-		ProjectsByContract: make(map[common.Address]struct{}),
-		ProjectIndexes:     make(map[uuid.UUID]int),
-		publisher:          publisher,
+		Projects:       make(map[common.Address]*Project),
+		ProjectIndexes: make(map[common.Address]int),
+		publisher:      publisher,
 	}
 }
 
-func (r *projectRegistryImpl) GetProject(ctx context.Context, projectID uuid.UUID) (*Project, bool, error) {
+func (r *projectRegistryImpl) GetProject(ctx context.Context, contract common.Address) (*Project, bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	project, ok := r.Projects[projectID]
+	project, ok := r.Projects[contract]
 	if !ok {
 		return nil, false, nil
 	}
-
 	return project, true, nil
 }
 
@@ -80,7 +74,6 @@ func (r *projectRegistryImpl) ListProjects(ctx context.Context) ([]*Project, err
 		}
 		projects = append(projects, project)
 	}
-
 	return projects, nil
 }
 
@@ -91,34 +84,33 @@ func (r *projectRegistryImpl) ListProjectContracts(ctx context.Context) (Project
 	if err := ctx.Err(); err != nil {
 		return ProjectContractSnapshot{}, err
 	}
-
 	return ProjectContractSnapshot{
-		ProjectIDs:       r.ProjectIDs,
 		ProjectContracts: r.ProjectContracts,
 		ProjectQueries:   r.ProjectQueries,
 	}, nil
 }
 
-func (r *projectRegistryImpl) SetProject(ctx context.Context, projectID uuid.UUID, project *Project) error {
+func (r *projectRegistryImpl) SetProject(ctx context.Context, project *Project) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.setProjectWithOptionsLocked(ctx, projectID, project, true)
+	return r.setProjectWithOptionsLocked(ctx, project, true)
 }
 
-func (r *projectRegistryImpl) LoadProject(ctx context.Context, projectID uuid.UUID, project *Project) error {
+func (r *projectRegistryImpl) LoadProject(ctx context.Context, project *Project) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.setProjectWithOptionsLocked(ctx, projectID, project, false)
+	return r.setProjectWithOptionsLocked(ctx, project, false)
 }
 
-func (r *projectRegistryImpl) setProjectWithOptionsLocked(ctx context.Context, projectID uuid.UUID, project *Project, persist bool) error {
+func (r *projectRegistryImpl) setProjectWithOptionsLocked(ctx context.Context, project *Project, persist bool) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 	if project == nil {
 		return nil
 	}
-	if _, ok := r.ProjectsByContract[project.Meta.Contract]; ok {
+	contract := project.Meta.Contract
+	if _, ok := r.Projects[contract]; ok {
 		return nil
 	}
 	if persist {
@@ -126,34 +118,33 @@ func (r *projectRegistryImpl) setProjectWithOptionsLocked(ctx context.Context, p
 			return err
 		}
 	}
-	r.setProjectLocked(projectID, project)
+	r.setProjectLocked(project)
 	return nil
 }
 
-func (r *projectRegistryImpl) setProjectLocked(projectID uuid.UUID, project *Project) {
+func (r *projectRegistryImpl) setProjectLocked(project *Project) {
 	if project == nil {
 		return
 	}
-	if _, ok := r.ProjectsByContract[project.Meta.Contract]; ok {
+	contract := project.Meta.Contract
+	if _, ok := r.Projects[contract]; ok {
 		return
 	}
-	r.ProjectsByContract[project.Meta.Contract] = struct{}{}
-	r.Projects[projectID] = project
-	r.ProjectIndexes[projectID] = len(r.ProjectIDs)
-	r.ProjectIDs = append(r.ProjectIDs, project.Meta.ProjectID)
-	r.ProjectContracts = append(r.ProjectContracts, project.Meta.Contract)
+	r.Projects[contract] = project
+	r.ProjectIndexes[contract] = len(r.ProjectContracts)
+	r.ProjectContracts = append(r.ProjectContracts, contract)
 	r.ProjectQueries = append(r.ProjectQueries, athenacontract.AthenaProjectQuery{
-		TokenContract: project.Meta.Contract,
+		TokenContract: contract,
 		MsgCaller:     project.Meta.Creator,
 	})
 }
 
-func (r *projectRegistryImpl) UpdateProjectChainStates(ctx context.Context, states map[uuid.UUID]athenacontract.AthenaProject) error {
+func (r *projectRegistryImpl) UpdateProjectChainStates(ctx context.Context, states map[common.Address]athenacontract.AthenaProject) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for projectID, state := range states {
-		project, ok := r.Projects[projectID]
+	for contract, state := range states {
+		project, ok := r.Projects[contract]
 		if !ok {
 			continue
 		}
@@ -162,19 +153,19 @@ func (r *projectRegistryImpl) UpdateProjectChainStates(ctx context.Context, stat
 	return nil
 }
 
-func (r *projectRegistryImpl) UpdateProjectMetaState(ctx context.Context, projectID uuid.UUID, state *ProjectMeta) error {
+func (r *projectRegistryImpl) UpdateProjectMetaState(ctx context.Context, contract common.Address, state *ProjectMeta) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	project, ok := r.Projects[projectID]
+	project, ok := r.Projects[contract]
 	if !ok {
 		return nil
 	}
 	if state != nil {
 		if state.SourceCode != "" {
-			if err := r.publisher.PublishProjectSourceCodeUpdate(ctx, projectID, state.SourceCode); err != nil {
+			if err := r.publisher.PublishProjectSourceCodeUpdate(ctx, contract, state.SourceCode); err != nil {
 				return err
 			}
 			project.Meta.SourceCode = state.SourceCode
@@ -189,41 +180,35 @@ func (r *projectRegistryImpl) UpdateProjectMetaState(ctx context.Context, projec
 	return nil
 }
 
-func (r *projectRegistryImpl) RemoveProject(ctx context.Context, projectID uuid.UUID) error {
+func (r *projectRegistryImpl) RemoveProject(ctx context.Context, contract common.Address) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if project, ok := r.Projects[projectID]; ok {
-		delete(r.ProjectsByContract, project.Meta.Contract)
-	}
-	delete(r.Projects, projectID)
-	r.removeProjectContractSnapshot(projectID)
+	delete(r.Projects, contract)
+	r.removeProjectContractSnapshot(contract)
 	return nil
 }
 
-func (r *projectRegistryImpl) removeProjectContractSnapshot(projectID uuid.UUID) {
-	index, ok := r.ProjectIndexes[projectID]
+func (r *projectRegistryImpl) removeProjectContractSnapshot(contract common.Address) {
+	index, ok := r.ProjectIndexes[contract]
 	if !ok {
 		return
 	}
 
-	lastIndex := len(r.ProjectIDs) - 1
+	lastIndex := len(r.ProjectContracts) - 1
 	if index != lastIndex {
-		lastProjectID := r.ProjectIDs[lastIndex]
-		r.ProjectIDs[index] = lastProjectID
-		r.ProjectContracts[index] = r.ProjectContracts[lastIndex]
+		lastContract := r.ProjectContracts[lastIndex]
+		r.ProjectContracts[index] = lastContract
 		r.ProjectQueries[index] = r.ProjectQueries[lastIndex]
-		r.ProjectIndexes[lastProjectID] = index
+		r.ProjectIndexes[lastContract] = index
 	}
-	r.ProjectIDs[lastIndex] = uuid.UUID{}
 	r.ProjectContracts[lastIndex] = common.Address{}
 	r.ProjectQueries[lastIndex] = athenacontract.AthenaProjectQuery{}
-	r.ProjectIDs = r.ProjectIDs[:lastIndex]
 	r.ProjectContracts = r.ProjectContracts[:lastIndex]
 	r.ProjectQueries = r.ProjectQueries[:lastIndex]
-	delete(r.ProjectIndexes, projectID)
+	delete(r.ProjectIndexes, contract)
 }
 
 func projectMetaToStore(meta ProjectMeta) appstore.ProjectMeta {
@@ -232,7 +217,6 @@ func projectMetaToStore(meta ProjectMeta) appstore.ProjectMeta {
 		txHash = meta.Tx.Hash()
 	}
 	return appstore.ProjectMeta{
-		ProjectID:   meta.ProjectID,
 		BlockTime:   meta.BlockTime,
 		BlockNumber: meta.BlockNumber,
 		Contract:    meta.Contract,
@@ -248,7 +232,6 @@ func projectMetaToStore(meta ProjectMeta) appstore.ProjectMeta {
 
 func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 	return ProjectMeta{
-		ProjectID:   meta.ProjectID,
 		BlockTime:   meta.BlockTime,
 		BlockNumber: meta.BlockNumber,
 		Contract:    meta.Contract,

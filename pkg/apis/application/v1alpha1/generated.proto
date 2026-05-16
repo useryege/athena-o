@@ -49,8 +49,6 @@ message ProjectChainState {
 }
 
 message ProjectMeta {
-  optional string projectID = 1;
-
   optional uint64 blockTime = 2;
 
   optional uint64 blockNumber = 3;

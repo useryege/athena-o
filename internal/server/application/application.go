@@ -44,7 +44,7 @@ func (s *Server) ListProjects(ctx context.Context, req *applicationpkg.ListProje
 			if resp.Items[i].Meta.TxIndex != resp.Items[j].Meta.TxIndex {
 				return resp.Items[i].Meta.TxIndex > resp.Items[j].Meta.TxIndex
 			}
-			return resp.Items[i].Meta.ProjectID > resp.Items[j].Meta.ProjectID
+			return resp.Items[i].Meta.Contract > resp.Items[j].Meta.Contract
 		})
 	}
 
@@ -64,8 +64,8 @@ func (s *Server) GetProject(ctx context.Context, req *applicationpkg.GetProjectR
 	defer closer.Close()
 
 	resp, err := client.GetProject(ctx, &applicationapiclient.GetProjectRequest{
-		ProjectID: req.GetProjectID(),
-		Scope:     req.GetScope(),
+		Contract: req.GetContract(),
+		Scope:    req.GetScope(),
 	})
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func (s *Server) ArchiveProject(ctx context.Context, req *applicationpkg.Archive
 	}
 	defer closer.Close()
 
-	if _, err := client.ArchiveProject(ctx, &applicationapiclient.ArchiveProjectRequest{ProjectID: req.GetProjectID()}); err != nil {
+	if _, err := client.ArchiveProject(ctx, &applicationapiclient.ArchiveProjectRequest{Contract: req.GetContract()}); err != nil {
 		return nil, err
 	}
 	return &applicationpkg.ArchiveProjectResponse{}, nil
@@ -154,7 +154,7 @@ func (s *Server) UnarchiveProject(ctx context.Context, req *applicationpkg.Unarc
 	}
 	defer closer.Close()
 
-	if _, err := client.UnarchiveProject(ctx, &applicationapiclient.UnarchiveProjectRequest{ProjectID: req.GetProjectID()}); err != nil {
+	if _, err := client.UnarchiveProject(ctx, &applicationapiclient.UnarchiveProjectRequest{Contract: req.GetContract()}); err != nil {
 		return nil, err
 	}
 	return &applicationpkg.UnarchiveProjectResponse{}, nil

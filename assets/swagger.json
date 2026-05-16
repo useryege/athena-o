@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-235-gf768cff-dirty"
+    "version": "v1.0.0-238-g19ce4c0-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -241,17 +241,17 @@
         }
       }
     },
-    "/api/v1/project/{projectID}/archive": {
+    "/api/v1/project/{contract}/archive": {
       "post": {
         "tags": [
           "ApplicationService"
         ],
-        "summary": "ArchiveProject archives a project by projectID.",
+        "summary": "ArchiveProject archives a project by contract.",
         "operationId": "ApplicationService_ArchiveProject",
         "parameters": [
           {
             "type": "string",
-            "name": "projectID",
+            "name": "contract",
             "in": "path",
             "required": true
           },
@@ -280,17 +280,17 @@
         }
       }
     },
-    "/api/v1/project/{projectID}/unarchive": {
+    "/api/v1/project/{contract}/unarchive": {
       "post": {
         "tags": [
           "ApplicationService"
         ],
-        "summary": "UnarchiveProject unarchives a project by projectID.",
+        "summary": "UnarchiveProject unarchives a project by contract.",
         "operationId": "ApplicationService_UnarchiveProject",
         "parameters": [
           {
             "type": "string",
-            "name": "projectID",
+            "name": "contract",
             "in": "path",
             "required": true
           },
@@ -368,17 +368,17 @@
         }
       }
     },
-    "/api/v1/projects/{projectID}": {
+    "/api/v1/projects/{contract}": {
       "get": {
         "tags": [
           "ApplicationService"
         ],
-        "summary": "GetProject returns the project snapshot for a given project ID.",
+        "summary": "GetProject returns the project snapshot for a given contract.",
         "operationId": "ApplicationService_GetProject",
         "parameters": [
           {
             "type": "string",
-            "name": "projectID",
+            "name": "contract",
             "in": "path",
             "required": true
           },
@@ -744,7 +744,7 @@
     "applicationArchiveProjectRequest": {
       "type": "object",
       "properties": {
-        "projectID": {
+        "contract": {
           "type": "string"
         }
       }
@@ -766,7 +766,7 @@
       }
     },
     "applicationGetProjectResponse": {
-      "description": "GetProjectResponse returns the project snapshot for a given project ID.",
+      "description": "GetProjectResponse returns the project snapshot for a given contract.",
       "type": "object",
       "properties": {
         "item": {
@@ -826,7 +826,7 @@
     "applicationUnarchiveProjectRequest": {
       "type": "object",
       "properties": {
-        "projectID": {
+        "contract": {
           "type": "string"
         }
       }
@@ -1213,9 +1213,6 @@
         },
         "creatorResult": {
           "$ref": "#/definitions/v1alpha1SimulateResult"
-        },
-        "projectID": {
-          "type": "string"
         },
         "sourceCode": {
           "type": "string"

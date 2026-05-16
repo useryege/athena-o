@@ -6,7 +6,6 @@ type ProjectView struct {
 }
 
 type ProjectMeta struct {
-	ProjectID           string                   `protobuf:"bytes,1,opt,name=projectID" json:"projectID"`
 	BlockTime           uint64                   `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
 	BlockNumber         uint64                   `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
 	Contract            string                   `protobuf:"bytes,4,opt,name=contract" json:"contract"`

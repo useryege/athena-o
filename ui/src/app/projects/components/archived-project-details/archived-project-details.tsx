@@ -8,7 +8,7 @@ import {ProjectView} from '../../../shared/services/athena-application-service';
 require('../project-details/project-details.scss');
 
 interface RouteParams {
-    projectID: string;
+    contract: string;
 }
 
 const renderValue = (value: string | number | boolean | undefined) => {
@@ -19,14 +19,14 @@ const renderValue = (value: string | number | boolean | undefined) => {
 };
 
 export const ArchivedProjectDetails = (props: RouteComponentProps<RouteParams>) => {
-    const projectID = props.match.params.projectID;
+    const contract = props.match.params.contract;
     const [project, setProject] = React.useState<ProjectView | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [working, setWorking] = React.useState(false);
     const [error, setError] = React.useState<Error | null>(null);
 
     React.useEffect(() => {
-        const req = services.athenaApplication.getArchivedProject(projectID);
+        const req = services.athenaApplication.getArchivedProject(contract);
         req.then(data => {
             setProject(data);
             setError(null);
@@ -34,13 +34,13 @@ export const ArchivedProjectDetails = (props: RouteComponentProps<RouteParams>) 
             .catch(e => setError(e as Error))
             .finally(() => setLoading(false));
         return () => req.abort && req.abort();
-    }, [projectID]);
+    }, [contract]);
 
     const handleUnarchive = async () => {
         setWorking(true);
         try {
-            await services.athenaApplication.unarchiveProject(projectID);
-            history.push(`/projects/${projectID}`);
+            await services.athenaApplication.unarchiveProject(contract);
+            history.push(`/projects/${contract}`);
         } catch (e) {
             setError(e as Error);
         } finally {
@@ -51,7 +51,7 @@ export const ArchivedProjectDetails = (props: RouteComponentProps<RouteParams>) 
     return (
         <Page
             title='Archived Project Details'
-            toolbar={{breadcrumbs: [{title: 'Projects', path: '/projects'}, {title: 'Archived', path: '/projects/archived'}, {title: projectID}]}}>
+            toolbar={{breadcrumbs: [{title: 'Projects', path: '/projects'}, {title: 'Archived', path: '/projects/archived'}, {title: contract}]}}>
             <div className='project-details'>
                 {error && (
                     <div className='project-details__error'>
@@ -65,10 +65,6 @@ export const ArchivedProjectDetails = (props: RouteComponentProps<RouteParams>) 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Archived Meta</div>
                             <div className='project-details__grid'>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Project ID</span>
-                                    <span className='project-details__field-value'>{renderValue(project?.meta?.projectID)}</span>
-                                </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Contract</span>
                                     <span className='project-details__field-value'>{renderValue(project?.meta?.contract)}</span>

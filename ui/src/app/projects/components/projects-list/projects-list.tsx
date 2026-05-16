@@ -12,8 +12,8 @@ const AUTO_REFRESH_INTERVAL_MS = 3000;
 const renderLastUpdatedAt = (value: Date | null) => (value ? value.toLocaleTimeString() : 'Never');
 
 const getProjectRowKey = (project: ProjectView, index: number) => {
-    if (project.meta?.projectID) {
-        return project.meta.projectID;
+    if (project.meta?.contract) {
+        return project.meta.contract;
     }
     if (project.meta?.blockNumber !== undefined && project.meta?.txIndex !== undefined) {
         return `${project.meta.blockNumber}-${project.meta.txIndex}`;
@@ -193,7 +193,7 @@ export const ProjectsList = () => {
                                             project={project}
                                             index={index}
                                             usdtDecimals={projectOptions?.usdtDecimals}
-                                            onClick={project.meta?.projectID ? () => history.push(`/projects/${project.meta!.projectID}`) : undefined}
+                                            onClick={project.meta?.contract ? () => history.push(`/projects/${project.meta!.contract}`) : undefined}
                                         />
                                     ))
                                 )}

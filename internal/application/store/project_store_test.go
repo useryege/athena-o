@@ -6,7 +6,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/google/uuid"
 )
 
 func TestUpdateProjectSourceCode(t *testing.T) {
@@ -17,14 +16,14 @@ func TestUpdateProjectSourceCode(t *testing.T) {
 	defer db.Close()
 
 	store := NewSQLStore(db)
-	projectID := uuid.New()
+	contract := common.HexToAddress("0x0000000000000000000000000000000000000001")
 	sourceCode := "contract C {}"
 
 	mock.ExpectExec("UPDATE project").
-		WithArgs(projectID, sourceCode).
+		WithArgs(contract.Bytes(), sourceCode).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	if err := store.UpdateProjectSourceCode(context.Background(), projectID, sourceCode); err != nil {
+	if err := store.UpdateProjectSourceCode(context.Background(), contract, sourceCode); err != nil {
 		t.Fatalf("update project source code: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -40,15 +39,14 @@ func TestListProjectMetasIncludesSourceCode(t *testing.T) {
 	defer db.Close()
 
 	store := NewSQLStore(db)
-	projectID := uuid.New()
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000A1")
 	creator := common.HexToAddress("0x00000000000000000000000000000000000000B2")
 	txHash := common.HexToHash("0x1234")
 	sourceCode := "contract X {}"
 
 	rows := sqlmock.NewRows([]string{
-		"project_id", "block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code",
-	}).AddRow(projectID, int64(100), int64(200), contract.Bytes(), creator.Bytes(), txHash.Bytes(), int64(3), sourceCode)
+		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code",
+	}).AddRow(int64(100), int64(200), contract.Bytes(), creator.Bytes(), txHash.Bytes(), int64(3), sourceCode)
 
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 
@@ -75,14 +73,13 @@ func TestListProjectMetasNullSourceCodeReturnsEmptyString(t *testing.T) {
 	defer db.Close()
 
 	store := NewSQLStore(db)
-	projectID := uuid.New()
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000C3")
 	creator := common.HexToAddress("0x00000000000000000000000000000000000000D4")
 	txHash := common.HexToHash("0x5678")
 
 	rows := sqlmock.NewRows([]string{
-		"project_id", "block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code",
-	}).AddRow(projectID, int64(101), int64(201), contract.Bytes(), creator.Bytes(), txHash.Bytes(), int64(4), nil)
+		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code",
+	}).AddRow(int64(101), int64(201), contract.Bytes(), creator.Bytes(), txHash.Bytes(), int64(4), nil)
 
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 

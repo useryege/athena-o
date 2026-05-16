@@ -26,13 +26,13 @@ message ListProjectsResponse {
   int32 pageSize = 4;
 }
 
-// GetProjectRequest queries the project snapshot for a given project ID.
+// GetProjectRequest queries the project snapshot for a given contract.
 message GetProjectRequest {
-  string projectID = 1;
+  string contract = 1;
   v1.ProjectScope scope = 2;
 }
 
-// GetProjectResponse returns the project snapshot for a given project ID.
+// GetProjectResponse returns the project snapshot for a given contract.
 message GetProjectResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView item = 1;
 }
@@ -78,13 +78,13 @@ message GetProjectOptionsResponse {
 message DeleteSourceCodeBlacklistFieldResponse {}
 
 message ArchiveProjectRequest {
-  string projectID = 1;
+  string contract = 1;
 }
 
 message ArchiveProjectResponse {}
 
 message UnarchiveProjectRequest {
-  string projectID = 1;
+  string contract = 1;
 }
 
 message UnarchiveProjectResponse {}
@@ -95,9 +95,9 @@ service ApplicationService {
     option (google.api.http) = {get: "/api/v1/projects"};
   }
 
-  // GetProject returns the project snapshot for a given project ID.
+  // GetProject returns the project snapshot for a given contract.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse) {
-    option (google.api.http) = {get: "/api/v1/projects/{projectID}"};
+    option (google.api.http) = {get: "/api/v1/projects/{contract}"};
   }
 
   // ListSourceCodeBlacklistFields returns all globally configured source-code blacklist fields.
@@ -123,18 +123,18 @@ service ApplicationService {
     option (google.api.http) = {get: "/api/v1/project-options"};
   }
 
-  // ArchiveProject archives a project by projectID.
+  // ArchiveProject archives a project by contract.
   rpc ArchiveProject(ArchiveProjectRequest) returns (ArchiveProjectResponse) {
     option (google.api.http) = {
-      post: "/api/v1/project/{projectID}/archive"
+      post: "/api/v1/project/{contract}/archive"
       body: "*"
     };
   }
 
-  // UnarchiveProject unarchives a project by projectID.
+  // UnarchiveProject unarchives a project by contract.
   rpc UnarchiveProject(UnarchiveProjectRequest) returns (UnarchiveProjectResponse) {
     option (google.api.http) = {
-      post: "/api/v1/project/{projectID}/unarchive"
+      post: "/api/v1/project/{contract}/unarchive"
       body: "*"
     };
   }

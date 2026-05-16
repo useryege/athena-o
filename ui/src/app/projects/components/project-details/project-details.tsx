@@ -92,11 +92,11 @@ const renderPairSection = (title: string, pair?: PairV2State) => (
 );
 
 interface RouteParams {
-    projectID: string;
+    contract: string;
 }
 
 export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
-    const projectID = props.match.params.projectID;
+    const contract = props.match.params.contract;
     const [project, setProject] = React.useState<ProjectView | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [archiving, setArchiving] = React.useState(false);
@@ -124,7 +124,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         }
 
         try {
-            const req = services.athenaApplication.getProject(projectID);
+            const req = services.athenaApplication.getProject(contract);
             requestRef.current = req;
             const data = await req;
             if (isMountedRef.current) {
@@ -142,7 +142,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             }
             requestRef.current = null;
         }
-    }, [projectID]);
+    }, [contract]);
 
     React.useEffect(() => {
         isMountedRef.current = true;
@@ -155,12 +155,12 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         };
     }, [cleanupRequests, loadProject]);
 
-    const breadcrumbs = [{title: 'Projects', path: '/projects'}, {title: projectID}];
+    const breadcrumbs = [{title: 'Projects', path: '/projects'}, {title: contract}];
 
     const handleArchive = React.useCallback(async () => {
         setArchiving(true);
         try {
-            await services.athenaApplication.archiveProject(projectID);
+            await services.athenaApplication.archiveProject(contract);
             history.push('/projects/archived');
         } catch (err) {
             if (isMountedRef.current) {
@@ -171,7 +171,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                 setArchiving(false);
             }
         }
-    }, [projectID]);
+    }, [contract]);
 
     return (
         <Page title='Project Details' toolbar={{breadcrumbs}}>
@@ -198,10 +198,6 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Meta</div>
                             <div className='project-details__grid'>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Project ID</span>
-                                    <span className='project-details__field-value'>{renderValue(project.meta?.projectID)}</span>
-                                </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Contract</span>
                                     <span className='project-details__field-value'>{renderValue(project.meta?.contract)}</span>

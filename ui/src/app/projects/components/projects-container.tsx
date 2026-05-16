@@ -10,7 +10,7 @@ export const ProjectsContainer = (props: RouteComponentProps<any>) => (
     <Switch>
         <Route exact={true} path={`${props.match.path}`} component={ProjectsList} />
         <Route exact={true} path={`${props.match.path}/archived`} component={ArchivedProjectsList} />
-        <Route exact={true} path={`${props.match.path}/archived/:projectID`} component={ArchivedProjectDetails} />
-        <Route exact={true} path={`${props.match.path}/:projectID`} component={ProjectDetails} />
+        <Route exact={true} path={`${props.match.path}/archived/:contract`} component={ArchivedProjectDetails} />
+        <Route exact={true} path={`${props.match.path}/:contract`} component={ProjectDetails} />
     </Switch>
 );
