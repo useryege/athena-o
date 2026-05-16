@@ -65,7 +65,6 @@ func (s *Server) GetProject(ctx context.Context, req *applicationpkg.GetProjectR
 
 	resp, err := client.GetProject(ctx, &applicationapiclient.GetProjectRequest{
 		Contract: req.GetContract(),
-		Scope:    req.GetScope(),
 	})
 	if err != nil {
 		return nil, err

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-238-g19ce4c0-dirty"
+    "version": "v1.0.0-241-g498516b-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -381,18 +381,6 @@
             "name": "contract",
             "in": "path",
             "required": true
-          },
-          {
-            "enum": [
-              "PROJECT_SCOPE_UNSPECIFIED",
-              "PROJECT_SCOPE_ACTIVE",
-              "PROJECT_SCOPE_ARCHIVED",
-              "PROJECT_SCOPE_ALL"
-            ],
-            "type": "string",
-            "default": "PROJECT_SCOPE_UNSPECIFIED",
-            "name": "scope",
-            "in": "query"
           }
         ],
         "responses": {

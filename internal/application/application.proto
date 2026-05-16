@@ -26,7 +26,6 @@ message ListProjectsResponse {
 // GetProjectRequest queries the project snapshot for a given contract.
 message GetProjectRequest {
   string contract = 1;
-  v1.ProjectScope scope = 2;
 }
 
 // GetProjectResponse returns the project snapshot for a given contract.

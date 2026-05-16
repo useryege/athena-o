@@ -135,8 +135,8 @@ export class AthenaApplicationService {
         return promise;
     }
 
-    public getProject(contract: string, scope: ProjectScope = PROJECT_SCOPE.ACTIVE): Promise<ProjectView> & {abort?: () => void} {
-        const req = requests.get(`/projects/${encodeURIComponent(contract)}`).query({scope});
+    public getProject(contract: string): Promise<ProjectView> & {abort?: () => void} {
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}`);
         const promise = req.then(res => (res.body as GetProjectResponse).item) as any;
         promise.abort = () => req.abort();
         return promise;
@@ -213,7 +213,7 @@ export class AthenaApplicationService {
     }
 
     public getArchivedProject(contract: string): Promise<ProjectView> & {abort?: () => void} {
-        const req = this.getProject(contract, PROJECT_SCOPE.ARCHIVED) as any;
+        const req = this.getProject(contract) as any;
         const promise = req.then((item: ProjectView) => item) as any;
         promise.abort = () => req.abort();
         return promise;

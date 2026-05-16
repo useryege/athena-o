@@ -574,11 +574,6 @@ func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProj
 }
 
 func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProjectRequest) (*applicationpkg.GetProjectResponse, error) {
-	scope, err := normalizeProjectScope(req.GetScope())
-	if err != nil {
-		return nil, err
-	}
-
 	if !common.IsHexAddress(req.GetContract()) {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
 	}
@@ -591,23 +586,7 @@ func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProject
 		return nil, err
 	}
 	if !ok {
-		if scope == v1.ProjectScope_PROJECT_SCOPE_ARCHIVED {
-			return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetContract())
-		}
 		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
-	}
-
-	switch scope {
-	case v1.ProjectScope_PROJECT_SCOPE_ACTIVE:
-		if project.Meta.IsArchived {
-			return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
-		}
-	case v1.ProjectScope_PROJECT_SCOPE_ARCHIVED:
-		if !project.Meta.IsArchived {
-			return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetContract())
-		}
-	default:
-		return nil, status.Errorf(codes.Internal, "unsupported project scope %v", scope)
 	}
 
 	return &applicationpkg.GetProjectResponse{Item: projectToView(project)}, nil
