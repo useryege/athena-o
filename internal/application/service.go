@@ -48,7 +48,6 @@ type Service struct {
 
 	blockWatcher    *BlockWatcher
 	blockSubscriber *BlockEventSubscriber
-	projectSync     ProjectSync
 	apiFetcher      ethereumapi.EthereumAPI
 	sourceAnalyzer  sourcecode.Analyzer
 	sourceBlacklist appcache.SourceCodeBlacklistModel
@@ -140,8 +139,7 @@ func (s *Service) Start() error {
 	}
 
 	s.apiFetcher = apiFetcher
-	s.projectSync = NewProjectSync(s.nodeClient, s.registry, athenaFetcher, projectSimulator)
-	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, s.projectSync)
+	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, s.registry, athenaFetcher, projectSimulator)
 	s.blockWatcher = NewBlockWatcher(s.nodeClient, s.registry, s.projectCache, athenaFetcher)
 	if err := s.blockSubscriber.Start(ctx); err != nil {
 		cancel()
@@ -487,7 +485,6 @@ func (s *Service) Stop() error {
 func (s *Service) clearPipelineLocked() {
 	s.blockWatcher = nil
 	s.blockSubscriber = nil
-	s.projectSync = nil
 	s.apiFetcher = nil
 }
 
