@@ -20,9 +20,9 @@ const initialProjectSyncLookback = 30 * 24 * time.Hour
 
 type BlockWatcher struct {
 	nodeClient   *ethclient.Client
-	registry     ProjectRegistry
 	projectCache ProjectSnapshotCache
 	fetcher      evm.AthenaFetcher
+	publisher    PersistenceEventPublisher
 	wg           sync.WaitGroup
 
 	chainID *big.Int
@@ -30,9 +30,9 @@ type BlockWatcher struct {
 
 func NewBlockWatcher(
 	nodeClient *ethclient.Client,
-	registry ProjectRegistry,
 	projectCache ProjectSnapshotCache,
 	fetcher evm.AthenaFetcher,
+	publisher PersistenceEventPublisher,
 ) *BlockWatcher {
 	chainID, err := nodeClient.ChainID(context.Background())
 	if err != nil {
@@ -41,9 +41,9 @@ func NewBlockWatcher(
 
 	return &BlockWatcher{
 		nodeClient:   nodeClient,
-		registry:     registry,
 		projectCache: projectCache,
 		fetcher:      fetcher,
+		publisher:    publisher,
 		chainID:      chainID,
 	}
 }
@@ -297,10 +297,23 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project, co
 		if !snapshot.Token.IsValidERC20 {
 			continue
 		}
+		if w.publisher == nil {
+			return errors.New("persistence publisher is not configured")
+		}
+		_, exists, err := w.projectCache.GetProject(ctx, project.Meta.Contract)
+		if err != nil {
+			return fmt.Errorf("failed to query project %s: %w", project.Meta.Contract.Hex(), err)
+		}
+		if exists {
+			continue
+		}
 
 		project.ChainState = snapshot
-		if err := w.registry.SetProject(ctx, project); err != nil {
-			return fmt.Errorf("failed to store project %s: %w", project.Meta.Contract.Hex(), err)
+		if err := w.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
+			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
+		}
+		if err := w.projectCache.SetProject(ctx, project); err != nil {
+			return fmt.Errorf("failed to cache project %s: %w", project.Meta.Contract.Hex(), err)
 		}
 	}
 	return nil

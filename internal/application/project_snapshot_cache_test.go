@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func TestSetProject_WritesProjectAndMaxBlock(t *testing.T) {
+func TestSetProject_WritesProjectWithoutUpdatingMaxBlock(t *testing.T) {
 	ctx := context.Background()
 	cache, _, cleanup := newTestSnapshotCache(t)
 	defer cleanup()
@@ -44,24 +44,23 @@ func TestSetProject_WritesProjectAndMaxBlock(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get max project block number: %v", err)
 	}
-	if !ok {
-		t.Fatalf("max project block number not found")
-	}
-	if maxBlock != 42 {
-		t.Fatalf("max project block number = %d, want 42", maxBlock)
+	if ok {
+		t.Fatalf("max project block number = %d, want not found", maxBlock)
 	}
 }
 
-func TestSetMaxProjectBlockNumber_OverwritesValue(t *testing.T) {
+func TestReplaceAll_SetsMaxProjectBlockNumber(t *testing.T) {
 	ctx := context.Background()
 	cache, _, cleanup := newTestSnapshotCache(t)
 	defer cleanup()
 
-	if err := cache.SetMaxProjectBlockNumber(ctx, 100); err != nil {
-		t.Fatalf("set max project block number(100): %v", err)
+	projects := []*Project{
+		{Meta: ProjectMeta{Contract: common.HexToAddress("0x00000000000000000000000000000000000000C1"), BlockNumber: 30}},
+		{Meta: ProjectMeta{Contract: common.HexToAddress("0x00000000000000000000000000000000000000C2"), BlockNumber: 80}},
+		{Meta: ProjectMeta{Contract: common.HexToAddress("0x00000000000000000000000000000000000000C3"), BlockNumber: 10}},
 	}
-	if err := cache.SetMaxProjectBlockNumber(ctx, 80); err != nil {
-		t.Fatalf("set max project block number(80): %v", err)
+	if err := cache.ReplaceAll(ctx, projects); err != nil {
+		t.Fatalf("replace all: %v", err)
 	}
 
 	maxBlock, ok, err := cache.GetMaxProjectBlockNumber(ctx)

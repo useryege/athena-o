@@ -52,7 +52,6 @@ type Service struct {
 	sourceAnalyzer  sourcecode.Analyzer
 	sourceBlacklist appcache.SourceCodeBlacklistModel
 
-	registry             ProjectRegistry
 	store                appstore.Store
 	projectCache         ProjectSnapshotCache
 	persistencePublisher PersistenceEventPublisher
@@ -68,7 +67,6 @@ type Service struct {
 
 func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, store appstore.Store, liquidityLocker []common.Address, redisClient *redis.Client) *Service {
 	persistenceBus := NewRedisPersistenceEventBus(redisClient)
-	registry := NewProjectRegistry(persistenceBus)
 	sourceAnalyzer := sourcecode.NewAnalyzer()
 	sourceBlacklist := appcache.NewSourceCodeBlacklistModel(
 		store,
@@ -78,7 +76,6 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 
 	return &Service{
 		nodeClient:           nodeClient,
-		registry:             registry,
 		store:                store,
 		projectCache:         NewProjectSnapshotCache(redisClient),
 		sourceAnalyzer:       sourceAnalyzer,
@@ -139,8 +136,8 @@ func (s *Service) Start() error {
 	}
 
 	s.apiFetcher = apiFetcher
-	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient, s.registry, athenaFetcher, projectSimulator)
-	s.blockWatcher = NewBlockWatcher(s.nodeClient, s.registry, s.projectCache, athenaFetcher)
+	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient)
+	s.blockWatcher = NewBlockWatcher(s.nodeClient, s.projectCache, athenaFetcher, s.persistencePublisher)
 	if err := s.blockSubscriber.Start(ctx); err != nil {
 		cancel()
 		s.clearPipelineLocked()
@@ -187,17 +184,6 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context, fetcher evm.Athena
 		if err := s.projectCache.ReplaceAll(ctx, projects); err != nil {
 			time.Sleep(bootstrapRetryInterval)
 			continue
-		}
-		activeProjects, err := s.projectCache.ListActiveProjects(ctx)
-		if err != nil {
-			time.Sleep(bootstrapRetryInterval)
-			continue
-		}
-		for _, project := range activeProjects {
-			if err := s.registry.LoadProject(ctx, project); err != nil {
-				time.Sleep(bootstrapRetryInterval)
-				continue
-			}
 		}
 		return nil
 	}
@@ -378,7 +364,7 @@ func (s *Service) refreshAllProjectSourceCodes(ctx context.Context) error {
 	}
 }
 
-func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []*Project, active bool, fields []string) error {
+func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []*Project, _ bool, fields []string) error {
 	for _, project := range projects {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -398,9 +384,6 @@ func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []
 		}
 		if err := s.projectCache.SetProject(ctx, project); err != nil {
 			continue
-		}
-		if active {
-			_ = s.registry.UpdateProjectMetaState(ctx, project.Meta.Contract, &project.Meta)
 		}
 	}
 	return nil
@@ -634,9 +617,6 @@ func (s *Service) ArchiveProject(ctx context.Context, req *applicationpkg.Archiv
 	if err := s.projectCache.SetProject(ctx, project); err != nil {
 		return nil, err
 	}
-	if err := s.registry.RemoveProject(ctx, contract); err != nil {
-		return nil, err
-	}
 	return &applicationpkg.ArchiveProjectResponse{}, nil
 }
 
@@ -671,9 +651,6 @@ func (s *Service) UnarchiveProject(ctx context.Context, req *applicationpkg.Unar
 	project.Meta.IsArchived = false
 	project.Meta.ArchivedAt = time.Time{}
 	if err := s.projectCache.SetProject(ctx, project); err != nil {
-		return nil, err
-	}
-	if err := s.registry.LoadProject(ctx, project); err != nil {
 		return nil, err
 	}
 	return &applicationpkg.UnarchiveProjectResponse{}, nil

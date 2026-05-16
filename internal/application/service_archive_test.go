@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	appstore "github.com/useryege/athena/internal/application/store"
-	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 type archiveProjectStoreMock struct {
@@ -143,10 +142,6 @@ func (m *archiveProjectCacheMock) GetMaxProjectBlockNumber(ctx context.Context) 
 	return 0, false, nil
 }
 
-func (m *archiveProjectCacheMock) SetMaxProjectBlockNumber(ctx context.Context, block uint64) error {
-	return nil
-}
-
 func (m *archiveProjectCacheMock) ListActiveProjects(ctx context.Context) ([]*Project, error) {
 	return nil, nil
 }
@@ -155,53 +150,7 @@ func (m *archiveProjectCacheMock) ListArchivedProjects(ctx context.Context, page
 	return nil, 0, 0, 0, nil
 }
 
-type archiveProjectRegistryMock struct {
-	getCalls int
-
-	removeErr   error
-	removeCalls int
-	removed     []common.Address
-}
-
-func (m *archiveProjectRegistryMock) GetProject(ctx context.Context, contract common.Address) (*Project, bool, error) {
-	m.getCalls++
-	return nil, false, nil
-}
-
-func (m *archiveProjectRegistryMock) ListProjects(ctx context.Context) ([]*Project, error) {
-	return nil, nil
-}
-
-func (m *archiveProjectRegistryMock) ListProjectContracts(ctx context.Context) (ProjectContractSnapshot, error) {
-	return ProjectContractSnapshot{}, nil
-}
-
-func (m *archiveProjectRegistryMock) SetProject(ctx context.Context, project *Project) error {
-	return nil
-}
-
-func (m *archiveProjectRegistryMock) LoadProject(ctx context.Context, project *Project) error {
-	return nil
-}
-
-func (m *archiveProjectRegistryMock) UpdateProjectChainStates(ctx context.Context, states map[common.Address]athenacontract.AthenaProject) error {
-	return nil
-}
-
-func (m *archiveProjectRegistryMock) UpdateProjectMetaState(ctx context.Context, contract common.Address, state *ProjectMeta) error {
-	return nil
-}
-
-func (m *archiveProjectRegistryMock) RemoveProject(ctx context.Context, contract common.Address) error {
-	if m.removeErr != nil {
-		return m.removeErr
-	}
-	m.removeCalls++
-	m.removed = append(m.removed, contract)
-	return nil
-}
-
-func TestArchiveProjectCacheAndRegistryHit(t *testing.T) {
+func TestArchiveProjectCacheHit(t *testing.T) {
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 	meta := &appstore.ProjectMeta{
 		Contract:    contract,
@@ -212,12 +161,10 @@ func TestArchiveProjectCacheAndRegistryHit(t *testing.T) {
 	store := &archiveProjectStoreMock{meta: meta}
 	publisher := &archiveProjectPublisherMock{}
 	cache := &archiveProjectCacheMock{getProject: project, getOK: true}
-	registry := &archiveProjectRegistryMock{}
 	service := &Service{
 		store:                store,
 		persistencePublisher: publisher,
 		projectCache:         cache,
-		registry:             registry,
 	}
 
 	_, err := service.ArchiveProject(context.Background(), &applicationpkg.ArchiveProjectRequest{Contract: contract.Hex()})
@@ -242,45 +189,6 @@ func TestArchiveProjectCacheAndRegistryHit(t *testing.T) {
 	if cache.lastSet.Meta.ArchivedAt.Location() != time.UTC {
 		t.Fatalf("archived at location = %s, want UTC", cache.lastSet.Meta.ArchivedAt.Location())
 	}
-	if registry.removeCalls != 1 || len(registry.removed) != 1 || registry.removed[0] != contract {
-		t.Fatalf("remove calls = %d, removed = %v, want 1 call with %s", registry.removeCalls, registry.removed, contract.Hex())
-	}
-}
-
-func TestArchiveProjectRegistryMissCacheHit(t *testing.T) {
-	contract := common.HexToAddress("0x3000000000000000000000000000000000000003")
-	meta := &appstore.ProjectMeta{
-		Contract:    contract,
-		Creator:     common.HexToAddress("0x4000000000000000000000000000000000000004"),
-		BlockNumber: 22,
-	}
-	store := &archiveProjectStoreMock{meta: meta}
-	publisher := &archiveProjectPublisherMock{}
-	cache := &archiveProjectCacheMock{
-		getProject: &Project{Meta: projectMetaFromStore(*meta)},
-		getOK:      true,
-	}
-	registry := &archiveProjectRegistryMock{}
-	service := &Service{
-		store:                store,
-		persistencePublisher: publisher,
-		projectCache:         cache,
-		registry:             registry,
-	}
-
-	_, err := service.ArchiveProject(context.Background(), &applicationpkg.ArchiveProjectRequest{Contract: contract.Hex()})
-	if err != nil {
-		t.Fatalf("archive project: %v", err)
-	}
-	if registry.getCalls != 0 {
-		t.Fatalf("registry get calls = %d, want 0", registry.getCalls)
-	}
-	if cache.setCalls != 1 {
-		t.Fatalf("set project calls = %d, want 1", cache.setCalls)
-	}
-	if registry.removeCalls != 1 {
-		t.Fatalf("remove calls = %d, want 1", registry.removeCalls)
-	}
 }
 
 func TestArchiveProjectCacheMissBuildsFromStoreMeta(t *testing.T) {
@@ -296,12 +204,10 @@ func TestArchiveProjectCacheMissBuildsFromStoreMeta(t *testing.T) {
 	store := &archiveProjectStoreMock{meta: meta}
 	publisher := &archiveProjectPublisherMock{}
 	cache := &archiveProjectCacheMock{getProject: nil, getOK: false}
-	registry := &archiveProjectRegistryMock{}
 	service := &Service{
 		store:                store,
 		persistencePublisher: publisher,
 		projectCache:         cache,
-		registry:             registry,
 	}
 
 	_, err := service.ArchiveProject(context.Background(), &applicationpkg.ArchiveProjectRequest{Contract: contract.Hex()})
@@ -325,7 +231,7 @@ func TestArchiveProjectCacheMissBuildsFromStoreMeta(t *testing.T) {
 	}
 }
 
-func TestArchiveProjectSetProjectErrorStopsBeforeRegistryRemove(t *testing.T) {
+func TestArchiveProjectSetProjectErrorStopsFlow(t *testing.T) {
 	contract := common.HexToAddress("0x7000000000000000000000000000000000000007")
 	meta := &appstore.ProjectMeta{Contract: contract}
 	expectedErr := errors.New("set project failed")
@@ -336,49 +242,14 @@ func TestArchiveProjectSetProjectErrorStopsBeforeRegistryRemove(t *testing.T) {
 		getOK:      true,
 		setErr:     expectedErr,
 	}
-	registry := &archiveProjectRegistryMock{}
 	service := &Service{
 		store:                store,
 		persistencePublisher: publisher,
 		projectCache:         cache,
-		registry:             registry,
 	}
 
 	_, err := service.ArchiveProject(context.Background(), &applicationpkg.ArchiveProjectRequest{Contract: contract.Hex()})
 	if !errors.Is(err, expectedErr) {
 		t.Fatalf("archive project err = %v, want %v", err, expectedErr)
-	}
-	if registry.removeCalls != 0 {
-		t.Fatalf("remove calls = %d, want 0", registry.removeCalls)
-	}
-}
-
-func TestArchiveProjectRemoveProjectErrorAfterCacheUpdated(t *testing.T) {
-	contract := common.HexToAddress("0x8000000000000000000000000000000000000008")
-	meta := &appstore.ProjectMeta{Contract: contract}
-	expectedErr := errors.New("remove project failed")
-	store := &archiveProjectStoreMock{meta: meta}
-	publisher := &archiveProjectPublisherMock{}
-	cache := &archiveProjectCacheMock{
-		getProject: &Project{Meta: projectMetaFromStore(*meta)},
-		getOK:      true,
-	}
-	registry := &archiveProjectRegistryMock{removeErr: expectedErr}
-	service := &Service{
-		store:                store,
-		persistencePublisher: publisher,
-		projectCache:         cache,
-		registry:             registry,
-	}
-
-	_, err := service.ArchiveProject(context.Background(), &applicationpkg.ArchiveProjectRequest{Contract: contract.Hex()})
-	if !errors.Is(err, expectedErr) {
-		t.Fatalf("archive project err = %v, want %v", err, expectedErr)
-	}
-	if cache.setCalls != 1 {
-		t.Fatalf("set project calls = %d, want 1", cache.setCalls)
-	}
-	if cache.lastSet == nil || !cache.lastSet.Meta.IsArchived || cache.lastSet.Meta.ArchivedAt.IsZero() {
-		t.Fatalf("cache was not updated before remove failure")
 	}
 }

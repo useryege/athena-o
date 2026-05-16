@@ -26,7 +26,6 @@ type ProjectSnapshotCache interface {
 	DeleteProject(ctx context.Context, contract common.Address) error
 	GetProject(ctx context.Context, contract common.Address) (*Project, bool, error)
 	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
-	SetMaxProjectBlockNumber(ctx context.Context, block uint64) error
 	ListActiveProjects(ctx context.Context) ([]*Project, error)
 	ListArchivedProjects(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error)
 }
@@ -100,7 +99,6 @@ func (c *RedisProjectSnapshotCache) SetProject(ctx context.Context, project *Pro
 		pipe.ZRem(ctx, projectIndexArchived, contractKey)
 		pipe.ZAdd(ctx, projectIndexActive, redis.Z{Score: activeScore(project), Member: contractKey})
 	}
-	pipe.Set(ctx, projectMaxBlockKey, strconv.FormatUint(project.Meta.BlockNumber, 10), 0)
 	_, err = pipe.Exec(ctx)
 	return err
 }
@@ -152,13 +150,6 @@ func (c *RedisProjectSnapshotCache) GetMaxProjectBlockNumber(ctx context.Context
 		return 0, false, fmt.Errorf("parse max project block number: %w", err)
 	}
 	return maxBlock, true, nil
-}
-
-func (c *RedisProjectSnapshotCache) SetMaxProjectBlockNumber(ctx context.Context, block uint64) error {
-	if c == nil || c.client == nil {
-		return nil
-	}
-	return c.client.Set(ctx, projectMaxBlockKey, strconv.FormatUint(block, 10), 0).Err()
 }
 
 func (c *RedisProjectSnapshotCache) ListActiveProjects(ctx context.Context) ([]*Project, error) {
