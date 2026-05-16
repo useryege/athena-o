@@ -14,6 +14,7 @@ import (
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/evm"
+	v1 "github.com/useryege/athena/internal/pkg/proto/v1"
 	"github.com/useryege/athena/internal/application/sourcecode"
 	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
@@ -528,14 +529,14 @@ func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProj
 		pageSize int32
 	)
 	switch scope {
-	case applicationpkg.ProjectScope_PROJECT_SCOPE_ACTIVE:
+	case v1.ProjectScope_PROJECT_SCOPE_ACTIVE:
 		projects, err = s.projectCache.ListActiveProjects(ctx)
 		projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
 		if err != nil {
 			return nil, err
 		}
 		total, page, pageSize = paginateActiveProjects(req.GetPage(), req.GetPageSize(), &projects)
-	case applicationpkg.ProjectScope_PROJECT_SCOPE_ARCHIVED:
+	case v1.ProjectScope_PROJECT_SCOPE_ARCHIVED:
 		projects, total, page, pageSize, err = s.projectCache.ListArchivedProjects(ctx, req.GetPage(), req.GetPageSize())
 		projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
 		if err != nil {
@@ -576,18 +577,18 @@ func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProject
 		return nil, err
 	}
 	if !ok {
-		if scope == applicationpkg.ProjectScope_PROJECT_SCOPE_ARCHIVED {
+		if scope == v1.ProjectScope_PROJECT_SCOPE_ARCHIVED {
 			return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetProjectID())
 		}
 		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
 	}
 
 	switch scope {
-	case applicationpkg.ProjectScope_PROJECT_SCOPE_ACTIVE:
+	case v1.ProjectScope_PROJECT_SCOPE_ACTIVE:
 		if project.Meta.IsArchived {
 			return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
 		}
-	case applicationpkg.ProjectScope_PROJECT_SCOPE_ARCHIVED:
+	case v1.ProjectScope_PROJECT_SCOPE_ARCHIVED:
 		if !project.Meta.IsArchived {
 			return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetProjectID())
 		}
@@ -687,13 +688,13 @@ func (s *Service) UnarchiveProject(ctx context.Context, req *applicationpkg.Unar
 	return &applicationpkg.UnarchiveProjectResponse{}, nil
 }
 
-func normalizeProjectScope(scope applicationpkg.ProjectScope) (applicationpkg.ProjectScope, error) {
+func normalizeProjectScope(scope v1.ProjectScope) (v1.ProjectScope, error) {
 	switch scope {
-	case applicationpkg.ProjectScope_PROJECT_SCOPE_UNSPECIFIED, applicationpkg.ProjectScope_PROJECT_SCOPE_ACTIVE:
-		return applicationpkg.ProjectScope_PROJECT_SCOPE_ACTIVE, nil
-	case applicationpkg.ProjectScope_PROJECT_SCOPE_ARCHIVED:
-		return applicationpkg.ProjectScope_PROJECT_SCOPE_ARCHIVED, nil
-	case applicationpkg.ProjectScope_PROJECT_SCOPE_ALL:
+	case v1.ProjectScope_PROJECT_SCOPE_UNSPECIFIED, v1.ProjectScope_PROJECT_SCOPE_ACTIVE:
+		return v1.ProjectScope_PROJECT_SCOPE_ACTIVE, nil
+	case v1.ProjectScope_PROJECT_SCOPE_ARCHIVED:
+		return v1.ProjectScope_PROJECT_SCOPE_ARCHIVED, nil
+	case v1.ProjectScope_PROJECT_SCOPE_ALL:
 		return 0, status.Error(codes.InvalidArgument, "scope PROJECT_SCOPE_ALL is not supported")
 	default:
 		return 0, status.Errorf(codes.InvalidArgument, "invalid scope %q", scope.String())

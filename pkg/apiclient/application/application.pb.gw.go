@@ -69,6 +69,24 @@ func local_request_ApplicationService_ListProjects_0(ctx context.Context, marsha
 
 }
 
+func request_ApplicationService_GetProjectOptions_0(ctx context.Context, marshaler runtime.Marshaler, client ApplicationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetProjectOptionsRequest
+	var metadata runtime.ServerMetadata
+
+	msg, err := client.GetProjectOptions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_ApplicationService_GetProjectOptions_0(ctx context.Context, marshaler runtime.Marshaler, server ApplicationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetProjectOptionsRequest
+	var metadata runtime.ServerMetadata
+
+	msg, err := server.GetProjectOptions(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 var (
 	filter_ApplicationService_GetProject_0 = &utilities.DoubleArray{Encoding: map[string]int{"projectID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
@@ -247,24 +265,6 @@ func local_request_ApplicationService_DeleteSourceCodeBlacklistField_0(ctx conte
 
 }
 
-func request_ApplicationService_GetProjectOptions_0(ctx context.Context, marshaler runtime.Marshaler, client ApplicationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetProjectOptionsRequest
-	var metadata runtime.ServerMetadata
-
-	msg, err := client.GetProjectOptions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_ApplicationService_GetProjectOptions_0(ctx context.Context, marshaler runtime.Marshaler, server ApplicationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetProjectOptionsRequest
-	var metadata runtime.ServerMetadata
-
-	msg, err := server.GetProjectOptions(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
 func request_ApplicationService_ArchiveProject_0(ctx context.Context, marshaler runtime.Marshaler, client ApplicationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ArchiveProjectRequest
 	var metadata runtime.ServerMetadata
@@ -434,6 +434,29 @@ func RegisterApplicationServiceHandlerServer(ctx context.Context, mux *runtime.S
 
 	})
 
+	mux.Handle("GET", pattern_ApplicationService_GetProjectOptions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_ApplicationService_GetProjectOptions_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ApplicationService_GetProjectOptions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("GET", pattern_ApplicationService_GetProject_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -523,29 +546,6 @@ func RegisterApplicationServiceHandlerServer(ctx context.Context, mux *runtime.S
 		}
 
 		forward_ApplicationService_DeleteSourceCodeBlacklistField_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_ApplicationService_GetProjectOptions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_ApplicationService_GetProjectOptions_0(rctx, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_ApplicationService_GetProjectOptions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -656,6 +656,26 @@ func RegisterApplicationServiceHandlerClient(ctx context.Context, mux *runtime.S
 
 	})
 
+	mux.Handle("GET", pattern_ApplicationService_GetProjectOptions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ApplicationService_GetProjectOptions_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ApplicationService_GetProjectOptions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("GET", pattern_ApplicationService_GetProject_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -736,26 +756,6 @@ func RegisterApplicationServiceHandlerClient(ctx context.Context, mux *runtime.S
 
 	})
 
-	mux.Handle("GET", pattern_ApplicationService_GetProjectOptions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_ApplicationService_GetProjectOptions_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_ApplicationService_GetProjectOptions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
 	mux.Handle("POST", pattern_ApplicationService_ArchiveProject_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -802,6 +802,8 @@ func RegisterApplicationServiceHandlerClient(ctx context.Context, mux *runtime.S
 var (
 	pattern_ApplicationService_ListProjects_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "projects"}, "", runtime.AssumeColonVerbOpt(true)))
 
+	pattern_ApplicationService_GetProjectOptions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "projects", "options"}, "", runtime.AssumeColonVerbOpt(true)))
+
 	pattern_ApplicationService_GetProject_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "projects", "projectID"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_ApplicationService_ListSourceCodeBlacklistFields_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "source-code", "blacklist-fields"}, "", runtime.AssumeColonVerbOpt(true)))
@@ -809,8 +811,6 @@ var (
 	pattern_ApplicationService_AddSourceCodeBlacklistField_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "source-code", "blacklist-fields"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_ApplicationService_DeleteSourceCodeBlacklistField_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "source-code", "blacklist-fields", "field"}, "", runtime.AssumeColonVerbOpt(true)))
-
-	pattern_ApplicationService_GetProjectOptions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "projects", "options"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_ApplicationService_ArchiveProject_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v1", "project", "projectID", "archive"}, "", runtime.AssumeColonVerbOpt(true)))
 
@@ -820,6 +820,8 @@ var (
 var (
 	forward_ApplicationService_ListProjects_0 = runtime.ForwardResponseMessage
 
+	forward_ApplicationService_GetProjectOptions_0 = runtime.ForwardResponseMessage
+
 	forward_ApplicationService_GetProject_0 = runtime.ForwardResponseMessage
 
 	forward_ApplicationService_ListSourceCodeBlacklistFields_0 = runtime.ForwardResponseMessage
@@ -827,8 +829,6 @@ var (
 	forward_ApplicationService_AddSourceCodeBlacklistField_0 = runtime.ForwardResponseMessage
 
 	forward_ApplicationService_DeleteSourceCodeBlacklistField_0 = runtime.ForwardResponseMessage
-
-	forward_ApplicationService_GetProjectOptions_0 = runtime.ForwardResponseMessage
 
 	forward_ApplicationService_ArchiveProject_0 = runtime.ForwardResponseMessage
 

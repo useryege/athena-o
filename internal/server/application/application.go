@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
+	v1 "github.com/useryege/athena/internal/pkg/proto/v1"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 )
 
@@ -27,7 +28,7 @@ func (s *Server) ListProjects(ctx context.Context, req *applicationpkg.ListProje
 	defer closer.Close()
 
 	resp, err := client.ListProjects(ctx, &applicationapiclient.ListProjectsRequest{
-		Scope:    applicationapiclient.ProjectScope(req.GetScope()),
+		Scope:    req.GetScope(),
 		Page:     req.GetPage(),
 		PageSize: req.GetPageSize(),
 	})
@@ -35,7 +36,7 @@ func (s *Server) ListProjects(ctx context.Context, req *applicationpkg.ListProje
 		return nil, err
 	}
 
-	if req.GetScope() == applicationpkg.ProjectScope_PROJECT_SCOPE_UNSPECIFIED || req.GetScope() == applicationpkg.ProjectScope_PROJECT_SCOPE_ACTIVE {
+	if req.GetScope() == v1.ProjectScope_PROJECT_SCOPE_UNSPECIFIED || req.GetScope() == v1.ProjectScope_PROJECT_SCOPE_ACTIVE {
 		sort.SliceStable(resp.Items, func(i, j int) bool {
 			if resp.Items[i].Meta.BlockNumber != resp.Items[j].Meta.BlockNumber {
 				return resp.Items[i].Meta.BlockNumber < resp.Items[j].Meta.BlockNumber
@@ -64,7 +65,7 @@ func (s *Server) GetProject(ctx context.Context, req *applicationpkg.GetProjectR
 
 	resp, err := client.GetProject(ctx, &applicationapiclient.GetProjectRequest{
 		ProjectID: req.GetProjectID(),
-		Scope:     applicationapiclient.ProjectScope(req.GetScope()),
+		Scope:     req.GetScope(),
 	})
 	if err != nil {
 		return nil, err

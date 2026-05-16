@@ -5,21 +5,15 @@ syntax = "proto3";
 // Application Service API returns the list of projects.
 package application;
 
+import "github.com/useryege/athena/internal/pkg/proto/v1/v1.proto";
 import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
 import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/application";
 
-enum ProjectScope {
-  PROJECT_SCOPE_UNSPECIFIED = 0;
-  PROJECT_SCOPE_ACTIVE = 1;
-  PROJECT_SCOPE_ARCHIVED = 2;
-  PROJECT_SCOPE_ALL = 3;
-}
-
 // ListProjectsRequest queries the current known project snapshot.
 message ListProjectsRequest {
-  ProjectScope scope = 1;
+  v1.ProjectScope scope = 1;
   int32 page = 2;
   int32 pageSize = 3;
 }
@@ -35,7 +29,7 @@ message ListProjectsResponse {
 // GetProjectRequest queries the project snapshot for a given project ID.
 message GetProjectRequest {
   string projectID = 1;
-  ProjectScope scope = 2;
+  v1.ProjectScope scope = 2;
 }
 
 // GetProjectResponse returns the project snapshot for a given project ID.
