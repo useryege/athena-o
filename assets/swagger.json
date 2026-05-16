@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-234-gff15f2a-dirty"
+    "version": "v1.0.0-235-gf768cff-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -218,6 +218,29 @@
         }
       }
     },
+    "/api/v1/project-options": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "GetProjectOptions returns the options.",
+        "operationId": "ApplicationService_GetProjectOptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetProjectOptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/project/{projectID}/archive": {
       "post": {
         "tags": [
@@ -334,29 +357,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationListProjectsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/projects/options": {
-      "get": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "GetProjectOptions returns the options.",
-        "operationId": "ApplicationService_GetProjectOptions",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationGetProjectOptionsResponse"
             }
           },
           "default": {
@@ -810,16 +810,6 @@
         }
       }
     },
-    "applicationProjectScope": {
-      "type": "string",
-      "default": "PROJECT_SCOPE_UNSPECIFIED",
-      "enum": [
-        "PROJECT_SCOPE_UNSPECIFIED",
-        "PROJECT_SCOPE_ACTIVE",
-        "PROJECT_SCOPE_ARCHIVED",
-        "PROJECT_SCOPE_ALL"
-      ]
-    },
     "applicationSourceCodeBlacklistField": {
       "description": "SourceCodeBlacklistField is a globally maintained source-code blacklist field.",
       "type": "object",
@@ -1128,6 +1118,16 @@
           "type": "string"
         }
       }
+    },
+    "v1ProjectScope": {
+      "type": "string",
+      "default": "PROJECT_SCOPE_UNSPECIFIED",
+      "enum": [
+        "PROJECT_SCOPE_UNSPECIFIED",
+        "PROJECT_SCOPE_ACTIVE",
+        "PROJECT_SCOPE_ARCHIVED",
+        "PROJECT_SCOPE_ALL"
+      ]
     },
     "v1alpha1PairV2State": {
       "type": "object",

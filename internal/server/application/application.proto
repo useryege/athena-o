@@ -120,7 +120,7 @@ service ApplicationService {
 
   // GetProjectOptions returns the options.
   rpc GetProjectOptions(GetProjectOptionsRequest) returns (GetProjectOptionsResponse) {
-    option (google.api.http) = {get: "/api/v1/projects/options"};
+    option (google.api.http) = {get: "/api/v1/project-options"};
   }
 
   // ArchiveProject archives a project by projectID.

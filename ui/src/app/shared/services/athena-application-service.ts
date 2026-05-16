@@ -137,7 +137,7 @@ export class AthenaApplicationService {
     }
 
     public getProjectOptions(): Promise<ProjectOptions | undefined> & {abort?: () => void} {
-        const req = requests.get('/projects/options');
+        const req = requests.get('/project-options');
         const promise = req.then(res => {
             const body = (res.body || {}) as any;
             const options = (body.options || body) as any;
