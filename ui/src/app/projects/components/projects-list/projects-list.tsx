@@ -82,7 +82,7 @@ export const ProjectsList = () => {
             requestRef.current = req;
             const data = await req;
             if (isMountedRef.current) {
-                setProjects(data);
+                setProjects(data.items);
                 setLastUpdatedAt(new Date());
                 setError(null);
             }

@@ -10,17 +10,32 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/application";
 
+enum ProjectScope {
+  PROJECT_SCOPE_UNSPECIFIED = 0;
+  PROJECT_SCOPE_ACTIVE = 1;
+  PROJECT_SCOPE_ARCHIVED = 2;
+  PROJECT_SCOPE_ALL = 3;
+}
+
 // ListProjectsRequest queries the current known project snapshot.
-message ListProjectsRequest {}
+message ListProjectsRequest {
+  ProjectScope scope = 1;
+  int32 page = 2;
+  int32 pageSize = 3;
+}
 
 // ListProjectsResponse returns the current known project snapshot.
 message ListProjectsResponse {
   repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 pageSize = 4;
 }
 
 // GetProjectRequest queries the project snapshot for a given project ID.
 message GetProjectRequest {
   string projectID = 1;
+  ProjectScope scope = 2;
 }
 
 // GetProjectResponse returns the project snapshot for a given project ID.
@@ -80,35 +95,15 @@ message UnarchiveProjectRequest {
 
 message UnarchiveProjectResponse {}
 
-message ListArchivedProjectsRequest {
-  int32 page = 1;
-  int32 pageSize = 2;
-}
-
-message ListArchivedProjectsResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView items = 1;
-  int64 total = 2;
-  int32 page = 3;
-  int32 pageSize = 4;
-}
-
-message GetArchivedProjectRequest {
-  string projectID = 1;
-}
-
-message GetArchivedProjectResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView item = 1;
-}
-
 service ApplicationService {
   // ListProjects returns the current known project snapshot.
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {
-    option (google.api.http) = {get: "/api/v1/project/list"};
+    option (google.api.http) = {get: "/api/v1/projects"};
   }
 
   // GetProject returns the project snapshot for a given project ID.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse) {
-    option (google.api.http) = {get: "/api/v1/project/{projectID}"};
+    option (google.api.http) = {get: "/api/v1/projects/{projectID}"};
   }
 
   // ListSourceCodeBlacklistFields returns all globally configured source-code blacklist fields.
@@ -148,15 +143,5 @@ service ApplicationService {
       post: "/api/v1/project/{projectID}/unarchive"
       body: "*"
     };
-  }
-
-  // ListArchivedProjects returns archived projects using pagination.
-  rpc ListArchivedProjects(ListArchivedProjectsRequest) returns (ListArchivedProjectsResponse) {
-    option (google.api.http) = {get: "/api/v1/projects/archived"};
-  }
-
-  // GetArchivedProject returns archived project snapshot for a given project ID.
-  rpc GetArchivedProject(GetArchivedProjectRequest) returns (GetArchivedProjectResponse) {
-    option (google.api.http) = {get: "/api/v1/projects/archived/{projectID}"};
   }
 }

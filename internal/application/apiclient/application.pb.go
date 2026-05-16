@@ -29,11 +29,45 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type ProjectScope int32
+
+const (
+	ProjectScope_PROJECT_SCOPE_UNSPECIFIED ProjectScope = 0
+	ProjectScope_PROJECT_SCOPE_ACTIVE      ProjectScope = 1
+	ProjectScope_PROJECT_SCOPE_ARCHIVED    ProjectScope = 2
+	ProjectScope_PROJECT_SCOPE_ALL         ProjectScope = 3
+)
+
+var ProjectScope_name = map[int32]string{
+	0: "PROJECT_SCOPE_UNSPECIFIED",
+	1: "PROJECT_SCOPE_ACTIVE",
+	2: "PROJECT_SCOPE_ARCHIVED",
+	3: "PROJECT_SCOPE_ALL",
+}
+
+var ProjectScope_value = map[string]int32{
+	"PROJECT_SCOPE_UNSPECIFIED": 0,
+	"PROJECT_SCOPE_ACTIVE":      1,
+	"PROJECT_SCOPE_ARCHIVED":    2,
+	"PROJECT_SCOPE_ALL":         3,
+}
+
+func (x ProjectScope) String() string {
+	return proto.EnumName(ProjectScope_name, int32(x))
+}
+
+func (ProjectScope) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_8ec0c1410c6c3952, []int{0}
+}
+
 // ListProjectsRequest queries the current known project snapshot.
 type ListProjectsRequest struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Scope                ProjectScope `protobuf:"varint,1,opt,name=scope,proto3,enum=application.ProjectScope" json:"scope,omitempty"`
+	Page                 int32        `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32        `protobuf:"varint,3,opt,name=pageSize,proto3" json:"pageSize,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
 func (m *ListProjectsRequest) Reset()         { *m = ListProjectsRequest{} }
@@ -69,9 +103,33 @@ func (m *ListProjectsRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ListProjectsRequest proto.InternalMessageInfo
 
+func (m *ListProjectsRequest) GetScope() ProjectScope {
+	if m != nil {
+		return m.Scope
+	}
+	return ProjectScope_PROJECT_SCOPE_UNSPECIFIED
+}
+
+func (m *ListProjectsRequest) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListProjectsRequest) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
 // ListProjectsResponse returns the current known project snapshot.
 type ListProjectsResponse struct {
 	Items                []*v1alpha1.ProjectView `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total                int64                   `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page                 int32                   `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32                   `protobuf:"varint,4,opt,name=pageSize,proto3" json:"pageSize,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -117,12 +175,34 @@ func (m *ListProjectsResponse) GetItems() []*v1alpha1.ProjectView {
 	return nil
 }
 
+func (m *ListProjectsResponse) GetTotal() int64 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *ListProjectsResponse) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListProjectsResponse) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
 // GetProjectRequest queries the project snapshot for a given project ID.
 type GetProjectRequest struct {
-	ProjectID            string   `protobuf:"bytes,1,opt,name=projectID,proto3" json:"projectID,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	ProjectID            string       `protobuf:"bytes,1,opt,name=projectID,proto3" json:"projectID,omitempty"`
+	Scope                ProjectScope `protobuf:"varint,2,opt,name=scope,proto3,enum=application.ProjectScope" json:"scope,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
 func (m *GetProjectRequest) Reset()         { *m = GetProjectRequest{} }
@@ -163,6 +243,13 @@ func (m *GetProjectRequest) GetProjectID() string {
 		return m.ProjectID
 	}
 	return ""
+}
+
+func (m *GetProjectRequest) GetScope() ProjectScope {
+	if m != nil {
+		return m.Scope
+	}
+	return ProjectScope_PROJECT_SCOPE_UNSPECIFIED
 }
 
 // GetProjectResponse returns the project snapshot for a given project ID.
@@ -803,227 +890,8 @@ func (m *UnarchiveProjectResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_UnarchiveProjectResponse proto.InternalMessageInfo
 
-type ListArchivedProjectsRequest struct {
-	Page                 int32    `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
-	PageSize             int32    `protobuf:"varint,2,opt,name=pageSize,proto3" json:"pageSize,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *ListArchivedProjectsRequest) Reset()         { *m = ListArchivedProjectsRequest{} }
-func (m *ListArchivedProjectsRequest) String() string { return proto.CompactTextString(m) }
-func (*ListArchivedProjectsRequest) ProtoMessage()    {}
-func (*ListArchivedProjectsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{17}
-}
-func (m *ListArchivedProjectsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ListArchivedProjectsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ListArchivedProjectsRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ListArchivedProjectsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListArchivedProjectsRequest.Merge(m, src)
-}
-func (m *ListArchivedProjectsRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *ListArchivedProjectsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListArchivedProjectsRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ListArchivedProjectsRequest proto.InternalMessageInfo
-
-func (m *ListArchivedProjectsRequest) GetPage() int32 {
-	if m != nil {
-		return m.Page
-	}
-	return 0
-}
-
-func (m *ListArchivedProjectsRequest) GetPageSize() int32 {
-	if m != nil {
-		return m.PageSize
-	}
-	return 0
-}
-
-type ListArchivedProjectsResponse struct {
-	Items                []*v1alpha1.ProjectView `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	Total                int64                   `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
-	Page                 int32                   `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
-	PageSize             int32                   `protobuf:"varint,4,opt,name=pageSize,proto3" json:"pageSize,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
-	XXX_unrecognized     []byte                  `json:"-"`
-	XXX_sizecache        int32                   `json:"-"`
-}
-
-func (m *ListArchivedProjectsResponse) Reset()         { *m = ListArchivedProjectsResponse{} }
-func (m *ListArchivedProjectsResponse) String() string { return proto.CompactTextString(m) }
-func (*ListArchivedProjectsResponse) ProtoMessage()    {}
-func (*ListArchivedProjectsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{18}
-}
-func (m *ListArchivedProjectsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ListArchivedProjectsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ListArchivedProjectsResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ListArchivedProjectsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListArchivedProjectsResponse.Merge(m, src)
-}
-func (m *ListArchivedProjectsResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *ListArchivedProjectsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListArchivedProjectsResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ListArchivedProjectsResponse proto.InternalMessageInfo
-
-func (m *ListArchivedProjectsResponse) GetItems() []*v1alpha1.ProjectView {
-	if m != nil {
-		return m.Items
-	}
-	return nil
-}
-
-func (m *ListArchivedProjectsResponse) GetTotal() int64 {
-	if m != nil {
-		return m.Total
-	}
-	return 0
-}
-
-func (m *ListArchivedProjectsResponse) GetPage() int32 {
-	if m != nil {
-		return m.Page
-	}
-	return 0
-}
-
-func (m *ListArchivedProjectsResponse) GetPageSize() int32 {
-	if m != nil {
-		return m.PageSize
-	}
-	return 0
-}
-
-type GetArchivedProjectRequest struct {
-	ProjectID            string   `protobuf:"bytes,1,opt,name=projectID,proto3" json:"projectID,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetArchivedProjectRequest) Reset()         { *m = GetArchivedProjectRequest{} }
-func (m *GetArchivedProjectRequest) String() string { return proto.CompactTextString(m) }
-func (*GetArchivedProjectRequest) ProtoMessage()    {}
-func (*GetArchivedProjectRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{19}
-}
-func (m *GetArchivedProjectRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *GetArchivedProjectRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_GetArchivedProjectRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *GetArchivedProjectRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetArchivedProjectRequest.Merge(m, src)
-}
-func (m *GetArchivedProjectRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *GetArchivedProjectRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetArchivedProjectRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetArchivedProjectRequest proto.InternalMessageInfo
-
-func (m *GetArchivedProjectRequest) GetProjectID() string {
-	if m != nil {
-		return m.ProjectID
-	}
-	return ""
-}
-
-type GetArchivedProjectResponse struct {
-	Item                 *v1alpha1.ProjectView `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
-}
-
-func (m *GetArchivedProjectResponse) Reset()         { *m = GetArchivedProjectResponse{} }
-func (m *GetArchivedProjectResponse) String() string { return proto.CompactTextString(m) }
-func (*GetArchivedProjectResponse) ProtoMessage()    {}
-func (*GetArchivedProjectResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{20}
-}
-func (m *GetArchivedProjectResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *GetArchivedProjectResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_GetArchivedProjectResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *GetArchivedProjectResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetArchivedProjectResponse.Merge(m, src)
-}
-func (m *GetArchivedProjectResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *GetArchivedProjectResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetArchivedProjectResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetArchivedProjectResponse proto.InternalMessageInfo
-
-func (m *GetArchivedProjectResponse) GetItem() *v1alpha1.ProjectView {
-	if m != nil {
-		return m.Item
-	}
-	return nil
-}
-
 func init() {
+	proto.RegisterEnum("application.ProjectScope", ProjectScope_name, ProjectScope_value)
 	proto.RegisterType((*ListProjectsRequest)(nil), "application.ListProjectsRequest")
 	proto.RegisterType((*ListProjectsResponse)(nil), "application.ListProjectsResponse")
 	proto.RegisterType((*GetProjectRequest)(nil), "application.GetProjectRequest")
@@ -1041,10 +909,6 @@ func init() {
 	proto.RegisterType((*ArchiveProjectResponse)(nil), "application.ArchiveProjectResponse")
 	proto.RegisterType((*UnarchiveProjectRequest)(nil), "application.UnarchiveProjectRequest")
 	proto.RegisterType((*UnarchiveProjectResponse)(nil), "application.UnarchiveProjectResponse")
-	proto.RegisterType((*ListArchivedProjectsRequest)(nil), "application.ListArchivedProjectsRequest")
-	proto.RegisterType((*ListArchivedProjectsResponse)(nil), "application.ListArchivedProjectsResponse")
-	proto.RegisterType((*GetArchivedProjectRequest)(nil), "application.GetArchivedProjectRequest")
-	proto.RegisterType((*GetArchivedProjectResponse)(nil), "application.GetArchivedProjectResponse")
 }
 
 func init() {
@@ -1052,55 +916,57 @@ func init() {
 }
 
 var fileDescriptor_8ec0c1410c6c3952 = []byte{
-	// 756 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x56, 0x4d, 0x6f, 0xd3, 0x4a,
-	0x14, 0x95, 0x9b, 0xe6, 0xbd, 0xf6, 0xf6, 0xa9, 0x7a, 0x6f, 0x5e, 0x0b, 0x61, 0x5a, 0x42, 0x71,
-	0x9b, 0x10, 0x36, 0x0e, 0x69, 0x85, 0x50, 0x41, 0x48, 0xb4, 0x14, 0x0a, 0x12, 0x15, 0xc8, 0x11,
-	0x48, 0xc0, 0x02, 0xa6, 0xf6, 0x25, 0x19, 0xe2, 0xda, 0xc6, 0x9e, 0xb4, 0x82, 0x05, 0x62, 0x85,
-	0xc4, 0xcf, 0x42, 0x62, 0xc1, 0x92, 0x9f, 0x80, 0xfa, 0x4b, 0x90, 0xed, 0xc9, 0x87, 0x9d, 0xd8,
-	0x4e, 0xcb, 0xc7, 0x2a, 0xf1, 0xcc, 0xbd, 0xe7, 0x9e, 0x33, 0x73, 0xe7, 0xcc, 0x40, 0x95, 0xdb,
-	0x02, 0x3d, 0x9b, 0x59, 0x75, 0xe6, 0xba, 0x16, 0x37, 0x98, 0xe0, 0x8e, 0x3d, 0xfc, 0x5f, 0x73,
-	0x3d, 0x47, 0x38, 0x64, 0x6e, 0x68, 0x88, 0xde, 0x6b, 0x71, 0xd1, 0xee, 0xee, 0x6b, 0x86, 0x73,
-	0x50, 0xef, 0xfa, 0xe8, 0xbd, 0xc5, 0x16, 0xd6, 0x99, 0x68, 0xa3, 0xcd, 0xea, 0x6e, 0xa7, 0x55,
-	0x67, 0x2e, 0xf7, 0x63, 0x78, 0x87, 0x0d, 0x66, 0xb9, 0x6d, 0xd6, 0xa8, 0xb7, 0xd0, 0x46, 0x8f,
-	0x09, 0x34, 0x23, 0x58, 0x75, 0x11, 0xfe, 0x7f, 0xc0, 0x7d, 0xf1, 0xc8, 0x73, 0x5e, 0xa3, 0x21,
-	0x7c, 0x1d, 0xdf, 0x74, 0xd1, 0x17, 0xaa, 0x0f, 0x0b, 0xf1, 0x61, 0xdf, 0x75, 0x6c, 0x1f, 0xc9,
-	0x73, 0x28, 0x72, 0x81, 0x07, 0x7e, 0x49, 0x59, 0x29, 0xd4, 0xe6, 0xd6, 0xef, 0x68, 0x03, 0x22,
-	0x5a, 0x8f, 0x88, 0x16, 0x11, 0xd1, 0xdc, 0x4e, 0x4b, 0x0b, 0x88, 0x68, 0xc3, 0x62, 0x7a, 0x44,
-	0x34, 0x09, 0xfd, 0x84, 0xe3, 0x91, 0x1e, 0x61, 0xaa, 0x0d, 0xf8, 0x6f, 0x17, 0x7b, 0x35, 0x25,
-	0x13, 0xb2, 0x0c, 0xb3, 0x6e, 0x34, 0x72, 0x7f, 0xa7, 0xa4, 0xac, 0x28, 0xb5, 0x59, 0x7d, 0x30,
-	0xa0, 0x3a, 0x40, 0x86, 0x53, 0x24, 0xcb, 0xa7, 0x30, 0x1d, 0x20, 0x86, 0xe1, 0xbf, 0x8c, 0x64,
-	0x08, 0xa9, 0xde, 0x82, 0x52, 0xd3, 0xe9, 0x7a, 0x06, 0xde, 0x76, 0x4c, 0xdc, 0xb6, 0x98, 0xd1,
-	0xb1, 0xb8, 0x2f, 0xee, 0x72, 0xb4, 0x4c, 0x32, 0x0f, 0x53, 0xdc, 0x0c, 0x8b, 0x16, 0xf4, 0x29,
-	0x6e, 0x92, 0x05, 0x28, 0xbe, 0x0a, 0x26, 0x4a, 0x53, 0x21, 0xed, 0xe8, 0x43, 0xad, 0xc2, 0x5a,
-	0xb0, 0xb4, 0x69, 0x28, 0xfd, 0x2d, 0x30, 0xa1, 0x92, 0x13, 0x27, 0xd5, 0xde, 0x88, 0xef, 0x49,
-	0x25, 0x26, 0x25, 0x2d, 0xbd, 0xb7, 0xe6, 0xd7, 0x41, 0xdd, 0x32, 0xcd, 0xd4, 0x28, 0xb9, 0x09,
-	0x7d, 0x25, 0xca, 0xb0, 0x92, 0x97, 0xb0, 0x9a, 0x99, 0x2b, 0xf9, 0x6d, 0xc6, 0x76, 0x63, 0x42,
-	0x7a, 0xd1, 0x6a, 0xdf, 0x84, 0xca, 0x0e, 0x5a, 0x28, 0xf0, 0x74, 0x04, 0x6b, 0x50, 0xcd, 0x4b,
-	0x8f, 0x38, 0xaa, 0x14, 0x4a, 0x83, 0x3e, 0x7a, 0xe8, 0x06, 0xdc, 0xfa, 0x1b, 0xf1, 0x1e, 0xce,
-	0x8d, 0x99, 0x93, 0xe2, 0x18, 0xfc, 0xed, 0x44, 0x43, 0x52, 0xdf, 0xee, 0x4f, 0x77, 0x5b, 0x54,
-	0x42, 0xef, 0xe1, 0xaa, 0x57, 0x61, 0x71, 0xcb, 0x33, 0xda, 0xfc, 0x10, 0x4f, 0x74, 0x34, 0x4a,
-	0x70, 0x26, 0x99, 0x26, 0xc5, 0x5e, 0x83, 0xb3, 0x8f, 0x6d, 0x76, 0x0a, 0x48, 0x0a, 0xa5, 0xd1,
-	0x44, 0x09, 0xba, 0x07, 0x4b, 0x41, 0xbb, 0xca, 0x92, 0x66, 0xc2, 0x50, 0x08, 0x81, 0x69, 0x97,
-	0xb5, 0x30, 0xc4, 0x2c, 0xea, 0xe1, 0x7f, 0x42, 0x61, 0x26, 0xf8, 0x6d, 0xf2, 0x77, 0x18, 0x1e,
-	0x91, 0xa2, 0xde, 0xff, 0x56, 0x3f, 0x2b, 0xb0, 0x3c, 0x1e, 0xef, 0x0f, 0x38, 0x51, 0xd0, 0x4e,
-	0xc2, 0x11, 0xcc, 0x0a, 0x69, 0x15, 0xf4, 0xe8, 0xa3, 0xaf, 0xa1, 0x90, 0xa2, 0x61, 0x3a, 0xa1,
-	0x61, 0x33, 0x6c, 0x9c, 0x84, 0x82, 0xc9, 0x56, 0xfa, 0x08, 0xe8, 0xb8, 0xd4, 0xdf, 0xee, 0x6f,
-	0xeb, 0x5f, 0x66, 0x80, 0x6c, 0x0d, 0x42, 0x9b, 0xe8, 0x1d, 0x72, 0x03, 0x49, 0x13, 0xfe, 0x19,
-	0xbe, 0x0f, 0xc8, 0x4a, 0x0c, 0x6f, 0xcc, 0x0d, 0x42, 0x2f, 0x66, 0x44, 0x48, 0x19, 0x7b, 0x00,
-	0x83, 0x83, 0x45, 0xca, 0xb1, 0x84, 0x91, 0x8b, 0x80, 0x5e, 0x48, 0x9d, 0x97, 0x70, 0x1f, 0x15,
-	0x38, 0x9f, 0xe9, 0x98, 0xa4, 0x31, 0xc2, 0x29, 0xcf, 0x85, 0xe9, 0xfa, 0x49, 0x52, 0x24, 0x91,
-	0x0f, 0x0a, 0x2c, 0x65, 0x18, 0x23, 0xa9, 0xc7, 0x30, 0xf3, 0xed, 0x97, 0x5e, 0x99, 0x3c, 0x41,
-	0x52, 0xf8, 0xa4, 0x40, 0x39, 0xdb, 0xfa, 0x48, 0x5c, 0xd9, 0x44, 0x36, 0x4b, 0x37, 0x4e, 0x94,
-	0x23, 0xb9, 0xec, 0x0f, 0x5f, 0xeb, 0xd2, 0x3f, 0x49, 0x25, 0x65, 0x37, 0xe3, 0xde, 0x4b, 0xab,
-	0x79, 0x61, 0xfd, 0x13, 0x31, 0x1f, 0x37, 0x3b, 0xa2, 0xc6, 0xd7, 0x6c, 0x9c, 0xdb, 0xd1, 0xd5,
-	0xcc, 0x18, 0x09, 0xfd, 0x02, 0xfe, 0x4d, 0x9a, 0x1e, 0x59, 0x8b, 0x25, 0xa6, 0x98, 0x29, 0xad,
-	0xe4, 0x44, 0xc9, 0x02, 0x9d, 0xe8, 0xad, 0x95, 0x74, 0x3a, 0x52, 0x1b, 0x69, 0xbd, 0x14, 0x73,
-	0xa5, 0x97, 0x27, 0x88, 0x94, 0xc5, 0x30, 0x7c, 0x30, 0x25, 0xa6, 0xc9, 0xc8, 0x32, 0x8f, 0x37,
-	0x2d, 0x7a, 0x29, 0x37, 0x2e, 0x2a, 0xb3, 0xbd, 0xfb, 0xf5, 0xb8, 0xac, 0x7c, 0x3b, 0x2e, 0x2b,
-	0xdf, 0x8f, 0xcb, 0xca, 0xb3, 0xcd, 0x8c, 0xe7, 0x6a, 0xca, 0xf3, 0x97, 0x1b, 0x16, 0x47, 0x5b,
-	0xec, 0xff, 0x15, 0x3e, 0x53, 0x37, 0x7e, 0x04, 0x00, 0x00, 0xff, 0xff, 0x23, 0xe2, 0xd0, 0xc4,
-	0x27, 0x0b, 0x00, 0x00,
+	// 790 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xdd, 0x4e, 0xdb, 0x48,
+	0x14, 0x5e, 0x27, 0x84, 0x5d, 0x0e, 0x08, 0x85, 0x59, 0x60, 0x8d, 0x77, 0xc9, 0x66, 0x0d, 0x89,
+	0xa2, 0xbd, 0xb0, 0x4b, 0x50, 0x55, 0xd1, 0xaa, 0x52, 0x43, 0x12, 0x20, 0x15, 0x2d, 0x91, 0x03,
+	0x48, 0x6d, 0x2f, 0xa8, 0xb1, 0xa7, 0xc9, 0x14, 0x63, 0xbb, 0xf6, 0x24, 0x55, 0xb9, 0xa8, 0x7a,
+	0x55, 0xa9, 0x8f, 0xd4, 0x37, 0xe8, 0x65, 0x1f, 0xa1, 0xe2, 0x09, 0xfa, 0x08, 0x95, 0xed, 0xc9,
+	0xcf, 0x04, 0x9c, 0x04, 0xda, 0xab, 0x64, 0xe6, 0x9c, 0xf3, 0xcd, 0xf7, 0x9d, 0x33, 0xe7, 0x78,
+	0x20, 0x4f, 0x6c, 0x8a, 0x3d, 0x5b, 0xb7, 0x54, 0xdd, 0x75, 0x2d, 0x62, 0xe8, 0x94, 0x38, 0xf6,
+	0xe0, 0x7f, 0xc5, 0xf5, 0x1c, 0xea, 0xa0, 0xd9, 0x81, 0x2d, 0x69, 0xaf, 0x49, 0x68, 0xab, 0x7d,
+	0xaa, 0x18, 0xce, 0xb9, 0xda, 0xf6, 0xb1, 0xf7, 0x0e, 0x37, 0xb1, 0xaa, 0xd3, 0x16, 0xb6, 0x75,
+	0xd5, 0x3d, 0x6b, 0xaa, 0xba, 0x4b, 0x7c, 0x0e, 0xaf, 0xb3, 0xa1, 0x5b, 0x6e, 0x4b, 0xdf, 0x50,
+	0x9b, 0xd8, 0xc6, 0x9e, 0x4e, 0xb1, 0x19, 0xc1, 0xca, 0x1d, 0xf8, 0x73, 0x9f, 0xf8, 0xb4, 0xee,
+	0x39, 0xaf, 0xb1, 0x41, 0x7d, 0x0d, 0xbf, 0x69, 0x63, 0x9f, 0x22, 0x15, 0x52, 0xbe, 0xe1, 0xb8,
+	0x58, 0x14, 0xb2, 0x42, 0x61, 0xbe, 0xb8, 0xa2, 0x0c, 0x12, 0x62, 0xce, 0x8d, 0xc0, 0x41, 0x8b,
+	0xfc, 0x10, 0x82, 0x29, 0x57, 0x6f, 0x62, 0x31, 0x91, 0x15, 0x0a, 0x29, 0x2d, 0xfc, 0x8f, 0x24,
+	0xf8, 0x23, 0xf8, 0x6d, 0x90, 0x0b, 0x2c, 0x26, 0xc3, 0xfd, 0xde, 0x5a, 0xfe, 0x2c, 0xc0, 0x22,
+	0x7f, 0xb0, 0xef, 0x3a, 0xb6, 0x8f, 0xd1, 0x0b, 0x48, 0x11, 0x8a, 0xcf, 0x7d, 0x51, 0xc8, 0x26,
+	0x0b, 0xb3, 0xc5, 0xaa, 0xd2, 0x97, 0xaa, 0x74, 0xa5, 0x2a, 0x91, 0x54, 0xc5, 0x3d, 0x6b, 0x2a,
+	0x81, 0x54, 0x8e, 0x5d, 0x57, 0x6a, 0x97, 0xe6, 0x31, 0xc1, 0x6f, 0xb5, 0x08, 0x13, 0x2d, 0x42,
+	0x8a, 0x3a, 0x54, 0xb7, 0x42, 0x9a, 0x49, 0x2d, 0x5a, 0xf4, 0xb8, 0x27, 0x63, 0xb8, 0x4f, 0x0d,
+	0x71, 0x3f, 0x85, 0x85, 0x5d, 0xdc, 0x65, 0xde, 0xcd, 0xd8, 0x3f, 0x30, 0xe3, 0x46, 0x3b, 0xb5,
+	0x4a, 0x98, 0xb5, 0x19, 0xad, 0xbf, 0xd1, 0xcf, 0x67, 0x62, 0xb2, 0x7c, 0xca, 0x0e, 0xa0, 0xc1,
+	0x33, 0x58, 0x72, 0x9e, 0xc1, 0x54, 0x20, 0x24, 0xc4, 0xff, 0x65, 0xb9, 0x09, 0x21, 0xe5, 0x47,
+	0x20, 0x36, 0x9c, 0xb6, 0x67, 0xe0, 0xb2, 0x63, 0xe2, 0x6d, 0x4b, 0x37, 0xce, 0x2c, 0xe2, 0xd3,
+	0x1d, 0x82, 0x2d, 0x13, 0xcd, 0x43, 0x82, 0x98, 0xe1, 0xa1, 0x49, 0x2d, 0x41, 0xcc, 0x20, 0x8d,
+	0xaf, 0x02, 0x43, 0xa8, 0x66, 0x46, 0x8b, 0x16, 0x72, 0x1e, 0xd6, 0x83, 0x8a, 0xc6, 0xa1, 0x74,
+	0xef, 0x96, 0x6c, 0x42, 0x6e, 0x8c, 0x1f, 0x53, 0xfb, 0x80, 0xbf, 0x0a, 0x39, 0x4e, 0x4a, 0x5c,
+	0x38, 0x2b, 0xb5, 0x7c, 0x1f, 0xe4, 0x92, 0x69, 0xc6, 0x7a, 0xb1, 0xaa, 0xf5, 0x94, 0x08, 0x83,
+	0x4a, 0x5e, 0xc2, 0xda, 0xc8, 0x58, 0xc6, 0x6f, 0x8b, 0xab, 0xc6, 0x84, 0xf4, 0xa2, 0x6c, 0x3f,
+	0x84, 0x5c, 0x05, 0x5b, 0x98, 0xe2, 0xdb, 0x11, 0x2c, 0x40, 0x7e, 0x5c, 0x78, 0xc4, 0x51, 0x96,
+	0x40, 0xec, 0xdf, 0xa3, 0x03, 0x37, 0xe0, 0xd6, 0x2b, 0xc4, 0x7b, 0x58, 0xb9, 0xc6, 0xc6, 0xc4,
+	0xe9, 0xf0, 0xbb, 0x13, 0x6d, 0x31, 0x7d, 0xbb, 0x3f, 0x7d, 0xdb, 0xa2, 0x23, 0xb4, 0x2e, 0xae,
+	0x7c, 0x17, 0x96, 0x4a, 0x9e, 0xd1, 0x22, 0x1d, 0x7c, 0x93, 0x5e, 0x92, 0x45, 0x58, 0x1e, 0x0e,
+	0x63, 0x62, 0xef, 0xc1, 0x5f, 0x47, 0xb6, 0x7e, 0x0b, 0x48, 0x09, 0xc4, 0xab, 0x81, 0x11, 0xe8,
+	0xff, 0x17, 0x30, 0x37, 0xd8, 0xa0, 0x68, 0x15, 0x56, 0xea, 0xda, 0xc1, 0xe3, 0x6a, 0xf9, 0xf0,
+	0xa4, 0x51, 0x3e, 0xa8, 0x57, 0x4f, 0x8e, 0x9e, 0x36, 0xea, 0xd5, 0x72, 0x6d, 0xa7, 0x56, 0xad,
+	0xa4, 0x7f, 0x43, 0x22, 0x2c, 0xf2, 0xe6, 0x52, 0xf9, 0xb0, 0x76, 0x5c, 0x4d, 0x0b, 0x48, 0x82,
+	0xe5, 0x21, 0x8b, 0x56, 0xde, 0xab, 0x1d, 0x57, 0x2b, 0xe9, 0x04, 0x5a, 0x82, 0x85, 0x21, 0xdb,
+	0xfe, 0x7e, 0x3a, 0x59, 0xfc, 0x3e, 0x0d, 0xa8, 0xd4, 0xcf, 0x68, 0x03, 0x7b, 0x1d, 0x62, 0x60,
+	0xd4, 0x80, 0xb9, 0xc1, 0xd9, 0x89, 0xb2, 0x5c, 0xda, 0xaf, 0x99, 0xe7, 0xd2, 0x7f, 0x23, 0x3c,
+	0x58, 0xc1, 0x9f, 0x00, 0xf4, 0x6f, 0x03, 0xca, 0x70, 0x01, 0x57, 0xc6, 0x9d, 0xf4, 0x6f, 0xac,
+	0x9d, 0xc1, 0x7d, 0x14, 0x60, 0x75, 0x64, 0x9b, 0xa3, 0x8d, 0x2b, 0x9c, 0xc6, 0x8d, 0x0e, 0xa9,
+	0x78, 0x93, 0x10, 0x46, 0xe4, 0x83, 0x00, 0x7f, 0x8f, 0xe8, 0x66, 0xa4, 0x72, 0x98, 0xe3, 0x67,
+	0x86, 0x74, 0x67, 0xf2, 0x00, 0x46, 0xe1, 0x93, 0x00, 0x99, 0xd1, 0xfd, 0x8a, 0x78, 0x65, 0x13,
+	0xcd, 0x06, 0x69, 0xf3, 0x46, 0x31, 0x8c, 0x0b, 0xf7, 0xf1, 0x62, 0x4d, 0x8f, 0x72, 0x31, 0xd5,
+	0xe4, 0x07, 0x86, 0x94, 0x1f, 0xe7, 0xd6, 0xfb, 0x4c, 0xcd, 0xf3, 0x1d, 0x8a, 0x64, 0x3e, 0x67,
+	0xd7, 0xb5, 0xa8, 0xb4, 0x36, 0xd2, 0x87, 0x41, 0x9f, 0x40, 0x7a, 0xb8, 0x53, 0xd1, 0x3a, 0x17,
+	0x18, 0x33, 0x01, 0xa4, 0xdc, 0x18, 0xaf, 0xe8, 0x80, 0xed, 0xdd, 0x2f, 0x97, 0x19, 0xe1, 0xeb,
+	0x65, 0x46, 0xf8, 0x76, 0x99, 0x11, 0x9e, 0x6f, 0x8d, 0x78, 0x68, 0xc5, 0x3c, 0xdc, 0x88, 0x61,
+	0x11, 0x6c, 0xd3, 0xd3, 0xe9, 0xf0, 0x81, 0xb5, 0xf9, 0x23, 0x00, 0x00, 0xff, 0xff, 0x2e, 0x97,
+	0x9e, 0xf8, 0xe1, 0x09, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1131,10 +997,6 @@ type ApplicationServiceClient interface {
 	ArchiveProject(ctx context.Context, in *ArchiveProjectRequest, opts ...grpc.CallOption) (*ArchiveProjectResponse, error)
 	// UnarchiveProject unarchives a project by projectID.
 	UnarchiveProject(ctx context.Context, in *UnarchiveProjectRequest, opts ...grpc.CallOption) (*UnarchiveProjectResponse, error)
-	// ListArchivedProjects returns archived projects using pagination.
-	ListArchivedProjects(ctx context.Context, in *ListArchivedProjectsRequest, opts ...grpc.CallOption) (*ListArchivedProjectsResponse, error)
-	// GetArchivedProject returns archived project snapshot for a given project ID.
-	GetArchivedProject(ctx context.Context, in *GetArchivedProjectRequest, opts ...grpc.CallOption) (*GetArchivedProjectResponse, error)
 }
 
 type applicationServiceClient struct {
@@ -1217,24 +1079,6 @@ func (c *applicationServiceClient) UnarchiveProject(ctx context.Context, in *Una
 	return out, nil
 }
 
-func (c *applicationServiceClient) ListArchivedProjects(ctx context.Context, in *ListArchivedProjectsRequest, opts ...grpc.CallOption) (*ListArchivedProjectsResponse, error) {
-	out := new(ListArchivedProjectsResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/ListArchivedProjects", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *applicationServiceClient) GetArchivedProject(ctx context.Context, in *GetArchivedProjectRequest, opts ...grpc.CallOption) (*GetArchivedProjectResponse, error) {
-	out := new(GetArchivedProjectResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetArchivedProject", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ApplicationServiceServer is the server API for ApplicationService service.
 type ApplicationServiceServer interface {
 	// ListProjects returns the current known project snapshot.
@@ -1253,10 +1097,6 @@ type ApplicationServiceServer interface {
 	ArchiveProject(context.Context, *ArchiveProjectRequest) (*ArchiveProjectResponse, error)
 	// UnarchiveProject unarchives a project by projectID.
 	UnarchiveProject(context.Context, *UnarchiveProjectRequest) (*UnarchiveProjectResponse, error)
-	// ListArchivedProjects returns archived projects using pagination.
-	ListArchivedProjects(context.Context, *ListArchivedProjectsRequest) (*ListArchivedProjectsResponse, error)
-	// GetArchivedProject returns archived project snapshot for a given project ID.
-	GetArchivedProject(context.Context, *GetArchivedProjectRequest) (*GetArchivedProjectResponse, error)
 }
 
 // UnimplementedApplicationServiceServer can be embedded to have forward compatible implementations.
@@ -1286,12 +1126,6 @@ func (*UnimplementedApplicationServiceServer) ArchiveProject(ctx context.Context
 }
 func (*UnimplementedApplicationServiceServer) UnarchiveProject(ctx context.Context, req *UnarchiveProjectRequest) (*UnarchiveProjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnarchiveProject not implemented")
-}
-func (*UnimplementedApplicationServiceServer) ListArchivedProjects(ctx context.Context, req *ListArchivedProjectsRequest) (*ListArchivedProjectsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListArchivedProjects not implemented")
-}
-func (*UnimplementedApplicationServiceServer) GetArchivedProject(ctx context.Context, req *GetArchivedProjectRequest) (*GetArchivedProjectResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetArchivedProject not implemented")
 }
 
 func RegisterApplicationServiceServer(s *grpc.Server, srv ApplicationServiceServer) {
@@ -1442,42 +1276,6 @@ func _ApplicationService_UnarchiveProject_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_ListArchivedProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListArchivedProjectsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).ListArchivedProjects(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/application.ApplicationService/ListArchivedProjects",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).ListArchivedProjects(ctx, req.(*ListArchivedProjectsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApplicationService_GetArchivedProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetArchivedProjectRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).GetArchivedProject(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/application.ApplicationService/GetArchivedProject",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).GetArchivedProject(ctx, req.(*GetArchivedProjectRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "application.ApplicationService",
 	HandlerType: (*ApplicationServiceServer)(nil),
@@ -1514,14 +1312,6 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 			MethodName: "UnarchiveProject",
 			Handler:    _ApplicationService_UnarchiveProject_Handler,
 		},
-		{
-			MethodName: "ListArchivedProjects",
-			Handler:    _ApplicationService_ListArchivedProjects_Handler,
-		},
-		{
-			MethodName: "GetArchivedProject",
-			Handler:    _ApplicationService_GetArchivedProject_Handler,
-		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "internal/application/application.proto",
@@ -1551,6 +1341,21 @@ func (m *ListProjectsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.PageSize != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Page != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Scope != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.Scope))
+		i--
+		dAtA[i] = 0x8
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -1577,6 +1382,21 @@ func (m *ListProjectsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Page != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Total != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x10
 	}
 	if len(m.Items) > 0 {
 		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
@@ -1618,6 +1438,11 @@ func (m *GetProjectRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Scope != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.Scope))
+		i--
+		dAtA[i] = 0x10
 	}
 	if len(m.ProjectID) > 0 {
 		i -= len(m.ProjectID)
@@ -2097,172 +1922,6 @@ func (m *UnarchiveProjectResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ListArchivedProjectsRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ListArchivedProjectsRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ListArchivedProjectsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.PageSize != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.PageSize))
-		i--
-		dAtA[i] = 0x10
-	}
-	if m.Page != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.Page))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ListArchivedProjectsResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ListArchivedProjectsResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ListArchivedProjectsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.PageSize != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.PageSize))
-		i--
-		dAtA[i] = 0x20
-	}
-	if m.Page != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.Page))
-		i--
-		dAtA[i] = 0x18
-	}
-	if m.Total != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.Total))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Items) > 0 {
-		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintApplication(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *GetArchivedProjectRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GetArchivedProjectRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GetArchivedProjectRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.ProjectID) > 0 {
-		i -= len(m.ProjectID)
-		copy(dAtA[i:], m.ProjectID)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.ProjectID)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *GetArchivedProjectResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GetArchivedProjectResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GetArchivedProjectResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Item != nil {
-		{
-			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintApplication(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintApplication(dAtA []byte, offset int, v uint64) int {
 	offset -= sovApplication(v)
 	base := offset
@@ -2280,6 +1939,15 @@ func (m *ListProjectsRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	if m.Scope != 0 {
+		n += 1 + sovApplication(uint64(m.Scope))
+	}
+	if m.Page != 0 {
+		n += 1 + sovApplication(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovApplication(uint64(m.PageSize))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -2298,6 +1966,15 @@ func (m *ListProjectsResponse) Size() (n int) {
 			n += 1 + l + sovApplication(uint64(l))
 		}
 	}
+	if m.Total != 0 {
+		n += 1 + sovApplication(uint64(m.Total))
+	}
+	if m.Page != 0 {
+		n += 1 + sovApplication(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovApplication(uint64(m.PageSize))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -2313,6 +1990,9 @@ func (m *GetProjectRequest) Size() (n int) {
 	l = len(m.ProjectID)
 	if l > 0 {
 		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.Scope != 0 {
+		n += 1 + sovApplication(uint64(m.Scope))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2529,83 +2209,6 @@ func (m *UnarchiveProjectResponse) Size() (n int) {
 	return n
 }
 
-func (m *ListArchivedProjectsRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Page != 0 {
-		n += 1 + sovApplication(uint64(m.Page))
-	}
-	if m.PageSize != 0 {
-		n += 1 + sovApplication(uint64(m.PageSize))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *ListArchivedProjectsResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Items) > 0 {
-		for _, e := range m.Items {
-			l = e.Size()
-			n += 1 + l + sovApplication(uint64(l))
-		}
-	}
-	if m.Total != 0 {
-		n += 1 + sovApplication(uint64(m.Total))
-	}
-	if m.Page != 0 {
-		n += 1 + sovApplication(uint64(m.Page))
-	}
-	if m.PageSize != 0 {
-		n += 1 + sovApplication(uint64(m.PageSize))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *GetArchivedProjectRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.ProjectID)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *GetArchivedProjectResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Item != nil {
-		l = m.Item.Size()
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func sovApplication(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
@@ -2641,6 +2244,63 @@ func (m *ListProjectsRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: ListProjectsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Scope", wireType)
+			}
+			m.Scope = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Scope |= ProjectScope(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipApplication(dAtA[iNdEx:])
@@ -2726,6 +2386,63 @@ func (m *ListProjectsResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipApplication(dAtA[iNdEx:])
@@ -2809,6 +2526,25 @@ func (m *GetProjectRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.ProjectID = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Scope", wireType)
+			}
+			m.Scope = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Scope |= ProjectScope(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipApplication(dAtA[iNdEx:])
@@ -3844,407 +3580,6 @@ func (m *UnarchiveProjectResponse) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: UnarchiveProjectResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ListArchivedProjectsRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ListArchivedProjectsRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListArchivedProjectsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
-			}
-			m.Page = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Page |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
-			}
-			m.PageSize = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.PageSize |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ListArchivedProjectsResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ListArchivedProjectsResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListArchivedProjectsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Items = append(m.Items, &v1alpha1.ProjectView{})
-			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
-			}
-			m.Total = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Total |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
-			}
-			m.Page = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Page |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
-			}
-			m.PageSize = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.PageSize |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetArchivedProjectRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetArchivedProjectRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetArchivedProjectRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProjectID", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ProjectID = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetArchivedProjectResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetArchivedProjectResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetArchivedProjectResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Item == nil {
-				m.Item = &v1alpha1.ProjectView{}
-			}
-			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipApplication(dAtA[iNdEx:])

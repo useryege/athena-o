@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-221-gf3ea8b5-dirty"
+    "version": "v1.0.0-233-gb6d05f4-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -218,60 +218,6 @@
         }
       }
     },
-    "/api/v1/project/list": {
-      "get": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "ListProjects returns the current known project snapshot.",
-        "operationId": "ApplicationService_ListProjects",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationListProjectsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/project/{projectID}": {
-      "get": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "GetProject returns the project snapshot for a given project ID.",
-        "operationId": "ApplicationService_GetProject",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "projectID",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationGetProjectResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
     "/api/v1/project/{projectID}/archive": {
       "post": {
         "tags": [
@@ -350,14 +296,26 @@
         }
       }
     },
-    "/api/v1/projects/archived": {
+    "/api/v1/projects": {
       "get": {
         "tags": [
           "ApplicationService"
         ],
-        "summary": "ListArchivedProjects returns archived projects using pagination.",
-        "operationId": "ApplicationService_ListArchivedProjects",
+        "summary": "ListProjects returns the current known project snapshot.",
+        "operationId": "ApplicationService_ListProjects",
         "parameters": [
+          {
+            "enum": [
+              "PROJECT_SCOPE_UNSPECIFIED",
+              "PROJECT_SCOPE_ACTIVE",
+              "PROJECT_SCOPE_ARCHIVED",
+              "PROJECT_SCOPE_ALL"
+            ],
+            "type": "string",
+            "default": "PROJECT_SCOPE_UNSPECIFIED",
+            "name": "scope",
+            "in": "query"
+          },
           {
             "type": "integer",
             "format": "int32",
@@ -375,38 +333,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/applicationListArchivedProjectsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/projects/archived/{projectID}": {
-      "get": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "GetArchivedProject returns archived project snapshot for a given project ID.",
-        "operationId": "ApplicationService_GetArchivedProject",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "projectID",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationGetArchivedProjectResponse"
+              "$ref": "#/definitions/applicationListProjectsResponse"
             }
           },
           "default": {
@@ -430,6 +357,49 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationGetProjectOptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectID}": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "GetProject returns the project snapshot for a given project ID.",
+        "operationId": "ApplicationService_GetProject",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "projectID",
+            "in": "path",
+            "required": true
+          },
+          {
+            "enum": [
+              "PROJECT_SCOPE_UNSPECIFIED",
+              "PROJECT_SCOPE_ACTIVE",
+              "PROJECT_SCOPE_ARCHIVED",
+              "PROJECT_SCOPE_ALL"
+            ],
+            "type": "string",
+            "default": "PROJECT_SCOPE_UNSPECIFIED",
+            "name": "scope",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetProjectResponse"
             }
           },
           "default": {
@@ -786,14 +756,6 @@
       "description": "DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.",
       "type": "object"
     },
-    "applicationGetArchivedProjectResponse": {
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/v1alpha1ProjectView"
-        }
-      }
-    },
     "applicationGetProjectOptionsResponse": {
       "description": "GetProjectOptionsResponse returns the options.",
       "type": "object",
@@ -812,7 +774,8 @@
         }
       }
     },
-    "applicationListArchivedProjectsResponse": {
+    "applicationListProjectsResponse": {
+      "description": "ListProjectsResponse returns the current known project snapshot.",
       "type": "object",
       "properties": {
         "items": {
@@ -835,18 +798,6 @@
         }
       }
     },
-    "applicationListProjectsResponse": {
-      "description": "ListProjectsResponse returns the current known project snapshot.",
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1ProjectView"
-          }
-        }
-      }
-    },
     "applicationListSourceCodeBlacklistFieldsResponse": {
       "description": "ListSourceCodeBlacklistFieldsResponse returns all source-code blacklist fields.",
       "type": "object",
@@ -858,6 +809,16 @@
           }
         }
       }
+    },
+    "applicationProjectScope": {
+      "type": "string",
+      "default": "PROJECT_SCOPE_UNSPECIFIED",
+      "enum": [
+        "PROJECT_SCOPE_UNSPECIFIED",
+        "PROJECT_SCOPE_ACTIVE",
+        "PROJECT_SCOPE_ARCHIVED",
+        "PROJECT_SCOPE_ALL"
+      ]
     },
     "applicationSourceCodeBlacklistField": {
       "description": "SourceCodeBlacklistField is a globally maintained source-code blacklist field.",

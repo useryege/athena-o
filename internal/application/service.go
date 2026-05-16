@@ -514,12 +514,35 @@ func (s *Service) DeleteSourceCodeBlacklistField(ctx context.Context, req *appli
 	return &applicationpkg.DeleteSourceCodeBlacklistFieldResponse{}, nil
 }
 
-func (s *Service) ListProjects(ctx context.Context, _ *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {
-	startedAt := time.Now()
-	projects, err := s.projectCache.ListActiveProjects(ctx)
-	projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
+func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {
+	scope, err := normalizeProjectScope(req.GetScope())
 	if err != nil {
 		return nil, err
+	}
+
+	startedAt := time.Now()
+	var (
+		projects []*Project
+		total    int64
+		page     int32
+		pageSize int32
+	)
+	switch scope {
+	case applicationpkg.ProjectScope_PROJECT_SCOPE_ACTIVE:
+		projects, err = s.projectCache.ListActiveProjects(ctx)
+		projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
+		if err != nil {
+			return nil, err
+		}
+		total, page, pageSize = paginateActiveProjects(req.GetPage(), req.GetPageSize(), &projects)
+	case applicationpkg.ProjectScope_PROJECT_SCOPE_ARCHIVED:
+		projects, total, page, pageSize, err = s.projectCache.ListArchivedProjects(ctx, req.GetPage(), req.GetPageSize())
+		projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, status.Errorf(codes.Internal, "unsupported project scope %v", scope)
 	}
 
 	items := make([]*v1alpha1.ProjectView, 0, len(projects))
@@ -527,10 +550,20 @@ func (s *Service) ListProjects(ctx context.Context, _ *applicationpkg.ListProjec
 		items = append(items, projectToView(project))
 	}
 
-	return &applicationpkg.ListProjectsResponse{Items: items}, nil
+	return &applicationpkg.ListProjectsResponse{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
 }
 
 func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProjectRequest) (*applicationpkg.GetProjectResponse, error) {
+	scope, err := normalizeProjectScope(req.GetScope())
+	if err != nil {
+		return nil, err
+	}
+
 	projectID, err := uuid.Parse(req.GetProjectID())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid projectID %q: %v", req.GetProjectID(), err)
@@ -542,8 +575,24 @@ func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProject
 	if err != nil {
 		return nil, err
 	}
-	if !ok || project.Meta.IsArchived {
+	if !ok {
+		if scope == applicationpkg.ProjectScope_PROJECT_SCOPE_ARCHIVED {
+			return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetProjectID())
+		}
 		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
+	}
+
+	switch scope {
+	case applicationpkg.ProjectScope_PROJECT_SCOPE_ACTIVE:
+		if project.Meta.IsArchived {
+			return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetProjectID())
+		}
+	case applicationpkg.ProjectScope_PROJECT_SCOPE_ARCHIVED:
+		if !project.Meta.IsArchived {
+			return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetProjectID())
+		}
+	default:
+		return nil, status.Errorf(codes.Internal, "unsupported project scope %v", scope)
 	}
 
 	return &applicationpkg.GetProjectResponse{Item: projectToView(project)}, nil
@@ -638,29 +687,46 @@ func (s *Service) UnarchiveProject(ctx context.Context, req *applicationpkg.Unar
 	return &applicationpkg.UnarchiveProjectResponse{}, nil
 }
 
-func (s *Service) ListArchivedProjects(ctx context.Context, req *applicationpkg.ListArchivedProjectsRequest) (*applicationpkg.ListArchivedProjectsResponse, error) {
-	projects, total, page, pageSize, err := s.projectCache.ListArchivedProjects(ctx, req.GetPage(), req.GetPageSize())
-	if err != nil {
-		return nil, err
+func normalizeProjectScope(scope applicationpkg.ProjectScope) (applicationpkg.ProjectScope, error) {
+	switch scope {
+	case applicationpkg.ProjectScope_PROJECT_SCOPE_UNSPECIFIED, applicationpkg.ProjectScope_PROJECT_SCOPE_ACTIVE:
+		return applicationpkg.ProjectScope_PROJECT_SCOPE_ACTIVE, nil
+	case applicationpkg.ProjectScope_PROJECT_SCOPE_ARCHIVED:
+		return applicationpkg.ProjectScope_PROJECT_SCOPE_ARCHIVED, nil
+	case applicationpkg.ProjectScope_PROJECT_SCOPE_ALL:
+		return 0, status.Error(codes.InvalidArgument, "scope PROJECT_SCOPE_ALL is not supported")
+	default:
+		return 0, status.Errorf(codes.InvalidArgument, "invalid scope %q", scope.String())
 	}
-	items := make([]*v1alpha1.ProjectView, 0, len(projects))
-	for _, project := range projects {
-		items = append(items, projectToView(project))
-	}
-	return &applicationpkg.ListArchivedProjectsResponse{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
-func (s *Service) GetArchivedProject(ctx context.Context, req *applicationpkg.GetArchivedProjectRequest) (*applicationpkg.GetArchivedProjectResponse, error) {
-	projectID, err := uuid.Parse(req.GetProjectID())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid projectID %q: %v", req.GetProjectID(), err)
+func normalizeProjectPage(page int32, pageSize int32) (int32, int32) {
+	if page < 1 {
+		page = 1
 	}
-	project, ok, err := s.projectCache.GetProject(ctx, projectID)
-	if err != nil {
-		return nil, err
+	if pageSize <= 0 {
+		pageSize = 20
 	}
-	if !ok || !project.Meta.IsArchived {
-		return nil, status.Errorf(codes.NotFound, "archived project %q not found", req.GetProjectID())
+	if pageSize > 200 {
+		pageSize = 200
 	}
-	return &applicationpkg.GetArchivedProjectResponse{Item: projectToView(project)}, nil
+	return page, pageSize
+}
+
+func paginateActiveProjects(page int32, pageSize int32, projects *[]*Project) (int64, int32, int32) {
+	normalizedPage, normalizedPageSize := normalizeProjectPage(page, pageSize)
+	total := int64(len(*projects))
+	start := int64(normalizedPage-1) * int64(normalizedPageSize)
+	if start >= total {
+		*projects = (*projects)[:0]
+		return total, normalizedPage, normalizedPageSize
+	}
+
+	stop := start + int64(normalizedPageSize)
+	if stop > total {
+		stop = total
+	}
+
+	*projects = (*projects)[start:stop]
+	return total, normalizedPage, normalizedPageSize
 }

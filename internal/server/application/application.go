@@ -26,22 +26,33 @@ func (s *Server) ListProjects(ctx context.Context, req *applicationpkg.ListProje
 	}
 	defer closer.Close()
 
-	resp, err := client.ListProjects(ctx, &applicationapiclient.ListProjectsRequest{})
+	resp, err := client.ListProjects(ctx, &applicationapiclient.ListProjectsRequest{
+		Scope:    applicationapiclient.ProjectScope(req.GetScope()),
+		Page:     req.GetPage(),
+		PageSize: req.GetPageSize(),
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	sort.SliceStable(resp.Items, func(i, j int) bool {
-		if resp.Items[i].Meta.BlockNumber != resp.Items[j].Meta.BlockNumber {
-			return resp.Items[i].Meta.BlockNumber < resp.Items[j].Meta.BlockNumber
-		}
-		if resp.Items[i].Meta.TxIndex != resp.Items[j].Meta.TxIndex {
-			return resp.Items[i].Meta.TxIndex > resp.Items[j].Meta.TxIndex
-		}
-		return resp.Items[i].Meta.ProjectID > resp.Items[j].Meta.ProjectID
-	})
+	if req.GetScope() == applicationpkg.ProjectScope_PROJECT_SCOPE_UNSPECIFIED || req.GetScope() == applicationpkg.ProjectScope_PROJECT_SCOPE_ACTIVE {
+		sort.SliceStable(resp.Items, func(i, j int) bool {
+			if resp.Items[i].Meta.BlockNumber != resp.Items[j].Meta.BlockNumber {
+				return resp.Items[i].Meta.BlockNumber < resp.Items[j].Meta.BlockNumber
+			}
+			if resp.Items[i].Meta.TxIndex != resp.Items[j].Meta.TxIndex {
+				return resp.Items[i].Meta.TxIndex > resp.Items[j].Meta.TxIndex
+			}
+			return resp.Items[i].Meta.ProjectID > resp.Items[j].Meta.ProjectID
+		})
+	}
 
-	return &applicationpkg.ListProjectsResponse{Items: resp.Items}, nil
+	return &applicationpkg.ListProjectsResponse{
+		Items:    resp.Items,
+		Total:    resp.Total,
+		Page:     resp.Page,
+		PageSize: resp.PageSize,
+	}, nil
 }
 
 func (s *Server) GetProject(ctx context.Context, req *applicationpkg.GetProjectRequest) (*applicationpkg.GetProjectResponse, error) {
@@ -51,7 +62,10 @@ func (s *Server) GetProject(ctx context.Context, req *applicationpkg.GetProjectR
 	}
 	defer closer.Close()
 
-	resp, err := client.GetProject(ctx, &applicationapiclient.GetProjectRequest{ProjectID: req.ProjectID})
+	resp, err := client.GetProject(ctx, &applicationapiclient.GetProjectRequest{
+		ProjectID: req.GetProjectID(),
+		Scope:     applicationapiclient.ProjectScope(req.GetScope()),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -143,42 +157,6 @@ func (s *Server) UnarchiveProject(ctx context.Context, req *applicationpkg.Unarc
 		return nil, err
 	}
 	return &applicationpkg.UnarchiveProjectResponse{}, nil
-}
-
-func (s *Server) ListArchivedProjects(ctx context.Context, req *applicationpkg.ListArchivedProjectsRequest) (*applicationpkg.ListArchivedProjectsResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListArchivedProjects(ctx, &applicationapiclient.ListArchivedProjectsRequest{
-		Page:     req.GetPage(),
-		PageSize: req.GetPageSize(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.ListArchivedProjectsResponse{
-		Items:    resp.Items,
-		Total:    resp.Total,
-		Page:     resp.Page,
-		PageSize: resp.PageSize,
-	}, nil
-}
-
-func (s *Server) GetArchivedProject(ctx context.Context, req *applicationpkg.GetArchivedProjectRequest) (*applicationpkg.GetArchivedProjectResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetArchivedProject(ctx, &applicationapiclient.GetArchivedProjectRequest{ProjectID: req.GetProjectID()})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.GetArchivedProjectResponse{Item: resp.Item}, nil
 }
 
 func sourceCodeBlacklistFieldToAPI(item *applicationapiclient.SourceCodeBlacklistField) *applicationpkg.SourceCodeBlacklistField {

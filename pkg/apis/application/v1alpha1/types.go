@@ -72,3 +72,12 @@ type ProjectOption struct {
 	WethDecimals    uint32 `protobuf:"varint,4,opt,name=wethDecimals" json:"wethDecimals"`
 	UsdtDecimals    uint32 `protobuf:"varint,5,opt,name=usdtDecimals" json:"usdtDecimals"`
 }
+
+type ProjectScope int32
+
+const (
+	ProjectScopeUnspecified ProjectScope = 0
+	ProjectScopeActive      ProjectScope = 1
+	ProjectScopeArchived    ProjectScope = 2
+	ProjectScopeAll         ProjectScope = 3
+)
