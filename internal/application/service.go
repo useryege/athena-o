@@ -646,16 +646,17 @@ func (s *Service) ArchiveProject(ctx context.Context, req *applicationpkg.Archiv
 	if err := s.persistencePublisher.PublishProjectArchive(ctx, contract); err != nil {
 		return nil, err
 	}
-	project, ok, err := s.registry.GetProject(ctx, contract)
+	project, ok, err := s.projectCache.GetProject(ctx, contract)
 	if err != nil {
 		return nil, err
 	}
-	if ok && project != nil {
-		project.Meta.IsArchived = true
-		project.Meta.ArchivedAt = time.Now()
-		if err := s.projectCache.SetProject(ctx, project); err != nil {
-			return nil, err
-		}
+	if !ok || project == nil {
+		project = &Project{Meta: projectMetaFromStore(*meta)}
+	}
+	project.Meta.IsArchived = true
+	project.Meta.ArchivedAt = time.Now().UTC()
+	if err := s.projectCache.SetProject(ctx, project); err != nil {
+		return nil, err
 	}
 	if err := s.registry.RemoveProject(ctx, contract); err != nil {
 		return nil, err
