@@ -16,12 +16,12 @@ type remoteBlacklistCacheMock struct {
 
 func (r *remoteBlacklistCacheMock) Get(ctx context.Context) ([]string, bool, error) {
 	r.gets++
-	return cloneStringSlice(r.fields), r.ok, nil
+	return r.fields, r.ok, nil
 }
 
 func (r *remoteBlacklistCacheMock) Set(ctx context.Context, fields []string) error {
-	r.sets = append(r.sets, cloneStringSlice(fields))
-	r.fields = cloneStringSlice(fields)
+	r.sets = append(r.sets, fields)
+	r.fields = fields
 	r.ok = true
 	return nil
 }
@@ -122,7 +122,7 @@ func (p *sourceCodeBlacklistPublisherMock) PublishDelete(ctx context.Context, fi
 }
 
 func (s *sourceCodeBlacklistStoreMock) ListSourceCodeBlacklistFields(ctx context.Context) ([]string, error) {
-	return cloneStringSlice(s.fields), nil
+	return s.fields, nil
 }
 
 func (s *sourceCodeBlacklistStoreMock) AddSourceCodeBlacklistField(ctx context.Context, field string) error {

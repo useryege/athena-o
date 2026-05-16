@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -215,7 +216,7 @@ func TestProjectRegistryListProjectContractsSnapshotAlignedAfterRemove(t *testin
 	}
 }
 
-func TestProjectRegistryListProjectContractsReturnsCopy(t *testing.T) {
+func TestProjectRegistryListProjectContractsReturnsSharedSlices(t *testing.T) {
 	publisher := &registryPublisherMock{}
 	registry := NewProjectRegistry(publisher)
 
@@ -245,13 +246,120 @@ func TestProjectRegistryListProjectContractsReturnsCopy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list project contracts: %v", err)
 	}
-	if latest.ProjectIDs[0] != projectID {
-		t.Fatalf("project id mutated: got %s want %s", latest.ProjectIDs[0], projectID)
+	if latest.ProjectIDs[0] != uuid.Nil {
+		t.Fatalf("project id not shared: got %s want %s", latest.ProjectIDs[0], uuid.Nil)
 	}
-	if latest.ProjectContracts[0] != contract {
-		t.Fatalf("contract mutated: got %s want %s", latest.ProjectContracts[0], contract)
+	if latest.ProjectContracts[0] != common.HexToAddress("0xffffffffffffffffffffffffffffffffffffffff") {
+		t.Fatalf("contract slice not shared: got %s", latest.ProjectContracts[0])
 	}
-	if latest.ProjectQueries[0].TokenContract != contract || latest.ProjectQueries[0].MsgCaller != creator {
-		t.Fatalf("query mutated: got token=%s caller=%s", latest.ProjectQueries[0].TokenContract, latest.ProjectQueries[0].MsgCaller)
+	if latest.ProjectQueries[0] != (athenacontract.AthenaProjectQuery{}) {
+		t.Fatalf("query slice not shared: got token=%s caller=%s", latest.ProjectQueries[0].TokenContract, latest.ProjectQueries[0].MsgCaller)
+	}
+}
+
+func TestProjectRegistryGetProjectReturnsSharedReference(t *testing.T) {
+	publisher := &registryPublisherMock{}
+	registry := NewProjectRegistry(publisher)
+
+	projectID := uuid.New()
+	project := &Project{Meta: ProjectMeta{
+		ProjectID:  projectID,
+		Contract:   common.HexToAddress("0x1111111111111111111111111111111111111111"),
+		SourceCode: "old",
+	}}
+	if err := registry.LoadProject(context.Background(), projectID, project); err != nil {
+		t.Fatalf("load project: %v", err)
+	}
+
+	stored, ok, err := registry.GetProject(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || stored == nil {
+		t.Fatalf("project not found")
+	}
+
+	stored.Meta.SourceCode = "new"
+
+	latest, ok, err := registry.GetProject(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("get project again: %v", err)
+	}
+	if !ok || latest == nil {
+		t.Fatalf("project not found on second get")
+	}
+	if latest.Meta.SourceCode != "new" {
+		t.Fatalf("shared reference not observed: got %q want %q", latest.Meta.SourceCode, "new")
+	}
+}
+
+func TestProjectRegistryListProjectsReturnsSharedReferences(t *testing.T) {
+	publisher := &registryPublisherMock{}
+	registry := NewProjectRegistry(publisher)
+
+	projectID := uuid.New()
+	project := &Project{Meta: ProjectMeta{
+		ProjectID:  projectID,
+		Contract:   common.HexToAddress("0x1111111111111111111111111111111111111111"),
+		SourceCode: "old",
+	}}
+	if err := registry.LoadProject(context.Background(), projectID, project); err != nil {
+		t.Fatalf("load project: %v", err)
+	}
+
+	projects, err := registry.ListProjects(context.Background())
+	if err != nil {
+		t.Fatalf("list projects: %v", err)
+	}
+	if len(projects) != 1 || projects[0] == nil {
+		t.Fatalf("unexpected projects list")
+	}
+
+	projects[0].Meta.SourceCode = "new"
+
+	latest, ok, err := registry.GetProject(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || latest == nil {
+		t.Fatalf("project not found after list update")
+	}
+	if latest.Meta.SourceCode != "new" {
+		t.Fatalf("shared list reference not observed: got %q want %q", latest.Meta.SourceCode, "new")
+	}
+}
+
+func TestProjectRegistryUpdateProjectChainStatesRetainsInputReferences(t *testing.T) {
+	publisher := &registryPublisherMock{}
+	registry := NewProjectRegistry(publisher)
+
+	projectID := uuid.New()
+	project := &Project{Meta: ProjectMeta{
+		ProjectID: projectID,
+		Contract:  common.HexToAddress("0x1111111111111111111111111111111111111111"),
+	}}
+	if err := registry.LoadProject(context.Background(), projectID, project); err != nil {
+		t.Fatalf("load project: %v", err)
+	}
+
+	totalSupply := big.NewInt(100)
+	state := athenacontract.AthenaProject{}
+	state.Token.TotalSupply = totalSupply
+	if err := registry.UpdateProjectChainStates(context.Background(), map[uuid.UUID]athenacontract.AthenaProject{
+		projectID: state,
+	}); err != nil {
+		t.Fatalf("update chain states: %v", err)
+	}
+
+	totalSupply.SetInt64(200)
+	latest, ok, err := registry.GetProject(context.Background(), projectID)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || latest == nil {
+		t.Fatalf("project not found")
+	}
+	if latest.ChainState.Token.TotalSupply == nil || latest.ChainState.Token.TotalSupply.Int64() != 200 {
+		t.Fatalf("chain state reference not retained")
 	}
 }

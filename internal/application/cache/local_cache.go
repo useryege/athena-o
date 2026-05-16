@@ -29,7 +29,7 @@ func (c *LocalBlacklistCache) Get() ([]string, bool) {
 	if !c.ready {
 		return nil, false
 	}
-	return cloneStringSlice(c.fields), true
+	return c.fields, true
 }
 
 func (c *LocalBlacklistCache) Set(fields []string) {
@@ -51,13 +51,4 @@ func (c *LocalBlacklistCache) Del() {
 	defer c.mu.Unlock()
 	c.fields = nil
 	c.ready = false
-}
-
-func cloneStringSlice(values []string) []string {
-	if values == nil {
-		return nil
-	}
-	cloned := make([]string, len(values))
-	copy(cloned, values)
-	return cloned
 }

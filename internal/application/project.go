@@ -70,7 +70,7 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 			},
 			SourceCodeBlacklist: v1alpha1.SourceCodeBlacklistState{
 				HasBlacklistFields: sourceCodeBlacklist.HasBlacklistFields,
-				BlacklistFields:    cloneStringSlice(sourceCodeBlacklist.BlacklistFields),
+				BlacklistFields:    sourceCodeBlacklist.BlacklistFields,
 			},
 		},
 		ChainState: v1alpha1.ProjectChainState{
