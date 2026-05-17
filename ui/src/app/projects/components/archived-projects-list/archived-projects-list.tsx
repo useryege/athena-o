@@ -63,9 +63,11 @@ export const ArchivedProjectsList = () => {
         }
         const req = services.athenaApplication.getProjectOptions();
         optionsReqRef.current = req;
-        req.then(options => setProjectOptions(options || null))
-            .catch(() => undefined)
-            .finally(() => {
+        req.then((options): void => {
+            setProjectOptions(options || null);
+        })
+            .catch((): void => {})
+            .finally((): void => {
                 optionsReqRef.current = null;
             });
     }, [projectOptions]);
