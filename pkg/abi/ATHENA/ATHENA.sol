@@ -69,6 +69,7 @@ contract Athena {
         uint256 wethBalance;
         uint256 usdtBalance;
         uint256 nativeBalance;
+        uint256 usdtValue;
     }
 
     struct Project {
@@ -274,6 +275,11 @@ contract Athena {
             (, project.creatorState.wethBalance) = _safeBalanceOf(wethContract, msgCaller);
             (, project.creatorState.usdtBalance) = _safeBalanceOf(usdtContract, msgCaller);
             project.creatorState.nativeBalance = msgCaller.balance;
+
+            uint256 wethUsdtValue = _quoteToUsdtValue(project.creatorState.wethBalance, wethContract);
+            uint256 nativeUsdtValue = _quoteToUsdtValue(project.creatorState.nativeBalance, wethContract);
+            project.creatorState.usdtValue =
+                wethUsdtValue + project.creatorState.usdtBalance + nativeUsdtValue;
         }
 
         if (!project.token.isValidERC20 || tokenContract == wethContract) {

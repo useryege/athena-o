@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import {ProjectView} from '../../../shared/services/athena-application-service';
-import {PairMetricsCell} from '../pair-metrics-cell/pair-metrics-cell';
+import {formatUsdtValue, PairMetricsCell} from '../pair-metrics-cell/pair-metrics-cell';
 
 const renderValue = (value: string | number | undefined) => (value === undefined || value === '' ? '-' : value);
 
@@ -112,6 +112,7 @@ export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project
                         usdtDecimals={usdtDecimals}
                     />
                 </div>
+                <div className='projects-list__cell'>{formatUsdtValue(project.chainState?.creatorState?.usdtValue, usdtDecimals)}</div>
                 <div className='projects-list__cell projects-list__cell--block-time'>
                     {blockTime ? (
                         <>

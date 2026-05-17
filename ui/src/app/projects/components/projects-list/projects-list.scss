@@ -63,6 +63,7 @@
             minmax(74px, 0.85fr)
             minmax(152px, 1.35fr)
             minmax(152px, 1.35fr)
+            minmax(124px, 1.1fr)
             minmax(116px, 1.2fr);
         column-gap: 8px;
         align-items: center;
@@ -146,6 +147,7 @@
                 repeat(3, minmax(70px, 0.85fr))
                 minmax(132px, 1.2fr)
                 minmax(132px, 1.2fr)
+                minmax(112px, 1fr)
                 minmax(96px, 1.1fr);
             column-gap: 6px;
         }

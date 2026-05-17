@@ -55,6 +55,7 @@ type CreatorState struct {
 	WethBalance   string `protobuf:"bytes,2,opt,name=wethBalance" json:"wethBalance"`
 	UsdtBalance   string `protobuf:"bytes,3,opt,name=usdtBalance" json:"usdtBalance"`
 	NativeBalance string `protobuf:"bytes,4,opt,name=nativeBalance" json:"nativeBalance"`
+	UsdtValue     string `protobuf:"bytes,5,opt,name=usdtValue" json:"usdtValue"`
 }
 
 type SimulateResult struct {

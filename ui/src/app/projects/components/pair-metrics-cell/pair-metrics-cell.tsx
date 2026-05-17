@@ -16,7 +16,7 @@ const normalizeDecimals = (decimals?: number | string) => {
     return undefined;
 };
 
-const formatQuoteUsdt = (rawValue?: string, decimals?: number | string) => {
+export const formatUsdtValue = (rawValue?: string, decimals?: number | string) => {
     if (rawValue === undefined || rawValue === null || rawValue === '') {
         return '-';
     }
@@ -50,14 +50,12 @@ export const PairMetricsCell = ({quoteValue, removeLiquidity, usdtDecimals}: Pai
     <div className='pair-metrics-cell'>
         <div className='pair-metrics-cell__item'>
             <span className='pair-metrics-cell__label'>Quote</span>
-            <span className='pair-metrics-cell__value'>{formatQuoteUsdt(quoteValue, usdtDecimals)}</span>
+            <span className='pair-metrics-cell__value'>{formatUsdtValue(quoteValue, usdtDecimals)}</span>
         </div>
         <div className='pair-metrics-cell__item'>
             <span className='pair-metrics-cell__label'>RmLiq</span>
             {removeLiquidity !== undefined ? (
-                <span className={`project-details__badge project-details__badge--${removeLiquidity ? 'negative' : 'positive'}`}>
-                    {removeLiquidity ? 'Yes' : 'No'}
-                </span>
+                <span className={`project-details__badge project-details__badge--${removeLiquidity ? 'negative' : 'positive'}`}>{removeLiquidity ? 'Yes' : 'No'}</span>
             ) : (
                 <span className='pair-metrics-cell__value'>-</span>
             )}

@@ -274,6 +274,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                     <span className='project-details__field-label'>Native Balance</span>
                                     <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.nativeBalance)}</span>
                                 </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Total Asset (USDT)</span>
+                                    <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.usdtValue)}</span>
+                                </div>
                             </div>
                         </div>
 

@@ -2,7 +2,7 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {history} from '../../../app';
 import {services} from '../../../shared/services';
-import {ProjectView} from '../../../shared/services/athena-application-service';
+import {ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
 import {ProjectListRow} from '../project-list-row/project-list-row';
 
 require('../projects-list/projects-list.scss');
@@ -18,8 +18,10 @@ export const ArchivedProjectsList = () => {
     const [page, setPage] = React.useState(1);
     const [total, setTotal] = React.useState(0);
     const [refreshing, setRefreshing] = React.useState(false);
+    const [projectOptions, setProjectOptions] = React.useState<ProjectOptions | null>(null);
 
     const reqRef = React.useRef<{abort?: () => void} | null>(null);
+    const optionsReqRef = React.useRef<{abort?: () => void} | null>(null);
 
     const load = React.useCallback(async (targetPage: number) => {
         if (reqRef.current) {
@@ -45,8 +47,28 @@ export const ArchivedProjectsList = () => {
 
     React.useEffect(() => {
         load(1);
-        return () => reqRef.current?.abort && reqRef.current.abort();
+        return () => {
+            if (reqRef.current?.abort) {
+                reqRef.current.abort();
+            }
+            if (optionsReqRef.current?.abort) {
+                optionsReqRef.current.abort();
+            }
+        };
     }, [load]);
+
+    React.useEffect(() => {
+        if (projectOptions || optionsReqRef.current) {
+            return;
+        }
+        const req = services.athenaApplication.getProjectOptions();
+        optionsReqRef.current = req;
+        req.then(options => setProjectOptions(options || null))
+            .catch(() => undefined)
+            .finally(() => {
+                optionsReqRef.current = null;
+            });
+    }, [projectOptions]);
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -91,6 +113,7 @@ export const ArchivedProjectsList = () => {
                                         <div>Open Src</div>
                                         <div>WETH Pair</div>
                                         <div>USDT Pair</div>
+                                        <div>Creator Asset (USDT)</div>
                                         <div>Block Time</div>
                                     </div>
                                 </div>
@@ -106,6 +129,7 @@ export const ArchivedProjectsList = () => {
                                             key={getProjectRowKey(project, index)}
                                             project={project}
                                             index={(page - 1) * PAGE_SIZE + index}
+                                            usdtDecimals={projectOptions?.usdtDecimals}
                                             onClick={project.meta?.contract ? () => history.push(`/projects/archived/${project.meta!.contract}`) : undefined}
                                         />
                                     ))

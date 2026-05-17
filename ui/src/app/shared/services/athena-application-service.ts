@@ -55,6 +55,7 @@ export interface CreatorState {
     wethBalance?: string;
     usdtBalance?: string;
     nativeBalance?: string;
+    usdtValue?: string;
 }
 
 export interface ListProjectsResponse {

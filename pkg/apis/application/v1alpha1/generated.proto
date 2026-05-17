@@ -16,6 +16,8 @@ message CreatorState {
   optional string usdtBalance = 3;
 
   optional string nativeBalance = 4;
+
+  optional string usdtValue = 5;
 }
 
 message PairV2State {

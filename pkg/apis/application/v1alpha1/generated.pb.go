@@ -50,6 +50,11 @@ func (m *CreatorState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.UsdtValue)
+	copy(dAtA[i:], m.UsdtValue)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UsdtValue)))
+	i--
+	dAtA[i] = 0x2a
 	i -= len(m.NativeBalance)
 	copy(dAtA[i:], m.NativeBalance)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.NativeBalance)))
@@ -590,6 +595,8 @@ func (m *CreatorState) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.NativeBalance)
 	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.UsdtValue)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -764,6 +771,7 @@ func (this *CreatorState) String() string {
 		`WethBalance:` + fmt.Sprintf("%v", this.WethBalance) + `,`,
 		`UsdtBalance:` + fmt.Sprintf("%v", this.UsdtBalance) + `,`,
 		`NativeBalance:` + fmt.Sprintf("%v", this.NativeBalance) + `,`,
+		`UsdtValue:` + fmt.Sprintf("%v", this.UsdtValue) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1053,6 +1061,38 @@ func (m *CreatorState) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.NativeBalance = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UsdtValue", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UsdtValue = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

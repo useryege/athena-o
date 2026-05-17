@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-253-g59c913e-dirty"
+    "version": "v1.0.0-258-gcbb2ffc-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1127,6 +1127,9 @@
           "type": "string"
         },
         "usdtBalance": {
+          "type": "string"
+        },
+        "usdtValue": {
           "type": "string"
         },
         "wethBalance": {

@@ -87,6 +87,7 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 				WethBalance:   bigIntToString(chainState.CreatorState.WethBalance),
 				UsdtBalance:   bigIntToString(chainState.CreatorState.UsdtBalance),
 				NativeBalance: bigIntToString(chainState.CreatorState.NativeBalance),
+				UsdtValue:     bigIntToString(chainState.CreatorState.UsdtValue),
 			},
 		},
 	}
