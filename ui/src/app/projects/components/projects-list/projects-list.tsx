@@ -8,6 +8,7 @@ import {ProjectListRow} from '../project-list-row/project-list-row';
 require('./projects-list.scss');
 
 const AUTO_REFRESH_INTERVAL_MS = 3000;
+const PAGE_SIZE = 10;
 
 const renderLastUpdatedAt = (value: Date | null) => (value ? value.toLocaleTimeString() : 'Never');
 
@@ -26,6 +27,8 @@ export const ProjectsList = () => {
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
     const [autoRefresh, setAutoRefresh] = React.useState(false);
+    const [page, setPage] = React.useState(1);
+    const [total, setTotal] = React.useState(0);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
     const [projectOptions, setProjectOptions] = React.useState<ProjectOptions | null>(null);
@@ -33,6 +36,7 @@ export const ProjectsList = () => {
     const optionsRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
+    const currentPageRef = React.useRef(1);
 
     const cleanupRequests = React.useCallback(() => {
         if (intervalRef.current !== undefined) {
@@ -69,20 +73,24 @@ export const ProjectsList = () => {
         }
     }, [projectOptions]);
 
-    const loadProjects = React.useCallback(async () => {
+    const loadProjects = React.useCallback(async (targetPage?: number) => {
         if (requestRef.current) {
             return;
         }
+        const pageToLoad = targetPage ?? currentPageRef.current;
         if (isMountedRef.current) {
             setRefreshing(true);
         }
 
         try {
-            const req = services.athenaApplication.listProjects();
+            const req = services.athenaApplication.listProjects(undefined, pageToLoad, PAGE_SIZE);
             requestRef.current = req;
             const data = await req;
             if (isMountedRef.current) {
                 setProjects(data.items);
+                setTotal(data.total);
+                setPage(data.page);
+                currentPageRef.current = data.page;
                 setLastUpdatedAt(new Date());
                 setError(null);
             }
@@ -101,7 +109,7 @@ export const ProjectsList = () => {
 
     React.useEffect(() => {
         isMountedRef.current = true;
-        loadProjects();
+        loadProjects(1);
         loadProjectOptions();
 
         return () => {
@@ -115,8 +123,10 @@ export const ProjectsList = () => {
             return;
         }
         setAutoRefresh(true);
-        loadProjects();
-        intervalRef.current = window.setInterval(loadProjects, AUTO_REFRESH_INTERVAL_MS);
+        loadProjects(currentPageRef.current);
+        intervalRef.current = window.setInterval(() => {
+            loadProjects(currentPageRef.current);
+        }, AUTO_REFRESH_INTERVAL_MS);
     }, [loadProjects]);
 
     const handleStop = React.useCallback(() => {
@@ -128,8 +138,10 @@ export const ProjectsList = () => {
         if (autoRefresh) {
             return;
         }
-        loadProjects();
+        loadProjects(currentPageRef.current);
     }, [autoRefresh, loadProjects]);
+
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
     return (
         <Page title='Projects' toolbar={{breadcrumbs: [{title: 'Projects'}]}}>
@@ -162,6 +174,10 @@ export const ProjectsList = () => {
                                 </div>
                                 <div className='projects-list__status'>
                                     <span>{autoRefresh ? 'Auto refresh: On' : 'Auto refresh: Off'}</span>
+                                    <span>Total: {total}</span>
+                                    <span>
+                                        Page: {page}/{totalPages}
+                                    </span>
                                     <span>Last updated: {renderLastUpdatedAt(lastUpdatedAt)}</span>
                                     {refreshing && <span>Refreshing...</span>}
                                 </div>
@@ -192,12 +208,26 @@ export const ProjectsList = () => {
                                         <ProjectListRow
                                             key={getProjectRowKey(project, index)}
                                             project={project}
-                                            index={index}
+                                            index={(page - 1) * PAGE_SIZE + index}
                                             usdtDecimals={projectOptions?.usdtDecimals}
                                             onClick={project.meta?.contract ? () => history.push(`/projects/${project.meta!.contract}`) : undefined}
                                         />
                                     ))
                                 )}
+                            </div>
+                            <div className='projects-list__controls' style={{marginTop: 12}}>
+                                <div className='projects-list__actions'>
+                                    <button type='button' className='argo-button argo-button--base-o' disabled={page <= 1 || refreshing} onClick={() => loadProjects(page - 1)}>
+                                        Prev
+                                    </button>
+                                    <button
+                                        type='button'
+                                        className='argo-button argo-button--base-o'
+                                        disabled={page >= totalPages || refreshing}
+                                        onClick={() => loadProjects(page + 1)}>
+                                        Next
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

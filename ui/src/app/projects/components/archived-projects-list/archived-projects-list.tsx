@@ -7,7 +7,7 @@ import {ProjectListRow} from '../project-list-row/project-list-row';
 
 require('../projects-list/projects-list.scss');
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 const getProjectRowKey = (project: ProjectView, index: number) => project.meta?.contract || `archived-project-${index}`;
 
