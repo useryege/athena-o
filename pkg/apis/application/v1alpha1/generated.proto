@@ -80,6 +80,8 @@ message ProjectMeta {
   optional SimulateResult creatorResult = 9;
 
   optional SourceCodeBlacklistState sourceCodeBlacklist = 10;
+
+  optional bool isArchived = 11;
 }
 
 message ProjectOption {

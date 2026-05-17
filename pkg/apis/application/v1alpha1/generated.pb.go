@@ -263,6 +263,14 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i--
+	if m.IsArchived {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x58
 	{
 		size, err := m.SourceCodeBlacklist.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
@@ -674,6 +682,7 @@ func (m *ProjectMeta) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = m.SourceCodeBlacklist.Size()
 	n += 1 + l + sovGenerated(uint64(l))
+	n += 2
 	return n
 }
 
@@ -827,6 +836,7 @@ func (this *ProjectMeta) String() string {
 		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
 		`CreatorResult:` + strings.Replace(strings.Replace(this.CreatorResult.String(), "SimulateResult", "SimulateResult", 1), `&`, ``, 1) + `,`,
 		`SourceCodeBlacklist:` + strings.Replace(strings.Replace(this.SourceCodeBlacklist.String(), "SourceCodeBlacklistState", "SourceCodeBlacklistState", 1), `&`, ``, 1) + `,`,
+		`IsArchived:` + fmt.Sprintf("%v", this.IsArchived) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -2070,6 +2080,26 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsArchived", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsArchived = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

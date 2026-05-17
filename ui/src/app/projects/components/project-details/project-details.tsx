@@ -1,7 +1,6 @@
 import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
-import {history} from '../../../app';
 import {services} from '../../../shared/services';
 import {PairV2State, ProjectView} from '../../../shared/services/athena-application-service';
 
@@ -99,7 +98,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const contract = props.match.params.contract;
     const [project, setProject] = React.useState<ProjectView | null>(null);
     const [loading, setLoading] = React.useState(true);
-    const [archiving, setArchiving] = React.useState(false);
+    const [changingArchiveState, setChangingArchiveState] = React.useState(false);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
 
@@ -156,22 +155,30 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     }, [cleanupRequests, loadProject]);
 
     const breadcrumbs = [{title: 'Projects', path: '/projects'}, {title: contract}];
+    const isArchived = project?.meta?.isArchived ?? false;
 
-    const handleArchive = React.useCallback(async () => {
-        setArchiving(true);
+    const handleArchiveStateChange = React.useCallback(async () => {
+        if (changingArchiveState) {
+            return;
+        }
+        setChangingArchiveState(true);
         try {
-            await services.athenaApplication.archiveProject(contract);
-            history.push('/projects/archived');
+            if (isArchived) {
+                await services.athenaApplication.unarchiveProject(contract);
+            } else {
+                await services.athenaApplication.archiveProject(contract);
+            }
+            await loadProject();
         } catch (err) {
             if (isMountedRef.current) {
                 setError(err as Error);
             }
         } finally {
             if (isMountedRef.current) {
-                setArchiving(false);
+                setChangingArchiveState(false);
             }
         }
-    }, [contract]);
+    }, [changingArchiveState, contract, isArchived, loadProject]);
 
     return (
         <Page title='Project Details' toolbar={{breadcrumbs}}>
@@ -190,8 +197,8 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             Last updated: {lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : 'Never'}
                         </div>
                         <div style={{textAlign: 'right', marginBottom: '10px'}}>
-                            <button type='button' className='argo-button argo-button--base' disabled={archiving} onClick={handleArchive}>
-                                {archiving ? 'Archiving...' : 'Archive Project'}
+                            <button type='button' className='argo-button argo-button--base' disabled={changingArchiveState} onClick={handleArchiveStateChange}>
+                                {changingArchiveState ? (isArchived ? 'Unarchiving...' : 'Archiving...') : isArchived ? 'Unarchive Project' : 'Archive Project'}
                             </button>
                         </div>
 
@@ -217,6 +224,14 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Tx Index</span>
                                     <span className='project-details__field-value'>{renderValue(project.meta?.txIndex)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Status</span>
+                                    <span className='project-details__field-value'>
+                                        <span className={`project-details__badge project-details__badge--${isArchived ? 'negative' : 'positive'}`}>
+                                            {isArchived ? 'Archived' : 'Active'}
+                                        </span>
+                                    </span>
                                 </div>
                             </div>
                         </div>

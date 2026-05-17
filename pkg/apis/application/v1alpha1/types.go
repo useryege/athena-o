@@ -15,6 +15,7 @@ type ProjectMeta struct {
 	SourceCode          string                   `protobuf:"bytes,8,opt,name=sourceCode" json:"sourceCode"`
 	CreatorResult       SimulateResult           `protobuf:"bytes,9,opt,name=creatorResult" json:"creatorResult"`
 	SourceCodeBlacklist SourceCodeBlacklistState `protobuf:"bytes,10,opt,name=sourceCodeBlacklist" json:"sourceCodeBlacklist"`
+	IsArchived          bool                     `protobuf:"varint,11,opt,name=isArchived" json:"isArchived"`
 }
 
 type ProjectChainState struct {

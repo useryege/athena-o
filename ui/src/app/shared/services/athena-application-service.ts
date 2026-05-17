@@ -15,6 +15,7 @@ export interface ProjectMeta {
     sourceCode?: string;
     creatorResult?: SimulateResult;
     sourceCodeBlacklist?: SourceCodeBlacklistState;
+    isArchived?: boolean;
 }
 
 export interface ProjectChainState {
@@ -93,13 +94,6 @@ export interface ProjectOptions {
 
 export interface GetProjectOptionsResponse {
     options?: ProjectOptions;
-}
-
-export interface ListArchivedProjectsResponse {
-    items?: ProjectView[];
-    total?: number;
-    page?: number;
-    pageSize?: number;
 }
 
 export const PROJECT_SCOPE = {
@@ -202,28 +196,6 @@ export class AthenaApplicationService {
     public unarchiveProject(contract: string): Promise<void> & {abort?: () => void} {
         const req = requests.post(`/project/${encodeURIComponent(contract)}/unarchive`).send({contract});
         const promise = req.then(() => {}) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listArchivedProjects(page = 1, pageSize = 20): Promise<{items: ProjectView[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
-        const req = this.listProjects(PROJECT_SCOPE.ARCHIVED, page, pageSize) as any;
-        const promise = req.then((res: ListArchivedProjectsResponse) => {
-            const body = (res || {}) as ListArchivedProjectsResponse;
-            return {
-                items: body.items || [],
-                total: body.total || 0,
-                page: body.page || page,
-                pageSize: body.pageSize || pageSize
-            };
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public getArchivedProject(contract: string): Promise<ProjectView> & {abort?: () => void} {
-        const req = this.getProject(contract) as any;
-        const promise = req.then((item: ProjectView) => item) as any;
         promise.abort = () => req.abort();
         return promise;
     }

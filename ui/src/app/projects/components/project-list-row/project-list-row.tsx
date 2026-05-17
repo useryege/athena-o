@@ -46,8 +46,21 @@ const formatBlockTime = (blockTime: number | undefined): {date: string; time: st
     return {date: `${year}-${month}-${day}`, time: `${hour}:${minute}:${second}`};
 };
 
-export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project: ProjectView; index: number; usdtDecimals?: number; onClick?: () => void}) => {
+export const ProjectListRow = ({
+    project,
+    index,
+    usdtDecimals,
+    defaultIsArchived,
+    onClick
+}: {
+    project: ProjectView;
+    index: number;
+    usdtDecimals?: number;
+    defaultIsArchived?: boolean;
+    onClick?: () => void;
+}) => {
     const blockTime = formatBlockTime(project.meta?.blockTime);
+    const isArchived = project.meta?.isArchived ?? defaultIsArchived ?? false;
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (onClick && (e.key === 'Enter' || e.key === ' ')) {
@@ -70,6 +83,9 @@ export const ProjectListRow = ({project, index, usdtDecimals, onClick}: {project
                     {renderValue(project.chainState?.token?.name)}
                 </div>
                 <div className='projects-list__cell'>{renderValue(project.chainState?.token?.symbol)}</div>
+                <div className='projects-list__cell'>
+                    <span className={`project-details__badge project-details__badge--${isArchived ? 'negative' : 'positive'}`}>{isArchived ? 'Archived' : 'Active'}</span>
+                </div>
                 <div className='projects-list__cell'>
                     {project.meta?.sourceCodeBlacklist?.hasBlacklistFields !== undefined ? (
                         <span className={`project-details__badge project-details__badge--${project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'negative' : 'positive'}`}>

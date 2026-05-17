@@ -71,6 +71,7 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 				HasBlacklistFields: sourceCodeBlacklist.HasBlacklistFields,
 				BlacklistFields:    sourceCodeBlacklist.BlacklistFields,
 			},
+			IsArchived: project.Meta.IsArchived,
 		},
 		ChainState: v1alpha1.ProjectChainState{
 			Token: v1alpha1.TokenState{

@@ -2,15 +2,22 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {history} from '../../../app';
 import {services} from '../../../shared/services';
-import {ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
+import {PROJECT_SCOPE, ProjectOptions, ProjectScope, ProjectView} from '../../../shared/services/athena-application-service';
 import {ProjectListRow} from '../project-list-row/project-list-row';
 
 require('./projects-list.scss');
 
 const AUTO_REFRESH_INTERVAL_MS = 3000;
 const PAGE_SIZE = 10;
+const ACTIVE_SCOPE = PROJECT_SCOPE.ACTIVE;
+const ARCHIVED_SCOPE = PROJECT_SCOPE.ARCHIVED;
 
 const renderLastUpdatedAt = (value: Date | null) => (value ? value.toLocaleTimeString() : 'Never');
+const renderScopeLabel = (scope: ProjectScope) => (scope === ARCHIVED_SCOPE ? 'Archived' : 'Active');
+const isAbortedError = (err: unknown) =>
+    String((err as any)?.message || '')
+        .toLowerCase()
+        .includes('abort');
 
 const getProjectRowKey = (project: ProjectView, index: number) => {
     if (project.meta?.contract) {
@@ -24,6 +31,7 @@ const getProjectRowKey = (project: ProjectView, index: number) => {
 
 export const ProjectsList = () => {
     const [projects, setProjects] = React.useState<ProjectView[]>([]);
+    const [scope, setScope] = React.useState<ProjectScope>(ACTIVE_SCOPE);
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
     const [autoRefresh, setAutoRefresh] = React.useState(false);
@@ -37,6 +45,7 @@ export const ProjectsList = () => {
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
     const currentPageRef = React.useRef(1);
+    const currentScopeRef = React.useRef<ProjectScope>(ACTIVE_SCOPE);
 
     const cleanupRequests = React.useCallback(() => {
         if (intervalRef.current !== undefined) {
@@ -65,7 +74,7 @@ export const ProjectsList = () => {
                 setProjectOptions(options || null);
             }
         } catch (err) {
-            if (isMountedRef.current) {
+            if (isMountedRef.current && !isAbortedError(err)) {
                 setError(err as Error);
             }
         } finally {
@@ -73,24 +82,27 @@ export const ProjectsList = () => {
         }
     }, [projectOptions]);
 
-    const loadProjects = React.useCallback(async (targetPage?: number) => {
+    const loadProjects = React.useCallback(async (targetPage?: number, targetScope?: ProjectScope) => {
         if (requestRef.current) {
             return;
         }
         const pageToLoad = targetPage ?? currentPageRef.current;
+        const scopeToLoad = targetScope ?? currentScopeRef.current;
         if (isMountedRef.current) {
             setRefreshing(true);
         }
 
         try {
-            const req = services.athenaApplication.listProjects(undefined, pageToLoad, PAGE_SIZE);
+            const req = services.athenaApplication.listProjects(scopeToLoad, pageToLoad, PAGE_SIZE);
             requestRef.current = req;
             const data = await req;
             if (isMountedRef.current) {
                 setProjects(data.items);
                 setTotal(data.total);
                 setPage(data.page);
+                setScope(scopeToLoad);
                 currentPageRef.current = data.page;
+                currentScopeRef.current = scopeToLoad;
                 setLastUpdatedAt(new Date());
                 setError(null);
             }
@@ -109,7 +121,7 @@ export const ProjectsList = () => {
 
     React.useEffect(() => {
         isMountedRef.current = true;
-        loadProjects(1);
+        loadProjects(1, ACTIVE_SCOPE);
         loadProjectOptions();
 
         return () => {
@@ -123,9 +135,9 @@ export const ProjectsList = () => {
             return;
         }
         setAutoRefresh(true);
-        loadProjects(currentPageRef.current);
+        loadProjects(currentPageRef.current, currentScopeRef.current);
         intervalRef.current = window.setInterval(() => {
-            loadProjects(currentPageRef.current);
+            loadProjects(currentPageRef.current, currentScopeRef.current);
         }, AUTO_REFRESH_INTERVAL_MS);
     }, [loadProjects]);
 
@@ -138,8 +150,29 @@ export const ProjectsList = () => {
         if (autoRefresh) {
             return;
         }
-        loadProjects(currentPageRef.current);
+        loadProjects(currentPageRef.current, currentScopeRef.current);
     }, [autoRefresh, loadProjects]);
+
+    const handleScopeChange = React.useCallback(
+        (nextScope: ProjectScope) => {
+            if (currentScopeRef.current === nextScope) {
+                return;
+            }
+            if (requestRef.current?.abort) {
+                requestRef.current.abort();
+                requestRef.current = null;
+            }
+            currentScopeRef.current = nextScope;
+            currentPageRef.current = 1;
+            setPage(1);
+            setProjects([]);
+            setTotal(0);
+            setScope(nextScope);
+            setError(null);
+            loadProjects(1, nextScope);
+        },
+        [loadProjects]
+    );
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -159,7 +192,18 @@ export const ProjectsList = () => {
                         <div className='white-box projects-list__box'>
                             <div className='projects-list__controls'>
                                 <div className='projects-list__actions'>
-                                    <button type='button' className='argo-button argo-button--base-o' onClick={() => history.push('/projects/archived')}>
+                                    <button
+                                        type='button'
+                                        className={`argo-button ${scope === ACTIVE_SCOPE ? 'argo-button--base' : 'argo-button--base-o'}`}
+                                        disabled={refreshing}
+                                        onClick={() => handleScopeChange(ACTIVE_SCOPE)}>
+                                        Active
+                                    </button>
+                                    <button
+                                        type='button'
+                                        className={`argo-button ${scope === ARCHIVED_SCOPE ? 'argo-button--base' : 'argo-button--base-o'}`}
+                                        disabled={refreshing}
+                                        onClick={() => handleScopeChange(ARCHIVED_SCOPE)}>
                                         Archived
                                     </button>
                                     <button type='button' className='argo-button argo-button--base' disabled={autoRefresh} onClick={handleStart}>
@@ -173,6 +217,7 @@ export const ProjectsList = () => {
                                     </button>
                                 </div>
                                 <div className='projects-list__status'>
+                                    <span>Scope: {renderScopeLabel(scope)}</span>
                                     <span>{autoRefresh ? 'Auto refresh: On' : 'Auto refresh: Off'}</span>
                                     <span>Total: {total}</span>
                                     <span>
@@ -188,6 +233,7 @@ export const ProjectsList = () => {
                                         <div>#</div>
                                         <div>Name</div>
                                         <div>Symbol</div>
+                                        <div>Status</div>
                                         <div>Blacklist</div>
                                         <div>Mint Risk</div>
                                         <div title='Is Open Source'>Open Src</div>
@@ -200,7 +246,7 @@ export const ProjectsList = () => {
                                 {projects.length === 0 ? (
                                     <div className='argo-table-list__row'>
                                         <div className='row'>
-                                            <div className='columns small-12 text-center'>No projects found</div>
+                                            <div className='columns small-12 text-center'>No {renderScopeLabel(scope).toLowerCase()} projects found</div>
                                         </div>
                                     </div>
                                 ) : (
@@ -210,6 +256,7 @@ export const ProjectsList = () => {
                                             project={project}
                                             index={(page - 1) * PAGE_SIZE + index}
                                             usdtDecimals={projectOptions?.usdtDecimals}
+                                            defaultIsArchived={scope === ARCHIVED_SCOPE}
                                             onClick={project.meta?.contract ? () => history.push(`/projects/${project.meta!.contract}`) : undefined}
                                         />
                                     ))
