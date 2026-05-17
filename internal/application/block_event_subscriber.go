@@ -72,23 +72,23 @@ func (s *BlockEventSubscriber) run(ctx context.Context) error {
 				"triggerBlockNumber": triggerBlockNumber,
 			}).Info("received new block header")
 
-			latestBlockNumber, err := s.client.BlockNumber(ctx)
-			if err != nil {
-				if errors.Is(err, context.Canceled) {
-					return err
-				}
-				log.WithFields(log.Fields{
-					"event":              "header_received",
-					"triggerBlockNumber": triggerBlockNumber,
-					"error":              err,
-				}).Warn("failed to get latest block number after new block header")
-			} else {
-				log.WithFields(log.Fields{
-					"event":              "header_received",
-					"triggerBlockNumber": triggerBlockNumber,
-					"latestBlockNumber":  latestBlockNumber,
-				}).Info("resolved latest block number after new block header")
-			}
+			// latestBlockNumber, err := s.client.BlockNumber(ctx)
+			// if err != nil {
+			// 	if errors.Is(err, context.Canceled) {
+			// 		return err
+			// 	}
+			// 	log.WithFields(log.Fields{
+			// 		"event":              "header_received",
+			// 		"triggerBlockNumber": triggerBlockNumber,
+			// 		"error":              err,
+			// 	}).Warn("failed to get latest block number after new block header")
+			// } else {
+			// 	log.WithFields(log.Fields{
+			// 		"event":              "header_received",
+			// 		"triggerBlockNumber": triggerBlockNumber,
+			// 		"latestBlockNumber":  latestBlockNumber,
+			// 	}).Info("resolved latest block number after new block header")
+			// }
 		}
 	}
 }
