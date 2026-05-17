@@ -1,12 +1,12 @@
 import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {services} from '../../../shared/services';
-import {BytecodeBlacklistContract} from '../../../shared/services/athena-application-service';
+import {WalletBlacklistContract} from '../../../shared/services/athena-application-service';
 
-require('./bytecode-blacklist-list.scss');
+require('./wallet-blacklist-list.scss');
 
-export const BytecodeBlacklistList = () => {
-    const [items, setItems] = React.useState<BytecodeBlacklistContract[]>([]);
+export const WalletBlacklistList = () => {
+    const [items, setItems] = React.useState<WalletBlacklistContract[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
     const [submitting, setSubmitting] = React.useState(false);
@@ -34,7 +34,7 @@ export const BytecodeBlacklistList = () => {
         }
 
         try {
-            const req = services.athenaApplication.listBytecodeBlacklistContracts();
+            const req = services.athenaApplication.listWalletBlacklistContracts();
             requestRef.current = req;
             const data = await req;
             if (isMountedRef.current) {
@@ -78,7 +78,7 @@ export const BytecodeBlacklistList = () => {
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.addBytecodeBlacklistContract(contract, newNote);
+            await services.athenaApplication.addWalletBlacklistContract(contract, newNote);
             setNewContract('');
             setNewNote('');
             await loadItems();
@@ -101,7 +101,7 @@ export const BytecodeBlacklistList = () => {
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.deleteBytecodeBlacklistContract(contract);
+            await services.athenaApplication.deleteWalletBlacklistContract(contract);
             await loadItems();
         } catch (err) {
             if (isMountedRef.current) {
@@ -114,7 +114,7 @@ export const BytecodeBlacklistList = () => {
         }
     };
 
-    const startEdit = (item: BytecodeBlacklistContract) => {
+    const startEdit = (item: WalletBlacklistContract) => {
         setEditingContract(item.contract || '');
         setEditingNote(item.note || '');
     };
@@ -132,7 +132,7 @@ export const BytecodeBlacklistList = () => {
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.updateBytecodeBlacklistContractNote(editingContract, editingNote);
+            await services.athenaApplication.updateWalletBlacklistContractNote(editingContract, editingNote);
             cancelEdit();
             await loadItems();
         } catch (err) {
@@ -147,10 +147,10 @@ export const BytecodeBlacklistList = () => {
     };
 
     return (
-        <Page title='Bytecode Blacklist' toolbar={{breadcrumbs: [{title: 'Bytecode Blacklist'}]}}>
-            <div className='bytecode-blacklist-list'>
+        <Page title='Wallet Blacklist' toolbar={{breadcrumbs: [{title: 'Wallet Blacklist'}]}}>
+            <div className='wallet-blacklist-list'>
                 {error && (
-                    <div className='bytecode-blacklist-list__error'>
+                    <div className='wallet-blacklist-list__error'>
                         <i className='fa fa-exclamation-triangle' /> Failed to process request: {error.message}
                     </div>
                 )}
@@ -158,13 +158,13 @@ export const BytecodeBlacklistList = () => {
                     <MockupList height={50} marginTop={30} />
                 ) : (
                     <div className='argo-container'>
-                        <div className='white-box bytecode-blacklist-list__box'>
-                            <div className='bytecode-blacklist-list__controls'>
-                                <form className='bytecode-blacklist-list__add-form' onSubmit={handleAdd}>
+                        <div className='white-box wallet-blacklist-list__box'>
+                            <div className='wallet-blacklist-list__controls'>
+                                <form className='wallet-blacklist-list__add-form' onSubmit={handleAdd}>
                                     <input
                                         type='text'
                                         className='argo-field'
-                                        placeholder='Contract address (0x...)'
+                                        placeholder='Wallet address (0x...)'
                                         value={newContract}
                                         onChange={e => setNewContract(e.target.value)}
                                         disabled={submitting}
@@ -178,21 +178,20 @@ export const BytecodeBlacklistList = () => {
                                         disabled={submitting}
                                     />
                                     <button type='submit' className='argo-button argo-button--base' disabled={!newContract.trim() || submitting}>
-                                        {submitting ? 'Adding...' : 'Add Contract'}
+                                        {submitting ? 'Adding...' : 'Add Wallet'}
                                     </button>
                                 </form>
-                                <div className='bytecode-blacklist-list__actions'>
+                                <div className='wallet-blacklist-list__actions'>
                                     <button type='button' className='argo-button argo-button--base' disabled={refreshing || submitting} onClick={handleRefresh}>
                                         {refreshing ? 'Refreshing...' : 'Refresh'}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className='argo-table-list bytecode-blacklist-list__table'>
+                            <div className='argo-table-list wallet-blacklist-list__table'>
                                 <div className='argo-table-list__head'>
-                                    <div className='bytecode-blacklist-list__row'>
-                                        <div>Contract</div>
-                                        <div>Code Hash</div>
+                                    <div className='wallet-blacklist-list__row'>
+                                        <div>Wallet</div>
                                         <div>Note</div>
                                         <div>Created At</div>
                                         <div className='actions'>Actions</div>
@@ -201,7 +200,7 @@ export const BytecodeBlacklistList = () => {
                                 {items.length === 0 ? (
                                     <div className='argo-table-list__row'>
                                         <div className='row'>
-                                            <div className='columns small-12 text-center'>No blacklisted contracts found</div>
+                                            <div className='columns small-12 text-center'>No blacklisted wallets found</div>
                                         </div>
                                     </div>
                                 ) : (
@@ -210,9 +209,8 @@ export const BytecodeBlacklistList = () => {
                                         const editing = editingContract === contract;
                                         return (
                                             <div className='argo-table-list__row' key={contract || index}>
-                                                <div className='bytecode-blacklist-list__row'>
+                                                <div className='wallet-blacklist-list__row'>
                                                     <div className='mono'>{contract || '-'}</div>
-                                                    <div className='mono'>{item.codeHash || '-'}</div>
                                                     <div>
                                                         {editing ? (
                                                             <input

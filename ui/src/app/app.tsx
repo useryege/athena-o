@@ -12,6 +12,7 @@ import login from './login';
 import projects from './projects';
 import sourceCodeBlacklist from './source-code-blacklist';
 import settings from './settings';
+import walletBlacklist from './wallet-blacklist';
 import {Layout, ThemeWrapper} from './shared/components/layout/layout';
 import {Page} from './shared/components/page/page';
 import {VersionPanel} from './shared/components/version-info/version-info-panel';
@@ -37,6 +38,7 @@ const routes: Routes = {
     '/projects': {component: projects.component},
     '/source-code-blacklist': {component: sourceCodeBlacklist.component},
     '/bytecode-blacklist': {component: bytecodeBlacklist.component},
+    '/wallet-blacklist': {component: walletBlacklist.component},
     // '/applications': {component: applications.component},
     '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
@@ -68,6 +70,12 @@ const navItems: NavItem[] = [
         tooltip: 'Manage bytecode blacklist contracts',
         path: '/bytecode-blacklist',
         iconClassName: 'fa fa-file-code-o'
+    },
+    {
+        title: 'Wallet Blacklist',
+        tooltip: 'Manage wallet blacklist addresses',
+        path: '/wallet-blacklist',
+        iconClassName: 'fa fa-address-card-o'
     },
     // {
     //     title: 'Applications',

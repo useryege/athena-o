@@ -111,6 +111,51 @@ message DeleteBytecodeBlacklistContractRequest {
 // DeleteBytecodeBlacklistContractResponse is returned after deleting a bytecode-blacklist contract entry.
 message DeleteBytecodeBlacklistContractResponse {}
 
+// WalletBlacklistContract is a globally maintained wallet-blacklist entry.
+message WalletBlacklistContract {
+  string contract = 1;
+  string note = 2;
+  string created_at = 3;
+}
+
+// ListWalletBlacklistContractsRequest queries all wallet-blacklist entries.
+message ListWalletBlacklistContractsRequest {}
+
+// ListWalletBlacklistContractsResponse returns all wallet-blacklist entries.
+message ListWalletBlacklistContractsResponse {
+  repeated WalletBlacklistContract items = 1;
+}
+
+// AddWalletBlacklistContractRequest adds a wallet-blacklist entry.
+message AddWalletBlacklistContractRequest {
+  string contract = 1;
+  string note = 2;
+}
+
+// AddWalletBlacklistContractResponse returns the stored wallet-blacklist entry.
+message AddWalletBlacklistContractResponse {
+  WalletBlacklistContract item = 1;
+}
+
+// UpdateWalletBlacklistContractNoteRequest updates the note of a wallet-blacklist entry.
+message UpdateWalletBlacklistContractNoteRequest {
+  string contract = 1;
+  string note = 2;
+}
+
+// UpdateWalletBlacklistContractNoteResponse returns the updated wallet-blacklist entry.
+message UpdateWalletBlacklistContractNoteResponse {
+  WalletBlacklistContract item = 1;
+}
+
+// DeleteWalletBlacklistContractRequest deletes a wallet-blacklist entry.
+message DeleteWalletBlacklistContractRequest {
+  string contract = 1;
+}
+
+// DeleteWalletBlacklistContractResponse is returned after deleting a wallet-blacklist entry.
+message DeleteWalletBlacklistContractResponse {}
+
 // GetProjectOptionsRequest don't need any parameters.
 message GetProjectOptionsRequest {}
 
@@ -150,6 +195,14 @@ service ApplicationService {
   rpc UpdateBytecodeBlacklistContractNote(UpdateBytecodeBlacklistContractNoteRequest) returns (UpdateBytecodeBlacklistContractNoteResponse);
   // DeleteBytecodeBlacklistContract deletes a globally configured bytecode-blacklist contract entry.
   rpc DeleteBytecodeBlacklistContract(DeleteBytecodeBlacklistContractRequest) returns (DeleteBytecodeBlacklistContractResponse);
+  // ListWalletBlacklistContracts returns all globally configured wallet-blacklist entries.
+  rpc ListWalletBlacklistContracts(ListWalletBlacklistContractsRequest) returns (ListWalletBlacklistContractsResponse);
+  // AddWalletBlacklistContract adds a globally configured wallet-blacklist entry.
+  rpc AddWalletBlacklistContract(AddWalletBlacklistContractRequest) returns (AddWalletBlacklistContractResponse);
+  // UpdateWalletBlacklistContractNote updates the note of a globally configured wallet-blacklist entry.
+  rpc UpdateWalletBlacklistContractNote(UpdateWalletBlacklistContractNoteRequest) returns (UpdateWalletBlacklistContractNoteResponse);
+  // DeleteWalletBlacklistContract deletes a globally configured wallet-blacklist entry.
+  rpc DeleteWalletBlacklistContract(DeleteWalletBlacklistContractRequest) returns (DeleteWalletBlacklistContractResponse);
   // GetProjectOptions returns the options.
   rpc GetProjectOptions(GetProjectOptionsRequest) returns (GetProjectOptionsResponse);
   // ArchiveProject archives a project by contract.

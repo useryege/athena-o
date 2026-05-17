@@ -187,6 +187,74 @@ func (s *Server) DeleteBytecodeBlacklistContract(ctx context.Context, req *appli
 	return &applicationpkg.DeleteBytecodeBlacklistContractResponse{}, nil
 }
 
+func (s *Server) ListWalletBlacklistContracts(ctx context.Context, _ *applicationpkg.ListWalletBlacklistContractsRequest) (*applicationpkg.ListWalletBlacklistContractsResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListWalletBlacklistContracts(ctx, &applicationapiclient.ListWalletBlacklistContractsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*applicationpkg.WalletBlacklistContract, 0, len(resp.Items))
+	for _, item := range resp.Items {
+		items = append(items, walletBlacklistContractToAPI(item))
+	}
+	return &applicationpkg.ListWalletBlacklistContractsResponse{Items: items}, nil
+}
+
+func (s *Server) AddWalletBlacklistContract(ctx context.Context, req *applicationpkg.AddWalletBlacklistContractRequest) (*applicationpkg.AddWalletBlacklistContractResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.AddWalletBlacklistContract(ctx, &applicationapiclient.AddWalletBlacklistContractRequest{
+		Contract: req.GetContract(),
+		Note:     req.GetNote(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.AddWalletBlacklistContractResponse{Item: walletBlacklistContractToAPI(resp.Item)}, nil
+}
+
+func (s *Server) UpdateWalletBlacklistContractNote(ctx context.Context, req *applicationpkg.UpdateWalletBlacklistContractNoteRequest) (*applicationpkg.UpdateWalletBlacklistContractNoteResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.UpdateWalletBlacklistContractNote(ctx, &applicationapiclient.UpdateWalletBlacklistContractNoteRequest{
+		Contract: req.GetContract(),
+		Note:     req.GetNote(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.UpdateWalletBlacklistContractNoteResponse{Item: walletBlacklistContractToAPI(resp.Item)}, nil
+}
+
+func (s *Server) DeleteWalletBlacklistContract(ctx context.Context, req *applicationpkg.DeleteWalletBlacklistContractRequest) (*applicationpkg.DeleteWalletBlacklistContractResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	if _, err := client.DeleteWalletBlacklistContract(ctx, &applicationapiclient.DeleteWalletBlacklistContractRequest{
+		Contract: req.GetContract(),
+	}); err != nil {
+		return nil, err
+	}
+	return &applicationpkg.DeleteWalletBlacklistContractResponse{}, nil
+}
+
 func (s *Server) GetProjectOptions(ctx context.Context, _ *applicationpkg.GetProjectOptionsRequest) (*applicationpkg.GetProjectOptionsResponse, error) {
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {
@@ -244,6 +312,17 @@ func bytecodeBlacklistContractToAPI(item *applicationapiclient.BytecodeBlacklist
 	return &applicationpkg.BytecodeBlacklistContract{
 		Contract:  item.Contract,
 		CodeHash:  item.CodeHash,
+		Note:      item.Note,
+		CreatedAt: item.CreatedAt,
+	}
+}
+
+func walletBlacklistContractToAPI(item *applicationapiclient.WalletBlacklistContract) *applicationpkg.WalletBlacklistContract {
+	if item == nil {
+		return nil
+	}
+	return &applicationpkg.WalletBlacklistContract{
+		Contract:  item.Contract,
 		Note:      item.Note,
 		CreatedAt: item.CreatedAt,
 	}
