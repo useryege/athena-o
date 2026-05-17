@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-262-g8c34ba0-dirty"
+    "version": "v1.0.0-263-gb4644d2-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -207,6 +207,130 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountEmptyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bytecode/blacklist-contracts": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ListBytecodeBlacklistContracts returns all globally configured bytecode-blacklist contract entries.",
+        "operationId": "ApplicationService_ListBytecodeBlacklistContracts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListBytecodeBlacklistContractsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "AddBytecodeBlacklistContract adds a globally configured bytecode-blacklist contract entry.",
+        "operationId": "ApplicationService_AddBytecodeBlacklistContract",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationAddBytecodeBlacklistContractRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationAddBytecodeBlacklistContractResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bytecode/blacklist-contracts/{contract}": {
+      "delete": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "DeleteBytecodeBlacklistContract deletes a globally configured bytecode-blacklist contract entry.",
+        "operationId": "ApplicationService_DeleteBytecodeBlacklistContract",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationDeleteBytecodeBlacklistContractResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bytecode/blacklist-contracts/{contract}/note": {
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "UpdateBytecodeBlacklistContractNote updates the note of a globally configured bytecode-blacklist contract entry.",
+        "operationId": "ApplicationService_UpdateBytecodeBlacklistContractNote",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationUpdateBytecodeBlacklistContractNoteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationUpdateBytecodeBlacklistContractNoteResponse"
             }
           },
           "default": {
@@ -711,6 +835,27 @@
     "accountUpdatePasswordResponse": {
       "type": "object"
     },
+    "applicationAddBytecodeBlacklistContractRequest": {
+      "description": "AddBytecodeBlacklistContractRequest adds a bytecode-blacklist contract entry.",
+      "type": "object",
+      "properties": {
+        "contract": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationAddBytecodeBlacklistContractResponse": {
+      "description": "AddBytecodeBlacklistContractResponse returns the stored bytecode-blacklist contract entry.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/applicationBytecodeBlacklistContract"
+        }
+      }
+    },
     "applicationAddSourceCodeBlacklistFieldRequest": {
       "description": "AddSourceCodeBlacklistFieldRequest adds a source-code blacklist field.",
       "type": "object",
@@ -740,6 +885,28 @@
     "applicationArchiveProjectResponse": {
       "type": "object"
     },
+    "applicationBytecodeBlacklistContract": {
+      "description": "BytecodeBlacklistContract is a globally maintained bytecode-blacklist contract entry.",
+      "type": "object",
+      "properties": {
+        "code_hash": {
+          "type": "string"
+        },
+        "contract": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationDeleteBytecodeBlacklistContractResponse": {
+      "description": "DeleteBytecodeBlacklistContractResponse is returned after deleting a bytecode-blacklist contract entry.",
+      "type": "object"
+    },
     "applicationDeleteSourceCodeBlacklistFieldResponse": {
       "description": "DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.",
       "type": "object"
@@ -759,6 +926,18 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1ProjectView"
+        }
+      }
+    },
+    "applicationListBytecodeBlacklistContractsResponse": {
+      "description": "ListBytecodeBlacklistContractsResponse returns all bytecode-blacklist contract entries.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/applicationBytecodeBlacklistContract"
+          }
         }
       }
     },
@@ -821,6 +1000,27 @@
     },
     "applicationUnarchiveProjectResponse": {
       "type": "object"
+    },
+    "applicationUpdateBytecodeBlacklistContractNoteRequest": {
+      "description": "UpdateBytecodeBlacklistContractNoteRequest updates the note of a bytecode-blacklist contract entry.",
+      "type": "object",
+      "properties": {
+        "contract": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationUpdateBytecodeBlacklistContractNoteResponse": {
+      "description": "UpdateBytecodeBlacklistContractNoteResponse returns the updated bytecode-blacklist contract entry.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/applicationBytecodeBlacklistContract"
+        }
+      }
     },
     "clusterConnector": {
       "type": "object",

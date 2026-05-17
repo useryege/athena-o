@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redis/go-redis/v9"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
@@ -67,6 +68,7 @@ type Service struct {
 	persistenceWriter    PersistenceEventWriter
 
 	delayedFetchSem chan struct{}
+	codeAtFunc      func(ctx context.Context, contract common.Address) ([]byte, error)
 	startStopMu     sync.Mutex
 	lifecycleCtx    context.Context
 	lifecycleStop   context.CancelFunc
@@ -702,6 +704,146 @@ func (s *Service) DeleteSourceCodeBlacklistField(ctx context.Context, req *appli
 		return nil, err
 	}
 	return &applicationpkg.DeleteSourceCodeBlacklistFieldResponse{}, nil
+}
+
+func (s *Service) ListBytecodeBlacklistContracts(ctx context.Context, _ *applicationpkg.ListBytecodeBlacklistContractsRequest) (*applicationpkg.ListBytecodeBlacklistContractsResponse, error) {
+	store, ok := s.store.(appstore.BytecodeBlacklistContractStore)
+	if !ok || store == nil {
+		return &applicationpkg.ListBytecodeBlacklistContractsResponse{}, nil
+	}
+
+	records, err := store.ListBytecodeBlacklistContracts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*applicationpkg.BytecodeBlacklistContract, 0, len(records))
+	for _, record := range records {
+		items = append(items, bytecodeBlacklistContractToAPI(record))
+	}
+	return &applicationpkg.ListBytecodeBlacklistContractsResponse{Items: items}, nil
+}
+
+func (s *Service) AddBytecodeBlacklistContract(ctx context.Context, req *applicationpkg.AddBytecodeBlacklistContractRequest) (*applicationpkg.AddBytecodeBlacklistContractResponse, error) {
+	if !common.IsHexAddress(req.GetContract()) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
+	}
+	store, ok := s.store.(appstore.BytecodeBlacklistContractStore)
+	if !ok || store == nil {
+		return &applicationpkg.AddBytecodeBlacklistContractResponse{}, status.Error(codes.FailedPrecondition, "bytecode blacklist contract store is not configured")
+	}
+
+	contract := common.HexToAddress(req.GetContract())
+	code, err := s.fetchContractBytecode(ctx, contract)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "fetch contract bytecode for %s: %v", contract.Hex(), err)
+	}
+	if len(code) == 0 {
+		return nil, status.Errorf(codes.FailedPrecondition, "contract %s has empty runtime bytecode", contract.Hex())
+	}
+
+	record := appstore.BytecodeBlacklistContract{
+		Contract: contract,
+		CodeHash: crypto.Keccak256Hash(code),
+		Note:     req.GetNote(),
+	}
+	if err := store.AddBytecodeBlacklistContract(ctx, record); err != nil {
+		if errors.Is(err, appstore.ErrBytecodeBlacklistContractAlreadyExists) {
+			return nil, status.Errorf(codes.AlreadyExists, "bytecode blacklist contract %s already exists", contract.Hex())
+		}
+		return nil, err
+	}
+
+	created, found, err := findBytecodeBlacklistContractByAddress(ctx, store, contract)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return &applicationpkg.AddBytecodeBlacklistContractResponse{Item: bytecodeBlacklistContractToAPI(record)}, nil
+	}
+	return &applicationpkg.AddBytecodeBlacklistContractResponse{Item: bytecodeBlacklistContractToAPI(created)}, nil
+}
+
+func (s *Service) UpdateBytecodeBlacklistContractNote(ctx context.Context, req *applicationpkg.UpdateBytecodeBlacklistContractNoteRequest) (*applicationpkg.UpdateBytecodeBlacklistContractNoteResponse, error) {
+	if !common.IsHexAddress(req.GetContract()) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
+	}
+	store, ok := s.store.(appstore.BytecodeBlacklistContractStore)
+	if !ok || store == nil {
+		return &applicationpkg.UpdateBytecodeBlacklistContractNoteResponse{}, status.Error(codes.FailedPrecondition, "bytecode blacklist contract store is not configured")
+	}
+
+	contract := common.HexToAddress(req.GetContract())
+	if err := store.UpdateBytecodeBlacklistContractNote(ctx, contract, req.GetNote()); err != nil {
+		if errors.Is(err, appstore.ErrBytecodeBlacklistContractNotFound) {
+			return nil, status.Errorf(codes.NotFound, "bytecode blacklist contract %s not found", contract.Hex())
+		}
+		return nil, err
+	}
+
+	updated, found, err := findBytecodeBlacklistContractByAddress(ctx, store, contract)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "bytecode blacklist contract %s not found", contract.Hex())
+	}
+	return &applicationpkg.UpdateBytecodeBlacklistContractNoteResponse{Item: bytecodeBlacklistContractToAPI(updated)}, nil
+}
+
+func (s *Service) DeleteBytecodeBlacklistContract(ctx context.Context, req *applicationpkg.DeleteBytecodeBlacklistContractRequest) (*applicationpkg.DeleteBytecodeBlacklistContractResponse, error) {
+	if !common.IsHexAddress(req.GetContract()) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
+	}
+	store, ok := s.store.(appstore.BytecodeBlacklistContractStore)
+	if !ok || store == nil {
+		return &applicationpkg.DeleteBytecodeBlacklistContractResponse{}, status.Error(codes.FailedPrecondition, "bytecode blacklist contract store is not configured")
+	}
+
+	contract := common.HexToAddress(req.GetContract())
+	if err := store.DeleteBytecodeBlacklistContract(ctx, contract); err != nil {
+		if errors.Is(err, appstore.ErrBytecodeBlacklistContractNotFound) {
+			return nil, status.Errorf(codes.NotFound, "bytecode blacklist contract %s not found", contract.Hex())
+		}
+		return nil, err
+	}
+	return &applicationpkg.DeleteBytecodeBlacklistContractResponse{}, nil
+}
+
+func findBytecodeBlacklistContractByAddress(ctx context.Context, store appstore.BytecodeBlacklistContractStore, contract common.Address) (appstore.BytecodeBlacklistContract, bool, error) {
+	items, err := store.ListBytecodeBlacklistContracts(ctx)
+	if err != nil {
+		return appstore.BytecodeBlacklistContract{}, false, err
+	}
+	for _, item := range items {
+		if item.Contract == contract {
+			return item, true, nil
+		}
+	}
+	return appstore.BytecodeBlacklistContract{}, false, nil
+}
+
+func bytecodeBlacklistContractToAPI(item appstore.BytecodeBlacklistContract) *applicationpkg.BytecodeBlacklistContract {
+	createdAt := ""
+	if !item.CreatedAt.IsZero() {
+		createdAt = item.CreatedAt.UTC().Format(time.RFC3339Nano)
+	}
+	return &applicationpkg.BytecodeBlacklistContract{
+		Contract:  item.Contract.Hex(),
+		CodeHash:  item.CodeHash.Hex(),
+		Note:      item.Note,
+		CreatedAt: createdAt,
+	}
+}
+
+func (s *Service) fetchContractBytecode(ctx context.Context, contract common.Address) ([]byte, error) {
+	if s.codeAtFunc != nil {
+		return s.codeAtFunc(ctx, contract)
+	}
+	if s.nodeClient == nil {
+		return nil, errors.New("node client is not configured")
+	}
+	return s.nodeClient.CodeAt(ctx, contract, nil)
 }
 
 func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {

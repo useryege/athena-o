@@ -34,3 +34,15 @@ CREATE TABLE IF NOT EXISTS source_code_blacklist_field (
   CONSTRAINT source_code_blacklist_field_not_empty CHECK (length(btrim(field)) > 0),
   CONSTRAINT source_code_blacklist_field_field_unique UNIQUE (field)
 );
+
+CREATE TABLE IF NOT EXISTS bytecode_blacklist_contract (
+  contract BYTEA PRIMARY KEY,
+  code_hash BYTEA NOT NULL,
+  note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT bytecode_blacklist_contract_len CHECK (length(contract) = 20),
+  CONSTRAINT bytecode_blacklist_contract_code_hash_len CHECK (length(code_hash) = 32)
+);
+
+CREATE INDEX IF NOT EXISTS bytecode_blacklist_contract_code_hash_idx
+  ON bytecode_blacklist_contract (code_hash);

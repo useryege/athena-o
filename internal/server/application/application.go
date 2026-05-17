@@ -119,6 +119,74 @@ func (s *Server) DeleteSourceCodeBlacklistField(ctx context.Context, req *applic
 	return &applicationpkg.DeleteSourceCodeBlacklistFieldResponse{}, nil
 }
 
+func (s *Server) ListBytecodeBlacklistContracts(ctx context.Context, _ *applicationpkg.ListBytecodeBlacklistContractsRequest) (*applicationpkg.ListBytecodeBlacklistContractsResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListBytecodeBlacklistContracts(ctx, &applicationapiclient.ListBytecodeBlacklistContractsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*applicationpkg.BytecodeBlacklistContract, 0, len(resp.Items))
+	for _, item := range resp.Items {
+		items = append(items, bytecodeBlacklistContractToAPI(item))
+	}
+	return &applicationpkg.ListBytecodeBlacklistContractsResponse{Items: items}, nil
+}
+
+func (s *Server) AddBytecodeBlacklistContract(ctx context.Context, req *applicationpkg.AddBytecodeBlacklistContractRequest) (*applicationpkg.AddBytecodeBlacklistContractResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.AddBytecodeBlacklistContract(ctx, &applicationapiclient.AddBytecodeBlacklistContractRequest{
+		Contract: req.GetContract(),
+		Note:     req.GetNote(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.AddBytecodeBlacklistContractResponse{Item: bytecodeBlacklistContractToAPI(resp.Item)}, nil
+}
+
+func (s *Server) UpdateBytecodeBlacklistContractNote(ctx context.Context, req *applicationpkg.UpdateBytecodeBlacklistContractNoteRequest) (*applicationpkg.UpdateBytecodeBlacklistContractNoteResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.UpdateBytecodeBlacklistContractNote(ctx, &applicationapiclient.UpdateBytecodeBlacklistContractNoteRequest{
+		Contract: req.GetContract(),
+		Note:     req.GetNote(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.UpdateBytecodeBlacklistContractNoteResponse{Item: bytecodeBlacklistContractToAPI(resp.Item)}, nil
+}
+
+func (s *Server) DeleteBytecodeBlacklistContract(ctx context.Context, req *applicationpkg.DeleteBytecodeBlacklistContractRequest) (*applicationpkg.DeleteBytecodeBlacklistContractResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	if _, err := client.DeleteBytecodeBlacklistContract(ctx, &applicationapiclient.DeleteBytecodeBlacklistContractRequest{
+		Contract: req.GetContract(),
+	}); err != nil {
+		return nil, err
+	}
+	return &applicationpkg.DeleteBytecodeBlacklistContractResponse{}, nil
+}
+
 func (s *Server) GetProjectOptions(ctx context.Context, _ *applicationpkg.GetProjectOptionsRequest) (*applicationpkg.GetProjectOptionsResponse, error) {
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {
@@ -166,5 +234,17 @@ func sourceCodeBlacklistFieldToAPI(item *applicationapiclient.SourceCodeBlacklis
 	return &applicationpkg.SourceCodeBlacklistField{
 		Id:    item.Id,
 		Field: item.Field,
+	}
+}
+
+func bytecodeBlacklistContractToAPI(item *applicationapiclient.BytecodeBlacklistContract) *applicationpkg.BytecodeBlacklistContract {
+	if item == nil {
+		return nil
+	}
+	return &applicationpkg.BytecodeBlacklistContract{
+		Contract:  item.Contract,
+		CodeHash:  item.CodeHash,
+		Note:      item.Note,
+		CreatedAt: item.CreatedAt,
 	}
 }

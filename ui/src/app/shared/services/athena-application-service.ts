@@ -118,6 +118,25 @@ export interface AddSourceCodeBlacklistFieldResponse {
     item?: SourceCodeBlacklistField;
 }
 
+export interface BytecodeBlacklistContract {
+    contract?: string;
+    codeHash?: string;
+    note?: string;
+    createdAt?: string;
+}
+
+export interface ListBytecodeBlacklistContractsResponse {
+    items?: BytecodeBlacklistContract[];
+}
+
+export interface AddBytecodeBlacklistContractResponse {
+    item?: BytecodeBlacklistContract;
+}
+
+export interface UpdateBytecodeBlacklistContractNoteResponse {
+    item?: BytecodeBlacklistContract;
+}
+
 export class AthenaApplicationService {
     public listProjects(
         scope: ProjectScope = PROJECT_SCOPE.ACTIVE,
@@ -181,6 +200,59 @@ export class AthenaApplicationService {
 
     public deleteSourceCodeBlacklistField(field: string): Promise<void> & {abort?: () => void} {
         const req = requests.delete(`/source-code/blacklist-fields/${encodeURIComponent(field)}`);
+        const promise = req.then(() => {}) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listBytecodeBlacklistContracts(): Promise<BytecodeBlacklistContract[]> & {abort?: () => void} {
+        const req = requests.get('/bytecode/blacklist-contracts');
+        const promise = req.then(res => {
+            const body = (res.body as ListBytecodeBlacklistContractsResponse) || {};
+            const items = body.items || [];
+            return items.map(item => ({
+                contract: item.contract,
+                codeHash: item.codeHash ?? (item as any).code_hash,
+                note: item.note,
+                createdAt: item.createdAt ?? (item as any).created_at
+            }));
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public addBytecodeBlacklistContract(contract: string, note: string): Promise<BytecodeBlacklistContract> & {abort?: () => void} {
+        const req = requests.post('/bytecode/blacklist-contracts').send({contract, note});
+        const promise = req.then(res => {
+            const item = ((res.body as AddBytecodeBlacklistContractResponse) || {}).item || {};
+            return {
+                contract: item.contract,
+                codeHash: item.codeHash ?? (item as any).code_hash,
+                note: item.note,
+                createdAt: item.createdAt ?? (item as any).created_at
+            } as BytecodeBlacklistContract;
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public updateBytecodeBlacklistContractNote(contract: string, note: string): Promise<BytecodeBlacklistContract> & {abort?: () => void} {
+        const req = requests.post(`/bytecode/blacklist-contracts/${encodeURIComponent(contract)}/note`).send({contract, note});
+        const promise = req.then(res => {
+            const item = ((res.body as UpdateBytecodeBlacklistContractNoteResponse) || {}).item || {};
+            return {
+                contract: item.contract,
+                codeHash: item.codeHash ?? (item as any).code_hash,
+                note: item.note,
+                createdAt: item.createdAt ?? (item as any).created_at
+            } as BytecodeBlacklistContract;
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public deleteBytecodeBlacklistContract(contract: string): Promise<void> & {abort?: () => void} {
+        const req = requests.delete(`/bytecode/blacklist-contracts/${encodeURIComponent(contract)}`);
         const promise = req.then(() => {}) as any;
         promise.abort = () => req.abort();
         return promise;

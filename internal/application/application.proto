@@ -65,6 +65,52 @@ message DeleteSourceCodeBlacklistFieldRequest {
 // DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.
 message DeleteSourceCodeBlacklistFieldResponse {}
 
+// BytecodeBlacklistContract is a globally maintained bytecode-blacklist contract entry.
+message BytecodeBlacklistContract {
+  string contract = 1;
+  string code_hash = 2;
+  string note = 3;
+  string created_at = 4;
+}
+
+// ListBytecodeBlacklistContractsRequest queries all bytecode-blacklist contract entries.
+message ListBytecodeBlacklistContractsRequest {}
+
+// ListBytecodeBlacklistContractsResponse returns all bytecode-blacklist contract entries.
+message ListBytecodeBlacklistContractsResponse {
+  repeated BytecodeBlacklistContract items = 1;
+}
+
+// AddBytecodeBlacklistContractRequest adds a bytecode-blacklist contract entry.
+message AddBytecodeBlacklistContractRequest {
+  string contract = 1;
+  string note = 2;
+}
+
+// AddBytecodeBlacklistContractResponse returns the stored bytecode-blacklist contract entry.
+message AddBytecodeBlacklistContractResponse {
+  BytecodeBlacklistContract item = 1;
+}
+
+// UpdateBytecodeBlacklistContractNoteRequest updates the note of a bytecode-blacklist contract entry.
+message UpdateBytecodeBlacklistContractNoteRequest {
+  string contract = 1;
+  string note = 2;
+}
+
+// UpdateBytecodeBlacklistContractNoteResponse returns the updated bytecode-blacklist contract entry.
+message UpdateBytecodeBlacklistContractNoteResponse {
+  BytecodeBlacklistContract item = 1;
+}
+
+// DeleteBytecodeBlacklistContractRequest deletes a bytecode-blacklist contract entry.
+message DeleteBytecodeBlacklistContractRequest {
+  string contract = 1;
+}
+
+// DeleteBytecodeBlacklistContractResponse is returned after deleting a bytecode-blacklist contract entry.
+message DeleteBytecodeBlacklistContractResponse {}
+
 // GetProjectOptionsRequest don't need any parameters.
 message GetProjectOptionsRequest {}
 
@@ -96,6 +142,14 @@ service ApplicationService {
   rpc AddSourceCodeBlacklistField(AddSourceCodeBlacklistFieldRequest) returns (AddSourceCodeBlacklistFieldResponse);
   // DeleteSourceCodeBlacklistField deletes a globally configured source-code blacklist field.
   rpc DeleteSourceCodeBlacklistField(DeleteSourceCodeBlacklistFieldRequest) returns (DeleteSourceCodeBlacklistFieldResponse);
+  // ListBytecodeBlacklistContracts returns all globally configured bytecode-blacklist contract entries.
+  rpc ListBytecodeBlacklistContracts(ListBytecodeBlacklistContractsRequest) returns (ListBytecodeBlacklistContractsResponse);
+  // AddBytecodeBlacklistContract adds a globally configured bytecode-blacklist contract entry.
+  rpc AddBytecodeBlacklistContract(AddBytecodeBlacklistContractRequest) returns (AddBytecodeBlacklistContractResponse);
+  // UpdateBytecodeBlacklistContractNote updates the note of a globally configured bytecode-blacklist contract entry.
+  rpc UpdateBytecodeBlacklistContractNote(UpdateBytecodeBlacklistContractNoteRequest) returns (UpdateBytecodeBlacklistContractNoteResponse);
+  // DeleteBytecodeBlacklistContract deletes a globally configured bytecode-blacklist contract entry.
+  rpc DeleteBytecodeBlacklistContract(DeleteBytecodeBlacklistContractRequest) returns (DeleteBytecodeBlacklistContractResponse);
   // GetProjectOptions returns the options.
   rpc GetProjectOptions(GetProjectOptionsRequest) returns (GetProjectOptionsResponse);
   // ArchiveProject archives a project by contract.

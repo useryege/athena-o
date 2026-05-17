@@ -6,6 +6,7 @@ import {Helmet} from 'react-helmet';
 import {Redirect, Route, RouteComponentProps, Router, Switch} from 'react-router';
 import {Subscription} from 'rxjs';
 // import applications from './applications';
+import bytecodeBlacklist from './bytecode-blacklist';
 import help from './help';
 import login from './login';
 import projects from './projects';
@@ -35,6 +36,7 @@ const routes: Routes = {
     '/login': {component: login.component as any, noLayout: true},
     '/projects': {component: projects.component},
     '/source-code-blacklist': {component: sourceCodeBlacklist.component},
+    '/bytecode-blacklist': {component: bytecodeBlacklist.component},
     // '/applications': {component: applications.component},
     '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
@@ -60,6 +62,12 @@ const navItems: NavItem[] = [
         tooltip: 'Manage source-code blacklist fields',
         path: '/source-code-blacklist',
         iconClassName: 'fa fa-ban'
+    },
+    {
+        title: 'Bytecode Blacklist',
+        tooltip: 'Manage bytecode blacklist contracts',
+        path: '/bytecode-blacklist',
+        iconClassName: 'fa fa-file-code-o'
     },
     // {
     //     title: 'Applications',

@@ -553,6 +553,476 @@ func (m *DeleteSourceCodeBlacklistFieldRequest) GetField() string {
 	return ""
 }
 
+// BytecodeBlacklistContract is a globally maintained bytecode-blacklist contract entry.
+type BytecodeBlacklistContract struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	CodeHash             string   `protobuf:"bytes,2,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	Note                 string   `protobuf:"bytes,3,opt,name=note,proto3" json:"note,omitempty"`
+	CreatedAt            string   `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *BytecodeBlacklistContract) Reset()         { *m = BytecodeBlacklistContract{} }
+func (m *BytecodeBlacklistContract) String() string { return proto.CompactTextString(m) }
+func (*BytecodeBlacklistContract) ProtoMessage()    {}
+func (*BytecodeBlacklistContract) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{10}
+}
+func (m *BytecodeBlacklistContract) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *BytecodeBlacklistContract) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_BytecodeBlacklistContract.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *BytecodeBlacklistContract) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BytecodeBlacklistContract.Merge(m, src)
+}
+func (m *BytecodeBlacklistContract) XXX_Size() int {
+	return m.Size()
+}
+func (m *BytecodeBlacklistContract) XXX_DiscardUnknown() {
+	xxx_messageInfo_BytecodeBlacklistContract.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BytecodeBlacklistContract proto.InternalMessageInfo
+
+func (m *BytecodeBlacklistContract) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+func (m *BytecodeBlacklistContract) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+func (m *BytecodeBlacklistContract) GetNote() string {
+	if m != nil {
+		return m.Note
+	}
+	return ""
+}
+
+func (m *BytecodeBlacklistContract) GetCreatedAt() string {
+	if m != nil {
+		return m.CreatedAt
+	}
+	return ""
+}
+
+// ListBytecodeBlacklistContractsRequest queries all bytecode-blacklist contract entries.
+type ListBytecodeBlacklistContractsRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListBytecodeBlacklistContractsRequest) Reset()         { *m = ListBytecodeBlacklistContractsRequest{} }
+func (m *ListBytecodeBlacklistContractsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListBytecodeBlacklistContractsRequest) ProtoMessage()    {}
+func (*ListBytecodeBlacklistContractsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{11}
+}
+func (m *ListBytecodeBlacklistContractsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListBytecodeBlacklistContractsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListBytecodeBlacklistContractsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListBytecodeBlacklistContractsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListBytecodeBlacklistContractsRequest.Merge(m, src)
+}
+func (m *ListBytecodeBlacklistContractsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListBytecodeBlacklistContractsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListBytecodeBlacklistContractsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListBytecodeBlacklistContractsRequest proto.InternalMessageInfo
+
+// ListBytecodeBlacklistContractsResponse returns all bytecode-blacklist contract entries.
+type ListBytecodeBlacklistContractsResponse struct {
+	Items                []*BytecodeBlacklistContract `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *ListBytecodeBlacklistContractsResponse) Reset() {
+	*m = ListBytecodeBlacklistContractsResponse{}
+}
+func (m *ListBytecodeBlacklistContractsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListBytecodeBlacklistContractsResponse) ProtoMessage()    {}
+func (*ListBytecodeBlacklistContractsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{12}
+}
+func (m *ListBytecodeBlacklistContractsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListBytecodeBlacklistContractsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListBytecodeBlacklistContractsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListBytecodeBlacklistContractsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListBytecodeBlacklistContractsResponse.Merge(m, src)
+}
+func (m *ListBytecodeBlacklistContractsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListBytecodeBlacklistContractsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListBytecodeBlacklistContractsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListBytecodeBlacklistContractsResponse proto.InternalMessageInfo
+
+func (m *ListBytecodeBlacklistContractsResponse) GetItems() []*BytecodeBlacklistContract {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+// AddBytecodeBlacklistContractRequest adds a bytecode-blacklist contract entry.
+type AddBytecodeBlacklistContractRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	Note                 string   `protobuf:"bytes,2,opt,name=note,proto3" json:"note,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AddBytecodeBlacklistContractRequest) Reset()         { *m = AddBytecodeBlacklistContractRequest{} }
+func (m *AddBytecodeBlacklistContractRequest) String() string { return proto.CompactTextString(m) }
+func (*AddBytecodeBlacklistContractRequest) ProtoMessage()    {}
+func (*AddBytecodeBlacklistContractRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{13}
+}
+func (m *AddBytecodeBlacklistContractRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AddBytecodeBlacklistContractRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AddBytecodeBlacklistContractRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AddBytecodeBlacklistContractRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddBytecodeBlacklistContractRequest.Merge(m, src)
+}
+func (m *AddBytecodeBlacklistContractRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *AddBytecodeBlacklistContractRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddBytecodeBlacklistContractRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddBytecodeBlacklistContractRequest proto.InternalMessageInfo
+
+func (m *AddBytecodeBlacklistContractRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+func (m *AddBytecodeBlacklistContractRequest) GetNote() string {
+	if m != nil {
+		return m.Note
+	}
+	return ""
+}
+
+// AddBytecodeBlacklistContractResponse returns the stored bytecode-blacklist contract entry.
+type AddBytecodeBlacklistContractResponse struct {
+	Item                 *BytecodeBlacklistContract `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
+}
+
+func (m *AddBytecodeBlacklistContractResponse) Reset()         { *m = AddBytecodeBlacklistContractResponse{} }
+func (m *AddBytecodeBlacklistContractResponse) String() string { return proto.CompactTextString(m) }
+func (*AddBytecodeBlacklistContractResponse) ProtoMessage()    {}
+func (*AddBytecodeBlacklistContractResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{14}
+}
+func (m *AddBytecodeBlacklistContractResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AddBytecodeBlacklistContractResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AddBytecodeBlacklistContractResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AddBytecodeBlacklistContractResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddBytecodeBlacklistContractResponse.Merge(m, src)
+}
+func (m *AddBytecodeBlacklistContractResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *AddBytecodeBlacklistContractResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddBytecodeBlacklistContractResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddBytecodeBlacklistContractResponse proto.InternalMessageInfo
+
+func (m *AddBytecodeBlacklistContractResponse) GetItem() *BytecodeBlacklistContract {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+// UpdateBytecodeBlacklistContractNoteRequest updates the note of a bytecode-blacklist contract entry.
+type UpdateBytecodeBlacklistContractNoteRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	Note                 string   `protobuf:"bytes,2,opt,name=note,proto3" json:"note,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteRequest) Reset() {
+	*m = UpdateBytecodeBlacklistContractNoteRequest{}
+}
+func (m *UpdateBytecodeBlacklistContractNoteRequest) String() string {
+	return proto.CompactTextString(m)
+}
+func (*UpdateBytecodeBlacklistContractNoteRequest) ProtoMessage() {}
+func (*UpdateBytecodeBlacklistContractNoteRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{15}
+}
+func (m *UpdateBytecodeBlacklistContractNoteRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateBytecodeBlacklistContractNoteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateBytecodeBlacklistContractNoteRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateBytecodeBlacklistContractNoteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateBytecodeBlacklistContractNoteRequest.Merge(m, src)
+}
+func (m *UpdateBytecodeBlacklistContractNoteRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateBytecodeBlacklistContractNoteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateBytecodeBlacklistContractNoteRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateBytecodeBlacklistContractNoteRequest proto.InternalMessageInfo
+
+func (m *UpdateBytecodeBlacklistContractNoteRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteRequest) GetNote() string {
+	if m != nil {
+		return m.Note
+	}
+	return ""
+}
+
+// UpdateBytecodeBlacklistContractNoteResponse returns the updated bytecode-blacklist contract entry.
+type UpdateBytecodeBlacklistContractNoteResponse struct {
+	Item                 *BytecodeBlacklistContract `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteResponse) Reset() {
+	*m = UpdateBytecodeBlacklistContractNoteResponse{}
+}
+func (m *UpdateBytecodeBlacklistContractNoteResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*UpdateBytecodeBlacklistContractNoteResponse) ProtoMessage() {}
+func (*UpdateBytecodeBlacklistContractNoteResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{16}
+}
+func (m *UpdateBytecodeBlacklistContractNoteResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateBytecodeBlacklistContractNoteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateBytecodeBlacklistContractNoteResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateBytecodeBlacklistContractNoteResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateBytecodeBlacklistContractNoteResponse.Merge(m, src)
+}
+func (m *UpdateBytecodeBlacklistContractNoteResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateBytecodeBlacklistContractNoteResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateBytecodeBlacklistContractNoteResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateBytecodeBlacklistContractNoteResponse proto.InternalMessageInfo
+
+func (m *UpdateBytecodeBlacklistContractNoteResponse) GetItem() *BytecodeBlacklistContract {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+// DeleteBytecodeBlacklistContractRequest deletes a bytecode-blacklist contract entry.
+type DeleteBytecodeBlacklistContractRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteBytecodeBlacklistContractRequest) Reset() {
+	*m = DeleteBytecodeBlacklistContractRequest{}
+}
+func (m *DeleteBytecodeBlacklistContractRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteBytecodeBlacklistContractRequest) ProtoMessage()    {}
+func (*DeleteBytecodeBlacklistContractRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{17}
+}
+func (m *DeleteBytecodeBlacklistContractRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteBytecodeBlacklistContractRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteBytecodeBlacklistContractRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteBytecodeBlacklistContractRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteBytecodeBlacklistContractRequest.Merge(m, src)
+}
+func (m *DeleteBytecodeBlacklistContractRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteBytecodeBlacklistContractRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteBytecodeBlacklistContractRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteBytecodeBlacklistContractRequest proto.InternalMessageInfo
+
+func (m *DeleteBytecodeBlacklistContractRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+// DeleteBytecodeBlacklistContractResponse is returned after deleting a bytecode-blacklist contract entry.
+type DeleteBytecodeBlacklistContractResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteBytecodeBlacklistContractResponse) Reset() {
+	*m = DeleteBytecodeBlacklistContractResponse{}
+}
+func (m *DeleteBytecodeBlacklistContractResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteBytecodeBlacklistContractResponse) ProtoMessage()    {}
+func (*DeleteBytecodeBlacklistContractResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{18}
+}
+func (m *DeleteBytecodeBlacklistContractResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteBytecodeBlacklistContractResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteBytecodeBlacklistContractResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteBytecodeBlacklistContractResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteBytecodeBlacklistContractResponse.Merge(m, src)
+}
+func (m *DeleteBytecodeBlacklistContractResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteBytecodeBlacklistContractResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteBytecodeBlacklistContractResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteBytecodeBlacklistContractResponse proto.InternalMessageInfo
+
 // GetProjectOptionsRequest don't need any parameters.
 type GetProjectOptionsRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -564,7 +1034,7 @@ func (m *GetProjectOptionsRequest) Reset()         { *m = GetProjectOptionsReque
 func (m *GetProjectOptionsRequest) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsRequest) ProtoMessage()    {}
 func (*GetProjectOptionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{10}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{19}
 }
 func (m *GetProjectOptionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -605,7 +1075,7 @@ func (m *GetProjectOptionsResponse) Reset()         { *m = GetProjectOptionsResp
 func (m *GetProjectOptionsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsResponse) ProtoMessage()    {}
 func (*GetProjectOptionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{11}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{20}
 }
 func (m *GetProjectOptionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -654,7 +1124,7 @@ func (m *DeleteSourceCodeBlacklistFieldResponse) Reset() {
 func (m *DeleteSourceCodeBlacklistFieldResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteSourceCodeBlacklistFieldResponse) ProtoMessage()    {}
 func (*DeleteSourceCodeBlacklistFieldResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{12}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{21}
 }
 func (m *DeleteSourceCodeBlacklistFieldResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -694,7 +1164,7 @@ func (m *ArchiveProjectRequest) Reset()         { *m = ArchiveProjectRequest{} }
 func (m *ArchiveProjectRequest) String() string { return proto.CompactTextString(m) }
 func (*ArchiveProjectRequest) ProtoMessage()    {}
 func (*ArchiveProjectRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{13}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{22}
 }
 func (m *ArchiveProjectRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -740,7 +1210,7 @@ func (m *ArchiveProjectResponse) Reset()         { *m = ArchiveProjectResponse{}
 func (m *ArchiveProjectResponse) String() string { return proto.CompactTextString(m) }
 func (*ArchiveProjectResponse) ProtoMessage()    {}
 func (*ArchiveProjectResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{14}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{23}
 }
 func (m *ArchiveProjectResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -780,7 +1250,7 @@ func (m *UnarchiveProjectRequest) Reset()         { *m = UnarchiveProjectRequest
 func (m *UnarchiveProjectRequest) String() string { return proto.CompactTextString(m) }
 func (*UnarchiveProjectRequest) ProtoMessage()    {}
 func (*UnarchiveProjectRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{15}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{24}
 }
 func (m *UnarchiveProjectRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -826,7 +1296,7 @@ func (m *UnarchiveProjectResponse) Reset()         { *m = UnarchiveProjectRespon
 func (m *UnarchiveProjectResponse) String() string { return proto.CompactTextString(m) }
 func (*UnarchiveProjectResponse) ProtoMessage()    {}
 func (*UnarchiveProjectResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{16}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{25}
 }
 func (m *UnarchiveProjectResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -866,6 +1336,15 @@ func init() {
 	proto.RegisterType((*AddSourceCodeBlacklistFieldRequest)(nil), "application.AddSourceCodeBlacklistFieldRequest")
 	proto.RegisterType((*AddSourceCodeBlacklistFieldResponse)(nil), "application.AddSourceCodeBlacklistFieldResponse")
 	proto.RegisterType((*DeleteSourceCodeBlacklistFieldRequest)(nil), "application.DeleteSourceCodeBlacklistFieldRequest")
+	proto.RegisterType((*BytecodeBlacklistContract)(nil), "application.BytecodeBlacklistContract")
+	proto.RegisterType((*ListBytecodeBlacklistContractsRequest)(nil), "application.ListBytecodeBlacklistContractsRequest")
+	proto.RegisterType((*ListBytecodeBlacklistContractsResponse)(nil), "application.ListBytecodeBlacklistContractsResponse")
+	proto.RegisterType((*AddBytecodeBlacklistContractRequest)(nil), "application.AddBytecodeBlacklistContractRequest")
+	proto.RegisterType((*AddBytecodeBlacklistContractResponse)(nil), "application.AddBytecodeBlacklistContractResponse")
+	proto.RegisterType((*UpdateBytecodeBlacklistContractNoteRequest)(nil), "application.UpdateBytecodeBlacklistContractNoteRequest")
+	proto.RegisterType((*UpdateBytecodeBlacklistContractNoteResponse)(nil), "application.UpdateBytecodeBlacklistContractNoteResponse")
+	proto.RegisterType((*DeleteBytecodeBlacklistContractRequest)(nil), "application.DeleteBytecodeBlacklistContractRequest")
+	proto.RegisterType((*DeleteBytecodeBlacklistContractResponse)(nil), "application.DeleteBytecodeBlacklistContractResponse")
 	proto.RegisterType((*GetProjectOptionsRequest)(nil), "application.GetProjectOptionsRequest")
 	proto.RegisterType((*GetProjectOptionsResponse)(nil), "application.GetProjectOptionsResponse")
 	proto.RegisterType((*DeleteSourceCodeBlacklistFieldResponse)(nil), "application.DeleteSourceCodeBlacklistFieldResponse")
@@ -880,62 +1359,79 @@ func init() {
 }
 
 var fileDescriptor_dbb8cd1a14781c7f = []byte{
-	// 868 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x96, 0xcf, 0x6f, 0xdc, 0x44,
-	0x14, 0xc7, 0x35, 0xd9, 0x04, 0x9a, 0x57, 0x14, 0x85, 0xa1, 0x50, 0xd7, 0xa5, 0xdb, 0xe0, 0x64,
-	0x97, 0x50, 0x75, 0x3d, 0x6c, 0x52, 0x0e, 0x2d, 0x42, 0x22, 0xe1, 0x47, 0x39, 0x20, 0x81, 0x1c,
-	0x81, 0x04, 0x5c, 0x98, 0xd8, 0xaf, 0xce, 0x10, 0xc7, 0x63, 0xec, 0x59, 0x23, 0xa8, 0xca, 0x01,
-	0x2e, 0x1c, 0x91, 0xf8, 0x4b, 0x90, 0xb8, 0x70, 0xe2, 0x9a, 0x23, 0x12, 0xff, 0x00, 0x8a, 0xf8,
-	0x43, 0x90, 0xc7, 0xe3, 0x5d, 0x7b, 0x13, 0xef, 0x6e, 0xa0, 0xa7, 0xb5, 0x67, 0xde, 0x8f, 0xcf,
-	0x7b, 0x6f, 0xe6, 0xbb, 0x86, 0x81, 0x88, 0x15, 0xa6, 0x31, 0x8f, 0x58, 0x86, 0x69, 0x8e, 0x29,
-	0xe3, 0x49, 0x12, 0x09, 0x9f, 0x2b, 0x21, 0xe3, 0xfa, 0xb3, 0x9b, 0xa4, 0x52, 0x49, 0x7a, 0xb5,
-	0xb6, 0x64, 0xdf, 0x0f, 0x85, 0x3a, 0x1a, 0x1d, 0xba, 0xbe, 0x3c, 0x61, 0xa3, 0x0c, 0xd3, 0x6f,
-	0x31, 0x44, 0xc6, 0xd5, 0x11, 0xc6, 0x9c, 0x8d, 0xc3, 0x26, 0xc7, 0x21, 0xd3, 0xbe, 0x2c, 0x1f,
-	0xb2, 0x7c, 0x58, 0xc6, 0xb1, 0x3f, 0x98, 0xe1, 0x5a, 0x78, 0xf0, 0x44, 0x64, 0x0d, 0x94, 0x7c,
-	0xc8, 0xa3, 0xe4, 0x88, 0x0f, 0x59, 0x88, 0x31, 0xa6, 0x5c, 0x61, 0x60, 0x22, 0xbd, 0x1c, 0x4a,
-	0x19, 0x46, 0x58, 0x78, 0x30, 0x1e, 0xc7, 0x52, 0x69, 0xfb, 0xac, 0xdc, 0x75, 0x4e, 0xe0, 0x85,
-	0x0f, 0x45, 0xa6, 0x3e, 0x4e, 0xe5, 0x57, 0xe8, 0xab, 0xcc, 0xc3, 0xaf, 0x47, 0x98, 0x29, 0xda,
-	0x87, 0x95, 0xcc, 0x97, 0x09, 0x5a, 0x64, 0x83, 0x6c, 0xaf, 0xed, 0xac, 0xbb, 0xf9, 0xd0, 0x35,
-	0x36, 0x07, 0xc5, 0xba, 0x57, 0x6e, 0x53, 0x0a, 0xcb, 0x09, 0x0f, 0xd1, 0x5a, 0xda, 0x20, 0xdb,
-	0x2b, 0x9e, 0x7e, 0xa6, 0x36, 0x5c, 0x29, 0x7e, 0x0f, 0xc4, 0x77, 0x68, 0x75, 0xf4, 0xfa, 0xf8,
-	0xdd, 0xf9, 0x9d, 0xc0, 0xb5, 0x66, 0xbe, 0x2c, 0x91, 0x71, 0x86, 0xf4, 0x0b, 0x58, 0x11, 0x0a,
-	0x4f, 0x32, 0x8b, 0x6c, 0x74, 0xb6, 0xaf, 0xee, 0xbc, 0xe7, 0x4e, 0xea, 0x77, 0xab, 0xfa, 0xdd,
-	0xb2, 0x7e, 0x37, 0x39, 0x0e, 0xdd, 0xa2, 0x7e, 0xb7, 0xde, 0xfe, 0xaa, 0xfe, 0x0a, 0xf3, 0x53,
-	0x81, 0xdf, 0x78, 0x65, 0x4c, 0x7a, 0x0d, 0x56, 0x94, 0x54, 0x3c, 0xd2, 0x98, 0x1d, 0xaf, 0x7c,
-	0x19, 0xb3, 0x77, 0x5a, 0xd8, 0x97, 0xa7, 0xd8, 0x19, 0x3c, 0xff, 0x10, 0x2b, 0xf2, 0xaa, 0x51,
-	0x36, 0x5c, 0xf1, 0x65, 0xac, 0x52, 0xee, 0x2b, 0xdd, 0xab, 0x55, 0x6f, 0xfc, 0xee, 0x48, 0xa0,
-	0x75, 0x07, 0x53, 0xe9, 0x67, 0xb0, 0x5c, 0x50, 0x69, 0xeb, 0xa7, 0x56, 0xa8, 0x0e, 0xe9, 0xbc,
-	0x0d, 0xd6, 0x81, 0x1c, 0xa5, 0x3e, 0xbe, 0x23, 0x03, 0xdc, 0x8f, 0xb8, 0x7f, 0x1c, 0x89, 0x4c,
-	0xbd, 0x2f, 0x30, 0x0a, 0xe8, 0x1a, 0x2c, 0x89, 0x40, 0x27, 0xed, 0x78, 0x4b, 0x22, 0x28, 0x7a,
-	0xf2, 0xa8, 0xd8, 0xd0, 0x3d, 0x59, 0xf5, 0xca, 0x17, 0xa7, 0x0f, 0x5b, 0xc5, 0x78, 0xda, 0xa2,
-	0x54, 0xe7, 0xc3, 0x09, 0xa0, 0x37, 0xc7, 0xce, 0x54, 0xfb, 0x66, 0x73, 0xae, 0xbd, 0x46, 0x29,
-	0x6d, 0xee, 0x66, 0x6e, 0xce, 0x03, 0x70, 0xf6, 0x82, 0xa0, 0xd5, 0xca, 0x8c, 0x60, 0x5c, 0x09,
-	0xa9, 0x57, 0xf2, 0x25, 0x6c, 0xce, 0xf4, 0x35, 0x7c, 0xf7, 0x1b, 0xd3, 0x58, 0x10, 0xaf, 0xec,
-	0xf6, 0x5b, 0xd0, 0x7b, 0x17, 0x23, 0x54, 0xf8, 0xdf, 0x00, 0x6d, 0xb0, 0x26, 0xa7, 0xe3, 0xa3,
-	0x44, 0x5f, 0xca, 0xaa, 0xbd, 0xdf, 0xc3, 0x8d, 0x0b, 0xf6, 0x0c, 0x32, 0x87, 0x67, 0x65, 0xb9,
-	0x64, 0xa8, 0x1f, 0xfe, 0xef, 0x33, 0x54, 0xa6, 0xf0, 0xaa, 0xb8, 0xce, 0x36, 0xf4, 0xe7, 0x95,
-	0x56, 0xc2, 0x38, 0xbb, 0xf0, 0xe2, 0x5e, 0xea, 0x1f, 0x89, 0x1c, 0x2f, 0x71, 0x31, 0x2c, 0x78,
-	0x69, 0xda, 0xc9, 0x84, 0x7b, 0x03, 0xae, 0x7f, 0x12, 0xf3, 0x4b, 0x07, 0xb4, 0xc1, 0x3a, 0xef,
-	0x56, 0x86, 0xdc, 0x39, 0x5d, 0x05, 0xba, 0x37, 0xa9, 0xfd, 0x00, 0xd3, 0x5c, 0xf8, 0x48, 0x4f,
-	0xe0, 0xb9, 0xba, 0x10, 0xd1, 0x8d, 0x46, 0x83, 0x2e, 0xd0, 0x44, 0xfb, 0x95, 0x19, 0x16, 0x06,
-	0xdf, 0xfa, 0xe1, 0xaf, 0x7f, 0x7e, 0x59, 0xa2, 0x74, 0x5d, 0xab, 0x6d, 0x3e, 0x2c, 0x84, 0xbd,
-	0x0c, 0x9f, 0x02, 0x4c, 0x26, 0x4a, 0xbb, 0x8d, 0x50, 0xe7, 0x54, 0xc5, 0xbe, 0xdd, 0xba, 0x6f,
-	0x12, 0x6d, 0xea, 0x44, 0xb7, 0xe8, 0xcd, 0xe9, 0x44, 0xec, 0x71, 0xd5, 0x94, 0x27, 0xf4, 0x37,
-	0x02, 0xb7, 0x66, 0xde, 0x52, 0x3a, 0x3c, 0x57, 0xd2, 0xbc, 0x9b, 0x6f, 0xef, 0x5c, 0xc6, 0xc5,
-	0xd0, 0xde, 0xd5, 0xb4, 0x7d, 0xba, 0x55, 0xd1, 0x66, 0xda, 0x65, 0xe0, 0xcb, 0x00, 0xd9, 0x61,
-	0xe5, 0x34, 0x78, 0x54, 0x42, 0xfd, 0x4a, 0xe0, 0xe6, 0x8c, 0xab, 0x4b, 0x59, 0x83, 0x60, 0xbe,
-	0x40, 0xd8, 0xaf, 0x2f, 0xee, 0x60, 0x80, 0x99, 0x06, 0x7e, 0xcd, 0x59, 0x08, 0xf8, 0x01, 0xb9,
-	0x43, 0xff, 0x20, 0xd0, 0x9d, 0x7d, 0x63, 0x68, 0xb3, 0x71, 0x0b, 0x29, 0x87, 0xbd, 0x7b, 0x29,
-	0x1f, 0x03, 0x7f, 0x4f, 0xc3, 0xbb, 0x77, 0xee, 0x2e, 0x02, 0xcf, 0x1e, 0xeb, 0xdf, 0x27, 0xf4,
-	0x47, 0x52, 0xff, 0x7b, 0x33, 0x9a, 0x43, 0x7b, 0x2d, 0x07, 0xb1, 0xa9, 0x57, 0x76, 0x7f, 0x9e,
-	0x99, 0x41, 0xbb, 0xad, 0xd1, 0x6e, 0xd0, 0xeb, 0x53, 0xc7, 0x76, 0x60, 0x84, 0x87, 0xfe, 0x44,
-	0x60, 0xad, 0x29, 0x0d, 0xd4, 0x69, 0x4e, 0xef, 0x22, 0x6d, 0xb0, 0x37, 0x67, 0xda, 0x98, 0xe4,
-	0x03, 0x9d, 0xfc, 0x55, 0xc7, 0x99, 0x4a, 0x5e, 0xbb, 0x32, 0xcc, 0x68, 0x48, 0x31, 0xd2, 0x9f,
-	0x09, 0xac, 0x4f, 0x8b, 0x0a, 0xdd, 0x6a, 0x24, 0x6a, 0x91, 0x2a, 0xbb, 0x37, 0xc7, 0xaa, 0xed,
-	0x94, 0x5d, 0x00, 0x34, 0x8a, 0x27, 0x48, 0xfb, 0xfb, 0xa7, 0x67, 0x5d, 0xf2, 0xe7, 0x59, 0x97,
-	0xfc, 0x7d, 0xd6, 0x25, 0x9f, 0xdf, 0x9b, 0xff, 0x89, 0xe8, 0x47, 0x02, 0x63, 0x55, 0xff, 0x4e,
-	0x3c, 0x7c, 0x46, 0x7f, 0xf7, 0xed, 0xfe, 0x1b, 0x00, 0x00, 0xff, 0xff, 0x21, 0x8a, 0xf6, 0xf3,
-	0xd8, 0x0a, 0x00, 0x00,
+	// 1138 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x58, 0xcf, 0x6f, 0xe3, 0x44,
+	0x14, 0xd6, 0x34, 0x2d, 0x34, 0x6f, 0x51, 0x29, 0xc3, 0xc2, 0xa6, 0xee, 0x36, 0x2d, 0x6e, 0x93,
+	0x76, 0xcb, 0xc6, 0x26, 0x6d, 0xd1, 0xd2, 0x02, 0x82, 0x76, 0x17, 0x76, 0x0f, 0x08, 0x90, 0xab,
+	0x22, 0xf1, 0x43, 0x5a, 0x26, 0xce, 0x34, 0x31, 0x75, 0x6d, 0x63, 0x4f, 0x82, 0x96, 0xd5, 0x72,
+	0x80, 0x03, 0x1c, 0x91, 0xf8, 0x4b, 0x90, 0x56, 0x42, 0x9c, 0x38, 0x21, 0x71, 0x44, 0xe2, 0xc4,
+	0x01, 0x09, 0x55, 0xfc, 0x21, 0x68, 0xc6, 0xe3, 0xc4, 0x4e, 0xe2, 0x1f, 0xd9, 0xdd, 0x53, 0xe3,
+	0xf1, 0xfb, 0xde, 0x7c, 0xdf, 0x7b, 0xcf, 0xf3, 0xb9, 0x86, 0x86, 0xe5, 0x30, 0xea, 0x3b, 0xc4,
+	0xd6, 0x03, 0xea, 0xf7, 0xa9, 0xaf, 0x13, 0xcf, 0xb3, 0x2d, 0x93, 0x30, 0xcb, 0x75, 0xe2, 0xbf,
+	0x35, 0xcf, 0x77, 0x99, 0x8b, 0x2f, 0xc5, 0x96, 0x94, 0xfd, 0x8e, 0xc5, 0xba, 0xbd, 0x96, 0x66,
+	0xba, 0xe7, 0x7a, 0x2f, 0xa0, 0xfe, 0x3d, 0xda, 0xa1, 0x3a, 0x61, 0x5d, 0xea, 0x10, 0x7d, 0x90,
+	0xd6, 0x3b, 0xeb, 0xe8, 0x02, 0xab, 0xf7, 0x9b, 0x7a, 0xbf, 0x19, 0xe6, 0x51, 0xee, 0x64, 0x40,
+	0x39, 0x82, 0x78, 0x56, 0x90, 0xa0, 0xd2, 0x6f, 0x12, 0xdb, 0xeb, 0x92, 0xa6, 0xde, 0xa1, 0x0e,
+	0xf5, 0x09, 0xa3, 0x6d, 0x99, 0xe9, 0x6a, 0xc7, 0x75, 0x3b, 0x36, 0xe5, 0x08, 0x9d, 0x38, 0x8e,
+	0xcb, 0x44, 0x7c, 0x10, 0xde, 0x55, 0xcf, 0xe1, 0xf9, 0xf7, 0xac, 0x80, 0x7d, 0xe8, 0xbb, 0x5f,
+	0x50, 0x93, 0x05, 0x06, 0xfd, 0xb2, 0x47, 0x03, 0x86, 0xeb, 0x30, 0x17, 0x98, 0xae, 0x47, 0x2b,
+	0x68, 0x0d, 0x6d, 0x2d, 0xec, 0x2c, 0x6a, 0xfd, 0xa6, 0x26, 0x63, 0x8e, 0xf9, 0xba, 0x11, 0xde,
+	0xc6, 0x18, 0x66, 0x3d, 0xd2, 0xa1, 0x95, 0x99, 0x35, 0xb4, 0x35, 0x67, 0x88, 0xdf, 0x58, 0x81,
+	0x79, 0xfe, 0xf7, 0xd8, 0xfa, 0x9a, 0x56, 0x4a, 0x62, 0x7d, 0x70, 0xad, 0xfe, 0x8a, 0xe0, 0x72,
+	0x72, 0xbf, 0xc0, 0x73, 0x9d, 0x80, 0xe2, 0x4f, 0x61, 0xce, 0x62, 0xf4, 0x3c, 0xa8, 0xa0, 0xb5,
+	0xd2, 0xd6, 0xa5, 0x9d, 0x77, 0xb4, 0xa1, 0x7e, 0x2d, 0xd2, 0xaf, 0x85, 0xfa, 0x35, 0xef, 0xac,
+	0xa3, 0x71, 0xfd, 0x5a, 0xbc, 0xfc, 0x91, 0xfe, 0x88, 0xe6, 0x47, 0x16, 0xfd, 0xca, 0x08, 0x73,
+	0xe2, 0xcb, 0x30, 0xc7, 0x5c, 0x46, 0x6c, 0x41, 0xb3, 0x64, 0x84, 0x17, 0x03, 0xee, 0xa5, 0x14,
+	0xee, 0xb3, 0x23, 0xdc, 0x75, 0x78, 0xee, 0x36, 0x8d, 0x98, 0x47, 0x85, 0x52, 0x60, 0xde, 0x74,
+	0x1d, 0xe6, 0x13, 0x93, 0x89, 0x5a, 0x95, 0x8d, 0xc1, 0xb5, 0xea, 0x02, 0x8e, 0x03, 0xa4, 0xd2,
+	0x8f, 0x61, 0x96, 0xb3, 0x12, 0xd1, 0x4f, 0x4c, 0xa8, 0x48, 0xa9, 0xbe, 0x0d, 0x95, 0x63, 0xb7,
+	0xe7, 0x9b, 0xf4, 0xa6, 0xdb, 0xa6, 0x47, 0x36, 0x31, 0xcf, 0x6c, 0x2b, 0x60, 0xef, 0x5a, 0xd4,
+	0x6e, 0xe3, 0x05, 0x98, 0xb1, 0xda, 0x62, 0xd3, 0x92, 0x31, 0x63, 0xb5, 0x79, 0x4d, 0x4e, 0xf9,
+	0x0d, 0x51, 0x93, 0xb2, 0x11, 0x5e, 0xa8, 0x75, 0xd8, 0xe0, 0xed, 0x49, 0xcb, 0x12, 0xcd, 0x87,
+	0xda, 0x86, 0x5a, 0x4e, 0x9c, 0x54, 0xfb, 0x7a, 0xb2, 0xaf, 0xb5, 0x84, 0x94, 0x34, 0xb8, 0xec,
+	0x9b, 0x7a, 0x00, 0xea, 0x61, 0xbb, 0x9d, 0x1a, 0x25, 0x5b, 0x30, 0x50, 0x82, 0xe2, 0x4a, 0x3e,
+	0x87, 0xf5, 0x4c, 0xac, 0xe4, 0xb7, 0x9f, 0xe8, 0x46, 0x41, 0x7a, 0x61, 0xb5, 0xdf, 0x84, 0xda,
+	0x2d, 0x6a, 0x53, 0x46, 0x1f, 0x8d, 0xe0, 0xf7, 0x08, 0x96, 0x8e, 0xee, 0x31, 0x6a, 0xc6, 0x71,
+	0x37, 0xe5, 0xec, 0x64, 0xcd, 0x15, 0x5e, 0x86, 0x32, 0x07, 0xdd, 0xed, 0x92, 0xa0, 0x2b, 0xdb,
+	0x37, 0xcf, 0x17, 0xee, 0x90, 0xa0, 0xcb, 0xa7, 0xda, 0x71, 0x59, 0x38, 0xd5, 0x65, 0x43, 0xfc,
+	0xc6, 0x2b, 0x00, 0xa6, 0x4f, 0xf9, 0x99, 0x70, 0x97, 0x30, 0x31, 0xd7, 0x65, 0xa3, 0x2c, 0x57,
+	0x0e, 0x99, 0xba, 0x19, 0x36, 0x33, 0x95, 0xcc, 0xa0, 0xeb, 0xa7, 0x50, 0xcf, 0x0b, 0x94, 0x65,
+	0x7d, 0x23, 0xd9, 0xf6, 0x7a, 0xa2, 0xae, 0xa9, 0xf8, 0xa8, 0xef, 0x27, 0xa2, 0x77, 0xe9, 0x61,
+	0xf9, 0xcf, 0xde, 0xa0, 0x0c, 0x33, 0xc3, 0x32, 0xa8, 0x2d, 0xd8, 0xc8, 0x4e, 0x2b, 0xc9, 0x1f,
+	0x24, 0x66, 0xa2, 0x28, 0xf7, 0x70, 0x28, 0x3e, 0x83, 0xed, 0x13, 0xaf, 0x4d, 0x18, 0x4d, 0x0d,
+	0x7c, 0xdf, 0x65, 0xf4, 0x51, 0x15, 0x58, 0xf0, 0x72, 0xa1, 0xec, 0x4f, 0x40, 0xc8, 0x2d, 0xa8,
+	0x87, 0xd3, 0xfd, 0x38, 0x6d, 0x50, 0xaf, 0xc1, 0x66, 0x6e, 0x96, 0x90, 0xac, 0xaa, 0x40, 0x65,
+	0x78, 0x5a, 0x7e, 0xe0, 0x09, 0x93, 0x8a, 0x06, 0xef, 0x1b, 0x58, 0x9a, 0x70, 0x4f, 0xaa, 0x24,
+	0xf0, 0xb4, 0x1b, 0x2e, 0x49, 0xa1, 0xb7, 0x1f, 0xfb, 0x4c, 0x0d, 0xb7, 0x30, 0xa2, 0xbc, 0xea,
+	0x56, 0x54, 0x8c, 0xbc, 0xf3, 0x44, 0xdd, 0x85, 0x17, 0x0e, 0x7d, 0xb3, 0x6b, 0xf5, 0xe9, 0x14,
+	0x46, 0x51, 0x81, 0x17, 0x47, 0x41, 0x32, 0xdd, 0xab, 0x70, 0xe5, 0xc4, 0x21, 0x53, 0x27, 0x54,
+	0xa0, 0x32, 0x0e, 0x0b, 0x53, 0xee, 0xfc, 0xf3, 0x2c, 0xe0, 0xc3, 0xa1, 0xf6, 0x63, 0xea, 0xf7,
+	0x2d, 0x93, 0xe2, 0x73, 0x78, 0x26, 0x6e, 0xcc, 0x78, 0x2d, 0x51, 0xa0, 0x09, 0xef, 0x08, 0xca,
+	0x4b, 0x19, 0x11, 0x92, 0x7e, 0xe5, 0xdb, 0xbf, 0xfe, 0xfb, 0x69, 0x06, 0xe3, 0x45, 0xf1, 0xf6,
+	0xd1, 0x6f, 0xf2, 0x17, 0x9d, 0x30, 0xbd, 0x0f, 0x30, 0xec, 0x28, 0xae, 0x26, 0x52, 0x8d, 0xb9,
+	0xac, 0xb2, 0x9a, 0x7a, 0x5f, 0x6e, 0xb4, 0x2e, 0x36, 0x5a, 0xc1, 0xcb, 0xa3, 0x1b, 0xe9, 0xf7,
+	0xa3, 0xa2, 0x3c, 0xc0, 0x0f, 0x11, 0xac, 0x64, 0xba, 0x16, 0x6e, 0x8e, 0x49, 0xca, 0x73, 0x42,
+	0x65, 0x67, 0x1a, 0x88, 0x64, 0x7b, 0x5d, 0xb0, 0xad, 0xe3, 0x8d, 0x88, 0x6d, 0x20, 0x20, 0x0d,
+	0xfe, 0x80, 0xe8, 0xad, 0x08, 0xd4, 0x38, 0x0d, 0x49, 0xfd, 0x8c, 0x60, 0x39, 0xc3, 0xca, 0xb0,
+	0x9e, 0x60, 0x90, 0x6f, 0x98, 0xca, 0x2b, 0xc5, 0x01, 0x92, 0xb0, 0x2e, 0x08, 0x5f, 0x53, 0x0b,
+	0x11, 0x3e, 0x40, 0xdb, 0xf8, 0x37, 0x04, 0xd5, 0xec, 0x27, 0x06, 0x27, 0x0b, 0x57, 0xc8, 0x49,
+	0x95, 0xdd, 0xa9, 0x30, 0x92, 0xfc, 0x9e, 0x20, 0xaf, 0x6d, 0x5f, 0x2f, 0x42, 0x5e, 0xbf, 0x2f,
+	0xfe, 0x3e, 0xc0, 0xbf, 0x20, 0xa8, 0x66, 0x9b, 0x1d, 0x1e, 0x6f, 0x7d, 0xae, 0x85, 0x8e, 0x28,
+	0x28, 0xe6, 0xa6, 0xe3, 0xf3, 0xd2, 0x92, 0x98, 0x18, 0x7d, 0x73, 0x40, 0xeb, 0x21, 0x82, 0xab,
+	0x59, 0x3e, 0x87, 0xc7, 0xfa, 0x9f, 0x77, 0xc4, 0x2b, 0xcd, 0x29, 0x10, 0x69, 0x23, 0x93, 0xc5,
+	0x99, 0x8f, 0xcc, 0xdf, 0x08, 0xd6, 0x0b, 0x98, 0x1b, 0xbe, 0x91, 0xe0, 0x52, 0xdc, 0x6c, 0x95,
+	0xd7, 0xa6, 0x07, 0x4a, 0x2d, 0x6f, 0x09, 0x2d, 0xfb, 0xea, 0x5e, 0x11, 0x2d, 0xb1, 0x13, 0x47,
+	0xe7, 0xa6, 0xcd, 0xb5, 0xfd, 0x8e, 0x60, 0x35, 0xc7, 0x07, 0xf1, 0xa4, 0xd9, 0xce, 0x6d, 0xcc,
+	0xde, 0x74, 0x20, 0xa9, 0xe7, 0x86, 0xd0, 0xd3, 0xdc, 0xd6, 0xa7, 0xd4, 0x83, 0xbf, 0x43, 0xf1,
+	0xff, 0x81, 0xa4, 0x11, 0xe3, 0x5a, 0xca, 0xe9, 0x9c, 0x34, 0x71, 0xa5, 0x9e, 0x17, 0x26, 0xd9,
+	0xad, 0x0a, 0x76, 0x4b, 0xf8, 0xca, 0xc8, 0x59, 0xde, 0x90, 0x6e, 0x8c, 0x7f, 0x40, 0xb0, 0x90,
+	0xf4, 0x4b, 0xac, 0x26, 0x07, 0x74, 0x92, 0x61, 0x2a, 0xeb, 0x99, 0x31, 0x72, 0xf3, 0x86, 0xd8,
+	0x7c, 0x53, 0x55, 0x47, 0x36, 0x8f, 0x77, 0x55, 0x1a, 0x2b, 0x6f, 0xec, 0x8f, 0x08, 0x16, 0x47,
+	0x9d, 0x16, 0x6f, 0x24, 0x07, 0x6d, 0xb2, 0x7f, 0x2b, 0xb5, 0x9c, 0xa8, 0xb4, 0xe7, 0x68, 0x02,
+	0xa1, 0x9e, 0x33, 0xa4, 0x74, 0x74, 0xf4, 0xc7, 0x45, 0x15, 0xfd, 0x79, 0x51, 0x45, 0xff, 0x5e,
+	0x54, 0xd1, 0x27, 0x7b, 0xf9, 0xdf, 0x11, 0x4c, 0xdb, 0xa2, 0x0e, 0x8b, 0x7f, 0x4c, 0x68, 0x3d,
+	0x25, 0x3e, 0x0e, 0xec, 0xfe, 0x1f, 0x00, 0x00, 0xff, 0xff, 0xd9, 0xa0, 0x4f, 0x9d, 0xfd, 0x10,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -960,6 +1456,14 @@ type ApplicationServiceClient interface {
 	AddSourceCodeBlacklistField(ctx context.Context, in *AddSourceCodeBlacklistFieldRequest, opts ...grpc.CallOption) (*AddSourceCodeBlacklistFieldResponse, error)
 	// DeleteSourceCodeBlacklistField deletes a globally configured source-code blacklist field.
 	DeleteSourceCodeBlacklistField(ctx context.Context, in *DeleteSourceCodeBlacklistFieldRequest, opts ...grpc.CallOption) (*DeleteSourceCodeBlacklistFieldResponse, error)
+	// ListBytecodeBlacklistContracts returns all globally configured bytecode-blacklist contract entries.
+	ListBytecodeBlacklistContracts(ctx context.Context, in *ListBytecodeBlacklistContractsRequest, opts ...grpc.CallOption) (*ListBytecodeBlacklistContractsResponse, error)
+	// AddBytecodeBlacklistContract adds a globally configured bytecode-blacklist contract entry.
+	AddBytecodeBlacklistContract(ctx context.Context, in *AddBytecodeBlacklistContractRequest, opts ...grpc.CallOption) (*AddBytecodeBlacklistContractResponse, error)
+	// UpdateBytecodeBlacklistContractNote updates the note of a globally configured bytecode-blacklist contract entry.
+	UpdateBytecodeBlacklistContractNote(ctx context.Context, in *UpdateBytecodeBlacklistContractNoteRequest, opts ...grpc.CallOption) (*UpdateBytecodeBlacklistContractNoteResponse, error)
+	// DeleteBytecodeBlacklistContract deletes a globally configured bytecode-blacklist contract entry.
+	DeleteBytecodeBlacklistContract(ctx context.Context, in *DeleteBytecodeBlacklistContractRequest, opts ...grpc.CallOption) (*DeleteBytecodeBlacklistContractResponse, error)
 	// GetProjectOptions returns the options.
 	GetProjectOptions(ctx context.Context, in *GetProjectOptionsRequest, opts ...grpc.CallOption) (*GetProjectOptionsResponse, error)
 	// ArchiveProject archives a project by contract.
@@ -1021,6 +1525,42 @@ func (c *applicationServiceClient) DeleteSourceCodeBlacklistField(ctx context.Co
 	return out, nil
 }
 
+func (c *applicationServiceClient) ListBytecodeBlacklistContracts(ctx context.Context, in *ListBytecodeBlacklistContractsRequest, opts ...grpc.CallOption) (*ListBytecodeBlacklistContractsResponse, error) {
+	out := new(ListBytecodeBlacklistContractsResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/ListBytecodeBlacklistContracts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) AddBytecodeBlacklistContract(ctx context.Context, in *AddBytecodeBlacklistContractRequest, opts ...grpc.CallOption) (*AddBytecodeBlacklistContractResponse, error) {
+	out := new(AddBytecodeBlacklistContractResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/AddBytecodeBlacklistContract", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) UpdateBytecodeBlacklistContractNote(ctx context.Context, in *UpdateBytecodeBlacklistContractNoteRequest, opts ...grpc.CallOption) (*UpdateBytecodeBlacklistContractNoteResponse, error) {
+	out := new(UpdateBytecodeBlacklistContractNoteResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/UpdateBytecodeBlacklistContractNote", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) DeleteBytecodeBlacklistContract(ctx context.Context, in *DeleteBytecodeBlacklistContractRequest, opts ...grpc.CallOption) (*DeleteBytecodeBlacklistContractResponse, error) {
+	out := new(DeleteBytecodeBlacklistContractResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/DeleteBytecodeBlacklistContract", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *applicationServiceClient) GetProjectOptions(ctx context.Context, in *GetProjectOptionsRequest, opts ...grpc.CallOption) (*GetProjectOptionsResponse, error) {
 	out := new(GetProjectOptionsResponse)
 	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProjectOptions", in, out, opts...)
@@ -1060,6 +1600,14 @@ type ApplicationServiceServer interface {
 	AddSourceCodeBlacklistField(context.Context, *AddSourceCodeBlacklistFieldRequest) (*AddSourceCodeBlacklistFieldResponse, error)
 	// DeleteSourceCodeBlacklistField deletes a globally configured source-code blacklist field.
 	DeleteSourceCodeBlacklistField(context.Context, *DeleteSourceCodeBlacklistFieldRequest) (*DeleteSourceCodeBlacklistFieldResponse, error)
+	// ListBytecodeBlacklistContracts returns all globally configured bytecode-blacklist contract entries.
+	ListBytecodeBlacklistContracts(context.Context, *ListBytecodeBlacklistContractsRequest) (*ListBytecodeBlacklistContractsResponse, error)
+	// AddBytecodeBlacklistContract adds a globally configured bytecode-blacklist contract entry.
+	AddBytecodeBlacklistContract(context.Context, *AddBytecodeBlacklistContractRequest) (*AddBytecodeBlacklistContractResponse, error)
+	// UpdateBytecodeBlacklistContractNote updates the note of a globally configured bytecode-blacklist contract entry.
+	UpdateBytecodeBlacklistContractNote(context.Context, *UpdateBytecodeBlacklistContractNoteRequest) (*UpdateBytecodeBlacklistContractNoteResponse, error)
+	// DeleteBytecodeBlacklistContract deletes a globally configured bytecode-blacklist contract entry.
+	DeleteBytecodeBlacklistContract(context.Context, *DeleteBytecodeBlacklistContractRequest) (*DeleteBytecodeBlacklistContractResponse, error)
 	// GetProjectOptions returns the options.
 	GetProjectOptions(context.Context, *GetProjectOptionsRequest) (*GetProjectOptionsResponse, error)
 	// ArchiveProject archives a project by contract.
@@ -1086,6 +1634,18 @@ func (*UnimplementedApplicationServiceServer) AddSourceCodeBlacklistField(ctx co
 }
 func (*UnimplementedApplicationServiceServer) DeleteSourceCodeBlacklistField(ctx context.Context, req *DeleteSourceCodeBlacklistFieldRequest) (*DeleteSourceCodeBlacklistFieldResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSourceCodeBlacklistField not implemented")
+}
+func (*UnimplementedApplicationServiceServer) ListBytecodeBlacklistContracts(ctx context.Context, req *ListBytecodeBlacklistContractsRequest) (*ListBytecodeBlacklistContractsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListBytecodeBlacklistContracts not implemented")
+}
+func (*UnimplementedApplicationServiceServer) AddBytecodeBlacklistContract(ctx context.Context, req *AddBytecodeBlacklistContractRequest) (*AddBytecodeBlacklistContractResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddBytecodeBlacklistContract not implemented")
+}
+func (*UnimplementedApplicationServiceServer) UpdateBytecodeBlacklistContractNote(ctx context.Context, req *UpdateBytecodeBlacklistContractNoteRequest) (*UpdateBytecodeBlacklistContractNoteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBytecodeBlacklistContractNote not implemented")
+}
+func (*UnimplementedApplicationServiceServer) DeleteBytecodeBlacklistContract(ctx context.Context, req *DeleteBytecodeBlacklistContractRequest) (*DeleteBytecodeBlacklistContractResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteBytecodeBlacklistContract not implemented")
 }
 func (*UnimplementedApplicationServiceServer) GetProjectOptions(ctx context.Context, req *GetProjectOptionsRequest) (*GetProjectOptionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProjectOptions not implemented")
@@ -1191,6 +1751,78 @@ func _ApplicationService_DeleteSourceCodeBlacklistField_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApplicationService_ListBytecodeBlacklistContracts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBytecodeBlacklistContractsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).ListBytecodeBlacklistContracts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/ListBytecodeBlacklistContracts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).ListBytecodeBlacklistContracts(ctx, req.(*ListBytecodeBlacklistContractsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_AddBytecodeBlacklistContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddBytecodeBlacklistContractRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).AddBytecodeBlacklistContract(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/AddBytecodeBlacklistContract",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).AddBytecodeBlacklistContract(ctx, req.(*AddBytecodeBlacklistContractRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_UpdateBytecodeBlacklistContractNote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBytecodeBlacklistContractNoteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).UpdateBytecodeBlacklistContractNote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/UpdateBytecodeBlacklistContractNote",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).UpdateBytecodeBlacklistContractNote(ctx, req.(*UpdateBytecodeBlacklistContractNoteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_DeleteBytecodeBlacklistContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteBytecodeBlacklistContractRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).DeleteBytecodeBlacklistContract(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/DeleteBytecodeBlacklistContract",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).DeleteBytecodeBlacklistContract(ctx, req.(*DeleteBytecodeBlacklistContractRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ApplicationService_GetProjectOptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetProjectOptionsRequest)
 	if err := dec(in); err != nil {
@@ -1268,6 +1900,22 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteSourceCodeBlacklistField",
 			Handler:    _ApplicationService_DeleteSourceCodeBlacklistField_Handler,
+		},
+		{
+			MethodName: "ListBytecodeBlacklistContracts",
+			Handler:    _ApplicationService_ListBytecodeBlacklistContracts_Handler,
+		},
+		{
+			MethodName: "AddBytecodeBlacklistContract",
+			Handler:    _ApplicationService_AddBytecodeBlacklistContract_Handler,
+		},
+		{
+			MethodName: "UpdateBytecodeBlacklistContractNote",
+			Handler:    _ApplicationService_UpdateBytecodeBlacklistContractNote_Handler,
+		},
+		{
+			MethodName: "DeleteBytecodeBlacklistContract",
+			Handler:    _ApplicationService_DeleteBytecodeBlacklistContract_Handler,
 		},
 		{
 			MethodName: "GetProjectOptions",
@@ -1671,6 +2319,350 @@ func (m *DeleteSourceCodeBlacklistFieldRequest) MarshalToSizedBuffer(dAtA []byte
 	return len(dAtA) - i, nil
 }
 
+func (m *BytecodeBlacklistContract) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BytecodeBlacklistContract) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *BytecodeBlacklistContract) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CreatedAt) > 0 {
+		i -= len(m.CreatedAt)
+		copy(dAtA[i:], m.CreatedAt)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.CreatedAt)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Note) > 0 {
+		i -= len(m.Note)
+		copy(dAtA[i:], m.Note)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Note)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.CodeHash)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListBytecodeBlacklistContractsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListBytecodeBlacklistContractsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListBytecodeBlacklistContractsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListBytecodeBlacklistContractsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListBytecodeBlacklistContractsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListBytecodeBlacklistContractsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintApplication(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AddBytecodeBlacklistContractRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AddBytecodeBlacklistContractRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AddBytecodeBlacklistContractRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Note) > 0 {
+		i -= len(m.Note)
+		copy(dAtA[i:], m.Note)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Note)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AddBytecodeBlacklistContractResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AddBytecodeBlacklistContractResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AddBytecodeBlacklistContractResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Note) > 0 {
+		i -= len(m.Note)
+		copy(dAtA[i:], m.Note)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Note)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeleteBytecodeBlacklistContractRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteBytecodeBlacklistContractRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteBytecodeBlacklistContractRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeleteBytecodeBlacklistContractResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteBytecodeBlacklistContractResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteBytecodeBlacklistContractResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *GetProjectOptionsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -2068,6 +3060,164 @@ func (m *DeleteSourceCodeBlacklistFieldRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovApplication(uint64(l))
 	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *BytecodeBlacklistContract) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	l = len(m.Note)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	l = len(m.CreatedAt)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListBytecodeBlacklistContractsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListBytecodeBlacklistContractsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovApplication(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AddBytecodeBlacklistContractRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	l = len(m.Note)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AddBytecodeBlacklistContractResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	l = len(m.Note)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateBytecodeBlacklistContractNoteResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteBytecodeBlacklistContractRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteBytecodeBlacklistContractResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -3065,6 +4215,859 @@ func (m *DeleteSourceCodeBlacklistFieldRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.Field = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BytecodeBlacklistContract) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BytecodeBlacklistContract: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BytecodeBlacklistContract: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Note", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Note = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CreatedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListBytecodeBlacklistContractsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListBytecodeBlacklistContractsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListBytecodeBlacklistContractsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListBytecodeBlacklistContractsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListBytecodeBlacklistContractsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListBytecodeBlacklistContractsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &BytecodeBlacklistContract{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AddBytecodeBlacklistContractRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AddBytecodeBlacklistContractRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AddBytecodeBlacklistContractRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Note", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Note = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AddBytecodeBlacklistContractResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AddBytecodeBlacklistContractResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AddBytecodeBlacklistContractResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &BytecodeBlacklistContract{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateBytecodeBlacklistContractNoteRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateBytecodeBlacklistContractNoteRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateBytecodeBlacklistContractNoteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Note", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Note = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateBytecodeBlacklistContractNoteResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateBytecodeBlacklistContractNoteResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateBytecodeBlacklistContractNoteResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &BytecodeBlacklistContract{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteBytecodeBlacklistContractRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteBytecodeBlacklistContractRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteBytecodeBlacklistContractRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteBytecodeBlacklistContractResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteBytecodeBlacklistContractResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteBytecodeBlacklistContractResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipApplication(dAtA[iNdEx:])
