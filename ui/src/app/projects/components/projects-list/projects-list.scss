@@ -55,19 +55,24 @@
     &__row {
         display: grid;
         grid-template-columns:
-            minmax(40px, 0.5fr)
-            minmax(140px, 2.2fr)
-            minmax(70px, 0.9fr)
-            minmax(74px, 0.85fr)
-            minmax(74px, 0.85fr)
-            minmax(74px, 0.85fr)
-            minmax(152px, 1.35fr)
-            minmax(152px, 1.35fr)
-            minmax(124px, 1.1fr)
-            minmax(116px, 1.2fr);
-        column-gap: 8px;
+            minmax(36px, 0.45fr)
+            minmax(112px, 2fr)
+            minmax(62px, 0.8fr)
+            minmax(64px, 0.8fr)
+            minmax(66px, 0.8fr)
+            minmax(66px, 0.8fr)
+            minmax(126px, 1.25fr)
+            minmax(126px, 1.25fr)
+            minmax(104px, 1.05fr)
+            minmax(96px, 1fr);
+        column-gap: 6px;
         align-items: center;
         width: 100%;
+    }
+
+    .argo-table-list__head .projects-list__row > div {
+        white-space: normal;
+        line-height: 1.25;
     }
 
     &__cell {
@@ -141,15 +146,17 @@
 
         &__row {
             grid-template-columns:
-                minmax(36px, 0.45fr)
-                minmax(120px, 1.9fr)
-                minmax(56px, 0.8fr)
-                repeat(3, minmax(70px, 0.85fr))
-                minmax(132px, 1.2fr)
-                minmax(132px, 1.2fr)
-                minmax(112px, 1fr)
-                minmax(96px, 1.1fr);
-            column-gap: 6px;
+                minmax(28px, 0.42fr)
+                minmax(84px, 1.65fr)
+                minmax(48px, 0.7fr)
+                minmax(56px, 0.72fr)
+                minmax(56px, 0.72fr)
+                minmax(56px, 0.72fr)
+                minmax(98px, 1.05fr)
+                minmax(98px, 1.05fr)
+                minmax(88px, 0.9fr)
+                minmax(84px, 0.9fr);
+            column-gap: 5px;
         }
     }
 }
