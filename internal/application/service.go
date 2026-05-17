@@ -26,9 +26,17 @@ import (
 const (
 	activeProjectStateRefreshInterval      = 3 * time.Second
 	activeProjectSimulationRefreshInterval = time.Minute
+	archivedProjectRefreshInterval         = 10 * time.Minute
 	sourceCodeRefreshInterval              = time.Minute
 	sourceCodeScanPageSize                 = 200
 	bootstrapRetryInterval                 = 3 * time.Second
+)
+
+type refreshTarget uint8
+
+const (
+	refreshTargetActive refreshTarget = iota
+	refreshTargetArchived
 )
 
 type Service struct {
@@ -154,6 +162,9 @@ func (s *Service) Start() error {
 	go s.runActiveProjectStateRefreshLoop(ctx, athenaFetcher)
 	go s.runActiveProjectSimulationRefreshLoop(ctx, athenaFetcher, projectSimulator)
 	go s.runActiveProjectSourceCodeRefreshLoop(ctx)
+	go s.runArchivedProjectStateRefreshLoop(ctx, athenaFetcher)
+	go s.runArchivedProjectSimulationRefreshLoop(ctx, athenaFetcher, projectSimulator)
+	go s.runArchivedProjectSourceCodeRefreshLoop(ctx)
 
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
@@ -272,26 +283,19 @@ func (s *Service) runActiveProjectStateRefreshLoop(ctx context.Context, fetcher 
 }
 
 func (s *Service) refreshActiveProjectStates(ctx context.Context, fetcher evm.AthenaFetcher) error {
-	activeProjects, err := s.projectCache.ListActiveProjects(ctx)
+	return s.refreshProjectStates(ctx, fetcher, refreshTargetActive)
+}
+
+func (s *Service) refreshProjectStates(ctx context.Context, fetcher evm.AthenaFetcher, target refreshTarget) error {
+	projects, err := s.listProjectsByTarget(ctx, target)
 	if err != nil {
 		return err
 	}
-	if len(activeProjects) == 0 {
+	if len(projects) == 0 {
 		return nil
 	}
 
-	queries := make([]athenacontract.AthenaProjectQuery, 0, len(activeProjects))
-	contracts := make([]common.Address, 0, len(activeProjects))
-	for _, project := range activeProjects {
-		if project == nil {
-			continue
-		}
-		queries = append(queries, athenacontract.AthenaProjectQuery{
-			TokenContract: project.Meta.Contract,
-			MsgCaller:     project.Meta.Creator,
-		})
-		contracts = append(contracts, project.Meta.Contract)
-	}
+	queries, contracts := buildProjectQueries(projects)
 	if len(queries) == 0 {
 		return nil
 	}
@@ -307,7 +311,7 @@ func (s *Service) refreshActiveProjectStates(ctx context.Context, fetcher evm.At
 	for i, contract := range contracts {
 		nextState := fetched[i].Project
 		_, err := s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || current.Meta.IsArchived {
+			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
 				return nil, false, nil
 			}
 			current.ChainState = nextState
@@ -318,6 +322,62 @@ func (s *Service) refreshActiveProjectStates(ctx context.Context, fetcher evm.At
 		}
 	}
 	return nil
+}
+
+func buildProjectQueries(projects []*Project) ([]athenacontract.AthenaProjectQuery, []common.Address) {
+	queries := make([]athenacontract.AthenaProjectQuery, 0, len(projects))
+	contracts := make([]common.Address, 0, len(projects))
+	for _, project := range projects {
+		if project == nil {
+			continue
+		}
+		queries = append(queries, athenacontract.AthenaProjectQuery{
+			TokenContract: project.Meta.Contract,
+			MsgCaller:     project.Meta.Creator,
+		})
+		contracts = append(contracts, project.Meta.Contract)
+	}
+	return queries, contracts
+}
+
+func matchesTarget(isArchived bool, target refreshTarget) bool {
+	switch target {
+	case refreshTargetArchived:
+		return isArchived
+	default:
+		return !isArchived
+	}
+}
+
+func (s *Service) listProjectsByTarget(ctx context.Context, target refreshTarget) ([]*Project, error) {
+	if target == refreshTargetActive {
+		return s.projectCache.ListActiveProjects(ctx)
+	}
+	return s.listAllArchivedProjects(ctx)
+}
+
+func (s *Service) listAllArchivedProjects(ctx context.Context) ([]*Project, error) {
+	projects := make([]*Project, 0)
+	page := int32(1)
+
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
+		items, total, _, pageSize, err := s.projectCache.ListArchivedProjects(ctx, page, sourceCodeScanPageSize)
+		if err != nil {
+			return nil, err
+		}
+		projects = append(projects, items...)
+		if len(items) == 0 {
+			return projects, nil
+		}
+		if int64(page)*int64(pageSize) >= total {
+			return projects, nil
+		}
+		page++
+	}
 }
 
 func (s *Service) runActiveProjectSimulationRefreshLoop(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) {
@@ -335,30 +395,23 @@ func (s *Service) runActiveProjectSimulationRefreshLoop(ctx context.Context, fet
 }
 
 func (s *Service) refreshActiveProjectSimulations(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) error {
+	return s.refreshProjectSimulations(ctx, fetcher, simulator, refreshTargetActive)
+}
+
+func (s *Service) refreshProjectSimulations(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator, target refreshTarget) error {
 	if simulator == nil {
 		return nil
 	}
 
-	activeProjects, err := s.projectCache.ListActiveProjects(ctx)
+	projects, err := s.listProjectsByTarget(ctx, target)
 	if err != nil {
 		return err
 	}
-	if len(activeProjects) == 0 {
+	if len(projects) == 0 {
 		return nil
 	}
 
-	queries := make([]athenacontract.AthenaProjectQuery, 0, len(activeProjects))
-	contracts := make([]common.Address, 0, len(activeProjects))
-	for _, project := range activeProjects {
-		if project == nil {
-			continue
-		}
-		queries = append(queries, athenacontract.AthenaProjectQuery{
-			TokenContract: project.Meta.Contract,
-			MsgCaller:     project.Meta.Creator,
-		})
-		contracts = append(contracts, project.Meta.Contract)
-	}
+	queries, contracts := buildProjectQueries(projects)
 	if len(queries) == 0 {
 		return nil
 	}
@@ -376,7 +429,7 @@ func (s *Service) refreshActiveProjectSimulations(ctx context.Context, fetcher e
 		if err != nil {
 			return err
 		}
-		if !ok || latest == nil || latest.Meta.IsArchived {
+		if !ok || latest == nil || !matchesTarget(latest.Meta.IsArchived, target) {
 			continue
 		}
 
@@ -399,7 +452,7 @@ func (s *Service) refreshActiveProjectSimulations(ctx context.Context, fetcher e
 		}
 
 		_, err = s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || current.Meta.IsArchived {
+			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
 				return nil, false, nil
 			}
 			current.Meta.CreatorResult = result
@@ -427,22 +480,80 @@ func (s *Service) runActiveProjectSourceCodeRefreshLoop(ctx context.Context) {
 }
 
 func (s *Service) refreshActiveProjectSourceCodes(ctx context.Context) error {
+	return s.refreshProjectSourceCodes(ctx, refreshTargetActive)
+}
+
+func (s *Service) refreshProjectSourceCodes(ctx context.Context, target refreshTarget) error {
 	fields, err := s.sourceCodeBlacklistFields(ctx)
 	if err != nil {
 		return err
 	}
 
-	activeProjects, err := s.projectCache.ListActiveProjects(ctx)
+	projects, err := s.listProjectsByTarget(ctx, target)
 	if err != nil {
 		return err
 	}
-	if err := s.processProjectSourceCodeBatch(ctx, activeProjects, fields); err != nil {
+	if err := s.processProjectSourceCodeBatch(ctx, projects, fields, target); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []*Project, fields []string) error {
+func (s *Service) runArchivedProjectStateRefreshLoop(ctx context.Context, fetcher evm.AthenaFetcher) {
+	ticker := time.NewTicker(archivedProjectRefreshInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_ = s.refreshArchivedProjectStates(ctx, fetcher)
+		}
+	}
+}
+
+func (s *Service) refreshArchivedProjectStates(ctx context.Context, fetcher evm.AthenaFetcher) error {
+	return s.refreshProjectStates(ctx, fetcher, refreshTargetArchived)
+}
+
+func (s *Service) runArchivedProjectSimulationRefreshLoop(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) {
+	ticker := time.NewTicker(archivedProjectRefreshInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_ = s.refreshArchivedProjectSimulations(ctx, fetcher, simulator)
+		}
+	}
+}
+
+func (s *Service) refreshArchivedProjectSimulations(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) error {
+	return s.refreshProjectSimulations(ctx, fetcher, simulator, refreshTargetArchived)
+}
+
+func (s *Service) runArchivedProjectSourceCodeRefreshLoop(ctx context.Context) {
+	ticker := time.NewTicker(archivedProjectRefreshInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_ = s.refreshArchivedProjectSourceCodes(ctx)
+		}
+	}
+}
+
+func (s *Service) refreshArchivedProjectSourceCodes(ctx context.Context) error {
+	return s.refreshProjectSourceCodes(ctx, refreshTargetArchived)
+}
+
+func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []*Project, fields []string, target refreshTarget) error {
 	for _, project := range projects {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -469,7 +580,7 @@ func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []
 
 		shouldPersistSourceCode := false
 		_, err := s.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || current.Meta.IsArchived {
+			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
 				return nil, false, nil
 			}
 

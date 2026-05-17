@@ -11,8 +11,12 @@ import (
 )
 
 type activeRefreshCacheMock struct {
-	listActive []*Project
-	getByKey   map[string]*Project
+	listActive   []*Project
+	listArchived []*Project
+	getByKey     map[string]*Project
+
+	listArchivedErr   error
+	listArchivedCalls [][2]int32
 
 	setCalls []*Project
 	setErr   error
@@ -89,8 +93,32 @@ func (m *activeRefreshCacheMock) ListActiveProjects(context.Context) ([]*Project
 	return items, nil
 }
 
-func (m *activeRefreshCacheMock) ListArchivedProjects(context.Context, int32, int32) ([]*Project, int64, int32, int32, error) {
-	return nil, 0, 0, 0, nil
+func (m *activeRefreshCacheMock) ListArchivedProjects(_ context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
+	if m.listArchivedErr != nil {
+		return nil, 0, 0, 0, m.listArchivedErr
+	}
+	page, pageSize = normalizeCachePage(page, pageSize)
+	m.listArchivedCalls = append(m.listArchivedCalls, [2]int32{page, pageSize})
+
+	total := int64(len(m.listArchived))
+	if total == 0 {
+		return nil, total, page, pageSize, nil
+	}
+
+	start := int((page - 1) * pageSize)
+	if start >= len(m.listArchived) {
+		return nil, total, page, pageSize, nil
+	}
+	end := start + int(pageSize)
+	if end > len(m.listArchived) {
+		end = len(m.listArchived)
+	}
+
+	items := make([]*Project, 0, end-start)
+	for _, project := range m.listArchived[start:end] {
+		items = append(items, cloneProjectForTest(project))
+	}
+	return items, total, page, pageSize, nil
 }
 
 type activeRefreshFetcherMock struct {
