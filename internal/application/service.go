@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -29,6 +30,7 @@ const (
 	activeProjectSimulationRefreshInterval = time.Minute
 	archivedProjectRefreshInterval         = 10 * time.Minute
 	sourceCodeRefreshInterval              = time.Minute
+	binBlacklistScanInterval               = time.Minute
 	sourceCodeScanPageSize                 = 200
 	bootstrapRetryInterval                 = 3 * time.Second
 )
@@ -167,6 +169,7 @@ func (s *Service) Start() error {
 	go s.runArchivedProjectStateRefreshLoop(ctx, athenaFetcher)
 	go s.runArchivedProjectSimulationRefreshLoop(ctx, athenaFetcher, projectSimulator)
 	go s.runArchivedProjectSourceCodeRefreshLoop(ctx)
+	go s.runProjectBINBlacklistScanLoop(ctx)
 
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
@@ -553,6 +556,135 @@ func (s *Service) runArchivedProjectSourceCodeRefreshLoop(ctx context.Context) {
 
 func (s *Service) refreshArchivedProjectSourceCodes(ctx context.Context) error {
 	return s.refreshProjectSourceCodes(ctx, refreshTargetArchived)
+}
+
+func (s *Service) runProjectBINBlacklistScanLoop(ctx context.Context) {
+	ticker := time.NewTicker(binBlacklistScanInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_ = s.scanAllProjectsForBINBlacklist(ctx)
+		}
+	}
+}
+
+func (s *Service) scanAllProjectsForBINBlacklist(ctx context.Context) error {
+	blacklistStore, ok := s.store.(appstore.BytecodeBlacklistContractStore)
+	if !ok || blacklistStore == nil {
+		return nil
+	}
+
+	records, err := blacklistStore.ListBytecodeBlacklistContracts(ctx)
+	if err != nil {
+		return err
+	}
+	if len(records) == 0 {
+		return nil
+	}
+
+	blacklistedCodeHashes := make(map[common.Hash]struct{}, len(records))
+	for _, item := range records {
+		blacklistedCodeHashes[item.CodeHash] = struct{}{}
+	}
+
+	projects, err := s.listAllProjectsForBINBlacklistScan(ctx)
+	if err != nil {
+		return err
+	}
+	for _, project := range projects {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if project == nil {
+			continue
+		}
+
+		contract := project.Meta.Contract
+		code, err := s.fetchContractBytecode(ctx, contract)
+		if err != nil || len(code) == 0 {
+			continue
+		}
+
+		codeHash := crypto.Keccak256Hash(code)
+		if _, matched := blacklistedCodeHashes[codeHash]; !matched {
+			continue
+		}
+
+		_ = s.applyBINBlacklistAutoArchive(ctx, contract, codeHash)
+	}
+	return nil
+}
+
+func (s *Service) listAllProjectsForBINBlacklistScan(ctx context.Context) ([]*Project, error) {
+	activeProjects, err := s.projectCache.ListActiveProjects(ctx)
+	if err != nil {
+		return nil, err
+	}
+	archivedProjects, err := s.listAllArchivedProjects(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	all := make([]*Project, 0, len(activeProjects)+len(archivedProjects))
+	seen := make(map[common.Address]struct{}, len(activeProjects)+len(archivedProjects))
+	appendUnique := func(items []*Project) {
+		for _, project := range items {
+			if project == nil {
+				continue
+			}
+			contract := project.Meta.Contract
+			if _, ok := seen[contract]; ok {
+				continue
+			}
+			seen[contract] = struct{}{}
+			all = append(all, project)
+		}
+	}
+	appendUnique(activeProjects)
+	appendUnique(archivedProjects)
+	return all, nil
+}
+
+func (s *Service) applyBINBlacklistAutoArchive(ctx context.Context, contract common.Address, codeHash common.Hash) error {
+	current, exists, err := s.projectCache.GetProject(ctx, contract)
+	if err != nil || !exists || current == nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+	if !current.Meta.IsArchived && s.persistencePublisher != nil {
+		if err := s.persistencePublisher.PublishProjectArchive(ctx, contract); err == nil {
+			_, _ = s.projectCache.UpdateProject(ctx, contract, func(latest *Project, exists bool) (*Project, bool, error) {
+				if !exists || latest == nil || latest.Meta.IsArchived {
+					return nil, false, nil
+				}
+				latest.Meta.IsArchived = true
+				latest.Meta.ArchivedAt = now
+				return latest, true, nil
+			})
+		}
+	}
+
+	payload := "{}"
+	if encoded, err := json.Marshal(map[string]string{
+		"source":    "bin_blacklist_scan",
+		"code_hash": codeHash.Hex(),
+	}); err == nil {
+		payload = string(encoded)
+	}
+
+	return s.persistProjectEventLog(ctx, appstore.ProjectEventLog{
+		Contract:       contract,
+		EventType:      projectEventTypeAutoArchiveBIN,
+		OccurredAt:     now,
+		Message:        "Project auto archived by BIN blacklist match",
+		Payload:        payload,
+		IdempotencyKey: projectEventIdempotencyAutoArchiveBIN,
+	})
 }
 
 func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []*Project, fields []string, target refreshTarget) error {
