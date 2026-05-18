@@ -240,7 +240,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         };
     }, [cleanupRequests, loadBlacklistStatus, loadProject, loadProjectEventLogs]);
 
-    const breadcrumbs = [{title: 'Projects', path: '/projects'}, {title: contract}];
+    const breadcrumbs = [{title: 'Projects', path: `/projects${props.location.search || ''}`}, {title: contract}];
     const isArchived = project?.meta?.isArchived ?? false;
 
     const handleArchiveStateChange = React.useCallback(async () => {
