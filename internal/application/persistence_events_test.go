@@ -12,6 +12,7 @@ import (
 
 type persistenceWriterMock struct {
 	metas         []appstore.ProjectMeta
+	eventLogs     []appstore.ProjectEventLog
 	sourceUpdates []struct {
 		contract   common.Address
 		sourceCode string
@@ -24,6 +25,11 @@ type persistenceWriterMock struct {
 
 func (m *persistenceWriterMock) WriteProjectMeta(ctx context.Context, meta appstore.ProjectMeta) error {
 	m.metas = append(m.metas, meta)
+	return nil
+}
+
+func (m *persistenceWriterMock) WriteProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {
+	m.eventLogs = append(m.eventLogs, item)
 	return nil
 }
 
@@ -105,6 +111,40 @@ func TestApplyEventProjectSourceCodeUpdate(t *testing.T) {
 	}
 	if writer.sourceUpdates[0].sourceCode != "code" {
 		t.Fatalf("source code = %q, want %q", writer.sourceUpdates[0].sourceCode, "code")
+	}
+}
+
+func TestApplyEventProjectEventLogAdd(t *testing.T) {
+	contract := common.HexToAddress("0x7777777777777777777777777777777777777777")
+	occurredAt := time.Now().UTC().Truncate(time.Second)
+	payload, err := json.Marshal(projectEventLogAddPayload{
+		Contract:       contract.Hex(),
+		EventType:      2,
+		OccurredAt:     occurredAt.Format(time.RFC3339Nano),
+		Message:        "Contract source code opened",
+		Payload:        "{}",
+		IdempotencyKey: "project_source_code_opened",
+	})
+	if err != nil {
+		t.Fatalf("marshal payload: %v", err)
+	}
+
+	writer := &persistenceWriterMock{}
+	bus := &RedisPersistenceEventBus{}
+	if err := bus.applyEvent(context.Background(), writer, PersistenceEvent{Op: PersistenceOpProjectEventLogAdd, Payload: payload}); err != nil {
+		t.Fatalf("apply event: %v", err)
+	}
+	if len(writer.eventLogs) != 1 {
+		t.Fatalf("event log writes = %d, want 1", len(writer.eventLogs))
+	}
+	if writer.eventLogs[0].Contract != contract {
+		t.Fatalf("contract = %s, want %s", writer.eventLogs[0].Contract, contract)
+	}
+	if writer.eventLogs[0].EventType != 2 {
+		t.Fatalf("event type = %d, want 2", writer.eventLogs[0].EventType)
+	}
+	if writer.eventLogs[0].IdempotencyKey != "project_source_code_opened" {
+		t.Fatalf("idempotency key = %q, want %q", writer.eventLogs[0].IdempotencyKey, "project_source_code_opened")
 	}
 }
 

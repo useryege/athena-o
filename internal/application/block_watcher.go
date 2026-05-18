@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/evm"
+	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
@@ -324,6 +325,16 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 		project.ChainState = snapshot
 		if err := w.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
 			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
+		}
+		if err := w.publisher.PublishProjectEventLog(ctx, appstore.ProjectEventLog{
+			Contract:       project.Meta.Contract,
+			EventType:      projectEventTypeCreated,
+			OccurredAt:     time.Unix(int64(project.Meta.BlockTime), 0).UTC(),
+			Message:        "Project created",
+			Payload:        "{}",
+			IdempotencyKey: projectEventIdempotencyCreated,
+		}); err != nil {
+			return fmt.Errorf("failed to persist project event log %s: %w", project.Meta.Contract.Hex(), err)
 		}
 		_, err = w.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if exists && current != nil {

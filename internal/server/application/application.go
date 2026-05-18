@@ -73,6 +73,27 @@ func (s *Server) GetProject(ctx context.Context, req *applicationpkg.GetProjectR
 	return &applicationpkg.GetProjectResponse{Item: resp.Item}, nil
 }
 
+func (s *Server) ListProjectEventLogs(ctx context.Context, req *applicationpkg.ListProjectEventLogsRequest) (*applicationpkg.ListProjectEventLogsResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListProjectEventLogs(ctx, &applicationapiclient.ListProjectEventLogsRequest{
+		Contract: req.GetContract(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*applicationpkg.ProjectEventLog, 0, len(resp.Items))
+	for _, item := range resp.Items {
+		items = append(items, projectEventLogToAPI(item))
+	}
+	return &applicationpkg.ListProjectEventLogsResponse{Items: items}, nil
+}
+
 func (s *Server) ListSourceCodeBlacklistFields(ctx context.Context, _ *applicationpkg.ListSourceCodeBlacklistFieldsRequest) (*applicationpkg.ListSourceCodeBlacklistFieldsResponse, error) {
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {
@@ -325,5 +346,20 @@ func walletBlacklistContractToAPI(item *applicationapiclient.WalletBlacklistCont
 		Contract:  item.Contract,
 		Note:      item.Note,
 		CreatedAt: item.CreatedAt,
+	}
+}
+
+func projectEventLogToAPI(item *applicationapiclient.ProjectEventLog) *applicationpkg.ProjectEventLog {
+	if item == nil {
+		return nil
+	}
+	return &applicationpkg.ProjectEventLog{
+		Id:         item.Id,
+		Contract:   item.Contract,
+		EventType:  item.EventType,
+		OccurredAt: item.OccurredAt,
+		Message:    item.Message,
+		Payload:    item.Payload,
+		CreatedAt:  item.CreatedAt,
 	}
 }

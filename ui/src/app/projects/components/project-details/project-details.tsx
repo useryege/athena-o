@@ -2,7 +2,7 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
 import {services} from '../../../shared/services';
-import {PairV2State, ProjectView} from '../../../shared/services/athena-application-service';
+import {PairV2State, ProjectEventLog, ProjectView} from '../../../shared/services/athena-application-service';
 
 require('./project-details.scss');
 
@@ -20,6 +20,17 @@ const renderPercent = (value?: string) => {
         return '-';
     }
     return `${value}%`;
+};
+
+const renderEventType = (eventType?: number) => {
+    switch (eventType) {
+        case 1:
+            return 'Project Created';
+        case 2:
+            return 'Contract Source Opened';
+        default:
+            return `Unknown(${eventType ?? 0})`;
+    }
 };
 
 const renderPairSection = (title: string, pair?: PairV2State) => (
@@ -97,12 +108,14 @@ interface RouteParams {
 export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const contract = props.match.params.contract;
     const [project, setProject] = React.useState<ProjectView | null>(null);
+    const [eventLogs, setEventLogs] = React.useState<ProjectEventLog[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [changingArchiveState, setChangingArchiveState] = React.useState(false);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
 
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
+    const eventRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
 
@@ -114,6 +127,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         if (requestRef.current?.abort) {
             requestRef.current.abort();
             requestRef.current = null;
+        }
+        if (eventRequestRef.current?.abort) {
+            eventRequestRef.current.abort();
+            eventRequestRef.current = null;
         }
     }, []);
 
@@ -143,16 +160,41 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         }
     }, [contract]);
 
+    const loadProjectEventLogs = React.useCallback(async () => {
+        if (eventRequestRef.current) {
+            return;
+        }
+
+        try {
+            const req = services.athenaApplication.listProjectEventLogs(contract);
+            eventRequestRef.current = req;
+            const items = await req;
+            if (isMountedRef.current) {
+                setEventLogs(items || []);
+            }
+        } catch (err) {
+            if (isMountedRef.current) {
+                setError(err as Error);
+            }
+        } finally {
+            eventRequestRef.current = null;
+        }
+    }, [contract]);
+
     React.useEffect(() => {
         isMountedRef.current = true;
         loadProject();
-        intervalRef.current = window.setInterval(loadProject, AUTO_REFRESH_INTERVAL_MS);
+        loadProjectEventLogs();
+        intervalRef.current = window.setInterval(() => {
+            loadProject();
+            loadProjectEventLogs();
+        }, AUTO_REFRESH_INTERVAL_MS);
 
         return () => {
             isMountedRef.current = false;
             cleanupRequests();
         };
-    }, [cleanupRequests, loadProject]);
+    }, [cleanupRequests, loadProject, loadProjectEventLogs]);
 
     const breadcrumbs = [{title: 'Projects', path: '/projects'}, {title: contract}];
     const isArchived = project?.meta?.isArchived ?? false;
@@ -234,6 +276,24 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                     </span>
                                 </div>
                             </div>
+                        </div>
+
+                        <div className='white-box project-details__box'>
+                            <div className='project-details__section-title'>Event Log</div>
+                            {eventLogs.length === 0 ? (
+                                <div className='project-details__field-value'>No events available</div>
+                            ) : (
+                                <div className='project-details__grid'>
+                                    {eventLogs.map(item => (
+                                        <div key={`${item.id || 0}-${item.occurredAt || ''}`} className='project-details__field' style={{gridColumn: '1 / -1'}}>
+                                            <span className='project-details__field-label'>
+                                                {renderEventType(item.eventType)} • {renderValue(item.occurredAt)}
+                                            </span>
+                                            <span className='project-details__field-value'>{renderValue(item.message)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div className='white-box project-details__box'>

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-265-gf01db35-dirty"
+    "version": "v1.0.0-266-gbf612ed-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -512,6 +512,37 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationGetProjectResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{contract}/events": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ListProjectEventLogs returns event logs for a given contract.",
+        "operationId": "ApplicationService_ListProjectEventLogs",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListProjectEventLogsResponse"
             }
           },
           "default": {
@@ -1090,6 +1121,18 @@
         }
       }
     },
+    "applicationListProjectEventLogsResponse": {
+      "description": "ListProjectEventLogsResponse returns event logs for a contract.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/applicationProjectEventLog"
+          }
+        }
+      }
+    },
     "applicationListProjectsResponse": {
       "description": "ListProjectsResponse returns the current known project snapshot.",
       "type": "object",
@@ -1135,6 +1178,35 @@
           "items": {
             "$ref": "#/definitions/applicationWalletBlacklistContract"
           }
+        }
+      }
+    },
+    "applicationProjectEventLog": {
+      "description": "ProjectEventLog is a project event timeline entry.",
+      "type": "object",
+      "properties": {
+        "contract": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "event_type": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "message": {
+          "type": "string"
+        },
+        "occurred_at": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
         }
       }
     },

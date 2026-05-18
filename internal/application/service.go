@@ -607,6 +607,16 @@ func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []
 			if err := s.persistProjectSourceCode(ctx, project.Meta.Contract, sourceCode); err != nil {
 				continue
 			}
+			if err := s.persistProjectEventLog(ctx, appstore.ProjectEventLog{
+				Contract:       project.Meta.Contract,
+				EventType:      projectEventTypeOpenSource,
+				OccurredAt:     time.Now().UTC(),
+				Message:        "Contract source code opened",
+				Payload:        "{}",
+				IdempotencyKey: projectEventIdempotencyOpenSource,
+			}); err != nil {
+				continue
+			}
 		}
 	}
 	return nil
@@ -617,6 +627,13 @@ func (s *Service) persistProjectSourceCode(ctx context.Context, contract common.
 		return nil
 	}
 	return s.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode)
+}
+
+func (s *Service) persistProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {
+	if s.persistencePublisher == nil {
+		return nil
+	}
+	return s.persistencePublisher.PublishProjectEventLog(ctx, item)
 }
 
 func (s *Service) fetchSourceCode(ctx context.Context, project *Project) (string, string, error) {
@@ -964,6 +981,26 @@ func walletBlacklistContractToAPI(item appstore.WalletBlacklistContract) *applic
 	}
 }
 
+func projectEventLogToAPI(item appstore.ProjectEventLog) *applicationpkg.ProjectEventLog {
+	occurredAt := ""
+	if !item.OccurredAt.IsZero() {
+		occurredAt = item.OccurredAt.UTC().Format(time.RFC3339Nano)
+	}
+	createdAt := ""
+	if !item.CreatedAt.IsZero() {
+		createdAt = item.CreatedAt.UTC().Format(time.RFC3339Nano)
+	}
+	return &applicationpkg.ProjectEventLog{
+		Id:         item.ID,
+		Contract:   item.Contract.Hex(),
+		EventType:  int32(item.EventType),
+		OccurredAt: occurredAt,
+		Message:    item.Message,
+		Payload:    item.Payload,
+		CreatedAt:  createdAt,
+	}
+}
+
 func (s *Service) fetchContractBytecode(ctx context.Context, contract common.Address) ([]byte, error) {
 	if s.codeAtFunc != nil {
 		return s.codeAtFunc(ctx, contract)
@@ -1035,6 +1072,27 @@ func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProject
 	}
 
 	return &applicationpkg.GetProjectResponse{Item: projectToView(project)}, nil
+}
+
+func (s *Service) ListProjectEventLogs(ctx context.Context, req *applicationpkg.ListProjectEventLogsRequest) (*applicationpkg.ListProjectEventLogsResponse, error) {
+	if !common.IsHexAddress(req.GetContract()) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
+	}
+	store, ok := s.store.(appstore.ProjectEventLogStore)
+	if !ok || store == nil {
+		return &applicationpkg.ListProjectEventLogsResponse{}, status.Error(codes.FailedPrecondition, "project event log store is not configured")
+	}
+
+	items, err := store.ListProjectEventLogsByContract(ctx, common.HexToAddress(req.GetContract()))
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*applicationpkg.ProjectEventLog, 0, len(items))
+	for _, item := range items {
+		result = append(result, projectEventLogToAPI(item))
+	}
+	return &applicationpkg.ListProjectEventLogsResponse{Items: result}, nil
 }
 
 func (s *Service) GetProjectOptions(context.Context, *applicationpkg.GetProjectOptionsRequest) (*applicationpkg.GetProjectOptionsResponse, error) {

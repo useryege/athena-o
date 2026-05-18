@@ -80,6 +80,10 @@ func (m *archiveProjectPublisherMock) PublishProjectMetaSave(ctx context.Context
 	return nil
 }
 
+func (m *archiveProjectPublisherMock) PublishProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {
+	return nil
+}
+
 func (m *archiveProjectPublisherMock) PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error {
 	return nil
 }

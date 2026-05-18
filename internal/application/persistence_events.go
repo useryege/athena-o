@@ -27,6 +27,7 @@ const (
 
 const (
 	PersistenceOpProjectMetaSave       = "project_meta_save"
+	PersistenceOpProjectEventLogAdd    = "project_event_log_add"
 	PersistenceOpProjectSourceCode     = "project_source_code_update"
 	PersistenceOpProjectArchive        = "project_archive"
 	PersistenceOpProjectUnarchive      = "project_unarchive"
@@ -60,6 +61,15 @@ type projectSourceCodeUpdatePayload struct {
 	SourceCode string `json:"source_code"`
 }
 
+type projectEventLogAddPayload struct {
+	Contract       string `json:"contract"`
+	EventType      int32  `json:"event_type"`
+	OccurredAt     string `json:"occurred_at,omitempty"`
+	Message        string `json:"message,omitempty"`
+	Payload        string `json:"payload,omitempty"`
+	IdempotencyKey string `json:"idempotency_key"`
+}
+
 type blacklistFieldPayload struct {
 	Field string `json:"field"`
 }
@@ -67,6 +77,7 @@ type blacklistFieldPayload struct {
 type PersistenceEventPublisher interface {
 	Publish(ctx context.Context, event PersistenceEvent) error
 	PublishProjectMetaSave(ctx context.Context, meta appstore.ProjectMeta) error
+	PublishProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error
 	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error
 	PublishProjectArchive(ctx context.Context, contract common.Address) error
 	PublishProjectUnarchive(ctx context.Context, contract common.Address) error
@@ -76,6 +87,7 @@ type PersistenceEventPublisher interface {
 
 type PersistenceEventWriter interface {
 	WriteProjectMeta(ctx context.Context, meta appstore.ProjectMeta) error
+	WriteProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error
 	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
 	ArchiveProject(ctx context.Context, contract common.Address) error
 	UnarchiveProject(ctx context.Context, contract common.Address) error
@@ -175,6 +187,34 @@ func (b *RedisPersistenceEventBus) PublishProjectSourceCodeUpdate(ctx context.Co
 		Contract:   contract.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
+	})
+}
+
+func (b *RedisPersistenceEventBus) PublishProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {
+	payload := projectEventLogAddPayload{
+		Contract:       item.Contract.Hex(),
+		EventType:      int32(item.EventType),
+		Message:        item.Message,
+		Payload:        item.Payload,
+		IdempotencyKey: item.IdempotencyKey,
+	}
+	if !item.OccurredAt.IsZero() {
+		payload.OccurredAt = item.OccurredAt.UTC().Format(time.RFC3339Nano)
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal project event log payload: %w", err)
+	}
+	occurredAt := item.OccurredAt.UTC()
+	if occurredAt.IsZero() {
+		occurredAt = time.Now().UTC()
+	}
+	return b.Publish(ctx, PersistenceEvent{
+		Version:    persistenceEventVersion,
+		Op:         PersistenceOpProjectEventLogAdd,
+		Contract:   item.Contract.Hex(),
+		Payload:    data,
+		OccurredAt: occurredAt,
 	})
 }
 
@@ -359,6 +399,33 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
 		return writer.WriteProjectSourceCode(ctx, common.HexToAddress(payload.Contract), payload.SourceCode)
+	case PersistenceOpProjectEventLogAdd:
+		var payload projectEventLogAddPayload
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("unmarshal project event log payload: %w", err)
+		}
+		if !common.IsHexAddress(payload.Contract) {
+			return fmt.Errorf("invalid contract %q", payload.Contract)
+		}
+		if payload.EventType <= 0 {
+			return fmt.Errorf("invalid event_type %d", payload.EventType)
+		}
+		occurredAt := event.OccurredAt.UTC()
+		if payload.OccurredAt != "" {
+			parsed, err := time.Parse(time.RFC3339Nano, payload.OccurredAt)
+			if err != nil {
+				return fmt.Errorf("parse occurred_at %q: %w", payload.OccurredAt, err)
+			}
+			occurredAt = parsed.UTC()
+		}
+		return writer.WriteProjectEventLog(ctx, appstore.ProjectEventLog{
+			Contract:       common.HexToAddress(payload.Contract),
+			EventType:      int16(payload.EventType),
+			OccurredAt:     occurredAt,
+			Message:        payload.Message,
+			Payload:        payload.Payload,
+			IdempotencyKey: payload.IdempotencyKey,
+		})
 	case PersistenceOpProjectArchive:
 		if !common.IsHexAddress(event.Contract) {
 			return fmt.Errorf("invalid contract %q", event.Contract)
@@ -422,6 +489,14 @@ func NewStorePersistenceWriter(store appstore.Store) PersistenceEventWriter {
 
 func (w *storePersistenceWriter) WriteProjectMeta(ctx context.Context, meta appstore.ProjectMeta) error {
 	return w.store.SaveProjectMeta(ctx, meta)
+}
+
+func (w *storePersistenceWriter) WriteProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {
+	store, ok := w.store.(appstore.ProjectEventLogStore)
+	if !ok || store == nil {
+		return errors.New("project event log store is not configured")
+	}
+	return store.AddProjectEventLog(ctx, item)
 }
 
 func (w *storePersistenceWriter) WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {

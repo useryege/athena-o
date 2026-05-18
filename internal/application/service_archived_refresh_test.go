@@ -67,6 +67,10 @@ func (m *archivedRefreshPublisherMock) PublishProjectMetaSave(context.Context, a
 	return nil
 }
 
+func (m *archivedRefreshPublisherMock) PublishProjectEventLog(context.Context, appstore.ProjectEventLog) error {
+	return nil
+}
+
 func (m *archivedRefreshPublisherMock) PublishProjectSourceCodeUpdate(_ context.Context, contract common.Address, sourceCode string) error {
 	m.sourceUpdates = append(m.sourceUpdates, archivedSourceUpdate{contract: contract, sourceCode: sourceCode})
 	return nil

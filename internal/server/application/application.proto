@@ -36,6 +36,27 @@ message GetProjectResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView item = 1;
 }
 
+// ProjectEventLog is a project event timeline entry.
+message ProjectEventLog {
+  int64 id = 1;
+  string contract = 2;
+  int32 event_type = 3;
+  string occurred_at = 4;
+  string message = 5;
+  string payload = 6;
+  string created_at = 7;
+}
+
+// ListProjectEventLogsRequest queries event logs by contract.
+message ListProjectEventLogsRequest {
+  string contract = 1;
+}
+
+// ListProjectEventLogsResponse returns event logs for a contract.
+message ListProjectEventLogsResponse {
+  repeated ProjectEventLog items = 1;
+}
+
 // SourceCodeBlacklistField is a globally maintained source-code blacklist field.
 message SourceCodeBlacklistField {
   int64 id = 1;
@@ -188,6 +209,11 @@ service ApplicationService {
   // GetProject returns the project snapshot for a given contract.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse) {
     option (google.api.http) = {get: "/api/v1/projects/{contract}"};
+  }
+
+  // ListProjectEventLogs returns event logs for a given contract.
+  rpc ListProjectEventLogs(ListProjectEventLogsRequest) returns (ListProjectEventLogsResponse) {
+    option (google.api.http) = {get: "/api/v1/projects/{contract}/events"};
   }
 
   // ListSourceCodeBlacklistFields returns all globally configured source-code blacklist fields.

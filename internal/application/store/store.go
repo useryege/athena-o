@@ -21,6 +21,17 @@ type ProjectMeta struct {
 	ArchivedAt  time.Time
 }
 
+type ProjectEventLog struct {
+	ID             int64
+	Contract       common.Address
+	EventType      int16
+	OccurredAt     time.Time
+	Message        string
+	Payload        string
+	IdempotencyKey string
+	CreatedAt      time.Time
+}
+
 type ProjectStore interface {
 	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
 	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
@@ -31,6 +42,11 @@ type ProjectStore interface {
 	ListArchivedProjectMetas(ctx context.Context, page int32, pageSize int32) ([]ProjectMeta, int64, int32, int32, error)
 	GetArchivedProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error)
 	GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error)
+}
+
+type ProjectEventLogStore interface {
+	AddProjectEventLog(ctx context.Context, item ProjectEventLog) error
+	ListProjectEventLogsByContract(ctx context.Context, contract common.Address) ([]ProjectEventLog, error)
 }
 
 type SourceCodeBlacklistStore interface {
