@@ -5,6 +5,9 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
+	"os"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -54,7 +57,38 @@ func NewSettingsManagerFromEnv(ctx context.Context, opts ...SettingsManagerOpts)
 		mgr.settings.Certificate = cert
 	}
 
+	logLoadedAccounts(raw, accounts)
+
 	return mgr, nil
+}
+
+func logLoadedAccounts(raw RawSettings, accounts map[string]Account) {
+	accountNames := make([]string, 0, len(accounts))
+	for name := range accounts {
+		accountNames = append(accountNames, name)
+	}
+	sort.Strings(accountNames)
+
+	envAccountVars := 0
+	for _, item := range os.Environ() {
+		key, _, ok := strings.Cut(item, "=")
+		if !ok {
+			continue
+		}
+		if strings.HasPrefix(key, "ATHENA_ACCOUNT_") {
+			envAccountVars++
+		}
+	}
+
+	secretAccountKeys := 0
+	for key := range raw.Secrets {
+		if strings.HasPrefix(key, accountsKeyPrefix+".") {
+			secretAccountKeys++
+		}
+	}
+
+	log.Infof("Loaded local accounts from env: count=%d accounts=%v", len(accountNames), accountNames)
+	log.Infof("Account source hints: ATHENA_ACCOUNT_* variables=%d, ATHENA_SECRET_accounts.* keys=%d", envAccountVars, secretAccountKeys)
 }
 
 // NewSettingsManager is kept as a compatibility shim for older call sites. The
