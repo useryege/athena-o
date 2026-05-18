@@ -13,3 +13,5 @@ p, role:admin, accounts, update, *, allow
 
 g, role:admin, role:readonly
 g, admin, role:admin
+g, LINGJIE, role:readonly
+g, YUDIAN, role:readonly
