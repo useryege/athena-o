@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
 import {ProjectView} from '../../../shared/services/athena-application-service';
 import {formatUsdtValue, PairMetricsCell} from '../pair-metrics-cell/pair-metrics-cell';
@@ -51,95 +52,88 @@ export const ProjectListRow = ({
     index,
     usdtDecimals,
     defaultIsArchived,
-    onClick
+    to
 }: {
     project: ProjectView;
     index: number;
     usdtDecimals?: number;
     defaultIsArchived?: boolean;
-    onClick?: () => void;
+    to?: string;
 }) => {
     const blockTime = formatBlockTime(project.meta?.blockTime);
     const isArchived = project.meta?.isArchived ?? defaultIsArchived ?? false;
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
-            e.preventDefault();
-            onClick();
-        }
-    };
-
-    return (
-        <div
-            className='argo-table-list__row'
-            onClick={onClick}
-            onKeyDown={handleKeyDown}
-            role={onClick ? 'button' : undefined}
-            tabIndex={onClick ? 0 : undefined}
-            style={{cursor: onClick ? 'pointer' : 'default'}}>
-            <div className='projects-list__row'>
-                <div className='projects-list__cell projects-list__cell--rank'>#{index + 1}</div>
-                <div className='projects-list__cell' title={project.chainState?.token?.name || ''}>
-                    {renderValue(project.chainState?.token?.name)}
-                </div>
-                <div className='projects-list__cell'>{renderValue(project.chainState?.token?.symbol)}</div>
-                <div className='projects-list__cell'>
-                    <span className={`project-details__badge project-details__badge--${isArchived ? 'negative' : 'positive'}`}>{isArchived ? 'Archived' : 'Active'}</span>
-                </div>
-                <div className='projects-list__cell'>
-                    {project.meta?.sourceCodeBlacklist?.hasBlacklistFields !== undefined ? (
-                        <span className={`project-details__badge project-details__badge--${project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'negative' : 'positive'}`}>
-                            {project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'Yes' : 'No'}
-                        </span>
-                    ) : (
-                        '-'
-                    )}
-                </div>
-                <div className='projects-list__cell'>
-                    {project.meta?.creatorResult
-                        ? (() => {
-                              const hasRisk =
-                                  project.meta.creatorResult.canMintViaTransferToWethPair ||
-                                  project.meta.creatorResult.canMintViaTransferToUsdtPair ||
-                                  project.meta.creatorResult.canMintFromDeadViaTransferFrom ||
-                                  project.meta.creatorResult.canMintFromZeroViaTransferFrom ||
-                                  project.meta.creatorResult.canMintFromWethPairViaTransferFrom ||
-                                  project.meta.creatorResult.canMintFromUsdtPairViaTransferFrom;
-                              return <span className={`project-details__badge project-details__badge--${hasRisk ? 'negative' : 'positive'}`}>{hasRisk ? 'Yes' : 'No'}</span>;
-                          })()
-                        : '-'}
-                </div>
-                <div className='projects-list__cell'>
-                    <span className={`project-details__badge project-details__badge--${isOpenSource(project) ? 'positive' : 'negative'}`}>
-                        {isOpenSource(project) ? 'Yes' : 'No'}
+    const rowContent = (
+        <div className='projects-list__row'>
+            <div className='projects-list__cell projects-list__cell--rank'>#{index + 1}</div>
+            <div className='projects-list__cell' title={project.chainState?.token?.name || ''}>
+                {renderValue(project.chainState?.token?.name)}
+            </div>
+            <div className='projects-list__cell'>{renderValue(project.chainState?.token?.symbol)}</div>
+            <div className='projects-list__cell'>
+                <span className={`project-details__badge project-details__badge--${isArchived ? 'negative' : 'positive'}`}>{isArchived ? 'Archived' : 'Active'}</span>
+            </div>
+            <div className='projects-list__cell'>
+                {project.meta?.sourceCodeBlacklist?.hasBlacklistFields !== undefined ? (
+                    <span className={`project-details__badge project-details__badge--${project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'negative' : 'positive'}`}>
+                        {project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'Yes' : 'No'}
                     </span>
-                </div>
-                <div className='projects-list__cell'>
-                    <PairMetricsCell
-                        quoteValue={project.chainState?.wethPair?.quoteUsdtValue}
-                        removeLiquidity={project.chainState?.wethPair?.isRemoveLiquidity}
-                        usdtDecimals={usdtDecimals}
-                    />
-                </div>
-                <div className='projects-list__cell'>
-                    <PairMetricsCell
-                        quoteValue={project.chainState?.usdtPair?.quoteUsdtValue}
-                        removeLiquidity={project.chainState?.usdtPair?.isRemoveLiquidity}
-                        usdtDecimals={usdtDecimals}
-                    />
-                </div>
-                <div className='projects-list__cell'>{formatUsdtValue(project.chainState?.creatorState?.usdtValue, usdtDecimals)}</div>
-                <div className='projects-list__cell projects-list__cell--block-time'>
-                    {blockTime ? (
-                        <>
-                            <span>{blockTime.date}</span>
-                            <span>{blockTime.time}</span>
-                        </>
-                    ) : (
-                        '-'
-                    )}
-                </div>
+                ) : (
+                    '-'
+                )}
+            </div>
+            <div className='projects-list__cell'>
+                {project.meta?.creatorResult
+                    ? (() => {
+                          const hasRisk =
+                              project.meta.creatorResult.canMintViaTransferToWethPair ||
+                              project.meta.creatorResult.canMintViaTransferToUsdtPair ||
+                              project.meta.creatorResult.canMintFromDeadViaTransferFrom ||
+                              project.meta.creatorResult.canMintFromZeroViaTransferFrom ||
+                              project.meta.creatorResult.canMintFromWethPairViaTransferFrom ||
+                              project.meta.creatorResult.canMintFromUsdtPairViaTransferFrom;
+                          return <span className={`project-details__badge project-details__badge--${hasRisk ? 'negative' : 'positive'}`}>{hasRisk ? 'Yes' : 'No'}</span>;
+                      })()
+                    : '-'}
+            </div>
+            <div className='projects-list__cell'>
+                <span className={`project-details__badge project-details__badge--${isOpenSource(project) ? 'positive' : 'negative'}`}>{isOpenSource(project) ? 'Yes' : 'No'}</span>
+            </div>
+            <div className='projects-list__cell'>
+                <PairMetricsCell
+                    quoteValue={project.chainState?.wethPair?.quoteUsdtValue}
+                    removeLiquidity={project.chainState?.wethPair?.isRemoveLiquidity}
+                    usdtDecimals={usdtDecimals}
+                />
+            </div>
+            <div className='projects-list__cell'>
+                <PairMetricsCell
+                    quoteValue={project.chainState?.usdtPair?.quoteUsdtValue}
+                    removeLiquidity={project.chainState?.usdtPair?.isRemoveLiquidity}
+                    usdtDecimals={usdtDecimals}
+                />
+            </div>
+            <div className='projects-list__cell'>{formatUsdtValue(project.chainState?.creatorState?.usdtValue, usdtDecimals)}</div>
+            <div className='projects-list__cell projects-list__cell--block-time'>
+                {blockTime ? (
+                    <>
+                        <span>{blockTime.date}</span>
+                        <span>{blockTime.time}</span>
+                    </>
+                ) : (
+                    '-'
+                )}
             </div>
         </div>
     );
+
+    if (to) {
+        return (
+            <Link className='argo-table-list__row projects-list__row-link' to={to}>
+                {rowContent}
+            </Link>
+        );
+    }
+
+    return <div className='argo-table-list__row'>{rowContent}</div>;
 };

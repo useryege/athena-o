@@ -275,12 +275,9 @@ export const ProjectsList = () => {
                                             index={(page - 1) * PAGE_SIZE + index}
                                             usdtDecimals={projectOptions?.usdtDecimals}
                                             defaultIsArchived={scope === ARCHIVED_SCOPE}
-                                            onClick={
+                                            to={
                                                 project.meta?.contract
-                                                    ? () =>
-                                                          history.push(
-                                                              `/projects/${project.meta!.contract}${buildProjectsListSearch(currentPageRef.current, currentScopeRef.current)}`
-                                                          )
+                                                    ? `/projects/${project.meta.contract}${buildProjectsListSearch(currentPageRef.current, currentScopeRef.current)}`
                                                     : undefined
                                             }
                                         />
