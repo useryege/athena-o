@@ -1,4 +1,26 @@
 .project-details {
+    &__header {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    &__last-updated {
+        font-size: 12px;
+        color: #6d7f8b;
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
     &__box {
         padding: 20px;
         margin-bottom: 20px;

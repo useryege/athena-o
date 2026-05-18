@@ -1,6 +1,8 @@
-import {MockupList, Page} from 'argo-ui';
+import {ErrorNotification, FormField, MockupList, NotificationType, Page} from 'argo-ui';
 import * as React from 'react';
+import {Text} from 'react-form';
 import {RouteComponentProps} from 'react-router';
+import {Context} from '../../../shared/context';
 import {services} from '../../../shared/services';
 import {PairV2State, ProjectEventLog, ProjectView} from '../../../shared/services/athena-application-service';
 
@@ -106,16 +108,21 @@ interface RouteParams {
 }
 
 export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
+    const ctx = React.useContext(Context);
     const contract = props.match.params.contract;
     const [project, setProject] = React.useState<ProjectView | null>(null);
     const [eventLogs, setEventLogs] = React.useState<ProjectEventLog[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [changingArchiveState, setChangingArchiveState] = React.useState(false);
+    const [isBlacklistChecking, setIsBlacklistChecking] = React.useState(true);
+    const [isBlacklisted, setIsBlacklisted] = React.useState(false);
+    const [addingToBlacklist, setAddingToBlacklist] = React.useState(false);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
 
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const eventRequestRef = React.useRef<{abort?: () => void} | null>(null);
+    const blacklistRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
 
@@ -131,6 +138,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         if (eventRequestRef.current?.abort) {
             eventRequestRef.current.abort();
             eventRequestRef.current = null;
+        }
+        if (blacklistRequestRef.current?.abort) {
+            blacklistRequestRef.current.abort();
+            blacklistRequestRef.current = null;
         }
     }, []);
 
@@ -181,10 +192,43 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         }
     }, [contract]);
 
+    const loadBlacklistStatus = React.useCallback(async () => {
+        if (blacklistRequestRef.current) {
+            return;
+        }
+
+        if (isMountedRef.current) {
+            setIsBlacklistChecking(true);
+        }
+
+        try {
+            const req = services.athenaApplication.listBytecodeBlacklistContracts();
+            blacklistRequestRef.current = req;
+            const items = await req;
+            const normalizedContract = contract.trim().toLowerCase();
+            const exists = (items || []).some(item => (item.contract || '').trim().toLowerCase() === normalizedContract);
+            if (isMountedRef.current) {
+                setIsBlacklisted(exists);
+            }
+        } catch (err) {
+            if (isMountedRef.current) {
+                setError(err as Error);
+            }
+        } finally {
+            if (isMountedRef.current) {
+                setIsBlacklistChecking(false);
+            }
+            blacklistRequestRef.current = null;
+        }
+    }, [contract]);
+
     React.useEffect(() => {
         isMountedRef.current = true;
+        setIsBlacklisted(false);
+        setIsBlacklistChecking(true);
         loadProject();
         loadProjectEventLogs();
+        loadBlacklistStatus();
         intervalRef.current = window.setInterval(() => {
             loadProject();
             loadProjectEventLogs();
@@ -194,7 +238,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             isMountedRef.current = false;
             cleanupRequests();
         };
-    }, [cleanupRequests, loadProject, loadProjectEventLogs]);
+    }, [cleanupRequests, loadBlacklistStatus, loadProject, loadProjectEventLogs]);
 
     const breadcrumbs = [{title: 'Projects', path: '/projects'}, {title: contract}];
     const isArchived = project?.meta?.isArchived ?? false;
@@ -222,6 +266,71 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         }
     }, [changingArchiveState, contract, isArchived, loadProject]);
 
+    const handleAddToBlacklist = React.useCallback(async () => {
+        if (addingToBlacklist || isBlacklistChecking) {
+            return;
+        }
+
+        if (isBlacklisted) {
+            ctx.notifications.show({
+                content: '该合约已在 BIN 黑名单中',
+                type: NotificationType.Warning
+            });
+            return;
+        }
+
+        await ctx.popup.prompt(
+            '加入 BIN 黑名单',
+            api => (
+                <div>
+                    <div className='argo-form-row'>
+                        <FormField formApi={api} label='备注' field='note' component={Text} />
+                    </div>
+                </div>
+            ),
+            {
+                validate: vals => {
+                    const note = String(vals.note || '').trim();
+                    return {
+                        note: !note && '备注不能为空'
+                    };
+                },
+                submit: async (vals, _, close) => {
+                    const note = String(vals.note || '').trim();
+                    if (!note) {
+                        return;
+                    }
+
+                    setAddingToBlacklist(true);
+                    try {
+                        await services.athenaApplication.addBytecodeBlacklistContract(contract, note);
+                        if (isMountedRef.current) {
+                            setIsBlacklisted(true);
+                            setError(null);
+                        }
+                        close();
+                        ctx.notifications.show({
+                            content: '已加入 BIN 黑名单',
+                            type: NotificationType.Success
+                        });
+                    } catch (err) {
+                        ctx.notifications.show({
+                            content: <ErrorNotification title='加入 BIN 黑名单失败' e={err} />,
+                            type: NotificationType.Error
+                        });
+                    } finally {
+                        if (isMountedRef.current) {
+                            setAddingToBlacklist(false);
+                        }
+                    }
+                }
+            }
+        );
+    }, [addingToBlacklist, contract, ctx, isBlacklistChecking, isBlacklisted]);
+
+    const blacklistButtonText = isBlacklistChecking ? 'Checking...' : addingToBlacklist ? 'Adding...' : isBlacklisted ? '已加入BIN黑名单' : '加入BIN黑名单';
+    const blacklistButtonDisabled = isBlacklistChecking || addingToBlacklist || isBlacklisted;
+
     return (
         <Page title='Project Details' toolbar={{breadcrumbs}}>
             <div className='project-details'>
@@ -235,13 +344,16 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                     <MockupList height={50} marginTop={30} />
                 ) : project ? (
                     <div className='argo-container'>
-                        <div style={{textAlign: 'right', fontSize: '12px', color: '#6d7f8b', marginBottom: '10px'}}>
-                            Last updated: {lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : 'Never'}
-                        </div>
-                        <div style={{textAlign: 'right', marginBottom: '10px'}}>
-                            <button type='button' className='argo-button argo-button--base' disabled={changingArchiveState} onClick={handleArchiveStateChange}>
-                                {changingArchiveState ? (isArchived ? 'Unarchiving...' : 'Archiving...') : isArchived ? 'Unarchive Project' : 'Archive Project'}
-                            </button>
+                        <div className='project-details__header'>
+                            <div className='project-details__last-updated'>Last updated: {lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : 'Never'}</div>
+                            <div className='project-details__actions'>
+                                <button type='button' className='argo-button argo-button--base-o' disabled={blacklistButtonDisabled} onClick={handleAddToBlacklist}>
+                                    {blacklistButtonText}
+                                </button>
+                                <button type='button' className='argo-button argo-button--base' disabled={changingArchiveState} onClick={handleArchiveStateChange}>
+                                    {changingArchiveState ? (isArchived ? 'Unarchiving...' : 'Archiving...') : isArchived ? 'Unarchive Project' : 'Archive Project'}
+                                </button>
+                            </div>
                         </div>
 
                         <div className='white-box project-details__box'>
