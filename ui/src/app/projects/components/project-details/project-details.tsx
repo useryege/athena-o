@@ -273,18 +273,18 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
         if (isBlacklisted) {
             ctx.notifications.show({
-                content: '该合约已在 BIN 黑名单中',
+                content: 'This contract is already in the BIN blacklist',
                 type: NotificationType.Warning
             });
             return;
         }
 
         await ctx.popup.prompt(
-            '加入 BIN 黑名单',
+            'Add to BIN Blacklist',
             api => (
                 <div>
                     <div className='argo-form-row'>
-                        <FormField formApi={api} label='备注' field='note' component={Text} />
+                        <FormField formApi={api} label='Note' field='note' component={Text} />
                     </div>
                 </div>
             ),
@@ -292,7 +292,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                 validate: vals => {
                     const note = String(vals.note || '').trim();
                     return {
-                        note: !note && '备注不能为空'
+                        note: !note && 'Note is required'
                     };
                 },
                 submit: async (vals, _, close) => {
@@ -310,12 +310,12 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                         }
                         close();
                         ctx.notifications.show({
-                            content: '已加入 BIN 黑名单',
+                            content: 'Added to BIN blacklist',
                             type: NotificationType.Success
                         });
                     } catch (err) {
                         ctx.notifications.show({
-                            content: <ErrorNotification title='加入 BIN 黑名单失败' e={err} />,
+                            content: <ErrorNotification title='Failed to add to BIN blacklist' e={err} />,
                             type: NotificationType.Error
                         });
                     } finally {
@@ -328,7 +328,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         );
     }, [addingToBlacklist, contract, ctx, isBlacklistChecking, isBlacklisted]);
 
-    const blacklistButtonText = isBlacklistChecking ? 'Checking...' : addingToBlacklist ? 'Adding...' : isBlacklisted ? '已加入BIN黑名单' : '加入BIN黑名单';
+    const blacklistButtonText = isBlacklistChecking ? 'Checking...' : addingToBlacklist ? 'Adding...' : isBlacklisted ? 'Already in BIN blacklist' : 'Add to BIN blacklist';
     const blacklistButtonDisabled = isBlacklistChecking || addingToBlacklist || isBlacklisted;
 
     return (
