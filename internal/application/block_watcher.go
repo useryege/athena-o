@@ -270,9 +270,9 @@ func (w *BlockWatcher) scanBlock(ctx context.Context, blockNumber uint64) error 
 		}
 		projects = append(projects, project)
 	}
-	if err := w.syncProjects(ctx, projects); err != nil {
-		return fmt.Errorf("failed to sync projects for block %d: %w", blockNumber, err)
-	}
+
+	_ = w.syncProjects(ctx, projects)
+
 	return nil
 }
 
@@ -297,6 +297,10 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 
 	snapshots, err := w.fetcher.FetchProjects(ctx, queries)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"queries": queries,
+		}).Error("failed to fetch projects")
 		return err
 	}
 	if len(snapshots) != len(queries) {
