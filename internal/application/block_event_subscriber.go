@@ -66,11 +66,11 @@ func (s *BlockEventSubscriber) run(ctx context.Context) error {
 				continue
 			}
 
-			triggerBlockNumber := header.Number.Uint64()
-			log.WithFields(log.Fields{
-				"event":              "header_received",
-				"triggerBlockNumber": triggerBlockNumber,
-			}).Info("received new block header")
+			// triggerBlockNumber := header.Number.Uint64()
+			// log.WithFields(log.Fields{
+			// 	"event":              "header_received",
+			// 	"triggerBlockNumber": triggerBlockNumber,
+			// }).Info("received new block header")
 
 			// latestBlockNumber, err := s.client.BlockNumber(ctx)
 			// if err != nil {
