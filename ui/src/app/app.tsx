@@ -69,13 +69,13 @@ const navItems: NavItem[] = [
         title: 'Bytecode Blacklist',
         tooltip: 'Manage bytecode blacklist contracts',
         path: '/bytecode-blacklist',
-        iconClassName: 'fa fa-file-code-o'
+        iconClassName: 'fa fa-ban'
     },
     {
         title: 'Wallet Blacklist',
         tooltip: 'Manage wallet blacklist addresses',
         path: '/wallet-blacklist',
-        iconClassName: 'fa fa-address-card-o'
+        iconClassName: 'fa fa-ban'
     },
     // {
     //     title: 'Applications',
