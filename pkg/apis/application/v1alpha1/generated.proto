@@ -20,6 +20,16 @@ message CreatorState {
   optional string usdtValue = 5;
 }
 
+message GenesisWalletState {
+  optional string wallet = 1;
+
+  optional string netAmount = 2;
+
+  optional int64 ratioBps = 3;
+
+  optional int32 rank = 4;
+}
+
 message PairV2State {
   optional bool isCreated = 1;
 
@@ -82,6 +92,8 @@ message ProjectMeta {
   optional SourceCodeBlacklistState sourceCodeBlacklist = 10;
 
   optional bool isArchived = 11;
+
+  repeated GenesisWalletState genesisWallets = 12;
 }
 
 message ProjectOption {

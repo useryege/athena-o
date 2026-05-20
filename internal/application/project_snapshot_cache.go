@@ -27,6 +27,7 @@ const (
 	projectFieldCreatorResult       = "creator_result"
 	projectFieldSourceCode          = "source_code"
 	projectFieldSourceCodeBlacklist = "source_code_blacklist"
+	projectFieldGenesisWallets      = "genesis_wallets"
 
 	projectSchemaVersion = "2"
 
@@ -342,6 +343,10 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 	if err != nil {
 		return fmt.Errorf("marshal source code blacklist for %s: %w", project.Meta.Contract.Hex(), err)
 	}
+	genesisWalletsPayload, err := mustMarshalJSON(project.Meta.GenesisWallets)
+	if err != nil {
+		return fmt.Errorf("marshal genesis wallets for %s: %w", project.Meta.Contract.Hex(), err)
+	}
 
 	projectKey := projectDataV2Key(project.Meta.Contract)
 	pipe.HSet(ctx, projectKey, map[string]interface{}{
@@ -352,6 +357,7 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldCreatorResult:       creatorResultPayload,
 		projectFieldSourceCode:          project.Meta.SourceCode,
 		projectFieldSourceCodeBlacklist: sourceCodeBlacklistPayload,
+		projectFieldGenesisWallets:      genesisWalletsPayload,
 	})
 	c.applyProjectIndexes(ctx, pipe, project)
 	return nil
@@ -416,6 +422,13 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 		}
 		fields[projectFieldSourceCodeBlacklist] = sourceCodeBlacklistPayload
 	}
+	if current == nil || !reflect.DeepEqual(current.Meta.GenesisWallets, next.Meta.GenesisWallets) {
+		genesisWalletsPayload, err := mustMarshalJSON(next.Meta.GenesisWallets)
+		if err != nil {
+			return nil, fmt.Errorf("marshal genesis wallets for %s: %w", next.Meta.Contract.Hex(), err)
+		}
+		fields[projectFieldGenesisWallets] = genesisWalletsPayload
+	}
 
 	return fields, nil
 }
@@ -475,6 +488,11 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 	project.Meta.SourceCode = values[projectFieldSourceCode]
 	if raw := values[projectFieldSourceCodeBlacklist]; raw != "" {
 		if err := json.Unmarshal([]byte(raw), &project.Meta.SourceCodeBlacklist); err != nil {
+			return nil, false, err
+		}
+	}
+	if raw := values[projectFieldGenesisWallets]; raw != "" {
+		if err := json.Unmarshal([]byte(raw), &project.Meta.GenesisWallets); err != nil {
 			return nil, false, err
 		}
 	}

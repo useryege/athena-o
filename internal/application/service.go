@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -269,6 +270,15 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		return projects, nil
 	}
 
+	var genesisWalletStore appstore.ProjectGenesisWalletStore
+	if s.store != nil {
+		if configuredStore, ok := s.store.(appstore.ProjectGenesisWalletStore); ok && configuredStore != nil {
+			genesisWalletStore = configuredStore
+		} else {
+			log.WithField("component", "buildProjectsFromMetas").Warn("project genesis wallet store is not configured, skipping genesis wallet bootstrap")
+		}
+	}
+
 	blacklistFields, blacklistFieldsErr := s.sourceCodeBlacklistFields(ctx)
 
 	queries := make([]athenacontract.AthenaProjectQuery, 0, len(metas))
@@ -288,6 +298,13 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		project := &Project{
 			Meta:       projectMetaFromStore(meta),
 			ChainState: fetched[i].Project,
+		}
+		if genesisWalletStore != nil {
+			items, err := genesisWalletStore.ListProjectGenesisWalletsByContract(ctx, meta.Contract)
+			if err != nil {
+				return nil, err
+			}
+			project.Meta.GenesisWallets = projectGenesisWalletsFromStore(items)
 		}
 		if blacklistFieldsErr == nil && meta.SourceCode != "" && s.sourceAnalyzer != nil {
 			project.Meta.SourceCodeBlacklist = s.sourceAnalyzer.AnalyzeSourceCode(meta.SourceCode, blacklistFields)
@@ -309,6 +326,26 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		projects = append(projects, project)
 	}
 	return projects, nil
+}
+
+func projectGenesisWalletsFromStore(items []appstore.ProjectGenesisWallet) []GenesisWalletMeta {
+	if len(items) == 0 {
+		return nil
+	}
+	converted := make([]GenesisWalletMeta, 0, len(items))
+	for _, item := range items {
+		netAmount := new(big.Int)
+		if item.NetAmount != nil {
+			netAmount = new(big.Int).Set(item.NetAmount)
+		}
+		converted = append(converted, GenesisWalletMeta{
+			Wallet:    item.Wallet,
+			NetAmount: netAmount,
+			RatioBPS:  item.RatioBPS,
+			RankIndex: item.RankIndex,
+		})
+	}
+	return converted
 }
 
 func (s *Service) runPersistenceEventLoop(ctx context.Context) {
@@ -1234,7 +1271,7 @@ func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProj
 
 	items := make([]*v1alpha1.ProjectView, 0, len(projects))
 	for _, project := range projects {
-		items = append(items, projectToView(project))
+		items = append(items, projectToView(project, false))
 	}
 
 	return &applicationpkg.ListProjectsResponse{
@@ -1261,7 +1298,7 @@ func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProject
 		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
 	}
 
-	return &applicationpkg.GetProjectResponse{Item: projectToView(project)}, nil
+	return &applicationpkg.GetProjectResponse{Item: projectToView(project, true)}, nil
 }
 
 func (s *Service) ListProjectEventLogs(ctx context.Context, req *applicationpkg.ListProjectEventLogsRequest) (*applicationpkg.ListProjectEventLogsResponse, error) {

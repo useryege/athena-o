@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"math/big"
 	"sync"
 	"testing"
 	"time"
@@ -27,6 +28,14 @@ func TestSetProject_WritesProjectWithoutUpdatingMaxBlock(t *testing.T) {
 			SourceCode:  "contract A {}",
 			CreatorResult: SimulateResult{
 				CanMintViaTransferToUsdtPair: true,
+			},
+			GenesisWallets: []GenesisWalletMeta{
+				{
+					Wallet:    common.HexToAddress("0x00000000000000000000000000000000000000A2"),
+					NetAmount: big.NewInt(200),
+					RatioBPS:  2500,
+					RankIndex: 0,
+				},
 			},
 		},
 		ChainState: athenacontract.AthenaProject{
@@ -56,6 +65,15 @@ func TestSetProject_WritesProjectWithoutUpdatingMaxBlock(t *testing.T) {
 	}
 	if !got.Meta.CreatorResult.CanMintViaTransferToUsdtPair {
 		t.Fatalf("creator result not persisted")
+	}
+	if len(got.Meta.GenesisWallets) != 1 {
+		t.Fatalf("genesis wallets len = %d, want 1", len(got.Meta.GenesisWallets))
+	}
+	if got.Meta.GenesisWallets[0].Wallet != common.HexToAddress("0x00000000000000000000000000000000000000A2") {
+		t.Fatalf("genesis wallet = %s, want 0x...A2", got.Meta.GenesisWallets[0].Wallet.Hex())
+	}
+	if got.Meta.GenesisWallets[0].NetAmount.String() != "200" {
+		t.Fatalf("genesis net amount = %s, want 200", got.Meta.GenesisWallets[0].NetAmount.String())
 	}
 
 	maxBlock, ok, err := cache.GetMaxProjectBlockNumber(ctx)

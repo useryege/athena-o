@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-266-gbf612ed-dirty"
+    "version": "v1.0.0-288-gf054adc-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1606,6 +1606,25 @@
         }
       }
     },
+    "v1alpha1GenesisWalletState": {
+      "type": "object",
+      "properties": {
+        "netAmount": {
+          "type": "string"
+        },
+        "rank": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ratioBps": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1PairV2State": {
       "type": "object",
       "properties": {
@@ -1693,6 +1712,12 @@
         },
         "creatorResult": {
           "$ref": "#/definitions/v1alpha1SimulateResult"
+        },
+        "genesisWallets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1GenesisWalletState"
+          }
         },
         "isArchived": {
           "type": "boolean"

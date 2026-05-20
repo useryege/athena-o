@@ -7,6 +7,8 @@ package v1alpha1
 
 func (*CreatorState) ProtoMessage() {}
 
+func (*GenesisWalletState) ProtoMessage() {}
+
 func (*PairV2State) ProtoMessage() {}
 
 func (*ProjectChainState) ProtoMessage() {}

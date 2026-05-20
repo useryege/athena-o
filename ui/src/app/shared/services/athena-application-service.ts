@@ -16,6 +16,14 @@ export interface ProjectMeta {
     creatorResult?: SimulateResult;
     sourceCodeBlacklist?: SourceCodeBlacklistState;
     isArchived?: boolean;
+    genesisWallets?: GenesisWalletState[];
+}
+
+export interface GenesisWalletState {
+    wallet?: string;
+    netAmount?: string;
+    ratioBps?: number;
+    rank?: number;
 }
 
 export interface ProjectChainState {

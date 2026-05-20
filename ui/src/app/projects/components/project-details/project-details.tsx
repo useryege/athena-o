@@ -24,6 +24,13 @@ const renderPercent = (value?: string) => {
     return `${value}%`;
 };
 
+const renderRatioFromBps = (ratioBps?: number) => {
+    if (ratioBps === undefined || ratioBps === null || Number.isNaN(ratioBps)) {
+        return '-';
+    }
+    return `${(ratioBps / 100).toFixed(2)}%`;
+};
+
 const renderEventType = (eventType?: number) => {
     switch (eventType) {
         case 1:
@@ -388,6 +395,26 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                     </span>
                                 </div>
                             </div>
+                        </div>
+
+                        <div className='white-box project-details__box'>
+                            <div className='project-details__section-title'>Genesis Wallets</div>
+                            {!project.meta?.genesisWallets || project.meta.genesisWallets.length === 0 ? (
+                                <div className='project-details__field-value'>No genesis wallet metadata available</div>
+                            ) : (
+                                <div className='project-details__grid'>
+                                    {project.meta.genesisWallets.map((item, index) => (
+                                        <div key={`${item.wallet || ''}-${item.rank ?? index}`} className='project-details__field' style={{gridColumn: '1 / -1'}}>
+                                            <span className='project-details__field-label'>
+                                                Rank {renderValue(item.rank)}
+                                            </span>
+                                            <span className='project-details__field-value'>
+                                                Wallet: {renderValue(item.wallet)} | Net Amount: {renderValue(item.netAmount)} | Ratio: {renderRatioFromBps(item.ratioBps)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div className='white-box project-details__box'>

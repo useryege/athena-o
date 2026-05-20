@@ -375,6 +375,7 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 				"genesisWalletShares": genesisWalletShareItems,
 			}).Info("extracted genesis wallets from project creation receipt")
 		}
+		project.Meta.GenesisWallets = genesisWalletMetasFromShares(genesisWalletShares)
 
 		if w.publisher == nil {
 			return errors.New("persistence publisher is not configured")
@@ -415,6 +416,26 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 		}
 	}
 	return nil
+}
+
+func genesisWalletMetasFromShares(shares []GenesisWalletShare) []GenesisWalletMeta {
+	if len(shares) == 0 {
+		return nil
+	}
+	metas := make([]GenesisWalletMeta, 0, len(shares))
+	for i, item := range shares {
+		amount := new(big.Int)
+		if item.Amount != nil {
+			amount = new(big.Int).Set(item.Amount)
+		}
+		metas = append(metas, GenesisWalletMeta{
+			Wallet:    item.Wallet,
+			NetAmount: amount,
+			RatioBPS:  item.RatioBPS,
+			RankIndex: int32(i),
+		})
+	}
+	return metas
 }
 
 func (w *BlockWatcher) Stop() error {

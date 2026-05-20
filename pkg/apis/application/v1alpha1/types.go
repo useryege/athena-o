@@ -16,6 +16,14 @@ type ProjectMeta struct {
 	CreatorResult       SimulateResult           `protobuf:"bytes,9,opt,name=creatorResult" json:"creatorResult"`
 	SourceCodeBlacklist SourceCodeBlacklistState `protobuf:"bytes,10,opt,name=sourceCodeBlacklist" json:"sourceCodeBlacklist"`
 	IsArchived          bool                     `protobuf:"varint,11,opt,name=isArchived" json:"isArchived"`
+	GenesisWallets      []GenesisWalletState     `protobuf:"bytes,12,rep,name=genesisWallets" json:"genesisWallets"`
+}
+
+type GenesisWalletState struct {
+	Wallet    string `protobuf:"bytes,1,opt,name=wallet" json:"wallet"`
+	NetAmount string `protobuf:"bytes,2,opt,name=netAmount" json:"netAmount"`
+	RatioBps  int64  `protobuf:"varint,3,opt,name=ratioBps" json:"ratioBps"`
+	Rank      int32  `protobuf:"varint,4,opt,name=rank" json:"rank"`
 }
 
 type ProjectChainState struct {

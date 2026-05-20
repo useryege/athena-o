@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -158,5 +159,117 @@ func TestBuildProjectsFromMetasSkipsBlacklistAnalysisWhenFieldsLoadFails(t *test
 	}
 	if projects[0].Meta.SourceCodeBlacklist.HasBlacklistFields {
 		t.Fatalf("has blacklist fields = true, want false")
+	}
+}
+
+type buildProjectsGenesisStoreMock struct {
+	byContract map[common.Address][]appstore.ProjectGenesisWallet
+}
+
+func (m *buildProjectsGenesisStoreMock) SaveProjectMeta(context.Context, appstore.ProjectMeta) error {
+	return nil
+}
+
+func (m *buildProjectsGenesisStoreMock) ListProjectMetas(context.Context) ([]appstore.ProjectMeta, error) {
+	return nil, nil
+}
+
+func (m *buildProjectsGenesisStoreMock) ListAllProjectMetas(context.Context) ([]appstore.ProjectMeta, error) {
+	return nil, nil
+}
+
+func (m *buildProjectsGenesisStoreMock) UpdateProjectSourceCode(context.Context, common.Address, string) error {
+	return nil
+}
+
+func (m *buildProjectsGenesisStoreMock) ArchiveProjectByContract(context.Context, common.Address) error {
+	return nil
+}
+
+func (m *buildProjectsGenesisStoreMock) UnarchiveProjectByContract(context.Context, common.Address) error {
+	return nil
+}
+
+func (m *buildProjectsGenesisStoreMock) ListArchivedProjectMetas(context.Context, int32, int32) ([]appstore.ProjectMeta, int64, int32, int32, error) {
+	return nil, 0, 0, 0, nil
+}
+
+func (m *buildProjectsGenesisStoreMock) GetArchivedProjectMetaByContract(context.Context, common.Address) (*appstore.ProjectMeta, error) {
+	return nil, nil
+}
+
+func (m *buildProjectsGenesisStoreMock) GetProjectMetaByContract(context.Context, common.Address) (*appstore.ProjectMeta, error) {
+	return nil, nil
+}
+
+func (m *buildProjectsGenesisStoreMock) ListSourceCodeBlacklistFields(context.Context) ([]string, error) {
+	return nil, nil
+}
+
+func (m *buildProjectsGenesisStoreMock) AddSourceCodeBlacklistField(context.Context, string) error {
+	return nil
+}
+
+func (m *buildProjectsGenesisStoreMock) DeleteSourceCodeBlacklistField(context.Context, string) error {
+	return nil
+}
+
+func (m *buildProjectsGenesisStoreMock) ReplaceProjectGenesisWallets(context.Context, common.Address, []appstore.ProjectGenesisWallet) error {
+	return nil
+}
+
+func (m *buildProjectsGenesisStoreMock) ListProjectGenesisWalletsByContract(_ context.Context, contract common.Address) ([]appstore.ProjectGenesisWallet, error) {
+	items := m.byContract[contract]
+	out := make([]appstore.ProjectGenesisWallet, len(items))
+	copy(out, items)
+	return out, nil
+}
+
+func (m *buildProjectsGenesisStoreMock) ListProjectGenesisWalletsByWallet(context.Context, common.Address) ([]appstore.ProjectGenesisWallet, error) {
+	return nil, nil
+}
+
+func TestBuildProjectsFromMetasLoadsGenesisWalletsFromStore(t *testing.T) {
+	contract := common.HexToAddress("0xa000000000000000000000000000000000000001")
+	creator := common.HexToAddress("0xb000000000000000000000000000000000000002")
+	walletA := common.HexToAddress("0xc000000000000000000000000000000000000003")
+	walletB := common.HexToAddress("0xd000000000000000000000000000000000000004")
+
+	service := &Service{
+		store: &buildProjectsGenesisStoreMock{
+			byContract: map[common.Address][]appstore.ProjectGenesisWallet{
+				contract: {
+					{Wallet: walletA, NetAmount: big.NewInt(500), RatioBPS: 6250, RankIndex: 0},
+					{Wallet: walletB, NetAmount: big.NewInt(300), RatioBPS: 3750, RankIndex: 1},
+				},
+			},
+		},
+	}
+
+	metas := []appstore.ProjectMeta{{Contract: contract, Creator: creator}}
+	fetcher := &activeRefreshFetcherMock{
+		projectsWithSimulation: []athenacontract.AthenaProjectWithSimulationState{
+			{Project: athenacontract.AthenaProject{TokenContract: contract}},
+		},
+	}
+
+	projects, err := service.buildProjectsFromMetas(context.Background(), metas, fetcher, nil)
+	if err != nil {
+		t.Fatalf("build projects from metas: %v", err)
+	}
+	if len(projects) != 1 {
+		t.Fatalf("projects len = %d, want 1", len(projects))
+	}
+	if len(projects[0].Meta.GenesisWallets) != 2 {
+		t.Fatalf("genesis wallets len = %d, want 2", len(projects[0].Meta.GenesisWallets))
+	}
+	if projects[0].Meta.GenesisWallets[0].Wallet != walletA {
+		t.Fatalf("genesis wallet[0] = %s, want %s", projects[0].Meta.GenesisWallets[0].Wallet, walletA)
+	}
+	if projects[0].Meta.GenesisWallets[0].NetAmount.String() != "500" {
+		t.Fatalf("genesis wallet[0] amount = %s, want 500", projects[0].Meta.GenesisWallets[0].NetAmount.String())
+	}
+	if projects[0].Meta.GenesisWallets[1].RatioBPS != 3750 {
+		t.Fatalf("genesis wallet[1] ratio bps = %d, want 3750", projects[0].Meta.GenesisWallets[1].RatioBPS)
 	}
 }

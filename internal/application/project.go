@@ -31,9 +31,17 @@ type ProjectMeta struct {
 	// extra fields
 	CreatorResult       SimulateResult
 	SourceCodeBlacklist sourcecode.BlacklistReport
+	GenesisWallets      []GenesisWalletMeta
 }
 
-func projectToView(project *Project) *v1alpha1.ProjectView {
+type GenesisWalletMeta struct {
+	Wallet    common.Address
+	NetAmount *big.Int
+	RatioBPS  int64
+	RankIndex int32
+}
+
+func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.ProjectView {
 	if project == nil {
 		return nil
 	}
@@ -49,6 +57,18 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 	sourceCode := project.Meta.SourceCode
 	creatorResult := project.Meta.CreatorResult
 	sourceCodeBlacklist := project.Meta.SourceCodeBlacklist
+	var genesisWallets []v1alpha1.GenesisWalletState
+	if includeGenesisWallets && len(project.Meta.GenesisWallets) > 0 {
+		genesisWallets = make([]v1alpha1.GenesisWalletState, 0, len(project.Meta.GenesisWallets))
+		for _, item := range project.Meta.GenesisWallets {
+			genesisWallets = append(genesisWallets, v1alpha1.GenesisWalletState{
+				Wallet:    item.Wallet.Hex(),
+				NetAmount: bigIntToString(item.NetAmount),
+				RatioBps:  item.RatioBPS,
+				Rank:      item.RankIndex,
+			})
+		}
+	}
 
 	return &v1alpha1.ProjectView{
 		Meta: v1alpha1.ProjectMeta{
@@ -71,7 +91,8 @@ func projectToView(project *Project) *v1alpha1.ProjectView {
 				HasBlacklistFields: sourceCodeBlacklist.HasBlacklistFields,
 				BlacklistFields:    sourceCodeBlacklist.BlacklistFields,
 			},
-			IsArchived: project.Meta.IsArchived,
+			IsArchived:     project.Meta.IsArchived,
+			GenesisWallets: genesisWallets,
 		},
 		ChainState: v1alpha1.ProjectChainState{
 			Token: v1alpha1.TokenState{
