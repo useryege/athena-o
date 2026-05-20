@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -16,9 +17,15 @@ import (
 	"github.com/useryege/athena/internal/application/evm"
 	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
+	erc20contract "github.com/useryege/athena/pkg/abi/ERC20"
 )
 
 const initialProjectSyncLookback = 30 * 24 * time.Hour
+
+var (
+	errGenesisReceiptNil   = errors.New("project transaction receipt is nil")
+	erc20TransferTopicHash = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+)
 
 type BlockWatcher struct {
 	nodeClient   *ethclient.Client
@@ -315,6 +322,30 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 		if !snapshot.Token.IsValidERC20 {
 			continue
 		}
+
+		genesisWallets, err := w.fetchGenesisWallets(ctx, project)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"contract":    project.Meta.Contract.Hex(),
+				"txHash":      project.Meta.TxHash.Hex(),
+				"blockNumber": project.Meta.BlockNumber,
+				"creator":     project.Meta.Creator.Hex(),
+			}).WithError(err).Warn("failed to fetch genesis wallets from project creation receipt")
+		} else {
+			genesisWalletHex := make([]string, 0, len(genesisWallets))
+			for _, wallet := range genesisWallets {
+				genesisWalletHex = append(genesisWalletHex, wallet.Hex())
+			}
+			log.WithFields(log.Fields{
+				"contract":           project.Meta.Contract.Hex(),
+				"txHash":             project.Meta.TxHash.Hex(),
+				"blockNumber":        project.Meta.BlockNumber,
+				"creator":            project.Meta.Creator.Hex(),
+				"genesisWalletCount": len(genesisWalletHex),
+				"genesisWallets":     genesisWalletHex,
+			}).Info("extracted genesis wallets from project creation receipt")
+		}
+
 		if w.publisher == nil {
 			return errors.New("persistence publisher is not configured")
 		}
@@ -356,4 +387,133 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 func (w *BlockWatcher) Stop() error {
 	w.wg.Wait()
 	return nil
+}
+
+func (w *BlockWatcher) fetchGenesisWallets(ctx context.Context, project *Project) ([]common.Address, error) {
+	wallets, err := w.fetchGenesisWalletsFromReceipt(ctx, project)
+	if err == nil {
+		return wallets, nil
+	}
+	if !shouldFallbackToLogs(err) {
+		return nil, err
+	}
+	log.WithFields(log.Fields{
+		"contract":    project.Meta.Contract.Hex(),
+		"txHash":      project.Meta.TxHash.Hex(),
+		"blockNumber": project.Meta.BlockNumber,
+		"creator":     project.Meta.Creator.Hex(),
+		"fallback":    "eth_getLogs",
+		"reason":      "receipt_not_found",
+	}).WithError(err).Warn("failed to fetch genesis wallets from receipt, attempting logs fallback")
+	fallbackWallets, fallbackErr := w.fetchGenesisWalletsFromLogsFallback(ctx, project)
+	if fallbackErr != nil {
+		log.WithFields(log.Fields{
+			"contract":    project.Meta.Contract.Hex(),
+			"txHash":      project.Meta.TxHash.Hex(),
+			"blockNumber": project.Meta.BlockNumber,
+			"creator":     project.Meta.Creator.Hex(),
+			"fallback":    "eth_getLogs",
+		}).WithError(fallbackErr).Warn("failed to fetch genesis wallets from logs fallback")
+		return nil, fmt.Errorf("fetch genesis wallets by logs fallback: %w", fallbackErr)
+	}
+	return fallbackWallets, nil
+}
+
+func (w *BlockWatcher) fetchGenesisWalletsFromReceipt(ctx context.Context, project *Project) ([]common.Address, error) {
+	if project == nil {
+		return nil, errors.New("project is nil")
+	}
+	txHash := projectTxHash(project)
+	if txHash == (common.Hash{}) {
+		return nil, errors.New("project tx hash is empty")
+	}
+	receipt, err := w.nodeClient.TransactionReceipt(ctx, txHash)
+	if err != nil {
+		return nil, fmt.Errorf("fetch transaction receipt %s: %w", txHash.Hex(), err)
+	}
+	if receipt == nil {
+		return nil, fmt.Errorf("%w: %s", errGenesisReceiptNil, txHash.Hex())
+	}
+	return extractGenesisWallets(receipt.Logs, project.Meta.Contract), nil
+}
+
+func (w *BlockWatcher) fetchGenesisWalletsFromLogsFallback(ctx context.Context, project *Project) ([]common.Address, error) {
+	if project == nil {
+		return nil, errors.New("project is nil")
+	}
+	txHash := projectTxHash(project)
+	if txHash == (common.Hash{}) {
+		return nil, errors.New("project tx hash is empty")
+	}
+	blockNumber := new(big.Int).SetUint64(project.Meta.BlockNumber)
+	query := ethereum.FilterQuery{
+		FromBlock: blockNumber,
+		ToBlock:   blockNumber,
+		Addresses: []common.Address{project.Meta.Contract},
+		Topics: [][]common.Hash{
+			{erc20TransferTopicHash},
+		},
+	}
+	logs, err := w.nodeClient.FilterLogs(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return extractGenesisWallets(filterLogsByTxHash(logs, txHash), project.Meta.Contract), nil
+}
+
+func shouldFallbackToLogs(err error) bool {
+	return errors.Is(err, ethereum.NotFound) || errors.Is(err, errGenesisReceiptNil)
+}
+
+func projectTxHash(project *Project) common.Hash {
+	if project == nil {
+		return common.Hash{}
+	}
+	txHash := project.Meta.TxHash
+	if txHash == (common.Hash{}) && project.Meta.Tx != nil {
+		txHash = project.Meta.Tx.Hash()
+	}
+	return txHash
+}
+
+func filterLogsByTxHash(logs []types.Log, txHash common.Hash) []*types.Log {
+	filtered := make([]*types.Log, 0, len(logs))
+	for i := range logs {
+		if logs[i].TxHash != txHash {
+			continue
+		}
+		entry := logs[i]
+		filtered = append(filtered, &entry)
+	}
+	return filtered
+}
+
+func extractGenesisWallets(logs []*types.Log, tokenContract common.Address) []common.Address {
+	filterer, err := erc20contract.NewERC20Filterer(tokenContract, nil)
+	if err != nil {
+		return nil
+	}
+	wallets := make([]common.Address, 0)
+	seen := make(map[common.Address]struct{})
+	for _, entry := range logs {
+		if entry == nil {
+			continue
+		}
+		if entry.Address != tokenContract {
+			continue
+		}
+		transferEvent, err := filterer.ParseTransfer(*entry)
+		if err != nil {
+			continue
+		}
+		if transferEvent.To == (common.Address{}) {
+			continue
+		}
+		if _, exists := seen[transferEvent.To]; exists {
+			continue
+		}
+		seen[transferEvent.To] = struct{}{}
+		wallets = append(wallets, transferEvent.To)
+	}
+	return wallets
 }
