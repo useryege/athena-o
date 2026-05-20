@@ -121,6 +121,54 @@ func TestShouldFallbackToLogs(t *testing.T) {
 	})
 }
 
+func TestExtractGenesisWalletShares(t *testing.T) {
+	tokenContract := common.HexToAddress("0x1000000000000000000000000000000000000001")
+	fromA := common.HexToAddress("0x3000000000000000000000000000000000000003")
+	fromD := common.HexToAddress("0x4000000000000000000000000000000000000004")
+	toA := common.HexToAddress("0x5000000000000000000000000000000000000005")
+	toB := common.HexToAddress("0x6000000000000000000000000000000000000006")
+	toC := common.HexToAddress("0x7000000000000000000000000000000000000007")
+	toE := common.HexToAddress("0x8000000000000000000000000000000000000008")
+
+	t.Run("net holding ratio and descending order", func(t *testing.T) {
+		logs := []*types.Log{
+			buildTransferLog(tokenContract, common.Address{}, toA, big.NewInt(100)),
+			buildTransferLog(tokenContract, toA, toB, big.NewInt(40)),
+			buildTransferLog(tokenContract, common.Address{}, toC, big.NewInt(30)),
+			buildTransferLog(tokenContract, fromD, toA, big.NewInt(10)),
+		}
+		shares := extractGenesisWalletShares(logs, tokenContract, big.NewInt(200))
+		assertGenesisWalletShares(t, shares, []genesisWalletShareLog{
+			{Wallet: toA.Hex(), Amount: "70", Ratio: "35.0000%"},
+			{Wallet: toB.Hex(), Amount: "40", Ratio: "20.0000%"},
+			{Wallet: toC.Hex(), Amount: "30", Ratio: "15.0000%"},
+		})
+	})
+
+	t.Run("include only recipients and skip non-positive net holdings", func(t *testing.T) {
+		logs := []*types.Log{
+			buildTransferLog(tokenContract, common.Address{}, toA, big.NewInt(10)),
+			buildTransferLog(tokenContract, toA, toE, big.NewInt(10)),
+			buildTransferLog(tokenContract, fromA, toB, big.NewInt(2)),
+		}
+		shares := extractGenesisWalletShares(logs, tokenContract, big.NewInt(100))
+		assertGenesisWalletShares(t, shares, []genesisWalletShareLog{
+			{Wallet: toE.Hex(), Amount: "10", Ratio: "10.0000%"},
+			{Wallet: toB.Hex(), Amount: "2", Ratio: "2.0000%"},
+		})
+	})
+
+	t.Run("zero total supply returns zero ratio", func(t *testing.T) {
+		logs := []*types.Log{
+			buildTransferLog(tokenContract, common.Address{}, toA, big.NewInt(5)),
+		}
+		shares := extractGenesisWalletShares(logs, tokenContract, big.NewInt(0))
+		assertGenesisWalletShares(t, shares, []genesisWalletShareLog{
+			{Wallet: toA.Hex(), Amount: "5", Ratio: "0.0000%"},
+		})
+	})
+}
+
 func buildTransferLog(contract common.Address, from common.Address, to common.Address, amount *big.Int) *types.Log {
 	return &types.Log{
 		Address: contract,
@@ -145,6 +193,27 @@ func assertAddressHexList(t *testing.T, actual []common.Address, expected []comm
 	for i := range expected {
 		if actual[i] != expected[i] {
 			t.Fatalf("address[%d] = %s, want %s", i, actual[i].Hex(), expected[i].Hex())
+		}
+	}
+}
+
+func assertGenesisWalletShares(t *testing.T, actual []GenesisWalletShare, expected []genesisWalletShareLog) {
+	t.Helper()
+	if len(actual) != len(expected) {
+		t.Fatalf("share count mismatch: got %d want %d", len(actual), len(expected))
+	}
+	for i := range expected {
+		if actual[i].Wallet.Hex() != expected[i].Wallet {
+			t.Fatalf("share[%d].wallet = %s, want %s", i, actual[i].Wallet.Hex(), expected[i].Wallet)
+		}
+		if actual[i].Amount == nil {
+			t.Fatalf("share[%d].amount is nil", i)
+		}
+		if actual[i].Amount.String() != expected[i].Amount {
+			t.Fatalf("share[%d].amount = %s, want %s", i, actual[i].Amount.String(), expected[i].Amount)
+		}
+		if actual[i].Ratio != expected[i].Ratio {
+			t.Fatalf("share[%d].ratio = %s, want %s", i, actual[i].Ratio, expected[i].Ratio)
 		}
 	}
 }

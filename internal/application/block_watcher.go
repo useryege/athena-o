@@ -1,10 +1,12 @@
 package application
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"math/big"
+	"sort"
 	"sync"
 	"time"
 
@@ -35,6 +37,18 @@ type BlockWatcher struct {
 	wg           sync.WaitGroup
 
 	chainID *big.Int
+}
+
+type GenesisWalletShare struct {
+	Wallet common.Address
+	Amount *big.Int
+	Ratio  string
+}
+
+type genesisWalletShareLog struct {
+	Wallet string `json:"wallet"`
+	Amount string `json:"amount"`
+	Ratio  string `json:"ratio"`
 }
 
 func NewBlockWatcher(
@@ -323,7 +337,7 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 			continue
 		}
 
-		genesisWallets, err := w.fetchGenesisWallets(ctx, project)
+		genesisWalletShares, err := w.fetchGenesisWallets(ctx, project, snapshot.Token.TotalSupply)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"contract":    project.Meta.Contract.Hex(),
@@ -332,17 +346,28 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 				"creator":     project.Meta.Creator.Hex(),
 			}).WithError(err).Warn("failed to fetch genesis wallets from project creation receipt")
 		} else {
-			genesisWalletHex := make([]string, 0, len(genesisWallets))
-			for _, wallet := range genesisWallets {
-				genesisWalletHex = append(genesisWalletHex, wallet.Hex())
+			genesisWalletHex := make([]string, 0, len(genesisWalletShares))
+			genesisWalletShareItems := make([]genesisWalletShareLog, 0, len(genesisWalletShares))
+			for _, item := range genesisWalletShares {
+				genesisWalletHex = append(genesisWalletHex, item.Wallet.Hex())
+				amount := "0"
+				if item.Amount != nil {
+					amount = item.Amount.String()
+				}
+				genesisWalletShareItems = append(genesisWalletShareItems, genesisWalletShareLog{
+					Wallet: item.Wallet.Hex(),
+					Amount: amount,
+					Ratio:  item.Ratio,
+				})
 			}
 			log.WithFields(log.Fields{
-				"contract":           project.Meta.Contract.Hex(),
-				"txHash":             project.Meta.TxHash.Hex(),
-				"blockNumber":        project.Meta.BlockNumber,
-				"creator":            project.Meta.Creator.Hex(),
-				"genesisWalletCount": len(genesisWalletHex),
-				"genesisWallets":     genesisWalletHex,
+				"contract":            project.Meta.Contract.Hex(),
+				"txHash":              project.Meta.TxHash.Hex(),
+				"blockNumber":         project.Meta.BlockNumber,
+				"creator":             project.Meta.Creator.Hex(),
+				"genesisWalletCount":  len(genesisWalletHex),
+				"genesisWallets":      genesisWalletHex,
+				"genesisWalletShares": genesisWalletShareItems,
 			}).Info("extracted genesis wallets from project creation receipt")
 		}
 
@@ -389,10 +414,10 @@ func (w *BlockWatcher) Stop() error {
 	return nil
 }
 
-func (w *BlockWatcher) fetchGenesisWallets(ctx context.Context, project *Project) ([]common.Address, error) {
-	wallets, err := w.fetchGenesisWalletsFromReceipt(ctx, project)
+func (w *BlockWatcher) fetchGenesisWallets(ctx context.Context, project *Project, totalSupply *big.Int) ([]GenesisWalletShare, error) {
+	logs, err := w.fetchGenesisWalletsFromReceipt(ctx, project)
 	if err == nil {
-		return wallets, nil
+		return extractGenesisWalletShares(logs, project.Meta.Contract, totalSupply), nil
 	}
 	if !shouldFallbackToLogs(err) {
 		return nil, err
@@ -405,7 +430,7 @@ func (w *BlockWatcher) fetchGenesisWallets(ctx context.Context, project *Project
 		"fallback":    "eth_getLogs",
 		"reason":      "receipt_not_found",
 	}).WithError(err).Warn("failed to fetch genesis wallets from receipt, attempting logs fallback")
-	fallbackWallets, fallbackErr := w.fetchGenesisWalletsFromLogsFallback(ctx, project)
+	fallbackLogs, fallbackErr := w.fetchGenesisWalletsFromLogsFallback(ctx, project)
 	if fallbackErr != nil {
 		log.WithFields(log.Fields{
 			"contract":    project.Meta.Contract.Hex(),
@@ -416,10 +441,10 @@ func (w *BlockWatcher) fetchGenesisWallets(ctx context.Context, project *Project
 		}).WithError(fallbackErr).Warn("failed to fetch genesis wallets from logs fallback")
 		return nil, fmt.Errorf("fetch genesis wallets by logs fallback: %w", fallbackErr)
 	}
-	return fallbackWallets, nil
+	return extractGenesisWalletShares(fallbackLogs, project.Meta.Contract, totalSupply), nil
 }
 
-func (w *BlockWatcher) fetchGenesisWalletsFromReceipt(ctx context.Context, project *Project) ([]common.Address, error) {
+func (w *BlockWatcher) fetchGenesisWalletsFromReceipt(ctx context.Context, project *Project) ([]*types.Log, error) {
 	if project == nil {
 		return nil, errors.New("project is nil")
 	}
@@ -434,10 +459,10 @@ func (w *BlockWatcher) fetchGenesisWalletsFromReceipt(ctx context.Context, proje
 	if receipt == nil {
 		return nil, fmt.Errorf("%w: %s", errGenesisReceiptNil, txHash.Hex())
 	}
-	return extractGenesisWallets(receipt.Logs, project.Meta.Contract), nil
+	return receipt.Logs, nil
 }
 
-func (w *BlockWatcher) fetchGenesisWalletsFromLogsFallback(ctx context.Context, project *Project) ([]common.Address, error) {
+func (w *BlockWatcher) fetchGenesisWalletsFromLogsFallback(ctx context.Context, project *Project) ([]*types.Log, error) {
 	if project == nil {
 		return nil, errors.New("project is nil")
 	}
@@ -458,7 +483,7 @@ func (w *BlockWatcher) fetchGenesisWalletsFromLogsFallback(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	return extractGenesisWallets(filterLogsByTxHash(logs, txHash), project.Meta.Contract), nil
+	return filterLogsByTxHash(logs, txHash), nil
 }
 
 func shouldFallbackToLogs(err error) bool {
@@ -516,4 +541,73 @@ func extractGenesisWallets(logs []*types.Log, tokenContract common.Address) []co
 		wallets = append(wallets, transferEvent.To)
 	}
 	return wallets
+}
+
+func extractGenesisWalletShares(logs []*types.Log, tokenContract common.Address, totalSupply *big.Int) []GenesisWalletShare {
+	filterer, err := erc20contract.NewERC20Filterer(tokenContract, nil)
+	if err != nil {
+		return nil
+	}
+	candidates := make(map[common.Address]struct{})
+	netBalance := make(map[common.Address]*big.Int)
+	for _, entry := range logs {
+		if entry == nil {
+			continue
+		}
+		if entry.Address != tokenContract {
+			continue
+		}
+		transferEvent, err := filterer.ParseTransfer(*entry)
+		if err != nil {
+			continue
+		}
+		if transferEvent.Tokens == nil || transferEvent.Tokens.Sign() <= 0 {
+			continue
+		}
+
+		if transferEvent.To != (common.Address{}) {
+			candidates[transferEvent.To] = struct{}{}
+			if _, exists := netBalance[transferEvent.To]; !exists {
+				netBalance[transferEvent.To] = new(big.Int)
+			}
+			netBalance[transferEvent.To].Add(netBalance[transferEvent.To], transferEvent.Tokens)
+		}
+
+		if transferEvent.From != (common.Address{}) {
+			if _, exists := netBalance[transferEvent.From]; !exists {
+				netBalance[transferEvent.From] = new(big.Int)
+			}
+			netBalance[transferEvent.From].Sub(netBalance[transferEvent.From], transferEvent.Tokens)
+		}
+	}
+
+	shares := make([]GenesisWalletShare, 0, len(candidates))
+	for wallet := range candidates {
+		amount, exists := netBalance[wallet]
+		if !exists || amount.Sign() <= 0 {
+			continue
+		}
+		shares = append(shares, GenesisWalletShare{
+			Wallet: wallet,
+			Amount: new(big.Int).Set(amount),
+			Ratio:  formatGenesisWalletRatio(amount, totalSupply),
+		})
+	}
+	sort.Slice(shares, func(i, j int) bool {
+		amountCmp := shares[i].Amount.Cmp(shares[j].Amount)
+		if amountCmp != 0 {
+			return amountCmp > 0
+		}
+		return bytes.Compare(shares[i].Wallet.Bytes(), shares[j].Wallet.Bytes()) < 0
+	})
+	return shares
+}
+
+func formatGenesisWalletRatio(amount *big.Int, totalSupply *big.Int) string {
+	if amount == nil || amount.Sign() <= 0 || totalSupply == nil || totalSupply.Sign() <= 0 {
+		return "0.0000%"
+	}
+	ratio := new(big.Rat).SetFrac(amount, totalSupply)
+	ratio.Mul(ratio, big.NewRat(100, 1))
+	return ratio.FloatString(4) + "%"
 }
