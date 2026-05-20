@@ -123,4 +123,49 @@
         font-size: 12px;
         color: #363c43;
     }
+
+    &__rank-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    &__rank-item {
+        border: 1px solid #e1e4e5;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #fafbfc;
+    }
+
+    &__rank-header {
+        font-size: 13px;
+        font-weight: 600;
+        color: #4d5f6f;
+        margin-bottom: 8px;
+    }
+
+    &__rank-line {
+        font-size: 14px;
+        color: #363c43;
+        margin-bottom: 6px;
+        word-break: break-all;
+    }
+
+    &__rank-assets {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px 12px;
+    }
+
+    &__rank-asset {
+        font-size: 13px;
+        color: #4d5f6f;
+        word-break: break-all;
+    }
+
+    &__rank-asset--wide {
+        grid-column: 1 / -1;
+        font-weight: 600;
+        color: #363c43;
+    }
 }

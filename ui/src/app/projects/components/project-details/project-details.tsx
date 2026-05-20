@@ -4,7 +4,9 @@ import {Text} from 'react-form';
 import {RouteComponentProps} from 'react-router';
 import {Context} from '../../../shared/context';
 import {services} from '../../../shared/services';
-import {PairV2State, ProjectEventLog, ProjectView} from '../../../shared/services/athena-application-service';
+import {PairV2State, ProjectEventLog, ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
+import {formatUsdtValue} from '../pair-metrics-cell/pair-metrics-cell';
+import {GenesisWalletRankList} from './genesis-wallet-rank-list';
 
 require('./project-details.scss');
 
@@ -22,13 +24,6 @@ const renderPercent = (value?: string) => {
         return '-';
     }
     return `${value}%`;
-};
-
-const renderRatioFromBps = (ratioBps?: number) => {
-    if (ratioBps === undefined || ratioBps === null || Number.isNaN(ratioBps)) {
-        return '-';
-    }
-    return `${(ratioBps / 100).toFixed(2)}%`;
 };
 
 const renderEventType = (eventType?: number) => {
@@ -125,23 +120,13 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const [isBlacklisted, setIsBlacklisted] = React.useState(false);
     const [addingToBlacklist, setAddingToBlacklist] = React.useState(false);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
+    const [projectOptions, setProjectOptions] = React.useState<ProjectOptions | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
-    const genesisWalletAssetByWallet = React.useMemo(() => {
-        const states = project?.chainState?.genesisWalletAssetStates || [];
-        const walletMap = new Map<string, (typeof states)[number]['assetState']>();
-        states.forEach(item => {
-            const wallet = (item.wallet || '').toLowerCase();
-            if (!wallet) {
-                return;
-            }
-            walletMap.set(wallet, item.assetState);
-        });
-        return walletMap;
-    }, [project?.chainState?.genesisWalletAssetStates]);
 
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const eventRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const blacklistRequestRef = React.useRef<{abort?: () => void} | null>(null);
+    const optionsRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
 
@@ -161,6 +146,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         if (blacklistRequestRef.current?.abort) {
             blacklistRequestRef.current.abort();
             blacklistRequestRef.current = null;
+        }
+        if (optionsRequestRef.current?.abort) {
+            optionsRequestRef.current.abort();
+            optionsRequestRef.current = null;
         }
     }, []);
 
@@ -241,6 +230,26 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         }
     }, [contract]);
 
+    const loadProjectOptions = React.useCallback(async () => {
+        if (projectOptions || optionsRequestRef.current) {
+            return;
+        }
+        try {
+            const req = services.athenaApplication.getProjectOptions();
+            optionsRequestRef.current = req;
+            const options = await req;
+            if (isMountedRef.current) {
+                setProjectOptions(options || null);
+            }
+        } catch (err) {
+            if (isMountedRef.current) {
+                setError(err as Error);
+            }
+        } finally {
+            optionsRequestRef.current = null;
+        }
+    }, [projectOptions]);
+
     React.useEffect(() => {
         isMountedRef.current = true;
         setIsBlacklisted(false);
@@ -248,6 +257,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         loadProject();
         loadProjectEventLogs();
         loadBlacklistStatus();
+        loadProjectOptions();
         intervalRef.current = window.setInterval(() => {
             loadProject();
             loadProjectEventLogs();
@@ -257,7 +267,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             isMountedRef.current = false;
             cleanupRequests();
         };
-    }, [cleanupRequests, loadBlacklistStatus, loadProject, loadProjectEventLogs]);
+    }, [cleanupRequests, loadBlacklistStatus, loadProject, loadProjectEventLogs, loadProjectOptions]);
 
     const breadcrumbs = [{title: 'Projects', path: `/projects${props.location.search || ''}`}, {title: contract}];
     const isArchived = project?.meta?.isArchived ?? false;
@@ -411,28 +421,11 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Genesis Wallets</div>
-                            {!project.meta?.genesisWallets || project.meta.genesisWallets.length === 0 ? (
-                                <div className='project-details__field-value'>No genesis wallet metadata available</div>
-                            ) : (
-                                <div className='project-details__grid'>
-                                    {project.meta.genesisWallets.map((item, index) => {
-                                        const assetState = genesisWalletAssetByWallet.get((item.wallet || '').toLowerCase());
-                                        return (
-                                            <div key={`${item.wallet || ''}-${item.rank ?? index}`} className='project-details__field' style={{gridColumn: '1 / -1'}}>
-                                                <span className='project-details__field-label'>Rank {renderValue(item.rank)}</span>
-                                                <span className='project-details__field-value'>
-                                                    Wallet: {renderValue(item.wallet)} | Net Amount: {renderValue(item.netAmount)} | Ratio: {renderRatioFromBps(item.ratioBps)}
-                                                </span>
-                                                <span className='project-details__field-value'>
-                                                    Asset Token: {renderValue(assetState?.tokenBalance)} | Asset WETH: {renderValue(assetState?.wethBalance)} | Asset USDT:{' '}
-                                                    {renderValue(assetState?.usdtBalance)} | Asset Native: {renderValue(assetState?.nativeBalance)} | Total Asset (USDT):{' '}
-                                                    {renderValue(assetState?.usdtValue)}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                            <GenesisWalletRankList
+                                genesisWallets={project.meta?.genesisWallets}
+                                genesisWalletAssetStates={project.chainState?.genesisWalletAssetStates}
+                                usdtDecimals={projectOptions?.usdtDecimals}
+                            />
                         </div>
 
                         <div className='white-box project-details__box'>
@@ -508,7 +501,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Total Asset (USDT)</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.assetState?.usdtValue)}</span>
+                                    <span className='project-details__field-value'>{formatUsdtValue(project.chainState?.assetState?.usdtValue, projectOptions?.usdtDecimals)}</span>
                                 </div>
                             </div>
                         </div>
