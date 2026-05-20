@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redis/go-redis/v9"
+	log "github.com/sirupsen/logrus"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/evm"
@@ -183,24 +184,81 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context, fetcher evm.Athena
 		return status.Error(codes.FailedPrecondition, "project store is not configured")
 	}
 
+	startedAt := time.Now()
+	logger := log.WithField("component", "bootstrapProjectCaches")
+	logger.WithField("retry_interval", bootstrapRetryInterval.String()).Info("starting project cache bootstrap")
+
+	attempt := 0
 	for {
 		if err := ctx.Err(); err != nil {
+			logger.WithFields(log.Fields{
+				"attempt": attempt,
+				"elapsed": time.Since(startedAt).String(),
+				"reason":  err.Error(),
+			}).Info("project cache bootstrap canceled")
 			return err
 		}
+
+		attempt++
+
+		logger.WithFields(log.Fields{
+			"attempt": attempt,
+			"stage":   "list_all_project_metas",
+			"elapsed": time.Since(startedAt).String(),
+		}).Info("project cache bootstrap stage started")
 		metas, err := store.ListAllProjectMetas(ctx)
 		if err != nil {
+			logger.WithFields(log.Fields{
+				"attempt":       attempt,
+				"stage":         "list_all_project_metas",
+				"error":         err.Error(),
+				"next_retry_in": bootstrapRetryInterval.String(),
+				"elapsed":       time.Since(startedAt).String(),
+			}).Warn("project cache bootstrap stage failed, retrying")
 			time.Sleep(bootstrapRetryInterval)
 			continue
 		}
+
+		logger.WithFields(log.Fields{
+			"attempt": attempt,
+			"stage":   "build_projects_from_metas",
+			"elapsed": time.Since(startedAt).String(),
+		}).Info("project cache bootstrap stage started")
 		projects, err := s.buildProjectsFromMetas(ctx, metas, fetcher, simulator)
 		if err != nil {
+			logger.WithFields(log.Fields{
+				"attempt":       attempt,
+				"stage":         "build_projects_from_metas",
+				"error":         err.Error(),
+				"next_retry_in": bootstrapRetryInterval.String(),
+				"elapsed":       time.Since(startedAt).String(),
+			}).Warn("project cache bootstrap stage failed, retrying")
 			time.Sleep(bootstrapRetryInterval)
 			continue
 		}
+
+		logger.WithFields(log.Fields{
+			"attempt": attempt,
+			"stage":   "replace_all_cache",
+			"elapsed": time.Since(startedAt).String(),
+		}).Info("project cache bootstrap stage started")
 		if err := s.projectCache.ReplaceAll(ctx, projects); err != nil {
+			logger.WithFields(log.Fields{
+				"attempt":       attempt,
+				"stage":         "replace_all_cache",
+				"error":         err.Error(),
+				"next_retry_in": bootstrapRetryInterval.String(),
+				"elapsed":       time.Since(startedAt).String(),
+			}).Warn("project cache bootstrap stage failed, retrying")
 			time.Sleep(bootstrapRetryInterval)
 			continue
 		}
+
+		logger.WithFields(log.Fields{
+			"attempt":       attempt,
+			"project_count": len(projects),
+			"elapsed":       time.Since(startedAt).String(),
+		}).Info("project cache bootstrap completed")
 		return nil
 	}
 }
