@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"encoding/json"
+	"math/big"
 	"testing"
 	"time"
 
@@ -13,6 +14,10 @@ import (
 type persistenceWriterMock struct {
 	metas         []appstore.ProjectMeta
 	eventLogs     []appstore.ProjectEventLog
+	genesisWrites []struct {
+		contract common.Address
+		items    []appstore.ProjectGenesisWallet
+	}
 	sourceUpdates []struct {
 		contract   common.Address
 		sourceCode string
@@ -30,6 +35,14 @@ func (m *persistenceWriterMock) WriteProjectMeta(ctx context.Context, meta appst
 
 func (m *persistenceWriterMock) WriteProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {
 	m.eventLogs = append(m.eventLogs, item)
+	return nil
+}
+
+func (m *persistenceWriterMock) WriteProjectGenesisWallets(ctx context.Context, contract common.Address, items []appstore.ProjectGenesisWallet) error {
+	m.genesisWrites = append(m.genesisWrites, struct {
+		contract common.Address
+		items    []appstore.ProjectGenesisWallet
+	}{contract: contract, items: items})
 	return nil
 }
 
@@ -145,6 +158,50 @@ func TestApplyEventProjectEventLogAdd(t *testing.T) {
 	}
 	if writer.eventLogs[0].IdempotencyKey != "project_source_code_opened" {
 		t.Fatalf("idempotency key = %q, want %q", writer.eventLogs[0].IdempotencyKey, "project_source_code_opened")
+	}
+}
+
+func TestApplyEventProjectGenesisWalletReplace(t *testing.T) {
+	contract := common.HexToAddress("0x7777777777777777777777777777777777777777")
+	sourceTxHash := common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	walletA := common.HexToAddress("0x1111111111111111111111111111111111111111")
+	walletB := common.HexToAddress("0x2222222222222222222222222222222222222222")
+	payload, err := json.Marshal(projectGenesisWalletReplacePayload{
+		Contract:          contract.Hex(),
+		SourceTxHash:      sourceTxHash.Hex(),
+		SourceBlockNumber: 12345,
+		TotalSupply:       "1000",
+		Items: []projectGenesisWalletItemPayload{
+			{Wallet: walletA.Hex(), NetAmount: "700", RatioBPS: 7000, RankIndex: 0},
+			{Wallet: walletB.Hex(), NetAmount: "300", RatioBPS: 3000, RankIndex: 1},
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal payload: %v", err)
+	}
+
+	writer := &persistenceWriterMock{}
+	bus := &RedisPersistenceEventBus{}
+	if err := bus.applyEvent(context.Background(), writer, PersistenceEvent{Op: PersistenceOpProjectGenesisReplace, Payload: payload}); err != nil {
+		t.Fatalf("apply event: %v", err)
+	}
+	if len(writer.genesisWrites) != 1 {
+		t.Fatalf("genesis writes = %d, want 1", len(writer.genesisWrites))
+	}
+	if writer.genesisWrites[0].contract != contract {
+		t.Fatalf("contract = %s, want %s", writer.genesisWrites[0].contract, contract)
+	}
+	if len(writer.genesisWrites[0].items) != 2 {
+		t.Fatalf("genesis items len = %d, want 2", len(writer.genesisWrites[0].items))
+	}
+	if writer.genesisWrites[0].items[0].Wallet != walletA {
+		t.Fatalf("wallet[0] = %s, want %s", writer.genesisWrites[0].items[0].Wallet, walletA)
+	}
+	if writer.genesisWrites[0].items[0].NetAmount.Cmp(big.NewInt(700)) != 0 {
+		t.Fatalf("net amount[0] = %s, want 700", writer.genesisWrites[0].items[0].NetAmount.String())
+	}
+	if writer.genesisWrites[0].items[1].RatioBPS != 3000 {
+		t.Fatalf("ratio bps[1] = %d, want 3000", writer.genesisWrites[0].items[1].RatioBPS)
 	}
 }
 

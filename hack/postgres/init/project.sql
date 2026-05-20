@@ -77,3 +77,29 @@ CREATE INDEX IF NOT EXISTS project_event_log_contract_timeline_idx
 
 CREATE INDEX IF NOT EXISTS project_event_log_event_type_time_idx
   ON project_event_log (event_type, occurred_at DESC, id DESC);
+
+CREATE TABLE IF NOT EXISTS project_genesis_wallet (
+  id BIGSERIAL PRIMARY KEY,
+  project_contract BYTEA NOT NULL,
+  wallet BYTEA NOT NULL,
+  net_amount NUMERIC(78,0) NOT NULL,
+  ratio_bps BIGINT NOT NULL,
+  rank_index INT NOT NULL,
+  total_supply NUMERIC(78,0) NOT NULL,
+  source_tx_hash BYTEA NOT NULL,
+  source_block_number BIGINT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_genesis_wallet_project_contract_len CHECK (length(project_contract) = 20),
+  CONSTRAINT project_genesis_wallet_wallet_len CHECK (length(wallet) = 20),
+  CONSTRAINT project_genesis_wallet_source_tx_hash_len CHECK (length(source_tx_hash) = 32),
+  CONSTRAINT project_genesis_wallet_net_amount_positive CHECK (net_amount > 0),
+  CONSTRAINT project_genesis_wallet_ratio_bps_nonnegative CHECK (ratio_bps >= 0),
+  CONSTRAINT project_genesis_wallet_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract),
+  CONSTRAINT project_genesis_wallet_project_wallet_uidx UNIQUE (project_contract, wallet)
+);
+
+CREATE INDEX IF NOT EXISTS project_genesis_wallet_project_rank_idx
+  ON project_genesis_wallet (project_contract, rank_index);
+
+CREATE INDEX IF NOT EXISTS project_genesis_wallet_wallet_ratio_idx
+  ON project_genesis_wallet (wallet, ratio_bps DESC, project_contract);

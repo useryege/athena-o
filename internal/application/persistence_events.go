@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -28,6 +29,7 @@ const (
 const (
 	PersistenceOpProjectMetaSave       = "project_meta_save"
 	PersistenceOpProjectEventLogAdd    = "project_event_log_add"
+	PersistenceOpProjectGenesisReplace = "project_genesis_wallet_replace"
 	PersistenceOpProjectSourceCode     = "project_source_code_update"
 	PersistenceOpProjectArchive        = "project_archive"
 	PersistenceOpProjectUnarchive      = "project_unarchive"
@@ -70,6 +72,21 @@ type projectEventLogAddPayload struct {
 	IdempotencyKey string `json:"idempotency_key"`
 }
 
+type projectGenesisWalletReplacePayload struct {
+	Contract          string                            `json:"contract"`
+	SourceTxHash      string                            `json:"source_tx_hash"`
+	SourceBlockNumber uint64                            `json:"source_block_number"`
+	TotalSupply       string                            `json:"total_supply"`
+	Items             []projectGenesisWalletItemPayload `json:"items"`
+}
+
+type projectGenesisWalletItemPayload struct {
+	Wallet    string `json:"wallet"`
+	NetAmount string `json:"net_amount"`
+	RatioBPS  int64  `json:"ratio_bps"`
+	RankIndex int32  `json:"rank_index"`
+}
+
 type blacklistFieldPayload struct {
 	Field string `json:"field"`
 }
@@ -93,6 +110,10 @@ type PersistenceEventWriter interface {
 	UnarchiveProject(ctx context.Context, contract common.Address) error
 	AddSourceCodeBlacklistField(ctx context.Context, field string) error
 	DeleteSourceCodeBlacklistField(ctx context.Context, field string) error
+}
+
+type projectGenesisWalletWriter interface {
+	WriteProjectGenesisWallets(ctx context.Context, contract common.Address, items []appstore.ProjectGenesisWallet) error
 }
 
 type PersistenceEventConsumer interface {
@@ -426,6 +447,47 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			Payload:        payload.Payload,
 			IdempotencyKey: payload.IdempotencyKey,
 		})
+	case PersistenceOpProjectGenesisReplace:
+		var payload projectGenesisWalletReplacePayload
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("unmarshal project genesis wallet replace payload: %w", err)
+		}
+		if !common.IsHexAddress(payload.Contract) {
+			return fmt.Errorf("invalid contract %q", payload.Contract)
+		}
+		sourceTxHash := strings.TrimSpace(payload.SourceTxHash)
+		if len(sourceTxHash) != 66 || !strings.HasPrefix(sourceTxHash, "0x") || len(common.FromHex(sourceTxHash)) != 32 {
+			return fmt.Errorf("invalid source_tx_hash %q", payload.SourceTxHash)
+		}
+		totalSupply, ok := new(big.Int).SetString(strings.TrimSpace(payload.TotalSupply), 10)
+		if !ok || totalSupply.Sign() < 0 {
+			return fmt.Errorf("invalid total_supply %q", payload.TotalSupply)
+		}
+		items := make([]appstore.ProjectGenesisWallet, 0, len(payload.Items))
+		for _, entry := range payload.Items {
+			if !common.IsHexAddress(entry.Wallet) {
+				return fmt.Errorf("invalid wallet %q", entry.Wallet)
+			}
+			netAmount, ok := new(big.Int).SetString(strings.TrimSpace(entry.NetAmount), 10)
+			if !ok || netAmount.Sign() <= 0 {
+				return fmt.Errorf("invalid net_amount %q for wallet %s", entry.NetAmount, entry.Wallet)
+			}
+			items = append(items, appstore.ProjectGenesisWallet{
+				ProjectContract:   common.HexToAddress(payload.Contract),
+				Wallet:            common.HexToAddress(entry.Wallet),
+				NetAmount:         netAmount,
+				RatioBPS:          entry.RatioBPS,
+				RankIndex:         entry.RankIndex,
+				TotalSupply:       new(big.Int).Set(totalSupply),
+				SourceTxHash:      common.HexToHash(sourceTxHash),
+				SourceBlockNumber: payload.SourceBlockNumber,
+			})
+		}
+		gwWriter, ok := writer.(projectGenesisWalletWriter)
+		if !ok || gwWriter == nil {
+			return errors.New("project genesis wallet store is not configured")
+		}
+		return gwWriter.WriteProjectGenesisWallets(ctx, common.HexToAddress(payload.Contract), items)
 	case PersistenceOpProjectArchive:
 		if !common.IsHexAddress(event.Contract) {
 			return fmt.Errorf("invalid contract %q", event.Contract)
@@ -517,4 +579,12 @@ func (w *storePersistenceWriter) AddSourceCodeBlacklistField(ctx context.Context
 
 func (w *storePersistenceWriter) DeleteSourceCodeBlacklistField(ctx context.Context, field string) error {
 	return w.store.DeleteSourceCodeBlacklistField(ctx, field)
+}
+
+func (w *storePersistenceWriter) WriteProjectGenesisWallets(ctx context.Context, contract common.Address, items []appstore.ProjectGenesisWallet) error {
+	store, ok := w.store.(appstore.ProjectGenesisWalletStore)
+	if !ok || store == nil {
+		return errors.New("project genesis wallet store is not configured")
+	}
+	return store.ReplaceProjectGenesisWallets(ctx, contract, items)
 }

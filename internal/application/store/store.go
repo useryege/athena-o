@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -32,6 +33,19 @@ type ProjectEventLog struct {
 	CreatedAt      time.Time
 }
 
+type ProjectGenesisWallet struct {
+	ID                int64
+	ProjectContract   common.Address
+	Wallet            common.Address
+	NetAmount         *big.Int
+	RatioBPS          int64
+	RankIndex         int32
+	TotalSupply       *big.Int
+	SourceTxHash      common.Hash
+	SourceBlockNumber uint64
+	CreatedAt         time.Time
+}
+
 type ProjectStore interface {
 	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
 	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
@@ -47,6 +61,12 @@ type ProjectStore interface {
 type ProjectEventLogStore interface {
 	AddProjectEventLog(ctx context.Context, item ProjectEventLog) error
 	ListProjectEventLogsByContract(ctx context.Context, contract common.Address) ([]ProjectEventLog, error)
+}
+
+type ProjectGenesisWalletStore interface {
+	ReplaceProjectGenesisWallets(ctx context.Context, contract common.Address, items []ProjectGenesisWallet) error
+	ListProjectGenesisWalletsByContract(ctx context.Context, contract common.Address) ([]ProjectGenesisWallet, error)
+	ListProjectGenesisWalletsByWallet(ctx context.Context, wallet common.Address) ([]ProjectGenesisWallet, error)
 }
 
 type SourceCodeBlacklistStore interface {

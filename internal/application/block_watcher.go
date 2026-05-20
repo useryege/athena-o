@@ -3,8 +3,10 @@ package application
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"sort"
 	"sync"
@@ -40,15 +42,17 @@ type BlockWatcher struct {
 }
 
 type GenesisWalletShare struct {
-	Wallet common.Address
-	Amount *big.Int
-	Ratio  string
+	Wallet   common.Address
+	Amount   *big.Int
+	Ratio    string
+	RatioBPS int64
 }
 
 type genesisWalletShareLog struct {
-	Wallet string `json:"wallet"`
-	Amount string `json:"amount"`
-	Ratio  string `json:"ratio"`
+	Wallet   string `json:"wallet"`
+	Amount   string `json:"amount"`
+	Ratio    string `json:"ratio"`
+	RatioBPS int64  `json:"ratio_bps"`
 }
 
 func NewBlockWatcher(
@@ -355,9 +359,10 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 					amount = item.Amount.String()
 				}
 				genesisWalletShareItems = append(genesisWalletShareItems, genesisWalletShareLog{
-					Wallet: item.Wallet.Hex(),
-					Amount: amount,
-					Ratio:  item.Ratio,
+					Wallet:   item.Wallet.Hex(),
+					Amount:   amount,
+					Ratio:    item.Ratio,
+					RatioBPS: item.RatioBPS,
 				})
 			}
 			log.WithFields(log.Fields{
@@ -385,6 +390,9 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 		project.ChainState = snapshot
 		if err := w.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
 			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
+		}
+		if err := w.publishProjectGenesisWallets(ctx, project, snapshot.Token.TotalSupply, genesisWalletShares); err != nil {
+			return fmt.Errorf("failed to persist project genesis wallets %s: %w", project.Meta.Contract.Hex(), err)
 		}
 		if err := w.publisher.PublishProjectEventLog(ctx, appstore.ProjectEventLog{
 			Contract:       project.Meta.Contract,
@@ -588,9 +596,10 @@ func extractGenesisWalletShares(logs []*types.Log, tokenContract common.Address,
 			continue
 		}
 		shares = append(shares, GenesisWalletShare{
-			Wallet: wallet,
-			Amount: new(big.Int).Set(amount),
-			Ratio:  formatGenesisWalletRatio(amount, totalSupply),
+			Wallet:   wallet,
+			Amount:   new(big.Int).Set(amount),
+			Ratio:    formatGenesisWalletRatio(amount, totalSupply),
+			RatioBPS: ratioBPS(amount, totalSupply),
 		})
 	}
 	sort.Slice(shares, func(i, j int) bool {
@@ -610,4 +619,63 @@ func formatGenesisWalletRatio(amount *big.Int, totalSupply *big.Int) string {
 	ratio := new(big.Rat).SetFrac(amount, totalSupply)
 	ratio.Mul(ratio, big.NewRat(100, 1))
 	return ratio.FloatString(4) + "%"
+}
+
+func ratioBPS(amount *big.Int, totalSupply *big.Int) int64 {
+	if amount == nil || amount.Sign() <= 0 || totalSupply == nil || totalSupply.Sign() <= 0 {
+		return 0
+	}
+	// round(amount * 10000 / totalSupply) to nearest integer basis point
+	numerator := new(big.Int).Mul(amount, big.NewInt(10000))
+	halfDenominator := new(big.Int).Div(new(big.Int).Set(totalSupply), big.NewInt(2))
+	numerator.Add(numerator, halfDenominator)
+	result := new(big.Int).Div(numerator, totalSupply)
+	if !result.IsInt64() {
+		return math.MaxInt64
+	}
+	return result.Int64()
+}
+
+func (w *BlockWatcher) publishProjectGenesisWallets(ctx context.Context, project *Project, totalSupply *big.Int, shares []GenesisWalletShare) error {
+	if w.publisher == nil {
+		return errors.New("persistence publisher is not configured")
+	}
+	if project == nil {
+		return errors.New("project is nil")
+	}
+	txHash := projectTxHash(project)
+	totalSupplyText := "0"
+	if totalSupply != nil {
+		totalSupplyText = totalSupply.String()
+	}
+	items := make([]projectGenesisWalletItemPayload, 0, len(shares))
+	for i, item := range shares {
+		if item.Amount == nil {
+			continue
+		}
+		items = append(items, projectGenesisWalletItemPayload{
+			Wallet:    item.Wallet.Hex(),
+			NetAmount: item.Amount.String(),
+			RatioBPS:  item.RatioBPS,
+			RankIndex: int32(i),
+		})
+	}
+	payload := projectGenesisWalletReplacePayload{
+		Contract:          project.Meta.Contract.Hex(),
+		SourceTxHash:      txHash.Hex(),
+		SourceBlockNumber: project.Meta.BlockNumber,
+		TotalSupply:       totalSupplyText,
+		Items:             items,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal project genesis wallet replace payload: %w", err)
+	}
+	return w.publisher.Publish(ctx, PersistenceEvent{
+		Version:    persistenceEventVersion,
+		Op:         PersistenceOpProjectGenesisReplace,
+		Contract:   project.Meta.Contract.Hex(),
+		Payload:    data,
+		OccurredAt: time.Now().UTC(),
+	})
 }
