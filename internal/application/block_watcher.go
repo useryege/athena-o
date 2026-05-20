@@ -312,8 +312,9 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 			continue
 		}
 		queries = append(queries, athenacontract.AthenaProjectQuery{
-			TokenContract: project.Meta.Contract,
-			MsgCaller:     project.Meta.Creator,
+			TokenContract:  project.Meta.Contract,
+			MsgCaller:      project.Meta.Creator,
+			GenesisWallets: genesisWalletAddressesFromMetas(project.Meta.GenesisWallets),
 		})
 	}
 	if len(queries) == 0 {

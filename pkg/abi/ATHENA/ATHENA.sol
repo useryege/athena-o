@@ -64,12 +64,17 @@ contract Athena {
         uint256 feeAddressHoldLiquidityRatio;
     }
 
-    struct CreatorState {
+    struct AssetState {
         uint256 tokenBalance;
         uint256 wethBalance;
         uint256 usdtBalance;
         uint256 nativeBalance;
         uint256 usdtValue;
+    }
+
+    struct GenesisWalletAssetState {
+        address wallet;
+        AssetState assetState;
     }
 
     struct Project {
@@ -78,12 +83,14 @@ contract Athena {
         Token token;
         Pair wethPair;
         Pair usdtPair;
-        CreatorState creatorState;
+        AssetState assetState;
+        GenesisWalletAssetState[] genesisWalletAssetStates;
     }
 
     struct ProjectQuery {
         address tokenContract;
         address msgCaller;
+        address[] genesisWallets;
     }
 
     struct SimulationState {
@@ -149,13 +156,13 @@ contract Athena {
     }
 
     function Get(ProjectQuery calldata query, address[] calldata lockers) external view returns (Project memory) {
-        return _get(query.tokenContract, query.msgCaller, lockers);
+        return _get(query.tokenContract, query.msgCaller, query.genesisWallets, lockers);
     }
 
     function List(ProjectQuery[] calldata queries, address[] calldata lockers) external view returns (Project[] memory projects) {
         projects = new Project[](queries.length);
         for (uint256 i = 0; i < queries.length;) {
-            projects[i] = _get(queries[i].tokenContract, queries[i].msgCaller, lockers);
+            projects[i] = _get(queries[i].tokenContract, queries[i].msgCaller, queries[i].genesisWallets, lockers);
             unchecked {
                 i++;
             }
@@ -189,7 +196,7 @@ contract Athena {
         view
         returns (SimulationState memory)
     {
-        Project memory project = _get(query.tokenContract, query.msgCaller, lockers);
+        Project memory project = _get(query.tokenContract, query.msgCaller, query.genesisWallets, lockers);
         return _getSimulationState(query, project);
     }
 
@@ -200,7 +207,12 @@ contract Athena {
     {
         states = new SimulationState[](queries.length);
         for (uint256 i = 0; i < queries.length;) {
-            Project memory project = _get(queries[i].tokenContract, queries[i].msgCaller, lockers);
+            Project memory project = _get(
+                queries[i].tokenContract,
+                queries[i].msgCaller,
+                queries[i].genesisWallets,
+                lockers
+            );
             states[i] = _getSimulationState(queries[i], project);
             unchecked {
                 i++;
@@ -213,7 +225,7 @@ contract Athena {
         view
         returns (ProjectWithSimulationState memory result)
     {
-        result.project = _get(query.tokenContract, query.msgCaller, lockers);
+        result.project = _get(query.tokenContract, query.msgCaller, query.genesisWallets, lockers);
         result.simulationState = _getSimulationState(query, result.project);
     }
 
@@ -239,7 +251,12 @@ contract Athena {
         (, state.callerBalance) = _safeBalanceOf(query.tokenContract, query.msgCaller);
     }
 
-    function _get(address tokenContract, address msgCaller, address[] calldata lockers) private view returns (Project memory) {
+    function _get(
+        address tokenContract,
+        address msgCaller,
+        address[] calldata genesisWallets,
+        address[] calldata lockers
+    ) private view returns (Project memory) {
         Project memory project;
 
         project.tokenContract = tokenContract;
@@ -270,16 +287,9 @@ contract Athena {
             && symbolOk
             && bytes(project.token.symbol).length > 0;
 
-        if (msgCaller != ZERO_ADDRESS) {
-            (, project.creatorState.tokenBalance) = _safeBalanceOf(tokenContract, msgCaller);
-            (, project.creatorState.wethBalance) = _safeBalanceOf(wethContract, msgCaller);
-            (, project.creatorState.usdtBalance) = _safeBalanceOf(usdtContract, msgCaller);
-            project.creatorState.nativeBalance = msgCaller.balance;
-
-            uint256 wethUsdtValue = _quoteToUsdtValue(project.creatorState.wethBalance, wethContract);
-            uint256 nativeUsdtValue = _quoteToUsdtValue(project.creatorState.nativeBalance, wethContract);
-            project.creatorState.usdtValue =
-                wethUsdtValue + project.creatorState.usdtBalance + nativeUsdtValue;
+        project.assetState = _getAssetState(tokenContract, msgCaller);
+        if (genesisWallets.length > 0) {
+            project.genesisWalletAssetStates = _buildGenesisWalletAssetStates(tokenContract, genesisWallets);
         }
 
         if (!project.token.isValidERC20 || tokenContract == wethContract) {
@@ -297,6 +307,36 @@ contract Athena {
         }
 
         return project;
+    }
+
+    function _buildGenesisWalletAssetStates(address tokenContract, address[] calldata wallets)
+        private
+        view
+        returns (GenesisWalletAssetState[] memory states)
+    {
+        states = new GenesisWalletAssetState[](wallets.length);
+        for (uint256 i = 0; i < wallets.length;) {
+            states[i].wallet = wallets[i];
+            states[i].assetState = _getAssetState(tokenContract, wallets[i]);
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    function _getAssetState(address tokenContract, address wallet) private view returns (AssetState memory state) {
+        if (wallet == ZERO_ADDRESS) {
+            return state;
+        }
+
+        (, state.tokenBalance) = _safeBalanceOf(tokenContract, wallet);
+        (, state.wethBalance) = _safeBalanceOf(wethContract, wallet);
+        (, state.usdtBalance) = _safeBalanceOf(usdtContract, wallet);
+        state.nativeBalance = wallet.balance;
+
+        uint256 wethUsdtValue = _quoteToUsdtValue(state.wethBalance, wethContract);
+        uint256 nativeUsdtValue = _quoteToUsdtValue(state.nativeBalance, wethContract);
+        state.usdtValue = wethUsdtValue + state.usdtBalance + nativeUsdtValue;
     }
 
     function _getPair(address baseTokenContract, address quoteTokenContract, address[] calldata lockers)

@@ -114,7 +114,13 @@ func TestBuildProjectQueriesSkipsNilAndKeepsAlignment(t *testing.T) {
 	creatorB := common.HexToAddress("0x0400000000000000000000000000000000000004")
 
 	queries, contracts := buildProjectQueries([]*Project{
-		{Meta: ProjectMeta{Contract: contractA, Creator: creatorA}},
+		{Meta: ProjectMeta{
+			Contract: contractA,
+			Creator:  creatorA,
+			GenesisWallets: []GenesisWalletMeta{
+				{Wallet: common.HexToAddress("0x0500000000000000000000000000000000000005")},
+			},
+		}},
 		nil,
 		{Meta: ProjectMeta{Contract: contractB, Creator: creatorB}},
 	})
@@ -125,8 +131,14 @@ func TestBuildProjectQueriesSkipsNilAndKeepsAlignment(t *testing.T) {
 	if queries[0].TokenContract != contractA || queries[0].MsgCaller != creatorA || contracts[0] != contractA {
 		t.Fatalf("index 0 alignment mismatch: query=%+v contract=%s", queries[0], contracts[0].Hex())
 	}
+	if len(queries[0].GenesisWallets) != 1 || queries[0].GenesisWallets[0] != common.HexToAddress("0x0500000000000000000000000000000000000005") {
+		t.Fatalf("index 0 genesis wallets mismatch: query=%+v", queries[0])
+	}
 	if queries[1].TokenContract != contractB || queries[1].MsgCaller != creatorB || contracts[1] != contractB {
 		t.Fatalf("index 1 alignment mismatch: query=%+v contract=%s", queries[1], contracts[1].Hex())
+	}
+	if len(queries[1].GenesisWallets) != 0 {
+		t.Fatalf("index 1 genesis wallets len = %d, want 0", len(queries[1].GenesisWallets))
 	}
 }
 

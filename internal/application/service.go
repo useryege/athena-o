@@ -282,8 +282,22 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 	blacklistFields, blacklistFieldsErr := s.sourceCodeBlacklistFields(ctx)
 
 	queries := make([]athenacontract.AthenaProjectQuery, 0, len(metas))
+	genesisWalletsByContract := make(map[common.Address][]GenesisWalletMeta, len(metas))
 	for _, meta := range metas {
-		queries = append(queries, athenacontract.AthenaProjectQuery{TokenContract: meta.Contract, MsgCaller: meta.Creator})
+		var genesisWallets []GenesisWalletMeta
+		if genesisWalletStore != nil {
+			items, err := genesisWalletStore.ListProjectGenesisWalletsByContract(ctx, meta.Contract)
+			if err != nil {
+				return nil, err
+			}
+			genesisWallets = projectGenesisWalletsFromStore(items)
+			genesisWalletsByContract[meta.Contract] = genesisWallets
+		}
+		queries = append(queries, athenacontract.AthenaProjectQuery{
+			TokenContract:  meta.Contract,
+			MsgCaller:      meta.Creator,
+			GenesisWallets: genesisWalletAddressesFromMetas(genesisWallets),
+		})
 	}
 
 	fetched, err := fetcher.FetchProjectsWithSimulationState(ctx, queries)
@@ -299,12 +313,8 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 			Meta:       projectMetaFromStore(meta),
 			ChainState: fetched[i].Project,
 		}
-		if genesisWalletStore != nil {
-			items, err := genesisWalletStore.ListProjectGenesisWalletsByContract(ctx, meta.Contract)
-			if err != nil {
-				return nil, err
-			}
-			project.Meta.GenesisWallets = projectGenesisWalletsFromStore(items)
+		if genesisWallets, ok := genesisWalletsByContract[meta.Contract]; ok {
+			project.Meta.GenesisWallets = genesisWallets
 		}
 		if blacklistFieldsErr == nil && meta.SourceCode != "" && s.sourceAnalyzer != nil {
 			project.Meta.SourceCodeBlacklist = s.sourceAnalyzer.AnalyzeSourceCode(meta.SourceCode, blacklistFields)
@@ -346,6 +356,17 @@ func projectGenesisWalletsFromStore(items []appstore.ProjectGenesisWallet) []Gen
 		})
 	}
 	return converted
+}
+
+func genesisWalletAddressesFromMetas(items []GenesisWalletMeta) []common.Address {
+	if len(items) == 0 {
+		return nil
+	}
+	addresses := make([]common.Address, 0, len(items))
+	for _, item := range items {
+		addresses = append(addresses, item.Wallet)
+	}
+	return addresses
 }
 
 func (s *Service) runPersistenceEventLoop(ctx context.Context) {
@@ -432,8 +453,9 @@ func buildProjectQueries(projects []*Project) ([]athenacontract.AthenaProjectQue
 			continue
 		}
 		queries = append(queries, athenacontract.AthenaProjectQuery{
-			TokenContract: project.Meta.Contract,
-			MsgCaller:     project.Meta.Creator,
+			TokenContract:  project.Meta.Contract,
+			MsgCaller:      project.Meta.Creator,
+			GenesisWallets: genesisWalletAddressesFromMetas(project.Meta.GenesisWallets),
 		})
 		contracts = append(contracts, project.Meta.Contract)
 	}

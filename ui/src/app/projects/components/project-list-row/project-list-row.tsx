@@ -113,7 +113,7 @@ export const ProjectListRow = ({
                     usdtDecimals={usdtDecimals}
                 />
             </div>
-            <div className='projects-list__cell'>{formatUsdtValue(project.chainState?.creatorState?.usdtValue, usdtDecimals)}</div>
+            <div className='projects-list__cell'>{formatUsdtValue(project.chainState?.assetState?.usdtValue, usdtDecimals)}</div>
             <div className='projects-list__cell projects-list__cell--block-time'>
                 {blockTime ? (
                     <>

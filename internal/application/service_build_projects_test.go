@@ -272,4 +272,17 @@ func TestBuildProjectsFromMetasLoadsGenesisWalletsFromStore(t *testing.T) {
 	if projects[0].Meta.GenesisWallets[1].RatioBPS != 3750 {
 		t.Fatalf("genesis wallet[1] ratio bps = %d, want 3750", projects[0].Meta.GenesisWallets[1].RatioBPS)
 	}
+	if len(fetcher.projectWithSimulationCalls) != 1 {
+		t.Fatalf("fetch call count = %d, want 1", len(fetcher.projectWithSimulationCalls))
+	}
+	if len(fetcher.projectWithSimulationCalls[0]) != 1 {
+		t.Fatalf("fetch query size = %d, want 1", len(fetcher.projectWithSimulationCalls[0]))
+	}
+	gotQuery := fetcher.projectWithSimulationCalls[0][0]
+	if len(gotQuery.GenesisWallets) != 2 {
+		t.Fatalf("query genesis wallets len = %d, want 2", len(gotQuery.GenesisWallets))
+	}
+	if gotQuery.GenesisWallets[0] != walletA || gotQuery.GenesisWallets[1] != walletB {
+		t.Fatalf("query genesis wallets = %v, want [%s %s]", gotQuery.GenesisWallets, walletA.Hex(), walletB.Hex())
+	}
 }

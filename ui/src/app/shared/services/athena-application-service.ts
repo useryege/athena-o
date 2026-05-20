@@ -30,7 +30,8 @@ export interface ProjectChainState {
     token?: TokenState;
     wethPair?: PairV2State;
     usdtPair?: PairV2State;
-    creatorState?: CreatorState;
+    assetState?: AssetState;
+    genesisWalletAssetStates?: GenesisWalletAssetState[];
 }
 
 export interface TokenState {
@@ -59,12 +60,17 @@ export interface PairV2State {
     feeAddressHoldLiquidityRatio?: string;
 }
 
-export interface CreatorState {
+export interface AssetState {
     tokenBalance?: string;
     wethBalance?: string;
     usdtBalance?: string;
     nativeBalance?: string;
     usdtValue?: string;
+}
+
+export interface GenesisWalletAssetState {
+    wallet?: string;
+    assetState?: AssetState;
 }
 
 export interface ListProjectsResponse {

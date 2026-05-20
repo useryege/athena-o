@@ -126,6 +126,18 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const [addingToBlacklist, setAddingToBlacklist] = React.useState(false);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
+    const genesisWalletAssetByWallet = React.useMemo(() => {
+        const states = project?.chainState?.genesisWalletAssetStates || [];
+        const walletMap = new Map<string, (typeof states)[number]['assetState']>();
+        states.forEach(item => {
+            const wallet = (item.wallet || '').toLowerCase();
+            if (!wallet) {
+                return;
+            }
+            walletMap.set(wallet, item.assetState);
+        });
+        return walletMap;
+    }, [project?.chainState?.genesisWalletAssetStates]);
 
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const eventRequestRef = React.useRef<{abort?: () => void} | null>(null);
@@ -403,16 +415,22 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                 <div className='project-details__field-value'>No genesis wallet metadata available</div>
                             ) : (
                                 <div className='project-details__grid'>
-                                    {project.meta.genesisWallets.map((item, index) => (
-                                        <div key={`${item.wallet || ''}-${item.rank ?? index}`} className='project-details__field' style={{gridColumn: '1 / -1'}}>
-                                            <span className='project-details__field-label'>
-                                                Rank {renderValue(item.rank)}
-                                            </span>
-                                            <span className='project-details__field-value'>
-                                                Wallet: {renderValue(item.wallet)} | Net Amount: {renderValue(item.netAmount)} | Ratio: {renderRatioFromBps(item.ratioBps)}
-                                            </span>
-                                        </div>
-                                    ))}
+                                    {project.meta.genesisWallets.map((item, index) => {
+                                        const assetState = genesisWalletAssetByWallet.get((item.wallet || '').toLowerCase());
+                                        return (
+                                            <div key={`${item.wallet || ''}-${item.rank ?? index}`} className='project-details__field' style={{gridColumn: '1 / -1'}}>
+                                                <span className='project-details__field-label'>Rank {renderValue(item.rank)}</span>
+                                                <span className='project-details__field-value'>
+                                                    Wallet: {renderValue(item.wallet)} | Net Amount: {renderValue(item.netAmount)} | Ratio: {renderRatioFromBps(item.ratioBps)}
+                                                </span>
+                                                <span className='project-details__field-value'>
+                                                    Asset Token: {renderValue(assetState?.tokenBalance)} | Asset WETH: {renderValue(assetState?.wethBalance)} | Asset USDT:{' '}
+                                                    {renderValue(assetState?.usdtBalance)} | Asset Native: {renderValue(assetState?.nativeBalance)} | Total Asset (USDT):{' '}
+                                                    {renderValue(assetState?.usdtValue)}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
@@ -470,27 +488,27 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                         </div>
 
                         <div className='white-box project-details__box'>
-                            <div className='project-details__section-title'>Creator State</div>
+                            <div className='project-details__section-title'>Asset State</div>
                             <div className='project-details__grid'>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Token Balance</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.tokenBalance)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.chainState?.assetState?.tokenBalance)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>WETH Balance</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.wethBalance)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.chainState?.assetState?.wethBalance)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>USDT Balance</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.usdtBalance)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.chainState?.assetState?.usdtBalance)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Native Balance</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.nativeBalance)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.chainState?.assetState?.nativeBalance)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Total Asset (USDT)</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.creatorState?.usdtValue)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.chainState?.assetState?.usdtValue)}</span>
                                 </div>
                             </div>
                         </div>

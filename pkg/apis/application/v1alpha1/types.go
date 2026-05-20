@@ -27,10 +27,11 @@ type GenesisWalletState struct {
 }
 
 type ProjectChainState struct {
-	Token        TokenState   `protobuf:"bytes,1,opt,name=token" json:"token"`
-	WethPair     PairV2State  `protobuf:"bytes,2,opt,name=wethPair" json:"wethPair"`
-	UsdtPair     PairV2State  `protobuf:"bytes,3,opt,name=usdtPair" json:"usdtPair"`
-	CreatorState CreatorState `protobuf:"bytes,4,opt,name=creatorState" json:"creatorState"`
+	Token                    TokenState                `protobuf:"bytes,1,opt,name=token" json:"token"`
+	WethPair                 PairV2State               `protobuf:"bytes,2,opt,name=wethPair" json:"wethPair"`
+	UsdtPair                 PairV2State               `protobuf:"bytes,3,opt,name=usdtPair" json:"usdtPair"`
+	AssetState               AssetState                `protobuf:"bytes,4,opt,name=assetState" json:"assetState"`
+	GenesisWalletAssetStates []GenesisWalletAssetState `protobuf:"bytes,5,rep,name=genesisWalletAssetStates" json:"genesisWalletAssetStates"`
 }
 
 type TokenState struct {
@@ -59,12 +60,17 @@ type PairV2State struct {
 	FeeAddressHoldLiquidityRatio   string `protobuf:"bytes,15,opt,name=feeAddressHoldLiquidityRatio" json:"feeAddressHoldLiquidityRatio"`
 }
 
-type CreatorState struct {
+type AssetState struct {
 	TokenBalance  string `protobuf:"bytes,1,opt,name=tokenBalance" json:"tokenBalance"`
 	WethBalance   string `protobuf:"bytes,2,opt,name=wethBalance" json:"wethBalance"`
 	UsdtBalance   string `protobuf:"bytes,3,opt,name=usdtBalance" json:"usdtBalance"`
 	NativeBalance string `protobuf:"bytes,4,opt,name=nativeBalance" json:"nativeBalance"`
 	UsdtValue     string `protobuf:"bytes,5,opt,name=usdtValue" json:"usdtValue"`
+}
+
+type GenesisWalletAssetState struct {
+	Wallet     string     `protobuf:"bytes,1,opt,name=wallet" json:"wallet"`
+	AssetState AssetState `protobuf:"bytes,2,opt,name=assetState" json:"assetState"`
 }
 
 type SimulateResult struct {

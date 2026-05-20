@@ -5,7 +5,9 @@
 
 package v1alpha1
 
-func (*CreatorState) ProtoMessage() {}
+func (*AssetState) ProtoMessage() {}
+
+func (*GenesisWalletAssetState) ProtoMessage() {}
 
 func (*GenesisWalletState) ProtoMessage() {}
 

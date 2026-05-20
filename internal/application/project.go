@@ -58,6 +58,7 @@ func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.Proje
 	creatorResult := project.Meta.CreatorResult
 	sourceCodeBlacklist := project.Meta.SourceCodeBlacklist
 	var genesisWallets []v1alpha1.GenesisWalletState
+	var genesisWalletAssetStates []v1alpha1.GenesisWalletAssetState
 	if includeGenesisWallets && len(project.Meta.GenesisWallets) > 0 {
 		genesisWallets = make([]v1alpha1.GenesisWalletState, 0, len(project.Meta.GenesisWallets))
 		for _, item := range project.Meta.GenesisWallets {
@@ -66,6 +67,21 @@ func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.Proje
 				NetAmount: bigIntToString(item.NetAmount),
 				RatioBps:  item.RatioBPS,
 				Rank:      item.RankIndex,
+			})
+		}
+	}
+	if includeGenesisWallets && len(chainState.GenesisWalletAssetStates) > 0 {
+		genesisWalletAssetStates = make([]v1alpha1.GenesisWalletAssetState, 0, len(chainState.GenesisWalletAssetStates))
+		for _, item := range chainState.GenesisWalletAssetStates {
+			genesisWalletAssetStates = append(genesisWalletAssetStates, v1alpha1.GenesisWalletAssetState{
+				Wallet: addressToString(item.Wallet),
+				AssetState: v1alpha1.AssetState{
+					TokenBalance:  bigIntToString(item.AssetState.TokenBalance),
+					WethBalance:   bigIntToString(item.AssetState.WethBalance),
+					UsdtBalance:   bigIntToString(item.AssetState.UsdtBalance),
+					NativeBalance: bigIntToString(item.AssetState.NativeBalance),
+					UsdtValue:     bigIntToString(item.AssetState.UsdtValue),
+				},
 			})
 		}
 	}
@@ -104,13 +120,14 @@ func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.Proje
 			},
 			WethPair: pairToView(chainState.WethPair),
 			UsdtPair: pairToView(chainState.UsdtPair),
-			CreatorState: v1alpha1.CreatorState{
-				TokenBalance:  bigIntToString(chainState.CreatorState.TokenBalance),
-				WethBalance:   bigIntToString(chainState.CreatorState.WethBalance),
-				UsdtBalance:   bigIntToString(chainState.CreatorState.UsdtBalance),
-				NativeBalance: bigIntToString(chainState.CreatorState.NativeBalance),
-				UsdtValue:     bigIntToString(chainState.CreatorState.UsdtValue),
+			AssetState: v1alpha1.AssetState{
+				TokenBalance:  bigIntToString(chainState.AssetState.TokenBalance),
+				WethBalance:   bigIntToString(chainState.AssetState.WethBalance),
+				UsdtBalance:   bigIntToString(chainState.AssetState.UsdtBalance),
+				NativeBalance: bigIntToString(chainState.AssetState.NativeBalance),
+				UsdtValue:     bigIntToString(chainState.AssetState.UsdtValue),
 			},
+			GenesisWalletAssetStates: genesisWalletAssetStates,
 		},
 	}
 }
