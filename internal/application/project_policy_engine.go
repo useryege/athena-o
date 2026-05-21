@@ -14,7 +14,11 @@ import (
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
-const projectPolicyEvaluationInterval = time.Minute
+const (
+	projectPolicyWorkerCount                = 4
+	projectPolicyTaskQueueCapacity          = 4096
+	projectPolicyFallbackEvaluationInterval = 45 * time.Minute
+)
 
 type ProjectPolicyFacts struct {
 	SourceCodeBlacklistFields []string
@@ -26,6 +30,12 @@ type ProjectPolicyRule interface {
 	Evaluate(ctx context.Context, project *Project, facts ProjectPolicyFacts) (match bool, evidence map[string]any, err error)
 }
 
+type policyTaskState struct {
+	queued     bool
+	processing bool
+	dirty      bool
+}
+
 type projectPolicyEngineImpl struct {
 	projectCache ProjectSnapshotCache
 
@@ -35,6 +45,11 @@ type projectPolicyEngineImpl struct {
 
 	persistencePublisher PersistenceEventPublisher
 	rules                []ProjectPolicyRule
+	triggerCh            <-chan common.Address
+	taskCh               chan common.Address
+
+	pendingMu sync.Mutex
+	pending   map[common.Address]policyTaskState
 
 	wg sync.WaitGroup
 }
@@ -53,6 +68,7 @@ func NewProjectPolicyEngine(
 	sourceBlacklist sourceCodeBlacklistLister,
 	bytecodeBlacklist bytecodeBlacklistLister,
 	persistencePublisher PersistenceEventPublisher,
+	triggerCh <-chan common.Address,
 ) ProjectPolicyEngine {
 	return &projectPolicyEngineImpl{
 		projectCache:         projectCache,
@@ -60,6 +76,9 @@ func NewProjectPolicyEngine(
 		sourceBlacklist:      sourceBlacklist,
 		bytecodeBlacklist:    bytecodeBlacklist,
 		persistencePublisher: persistencePublisher,
+		triggerCh:            triggerCh,
+		taskCh:               make(chan common.Address, projectPolicyTaskQueueCapacity),
+		pending:              make(map[common.Address]policyTaskState),
 		rules: []ProjectPolicyRule{
 			sourceCodeBlacklistRule{},
 			bytecodeBlacklistRule{},
@@ -68,6 +87,14 @@ func NewProjectPolicyEngine(
 }
 
 func (e *projectPolicyEngineImpl) Start(ctx context.Context) error {
+	for i := 0; i < projectPolicyWorkerCount; i++ {
+		e.wg.Add(1)
+		go func(workerID int) {
+			defer e.wg.Done()
+			e.workerLoop(ctx, workerID)
+		}(i + 1)
+	}
+
 	e.wg.Add(1)
 	go func() {
 		defer e.wg.Done()
@@ -82,35 +109,54 @@ func (e *projectPolicyEngineImpl) Stop() error {
 }
 
 func (e *projectPolicyEngineImpl) runLoop(ctx context.Context) {
-	ticker := time.NewTicker(projectPolicyEvaluationInterval)
+	ticker := time.NewTicker(projectPolicyFallbackEvaluationInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
+		case contract := <-e.triggerCh:
+			e.enqueueContract(ctx, contract, "trigger")
 		case <-ticker.C:
-			if err := e.evaluateAllProjects(ctx); err != nil {
+			if err := e.enqueueAllProjects(ctx); err != nil {
 				log.WithFields(log.Fields{
 					"component": "project_policy_engine",
 					"error":     err.Error(),
-				}).Warn("project policy evaluation failed")
+				}).Warn("project policy fallback enqueue failed")
 			}
 		}
 	}
 }
 
-func (e *projectPolicyEngineImpl) evaluateAllProjects(ctx context.Context) error {
-	facts, err := e.buildFacts(ctx)
-	if err != nil {
-		return err
+func (e *projectPolicyEngineImpl) workerLoop(ctx context.Context, workerID int) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case contract := <-e.taskCh:
+			e.markProcessing(contract)
+			if err := e.evaluateProject(ctx, contract); err != nil && ctx.Err() == nil {
+				log.WithFields(log.Fields{
+					"component": "project_policy_engine",
+					"worker":    workerID,
+					"contract":  contract.Hex(),
+					"error":     err.Error(),
+				}).Warn("project policy evaluation failed")
+			}
+			requeue := e.finishProcessing(contract)
+			if requeue {
+				e.requeueContract(ctx, contract)
+			}
+		}
 	}
+}
 
+func (e *projectPolicyEngineImpl) enqueueAllProjects(ctx context.Context) error {
 	projects, err := e.listAllProjects(ctx)
 	if err != nil {
 		return err
 	}
-
 	for _, project := range projects {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -118,12 +164,128 @@ func (e *projectPolicyEngineImpl) evaluateAllProjects(ctx context.Context) error
 		if project == nil {
 			continue
 		}
-		if err := e.analyzeSourceCodeIfNeeded(ctx, project, facts.SourceCodeBlacklistFields); err != nil {
-			continue
-		}
-		if err := e.evaluateRulesForProject(ctx, project, facts); err != nil {
-			continue
-		}
+		e.enqueueContract(ctx, project.Meta.Contract, "fallback")
+	}
+	return nil
+}
+
+func (e *projectPolicyEngineImpl) enqueueContract(ctx context.Context, contract common.Address, source string) {
+	if contract == (common.Address{}) {
+		return
+	}
+
+	shouldQueue := false
+	e.pendingMu.Lock()
+	state := e.pending[contract]
+	if state.processing {
+		state.dirty = true
+		e.pending[contract] = state
+		e.pendingMu.Unlock()
+		return
+	}
+	if state.queued {
+		e.pendingMu.Unlock()
+		return
+	}
+	state.queued = true
+	e.pending[contract] = state
+	shouldQueue = true
+	e.pendingMu.Unlock()
+
+	if !shouldQueue {
+		return
+	}
+
+	select {
+	case <-ctx.Done():
+		e.clearQueuedState(contract)
+	case e.taskCh <- contract:
+		log.WithFields(log.Fields{
+			"component": "project_policy_engine",
+			"source":    source,
+			"contract":  contract.Hex(),
+		}).Debug("enqueued project policy task")
+	}
+}
+
+func (e *projectPolicyEngineImpl) markProcessing(contract common.Address) {
+	e.pendingMu.Lock()
+	defer e.pendingMu.Unlock()
+	state := e.pending[contract]
+	state.queued = false
+	state.processing = true
+	e.pending[contract] = state
+}
+
+func (e *projectPolicyEngineImpl) finishProcessing(contract common.Address) bool {
+	e.pendingMu.Lock()
+	defer e.pendingMu.Unlock()
+	state, ok := e.pending[contract]
+	if !ok {
+		return false
+	}
+	state.processing = false
+	if state.dirty {
+		state.dirty = false
+		state.queued = true
+		e.pending[contract] = state
+		return true
+	}
+	delete(e.pending, contract)
+	return false
+}
+
+func (e *projectPolicyEngineImpl) requeueContract(ctx context.Context, contract common.Address) {
+	select {
+	case <-ctx.Done():
+		e.clearQueuedState(contract)
+	case e.taskCh <- contract:
+		log.WithFields(log.Fields{
+			"component": "project_policy_engine",
+			"source":    "dirty_requeue",
+			"contract":  contract.Hex(),
+		}).Debug("requeued project policy task")
+	}
+}
+
+func (e *projectPolicyEngineImpl) clearQueuedState(contract common.Address) {
+	e.pendingMu.Lock()
+	defer e.pendingMu.Unlock()
+	state, ok := e.pending[contract]
+	if !ok {
+		return
+	}
+	state.queued = false
+	state.dirty = false
+	if state.processing {
+		e.pending[contract] = state
+		return
+	}
+	delete(e.pending, contract)
+}
+
+func (e *projectPolicyEngineImpl) evaluateProject(ctx context.Context, contract common.Address) error {
+	if contract == (common.Address{}) {
+		return nil
+	}
+
+	facts, err := e.buildFacts(ctx)
+	if err != nil {
+		return err
+	}
+
+	project, exists, err := e.projectCache.GetProject(ctx, contract)
+	if err != nil {
+		return err
+	}
+	if !exists || project == nil {
+		return nil
+	}
+	if err := e.analyzeSourceCodeIfNeeded(ctx, project, facts.SourceCodeBlacklistFields); err != nil {
+		return err
+	}
+	if err := e.evaluateRulesForProject(ctx, project, facts); err != nil {
+		return err
 	}
 	return nil
 }

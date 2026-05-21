@@ -31,6 +31,7 @@ type projectStateReconcilerImpl struct {
 
 	persistencePublisher PersistenceEventPublisher
 	codeAtFunc           func(ctx context.Context, contract common.Address) ([]byte, error)
+	policyTriggerCh      chan<- common.Address
 
 	jobSem chan struct{}
 	wg     sync.WaitGroup
@@ -43,6 +44,7 @@ func NewProjectStateReconciler(
 	apiFetcher ethereumapi.EthereumAPI,
 	persistencePublisher PersistenceEventPublisher,
 	codeAtFunc func(ctx context.Context, contract common.Address) ([]byte, error),
+	policyTriggerCh chan<- common.Address,
 ) ProjectStateReconciler {
 	return &projectStateReconcilerImpl{
 		projectCache:         projectCache,
@@ -51,6 +53,7 @@ func NewProjectStateReconciler(
 		apiFetcher:           apiFetcher,
 		persistencePublisher: persistencePublisher,
 		codeAtFunc:           codeAtFunc,
+		policyTriggerCh:      policyTriggerCh,
 		jobSem:               make(chan struct{}, reconcilerDefaultConcurrency),
 	}
 }
@@ -160,7 +163,7 @@ func (r *projectStateReconcilerImpl) refreshProjectStates(ctx context.Context, t
 
 	for i, contract := range contracts {
 		nextState := fetched[i].Project
-		_, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+		changed, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
 				return nil, false, nil
 			}
@@ -169,6 +172,9 @@ func (r *projectStateReconcilerImpl) refreshProjectStates(ctx context.Context, t
 		})
 		if err != nil {
 			return err
+		}
+		if changed {
+			r.triggerPolicyEvaluation(contract, "refresh_project_state")
 		}
 	}
 	return nil
@@ -235,7 +241,7 @@ func (r *projectStateReconcilerImpl) refreshProjectSimulations(ctx context.Conte
 			continue
 		}
 
-		_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+		changed, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
 				return nil, false, nil
 			}
@@ -244,6 +250,9 @@ func (r *projectStateReconcilerImpl) refreshProjectSimulations(ctx context.Conte
 		})
 		if err != nil {
 			return err
+		}
+		if changed {
+			r.triggerPolicyEvaluation(contract, "refresh_project_simulation")
 		}
 	}
 	return nil
@@ -293,7 +302,7 @@ func (r *projectStateReconcilerImpl) refreshProjectRuntimeCodeHashes(ctx context
 			continue
 		}
 		codeHash := crypto.Keccak256Hash(code)
-		_, err = r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
+		changed, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Runtime.RuntimeCodeHash != (common.Hash{}) {
 				return nil, false, nil
 			}
@@ -303,8 +312,26 @@ func (r *projectStateReconcilerImpl) refreshProjectRuntimeCodeHashes(ctx context
 		if err != nil {
 			continue
 		}
+		if changed {
+			r.triggerPolicyEvaluation(project.Meta.Contract, "refresh_project_runtime_code_hash")
+		}
 	}
 	return nil
+}
+
+func (r *projectStateReconcilerImpl) triggerPolicyEvaluation(contract common.Address, source string) {
+	if r == nil || r.policyTriggerCh == nil || contract == (common.Address{}) {
+		return
+	}
+	select {
+	case r.policyTriggerCh <- contract:
+	default:
+		log.WithFields(log.Fields{
+			"component": "project_state_reconciler",
+			"contract":  contract.Hex(),
+			"source":    source,
+		}).Warn("project policy trigger channel is full, dropping trigger")
+	}
 }
 
 func (r *projectStateReconcilerImpl) listProjectsByTarget(ctx context.Context, target refreshTarget) ([]*Project, error) {
@@ -353,7 +380,7 @@ func (r *projectStateReconcilerImpl) fetchProjectSourceCodeBatch(ctx context.Con
 		}
 
 		shouldPersistSourceCode := false
-		_, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
+		changed, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Meta.SourceCode != "" {
 				return nil, false, nil
 			}
@@ -363,6 +390,9 @@ func (r *projectStateReconcilerImpl) fetchProjectSourceCodeBatch(ctx context.Con
 		})
 		if err != nil {
 			continue
+		}
+		if changed {
+			r.triggerPolicyEvaluation(project.Meta.Contract, "refresh_project_sourcecode")
 		}
 
 		if !shouldPersistSourceCode {

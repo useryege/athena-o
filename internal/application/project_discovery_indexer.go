@@ -51,10 +51,11 @@ type projectDiscoveryIndexerImpl struct {
 }
 
 type discoveryIntakeImpl struct {
-	nodeClient   projectDiscoveryNodeClient
-	projectCache ProjectSnapshotCache
-	fetcher      evm.AthenaFetcher
-	publisher    PersistenceEventPublisher
+	nodeClient      projectDiscoveryNodeClient
+	projectCache    ProjectSnapshotCache
+	fetcher         evm.AthenaFetcher
+	publisher       PersistenceEventPublisher
+	policyTriggerCh chan<- common.Address
 }
 
 type GenesisWalletShare struct {
@@ -94,12 +95,14 @@ func NewDiscoveryIntake(
 	projectCache ProjectSnapshotCache,
 	fetcher evm.AthenaFetcher,
 	publisher PersistenceEventPublisher,
+	policyTriggerCh chan<- common.Address,
 ) DiscoveryIntake {
 	return &discoveryIntakeImpl{
-		nodeClient:   nodeClient,
-		projectCache: projectCache,
-		fetcher:      fetcher,
-		publisher:    publisher,
+		nodeClient:      nodeClient,
+		projectCache:    projectCache,
+		fetcher:         fetcher,
+		publisher:       publisher,
+		policyTriggerCh: policyTriggerCh,
 	}
 }
 
@@ -469,7 +472,7 @@ func (d *discoveryIntakeImpl) syncProjects(ctx context.Context, projects []*Proj
 		}); err != nil {
 			return fmt.Errorf("failed to persist project event log %s: %w", project.Meta.Contract.Hex(), err)
 		}
-		_, err = d.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
+		changed, err := d.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if exists && current != nil {
 				return nil, false, nil
 			}
@@ -478,8 +481,26 @@ func (d *discoveryIntakeImpl) syncProjects(ctx context.Context, projects []*Proj
 		if err != nil {
 			return fmt.Errorf("failed to cache project %s: %w", project.Meta.Contract.Hex(), err)
 		}
+		if changed {
+			d.triggerPolicyEvaluation(project.Meta.Contract, "discovery_new_project")
+		}
 	}
 	return nil
+}
+
+func (d *discoveryIntakeImpl) triggerPolicyEvaluation(contract common.Address, source string) {
+	if d == nil || d.policyTriggerCh == nil || contract == (common.Address{}) {
+		return
+	}
+	select {
+	case d.policyTriggerCh <- contract:
+	default:
+		log.WithFields(log.Fields{
+			"component": "project_discovery_intake",
+			"contract":  contract.Hex(),
+			"source":    source,
+		}).Warn("project policy trigger channel is full, dropping trigger")
+	}
 }
 
 func genesisWalletMetasFromShares(shares []GenesisWalletShare) []GenesisWalletMeta {

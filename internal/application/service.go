@@ -34,6 +34,7 @@ const (
 	binBlacklistScanInterval               = time.Minute
 	sourceCodeScanPageSize                 = 200
 	bootstrapRetryInterval                 = 3 * time.Second
+	projectPolicyTriggerQueueCapacity      = 4096
 )
 
 type refreshTarget uint8
@@ -184,7 +185,8 @@ func (s *Service) Start() error {
 	}
 
 	s.apiFetcher = apiFetcher
-	discoveryIntake := NewDiscoveryIntake(s.nodeClient, s.projectCache, athenaFetcher, s.persistencePublisher)
+	policyTriggerCh := make(chan common.Address, projectPolicyTriggerQueueCapacity)
+	discoveryIntake := NewDiscoveryIntake(s.nodeClient, s.projectCache, athenaFetcher, s.persistencePublisher, policyTriggerCh)
 	discoveryIndexer := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, discoveryIntake)
 	stateReconciler := NewProjectStateReconciler(
 		s.projectCache,
@@ -193,6 +195,7 @@ func (s *Service) Start() error {
 		apiFetcher,
 		s.persistencePublisher,
 		s.fetchContractBytecode,
+		policyTriggerCh,
 	)
 	policyEngine := NewProjectPolicyEngine(
 		s.projectCache,
@@ -200,6 +203,7 @@ func (s *Service) Start() error {
 		s.sourceBlacklist,
 		s.bytecodeBlacklist,
 		s.persistencePublisher,
+		policyTriggerCh,
 	)
 	pipeline := NewProjectPipeline(discoveryIndexer, stateReconciler, policyEngine)
 	if err := pipeline.Start(ctx); err != nil {
