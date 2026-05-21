@@ -597,36 +597,6 @@ func filterLogsByTxHash(logs []types.Log, txHash common.Hash) []*types.Log {
 	return filtered
 }
 
-func extractGenesisWallets(logs []*types.Log, tokenContract common.Address) []common.Address {
-	filterer, err := erc20contract.NewERC20Filterer(tokenContract, nil)
-	if err != nil {
-		return nil
-	}
-	wallets := make([]common.Address, 0)
-	seen := make(map[common.Address]struct{})
-	for _, entry := range logs {
-		if entry == nil {
-			continue
-		}
-		if entry.Address != tokenContract {
-			continue
-		}
-		transferEvent, err := filterer.ParseTransfer(*entry)
-		if err != nil {
-			continue
-		}
-		if transferEvent.To == (common.Address{}) {
-			continue
-		}
-		if _, exists := seen[transferEvent.To]; exists {
-			continue
-		}
-		seen[transferEvent.To] = struct{}{}
-		wallets = append(wallets, transferEvent.To)
-	}
-	return wallets
-}
-
 func extractGenesisWalletShares(logs []*types.Log, tokenContract common.Address, totalSupply *big.Int) []GenesisWalletShare {
 	filterer, err := erc20contract.NewERC20Filterer(tokenContract, nil)
 	if err != nil {
