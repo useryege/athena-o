@@ -232,6 +232,7 @@ func (s *Service) startWithContext(ctx context.Context) (*ProjectPipeline, ether
 	}
 	stateReconciler := NewProjectStateReconciler(
 		s.projectCache,
+		s.store,
 		athenaFetcher,
 		projectSimulator,
 		apiFetcher,

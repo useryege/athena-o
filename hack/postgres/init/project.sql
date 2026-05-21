@@ -27,6 +27,9 @@ CREATE INDEX IF NOT EXISTS project_block_order_idx
 CREATE INDEX IF NOT EXISTS project_archived_time_idx
   ON project (is_archived, archived_at DESC, id DESC);
 
+CREATE INDEX IF NOT EXISTS project_creator_order_idx
+  ON project (creator, block_number, tx_index, id);
+
 CREATE TABLE IF NOT EXISTS source_code_blacklist_field (
   id BIGSERIAL PRIMARY KEY,
   field TEXT NOT NULL,

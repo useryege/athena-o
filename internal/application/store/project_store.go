@@ -112,6 +112,41 @@ ORDER BY block_number, tx_index, id
 	return metas, nil
 }
 
+func (s *SQLStore) ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error) {
+	rows, err := s.db.QueryContext(ctx, `
+SELECT
+  block_number,
+  block_time,
+  contract,
+  creator,
+  tx_hash,
+  tx_index,
+  source_code,
+  is_archived,
+  archived_at
+FROM project
+WHERE creator = $1
+ORDER BY block_number, tx_index, id
+`, creator.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("list project metas by creator: %w", err)
+	}
+	defer rows.Close()
+
+	metas := make([]ProjectMeta, 0)
+	for rows.Next() {
+		meta, err := scanProjectMetaRow(rows, true)
+		if err != nil {
+			return nil, err
+		}
+		metas = append(metas, meta)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate project metas by creator: %w", err)
+	}
+	return metas, nil
+}
+
 func (s *SQLStore) UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project

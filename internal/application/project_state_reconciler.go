@@ -1,9 +1,11 @@
 package application
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -25,6 +27,7 @@ type reconcilerJob struct {
 
 type projectStateReconcilerImpl struct {
 	projectCache ProjectSnapshotCache
+	projectStore appstore.ProjectStore
 	fetcher      evm.AthenaFetcher
 	simulator    ProjectSimulator
 	apiFetcher   ethereumapi.EthereumAPI
@@ -39,6 +42,7 @@ type projectStateReconcilerImpl struct {
 
 func NewProjectStateReconciler(
 	projectCache ProjectSnapshotCache,
+	projectStore appstore.ProjectStore,
 	fetcher evm.AthenaFetcher,
 	simulator ProjectSimulator,
 	apiFetcher ethereumapi.EthereumAPI,
@@ -48,6 +52,7 @@ func NewProjectStateReconciler(
 ) ProjectStateReconciler {
 	return &projectStateReconcilerImpl{
 		projectCache:         projectCache,
+		projectStore:         projectStore,
 		fetcher:              fetcher,
 		simulator:            simulator,
 		apiFetcher:           apiFetcher,
@@ -68,6 +73,8 @@ func (r *projectStateReconcilerImpl) Start(ctx context.Context) error {
 		{name: "sourcecode_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSourceCodes},
 		{name: "runtime_code_hash_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectRuntimeCodeHashes},
 		{name: "runtime_code_hash_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectRuntimeCodeHashes},
+		{name: "creator_other_projects_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectCreatorOtherProjects},
+		{name: "creator_other_projects_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectCreatorOtherProjects},
 	}
 
 	for i := range jobs {
@@ -285,6 +292,79 @@ func (r *projectStateReconcilerImpl) refreshArchivedProjectRuntimeCodeHashes(ctx
 	return r.refreshProjectRuntimeCodeHashes(ctx, refreshTargetArchived)
 }
 
+func (r *projectStateReconcilerImpl) refreshActiveProjectCreatorOtherProjects(ctx context.Context) error {
+	return r.refreshProjectCreatorOtherProjects(ctx, refreshTargetActive)
+}
+
+func (r *projectStateReconcilerImpl) refreshArchivedProjectCreatorOtherProjects(ctx context.Context) error {
+	return r.refreshProjectCreatorOtherProjects(ctx, refreshTargetArchived)
+}
+
+func (r *projectStateReconcilerImpl) refreshProjectCreatorOtherProjects(ctx context.Context, target refreshTarget) error {
+	projects, err := r.listProjectsByTarget(ctx, target)
+	if err != nil {
+		return err
+	}
+	pendingByCreator := make(map[common.Address][]*Project)
+	for _, project := range projects {
+		if project == nil || project.Meta.Contract == (common.Address{}) || project.Meta.Creator == (common.Address{}) || project.Runtime.CreatorOtherProjectsResolved {
+			continue
+		}
+		creator := project.Meta.Creator
+		pendingByCreator[creator] = append(pendingByCreator[creator], project)
+	}
+	if len(pendingByCreator) == 0 {
+		return nil
+	}
+
+	creatorProjectContracts, err := r.buildCreatorProjectContractsIndexFromCache(ctx)
+	if err != nil {
+		return err
+	}
+
+	for creator, creatorProjects := range pendingByCreator {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		allContracts, hasCache := creatorProjectContracts[creator]
+		useDBFallback := !hasCache || len(allContracts) <= 1
+		if useDBFallback {
+			if r.projectStore == nil {
+				continue
+			}
+			metas, queryErr := r.projectStore.ListProjectMetasByCreator(ctx, creator)
+			if queryErr != nil {
+				log.WithFields(log.Fields{
+					"component": "project_state_reconciler",
+					"creator":   creator.Hex(),
+					"error":     queryErr.Error(),
+				}).Warn("list project metas by creator failed")
+				continue
+			}
+			allContracts = dedupeAndSortProjectContracts(metasToProjectContracts(metas))
+		}
+
+		for _, project := range creatorProjects {
+			otherContracts := excludeProjectContract(allContracts, project.Meta.Contract)
+			changed, updateErr := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
+				if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Runtime.CreatorOtherProjectsResolved {
+					return nil, false, nil
+				}
+				current.Runtime.CreatorOtherProjectContracts = cloneAddressSlice(otherContracts)
+				current.Runtime.CreatorOtherProjectsResolved = true
+				return current, true, nil
+			})
+			if updateErr != nil {
+				continue
+			}
+			if changed {
+				r.triggerPolicyEvaluation(project.Meta.Contract, "refresh_project_creator_other_projects")
+			}
+		}
+	}
+	return nil
+}
+
 func (r *projectStateReconcilerImpl) refreshProjectRuntimeCodeHashes(ctx context.Context, target refreshTarget) error {
 	projects, err := r.listProjectsByTarget(ctx, target)
 	if err != nil {
@@ -445,4 +525,117 @@ func (r *projectStateReconcilerImpl) fetchContractBytecode(ctx context.Context, 
 		return r.codeAtFunc(ctx, contract)
 	}
 	return nil, errors.New("codeAt function is not configured")
+}
+
+func (r *projectStateReconcilerImpl) buildCreatorProjectContractsIndexFromCache(ctx context.Context) (map[common.Address][]common.Address, error) {
+	projects, err := r.listAllProjects(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	creatorProjects := make(map[common.Address][]common.Address)
+	for _, project := range projects {
+		if project == nil || project.Meta.Creator == (common.Address{}) || project.Meta.Contract == (common.Address{}) {
+			continue
+		}
+		creator := project.Meta.Creator
+		creatorProjects[creator] = append(creatorProjects[creator], project.Meta.Contract)
+	}
+	for creator, contracts := range creatorProjects {
+		creatorProjects[creator] = dedupeAndSortProjectContracts(contracts)
+	}
+	return creatorProjects, nil
+}
+
+func (r *projectStateReconcilerImpl) listAllProjects(ctx context.Context) ([]*Project, error) {
+	activeProjects, err := r.projectCache.ListActiveProjects(ctx)
+	if err != nil {
+		return nil, err
+	}
+	archivedProjects, err := r.listAllArchivedProjects(ctx)
+	if err != nil {
+		return nil, err
+	}
+	projects := make([]*Project, 0, len(activeProjects)+len(archivedProjects))
+	seen := make(map[common.Address]struct{}, len(activeProjects)+len(archivedProjects))
+	for _, project := range activeProjects {
+		if project == nil || project.Meta.Contract == (common.Address{}) {
+			continue
+		}
+		if _, ok := seen[project.Meta.Contract]; ok {
+			continue
+		}
+		seen[project.Meta.Contract] = struct{}{}
+		projects = append(projects, project)
+	}
+	for _, project := range archivedProjects {
+		if project == nil || project.Meta.Contract == (common.Address{}) {
+			continue
+		}
+		if _, ok := seen[project.Meta.Contract]; ok {
+			continue
+		}
+		seen[project.Meta.Contract] = struct{}{}
+		projects = append(projects, project)
+	}
+	return projects, nil
+}
+
+func metasToProjectContracts(metas []appstore.ProjectMeta) []common.Address {
+	if len(metas) == 0 {
+		return nil
+	}
+	contracts := make([]common.Address, 0, len(metas))
+	for _, meta := range metas {
+		if meta.Contract == (common.Address{}) {
+			continue
+		}
+		contracts = append(contracts, meta.Contract)
+	}
+	return contracts
+}
+
+func excludeProjectContract(contracts []common.Address, contract common.Address) []common.Address {
+	if len(contracts) == 0 {
+		return nil
+	}
+	others := make([]common.Address, 0, len(contracts))
+	for _, item := range contracts {
+		if item == (common.Address{}) || item == contract {
+			continue
+		}
+		others = append(others, item)
+	}
+	return dedupeAndSortProjectContracts(others)
+}
+
+func dedupeAndSortProjectContracts(contracts []common.Address) []common.Address {
+	if len(contracts) == 0 {
+		return nil
+	}
+	seen := make(map[common.Address]struct{}, len(contracts))
+	filtered := make([]common.Address, 0, len(contracts))
+	for _, contract := range contracts {
+		if contract == (common.Address{}) {
+			continue
+		}
+		if _, ok := seen[contract]; ok {
+			continue
+		}
+		seen[contract] = struct{}{}
+		filtered = append(filtered, contract)
+	}
+	sort.Slice(filtered, func(i, j int) bool {
+		return bytes.Compare(filtered[i].Bytes(), filtered[j].Bytes()) < 0
+	})
+	return filtered
+}
+
+func cloneAddressSlice(addresses []common.Address) []common.Address {
+	if len(addresses) == 0 {
+		return nil
+	}
+	cloned := make([]common.Address, len(addresses))
+	copy(cloned, addresses)
+	return cloned
 }

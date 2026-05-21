@@ -97,3 +97,41 @@ func TestListProjectMetasNullSourceCodeReturnsEmptyString(t *testing.T) {
 		t.Fatalf("expectations were not met: %v", err)
 	}
 }
+
+func TestListProjectMetasByCreator(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	store := NewSQLStore(db)
+	creator := common.HexToAddress("0x00000000000000000000000000000000000000B2")
+	contractA := common.HexToAddress("0x00000000000000000000000000000000000000A1")
+	contractB := common.HexToAddress("0x00000000000000000000000000000000000000A2")
+	txHashA := common.HexToHash("0x1234")
+	txHashB := common.HexToHash("0x5678")
+
+	rows := sqlmock.NewRows([]string{
+		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "is_archived", "archived_at",
+	}).AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), txHashA.Bytes(), int64(1), "contract A {}", false, nil).
+		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), txHashB.Bytes(), int64(2), "contract B {}", true, nil)
+
+	mock.ExpectQuery("SELECT").
+		WithArgs(creator.Bytes()).
+		WillReturnRows(rows)
+
+	metas, err := store.ListProjectMetasByCreator(context.Background(), creator)
+	if err != nil {
+		t.Fatalf("list project metas by creator: %v", err)
+	}
+	if len(metas) != 2 {
+		t.Fatalf("metas len = %d, want 2", len(metas))
+	}
+	if metas[0].Contract != contractA || metas[1].Contract != contractB {
+		t.Fatalf("contracts = [%s, %s], want [%s, %s]", metas[0].Contract.Hex(), metas[1].Contract.Hex(), contractA.Hex(), contractB.Hex())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}

@@ -19,17 +19,19 @@ const (
 	projectDataHashKey     = "project:data" // obsolete v1 key; cleared during ReplaceAll cutover
 	projectDataV2KeyPrefix = "project:data:v2:"
 
-	projectFieldSchemaVersion       = "schema_version"
-	projectFieldMetaBase            = "meta_base"
-	projectFieldArchiveState        = "archive_state"
-	projectFieldChainState          = "chain_state"
-	projectFieldCreatorResult       = "creator_result"
-	projectFieldSourceCode          = "source_code"
-	projectFieldRuntimeCodeHash     = "runtime_code_hash"
-	projectFieldSourceCodeBlacklist = "source_code_blacklist"
-	projectFieldGenesisWallets      = "genesis_wallets"
+	projectFieldSchemaVersion                = "schema_version"
+	projectFieldMetaBase                     = "meta_base"
+	projectFieldArchiveState                 = "archive_state"
+	projectFieldChainState                   = "chain_state"
+	projectFieldCreatorResult                = "creator_result"
+	projectFieldCreatorOtherProjectContracts = "creator_other_project_contracts"
+	projectFieldCreatorOtherProjectsResolved = "creator_other_projects_resolved"
+	projectFieldSourceCode                   = "source_code"
+	projectFieldRuntimeCodeHash              = "runtime_code_hash"
+	projectFieldSourceCodeBlacklist          = "source_code_blacklist"
+	projectFieldGenesisWallets               = "genesis_wallets"
 
-	projectSchemaVersion = "3"
+	projectSchemaVersion = "4"
 
 	projectIndexActive   = "project:index:active"
 	projectIndexArchived = "project:index:archived"
@@ -338,6 +340,10 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 	if err != nil {
 		return fmt.Errorf("marshal creator result for %s: %w", project.Meta.Contract.Hex(), err)
 	}
+	creatorOtherProjectContractsPayload, err := mustMarshalJSON(project.Runtime.CreatorOtherProjectContracts)
+	if err != nil {
+		return fmt.Errorf("marshal creator other project contracts for %s: %w", project.Meta.Contract.Hex(), err)
+	}
 	sourceCodeBlacklistPayload, err := mustMarshalJSON(project.Runtime.SourceCodeBlacklist)
 	if err != nil {
 		return fmt.Errorf("marshal source code blacklist for %s: %w", project.Meta.Contract.Hex(), err)
@@ -349,15 +355,17 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 
 	projectKey := projectDataV2Key(project.Meta.Contract)
 	pipe.HSet(ctx, projectKey, map[string]any{
-		projectFieldSchemaVersion:       projectSchemaVersion,
-		projectFieldMetaBase:            metaBasePayload,
-		projectFieldArchiveState:        archivePayload,
-		projectFieldChainState:          chainStatePayload,
-		projectFieldCreatorResult:       creatorResultPayload,
-		projectFieldSourceCode:          project.Meta.SourceCode,
-		projectFieldRuntimeCodeHash:     project.Runtime.RuntimeCodeHash.Hex(),
-		projectFieldSourceCodeBlacklist: sourceCodeBlacklistPayload,
-		projectFieldGenesisWallets:      genesisWalletsPayload,
+		projectFieldSchemaVersion:                projectSchemaVersion,
+		projectFieldMetaBase:                     metaBasePayload,
+		projectFieldArchiveState:                 archivePayload,
+		projectFieldChainState:                   chainStatePayload,
+		projectFieldCreatorResult:                creatorResultPayload,
+		projectFieldCreatorOtherProjectContracts: creatorOtherProjectContractsPayload,
+		projectFieldCreatorOtherProjectsResolved: project.Runtime.CreatorOtherProjectsResolved,
+		projectFieldSourceCode:                   project.Meta.SourceCode,
+		projectFieldRuntimeCodeHash:              project.Runtime.RuntimeCodeHash.Hex(),
+		projectFieldSourceCodeBlacklist:          sourceCodeBlacklistPayload,
+		projectFieldGenesisWallets:               genesisWalletsPayload,
 	})
 	c.applyProjectIndexes(ctx, pipe, project)
 	return nil
@@ -408,6 +416,16 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 			return nil, fmt.Errorf("marshal creator result for %s: %w", next.Meta.Contract.Hex(), err)
 		}
 		fields[projectFieldCreatorResult] = creatorResultPayload
+	}
+	if current == nil || !reflect.DeepEqual(current.Runtime.CreatorOtherProjectContracts, next.Runtime.CreatorOtherProjectContracts) {
+		creatorOtherProjectContractsPayload, err := mustMarshalJSON(next.Runtime.CreatorOtherProjectContracts)
+		if err != nil {
+			return nil, fmt.Errorf("marshal creator other project contracts for %s: %w", next.Meta.Contract.Hex(), err)
+		}
+		fields[projectFieldCreatorOtherProjectContracts] = creatorOtherProjectContractsPayload
+	}
+	if current == nil || current.Runtime.CreatorOtherProjectsResolved != next.Runtime.CreatorOtherProjectsResolved {
+		fields[projectFieldCreatorOtherProjectsResolved] = next.Runtime.CreatorOtherProjectsResolved
 	}
 
 	if current == nil || current.Meta.SourceCode != next.Meta.SourceCode {
@@ -484,6 +502,14 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		if err := json.Unmarshal([]byte(raw), &project.Runtime.CreatorResult); err != nil {
 			return nil, false, err
 		}
+	}
+	if raw := values[projectFieldCreatorOtherProjectContracts]; raw != "" {
+		if err := json.Unmarshal([]byte(raw), &project.Runtime.CreatorOtherProjectContracts); err != nil {
+			return nil, false, err
+		}
+	}
+	if raw, ok := values[projectFieldCreatorOtherProjectsResolved]; ok {
+		project.Runtime.CreatorOtherProjectsResolved = raw == "1" || raw == "true" || raw == "TRUE"
 	}
 	project.Meta.SourceCode = values[projectFieldSourceCode]
 	if raw := values[projectFieldRuntimeCodeHash]; raw != "" {
