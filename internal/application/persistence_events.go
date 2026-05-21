@@ -163,16 +163,12 @@ func (b *RedisPersistenceEventBus) Publish(ctx context.Context, event Persistenc
 }
 
 func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, meta appstore.ProjectMeta) error {
-	txHash := meta.TxHash
-	if meta.Tx != nil {
-		txHash = meta.Tx.Hash()
-	}
 	payload := projectMetaSavePayload{
 		BlockTime:   meta.BlockTime,
 		BlockNumber: meta.BlockNumber,
 		Contract:    meta.Contract.Hex(),
 		Creator:     meta.Creator.Hex(),
-		TxHash:      txHash.Hex(),
+		TxHash:      meta.TxHash.Hex(),
 		TxIndex:     meta.TxIndex,
 		SourceCode:  meta.SourceCode,
 		IsArchived:  meta.IsArchived,

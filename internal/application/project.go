@@ -12,27 +12,29 @@ import (
 )
 
 type Project struct {
-	Meta       ProjectMeta
-	ChainState athenacontract.AthenaProject
+	Meta    ProjectMeta
+	Runtime ProjectRuntime
 }
 
 type ProjectMeta struct {
-	BlockTime       uint64
-	BlockNumber     uint64
-	Contract        common.Address
-	Creator         common.Address
-	Tx              *types.Transaction
-	TxHash          common.Hash
-	TxIndex         uint64
-	IsArchived      bool
-	ArchivedAt      time.Time
-	SourceCode      string
-	RuntimeCodeHash common.Hash
+	BlockTime      uint64
+	BlockNumber    uint64
+	Contract       common.Address
+	Creator        common.Address
+	TxHash         common.Hash
+	TxIndex        uint64
+	IsArchived     bool
+	ArchivedAt     time.Time
+	SourceCode     string
+	GenesisWallets []GenesisWalletMeta
+}
 
-	// extra fields
+type ProjectRuntime struct {
+	GenesisTx           *types.Transaction
+	ChainState          athenacontract.AthenaProject
 	CreatorResult       SimulateResult
+	RuntimeCodeHash     common.Hash
 	SourceCodeBlacklist sourcecode.BlacklistReport
-	GenesisWallets      []GenesisWalletMeta
 }
 
 type GenesisWalletMeta struct {
@@ -48,16 +50,16 @@ func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.Proje
 	}
 
 	txHash := ""
-	if project.Meta.Tx != nil {
-		txHash = project.Meta.Tx.Hash().Hex()
-	} else if project.Meta.TxHash != (common.Hash{}) {
+	if project.Meta.TxHash != (common.Hash{}) {
 		txHash = project.Meta.TxHash.Hex()
+	} else if project.Runtime.GenesisTx != nil {
+		txHash = project.Runtime.GenesisTx.Hash().Hex()
 	}
 
-	chainState := project.ChainState
+	chainState := project.Runtime.ChainState
 	sourceCode := project.Meta.SourceCode
-	creatorResult := project.Meta.CreatorResult
-	sourceCodeBlacklist := project.Meta.SourceCodeBlacklist
+	creatorResult := project.Runtime.CreatorResult
+	sourceCodeBlacklist := project.Runtime.SourceCodeBlacklist
 	var genesisWallets []v1alpha1.GenesisWalletState
 	var genesisWalletAssetStates []v1alpha1.GenesisWalletAssetState
 	if includeGenesisWallets && len(project.Meta.GenesisWallets) > 0 {

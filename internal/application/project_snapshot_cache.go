@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -58,13 +57,12 @@ type RedisProjectSnapshotCache struct {
 }
 
 type projectMetaBase struct {
-	BlockTime   uint64             `json:"block_time"`
-	BlockNumber uint64             `json:"block_number"`
-	Contract    common.Address     `json:"contract"`
-	Creator     common.Address     `json:"creator"`
-	Tx          *types.Transaction `json:"tx"`
-	TxHash      common.Hash        `json:"tx_hash"`
-	TxIndex     uint64             `json:"tx_index"`
+	BlockTime   uint64         `json:"block_time"`
+	BlockNumber uint64         `json:"block_number"`
+	Contract    common.Address `json:"contract"`
+	Creator     common.Address `json:"creator"`
+	TxHash      common.Hash    `json:"tx_hash"`
+	TxIndex     uint64         `json:"tx_index"`
 }
 
 type projectArchiveState struct {
@@ -315,7 +313,6 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		BlockNumber: project.Meta.BlockNumber,
 		Contract:    project.Meta.Contract,
 		Creator:     project.Meta.Creator,
-		Tx:          project.Meta.Tx,
 		TxHash:      project.Meta.TxHash,
 		TxIndex:     project.Meta.TxIndex,
 	})
@@ -329,15 +326,15 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 	if err != nil {
 		return fmt.Errorf("marshal archive state for %s: %w", project.Meta.Contract.Hex(), err)
 	}
-	chainStatePayload, err := mustMarshalJSON(project.ChainState)
+	chainStatePayload, err := mustMarshalJSON(project.Runtime.ChainState)
 	if err != nil {
 		return fmt.Errorf("marshal chain state for %s: %w", project.Meta.Contract.Hex(), err)
 	}
-	creatorResultPayload, err := mustMarshalJSON(project.Meta.CreatorResult)
+	creatorResultPayload, err := mustMarshalJSON(project.Runtime.CreatorResult)
 	if err != nil {
 		return fmt.Errorf("marshal creator result for %s: %w", project.Meta.Contract.Hex(), err)
 	}
-	sourceCodeBlacklistPayload, err := mustMarshalJSON(project.Meta.SourceCodeBlacklist)
+	sourceCodeBlacklistPayload, err := mustMarshalJSON(project.Runtime.SourceCodeBlacklist)
 	if err != nil {
 		return fmt.Errorf("marshal source code blacklist for %s: %w", project.Meta.Contract.Hex(), err)
 	}
@@ -354,7 +351,7 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldChainState:          chainStatePayload,
 		projectFieldCreatorResult:       creatorResultPayload,
 		projectFieldSourceCode:          project.Meta.SourceCode,
-		projectFieldRuntimeCodeHash:     project.Meta.RuntimeCodeHash.Hex(),
+		projectFieldRuntimeCodeHash:     project.Runtime.RuntimeCodeHash.Hex(),
 		projectFieldSourceCodeBlacklist: sourceCodeBlacklistPayload,
 		projectFieldGenesisWallets:      genesisWalletsPayload,
 	})
@@ -373,7 +370,6 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 			BlockNumber: next.Meta.BlockNumber,
 			Contract:    next.Meta.Contract,
 			Creator:     next.Meta.Creator,
-			Tx:          next.Meta.Tx,
 			TxHash:      next.Meta.TxHash,
 			TxIndex:     next.Meta.TxIndex,
 		})
@@ -394,16 +390,16 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 		fields[projectFieldArchiveState] = archivePayload
 	}
 
-	if current == nil || !reflect.DeepEqual(current.ChainState, next.ChainState) {
-		chainStatePayload, err := mustMarshalJSON(next.ChainState)
+	if current == nil || !reflect.DeepEqual(current.Runtime.ChainState, next.Runtime.ChainState) {
+		chainStatePayload, err := mustMarshalJSON(next.Runtime.ChainState)
 		if err != nil {
 			return nil, fmt.Errorf("marshal chain state for %s: %w", next.Meta.Contract.Hex(), err)
 		}
 		fields[projectFieldChainState] = chainStatePayload
 	}
 
-	if current == nil || current.Meta.CreatorResult != next.Meta.CreatorResult {
-		creatorResultPayload, err := mustMarshalJSON(next.Meta.CreatorResult)
+	if current == nil || current.Runtime.CreatorResult != next.Runtime.CreatorResult {
+		creatorResultPayload, err := mustMarshalJSON(next.Runtime.CreatorResult)
 		if err != nil {
 			return nil, fmt.Errorf("marshal creator result for %s: %w", next.Meta.Contract.Hex(), err)
 		}
@@ -413,12 +409,12 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 	if current == nil || current.Meta.SourceCode != next.Meta.SourceCode {
 		fields[projectFieldSourceCode] = next.Meta.SourceCode
 	}
-	if current == nil || current.Meta.RuntimeCodeHash != next.Meta.RuntimeCodeHash {
-		fields[projectFieldRuntimeCodeHash] = next.Meta.RuntimeCodeHash.Hex()
+	if current == nil || current.Runtime.RuntimeCodeHash != next.Runtime.RuntimeCodeHash {
+		fields[projectFieldRuntimeCodeHash] = next.Runtime.RuntimeCodeHash.Hex()
 	}
 
-	if current == nil || !reflect.DeepEqual(current.Meta.SourceCodeBlacklist, next.Meta.SourceCodeBlacklist) {
-		sourceCodeBlacklistPayload, err := mustMarshalJSON(next.Meta.SourceCodeBlacklist)
+	if current == nil || !reflect.DeepEqual(current.Runtime.SourceCodeBlacklist, next.Runtime.SourceCodeBlacklist) {
+		sourceCodeBlacklistPayload, err := mustMarshalJSON(next.Runtime.SourceCodeBlacklist)
 		if err != nil {
 			return nil, fmt.Errorf("marshal source code blacklist for %s: %w", next.Meta.Contract.Hex(), err)
 		}
@@ -465,7 +461,6 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		project.Meta.BlockNumber = meta.BlockNumber
 		project.Meta.Contract = meta.Contract
 		project.Meta.Creator = meta.Creator
-		project.Meta.Tx = meta.Tx
 		project.Meta.TxHash = meta.TxHash
 		project.Meta.TxIndex = meta.TxIndex
 	}
@@ -478,21 +473,21 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		project.Meta.ArchivedAt = archive.ArchivedAt
 	}
 	if raw := values[projectFieldChainState]; raw != "" {
-		if err := json.Unmarshal([]byte(raw), &project.ChainState); err != nil {
+		if err := json.Unmarshal([]byte(raw), &project.Runtime.ChainState); err != nil {
 			return nil, false, err
 		}
 	}
 	if raw := values[projectFieldCreatorResult]; raw != "" {
-		if err := json.Unmarshal([]byte(raw), &project.Meta.CreatorResult); err != nil {
+		if err := json.Unmarshal([]byte(raw), &project.Runtime.CreatorResult); err != nil {
 			return nil, false, err
 		}
 	}
 	project.Meta.SourceCode = values[projectFieldSourceCode]
 	if raw := values[projectFieldRuntimeCodeHash]; raw != "" {
-		project.Meta.RuntimeCodeHash = common.HexToHash(raw)
+		project.Runtime.RuntimeCodeHash = common.HexToHash(raw)
 	}
 	if raw := values[projectFieldSourceCodeBlacklist]; raw != "" {
-		if err := json.Unmarshal([]byte(raw), &project.Meta.SourceCodeBlacklist); err != nil {
+		if err := json.Unmarshal([]byte(raw), &project.Runtime.SourceCodeBlacklist); err != nil {
 			return nil, false, err
 		}
 	}
@@ -552,7 +547,6 @@ func sameProjectMetaBase(left ProjectMeta, right ProjectMeta) bool {
 		left.BlockNumber == right.BlockNumber &&
 		left.Contract == right.Contract &&
 		left.Creator == right.Creator &&
-		left.Tx == right.Tx &&
 		left.TxHash == right.TxHash &&
 		left.TxIndex == right.TxIndex
 }

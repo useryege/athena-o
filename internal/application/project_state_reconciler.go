@@ -164,7 +164,7 @@ func (r *projectStateReconcilerImpl) refreshProjectStates(ctx context.Context, t
 			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
 				return nil, false, nil
 			}
-			current.ChainState = nextState
+			current.Runtime.ChainState = nextState
 			return current, true, nil
 		})
 		if err != nil {
@@ -217,8 +217,8 @@ func (r *projectStateReconcilerImpl) refreshProjectSimulations(ctx context.Conte
 			continue
 		}
 
-		wethPairContract := latest.ChainState.WethPair.ContractAddress
-		usdtPairContract := latest.ChainState.UsdtPair.ContractAddress
+		wethPairContract := latest.Runtime.ChainState.WethPair.ContractAddress
+		usdtPairContract := latest.Runtime.ChainState.UsdtPair.ContractAddress
 		if wethPairContract == (common.Address{}) || usdtPairContract == (common.Address{}) {
 			continue
 		}
@@ -239,7 +239,7 @@ func (r *projectStateReconcilerImpl) refreshProjectSimulations(ctx context.Conte
 			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
 				return nil, false, nil
 			}
-			current.Meta.CreatorResult = result
+			current.Runtime.CreatorResult = result
 			return current, true, nil
 		})
 		if err != nil {
@@ -285,7 +285,7 @@ func (r *projectStateReconcilerImpl) refreshProjectRuntimeCodeHashes(ctx context
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if project == nil || project.Meta.RuntimeCodeHash != (common.Hash{}) {
+		if project == nil || project.Runtime.RuntimeCodeHash != (common.Hash{}) {
 			continue
 		}
 		code, err := r.fetchContractBytecode(ctx, project.Meta.Contract)
@@ -294,10 +294,10 @@ func (r *projectStateReconcilerImpl) refreshProjectRuntimeCodeHashes(ctx context
 		}
 		codeHash := crypto.Keccak256Hash(code)
 		_, err = r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Meta.RuntimeCodeHash != (common.Hash{}) {
+			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Runtime.RuntimeCodeHash != (common.Hash{}) {
 				return nil, false, nil
 			}
-			current.Meta.RuntimeCodeHash = codeHash
+			current.Runtime.RuntimeCodeHash = codeHash
 			return current, true, nil
 		})
 		if err != nil {

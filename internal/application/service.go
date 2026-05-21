@@ -308,8 +308,10 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 
 	for i, meta := range metas {
 		project := &Project{
-			Meta:       projectMetaFromStore(meta),
-			ChainState: fetched[i].Project,
+			Meta: projectMetaFromStore(meta),
+			Runtime: ProjectRuntime{
+				ChainState: fetched[i].Project,
+			},
 		}
 		if genesisWallets, ok := genesisWalletsByContract[meta.Contract]; ok {
 			project.Meta.GenesisWallets = genesisWallets
@@ -326,7 +328,7 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 			if err != nil {
 				return nil, err
 			}
-			project.Meta.CreatorResult = result
+			project.Runtime.CreatorResult = result
 		}
 		projects = append(projects, project)
 	}

@@ -192,21 +192,21 @@ func (e *projectPolicyEngineImpl) listAllProjects(ctx context.Context) ([]*Proje
 }
 
 func (e *projectPolicyEngineImpl) analyzeSourceCodeIfNeeded(ctx context.Context, project *Project, fields []string) error {
-	if project == nil || project.Meta.SourceCode == "" || e.sourceAnalyzer == nil || !project.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
+	if project == nil || project.Meta.SourceCode == "" || e.sourceAnalyzer == nil || !project.Runtime.SourceCodeBlacklist.ResolvedAt.IsZero() {
 		return nil
 	}
 	report := e.sourceAnalyzer.AnalyzeSourceCode(project.Meta.SourceCode, fields)
 	_, err := e.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil || current.Meta.SourceCode == "" || !current.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
+		if !exists || current == nil || current.Meta.SourceCode == "" || !current.Runtime.SourceCodeBlacklist.ResolvedAt.IsZero() {
 			return nil, false, nil
 		}
-		current.Meta.SourceCodeBlacklist = report
+		current.Runtime.SourceCodeBlacklist = report
 		return current, true, nil
 	})
 	if err != nil {
 		return err
 	}
-	project.Meta.SourceCodeBlacklist = report
+	project.Runtime.SourceCodeBlacklist = report
 	return nil
 }
 
@@ -305,7 +305,7 @@ func (r sourceCodeBlacklistRule) Evaluate(_ context.Context, project *Project, _
 	if project == nil || project.Meta.SourceCode == "" {
 		return false, nil, nil
 	}
-	report := project.Meta.SourceCodeBlacklist
+	report := project.Runtime.SourceCodeBlacklist
 	if !report.HasBlacklistFields {
 		return false, nil, nil
 	}
@@ -319,13 +319,13 @@ type bytecodeBlacklistRule struct{}
 func (r bytecodeBlacklistRule) Name() string { return "bytecode_blacklist" }
 
 func (r bytecodeBlacklistRule) Evaluate(_ context.Context, project *Project, facts ProjectPolicyFacts) (bool, map[string]any, error) {
-	if project == nil || project.Meta.RuntimeCodeHash == (common.Hash{}) || len(facts.BytecodeBlacklist) == 0 {
+	if project == nil || project.Runtime.RuntimeCodeHash == (common.Hash{}) || len(facts.BytecodeBlacklist) == 0 {
 		return false, nil, nil
 	}
-	if _, ok := facts.BytecodeBlacklist[project.Meta.RuntimeCodeHash]; !ok {
+	if _, ok := facts.BytecodeBlacklist[project.Runtime.RuntimeCodeHash]; !ok {
 		return false, nil, nil
 	}
 	return true, map[string]any{
-		"runtime_code_hash": strings.ToLower(project.Meta.RuntimeCodeHash.Hex()),
+		"runtime_code_hash": strings.ToLower(project.Runtime.RuntimeCodeHash.Hex()),
 	}, nil
 }

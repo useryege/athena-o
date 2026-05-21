@@ -347,15 +347,19 @@ func (d *discoveryIntakeImpl) IntakeCandidates(ctx context.Context, items []Disc
 	}
 	projects := make([]*Project, 0, len(items))
 	for _, item := range items {
-		projects = append(projects, &Project{Meta: ProjectMeta{
-			BlockTime:   item.BlockTime,
-			BlockNumber: item.BlockNumber,
-			TxIndex:     item.TxIndex,
-			Tx:          item.Tx,
-			TxHash:      item.TxHash,
-			Contract:    item.Contract,
-			Creator:     item.Creator,
-		}})
+		projects = append(projects, &Project{
+			Meta: ProjectMeta{
+				BlockTime:   item.BlockTime,
+				BlockNumber: item.BlockNumber,
+				TxIndex:     item.TxIndex,
+				TxHash:      item.TxHash,
+				Contract:    item.Contract,
+				Creator:     item.Creator,
+			},
+			Runtime: ProjectRuntime{
+				GenesisTx: item.Tx,
+			},
+		})
 	}
 	return d.syncProjects(ctx, projects)
 }
@@ -448,7 +452,7 @@ func (d *discoveryIntakeImpl) syncProjects(ctx context.Context, projects []*Proj
 			continue
 		}
 
-		project.ChainState = snapshot
+		project.Runtime.ChainState = snapshot
 		if err := d.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
 			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
 		}
@@ -579,8 +583,8 @@ func projectTxHash(project *Project) common.Hash {
 		return common.Hash{}
 	}
 	txHash := project.Meta.TxHash
-	if txHash == (common.Hash{}) && project.Meta.Tx != nil {
-		txHash = project.Meta.Tx.Hash()
+	if txHash == (common.Hash{}) && project.Runtime.GenesisTx != nil {
+		txHash = project.Runtime.GenesisTx.Hash()
 	}
 	return txHash
 }
