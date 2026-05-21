@@ -17,16 +17,17 @@ type Project struct {
 }
 
 type ProjectMeta struct {
-	BlockTime   uint64
-	BlockNumber uint64
-	Contract    common.Address
-	Creator     common.Address
-	Tx          *types.Transaction
-	TxHash      common.Hash
-	TxIndex     uint64
-	IsArchived  bool
-	ArchivedAt  time.Time
-	SourceCode  string
+	BlockTime       uint64
+	BlockNumber     uint64
+	Contract        common.Address
+	Creator         common.Address
+	Tx              *types.Transaction
+	TxHash          common.Hash
+	TxIndex         uint64
+	IsArchived      bool
+	ArchivedAt      time.Time
+	SourceCode      string
+	RuntimeCodeHash common.Hash
 
 	// extra fields
 	CreatorResult       SimulateResult

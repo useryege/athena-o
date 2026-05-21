@@ -26,10 +26,11 @@ const (
 	projectFieldChainState          = "chain_state"
 	projectFieldCreatorResult       = "creator_result"
 	projectFieldSourceCode          = "source_code"
+	projectFieldRuntimeCodeHash     = "runtime_code_hash"
 	projectFieldSourceCodeBlacklist = "source_code_blacklist"
 	projectFieldGenesisWallets      = "genesis_wallets"
 
-	projectSchemaVersion = "2"
+	projectSchemaVersion = "3"
 
 	projectIndexActive   = "project:index:active"
 	projectIndexArchived = "project:index:archived"
@@ -353,6 +354,7 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldChainState:          chainStatePayload,
 		projectFieldCreatorResult:       creatorResultPayload,
 		projectFieldSourceCode:          project.Meta.SourceCode,
+		projectFieldRuntimeCodeHash:     project.Meta.RuntimeCodeHash.Hex(),
 		projectFieldSourceCodeBlacklist: sourceCodeBlacklistPayload,
 		projectFieldGenesisWallets:      genesisWalletsPayload,
 	})
@@ -410,6 +412,9 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 
 	if current == nil || current.Meta.SourceCode != next.Meta.SourceCode {
 		fields[projectFieldSourceCode] = next.Meta.SourceCode
+	}
+	if current == nil || current.Meta.RuntimeCodeHash != next.Meta.RuntimeCodeHash {
+		fields[projectFieldRuntimeCodeHash] = next.Meta.RuntimeCodeHash.Hex()
 	}
 
 	if current == nil || !reflect.DeepEqual(current.Meta.SourceCodeBlacklist, next.Meta.SourceCodeBlacklist) {
@@ -483,6 +488,9 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		}
 	}
 	project.Meta.SourceCode = values[projectFieldSourceCode]
+	if raw := values[projectFieldRuntimeCodeHash]; raw != "" {
+		project.Meta.RuntimeCodeHash = common.HexToHash(raw)
+	}
 	if raw := values[projectFieldSourceCodeBlacklist]; raw != "" {
 		if err := json.Unmarshal([]byte(raw), &project.Meta.SourceCodeBlacklist); err != nil {
 			return nil, false, err

@@ -152,16 +152,20 @@ func (s *Service) Start() error {
 	discoveryIndexer := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, discoveryIntake)
 	stateReconciler := NewProjectStateReconciler(
 		s.projectCache,
-		s.store,
 		athenaFetcher,
 		projectSimulator,
 		apiFetcher,
-		s.sourceAnalyzer,
-		s.sourceBlacklist,
 		s.persistencePublisher,
 		s.fetchContractBytecode,
 	)
-	pipeline := NewProjectPipeline(discoveryIndexer, stateReconciler)
+	policyEngine := NewProjectPolicyEngine(
+		s.projectCache,
+		s.store,
+		s.sourceAnalyzer,
+		s.sourceBlacklist,
+		s.persistencePublisher,
+	)
+	pipeline := NewProjectPipeline(discoveryIndexer, stateReconciler, policyEngine)
 	if err := pipeline.Start(ctx); err != nil {
 		cancel()
 		s.clearPipelineLocked()
@@ -275,8 +279,6 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		}
 	}
 
-	blacklistFields, blacklistFieldsErr := s.sourceCodeBlacklistFields(ctx)
-
 	queries := make([]athenacontract.AthenaProjectQuery, 0, len(metas))
 	genesisWalletsByContract := make(map[common.Address][]GenesisWalletMeta, len(metas))
 	for _, meta := range metas {
@@ -311,9 +313,6 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		}
 		if genesisWallets, ok := genesisWalletsByContract[meta.Contract]; ok {
 			project.Meta.GenesisWallets = genesisWallets
-		}
-		if blacklistFieldsErr == nil && meta.SourceCode != "" && s.sourceAnalyzer != nil {
-			project.Meta.SourceCodeBlacklist = s.sourceAnalyzer.AnalyzeSourceCode(meta.SourceCode, blacklistFields)
 		}
 		if simulator != nil {
 			result, err := simulator.SimulatePrimary(

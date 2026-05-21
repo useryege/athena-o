@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -12,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/evm"
-	"github.com/useryege/athena/internal/application/sourcecode"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/util/ethereumapi"
 )
@@ -27,13 +25,9 @@ type reconcilerJob struct {
 
 type projectStateReconcilerImpl struct {
 	projectCache ProjectSnapshotCache
-	store        appstore.Store
 	fetcher      evm.AthenaFetcher
 	simulator    ProjectSimulator
 	apiFetcher   ethereumapi.EthereumAPI
-
-	sourceAnalyzer  sourcecode.Analyzer
-	sourceBlacklist sourceCodeBlacklistLister
 
 	persistencePublisher PersistenceEventPublisher
 	codeAtFunc           func(ctx context.Context, contract common.Address) ([]byte, error)
@@ -42,29 +36,19 @@ type projectStateReconcilerImpl struct {
 	wg     sync.WaitGroup
 }
 
-type sourceCodeBlacklistLister interface {
-	List(ctx context.Context) ([]string, error)
-}
-
 func NewProjectStateReconciler(
 	projectCache ProjectSnapshotCache,
-	store appstore.Store,
 	fetcher evm.AthenaFetcher,
 	simulator ProjectSimulator,
 	apiFetcher ethereumapi.EthereumAPI,
-	sourceAnalyzer sourcecode.Analyzer,
-	sourceBlacklist sourceCodeBlacklistLister,
 	persistencePublisher PersistenceEventPublisher,
 	codeAtFunc func(ctx context.Context, contract common.Address) ([]byte, error),
 ) ProjectStateReconciler {
 	return &projectStateReconcilerImpl{
 		projectCache:         projectCache,
-		store:                store,
 		fetcher:              fetcher,
 		simulator:            simulator,
 		apiFetcher:           apiFetcher,
-		sourceAnalyzer:       sourceAnalyzer,
-		sourceBlacklist:      sourceBlacklist,
 		persistencePublisher: persistencePublisher,
 		codeAtFunc:           codeAtFunc,
 		jobSem:               make(chan struct{}, reconcilerDefaultConcurrency),
@@ -79,7 +63,8 @@ func (r *projectStateReconcilerImpl) Start(ctx context.Context) error {
 		{name: "simulation_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSimulations},
 		{name: "sourcecode_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectSourceCodes},
 		{name: "sourcecode_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSourceCodes},
-		{name: "bin_blacklist_scan", interval: binBlacklistScanInterval, run: r.scanAllProjectsForBINBlacklist},
+		{name: "runtime_code_hash_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectRuntimeCodeHashes},
+		{name: "runtime_code_hash_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectRuntimeCodeHashes},
 	}
 
 	for i := range jobs {
@@ -273,41 +258,26 @@ func (r *projectStateReconcilerImpl) refreshArchivedProjectSourceCodes(ctx conte
 }
 
 func (r *projectStateReconcilerImpl) refreshProjectSourceCodes(ctx context.Context, target refreshTarget) error {
-	fields, err := r.sourceCodeBlacklistFields(ctx)
-	if err != nil {
-		return err
-	}
-
 	projects, err := r.listProjectsByTarget(ctx, target)
 	if err != nil {
 		return err
 	}
-	if err := r.processProjectSourceCodeBatch(ctx, projects, fields, target); err != nil {
+	if err := r.fetchProjectSourceCodeBatch(ctx, projects, target); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *projectStateReconcilerImpl) scanAllProjectsForBINBlacklist(ctx context.Context) error {
-	blacklistStore, ok := r.store.(appstore.BytecodeBlacklistContractStore)
-	if !ok || blacklistStore == nil {
-		return nil
-	}
+func (r *projectStateReconcilerImpl) refreshActiveProjectRuntimeCodeHashes(ctx context.Context) error {
+	return r.refreshProjectRuntimeCodeHashes(ctx, refreshTargetActive)
+}
 
-	records, err := blacklistStore.ListBytecodeBlacklistContracts(ctx)
-	if err != nil {
-		return err
-	}
-	if len(records) == 0 {
-		return nil
-	}
+func (r *projectStateReconcilerImpl) refreshArchivedProjectRuntimeCodeHashes(ctx context.Context) error {
+	return r.refreshProjectRuntimeCodeHashes(ctx, refreshTargetArchived)
+}
 
-	blacklistedCodeHashes := make(map[common.Hash]struct{}, len(records))
-	for _, item := range records {
-		blacklistedCodeHashes[item.CodeHash] = struct{}{}
-	}
-
-	projects, err := r.listAllProjectsForBINBlacklistScan(ctx)
+func (r *projectStateReconcilerImpl) refreshProjectRuntimeCodeHashes(ctx context.Context, target refreshTarget) error {
+	projects, err := r.listProjectsByTarget(ctx, target)
 	if err != nil {
 		return err
 	}
@@ -315,22 +285,24 @@ func (r *projectStateReconcilerImpl) scanAllProjectsForBINBlacklist(ctx context.
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if project == nil {
+		if project == nil || project.Meta.RuntimeCodeHash != (common.Hash{}) {
 			continue
 		}
-
-		contract := project.Meta.Contract
-		code, err := r.fetchContractBytecode(ctx, contract)
+		code, err := r.fetchContractBytecode(ctx, project.Meta.Contract)
 		if err != nil || len(code) == 0 {
 			continue
 		}
-
 		codeHash := crypto.Keccak256Hash(code)
-		if _, matched := blacklistedCodeHashes[codeHash]; !matched {
+		_, err = r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
+			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Meta.RuntimeCodeHash != (common.Hash{}) {
+				return nil, false, nil
+			}
+			current.Meta.RuntimeCodeHash = codeHash
+			return current, true, nil
+		})
+		if err != nil {
 			continue
 		}
-
-		_ = r.applyBINBlacklistAutoArchive(ctx, contract, codeHash)
 	}
 	return nil
 }
@@ -366,136 +338,48 @@ func (r *projectStateReconcilerImpl) listAllArchivedProjects(ctx context.Context
 	}
 }
 
-func (r *projectStateReconcilerImpl) listAllProjectsForBINBlacklistScan(ctx context.Context) ([]*Project, error) {
-	activeProjects, err := r.projectCache.ListActiveProjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-	archivedProjects, err := r.listAllArchivedProjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	all := make([]*Project, 0, len(activeProjects)+len(archivedProjects))
-	seen := make(map[common.Address]struct{}, len(activeProjects)+len(archivedProjects))
-	appendUnique := func(items []*Project) {
-		for _, project := range items {
-			if project == nil {
-				continue
-			}
-			contract := project.Meta.Contract
-			if _, ok := seen[contract]; ok {
-				continue
-			}
-			seen[contract] = struct{}{}
-			all = append(all, project)
-		}
-	}
-	appendUnique(activeProjects)
-	appendUnique(archivedProjects)
-	return all, nil
-}
-
-func (r *projectStateReconcilerImpl) applyBINBlacklistAutoArchive(ctx context.Context, contract common.Address, codeHash common.Hash) error {
-	current, exists, err := r.projectCache.GetProject(ctx, contract)
-	if err != nil || !exists || current == nil {
-		return err
-	}
-
-	now := time.Now().UTC()
-	if !current.Meta.IsArchived && r.persistencePublisher != nil {
-		if err := r.persistencePublisher.PublishProjectArchive(ctx, contract); err == nil {
-			_, _ = r.projectCache.UpdateProject(ctx, contract, func(latest *Project, exists bool) (*Project, bool, error) {
-				if !exists || latest == nil || latest.Meta.IsArchived {
-					return nil, false, nil
-				}
-				latest.Meta.IsArchived = true
-				latest.Meta.ArchivedAt = now
-				return latest, true, nil
-			})
-		}
-	}
-
-	payload := "{}"
-	if encoded, err := json.Marshal(map[string]string{
-		"source":    "bin_blacklist_scan",
-		"code_hash": codeHash.Hex(),
-	}); err == nil {
-		payload = string(encoded)
-	}
-
-	return r.persistProjectEventLog(ctx, appstore.ProjectEventLog{
-		Contract:       contract,
-		EventType:      projectEventTypeAutoArchiveBIN,
-		OccurredAt:     now,
-		Message:        "Project auto archived by BIN blacklist match",
-		Payload:        payload,
-		IdempotencyKey: projectEventIdempotencyAutoArchiveBIN,
-	})
-}
-
-func (r *projectStateReconcilerImpl) processProjectSourceCodeBatch(ctx context.Context, projects []*Project, fields []string, target refreshTarget) error {
+func (r *projectStateReconcilerImpl) fetchProjectSourceCodeBatch(ctx context.Context, projects []*Project, target refreshTarget) error {
 	for _, project := range projects {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if project == nil {
+		if project == nil || project.Meta.SourceCode != "" || r.apiFetcher == nil {
 			continue
 		}
 
-		sourceCode := project.Meta.SourceCode
-		if sourceCode == "" && r.apiFetcher != nil {
-			fetchedSourceCode, _, fetchErr := r.fetchSourceCode(ctx, project)
-			if fetchErr != nil {
-				continue
-			}
-			sourceCode = fetchedSourceCode
-		}
-
-		var analyzedSourceCode string
-		var blacklistReport sourcecode.BlacklistReport
-		if sourceCode != "" && r.sourceAnalyzer != nil && project.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
-			analyzedSourceCode = sourceCode
-			blacklistReport = r.sourceAnalyzer.AnalyzeSourceCode(sourceCode, fields)
+		sourceCode, _, fetchErr := r.fetchSourceCode(ctx, project)
+		if fetchErr != nil || sourceCode == "" {
+			continue
 		}
 
 		shouldPersistSourceCode := false
 		_, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
+			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Meta.SourceCode != "" {
 				return nil, false, nil
 			}
-
-			changed := false
-			if sourceCode != "" && current.Meta.SourceCode == "" {
-				current.Meta.SourceCode = sourceCode
-				changed = true
-				shouldPersistSourceCode = true
-			}
-
-			if analyzedSourceCode != "" && current.Meta.SourceCode == analyzedSourceCode && current.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
-				current.Meta.SourceCodeBlacklist = blacklistReport
-				changed = true
-			}
-
-			return current, changed, nil
+			current.Meta.SourceCode = sourceCode
+			shouldPersistSourceCode = true
+			return current, true, nil
 		})
 		if err != nil {
 			continue
 		}
-		if shouldPersistSourceCode {
-			if err := r.persistProjectSourceCode(ctx, project.Meta.Contract, sourceCode); err != nil {
-				continue
-			}
-			if err := r.persistProjectEventLog(ctx, appstore.ProjectEventLog{
-				Contract:       project.Meta.Contract,
-				EventType:      projectEventTypeOpenSource,
-				OccurredAt:     time.Now().UTC(),
-				Message:        "Contract source code opened",
-				Payload:        "{}",
-				IdempotencyKey: projectEventIdempotencyOpenSource,
-			}); err != nil {
-				continue
-			}
+
+		if !shouldPersistSourceCode {
+			continue
+		}
+		if err := r.persistProjectSourceCode(ctx, project.Meta.Contract, sourceCode); err != nil {
+			continue
+		}
+		if err := r.persistProjectEventLog(ctx, appstore.ProjectEventLog{
+			Contract:       project.Meta.Contract,
+			EventType:      projectEventTypeOpenSource,
+			OccurredAt:     time.Now().UTC(),
+			Message:        "Contract source code opened",
+			Payload:        "{}",
+			IdempotencyKey: projectEventIdempotencyOpenSource,
+		}); err != nil {
+			continue
 		}
 	}
 	return nil
@@ -524,13 +408,6 @@ func (r *projectStateReconcilerImpl) fetchSourceCode(ctx context.Context, projec
 		return "", "", errors.New("etherscan getsourcecode returned empty result")
 	}
 	return response.Result[0].SourceCode, response.Result[0].ABI, nil
-}
-
-func (r *projectStateReconcilerImpl) sourceCodeBlacklistFields(ctx context.Context) ([]string, error) {
-	if r.sourceBlacklist == nil {
-		return nil, nil
-	}
-	return r.sourceBlacklist.List(ctx)
 }
 
 func (r *projectStateReconcilerImpl) fetchContractBytecode(ctx context.Context, contract common.Address) ([]byte, error) {

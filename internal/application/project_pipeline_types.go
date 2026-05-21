@@ -20,6 +20,10 @@ type ProjectStateReconciler interface {
 	Lifecycle
 }
 
+type ProjectPolicyEngine interface {
+	Lifecycle
+}
+
 type DiscoveredProjectCandidate struct {
 	BlockTime   uint64
 	BlockNumber uint64
