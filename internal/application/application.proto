@@ -54,6 +54,42 @@ message ListProjectEventLogsResponse {
   repeated ProjectEventLog items = 1;
 }
 
+// ProjectComment is a project comment timeline entry.
+message ProjectComment {
+  int64 id = 1;
+  string contract = 2;
+  string username = 3;
+  string content = 4;
+  string created_at = 5;
+}
+
+// AddProjectCommentRequest creates a project comment.
+message AddProjectCommentRequest {
+  string contract = 1;
+  string username = 2;
+  string content = 3;
+}
+
+// AddProjectCommentResponse returns the created project comment.
+message AddProjectCommentResponse {
+  ProjectComment item = 1;
+}
+
+// ListProjectCommentsRequest queries comments by contract.
+message ListProjectCommentsRequest {
+  string contract = 1;
+  int32 page = 2;
+  int32 pageSize = 3;
+}
+
+// ListProjectCommentsResponse returns comments for a contract.
+message ListProjectCommentsResponse {
+  repeated ProjectComment items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 pageSize = 4;
+}
+
 // SourceCodeBlacklistField is a globally maintained source-code blacklist field.
 message SourceCodeBlacklistField {
   int64 id = 1;
@@ -204,6 +240,10 @@ service ApplicationService {
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
   // ListProjectEventLogs returns event logs for a given contract.
   rpc ListProjectEventLogs(ListProjectEventLogsRequest) returns (ListProjectEventLogsResponse);
+  // AddProjectComment creates a project comment.
+  rpc AddProjectComment(AddProjectCommentRequest) returns (AddProjectCommentResponse);
+  // ListProjectComments returns comments for a given contract.
+  rpc ListProjectComments(ListProjectCommentsRequest) returns (ListProjectCommentsResponse);
   // ListSourceCodeBlacklistFields returns all globally configured source-code blacklist fields.
   rpc ListSourceCodeBlacklistFields(ListSourceCodeBlacklistFieldsRequest) returns (ListSourceCodeBlacklistFieldsResponse);
   // AddSourceCodeBlacklistField adds a globally configured source-code blacklist field.

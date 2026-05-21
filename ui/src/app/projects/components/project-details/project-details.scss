@@ -168,4 +168,84 @@
         font-weight: 600;
         color: #363c43;
     }
+
+    &__comment-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    &__comment-input {
+        width: 100%;
+        resize: vertical;
+        min-height: 72px;
+        border: 1px solid #d9dde0;
+        border-radius: 4px;
+        padding: 10px;
+        font-size: 14px;
+        color: #363c43;
+    }
+
+    &__comment-form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    &__comment-counter {
+        font-size: 12px;
+        color: #6d7f8b;
+    }
+
+    &__comment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    &__comment-item {
+        border: 1px solid #e1e4e5;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #fafbfc;
+    }
+
+    &__comment-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+    }
+
+    &__comment-user {
+        font-size: 13px;
+        font-weight: 600;
+        color: #363c43;
+        word-break: break-all;
+    }
+
+    &__comment-time {
+        font-size: 12px;
+        color: #6d7f8b;
+        word-break: break-all;
+    }
+
+    &__comment-content {
+        font-size: 14px;
+        color: #363c43;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    &__comment-pagination {
+        margin-top: 14px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: #4d5f6f;
+    }
 }

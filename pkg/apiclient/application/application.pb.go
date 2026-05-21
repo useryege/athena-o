@@ -457,6 +457,326 @@ func (m *ListProjectEventLogsResponse) GetItems() []*ProjectEventLog {
 	return nil
 }
 
+// ProjectComment is a project comment timeline entry.
+type ProjectComment struct {
+	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Contract             string   `protobuf:"bytes,2,opt,name=contract,proto3" json:"contract,omitempty"`
+	Username             string   `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
+	Content              string   `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	CreatedAt            string   `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ProjectComment) Reset()         { *m = ProjectComment{} }
+func (m *ProjectComment) String() string { return proto.CompactTextString(m) }
+func (*ProjectComment) ProtoMessage()    {}
+func (*ProjectComment) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{7}
+}
+func (m *ProjectComment) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ProjectComment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ProjectComment.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ProjectComment) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectComment.Merge(m, src)
+}
+func (m *ProjectComment) XXX_Size() int {
+	return m.Size()
+}
+func (m *ProjectComment) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProjectComment.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProjectComment proto.InternalMessageInfo
+
+func (m *ProjectComment) GetId() int64 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+func (m *ProjectComment) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+func (m *ProjectComment) GetUsername() string {
+	if m != nil {
+		return m.Username
+	}
+	return ""
+}
+
+func (m *ProjectComment) GetContent() string {
+	if m != nil {
+		return m.Content
+	}
+	return ""
+}
+
+func (m *ProjectComment) GetCreatedAt() string {
+	if m != nil {
+		return m.CreatedAt
+	}
+	return ""
+}
+
+// AddProjectCommentRequest creates a project comment.
+type AddProjectCommentRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	Content              string   `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AddProjectCommentRequest) Reset()         { *m = AddProjectCommentRequest{} }
+func (m *AddProjectCommentRequest) String() string { return proto.CompactTextString(m) }
+func (*AddProjectCommentRequest) ProtoMessage()    {}
+func (*AddProjectCommentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{8}
+}
+func (m *AddProjectCommentRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AddProjectCommentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AddProjectCommentRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AddProjectCommentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddProjectCommentRequest.Merge(m, src)
+}
+func (m *AddProjectCommentRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *AddProjectCommentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddProjectCommentRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddProjectCommentRequest proto.InternalMessageInfo
+
+func (m *AddProjectCommentRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+func (m *AddProjectCommentRequest) GetContent() string {
+	if m != nil {
+		return m.Content
+	}
+	return ""
+}
+
+// AddProjectCommentResponse returns the created project comment.
+type AddProjectCommentResponse struct {
+	Item                 *ProjectComment `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
+}
+
+func (m *AddProjectCommentResponse) Reset()         { *m = AddProjectCommentResponse{} }
+func (m *AddProjectCommentResponse) String() string { return proto.CompactTextString(m) }
+func (*AddProjectCommentResponse) ProtoMessage()    {}
+func (*AddProjectCommentResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{9}
+}
+func (m *AddProjectCommentResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AddProjectCommentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AddProjectCommentResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AddProjectCommentResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddProjectCommentResponse.Merge(m, src)
+}
+func (m *AddProjectCommentResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *AddProjectCommentResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddProjectCommentResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddProjectCommentResponse proto.InternalMessageInfo
+
+func (m *AddProjectCommentResponse) GetItem() *ProjectComment {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+// ListProjectCommentsRequest queries comments by contract.
+type ListProjectCommentsRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	Page                 int32    `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32    `protobuf:"varint,3,opt,name=pageSize,proto3" json:"pageSize,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListProjectCommentsRequest) Reset()         { *m = ListProjectCommentsRequest{} }
+func (m *ListProjectCommentsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListProjectCommentsRequest) ProtoMessage()    {}
+func (*ListProjectCommentsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{10}
+}
+func (m *ListProjectCommentsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListProjectCommentsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListProjectCommentsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListProjectCommentsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListProjectCommentsRequest.Merge(m, src)
+}
+func (m *ListProjectCommentsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListProjectCommentsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListProjectCommentsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListProjectCommentsRequest proto.InternalMessageInfo
+
+func (m *ListProjectCommentsRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+func (m *ListProjectCommentsRequest) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListProjectCommentsRequest) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+// ListProjectCommentsResponse returns comments for a contract.
+type ListProjectCommentsResponse struct {
+	Items                []*ProjectComment `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total                int64             `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page                 int32             `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32             `protobuf:"varint,4,opt,name=pageSize,proto3" json:"pageSize,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
+}
+
+func (m *ListProjectCommentsResponse) Reset()         { *m = ListProjectCommentsResponse{} }
+func (m *ListProjectCommentsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListProjectCommentsResponse) ProtoMessage()    {}
+func (*ListProjectCommentsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{11}
+}
+func (m *ListProjectCommentsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListProjectCommentsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListProjectCommentsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListProjectCommentsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListProjectCommentsResponse.Merge(m, src)
+}
+func (m *ListProjectCommentsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListProjectCommentsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListProjectCommentsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListProjectCommentsResponse proto.InternalMessageInfo
+
+func (m *ListProjectCommentsResponse) GetItems() []*ProjectComment {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+func (m *ListProjectCommentsResponse) GetTotal() int64 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *ListProjectCommentsResponse) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListProjectCommentsResponse) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
 // SourceCodeBlacklistField is a globally maintained source-code blacklist field.
 type SourceCodeBlacklistField struct {
 	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -470,7 +790,7 @@ func (m *SourceCodeBlacklistField) Reset()         { *m = SourceCodeBlacklistFie
 func (m *SourceCodeBlacklistField) String() string { return proto.CompactTextString(m) }
 func (*SourceCodeBlacklistField) ProtoMessage()    {}
 func (*SourceCodeBlacklistField) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{7}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{12}
 }
 func (m *SourceCodeBlacklistField) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -524,7 +844,7 @@ func (m *ListSourceCodeBlacklistFieldsRequest) Reset()         { *m = ListSource
 func (m *ListSourceCodeBlacklistFieldsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListSourceCodeBlacklistFieldsRequest) ProtoMessage()    {}
 func (*ListSourceCodeBlacklistFieldsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{8}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{13}
 }
 func (m *ListSourceCodeBlacklistFieldsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -565,7 +885,7 @@ func (m *ListSourceCodeBlacklistFieldsResponse) Reset()         { *m = ListSourc
 func (m *ListSourceCodeBlacklistFieldsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListSourceCodeBlacklistFieldsResponse) ProtoMessage()    {}
 func (*ListSourceCodeBlacklistFieldsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{9}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{14}
 }
 func (m *ListSourceCodeBlacklistFieldsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -613,7 +933,7 @@ func (m *AddSourceCodeBlacklistFieldRequest) Reset()         { *m = AddSourceCod
 func (m *AddSourceCodeBlacklistFieldRequest) String() string { return proto.CompactTextString(m) }
 func (*AddSourceCodeBlacklistFieldRequest) ProtoMessage()    {}
 func (*AddSourceCodeBlacklistFieldRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{10}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{15}
 }
 func (m *AddSourceCodeBlacklistFieldRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -661,7 +981,7 @@ func (m *AddSourceCodeBlacklistFieldResponse) Reset()         { *m = AddSourceCo
 func (m *AddSourceCodeBlacklistFieldResponse) String() string { return proto.CompactTextString(m) }
 func (*AddSourceCodeBlacklistFieldResponse) ProtoMessage()    {}
 func (*AddSourceCodeBlacklistFieldResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{11}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{16}
 }
 func (m *AddSourceCodeBlacklistFieldResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -709,7 +1029,7 @@ func (m *DeleteSourceCodeBlacklistFieldRequest) Reset()         { *m = DeleteSou
 func (m *DeleteSourceCodeBlacklistFieldRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteSourceCodeBlacklistFieldRequest) ProtoMessage()    {}
 func (*DeleteSourceCodeBlacklistFieldRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{12}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{17}
 }
 func (m *DeleteSourceCodeBlacklistFieldRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -760,7 +1080,7 @@ func (m *BytecodeBlacklistContract) Reset()         { *m = BytecodeBlacklistCont
 func (m *BytecodeBlacklistContract) String() string { return proto.CompactTextString(m) }
 func (*BytecodeBlacklistContract) ProtoMessage()    {}
 func (*BytecodeBlacklistContract) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{13}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{18}
 }
 func (m *BytecodeBlacklistContract) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -828,7 +1148,7 @@ func (m *ListBytecodeBlacklistContractsRequest) Reset()         { *m = ListBytec
 func (m *ListBytecodeBlacklistContractsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodeBlacklistContractsRequest) ProtoMessage()    {}
 func (*ListBytecodeBlacklistContractsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{14}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{19}
 }
 func (m *ListBytecodeBlacklistContractsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -871,7 +1191,7 @@ func (m *ListBytecodeBlacklistContractsResponse) Reset() {
 func (m *ListBytecodeBlacklistContractsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodeBlacklistContractsResponse) ProtoMessage()    {}
 func (*ListBytecodeBlacklistContractsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{15}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{20}
 }
 func (m *ListBytecodeBlacklistContractsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -920,7 +1240,7 @@ func (m *AddBytecodeBlacklistContractRequest) Reset()         { *m = AddBytecode
 func (m *AddBytecodeBlacklistContractRequest) String() string { return proto.CompactTextString(m) }
 func (*AddBytecodeBlacklistContractRequest) ProtoMessage()    {}
 func (*AddBytecodeBlacklistContractRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{16}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{21}
 }
 func (m *AddBytecodeBlacklistContractRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -975,7 +1295,7 @@ func (m *AddBytecodeBlacklistContractResponse) Reset()         { *m = AddBytecod
 func (m *AddBytecodeBlacklistContractResponse) String() string { return proto.CompactTextString(m) }
 func (*AddBytecodeBlacklistContractResponse) ProtoMessage()    {}
 func (*AddBytecodeBlacklistContractResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{17}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{22}
 }
 func (m *AddBytecodeBlacklistContractResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1028,7 +1348,7 @@ func (m *UpdateBytecodeBlacklistContractNoteRequest) String() string {
 }
 func (*UpdateBytecodeBlacklistContractNoteRequest) ProtoMessage() {}
 func (*UpdateBytecodeBlacklistContractNoteRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{18}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{23}
 }
 func (m *UpdateBytecodeBlacklistContractNoteRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1087,7 +1407,7 @@ func (m *UpdateBytecodeBlacklistContractNoteResponse) String() string {
 }
 func (*UpdateBytecodeBlacklistContractNoteResponse) ProtoMessage() {}
 func (*UpdateBytecodeBlacklistContractNoteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{19}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{24}
 }
 func (m *UpdateBytecodeBlacklistContractNoteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1137,7 +1457,7 @@ func (m *DeleteBytecodeBlacklistContractRequest) Reset() {
 func (m *DeleteBytecodeBlacklistContractRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteBytecodeBlacklistContractRequest) ProtoMessage()    {}
 func (*DeleteBytecodeBlacklistContractRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{20}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{25}
 }
 func (m *DeleteBytecodeBlacklistContractRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1186,7 +1506,7 @@ func (m *DeleteBytecodeBlacklistContractResponse) Reset() {
 func (m *DeleteBytecodeBlacklistContractResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteBytecodeBlacklistContractResponse) ProtoMessage()    {}
 func (*DeleteBytecodeBlacklistContractResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{21}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{26}
 }
 func (m *DeleteBytecodeBlacklistContractResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1229,7 +1549,7 @@ func (m *WalletBlacklistContract) Reset()         { *m = WalletBlacklistContract
 func (m *WalletBlacklistContract) String() string { return proto.CompactTextString(m) }
 func (*WalletBlacklistContract) ProtoMessage()    {}
 func (*WalletBlacklistContract) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{22}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{27}
 }
 func (m *WalletBlacklistContract) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1290,7 +1610,7 @@ func (m *ListWalletBlacklistContractsRequest) Reset()         { *m = ListWalletB
 func (m *ListWalletBlacklistContractsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListWalletBlacklistContractsRequest) ProtoMessage()    {}
 func (*ListWalletBlacklistContractsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{23}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{28}
 }
 func (m *ListWalletBlacklistContractsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1331,7 +1651,7 @@ func (m *ListWalletBlacklistContractsResponse) Reset()         { *m = ListWallet
 func (m *ListWalletBlacklistContractsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListWalletBlacklistContractsResponse) ProtoMessage()    {}
 func (*ListWalletBlacklistContractsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{24}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{29}
 }
 func (m *ListWalletBlacklistContractsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1380,7 +1700,7 @@ func (m *AddWalletBlacklistContractRequest) Reset()         { *m = AddWalletBlac
 func (m *AddWalletBlacklistContractRequest) String() string { return proto.CompactTextString(m) }
 func (*AddWalletBlacklistContractRequest) ProtoMessage()    {}
 func (*AddWalletBlacklistContractRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{25}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{30}
 }
 func (m *AddWalletBlacklistContractRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1435,7 +1755,7 @@ func (m *AddWalletBlacklistContractResponse) Reset()         { *m = AddWalletBla
 func (m *AddWalletBlacklistContractResponse) String() string { return proto.CompactTextString(m) }
 func (*AddWalletBlacklistContractResponse) ProtoMessage()    {}
 func (*AddWalletBlacklistContractResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{26}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{31}
 }
 func (m *AddWalletBlacklistContractResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1486,7 +1806,7 @@ func (m *UpdateWalletBlacklistContractNoteRequest) Reset() {
 func (m *UpdateWalletBlacklistContractNoteRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateWalletBlacklistContractNoteRequest) ProtoMessage()    {}
 func (*UpdateWalletBlacklistContractNoteRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{27}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{32}
 }
 func (m *UpdateWalletBlacklistContractNoteRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1545,7 +1865,7 @@ func (m *UpdateWalletBlacklistContractNoteResponse) String() string {
 }
 func (*UpdateWalletBlacklistContractNoteResponse) ProtoMessage() {}
 func (*UpdateWalletBlacklistContractNoteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{28}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{33}
 }
 func (m *UpdateWalletBlacklistContractNoteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1593,7 +1913,7 @@ func (m *DeleteWalletBlacklistContractRequest) Reset()         { *m = DeleteWall
 func (m *DeleteWalletBlacklistContractRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteWalletBlacklistContractRequest) ProtoMessage()    {}
 func (*DeleteWalletBlacklistContractRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{29}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{34}
 }
 func (m *DeleteWalletBlacklistContractRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1640,7 +1960,7 @@ func (m *DeleteWalletBlacklistContractResponse) Reset()         { *m = DeleteWal
 func (m *DeleteWalletBlacklistContractResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteWalletBlacklistContractResponse) ProtoMessage()    {}
 func (*DeleteWalletBlacklistContractResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{30}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{35}
 }
 func (m *DeleteWalletBlacklistContractResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1680,7 +2000,7 @@ func (m *GetProjectOptionsRequest) Reset()         { *m = GetProjectOptionsReque
 func (m *GetProjectOptionsRequest) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsRequest) ProtoMessage()    {}
 func (*GetProjectOptionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{31}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{36}
 }
 func (m *GetProjectOptionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1721,7 +2041,7 @@ func (m *GetProjectOptionsResponse) Reset()         { *m = GetProjectOptionsResp
 func (m *GetProjectOptionsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsResponse) ProtoMessage()    {}
 func (*GetProjectOptionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{32}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{37}
 }
 func (m *GetProjectOptionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1770,7 +2090,7 @@ func (m *DeleteSourceCodeBlacklistFieldResponse) Reset() {
 func (m *DeleteSourceCodeBlacklistFieldResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteSourceCodeBlacklistFieldResponse) ProtoMessage()    {}
 func (*DeleteSourceCodeBlacklistFieldResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{33}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{38}
 }
 func (m *DeleteSourceCodeBlacklistFieldResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1810,7 +2130,7 @@ func (m *ArchiveProjectRequest) Reset()         { *m = ArchiveProjectRequest{} }
 func (m *ArchiveProjectRequest) String() string { return proto.CompactTextString(m) }
 func (*ArchiveProjectRequest) ProtoMessage()    {}
 func (*ArchiveProjectRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{34}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{39}
 }
 func (m *ArchiveProjectRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1856,7 +2176,7 @@ func (m *ArchiveProjectResponse) Reset()         { *m = ArchiveProjectResponse{}
 func (m *ArchiveProjectResponse) String() string { return proto.CompactTextString(m) }
 func (*ArchiveProjectResponse) ProtoMessage()    {}
 func (*ArchiveProjectResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{35}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{40}
 }
 func (m *ArchiveProjectResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1896,7 +2216,7 @@ func (m *UnarchiveProjectRequest) Reset()         { *m = UnarchiveProjectRequest
 func (m *UnarchiveProjectRequest) String() string { return proto.CompactTextString(m) }
 func (*UnarchiveProjectRequest) ProtoMessage()    {}
 func (*UnarchiveProjectRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{36}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{41}
 }
 func (m *UnarchiveProjectRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1942,7 +2262,7 @@ func (m *UnarchiveProjectResponse) Reset()         { *m = UnarchiveProjectRespon
 func (m *UnarchiveProjectResponse) String() string { return proto.CompactTextString(m) }
 func (*UnarchiveProjectResponse) ProtoMessage()    {}
 func (*UnarchiveProjectResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{37}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{42}
 }
 func (m *UnarchiveProjectResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1979,6 +2299,11 @@ func init() {
 	proto.RegisterType((*ProjectEventLog)(nil), "application.ProjectEventLog")
 	proto.RegisterType((*ListProjectEventLogsRequest)(nil), "application.ListProjectEventLogsRequest")
 	proto.RegisterType((*ListProjectEventLogsResponse)(nil), "application.ListProjectEventLogsResponse")
+	proto.RegisterType((*ProjectComment)(nil), "application.ProjectComment")
+	proto.RegisterType((*AddProjectCommentRequest)(nil), "application.AddProjectCommentRequest")
+	proto.RegisterType((*AddProjectCommentResponse)(nil), "application.AddProjectCommentResponse")
+	proto.RegisterType((*ListProjectCommentsRequest)(nil), "application.ListProjectCommentsRequest")
+	proto.RegisterType((*ListProjectCommentsResponse)(nil), "application.ListProjectCommentsResponse")
 	proto.RegisterType((*SourceCodeBlacklistField)(nil), "application.SourceCodeBlacklistField")
 	proto.RegisterType((*ListSourceCodeBlacklistFieldsRequest)(nil), "application.ListSourceCodeBlacklistFieldsRequest")
 	proto.RegisterType((*ListSourceCodeBlacklistFieldsResponse)(nil), "application.ListSourceCodeBlacklistFieldsResponse")
@@ -2017,100 +2342,110 @@ func init() {
 }
 
 var fileDescriptor_dbb8cd1a14781c7f = []byte{
-	// 1487 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x59, 0xcd, 0x6f, 0xdc, 0xc4,
-	0x1b, 0xd6, 0xe4, 0xa3, 0x6d, 0xde, 0xfe, 0xd4, 0x5f, 0x19, 0x4a, 0xbb, 0x75, 0x3e, 0xeb, 0x24,
-	0xdb, 0x24, 0x34, 0x36, 0xbb, 0x4d, 0x69, 0x53, 0xa8, 0x20, 0x69, 0x4b, 0x7b, 0xa8, 0x00, 0x6d,
-	0x28, 0x88, 0x82, 0x28, 0x8e, 0x3d, 0xdd, 0x35, 0x75, 0x6c, 0x63, 0x4f, 0xb6, 0x0a, 0x55, 0x39,
-	0xc0, 0x01, 0x8e, 0x48, 0x1c, 0xf8, 0x27, 0x90, 0x10, 0x52, 0x25, 0xc4, 0x01, 0x71, 0x42, 0xe2,
-	0x58, 0xc4, 0x89, 0x1b, 0xaa, 0x38, 0xf2, 0x47, 0xa0, 0x19, 0x8f, 0x77, 0x3d, 0xde, 0xf5, 0x57,
-	0xd2, 0xd3, 0xae, 0x67, 0xde, 0xf7, 0x9d, 0xe7, 0x79, 0xe7, 0x19, 0xfb, 0xf1, 0x2e, 0xac, 0xda,
-	0x2e, 0x25, 0x81, 0x6b, 0x38, 0x7a, 0x48, 0x82, 0x2e, 0x09, 0x74, 0xc3, 0xf7, 0x1d, 0xdb, 0x34,
-	0xa8, 0xed, 0xb9, 0xc9, 0xef, 0x9a, 0x1f, 0x78, 0xd4, 0xc3, 0x47, 0x13, 0x43, 0xca, 0x7a, 0xdb,
-	0xa6, 0x9d, 0xdd, 0x6d, 0xcd, 0xf4, 0x76, 0xf4, 0xdd, 0x90, 0x04, 0x7b, 0xa4, 0x4d, 0x74, 0x83,
-	0x76, 0x88, 0x6b, 0xe8, 0xbd, 0xb2, 0xfe, 0xfd, 0xb6, 0xce, 0x73, 0xf5, 0x6e, 0x43, 0xef, 0x36,
-	0xa2, 0x3a, 0xca, 0xcd, 0x9c, 0x54, 0x96, 0x61, 0xf8, 0x76, 0x28, 0x41, 0xe9, 0x36, 0x0c, 0xc7,
-	0xef, 0x18, 0x0d, 0xbd, 0x4d, 0x5c, 0x12, 0x18, 0x94, 0x58, 0xa2, 0xd2, 0x54, 0xdb, 0xf3, 0xda,
-	0x0e, 0x61, 0x19, 0xba, 0xe1, 0xba, 0x1e, 0xe5, 0xf1, 0x61, 0x34, 0xab, 0xee, 0xc0, 0xf3, 0xb7,
-	0xec, 0x90, 0xbe, 0x1d, 0x78, 0x9f, 0x10, 0x93, 0x86, 0x2d, 0xf2, 0xe9, 0x2e, 0x09, 0x29, 0xae,
-	0xc3, 0x78, 0x68, 0x7a, 0x3e, 0xa9, 0xa1, 0x39, 0xb4, 0x74, 0xac, 0x79, 0x5c, 0xeb, 0x36, 0x34,
-	0x11, 0xb3, 0xc5, 0xc6, 0x5b, 0xd1, 0x34, 0xc6, 0x30, 0xe6, 0x1b, 0x6d, 0x52, 0x1b, 0x99, 0x43,
-	0x4b, 0xe3, 0x2d, 0xfe, 0x1d, 0x2b, 0x70, 0x84, 0x7d, 0x6e, 0xd9, 0x9f, 0x91, 0xda, 0x28, 0x1f,
-	0xef, 0x5d, 0xab, 0x3f, 0x23, 0x38, 0x21, 0xaf, 0x17, 0xfa, 0x9e, 0x1b, 0x12, 0xfc, 0x01, 0x8c,
-	0xdb, 0x94, 0xec, 0x84, 0x35, 0x34, 0x37, 0xba, 0x74, 0xb4, 0x79, 0x5d, 0xeb, 0xf3, 0xd7, 0x62,
-	0xfe, 0x5a, 0xc4, 0x5f, 0xf3, 0xef, 0xb7, 0x35, 0xc6, 0x5f, 0x4b, 0xb6, 0x3f, 0xe6, 0x1f, 0xc3,
-	0x7c, 0xd7, 0x26, 0x0f, 0x5a, 0x51, 0x4d, 0x7c, 0x02, 0xc6, 0xa9, 0x47, 0x0d, 0x87, 0xc3, 0x1c,
-	0x6d, 0x45, 0x17, 0x3d, 0xec, 0xa3, 0x19, 0xd8, 0xc7, 0x52, 0xd8, 0x75, 0x78, 0xee, 0x06, 0x89,
-	0x91, 0xc7, 0x8d, 0x52, 0xe0, 0x88, 0xe9, 0xb9, 0x34, 0x30, 0x4c, 0xca, 0x7b, 0x35, 0xd1, 0xea,
-	0x5d, 0xab, 0x1e, 0xe0, 0x64, 0x82, 0x60, 0xfa, 0x3e, 0x8c, 0x31, 0x54, 0x3c, 0xfa, 0x99, 0x11,
-	0xe5, 0x25, 0xd5, 0x27, 0x08, 0xfe, 0x2f, 0x46, 0xaf, 0x77, 0x89, 0x4b, 0x6f, 0x79, 0x6d, 0x7c,
-	0x0c, 0x46, 0x6c, 0x8b, 0x2f, 0x36, 0xda, 0x1a, 0xb1, 0x2d, 0x09, 0xf0, 0x88, 0x0c, 0x18, 0x4f,
-	0x03, 0x10, 0x96, 0x77, 0x97, 0xee, 0xf9, 0x71, 0x5f, 0x26, 0xf8, 0xc8, 0x3b, 0x7b, 0x3e, 0xc1,
-	0xb3, 0x70, 0xd4, 0x33, 0xcd, 0xdd, 0x20, 0x20, 0xd6, 0x5d, 0x83, 0xf2, 0xfe, 0x4c, 0xb4, 0x20,
-	0x1e, 0xda, 0xa0, 0xb8, 0x06, 0x87, 0x77, 0x48, 0x18, 0xb2, 0xa6, 0x8e, 0xf3, 0xc9, 0xf8, 0x92,
-	0xcd, 0xf8, 0xc6, 0x9e, 0xe3, 0x19, 0x56, 0xed, 0x50, 0x34, 0x23, 0x2e, 0xd9, 0x9a, 0x66, 0x40,
-	0x98, 0x5e, 0x59, 0xcd, 0xc3, 0x7c, 0x72, 0x42, 0x8c, 0x6c, 0x50, 0x75, 0x1d, 0x26, 0x13, 0x7a,
-	0x89, 0x59, 0x85, 0x65, 0xda, 0xdf, 0x82, 0xa9, 0xe1, 0xa9, 0x62, 0x23, 0x9a, 0xb2, 0xe4, 0xa6,
-	0xa4, 0x2e, 0xa7, 0xb2, 0x84, 0x92, 0xd4, 0xd7, 0xa1, 0xb6, 0xe5, 0xed, 0x06, 0x26, 0xb9, 0xea,
-	0x59, 0x64, 0xd3, 0x31, 0xcc, 0xfb, 0x8e, 0x1d, 0xd2, 0x37, 0x6c, 0xe2, 0x58, 0x03, 0x9d, 0x3e,
-	0x01, 0xe3, 0xf7, 0xd8, 0x84, 0x68, 0x73, 0x74, 0xa1, 0xd6, 0x61, 0x81, 0xa1, 0xca, 0xaa, 0x12,
-	0x33, 0x53, 0x2d, 0x58, 0x2c, 0x88, 0x13, 0x34, 0x5e, 0x91, 0x69, 0x2c, 0x4a, 0x34, 0xb2, 0xd2,
-	0x63, 0x3e, 0x97, 0x41, 0xdd, 0xb0, 0xac, 0xcc, 0x28, 0xd1, 0xe5, 0x1e, 0x13, 0x94, 0x64, 0xf2,
-	0x31, 0xcc, 0xe7, 0xe6, 0x0a, 0x7c, 0xeb, 0x92, 0xde, 0x4b, 0xc2, 0x8b, 0xf4, 0x7c, 0x05, 0x16,
-	0xaf, 0x11, 0x87, 0x50, 0xb2, 0x3f, 0x80, 0x5f, 0x21, 0x38, 0xbd, 0xb9, 0x47, 0x89, 0x99, 0xcc,
-	0xbb, 0x1a, 0x8b, 0x3d, 0x47, 0x3a, 0x78, 0x12, 0x26, 0x58, 0xd2, 0xdd, 0x8e, 0x11, 0x76, 0xfa,
-	0xa7, 0xc4, 0x22, 0x37, 0x8d, 0xb0, 0xc3, 0xee, 0x1b, 0xae, 0x47, 0xa3, 0xf3, 0x31, 0xd1, 0xe2,
-	0xdf, 0x53, 0x2a, 0x1e, 0x4b, 0xab, 0xf8, 0x6c, 0xb4, 0x99, 0x99, 0x60, 0x7a, 0xbb, 0x7e, 0x0f,
-	0xea, 0x45, 0x81, 0xa2, 0xad, 0xaf, 0xca, 0xdb, 0x5e, 0x97, 0xfa, 0x9a, 0x99, 0x1f, 0xef, 0xfb,
-	0x6d, 0xbe, 0x77, 0xd9, 0x61, 0xc5, 0xc7, 0xab, 0xd7, 0x86, 0x91, 0x7e, 0x1b, 0xd4, 0x6d, 0x58,
-	0xc8, 0x2f, 0x2b, 0xc0, 0x5f, 0x96, 0x34, 0x51, 0x16, 0x7b, 0x24, 0x8a, 0x0f, 0x61, 0xe5, 0xb6,
-	0x6f, 0x19, 0x94, 0x64, 0x06, 0xbe, 0xe9, 0x51, 0xb2, 0x5f, 0x06, 0x36, 0xbc, 0x58, 0xaa, 0xfa,
-	0x33, 0x20, 0x72, 0x0d, 0xea, 0x91, 0xba, 0x0f, 0xb2, 0x0d, 0xea, 0x32, 0x9c, 0x2d, 0xac, 0x12,
-	0x81, 0x55, 0x3b, 0x70, 0xea, 0x3d, 0xc3, 0x71, 0x08, 0xad, 0x76, 0x18, 0x86, 0xb4, 0x29, 0xa5,
-	0xf7, 0xd1, 0xb4, 0xde, 0x17, 0x61, 0x9e, 0xc9, 0x38, 0x63, 0xb5, 0x9e, 0xda, 0xb7, 0xa3, 0x7b,
-	0x61, 0x76, 0x58, 0xaf, 0xcb, 0x92, 0xd6, 0x17, 0xa4, 0x36, 0x67, 0x64, 0xc7, 0x4a, 0xdf, 0x82,
-	0x33, 0x1b, 0x96, 0x95, 0x15, 0xb4, 0x4f, 0x95, 0x7c, 0xc4, 0x6f, 0x9b, 0x99, 0x45, 0x05, 0xec,
-	0x4b, 0x92, 0x38, 0xca, 0xa1, 0x8e, 0xa4, 0x71, 0x07, 0x96, 0x22, 0x15, 0x66, 0x84, 0x1d, 0x44,
-	0xe1, 0x04, 0x96, 0x4b, 0xd4, 0x3e, 0x30, 0x85, 0x4d, 0x58, 0x88, 0x74, 0xb9, 0xff, 0xd6, 0xb3,
-	0xdb, 0x66, 0x41, 0x0d, 0xa1, 0x6c, 0x05, 0x6a, 0x7d, 0xa7, 0xf5, 0x96, 0xcf, 0x0d, 0x6e, 0x2c,
-	0xb2, 0xcf, 0xe1, 0xf4, 0x90, 0x39, 0xc1, 0xcf, 0x80, 0xc3, 0x5e, 0x34, 0x24, 0x28, 0xde, 0x38,
-	0xb0, 0x1f, 0x8b, 0x96, 0x68, 0xc5, 0x75, 0xd5, 0xa5, 0xf8, 0x98, 0x17, 0x3d, 0x29, 0xd5, 0xf3,
-	0xf0, 0xc2, 0x46, 0x60, 0x76, 0xec, 0x2e, 0xa9, 0x60, 0x32, 0x6b, 0x70, 0x32, 0x9d, 0x24, 0xca,
-	0x5d, 0x80, 0x53, 0xb7, 0x5d, 0xa3, 0x72, 0x41, 0x05, 0x6a, 0x83, 0x69, 0x51, 0xc9, 0xe6, 0xbf,
-	0x27, 0x01, 0x6f, 0xf4, 0xb9, 0x6f, 0x91, 0xa0, 0x6b, 0x9b, 0x04, 0xef, 0xc0, 0xff, 0x92, 0xa6,
-	0x1e, 0xcf, 0x49, 0x0d, 0x1a, 0xf2, 0x7e, 0xa1, 0x9c, 0xc9, 0x89, 0x10, 0xf0, 0x6b, 0x5f, 0xfc,
-	0xf9, 0xcf, 0xb7, 0x23, 0x18, 0x1f, 0xe7, 0x6f, 0x2e, 0xdd, 0x06, 0x7b, 0x49, 0x8a, 0xca, 0x07,
-	0x00, 0xfd, 0x1d, 0xc5, 0x33, 0x52, 0xa9, 0x01, 0x87, 0xae, 0xcc, 0x66, 0xce, 0x8b, 0x85, 0xe6,
-	0xf9, 0x42, 0xd3, 0x78, 0x32, 0xbd, 0x90, 0xfe, 0x30, 0x6e, 0xca, 0x23, 0xfc, 0x9d, 0xfc, 0xe2,
-	0xd2, 0x73, 0x93, 0x78, 0x29, 0x8b, 0x49, 0xda, 0xab, 0x2a, 0xcb, 0x25, 0x22, 0x05, 0xa4, 0x15,
-	0x0e, 0x69, 0x01, 0xab, 0x39, 0x90, 0x74, 0x6e, 0xcc, 0x43, 0xfc, 0x18, 0xc1, 0x74, 0xae, 0x53,
-	0xc4, 0x8d, 0x81, 0x85, 0x8b, 0xdc, 0xa7, 0xd2, 0xac, 0x92, 0x22, 0x40, 0x9f, 0xe3, 0xa0, 0xeb,
-	0x78, 0x21, 0x06, 0x1d, 0xf2, 0x94, 0x55, 0xf6, 0x50, 0xd2, 0xb7, 0xe3, 0xa4, 0xd5, 0x7b, 0x11,
-	0xa8, 0x1f, 0x11, 0x4c, 0xe6, 0xd8, 0x47, 0xac, 0x4b, 0x08, 0x8a, 0x4d, 0xaa, 0xf2, 0x52, 0xf9,
-	0x04, 0x01, 0x58, 0xe7, 0x80, 0x97, 0xd5, 0x52, 0x80, 0x2f, 0xa3, 0x15, 0xfc, 0x2b, 0x82, 0x99,
-	0xfc, 0xb3, 0x8c, 0xe5, 0xc6, 0x95, 0x72, 0xaf, 0xca, 0xf9, 0x4a, 0x39, 0x02, 0xfc, 0x1a, 0x07,
-	0xaf, 0xad, 0x9c, 0x2b, 0x03, 0x5e, 0x7f, 0xc8, 0x3f, 0x1f, 0xe1, 0x9f, 0x10, 0xcc, 0xe4, 0x1b,
-	0x4c, 0x3c, 0xb8, 0xf5, 0x85, 0xb6, 0x35, 0xc5, 0xa0, 0x9c, 0x83, 0x1d, 0xd4, 0xcb, 0xb6, 0xc8,
-	0x49, 0xc0, 0x37, 0x7b, 0xb0, 0x1e, 0x23, 0x98, 0xca, 0xf3, 0x96, 0x78, 0x60, 0xff, 0x8b, 0x6c,
-	0x95, 0xd2, 0xa8, 0x90, 0x91, 0x25, 0x99, 0x3c, 0xcc, 0x4c, 0x32, 0x7f, 0x21, 0x98, 0x2f, 0x61,
-	0x28, 0xf1, 0x45, 0x09, 0x4b, 0x79, 0x83, 0xab, 0x5c, 0xaa, 0x9e, 0x28, 0xb8, 0xbc, 0xc6, 0xb9,
-	0xac, 0xab, 0x6b, 0x65, 0xb8, 0x24, 0x6f, 0x3c, 0xcc, 0x46, 0x30, 0x6e, 0xbf, 0x21, 0x98, 0x2d,
-	0xf0, 0x9e, 0x78, 0x98, 0xb6, 0x0b, 0x37, 0x66, 0xad, 0x5a, 0x92, 0xe0, 0x73, 0x91, 0xf3, 0x69,
-	0xac, 0xe8, 0x15, 0xf9, 0xe0, 0x1f, 0x50, 0xf4, 0x4b, 0x41, 0x96, 0x0f, 0x4d, 0x49, 0xab, 0x84,
-	0xb3, 0x55, 0x1a, 0x15, 0x32, 0xb2, 0xee, 0xf9, 0x0f, 0x78, 0xc6, 0xd0, 0xc3, 0xf0, 0x3d, 0x02,
-	0x25, 0xdb, 0x80, 0x62, 0x2d, 0x2d, 0xec, 0x7c, 0x0f, 0xa6, 0xe8, 0xa5, 0xe3, 0x05, 0xd6, 0x55,
-	0x8e, 0xf5, 0xac, 0x5a, 0x02, 0x2b, 0x13, 0xca, 0x1f, 0x08, 0xce, 0x14, 0x7a, 0x4e, 0x7c, 0x61,
-	0x88, 0x92, 0x8b, 0xfd, 0xaf, 0xf2, 0x72, 0xd5, 0x34, 0xc1, 0xe1, 0x0a, 0xe7, 0x70, 0x51, 0x6d,
-	0x16, 0x73, 0x18, 0x26, 0xfe, 0x5f, 0x10, 0x4c, 0xe7, 0x9a, 0xd3, 0xd4, 0x63, 0xb7, 0x8c, 0x19,
-	0x56, 0x9a, 0x55, 0x52, 0x62, 0x9b, 0xc7, 0x79, 0xe8, 0x2b, 0xab, 0x95, 0x78, 0xe0, 0x2f, 0x51,
-	0xf2, 0xe7, 0x4c, 0xe1, 0x8b, 0xf1, 0x62, 0x86, 0x59, 0x92, 0x3d, 0xb5, 0x52, 0x2f, 0x0a, 0x13,
-	0xd8, 0x66, 0x39, 0xb6, 0xd3, 0xf8, 0x54, 0xca, 0xc7, 0xac, 0x0a, 0x73, 0x8c, 0xbf, 0x46, 0x70,
-	0x4c, 0xb6, 0xaf, 0x58, 0x95, 0xc5, 0x38, 0xcc, 0xbf, 0x2a, 0xf3, 0xb9, 0x31, 0x59, 0x22, 0x15,
-	0x8b, 0x27, 0x77, 0x53, 0xf8, 0x5c, 0xb6, 0xa1, 0xdf, 0x20, 0x38, 0x9e, 0x36, 0xbe, 0x58, 0x7e,
-	0xe3, 0xc9, 0xb0, 0xd3, 0xca, 0x62, 0x41, 0x54, 0xd6, 0xc3, 0x63, 0x08, 0xa0, 0x5d, 0xb7, 0x0f,
-	0x69, 0x73, 0xf3, 0xf7, 0xa7, 0x33, 0xe8, 0xc9, 0xd3, 0x19, 0xf4, 0xf7, 0xd3, 0x19, 0x74, 0x67,
-	0xad, 0xf8, 0x2f, 0x01, 0xd3, 0xb1, 0x89, 0x4b, 0x93, 0xff, 0x0b, 0x6c, 0x1f, 0xe2, 0xbf, 0xf3,
-	0x9f, 0xff, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x5e, 0x10, 0xe5, 0xfe, 0xc8, 0x18, 0x00, 0x00,
+	// 1635 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x59, 0xcd, 0x6f, 0xdc, 0x44,
+	0x14, 0xd7, 0xe4, 0xa3, 0x6d, 0x5e, 0x51, 0x68, 0x87, 0x42, 0x37, 0xce, 0x67, 0x9d, 0xef, 0xd0,
+	0xac, 0xd9, 0x34, 0xa5, 0x4d, 0xa1, 0x82, 0xa4, 0x2d, 0xed, 0xa1, 0x82, 0x6a, 0x43, 0x41, 0x14,
+	0x44, 0x71, 0xec, 0xe9, 0xae, 0xe9, 0xae, 0xbd, 0xd8, 0x93, 0xad, 0x42, 0x55, 0x0e, 0x70, 0x80,
+	0x23, 0xa8, 0x52, 0x39, 0xf0, 0x2f, 0x20, 0x21, 0xa4, 0x4a, 0x88, 0x03, 0xe2, 0x84, 0xc4, 0xb1,
+	0x88, 0x13, 0x37, 0x54, 0xf1, 0x87, 0xa0, 0x19, 0x8f, 0x77, 0x3d, 0xde, 0x1d, 0x7f, 0x24, 0x3d,
+	0x65, 0x3d, 0xf3, 0xde, 0x9b, 0xdf, 0xfb, 0xbd, 0xdf, 0x78, 0xdf, 0xcb, 0xc2, 0xaa, 0xe3, 0x52,
+	0xe2, 0xbb, 0x66, 0xc3, 0x08, 0x88, 0xdf, 0x26, 0xbe, 0x61, 0xb6, 0x5a, 0x0d, 0xc7, 0x32, 0xa9,
+	0xe3, 0xb9, 0xf1, 0xcf, 0xe5, 0x96, 0xef, 0x51, 0x0f, 0x1f, 0x8d, 0x2d, 0x69, 0x1b, 0x35, 0x87,
+	0xd6, 0x77, 0x77, 0xca, 0x96, 0xd7, 0x34, 0x76, 0x03, 0xe2, 0xef, 0x91, 0x1a, 0x31, 0x4c, 0x5a,
+	0x27, 0xae, 0x69, 0x74, 0xc2, 0xb6, 0xee, 0xd6, 0x0c, 0xee, 0x6b, 0xb4, 0x2b, 0x46, 0xbb, 0x12,
+	0xc6, 0xd1, 0xae, 0xa5, 0xb8, 0x32, 0x0f, 0xb3, 0xe5, 0x04, 0x12, 0x94, 0x76, 0xc5, 0x6c, 0xb4,
+	0xea, 0x66, 0xc5, 0xa8, 0x11, 0x97, 0xf8, 0x26, 0x25, 0xb6, 0x88, 0x34, 0x51, 0xf3, 0xbc, 0x5a,
+	0x83, 0x30, 0x0f, 0xc3, 0x74, 0x5d, 0x8f, 0x72, 0xfb, 0x20, 0xdc, 0xd5, 0x9b, 0xf0, 0xc2, 0x75,
+	0x27, 0xa0, 0x37, 0x7c, 0xef, 0x53, 0x62, 0xd1, 0xa0, 0x4a, 0x3e, 0xdb, 0x25, 0x01, 0xc5, 0x0b,
+	0x30, 0x1c, 0x58, 0x5e, 0x8b, 0x94, 0xd0, 0x0c, 0x5a, 0x1a, 0x5d, 0x3b, 0x56, 0x6e, 0x57, 0xca,
+	0xc2, 0x66, 0x9b, 0xad, 0x57, 0xc3, 0x6d, 0x8c, 0x61, 0xa8, 0x65, 0xd6, 0x48, 0x69, 0x60, 0x06,
+	0x2d, 0x0d, 0x57, 0xf9, 0x67, 0xac, 0xc1, 0x11, 0xf6, 0x77, 0xdb, 0xf9, 0x9c, 0x94, 0x06, 0xf9,
+	0x7a, 0xe7, 0x59, 0xff, 0x15, 0xc1, 0x09, 0xf9, 0xbc, 0xa0, 0xe5, 0xb9, 0x01, 0xc1, 0x1f, 0xc2,
+	0xb0, 0x43, 0x49, 0x33, 0x28, 0xa1, 0x99, 0xc1, 0xa5, 0xa3, 0x6b, 0x57, 0xca, 0xdd, 0xfc, 0xcb,
+	0x51, 0xfe, 0xe5, 0x30, 0xff, 0x72, 0xeb, 0x6e, 0xad, 0xcc, 0xf2, 0x2f, 0xc7, 0xe9, 0x8f, 0xf2,
+	0x8f, 0x60, 0xbe, 0xe7, 0x90, 0x7b, 0xd5, 0x30, 0x26, 0x3e, 0x01, 0xc3, 0xd4, 0xa3, 0x66, 0x83,
+	0xc3, 0x1c, 0xac, 0x86, 0x0f, 0x1d, 0xec, 0x83, 0x0a, 0xec, 0x43, 0x09, 0xec, 0x06, 0x1c, 0xbf,
+	0x4a, 0x22, 0xe4, 0x11, 0x51, 0x1a, 0x1c, 0xb1, 0x3c, 0x97, 0xfa, 0xa6, 0x45, 0x39, 0x57, 0x23,
+	0xd5, 0xce, 0xb3, 0xee, 0x01, 0x8e, 0x3b, 0x88, 0x4c, 0x3f, 0x80, 0x21, 0x86, 0x8a, 0x5b, 0x3f,
+	0xb3, 0x44, 0x79, 0x48, 0xfd, 0x09, 0x82, 0xe7, 0xc5, 0xea, 0x95, 0x36, 0x71, 0xe9, 0x75, 0xaf,
+	0x86, 0x47, 0x61, 0xc0, 0xb1, 0xf9, 0x61, 0x83, 0xd5, 0x01, 0xc7, 0x96, 0x00, 0x0f, 0xc8, 0x80,
+	0xf1, 0x24, 0x00, 0x61, 0x7e, 0xb7, 0xe9, 0x5e, 0x2b, 0xe2, 0x65, 0x84, 0xaf, 0xbc, 0xbb, 0xd7,
+	0x22, 0x78, 0x1a, 0x8e, 0x7a, 0x96, 0xb5, 0xeb, 0xfb, 0xc4, 0xbe, 0x6d, 0x52, 0xce, 0xcf, 0x48,
+	0x15, 0xa2, 0xa5, 0x4d, 0x8a, 0x4b, 0x70, 0xb8, 0x49, 0x82, 0x80, 0x91, 0x3a, 0xcc, 0x37, 0xa3,
+	0x47, 0xb6, 0xd3, 0x32, 0xf7, 0x1a, 0x9e, 0x69, 0x97, 0x0e, 0x85, 0x3b, 0xe2, 0x91, 0x9d, 0x69,
+	0xf9, 0x84, 0xe9, 0x95, 0xc5, 0x3c, 0xcc, 0x37, 0x47, 0xc4, 0xca, 0x26, 0xd5, 0x37, 0x60, 0x3c,
+	0xa6, 0x97, 0x28, 0xab, 0x20, 0x0f, 0xfd, 0x55, 0x98, 0xe8, 0xef, 0x2a, 0x0a, 0xb1, 0x26, 0x4b,
+	0x6e, 0x42, 0x62, 0x39, 0xe1, 0x25, 0x94, 0xa4, 0x7f, 0x87, 0x60, 0x54, 0x6c, 0x5d, 0xf2, 0x9a,
+	0x4d, 0xe2, 0xd2, 0x42, 0x04, 0x6b, 0x70, 0x84, 0xd5, 0xd8, 0x35, 0x9b, 0x21, 0xbd, 0x23, 0xd5,
+	0xce, 0x33, 0xa3, 0x88, 0xd9, 0x11, 0x37, 0x62, 0x36, 0x7a, 0x4c, 0x50, 0x34, 0x9c, 0xa4, 0xe8,
+	0x06, 0x94, 0x36, 0x6d, 0x5b, 0x46, 0x95, 0x83, 0x9f, 0xf8, 0x81, 0x03, 0xd2, 0x81, 0xfa, 0x75,
+	0x18, 0xeb, 0x13, 0x51, 0xd0, 0x66, 0x48, 0xfa, 0x1d, 0xef, 0xc7, 0x5a, 0xe4, 0x12, 0xaa, 0xb2,
+	0x0e, 0x5a, 0xac, 0x0e, 0x62, 0x2f, 0x4f, 0x05, 0x0b, 0xbf, 0x5d, 0x1e, 0x21, 0x49, 0x2d, 0xdd,
+	0xa3, 0x04, 0xf4, 0x8a, 0x5c, 0xf1, 0x54, 0xec, 0xcf, 0xf4, 0xd5, 0xf1, 0x26, 0x94, 0xb6, 0xbd,
+	0x5d, 0xdf, 0x22, 0x97, 0x3c, 0x9b, 0x6c, 0x35, 0x4c, 0xeb, 0x6e, 0xc3, 0x09, 0xe8, 0x5b, 0x0e,
+	0x69, 0xd8, 0x3d, 0xfa, 0x39, 0x01, 0xc3, 0x77, 0xd8, 0x86, 0x28, 0x4a, 0xf8, 0xa0, 0x2f, 0xc0,
+	0x1c, 0xcb, 0x4c, 0x15, 0x25, 0xa2, 0x53, 0xb7, 0x61, 0x3e, 0xc3, 0x4e, 0x70, 0xf1, 0x9a, 0xcc,
+	0xc5, 0xbc, 0xc4, 0x85, 0xca, 0x3d, 0xba, 0x06, 0x17, 0x40, 0xdf, 0xb4, 0x6d, 0xa5, 0x95, 0x28,
+	0x6d, 0x27, 0x13, 0x14, 0xcf, 0xe4, 0x13, 0x98, 0x4d, 0xf5, 0x15, 0xf8, 0x36, 0x24, 0x99, 0xe5,
+	0x84, 0x17, 0x0a, 0xee, 0x22, 0xcc, 0x5f, 0x26, 0x0d, 0x42, 0xc9, 0xfe, 0x00, 0x7e, 0x8d, 0x60,
+	0x6c, 0x6b, 0x8f, 0x12, 0x2b, 0xee, 0x77, 0x29, 0x76, 0x85, 0x95, 0x7a, 0x1d, 0x87, 0x11, 0xe6,
+	0x74, 0xbb, 0x6e, 0x06, 0xf5, 0xee, 0xdd, 0xb7, 0xc9, 0x35, 0x33, 0xa8, 0x33, 0xcd, 0xb8, 0x1e,
+	0x8d, 0xee, 0x3d, 0xff, 0x9c, 0xb8, 0xd9, 0x43, 0xc9, 0x9b, 0xbd, 0x18, 0x16, 0x53, 0x09, 0xa6,
+	0x53, 0xf5, 0x3b, 0xb0, 0x90, 0x65, 0x28, 0x68, 0x7d, 0x5d, 0x2e, 0xfb, 0x82, 0xc4, 0xab, 0xd2,
+	0x3f, 0xaa, 0xfb, 0x4d, 0x5e, 0x3b, 0xb5, 0x59, 0xbe, 0x3b, 0xcd, 0x69, 0x18, 0xe8, 0xd2, 0xa0,
+	0xef, 0xc0, 0x5c, 0x7a, 0x58, 0x01, 0xfe, 0x82, 0xa4, 0x89, 0xbc, 0xd8, 0x43, 0x51, 0x7c, 0x04,
+	0x2b, 0x37, 0x5b, 0xb6, 0x49, 0x89, 0xd2, 0xf0, 0x6d, 0x8f, 0x92, 0xfd, 0x66, 0xe0, 0xc0, 0xcb,
+	0xb9, 0xa2, 0x3f, 0x83, 0x44, 0x2e, 0xc3, 0x42, 0xa8, 0xee, 0x83, 0x94, 0x41, 0x5f, 0x86, 0xc5,
+	0xcc, 0x28, 0x21, 0x58, 0xbd, 0x0e, 0x27, 0xdf, 0x37, 0x1b, 0x0d, 0x42, 0x8b, 0x5d, 0x86, 0x3e,
+	0x34, 0x25, 0xf4, 0x3e, 0x98, 0xd4, 0xfb, 0x3c, 0xcc, 0x32, 0x19, 0x2b, 0x4e, 0xeb, 0xa8, 0x7d,
+	0x27, 0x7c, 0x17, 0xaa, 0xcd, 0x3a, 0x2c, 0x4b, 0x5a, 0x9f, 0x93, 0x68, 0x56, 0x78, 0x47, 0x4a,
+	0xdf, 0x86, 0x53, 0x9b, 0xb6, 0xad, 0x32, 0xda, 0xa7, 0x4a, 0x3e, 0xe6, 0xaf, 0x4d, 0x65, 0x50,
+	0x01, 0xfb, 0xbc, 0x24, 0x8e, 0x7c, 0xa8, 0x43, 0x69, 0xdc, 0x82, 0xa5, 0x50, 0x85, 0x0a, 0xb3,
+	0x83, 0x28, 0x9c, 0xc0, 0x72, 0x8e, 0xd8, 0x07, 0x4e, 0x61, 0x0b, 0xe6, 0x42, 0x5d, 0xee, 0x9f,
+	0x7a, 0xf6, 0xda, 0xcc, 0x88, 0x21, 0x94, 0xad, 0x41, 0xa9, 0xdb, 0xa0, 0xbf, 0xd3, 0xe2, 0x73,
+	0x51, 0x24, 0xb2, 0x2f, 0x60, 0xac, 0xcf, 0x9e, 0xc8, 0xcf, 0x84, 0xc3, 0x5e, 0xb8, 0x24, 0x52,
+	0xbc, 0x7a, 0xe0, 0x36, 0x3e, 0x3c, 0xa2, 0x1a, 0xc5, 0xd5, 0x97, 0xa2, 0x6b, 0x9e, 0xf5, 0x4d,
+	0xa9, 0x9f, 0x81, 0x17, 0x37, 0x7d, 0xab, 0xee, 0xb4, 0x49, 0x81, 0xd9, 0xa4, 0x04, 0x2f, 0x25,
+	0x9d, 0x44, 0xb8, 0xb3, 0x70, 0xf2, 0xa6, 0x6b, 0x16, 0x0e, 0xa8, 0x41, 0xa9, 0xd7, 0x2d, 0x0c,
+	0xb9, 0xf6, 0xc3, 0x18, 0xe0, 0xcd, 0x6e, 0xee, 0xdb, 0xc4, 0x6f, 0x3b, 0x16, 0xc1, 0x4d, 0x78,
+	0x2e, 0x3e, 0x0b, 0xe2, 0x19, 0x89, 0xa0, 0x3e, 0x63, 0xa9, 0x76, 0x2a, 0xc5, 0x42, 0xc0, 0x2f,
+	0x7d, 0xf9, 0xf7, 0x7f, 0x0f, 0x07, 0x30, 0x3e, 0xc6, 0x07, 0xde, 0x76, 0x85, 0xcd, 0xd6, 0x61,
+	0x78, 0x1f, 0xa0, 0x5b, 0x51, 0x3c, 0x25, 0x85, 0xea, 0x19, 0xec, 0xb4, 0x69, 0xe5, 0xbe, 0x38,
+	0x68, 0x96, 0x1f, 0x34, 0x89, 0xc7, 0x93, 0x07, 0x19, 0xf7, 0x23, 0x52, 0x1e, 0xe0, 0xef, 0xe5,
+	0x79, 0xb7, 0x33, 0x84, 0xe0, 0x25, 0x55, 0x26, 0xc9, 0x11, 0x47, 0x5b, 0xce, 0x61, 0x29, 0x20,
+	0xad, 0x70, 0x48, 0x73, 0x58, 0x4f, 0x81, 0x64, 0xf0, 0x79, 0x2e, 0xc0, 0x0f, 0x11, 0x1c, 0xef,
+	0x69, 0xf2, 0xb1, 0xdc, 0x67, 0xa9, 0xc6, 0x0a, 0x6d, 0x21, 0xcb, 0x4c, 0x00, 0x32, 0x38, 0xa0,
+	0x65, 0x7d, 0x2e, 0x0d, 0x90, 0x25, 0xda, 0xf4, 0x0b, 0x68, 0x05, 0x3f, 0x42, 0xd2, 0xff, 0x23,
+	0xa2, 0x0e, 0x1e, 0x2f, 0xaa, 0x48, 0x48, 0x8c, 0x13, 0xda, 0x52, 0xb6, 0xa1, 0xc0, 0x76, 0x9a,
+	0x63, 0x5b, 0xc0, 0xb9, 0xb0, 0xe1, 0xc7, 0x08, 0x26, 0x53, 0x1b, 0x6b, 0x5c, 0xe9, 0x39, 0x39,
+	0xab, 0x59, 0xd7, 0xd6, 0x8a, 0xb8, 0xa8, 0x60, 0x07, 0xdc, 0x65, 0x95, 0x7d, 0x87, 0x1b, 0x3b,
+	0x91, 0xd3, 0xea, 0x9d, 0x10, 0xd4, 0xcf, 0x08, 0xc6, 0x53, 0xba, 0x6d, 0x6c, 0x24, 0x0b, 0x99,
+	0xd1, 0x32, 0x6b, 0xaf, 0xe4, 0x77, 0x50, 0x69, 0x20, 0x0d, 0x30, 0xd3, 0xc0, 0xef, 0x08, 0xa6,
+	0xd2, 0x5f, 0x7d, 0x58, 0x26, 0x2e, 0x57, 0xb3, 0xaf, 0x9d, 0x29, 0xe4, 0x23, 0xc0, 0xaf, 0x73,
+	0xf0, 0xe5, 0x95, 0xd3, 0x79, 0xc0, 0x1b, 0xf7, 0xf9, 0xdf, 0x07, 0xf8, 0x17, 0x04, 0x53, 0xe9,
+	0xfd, 0x38, 0xee, 0x2d, 0x7d, 0x66, 0x97, 0x9f, 0xc8, 0x20, 0x5f, 0xc3, 0xdf, 0xab, 0x97, 0x1d,
+	0xe1, 0x13, 0x83, 0x6f, 0x75, 0x60, 0x3d, 0x46, 0x30, 0x91, 0xd6, 0x8a, 0xe3, 0x9e, 0xfa, 0x67,
+	0x75, 0xa1, 0x5a, 0xa5, 0x80, 0x87, 0x4a, 0x32, 0x69, 0x98, 0x99, 0x64, 0xfe, 0x41, 0x30, 0x9b,
+	0xa3, 0xff, 0xc6, 0xe7, 0x24, 0x2c, 0xf9, 0xe7, 0x01, 0xed, 0x7c, 0x71, 0x47, 0x91, 0xcb, 0x1b,
+	0x3c, 0x97, 0x0d, 0x7d, 0x3d, 0x4f, 0x2e, 0xf1, 0x57, 0x0f, 0xeb, 0xba, 0x58, 0x6e, 0x7f, 0x20,
+	0x98, 0xce, 0x68, 0xd5, 0x71, 0x3f, 0x6d, 0x67, 0x16, 0x66, 0xbd, 0x98, 0x93, 0xc8, 0xe7, 0x1c,
+	0xcf, 0xa7, 0xb2, 0x62, 0x14, 0xcc, 0x07, 0xff, 0x84, 0xc2, 0xff, 0xc7, 0xa9, 0xda, 0xf6, 0x84,
+	0xb4, 0x72, 0x0c, 0x02, 0x5a, 0xa5, 0x80, 0x87, 0xea, 0x2b, 0xf2, 0x1e, 0xf7, 0xe8, 0x7b, 0x19,
+	0x7e, 0x44, 0xa0, 0xa9, 0xfb, 0x75, 0x5c, 0x4e, 0x0a, 0x3b, 0xbd, 0x65, 0xd5, 0x8c, 0xdc, 0xf6,
+	0x02, 0xeb, 0x2a, 0xc7, 0xba, 0xa8, 0xe7, 0xc0, 0xca, 0x84, 0xf2, 0x17, 0x82, 0x53, 0x99, 0x2d,
+	0x3a, 0x3e, 0xdb, 0x47, 0xc9, 0xd9, 0xe3, 0x82, 0xf6, 0x6a, 0x51, 0x37, 0x91, 0xc3, 0x45, 0x9e,
+	0xc3, 0x39, 0x7d, 0x2d, 0x3b, 0x87, 0x7e, 0xe2, 0xff, 0x0d, 0xc1, 0x64, 0x6a, 0x2f, 0x9f, 0xf8,
+	0xda, 0xcd, 0x33, 0x3b, 0x68, 0x6b, 0x45, 0x5c, 0xa2, 0xae, 0x98, 0xe7, 0x61, 0xac, 0xac, 0x16,
+	0xca, 0x03, 0x7f, 0x85, 0xe2, 0x3f, 0x1a, 0x88, 0x31, 0x22, 0xd1, 0x65, 0xa9, 0x46, 0x90, 0x44,
+	0x97, 0xa5, 0x9c, 0x46, 0xf4, 0x69, 0x8e, 0x6d, 0x0c, 0x9f, 0x4c, 0x74, 0x32, 0xab, 0x62, 0x96,
+	0xc0, 0xdf, 0x20, 0x18, 0x95, 0xbb, 0x7d, 0xac, 0xcb, 0x62, 0xec, 0xd7, 0xee, 0x6b, 0xb3, 0xa9,
+	0x36, 0x2a, 0x91, 0x8a, 0xc3, 0xe3, 0xd5, 0x14, 0x63, 0x01, 0x2b, 0xe8, 0xb7, 0x08, 0x8e, 0x25,
+	0xe7, 0x04, 0x2c, 0x0f, 0x88, 0x8a, 0xe9, 0x43, 0x9b, 0xcf, 0xb0, 0xca, 0xe8, 0x39, 0xe3, 0x80,
+	0x76, 0xdd, 0x2e, 0xa4, 0xad, 0xad, 0x3f, 0x9f, 0x4e, 0xa1, 0x27, 0x4f, 0xa7, 0xd0, 0xbf, 0x4f,
+	0xa7, 0xd0, 0xad, 0xf5, 0xec, 0x1f, 0xde, 0xac, 0x86, 0x43, 0x5c, 0x1a, 0xff, 0xf5, 0x6d, 0xe7,
+	0x10, 0xff, 0x35, 0xed, 0xcc, 0xff, 0x01, 0x00, 0x00, 0xff, 0xff, 0x6a, 0xa9, 0xa7, 0xd6, 0x2e,
+	0x1c, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -2131,6 +2466,10 @@ type ApplicationServiceClient interface {
 	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
 	// ListProjectEventLogs returns event logs for a given contract.
 	ListProjectEventLogs(ctx context.Context, in *ListProjectEventLogsRequest, opts ...grpc.CallOption) (*ListProjectEventLogsResponse, error)
+	// AddProjectComment creates a project comment.
+	AddProjectComment(ctx context.Context, in *AddProjectCommentRequest, opts ...grpc.CallOption) (*AddProjectCommentResponse, error)
+	// ListProjectComments returns comments for a given contract.
+	ListProjectComments(ctx context.Context, in *ListProjectCommentsRequest, opts ...grpc.CallOption) (*ListProjectCommentsResponse, error)
 	// ListSourceCodeBlacklistFields returns all globally configured source-code blacklist fields.
 	ListSourceCodeBlacklistFields(ctx context.Context, in *ListSourceCodeBlacklistFieldsRequest, opts ...grpc.CallOption) (*ListSourceCodeBlacklistFieldsResponse, error)
 	// AddSourceCodeBlacklistField adds a globally configured source-code blacklist field.
@@ -2190,6 +2529,24 @@ func (c *applicationServiceClient) GetProject(ctx context.Context, in *GetProjec
 func (c *applicationServiceClient) ListProjectEventLogs(ctx context.Context, in *ListProjectEventLogsRequest, opts ...grpc.CallOption) (*ListProjectEventLogsResponse, error) {
 	out := new(ListProjectEventLogsResponse)
 	err := c.cc.Invoke(ctx, "/application.ApplicationService/ListProjectEventLogs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) AddProjectComment(ctx context.Context, in *AddProjectCommentRequest, opts ...grpc.CallOption) (*AddProjectCommentResponse, error) {
+	out := new(AddProjectCommentResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/AddProjectComment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) ListProjectComments(ctx context.Context, in *ListProjectCommentsRequest, opts ...grpc.CallOption) (*ListProjectCommentsResponse, error) {
+	out := new(ListProjectCommentsResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/ListProjectComments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2330,6 +2687,10 @@ type ApplicationServiceServer interface {
 	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
 	// ListProjectEventLogs returns event logs for a given contract.
 	ListProjectEventLogs(context.Context, *ListProjectEventLogsRequest) (*ListProjectEventLogsResponse, error)
+	// AddProjectComment creates a project comment.
+	AddProjectComment(context.Context, *AddProjectCommentRequest) (*AddProjectCommentResponse, error)
+	// ListProjectComments returns comments for a given contract.
+	ListProjectComments(context.Context, *ListProjectCommentsRequest) (*ListProjectCommentsResponse, error)
 	// ListSourceCodeBlacklistFields returns all globally configured source-code blacklist fields.
 	ListSourceCodeBlacklistFields(context.Context, *ListSourceCodeBlacklistFieldsRequest) (*ListSourceCodeBlacklistFieldsResponse, error)
 	// AddSourceCodeBlacklistField adds a globally configured source-code blacklist field.
@@ -2372,6 +2733,12 @@ func (*UnimplementedApplicationServiceServer) GetProject(ctx context.Context, re
 }
 func (*UnimplementedApplicationServiceServer) ListProjectEventLogs(ctx context.Context, req *ListProjectEventLogsRequest) (*ListProjectEventLogsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProjectEventLogs not implemented")
+}
+func (*UnimplementedApplicationServiceServer) AddProjectComment(ctx context.Context, req *AddProjectCommentRequest) (*AddProjectCommentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddProjectComment not implemented")
+}
+func (*UnimplementedApplicationServiceServer) ListProjectComments(ctx context.Context, req *ListProjectCommentsRequest) (*ListProjectCommentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProjectComments not implemented")
 }
 func (*UnimplementedApplicationServiceServer) ListSourceCodeBlacklistFields(ctx context.Context, req *ListSourceCodeBlacklistFieldsRequest) (*ListSourceCodeBlacklistFieldsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSourceCodeBlacklistFields not implemented")
@@ -2470,6 +2837,42 @@ func _ApplicationService_ListProjectEventLogs_Handler(srv interface{}, ctx conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApplicationServiceServer).ListProjectEventLogs(ctx, req.(*ListProjectEventLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_AddProjectComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddProjectCommentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).AddProjectComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/AddProjectComment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).AddProjectComment(ctx, req.(*AddProjectCommentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_ListProjectComments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProjectCommentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).ListProjectComments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/ListProjectComments",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).ListProjectComments(ctx, req.(*ListProjectCommentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2741,6 +3144,14 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListProjectEventLogs",
 			Handler:    _ApplicationService_ListProjectEventLogs_Handler,
+		},
+		{
+			MethodName: "AddProjectComment",
+			Handler:    _ApplicationService_AddProjectComment_Handler,
+		},
+		{
+			MethodName: "ListProjectComments",
+			Handler:    _ApplicationService_ListProjectComments_Handler,
 		},
 		{
 			MethodName: "ListSourceCodeBlacklistFields",
@@ -3103,6 +3514,246 @@ func (m *ListProjectEventLogsResponse) MarshalToSizedBuffer(dAtA []byte) (int, e
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintApplication(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ProjectComment) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ProjectComment) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ProjectComment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CreatedAt) > 0 {
+		i -= len(m.CreatedAt)
+		copy(dAtA[i:], m.CreatedAt)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.CreatedAt)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Content) > 0 {
+		i -= len(m.Content)
+		copy(dAtA[i:], m.Content)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Content)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Username) > 0 {
+		i -= len(m.Username)
+		copy(dAtA[i:], m.Username)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Username)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Id != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.Id))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AddProjectCommentRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AddProjectCommentRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AddProjectCommentRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Content) > 0 {
+		i -= len(m.Content)
+		copy(dAtA[i:], m.Content)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Content)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AddProjectCommentResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AddProjectCommentResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AddProjectCommentResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListProjectCommentsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListProjectCommentsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListProjectCommentsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Page != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListProjectCommentsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListProjectCommentsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListProjectCommentsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Page != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Total != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x10
 	}
 	if len(m.Items) > 0 {
 		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
@@ -4387,6 +5038,122 @@ func (m *ListProjectEventLogsResponse) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovApplication(uint64(l))
 		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ProjectComment) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Id != 0 {
+		n += 1 + sovApplication(uint64(m.Id))
+	}
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	l = len(m.Username)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	l = len(m.Content)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	l = len(m.CreatedAt)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AddProjectCommentRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	l = len(m.Content)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AddProjectCommentResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListProjectCommentsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.Page != 0 {
+		n += 1 + sovApplication(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovApplication(uint64(m.PageSize))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListProjectCommentsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovApplication(uint64(l))
+		}
+	}
+	if m.Total != 0 {
+		n += 1 + sovApplication(uint64(m.Total))
+	}
+	if m.Page != 0 {
+		n += 1 + sovApplication(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovApplication(uint64(m.PageSize))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -5720,6 +6487,669 @@ func (m *ListProjectEventLogsResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ProjectComment) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ProjectComment: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ProjectComment: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			m.Id = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Id |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Username", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Username = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Content", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Content = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CreatedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AddProjectCommentRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AddProjectCommentRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AddProjectCommentRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Content", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Content = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AddProjectCommentResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AddProjectCommentResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AddProjectCommentResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &ProjectComment{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListProjectCommentsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListProjectCommentsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListProjectCommentsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListProjectCommentsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListProjectCommentsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListProjectCommentsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &ProjectComment{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipApplication(dAtA[iNdEx:])

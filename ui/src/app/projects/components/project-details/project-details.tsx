@@ -4,13 +4,14 @@ import {Text} from 'react-form';
 import {RouteComponentProps} from 'react-router';
 import {Context} from '../../../shared/context';
 import {services} from '../../../shared/services';
-import {PairV2State, ProjectEventLog, ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
+import {PairV2State, ProjectComment, ProjectEventLog, ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
 import {formatUsdtValue} from '../pair-metrics-cell/pair-metrics-cell';
 import {GenesisWalletRankList} from './genesis-wallet-rank-list';
 
 require('./project-details.scss');
 
 const AUTO_REFRESH_INTERVAL_MS = 3000;
+const COMMENT_PAGE_SIZE = 5;
 
 const renderValue = (value: string | number | boolean | undefined) => {
     if (value === undefined || value === '') {
@@ -114,6 +115,12 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const contract = props.match.params.contract;
     const [project, setProject] = React.useState<ProjectView | null>(null);
     const [eventLogs, setEventLogs] = React.useState<ProjectEventLog[]>([]);
+    const [comments, setComments] = React.useState<ProjectComment[]>([]);
+    const [commentPage, setCommentPage] = React.useState(1);
+    const [commentTotal, setCommentTotal] = React.useState(0);
+    const [commentInput, setCommentInput] = React.useState('');
+    const [commentsLoading, setCommentsLoading] = React.useState(false);
+    const [submittingComment, setSubmittingComment] = React.useState(false);
     const [loading, setLoading] = React.useState(true);
     const [changingArchiveState, setChangingArchiveState] = React.useState(false);
     const [isBlacklistChecking, setIsBlacklistChecking] = React.useState(true);
@@ -125,6 +132,8 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const eventRequestRef = React.useRef<{abort?: () => void} | null>(null);
+    const commentsRequestRef = React.useRef<{abort?: () => void} | null>(null);
+    const addCommentRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const blacklistRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const optionsRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const intervalRef = React.useRef<number | undefined>(undefined);
@@ -142,6 +151,14 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         if (eventRequestRef.current?.abort) {
             eventRequestRef.current.abort();
             eventRequestRef.current = null;
+        }
+        if (commentsRequestRef.current?.abort) {
+            commentsRequestRef.current.abort();
+            commentsRequestRef.current = null;
+        }
+        if (addCommentRequestRef.current?.abort) {
+            addCommentRequestRef.current.abort();
+            addCommentRequestRef.current = null;
         }
         if (blacklistRequestRef.current?.abort) {
             blacklistRequestRef.current.abort();
@@ -200,6 +217,38 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         }
     }, [contract]);
 
+    const loadProjectComments = React.useCallback(
+        async (targetPage = 1) => {
+            if (commentsRequestRef.current?.abort) {
+                commentsRequestRef.current.abort();
+                commentsRequestRef.current = null;
+            }
+            if (isMountedRef.current) {
+                setCommentsLoading(true);
+            }
+            try {
+                const req = services.athenaApplication.listProjectComments(contract, targetPage, COMMENT_PAGE_SIZE);
+                commentsRequestRef.current = req;
+                const data = await req;
+                if (isMountedRef.current) {
+                    setComments(data.items || []);
+                    setCommentPage(data.page || targetPage);
+                    setCommentTotal(data.total || 0);
+                }
+            } catch (err) {
+                if (isMountedRef.current) {
+                    setError(err as Error);
+                }
+            } finally {
+                if (isMountedRef.current) {
+                    setCommentsLoading(false);
+                }
+                commentsRequestRef.current = null;
+            }
+        },
+        [contract]
+    );
+
     const loadBlacklistStatus = React.useCallback(async () => {
         if (blacklistRequestRef.current) {
             return;
@@ -254,8 +303,12 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         isMountedRef.current = true;
         setIsBlacklisted(false);
         setIsBlacklistChecking(true);
+        setCommentPage(1);
+        setCommentTotal(0);
+        setCommentInput('');
         loadProject();
         loadProjectEventLogs();
+        loadProjectComments(1);
         loadBlacklistStatus();
         loadProjectOptions();
         intervalRef.current = window.setInterval(() => {
@@ -267,7 +320,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             isMountedRef.current = false;
             cleanupRequests();
         };
-    }, [cleanupRequests, loadBlacklistStatus, loadProject, loadProjectEventLogs, loadProjectOptions]);
+    }, [cleanupRequests, loadBlacklistStatus, loadProject, loadProjectComments, loadProjectEventLogs, loadProjectOptions]);
 
     const breadcrumbs = [{title: 'Projects', path: `/projects${props.location.search || ''}`}, {title: contract}];
     const isArchived = project?.meta?.isArchived ?? false;
@@ -359,6 +412,52 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
     const blacklistButtonText = isBlacklistChecking ? 'Checking...' : addingToBlacklist ? 'Adding...' : isBlacklisted ? 'Already in BIN blacklist' : 'Add to BIN blacklist';
     const blacklistButtonDisabled = isBlacklistChecking || addingToBlacklist || isBlacklisted;
+    const commentTotalPages = Math.max(1, Math.ceil(commentTotal / COMMENT_PAGE_SIZE));
+
+    const handleSubmitComment = React.useCallback(async () => {
+        const content = commentInput.trim();
+        if (!content) {
+            ctx.notifications.show({content: 'Comment content is required', type: NotificationType.Warning});
+            return;
+        }
+        if (submittingComment) {
+            return;
+        }
+        setSubmittingComment(true);
+        try {
+            const req = services.athenaApplication.addProjectComment(contract, content);
+            addCommentRequestRef.current = req;
+            await req;
+            if (isMountedRef.current) {
+                setCommentInput('');
+            }
+            await loadProjectComments(1);
+            if (isMountedRef.current) {
+                setError(null);
+            }
+            ctx.notifications.show({content: 'Comment posted', type: NotificationType.Success});
+        } catch (err) {
+            ctx.notifications.show({
+                content: <ErrorNotification title='Failed to add comment' e={err} />,
+                type: NotificationType.Error
+            });
+        } finally {
+            addCommentRequestRef.current = null;
+            if (isMountedRef.current) {
+                setSubmittingComment(false);
+            }
+        }
+    }, [commentInput, contract, ctx, loadProjectComments, submittingComment]);
+
+    const handleCommentPageChange = React.useCallback(
+        (nextPage: number) => {
+            if (nextPage < 1 || nextPage > commentTotalPages || commentsLoading) {
+                return;
+            }
+            loadProjectComments(nextPage);
+        },
+        [commentTotalPages, commentsLoading, loadProjectComments]
+    );
 
     return (
         <Page title='Project Details' toolbar={{breadcrumbs}}>
@@ -444,6 +543,64 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                     ))}
                                 </div>
                             )}
+                        </div>
+
+                        <div className='white-box project-details__box'>
+                            <div className='project-details__section-title'>Comments</div>
+                            <div className='project-details__comment-form'>
+                                <textarea
+                                    className='project-details__comment-input'
+                                    value={commentInput}
+                                    rows={3}
+                                    maxLength={1000}
+                                    placeholder='Write a comment...'
+                                    onChange={e => setCommentInput(e.currentTarget.value)}
+                                />
+                                <div className='project-details__comment-form-actions'>
+                                    <span className='project-details__comment-counter'>{commentInput.length}/1000</span>
+                                    <button type='button' className='argo-button argo-button--base' disabled={submittingComment} onClick={handleSubmitComment}>
+                                        {submittingComment ? 'Posting...' : 'Post Comment'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {commentsLoading ? (
+                                <div className='project-details__field-value'>Loading comments...</div>
+                            ) : comments.length === 0 ? (
+                                <div className='project-details__field-value'>No comments yet</div>
+                            ) : (
+                                <div className='project-details__comment-list'>
+                                    {comments.map(item => (
+                                        <div key={`${item.id || 0}-${item.createdAt || ''}`} className='project-details__comment-item'>
+                                            <div className='project-details__comment-meta'>
+                                                <span className='project-details__comment-user'>{renderValue(item.username)}</span>
+                                                <span className='project-details__comment-time'>{renderValue(item.createdAt)}</span>
+                                            </div>
+                                            <div className='project-details__comment-content'>{renderValue(item.content)}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className='project-details__comment-pagination'>
+                                <button
+                                    type='button'
+                                    className='argo-button argo-button--base-o'
+                                    disabled={commentsLoading || commentPage <= 1}
+                                    onClick={() => handleCommentPageChange(commentPage - 1)}>
+                                    Prev
+                                </button>
+                                <span>
+                                    Page {commentPage}/{commentTotalPages} • Total {commentTotal}
+                                </span>
+                                <button
+                                    type='button'
+                                    className='argo-button argo-button--base-o'
+                                    disabled={commentsLoading || commentPage >= commentTotalPages}
+                                    onClick={() => handleCommentPageChange(commentPage + 1)}>
+                                    Next
+                                </button>
+                            </div>
                         </div>
 
                         <div className='white-box project-details__box'>
