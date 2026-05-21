@@ -61,6 +61,13 @@ func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.Proje
 	chainState := project.Runtime.ChainState
 	sourceCode := project.Meta.SourceCode
 	creatorResult := project.Runtime.CreatorResult
+	creatorOtherProjectContracts := make([]string, 0, len(project.Runtime.CreatorOtherProjectContracts))
+	for _, contract := range project.Runtime.CreatorOtherProjectContracts {
+		if contract == (common.Address{}) {
+			continue
+		}
+		creatorOtherProjectContracts = append(creatorOtherProjectContracts, contract.Hex())
+	}
 	sourceCodeBlacklist := project.Runtime.SourceCodeBlacklist
 	var genesisWallets []v1alpha1.GenesisWalletState
 	var genesisWalletAssetStates []v1alpha1.GenesisWalletAssetState
@@ -112,8 +119,9 @@ func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.Proje
 				HasBlacklistFields: sourceCodeBlacklist.HasBlacklistFields,
 				BlacklistFields:    sourceCodeBlacklist.BlacklistFields,
 			},
-			IsArchived:     project.Meta.IsArchived,
-			GenesisWallets: genesisWallets,
+			IsArchived:                   project.Meta.IsArchived,
+			GenesisWallets:               genesisWallets,
+			CreatorOtherProjectContracts: creatorOtherProjectContracts,
 		},
 		ChainState: v1alpha1.ProjectChainState{
 			Token: v1alpha1.TokenState{

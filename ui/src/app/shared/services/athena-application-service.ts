@@ -17,6 +17,7 @@ export interface ProjectMeta {
     sourceCodeBlacklist?: SourceCodeBlacklistState;
     isArchived?: boolean;
     genesisWallets?: GenesisWalletState[];
+    creatorOtherProjectContracts?: string[];
 }
 
 export interface GenesisWalletState {

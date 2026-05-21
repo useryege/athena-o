@@ -515,6 +515,16 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                         </span>
                                     </span>
                                 </div>
+                                <div className='project-details__field' style={{gridColumn: '1 / -1'}}>
+                                    <span className='project-details__field-label'>Creator Other Projects</span>
+                                    <div className='project-details__field-value'>
+                                        {project.meta?.creatorOtherProjectContracts && project.meta.creatorOtherProjectContracts.length > 0 ? (
+                                            project.meta.creatorOtherProjectContracts.map((item, index) => <div key={`${item}-${index}`}>{item}</div>)
+                                        ) : (
+                                            '-'
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
