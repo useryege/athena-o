@@ -3,8 +3,8 @@ package application
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/redis/go-redis/v9"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
+	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/server/version"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
@@ -25,7 +25,7 @@ type ApplicationServerOpts struct {
 	EtherscanAPIKey     string
 	Store               appstore.Store
 	LiquidityLocker     []common.Address
-	RedisClient         *redis.Client
+	RedisClient         redisport.Client
 
 	// Fetch from Athena contract
 	V2FactoryContract common.Address

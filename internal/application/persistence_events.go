@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/redis/go-redis/v9"
+	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -164,17 +164,17 @@ type projectGenesisWalletWriter interface {
 }
 
 type PersistenceEventConsumer interface {
-	Start(ctx context.Context) error
+	Start(ctx context.Context, writer PersistenceEventWriter) error
 }
 
 type RedisPersistenceEventBus struct {
-	client   *redis.Client
+	client   redisport.StreamClient
 	stream   string
 	group    string
 	consumer string
 }
 
-func NewRedisPersistenceEventBus(client *redis.Client) *RedisPersistenceEventBus {
+func NewRedisPersistenceEventBus(client redisport.StreamClient) *RedisPersistenceEventBus {
 	return &RedisPersistenceEventBus{
 		client:   client,
 		stream:   persistenceStreamKey,
@@ -200,10 +200,10 @@ func (b *RedisPersistenceEventBus) Publish(ctx context.Context, event Persistenc
 	if err != nil {
 		return fmt.Errorf("marshal persistence event: %w", err)
 	}
-	if err := b.client.XAdd(ctx, &redis.XAddArgs{
+	if err := b.client.XAdd(ctx, redisport.XAddInput{
 		Stream: b.stream,
 		Values: map[string]any{"event": string(encoded)},
-	}).Err(); err != nil {
+	}); err != nil {
 		return fmt.Errorf("publish persistence event: %w", err)
 	}
 	return nil
@@ -470,15 +470,15 @@ func (b *RedisPersistenceEventBus) Start(ctx context.Context, writer Persistence
 }
 
 func (b *RedisPersistenceEventBus) consume(ctx context.Context, id string, writer PersistenceEventWriter, block time.Duration) (int, error) {
-	streams, err := b.client.XReadGroup(ctx, &redis.XReadGroupArgs{
+	streams, err := b.client.XReadGroup(ctx, redisport.XReadGroupInput{
 		Group:    b.group,
 		Consumer: b.consumer,
 		Streams:  []string{b.stream, id},
 		Count:    persistenceReadCount,
 		Block:    block,
-	}).Result()
+	})
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if errors.Is(err, redisport.ErrNotFound) {
 			return 0, nil
 		}
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
@@ -505,7 +505,7 @@ func (b *RedisPersistenceEventBus) consume(ctx context.Context, id string, write
 	return processed, nil
 }
 
-func (b *RedisPersistenceEventBus) handleMessage(ctx context.Context, writer PersistenceEventWriter, message redis.XMessage) error {
+func (b *RedisPersistenceEventBus) handleMessage(ctx context.Context, writer PersistenceEventWriter, message redisport.XMessage) error {
 	value, ok := message.Values["event"]
 	if !ok {
 		return fmt.Errorf("persistence event %s missing event payload", message.ID)
@@ -521,7 +521,7 @@ func (b *RedisPersistenceEventBus) handleMessage(ctx context.Context, writer Per
 	if err := b.applyEvent(ctx, writer, event); err != nil {
 		return err
 	}
-	if err := b.client.XAck(ctx, b.stream, b.group, message.ID).Err(); err != nil {
+	if err := b.client.XAck(ctx, b.stream, b.group, message.ID); err != nil {
 		return fmt.Errorf("ack persistence event %s: %w", message.ID, err)
 	}
 	return nil
@@ -756,7 +756,7 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 }
 
 func (b *RedisPersistenceEventBus) ensureConsumerGroup(ctx context.Context) error {
-	err := b.client.XGroupCreateMkStream(ctx, b.stream, b.group, "0").Err()
+	err := b.client.XGroupCreateMkStream(ctx, b.stream, b.group, "0")
 	if err == nil {
 		return nil
 	}

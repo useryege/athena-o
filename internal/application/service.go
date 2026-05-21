@@ -11,11 +11,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/evm"
+	"github.com/useryege/athena/internal/application/redisport"
 	"github.com/useryege/athena/internal/application/sourcecode"
 	appstore "github.com/useryege/athena/internal/application/store"
 	v1 "github.com/useryege/athena/internal/pkg/proto/v1"
@@ -79,7 +79,7 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, store appstore.Store, liquidityLocker []common.Address, redisClient *redis.Client) *Service {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client) *Service {
 	persistenceBus := NewRedisPersistenceEventBus(redisClient)
 	sourceAnalyzer := sourcecode.NewAnalyzer()
 	var bytecodeStore appstore.BytecodeBlacklistContractStore

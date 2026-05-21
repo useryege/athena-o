@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/useryege/athena/internal/application/redisport"
 	"github.com/useryege/athena/internal/application/store"
 )
 
@@ -20,10 +20,10 @@ var _ BytecodeBlacklistRemoteCache = &RedisBytecodeBlacklistCache{}
 var _ WalletBlacklistRemoteCache = &RedisWalletBlacklistCache{}
 
 type RedisBlacklistCache struct {
-	client *redis.Client
+	client redisport.KVReaderWriter
 }
 
-func NewSourceCodeBlacklistRedisCache(client *redis.Client) SourceCodeBlacklistRemoteCache {
+func NewSourceCodeBlacklistRedisCache(client redisport.KVReaderWriter) SourceCodeBlacklistRemoteCache {
 	if client == nil {
 		return NoopRedisBlacklistCache{}
 	}
@@ -35,8 +35,8 @@ func (c *RedisBlacklistCache) Get(ctx context.Context) ([]string, bool, error) {
 		return nil, false, nil
 	}
 
-	value, err := c.client.Get(ctx, SourceCodeBlacklistRedisKey).Result()
-	if errors.Is(err, redis.Nil) {
+	value, err := c.client.Get(ctx, SourceCodeBlacklistRedisKey)
+	if errors.Is(err, redisport.ErrNotFound) {
 		return nil, false, nil
 	}
 	if err != nil {
@@ -59,14 +59,14 @@ func (c *RedisBlacklistCache) Set(ctx context.Context, fields []string) error {
 	if err != nil {
 		return err
 	}
-	return c.client.Set(ctx, SourceCodeBlacklistRedisKey, payload, 0).Err()
+	return c.client.Set(ctx, SourceCodeBlacklistRedisKey, payload, 0)
 }
 
 func (c *RedisBlacklistCache) Del(ctx context.Context) error {
 	if c == nil || c.client == nil {
 		return nil
 	}
-	return c.client.Del(ctx, SourceCodeBlacklistRedisKey).Err()
+	return c.client.Del(ctx, SourceCodeBlacklistRedisKey)
 }
 
 type NoopRedisBlacklistCache struct{}
@@ -84,10 +84,10 @@ func (NoopRedisBlacklistCache) Del(context.Context) error {
 }
 
 type RedisBytecodeBlacklistCache struct {
-	client *redis.Client
+	client redisport.KVReaderWriter
 }
 
-func NewBytecodeBlacklistRedisCache(client *redis.Client) BytecodeBlacklistRemoteCache {
+func NewBytecodeBlacklistRedisCache(client redisport.KVReaderWriter) BytecodeBlacklistRemoteCache {
 	if client == nil {
 		return NoopRedisBytecodeBlacklistCache{}
 	}
@@ -98,8 +98,8 @@ func (c *RedisBytecodeBlacklistCache) Get(ctx context.Context) ([]store.Bytecode
 	if c == nil || c.client == nil {
 		return nil, false, nil
 	}
-	value, err := c.client.Get(ctx, BytecodeBlacklistRedisKey).Result()
-	if errors.Is(err, redis.Nil) {
+	value, err := c.client.Get(ctx, BytecodeBlacklistRedisKey)
+	if errors.Is(err, redisport.ErrNotFound) {
 		return nil, false, nil
 	}
 	if err != nil {
@@ -120,14 +120,14 @@ func (c *RedisBytecodeBlacklistCache) Set(ctx context.Context, items []store.Byt
 	if err != nil {
 		return err
 	}
-	return c.client.Set(ctx, BytecodeBlacklistRedisKey, payload, 0).Err()
+	return c.client.Set(ctx, BytecodeBlacklistRedisKey, payload, 0)
 }
 
 func (c *RedisBytecodeBlacklistCache) Del(ctx context.Context) error {
 	if c == nil || c.client == nil {
 		return nil
 	}
-	return c.client.Del(ctx, BytecodeBlacklistRedisKey).Err()
+	return c.client.Del(ctx, BytecodeBlacklistRedisKey)
 }
 
 type NoopRedisBytecodeBlacklistCache struct{}
@@ -145,10 +145,10 @@ func (NoopRedisBytecodeBlacklistCache) Del(context.Context) error {
 }
 
 type RedisWalletBlacklistCache struct {
-	client *redis.Client
+	client redisport.KVReaderWriter
 }
 
-func NewWalletBlacklistRedisCache(client *redis.Client) WalletBlacklistRemoteCache {
+func NewWalletBlacklistRedisCache(client redisport.KVReaderWriter) WalletBlacklistRemoteCache {
 	if client == nil {
 		return NoopRedisWalletBlacklistCache{}
 	}
@@ -159,8 +159,8 @@ func (c *RedisWalletBlacklistCache) Get(ctx context.Context) ([]store.WalletBlac
 	if c == nil || c.client == nil {
 		return nil, false, nil
 	}
-	value, err := c.client.Get(ctx, WalletBlacklistRedisKey).Result()
-	if errors.Is(err, redis.Nil) {
+	value, err := c.client.Get(ctx, WalletBlacklistRedisKey)
+	if errors.Is(err, redisport.ErrNotFound) {
 		return nil, false, nil
 	}
 	if err != nil {
@@ -181,14 +181,14 @@ func (c *RedisWalletBlacklistCache) Set(ctx context.Context, items []store.Walle
 	if err != nil {
 		return err
 	}
-	return c.client.Set(ctx, WalletBlacklistRedisKey, payload, 0).Err()
+	return c.client.Set(ctx, WalletBlacklistRedisKey, payload, 0)
 }
 
 func (c *RedisWalletBlacklistCache) Del(ctx context.Context) error {
 	if c == nil || c.client == nil {
 		return nil
 	}
-	return c.client.Del(ctx, WalletBlacklistRedisKey).Err()
+	return c.client.Del(ctx, WalletBlacklistRedisKey)
 }
 
 type NoopRedisWalletBlacklistCache struct{}

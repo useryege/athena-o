@@ -27,6 +27,7 @@ import (
 	"github.com/useryege/athena/internal/application"
 	"github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/application/metrics"
+	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
@@ -145,7 +146,7 @@ func NewCommand() *cobra.Command {
 				EtherscanAPIKey:     etherscanAPIKey,
 				Store:               store,
 				LiquidityLocker:     liquidityLockerAddresses,
-				RedisClient:         redisClient,
+				RedisClient:         redisport.NewGoRedisAdapter(redisClient),
 
 				// Fetch from Athena contract
 				V2FactoryContract: v2FactoryContractAddress,

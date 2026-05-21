@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/redis/go-redis/v9"
+	"github.com/useryege/athena/internal/application/redisport"
 )
 
 const (
@@ -50,10 +50,18 @@ type ProjectSnapshotCache interface {
 }
 
 type RedisProjectSnapshotCache struct {
-	client *redis.Client
+	client projectSnapshotRedisClient
 
 	lockMu        sync.Mutex
 	contractLocks map[string]*sync.Mutex
+}
+
+type projectSnapshotRedisClient interface {
+	redisport.KVReaderWriter
+	redisport.HashReader
+	redisport.SortedSetReader
+	redisport.Scanner
+	redisport.TxRunner
 }
 
 type projectMetaBase struct {
@@ -70,7 +78,7 @@ type projectArchiveState struct {
 	ArchivedAt time.Time `json:"archived_at"`
 }
 
-func NewProjectSnapshotCache(client *redis.Client) ProjectSnapshotCache {
+func NewProjectSnapshotCache(client projectSnapshotRedisClient) ProjectSnapshotCache {
 	return &RedisProjectSnapshotCache{
 		client:        client,
 		contractLocks: map[string]*sync.Mutex{},
@@ -93,8 +101,7 @@ func (c *RedisProjectSnapshotCache) ReplaceAll(ctx context.Context, projects []*
 	pipe := c.client.TxPipeline()
 	pipe.Del(ctx, deleteKeys...)
 	if len(projects) == 0 {
-		_, err := pipe.Exec(ctx)
-		return err
+		return pipe.Exec(ctx)
 	}
 
 	var maxBlock uint64
@@ -114,8 +121,7 @@ func (c *RedisProjectSnapshotCache) ReplaceAll(ctx context.Context, projects []*
 	if hasMaxBlock {
 		pipe.Set(ctx, projectMaxBlockKey, strconv.FormatUint(maxBlock, 10), 0)
 	}
-	_, err = pipe.Exec(ctx)
-	return err
+	return pipe.Exec(ctx)
 }
 
 func (c *RedisProjectSnapshotCache) SetProject(ctx context.Context, project *Project) error {
@@ -189,8 +195,8 @@ func (c *RedisProjectSnapshotCache) GetMaxProjectBlockNumber(ctx context.Context
 	if c == nil || c.client == nil {
 		return 0, false, nil
 	}
-	value, err := c.client.Get(ctx, projectMaxBlockKey).Result()
-	if errors.Is(err, redis.Nil) {
+	value, err := c.client.Get(ctx, projectMaxBlockKey)
+	if errors.Is(err, redisport.ErrNotFound) {
 		return 0, false, nil
 	}
 	if err != nil {
@@ -207,7 +213,7 @@ func (c *RedisProjectSnapshotCache) ListActiveProjects(ctx context.Context) ([]*
 	if c == nil || c.client == nil {
 		return nil, nil
 	}
-	contracts, err := c.client.ZRange(ctx, projectIndexActive, 0, -1).Result()
+	contracts, err := c.client.ZRange(ctx, projectIndexActive, 0, -1)
 	if err != nil {
 		return nil, err
 	}
@@ -229,13 +235,13 @@ func (c *RedisProjectSnapshotCache) ListArchivedProjects(ctx context.Context, pa
 		return nil, 0, 0, 0, nil
 	}
 	page, pageSize = normalizeCachePage(page, pageSize)
-	total, err := c.client.ZCard(ctx, projectIndexArchived).Result()
+	total, err := c.client.ZCard(ctx, projectIndexArchived)
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
 	start := int64(page-1) * int64(pageSize)
 	stop := start + int64(pageSize) - 1
-	contracts, err := c.client.ZRevRange(ctx, projectIndexArchived, start, stop).Result()
+	contracts, err := c.client.ZRevRange(ctx, projectIndexArchived, start, stop)
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
@@ -250,7 +256,7 @@ func (c *RedisProjectSnapshotCache) listProjectDataV2Keys(ctx context.Context) (
 	keys := make([]string, 0)
 	var cursor uint64
 	for {
-		batch, nextCursor, err := c.client.Scan(ctx, cursor, projectDataV2KeyPrefix+"*", 512).Result()
+		batch, nextCursor, err := c.client.Scan(ctx, cursor, projectDataV2KeyPrefix+"*", 512)
 		if err != nil {
 			return nil, err
 		}
@@ -288,8 +294,7 @@ func (c *RedisProjectSnapshotCache) setProjectUnlocked(ctx context.Context, proj
 	if err := c.writeProjectAllToPipeline(ctx, pipe, project); err != nil {
 		return err
 	}
-	_, err := pipe.Exec(ctx)
-	return err
+	return pipe.Exec(ctx)
 }
 
 func (c *RedisProjectSnapshotCache) updateProjectUnlocked(ctx context.Context, current *Project, next *Project) error {
@@ -303,11 +308,10 @@ func (c *RedisProjectSnapshotCache) updateProjectUnlocked(ctx context.Context, c
 		pipe.HSet(ctx, projectDataV2Key(next.Meta.Contract), fields)
 	}
 	c.applyProjectIndexes(ctx, pipe, next)
-	_, err = pipe.Exec(ctx)
-	return err
+	return pipe.Exec(ctx)
 }
 
-func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Context, pipe redis.Pipeliner, project *Project) error {
+func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Context, pipe redisport.Pipeline, project *Project) error {
 	metaBasePayload, err := mustMarshalJSON(projectMetaBase{
 		BlockTime:   project.Meta.BlockTime,
 		BlockNumber: project.Meta.BlockNumber,
@@ -344,7 +348,7 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 	}
 
 	projectKey := projectDataV2Key(project.Meta.Contract)
-	pipe.HSet(ctx, projectKey, map[string]interface{}{
+	pipe.HSet(ctx, projectKey, map[string]any{
 		projectFieldSchemaVersion:       projectSchemaVersion,
 		projectFieldMetaBase:            metaBasePayload,
 		projectFieldArchiveState:        archivePayload,
@@ -359,8 +363,8 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 	return nil
 }
 
-func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *Project) (map[string]interface{}, error) {
-	fields := map[string]interface{}{
+func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *Project) (map[string]any, error) {
+	fields := map[string]any{
 		projectFieldSchemaVersion: projectSchemaVersion,
 	}
 
@@ -438,12 +442,11 @@ func (c *RedisProjectSnapshotCache) deleteProjectUnlocked(ctx context.Context, c
 	pipe.HDel(ctx, projectDataHashKey, contractKey)
 	pipe.ZRem(ctx, projectIndexActive, contractKey)
 	pipe.ZRem(ctx, projectIndexArchived, contractKey)
-	_, err := pipe.Exec(ctx)
-	return err
+	return pipe.Exec(ctx)
 }
 
 func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, contract common.Address) (*Project, bool, error) {
-	values, err := c.client.HGetAll(ctx, projectDataV2Key(contract)).Result()
+	values, err := c.client.HGetAll(ctx, projectDataV2Key(contract))
 	if err != nil {
 		return nil, false, err
 	}
@@ -502,15 +505,15 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 	return project, true, nil
 }
 
-func (c *RedisProjectSnapshotCache) applyProjectIndexes(ctx context.Context, pipe redis.Pipeliner, project *Project) {
+func (c *RedisProjectSnapshotCache) applyProjectIndexes(ctx context.Context, pipe redisport.Pipeline, project *Project) {
 	contractKey := project.Meta.Contract.Hex()
 	if project.Meta.IsArchived {
 		pipe.ZRem(ctx, projectIndexActive, contractKey)
-		pipe.ZAdd(ctx, projectIndexArchived, redis.Z{Score: archivedScore(project.Meta.ArchivedAt), Member: contractKey})
+		pipe.ZAdd(ctx, projectIndexArchived, redisport.ZMember{Score: archivedScore(project.Meta.ArchivedAt), Member: contractKey})
 		return
 	}
 	pipe.ZRem(ctx, projectIndexArchived, contractKey)
-	pipe.ZAdd(ctx, projectIndexActive, redis.Z{Score: activeScore(project), Member: contractKey})
+	pipe.ZAdd(ctx, projectIndexActive, redisport.ZMember{Score: activeScore(project), Member: contractKey})
 }
 
 func (c *RedisProjectSnapshotCache) getProjectsByContracts(ctx context.Context, contracts []string) ([]*Project, error) {
