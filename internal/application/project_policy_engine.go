@@ -23,6 +23,7 @@ const (
 type ProjectPolicyFacts struct {
 	SourceCodeBlacklistFields []string
 	BytecodeBlacklist         map[common.Hash]struct{}
+	WalletBlacklist           map[common.Address]struct{}
 }
 
 type ProjectPolicyRule interface {
@@ -42,6 +43,7 @@ type projectPolicyEngineImpl struct {
 	sourceAnalyzer    sourcecode.Analyzer
 	sourceBlacklist   sourceCodeBlacklistLister
 	bytecodeBlacklist bytecodeBlacklistLister
+	walletBlacklist   walletBlacklistLister
 
 	persistencePublisher PersistenceEventPublisher
 	rules                []ProjectPolicyRule
@@ -62,11 +64,16 @@ type bytecodeBlacklistLister interface {
 	List(ctx context.Context) ([]appstore.BytecodeBlacklistContract, error)
 }
 
+type walletBlacklistLister interface {
+	List(ctx context.Context) ([]appstore.WalletBlacklistContract, error)
+}
+
 func NewProjectPolicyEngine(
 	projectCache ProjectSnapshotCache,
 	sourceAnalyzer sourcecode.Analyzer,
 	sourceBlacklist sourceCodeBlacklistLister,
 	bytecodeBlacklist bytecodeBlacklistLister,
+	walletBlacklist walletBlacklistLister,
 	persistencePublisher PersistenceEventPublisher,
 	triggerCh <-chan common.Address,
 ) ProjectPolicyEngine {
@@ -75,11 +82,14 @@ func NewProjectPolicyEngine(
 		sourceAnalyzer:       sourceAnalyzer,
 		sourceBlacklist:      sourceBlacklist,
 		bytecodeBlacklist:    bytecodeBlacklist,
+		walletBlacklist:      walletBlacklist,
 		persistencePublisher: persistencePublisher,
 		triggerCh:            triggerCh,
 		taskCh:               make(chan common.Address, projectPolicyTaskQueueCapacity),
 		pending:              make(map[common.Address]policyTaskState),
 		rules: []ProjectPolicyRule{
+			walletBlacklistCreatorRule{},
+			walletBlacklistGenesisWalletRule{},
 			sourceCodeBlacklistRule{},
 			bytecodeBlacklistRule{},
 			simulateMintRiskRule{},
@@ -311,6 +321,16 @@ func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicy
 			facts.BytecodeBlacklist[item.CodeHash] = struct{}{}
 		}
 	}
+	if e.walletBlacklist != nil {
+		records, err := e.walletBlacklist.List(ctx)
+		if err != nil {
+			return facts, err
+		}
+		facts.WalletBlacklist = make(map[common.Address]struct{}, len(records))
+		for _, item := range records {
+			facts.WalletBlacklist[item.Contract] = struct{}{}
+		}
+	}
 	return facts, nil
 }
 
@@ -509,5 +529,50 @@ func (r simulateMintRiskRule) Evaluate(_ context.Context, project *Project, _ Pr
 	}
 	return true, map[string]any{
 		"mintable_paths": project.Runtime.CreatorResult.MintablePaths(),
+	}, nil
+}
+
+type walletBlacklistCreatorRule struct{}
+
+func (r walletBlacklistCreatorRule) Name() string { return "wallet_blacklist_creator" }
+
+func (r walletBlacklistCreatorRule) Evaluate(_ context.Context, project *Project, facts ProjectPolicyFacts) (bool, map[string]any, error) {
+	if project == nil || len(facts.WalletBlacklist) == 0 {
+		return false, nil, nil
+	}
+	if _, ok := facts.WalletBlacklist[project.Meta.Creator]; !ok {
+		return false, nil, nil
+	}
+	return true, map[string]any{
+		"creator_wallet": strings.ToLower(project.Meta.Creator.Hex()),
+	}, nil
+}
+
+type walletBlacklistGenesisWalletRule struct{}
+
+func (r walletBlacklistGenesisWalletRule) Name() string { return "wallet_blacklist_genesis_wallet" }
+
+func (r walletBlacklistGenesisWalletRule) Evaluate(_ context.Context, project *Project, facts ProjectPolicyFacts) (bool, map[string]any, error) {
+	if project == nil || len(project.Meta.GenesisWallets) == 0 || len(facts.WalletBlacklist) == 0 {
+		return false, nil, nil
+	}
+
+	matched := make([]string, 0)
+	seen := make(map[common.Address]struct{})
+	for _, item := range project.Meta.GenesisWallets {
+		if _, ok := facts.WalletBlacklist[item.Wallet]; !ok {
+			continue
+		}
+		if _, duplicated := seen[item.Wallet]; duplicated {
+			continue
+		}
+		seen[item.Wallet] = struct{}{}
+		matched = append(matched, strings.ToLower(item.Wallet.Hex()))
+	}
+	if len(matched) == 0 {
+		return false, nil, nil
+	}
+	return true, map[string]any{
+		"blacklisted_genesis_wallets": matched,
 	}, nil
 }

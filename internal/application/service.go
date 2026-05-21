@@ -83,6 +83,7 @@ type Service struct {
 	startStopMu     sync.Mutex
 	lifecycleCtx    context.Context
 	lifecycleStop   context.CancelFunc
+	policyTriggerCh chan common.Address
 	bootstrapStop   context.CancelFunc
 	starting        bool
 	started         bool
@@ -176,6 +177,7 @@ func (s *Service) Start() error {
 	s.apiFetcher = apiFetcher
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
+	s.policyTriggerCh = policyTriggerCh
 	s.bootstrapStop = nil
 	s.starting = false
 	s.started = true
@@ -242,6 +244,7 @@ func (s *Service) startWithContext(ctx context.Context) (*ProjectPipeline, ether
 		s.sourceAnalyzer,
 		s.sourceBlacklist,
 		s.bytecodeBlacklist,
+		s.walletBlacklist,
 		s.persistencePublisher,
 		policyTriggerCh,
 	)
@@ -706,9 +709,22 @@ func (s *Service) enqueueAllProjectsForPolicy(ctx context.Context, policyTrigger
 	}
 }
 
+func (s *Service) triggerFullPolicyReevaluation() {
+	s.startStopMu.Lock()
+	ctx := s.lifecycleCtx
+	policyTriggerCh := s.policyTriggerCh
+	started := s.started
+	s.startStopMu.Unlock()
+	if !started || ctx == nil || policyTriggerCh == nil {
+		return
+	}
+	go s.enqueueAllProjectsForPolicy(ctx, policyTriggerCh)
+}
+
 func (s *Service) clearPipelineLocked() {
 	s.pipeline = nil
 	s.apiFetcher = nil
+	s.policyTriggerCh = nil
 }
 
 func (s *Service) ListSourceCodeBlacklistFields(ctx context.Context, _ *applicationpkg.ListSourceCodeBlacklistFieldsRequest) (*applicationpkg.ListSourceCodeBlacklistFieldsResponse, error) {
@@ -897,6 +913,7 @@ func (s *Service) AddWalletBlacklistContract(ctx context.Context, req *applicati
 		}
 		return nil, err
 	}
+	s.triggerFullPolicyReevaluation()
 
 	items, err := s.walletBlacklist.List(ctx)
 	if err != nil {
@@ -951,6 +968,7 @@ func (s *Service) DeleteWalletBlacklistContract(ctx context.Context, req *applic
 		}
 		return nil, err
 	}
+	s.triggerFullPolicyReevaluation()
 	return &applicationpkg.DeleteWalletBlacklistContractResponse{}, nil
 }
 
