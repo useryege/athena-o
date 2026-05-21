@@ -128,9 +128,6 @@ type RedisPersistenceEventBus struct {
 }
 
 func NewRedisPersistenceEventBus(client *redis.Client) *RedisPersistenceEventBus {
-	if client == nil {
-		panic("redis client is nil")
-	}
 	return &RedisPersistenceEventBus{
 		client:   client,
 		stream:   persistenceStreamKey,

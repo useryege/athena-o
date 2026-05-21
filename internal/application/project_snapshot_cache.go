@@ -72,9 +72,6 @@ type projectArchiveState struct {
 }
 
 func NewProjectSnapshotCache(client *redis.Client) ProjectSnapshotCache {
-	if client == nil {
-		panic("redis client is nil")
-	}
 	return &RedisProjectSnapshotCache{
 		client:        client,
 		contractLocks: map[string]*sync.Mutex{},
