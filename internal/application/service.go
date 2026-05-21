@@ -36,6 +36,9 @@ const (
 	binBlacklistScanInterval               = time.Minute
 	sourceCodeScanPageSize                 = 200
 	bootstrapRetryInterval                 = 3 * time.Second
+	bootstrapMaxRetryInterval              = 30 * time.Second
+	bootstrapMaxRetryWindow                = 10 * time.Minute
+	bootstrapBuildWorkerCount              = 8
 	projectPolicyTriggerQueueCapacity      = 4096
 	maxProjectCommentContentLength         = 1000
 )
@@ -80,6 +83,8 @@ type Service struct {
 	startStopMu     sync.Mutex
 	lifecycleCtx    context.Context
 	lifecycleStop   context.CancelFunc
+	bootstrapStop   context.CancelFunc
+	starting        bool
 	started         bool
 }
 
@@ -135,62 +140,94 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 
 func (s *Service) Start() error {
 	s.startStopMu.Lock()
-	defer s.startStopMu.Unlock()
 	if s.started {
+		s.startStopMu.Unlock()
 		return nil
 	}
+	if s.starting {
+		s.startStopMu.Unlock()
+		return status.Error(codes.Aborted, "service start already in progress")
+	}
 
-	athenaFetcher, err := evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
+	ctx, cancel := context.WithCancel(context.Background())
+	s.starting = true
+	s.bootstrapStop = cancel
+	s.startStopMu.Unlock()
+
+	pipeline, apiFetcher, policyTriggerCh, err := s.startWithContext(ctx)
 	if err != nil {
+		cancel()
+		s.startStopMu.Lock()
+		s.starting = false
+		s.bootstrapStop = nil
 		s.clearPipelineLocked()
+		s.startStopMu.Unlock()
 		return err
 	}
 
-	chainID, err := s.nodeClient.ChainID(context.Background())
+	s.startStopMu.Lock()
+	if !s.starting {
+		s.startStopMu.Unlock()
+		cancel()
+		_ = pipeline.Stop()
+		return context.Canceled
+	}
+	s.pipeline = pipeline
+	s.apiFetcher = apiFetcher
+	s.lifecycleCtx = ctx
+	s.lifecycleStop = cancel
+	s.bootstrapStop = nil
+	s.starting = false
+	s.started = true
+	s.startStopMu.Unlock()
+
+	go s.enqueueAllProjectsForPolicy(ctx, policyTriggerCh)
+	return nil
+}
+
+func (s *Service) startWithContext(ctx context.Context) (*ProjectPipeline, ethereumapi.EthereumAPI, chan common.Address, error) {
+	athenaFetcher, err := evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
 	if err != nil {
-		s.clearPipelineLocked()
-		return err
+		return nil, nil, nil, err
+	}
+
+	chainID, err := s.nodeClient.ChainID(ctx)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
 	apiFetcher := ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
 	projectSimulator := NewProjectSimulator(s.nodeClient)
 
-	ctx, cancel := context.WithCancel(context.Background())
 	if s.sourceBlacklist != nil {
 		if err := s.sourceBlacklist.Load(ctx); err != nil {
-			cancel()
-			s.clearPipelineLocked()
-			return err
+			return nil, nil, nil, err
 		}
 	}
 	if s.bytecodeBlacklist != nil {
 		if err := s.bytecodeBlacklist.Load(ctx); err != nil {
-			cancel()
-			s.clearPipelineLocked()
-			return err
+			return nil, nil, nil, err
 		}
 	}
 	if s.walletBlacklist != nil {
 		if err := s.walletBlacklist.Load(ctx); err != nil {
-			cancel()
-			s.clearPipelineLocked()
-			return err
+			return nil, nil, nil, err
 		}
 	}
 
 	if err := s.bootstrapProjectCaches(ctx, athenaFetcher, projectSimulator); err != nil {
-		cancel()
-		s.clearPipelineLocked()
-		return err
+		return nil, nil, nil, err
 	}
 	if s.persistenceBus != nil && s.persistenceWriter != nil {
 		go s.runPersistenceEventLoop(ctx)
 	}
 
-	s.apiFetcher = apiFetcher
 	policyTriggerCh := make(chan common.Address, projectPolicyTriggerQueueCapacity)
 	discoveryIntake := NewDiscoveryIntake(s.nodeClient, s.projectCache, athenaFetcher, s.persistencePublisher, policyTriggerCh)
-	discoveryIndexer := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, discoveryIntake)
+	discoveryIndexer, err := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, discoveryIntake)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	stateReconciler := NewProjectStateReconciler(
 		s.projectCache,
 		athenaFetcher,
@@ -210,16 +247,9 @@ func (s *Service) Start() error {
 	)
 	pipeline := NewProjectPipeline(discoveryIndexer, stateReconciler, policyEngine)
 	if err := pipeline.Start(ctx); err != nil {
-		cancel()
-		s.clearPipelineLocked()
-		return err
+		return nil, nil, nil, err
 	}
-	s.pipeline = pipeline
-
-	s.lifecycleCtx = ctx
-	s.lifecycleStop = cancel
-	s.started = true
-	return nil
+	return pipeline, apiFetcher, policyTriggerCh, nil
 }
 
 func (s *Service) bootstrapProjectCaches(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) error {
@@ -230,9 +260,14 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context, fetcher evm.Athena
 
 	startedAt := time.Now()
 	logger := log.WithField("component", "bootstrapProjectCaches")
-	logger.WithField("retry_interval", bootstrapRetryInterval.String()).Info("starting project cache bootstrap")
+	logger.WithFields(log.Fields{
+		"retry_interval": bootstrapRetryInterval.String(),
+		"retry_max":      bootstrapMaxRetryInterval.String(),
+		"retry_window":   bootstrapMaxRetryWindow.String(),
+	}).Info("starting project cache bootstrap")
 
 	attempt := 0
+	backoff := bootstrapRetryInterval
 	for {
 		if err := ctx.Err(); err != nil {
 			logger.WithFields(log.Fields{
@@ -242,75 +277,112 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context, fetcher evm.Athena
 			}).Info("project cache bootstrap canceled")
 			return err
 		}
+		if time.Since(startedAt) > bootstrapMaxRetryWindow {
+			return fmt.Errorf("project cache bootstrap exceeded max retry window %s after %d attempts", bootstrapMaxRetryWindow, attempt)
+		}
 
 		attempt++
 
-		logger.WithFields(log.Fields{
-			"attempt": attempt,
-			"stage":   "list_all_project_metas",
-			"elapsed": time.Since(startedAt).String(),
-		}).Info("project cache bootstrap stage started")
-		metas, err := store.ListAllProjectMetas(ctx)
+		metas, err := s.bootstrapLoadProjectMetas(ctx, store, attempt, startedAt)
 		if err != nil {
 			logger.WithFields(log.Fields{
 				"attempt":       attempt,
 				"stage":         "list_all_project_metas",
 				"error":         err.Error(),
-				"next_retry_in": bootstrapRetryInterval.String(),
+				"next_retry_in": backoff.String(),
 				"elapsed":       time.Since(startedAt).String(),
 			}).Warn("project cache bootstrap stage failed, retrying")
-			time.Sleep(bootstrapRetryInterval)
+			if err := waitBootstrapRetry(ctx, backoff); err != nil {
+				return err
+			}
+			backoff = nextBootstrapBackoff(backoff)
 			continue
 		}
 
-		logger.WithFields(log.Fields{
-			"attempt": attempt,
-			"stage":   "build_projects_from_metas",
-			"elapsed": time.Since(startedAt).String(),
-		}).Info("project cache bootstrap stage started")
-		projects, err := s.buildProjectsFromMetas(ctx, metas, fetcher, simulator)
+		projects, stats, err := s.bootstrapBuildProjects(ctx, metas, fetcher, simulator, attempt, startedAt)
 		if err != nil {
 			logger.WithFields(log.Fields{
 				"attempt":       attempt,
 				"stage":         "build_projects_from_metas",
 				"error":         err.Error(),
-				"next_retry_in": bootstrapRetryInterval.String(),
+				"next_retry_in": backoff.String(),
 				"elapsed":       time.Since(startedAt).String(),
 			}).Warn("project cache bootstrap stage failed, retrying")
-			time.Sleep(bootstrapRetryInterval)
+			if err := waitBootstrapRetry(ctx, backoff); err != nil {
+				return err
+			}
+			backoff = nextBootstrapBackoff(backoff)
 			continue
 		}
 
-		logger.WithFields(log.Fields{
-			"attempt": attempt,
-			"stage":   "replace_all_cache",
-			"elapsed": time.Since(startedAt).String(),
-		}).Info("project cache bootstrap stage started")
-		if err := s.projectCache.ReplaceAll(ctx, projects); err != nil {
+		if err := s.bootstrapReplaceCache(ctx, projects, attempt, startedAt); err != nil {
 			logger.WithFields(log.Fields{
 				"attempt":       attempt,
 				"stage":         "replace_all_cache",
 				"error":         err.Error(),
-				"next_retry_in": bootstrapRetryInterval.String(),
+				"next_retry_in": backoff.String(),
 				"elapsed":       time.Since(startedAt).String(),
 			}).Warn("project cache bootstrap stage failed, retrying")
-			time.Sleep(bootstrapRetryInterval)
+			if err := waitBootstrapRetry(ctx, backoff); err != nil {
+				return err
+			}
+			backoff = nextBootstrapBackoff(backoff)
 			continue
 		}
 
 		logger.WithFields(log.Fields{
-			"attempt":       attempt,
-			"project_count": len(projects),
-			"elapsed":       time.Since(startedAt).String(),
+			"attempt":           attempt,
+			"project_count":     len(projects),
+			"total_meta_count":  stats.Total,
+			"skipped_count":     stats.Skipped,
+			"simulate_failures": stats.SimulationFailed,
+			"elapsed":           time.Since(startedAt).String(),
 		}).Info("project cache bootstrap completed")
 		return nil
 	}
 }
 
-func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta, fetcher evm.AthenaFetcher, simulator ProjectSimulator) ([]*Project, error) {
+type bootstrapBuildStats struct {
+	Total            int
+	Skipped          int
+	SimulationFailed int
+}
+
+func (s *Service) bootstrapLoadProjectMetas(ctx context.Context, store appstore.ProjectStore, attempt int, startedAt time.Time) ([]appstore.ProjectMeta, error) {
+	log.WithFields(log.Fields{
+		"component": "bootstrapProjectCaches",
+		"attempt":   attempt,
+		"stage":     "list_all_project_metas",
+		"elapsed":   time.Since(startedAt).String(),
+	}).Info("project cache bootstrap stage started")
+	return store.ListAllProjectMetas(ctx)
+}
+
+func (s *Service) bootstrapBuildProjects(ctx context.Context, metas []appstore.ProjectMeta, fetcher evm.AthenaFetcher, simulator ProjectSimulator, attempt int, startedAt time.Time) ([]*Project, bootstrapBuildStats, error) {
+	log.WithFields(log.Fields{
+		"component": "bootstrapProjectCaches",
+		"attempt":   attempt,
+		"stage":     "build_projects_from_metas",
+		"elapsed":   time.Since(startedAt).String(),
+	}).Info("project cache bootstrap stage started")
+	return s.buildProjectsFromMetas(ctx, metas, fetcher, simulator)
+}
+
+func (s *Service) bootstrapReplaceCache(ctx context.Context, projects []*Project, attempt int, startedAt time.Time) error {
+	log.WithFields(log.Fields{
+		"component": "bootstrapProjectCaches",
+		"attempt":   attempt,
+		"stage":     "replace_all_cache",
+		"elapsed":   time.Since(startedAt).String(),
+	}).Info("project cache bootstrap stage started")
+	return s.projectCache.ReplaceAll(ctx, projects)
+}
+
+func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta, fetcher evm.AthenaFetcher, simulator ProjectSimulator) ([]*Project, bootstrapBuildStats, error) {
+	stats := bootstrapBuildStats{Total: len(metas)}
 	projects := make([]*Project, 0, len(metas))
 	if len(metas) == 0 {
-		return projects, nil
+		return projects, stats, nil
 	}
 
 	var genesisWalletStore appstore.ProjectGenesisWalletStore
@@ -322,18 +394,25 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		}
 	}
 
-	queries := make([]athenacontract.AthenaProjectQuery, 0, len(metas))
-	genesisWalletsByContract := make(map[common.Address][]GenesisWalletMeta, len(metas))
+	contracts := make([]common.Address, 0, len(metas))
 	for _, meta := range metas {
-		var genesisWallets []GenesisWalletMeta
-		if genesisWalletStore != nil {
-			items, err := genesisWalletStore.ListProjectGenesisWalletsByContract(ctx, meta.Contract)
-			if err != nil {
-				return nil, err
-			}
-			genesisWallets = projectGenesisWalletsFromStore(items)
-			genesisWalletsByContract[meta.Contract] = genesisWallets
+		contracts = append(contracts, meta.Contract)
+	}
+
+	genesisWalletsByContract := make(map[common.Address][]GenesisWalletMeta, len(metas))
+	if genesisWalletStore != nil {
+		itemsByContract, err := genesisWalletStore.ListProjectGenesisWalletsByContracts(ctx, contracts)
+		if err != nil {
+			return nil, stats, err
 		}
+		for contract, items := range itemsByContract {
+			genesisWalletsByContract[contract] = projectGenesisWalletsFromStore(items)
+		}
+	}
+
+	queries := make([]athenacontract.AthenaProjectQuery, 0, len(metas))
+	for _, meta := range metas {
+		genesisWallets := genesisWalletsByContract[meta.Contract]
 		queries = append(queries, athenacontract.AthenaProjectQuery{
 			TokenContract:  meta.Contract,
 			MsgCaller:      meta.Creator,
@@ -343,12 +422,13 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 
 	fetched, err := fetcher.FetchProjectsWithSimulationState(ctx, queries)
 	if err != nil {
-		return nil, err
+		return nil, stats, err
 	}
 	if len(fetched) != len(metas) {
-		return nil, fmt.Errorf("fetch projects with simulation state size mismatch: got %d want %d", len(fetched), len(metas))
+		return nil, stats, fmt.Errorf("fetch projects with simulation state size mismatch: got %d want %d", len(fetched), len(metas))
 	}
 
+	projectItems := make([]*Project, len(metas))
 	for i, meta := range metas {
 		project := &Project{
 			Meta: projectMetaFromStore(meta),
@@ -359,23 +439,76 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		if genesisWallets, ok := genesisWalletsByContract[meta.Contract]; ok {
 			project.Meta.GenesisWallets = genesisWallets
 		}
-		if simulator != nil {
-			result, err := simulator.SimulatePrimary(
-				ctx,
-				meta.Creator,
-				meta.Contract,
-				fetched[i].Project.WethPair.ContractAddress,
-				fetched[i].Project.UsdtPair.ContractAddress,
-				fetched[i].SimulationState,
-			)
-			if err != nil {
-				return nil, err
-			}
-			project.Runtime.CreatorResult = result
-		}
-		projects = append(projects, project)
+		projectItems[i] = project
 	}
-	return projects, nil
+
+	if simulator != nil {
+		type simulateTask struct {
+			index int
+			meta  appstore.ProjectMeta
+		}
+		workerCount := bootstrapBuildWorkerCount
+		if workerCount > len(metas) {
+			workerCount = len(metas)
+		}
+		if workerCount < 1 {
+			workerCount = 1
+		}
+
+		taskCh := make(chan simulateTask, len(metas))
+		var wg sync.WaitGroup
+		var statsMu sync.Mutex
+		for i := 0; i < workerCount; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for task := range taskCh {
+					project := projectItems[task.index]
+					if project == nil {
+						continue
+					}
+					result, err := simulator.SimulatePrimary(
+						ctx,
+						task.meta.Creator,
+						task.meta.Contract,
+						fetched[task.index].Project.WethPair.ContractAddress,
+						fetched[task.index].Project.UsdtPair.ContractAddress,
+						fetched[task.index].SimulationState,
+					)
+					if err != nil {
+						statsMu.Lock()
+						stats.SimulationFailed++
+						statsMu.Unlock()
+						log.WithFields(log.Fields{
+							"component": "bootstrapProjectCaches",
+							"contract":  task.meta.Contract.Hex(),
+							"creator":   task.meta.Creator.Hex(),
+							"error":     err.Error(),
+						}).Warn("bootstrap simulation failed, using zero-value simulation result")
+						continue
+					}
+					project.Runtime.CreatorResult = result
+				}
+			}()
+		}
+		for i, meta := range metas {
+			taskCh <- simulateTask{index: i, meta: meta}
+		}
+		close(taskCh)
+		wg.Wait()
+		if err := ctx.Err(); err != nil {
+			return nil, stats, err
+		}
+	}
+
+	for _, item := range projectItems {
+		if item == nil {
+			stats.Skipped++
+			continue
+		}
+		projects = append(projects, item)
+	}
+	return projects, stats, nil
 }
 
 func projectGenesisWalletsFromStore(items []appstore.ProjectGenesisWallet) []GenesisWalletMeta {
@@ -464,29 +597,113 @@ func (s *Service) sourceCodeBlacklistFields(ctx context.Context) ([]string, erro
 
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
-	defer s.startStopMu.Unlock()
+
+	if s.starting && !s.started {
+		stop := s.bootstrapStop
+		s.starting = false
+		s.bootstrapStop = nil
+		s.startStopMu.Unlock()
+		if stop != nil {
+			stop()
+		}
+		return nil
+	}
 
 	if !s.started {
+		s.startStopMu.Unlock()
 		return nil
 	}
 
 	stop := s.lifecycleStop
+	pipeline := s.pipeline
 
 	if stop != nil {
 		stop()
 	}
 
-	pipelineErr := error(nil)
-	if s.pipeline != nil {
-		pipelineErr = s.pipeline.Stop()
-	}
-
 	s.lifecycleCtx = nil
 	s.lifecycleStop = nil
+	s.bootstrapStop = nil
+	s.starting = false
 	s.started = false
 	s.clearPipelineLocked()
+	s.startStopMu.Unlock()
+
+	pipelineErr := error(nil)
+	if pipeline != nil {
+		pipelineErr = pipeline.Stop()
+	}
 
 	return pipelineErr
+}
+
+func waitBootstrapRetry(ctx context.Context, delay time.Duration) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(delay):
+		return nil
+	}
+}
+
+func nextBootstrapBackoff(current time.Duration) time.Duration {
+	next := current * 2
+	if next > bootstrapMaxRetryInterval {
+		return bootstrapMaxRetryInterval
+	}
+	return next
+}
+
+func (s *Service) enqueueAllProjectsForPolicy(ctx context.Context, policyTriggerCh chan<- common.Address) {
+	if policyTriggerCh == nil {
+		return
+	}
+	sendContract := func(contract common.Address) bool {
+		if contract == (common.Address{}) {
+			return true
+		}
+		select {
+		case <-ctx.Done():
+			return false
+		case policyTriggerCh <- contract:
+			return true
+		}
+	}
+
+	activeProjects, err := s.projectCache.ListActiveProjects(ctx)
+	if err != nil {
+		log.WithField("component", "service_start").WithError(err).Warn("failed to list active projects for initial policy enqueue")
+		return
+	}
+	for _, project := range activeProjects {
+		if project == nil {
+			continue
+		}
+		if ok := sendContract(project.Meta.Contract); !ok {
+			return
+		}
+	}
+
+	page := int32(1)
+	for {
+		archivedProjects, total, _, pageSize, err := s.projectCache.ListArchivedProjects(ctx, page, sourceCodeScanPageSize)
+		if err != nil {
+			log.WithField("component", "service_start").WithError(err).Warn("failed to list archived projects for initial policy enqueue")
+			return
+		}
+		for _, project := range archivedProjects {
+			if project == nil {
+				continue
+			}
+			if ok := sendContract(project.Meta.Contract); !ok {
+				return
+			}
+		}
+		if len(archivedProjects) == 0 || int64(page)*int64(pageSize) >= total {
+			return
+		}
+		page++
+	}
 }
 
 func (s *Service) clearPipelineLocked() {

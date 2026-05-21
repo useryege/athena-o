@@ -76,10 +76,10 @@ func NewProjectDiscoveryIndexer(
 	nodeClient *ethclient.Client,
 	projectCache ProjectSnapshotCache,
 	intake DiscoveryIntake,
-) ProjectDiscoveryIndexer {
+) (ProjectDiscoveryIndexer, error) {
 	chainID, err := nodeClient.ChainID(context.Background())
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &projectDiscoveryIndexerImpl{
@@ -87,7 +87,7 @@ func NewProjectDiscoveryIndexer(
 		projectCache: projectCache,
 		intake:       intake,
 		chainID:      chainID,
-	}
+	}, nil
 }
 
 func NewDiscoveryIntake(

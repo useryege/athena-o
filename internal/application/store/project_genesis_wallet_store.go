@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -98,6 +99,70 @@ ORDER BY rank_index ASC, id ASC
 		return nil, fmt.Errorf("iterate project genesis wallets by contract: %w", err)
 	}
 	return items, nil
+}
+
+func (s *SQLStore) ListProjectGenesisWalletsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address][]ProjectGenesisWallet, error) {
+	result := make(map[common.Address][]ProjectGenesisWallet)
+	if len(contracts) == 0 {
+		return result, nil
+	}
+
+	uniqueContracts := make([]common.Address, 0, len(contracts))
+	seen := make(map[common.Address]struct{}, len(contracts))
+	for _, contract := range contracts {
+		if contract == (common.Address{}) {
+			continue
+		}
+		if _, ok := seen[contract]; ok {
+			continue
+		}
+		seen[contract] = struct{}{}
+		uniqueContracts = append(uniqueContracts, contract)
+	}
+	if len(uniqueContracts) == 0 {
+		return result, nil
+	}
+
+	placeholders := make([]string, 0, len(uniqueContracts))
+	args := make([]any, 0, len(uniqueContracts))
+	for i, contract := range uniqueContracts {
+		placeholders = append(placeholders, fmt.Sprintf("$%d", i+1))
+		args = append(args, contract.Bytes())
+	}
+
+	query := fmt.Sprintf(`
+SELECT
+  id,
+  project_contract,
+  wallet,
+  net_amount::text,
+  ratio_bps,
+  rank_index,
+  total_supply::text,
+  source_tx_hash,
+  source_block_number,
+  created_at
+FROM project_genesis_wallet
+WHERE project_contract IN (%s)
+ORDER BY project_contract ASC, rank_index ASC, id ASC
+`, strings.Join(placeholders, ", "))
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list project genesis wallets by contracts: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		item, err := scanProjectGenesisWalletRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		result[item.ProjectContract] = append(result[item.ProjectContract], item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate project genesis wallets by contracts: %w", err)
+	}
+	return result, nil
 }
 
 func (s *SQLStore) ListProjectGenesisWalletsByWallet(ctx context.Context, wallet common.Address) ([]ProjectGenesisWallet, error) {
