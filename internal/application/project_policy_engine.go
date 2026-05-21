@@ -28,10 +28,10 @@ type ProjectPolicyRule interface {
 
 type projectPolicyEngineImpl struct {
 	projectCache ProjectSnapshotCache
-	store        appstore.Store
 
-	sourceAnalyzer  sourcecode.Analyzer
-	sourceBlacklist sourceCodeBlacklistLister
+	sourceAnalyzer    sourcecode.Analyzer
+	sourceBlacklist   sourceCodeBlacklistLister
+	bytecodeBlacklist bytecodeBlacklistLister
 
 	persistencePublisher PersistenceEventPublisher
 	rules                []ProjectPolicyRule
@@ -43,18 +43,22 @@ type sourceCodeBlacklistLister interface {
 	List(ctx context.Context) ([]string, error)
 }
 
+type bytecodeBlacklistLister interface {
+	List(ctx context.Context) ([]appstore.BytecodeBlacklistContract, error)
+}
+
 func NewProjectPolicyEngine(
 	projectCache ProjectSnapshotCache,
-	store appstore.Store,
 	sourceAnalyzer sourcecode.Analyzer,
 	sourceBlacklist sourceCodeBlacklistLister,
+	bytecodeBlacklist bytecodeBlacklistLister,
 	persistencePublisher PersistenceEventPublisher,
 ) ProjectPolicyEngine {
 	return &projectPolicyEngineImpl{
 		projectCache:         projectCache,
-		store:                store,
 		sourceAnalyzer:       sourceAnalyzer,
 		sourceBlacklist:      sourceBlacklist,
+		bytecodeBlacklist:    bytecodeBlacklist,
 		persistencePublisher: persistencePublisher,
 		rules: []ProjectPolicyRule{
 			sourceCodeBlacklistRule{},
@@ -134,9 +138,8 @@ func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicy
 		facts.SourceCodeBlacklistFields = fields
 	}
 
-	blacklistStore, ok := e.store.(appstore.BytecodeBlacklistContractStore)
-	if ok && blacklistStore != nil {
-		records, err := blacklistStore.ListBytecodeBlacklistContracts(ctx)
+	if e.bytecodeBlacklist != nil {
+		records, err := e.bytecodeBlacklist.List(ctx)
 		if err != nil {
 			return facts, err
 		}
