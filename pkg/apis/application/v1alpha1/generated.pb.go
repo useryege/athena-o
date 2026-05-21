@@ -358,6 +358,15 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.CreatorOtherProjectContracts) > 0 {
+		for iNdEx := len(m.CreatorOtherProjectContracts) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.CreatorOtherProjectContracts[iNdEx])
+			copy(dAtA[i:], m.CreatorOtherProjectContracts[iNdEx])
+			i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatorOtherProjectContracts[iNdEx])))
+			i--
+			dAtA[i] = 0x6a
+		}
+	}
 	if len(m.GenesisWallets) > 0 {
 		for iNdEx := len(m.GenesisWallets) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -832,6 +841,12 @@ func (m *ProjectMeta) Size() (n int) {
 			n += 1 + l + sovGenerated(uint64(l))
 		}
 	}
+	if len(m.CreatorOtherProjectContracts) > 0 {
+		for _, s := range m.CreatorOtherProjectContracts {
+			l = len(s)
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -1022,6 +1037,7 @@ func (this *ProjectMeta) String() string {
 		`SourceCodeBlacklist:` + strings.Replace(strings.Replace(this.SourceCodeBlacklist.String(), "SourceCodeBlacklistState", "SourceCodeBlacklistState", 1), `&`, ``, 1) + `,`,
 		`IsArchived:` + fmt.Sprintf("%v", this.IsArchived) + `,`,
 		`GenesisWallets:` + repeatedStringForGenesisWallets + `,`,
+		`CreatorOtherProjectContracts:` + fmt.Sprintf("%v", this.CreatorOtherProjectContracts) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -2619,6 +2635,38 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			if err := m.GenesisWallets[len(m.GenesisWallets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatorOtherProjectContracts", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CreatorOtherProjectContracts = append(m.CreatorOtherProjectContracts, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -102,6 +102,8 @@ message ProjectMeta {
   optional bool isArchived = 11;
 
   repeated GenesisWalletState genesisWallets = 12;
+
+  repeated string creatorOtherProjectContracts = 13;
 }
 
 message ProjectOption {

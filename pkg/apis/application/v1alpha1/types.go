@@ -6,17 +6,18 @@ type ProjectView struct {
 }
 
 type ProjectMeta struct {
-	BlockTime           uint64                   `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
-	BlockNumber         uint64                   `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
-	Contract            string                   `protobuf:"bytes,4,opt,name=contract" json:"contract"`
-	Creator             string                   `protobuf:"bytes,5,opt,name=creator" json:"creator"`
-	TxHash              string                   `protobuf:"bytes,6,opt,name=txHash" json:"txHash"`
-	TxIndex             uint64                   `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
-	SourceCode          string                   `protobuf:"bytes,8,opt,name=sourceCode" json:"sourceCode"`
-	CreatorResult       SimulateResult           `protobuf:"bytes,9,opt,name=creatorResult" json:"creatorResult"`
-	SourceCodeBlacklist SourceCodeBlacklistState `protobuf:"bytes,10,opt,name=sourceCodeBlacklist" json:"sourceCodeBlacklist"`
-	IsArchived          bool                     `protobuf:"varint,11,opt,name=isArchived" json:"isArchived"`
-	GenesisWallets      []GenesisWalletState     `protobuf:"bytes,12,rep,name=genesisWallets" json:"genesisWallets"`
+	BlockTime                    uint64                   `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
+	BlockNumber                  uint64                   `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
+	Contract                     string                   `protobuf:"bytes,4,opt,name=contract" json:"contract"`
+	Creator                      string                   `protobuf:"bytes,5,opt,name=creator" json:"creator"`
+	TxHash                       string                   `protobuf:"bytes,6,opt,name=txHash" json:"txHash"`
+	TxIndex                      uint64                   `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
+	SourceCode                   string                   `protobuf:"bytes,8,opt,name=sourceCode" json:"sourceCode"`
+	CreatorResult                SimulateResult           `protobuf:"bytes,9,opt,name=creatorResult" json:"creatorResult"`
+	SourceCodeBlacklist          SourceCodeBlacklistState `protobuf:"bytes,10,opt,name=sourceCodeBlacklist" json:"sourceCodeBlacklist"`
+	IsArchived                   bool                     `protobuf:"varint,11,opt,name=isArchived" json:"isArchived"`
+	GenesisWallets               []GenesisWalletState     `protobuf:"bytes,12,rep,name=genesisWallets" json:"genesisWallets"`
+	CreatorOtherProjectContracts []string                 `protobuf:"bytes,13,rep,name=creatorOtherProjectContracts" json:"creatorOtherProjectContracts"`
 }
 
 type GenesisWalletState struct {
