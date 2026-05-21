@@ -82,6 +82,7 @@ func NewProjectPolicyEngine(
 		rules: []ProjectPolicyRule{
 			sourceCodeBlacklistRule{},
 			bytecodeBlacklistRule{},
+			simulateMintRiskRule{},
 		},
 	}
 }
@@ -492,5 +493,21 @@ func (r bytecodeBlacklistRule) Evaluate(_ context.Context, project *Project, fac
 	}
 	return true, map[string]any{
 		"runtime_code_hash": strings.ToLower(project.Runtime.RuntimeCodeHash.Hex()),
+	}, nil
+}
+
+type simulateMintRiskRule struct{}
+
+func (r simulateMintRiskRule) Name() string { return "simulate_result_mint_risk" }
+
+func (r simulateMintRiskRule) Evaluate(_ context.Context, project *Project, _ ProjectPolicyFacts) (bool, map[string]any, error) {
+	if project == nil {
+		return false, nil, nil
+	}
+	if !project.Runtime.CreatorResult.HasMintRisk() {
+		return false, nil, nil
+	}
+	return true, map[string]any{
+		"mintable_paths": project.Runtime.CreatorResult.MintablePaths(),
 	}, nil
 }
