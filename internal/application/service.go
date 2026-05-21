@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -59,8 +58,7 @@ type Service struct {
 	etherscanAPIKey     string
 	liquidityLocker     []common.Address
 
-	blockWatcher    *BlockWatcher
-	blockSubscriber *BlockEventSubscriber
+	pipeline        *ProjectPipeline
 	apiFetcher      ethereumapi.EthereumAPI
 	sourceAnalyzer  sourcecode.Analyzer
 	sourceBlacklist appcache.SourceCodeBlacklistModel
@@ -150,28 +148,26 @@ func (s *Service) Start() error {
 	}
 
 	s.apiFetcher = apiFetcher
-	s.blockSubscriber = NewBlockEventSubscriber(s.nodeClient)
-	s.blockWatcher = NewBlockWatcher(s.nodeClient, s.projectCache, athenaFetcher, s.persistencePublisher)
-	if err := s.blockSubscriber.Start(ctx); err != nil {
+	discoveryIntake := NewDiscoveryIntake(s.nodeClient, s.projectCache, athenaFetcher, s.persistencePublisher)
+	discoveryIndexer := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, discoveryIntake)
+	stateReconciler := NewProjectStateReconciler(
+		s.projectCache,
+		s.store,
+		athenaFetcher,
+		projectSimulator,
+		apiFetcher,
+		s.sourceAnalyzer,
+		s.sourceBlacklist,
+		s.persistencePublisher,
+		s.fetchContractBytecode,
+	)
+	pipeline := NewProjectPipeline(discoveryIndexer, stateReconciler)
+	if err := pipeline.Start(ctx); err != nil {
 		cancel()
 		s.clearPipelineLocked()
 		return err
 	}
-
-	if err := s.blockWatcher.Start(ctx); err != nil {
-		cancel()
-		_ = s.blockSubscriber.Stop()
-		s.clearPipelineLocked()
-		return err
-	}
-
-	go s.runActiveProjectStateRefreshLoop(ctx, athenaFetcher)
-	go s.runActiveProjectSimulationRefreshLoop(ctx, athenaFetcher, projectSimulator)
-	go s.runActiveProjectSourceCodeRefreshLoop(ctx)
-	go s.runArchivedProjectStateRefreshLoop(ctx, athenaFetcher)
-	go s.runArchivedProjectSimulationRefreshLoop(ctx, athenaFetcher, projectSimulator)
-	go s.runArchivedProjectSourceCodeRefreshLoop(ctx)
-	go s.runProjectBINBlacklistScanLoop(ctx)
+	s.pipeline = pipeline
 
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
@@ -389,62 +385,6 @@ func (s *Service) runPersistenceEventLoop(ctx context.Context) {
 	}
 }
 
-func (s *Service) runActiveProjectStateRefreshLoop(ctx context.Context, fetcher evm.AthenaFetcher) {
-	ticker := time.NewTicker(activeProjectStateRefreshInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			_ = s.refreshActiveProjectStates(ctx, fetcher)
-		}
-	}
-}
-
-func (s *Service) refreshActiveProjectStates(ctx context.Context, fetcher evm.AthenaFetcher) error {
-	return s.refreshProjectStates(ctx, fetcher, refreshTargetActive)
-}
-
-func (s *Service) refreshProjectStates(ctx context.Context, fetcher evm.AthenaFetcher, target refreshTarget) error {
-	projects, err := s.listProjectsByTarget(ctx, target)
-	if err != nil {
-		return err
-	}
-	if len(projects) == 0 {
-		return nil
-	}
-
-	queries, contracts := buildProjectQueries(projects)
-	if len(queries) == 0 {
-		return nil
-	}
-
-	fetched, err := fetcher.FetchProjectsWithSimulationState(ctx, queries)
-	if err != nil {
-		return err
-	}
-	if len(fetched) != len(queries) {
-		return fmt.Errorf("fetch projects with simulation state size mismatch: got %d want %d", len(fetched), len(queries))
-	}
-
-	for i, contract := range contracts {
-		nextState := fetched[i].Project
-		_, err := s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
-				return nil, false, nil
-			}
-			current.ChainState = nextState
-			return current, true, nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func buildProjectQueries(projects []*Project) ([]athenacontract.AthenaProjectQuery, []common.Address) {
 	queries := make([]athenacontract.AthenaProjectQuery, 0, len(projects))
 	contracts := make([]common.Address, 0, len(projects))
@@ -471,431 +411,6 @@ func matchesTarget(isArchived bool, target refreshTarget) bool {
 	}
 }
 
-func (s *Service) listProjectsByTarget(ctx context.Context, target refreshTarget) ([]*Project, error) {
-	if target == refreshTargetActive {
-		return s.projectCache.ListActiveProjects(ctx)
-	}
-	return s.listAllArchivedProjects(ctx)
-}
-
-func (s *Service) listAllArchivedProjects(ctx context.Context) ([]*Project, error) {
-	projects := make([]*Project, 0)
-	page := int32(1)
-
-	for {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-
-		items, total, _, pageSize, err := s.projectCache.ListArchivedProjects(ctx, page, sourceCodeScanPageSize)
-		if err != nil {
-			return nil, err
-		}
-		projects = append(projects, items...)
-		if len(items) == 0 {
-			return projects, nil
-		}
-		if int64(page)*int64(pageSize) >= total {
-			return projects, nil
-		}
-		page++
-	}
-}
-
-func (s *Service) runActiveProjectSimulationRefreshLoop(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) {
-	ticker := time.NewTicker(activeProjectSimulationRefreshInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			_ = s.refreshActiveProjectSimulations(ctx, fetcher, simulator)
-		}
-	}
-}
-
-func (s *Service) refreshActiveProjectSimulations(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) error {
-	return s.refreshProjectSimulations(ctx, fetcher, simulator, refreshTargetActive)
-}
-
-func (s *Service) refreshProjectSimulations(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator, target refreshTarget) error {
-	if simulator == nil {
-		return nil
-	}
-
-	projects, err := s.listProjectsByTarget(ctx, target)
-	if err != nil {
-		return err
-	}
-	if len(projects) == 0 {
-		return nil
-	}
-
-	queries, contracts := buildProjectQueries(projects)
-	if len(queries) == 0 {
-		return nil
-	}
-
-	states, err := fetcher.FetchSimulationStates(ctx, queries)
-	if err != nil {
-		return err
-	}
-	if len(states) != len(queries) {
-		return fmt.Errorf("fetch simulation states size mismatch: got %d want %d", len(states), len(queries))
-	}
-
-	for i, contract := range contracts {
-		latest, ok, err := s.projectCache.GetProject(ctx, contract)
-		if err != nil {
-			return err
-		}
-		if !ok || latest == nil || !matchesTarget(latest.Meta.IsArchived, target) {
-			continue
-		}
-
-		wethPairContract := latest.ChainState.WethPair.ContractAddress
-		usdtPairContract := latest.ChainState.UsdtPair.ContractAddress
-		if wethPairContract == (common.Address{}) || usdtPairContract == (common.Address{}) {
-			continue
-		}
-
-		result, err := simulator.SimulatePrimary(
-			ctx,
-			latest.Meta.Creator,
-			latest.Meta.Contract,
-			wethPairContract,
-			usdtPairContract,
-			states[i],
-		)
-		if err != nil {
-			continue
-		}
-
-		_, err = s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
-				return nil, false, nil
-			}
-			current.Meta.CreatorResult = result
-			return current, true, nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *Service) runActiveProjectSourceCodeRefreshLoop(ctx context.Context) {
-	ticker := time.NewTicker(sourceCodeRefreshInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			_ = s.refreshActiveProjectSourceCodes(ctx)
-		}
-	}
-}
-
-func (s *Service) refreshActiveProjectSourceCodes(ctx context.Context) error {
-	return s.refreshProjectSourceCodes(ctx, refreshTargetActive)
-}
-
-func (s *Service) refreshProjectSourceCodes(ctx context.Context, target refreshTarget) error {
-	fields, err := s.sourceCodeBlacklistFields(ctx)
-	if err != nil {
-		return err
-	}
-
-	projects, err := s.listProjectsByTarget(ctx, target)
-	if err != nil {
-		return err
-	}
-	if err := s.processProjectSourceCodeBatch(ctx, projects, fields, target); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Service) runArchivedProjectStateRefreshLoop(ctx context.Context, fetcher evm.AthenaFetcher) {
-	ticker := time.NewTicker(archivedProjectRefreshInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			_ = s.refreshArchivedProjectStates(ctx, fetcher)
-		}
-	}
-}
-
-func (s *Service) refreshArchivedProjectStates(ctx context.Context, fetcher evm.AthenaFetcher) error {
-	return s.refreshProjectStates(ctx, fetcher, refreshTargetArchived)
-}
-
-func (s *Service) runArchivedProjectSimulationRefreshLoop(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) {
-	ticker := time.NewTicker(archivedProjectRefreshInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			_ = s.refreshArchivedProjectSimulations(ctx, fetcher, simulator)
-		}
-	}
-}
-
-func (s *Service) refreshArchivedProjectSimulations(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) error {
-	return s.refreshProjectSimulations(ctx, fetcher, simulator, refreshTargetArchived)
-}
-
-func (s *Service) runArchivedProjectSourceCodeRefreshLoop(ctx context.Context) {
-	ticker := time.NewTicker(archivedProjectRefreshInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			_ = s.refreshArchivedProjectSourceCodes(ctx)
-		}
-	}
-}
-
-func (s *Service) refreshArchivedProjectSourceCodes(ctx context.Context) error {
-	return s.refreshProjectSourceCodes(ctx, refreshTargetArchived)
-}
-
-func (s *Service) runProjectBINBlacklistScanLoop(ctx context.Context) {
-	ticker := time.NewTicker(binBlacklistScanInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			_ = s.scanAllProjectsForBINBlacklist(ctx)
-		}
-	}
-}
-
-func (s *Service) scanAllProjectsForBINBlacklist(ctx context.Context) error {
-	blacklistStore, ok := s.store.(appstore.BytecodeBlacklistContractStore)
-	if !ok || blacklistStore == nil {
-		return nil
-	}
-
-	records, err := blacklistStore.ListBytecodeBlacklistContracts(ctx)
-	if err != nil {
-		return err
-	}
-	if len(records) == 0 {
-		return nil
-	}
-
-	blacklistedCodeHashes := make(map[common.Hash]struct{}, len(records))
-	for _, item := range records {
-		blacklistedCodeHashes[item.CodeHash] = struct{}{}
-	}
-
-	projects, err := s.listAllProjectsForBINBlacklistScan(ctx)
-	if err != nil {
-		return err
-	}
-	for _, project := range projects {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if project == nil {
-			continue
-		}
-
-		contract := project.Meta.Contract
-		code, err := s.fetchContractBytecode(ctx, contract)
-		if err != nil || len(code) == 0 {
-			continue
-		}
-
-		codeHash := crypto.Keccak256Hash(code)
-		if _, matched := blacklistedCodeHashes[codeHash]; !matched {
-			continue
-		}
-
-		_ = s.applyBINBlacklistAutoArchive(ctx, contract, codeHash)
-	}
-	return nil
-}
-
-func (s *Service) listAllProjectsForBINBlacklistScan(ctx context.Context) ([]*Project, error) {
-	activeProjects, err := s.projectCache.ListActiveProjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-	archivedProjects, err := s.listAllArchivedProjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	all := make([]*Project, 0, len(activeProjects)+len(archivedProjects))
-	seen := make(map[common.Address]struct{}, len(activeProjects)+len(archivedProjects))
-	appendUnique := func(items []*Project) {
-		for _, project := range items {
-			if project == nil {
-				continue
-			}
-			contract := project.Meta.Contract
-			if _, ok := seen[contract]; ok {
-				continue
-			}
-			seen[contract] = struct{}{}
-			all = append(all, project)
-		}
-	}
-	appendUnique(activeProjects)
-	appendUnique(archivedProjects)
-	return all, nil
-}
-
-func (s *Service) applyBINBlacklistAutoArchive(ctx context.Context, contract common.Address, codeHash common.Hash) error {
-	current, exists, err := s.projectCache.GetProject(ctx, contract)
-	if err != nil || !exists || current == nil {
-		return err
-	}
-
-	now := time.Now().UTC()
-	if !current.Meta.IsArchived && s.persistencePublisher != nil {
-		if err := s.persistencePublisher.PublishProjectArchive(ctx, contract); err == nil {
-			_, _ = s.projectCache.UpdateProject(ctx, contract, func(latest *Project, exists bool) (*Project, bool, error) {
-				if !exists || latest == nil || latest.Meta.IsArchived {
-					return nil, false, nil
-				}
-				latest.Meta.IsArchived = true
-				latest.Meta.ArchivedAt = now
-				return latest, true, nil
-			})
-		}
-	}
-
-	payload := "{}"
-	if encoded, err := json.Marshal(map[string]string{
-		"source":    "bin_blacklist_scan",
-		"code_hash": codeHash.Hex(),
-	}); err == nil {
-		payload = string(encoded)
-	}
-
-	return s.persistProjectEventLog(ctx, appstore.ProjectEventLog{
-		Contract:       contract,
-		EventType:      projectEventTypeAutoArchiveBIN,
-		OccurredAt:     now,
-		Message:        "Project auto archived by BIN blacklist match",
-		Payload:        payload,
-		IdempotencyKey: projectEventIdempotencyAutoArchiveBIN,
-	})
-}
-
-func (s *Service) processProjectSourceCodeBatch(ctx context.Context, projects []*Project, fields []string, target refreshTarget) error {
-	for _, project := range projects {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if project == nil {
-			continue
-		}
-
-		sourceCode := project.Meta.SourceCode
-		if sourceCode == "" && s.apiFetcher != nil {
-			fetchedSourceCode, _, fetchErr := s.fetchSourceCode(ctx, project)
-			if fetchErr != nil {
-				continue
-			}
-			sourceCode = fetchedSourceCode
-		}
-
-		var analyzedSourceCode string
-		var blacklistReport sourcecode.BlacklistReport
-		if sourceCode != "" && s.sourceAnalyzer != nil && project.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
-			analyzedSourceCode = sourceCode
-			blacklistReport = s.sourceAnalyzer.AnalyzeSourceCode(sourceCode, fields)
-		}
-
-		shouldPersistSourceCode := false
-		_, err := s.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
-				return nil, false, nil
-			}
-
-			changed := false
-			if sourceCode != "" && current.Meta.SourceCode == "" {
-				current.Meta.SourceCode = sourceCode
-				changed = true
-				shouldPersistSourceCode = true
-			}
-
-			if analyzedSourceCode != "" && current.Meta.SourceCode == analyzedSourceCode && current.Meta.SourceCodeBlacklist.ResolvedAt.IsZero() {
-				current.Meta.SourceCodeBlacklist = blacklistReport
-				changed = true
-			}
-
-			return current, changed, nil
-		})
-		if err != nil {
-			continue
-		}
-		if shouldPersistSourceCode {
-			if err := s.persistProjectSourceCode(ctx, project.Meta.Contract, sourceCode); err != nil {
-				continue
-			}
-			if err := s.persistProjectEventLog(ctx, appstore.ProjectEventLog{
-				Contract:       project.Meta.Contract,
-				EventType:      projectEventTypeOpenSource,
-				OccurredAt:     time.Now().UTC(),
-				Message:        "Contract source code opened",
-				Payload:        "{}",
-				IdempotencyKey: projectEventIdempotencyOpenSource,
-			}); err != nil {
-				continue
-			}
-		}
-	}
-	return nil
-}
-
-func (s *Service) persistProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
-	if sourceCode == "" || s.persistencePublisher == nil {
-		return nil
-	}
-	return s.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode)
-}
-
-func (s *Service) persistProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {
-	if s.persistencePublisher == nil {
-		return nil
-	}
-	return s.persistencePublisher.PublishProjectEventLog(ctx, item)
-}
-
-func (s *Service) fetchSourceCode(ctx context.Context, project *Project) (string, string, error) {
-	response, err := s.apiFetcher.GetSourceCode(ctx, project.Meta.Contract.String())
-	if err != nil {
-		return "", "", err
-	}
-	if len(response.Result) == 0 {
-		return "", "", errors.New("etherscan getsourcecode returned empty result")
-	}
-	return response.Result[0].SourceCode, response.Result[0].ABI, nil
-}
-
 func (s *Service) sourceCodeBlacklistFields(ctx context.Context) ([]string, error) {
 	if s.sourceBlacklist == nil {
 		return nil, nil
@@ -917,20 +432,21 @@ func (s *Service) Stop() error {
 		stop()
 	}
 
-	subscriberErr := s.blockSubscriber.Stop()
-	watcherErr := s.blockWatcher.Stop()
+	pipelineErr := error(nil)
+	if s.pipeline != nil {
+		pipelineErr = s.pipeline.Stop()
+	}
 
 	s.lifecycleCtx = nil
 	s.lifecycleStop = nil
 	s.started = false
 	s.clearPipelineLocked()
 
-	return errors.Join(subscriberErr, watcherErr)
+	return pipelineErr
 }
 
 func (s *Service) clearPipelineLocked() {
-	s.blockWatcher = nil
-	s.blockSubscriber = nil
+	s.pipeline = nil
 	s.apiFetcher = nil
 }
 

@@ -25,20 +25,36 @@ import (
 )
 
 const initialProjectSyncLookback = 30 * 24 * time.Hour
+const defaultBlockHeaderQueueCapacity = 16
 
 var (
 	errGenesisReceiptNil   = errors.New("project transaction receipt is nil")
 	erc20TransferTopicHash = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 )
 
-type BlockWatcher struct {
-	nodeClient   *ethclient.Client
+type projectDiscoveryNodeClient interface {
+	SubscribeNewHead(ctx context.Context, ch chan<- *types.Header) (ethereum.Subscription, error)
+	BlockNumber(ctx context.Context) (uint64, error)
+	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
+	FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error)
+	ChainID(ctx context.Context) (*big.Int, error)
+}
+
+type projectDiscoveryIndexerImpl struct {
+	nodeClient   projectDiscoveryNodeClient
 	projectCache ProjectSnapshotCache
-	fetcher      evm.AthenaFetcher
-	publisher    PersistenceEventPublisher
+	intake       DiscoveryIntake
 	wg           sync.WaitGroup
 
 	chainID *big.Int
+}
+
+type discoveryIntakeImpl struct {
+	nodeClient   projectDiscoveryNodeClient
+	projectCache ProjectSnapshotCache
+	fetcher      evm.AthenaFetcher
+	publisher    PersistenceEventPublisher
 }
 
 type GenesisWalletShare struct {
@@ -55,39 +71,56 @@ type genesisWalletShareLog struct {
 	RatioBPS int64  `json:"ratio_bps"`
 }
 
-func NewBlockWatcher(
+func NewProjectDiscoveryIndexer(
 	nodeClient *ethclient.Client,
 	projectCache ProjectSnapshotCache,
-	fetcher evm.AthenaFetcher,
-	publisher PersistenceEventPublisher,
-) *BlockWatcher {
+	intake DiscoveryIntake,
+) ProjectDiscoveryIndexer {
 	chainID, err := nodeClient.ChainID(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
-	return &BlockWatcher{
+	return &projectDiscoveryIndexerImpl{
 		nodeClient:   nodeClient,
 		projectCache: projectCache,
-		fetcher:      fetcher,
-		publisher:    publisher,
+		intake:       intake,
 		chainID:      chainID,
 	}
 }
 
-func (w *BlockWatcher) Start(ctx context.Context) error {
+func NewDiscoveryIntake(
+	nodeClient *ethclient.Client,
+	projectCache ProjectSnapshotCache,
+	fetcher evm.AthenaFetcher,
+	publisher PersistenceEventPublisher,
+) DiscoveryIntake {
+	return &discoveryIntakeImpl{
+		nodeClient:   nodeClient,
+		projectCache: projectCache,
+		fetcher:      fetcher,
+		publisher:    publisher,
+	}
+}
+
+func (w *projectDiscoveryIndexerImpl) Start(ctx context.Context) error {
 	w.wg.Add(1)
 	go func() {
 		defer w.wg.Done()
 		err := w.run(ctx)
 		if err != nil && !errors.Is(err, context.Canceled) {
-			log.Errorf("failed to run block watcher: %v", err)
+			log.Errorf("failed to run project discovery indexer: %v", err)
 		}
 	}()
 	return nil
 }
 
-func (w *BlockWatcher) getLatestBlock(ctx context.Context) (uint64, error) {
+func (w *projectDiscoveryIndexerImpl) Stop() error {
+	w.wg.Wait()
+	return nil
+}
+
+func (w *projectDiscoveryIndexerImpl) getLatestBlock(ctx context.Context) (uint64, error) {
 	latestBlock, err := w.nodeClient.BlockNumber(ctx)
 	if err != nil {
 		return 0, err
@@ -95,19 +128,19 @@ func (w *BlockWatcher) getLatestBlock(ctx context.Context) (uint64, error) {
 	return latestBlock, nil
 }
 
-func (w *BlockWatcher) run(ctx context.Context) error {
+func (w *projectDiscoveryIndexerImpl) run(ctx context.Context) error {
 	cursor, err := w.loadCursor(ctx)
 	if err != nil {
 		return err
 	}
-	log.WithField("cursor", cursor).Info("initialized block watcher cursor")
+	log.WithField("cursor", cursor).Info("initialized project discovery cursor")
 	if err := w.catchUpToLatest(ctx, &cursor); err != nil {
 		return err
 	}
 	return w.followHeads(ctx, &cursor)
 }
 
-func (w *BlockWatcher) loadCursor(ctx context.Context) (uint64, error) {
+func (w *projectDiscoveryIndexerImpl) loadCursor(ctx context.Context) (uint64, error) {
 	maxBlock, ok, err := w.projectCache.GetMaxProjectBlockNumber(ctx)
 	if err != nil {
 		return 0, err
@@ -117,13 +150,13 @@ func (w *BlockWatcher) loadCursor(ctx context.Context) (uint64, error) {
 		log.WithFields(log.Fields{
 			"projectBlockNumber": maxBlock,
 			"cursor":             cursor,
-		}).Info("initialized block watcher cursor from persisted projects")
+		}).Info("initialized project discovery cursor from persisted projects")
 		return cursor, nil
 	}
 
 	latestBlock, err := w.nodeClient.BlockByNumber(ctx, nil)
 	if err != nil {
-		return 0, fmt.Errorf("failed to initialize block watcher cursor: %w", err)
+		return 0, fmt.Errorf("failed to initialize project discovery cursor: %w", err)
 	}
 	cursor, startBlock, err := w.initialCursorFromLookback(ctx, latestBlock)
 	if err != nil {
@@ -134,7 +167,7 @@ func (w *BlockWatcher) loadCursor(ctx context.Context) (uint64, error) {
 		"startBlockNumber":  startBlock,
 		"cursor":            cursor,
 		"lookback":          initialProjectSyncLookback.String(),
-	}).Info("initialized block watcher cursor from lookback")
+	}).Info("initialized project discovery cursor from lookback")
 	return cursor, nil
 }
 
@@ -145,7 +178,7 @@ func resumeCursorFromProjectBlock(blockNumber uint64) uint64 {
 	return blockNumber - 1
 }
 
-func (w *BlockWatcher) initialCursorFromLookback(ctx context.Context, latestBlock *types.Block) (uint64, uint64, error) {
+func (w *projectDiscoveryIndexerImpl) initialCursorFromLookback(ctx context.Context, latestBlock *types.Block) (uint64, uint64, error) {
 	if latestBlock == nil {
 		return 0, 0, errors.New("latest block is nil")
 	}
@@ -162,7 +195,7 @@ func (w *BlockWatcher) initialCursorFromLookback(ctx context.Context, latestBloc
 	return cursorBeforeBlock(startBlock), startBlock, nil
 }
 
-func (w *BlockWatcher) findBlockByTimestamp(ctx context.Context, latestBlockNumber uint64, targetTimestamp uint64) (uint64, error) {
+func (w *projectDiscoveryIndexerImpl) findBlockByTimestamp(ctx context.Context, latestBlockNumber uint64, targetTimestamp uint64) (uint64, error) {
 	var result uint64
 	low := uint64(0)
 	high := latestBlockNumber
@@ -195,7 +228,7 @@ func cursorBeforeBlock(blockNumber uint64) uint64 {
 	return blockNumber - 1
 }
 
-func (w *BlockWatcher) catchUpToLatest(ctx context.Context, cursor *uint64) error {
+func (w *projectDiscoveryIndexerImpl) catchUpToLatest(ctx context.Context, cursor *uint64) error {
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -211,11 +244,12 @@ func (w *BlockWatcher) catchUpToLatest(ctx context.Context, cursor *uint64) erro
 		if err := w.processNextBlock(ctx, cursor); err != nil {
 			return err
 		}
+
 		log.WithField("cursor", *cursor).Info("caught up to latest block")
 	}
 }
 
-func (w *BlockWatcher) followHeads(ctx context.Context, cursor *uint64) error {
+func (w *projectDiscoveryIndexerImpl) followHeads(ctx context.Context, cursor *uint64) error {
 	headers := make(chan *types.Header, defaultBlockHeaderQueueCapacity)
 	subscription, err := w.nodeClient.SubscribeNewHead(ctx, headers)
 	if err != nil {
@@ -242,15 +276,14 @@ func (w *BlockWatcher) followHeads(ctx context.Context, cursor *uint64) error {
 			if header == nil || header.Number == nil {
 				continue
 			}
-			if err := w.scanBlock(ctx, header.Number.Uint64()); err != nil {
+			if err := w.processBlock(ctx, cursor, header.Number.Uint64()); err != nil {
 				return err
 			}
-			log.WithField("cursor", *cursor).Info("scanned block")
 		}
 	}
 }
 
-func (w *BlockWatcher) processBlock(ctx context.Context, cursor *uint64, blockNumber uint64) error {
+func (w *projectDiscoveryIndexerImpl) processBlock(ctx context.Context, cursor *uint64, blockNumber uint64) error {
 	if blockNumber <= *cursor {
 		return nil
 	}
@@ -261,17 +294,31 @@ func (w *BlockWatcher) processBlock(ctx context.Context, cursor *uint64, blockNu
 	return nil
 }
 
-func (w *BlockWatcher) processNextBlock(ctx context.Context, cursor *uint64) error {
+func (w *projectDiscoveryIndexerImpl) processNextBlock(ctx context.Context, cursor *uint64) error {
 	return w.processBlock(ctx, cursor, *cursor+1)
 }
 
-func (w *BlockWatcher) scanBlock(ctx context.Context, blockNumber uint64) error {
+func (w *projectDiscoveryIndexerImpl) scanBlock(ctx context.Context, blockNumber uint64) error {
 	block, err := w.nodeClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
 	if err != nil {
 		return fmt.Errorf("failed to get block %d: %w", blockNumber, err)
 	}
 
-	projects := make([]*Project, 0)
+	candidates := w.discoverBlockCandidates(block, blockNumber)
+	if len(candidates) == 0 {
+		return nil
+	}
+	if w.intake == nil {
+		return errors.New("discovery intake is not configured")
+	}
+	return w.intake.IntakeCandidates(ctx, candidates)
+}
+
+func (w *projectDiscoveryIndexerImpl) discoverBlockCandidates(block *types.Block, blockNumber uint64) []DiscoveredProjectCandidate {
+	if block == nil {
+		return nil
+	}
+	candidates := make([]DiscoveredProjectCandidate, 0)
 	for txIndex, tx := range block.Transactions() {
 		if tx.To() != nil {
 			continue
@@ -281,27 +328,39 @@ func (w *BlockWatcher) scanBlock(ctx context.Context, blockNumber uint64) error 
 			continue
 		}
 		contractAddress := crypto.CreateAddress(from, tx.Nonce())
-
-		project := &Project{
-			Meta: ProjectMeta{
-				BlockTime:   block.Time(),
-				BlockNumber: blockNumber,
-				TxIndex:     uint64(txIndex),
-				Tx:          tx,
-				TxHash:      tx.Hash(),
-				Contract:    contractAddress,
-				Creator:     from,
-			},
-		}
-		projects = append(projects, project)
+		candidates = append(candidates, DiscoveredProjectCandidate{
+			BlockTime:   block.Time(),
+			BlockNumber: blockNumber,
+			TxIndex:     uint64(txIndex),
+			Tx:          tx,
+			TxHash:      tx.Hash(),
+			Contract:    contractAddress,
+			Creator:     from,
+		})
 	}
-
-	_ = w.syncProjects(ctx, projects)
-
-	return nil
+	return candidates
 }
 
-func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) error {
+func (d *discoveryIntakeImpl) IntakeCandidates(ctx context.Context, items []DiscoveredProjectCandidate) error {
+	if len(items) == 0 {
+		return nil
+	}
+	projects := make([]*Project, 0, len(items))
+	for _, item := range items {
+		projects = append(projects, &Project{Meta: ProjectMeta{
+			BlockTime:   item.BlockTime,
+			BlockNumber: item.BlockNumber,
+			TxIndex:     item.TxIndex,
+			Tx:          item.Tx,
+			TxHash:      item.TxHash,
+			Contract:    item.Contract,
+			Creator:     item.Creator,
+		}})
+	}
+	return d.syncProjects(ctx, projects)
+}
+
+func (d *discoveryIntakeImpl) syncProjects(ctx context.Context, projects []*Project) error {
 	if len(projects) == 0 {
 		return nil
 	}
@@ -321,7 +380,7 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 		return nil
 	}
 
-	snapshots, err := w.fetcher.FetchProjects(ctx, queries)
+	snapshots, err := d.fetcher.FetchProjects(ctx, queries)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -342,7 +401,7 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 			continue
 		}
 
-		genesisWalletShares, err := w.fetchGenesisWallets(ctx, project, snapshot.Token.TotalSupply)
+		genesisWalletShares, err := d.fetchGenesisWallets(ctx, project, snapshot.Token.TotalSupply)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"contract":    project.Meta.Contract.Hex(),
@@ -378,10 +437,10 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 		}
 		project.Meta.GenesisWallets = genesisWalletMetasFromShares(genesisWalletShares)
 
-		if w.publisher == nil {
+		if d.publisher == nil {
 			return errors.New("persistence publisher is not configured")
 		}
-		_, exists, err := w.projectCache.GetProject(ctx, project.Meta.Contract)
+		_, exists, err := d.projectCache.GetProject(ctx, project.Meta.Contract)
 		if err != nil {
 			return fmt.Errorf("failed to query project %s: %w", project.Meta.Contract.Hex(), err)
 		}
@@ -390,13 +449,13 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 		}
 
 		project.ChainState = snapshot
-		if err := w.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
+		if err := d.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
 			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
 		}
-		if err := w.publishProjectGenesisWallets(ctx, project, snapshot.Token.TotalSupply, genesisWalletShares); err != nil {
+		if err := d.publishProjectGenesisWallets(ctx, project, snapshot.Token.TotalSupply, genesisWalletShares); err != nil {
 			return fmt.Errorf("failed to persist project genesis wallets %s: %w", project.Meta.Contract.Hex(), err)
 		}
-		if err := w.publisher.PublishProjectEventLog(ctx, appstore.ProjectEventLog{
+		if err := d.publisher.PublishProjectEventLog(ctx, appstore.ProjectEventLog{
 			Contract:       project.Meta.Contract,
 			EventType:      projectEventTypeCreated,
 			OccurredAt:     time.Unix(int64(project.Meta.BlockTime), 0).UTC(),
@@ -406,7 +465,7 @@ func (w *BlockWatcher) syncProjects(ctx context.Context, projects []*Project) er
 		}); err != nil {
 			return fmt.Errorf("failed to persist project event log %s: %w", project.Meta.Contract.Hex(), err)
 		}
-		_, err = w.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
+		_, err = d.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if exists && current != nil {
 				return nil, false, nil
 			}
@@ -439,13 +498,8 @@ func genesisWalletMetasFromShares(shares []GenesisWalletShare) []GenesisWalletMe
 	return metas
 }
 
-func (w *BlockWatcher) Stop() error {
-	w.wg.Wait()
-	return nil
-}
-
-func (w *BlockWatcher) fetchGenesisWallets(ctx context.Context, project *Project, totalSupply *big.Int) ([]GenesisWalletShare, error) {
-	logs, err := w.fetchGenesisWalletsFromReceipt(ctx, project)
+func (d *discoveryIntakeImpl) fetchGenesisWallets(ctx context.Context, project *Project, totalSupply *big.Int) ([]GenesisWalletShare, error) {
+	logs, err := d.fetchGenesisWalletsFromReceipt(ctx, project)
 	if err == nil {
 		return extractGenesisWalletShares(logs, project.Meta.Contract, totalSupply), nil
 	}
@@ -460,7 +514,7 @@ func (w *BlockWatcher) fetchGenesisWallets(ctx context.Context, project *Project
 		"fallback":    "eth_getLogs",
 		"reason":      "receipt_not_found",
 	}).WithError(err).Warn("failed to fetch genesis wallets from receipt, attempting logs fallback")
-	fallbackLogs, fallbackErr := w.fetchGenesisWalletsFromLogsFallback(ctx, project)
+	fallbackLogs, fallbackErr := d.fetchGenesisWalletsFromLogsFallback(ctx, project)
 	if fallbackErr != nil {
 		log.WithFields(log.Fields{
 			"contract":    project.Meta.Contract.Hex(),
@@ -474,7 +528,7 @@ func (w *BlockWatcher) fetchGenesisWallets(ctx context.Context, project *Project
 	return extractGenesisWalletShares(fallbackLogs, project.Meta.Contract, totalSupply), nil
 }
 
-func (w *BlockWatcher) fetchGenesisWalletsFromReceipt(ctx context.Context, project *Project) ([]*types.Log, error) {
+func (d *discoveryIntakeImpl) fetchGenesisWalletsFromReceipt(ctx context.Context, project *Project) ([]*types.Log, error) {
 	if project == nil {
 		return nil, errors.New("project is nil")
 	}
@@ -482,7 +536,7 @@ func (w *BlockWatcher) fetchGenesisWalletsFromReceipt(ctx context.Context, proje
 	if txHash == (common.Hash{}) {
 		return nil, errors.New("project tx hash is empty")
 	}
-	receipt, err := w.nodeClient.TransactionReceipt(ctx, txHash)
+	receipt, err := d.nodeClient.TransactionReceipt(ctx, txHash)
 	if err != nil {
 		return nil, fmt.Errorf("fetch transaction receipt %s: %w", txHash.Hex(), err)
 	}
@@ -492,7 +546,7 @@ func (w *BlockWatcher) fetchGenesisWalletsFromReceipt(ctx context.Context, proje
 	return receipt.Logs, nil
 }
 
-func (w *BlockWatcher) fetchGenesisWalletsFromLogsFallback(ctx context.Context, project *Project) ([]*types.Log, error) {
+func (d *discoveryIntakeImpl) fetchGenesisWalletsFromLogsFallback(ctx context.Context, project *Project) ([]*types.Log, error) {
 	if project == nil {
 		return nil, errors.New("project is nil")
 	}
@@ -509,7 +563,7 @@ func (w *BlockWatcher) fetchGenesisWalletsFromLogsFallback(ctx context.Context, 
 			{erc20TransferTopicHash},
 		},
 	}
-	logs, err := w.nodeClient.FilterLogs(ctx, query)
+	logs, err := d.nodeClient.FilterLogs(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -658,8 +712,8 @@ func ratioBPS(amount *big.Int, totalSupply *big.Int) int64 {
 	return result.Int64()
 }
 
-func (w *BlockWatcher) publishProjectGenesisWallets(ctx context.Context, project *Project, totalSupply *big.Int, shares []GenesisWalletShare) error {
-	if w.publisher == nil {
+func (d *discoveryIntakeImpl) publishProjectGenesisWallets(ctx context.Context, project *Project, totalSupply *big.Int, shares []GenesisWalletShare) error {
+	if d.publisher == nil {
 		return errors.New("persistence publisher is not configured")
 	}
 	if project == nil {
@@ -693,7 +747,7 @@ func (w *BlockWatcher) publishProjectGenesisWallets(ctx context.Context, project
 	if err != nil {
 		return fmt.Errorf("marshal project genesis wallet replace payload: %w", err)
 	}
-	return w.publisher.Publish(ctx, PersistenceEvent{
+	return d.publisher.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectGenesisReplace,
 		Contract:   project.Meta.Contract.Hex(),
