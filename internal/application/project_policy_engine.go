@@ -147,21 +147,51 @@ func (e *projectPolicyEngineImpl) EvaluateAllOnce(ctx context.Context) error {
 	if e == nil {
 		return nil
 	}
+	startedAt := time.Now()
+	logger := log.WithFields(log.Fields{
+		"component": "project_policy_engine",
+		"stage":     "evaluate_all_once",
+	})
+	logger.Info("project policy evaluation stage started")
+
 	projects, err := e.listAllProjects(ctx)
 	if err != nil {
+		logger.WithFields(log.Fields{
+			"duration": time.Since(startedAt).String(),
+			"error":    err.Error(),
+		}).Warn("project policy evaluation stage failed")
 		return err
 	}
+	evaluatedCount := 0
 	for _, project := range projects {
 		if err := ctx.Err(); err != nil {
+			logger.WithFields(log.Fields{
+				"duration":        time.Since(startedAt).String(),
+				"error":           err.Error(),
+				"project_count":   len(projects),
+				"evaluated_count": evaluatedCount,
+			}).Warn("project policy evaluation stage failed")
 			return err
 		}
 		if project == nil {
 			continue
 		}
 		if err := e.evaluateProject(ctx, project.Meta.Contract); err != nil {
+			logger.WithFields(log.Fields{
+				"duration":        time.Since(startedAt).String(),
+				"error":           err.Error(),
+				"project_count":   len(projects),
+				"evaluated_count": evaluatedCount,
+			}).Warn("project policy evaluation stage failed")
 			return err
 		}
+		evaluatedCount++
 	}
+	logger.WithFields(log.Fields{
+		"duration":        time.Since(startedAt).String(),
+		"project_count":   len(projects),
+		"evaluated_count": evaluatedCount,
+	}).Info("project policy evaluation stage completed")
 	return nil
 }
 

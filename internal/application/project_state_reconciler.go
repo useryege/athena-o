@@ -98,9 +98,22 @@ func (r *projectStateReconcilerImpl) reconcileOnceJobs(ctx context.Context, jobs
 		if err := ctx.Err(); err != nil {
 			return err
 		}
+		jobStartedAt := time.Now()
+		logger := log.WithFields(log.Fields{
+			"component": "project_state_reconciler",
+			"phase":     "reconcile_once",
+			"job":       job.name,
+			"interval":  job.interval.String(),
+		})
+		logger.Info("project reconciler job started")
 		if err := r.runJobOnce(ctx, job); err != nil {
+			logger.WithFields(log.Fields{
+				"duration": time.Since(jobStartedAt).String(),
+				"error":    err.Error(),
+			}).Warn("project reconciler job failed")
 			return err
 		}
+		logger.WithField("duration", time.Since(jobStartedAt).String()).Info("project reconciler job completed")
 	}
 	return nil
 }
