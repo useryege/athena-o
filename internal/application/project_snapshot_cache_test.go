@@ -67,6 +67,43 @@ func TestRedisProjectSnapshotCacheReplaceAllRequiresClient(t *testing.T) {
 	}
 }
 
+func TestRedisProjectSnapshotCachePersistsProjectReport(t *testing.T) {
+	ctx := context.Background()
+	mini := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
+	contract := common.BigToAddress(big.NewInt(100))
+	want := ProjectReport{
+		IsPolicyEvaluated:            true,
+		IsBlacklistedCreatorWallet:   true,
+		IsBlacklistedGenesisWallet:   true,
+		IsBlacklistedBytecode:        true,
+		IsBlacklistedSourceCode:      true,
+		IsBlacklistedSourceCodeField: true,
+		HasMintRisk:                  true,
+		ShouldArchive:                true,
+	}
+
+	if err := cache.SetProject(ctx, &Project{
+		Meta:   ProjectMeta{Contract: contract},
+		Report: want,
+	}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	project, exists, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !exists || project == nil {
+		t.Fatal("project missing after set")
+	}
+	if got := project.Report; got != want {
+		t.Fatalf("project report = %+v, want %+v", got, want)
+	}
+}
+
 func mustParseTimeForTest(t *testing.T, value string) time.Time {
 	t.Helper()
 	parsed, err := time.Parse(time.RFC3339, value)

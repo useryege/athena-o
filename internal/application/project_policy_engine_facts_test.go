@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/useryege/athena/internal/application/sourcecode"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -169,5 +171,111 @@ func TestProjectPolicyEngineEvaluateAllOnceEvaluatesActiveAndArchivedProjects(t 
 	}
 	if !seen[active] || !seen[archived] {
 		t.Fatalf("evaluated contracts = %v, want active %s and archived %s", got, active.Hex(), archived.Hex())
+	}
+}
+
+func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
+	contract := common.HexToAddress("0x0000000000000000000000000000000000000201")
+	creator := common.HexToAddress("0x0000000000000000000000000000000000000202")
+	genesisWallet := common.HexToAddress("0x0000000000000000000000000000000000000203")
+	runtimeCodeHash := common.HexToHash("0x2020202020202020202020202020202020202020202020202020202020202020")
+	sourceCode := "contract Source {}"
+	sourceHash := crypto.Keccak256Hash([]byte(sourceCode))
+	project := &Project{
+		Meta: ProjectMeta{
+			Contract:   contract,
+			Creator:    creator,
+			SourceCode: sourceCode,
+			GenesisWallets: []GenesisWalletMeta{{
+				Wallet: genesisWallet,
+			}},
+		},
+		Runtime: ProjectRuntime{
+			RuntimeCodeHash: runtimeCodeHash,
+			SourceCodeBlacklist: sourcecode.BlacklistReport{
+				HasBlacklistFields: true,
+				BlacklistFields:    []string{"owner"},
+			},
+			CreatorResult: SimulateResult{
+				CanMintFromZeroViaTransferFrom: true,
+			},
+		},
+	}
+	cache := newPolicyReevaluationProjectCache(project)
+	engine := &projectPolicyEngineImpl{
+		projectCache: cache,
+		rules: []ProjectPolicyRule{
+			walletBlacklistCreatorRule{},
+			walletBlacklistGenesisWalletRule{},
+			sourceCodeBlacklistFieldRule{},
+			bytecodeBlacklistRule{},
+			sourcecodeBlacklistContractRule{},
+			simulateMintRiskRule{},
+		},
+	}
+
+	if err := engine.evaluateRulesForProject(context.Background(), project, ProjectPolicyFacts{
+		BytecodeBlacklist: map[common.Hash]struct{}{
+			runtimeCodeHash: {},
+		},
+		SourcecodeBlacklist: map[common.Hash]struct{}{
+			sourceHash: {},
+		},
+		WalletBlacklist: map[common.Address]struct{}{
+			creator:       {},
+			genesisWallet: {},
+		},
+	}); err != nil {
+		t.Fatalf("evaluateRulesForProject: %v", err)
+	}
+
+	report := cache.projects[contract].Report
+	if !report.IsPolicyEvaluated ||
+		!report.IsBlacklistedCreatorWallet ||
+		!report.IsBlacklistedGenesisWallet ||
+		!report.IsBlacklistedBytecode ||
+		!report.IsBlacklistedSourceCode ||
+		!report.IsBlacklistedSourceCodeField ||
+		!report.HasMintRisk ||
+		!report.ShouldArchive {
+		t.Fatalf("project report = %+v, want all policy fields true", report)
+	}
+}
+
+func TestProjectPolicyEngineEvaluateRulesRecomputesProjectReport(t *testing.T) {
+	contract := common.HexToAddress("0x0000000000000000000000000000000000000211")
+	project := &Project{
+		Meta: ProjectMeta{Contract: contract},
+		Report: ProjectReport{
+			IsPolicyEvaluated:            true,
+			IsBlacklistedCreatorWallet:   true,
+			IsBlacklistedGenesisWallet:   true,
+			IsBlacklistedBytecode:        true,
+			IsBlacklistedSourceCode:      true,
+			IsBlacklistedSourceCodeField: true,
+			HasMintRisk:                  true,
+			ShouldArchive:                true,
+		},
+	}
+	cache := newPolicyReevaluationProjectCache(project)
+	engine := &projectPolicyEngineImpl{
+		projectCache: cache,
+		rules: []ProjectPolicyRule{
+			walletBlacklistCreatorRule{},
+			walletBlacklistGenesisWalletRule{},
+			sourceCodeBlacklistFieldRule{},
+			bytecodeBlacklistRule{},
+			sourcecodeBlacklistContractRule{},
+			simulateMintRiskRule{},
+		},
+	}
+
+	if err := engine.evaluateRulesForProject(context.Background(), project, ProjectPolicyFacts{}); err != nil {
+		t.Fatalf("evaluateRulesForProject: %v", err)
+	}
+
+	want := ProjectReport{IsPolicyEvaluated: true}
+	if got := cache.projects[contract].Report; got != want {
+		t.Fatalf("project report = %+v, want %+v", got, want)
 	}
 }

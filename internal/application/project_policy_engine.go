@@ -3,8 +3,9 @@ package application
 // A project is automatically archived when any archive policy rule matches:
 // - wallet_blacklist_creator: creator wallet matches the wallet blacklist.
 // - wallet_blacklist_genesis_wallet: a genesis wallet matches the wallet blacklist.
-// - sourcecode_blacklist: source analysis reports blacklisted fields.
+// - sourcecode_blacklist_field: source analysis reports blacklisted fields.
 // - bytecode_blacklist: runtime code hash matches the bytecode blacklist.
+// - sourcecode_blacklist_contract: source code hash matches the sourcecode blacklist.
 // - simulate_result_mint_risk: creator simulation result has mint risk.
 
 import (
@@ -118,7 +119,7 @@ func NewProjectPolicyEngine(
 		rules: []ProjectPolicyRule{
 			walletBlacklistCreatorRule{},
 			walletBlacklistGenesisWalletRule{},
-			sourceCodeBlacklistRule{},
+			sourceCodeBlacklistFieldRule{},
 			bytecodeBlacklistRule{},
 			sourcecodeBlacklistContractRule{},
 			simulateMintRiskRule{},
@@ -578,6 +579,12 @@ func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, p
 		return nil
 	}
 
+	report := ProjectReport{IsPolicyEvaluated: true}
+	type projectPolicyRuleMatch struct {
+		ruleName string
+		evidence map[string]any
+	}
+	matches := make([]projectPolicyRuleMatch, 0, len(e.rules))
 	for _, rule := range e.rules {
 		if rule == nil {
 			continue
@@ -589,21 +596,76 @@ func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, p
 		if !match {
 			continue
 		}
+		markProjectReportRuleMatch(&report, rule.Name())
+		matches = append(matches, projectPolicyRuleMatch{
+			ruleName: rule.Name(),
+			evidence: evidence,
+		})
+	}
+	report.ShouldArchive = projectReportShouldArchive(report)
+	if err := e.updateProjectReport(ctx, project.Meta.Contract, report); err != nil {
+		return err
+	}
+	project.Report = report
 
+	for _, match := range matches {
 		now := time.Now().UTC()
 		if !project.Meta.IsArchived {
-			if err := e.archiveProjectByPolicy(ctx, project, rule.Name(), evidence, now); err != nil {
+			if err := e.archiveProjectByPolicy(ctx, project, match.ruleName, match.evidence, now); err != nil {
 				continue
 			}
 			project.Meta.IsArchived = true
 			project.Meta.ArchivedAt = now
 			continue
 		}
-		if err := e.persistPolicyAuditEvent(ctx, project.Meta.Contract, rule.Name(), evidence, now); err != nil {
+		if err := e.persistPolicyAuditEvent(ctx, project.Meta.Contract, match.ruleName, match.evidence, now); err != nil {
 			continue
 		}
 	}
 	return nil
+}
+
+func (e *projectPolicyEngineImpl) updateProjectReport(ctx context.Context, contract common.Address, report ProjectReport) error {
+	if e == nil || e.projectCache == nil {
+		return nil
+	}
+	_, err := e.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+		if !exists || current == nil || current.Report == report {
+			return nil, false, nil
+		}
+		current.Report = report
+		return current, true, nil
+	})
+	return err
+}
+
+func markProjectReportRuleMatch(report *ProjectReport, ruleName string) {
+	if report == nil {
+		return
+	}
+	switch ruleName {
+	case walletBlacklistCreatorRule{}.Name():
+		report.IsBlacklistedCreatorWallet = true
+	case walletBlacklistGenesisWalletRule{}.Name():
+		report.IsBlacklistedGenesisWallet = true
+	case bytecodeBlacklistRule{}.Name():
+		report.IsBlacklistedBytecode = true
+	case sourcecodeBlacklistContractRule{}.Name():
+		report.IsBlacklistedSourceCode = true
+	case sourceCodeBlacklistFieldRule{}.Name():
+		report.IsBlacklistedSourceCodeField = true
+	case simulateMintRiskRule{}.Name():
+		report.HasMintRisk = true
+	}
+}
+
+func projectReportShouldArchive(report ProjectReport) bool {
+	return report.IsBlacklistedCreatorWallet ||
+		report.IsBlacklistedGenesisWallet ||
+		report.IsBlacklistedBytecode ||
+		report.IsBlacklistedSourceCode ||
+		report.IsBlacklistedSourceCodeField ||
+		report.HasMintRisk
 }
 
 func (e *projectPolicyEngineImpl) archiveProjectByPolicy(ctx context.Context, project *Project, ruleName string, evidence map[string]any, now time.Time) error {
@@ -660,11 +722,11 @@ func (e *projectPolicyEngineImpl) persistPolicyAuditEvent(ctx context.Context, c
 	})
 }
 
-type sourceCodeBlacklistRule struct{}
+type sourceCodeBlacklistFieldRule struct{}
 
-func (r sourceCodeBlacklistRule) Name() string { return "sourcecode_blacklist" }
+func (r sourceCodeBlacklistFieldRule) Name() string { return "sourcecode_blacklist_field" }
 
-func (r sourceCodeBlacklistRule) Evaluate(_ context.Context, project *Project, _ ProjectPolicyFacts) (bool, map[string]any, error) {
+func (r sourceCodeBlacklistFieldRule) Evaluate(_ context.Context, project *Project, _ ProjectPolicyFacts) (bool, map[string]any, error) {
 	if project == nil || project.Meta.SourceCode == "" {
 		return false, nil, nil
 	}

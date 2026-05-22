@@ -15,6 +15,19 @@ import (
 type Project struct {
 	Meta    ProjectMeta
 	Runtime ProjectRuntime
+	Report  ProjectReport
+}
+
+type ProjectReport struct {
+	IsPolicyEvaluated bool
+
+	IsBlacklistedCreatorWallet   bool
+	IsBlacklistedGenesisWallet   bool
+	IsBlacklistedBytecode        bool
+	IsBlacklistedSourceCode      bool
+	IsBlacklistedSourceCodeField bool
+	HasMintRisk                  bool
+	ShouldArchive                bool
 }
 
 type ProjectMeta struct {
