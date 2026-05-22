@@ -30,6 +30,7 @@ const defaultBlockHeaderQueueCapacity = 16
 var (
 	errGenesisReceiptNil   = errors.New("project transaction receipt is nil")
 	erc20TransferTopicHash = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	erc20ApproveTopicHash  = crypto.Keccak256Hash([]byte("Approval(address,address,uint256)"))
 )
 
 type projectDiscoveryNodeClient interface {
