@@ -1,5 +1,12 @@
 package application
 
+// A project is automatically archived when any archive policy rule matches:
+// - wallet_blacklist_creator: creator wallet matches the wallet blacklist.
+// - wallet_blacklist_genesis_wallet: a genesis wallet matches the wallet blacklist.
+// - sourcecode_blacklist: source analysis reports blacklisted fields.
+// - bytecode_blacklist: runtime code hash matches the bytecode blacklist.
+// - simulate_result_mint_risk: creator simulation result has mint risk.
+
 import (
 	"context"
 	"encoding/json"
