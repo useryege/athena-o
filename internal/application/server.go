@@ -37,23 +37,27 @@ type ApplicationServerOpts struct {
 	UsdtDecimals      uint8
 }
 
-func NewServer(opts ApplicationServerOpts) *ApplicationServer {
+func NewServer(opts ApplicationServerOpts) (*ApplicationServer, error) {
+	service, err := NewService(opts.NodeClient,
+		opts.V2FactoryContract,
+		opts.WethContract,
+		opts.UsdtContract,
+		opts.WethDecimals,
+		opts.UsdtDecimals,
+		opts.AthenaContract,
+		opts.EtherscanAPIBaseURL,
+		opts.EtherscanAPIKey,
+		opts.DeepSeekConfig,
+		opts.Store,
+		opts.LiquidityLocker,
+		opts.RedisClient)
+	if err != nil {
+		return nil, err
+	}
 	return &ApplicationServer{
 		ApplicationServerOpts: opts,
-		service: NewService(opts.NodeClient,
-			opts.V2FactoryContract,
-			opts.WethContract,
-			opts.UsdtContract,
-			opts.WethDecimals,
-			opts.UsdtDecimals,
-			opts.AthenaContract,
-			opts.EtherscanAPIBaseURL,
-			opts.EtherscanAPIKey,
-			opts.DeepSeekConfig,
-			opts.Store,
-			opts.LiquidityLocker,
-			opts.RedisClient),
-	}
+		service:               service,
+	}, nil
 }
 
 // CreateGRPC creates a new gRPC server.

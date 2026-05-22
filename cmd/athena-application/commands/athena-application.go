@@ -146,7 +146,7 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 
-			server := application.NewServer(application.ApplicationServerOpts{
+			server, err := application.NewServer(application.ApplicationServerOpts{
 				NodeClient:          nodeClient,
 				AthenaContract:      athenaContractAddress,
 				EtherscanAPIBaseURL: etherscanAPIBaseURL,
@@ -167,6 +167,9 @@ func NewCommand() *cobra.Command {
 				WethDecimals:      wethDecimals,
 				UsdtDecimals:      usdtDecimals,
 			})
+			if err != nil {
+				return err
+			}
 
 			applicationGrpc := server.CreateGRPC()
 

@@ -18,6 +18,10 @@ type fakeDeepSeekClient struct {
 	calls   int
 }
 
+func (f *fakeDeepSeekClient) Ping(context.Context) error {
+	return nil
+}
+
 func (f *fakeDeepSeekClient) CreateChatCompletion(_ context.Context, request deepseek.ChatCompletionRequest) (*deepseek.ChatCompletionResponse, error) {
 	f.calls++
 	f.request = request

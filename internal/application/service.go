@@ -92,21 +92,24 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, deepseekConfig deepseek.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client) *Service {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, deepseekConfig deepseek.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client) (*Service, error) {
 	persistenceBus := NewRedisPersistenceEventBus(redisClient)
 	sourceAnalyzer := sourcecode.NewAnalyzer()
 	var sourceQualityAnalyzer sourcequality.Analyzer
 	if strings.TrimSpace(deepseekConfig.APIKey) != "" {
 		deepseekClient, err := deepseek.NewClient(deepseekConfig)
 		if err != nil {
-			log.WithError(err).Warn("failed to configure DeepSeek source quality analyzer")
-		} else {
-			configWithDefaults := deepseekConfig.WithDefaults()
-			sourceQualityAnalyzer = sourcequality.NewAnalyzer(deepseekClient, sourcequality.Options{
-				Model:     configWithDefaults.Model,
-				MaxTokens: configWithDefaults.MaxTokens,
-			})
+			return nil, fmt.Errorf("failed to configure DeepSeek source quality analyzer: %w", err)
 		}
+		if err := deepseekClient.Ping(context.Background()); err != nil {
+			return nil, fmt.Errorf("failed to ping DeepSeek source quality analyzer: %w", err)
+		}
+		log.Info("DeepSeek source quality analyzer configured successfully")
+		configWithDefaults := deepseekConfig.WithDefaults()
+		sourceQualityAnalyzer = sourcequality.NewAnalyzer(deepseekClient, sourcequality.Options{
+			Model:     configWithDefaults.Model,
+			MaxTokens: configWithDefaults.MaxTokens,
+		})
 	}
 	var bytecodeStore appstore.BytecodeBlacklistContractStore
 	if s, ok := store.(appstore.BytecodeBlacklistContractStore); ok {
@@ -163,7 +166,7 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		etherscanAPIBaseURL:   etherscanAPIBaseURL,
 		etherscanAPIKey:       etherscanAPIKey,
 		liquidityLocker:       liquidityLocker,
-	}
+	}, nil
 }
 
 func (s *Service) Start() error {

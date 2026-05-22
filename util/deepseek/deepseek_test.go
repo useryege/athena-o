@@ -36,6 +36,86 @@ func TestConfigWithDefaults(t *testing.T) {
 	}
 }
 
+func TestPing(t *testing.T) {
+	var gotPath string
+	var gotAuthorization string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotAuthorization = r.Header.Get("Authorization")
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"object":"list","data":[{"id":"deepseek-v4-flash","object":"model","owned_by":"deepseek"}]}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{BaseURL: server.URL, APIKey: "secret"})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	if err := client.Ping(context.Background()); err != nil {
+		t.Fatalf("Ping: %v", err)
+	}
+	if gotPath != "/models" {
+		t.Fatalf("path = %q, want /models", gotPath)
+	}
+	if gotAuthorization != "Bearer secret" {
+		t.Fatalf("Authorization = %q, want bearer token", gotAuthorization)
+	}
+}
+
+func TestPingErrors(t *testing.T) {
+	tests := []struct {
+		name       string
+		statusCode int
+		body       string
+		want       string
+	}{
+		{name: "unauthorized", statusCode: http.StatusUnauthorized, body: `unauthorized`, want: "401"},
+		{name: "server error", statusCode: http.StatusInternalServerError, body: `server unavailable`, want: "server unavailable"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tt.statusCode)
+				_, _ = w.Write([]byte(tt.body))
+			}))
+			defer server.Close()
+
+			client, err := NewClient(Config{BaseURL: server.URL, APIKey: "secret"})
+			if err != nil {
+				t.Fatalf("NewClient: %v", err)
+			}
+			err = client.Ping(context.Background())
+			if err == nil || !strings.Contains(err.Error(), tt.want) || !strings.Contains(err.Error(), "ping request") {
+				t.Fatalf("error = %v, want contains %q and ping request", err, tt.want)
+			}
+		})
+	}
+}
+
+func TestPingContextCanceled(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{BaseURL: server.URL, APIKey: "secret", Timeout: time.Second})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = client.Ping(ctx)
+	if err == nil || !strings.Contains(err.Error(), "context canceled") {
+		t.Fatalf("error = %v, want context canceled", err)
+	}
+}
+
 func TestCreateChatCompletion(t *testing.T) {
 	var gotPath string
 	var gotAuthorization string

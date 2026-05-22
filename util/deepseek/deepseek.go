@@ -23,6 +23,7 @@ const (
 )
 
 type Client interface {
+	Ping(ctx context.Context) error
 	CreateChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error)
 }
 
@@ -94,6 +95,23 @@ func (c Config) withDefaults() Config {
 	return c
 }
 
+func (c *clientImpl) Ping(ctx context.Context) error {
+	endpoint := strings.TrimRight(c.config.BaseURL, "/") + "/models"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create deepseek ping request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+c.config.APIKey)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send deepseek ping request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	return ensureHTTPSuccess(resp, "ping request")
+}
+
 func (c *clientImpl) CreateChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	request = c.applyRequestDefaults(request)
 	if len(request.Messages) == 0 {
@@ -119,7 +137,7 @@ func (c *clientImpl) CreateChatCompletion(ctx context.Context, request ChatCompl
 	}
 	defer resp.Body.Close()
 
-	if err := ensureHTTPSuccess(resp); err != nil {
+	if err := ensureHTTPSuccess(resp, "chat completion request"); err != nil {
 		return nil, err
 	}
 
@@ -163,13 +181,13 @@ type chatCompletionResponseBody struct {
 	} `json:"choices"`
 }
 
-func ensureHTTPSuccess(resp *http.Response) error {
+func ensureHTTPSuccess(resp *http.Response, operation string) error {
 	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
 		return nil
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, errorBodyLimit))
 	if err != nil {
-		return fmt.Errorf("deepseek chat completion request failed with status %s and unreadable body: %w", resp.Status, err)
+		return fmt.Errorf("deepseek %s failed with status %s and unreadable body: %w", operation, resp.Status, err)
 	}
-	return fmt.Errorf("deepseek chat completion request failed with status %s: %s", resp.Status, string(body))
+	return fmt.Errorf("deepseek %s failed with status %s: %s", operation, resp.Status, string(body))
 }
