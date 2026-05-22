@@ -1,6 +1,12 @@
 .projects-list {
     padding: 0 24px;
 
+    .argo-container {
+        width: min(94vw, 1680px);
+        max-width: 1680px;
+        margin: 0 auto;
+    }
+
     &__box {
         min-width: 100%;
         width: 100%;
