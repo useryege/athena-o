@@ -10,16 +10,18 @@ import (
 )
 
 type ProjectMeta struct {
-	BlockTime   uint64
-	BlockNumber uint64
-	Contract    common.Address
-	Creator     common.Address
-	Tx          *types.Transaction
-	TxHash      common.Hash
-	TxIndex     uint64
-	SourceCode  string
-	IsArchived  bool
-	ArchivedAt  time.Time
+	BlockTime               uint64
+	BlockNumber             uint64
+	Contract                common.Address
+	Creator                 common.Address
+	Tx                      *types.Transaction
+	TxHash                  common.Hash
+	TxIndex                 uint64
+	SourceCode              string
+	SourceQualityReport     string
+	SourceQualityReportedAt time.Time
+	IsArchived              bool
+	ArchivedAt              time.Time
 }
 
 type ProjectEventLog struct {
@@ -59,6 +61,7 @@ type ProjectStore interface {
 	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
 	ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, error)
 	UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
+	UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
 	ArchiveProjectByContract(ctx context.Context, contract common.Address) error
 	UnarchiveProjectByContract(ctx context.Context, contract common.Address) error
 	ListArchivedProjectMetas(ctx context.Context, page int32, pageSize int32) ([]ProjectMeta, int64, int32, int32, error)

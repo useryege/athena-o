@@ -104,6 +104,10 @@ message ProjectMeta {
   repeated GenesisWalletState genesisWallets = 12;
 
   repeated string creatorOtherProjectContracts = 13;
+
+  optional string sourceQualityReport = 14;
+
+  optional string sourceQualityReportedAt = 15;
 }
 
 message ProjectOption {

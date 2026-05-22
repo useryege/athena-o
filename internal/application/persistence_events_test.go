@@ -32,6 +32,10 @@ func (w *persistenceEventWriterFake) WriteProjectSourceCode(context.Context, com
 	return w.err
 }
 
+func (w *persistenceEventWriterFake) WriteProjectSourceQualityReport(context.Context, common.Address, string) error {
+	return w.err
+}
+
 func (w *persistenceEventWriterFake) ArchiveProject(context.Context, common.Address) error {
 	if w.err != nil {
 		return w.err

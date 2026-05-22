@@ -34,6 +34,7 @@ const (
 	PersistenceOpProjectEventLogAdd              = "project_event_log_add"
 	PersistenceOpProjectGenesisReplace           = "project_genesis_wallet_replace"
 	PersistenceOpProjectSourceCode               = "project_source_code_update"
+	PersistenceOpProjectSourceQualityReport      = "project_source_quality_report_update"
 	PersistenceOpProjectArchive                  = "project_archive"
 	PersistenceOpProjectUnarchive                = "project_unarchive"
 	PersistenceOpSourceBlacklistAdd              = "blacklist_add"
@@ -73,6 +74,11 @@ type projectMetaSavePayload struct {
 type projectSourceCodeUpdatePayload struct {
 	Contract   string `json:"contract"`
 	SourceCode string `json:"source_code"`
+}
+
+type projectSourceQualityReportUpdatePayload struct {
+	Contract string `json:"contract"`
+	Report   string `json:"report"`
 }
 
 type projectEventLogAddPayload struct {
@@ -152,6 +158,7 @@ type PersistenceEventPublisher interface {
 	PublishProjectMetaSave(ctx context.Context, meta appstore.ProjectMeta) error
 	PublishProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error
 	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error
+	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error
 	PublishProjectArchive(ctx context.Context, contract common.Address) error
 	PublishProjectUnarchive(ctx context.Context, contract common.Address) error
 	PublishSourceCodeBlacklistAdd(ctx context.Context, field string) error
@@ -171,6 +178,7 @@ type PersistenceEventWriter interface {
 	WriteProjectMeta(ctx context.Context, meta appstore.ProjectMeta) error
 	WriteProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error
 	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
+	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
 	ArchiveProject(ctx context.Context, contract common.Address) error
 	UnarchiveProject(ctx context.Context, contract common.Address) error
 	AddSourceCodeBlacklistField(ctx context.Context, field string) error
@@ -285,6 +293,21 @@ func (b *RedisPersistenceEventBus) PublishProjectSourceCodeUpdate(ctx context.Co
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectSourceCode,
+		Contract:   contract.Hex(),
+		Payload:    data,
+		OccurredAt: time.Now().UTC(),
+	})
+}
+
+func (b *RedisPersistenceEventBus) PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error {
+	payload := projectSourceQualityReportUpdatePayload{Contract: contract.Hex(), Report: report}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal project source quality report payload: %w", err)
+	}
+	return b.Publish(ctx, PersistenceEvent{
+		Version:    persistenceEventVersion,
+		Op:         PersistenceOpProjectSourceQualityReport,
 		Contract:   contract.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
@@ -747,6 +770,15 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
 		return writer.WriteProjectSourceCode(ctx, common.HexToAddress(payload.Contract), payload.SourceCode)
+	case PersistenceOpProjectSourceQualityReport:
+		var payload projectSourceQualityReportUpdatePayload
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("unmarshal project source quality report payload: %w", err)
+		}
+		if !common.IsHexAddress(payload.Contract) {
+			return fmt.Errorf("invalid contract %q", payload.Contract)
+		}
+		return writer.WriteProjectSourceQualityReport(ctx, common.HexToAddress(payload.Contract), payload.Report)
 	case PersistenceOpProjectEventLogAdd:
 		var payload projectEventLogAddPayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -1017,6 +1049,10 @@ func (w *storePersistenceWriter) WriteProjectEventLog(ctx context.Context, item 
 
 func (w *storePersistenceWriter) WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
 	return w.store.UpdateProjectSourceCode(ctx, contract, sourceCode)
+}
+
+func (w *storePersistenceWriter) WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
+	return w.store.UpdateProjectSourceQualityReport(ctx, contract, report)
 }
 
 func (w *storePersistenceWriter) ArchiveProject(ctx context.Context, contract common.Address) error {

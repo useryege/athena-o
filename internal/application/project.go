@@ -17,16 +17,18 @@ type Project struct {
 }
 
 type ProjectMeta struct {
-	BlockTime      uint64
-	BlockNumber    uint64
-	Contract       common.Address
-	Creator        common.Address
-	TxHash         common.Hash
-	TxIndex        uint64
-	IsArchived     bool
-	ArchivedAt     time.Time
-	SourceCode     string
-	GenesisWallets []GenesisWalletMeta
+	BlockTime               uint64
+	BlockNumber             uint64
+	Contract                common.Address
+	Creator                 common.Address
+	TxHash                  common.Hash
+	TxIndex                 uint64
+	IsArchived              bool
+	ArchivedAt              time.Time
+	SourceCode              string
+	SourceQualityReport     string
+	SourceQualityReportedAt time.Time
+	GenesisWallets          []GenesisWalletMeta
 }
 
 type ProjectRuntime struct {
@@ -122,6 +124,8 @@ func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.Proje
 			IsArchived:                   project.Meta.IsArchived,
 			GenesisWallets:               genesisWallets,
 			CreatorOtherProjectContracts: creatorOtherProjectContracts,
+			SourceQualityReport:          project.Meta.SourceQualityReport,
+			SourceQualityReportedAt:      formatOptionalTime(project.Meta.SourceQualityReportedAt),
 		},
 		ChainState: v1alpha1.ProjectChainState{
 			Token: v1alpha1.TokenState{
@@ -163,6 +167,13 @@ func pairToView(pair athenacontract.AthenaPair) v1alpha1.PairV2State {
 		IsRemoveLiquidity:              pair.IsRemoveLiquidity,
 		FeeAddressHoldLiquidityRatio:   bigIntToString(pair.FeeAddressHoldLiquidityRatio),
 	}
+}
+
+func formatOptionalTime(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+	return value.UTC().Format(time.RFC3339Nano)
 }
 
 func bigIntToString(value *big.Int) string {

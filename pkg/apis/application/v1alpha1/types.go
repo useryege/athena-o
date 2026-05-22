@@ -18,6 +18,8 @@ type ProjectMeta struct {
 	IsArchived                   bool                     `protobuf:"varint,11,opt,name=isArchived" json:"isArchived"`
 	GenesisWallets               []GenesisWalletState     `protobuf:"bytes,12,rep,name=genesisWallets" json:"genesisWallets"`
 	CreatorOtherProjectContracts []string                 `protobuf:"bytes,13,rep,name=creatorOtherProjectContracts" json:"creatorOtherProjectContracts"`
+	SourceQualityReport          string                   `protobuf:"bytes,14,opt,name=sourceQualityReport" json:"sourceQualityReport"`
+	SourceQualityReportedAt      string                   `protobuf:"bytes,15,opt,name=sourceQualityReportedAt" json:"sourceQualityReportedAt"`
 }
 
 type GenesisWalletState struct {

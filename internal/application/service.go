@@ -269,6 +269,7 @@ func (s *Service) startWithContext(ctx context.Context) (*ProjectPipeline, ether
 		athenaFetcher,
 		projectSimulator,
 		apiFetcher,
+		s.sourceQualityAnalyzer,
 		s.persistencePublisher,
 		s.fetchContractBytecode,
 		policyTriggerCh,

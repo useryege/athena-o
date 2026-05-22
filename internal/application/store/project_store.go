@@ -54,7 +54,9 @@ SELECT
   creator,
   tx_hash,
   tx_index,
-  source_code
+  source_code,
+  source_quality_report,
+  source_quality_reported_at
 FROM project
 WHERE is_archived = FALSE
 ORDER BY block_number, tx_index, id
@@ -88,6 +90,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_quality_report,
+  source_quality_reported_at,
   is_archived,
   archived_at
 FROM project
@@ -122,6 +126,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_quality_report,
+  source_quality_reported_at,
   is_archived,
   archived_at
 FROM project
@@ -155,6 +161,18 @@ WHERE contract = $1
 `, contract.Bytes(), sourceCode)
 	if err != nil {
 		return fmt.Errorf("update project source code: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
+	_, err := s.db.ExecContext(ctx, `
+UPDATE project
+SET source_quality_report = $2, source_quality_reported_at = now()
+WHERE contract = $1
+`, contract.Bytes(), report)
+	if err != nil {
+		return fmt.Errorf("update project source quality report: %w", err)
 	}
 	return nil
 }
@@ -201,6 +219,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_quality_report,
+  source_quality_reported_at,
   is_archived,
   archived_at
 FROM project
@@ -237,6 +257,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_quality_report,
+  source_quality_reported_at,
   is_archived,
   archived_at
 FROM project
@@ -262,6 +284,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_quality_report,
+  source_quality_reported_at,
   is_archived,
   archived_at
 FROM project
@@ -290,14 +314,16 @@ func scanProjectMetaRow(scanner rowScanner, withArchiveFields bool) (ProjectMeta
 	var txHash []byte
 	var txIndex int64
 	var sourceCode sql.NullString
+	var sourceQualityReport sql.NullString
+	var sourceQualityReportedAt sql.NullTime
 	var isArchived bool
 	var archivedAt sql.NullTime
 
 	var err error
 	if withArchiveFields {
-		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &isArchived, &archivedAt)
+		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceQualityReport, &sourceQualityReportedAt, &isArchived, &archivedAt)
 	} else {
-		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode)
+		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceQualityReport, &sourceQualityReportedAt)
 	}
 	if err != nil {
 		return ProjectMeta{}, fmt.Errorf("scan project meta: %w", err)
@@ -319,6 +345,10 @@ func scanProjectMetaRow(scanner rowScanner, withArchiveFields bool) (ProjectMeta
 	meta.TxHash = common.BytesToHash(txHash)
 	meta.TxIndex = uint64(txIndex)
 	meta.SourceCode = sourceCode.String
+	meta.SourceQualityReport = sourceQualityReport.String
+	if sourceQualityReportedAt.Valid {
+		meta.SourceQualityReportedAt = sourceQualityReportedAt.Time
+	}
 	meta.IsArchived = isArchived
 	if archivedAt.Valid {
 		meta.ArchivedAt = archivedAt.Time

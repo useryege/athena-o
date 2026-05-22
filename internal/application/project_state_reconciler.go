@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/evm"
+	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/util/ethereumapi"
 )
@@ -27,11 +29,12 @@ type reconcilerJob struct {
 }
 
 type projectStateReconcilerImpl struct {
-	projectCache ProjectSnapshotCache
-	projectStore appstore.ProjectStore
-	fetcher      evm.AthenaFetcher
-	simulator    ProjectSimulator
-	apiFetcher   ethereumapi.EthereumAPI
+	projectCache          ProjectSnapshotCache
+	projectStore          appstore.ProjectStore
+	fetcher               evm.AthenaFetcher
+	simulator             ProjectSimulator
+	apiFetcher            ethereumapi.EthereumAPI
+	sourceQualityAnalyzer sourcequality.Analyzer
 
 	persistencePublisher PersistenceEventPublisher
 	codeAtFunc           func(ctx context.Context, contract common.Address) ([]byte, error)
@@ -48,20 +51,22 @@ func NewProjectStateReconciler(
 	fetcher evm.AthenaFetcher,
 	simulator ProjectSimulator,
 	apiFetcher ethereumapi.EthereumAPI,
+	sourceQualityAnalyzer sourcequality.Analyzer,
 	persistencePublisher PersistenceEventPublisher,
 	codeAtFunc func(ctx context.Context, contract common.Address) ([]byte, error),
 	policyTriggerCh chan<- common.Address,
 ) ProjectStateReconciler {
 	return &projectStateReconcilerImpl{
-		projectCache:         projectCache,
-		projectStore:         projectStore,
-		fetcher:              fetcher,
-		simulator:            simulator,
-		apiFetcher:           apiFetcher,
-		persistencePublisher: persistencePublisher,
-		codeAtFunc:           codeAtFunc,
-		policyTriggerCh:      policyTriggerCh,
-		jobSem:               make(chan struct{}, reconcilerDefaultConcurrency),
+		projectCache:          projectCache,
+		projectStore:          projectStore,
+		fetcher:               fetcher,
+		simulator:             simulator,
+		apiFetcher:            apiFetcher,
+		sourceQualityAnalyzer: sourceQualityAnalyzer,
+		persistencePublisher:  persistencePublisher,
+		codeAtFunc:            codeAtFunc,
+		policyTriggerCh:       policyTriggerCh,
+		jobSem:                make(chan struct{}, reconcilerDefaultConcurrency),
 	}
 }
 
@@ -108,6 +113,8 @@ func (r *projectStateReconcilerImpl) reconcilerJobs() []reconcilerJob {
 		{name: "simulation_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSimulations},
 		{name: "sourcecode_refresh_active", interval: activeProjectSourceCodeRefreshInterval, run: r.refreshActiveProjectSourceCodes},
 		{name: "sourcecode_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSourceCodes},
+		{name: "source_quality_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectSourceQualityReports},
+		{name: "source_quality_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSourceQualityReports},
 		{name: "runtime_code_hash_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectRuntimeCodeHashes},
 		{name: "runtime_code_hash_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectRuntimeCodeHashes},
 		{name: "creator_other_projects_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectCreatorOtherProjects},
@@ -320,6 +327,66 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceCodes(ctx context.Conte
 
 func (r *projectStateReconcilerImpl) refreshActiveProjectRuntimeCodeHashes(ctx context.Context) error {
 	return r.refreshProjectRuntimeCodeHashes(ctx, refreshTargetActive)
+}
+
+func (r *projectStateReconcilerImpl) refreshActiveProjectSourceQualityReports(ctx context.Context) error {
+	return r.refreshProjectSourceQualityReports(ctx, refreshTargetActive)
+}
+
+func (r *projectStateReconcilerImpl) refreshArchivedProjectSourceQualityReports(ctx context.Context) error {
+	return r.refreshProjectSourceQualityReports(ctx, refreshTargetArchived)
+}
+
+func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReports(ctx context.Context, target refreshTarget) error {
+	if r.sourceQualityAnalyzer == nil {
+		return nil
+	}
+	projects, err := r.listProjectsByTarget(ctx, target)
+	if err != nil {
+		return err
+	}
+	for _, project := range projects {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if project == nil || project.Meta.SourceCode == "" || project.Meta.SourceQualityReport != "" {
+			continue
+		}
+		report, err := r.sourceQualityAnalyzer.AnalyzeContractSource(ctx, project.Meta.SourceCode)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"component": "project_state_reconciler",
+				"contract":  project.Meta.Contract.Hex(),
+				"error":     err.Error(),
+			}).Warn("failed to analyze project source quality")
+			continue
+		}
+		report = strings.TrimSpace(report)
+		if report == "" {
+			continue
+		}
+		if err := r.persistProjectSourceQualityReport(ctx, project.Meta.Contract, report); err != nil {
+			log.WithFields(log.Fields{
+				"component": "project_state_reconciler",
+				"contract":  project.Meta.Contract.Hex(),
+				"error":     err.Error(),
+			}).Warn("failed to persist project source quality report")
+			continue
+		}
+		reportedAt := time.Now().UTC()
+		_, err = r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
+			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Meta.SourceCode == "" || current.Meta.SourceQualityReport != "" {
+				return nil, false, nil
+			}
+			current.Meta.SourceQualityReport = report
+			current.Meta.SourceQualityReportedAt = reportedAt
+			return current, true, nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *projectStateReconcilerImpl) refreshArchivedProjectRuntimeCodeHashes(ctx context.Context) error {
@@ -537,6 +604,13 @@ func (r *projectStateReconcilerImpl) persistProjectSourceCode(ctx context.Contex
 		return nil
 	}
 	return r.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode)
+}
+
+func (r *projectStateReconcilerImpl) persistProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
+	if report == "" || r.persistencePublisher == nil {
+		return nil
+	}
+	return r.persistencePublisher.PublishProjectSourceQualityReportUpdate(ctx, contract, report)
 }
 
 func (r *projectStateReconcilerImpl) persistProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {

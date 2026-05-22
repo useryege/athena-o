@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS project (
   tx_hash BYTEA NOT NULL,
   tx_index BIGINT NOT NULL,
   source_code TEXT,
+  source_quality_report TEXT,
+  source_quality_reported_at TIMESTAMPTZ,
   is_archived BOOLEAN NOT NULL DEFAULT FALSE,
   archived_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

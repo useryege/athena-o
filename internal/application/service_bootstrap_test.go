@@ -31,6 +31,10 @@ func (s *bootstrapProjectStoreFake) UpdateProjectSourceCode(context.Context, com
 	return nil
 }
 
+func (s *bootstrapProjectStoreFake) UpdateProjectSourceQualityReport(context.Context, common.Address, string) error {
+	return nil
+}
+
 func (s *bootstrapProjectStoreFake) ArchiveProjectByContract(context.Context, common.Address) error {
 	return nil
 }

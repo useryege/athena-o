@@ -358,6 +358,16 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.SourceQualityReportedAt)
+	copy(dAtA[i:], m.SourceQualityReportedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceQualityReportedAt)))
+	i--
+	dAtA[i] = 0x7a
+	i -= len(m.SourceQualityReport)
+	copy(dAtA[i:], m.SourceQualityReport)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceQualityReport)))
+	i--
+	dAtA[i] = 0x72
 	if len(m.CreatorOtherProjectContracts) > 0 {
 		for iNdEx := len(m.CreatorOtherProjectContracts) - 1; iNdEx >= 0; iNdEx-- {
 			i -= len(m.CreatorOtherProjectContracts[iNdEx])
@@ -847,6 +857,10 @@ func (m *ProjectMeta) Size() (n int) {
 			n += 1 + l + sovGenerated(uint64(l))
 		}
 	}
+	l = len(m.SourceQualityReport)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.SourceQualityReportedAt)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -1038,6 +1052,8 @@ func (this *ProjectMeta) String() string {
 		`IsArchived:` + fmt.Sprintf("%v", this.IsArchived) + `,`,
 		`GenesisWallets:` + repeatedStringForGenesisWallets + `,`,
 		`CreatorOtherProjectContracts:` + fmt.Sprintf("%v", this.CreatorOtherProjectContracts) + `,`,
+		`SourceQualityReport:` + fmt.Sprintf("%v", this.SourceQualityReport) + `,`,
+		`SourceQualityReportedAt:` + fmt.Sprintf("%v", this.SourceQualityReportedAt) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -2667,6 +2683,70 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.CreatorOtherProjectContracts = append(m.CreatorOtherProjectContracts, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceQualityReport", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceQualityReport = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceQualityReportedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceQualityReportedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -6,8 +6,87 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/redis/go-redis/v9"
+	"github.com/useryege/athena/internal/application/redisport"
+	appstore "github.com/useryege/athena/internal/application/store"
 )
+
+type sourceQualityAnalyzerFake struct {
+	report string
+	err    error
+	calls  int
+}
+
+func (f *sourceQualityAnalyzerFake) AnalyzeContractSource(context.Context, string) (string, error) {
+	f.calls++
+	if f.err != nil {
+		return "", f.err
+	}
+	return f.report, nil
+}
+
+type persistencePublisherFake struct {
+	sourceQualityReports map[common.Address]string
+}
+
+func (p *persistencePublisherFake) Publish(context.Context, PersistenceEvent) error { return nil }
+func (p *persistencePublisherFake) PublishProjectMetaSave(context.Context, appstore.ProjectMeta) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishProjectEventLog(context.Context, appstore.ProjectEventLog) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishProjectSourceCodeUpdate(context.Context, common.Address, string) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishProjectSourceQualityReportUpdate(_ context.Context, contract common.Address, report string) error {
+	if p.sourceQualityReports == nil {
+		p.sourceQualityReports = map[common.Address]string{}
+	}
+	p.sourceQualityReports[contract] = report
+	return nil
+}
+func (p *persistencePublisherFake) PublishProjectArchive(context.Context, common.Address) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishProjectUnarchive(context.Context, common.Address) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishSourceCodeBlacklistAdd(context.Context, string) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishSourceCodeBlacklistDelete(context.Context, string) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishBytecodeBlacklistAdd(context.Context, appstore.BytecodeBlacklistContract) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishBytecodeBlacklistUpdateNote(context.Context, common.Address, string) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishBytecodeBlacklistDelete(context.Context, common.Address) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishSourcecodeBlacklistContractAdd(context.Context, appstore.SourcecodeBlacklistContract) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishSourcecodeBlacklistContractUpdateNote(context.Context, common.Address, string) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishSourcecodeBlacklistContractDelete(context.Context, common.Address) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishWalletBlacklistAdd(context.Context, appstore.WalletBlacklistEntry) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishWalletBlacklistUpdateNote(context.Context, common.Address, string) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishWalletBlacklistDelete(context.Context, common.Address) error {
+	return nil
+}
 
 func TestProjectStateReconcilerJobIntervals(t *testing.T) {
 	reconciler := &projectStateReconcilerImpl{}
@@ -20,6 +99,8 @@ func TestProjectStateReconcilerJobIntervals(t *testing.T) {
 
 	assertJobInterval(t, intervals, "sourcecode_refresh_active", 10*time.Second)
 	assertJobInterval(t, intervals, "sourcecode_refresh_archived", archivedProjectRefreshInterval)
+	assertJobInterval(t, intervals, "source_quality_refresh_active", sourceCodeRefreshInterval)
+	assertJobInterval(t, intervals, "source_quality_refresh_archived", archivedProjectRefreshInterval)
 	assertJobInterval(t, intervals, "runtime_code_hash_refresh_active", sourceCodeRefreshInterval)
 	assertJobInterval(t, intervals, "creator_other_projects_refresh_active", sourceCodeRefreshInterval)
 }
@@ -89,4 +170,76 @@ func TestProjectStateReconcilerReconcileOnceSuppressesPolicyTriggers(t *testing.
 		t.Fatalf("unexpected policy trigger %s", got.Hex())
 	default:
 	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSourceQualityReports(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract, SourceCode: "contract A {}"}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	analyzer := &sourceQualityAnalyzerFake{report: "## Report"}
+	publisher := &persistencePublisherFake{}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:          cache,
+		sourceQualityAnalyzer: analyzer,
+		persistencePublisher:  publisher,
+	}
+
+	if err := reconciler.refreshProjectSourceQualityReports(ctx, refreshTargetActive); err != nil {
+		t.Fatalf("refresh source quality reports: %v", err)
+	}
+	if analyzer.calls != 1 {
+		t.Fatalf("analyzer calls = %d, want 1", analyzer.calls)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || project.Meta.SourceQualityReport != "## Report" {
+		t.Fatalf("source quality report = %q, want report", project.Meta.SourceQualityReport)
+	}
+	if project.Meta.SourceQualityReportedAt.IsZero() {
+		t.Fatal("source quality reported at is zero")
+	}
+	if publisher.sourceQualityReports[contract] != "## Report" {
+		t.Fatalf("persisted report = %q, want report", publisher.sourceQualityReports[contract])
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSourceQualityReportsSkipsCompletedAndClosedSource(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	closedSource := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	completed := common.HexToAddress("0x00000000000000000000000000000000000000a2")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: closedSource}}); err != nil {
+		t.Fatalf("set closed source project: %v", err)
+	}
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: completed, SourceCode: "contract A {}", SourceQualityReport: "existing"}}); err != nil {
+		t.Fatalf("set completed project: %v", err)
+	}
+
+	analyzer := &sourceQualityAnalyzerFake{report: "## Report"}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:          cache,
+		sourceQualityAnalyzer: analyzer,
+		persistencePublisher:  &persistencePublisherFake{},
+	}
+
+	if err := reconciler.refreshProjectSourceQualityReports(ctx, refreshTargetActive); err != nil {
+		t.Fatalf("refresh source quality reports: %v", err)
+	}
+	if analyzer.calls != 0 {
+		t.Fatalf("analyzer calls = %d, want 0", analyzer.calls)
+	}
+}
+
+func newProjectSnapshotCacheTest(t *testing.T) ProjectSnapshotCache {
+	t.Helper()
+	mini := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	return NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
 }

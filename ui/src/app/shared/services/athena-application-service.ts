@@ -18,6 +18,8 @@ export interface ProjectMeta {
     isArchived?: boolean;
     genesisWallets?: GenesisWalletState[];
     creatorOtherProjectContracts?: string[];
+    sourceQualityReport?: string;
+    sourceQualityReportedAt?: string;
 }
 
 export interface GenesisWalletState {

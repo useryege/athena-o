@@ -38,6 +38,76 @@ const renderEventType = (eventType?: number) => {
     }
 };
 
+const renderQualityReportMarkdown = (markdown: string) => {
+    const lines = markdown.split(/\r?\n/);
+    const nodes: React.ReactNode[] = [];
+    let index = 0;
+
+    while (index < lines.length) {
+        const line = lines[index];
+        const trimmed = line.trim();
+        if (!trimmed) {
+            index++;
+            continue;
+        }
+
+        if (trimmed.startsWith('```')) {
+            const codeLines: string[] = [];
+            index++;
+            while (index < lines.length && !lines[index].trim().startsWith('```')) {
+                codeLines.push(lines[index]);
+                index++;
+            }
+            if (index < lines.length) {
+                index++;
+            }
+            nodes.push(
+                <pre key={`code-${index}`} className='project-details__quality-code'>
+                    <code>{codeLines.join('\n')}</code>
+                </pre>
+            );
+            continue;
+        }
+
+        const heading = trimmed.match(/^(#{1,4})\s+(.+)$/);
+        if (heading) {
+            const level = heading[1].length;
+            nodes.push(
+                <div key={`heading-${index}`} className={`project-details__quality-heading project-details__quality-heading--${level}`}>
+                    {heading[2]}
+                </div>
+            );
+            index++;
+            continue;
+        }
+
+        if (/^[-*]\s+/.test(trimmed)) {
+            const items: string[] = [];
+            while (index < lines.length && /^[-*]\s+/.test(lines[index].trim())) {
+                items.push(lines[index].trim().replace(/^[-*]\s+/, ''));
+                index++;
+            }
+            nodes.push(
+                <ul key={`list-${index}`} className='project-details__quality-list'>
+                    {items.map((item, itemIndex) => (
+                        <li key={`${item}-${itemIndex}`}>{item}</li>
+                    ))}
+                </ul>
+            );
+            continue;
+        }
+
+        nodes.push(
+            <p key={`paragraph-${index}`} className='project-details__quality-paragraph'>
+                {trimmed}
+            </p>
+        );
+        index++;
+    }
+
+    return nodes;
+};
+
 const renderPairSection = (title: string, pair?: PairV2State) => (
     <div className='white-box project-details__box'>
         <div className='project-details__section-title'>{title}</div>
@@ -327,6 +397,9 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
     const breadcrumbs = [{title: 'Projects', path: `/projects${props.location.search || ''}`}, {title: contract}];
     const isArchived = project?.meta?.isArchived ?? false;
+    const sourceCode = project?.meta?.sourceCode || '';
+    const isOpenSource = sourceCode.trim().length > 0;
+    const sourceQualityReport = project?.meta?.sourceQualityReport || '';
 
     const handleArchiveStateChange = React.useCallback(async () => {
         if (changingArchiveState) {
@@ -676,14 +749,29 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             </div>
                         </div>
 
-                        {project.meta?.sourceCode && (
+                        {isOpenSource && (
                             <div className='white-box project-details__box'>
                                 <div className='project-details__section-title'>Source Code</div>
-                                {project.meta?.sourceCode && (
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Contract Source Code</span>
+                                    <div className='project-details__code-block'>{sourceCode}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {isOpenSource && (
+                            <div className='white-box project-details__box'>
+                                <div className='project-details__section-title'>Quality Report</div>
+                                {project.meta?.sourceQualityReportedAt && (
                                     <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Contract Source Code</span>
-                                        <div className='project-details__code-block'>{project.meta.sourceCode}</div>
+                                        <span className='project-details__field-label'>Reported At</span>
+                                        <span className='project-details__field-value'>{renderValue(project.meta.sourceQualityReportedAt)}</span>
                                     </div>
+                                )}
+                                {sourceQualityReport.trim() ? (
+                                    <div className='project-details__quality-report'>{renderQualityReportMarkdown(sourceQualityReport)}</div>
+                                ) : (
+                                    <div className='project-details__field-value'>Quality report is pending</div>
                                 )}
                             </div>
                         )}
