@@ -11,7 +11,7 @@ POSTGRES_IMAGE_TAG="${ATHENA_POSTGRES_IMAGE_TAG:-16}"
 ATHENA_LOCAL_DATA_MODE="${ATHENA_LOCAL_DATA_MODE:-ephemeral}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-POSTGRES_DATA_DIR="$REPO_ROOT/tmp/athena-local/postgres"
+POSTGRES_DATA_DIR="${ATHENA_POSTGRES_DATA_DIR:-/tmp/athena-local/postgres}"
 POSTGRES_INIT_DIR="${ATHENA_POSTGRES_INIT_DIR:-$REPO_ROOT/hack/postgres/init}"
 
 perf_opts=(

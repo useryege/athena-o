@@ -6,7 +6,7 @@ REDIS_IMAGE_TAG=$(grep 'image: redis' manifests/base/redis/athena-redis-deployme
 ATHENA_LOCAL_DATA_MODE="${ATHENA_LOCAL_DATA_MODE:-ephemeral}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-REDIS_DATA_DIR="$REPO_ROOT/tmp/athena-local/redis"
+REDIS_DATA_DIR="${ATHENA_REDIS_DATA_DIR:-/tmp/athena-local/redis}"
 
 if [ "$ATHENA_REDIS_LOCAL" = 'true' ]; then
     if ! command -v redis-server &>/dev/null; then
