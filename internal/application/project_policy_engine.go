@@ -126,6 +126,28 @@ func (e *projectPolicyEngineImpl) Start(ctx context.Context) error {
 	return nil
 }
 
+func (e *projectPolicyEngineImpl) EvaluateAllOnce(ctx context.Context) error {
+	if e == nil {
+		return nil
+	}
+	projects, err := e.listAllProjects(ctx)
+	if err != nil {
+		return err
+	}
+	for _, project := range projects {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if project == nil {
+			continue
+		}
+		if err := e.evaluateProject(ctx, project.Meta.Contract); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (e *projectPolicyEngineImpl) Stop() error {
 	e.wg.Wait()
 	return nil

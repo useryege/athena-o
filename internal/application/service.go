@@ -39,7 +39,6 @@ const (
 	bootstrapRetryInterval                 = 3 * time.Second
 	bootstrapMaxRetryInterval              = 30 * time.Second
 	bootstrapMaxRetryWindow                = 10 * time.Minute
-	bootstrapBuildWorkerCount              = 8
 	projectPolicyTriggerQueueCapacity      = 4096
 )
 
@@ -183,7 +182,6 @@ func (s *Service) Start() error {
 	s.started = true
 	s.startStopMu.Unlock()
 
-	go s.enqueueAllProjectsForPolicy(ctx, policyTriggerCh)
 	return nil
 }
 
@@ -219,7 +217,7 @@ func (s *Service) startWithContext(ctx context.Context) (*ProjectPipeline, ether
 		}
 	}
 
-	if err := s.bootstrapProjectCaches(ctx, athenaFetcher, projectSimulator); err != nil {
+	if err := s.bootstrapProjectCaches(ctx); err != nil {
 		return nil, nil, nil, err
 	}
 	if s.persistenceBus != nil && s.persistenceWriter != nil {
@@ -251,6 +249,12 @@ func (s *Service) startWithContext(ctx context.Context) (*ProjectPipeline, ether
 		s.persistencePublisher,
 		policyTriggerCh,
 	)
+	if err := stateReconciler.ReconcileOnce(ctx); err != nil {
+		return nil, nil, nil, err
+	}
+	if err := policyEngine.EvaluateAllOnce(ctx); err != nil {
+		return nil, nil, nil, err
+	}
 	pipeline := NewProjectPipeline(discoveryIndexer, stateReconciler, policyEngine)
 	if err := pipeline.Start(ctx); err != nil {
 		return nil, nil, nil, err
@@ -258,7 +262,7 @@ func (s *Service) startWithContext(ctx context.Context) (*ProjectPipeline, ether
 	return pipeline, apiFetcher, policyTriggerCh, nil
 }
 
-func (s *Service) bootstrapProjectCaches(ctx context.Context, fetcher evm.AthenaFetcher, simulator ProjectSimulator) error {
+func (s *Service) bootstrapProjectCaches(ctx context.Context) error {
 	store, ok := s.store.(appstore.ProjectStore)
 	if !ok || store == nil {
 		return status.Error(codes.FailedPrecondition, "project store is not configured")
@@ -305,7 +309,7 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context, fetcher evm.Athena
 			continue
 		}
 
-		projects, stats, err := s.bootstrapBuildProjects(ctx, metas, fetcher, simulator, attempt, startedAt)
+		projects, stats, err := s.bootstrapBuildProjects(ctx, metas, attempt, startedAt)
 		if err != nil {
 			logger.WithFields(log.Fields{
 				"attempt":       attempt,
@@ -337,21 +341,17 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context, fetcher evm.Athena
 		}
 
 		logger.WithFields(log.Fields{
-			"attempt":           attempt,
-			"project_count":     len(projects),
-			"total_meta_count":  stats.Total,
-			"skipped_count":     stats.Skipped,
-			"simulate_failures": stats.SimulationFailed,
-			"elapsed":           time.Since(startedAt).String(),
+			"attempt":          attempt,
+			"project_count":    len(projects),
+			"total_meta_count": stats.Total,
+			"elapsed":          time.Since(startedAt).String(),
 		}).Info("project cache bootstrap completed")
 		return nil
 	}
 }
 
 type bootstrapBuildStats struct {
-	Total            int
-	Skipped          int
-	SimulationFailed int
+	Total int
 }
 
 func (s *Service) bootstrapLoadProjectMetas(ctx context.Context, store appstore.ProjectStore, attempt int, startedAt time.Time) ([]appstore.ProjectMeta, error) {
@@ -364,14 +364,14 @@ func (s *Service) bootstrapLoadProjectMetas(ctx context.Context, store appstore.
 	return store.ListAllProjectMetas(ctx)
 }
 
-func (s *Service) bootstrapBuildProjects(ctx context.Context, metas []appstore.ProjectMeta, fetcher evm.AthenaFetcher, simulator ProjectSimulator, attempt int, startedAt time.Time) ([]*Project, bootstrapBuildStats, error) {
+func (s *Service) bootstrapBuildProjects(ctx context.Context, metas []appstore.ProjectMeta, attempt int, startedAt time.Time) ([]*Project, bootstrapBuildStats, error) {
 	log.WithFields(log.Fields{
 		"component": "bootstrapProjectCaches",
 		"attempt":   attempt,
 		"stage":     "build_projects_from_metas",
 		"elapsed":   time.Since(startedAt).String(),
 	}).Info("project cache bootstrap stage started")
-	return s.buildProjectsFromMetas(ctx, metas, fetcher, simulator)
+	return s.buildProjectsFromMetas(ctx, metas)
 }
 
 func (s *Service) bootstrapReplaceCache(ctx context.Context, projects []*Project, attempt int, startedAt time.Time) error {
@@ -384,7 +384,7 @@ func (s *Service) bootstrapReplaceCache(ctx context.Context, projects []*Project
 	return s.projectCache.ReplaceAll(ctx, projects)
 }
 
-func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta, fetcher evm.AthenaFetcher, simulator ProjectSimulator) ([]*Project, bootstrapBuildStats, error) {
+func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta) ([]*Project, bootstrapBuildStats, error) {
 	stats := bootstrapBuildStats{Total: len(metas)}
 	projects := make([]*Project, 0, len(metas))
 	if len(metas) == 0 {
@@ -416,103 +416,14 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		}
 	}
 
-	queries := make([]athenacontract.AthenaProjectQuery, 0, len(metas))
 	for _, meta := range metas {
-		genesisWallets := genesisWalletsByContract[meta.Contract]
-		queries = append(queries, athenacontract.AthenaProjectQuery{
-			TokenContract:  meta.Contract,
-			MsgCaller:      meta.Creator,
-			GenesisWallets: genesisWalletAddressesFromMetas(genesisWallets),
-		})
-	}
-
-	fetched, err := fetcher.FetchProjectsWithSimulationState(ctx, queries)
-	if err != nil {
-		return nil, stats, err
-	}
-	if len(fetched) != len(metas) {
-		return nil, stats, fmt.Errorf("fetch projects with simulation state size mismatch: got %d want %d", len(fetched), len(metas))
-	}
-
-	projectItems := make([]*Project, len(metas))
-	for i, meta := range metas {
 		project := &Project{
 			Meta: projectMetaFromStore(meta),
-			Runtime: ProjectRuntime{
-				ChainState: fetched[i].Project,
-			},
 		}
 		if genesisWallets, ok := genesisWalletsByContract[meta.Contract]; ok {
 			project.Meta.GenesisWallets = genesisWallets
 		}
-		projectItems[i] = project
-	}
-
-	if simulator != nil {
-		type simulateTask struct {
-			index int
-			meta  appstore.ProjectMeta
-		}
-		workerCount := bootstrapBuildWorkerCount
-		if workerCount > len(metas) {
-			workerCount = len(metas)
-		}
-		if workerCount < 1 {
-			workerCount = 1
-		}
-
-		taskCh := make(chan simulateTask, len(metas))
-		var wg sync.WaitGroup
-		var statsMu sync.Mutex
-		for i := 0; i < workerCount; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for task := range taskCh {
-					project := projectItems[task.index]
-					if project == nil {
-						continue
-					}
-					result, err := simulator.SimulatePrimary(
-						ctx,
-						task.meta.Creator,
-						task.meta.Contract,
-						fetched[task.index].Project.WethPair.ContractAddress,
-						fetched[task.index].Project.UsdtPair.ContractAddress,
-						fetched[task.index].SimulationState,
-					)
-					if err != nil {
-						statsMu.Lock()
-						stats.SimulationFailed++
-						statsMu.Unlock()
-						log.WithFields(log.Fields{
-							"component": "bootstrapProjectCaches",
-							"contract":  task.meta.Contract.Hex(),
-							"creator":   task.meta.Creator.Hex(),
-							"error":     err.Error(),
-						}).Warn("bootstrap simulation failed, using zero-value simulation result")
-						continue
-					}
-					project.Runtime.CreatorResult = result
-				}
-			}()
-		}
-		for i, meta := range metas {
-			taskCh <- simulateTask{index: i, meta: meta}
-		}
-		close(taskCh)
-		wg.Wait()
-		if err := ctx.Err(); err != nil {
-			return nil, stats, err
-		}
-	}
-
-	for _, item := range projectItems {
-		if item == nil {
-			stats.Skipped++
-			continue
-		}
-		projects = append(projects, item)
+		projects = append(projects, project)
 	}
 	return projects, stats, nil
 }

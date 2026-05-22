@@ -106,3 +106,42 @@ func TestProjectPolicyEngineBuildFactsCachesByBlacklistVersion(t *testing.T) {
 		t.Fatalf("list calls after version change = source:%d bytecode:%d wallet:%d, want all 2", source.listCalls, bytecode.listCalls, wallet.listCalls)
 	}
 }
+
+type recordingPolicyRule struct {
+	contracts *[]common.Address
+}
+
+func (r recordingPolicyRule) Name() string { return "recording" }
+
+func (r recordingPolicyRule) Evaluate(_ context.Context, project *Project, _ ProjectPolicyFacts) (bool, map[string]any, error) {
+	*r.contracts = append(*r.contracts, project.Meta.Contract)
+	return false, nil, nil
+}
+
+func TestProjectPolicyEngineEvaluateAllOnceEvaluatesActiveAndArchivedProjects(t *testing.T) {
+	active := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	archived := common.HexToAddress("0x00000000000000000000000000000000000000a2")
+	cache := newPolicyReevaluationProjectCache(
+		&Project{Meta: ProjectMeta{Contract: active}},
+		&Project{Meta: ProjectMeta{Contract: archived, IsArchived: true}},
+	)
+	var got []common.Address
+	engine := &projectPolicyEngineImpl{
+		projectCache: cache,
+		rules:        []ProjectPolicyRule{recordingPolicyRule{contracts: &got}},
+	}
+
+	if err := engine.EvaluateAllOnce(context.Background()); err != nil {
+		t.Fatalf("EvaluateAllOnce: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("evaluated contracts = %v, want 2 contracts", got)
+	}
+	seen := map[common.Address]bool{}
+	for _, contract := range got {
+		seen[contract] = true
+	}
+	if !seen[active] || !seen[archived] {
+		t.Fatalf("evaluated contracts = %v, want active %s and archived %s", got, active.Hex(), archived.Hex())
+	}
+}

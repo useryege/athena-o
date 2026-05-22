@@ -18,10 +18,12 @@ type ProjectDiscoveryIndexer interface {
 
 type ProjectStateReconciler interface {
 	Lifecycle
+	ReconcileOnce(ctx context.Context) error
 }
 
 type ProjectPolicyEngine interface {
 	Lifecycle
+	EvaluateAllOnce(ctx context.Context) error
 }
 
 type DiscoveredProjectCandidate struct {

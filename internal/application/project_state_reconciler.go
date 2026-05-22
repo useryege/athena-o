@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -36,8 +37,9 @@ type projectStateReconcilerImpl struct {
 	codeAtFunc           func(ctx context.Context, contract common.Address) ([]byte, error)
 	policyTriggerCh      chan<- common.Address
 
-	jobSem chan struct{}
-	wg     sync.WaitGroup
+	jobSem                 chan struct{}
+	wg                     sync.WaitGroup
+	suppressPolicyTriggers atomic.Bool
 }
 
 func NewProjectStateReconciler(
@@ -77,6 +79,27 @@ func (r *projectStateReconcilerImpl) Start(ctx context.Context) error {
 	return nil
 }
 
+func (r *projectStateReconcilerImpl) ReconcileOnce(ctx context.Context) error {
+	if r == nil {
+		return nil
+	}
+	return r.reconcileOnceJobs(ctx, r.reconcilerJobs())
+}
+
+func (r *projectStateReconcilerImpl) reconcileOnceJobs(ctx context.Context, jobs []reconcilerJob) error {
+	r.suppressPolicyTriggers.Store(true)
+	defer r.suppressPolicyTriggers.Store(false)
+	for _, job := range jobs {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := r.runJobOnce(ctx, job); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *projectStateReconcilerImpl) reconcilerJobs() []reconcilerJob {
 	return []reconcilerJob{
 		{name: "state_refresh_active", interval: activeProjectStateRefreshInterval, run: r.refreshActiveProjectStates},
@@ -112,18 +135,25 @@ func (r *projectStateReconcilerImpl) runLoop(ctx context.Context, job reconciler
 }
 
 func (r *projectStateReconcilerImpl) executeJob(ctx context.Context, job reconcilerJob) {
-	if err := r.acquireSemaphore(ctx); err != nil {
-		return
-	}
-	defer r.releaseSemaphore()
-
-	if err := job.run(ctx); err != nil {
+	if err := r.runJobOnce(ctx, job); err != nil {
 		log.WithFields(log.Fields{
 			"component": "project_state_reconciler",
 			"job":       job.name,
 			"error":     err.Error(),
 		}).Warn("project reconciler job failed")
 	}
+}
+
+func (r *projectStateReconcilerImpl) runJobOnce(ctx context.Context, job reconcilerJob) error {
+	if err := r.acquireSemaphore(ctx); err != nil {
+		return err
+	}
+	defer r.releaseSemaphore()
+
+	if err := job.run(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *projectStateReconcilerImpl) acquireSemaphore(ctx context.Context) error {
@@ -405,6 +435,9 @@ func (r *projectStateReconcilerImpl) refreshProjectRuntimeCodeHashes(ctx context
 
 func (r *projectStateReconcilerImpl) triggerPolicyEvaluation(contract common.Address, source string) {
 	if r == nil || r.policyTriggerCh == nil || contract == (common.Address{}) {
+		return
+	}
+	if r.suppressPolicyTriggers.Load() {
 		return
 	}
 	select {
