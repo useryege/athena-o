@@ -234,107 +234,48 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		startLogger.WithFields(fields).Info("application startup stage completed")
 	}()
 
-	startStage := func(stage string, fields log.Fields) (*log.Entry, time.Time) {
-		if fields == nil {
-			fields = log.Fields{}
-		}
-		fields["component"] = "application_start"
-		fields["stage"] = stage
-		logger := log.WithFields(fields)
-		logger.WithField("elapsed", time.Since(startedAt).String()).Info("application startup stage started")
-		return logger, time.Now()
-	}
-	completeStage := func(logger *log.Entry, stageStartedAt time.Time, fields log.Fields) {
-		if fields == nil {
-			fields = log.Fields{}
-		}
-		fields["duration"] = time.Since(stageStartedAt).String()
-		fields["elapsed"] = time.Since(startedAt).String()
-		logger.WithFields(fields).Info("application startup stage completed")
-	}
-	failStage := func(logger *log.Entry, stageStartedAt time.Time, stageErr error, fields log.Fields) {
-		if fields == nil {
-			fields = log.Fields{}
-		}
-		fields["duration"] = time.Since(stageStartedAt).String()
-		fields["elapsed"] = time.Since(startedAt).String()
-		fields["error"] = stageErr.Error()
-		logger.WithFields(fields).Warn("application startup stage failed")
-	}
-
 	log.Info("athena-application project snapshot cache currently supports a single application writer replica")
 
-	stageLogger, stageStartedAt := startStage("new_athena_fetcher", nil)
 	athenaFetcher, err := evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
 	if err != nil {
-		failStage(stageLogger, stageStartedAt, err, nil)
 		return nil, nil, nil, err
 	}
-	completeStage(stageLogger, stageStartedAt, nil)
 
-	stageLogger, stageStartedAt = startStage("chain_id", nil)
 	chainID, err := s.nodeClient.ChainID(ctx)
 	if err != nil {
-		failStage(stageLogger, stageStartedAt, err, nil)
 		return nil, nil, nil, err
 	}
-	completeStage(stageLogger, stageStartedAt, log.Fields{
-		"chain_id": chainID.String(),
-	})
 
 	apiFetcher = ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
 	projectSimulator := NewProjectSimulator(s.nodeClient)
 
-	stageLogger, stageStartedAt = startStage("load_source_blacklist", nil)
 	if s.sourceBlacklist != nil {
 		if err := s.sourceBlacklist.Load(ctx); err != nil {
-			failStage(stageLogger, stageStartedAt, err, nil)
 			return nil, nil, nil, err
 		}
 	}
-	completeStage(stageLogger, stageStartedAt, log.Fields{
-		"skipped": s.sourceBlacklist == nil,
-	})
 
-	stageLogger, stageStartedAt = startStage("load_bytecode_blacklist", nil)
 	if s.bytecodeBlacklist != nil {
 		if err := s.bytecodeBlacklist.Load(ctx); err != nil {
-			failStage(stageLogger, stageStartedAt, err, nil)
 			return nil, nil, nil, err
 		}
 	}
-	completeStage(stageLogger, stageStartedAt, log.Fields{
-		"skipped": s.bytecodeBlacklist == nil,
-	})
 
-	stageLogger, stageStartedAt = startStage("load_sourcecode_blacklist", nil)
 	if s.sourcecodeBlacklist != nil {
 		if err := s.sourcecodeBlacklist.Load(ctx); err != nil {
-			failStage(stageLogger, stageStartedAt, err, nil)
 			return nil, nil, nil, err
 		}
 	}
-	completeStage(stageLogger, stageStartedAt, log.Fields{
-		"skipped": s.sourcecodeBlacklist == nil,
-	})
 
-	stageLogger, stageStartedAt = startStage("load_wallet_blacklist", nil)
 	if s.walletBlacklist != nil {
 		if err := s.walletBlacklist.Load(ctx); err != nil {
-			failStage(stageLogger, stageStartedAt, err, nil)
 			return nil, nil, nil, err
 		}
 	}
-	completeStage(stageLogger, stageStartedAt, log.Fields{
-		"skipped": s.walletBlacklist == nil,
-	})
 
-	stageLogger, stageStartedAt = startStage("bootstrap_project_caches", nil)
 	if err := s.bootstrapProjectCaches(ctx); err != nil {
-		failStage(stageLogger, stageStartedAt, err, nil)
 		return nil, nil, nil, err
 	}
-	completeStage(stageLogger, stageStartedAt, nil)
 
 	if s.persistenceBus != nil && s.persistenceWriter != nil {
 		go s.runPersistenceEventLoop(ctx)
@@ -343,13 +284,10 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 	policyTriggerCh = make(chan common.Address, projectPolicyTriggerQueueCapacity)
 	discoveryIntake := NewDiscoveryIntake(s.nodeClient, s.projectCache, athenaFetcher, s.persistencePublisher, policyTriggerCh)
 
-	stageLogger, stageStartedAt = startStage("new_discovery_indexer", nil)
 	discoveryIndexer, err := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, discoveryIntake)
 	if err != nil {
-		failStage(stageLogger, stageStartedAt, err, nil)
 		return nil, nil, nil, err
 	}
-	completeStage(stageLogger, stageStartedAt, nil)
 
 	stateReconciler := NewProjectStateReconciler(
 		s.projectCache,
@@ -373,27 +311,18 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		policyTriggerCh,
 	)
 
-	stageLogger, stageStartedAt = startStage("state_reconcile_once", nil)
 	if err := stateReconciler.ReconcileOnce(ctx); err != nil {
-		failStage(stageLogger, stageStartedAt, err, nil)
 		return nil, nil, nil, err
 	}
-	completeStage(stageLogger, stageStartedAt, nil)
 
-	stageLogger, stageStartedAt = startStage("policy_evaluate_all_once", nil)
 	if err := policyEngine.EvaluateAllOnce(ctx); err != nil {
-		failStage(stageLogger, stageStartedAt, err, nil)
 		return nil, nil, nil, err
 	}
-	completeStage(stageLogger, stageStartedAt, nil)
 
 	pipeline = NewProjectPipeline(discoveryIndexer, stateReconciler, policyEngine)
-	stageLogger, stageStartedAt = startStage("pipeline_start", nil)
 	if err := pipeline.Start(ctx); err != nil {
-		failStage(stageLogger, stageStartedAt, err, nil)
 		return nil, nil, nil, err
 	}
-	completeStage(stageLogger, stageStartedAt, nil)
 	return pipeline, apiFetcher, policyTriggerCh, nil
 }
 
@@ -439,7 +368,7 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context) error {
 		attempt++
 
 		stageStartedAt := time.Now()
-		metas, err := s.bootstrapLoadProjectMetas(ctx, store, attempt, startedAt)
+		metas, err := s.bootstrapLoadProjectMetas(ctx, store)
 		if err != nil {
 			logger.WithFields(log.Fields{
 				"attempt":       attempt,
@@ -457,7 +386,7 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context) error {
 		}
 
 		stageStartedAt = time.Now()
-		projects, stats, err := s.bootstrapBuildProjects(ctx, metas, genesisWalletStore, attempt, startedAt)
+		projects, stats, err := s.bootstrapBuildProjects(ctx, metas, genesisWalletStore)
 		if err != nil {
 			logger.WithFields(log.Fields{
 				"attempt":       attempt,
@@ -475,7 +404,7 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context) error {
 		}
 
 		stageStartedAt = time.Now()
-		if err := s.bootstrapReplaceCache(ctx, projects, attempt, startedAt); err != nil {
+		if err := s.bootstrapReplaceCache(ctx, projects); err != nil {
 			logger.WithFields(log.Fields{
 				"attempt":       attempt,
 				"stage":         "replace_all_cache",
@@ -507,96 +436,16 @@ type bootstrapBuildStats struct {
 	GenesisWalletCount  int
 }
 
-func (s *Service) bootstrapLoadProjectMetas(ctx context.Context, store appstore.ProjectStore, attempt int, startedAt time.Time) ([]appstore.ProjectMeta, error) {
-	stageStartedAt := time.Now()
-	logger := log.WithFields(log.Fields{
-		"component": "bootstrapProjectCaches",
-		"attempt":   attempt,
-		"stage":     "list_all_project_metas",
-	})
-	logger.WithField("elapsed", time.Since(startedAt).String()).Info("project cache bootstrap stage started")
-
-	metas, err := store.ListAllProjectMetas(ctx)
-	duration := time.Since(stageStartedAt)
-	if err != nil {
-		logger.WithFields(log.Fields{
-			"duration": duration.String(),
-			"elapsed":  time.Since(startedAt).String(),
-			"error":    err.Error(),
-		}).Warn("project cache bootstrap stage failed")
-		return nil, err
-	}
-	logger.WithFields(log.Fields{
-		"duration":   duration.String(),
-		"elapsed":    time.Since(startedAt).String(),
-		"meta_count": len(metas),
-	}).Info("project cache bootstrap stage completed")
-	return metas, nil
+func (s *Service) bootstrapLoadProjectMetas(ctx context.Context, store appstore.ProjectStore) ([]appstore.ProjectMeta, error) {
+	return store.ListAllProjectMetas(ctx)
 }
 
-func (s *Service) bootstrapBuildProjects(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore, attempt int, startedAt time.Time) ([]*Project, bootstrapBuildStats, error) {
-	stageStartedAt := time.Now()
-	logger := log.WithFields(log.Fields{
-		"component": "bootstrapProjectCaches",
-		"attempt":   attempt,
-		"stage":     "build_projects_from_metas",
-	})
-	logger.WithFields(log.Fields{
-		"elapsed":    time.Since(startedAt).String(),
-		"meta_count": len(metas),
-	}).Info("project cache bootstrap stage started")
-
-	projects, stats, err := s.buildProjectsFromMetas(ctx, metas, genesisWalletStore)
-	duration := time.Since(stageStartedAt)
-	if err != nil {
-		logger.WithFields(log.Fields{
-			"duration":   duration.String(),
-			"elapsed":    time.Since(startedAt).String(),
-			"error":      err.Error(),
-			"meta_count": len(metas),
-		}).Warn("project cache bootstrap stage failed")
-		return nil, stats, err
-	}
-	logger.WithFields(log.Fields{
-		"duration":              duration.String(),
-		"elapsed":               time.Since(startedAt).String(),
-		"meta_count":            len(metas),
-		"project_count":         len(projects),
-		"genesis_project_count": stats.GenesisProjectCount,
-		"genesis_wallet_count":  stats.GenesisWalletCount,
-	}).Info("project cache bootstrap stage completed")
-	return projects, stats, nil
+func (s *Service) bootstrapBuildProjects(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore) ([]*Project, bootstrapBuildStats, error) {
+	return s.buildProjectsFromMetas(ctx, metas, genesisWalletStore)
 }
 
-func (s *Service) bootstrapReplaceCache(ctx context.Context, projects []*Project, attempt int, startedAt time.Time) error {
-	stageStartedAt := time.Now()
-	logger := log.WithFields(log.Fields{
-		"component": "bootstrapProjectCaches",
-		"attempt":   attempt,
-		"stage":     "replace_all_cache",
-	})
-	logger.WithFields(log.Fields{
-		"elapsed":       time.Since(startedAt).String(),
-		"project_count": len(projects),
-	}).Info("project cache bootstrap stage started")
-
-	err := s.projectCache.ReplaceAll(ctx, projects)
-	duration := time.Since(stageStartedAt)
-	if err != nil {
-		logger.WithFields(log.Fields{
-			"duration":      duration.String(),
-			"elapsed":       time.Since(startedAt).String(),
-			"error":         err.Error(),
-			"project_count": len(projects),
-		}).Warn("project cache bootstrap stage failed")
-		return err
-	}
-	logger.WithFields(log.Fields{
-		"duration":      duration.String(),
-		"elapsed":       time.Since(startedAt).String(),
-		"project_count": len(projects),
-	}).Info("project cache bootstrap stage completed")
-	return nil
+func (s *Service) bootstrapReplaceCache(ctx context.Context, projects []*Project) error {
+	return s.projectCache.ReplaceAll(ctx, projects)
 }
 
 func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore) ([]*Project, bootstrapBuildStats, error) {
@@ -615,20 +464,8 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 	}
 
 	genesisWalletsByContract := make(map[common.Address][]GenesisWalletMeta, len(metas))
-	genesisStageStartedAt := time.Now()
-	genesisLogger := log.WithFields(log.Fields{
-		"component":      "bootstrapProjectCaches",
-		"stage":          "list_project_genesis_wallets_by_contracts",
-		"contract_count": len(contracts),
-	})
-	genesisLogger.Info("project cache bootstrap stage started")
 	itemsByContract, err := genesisWalletStore.ListProjectGenesisWalletsByContracts(ctx, contracts)
-	genesisDuration := time.Since(genesisStageStartedAt)
 	if err != nil {
-		genesisLogger.WithFields(log.Fields{
-			"duration": genesisDuration.String(),
-			"error":    err.Error(),
-		}).Warn("project cache bootstrap stage failed")
 		return nil, stats, err
 	}
 	genesisWalletCount := 0
@@ -638,11 +475,6 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 	}
 	stats.GenesisProjectCount = len(itemsByContract)
 	stats.GenesisWalletCount = genesisWalletCount
-	genesisLogger.WithFields(log.Fields{
-		"duration":              genesisDuration.String(),
-		"genesis_project_count": len(itemsByContract),
-		"genesis_wallet_count":  genesisWalletCount,
-	}).Info("project cache bootstrap stage completed")
 
 	for _, meta := range metas {
 		project := &Project{

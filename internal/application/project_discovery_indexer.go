@@ -108,6 +108,7 @@ func NewDiscoveryIntake(
 }
 
 func (w *projectDiscoveryIndexerImpl) Start(ctx context.Context) error {
+	log.Info("starting project discovery indexer")
 	w.wg.Add(1)
 	go func() {
 		defer w.wg.Done()
