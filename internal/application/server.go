@@ -8,6 +8,7 @@ import (
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/server/version"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
+	"github.com/useryege/athena/util/deepseek"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -23,6 +24,7 @@ type ApplicationServerOpts struct {
 	AthenaContract      common.Address
 	EtherscanAPIBaseURL string
 	EtherscanAPIKey     string
+	DeepSeekConfig      deepseek.Config
 	Store               appstore.Store
 	LiquidityLocker     []common.Address
 	RedisClient         redisport.Client
@@ -47,6 +49,7 @@ func NewServer(opts ApplicationServerOpts) *ApplicationServer {
 			opts.AthenaContract,
 			opts.EtherscanAPIBaseURL,
 			opts.EtherscanAPIKey,
+			opts.DeepSeekConfig,
 			opts.Store,
 			opts.LiquidityLocker,
 			opts.RedisClient),

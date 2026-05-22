@@ -31,6 +31,7 @@ import (
 	appstore "github.com/useryege/athena/internal/application/store"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
+	"github.com/useryege/athena/util/deepseek"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/healthz"
@@ -51,6 +52,9 @@ func NewCommand() *cobra.Command {
 		athenaContract      string
 		etherscanAPIBaseURL string
 		etherscanAPIKey     string
+		deepseekAPIKey      string
+		deepseekAPIBaseURL  string
+		deepseekModel       string
 		liquidityLockers    []string
 		storeSrc            func(context.Context) (*appstore.SQLStore, error)
 		redisClient         *redis.Client
@@ -147,9 +151,14 @@ func NewCommand() *cobra.Command {
 				AthenaContract:      athenaContractAddress,
 				EtherscanAPIBaseURL: etherscanAPIBaseURL,
 				EtherscanAPIKey:     etherscanAPIKey,
-				Store:               store,
-				LiquidityLocker:     liquidityLockerAddresses,
-				RedisClient:         redisport.NewGoRedisAdapter(redisClient),
+				DeepSeekConfig: deepseek.Config{
+					BaseURL: deepseekAPIBaseURL,
+					APIKey:  deepseekAPIKey,
+					Model:   deepseekModel,
+				},
+				Store:           store,
+				LiquidityLocker: liquidityLockerAddresses,
+				RedisClient:     redisport.NewGoRedisAdapter(redisClient),
 
 				// Fetch from Athena contract
 				V2FactoryContract: v2FactoryContractAddress,
@@ -229,6 +238,9 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&athenaContract, "athena-contract", env.StringFromEnv("ATHENA_APPLICATION_ATHENA_CONTRACT", ""), "ATHENA aggregation contract address")
 	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
 	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")
+	command.Flags().StringVar(&deepseekAPIKey, "deepseek-api-key", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_API_KEY", ""), "DeepSeek API key")
+	command.Flags().StringVar(&deepseekAPIBaseURL, "deepseek-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_BASE_URL", deepseek.DefaultBaseURL), "DeepSeek API base URL")
+	command.Flags().StringVar(&deepseekModel, "deepseek-model", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_MODEL", deepseek.DefaultModel), "DeepSeek model for contract source quality analysis")
 	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")
 	storeSrc = appstore.NewSQLStoreSource()
 	cacheSrc = cacheutil.AddCacheFlagsToCmd(command, cacheutil.Options{

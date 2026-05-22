@@ -19,10 +19,12 @@ import (
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/redisport"
 	"github.com/useryege/athena/internal/application/sourcecode"
+	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
 	v1 "github.com/useryege/athena/internal/pkg/proto/v1"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
+	"github.com/useryege/athena/util/deepseek"
 	"github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -64,13 +66,14 @@ type Service struct {
 	etherscanAPIKey     string
 	liquidityLocker     []common.Address
 
-	pipeline            *ProjectPipeline
-	apiFetcher          ethereumapi.EthereumAPI
-	sourceAnalyzer      sourcecode.Analyzer
-	sourceBlacklist     appcache.SourceCodeBlacklistModel
-	bytecodeBlacklist   appcache.BytecodeBlacklistModel
-	sourcecodeBlacklist appcache.SourcecodeBlacklistContractModel
-	walletBlacklist     appcache.WalletBlacklistModel
+	pipeline              *ProjectPipeline
+	apiFetcher            ethereumapi.EthereumAPI
+	sourceAnalyzer        sourcecode.Analyzer
+	sourceQualityAnalyzer sourcequality.Analyzer
+	sourceBlacklist       appcache.SourceCodeBlacklistModel
+	bytecodeBlacklist     appcache.BytecodeBlacklistModel
+	sourcecodeBlacklist   appcache.SourcecodeBlacklistContractModel
+	walletBlacklist       appcache.WalletBlacklistModel
 
 	store                appstore.Store
 	projectCache         ProjectSnapshotCache
@@ -89,9 +92,22 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client) *Service {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, deepseekConfig deepseek.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client) *Service {
 	persistenceBus := NewRedisPersistenceEventBus(redisClient)
 	sourceAnalyzer := sourcecode.NewAnalyzer()
+	var sourceQualityAnalyzer sourcequality.Analyzer
+	if strings.TrimSpace(deepseekConfig.APIKey) != "" {
+		deepseekClient, err := deepseek.NewClient(deepseekConfig)
+		if err != nil {
+			log.WithError(err).Warn("failed to configure DeepSeek source quality analyzer")
+		} else {
+			configWithDefaults := deepseekConfig.WithDefaults()
+			sourceQualityAnalyzer = sourcequality.NewAnalyzer(deepseekClient, sourcequality.Options{
+				Model:     configWithDefaults.Model,
+				MaxTokens: configWithDefaults.MaxTokens,
+			})
+		}
+	}
 	var bytecodeStore appstore.BytecodeBlacklistContractStore
 	if s, ok := store.(appstore.BytecodeBlacklistContractStore); ok {
 		bytecodeStore = s
@@ -126,26 +142,27 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 	)
 
 	return &Service{
-		nodeClient:           nodeClient,
-		store:                store,
-		projectCache:         NewProjectSnapshotCache(redisClient),
-		sourceAnalyzer:       sourceAnalyzer,
-		sourceBlacklist:      sourceBlacklist,
-		bytecodeBlacklist:    bytecodeBlacklist,
-		sourcecodeBlacklist:  sourcecodeBlacklist,
-		walletBlacklist:      walletBlacklist,
-		persistencePublisher: persistenceBus,
-		persistenceBus:       persistenceBus,
-		persistenceWriter:    NewStorePersistenceWriter(store),
-		v2FactoryContract:    v2FactoryContract,
-		wethContract:         wethContract,
-		usdtContract:         usdtContract,
-		wethDecimals:         wethDecimals,
-		usdtDecimals:         usdtDecimals,
-		athenaContract:       athenaContract,
-		etherscanAPIBaseURL:  etherscanAPIBaseURL,
-		etherscanAPIKey:      etherscanAPIKey,
-		liquidityLocker:      liquidityLocker,
+		nodeClient:            nodeClient,
+		store:                 store,
+		projectCache:          NewProjectSnapshotCache(redisClient),
+		sourceAnalyzer:        sourceAnalyzer,
+		sourceQualityAnalyzer: sourceQualityAnalyzer,
+		sourceBlacklist:       sourceBlacklist,
+		bytecodeBlacklist:     bytecodeBlacklist,
+		sourcecodeBlacklist:   sourcecodeBlacklist,
+		walletBlacklist:       walletBlacklist,
+		persistencePublisher:  persistenceBus,
+		persistenceBus:        persistenceBus,
+		persistenceWriter:     NewStorePersistenceWriter(store),
+		v2FactoryContract:     v2FactoryContract,
+		wethContract:          wethContract,
+		usdtContract:          usdtContract,
+		wethDecimals:          wethDecimals,
+		usdtDecimals:          usdtDecimals,
+		athenaContract:        athenaContract,
+		etherscanAPIBaseURL:   etherscanAPIBaseURL,
+		etherscanAPIKey:       etherscanAPIKey,
+		liquidityLocker:       liquidityLocker,
 	}
 }
 
@@ -527,6 +544,13 @@ func (s *Service) sourceCodeBlacklistFields(ctx context.Context) ([]string, erro
 		return nil, nil
 	}
 	return s.sourceBlacklist.List(ctx)
+}
+
+func (s *Service) AnalyzeContractSourceQuality(ctx context.Context, sourceCode string) (string, error) {
+	if s.sourceQualityAnalyzer == nil {
+		return "", status.Error(codes.FailedPrecondition, "DeepSeek analyzer is not configured")
+	}
+	return s.sourceQualityAnalyzer.AnalyzeContractSource(ctx, sourceCode)
 }
 
 func (s *Service) Stop() error {
