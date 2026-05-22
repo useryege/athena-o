@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,13 +18,15 @@ import (
 const (
 	persistenceEventVersion = 1
 
-	persistenceStreamKey  = "application:persist:stream"
-	persistenceGroupName  = "application:persist:group"
-	persistenceConsumerID = "application-persist-consumer"
+	persistenceStreamKey           = "application:persist:stream"
+	persistenceGroupName           = "application:persist:group"
+	persistenceConsumerID          = "application-persist-consumer"
+	persistenceDeadLetterStreamKey = "application:persist:dead_letter_stream"
 
 	persistenceReadCount      = int64(64)
 	persistenceReadBlock      = 2 * time.Second
 	persistencePendingBackoff = 200 * time.Millisecond
+	persistenceMaxRetries     = 3
 )
 
 const (
@@ -167,23 +170,36 @@ type PersistenceEventConsumer interface {
 	Start(ctx context.Context, writer PersistenceEventWriter) error
 }
 
-type RedisPersistenceEventBus struct {
-	client   redisport.StreamClient
-	stream   string
-	group    string
-	consumer string
+type persistenceRedisClient interface {
+	redisport.StreamClient
+	redisport.KVReaderWriter
 }
 
-func NewRedisPersistenceEventBus(client redisport.StreamClient) *RedisPersistenceEventBus {
+type RedisPersistenceEventBus struct {
+	client           persistenceRedisClient
+	stream           string
+	group            string
+	consumer         string
+	deadLetterStream string
+}
+
+func NewRedisPersistenceEventBus(client persistenceRedisClient) *RedisPersistenceEventBus {
+	if client == nil {
+		return nil
+	}
 	return &RedisPersistenceEventBus{
-		client:   client,
-		stream:   persistenceStreamKey,
-		group:    persistenceGroupName,
-		consumer: persistenceConsumerID,
+		client:           client,
+		stream:           persistenceStreamKey,
+		group:            persistenceGroupName,
+		consumer:         persistenceConsumerID,
+		deadLetterStream: persistenceDeadLetterStreamKey,
 	}
 }
 
 func (b *RedisPersistenceEventBus) Publish(ctx context.Context, event PersistenceEvent) error {
+	if b == nil || b.client == nil {
+		return errors.New("persistence event redis client is nil")
+	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -435,6 +451,9 @@ func (b *RedisPersistenceEventBus) PublishWalletBlacklistDelete(ctx context.Cont
 }
 
 func (b *RedisPersistenceEventBus) Start(ctx context.Context, writer PersistenceEventWriter) error {
+	if b == nil || b.client == nil {
+		return errors.New("persistence event redis client is nil")
+	}
 	if writer == nil {
 		return errors.New("persistence event writer is nil")
 	}
@@ -470,6 +489,9 @@ func (b *RedisPersistenceEventBus) Start(ctx context.Context, writer Persistence
 }
 
 func (b *RedisPersistenceEventBus) consume(ctx context.Context, id string, writer PersistenceEventWriter, block time.Duration) (int, error) {
+	if b == nil || b.client == nil {
+		return 0, errors.New("persistence event redis client is nil")
+	}
 	streams, err := b.client.XReadGroup(ctx, redisport.XReadGroupInput{
 		Group:    b.group,
 		Consumer: b.consumer,
@@ -506,6 +528,22 @@ func (b *RedisPersistenceEventBus) consume(ctx context.Context, id string, write
 }
 
 func (b *RedisPersistenceEventBus) handleMessage(ctx context.Context, writer PersistenceEventWriter, message redisport.XMessage) error {
+	if b == nil || b.client == nil {
+		return errors.New("persistence event redis client is nil")
+	}
+	if err := b.processMessage(ctx, writer, message); err != nil {
+		return b.handleMessageFailure(ctx, message, err)
+	}
+	if err := b.client.XAck(ctx, b.stream, b.group, message.ID); err != nil {
+		return fmt.Errorf("ack persistence event %s: %w", message.ID, err)
+	}
+	if err := b.client.Del(ctx, persistenceRetryKey(message.ID)); err != nil {
+		return fmt.Errorf("clear persistence event retry count %s: %w", message.ID, err)
+	}
+	return nil
+}
+
+func (b *RedisPersistenceEventBus) processMessage(ctx context.Context, writer PersistenceEventWriter, message redisport.XMessage) error {
 	value, ok := message.Values["event"]
 	if !ok {
 		return fmt.Errorf("persistence event %s missing event payload", message.ID)
@@ -518,13 +556,77 @@ func (b *RedisPersistenceEventBus) handleMessage(ctx context.Context, writer Per
 	if err := json.Unmarshal([]byte(raw), &event); err != nil {
 		return fmt.Errorf("unmarshal persistence event %s: %w", message.ID, err)
 	}
-	if err := b.applyEvent(ctx, writer, event); err != nil {
+	return b.applyEvent(ctx, writer, event)
+}
+
+func (b *RedisPersistenceEventBus) handleMessageFailure(ctx context.Context, message redisport.XMessage, cause error) error {
+	attempts, err := b.incrementRetryCount(ctx, message.ID)
+	if err != nil {
+		return err
+	}
+	if attempts < persistenceMaxRetries {
+		return cause
+	}
+	if err := b.publishDeadLetter(ctx, message, cause, attempts); err != nil {
 		return err
 	}
 	if err := b.client.XAck(ctx, b.stream, b.group, message.ID); err != nil {
 		return fmt.Errorf("ack persistence event %s: %w", message.ID, err)
 	}
+	if err := b.client.Del(ctx, persistenceRetryKey(message.ID)); err != nil {
+		return fmt.Errorf("clear persistence event retry count %s: %w", message.ID, err)
+	}
 	return nil
+}
+
+func (b *RedisPersistenceEventBus) incrementRetryCount(ctx context.Context, messageID string) (int, error) {
+	key := persistenceRetryKey(messageID)
+	value, err := b.client.Get(ctx, key)
+	if err != nil && !errors.Is(err, redisport.ErrNotFound) {
+		return 0, fmt.Errorf("get persistence event retry count %s: %w", messageID, err)
+	}
+	attempts := 0
+	if value != "" {
+		parsed, parseErr := strconv.Atoi(value)
+		if parseErr != nil {
+			return 0, fmt.Errorf("parse persistence event retry count %s: %w", messageID, parseErr)
+		}
+		attempts = parsed
+	}
+	attempts++
+	if err := b.client.Set(ctx, key, strconv.Itoa(attempts), 0); err != nil {
+		return 0, fmt.Errorf("set persistence event retry count %s: %w", messageID, err)
+	}
+	return attempts, nil
+}
+
+func (b *RedisPersistenceEventBus) publishDeadLetter(ctx context.Context, message redisport.XMessage, cause error, attempts int) error {
+	rawValues, err := json.Marshal(message.Values)
+	if err != nil {
+		rawValues = []byte(fmt.Sprintf("%v", message.Values))
+	}
+	payload := ""
+	if value, ok := message.Values["event"].(string); ok {
+		payload = value
+	}
+	if err := b.client.XAdd(ctx, redisport.XAddInput{
+		Stream: b.deadLetterStream,
+		Values: map[string]any{
+			"message_id": message.ID,
+			"payload":    payload,
+			"raw_values": string(rawValues),
+			"error":      cause.Error(),
+			"attempts":   strconv.Itoa(attempts),
+			"failed_at":  time.Now().UTC().Format(time.RFC3339Nano),
+		},
+	}); err != nil {
+		return fmt.Errorf("publish dead-letter persistence event %s: %w", message.ID, err)
+	}
+	return nil
+}
+
+func persistenceRetryKey(messageID string) string {
+	return "application:persist:retry:" + messageID
 }
 
 func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer PersistenceEventWriter, event PersistenceEvent) error {
@@ -756,6 +858,9 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 }
 
 func (b *RedisPersistenceEventBus) ensureConsumerGroup(ctx context.Context) error {
+	if b == nil || b.client == nil {
+		return errors.New("persistence event redis client is nil")
+	}
 	err := b.client.XGroupCreateMkStream(ctx, b.stream, b.group, "0")
 	if err == nil {
 		return nil

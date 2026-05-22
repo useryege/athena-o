@@ -189,6 +189,8 @@ func (s *Service) Start() error {
 }
 
 func (s *Service) startWithContext(ctx context.Context) (*ProjectPipeline, ethereumapi.EthereumAPI, chan common.Address, error) {
+	log.Info("athena-application project snapshot cache currently supports a single application writer replica")
+
 	athenaFetcher, err := evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
 	if err != nil {
 		return nil, nil, nil, err
