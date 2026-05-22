@@ -58,27 +58,27 @@ type BytecodeBlacklistWritePublisher interface {
 }
 
 type WalletBlacklistCache interface {
-	Take(ctx context.Context, loader func(context.Context) ([]store.WalletBlacklistContract, error)) ([]store.WalletBlacklistContract, error)
-	Set(ctx context.Context, items []store.WalletBlacklistContract) error
+	Take(ctx context.Context, loader func(context.Context) ([]store.WalletBlacklistEntry, error)) ([]store.WalletBlacklistEntry, error)
+	Set(ctx context.Context, items []store.WalletBlacklistEntry) error
 	Del(ctx context.Context) error
 }
 
 type WalletBlacklistRemoteCache interface {
-	Get(ctx context.Context) ([]store.WalletBlacklistContract, bool, error)
-	Set(ctx context.Context, items []store.WalletBlacklistContract) error
+	Get(ctx context.Context) ([]store.WalletBlacklistEntry, bool, error)
+	Set(ctx context.Context, items []store.WalletBlacklistEntry) error
 	Del(ctx context.Context) error
 }
 
 type WalletBlacklistModel interface {
 	Load(ctx context.Context) error
-	List(ctx context.Context) ([]store.WalletBlacklistContract, error)
-	Add(ctx context.Context, item store.WalletBlacklistContract) error
-	UpdateNote(ctx context.Context, contract common.Address, note string) error
-	Delete(ctx context.Context, contract common.Address) error
+	List(ctx context.Context) ([]store.WalletBlacklistEntry, error)
+	Add(ctx context.Context, item store.WalletBlacklistEntry) error
+	UpdateNote(ctx context.Context, wallet common.Address, note string) error
+	Delete(ctx context.Context, wallet common.Address) error
 }
 
 type WalletBlacklistWritePublisher interface {
-	PublishAdd(ctx context.Context, item store.WalletBlacklistContract) error
-	PublishUpdateNote(ctx context.Context, contract common.Address, note string) error
-	PublishDelete(ctx context.Context, contract common.Address) error
+	PublishAdd(ctx context.Context, item store.WalletBlacklistEntry) error
+	PublishUpdateNote(ctx context.Context, wallet common.Address, note string) error
+	PublishDelete(ctx context.Context, wallet common.Address) error
 }

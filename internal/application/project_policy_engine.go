@@ -65,7 +65,7 @@ type bytecodeBlacklistLister interface {
 }
 
 type walletBlacklistLister interface {
-	List(ctx context.Context) ([]appstore.WalletBlacklistContract, error)
+	List(ctx context.Context) ([]appstore.WalletBlacklistEntry, error)
 }
 
 func NewProjectPolicyEngine(
@@ -328,7 +328,7 @@ func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicy
 		}
 		facts.WalletBlacklist = make(map[common.Address]struct{}, len(records))
 		for _, item := range records {
-			facts.WalletBlacklist[item.Contract] = struct{}{}
+			facts.WalletBlacklist[item.Wallet] = struct{}{}
 		}
 	}
 	return facts, nil

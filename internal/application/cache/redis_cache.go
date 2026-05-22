@@ -12,7 +12,7 @@ import (
 const (
 	SourceCodeBlacklistRedisKey = "source_code:blacklist:fields"
 	BytecodeBlacklistRedisKey   = "bytecode:blacklist:contracts"
-	WalletBlacklistRedisKey     = "wallet:blacklist:contracts"
+	WalletBlacklistRedisKey     = "wallet:blacklist:entries"
 )
 
 var _ SourceCodeBlacklistRemoteCache = &RedisBlacklistCache{}
@@ -155,7 +155,7 @@ func NewWalletBlacklistRedisCache(client redisport.KVReaderWriter) WalletBlackli
 	return &RedisWalletBlacklistCache{client: client}
 }
 
-func (c *RedisWalletBlacklistCache) Get(ctx context.Context) ([]store.WalletBlacklistContract, bool, error) {
+func (c *RedisWalletBlacklistCache) Get(ctx context.Context) ([]store.WalletBlacklistEntry, bool, error) {
 	if c == nil || c.client == nil {
 		return nil, false, nil
 	}
@@ -166,14 +166,14 @@ func (c *RedisWalletBlacklistCache) Get(ctx context.Context) ([]store.WalletBlac
 	if err != nil {
 		return nil, false, err
 	}
-	var items []store.WalletBlacklistContract
+	var items []store.WalletBlacklistEntry
 	if err := json.Unmarshal([]byte(value), &items); err != nil {
 		return nil, false, err
 	}
 	return items, true, nil
 }
 
-func (c *RedisWalletBlacklistCache) Set(ctx context.Context, items []store.WalletBlacklistContract) error {
+func (c *RedisWalletBlacklistCache) Set(ctx context.Context, items []store.WalletBlacklistEntry) error {
 	if c == nil || c.client == nil {
 		return nil
 	}
@@ -193,11 +193,11 @@ func (c *RedisWalletBlacklistCache) Del(ctx context.Context) error {
 
 type NoopRedisWalletBlacklistCache struct{}
 
-func (NoopRedisWalletBlacklistCache) Get(context.Context) ([]store.WalletBlacklistContract, bool, error) {
+func (NoopRedisWalletBlacklistCache) Get(context.Context) ([]store.WalletBlacklistEntry, bool, error) {
 	return nil, false, nil
 }
 
-func (NoopRedisWalletBlacklistCache) Set(context.Context, []store.WalletBlacklistContract) error {
+func (NoopRedisWalletBlacklistCache) Set(context.Context, []store.WalletBlacklistEntry) error {
 	return nil
 }
 

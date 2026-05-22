@@ -1535,9 +1535,9 @@ func (m *DeleteBytecodeBlacklistContractResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteBytecodeBlacklistContractResponse proto.InternalMessageInfo
 
-// WalletBlacklistContract is a globally maintained wallet-blacklist entry.
-type WalletBlacklistContract struct {
-	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+// WalletBlacklistEntry is a globally maintained wallet-blacklist entry.
+type WalletBlacklistEntry struct {
+	Wallet               string   `protobuf:"bytes,1,opt,name=wallet,proto3" json:"wallet,omitempty"`
 	Note                 string   `protobuf:"bytes,2,opt,name=note,proto3" json:"note,omitempty"`
 	CreatedAt            string   `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -1545,18 +1545,18 @@ type WalletBlacklistContract struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *WalletBlacklistContract) Reset()         { *m = WalletBlacklistContract{} }
-func (m *WalletBlacklistContract) String() string { return proto.CompactTextString(m) }
-func (*WalletBlacklistContract) ProtoMessage()    {}
-func (*WalletBlacklistContract) Descriptor() ([]byte, []int) {
+func (m *WalletBlacklistEntry) Reset()         { *m = WalletBlacklistEntry{} }
+func (m *WalletBlacklistEntry) String() string { return proto.CompactTextString(m) }
+func (*WalletBlacklistEntry) ProtoMessage()    {}
+func (*WalletBlacklistEntry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{27}
 }
-func (m *WalletBlacklistContract) XXX_Unmarshal(b []byte) error {
+func (m *WalletBlacklistEntry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *WalletBlacklistContract) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *WalletBlacklistEntry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_WalletBlacklistContract.Marshal(b, m, deterministic)
+		return xxx_messageInfo_WalletBlacklistEntry.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1566,58 +1566,58 @@ func (m *WalletBlacklistContract) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *WalletBlacklistContract) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WalletBlacklistContract.Merge(m, src)
+func (m *WalletBlacklistEntry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalletBlacklistEntry.Merge(m, src)
 }
-func (m *WalletBlacklistContract) XXX_Size() int {
+func (m *WalletBlacklistEntry) XXX_Size() int {
 	return m.Size()
 }
-func (m *WalletBlacklistContract) XXX_DiscardUnknown() {
-	xxx_messageInfo_WalletBlacklistContract.DiscardUnknown(m)
+func (m *WalletBlacklistEntry) XXX_DiscardUnknown() {
+	xxx_messageInfo_WalletBlacklistEntry.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_WalletBlacklistContract proto.InternalMessageInfo
+var xxx_messageInfo_WalletBlacklistEntry proto.InternalMessageInfo
 
-func (m *WalletBlacklistContract) GetContract() string {
+func (m *WalletBlacklistEntry) GetWallet() string {
 	if m != nil {
-		return m.Contract
+		return m.Wallet
 	}
 	return ""
 }
 
-func (m *WalletBlacklistContract) GetNote() string {
+func (m *WalletBlacklistEntry) GetNote() string {
 	if m != nil {
 		return m.Note
 	}
 	return ""
 }
 
-func (m *WalletBlacklistContract) GetCreatedAt() string {
+func (m *WalletBlacklistEntry) GetCreatedAt() string {
 	if m != nil {
 		return m.CreatedAt
 	}
 	return ""
 }
 
-// ListWalletBlacklistContractsRequest queries all wallet-blacklist entries.
-type ListWalletBlacklistContractsRequest struct {
+// ListWalletBlacklistEntriesRequest queries all wallet-blacklist entries.
+type ListWalletBlacklistEntriesRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListWalletBlacklistContractsRequest) Reset()         { *m = ListWalletBlacklistContractsRequest{} }
-func (m *ListWalletBlacklistContractsRequest) String() string { return proto.CompactTextString(m) }
-func (*ListWalletBlacklistContractsRequest) ProtoMessage()    {}
-func (*ListWalletBlacklistContractsRequest) Descriptor() ([]byte, []int) {
+func (m *ListWalletBlacklistEntriesRequest) Reset()         { *m = ListWalletBlacklistEntriesRequest{} }
+func (m *ListWalletBlacklistEntriesRequest) String() string { return proto.CompactTextString(m) }
+func (*ListWalletBlacklistEntriesRequest) ProtoMessage()    {}
+func (*ListWalletBlacklistEntriesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{28}
 }
-func (m *ListWalletBlacklistContractsRequest) XXX_Unmarshal(b []byte) error {
+func (m *ListWalletBlacklistEntriesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListWalletBlacklistContractsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListWalletBlacklistEntriesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ListWalletBlacklistContractsRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ListWalletBlacklistEntriesRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1627,38 +1627,38 @@ func (m *ListWalletBlacklistContractsRequest) XXX_Marshal(b []byte, deterministi
 		return b[:n], nil
 	}
 }
-func (m *ListWalletBlacklistContractsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListWalletBlacklistContractsRequest.Merge(m, src)
+func (m *ListWalletBlacklistEntriesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListWalletBlacklistEntriesRequest.Merge(m, src)
 }
-func (m *ListWalletBlacklistContractsRequest) XXX_Size() int {
+func (m *ListWalletBlacklistEntriesRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *ListWalletBlacklistContractsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListWalletBlacklistContractsRequest.DiscardUnknown(m)
+func (m *ListWalletBlacklistEntriesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListWalletBlacklistEntriesRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ListWalletBlacklistContractsRequest proto.InternalMessageInfo
+var xxx_messageInfo_ListWalletBlacklistEntriesRequest proto.InternalMessageInfo
 
-// ListWalletBlacklistContractsResponse returns all wallet-blacklist entries.
-type ListWalletBlacklistContractsResponse struct {
-	Items                []*WalletBlacklistContract `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
-	XXX_unrecognized     []byte                     `json:"-"`
-	XXX_sizecache        int32                      `json:"-"`
+// ListWalletBlacklistEntriesResponse returns all wallet-blacklist entries.
+type ListWalletBlacklistEntriesResponse struct {
+	Items                []*WalletBlacklistEntry `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
+	XXX_unrecognized     []byte                  `json:"-"`
+	XXX_sizecache        int32                   `json:"-"`
 }
 
-func (m *ListWalletBlacklistContractsResponse) Reset()         { *m = ListWalletBlacklistContractsResponse{} }
-func (m *ListWalletBlacklistContractsResponse) String() string { return proto.CompactTextString(m) }
-func (*ListWalletBlacklistContractsResponse) ProtoMessage()    {}
-func (*ListWalletBlacklistContractsResponse) Descriptor() ([]byte, []int) {
+func (m *ListWalletBlacklistEntriesResponse) Reset()         { *m = ListWalletBlacklistEntriesResponse{} }
+func (m *ListWalletBlacklistEntriesResponse) String() string { return proto.CompactTextString(m) }
+func (*ListWalletBlacklistEntriesResponse) ProtoMessage()    {}
+func (*ListWalletBlacklistEntriesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{29}
 }
-func (m *ListWalletBlacklistContractsResponse) XXX_Unmarshal(b []byte) error {
+func (m *ListWalletBlacklistEntriesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListWalletBlacklistContractsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListWalletBlacklistEntriesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ListWalletBlacklistContractsResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ListWalletBlacklistEntriesResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1668,46 +1668,46 @@ func (m *ListWalletBlacklistContractsResponse) XXX_Marshal(b []byte, determinist
 		return b[:n], nil
 	}
 }
-func (m *ListWalletBlacklistContractsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListWalletBlacklistContractsResponse.Merge(m, src)
+func (m *ListWalletBlacklistEntriesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListWalletBlacklistEntriesResponse.Merge(m, src)
 }
-func (m *ListWalletBlacklistContractsResponse) XXX_Size() int {
+func (m *ListWalletBlacklistEntriesResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *ListWalletBlacklistContractsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListWalletBlacklistContractsResponse.DiscardUnknown(m)
+func (m *ListWalletBlacklistEntriesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListWalletBlacklistEntriesResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ListWalletBlacklistContractsResponse proto.InternalMessageInfo
+var xxx_messageInfo_ListWalletBlacklistEntriesResponse proto.InternalMessageInfo
 
-func (m *ListWalletBlacklistContractsResponse) GetItems() []*WalletBlacklistContract {
+func (m *ListWalletBlacklistEntriesResponse) GetItems() []*WalletBlacklistEntry {
 	if m != nil {
 		return m.Items
 	}
 	return nil
 }
 
-// AddWalletBlacklistContractRequest adds a wallet-blacklist entry.
-type AddWalletBlacklistContractRequest struct {
-	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+// AddWalletBlacklistEntryRequest adds a wallet-blacklist entry.
+type AddWalletBlacklistEntryRequest struct {
+	Wallet               string   `protobuf:"bytes,1,opt,name=wallet,proto3" json:"wallet,omitempty"`
 	Note                 string   `protobuf:"bytes,2,opt,name=note,proto3" json:"note,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AddWalletBlacklistContractRequest) Reset()         { *m = AddWalletBlacklistContractRequest{} }
-func (m *AddWalletBlacklistContractRequest) String() string { return proto.CompactTextString(m) }
-func (*AddWalletBlacklistContractRequest) ProtoMessage()    {}
-func (*AddWalletBlacklistContractRequest) Descriptor() ([]byte, []int) {
+func (m *AddWalletBlacklistEntryRequest) Reset()         { *m = AddWalletBlacklistEntryRequest{} }
+func (m *AddWalletBlacklistEntryRequest) String() string { return proto.CompactTextString(m) }
+func (*AddWalletBlacklistEntryRequest) ProtoMessage()    {}
+func (*AddWalletBlacklistEntryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{30}
 }
-func (m *AddWalletBlacklistContractRequest) XXX_Unmarshal(b []byte) error {
+func (m *AddWalletBlacklistEntryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AddWalletBlacklistContractRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AddWalletBlacklistEntryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_AddWalletBlacklistContractRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_AddWalletBlacklistEntryRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1717,52 +1717,52 @@ func (m *AddWalletBlacklistContractRequest) XXX_Marshal(b []byte, deterministic 
 		return b[:n], nil
 	}
 }
-func (m *AddWalletBlacklistContractRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AddWalletBlacklistContractRequest.Merge(m, src)
+func (m *AddWalletBlacklistEntryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddWalletBlacklistEntryRequest.Merge(m, src)
 }
-func (m *AddWalletBlacklistContractRequest) XXX_Size() int {
+func (m *AddWalletBlacklistEntryRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *AddWalletBlacklistContractRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_AddWalletBlacklistContractRequest.DiscardUnknown(m)
+func (m *AddWalletBlacklistEntryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddWalletBlacklistEntryRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AddWalletBlacklistContractRequest proto.InternalMessageInfo
+var xxx_messageInfo_AddWalletBlacklistEntryRequest proto.InternalMessageInfo
 
-func (m *AddWalletBlacklistContractRequest) GetContract() string {
+func (m *AddWalletBlacklistEntryRequest) GetWallet() string {
 	if m != nil {
-		return m.Contract
+		return m.Wallet
 	}
 	return ""
 }
 
-func (m *AddWalletBlacklistContractRequest) GetNote() string {
+func (m *AddWalletBlacklistEntryRequest) GetNote() string {
 	if m != nil {
 		return m.Note
 	}
 	return ""
 }
 
-// AddWalletBlacklistContractResponse returns the stored wallet-blacklist entry.
-type AddWalletBlacklistContractResponse struct {
-	Item                 *WalletBlacklistContract `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
-	XXX_unrecognized     []byte                   `json:"-"`
-	XXX_sizecache        int32                    `json:"-"`
+// AddWalletBlacklistEntryResponse returns the stored wallet-blacklist entry.
+type AddWalletBlacklistEntryResponse struct {
+	Item                 *WalletBlacklistEntry `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *AddWalletBlacklistContractResponse) Reset()         { *m = AddWalletBlacklistContractResponse{} }
-func (m *AddWalletBlacklistContractResponse) String() string { return proto.CompactTextString(m) }
-func (*AddWalletBlacklistContractResponse) ProtoMessage()    {}
-func (*AddWalletBlacklistContractResponse) Descriptor() ([]byte, []int) {
+func (m *AddWalletBlacklistEntryResponse) Reset()         { *m = AddWalletBlacklistEntryResponse{} }
+func (m *AddWalletBlacklistEntryResponse) String() string { return proto.CompactTextString(m) }
+func (*AddWalletBlacklistEntryResponse) ProtoMessage()    {}
+func (*AddWalletBlacklistEntryResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{31}
 }
-func (m *AddWalletBlacklistContractResponse) XXX_Unmarshal(b []byte) error {
+func (m *AddWalletBlacklistEntryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AddWalletBlacklistContractResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AddWalletBlacklistEntryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_AddWalletBlacklistContractResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_AddWalletBlacklistEntryResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1772,48 +1772,46 @@ func (m *AddWalletBlacklistContractResponse) XXX_Marshal(b []byte, deterministic
 		return b[:n], nil
 	}
 }
-func (m *AddWalletBlacklistContractResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AddWalletBlacklistContractResponse.Merge(m, src)
+func (m *AddWalletBlacklistEntryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddWalletBlacklistEntryResponse.Merge(m, src)
 }
-func (m *AddWalletBlacklistContractResponse) XXX_Size() int {
+func (m *AddWalletBlacklistEntryResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *AddWalletBlacklistContractResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_AddWalletBlacklistContractResponse.DiscardUnknown(m)
+func (m *AddWalletBlacklistEntryResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddWalletBlacklistEntryResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AddWalletBlacklistContractResponse proto.InternalMessageInfo
+var xxx_messageInfo_AddWalletBlacklistEntryResponse proto.InternalMessageInfo
 
-func (m *AddWalletBlacklistContractResponse) GetItem() *WalletBlacklistContract {
+func (m *AddWalletBlacklistEntryResponse) GetItem() *WalletBlacklistEntry {
 	if m != nil {
 		return m.Item
 	}
 	return nil
 }
 
-// UpdateWalletBlacklistContractNoteRequest updates the note of a wallet-blacklist entry.
-type UpdateWalletBlacklistContractNoteRequest struct {
-	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+// UpdateWalletBlacklistEntryNoteRequest updates the note of a wallet-blacklist entry.
+type UpdateWalletBlacklistEntryNoteRequest struct {
+	Wallet               string   `protobuf:"bytes,1,opt,name=wallet,proto3" json:"wallet,omitempty"`
 	Note                 string   `protobuf:"bytes,2,opt,name=note,proto3" json:"note,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateWalletBlacklistContractNoteRequest) Reset() {
-	*m = UpdateWalletBlacklistContractNoteRequest{}
-}
-func (m *UpdateWalletBlacklistContractNoteRequest) String() string { return proto.CompactTextString(m) }
-func (*UpdateWalletBlacklistContractNoteRequest) ProtoMessage()    {}
-func (*UpdateWalletBlacklistContractNoteRequest) Descriptor() ([]byte, []int) {
+func (m *UpdateWalletBlacklistEntryNoteRequest) Reset()         { *m = UpdateWalletBlacklistEntryNoteRequest{} }
+func (m *UpdateWalletBlacklistEntryNoteRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateWalletBlacklistEntryNoteRequest) ProtoMessage()    {}
+func (*UpdateWalletBlacklistEntryNoteRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{32}
 }
-func (m *UpdateWalletBlacklistContractNoteRequest) XXX_Unmarshal(b []byte) error {
+func (m *UpdateWalletBlacklistEntryNoteRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateWalletBlacklistContractNoteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateWalletBlacklistEntryNoteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_UpdateWalletBlacklistContractNoteRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_UpdateWalletBlacklistEntryNoteRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1823,56 +1821,54 @@ func (m *UpdateWalletBlacklistContractNoteRequest) XXX_Marshal(b []byte, determi
 		return b[:n], nil
 	}
 }
-func (m *UpdateWalletBlacklistContractNoteRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateWalletBlacklistContractNoteRequest.Merge(m, src)
+func (m *UpdateWalletBlacklistEntryNoteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateWalletBlacklistEntryNoteRequest.Merge(m, src)
 }
-func (m *UpdateWalletBlacklistContractNoteRequest) XXX_Size() int {
+func (m *UpdateWalletBlacklistEntryNoteRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *UpdateWalletBlacklistContractNoteRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateWalletBlacklistContractNoteRequest.DiscardUnknown(m)
+func (m *UpdateWalletBlacklistEntryNoteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateWalletBlacklistEntryNoteRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UpdateWalletBlacklistContractNoteRequest proto.InternalMessageInfo
+var xxx_messageInfo_UpdateWalletBlacklistEntryNoteRequest proto.InternalMessageInfo
 
-func (m *UpdateWalletBlacklistContractNoteRequest) GetContract() string {
+func (m *UpdateWalletBlacklistEntryNoteRequest) GetWallet() string {
 	if m != nil {
-		return m.Contract
+		return m.Wallet
 	}
 	return ""
 }
 
-func (m *UpdateWalletBlacklistContractNoteRequest) GetNote() string {
+func (m *UpdateWalletBlacklistEntryNoteRequest) GetNote() string {
 	if m != nil {
 		return m.Note
 	}
 	return ""
 }
 
-// UpdateWalletBlacklistContractNoteResponse returns the updated wallet-blacklist entry.
-type UpdateWalletBlacklistContractNoteResponse struct {
-	Item                 *WalletBlacklistContract `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
-	XXX_unrecognized     []byte                   `json:"-"`
-	XXX_sizecache        int32                    `json:"-"`
+// UpdateWalletBlacklistEntryNoteResponse returns the updated wallet-blacklist entry.
+type UpdateWalletBlacklistEntryNoteResponse struct {
+	Item                 *WalletBlacklistEntry `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *UpdateWalletBlacklistContractNoteResponse) Reset() {
-	*m = UpdateWalletBlacklistContractNoteResponse{}
+func (m *UpdateWalletBlacklistEntryNoteResponse) Reset() {
+	*m = UpdateWalletBlacklistEntryNoteResponse{}
 }
-func (m *UpdateWalletBlacklistContractNoteResponse) String() string {
-	return proto.CompactTextString(m)
-}
-func (*UpdateWalletBlacklistContractNoteResponse) ProtoMessage() {}
-func (*UpdateWalletBlacklistContractNoteResponse) Descriptor() ([]byte, []int) {
+func (m *UpdateWalletBlacklistEntryNoteResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateWalletBlacklistEntryNoteResponse) ProtoMessage()    {}
+func (*UpdateWalletBlacklistEntryNoteResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{33}
 }
-func (m *UpdateWalletBlacklistContractNoteResponse) XXX_Unmarshal(b []byte) error {
+func (m *UpdateWalletBlacklistEntryNoteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateWalletBlacklistContractNoteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateWalletBlacklistEntryNoteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_UpdateWalletBlacklistContractNoteResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_UpdateWalletBlacklistEntryNoteResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1882,45 +1878,45 @@ func (m *UpdateWalletBlacklistContractNoteResponse) XXX_Marshal(b []byte, determ
 		return b[:n], nil
 	}
 }
-func (m *UpdateWalletBlacklistContractNoteResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateWalletBlacklistContractNoteResponse.Merge(m, src)
+func (m *UpdateWalletBlacklistEntryNoteResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateWalletBlacklistEntryNoteResponse.Merge(m, src)
 }
-func (m *UpdateWalletBlacklistContractNoteResponse) XXX_Size() int {
+func (m *UpdateWalletBlacklistEntryNoteResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *UpdateWalletBlacklistContractNoteResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateWalletBlacklistContractNoteResponse.DiscardUnknown(m)
+func (m *UpdateWalletBlacklistEntryNoteResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateWalletBlacklistEntryNoteResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UpdateWalletBlacklistContractNoteResponse proto.InternalMessageInfo
+var xxx_messageInfo_UpdateWalletBlacklistEntryNoteResponse proto.InternalMessageInfo
 
-func (m *UpdateWalletBlacklistContractNoteResponse) GetItem() *WalletBlacklistContract {
+func (m *UpdateWalletBlacklistEntryNoteResponse) GetItem() *WalletBlacklistEntry {
 	if m != nil {
 		return m.Item
 	}
 	return nil
 }
 
-// DeleteWalletBlacklistContractRequest deletes a wallet-blacklist entry.
-type DeleteWalletBlacklistContractRequest struct {
-	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+// DeleteWalletBlacklistEntryRequest deletes a wallet-blacklist entry.
+type DeleteWalletBlacklistEntryRequest struct {
+	Wallet               string   `protobuf:"bytes,1,opt,name=wallet,proto3" json:"wallet,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteWalletBlacklistContractRequest) Reset()         { *m = DeleteWalletBlacklistContractRequest{} }
-func (m *DeleteWalletBlacklistContractRequest) String() string { return proto.CompactTextString(m) }
-func (*DeleteWalletBlacklistContractRequest) ProtoMessage()    {}
-func (*DeleteWalletBlacklistContractRequest) Descriptor() ([]byte, []int) {
+func (m *DeleteWalletBlacklistEntryRequest) Reset()         { *m = DeleteWalletBlacklistEntryRequest{} }
+func (m *DeleteWalletBlacklistEntryRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteWalletBlacklistEntryRequest) ProtoMessage()    {}
+func (*DeleteWalletBlacklistEntryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{34}
 }
-func (m *DeleteWalletBlacklistContractRequest) XXX_Unmarshal(b []byte) error {
+func (m *DeleteWalletBlacklistEntryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteWalletBlacklistContractRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteWalletBlacklistEntryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_DeleteWalletBlacklistContractRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_DeleteWalletBlacklistEntryRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1930,44 +1926,44 @@ func (m *DeleteWalletBlacklistContractRequest) XXX_Marshal(b []byte, determinist
 		return b[:n], nil
 	}
 }
-func (m *DeleteWalletBlacklistContractRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteWalletBlacklistContractRequest.Merge(m, src)
+func (m *DeleteWalletBlacklistEntryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteWalletBlacklistEntryRequest.Merge(m, src)
 }
-func (m *DeleteWalletBlacklistContractRequest) XXX_Size() int {
+func (m *DeleteWalletBlacklistEntryRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *DeleteWalletBlacklistContractRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteWalletBlacklistContractRequest.DiscardUnknown(m)
+func (m *DeleteWalletBlacklistEntryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteWalletBlacklistEntryRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeleteWalletBlacklistContractRequest proto.InternalMessageInfo
+var xxx_messageInfo_DeleteWalletBlacklistEntryRequest proto.InternalMessageInfo
 
-func (m *DeleteWalletBlacklistContractRequest) GetContract() string {
+func (m *DeleteWalletBlacklistEntryRequest) GetWallet() string {
 	if m != nil {
-		return m.Contract
+		return m.Wallet
 	}
 	return ""
 }
 
-// DeleteWalletBlacklistContractResponse is returned after deleting a wallet-blacklist entry.
-type DeleteWalletBlacklistContractResponse struct {
+// DeleteWalletBlacklistEntryResponse is returned after deleting a wallet-blacklist entry.
+type DeleteWalletBlacklistEntryResponse struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteWalletBlacklistContractResponse) Reset()         { *m = DeleteWalletBlacklistContractResponse{} }
-func (m *DeleteWalletBlacklistContractResponse) String() string { return proto.CompactTextString(m) }
-func (*DeleteWalletBlacklistContractResponse) ProtoMessage()    {}
-func (*DeleteWalletBlacklistContractResponse) Descriptor() ([]byte, []int) {
+func (m *DeleteWalletBlacklistEntryResponse) Reset()         { *m = DeleteWalletBlacklistEntryResponse{} }
+func (m *DeleteWalletBlacklistEntryResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteWalletBlacklistEntryResponse) ProtoMessage()    {}
+func (*DeleteWalletBlacklistEntryResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{35}
 }
-func (m *DeleteWalletBlacklistContractResponse) XXX_Unmarshal(b []byte) error {
+func (m *DeleteWalletBlacklistEntryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteWalletBlacklistContractResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteWalletBlacklistEntryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_DeleteWalletBlacklistContractResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_DeleteWalletBlacklistEntryResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1977,17 +1973,17 @@ func (m *DeleteWalletBlacklistContractResponse) XXX_Marshal(b []byte, determinis
 		return b[:n], nil
 	}
 }
-func (m *DeleteWalletBlacklistContractResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteWalletBlacklistContractResponse.Merge(m, src)
+func (m *DeleteWalletBlacklistEntryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteWalletBlacklistEntryResponse.Merge(m, src)
 }
-func (m *DeleteWalletBlacklistContractResponse) XXX_Size() int {
+func (m *DeleteWalletBlacklistEntryResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *DeleteWalletBlacklistContractResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteWalletBlacklistContractResponse.DiscardUnknown(m)
+func (m *DeleteWalletBlacklistEntryResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteWalletBlacklistEntryResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeleteWalletBlacklistContractResponse proto.InternalMessageInfo
+var xxx_messageInfo_DeleteWalletBlacklistEntryResponse proto.InternalMessageInfo
 
 // GetProjectOptionsRequest don't need any parameters.
 type GetProjectOptionsRequest struct {
@@ -2319,15 +2315,15 @@ func init() {
 	proto.RegisterType((*UpdateBytecodeBlacklistContractNoteResponse)(nil), "application.UpdateBytecodeBlacklistContractNoteResponse")
 	proto.RegisterType((*DeleteBytecodeBlacklistContractRequest)(nil), "application.DeleteBytecodeBlacklistContractRequest")
 	proto.RegisterType((*DeleteBytecodeBlacklistContractResponse)(nil), "application.DeleteBytecodeBlacklistContractResponse")
-	proto.RegisterType((*WalletBlacklistContract)(nil), "application.WalletBlacklistContract")
-	proto.RegisterType((*ListWalletBlacklistContractsRequest)(nil), "application.ListWalletBlacklistContractsRequest")
-	proto.RegisterType((*ListWalletBlacklistContractsResponse)(nil), "application.ListWalletBlacklistContractsResponse")
-	proto.RegisterType((*AddWalletBlacklistContractRequest)(nil), "application.AddWalletBlacklistContractRequest")
-	proto.RegisterType((*AddWalletBlacklistContractResponse)(nil), "application.AddWalletBlacklistContractResponse")
-	proto.RegisterType((*UpdateWalletBlacklistContractNoteRequest)(nil), "application.UpdateWalletBlacklistContractNoteRequest")
-	proto.RegisterType((*UpdateWalletBlacklistContractNoteResponse)(nil), "application.UpdateWalletBlacklistContractNoteResponse")
-	proto.RegisterType((*DeleteWalletBlacklistContractRequest)(nil), "application.DeleteWalletBlacklistContractRequest")
-	proto.RegisterType((*DeleteWalletBlacklistContractResponse)(nil), "application.DeleteWalletBlacklistContractResponse")
+	proto.RegisterType((*WalletBlacklistEntry)(nil), "application.WalletBlacklistEntry")
+	proto.RegisterType((*ListWalletBlacklistEntriesRequest)(nil), "application.ListWalletBlacklistEntriesRequest")
+	proto.RegisterType((*ListWalletBlacklistEntriesResponse)(nil), "application.ListWalletBlacklistEntriesResponse")
+	proto.RegisterType((*AddWalletBlacklistEntryRequest)(nil), "application.AddWalletBlacklistEntryRequest")
+	proto.RegisterType((*AddWalletBlacklistEntryResponse)(nil), "application.AddWalletBlacklistEntryResponse")
+	proto.RegisterType((*UpdateWalletBlacklistEntryNoteRequest)(nil), "application.UpdateWalletBlacklistEntryNoteRequest")
+	proto.RegisterType((*UpdateWalletBlacklistEntryNoteResponse)(nil), "application.UpdateWalletBlacklistEntryNoteResponse")
+	proto.RegisterType((*DeleteWalletBlacklistEntryRequest)(nil), "application.DeleteWalletBlacklistEntryRequest")
+	proto.RegisterType((*DeleteWalletBlacklistEntryResponse)(nil), "application.DeleteWalletBlacklistEntryResponse")
 	proto.RegisterType((*GetProjectOptionsRequest)(nil), "application.GetProjectOptionsRequest")
 	proto.RegisterType((*GetProjectOptionsResponse)(nil), "application.GetProjectOptionsResponse")
 	proto.RegisterType((*DeleteSourceCodeBlacklistFieldResponse)(nil), "application.DeleteSourceCodeBlacklistFieldResponse")
@@ -2342,110 +2338,112 @@ func init() {
 }
 
 var fileDescriptor_dbb8cd1a14781c7f = []byte{
-	// 1635 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x59, 0xcd, 0x6f, 0xdc, 0x44,
-	0x14, 0xd7, 0xe4, 0xa3, 0x6d, 0x5e, 0x51, 0x68, 0x87, 0x42, 0x37, 0xce, 0x67, 0x9d, 0xef, 0xd0,
-	0xac, 0xd9, 0x34, 0xa5, 0x4d, 0xa1, 0x82, 0xa4, 0x2d, 0xed, 0xa1, 0x82, 0x6a, 0x43, 0x41, 0x14,
-	0x44, 0x71, 0xec, 0xe9, 0xae, 0xe9, 0xae, 0xbd, 0xd8, 0x93, 0xad, 0x42, 0x55, 0x0e, 0x70, 0x80,
-	0x23, 0xa8, 0x52, 0x39, 0xf0, 0x2f, 0x20, 0x21, 0xa4, 0x4a, 0x88, 0x03, 0xe2, 0x84, 0xc4, 0xb1,
-	0x88, 0x13, 0x37, 0x54, 0xf1, 0x87, 0xa0, 0x19, 0x8f, 0x77, 0x3d, 0xde, 0x1d, 0x7f, 0x24, 0x3d,
-	0x65, 0x3d, 0xf3, 0xde, 0x9b, 0xdf, 0xfb, 0xbd, 0xdf, 0x78, 0xdf, 0xcb, 0xc2, 0xaa, 0xe3, 0x52,
-	0xe2, 0xbb, 0x66, 0xc3, 0x08, 0x88, 0xdf, 0x26, 0xbe, 0x61, 0xb6, 0x5a, 0x0d, 0xc7, 0x32, 0xa9,
-	0xe3, 0xb9, 0xf1, 0xcf, 0xe5, 0x96, 0xef, 0x51, 0x0f, 0x1f, 0x8d, 0x2d, 0x69, 0x1b, 0x35, 0x87,
-	0xd6, 0x77, 0x77, 0xca, 0x96, 0xd7, 0x34, 0x76, 0x03, 0xe2, 0xef, 0x91, 0x1a, 0x31, 0x4c, 0x5a,
-	0x27, 0xae, 0x69, 0x74, 0xc2, 0xb6, 0xee, 0xd6, 0x0c, 0xee, 0x6b, 0xb4, 0x2b, 0x46, 0xbb, 0x12,
-	0xc6, 0xd1, 0xae, 0xa5, 0xb8, 0x32, 0x0f, 0xb3, 0xe5, 0x04, 0x12, 0x94, 0x76, 0xc5, 0x6c, 0xb4,
-	0xea, 0x66, 0xc5, 0xa8, 0x11, 0x97, 0xf8, 0x26, 0x25, 0xb6, 0x88, 0x34, 0x51, 0xf3, 0xbc, 0x5a,
-	0x83, 0x30, 0x0f, 0xc3, 0x74, 0x5d, 0x8f, 0x72, 0xfb, 0x20, 0xdc, 0xd5, 0x9b, 0xf0, 0xc2, 0x75,
-	0x27, 0xa0, 0x37, 0x7c, 0xef, 0x53, 0x62, 0xd1, 0xa0, 0x4a, 0x3e, 0xdb, 0x25, 0x01, 0xc5, 0x0b,
-	0x30, 0x1c, 0x58, 0x5e, 0x8b, 0x94, 0xd0, 0x0c, 0x5a, 0x1a, 0x5d, 0x3b, 0x56, 0x6e, 0x57, 0xca,
-	0xc2, 0x66, 0x9b, 0xad, 0x57, 0xc3, 0x6d, 0x8c, 0x61, 0xa8, 0x65, 0xd6, 0x48, 0x69, 0x60, 0x06,
-	0x2d, 0x0d, 0x57, 0xf9, 0x67, 0xac, 0xc1, 0x11, 0xf6, 0x77, 0xdb, 0xf9, 0x9c, 0x94, 0x06, 0xf9,
-	0x7a, 0xe7, 0x59, 0xff, 0x15, 0xc1, 0x09, 0xf9, 0xbc, 0xa0, 0xe5, 0xb9, 0x01, 0xc1, 0x1f, 0xc2,
-	0xb0, 0x43, 0x49, 0x33, 0x28, 0xa1, 0x99, 0xc1, 0xa5, 0xa3, 0x6b, 0x57, 0xca, 0xdd, 0xfc, 0xcb,
-	0x51, 0xfe, 0xe5, 0x30, 0xff, 0x72, 0xeb, 0x6e, 0xad, 0xcc, 0xf2, 0x2f, 0xc7, 0xe9, 0x8f, 0xf2,
-	0x8f, 0x60, 0xbe, 0xe7, 0x90, 0x7b, 0xd5, 0x30, 0x26, 0x3e, 0x01, 0xc3, 0xd4, 0xa3, 0x66, 0x83,
-	0xc3, 0x1c, 0xac, 0x86, 0x0f, 0x1d, 0xec, 0x83, 0x0a, 0xec, 0x43, 0x09, 0xec, 0x06, 0x1c, 0xbf,
-	0x4a, 0x22, 0xe4, 0x11, 0x51, 0x1a, 0x1c, 0xb1, 0x3c, 0x97, 0xfa, 0xa6, 0x45, 0x39, 0x57, 0x23,
-	0xd5, 0xce, 0xb3, 0xee, 0x01, 0x8e, 0x3b, 0x88, 0x4c, 0x3f, 0x80, 0x21, 0x86, 0x8a, 0x5b, 0x3f,
-	0xb3, 0x44, 0x79, 0x48, 0xfd, 0x09, 0x82, 0xe7, 0xc5, 0xea, 0x95, 0x36, 0x71, 0xe9, 0x75, 0xaf,
-	0x86, 0x47, 0x61, 0xc0, 0xb1, 0xf9, 0x61, 0x83, 0xd5, 0x01, 0xc7, 0x96, 0x00, 0x0f, 0xc8, 0x80,
-	0xf1, 0x24, 0x00, 0x61, 0x7e, 0xb7, 0xe9, 0x5e, 0x2b, 0xe2, 0x65, 0x84, 0xaf, 0xbc, 0xbb, 0xd7,
-	0x22, 0x78, 0x1a, 0x8e, 0x7a, 0x96, 0xb5, 0xeb, 0xfb, 0xc4, 0xbe, 0x6d, 0x52, 0xce, 0xcf, 0x48,
-	0x15, 0xa2, 0xa5, 0x4d, 0x8a, 0x4b, 0x70, 0xb8, 0x49, 0x82, 0x80, 0x91, 0x3a, 0xcc, 0x37, 0xa3,
-	0x47, 0xb6, 0xd3, 0x32, 0xf7, 0x1a, 0x9e, 0x69, 0x97, 0x0e, 0x85, 0x3b, 0xe2, 0x91, 0x9d, 0x69,
-	0xf9, 0x84, 0xe9, 0x95, 0xc5, 0x3c, 0xcc, 0x37, 0x47, 0xc4, 0xca, 0x26, 0xd5, 0x37, 0x60, 0x3c,
-	0xa6, 0x97, 0x28, 0xab, 0x20, 0x0f, 0xfd, 0x55, 0x98, 0xe8, 0xef, 0x2a, 0x0a, 0xb1, 0x26, 0x4b,
-	0x6e, 0x42, 0x62, 0x39, 0xe1, 0x25, 0x94, 0xa4, 0x7f, 0x87, 0x60, 0x54, 0x6c, 0x5d, 0xf2, 0x9a,
-	0x4d, 0xe2, 0xd2, 0x42, 0x04, 0x6b, 0x70, 0x84, 0xd5, 0xd8, 0x35, 0x9b, 0x21, 0xbd, 0x23, 0xd5,
-	0xce, 0x33, 0xa3, 0x88, 0xd9, 0x11, 0x37, 0x62, 0x36, 0x7a, 0x4c, 0x50, 0x34, 0x9c, 0xa4, 0xe8,
-	0x06, 0x94, 0x36, 0x6d, 0x5b, 0x46, 0x95, 0x83, 0x9f, 0xf8, 0x81, 0x03, 0xd2, 0x81, 0xfa, 0x75,
-	0x18, 0xeb, 0x13, 0x51, 0xd0, 0x66, 0x48, 0xfa, 0x1d, 0xef, 0xc7, 0x5a, 0xe4, 0x12, 0xaa, 0xb2,
-	0x0e, 0x5a, 0xac, 0x0e, 0x62, 0x2f, 0x4f, 0x05, 0x0b, 0xbf, 0x5d, 0x1e, 0x21, 0x49, 0x2d, 0xdd,
-	0xa3, 0x04, 0xf4, 0x8a, 0x5c, 0xf1, 0x54, 0xec, 0xcf, 0xf4, 0xd5, 0xf1, 0x26, 0x94, 0xb6, 0xbd,
-	0x5d, 0xdf, 0x22, 0x97, 0x3c, 0x9b, 0x6c, 0x35, 0x4c, 0xeb, 0x6e, 0xc3, 0x09, 0xe8, 0x5b, 0x0e,
-	0x69, 0xd8, 0x3d, 0xfa, 0x39, 0x01, 0xc3, 0x77, 0xd8, 0x86, 0x28, 0x4a, 0xf8, 0xa0, 0x2f, 0xc0,
-	0x1c, 0xcb, 0x4c, 0x15, 0x25, 0xa2, 0x53, 0xb7, 0x61, 0x3e, 0xc3, 0x4e, 0x70, 0xf1, 0x9a, 0xcc,
-	0xc5, 0xbc, 0xc4, 0x85, 0xca, 0x3d, 0xba, 0x06, 0x17, 0x40, 0xdf, 0xb4, 0x6d, 0xa5, 0x95, 0x28,
-	0x6d, 0x27, 0x13, 0x14, 0xcf, 0xe4, 0x13, 0x98, 0x4d, 0xf5, 0x15, 0xf8, 0x36, 0x24, 0x99, 0xe5,
-	0x84, 0x17, 0x0a, 0xee, 0x22, 0xcc, 0x5f, 0x26, 0x0d, 0x42, 0xc9, 0xfe, 0x00, 0x7e, 0x8d, 0x60,
-	0x6c, 0x6b, 0x8f, 0x12, 0x2b, 0xee, 0x77, 0x29, 0x76, 0x85, 0x95, 0x7a, 0x1d, 0x87, 0x11, 0xe6,
-	0x74, 0xbb, 0x6e, 0x06, 0xf5, 0xee, 0xdd, 0xb7, 0xc9, 0x35, 0x33, 0xa8, 0x33, 0xcd, 0xb8, 0x1e,
-	0x8d, 0xee, 0x3d, 0xff, 0x9c, 0xb8, 0xd9, 0x43, 0xc9, 0x9b, 0xbd, 0x18, 0x16, 0x53, 0x09, 0xa6,
-	0x53, 0xf5, 0x3b, 0xb0, 0x90, 0x65, 0x28, 0x68, 0x7d, 0x5d, 0x2e, 0xfb, 0x82, 0xc4, 0xab, 0xd2,
-	0x3f, 0xaa, 0xfb, 0x4d, 0x5e, 0x3b, 0xb5, 0x59, 0xbe, 0x3b, 0xcd, 0x69, 0x18, 0xe8, 0xd2, 0xa0,
-	0xef, 0xc0, 0x5c, 0x7a, 0x58, 0x01, 0xfe, 0x82, 0xa4, 0x89, 0xbc, 0xd8, 0x43, 0x51, 0x7c, 0x04,
-	0x2b, 0x37, 0x5b, 0xb6, 0x49, 0x89, 0xd2, 0xf0, 0x6d, 0x8f, 0x92, 0xfd, 0x66, 0xe0, 0xc0, 0xcb,
-	0xb9, 0xa2, 0x3f, 0x83, 0x44, 0x2e, 0xc3, 0x42, 0xa8, 0xee, 0x83, 0x94, 0x41, 0x5f, 0x86, 0xc5,
-	0xcc, 0x28, 0x21, 0x58, 0xbd, 0x0e, 0x27, 0xdf, 0x37, 0x1b, 0x0d, 0x42, 0x8b, 0x5d, 0x86, 0x3e,
-	0x34, 0x25, 0xf4, 0x3e, 0x98, 0xd4, 0xfb, 0x3c, 0xcc, 0x32, 0x19, 0x2b, 0x4e, 0xeb, 0xa8, 0x7d,
-	0x27, 0x7c, 0x17, 0xaa, 0xcd, 0x3a, 0x2c, 0x4b, 0x5a, 0x9f, 0x93, 0x68, 0x56, 0x78, 0x47, 0x4a,
-	0xdf, 0x86, 0x53, 0x9b, 0xb6, 0xad, 0x32, 0xda, 0xa7, 0x4a, 0x3e, 0xe6, 0xaf, 0x4d, 0x65, 0x50,
-	0x01, 0xfb, 0xbc, 0x24, 0x8e, 0x7c, 0xa8, 0x43, 0x69, 0xdc, 0x82, 0xa5, 0x50, 0x85, 0x0a, 0xb3,
-	0x83, 0x28, 0x9c, 0xc0, 0x72, 0x8e, 0xd8, 0x07, 0x4e, 0x61, 0x0b, 0xe6, 0x42, 0x5d, 0xee, 0x9f,
-	0x7a, 0xf6, 0xda, 0xcc, 0x88, 0x21, 0x94, 0xad, 0x41, 0xa9, 0xdb, 0xa0, 0xbf, 0xd3, 0xe2, 0x73,
-	0x51, 0x24, 0xb2, 0x2f, 0x60, 0xac, 0xcf, 0x9e, 0xc8, 0xcf, 0x84, 0xc3, 0x5e, 0xb8, 0x24, 0x52,
-	0xbc, 0x7a, 0xe0, 0x36, 0x3e, 0x3c, 0xa2, 0x1a, 0xc5, 0xd5, 0x97, 0xa2, 0x6b, 0x9e, 0xf5, 0x4d,
-	0xa9, 0x9f, 0x81, 0x17, 0x37, 0x7d, 0xab, 0xee, 0xb4, 0x49, 0x81, 0xd9, 0xa4, 0x04, 0x2f, 0x25,
-	0x9d, 0x44, 0xb8, 0xb3, 0x70, 0xf2, 0xa6, 0x6b, 0x16, 0x0e, 0xa8, 0x41, 0xa9, 0xd7, 0x2d, 0x0c,
-	0xb9, 0xf6, 0xc3, 0x18, 0xe0, 0xcd, 0x6e, 0xee, 0xdb, 0xc4, 0x6f, 0x3b, 0x16, 0xc1, 0x4d, 0x78,
-	0x2e, 0x3e, 0x0b, 0xe2, 0x19, 0x89, 0xa0, 0x3e, 0x63, 0xa9, 0x76, 0x2a, 0xc5, 0x42, 0xc0, 0x2f,
-	0x7d, 0xf9, 0xf7, 0x7f, 0x0f, 0x07, 0x30, 0x3e, 0xc6, 0x07, 0xde, 0x76, 0x85, 0xcd, 0xd6, 0x61,
-	0x78, 0x1f, 0xa0, 0x5b, 0x51, 0x3c, 0x25, 0x85, 0xea, 0x19, 0xec, 0xb4, 0x69, 0xe5, 0xbe, 0x38,
-	0x68, 0x96, 0x1f, 0x34, 0x89, 0xc7, 0x93, 0x07, 0x19, 0xf7, 0x23, 0x52, 0x1e, 0xe0, 0xef, 0xe5,
-	0x79, 0xb7, 0x33, 0x84, 0xe0, 0x25, 0x55, 0x26, 0xc9, 0x11, 0x47, 0x5b, 0xce, 0x61, 0x29, 0x20,
-	0xad, 0x70, 0x48, 0x73, 0x58, 0x4f, 0x81, 0x64, 0xf0, 0x79, 0x2e, 0xc0, 0x0f, 0x11, 0x1c, 0xef,
-	0x69, 0xf2, 0xb1, 0xdc, 0x67, 0xa9, 0xc6, 0x0a, 0x6d, 0x21, 0xcb, 0x4c, 0x00, 0x32, 0x38, 0xa0,
-	0x65, 0x7d, 0x2e, 0x0d, 0x90, 0x25, 0xda, 0xf4, 0x0b, 0x68, 0x05, 0x3f, 0x42, 0xd2, 0xff, 0x23,
-	0xa2, 0x0e, 0x1e, 0x2f, 0xaa, 0x48, 0x48, 0x8c, 0x13, 0xda, 0x52, 0xb6, 0xa1, 0xc0, 0x76, 0x9a,
-	0x63, 0x5b, 0xc0, 0xb9, 0xb0, 0xe1, 0xc7, 0x08, 0x26, 0x53, 0x1b, 0x6b, 0x5c, 0xe9, 0x39, 0x39,
-	0xab, 0x59, 0xd7, 0xd6, 0x8a, 0xb8, 0xa8, 0x60, 0x07, 0xdc, 0x65, 0x95, 0x7d, 0x87, 0x1b, 0x3b,
-	0x91, 0xd3, 0xea, 0x9d, 0x10, 0xd4, 0xcf, 0x08, 0xc6, 0x53, 0xba, 0x6d, 0x6c, 0x24, 0x0b, 0x99,
-	0xd1, 0x32, 0x6b, 0xaf, 0xe4, 0x77, 0x50, 0x69, 0x20, 0x0d, 0x30, 0xd3, 0xc0, 0xef, 0x08, 0xa6,
-	0xd2, 0x5f, 0x7d, 0x58, 0x26, 0x2e, 0x57, 0xb3, 0xaf, 0x9d, 0x29, 0xe4, 0x23, 0xc0, 0xaf, 0x73,
-	0xf0, 0xe5, 0x95, 0xd3, 0x79, 0xc0, 0x1b, 0xf7, 0xf9, 0xdf, 0x07, 0xf8, 0x17, 0x04, 0x53, 0xe9,
-	0xfd, 0x38, 0xee, 0x2d, 0x7d, 0x66, 0x97, 0x9f, 0xc8, 0x20, 0x5f, 0xc3, 0xdf, 0xab, 0x97, 0x1d,
-	0xe1, 0x13, 0x83, 0x6f, 0x75, 0x60, 0x3d, 0x46, 0x30, 0x91, 0xd6, 0x8a, 0xe3, 0x9e, 0xfa, 0x67,
-	0x75, 0xa1, 0x5a, 0xa5, 0x80, 0x87, 0x4a, 0x32, 0x69, 0x98, 0x99, 0x64, 0xfe, 0x41, 0x30, 0x9b,
-	0xa3, 0xff, 0xc6, 0xe7, 0x24, 0x2c, 0xf9, 0xe7, 0x01, 0xed, 0x7c, 0x71, 0x47, 0x91, 0xcb, 0x1b,
-	0x3c, 0x97, 0x0d, 0x7d, 0x3d, 0x4f, 0x2e, 0xf1, 0x57, 0x0f, 0xeb, 0xba, 0x58, 0x6e, 0x7f, 0x20,
-	0x98, 0xce, 0x68, 0xd5, 0x71, 0x3f, 0x6d, 0x67, 0x16, 0x66, 0xbd, 0x98, 0x93, 0xc8, 0xe7, 0x1c,
-	0xcf, 0xa7, 0xb2, 0x62, 0x14, 0xcc, 0x07, 0xff, 0x84, 0xc2, 0xff, 0xc7, 0xa9, 0xda, 0xf6, 0x84,
-	0xb4, 0x72, 0x0c, 0x02, 0x5a, 0xa5, 0x80, 0x87, 0xea, 0x2b, 0xf2, 0x1e, 0xf7, 0xe8, 0x7b, 0x19,
-	0x7e, 0x44, 0xa0, 0xa9, 0xfb, 0x75, 0x5c, 0x4e, 0x0a, 0x3b, 0xbd, 0x65, 0xd5, 0x8c, 0xdc, 0xf6,
-	0x02, 0xeb, 0x2a, 0xc7, 0xba, 0xa8, 0xe7, 0xc0, 0xca, 0x84, 0xf2, 0x17, 0x82, 0x53, 0x99, 0x2d,
-	0x3a, 0x3e, 0xdb, 0x47, 0xc9, 0xd9, 0xe3, 0x82, 0xf6, 0x6a, 0x51, 0x37, 0x91, 0xc3, 0x45, 0x9e,
-	0xc3, 0x39, 0x7d, 0x2d, 0x3b, 0x87, 0x7e, 0xe2, 0xff, 0x0d, 0xc1, 0x64, 0x6a, 0x2f, 0x9f, 0xf8,
-	0xda, 0xcd, 0x33, 0x3b, 0x68, 0x6b, 0x45, 0x5c, 0xa2, 0xae, 0x98, 0xe7, 0x61, 0xac, 0xac, 0x16,
-	0xca, 0x03, 0x7f, 0x85, 0xe2, 0x3f, 0x1a, 0x88, 0x31, 0x22, 0xd1, 0x65, 0xa9, 0x46, 0x90, 0x44,
-	0x97, 0xa5, 0x9c, 0x46, 0xf4, 0x69, 0x8e, 0x6d, 0x0c, 0x9f, 0x4c, 0x74, 0x32, 0xab, 0x62, 0x96,
-	0xc0, 0xdf, 0x20, 0x18, 0x95, 0xbb, 0x7d, 0xac, 0xcb, 0x62, 0xec, 0xd7, 0xee, 0x6b, 0xb3, 0xa9,
-	0x36, 0x2a, 0x91, 0x8a, 0xc3, 0xe3, 0xd5, 0x14, 0x63, 0x01, 0x2b, 0xe8, 0xb7, 0x08, 0x8e, 0x25,
-	0xe7, 0x04, 0x2c, 0x0f, 0x88, 0x8a, 0xe9, 0x43, 0x9b, 0xcf, 0xb0, 0xca, 0xe8, 0x39, 0xe3, 0x80,
-	0x76, 0xdd, 0x2e, 0xa4, 0xad, 0xad, 0x3f, 0x9f, 0x4e, 0xa1, 0x27, 0x4f, 0xa7, 0xd0, 0xbf, 0x4f,
-	0xa7, 0xd0, 0xad, 0xf5, 0xec, 0x1f, 0xde, 0xac, 0x86, 0x43, 0x5c, 0x1a, 0xff, 0xf5, 0x6d, 0xe7,
-	0x10, 0xff, 0x35, 0xed, 0xcc, 0xff, 0x01, 0x00, 0x00, 0xff, 0xff, 0x6a, 0xa9, 0xa7, 0xd6, 0x2e,
-	0x1c, 0x00, 0x00,
+	// 1667 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x59, 0xcb, 0x6f, 0x1c, 0x45,
+	0x13, 0x57, 0xfb, 0x91, 0xc4, 0x95, 0x4f, 0xfe, 0x92, 0xfe, 0xfc, 0x25, 0xeb, 0xb1, 0xb3, 0xb6,
+	0xc7, 0xf6, 0xfa, 0x91, 0x78, 0x87, 0x75, 0x1c, 0x05, 0x27, 0x20, 0xb0, 0x93, 0x90, 0x1c, 0x2c,
+	0x88, 0xd6, 0x84, 0x37, 0x32, 0xe3, 0x99, 0xce, 0xee, 0x90, 0xdd, 0x99, 0x61, 0xa6, 0xbd, 0x91,
+	0x89, 0xc2, 0x01, 0x0e, 0x70, 0x04, 0x45, 0x0a, 0xe2, 0xc4, 0x95, 0x2b, 0x52, 0x24, 0x84, 0x84,
+	0xc4, 0x09, 0x89, 0x13, 0x8a, 0xc4, 0x89, 0x1b, 0x8a, 0xf8, 0x43, 0x50, 0xf7, 0xf4, 0xec, 0x4e,
+	0xcf, 0xce, 0x6b, 0x93, 0x9c, 0xbc, 0xdd, 0x5d, 0x55, 0xfd, 0xab, 0xaa, 0xdf, 0x8c, 0x7f, 0xb5,
+	0x0b, 0x6b, 0x96, 0x4d, 0x89, 0x67, 0xeb, 0x2d, 0xcd, 0x27, 0x5e, 0x87, 0x78, 0x9a, 0xee, 0xba,
+	0x2d, 0xcb, 0xd0, 0xa9, 0xe5, 0xd8, 0xd1, 0xcf, 0x55, 0xd7, 0x73, 0xa8, 0x83, 0x8f, 0x47, 0xb6,
+	0x94, 0xcd, 0x86, 0x45, 0x9b, 0x07, 0xfb, 0x55, 0xc3, 0x69, 0x6b, 0x07, 0x3e, 0xf1, 0x0e, 0x49,
+	0x83, 0x68, 0x3a, 0x6d, 0x12, 0x5b, 0xd7, 0xba, 0x61, 0xdd, 0x3b, 0x0d, 0x8d, 0xfb, 0x6a, 0x9d,
+	0x9a, 0xd6, 0xa9, 0x05, 0x71, 0x94, 0x1b, 0x19, 0xae, 0xcc, 0x43, 0x77, 0x2d, 0x5f, 0x82, 0xd2,
+	0xa9, 0xe9, 0x2d, 0xb7, 0xa9, 0xd7, 0xb4, 0x06, 0xb1, 0x89, 0xa7, 0x53, 0x62, 0x8a, 0x48, 0xd3,
+	0x0d, 0xc7, 0x69, 0xb4, 0x08, 0xf3, 0xd0, 0x74, 0xdb, 0x76, 0x28, 0xb7, 0xf7, 0x83, 0x53, 0xb5,
+	0x0d, 0xff, 0xdb, 0xb1, 0x7c, 0x7a, 0xd3, 0x73, 0x3e, 0x26, 0x06, 0xf5, 0xeb, 0xe4, 0x93, 0x03,
+	0xe2, 0x53, 0x5c, 0x81, 0x51, 0xdf, 0x70, 0x5c, 0x52, 0x42, 0xb3, 0x68, 0x79, 0x7c, 0xfd, 0x44,
+	0xb5, 0x53, 0xab, 0x0a, 0x9b, 0x5d, 0xb6, 0x5f, 0x0f, 0x8e, 0x31, 0x86, 0x11, 0x57, 0x6f, 0x90,
+	0xd2, 0xd0, 0x2c, 0x5a, 0x1e, 0xad, 0xf3, 0xcf, 0x58, 0x81, 0x63, 0xec, 0xef, 0xae, 0xf5, 0x29,
+	0x29, 0x0d, 0xf3, 0xfd, 0xee, 0x5a, 0xfd, 0x19, 0xc1, 0x84, 0x7c, 0x9f, 0xef, 0x3a, 0xb6, 0x4f,
+	0xf0, 0xfb, 0x30, 0x6a, 0x51, 0xd2, 0xf6, 0x4b, 0x68, 0x76, 0x78, 0xf9, 0xf8, 0xfa, 0xb5, 0x6a,
+	0x2f, 0xff, 0x6a, 0x98, 0x7f, 0x35, 0xc8, 0xbf, 0xea, 0xde, 0x69, 0x54, 0x59, 0xfe, 0xd5, 0x68,
+	0xf9, 0xc3, 0xfc, 0x43, 0x98, 0x6f, 0x59, 0xe4, 0x6e, 0x3d, 0x88, 0x89, 0x27, 0x60, 0x94, 0x3a,
+	0x54, 0x6f, 0x71, 0x98, 0xc3, 0xf5, 0x60, 0xd1, 0xc5, 0x3e, 0x9c, 0x82, 0x7d, 0x24, 0x86, 0x5d,
+	0x83, 0x93, 0xd7, 0x49, 0x88, 0x3c, 0x2c, 0x94, 0x02, 0xc7, 0x0c, 0xc7, 0xa6, 0x9e, 0x6e, 0x50,
+	0x5e, 0xab, 0xb1, 0x7a, 0x77, 0xad, 0x3a, 0x80, 0xa3, 0x0e, 0x22, 0xd3, 0x77, 0x61, 0x84, 0xa1,
+	0xe2, 0xd6, 0xcf, 0x2d, 0x51, 0x1e, 0x52, 0x7d, 0x8c, 0xe0, 0xbf, 0x62, 0xf7, 0x5a, 0x87, 0xd8,
+	0x74, 0xc7, 0x69, 0xe0, 0x71, 0x18, 0xb2, 0x4c, 0x7e, 0xd9, 0x70, 0x7d, 0xc8, 0x32, 0x25, 0xc0,
+	0x43, 0x32, 0x60, 0x7c, 0x06, 0x80, 0x30, 0xbf, 0x3d, 0x7a, 0xe8, 0x86, 0x75, 0x19, 0xe3, 0x3b,
+	0x6f, 0x1e, 0xba, 0x04, 0xcf, 0xc0, 0x71, 0xc7, 0x30, 0x0e, 0x3c, 0x8f, 0x98, 0x7b, 0x3a, 0xe5,
+	0xf5, 0x19, 0xab, 0x43, 0xb8, 0xb5, 0x45, 0x71, 0x09, 0x8e, 0xb6, 0x89, 0xef, 0xb3, 0xa2, 0x8e,
+	0xf2, 0xc3, 0x70, 0xc9, 0x4e, 0x5c, 0xfd, 0xb0, 0xe5, 0xe8, 0x66, 0xe9, 0x48, 0x70, 0x22, 0x96,
+	0xec, 0x4e, 0xc3, 0x23, 0x8c, 0xaf, 0x2c, 0xe6, 0x51, 0x7e, 0x38, 0x26, 0x76, 0xb6, 0xa8, 0xba,
+	0x09, 0x53, 0x11, 0xbe, 0x84, 0x59, 0xf9, 0x45, 0xca, 0x5f, 0x87, 0xe9, 0x64, 0x57, 0xd1, 0x88,
+	0x75, 0x99, 0x72, 0xd3, 0x52, 0x95, 0x63, 0x5e, 0x82, 0x49, 0xea, 0x37, 0x08, 0xc6, 0xc5, 0xd1,
+	0x15, 0xa7, 0xdd, 0x26, 0x36, 0x1d, 0xa8, 0xc0, 0x0a, 0x1c, 0x63, 0x3d, 0xb6, 0xf5, 0x76, 0x50,
+	0xde, 0xb1, 0x7a, 0x77, 0xcd, 0x4a, 0xc4, 0xec, 0x88, 0x1d, 0x56, 0x36, 0x5c, 0xc6, 0x4a, 0x34,
+	0x1a, 0x2f, 0xd1, 0x4d, 0x28, 0x6d, 0x99, 0xa6, 0x8c, 0xaa, 0x40, 0x7d, 0xa2, 0x17, 0x0e, 0x49,
+	0x17, 0xaa, 0x3b, 0x30, 0x99, 0x10, 0x51, 0x94, 0x4d, 0x93, 0xf8, 0x3b, 0x95, 0x54, 0xb5, 0xd0,
+	0x25, 0x60, 0x65, 0x13, 0x94, 0x48, 0x1f, 0xc4, 0x59, 0x91, 0x0e, 0x0e, 0xfc, 0x76, 0x79, 0x88,
+	0x24, 0xb6, 0xf4, 0xae, 0x12, 0xd0, 0x6b, 0x72, 0xc7, 0x33, 0xb1, 0x3f, 0xd7, 0x57, 0xc7, 0xab,
+	0x50, 0xda, 0x75, 0x0e, 0x3c, 0x83, 0x5c, 0x71, 0x4c, 0xb2, 0xdd, 0xd2, 0x8d, 0x3b, 0x2d, 0xcb,
+	0xa7, 0xaf, 0x59, 0xa4, 0x65, 0xf6, 0xf1, 0x67, 0x02, 0x46, 0x6f, 0xb3, 0x03, 0xd1, 0x94, 0x60,
+	0xa1, 0x56, 0x60, 0x81, 0x65, 0x96, 0x16, 0x25, 0x2c, 0xa7, 0x6a, 0xc2, 0x62, 0x8e, 0x9d, 0xa8,
+	0xc5, 0x65, 0xb9, 0x16, 0x8b, 0x52, 0x2d, 0xd2, 0xdc, 0xc3, 0xc7, 0xe0, 0x12, 0xa8, 0x5b, 0xa6,
+	0x99, 0x6a, 0x25, 0x5a, 0xdb, 0xcd, 0x04, 0x45, 0x33, 0xf9, 0x08, 0xe6, 0x33, 0x7d, 0x05, 0xbe,
+	0x4d, 0x89, 0x66, 0x05, 0xe1, 0x05, 0x84, 0x7b, 0x19, 0x16, 0xaf, 0x92, 0x16, 0xa1, 0xe4, 0xe9,
+	0x00, 0x7e, 0x89, 0x60, 0x72, 0xfb, 0x90, 0x12, 0x23, 0xea, 0x77, 0x25, 0xf2, 0x08, 0xa7, 0xf2,
+	0x75, 0x0a, 0xc6, 0x98, 0xd3, 0x5e, 0x53, 0xf7, 0x9b, 0xbd, 0x67, 0xdf, 0x24, 0x37, 0x74, 0xbf,
+	0xc9, 0x38, 0x63, 0x3b, 0x34, 0x7c, 0xee, 0xf9, 0xe7, 0xd8, 0x93, 0x3d, 0x12, 0x7f, 0xb2, 0x97,
+	0x82, 0x66, 0xa6, 0x82, 0xe9, 0x76, 0xfd, 0x36, 0x54, 0xf2, 0x0c, 0x45, 0x59, 0x5f, 0x92, 0xdb,
+	0x5e, 0x91, 0xea, 0x9a, 0xea, 0x1f, 0xf6, 0xfd, 0x16, 0xef, 0x5d, 0xba, 0x59, 0xb1, 0x67, 0x9a,
+	0x97, 0x61, 0xa8, 0x57, 0x06, 0x75, 0x1f, 0x16, 0xb2, 0xc3, 0x0a, 0xf0, 0x97, 0x24, 0x4e, 0x14,
+	0xc5, 0x1e, 0x90, 0xe2, 0x03, 0x58, 0xbd, 0xe5, 0x9a, 0x3a, 0x25, 0xa9, 0x86, 0xaf, 0x3b, 0x94,
+	0x3c, 0x6d, 0x06, 0x16, 0x9c, 0x2d, 0x14, 0xfd, 0x39, 0x24, 0x72, 0x15, 0x2a, 0x01, 0xbb, 0x9f,
+	0xa5, 0x0d, 0xea, 0x0a, 0x2c, 0xe5, 0x46, 0x09, 0xc0, 0xaa, 0x3a, 0x4c, 0xbc, 0xad, 0xb7, 0x5a,
+	0x84, 0x76, 0x4d, 0xae, 0xd9, 0xd4, 0x3b, 0xc4, 0xa7, 0xe0, 0xc8, 0x5d, 0xbe, 0x2f, 0x82, 0x8b,
+	0x55, 0x52, 0x7d, 0x62, 0x44, 0x1f, 0x8e, 0x13, 0x7d, 0x1e, 0xe6, 0x18, 0x7f, 0x13, 0xae, 0xb1,
+	0x48, 0x97, 0xe4, 0x1f, 0x82, 0x9a, 0x65, 0x24, 0x4a, 0x7b, 0x51, 0x26, 0xf8, 0x9c, 0x54, 0xdb,
+	0xa4, 0x3c, 0x42, 0x6e, 0xef, 0x40, 0x79, 0xcb, 0x34, 0x13, 0x2d, 0x44, 0x3d, 0x07, 0x48, 0x58,
+	0x7d, 0x07, 0x66, 0x52, 0xa3, 0x09, 0xa4, 0x17, 0x24, 0x12, 0x14, 0x00, 0x1a, 0xf4, 0x7f, 0x17,
+	0x16, 0x03, 0xaa, 0x25, 0xd9, 0x44, 0x39, 0x3c, 0x08, 0xdc, 0x3d, 0xa8, 0xe4, 0x05, 0x7d, 0x36,
+	0xd4, 0x97, 0x61, 0x2e, 0xe0, 0xdb, 0x53, 0x14, 0x58, 0x5d, 0x00, 0x35, 0xcb, 0x59, 0xf0, 0x54,
+	0x81, 0x52, 0x4f, 0x6e, 0xbf, 0xe1, 0xf2, 0x29, 0x27, 0xe4, 0xce, 0x67, 0x30, 0x99, 0x70, 0x26,
+	0x52, 0xd2, 0xe1, 0xa8, 0x13, 0x6c, 0x89, 0xac, 0xae, 0x3f, 0xb3, 0x28, 0x0f, 0xae, 0xa8, 0x87,
+	0x71, 0xd5, 0xe5, 0xf0, 0xa1, 0xcd, 0xfb, 0xbf, 0xa7, 0x9e, 0x87, 0xff, 0x6f, 0x79, 0x46, 0xd3,
+	0xea, 0x90, 0x01, 0x26, 0x8d, 0x12, 0x9c, 0x8a, 0x3b, 0x89, 0x70, 0x17, 0xe0, 0xf4, 0x2d, 0x5b,
+	0x1f, 0x38, 0xa0, 0x02, 0xa5, 0x7e, 0xb7, 0x20, 0xe4, 0xfa, 0x1f, 0x25, 0xc0, 0x5b, 0xbd, 0xdc,
+	0x77, 0x89, 0xd7, 0xb1, 0x0c, 0x82, 0xdb, 0xf0, 0x9f, 0xe8, 0x64, 0x87, 0x67, 0xa5, 0x02, 0x25,
+	0x0c, 0x99, 0xca, 0x5c, 0x86, 0x85, 0x80, 0x5f, 0xfa, 0xfc, 0xcf, 0x7f, 0x1e, 0x0c, 0x61, 0x7c,
+	0x82, 0x8f, 0xaf, 0x9d, 0x1a, 0x9b, 0x94, 0x83, 0xf0, 0x1e, 0x40, 0xaf, 0xa3, 0xb8, 0x2c, 0x85,
+	0xea, 0x1b, 0xd3, 0x94, 0x99, 0xd4, 0x73, 0x71, 0xd1, 0x3c, 0xbf, 0xe8, 0x0c, 0x9e, 0x8a, 0x5f,
+	0xa4, 0xdd, 0x0b, 0x8b, 0x72, 0x1f, 0x7f, 0x2b, 0x4f, 0xaf, 0xdd, 0x91, 0x02, 0x2f, 0xa7, 0x65,
+	0x12, 0x1f, 0x58, 0x94, 0x95, 0x02, 0x96, 0x02, 0xd2, 0x2a, 0x87, 0xb4, 0x80, 0xd5, 0x0c, 0x48,
+	0x1a, 0x9f, 0xce, 0x7c, 0xfc, 0x00, 0xc1, 0xc9, 0x3e, 0xc9, 0x8e, 0x65, 0xd5, 0x94, 0x36, 0x24,
+	0x28, 0x95, 0x3c, 0x33, 0x01, 0x48, 0xe3, 0x80, 0x56, 0xd4, 0x85, 0x2c, 0x40, 0x86, 0x10, 0xdd,
+	0x97, 0xd0, 0x2a, 0x7e, 0x88, 0xa4, 0x6f, 0x17, 0x42, 0x3d, 0x8e, 0x97, 0xd2, 0x8a, 0x10, 0x1b,
+	0x0e, 0x94, 0xe5, 0x7c, 0x43, 0x81, 0xed, 0x1c, 0xc7, 0x56, 0xc1, 0x85, 0xb0, 0xe1, 0x47, 0x08,
+	0xce, 0x64, 0xca, 0x64, 0x5c, 0xeb, 0xbb, 0x39, 0x4f, 0x7a, 0x2b, 0xeb, 0x83, 0xb8, 0xa4, 0xc1,
+	0xf6, 0xb9, 0xcb, 0x1a, 0xfb, 0x8f, 0xac, 0xed, 0x87, 0x4e, 0x6b, 0xb7, 0x03, 0x50, 0x3f, 0x22,
+	0x98, 0xca, 0xd0, 0xce, 0x58, 0x8b, 0x37, 0x32, 0x47, 0x00, 0x2b, 0x2f, 0x14, 0x77, 0x48, 0xe3,
+	0x40, 0x16, 0x60, 0xc6, 0x81, 0x5f, 0x11, 0x94, 0xb3, 0x5f, 0x7d, 0x58, 0x2e, 0x5c, 0x21, 0xe9,
+	0xae, 0x9c, 0x1f, 0xc8, 0x47, 0x80, 0xdf, 0xe0, 0xe0, 0xab, 0xab, 0xe7, 0x8a, 0x80, 0xd7, 0xee,
+	0xf1, 0xbf, 0xf7, 0xf1, 0x4f, 0x08, 0xca, 0xd9, 0xea, 0x1a, 0xf7, 0xb7, 0x3e, 0x57, 0xb3, 0xc7,
+	0x32, 0x28, 0x26, 0xdf, 0xfb, 0xf9, 0xb2, 0x2f, 0x7c, 0x22, 0xf0, 0x8d, 0x2e, 0xac, 0x47, 0x08,
+	0xa6, 0xb3, 0x84, 0x35, 0xee, 0xeb, 0x7f, 0x9e, 0xa6, 0x54, 0x6a, 0x03, 0x78, 0xa4, 0x51, 0x26,
+	0x0b, 0x33, 0xa3, 0xcc, 0x5f, 0x08, 0xe6, 0x0b, 0xa8, 0x69, 0x7c, 0x51, 0xc2, 0x52, 0x5c, 0xdd,
+	0x2b, 0x2f, 0x0e, 0xee, 0x28, 0x72, 0x79, 0x85, 0xe7, 0xb2, 0xa9, 0x6e, 0x14, 0xc9, 0x25, 0xfa,
+	0xea, 0x61, 0x2a, 0x8b, 0xe5, 0xf6, 0x1b, 0x82, 0x99, 0x1c, 0xe1, 0x8d, 0x93, 0xb8, 0x9d, 0xdb,
+	0x98, 0x8d, 0xc1, 0x9c, 0x44, 0x3e, 0x17, 0x79, 0x3e, 0xb5, 0x55, 0x6d, 0xc0, 0x7c, 0xf0, 0xf7,
+	0x28, 0xf8, 0x56, 0x27, 0x59, 0x8d, 0xe3, 0x6a, 0x1f, 0xb9, 0x33, 0xb5, 0xbd, 0xa2, 0x15, 0xb6,
+	0x17, 0xc0, 0x67, 0x39, 0x70, 0x05, 0x97, 0x42, 0xe0, 0x81, 0x54, 0x5c, 0xeb, 0xc2, 0xc6, 0xdf,
+	0x21, 0x38, 0x9d, 0x22, 0xc1, 0xf1, 0xd9, 0x38, 0x8b, 0x33, 0x54, 0xa9, 0x72, 0xae, 0x98, 0xb1,
+	0x2c, 0x24, 0xd4, 0x54, 0x60, 0x8c, 0x05, 0xbf, 0x20, 0x28, 0x67, 0xeb, 0xed, 0xd8, 0x2b, 0xa5,
+	0x90, 0xe2, 0x8f, 0xbd, 0x52, 0x8a, 0x09, 0x7a, 0xb5, 0xc6, 0x01, 0x9f, 0x55, 0x2b, 0x69, 0x80,
+	0xb5, 0x7b, 0xc1, 0x4e, 0x8f, 0xc4, 0x3f, 0x20, 0x50, 0xd2, 0x05, 0x79, 0xac, 0xf9, 0xb9, 0xb2,
+	0x3f, 0xd6, 0xfc, 0x02, 0x4a, 0x7f, 0x85, 0x43, 0x9e, 0x5f, 0x9d, 0xcb, 0x85, 0x8c, 0xbf, 0x40,
+	0xd1, 0x6f, 0xed, 0x85, 0xf2, 0x8f, 0x09, 0xa3, 0xb4, 0xa9, 0x21, 0x26, 0x8c, 0x52, 0x07, 0x08,
+	0x75, 0x86, 0xe3, 0x99, 0xc4, 0xa7, 0x63, 0xe2, 0x63, 0x4d, 0xc8, 0x7f, 0xfc, 0x15, 0x82, 0x71,
+	0x59, 0xa0, 0x63, 0x55, 0x66, 0x55, 0x92, 0x42, 0x57, 0xe6, 0x33, 0x6d, 0xc4, 0xe5, 0x6b, 0xfc,
+	0xf2, 0x25, 0x35, 0x2e, 0x13, 0xa3, 0x6f, 0x1f, 0xa1, 0xe4, 0x59, 0xef, 0xbe, 0x46, 0x70, 0x22,
+	0x2e, 0xed, 0xf1, 0x82, 0x4c, 0x9c, 0xe4, 0x81, 0x41, 0x59, 0xcc, 0xb1, 0xca, 0x91, 0x89, 0x51,
+	0x40, 0x07, 0x76, 0x0f, 0xd2, 0xf6, 0xf6, 0xef, 0x4f, 0xca, 0xe8, 0xf1, 0x93, 0x32, 0xfa, 0xfb,
+	0x49, 0x19, 0xbd, 0xb7, 0x91, 0xff, 0xcb, 0x97, 0xd1, 0xb2, 0x88, 0x4d, 0xa3, 0x3f, 0x7f, 0xed,
+	0x1f, 0xe1, 0x3f, 0x67, 0x9d, 0xff, 0x37, 0x00, 0x00, 0xff, 0xff, 0xec, 0x9d, 0xf9, 0x48, 0xaf,
+	0x1b, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -2484,14 +2482,14 @@ type ApplicationServiceClient interface {
 	UpdateBytecodeBlacklistContractNote(ctx context.Context, in *UpdateBytecodeBlacklistContractNoteRequest, opts ...grpc.CallOption) (*UpdateBytecodeBlacklistContractNoteResponse, error)
 	// DeleteBytecodeBlacklistContract deletes a globally configured bytecode-blacklist contract entry.
 	DeleteBytecodeBlacklistContract(ctx context.Context, in *DeleteBytecodeBlacklistContractRequest, opts ...grpc.CallOption) (*DeleteBytecodeBlacklistContractResponse, error)
-	// ListWalletBlacklistContracts returns all globally configured wallet-blacklist entries.
-	ListWalletBlacklistContracts(ctx context.Context, in *ListWalletBlacklistContractsRequest, opts ...grpc.CallOption) (*ListWalletBlacklistContractsResponse, error)
-	// AddWalletBlacklistContract adds a globally configured wallet-blacklist entry.
-	AddWalletBlacklistContract(ctx context.Context, in *AddWalletBlacklistContractRequest, opts ...grpc.CallOption) (*AddWalletBlacklistContractResponse, error)
-	// UpdateWalletBlacklistContractNote updates the note of a globally configured wallet-blacklist entry.
-	UpdateWalletBlacklistContractNote(ctx context.Context, in *UpdateWalletBlacklistContractNoteRequest, opts ...grpc.CallOption) (*UpdateWalletBlacklistContractNoteResponse, error)
-	// DeleteWalletBlacklistContract deletes a globally configured wallet-blacklist entry.
-	DeleteWalletBlacklistContract(ctx context.Context, in *DeleteWalletBlacklistContractRequest, opts ...grpc.CallOption) (*DeleteWalletBlacklistContractResponse, error)
+	// ListWalletBlacklistEntries returns all globally configured wallet-blacklist entries.
+	ListWalletBlacklistEntries(ctx context.Context, in *ListWalletBlacklistEntriesRequest, opts ...grpc.CallOption) (*ListWalletBlacklistEntriesResponse, error)
+	// AddWalletBlacklistEntry adds a globally configured wallet-blacklist entry.
+	AddWalletBlacklistEntry(ctx context.Context, in *AddWalletBlacklistEntryRequest, opts ...grpc.CallOption) (*AddWalletBlacklistEntryResponse, error)
+	// UpdateWalletBlacklistEntryNote updates the note of a globally configured wallet-blacklist entry.
+	UpdateWalletBlacklistEntryNote(ctx context.Context, in *UpdateWalletBlacklistEntryNoteRequest, opts ...grpc.CallOption) (*UpdateWalletBlacklistEntryNoteResponse, error)
+	// DeleteWalletBlacklistEntry deletes a globally configured wallet-blacklist entry.
+	DeleteWalletBlacklistEntry(ctx context.Context, in *DeleteWalletBlacklistEntryRequest, opts ...grpc.CallOption) (*DeleteWalletBlacklistEntryResponse, error)
 	// GetProjectOptions returns the options.
 	GetProjectOptions(ctx context.Context, in *GetProjectOptionsRequest, opts ...grpc.CallOption) (*GetProjectOptionsResponse, error)
 	// ArchiveProject archives a project by contract.
@@ -2616,36 +2614,36 @@ func (c *applicationServiceClient) DeleteBytecodeBlacklistContract(ctx context.C
 	return out, nil
 }
 
-func (c *applicationServiceClient) ListWalletBlacklistContracts(ctx context.Context, in *ListWalletBlacklistContractsRequest, opts ...grpc.CallOption) (*ListWalletBlacklistContractsResponse, error) {
-	out := new(ListWalletBlacklistContractsResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/ListWalletBlacklistContracts", in, out, opts...)
+func (c *applicationServiceClient) ListWalletBlacklistEntries(ctx context.Context, in *ListWalletBlacklistEntriesRequest, opts ...grpc.CallOption) (*ListWalletBlacklistEntriesResponse, error) {
+	out := new(ListWalletBlacklistEntriesResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/ListWalletBlacklistEntries", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *applicationServiceClient) AddWalletBlacklistContract(ctx context.Context, in *AddWalletBlacklistContractRequest, opts ...grpc.CallOption) (*AddWalletBlacklistContractResponse, error) {
-	out := new(AddWalletBlacklistContractResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/AddWalletBlacklistContract", in, out, opts...)
+func (c *applicationServiceClient) AddWalletBlacklistEntry(ctx context.Context, in *AddWalletBlacklistEntryRequest, opts ...grpc.CallOption) (*AddWalletBlacklistEntryResponse, error) {
+	out := new(AddWalletBlacklistEntryResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/AddWalletBlacklistEntry", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *applicationServiceClient) UpdateWalletBlacklistContractNote(ctx context.Context, in *UpdateWalletBlacklistContractNoteRequest, opts ...grpc.CallOption) (*UpdateWalletBlacklistContractNoteResponse, error) {
-	out := new(UpdateWalletBlacklistContractNoteResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/UpdateWalletBlacklistContractNote", in, out, opts...)
+func (c *applicationServiceClient) UpdateWalletBlacklistEntryNote(ctx context.Context, in *UpdateWalletBlacklistEntryNoteRequest, opts ...grpc.CallOption) (*UpdateWalletBlacklistEntryNoteResponse, error) {
+	out := new(UpdateWalletBlacklistEntryNoteResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/UpdateWalletBlacklistEntryNote", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *applicationServiceClient) DeleteWalletBlacklistContract(ctx context.Context, in *DeleteWalletBlacklistContractRequest, opts ...grpc.CallOption) (*DeleteWalletBlacklistContractResponse, error) {
-	out := new(DeleteWalletBlacklistContractResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/DeleteWalletBlacklistContract", in, out, opts...)
+func (c *applicationServiceClient) DeleteWalletBlacklistEntry(ctx context.Context, in *DeleteWalletBlacklistEntryRequest, opts ...grpc.CallOption) (*DeleteWalletBlacklistEntryResponse, error) {
+	out := new(DeleteWalletBlacklistEntryResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/DeleteWalletBlacklistEntry", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2705,14 +2703,14 @@ type ApplicationServiceServer interface {
 	UpdateBytecodeBlacklistContractNote(context.Context, *UpdateBytecodeBlacklistContractNoteRequest) (*UpdateBytecodeBlacklistContractNoteResponse, error)
 	// DeleteBytecodeBlacklistContract deletes a globally configured bytecode-blacklist contract entry.
 	DeleteBytecodeBlacklistContract(context.Context, *DeleteBytecodeBlacklistContractRequest) (*DeleteBytecodeBlacklistContractResponse, error)
-	// ListWalletBlacklistContracts returns all globally configured wallet-blacklist entries.
-	ListWalletBlacklistContracts(context.Context, *ListWalletBlacklistContractsRequest) (*ListWalletBlacklistContractsResponse, error)
-	// AddWalletBlacklistContract adds a globally configured wallet-blacklist entry.
-	AddWalletBlacklistContract(context.Context, *AddWalletBlacklistContractRequest) (*AddWalletBlacklistContractResponse, error)
-	// UpdateWalletBlacklistContractNote updates the note of a globally configured wallet-blacklist entry.
-	UpdateWalletBlacklistContractNote(context.Context, *UpdateWalletBlacklistContractNoteRequest) (*UpdateWalletBlacklistContractNoteResponse, error)
-	// DeleteWalletBlacklistContract deletes a globally configured wallet-blacklist entry.
-	DeleteWalletBlacklistContract(context.Context, *DeleteWalletBlacklistContractRequest) (*DeleteWalletBlacklistContractResponse, error)
+	// ListWalletBlacklistEntries returns all globally configured wallet-blacklist entries.
+	ListWalletBlacklistEntries(context.Context, *ListWalletBlacklistEntriesRequest) (*ListWalletBlacklistEntriesResponse, error)
+	// AddWalletBlacklistEntry adds a globally configured wallet-blacklist entry.
+	AddWalletBlacklistEntry(context.Context, *AddWalletBlacklistEntryRequest) (*AddWalletBlacklistEntryResponse, error)
+	// UpdateWalletBlacklistEntryNote updates the note of a globally configured wallet-blacklist entry.
+	UpdateWalletBlacklistEntryNote(context.Context, *UpdateWalletBlacklistEntryNoteRequest) (*UpdateWalletBlacklistEntryNoteResponse, error)
+	// DeleteWalletBlacklistEntry deletes a globally configured wallet-blacklist entry.
+	DeleteWalletBlacklistEntry(context.Context, *DeleteWalletBlacklistEntryRequest) (*DeleteWalletBlacklistEntryResponse, error)
 	// GetProjectOptions returns the options.
 	GetProjectOptions(context.Context, *GetProjectOptionsRequest) (*GetProjectOptionsResponse, error)
 	// ArchiveProject archives a project by contract.
@@ -2761,17 +2759,17 @@ func (*UnimplementedApplicationServiceServer) UpdateBytecodeBlacklistContractNot
 func (*UnimplementedApplicationServiceServer) DeleteBytecodeBlacklistContract(ctx context.Context, req *DeleteBytecodeBlacklistContractRequest) (*DeleteBytecodeBlacklistContractResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteBytecodeBlacklistContract not implemented")
 }
-func (*UnimplementedApplicationServiceServer) ListWalletBlacklistContracts(ctx context.Context, req *ListWalletBlacklistContractsRequest) (*ListWalletBlacklistContractsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListWalletBlacklistContracts not implemented")
+func (*UnimplementedApplicationServiceServer) ListWalletBlacklistEntries(ctx context.Context, req *ListWalletBlacklistEntriesRequest) (*ListWalletBlacklistEntriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWalletBlacklistEntries not implemented")
 }
-func (*UnimplementedApplicationServiceServer) AddWalletBlacklistContract(ctx context.Context, req *AddWalletBlacklistContractRequest) (*AddWalletBlacklistContractResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddWalletBlacklistContract not implemented")
+func (*UnimplementedApplicationServiceServer) AddWalletBlacklistEntry(ctx context.Context, req *AddWalletBlacklistEntryRequest) (*AddWalletBlacklistEntryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddWalletBlacklistEntry not implemented")
 }
-func (*UnimplementedApplicationServiceServer) UpdateWalletBlacklistContractNote(ctx context.Context, req *UpdateWalletBlacklistContractNoteRequest) (*UpdateWalletBlacklistContractNoteResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateWalletBlacklistContractNote not implemented")
+func (*UnimplementedApplicationServiceServer) UpdateWalletBlacklistEntryNote(ctx context.Context, req *UpdateWalletBlacklistEntryNoteRequest) (*UpdateWalletBlacklistEntryNoteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWalletBlacklistEntryNote not implemented")
 }
-func (*UnimplementedApplicationServiceServer) DeleteWalletBlacklistContract(ctx context.Context, req *DeleteWalletBlacklistContractRequest) (*DeleteWalletBlacklistContractResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteWalletBlacklistContract not implemented")
+func (*UnimplementedApplicationServiceServer) DeleteWalletBlacklistEntry(ctx context.Context, req *DeleteWalletBlacklistEntryRequest) (*DeleteWalletBlacklistEntryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteWalletBlacklistEntry not implemented")
 }
 func (*UnimplementedApplicationServiceServer) GetProjectOptions(ctx context.Context, req *GetProjectOptionsRequest) (*GetProjectOptionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProjectOptions not implemented")
@@ -3003,74 +3001,74 @@ func _ApplicationService_DeleteBytecodeBlacklistContract_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_ListWalletBlacklistContracts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListWalletBlacklistContractsRequest)
+func _ApplicationService_ListWalletBlacklistEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWalletBlacklistEntriesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServiceServer).ListWalletBlacklistContracts(ctx, in)
+		return srv.(ApplicationServiceServer).ListWalletBlacklistEntries(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/application.ApplicationService/ListWalletBlacklistContracts",
+		FullMethod: "/application.ApplicationService/ListWalletBlacklistEntries",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).ListWalletBlacklistContracts(ctx, req.(*ListWalletBlacklistContractsRequest))
+		return srv.(ApplicationServiceServer).ListWalletBlacklistEntries(ctx, req.(*ListWalletBlacklistEntriesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_AddWalletBlacklistContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddWalletBlacklistContractRequest)
+func _ApplicationService_AddWalletBlacklistEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddWalletBlacklistEntryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServiceServer).AddWalletBlacklistContract(ctx, in)
+		return srv.(ApplicationServiceServer).AddWalletBlacklistEntry(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/application.ApplicationService/AddWalletBlacklistContract",
+		FullMethod: "/application.ApplicationService/AddWalletBlacklistEntry",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).AddWalletBlacklistContract(ctx, req.(*AddWalletBlacklistContractRequest))
+		return srv.(ApplicationServiceServer).AddWalletBlacklistEntry(ctx, req.(*AddWalletBlacklistEntryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_UpdateWalletBlacklistContractNote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateWalletBlacklistContractNoteRequest)
+func _ApplicationService_UpdateWalletBlacklistEntryNote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateWalletBlacklistEntryNoteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServiceServer).UpdateWalletBlacklistContractNote(ctx, in)
+		return srv.(ApplicationServiceServer).UpdateWalletBlacklistEntryNote(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/application.ApplicationService/UpdateWalletBlacklistContractNote",
+		FullMethod: "/application.ApplicationService/UpdateWalletBlacklistEntryNote",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).UpdateWalletBlacklistContractNote(ctx, req.(*UpdateWalletBlacklistContractNoteRequest))
+		return srv.(ApplicationServiceServer).UpdateWalletBlacklistEntryNote(ctx, req.(*UpdateWalletBlacklistEntryNoteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_DeleteWalletBlacklistContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteWalletBlacklistContractRequest)
+func _ApplicationService_DeleteWalletBlacklistEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteWalletBlacklistEntryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServiceServer).DeleteWalletBlacklistContract(ctx, in)
+		return srv.(ApplicationServiceServer).DeleteWalletBlacklistEntry(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/application.ApplicationService/DeleteWalletBlacklistContract",
+		FullMethod: "/application.ApplicationService/DeleteWalletBlacklistEntry",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).DeleteWalletBlacklistContract(ctx, req.(*DeleteWalletBlacklistContractRequest))
+		return srv.(ApplicationServiceServer).DeleteWalletBlacklistEntry(ctx, req.(*DeleteWalletBlacklistEntryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3182,20 +3180,20 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ApplicationService_DeleteBytecodeBlacklistContract_Handler,
 		},
 		{
-			MethodName: "ListWalletBlacklistContracts",
-			Handler:    _ApplicationService_ListWalletBlacklistContracts_Handler,
+			MethodName: "ListWalletBlacklistEntries",
+			Handler:    _ApplicationService_ListWalletBlacklistEntries_Handler,
 		},
 		{
-			MethodName: "AddWalletBlacklistContract",
-			Handler:    _ApplicationService_AddWalletBlacklistContract_Handler,
+			MethodName: "AddWalletBlacklistEntry",
+			Handler:    _ApplicationService_AddWalletBlacklistEntry_Handler,
 		},
 		{
-			MethodName: "UpdateWalletBlacklistContractNote",
-			Handler:    _ApplicationService_UpdateWalletBlacklistContractNote_Handler,
+			MethodName: "UpdateWalletBlacklistEntryNote",
+			Handler:    _ApplicationService_UpdateWalletBlacklistEntryNote_Handler,
 		},
 		{
-			MethodName: "DeleteWalletBlacklistContract",
-			Handler:    _ApplicationService_DeleteWalletBlacklistContract_Handler,
+			MethodName: "DeleteWalletBlacklistEntry",
+			Handler:    _ApplicationService_DeleteWalletBlacklistEntry_Handler,
 		},
 		{
 			MethodName: "GetProjectOptions",
@@ -4330,7 +4328,7 @@ func (m *DeleteBytecodeBlacklistContractResponse) MarshalToSizedBuffer(dAtA []by
 	return len(dAtA) - i, nil
 }
 
-func (m *WalletBlacklistContract) Marshal() (dAtA []byte, err error) {
+func (m *WalletBlacklistEntry) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4340,12 +4338,12 @@ func (m *WalletBlacklistContract) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *WalletBlacklistContract) MarshalTo(dAtA []byte) (int, error) {
+func (m *WalletBlacklistEntry) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *WalletBlacklistContract) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *WalletBlacklistEntry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -4368,17 +4366,17 @@ func (m *WalletBlacklistContract) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Contract) > 0 {
-		i -= len(m.Contract)
-		copy(dAtA[i:], m.Contract)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+	if len(m.Wallet) > 0 {
+		i -= len(m.Wallet)
+		copy(dAtA[i:], m.Wallet)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Wallet)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *ListWalletBlacklistContractsRequest) Marshal() (dAtA []byte, err error) {
+func (m *ListWalletBlacklistEntriesRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4388,12 +4386,12 @@ func (m *ListWalletBlacklistContractsRequest) Marshal() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *ListWalletBlacklistContractsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListWalletBlacklistEntriesRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ListWalletBlacklistContractsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ListWalletBlacklistEntriesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -4405,7 +4403,7 @@ func (m *ListWalletBlacklistContractsRequest) MarshalToSizedBuffer(dAtA []byte) 
 	return len(dAtA) - i, nil
 }
 
-func (m *ListWalletBlacklistContractsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListWalletBlacklistEntriesResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4415,12 +4413,12 @@ func (m *ListWalletBlacklistContractsResponse) Marshal() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *ListWalletBlacklistContractsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListWalletBlacklistEntriesResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ListWalletBlacklistContractsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ListWalletBlacklistEntriesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -4446,7 +4444,7 @@ func (m *ListWalletBlacklistContractsResponse) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *AddWalletBlacklistContractRequest) Marshal() (dAtA []byte, err error) {
+func (m *AddWalletBlacklistEntryRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4456,12 +4454,12 @@ func (m *AddWalletBlacklistContractRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AddWalletBlacklistContractRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *AddWalletBlacklistEntryRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *AddWalletBlacklistContractRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *AddWalletBlacklistEntryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -4477,17 +4475,17 @@ func (m *AddWalletBlacklistContractRequest) MarshalToSizedBuffer(dAtA []byte) (i
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Contract) > 0 {
-		i -= len(m.Contract)
-		copy(dAtA[i:], m.Contract)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+	if len(m.Wallet) > 0 {
+		i -= len(m.Wallet)
+		copy(dAtA[i:], m.Wallet)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Wallet)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *AddWalletBlacklistContractResponse) Marshal() (dAtA []byte, err error) {
+func (m *AddWalletBlacklistEntryResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4497,12 +4495,12 @@ func (m *AddWalletBlacklistContractResponse) Marshal() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *AddWalletBlacklistContractResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *AddWalletBlacklistEntryResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *AddWalletBlacklistContractResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *AddWalletBlacklistEntryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -4526,7 +4524,7 @@ func (m *AddWalletBlacklistContractResponse) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateWalletBlacklistContractNoteRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateWalletBlacklistEntryNoteRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4536,12 +4534,12 @@ func (m *UpdateWalletBlacklistContractNoteRequest) Marshal() (dAtA []byte, err e
 	return dAtA[:n], nil
 }
 
-func (m *UpdateWalletBlacklistContractNoteRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateWalletBlacklistEntryNoteRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UpdateWalletBlacklistContractNoteRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *UpdateWalletBlacklistEntryNoteRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -4557,17 +4555,17 @@ func (m *UpdateWalletBlacklistContractNoteRequest) MarshalToSizedBuffer(dAtA []b
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Contract) > 0 {
-		i -= len(m.Contract)
-		copy(dAtA[i:], m.Contract)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+	if len(m.Wallet) > 0 {
+		i -= len(m.Wallet)
+		copy(dAtA[i:], m.Wallet)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Wallet)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateWalletBlacklistContractNoteResponse) Marshal() (dAtA []byte, err error) {
+func (m *UpdateWalletBlacklistEntryNoteResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4577,12 +4575,12 @@ func (m *UpdateWalletBlacklistContractNoteResponse) Marshal() (dAtA []byte, err 
 	return dAtA[:n], nil
 }
 
-func (m *UpdateWalletBlacklistContractNoteResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateWalletBlacklistEntryNoteResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UpdateWalletBlacklistContractNoteResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *UpdateWalletBlacklistEntryNoteResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -4606,7 +4604,7 @@ func (m *UpdateWalletBlacklistContractNoteResponse) MarshalToSizedBuffer(dAtA []
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteWalletBlacklistContractRequest) Marshal() (dAtA []byte, err error) {
+func (m *DeleteWalletBlacklistEntryRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4616,12 +4614,12 @@ func (m *DeleteWalletBlacklistContractRequest) Marshal() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *DeleteWalletBlacklistContractRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteWalletBlacklistEntryRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *DeleteWalletBlacklistContractRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *DeleteWalletBlacklistEntryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -4630,17 +4628,17 @@ func (m *DeleteWalletBlacklistContractRequest) MarshalToSizedBuffer(dAtA []byte)
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Contract) > 0 {
-		i -= len(m.Contract)
-		copy(dAtA[i:], m.Contract)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+	if len(m.Wallet) > 0 {
+		i -= len(m.Wallet)
+		copy(dAtA[i:], m.Wallet)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Wallet)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteWalletBlacklistContractResponse) Marshal() (dAtA []byte, err error) {
+func (m *DeleteWalletBlacklistEntryResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4650,12 +4648,12 @@ func (m *DeleteWalletBlacklistContractResponse) Marshal() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *DeleteWalletBlacklistContractResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteWalletBlacklistEntryResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *DeleteWalletBlacklistContractResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *DeleteWalletBlacklistEntryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -5416,13 +5414,13 @@ func (m *DeleteBytecodeBlacklistContractResponse) Size() (n int) {
 	return n
 }
 
-func (m *WalletBlacklistContract) Size() (n int) {
+func (m *WalletBlacklistEntry) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Contract)
+	l = len(m.Wallet)
 	if l > 0 {
 		n += 1 + l + sovApplication(uint64(l))
 	}
@@ -5440,7 +5438,7 @@ func (m *WalletBlacklistContract) Size() (n int) {
 	return n
 }
 
-func (m *ListWalletBlacklistContractsRequest) Size() (n int) {
+func (m *ListWalletBlacklistEntriesRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -5452,7 +5450,7 @@ func (m *ListWalletBlacklistContractsRequest) Size() (n int) {
 	return n
 }
 
-func (m *ListWalletBlacklistContractsResponse) Size() (n int) {
+func (m *ListWalletBlacklistEntriesResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -5470,13 +5468,13 @@ func (m *ListWalletBlacklistContractsResponse) Size() (n int) {
 	return n
 }
 
-func (m *AddWalletBlacklistContractRequest) Size() (n int) {
+func (m *AddWalletBlacklistEntryRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Contract)
+	l = len(m.Wallet)
 	if l > 0 {
 		n += 1 + l + sovApplication(uint64(l))
 	}
@@ -5490,7 +5488,7 @@ func (m *AddWalletBlacklistContractRequest) Size() (n int) {
 	return n
 }
 
-func (m *AddWalletBlacklistContractResponse) Size() (n int) {
+func (m *AddWalletBlacklistEntryResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -5506,13 +5504,13 @@ func (m *AddWalletBlacklistContractResponse) Size() (n int) {
 	return n
 }
 
-func (m *UpdateWalletBlacklistContractNoteRequest) Size() (n int) {
+func (m *UpdateWalletBlacklistEntryNoteRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Contract)
+	l = len(m.Wallet)
 	if l > 0 {
 		n += 1 + l + sovApplication(uint64(l))
 	}
@@ -5526,7 +5524,7 @@ func (m *UpdateWalletBlacklistContractNoteRequest) Size() (n int) {
 	return n
 }
 
-func (m *UpdateWalletBlacklistContractNoteResponse) Size() (n int) {
+func (m *UpdateWalletBlacklistEntryNoteResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -5542,13 +5540,13 @@ func (m *UpdateWalletBlacklistContractNoteResponse) Size() (n int) {
 	return n
 }
 
-func (m *DeleteWalletBlacklistContractRequest) Size() (n int) {
+func (m *DeleteWalletBlacklistEntryRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Contract)
+	l = len(m.Wallet)
 	if l > 0 {
 		n += 1 + l + sovApplication(uint64(l))
 	}
@@ -5558,7 +5556,7 @@ func (m *DeleteWalletBlacklistContractRequest) Size() (n int) {
 	return n
 }
 
-func (m *DeleteWalletBlacklistContractResponse) Size() (n int) {
+func (m *DeleteWalletBlacklistEntryResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -8516,7 +8514,7 @@ func (m *DeleteBytecodeBlacklistContractResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *WalletBlacklistContract) Unmarshal(dAtA []byte) error {
+func (m *WalletBlacklistEntry) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8539,15 +8537,15 @@ func (m *WalletBlacklistContract) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: WalletBlacklistContract: wiretype end group for non-group")
+			return fmt.Errorf("proto: WalletBlacklistEntry: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: WalletBlacklistContract: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: WalletBlacklistEntry: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Wallet", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -8575,7 +8573,7 @@ func (m *WalletBlacklistContract) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Contract = string(dAtA[iNdEx:postIndex])
+			m.Wallet = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -8663,7 +8661,7 @@ func (m *WalletBlacklistContract) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListWalletBlacklistContractsRequest) Unmarshal(dAtA []byte) error {
+func (m *ListWalletBlacklistEntriesRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8686,10 +8684,10 @@ func (m *ListWalletBlacklistContractsRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListWalletBlacklistContractsRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListWalletBlacklistEntriesRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListWalletBlacklistContractsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListWalletBlacklistEntriesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -8714,7 +8712,7 @@ func (m *ListWalletBlacklistContractsRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListWalletBlacklistContractsResponse) Unmarshal(dAtA []byte) error {
+func (m *ListWalletBlacklistEntriesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8737,10 +8735,10 @@ func (m *ListWalletBlacklistContractsResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListWalletBlacklistContractsResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListWalletBlacklistEntriesResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListWalletBlacklistContractsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListWalletBlacklistEntriesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -8772,7 +8770,7 @@ func (m *ListWalletBlacklistContractsResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Items = append(m.Items, &WalletBlacklistContract{})
+			m.Items = append(m.Items, &WalletBlacklistEntry{})
 			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -8799,7 +8797,7 @@ func (m *ListWalletBlacklistContractsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AddWalletBlacklistContractRequest) Unmarshal(dAtA []byte) error {
+func (m *AddWalletBlacklistEntryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8822,15 +8820,15 @@ func (m *AddWalletBlacklistContractRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AddWalletBlacklistContractRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: AddWalletBlacklistEntryRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AddWalletBlacklistContractRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: AddWalletBlacklistEntryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Wallet", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -8858,7 +8856,7 @@ func (m *AddWalletBlacklistContractRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Contract = string(dAtA[iNdEx:postIndex])
+			m.Wallet = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -8914,7 +8912,7 @@ func (m *AddWalletBlacklistContractRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AddWalletBlacklistContractResponse) Unmarshal(dAtA []byte) error {
+func (m *AddWalletBlacklistEntryResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8937,10 +8935,10 @@ func (m *AddWalletBlacklistContractResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AddWalletBlacklistContractResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: AddWalletBlacklistEntryResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AddWalletBlacklistContractResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: AddWalletBlacklistEntryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -8973,7 +8971,7 @@ func (m *AddWalletBlacklistContractResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Item == nil {
-				m.Item = &WalletBlacklistContract{}
+				m.Item = &WalletBlacklistEntry{}
 			}
 			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9001,7 +8999,7 @@ func (m *AddWalletBlacklistContractResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateWalletBlacklistContractNoteRequest) Unmarshal(dAtA []byte) error {
+func (m *UpdateWalletBlacklistEntryNoteRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9024,15 +9022,15 @@ func (m *UpdateWalletBlacklistContractNoteRequest) Unmarshal(dAtA []byte) error 
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: UpdateWalletBlacklistContractNoteRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: UpdateWalletBlacklistEntryNoteRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UpdateWalletBlacklistContractNoteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: UpdateWalletBlacklistEntryNoteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Wallet", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -9060,7 +9058,7 @@ func (m *UpdateWalletBlacklistContractNoteRequest) Unmarshal(dAtA []byte) error 
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Contract = string(dAtA[iNdEx:postIndex])
+			m.Wallet = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -9116,7 +9114,7 @@ func (m *UpdateWalletBlacklistContractNoteRequest) Unmarshal(dAtA []byte) error 
 	}
 	return nil
 }
-func (m *UpdateWalletBlacklistContractNoteResponse) Unmarshal(dAtA []byte) error {
+func (m *UpdateWalletBlacklistEntryNoteResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9139,10 +9137,10 @@ func (m *UpdateWalletBlacklistContractNoteResponse) Unmarshal(dAtA []byte) error
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: UpdateWalletBlacklistContractNoteResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: UpdateWalletBlacklistEntryNoteResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UpdateWalletBlacklistContractNoteResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: UpdateWalletBlacklistEntryNoteResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -9175,7 +9173,7 @@ func (m *UpdateWalletBlacklistContractNoteResponse) Unmarshal(dAtA []byte) error
 				return io.ErrUnexpectedEOF
 			}
 			if m.Item == nil {
-				m.Item = &WalletBlacklistContract{}
+				m.Item = &WalletBlacklistEntry{}
 			}
 			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9203,7 +9201,7 @@ func (m *UpdateWalletBlacklistContractNoteResponse) Unmarshal(dAtA []byte) error
 	}
 	return nil
 }
-func (m *DeleteWalletBlacklistContractRequest) Unmarshal(dAtA []byte) error {
+func (m *DeleteWalletBlacklistEntryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9226,15 +9224,15 @@ func (m *DeleteWalletBlacklistContractRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DeleteWalletBlacklistContractRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: DeleteWalletBlacklistEntryRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeleteWalletBlacklistContractRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DeleteWalletBlacklistEntryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Wallet", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -9262,7 +9260,7 @@ func (m *DeleteWalletBlacklistContractRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Contract = string(dAtA[iNdEx:postIndex])
+			m.Wallet = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -9286,7 +9284,7 @@ func (m *DeleteWalletBlacklistContractRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteWalletBlacklistContractResponse) Unmarshal(dAtA []byte) error {
+func (m *DeleteWalletBlacklistEntryResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9309,10 +9307,10 @@ func (m *DeleteWalletBlacklistContractResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DeleteWalletBlacklistContractResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: DeleteWalletBlacklistEntryResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeleteWalletBlacklistContractResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DeleteWalletBlacklistEntryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

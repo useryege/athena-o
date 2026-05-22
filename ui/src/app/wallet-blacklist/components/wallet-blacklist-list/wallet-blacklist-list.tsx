@@ -1,19 +1,19 @@
 import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {services} from '../../../shared/services';
-import {WalletBlacklistContract} from '../../../shared/services/athena-application-service';
+import {WalletBlacklistEntry} from '../../../shared/services/athena-application-service';
 
 require('./wallet-blacklist-list.scss');
 
 export const WalletBlacklistList = () => {
-    const [items, setItems] = React.useState<WalletBlacklistContract[]>([]);
+    const [items, setItems] = React.useState<WalletBlacklistEntry[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
     const [submitting, setSubmitting] = React.useState(false);
     const [error, setError] = React.useState<Error | null>(null);
-    const [newContract, setNewContract] = React.useState('');
+    const [newWallet, setNewWallet] = React.useState('');
     const [newNote, setNewNote] = React.useState('');
-    const [editingContract, setEditingContract] = React.useState('');
+    const [editingWallet, setEditingWallet] = React.useState('');
     const [editingNote, setEditingNote] = React.useState('');
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const isMountedRef = React.useRef(false);
@@ -34,7 +34,7 @@ export const WalletBlacklistList = () => {
         }
 
         try {
-            const req = services.athenaApplication.listWalletBlacklistContracts();
+            const req = services.athenaApplication.listWalletBlacklistEntries();
             requestRef.current = req;
             const data = await req;
             if (isMountedRef.current) {
@@ -70,16 +70,16 @@ export const WalletBlacklistList = () => {
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
-        const contract = newContract.trim();
-        if (!contract || submitting) {
+        const wallet = newWallet.trim();
+        if (!wallet || submitting) {
             return;
         }
 
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.addWalletBlacklistContract(contract, newNote);
-            setNewContract('');
+            await services.athenaApplication.addWalletBlacklistEntry(wallet, newNote);
+            setNewWallet('');
             setNewNote('');
             await loadItems();
         } catch (err) {
@@ -93,15 +93,15 @@ export const WalletBlacklistList = () => {
         }
     };
 
-    const handleDelete = async (contract: string) => {
-        if (!contract || submitting) {
+    const handleDelete = async (wallet: string) => {
+        if (!wallet || submitting) {
             return;
         }
 
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.deleteWalletBlacklistContract(contract);
+            await services.athenaApplication.deleteWalletBlacklistEntry(wallet);
             await loadItems();
         } catch (err) {
             if (isMountedRef.current) {
@@ -114,25 +114,25 @@ export const WalletBlacklistList = () => {
         }
     };
 
-    const startEdit = (item: WalletBlacklistContract) => {
-        setEditingContract(item.contract || '');
+    const startEdit = (item: WalletBlacklistEntry) => {
+        setEditingWallet(item.wallet || '');
         setEditingNote(item.note || '');
     };
 
     const cancelEdit = () => {
-        setEditingContract('');
+        setEditingWallet('');
         setEditingNote('');
     };
 
     const handleSaveNote = async () => {
-        if (!editingContract || submitting) {
+        if (!editingWallet || submitting) {
             return;
         }
 
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.updateWalletBlacklistContractNote(editingContract, editingNote);
+            await services.athenaApplication.updateWalletBlacklistEntryNote(editingWallet, editingNote);
             cancelEdit();
             await loadItems();
         } catch (err) {
@@ -165,8 +165,8 @@ export const WalletBlacklistList = () => {
                                         type='text'
                                         className='argo-field'
                                         placeholder='Wallet address (0x...)'
-                                        value={newContract}
-                                        onChange={e => setNewContract(e.target.value)}
+                                        value={newWallet}
+                                        onChange={e => setNewWallet(e.target.value)}
                                         disabled={submitting}
                                     />
                                     <input
@@ -177,7 +177,7 @@ export const WalletBlacklistList = () => {
                                         onChange={e => setNewNote(e.target.value)}
                                         disabled={submitting}
                                     />
-                                    <button type='submit' className='argo-button argo-button--base' disabled={!newContract.trim() || submitting}>
+                                    <button type='submit' className='argo-button argo-button--base' disabled={!newWallet.trim() || submitting}>
                                         {submitting ? 'Adding...' : 'Add Wallet'}
                                     </button>
                                 </form>
@@ -205,12 +205,12 @@ export const WalletBlacklistList = () => {
                                     </div>
                                 ) : (
                                     items.map((item, index) => {
-                                        const contract = item.contract || '';
-                                        const editing = editingContract === contract;
+                                        const wallet = item.wallet || '';
+                                        const editing = editingWallet === wallet;
                                         return (
-                                            <div className='argo-table-list__row' key={contract || index}>
+                                            <div className='argo-table-list__row' key={wallet || index}>
                                                 <div className='wallet-blacklist-list__row'>
-                                                    <div className='mono'>{contract || '-'}</div>
+                                                    <div className='mono'>{wallet || '-'}</div>
                                                     <div>
                                                         {editing ? (
                                                             <input
@@ -240,15 +240,15 @@ export const WalletBlacklistList = () => {
                                                                 <button
                                                                     type='button'
                                                                     className='argo-button argo-button--base-o'
-                                                                    disabled={submitting || !contract}
+                                                                    disabled={submitting || !wallet}
                                                                     onClick={() => startEdit(item)}>
                                                                     Edit Note
                                                                 </button>
                                                                 <button
                                                                     type='button'
                                                                     className='argo-button argo-button--base-o'
-                                                                    disabled={submitting || !contract}
-                                                                    onClick={() => contract && handleDelete(contract)}>
+                                                                    disabled={submitting || !wallet}
+                                                                    onClick={() => wallet && handleDelete(wallet)}>
                                                                     Delete
                                                                 </button>
                                                             </React.Fragment>

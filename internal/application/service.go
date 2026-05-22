@@ -96,8 +96,8 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 	if s, ok := store.(appstore.BytecodeBlacklistContractStore); ok {
 		bytecodeStore = s
 	}
-	var walletStore appstore.WalletBlacklistContractStore
-	if s, ok := store.(appstore.WalletBlacklistContractStore); ok {
+	var walletStore appstore.WalletBlacklistStore
+	if s, ok := store.(appstore.WalletBlacklistStore); ok {
 		walletStore = s
 	}
 	sourceBlacklist := appcache.NewSourceCodeBlacklistModel(
@@ -947,9 +947,9 @@ func (s *Service) DeleteBytecodeBlacklistContract(ctx context.Context, req *appl
 	return &applicationpkg.DeleteBytecodeBlacklistContractResponse{}, nil
 }
 
-func (s *Service) ListWalletBlacklistContracts(ctx context.Context, _ *applicationpkg.ListWalletBlacklistContractsRequest) (*applicationpkg.ListWalletBlacklistContractsResponse, error) {
+func (s *Service) ListWalletBlacklistEntries(ctx context.Context, _ *applicationpkg.ListWalletBlacklistEntriesRequest) (*applicationpkg.ListWalletBlacklistEntriesResponse, error) {
 	if s.walletBlacklist == nil {
-		return &applicationpkg.ListWalletBlacklistContractsResponse{}, nil
+		return &applicationpkg.ListWalletBlacklistEntriesResponse{}, nil
 	}
 
 	records, err := s.walletBlacklist.List(ctx)
@@ -957,38 +957,38 @@ func (s *Service) ListWalletBlacklistContracts(ctx context.Context, _ *applicati
 		return nil, err
 	}
 
-	items := make([]*applicationpkg.WalletBlacklistContract, 0, len(records))
+	items := make([]*applicationpkg.WalletBlacklistEntry, 0, len(records))
 	for _, record := range records {
-		items = append(items, walletBlacklistContractToAPI(record))
+		items = append(items, walletBlacklistEntryToAPI(record))
 	}
-	return &applicationpkg.ListWalletBlacklistContractsResponse{Items: items}, nil
+	return &applicationpkg.ListWalletBlacklistEntriesResponse{Items: items}, nil
 }
 
-func (s *Service) AddWalletBlacklistContract(ctx context.Context, req *applicationpkg.AddWalletBlacklistContractRequest) (*applicationpkg.AddWalletBlacklistContractResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
+func (s *Service) AddWalletBlacklistEntry(ctx context.Context, req *applicationpkg.AddWalletBlacklistEntryRequest) (*applicationpkg.AddWalletBlacklistEntryResponse, error) {
+	if !common.IsHexAddress(req.GetWallet()) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid wallet %q", req.GetWallet())
 	}
 	if s.walletBlacklist == nil {
-		return &applicationpkg.AddWalletBlacklistContractResponse{}, status.Error(codes.FailedPrecondition, "wallet blacklist contract store is not configured")
+		return &applicationpkg.AddWalletBlacklistEntryResponse{}, status.Error(codes.FailedPrecondition, "wallet blacklist entry store is not configured")
 	}
 
-	contract := common.HexToAddress(req.GetContract())
-	code, err := s.fetchContractBytecode(ctx, contract)
+	wallet := common.HexToAddress(req.GetWallet())
+	code, err := s.fetchContractBytecode(ctx, wallet)
 	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, "fetch contract bytecode for %s: %v", contract.Hex(), err)
+		return nil, status.Errorf(codes.Unavailable, "fetch bytecode for wallet %s: %v", wallet.Hex(), err)
 	}
 	if len(code) > 0 {
-		return nil, status.Errorf(codes.FailedPrecondition, "contract %s is a contract address and cannot be added to wallet blacklist", contract.Hex())
+		return nil, status.Errorf(codes.FailedPrecondition, "wallet %s is a contract address and cannot be added to wallet blacklist", wallet.Hex())
 	}
 
-	record := appstore.WalletBlacklistContract{
-		Contract:  contract,
+	record := appstore.WalletBlacklistEntry{
+		Wallet:    wallet,
 		Note:      req.GetNote(),
 		CreatedAt: time.Now().UTC(),
 	}
 	if err := s.walletBlacklist.Add(ctx, record); err != nil {
-		if errors.Is(err, appstore.ErrWalletBlacklistContractAlreadyExists) {
-			return nil, status.Errorf(codes.AlreadyExists, "wallet blacklist contract %s already exists", contract.Hex())
+		if errors.Is(err, appstore.ErrWalletBlacklistEntryAlreadyExists) {
+			return nil, status.Errorf(codes.AlreadyExists, "wallet blacklist entry %s already exists", wallet.Hex())
 		}
 		return nil, err
 	}
@@ -998,25 +998,25 @@ func (s *Service) AddWalletBlacklistContract(ctx context.Context, req *applicati
 	if err != nil {
 		return nil, err
 	}
-	created, found := findWalletBlacklistContractInList(items, contract)
+	created, found := findWalletBlacklistEntryInList(items, wallet)
 	if !found {
-		return &applicationpkg.AddWalletBlacklistContractResponse{Item: walletBlacklistContractToAPI(record)}, nil
+		return &applicationpkg.AddWalletBlacklistEntryResponse{Item: walletBlacklistEntryToAPI(record)}, nil
 	}
-	return &applicationpkg.AddWalletBlacklistContractResponse{Item: walletBlacklistContractToAPI(created)}, nil
+	return &applicationpkg.AddWalletBlacklistEntryResponse{Item: walletBlacklistEntryToAPI(created)}, nil
 }
 
-func (s *Service) UpdateWalletBlacklistContractNote(ctx context.Context, req *applicationpkg.UpdateWalletBlacklistContractNoteRequest) (*applicationpkg.UpdateWalletBlacklistContractNoteResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
+func (s *Service) UpdateWalletBlacklistEntryNote(ctx context.Context, req *applicationpkg.UpdateWalletBlacklistEntryNoteRequest) (*applicationpkg.UpdateWalletBlacklistEntryNoteResponse, error) {
+	if !common.IsHexAddress(req.GetWallet()) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid wallet %q", req.GetWallet())
 	}
 	if s.walletBlacklist == nil {
-		return &applicationpkg.UpdateWalletBlacklistContractNoteResponse{}, status.Error(codes.FailedPrecondition, "wallet blacklist contract store is not configured")
+		return &applicationpkg.UpdateWalletBlacklistEntryNoteResponse{}, status.Error(codes.FailedPrecondition, "wallet blacklist entry store is not configured")
 	}
 
-	contract := common.HexToAddress(req.GetContract())
-	if err := s.walletBlacklist.UpdateNote(ctx, contract, req.GetNote()); err != nil {
-		if errors.Is(err, appstore.ErrWalletBlacklistContractNotFound) {
-			return nil, status.Errorf(codes.NotFound, "wallet blacklist contract %s not found", contract.Hex())
+	wallet := common.HexToAddress(req.GetWallet())
+	if err := s.walletBlacklist.UpdateNote(ctx, wallet, req.GetNote()); err != nil {
+		if errors.Is(err, appstore.ErrWalletBlacklistEntryNotFound) {
+			return nil, status.Errorf(codes.NotFound, "wallet blacklist entry %s not found", wallet.Hex())
 		}
 		return nil, err
 	}
@@ -1025,30 +1025,30 @@ func (s *Service) UpdateWalletBlacklistContractNote(ctx context.Context, req *ap
 	if err != nil {
 		return nil, err
 	}
-	updated, found := findWalletBlacklistContractInList(items, contract)
+	updated, found := findWalletBlacklistEntryInList(items, wallet)
 	if !found {
-		return nil, status.Errorf(codes.NotFound, "wallet blacklist contract %s not found", contract.Hex())
+		return nil, status.Errorf(codes.NotFound, "wallet blacklist entry %s not found", wallet.Hex())
 	}
-	return &applicationpkg.UpdateWalletBlacklistContractNoteResponse{Item: walletBlacklistContractToAPI(updated)}, nil
+	return &applicationpkg.UpdateWalletBlacklistEntryNoteResponse{Item: walletBlacklistEntryToAPI(updated)}, nil
 }
 
-func (s *Service) DeleteWalletBlacklistContract(ctx context.Context, req *applicationpkg.DeleteWalletBlacklistContractRequest) (*applicationpkg.DeleteWalletBlacklistContractResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
+func (s *Service) DeleteWalletBlacklistEntry(ctx context.Context, req *applicationpkg.DeleteWalletBlacklistEntryRequest) (*applicationpkg.DeleteWalletBlacklistEntryResponse, error) {
+	if !common.IsHexAddress(req.GetWallet()) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid wallet %q", req.GetWallet())
 	}
 	if s.walletBlacklist == nil {
-		return &applicationpkg.DeleteWalletBlacklistContractResponse{}, status.Error(codes.FailedPrecondition, "wallet blacklist contract store is not configured")
+		return &applicationpkg.DeleteWalletBlacklistEntryResponse{}, status.Error(codes.FailedPrecondition, "wallet blacklist entry store is not configured")
 	}
 
-	contract := common.HexToAddress(req.GetContract())
-	if err := s.walletBlacklist.Delete(ctx, contract); err != nil {
-		if errors.Is(err, appstore.ErrWalletBlacklistContractNotFound) {
-			return nil, status.Errorf(codes.NotFound, "wallet blacklist contract %s not found", contract.Hex())
+	wallet := common.HexToAddress(req.GetWallet())
+	if err := s.walletBlacklist.Delete(ctx, wallet); err != nil {
+		if errors.Is(err, appstore.ErrWalletBlacklistEntryNotFound) {
+			return nil, status.Errorf(codes.NotFound, "wallet blacklist entry %s not found", wallet.Hex())
 		}
 		return nil, err
 	}
 	s.triggerFullPolicyReevaluation()
-	return &applicationpkg.DeleteWalletBlacklistContractResponse{}, nil
+	return &applicationpkg.DeleteWalletBlacklistEntryResponse{}, nil
 }
 
 func findBytecodeBlacklistContractInList(items []appstore.BytecodeBlacklistContract, contract common.Address) (appstore.BytecodeBlacklistContract, bool) {
@@ -1060,13 +1060,13 @@ func findBytecodeBlacklistContractInList(items []appstore.BytecodeBlacklistContr
 	return appstore.BytecodeBlacklistContract{}, false
 }
 
-func findWalletBlacklistContractInList(items []appstore.WalletBlacklistContract, contract common.Address) (appstore.WalletBlacklistContract, bool) {
+func findWalletBlacklistEntryInList(items []appstore.WalletBlacklistEntry, wallet common.Address) (appstore.WalletBlacklistEntry, bool) {
 	for _, item := range items {
-		if item.Contract == contract {
+		if item.Wallet == wallet {
 			return item, true
 		}
 	}
-	return appstore.WalletBlacklistContract{}, false
+	return appstore.WalletBlacklistEntry{}, false
 }
 
 func bytecodeBlacklistContractToAPI(item appstore.BytecodeBlacklistContract) *applicationpkg.BytecodeBlacklistContract {
@@ -1082,13 +1082,13 @@ func bytecodeBlacklistContractToAPI(item appstore.BytecodeBlacklistContract) *ap
 	}
 }
 
-func walletBlacklistContractToAPI(item appstore.WalletBlacklistContract) *applicationpkg.WalletBlacklistContract {
+func walletBlacklistEntryToAPI(item appstore.WalletBlacklistEntry) *applicationpkg.WalletBlacklistEntry {
 	createdAt := ""
 	if !item.CreatedAt.IsZero() {
 		createdAt = item.CreatedAt.UTC().Format(time.RFC3339Nano)
 	}
-	return &applicationpkg.WalletBlacklistContract{
-		Contract:  item.Contract.Hex(),
+	return &applicationpkg.WalletBlacklistEntry{
+		Wallet:    item.Wallet.Hex(),
 		Note:      item.Note,
 		CreatedAt: createdAt,
 	}

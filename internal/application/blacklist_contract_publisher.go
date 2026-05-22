@@ -45,14 +45,14 @@ func newWalletBlacklistEventPublisher(publisher PersistenceEventPublisher) appca
 	return &walletBlacklistEventPublisher{publisher: publisher}
 }
 
-func (p *walletBlacklistEventPublisher) PublishAdd(ctx context.Context, item appstore.WalletBlacklistContract) error {
+func (p *walletBlacklistEventPublisher) PublishAdd(ctx context.Context, item appstore.WalletBlacklistEntry) error {
 	return p.publisher.PublishWalletBlacklistAdd(ctx, item)
 }
 
-func (p *walletBlacklistEventPublisher) PublishUpdateNote(ctx context.Context, contract common.Address, note string) error {
-	return p.publisher.PublishWalletBlacklistUpdateNote(ctx, contract, note)
+func (p *walletBlacklistEventPublisher) PublishUpdateNote(ctx context.Context, wallet common.Address, note string) error {
+	return p.publisher.PublishWalletBlacklistUpdateNote(ctx, wallet, note)
 }
 
-func (p *walletBlacklistEventPublisher) PublishDelete(ctx context.Context, contract common.Address) error {
-	return p.publisher.PublishWalletBlacklistDelete(ctx, contract)
+func (p *walletBlacklistEventPublisher) PublishDelete(ctx context.Context, wallet common.Address) error {
+	return p.publisher.PublishWalletBlacklistDelete(ctx, wallet)
 }

@@ -62,11 +62,11 @@ func (c *LocalBytecodeBlacklistCache) Del() {
 
 type LocalWalletBlacklistCache struct {
 	mu    sync.RWMutex
-	items []store.WalletBlacklistContract
+	items []store.WalletBlacklistEntry
 	ready bool
 }
 
-func NewLocalWalletBlacklistCache(items ...store.WalletBlacklistContract) *LocalWalletBlacklistCache {
+func NewLocalWalletBlacklistCache(items ...store.WalletBlacklistEntry) *LocalWalletBlacklistCache {
 	c := &LocalWalletBlacklistCache{}
 	if len(items) > 0 {
 		c.Set(items)
@@ -74,7 +74,7 @@ func NewLocalWalletBlacklistCache(items ...store.WalletBlacklistContract) *Local
 	return c
 }
 
-func (c *LocalWalletBlacklistCache) Get() ([]store.WalletBlacklistContract, bool) {
+func (c *LocalWalletBlacklistCache) Get() ([]store.WalletBlacklistEntry, bool) {
 	if c == nil {
 		return nil, false
 	}
@@ -83,14 +83,14 @@ func (c *LocalWalletBlacklistCache) Get() ([]store.WalletBlacklistContract, bool
 	if !c.ready {
 		return nil, false
 	}
-	return append([]store.WalletBlacklistContract(nil), c.items...), true
+	return append([]store.WalletBlacklistEntry(nil), c.items...), true
 }
 
-func (c *LocalWalletBlacklistCache) Set(items []store.WalletBlacklistContract) {
+func (c *LocalWalletBlacklistCache) Set(items []store.WalletBlacklistEntry) {
 	if c == nil {
 		return
 	}
-	normalized := normalizeWalletBlacklistContracts(items)
+	normalized := normalizeWalletBlacklistEntries(items)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.items = normalized
@@ -194,9 +194,9 @@ func NewLayeredWalletBlacklistCache(local *LocalWalletBlacklistCache, remote Wal
 	}
 }
 
-func (c *LayeredWalletBlacklistCache) Take(ctx context.Context, loader func(context.Context) ([]store.WalletBlacklistContract, error)) ([]store.WalletBlacklistContract, error) {
+func (c *LayeredWalletBlacklistCache) Take(ctx context.Context, loader func(context.Context) ([]store.WalletBlacklistEntry, error)) ([]store.WalletBlacklistEntry, error) {
 	if c == nil {
-		return loadWalletBlacklistContracts(ctx, loader)
+		return loadWalletBlacklistEntries(ctx, loader)
 	}
 	if items, ok := c.local.Get(); ok {
 		return items, nil
@@ -212,7 +212,7 @@ func (c *LayeredWalletBlacklistCache) Take(ctx context.Context, loader func(cont
 		}
 	}
 
-	items, err := loadWalletBlacklistContracts(ctx, loader)
+	items, err := loadWalletBlacklistEntries(ctx, loader)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (c *LayeredWalletBlacklistCache) Take(ctx context.Context, loader func(cont
 	return items, nil
 }
 
-func (c *LayeredWalletBlacklistCache) Set(ctx context.Context, items []store.WalletBlacklistContract) error {
+func (c *LayeredWalletBlacklistCache) Set(ctx context.Context, items []store.WalletBlacklistEntry) error {
 	if c == nil {
 		return nil
 	}
@@ -262,7 +262,7 @@ func loadBytecodeBlacklistContracts(ctx context.Context, loader func(context.Con
 	return normalizeBytecodeBlacklistContracts(items), nil
 }
 
-func loadWalletBlacklistContracts(ctx context.Context, loader func(context.Context) ([]store.WalletBlacklistContract, error)) ([]store.WalletBlacklistContract, error) {
+func loadWalletBlacklistEntries(ctx context.Context, loader func(context.Context) ([]store.WalletBlacklistEntry, error)) ([]store.WalletBlacklistEntry, error) {
 	if loader == nil {
 		return nil, nil
 	}
@@ -270,7 +270,7 @@ func loadWalletBlacklistContracts(ctx context.Context, loader func(context.Conte
 	if err != nil {
 		return nil, err
 	}
-	return normalizeWalletBlacklistContracts(items), nil
+	return normalizeWalletBlacklistEntries(items), nil
 }
 
 func normalizeBytecodeBlacklistContracts(items []store.BytecodeBlacklistContract) []store.BytecodeBlacklistContract {
@@ -299,20 +299,20 @@ func normalizeBytecodeBlacklistContracts(items []store.BytecodeBlacklistContract
 	return normalized
 }
 
-func normalizeWalletBlacklistContracts(items []store.WalletBlacklistContract) []store.WalletBlacklistContract {
+func normalizeWalletBlacklistEntries(items []store.WalletBlacklistEntry) []store.WalletBlacklistEntry {
 	if len(items) == 0 {
 		return nil
 	}
 	seen := make(map[common.Address]struct{}, len(items))
-	normalized := make([]store.WalletBlacklistContract, 0, len(items))
+	normalized := make([]store.WalletBlacklistEntry, 0, len(items))
 	for _, item := range items {
-		if item.Contract == (common.Address{}) {
+		if item.Wallet == (common.Address{}) {
 			continue
 		}
-		if _, ok := seen[item.Contract]; ok {
+		if _, ok := seen[item.Wallet]; ok {
 			continue
 		}
-		seen[item.Contract] = struct{}{}
+		seen[item.Wallet] = struct{}{}
 		item.Note = normalizeNote(item.Note)
 		normalized = append(normalized, item)
 	}
@@ -320,7 +320,7 @@ func normalizeWalletBlacklistContracts(items []store.WalletBlacklistContract) []
 		if !normalized[i].CreatedAt.Equal(normalized[j].CreatedAt) {
 			return normalized[i].CreatedAt.After(normalized[j].CreatedAt)
 		}
-		return normalized[i].Contract.Hex() < normalized[j].Contract.Hex()
+		return normalized[i].Wallet.Hex() < normalized[j].Wallet.Hex()
 	})
 	return normalized
 }

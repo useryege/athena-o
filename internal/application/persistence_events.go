@@ -113,17 +113,17 @@ type bytecodeBlacklistDeletePayload struct {
 }
 
 type walletBlacklistAddPayload struct {
-	Contract string `json:"contract"`
-	Note     string `json:"note,omitempty"`
+	Wallet string `json:"wallet"`
+	Note   string `json:"note,omitempty"`
 }
 
 type walletBlacklistUpdateNotePayload struct {
-	Contract string `json:"contract"`
-	Note     string `json:"note,omitempty"`
+	Wallet string `json:"wallet"`
+	Note   string `json:"note,omitempty"`
 }
 
 type walletBlacklistDeletePayload struct {
-	Contract string `json:"contract"`
+	Wallet string `json:"wallet"`
 }
 
 type PersistenceEventPublisher interface {
@@ -138,9 +138,9 @@ type PersistenceEventPublisher interface {
 	PublishBytecodeBlacklistAdd(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	PublishBytecodeBlacklistUpdateNote(ctx context.Context, contract common.Address, note string) error
 	PublishBytecodeBlacklistDelete(ctx context.Context, contract common.Address) error
-	PublishWalletBlacklistAdd(ctx context.Context, item appstore.WalletBlacklistContract) error
-	PublishWalletBlacklistUpdateNote(ctx context.Context, contract common.Address, note string) error
-	PublishWalletBlacklistDelete(ctx context.Context, contract common.Address) error
+	PublishWalletBlacklistAdd(ctx context.Context, item appstore.WalletBlacklistEntry) error
+	PublishWalletBlacklistUpdateNote(ctx context.Context, wallet common.Address, note string) error
+	PublishWalletBlacklistDelete(ctx context.Context, wallet common.Address) error
 }
 
 type PersistenceEventWriter interface {
@@ -154,9 +154,9 @@ type PersistenceEventWriter interface {
 	AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	UpdateBytecodeBlacklistContractNote(ctx context.Context, contract common.Address, note string) error
 	DeleteBytecodeBlacklistContract(ctx context.Context, contract common.Address) error
-	AddWalletBlacklistContract(ctx context.Context, item appstore.WalletBlacklistContract) error
-	UpdateWalletBlacklistContractNote(ctx context.Context, contract common.Address, note string) error
-	DeleteWalletBlacklistContract(ctx context.Context, contract common.Address) error
+	AddWalletBlacklistEntry(ctx context.Context, item appstore.WalletBlacklistEntry) error
+	UpdateWalletBlacklistEntryNote(ctx context.Context, wallet common.Address, note string) error
+	DeleteWalletBlacklistEntry(ctx context.Context, wallet common.Address) error
 }
 
 type projectGenesisWalletWriter interface {
@@ -381,10 +381,10 @@ func (b *RedisPersistenceEventBus) PublishBytecodeBlacklistDelete(ctx context.Co
 	})
 }
 
-func (b *RedisPersistenceEventBus) PublishWalletBlacklistAdd(ctx context.Context, item appstore.WalletBlacklistContract) error {
+func (b *RedisPersistenceEventBus) PublishWalletBlacklistAdd(ctx context.Context, item appstore.WalletBlacklistEntry) error {
 	payload := walletBlacklistAddPayload{
-		Contract: item.Contract.Hex(),
-		Note:     item.Note,
+		Wallet: item.Wallet.Hex(),
+		Note:   item.Note,
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -393,16 +393,16 @@ func (b *RedisPersistenceEventBus) PublishWalletBlacklistAdd(ctx context.Context
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpWalletBlacklistAdd,
-		Contract:   item.Contract.Hex(),
+		Contract:   item.Wallet.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
 	})
 }
 
-func (b *RedisPersistenceEventBus) PublishWalletBlacklistUpdateNote(ctx context.Context, contract common.Address, note string) error {
+func (b *RedisPersistenceEventBus) PublishWalletBlacklistUpdateNote(ctx context.Context, wallet common.Address, note string) error {
 	payload := walletBlacklistUpdateNotePayload{
-		Contract: contract.Hex(),
-		Note:     note,
+		Wallet: wallet.Hex(),
+		Note:   note,
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -411,15 +411,15 @@ func (b *RedisPersistenceEventBus) PublishWalletBlacklistUpdateNote(ctx context.
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpWalletBlacklistNote,
-		Contract:   contract.Hex(),
+		Contract:   wallet.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
 	})
 }
 
-func (b *RedisPersistenceEventBus) PublishWalletBlacklistDelete(ctx context.Context, contract common.Address) error {
+func (b *RedisPersistenceEventBus) PublishWalletBlacklistDelete(ctx context.Context, wallet common.Address) error {
 	payload := walletBlacklistDeletePayload{
-		Contract: contract.Hex(),
+		Wallet: wallet.Hex(),
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -428,7 +428,7 @@ func (b *RedisPersistenceEventBus) PublishWalletBlacklistDelete(ctx context.Cont
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpWalletBlacklistDel,
-		Contract:   contract.Hex(),
+		Contract:   wallet.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
 	})
@@ -717,14 +717,14 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
 			return fmt.Errorf("unmarshal wallet blacklist add payload: %w", err)
 		}
-		if !common.IsHexAddress(payload.Contract) {
-			return fmt.Errorf("invalid contract %q", payload.Contract)
+		if !common.IsHexAddress(payload.Wallet) {
+			return fmt.Errorf("invalid wallet %q", payload.Wallet)
 		}
-		err := writer.AddWalletBlacklistContract(ctx, appstore.WalletBlacklistContract{
-			Contract: common.HexToAddress(payload.Contract),
-			Note:     payload.Note,
+		err := writer.AddWalletBlacklistEntry(ctx, appstore.WalletBlacklistEntry{
+			Wallet: common.HexToAddress(payload.Wallet),
+			Note:   payload.Note,
 		})
-		if errors.Is(err, appstore.ErrWalletBlacklistContractAlreadyExists) {
+		if errors.Is(err, appstore.ErrWalletBlacklistEntryAlreadyExists) {
 			return nil
 		}
 		return err
@@ -733,20 +733,20 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
 			return fmt.Errorf("unmarshal wallet blacklist update note payload: %w", err)
 		}
-		if !common.IsHexAddress(payload.Contract) {
-			return fmt.Errorf("invalid contract %q", payload.Contract)
+		if !common.IsHexAddress(payload.Wallet) {
+			return fmt.Errorf("invalid wallet %q", payload.Wallet)
 		}
-		return writer.UpdateWalletBlacklistContractNote(ctx, common.HexToAddress(payload.Contract), payload.Note)
+		return writer.UpdateWalletBlacklistEntryNote(ctx, common.HexToAddress(payload.Wallet), payload.Note)
 	case PersistenceOpWalletBlacklistDel:
 		var payload walletBlacklistDeletePayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
 			return fmt.Errorf("unmarshal wallet blacklist delete payload: %w", err)
 		}
-		if !common.IsHexAddress(payload.Contract) {
-			return fmt.Errorf("invalid contract %q", payload.Contract)
+		if !common.IsHexAddress(payload.Wallet) {
+			return fmt.Errorf("invalid wallet %q", payload.Wallet)
 		}
-		err := writer.DeleteWalletBlacklistContract(ctx, common.HexToAddress(payload.Contract))
-		if errors.Is(err, appstore.ErrWalletBlacklistContractNotFound) {
+		err := writer.DeleteWalletBlacklistEntry(ctx, common.HexToAddress(payload.Wallet))
+		if errors.Is(err, appstore.ErrWalletBlacklistEntryNotFound) {
 			return nil
 		}
 		return err
@@ -833,28 +833,28 @@ func (w *storePersistenceWriter) DeleteBytecodeBlacklistContract(ctx context.Con
 	return store.DeleteBytecodeBlacklistContract(ctx, contract)
 }
 
-func (w *storePersistenceWriter) AddWalletBlacklistContract(ctx context.Context, item appstore.WalletBlacklistContract) error {
-	store, ok := w.store.(appstore.WalletBlacklistContractStore)
+func (w *storePersistenceWriter) AddWalletBlacklistEntry(ctx context.Context, item appstore.WalletBlacklistEntry) error {
+	store, ok := w.store.(appstore.WalletBlacklistStore)
 	if !ok || store == nil {
-		return errors.New("wallet blacklist contract store is not configured")
+		return errors.New("wallet blacklist entry store is not configured")
 	}
-	return store.AddWalletBlacklistContract(ctx, item)
+	return store.AddWalletBlacklistEntry(ctx, item)
 }
 
-func (w *storePersistenceWriter) UpdateWalletBlacklistContractNote(ctx context.Context, contract common.Address, note string) error {
-	store, ok := w.store.(appstore.WalletBlacklistContractStore)
+func (w *storePersistenceWriter) UpdateWalletBlacklistEntryNote(ctx context.Context, wallet common.Address, note string) error {
+	store, ok := w.store.(appstore.WalletBlacklistStore)
 	if !ok || store == nil {
-		return errors.New("wallet blacklist contract store is not configured")
+		return errors.New("wallet blacklist entry store is not configured")
 	}
-	return store.UpdateWalletBlacklistContractNote(ctx, contract, note)
+	return store.UpdateWalletBlacklistEntryNote(ctx, wallet, note)
 }
 
-func (w *storePersistenceWriter) DeleteWalletBlacklistContract(ctx context.Context, contract common.Address) error {
-	store, ok := w.store.(appstore.WalletBlacklistContractStore)
+func (w *storePersistenceWriter) DeleteWalletBlacklistEntry(ctx context.Context, wallet common.Address) error {
+	store, ok := w.store.(appstore.WalletBlacklistStore)
 	if !ok || store == nil {
-		return errors.New("wallet blacklist contract store is not configured")
+		return errors.New("wallet blacklist entry store is not configured")
 	}
-	return store.DeleteWalletBlacklistContract(ctx, contract)
+	return store.DeleteWalletBlacklistEntry(ctx, wallet)
 }
 
 func (w *storePersistenceWriter) WriteProjectGenesisWallets(ctx context.Context, contract common.Address, items []appstore.ProjectGenesisWallet) error {

@@ -50,11 +50,11 @@ CREATE TABLE IF NOT EXISTS bytecode_blacklist_contract (
 CREATE INDEX IF NOT EXISTS bytecode_blacklist_contract_code_hash_idx
   ON bytecode_blacklist_contract (code_hash);
 
-CREATE TABLE IF NOT EXISTS wallet_blacklist_contract (
-  contract BYTEA PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS wallet_blacklist (
+  wallet BYTEA PRIMARY KEY,
   note TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT wallet_blacklist_contract_len CHECK (length(contract) = 20)
+  CONSTRAINT wallet_blacklist_wallet_len CHECK (length(wallet) = 20)
 );
 
 CREATE TABLE IF NOT EXISTS project_event_log (

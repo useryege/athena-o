@@ -505,11 +505,6 @@ athena-all: clean-debug
 run:
 	bash ./hack/goreman-start.sh
 
-# Delete local PostgreSQL data directory so the next start can re-init (init SQL runs on fresh cluster). Stop goreman/postgres first if it is running.
-.PHONY: clean-postgres-data
-clean-postgres-data:
-	sudo rm -rf "$(CURRENT_DIR)/tmp/athena-local/postgres"
-
 .PHONY: serve-docs-local
 serve-docs-local:
 	mkdocs serve
@@ -624,3 +619,8 @@ prod-stop-remote:
 .PHONY: prod-logs-remote
 prod-logs-remote:
 	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && docker compose -f docker-compose.prod.yml --env-file .env logs -f $(PROD_LOG_SERVICE)"
+
+# Delete local PostgreSQL data directory so the next start can re-init (init SQL runs on fresh cluster). Stop goreman/postgres first if it is running.
+.PHONY: clean-postgres-data
+clean-postgres-data:
+	sudo rm -rf "$(CURRENT_DIR)/tmp/athena-local/postgres"
