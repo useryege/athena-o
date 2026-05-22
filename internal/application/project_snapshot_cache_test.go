@@ -82,7 +82,6 @@ func TestRedisProjectSnapshotCachePersistsProjectReport(t *testing.T) {
 		IsBlacklistedSourceCode:      true,
 		IsBlacklistedSourceCodeField: true,
 		HasMintRisk:                  true,
-		ShouldArchive:                true,
 	}
 
 	if err := cache.SetProject(ctx, &Project{

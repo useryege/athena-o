@@ -237,8 +237,7 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 		!report.IsBlacklistedBytecode ||
 		!report.IsBlacklistedSourceCode ||
 		!report.IsBlacklistedSourceCodeField ||
-		!report.HasMintRisk ||
-		!report.ShouldArchive {
+		!report.HasMintRisk {
 		t.Fatalf("project report = %+v, want all policy fields true", report)
 	}
 }
@@ -255,7 +254,6 @@ func TestProjectPolicyEngineEvaluateRulesRecomputesProjectReport(t *testing.T) {
 			IsBlacklistedSourceCode:      true,
 			IsBlacklistedSourceCodeField: true,
 			HasMintRisk:                  true,
-			ShouldArchive:                true,
 		},
 	}
 	cache := newPolicyReevaluationProjectCache(project)

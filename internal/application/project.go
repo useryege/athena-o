@@ -26,7 +26,6 @@ type ProjectReport struct {
 	IsBlacklistedSourceCode      bool
 	IsBlacklistedSourceCodeField bool
 	HasMintRisk                  bool
-	ShouldArchive                bool
 }
 
 type ProjectMeta struct {

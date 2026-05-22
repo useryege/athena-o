@@ -602,7 +602,6 @@ func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, p
 			evidence: evidence,
 		})
 	}
-	report.ShouldArchive = projectReportShouldArchive(report)
 	if err := e.updateProjectReport(ctx, project.Meta.Contract, report); err != nil {
 		return err
 	}
@@ -657,15 +656,6 @@ func markProjectReportRuleMatch(report *ProjectReport, ruleName string) {
 	case simulateMintRiskRule{}.Name():
 		report.HasMintRisk = true
 	}
-}
-
-func projectReportShouldArchive(report ProjectReport) bool {
-	return report.IsBlacklistedCreatorWallet ||
-		report.IsBlacklistedGenesisWallet ||
-		report.IsBlacklistedBytecode ||
-		report.IsBlacklistedSourceCode ||
-		report.IsBlacklistedSourceCodeField ||
-		report.HasMintRisk
 }
 
 func (e *projectPolicyEngineImpl) archiveProjectByPolicy(ctx context.Context, project *Project, ruleName string, evidence map[string]any, now time.Time) error {
