@@ -49,6 +49,22 @@ func TestRedisProjectSnapshotCacheListActiveProjectsPage(t *testing.T) {
 	}
 }
 
+func TestRedisProjectSnapshotCacheReplaceAllRequiresCache(t *testing.T) {
+	var cache *RedisProjectSnapshotCache
+
+	if err := cache.ReplaceAll(context.Background(), nil); err == nil {
+		t.Fatal("ReplaceAll error = nil, want error")
+	}
+}
+
+func TestRedisProjectSnapshotCacheReplaceAllRequiresClient(t *testing.T) {
+	cache := NewProjectSnapshotCache(nil)
+
+	if err := cache.ReplaceAll(context.Background(), nil); err == nil {
+		t.Fatal("ReplaceAll error = nil, want error")
+	}
+}
+
 func mustParseTimeForTest(t *testing.T, value string) time.Time {
 	t.Helper()
 	parsed, err := time.Parse(time.RFC3339, value)

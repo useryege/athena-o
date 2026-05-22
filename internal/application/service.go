@@ -305,6 +305,16 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context) error {
 	if !ok || store == nil {
 		return status.Error(codes.FailedPrecondition, "project store is not configured")
 	}
+	genesisWalletStore, ok := s.store.(appstore.ProjectGenesisWalletStore)
+	if !ok || genesisWalletStore == nil {
+		return status.Error(codes.FailedPrecondition, "project genesis wallet store is not configured")
+	}
+	if s.projectCache == nil {
+		return status.Error(codes.FailedPrecondition, "project snapshot cache is not configured")
+	}
+	if redisCache, ok := s.projectCache.(*RedisProjectSnapshotCache); ok && (redisCache == nil || redisCache.client == nil) {
+		return status.Error(codes.FailedPrecondition, "project snapshot cache redis client is not configured")
+	}
 
 	startedAt := time.Now()
 	logger := log.WithField("component", "bootstrapProjectCaches")
@@ -347,7 +357,7 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context) error {
 			continue
 		}
 
-		projects, stats, err := s.bootstrapBuildProjects(ctx, metas, attempt, startedAt)
+		projects, stats, err := s.bootstrapBuildProjects(ctx, metas, genesisWalletStore, attempt, startedAt)
 		if err != nil {
 			logger.WithFields(log.Fields{
 				"attempt":       attempt,
@@ -402,14 +412,14 @@ func (s *Service) bootstrapLoadProjectMetas(ctx context.Context, store appstore.
 	return store.ListAllProjectMetas(ctx)
 }
 
-func (s *Service) bootstrapBuildProjects(ctx context.Context, metas []appstore.ProjectMeta, attempt int, startedAt time.Time) ([]*Project, bootstrapBuildStats, error) {
+func (s *Service) bootstrapBuildProjects(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore, attempt int, startedAt time.Time) ([]*Project, bootstrapBuildStats, error) {
 	log.WithFields(log.Fields{
 		"component": "bootstrapProjectCaches",
 		"attempt":   attempt,
 		"stage":     "build_projects_from_metas",
 		"elapsed":   time.Since(startedAt).String(),
 	}).Info("project cache bootstrap stage started")
-	return s.buildProjectsFromMetas(ctx, metas)
+	return s.buildProjectsFromMetas(ctx, metas, genesisWalletStore)
 }
 
 func (s *Service) bootstrapReplaceCache(ctx context.Context, projects []*Project, attempt int, startedAt time.Time) error {
@@ -422,20 +432,14 @@ func (s *Service) bootstrapReplaceCache(ctx context.Context, projects []*Project
 	return s.projectCache.ReplaceAll(ctx, projects)
 }
 
-func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta) ([]*Project, bootstrapBuildStats, error) {
+func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore) ([]*Project, bootstrapBuildStats, error) {
 	stats := bootstrapBuildStats{Total: len(metas)}
 	projects := make([]*Project, 0, len(metas))
 	if len(metas) == 0 {
 		return projects, stats, nil
 	}
-
-	var genesisWalletStore appstore.ProjectGenesisWalletStore
-	if s.store != nil {
-		if configuredStore, ok := s.store.(appstore.ProjectGenesisWalletStore); ok && configuredStore != nil {
-			genesisWalletStore = configuredStore
-		} else {
-			log.WithField("component", "buildProjectsFromMetas").Warn("project genesis wallet store is not configured, skipping genesis wallet bootstrap")
-		}
+	if genesisWalletStore == nil {
+		return nil, stats, status.Error(codes.FailedPrecondition, "project genesis wallet store is not configured")
 	}
 
 	contracts := make([]common.Address, 0, len(metas))
@@ -444,14 +448,12 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 	}
 
 	genesisWalletsByContract := make(map[common.Address][]GenesisWalletMeta, len(metas))
-	if genesisWalletStore != nil {
-		itemsByContract, err := genesisWalletStore.ListProjectGenesisWalletsByContracts(ctx, contracts)
-		if err != nil {
-			return nil, stats, err
-		}
-		for contract, items := range itemsByContract {
-			genesisWalletsByContract[contract] = projectGenesisWalletsFromStore(items)
-		}
+	itemsByContract, err := genesisWalletStore.ListProjectGenesisWalletsByContracts(ctx, contracts)
+	if err != nil {
+		return nil, stats, err
+	}
+	for contract, items := range itemsByContract {
+		genesisWalletsByContract[contract] = projectGenesisWalletsFromStore(items)
 	}
 
 	for _, meta := range metas {

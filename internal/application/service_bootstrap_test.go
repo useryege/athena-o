@@ -8,6 +8,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	appstore "github.com/useryege/athena/internal/application/store"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type bootstrapProjectStoreFake struct {
@@ -111,6 +113,78 @@ func (s *bootstrapProjectStoreFake) ListProjectGenesisWalletsByWallet(_ context.
 	return items, nil
 }
 
+type bootstrapProjectStoreWithoutGenesisFake struct {
+	metas []appstore.ProjectMeta
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) SaveProjectMeta(context.Context, appstore.ProjectMeta) error {
+	return nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) ListProjectMetas(context.Context) ([]appstore.ProjectMeta, error) {
+	return append([]appstore.ProjectMeta(nil), s.metas...), nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) ListAllProjectMetas(context.Context) ([]appstore.ProjectMeta, error) {
+	return append([]appstore.ProjectMeta(nil), s.metas...), nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) UpdateProjectSourceCode(context.Context, common.Address, string) error {
+	return nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) UpdateProjectSourceQualityReport(context.Context, common.Address, string) error {
+	return nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) ArchiveProjectByContract(context.Context, common.Address) error {
+	return nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) UnarchiveProjectByContract(context.Context, common.Address) error {
+	return nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) ListArchivedProjectMetas(context.Context, int32, int32) ([]appstore.ProjectMeta, int64, int32, int32, error) {
+	return nil, 0, 1, 1, nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) ListProjectMetasByCreator(_ context.Context, creator common.Address) ([]appstore.ProjectMeta, error) {
+	metas := make([]appstore.ProjectMeta, 0)
+	for _, meta := range s.metas {
+		if meta.Creator == creator {
+			metas = append(metas, meta)
+		}
+	}
+	return metas, nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) GetArchivedProjectMetaByContract(context.Context, common.Address) (*appstore.ProjectMeta, error) {
+	return nil, nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) GetProjectMetaByContract(_ context.Context, contract common.Address) (*appstore.ProjectMeta, error) {
+	for _, meta := range s.metas {
+		if meta.Contract == contract {
+			item := meta
+			return &item, nil
+		}
+	}
+	return nil, nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) ListSourceCodeBlacklistFields(context.Context) ([]string, error) {
+	return nil, nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) AddSourceCodeBlacklistField(context.Context, string) error {
+	return nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) DeleteSourceCodeBlacklistField(context.Context, string) error {
+	return nil
+}
+
 type bootstrapProjectCacheFake struct {
 	replaced []*Project
 }
@@ -204,7 +278,41 @@ func TestBootstrapProjectCachesRestoresDBProjectsOnly(t *testing.T) {
 func TestBootstrapProjectCachesRequiresProjectStore(t *testing.T) {
 	service := &Service{projectCache: &bootstrapProjectCacheFake{}}
 
-	if err := service.bootstrapProjectCaches(context.Background()); err == nil {
-		t.Fatal("bootstrapProjectCaches error = nil, want failed precondition")
+	err := service.bootstrapProjectCaches(context.Background())
+	if status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("bootstrapProjectCaches error code = %v, want %v: %v", status.Code(err), codes.FailedPrecondition, err)
+	}
+}
+
+func TestBootstrapProjectCachesRequiresGenesisWalletStore(t *testing.T) {
+	service := &Service{
+		store:        &bootstrapProjectStoreWithoutGenesisFake{},
+		projectCache: &bootstrapProjectCacheFake{},
+	}
+
+	err := service.bootstrapProjectCaches(context.Background())
+	if status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("bootstrapProjectCaches error code = %v, want %v: %v", status.Code(err), codes.FailedPrecondition, err)
+	}
+}
+
+func TestBootstrapProjectCachesRequiresProjectCache(t *testing.T) {
+	service := &Service{store: &bootstrapProjectStoreFake{}}
+
+	err := service.bootstrapProjectCaches(context.Background())
+	if status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("bootstrapProjectCaches error code = %v, want %v: %v", status.Code(err), codes.FailedPrecondition, err)
+	}
+}
+
+func TestBootstrapProjectCachesRequiresProjectCacheRedisClient(t *testing.T) {
+	service := &Service{
+		store:        &bootstrapProjectStoreFake{},
+		projectCache: NewProjectSnapshotCache(nil),
+	}
+
+	err := service.bootstrapProjectCaches(context.Background())
+	if status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("bootstrapProjectCaches error code = %v, want %v: %v", status.Code(err), codes.FailedPrecondition, err)
 	}
 }

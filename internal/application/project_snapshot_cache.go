@@ -91,8 +91,11 @@ func NewProjectSnapshotCache(client projectSnapshotRedisClient) ProjectSnapshotC
 }
 
 func (c *RedisProjectSnapshotCache) ReplaceAll(ctx context.Context, projects []*Project) error {
-	if c == nil || c.client == nil {
-		return nil
+	if c == nil {
+		return errors.New("project snapshot cache is not configured")
+	}
+	if c.client == nil {
+		return errors.New("project snapshot cache redis client is not configured")
 	}
 
 	v2Keys, err := c.listProjectDataV2Keys(ctx)
