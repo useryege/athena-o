@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS project_comment (
   CONSTRAINT project_comment_project_contract_len CHECK (length(project_contract) = 20),
   CONSTRAINT project_comment_username_not_empty CHECK (length(btrim(username)) > 0),
   CONSTRAINT project_comment_content_not_empty CHECK (length(btrim(content)) > 0),
+  CONSTRAINT project_comment_content_max_len CHECK (char_length(content) <= 1000),
   CONSTRAINT project_comment_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract)
 );
 

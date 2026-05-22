@@ -41,7 +41,6 @@ const (
 	bootstrapMaxRetryWindow                = 10 * time.Minute
 	bootstrapBuildWorkerCount              = 8
 	projectPolicyTriggerQueueCapacity      = 4096
-	maxProjectCommentContentLength         = 1000
 )
 
 type refreshTarget uint8
@@ -1235,8 +1234,8 @@ func (s *Service) AddProjectComment(ctx context.Context, req *applicationpkg.Add
 	if content == "" {
 		return nil, status.Error(codes.InvalidArgument, "comment content is empty")
 	}
-	if utf8.RuneCountInString(content) > maxProjectCommentContentLength {
-		return nil, status.Errorf(codes.InvalidArgument, "comment content exceeds max length %d", maxProjectCommentContentLength)
+	if utf8.RuneCountInString(content) > appstore.MaxProjectCommentContentLength {
+		return nil, status.Errorf(codes.InvalidArgument, "comment content exceeds max length %d", appstore.MaxProjectCommentContentLength)
 	}
 
 	store, ok := s.store.(appstore.ProjectCommentStore)
@@ -1244,8 +1243,13 @@ func (s *Service) AddProjectComment(ctx context.Context, req *applicationpkg.Add
 		return &applicationpkg.AddProjectCommentResponse{}, status.Error(codes.FailedPrecondition, "project comment store is not configured")
 	}
 
+	contract := common.HexToAddress(req.GetContract())
+	if err := s.ensureProjectExists(ctx, contract, req.GetContract()); err != nil {
+		return nil, err
+	}
+
 	created, err := store.AddProjectComment(ctx, appstore.ProjectComment{
-		Contract: common.HexToAddress(req.GetContract()),
+		Contract: contract,
 		Username: username,
 		Content:  content,
 	})
@@ -1265,7 +1269,12 @@ func (s *Service) ListProjectComments(ctx context.Context, req *applicationpkg.L
 		return &applicationpkg.ListProjectCommentsResponse{}, status.Error(codes.FailedPrecondition, "project comment store is not configured")
 	}
 
-	items, total, page, pageSize, err := store.ListProjectCommentsByContract(ctx, common.HexToAddress(req.GetContract()), req.GetPage(), req.GetPageSize())
+	contract := common.HexToAddress(req.GetContract())
+	if err := s.ensureProjectExists(ctx, contract, req.GetContract()); err != nil {
+		return nil, err
+	}
+
+	items, total, page, pageSize, err := store.ListProjectCommentsByContract(ctx, contract, req.GetPage(), req.GetPageSize())
 	if err != nil {
 		return nil, err
 	}
@@ -1281,6 +1290,20 @@ func (s *Service) ListProjectComments(ctx context.Context, req *applicationpkg.L
 		Page:     page,
 		PageSize: pageSize,
 	}, nil
+}
+
+func (s *Service) ensureProjectExists(ctx context.Context, contract common.Address, rawContract string) error {
+	if s.store == nil {
+		return status.Error(codes.FailedPrecondition, "project store is not configured")
+	}
+	meta, err := s.store.GetProjectMetaByContract(ctx, contract)
+	if err != nil {
+		return err
+	}
+	if meta == nil {
+		return status.Errorf(codes.NotFound, "project %q not found", rawContract)
+	}
+	return nil
 }
 
 func (s *Service) GetProjectOptions(context.Context, *applicationpkg.GetProjectOptionsRequest) (*applicationpkg.GetProjectOptionsResponse, error) {

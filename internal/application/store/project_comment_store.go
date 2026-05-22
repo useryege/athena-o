@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
 const (
-	defaultProjectCommentPageSize int32 = 5
-	maxProjectCommentPageSize     int32 = 5
+	defaultProjectCommentPageSize  int32 = 5
+	maxProjectCommentPageSize      int32 = 5
+	MaxProjectCommentContentLength       = 1000
 )
 
 func (s *SQLStore) AddProjectComment(ctx context.Context, item ProjectComment) (ProjectComment, error) {
@@ -19,6 +21,9 @@ func (s *SQLStore) AddProjectComment(ctx context.Context, item ProjectComment) (
 	}
 	if strings.TrimSpace(item.Content) == "" {
 		return ProjectComment{}, fmt.Errorf("project comment content is empty")
+	}
+	if utf8.RuneCountInString(strings.TrimSpace(item.Content)) > MaxProjectCommentContentLength {
+		return ProjectComment{}, fmt.Errorf("project comment content exceeds max length %d", MaxProjectCommentContentLength)
 	}
 
 	row := s.db.QueryRowContext(ctx, `

@@ -199,6 +199,16 @@
         color: #6d7f8b;
     }
 
+    &__comment-error {
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        border: 1px solid #d9534f;
+        border-radius: 4px;
+        background-color: #fdf2f2;
+        color: #d9534f;
+        font-size: 13px;
+    }
+
     &__comment-list {
         display: flex;
         flex-direction: column;

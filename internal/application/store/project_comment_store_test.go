@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,8 +28,8 @@ func TestAddProjectComment(t *testing.T) {
 
 	created, err := store.AddProjectComment(context.Background(), ProjectComment{
 		Contract: contract,
-		Username: "alice",
-		Content:  "hello",
+		Username: " alice ",
+		Content:  " hello ",
 	})
 	require.NoError(t, err)
 	require.EqualValues(t, 1, created.ID)
@@ -57,6 +58,13 @@ func TestAddProjectCommentRejectsEmptyFields(t *testing.T) {
 		Contract: contract,
 		Username: "alice",
 		Content:  "   ",
+	})
+	require.Error(t, err)
+
+	_, err = store.AddProjectComment(context.Background(), ProjectComment{
+		Contract: contract,
+		Username: "alice",
+		Content:  strings.Repeat("a", MaxProjectCommentContentLength+1),
 	})
 	require.Error(t, err)
 }

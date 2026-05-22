@@ -120,6 +120,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const [commentTotal, setCommentTotal] = React.useState(0);
     const [commentInput, setCommentInput] = React.useState('');
     const [commentsLoading, setCommentsLoading] = React.useState(false);
+    const [commentsError, setCommentsError] = React.useState<Error | null>(null);
     const [submittingComment, setSubmittingComment] = React.useState(false);
     const [loading, setLoading] = React.useState(true);
     const [changingArchiveState, setChangingArchiveState] = React.useState(false);
@@ -234,10 +235,11 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                     setComments(data.items || []);
                     setCommentPage(data.page || targetPage);
                     setCommentTotal(data.total || 0);
+                    setCommentsError(null);
                 }
             } catch (err) {
                 if (isMountedRef.current) {
-                    setError(err as Error);
+                    setCommentsError(err as Error);
                 }
             } finally {
                 if (isMountedRef.current) {
@@ -306,6 +308,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         setCommentPage(1);
         setCommentTotal(0);
         setCommentInput('');
+        setCommentsError(null);
         loadProject();
         loadProjectEventLogs();
         loadProjectComments(1);
@@ -574,6 +577,8 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
                             {commentsLoading ? (
                                 <div className='project-details__field-value'>Loading comments...</div>
+                            ) : commentsError ? (
+                                <div className='project-details__comment-error'>Failed to load comments: {commentsError.message}</div>
                             ) : comments.length === 0 ? (
                                 <div className='project-details__field-value'>No comments yet</div>
                             ) : (
