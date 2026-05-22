@@ -11,6 +11,7 @@ import (
 )
 
 var _ BytecodeBlacklistCache = &LayeredBytecodeBlacklistCache{}
+var _ SourcecodeBlacklistContractCache = &LayeredSourcecodeBlacklistContractCache{}
 var _ WalletBlacklistCache = &LayeredWalletBlacklistCache{}
 
 type LocalBytecodeBlacklistCache struct {
@@ -99,6 +100,75 @@ type LocalWalletBlacklistCache struct {
 	items   []store.WalletBlacklistEntry
 	ready   bool
 	version string
+}
+
+type LocalSourcecodeBlacklistContractCache struct {
+	mu      sync.RWMutex
+	items   []store.SourcecodeBlacklistContract
+	ready   bool
+	version string
+}
+
+func NewLocalSourcecodeBlacklistContractCache(items ...store.SourcecodeBlacklistContract) *LocalSourcecodeBlacklistContractCache {
+	c := &LocalSourcecodeBlacklistContractCache{}
+	if len(items) > 0 {
+		c.Set(items)
+	}
+	return c
+}
+
+func (c *LocalSourcecodeBlacklistContractCache) GetSnapshot() ([]store.SourcecodeBlacklistContract, string, bool) {
+	if c == nil {
+		return nil, "", false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if !c.ready {
+		return nil, "", false
+	}
+	return append([]store.SourcecodeBlacklistContract(nil), c.items...), c.version, true
+}
+
+func (c *LocalSourcecodeBlacklistContractCache) Set(items []store.SourcecodeBlacklistContract) {
+	c.SetWithVersion(items, newBlacklistVersion())
+}
+
+func (c *LocalSourcecodeBlacklistContractCache) SetWithVersion(items []store.SourcecodeBlacklistContract, version string) {
+	if c == nil {
+		return
+	}
+	normalized := normalizeSourcecodeBlacklistContracts(items)
+	if version == "" {
+		version = newBlacklistVersion()
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.items = normalized
+	c.ready = true
+	c.version = version
+}
+
+func (c *LocalSourcecodeBlacklistContractCache) Del() {
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.items = nil
+	c.ready = false
+	c.version = ""
+}
+
+func (c *LocalSourcecodeBlacklistContractCache) Version() (string, bool) {
+	if c == nil {
+		return "", false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if !c.ready {
+		return "", false
+	}
+	return c.version, true
 }
 
 func NewLocalWalletBlacklistCache(items ...store.WalletBlacklistEntry) *LocalWalletBlacklistCache {
@@ -299,6 +369,124 @@ func (c *LayeredBytecodeBlacklistCache) Version(ctx context.Context) (string, er
 	return version, nil
 }
 
+type LayeredSourcecodeBlacklistContractCache struct {
+	local  *LocalSourcecodeBlacklistContractCache
+	remote SourcecodeBlacklistContractRemoteCache
+	loadMu sync.Mutex
+}
+
+func NewLayeredSourcecodeBlacklistContractCache(local *LocalSourcecodeBlacklistContractCache, remote SourcecodeBlacklistContractRemoteCache) *LayeredSourcecodeBlacklistContractCache {
+	if local == nil {
+		local = NewLocalSourcecodeBlacklistContractCache()
+	}
+	return &LayeredSourcecodeBlacklistContractCache{local: local, remote: remote}
+}
+
+func (c *LayeredSourcecodeBlacklistContractCache) Take(ctx context.Context, loader func(context.Context) ([]store.SourcecodeBlacklistContract, error)) ([]store.SourcecodeBlacklistContract, error) {
+	if c == nil {
+		return loadSourcecodeBlacklistContracts(ctx, loader)
+	}
+	if items, version, ok := c.local.GetSnapshot(); ok {
+		if c.remote == nil {
+			return items, nil
+		}
+		remoteVersion, versionOK, err := c.remote.Version(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if versionOK && remoteVersion == version {
+			return items, nil
+		}
+	}
+
+	c.loadMu.Lock()
+	defer c.loadMu.Unlock()
+	if items, version, ok := c.local.GetSnapshot(); ok {
+		if c.remote == nil {
+			return items, nil
+		}
+		remoteVersion, versionOK, err := c.remote.Version(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if versionOK && remoteVersion == version {
+			return items, nil
+		}
+	}
+
+	if c.remote != nil {
+		items, version, ok, err := c.remote.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			c.local.SetWithVersion(items, version)
+			return items, nil
+		}
+	}
+
+	items, err := loadSourcecodeBlacklistContracts(ctx, loader)
+	if err != nil {
+		return nil, err
+	}
+	if c.remote != nil {
+		version, err := c.remote.Set(ctx, items)
+		if err != nil {
+			return nil, err
+		}
+		c.local.SetWithVersion(items, version)
+		return items, nil
+	}
+	c.local.Set(items)
+	return items, nil
+}
+
+func (c *LayeredSourcecodeBlacklistContractCache) Set(ctx context.Context, items []store.SourcecodeBlacklistContract) error {
+	if c == nil {
+		return nil
+	}
+	if c.remote != nil {
+		version, err := c.remote.Set(ctx, items)
+		if err != nil {
+			return err
+		}
+		c.local.SetWithVersion(items, version)
+		return nil
+	}
+	c.local.Set(items)
+	return nil
+}
+
+func (c *LayeredSourcecodeBlacklistContractCache) Del(ctx context.Context) error {
+	if c == nil {
+		return nil
+	}
+	if c.remote != nil {
+		if err := c.remote.Del(ctx); err != nil {
+			return err
+		}
+	}
+	c.local.Del()
+	return nil
+}
+
+func (c *LayeredSourcecodeBlacklistContractCache) Version(ctx context.Context) (string, error) {
+	if c == nil {
+		return "", nil
+	}
+	if c.remote != nil {
+		version, ok, err := c.remote.Version(ctx)
+		if err != nil {
+			return "", err
+		}
+		if ok {
+			return version, nil
+		}
+	}
+	version, _ := c.local.Version()
+	return version, nil
+}
+
 type LayeredWalletBlacklistCache struct {
 	local  *LocalWalletBlacklistCache
 	remote WalletBlacklistRemoteCache
@@ -434,6 +622,17 @@ func loadBytecodeBlacklistContracts(ctx context.Context, loader func(context.Con
 	return normalizeBytecodeBlacklistContracts(items), nil
 }
 
+func loadSourcecodeBlacklistContracts(ctx context.Context, loader func(context.Context) ([]store.SourcecodeBlacklistContract, error)) ([]store.SourcecodeBlacklistContract, error) {
+	if loader == nil {
+		return nil, nil
+	}
+	items, err := loader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return normalizeSourcecodeBlacklistContracts(items), nil
+}
+
 func loadWalletBlacklistEntries(ctx context.Context, loader func(context.Context) ([]store.WalletBlacklistEntry, error)) ([]store.WalletBlacklistEntry, error) {
 	if loader == nil {
 		return nil, nil
@@ -459,6 +658,37 @@ func normalizeBytecodeBlacklistContracts(items []store.BytecodeBlacklistContract
 			continue
 		}
 		seen[item.Contract] = struct{}{}
+		item.Note = normalizeNote(item.Note)
+		normalized = append(normalized, item)
+	}
+	sort.SliceStable(normalized, func(i, j int) bool {
+		if !normalized[i].CreatedAt.Equal(normalized[j].CreatedAt) {
+			return normalized[i].CreatedAt.After(normalized[j].CreatedAt)
+		}
+		return normalized[i].Contract.Hex() < normalized[j].Contract.Hex()
+	})
+	return normalized
+}
+
+func normalizeSourcecodeBlacklistContracts(items []store.SourcecodeBlacklistContract) []store.SourcecodeBlacklistContract {
+	if len(items) == 0 {
+		return nil
+	}
+	seenContracts := make(map[common.Address]struct{}, len(items))
+	seenHashes := make(map[common.Hash]struct{}, len(items))
+	normalized := make([]store.SourcecodeBlacklistContract, 0, len(items))
+	for _, item := range items {
+		if item.Contract == (common.Address{}) || item.SourceHash == (common.Hash{}) {
+			continue
+		}
+		if _, ok := seenContracts[item.Contract]; ok {
+			continue
+		}
+		if _, ok := seenHashes[item.SourceHash]; ok {
+			continue
+		}
+		seenContracts[item.Contract] = struct{}{}
+		seenHashes[item.SourceHash] = struct{}{}
 		item.Note = normalizeNote(item.Note)
 		normalized = append(normalized, item)
 	}

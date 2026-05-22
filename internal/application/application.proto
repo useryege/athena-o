@@ -168,6 +168,52 @@ message DeleteBytecodeBlacklistContractRequest {
 // DeleteBytecodeBlacklistContractResponse is returned after deleting a bytecode-blacklist contract entry.
 message DeleteBytecodeBlacklistContractResponse {}
 
+// SourcecodeBlacklistContract is a globally maintained source-code hash blacklist contract entry.
+message SourcecodeBlacklistContract {
+  string source_hash = 1;
+  string contract = 2;
+  string note = 3;
+  string created_at = 4;
+}
+
+// ListSourcecodeBlacklistContractsRequest queries all source-code hash blacklist contract entries.
+message ListSourcecodeBlacklistContractsRequest {}
+
+// ListSourcecodeBlacklistContractsResponse returns all source-code hash blacklist contract entries.
+message ListSourcecodeBlacklistContractsResponse {
+  repeated SourcecodeBlacklistContract items = 1;
+}
+
+// AddSourcecodeBlacklistContractRequest adds a source-code hash blacklist contract entry.
+message AddSourcecodeBlacklistContractRequest {
+  string contract = 1;
+  string note = 2;
+}
+
+// AddSourcecodeBlacklistContractResponse returns the stored source-code hash blacklist contract entry.
+message AddSourcecodeBlacklistContractResponse {
+  SourcecodeBlacklistContract item = 1;
+}
+
+// UpdateSourcecodeBlacklistContractNoteRequest updates the note of a source-code hash blacklist contract entry.
+message UpdateSourcecodeBlacklistContractNoteRequest {
+  string contract = 1;
+  string note = 2;
+}
+
+// UpdateSourcecodeBlacklistContractNoteResponse returns the updated source-code hash blacklist contract entry.
+message UpdateSourcecodeBlacklistContractNoteResponse {
+  SourcecodeBlacklistContract item = 1;
+}
+
+// DeleteSourcecodeBlacklistContractRequest deletes a source-code hash blacklist contract entry.
+message DeleteSourcecodeBlacklistContractRequest {
+  string contract = 1;
+}
+
+// DeleteSourcecodeBlacklistContractResponse is returned after deleting a source-code hash blacklist contract entry.
+message DeleteSourcecodeBlacklistContractResponse {}
+
 // WalletBlacklistEntry is a globally maintained wallet-blacklist entry.
 message WalletBlacklistEntry {
   string wallet = 1;
@@ -258,6 +304,14 @@ service ApplicationService {
   rpc UpdateBytecodeBlacklistContractNote(UpdateBytecodeBlacklistContractNoteRequest) returns (UpdateBytecodeBlacklistContractNoteResponse);
   // DeleteBytecodeBlacklistContract deletes a globally configured bytecode-blacklist contract entry.
   rpc DeleteBytecodeBlacklistContract(DeleteBytecodeBlacklistContractRequest) returns (DeleteBytecodeBlacklistContractResponse);
+  // ListSourcecodeBlacklistContracts returns all globally configured source-code hash blacklist contract entries.
+  rpc ListSourcecodeBlacklistContracts(ListSourcecodeBlacklistContractsRequest) returns (ListSourcecodeBlacklistContractsResponse);
+  // AddSourcecodeBlacklistContract adds a globally configured source-code hash blacklist contract entry.
+  rpc AddSourcecodeBlacklistContract(AddSourcecodeBlacklistContractRequest) returns (AddSourcecodeBlacklistContractResponse);
+  // UpdateSourcecodeBlacklistContractNote updates the note of a globally configured source-code hash blacklist contract entry.
+  rpc UpdateSourcecodeBlacklistContractNote(UpdateSourcecodeBlacklistContractNoteRequest) returns (UpdateSourcecodeBlacklistContractNoteResponse);
+  // DeleteSourcecodeBlacklistContract deletes a globally configured source-code hash blacklist contract entry.
+  rpc DeleteSourcecodeBlacklistContract(DeleteSourcecodeBlacklistContractRequest) returns (DeleteSourcecodeBlacklistContractResponse);
   // ListWalletBlacklistEntries returns all globally configured wallet-blacklist entries.
   rpc ListWalletBlacklistEntries(ListWalletBlacklistEntriesRequest) returns (ListWalletBlacklistEntriesResponse);
   // AddWalletBlacklistEntry adds a globally configured wallet-blacklist entry.

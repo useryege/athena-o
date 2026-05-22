@@ -9,6 +9,7 @@ import (
 )
 
 var _ appcache.BytecodeBlacklistWritePublisher = &bytecodeBlacklistEventPublisher{}
+var _ appcache.SourcecodeBlacklistContractWritePublisher = &sourcecodeBlacklistContractEventPublisher{}
 var _ appcache.WalletBlacklistWritePublisher = &walletBlacklistEventPublisher{}
 
 type bytecodeBlacklistEventPublisher struct {
@@ -32,6 +33,29 @@ func (p *bytecodeBlacklistEventPublisher) PublishUpdateNote(ctx context.Context,
 
 func (p *bytecodeBlacklistEventPublisher) PublishDelete(ctx context.Context, contract common.Address) error {
 	return p.publisher.PublishBytecodeBlacklistDelete(ctx, contract)
+}
+
+type sourcecodeBlacklistContractEventPublisher struct {
+	publisher PersistenceEventPublisher
+}
+
+func newSourcecodeBlacklistContractEventPublisher(publisher PersistenceEventPublisher) appcache.SourcecodeBlacklistContractWritePublisher {
+	if publisher == nil {
+		return nil
+	}
+	return &sourcecodeBlacklistContractEventPublisher{publisher: publisher}
+}
+
+func (p *sourcecodeBlacklistContractEventPublisher) PublishAdd(ctx context.Context, item appstore.SourcecodeBlacklistContract) error {
+	return p.publisher.PublishSourcecodeBlacklistContractAdd(ctx, item)
+}
+
+func (p *sourcecodeBlacklistContractEventPublisher) PublishUpdateNote(ctx context.Context, contract common.Address, note string) error {
+	return p.publisher.PublishSourcecodeBlacklistContractUpdateNote(ctx, contract, note)
+}
+
+func (p *sourcecodeBlacklistContractEventPublisher) PublishDelete(ctx context.Context, contract common.Address) error {
+	return p.publisher.PublishSourcecodeBlacklistContractDelete(ctx, contract)
 }
 
 type walletBlacklistEventPublisher struct {

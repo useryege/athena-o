@@ -63,6 +63,35 @@ type BytecodeBlacklistWritePublisher interface {
 	PublishDelete(ctx context.Context, contract common.Address) error
 }
 
+type SourcecodeBlacklistContractCache interface {
+	Take(ctx context.Context, loader func(context.Context) ([]store.SourcecodeBlacklistContract, error)) ([]store.SourcecodeBlacklistContract, error)
+	Set(ctx context.Context, items []store.SourcecodeBlacklistContract) error
+	Del(ctx context.Context) error
+	Version(ctx context.Context) (string, error)
+}
+
+type SourcecodeBlacklistContractRemoteCache interface {
+	Get(ctx context.Context) ([]store.SourcecodeBlacklistContract, string, bool, error)
+	Set(ctx context.Context, items []store.SourcecodeBlacklistContract) (string, error)
+	Del(ctx context.Context) error
+	Version(ctx context.Context) (string, bool, error)
+}
+
+type SourcecodeBlacklistContractModel interface {
+	Load(ctx context.Context) error
+	List(ctx context.Context) ([]store.SourcecodeBlacklistContract, error)
+	Add(ctx context.Context, item store.SourcecodeBlacklistContract) error
+	UpdateNote(ctx context.Context, contract common.Address, note string) error
+	Delete(ctx context.Context, contract common.Address) error
+	Version(ctx context.Context) (string, error)
+}
+
+type SourcecodeBlacklistContractWritePublisher interface {
+	PublishAdd(ctx context.Context, item store.SourcecodeBlacklistContract) error
+	PublishUpdateNote(ctx context.Context, contract common.Address, note string) error
+	PublishDelete(ctx context.Context, contract common.Address) error
+}
+
 type WalletBlacklistCache interface {
 	Take(ctx context.Context, loader func(context.Context) ([]store.WalletBlacklistEntry, error)) ([]store.WalletBlacklistEntry, error)
 	Set(ctx context.Context, items []store.WalletBlacklistEntry) error

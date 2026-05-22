@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-309-g3da3250-dirty"
+    "version": "v1.0.0-319-gda99fcf-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -734,6 +734,130 @@
         }
       }
     },
+    "/api/v1/source-code/blacklist-contracts": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ListSourcecodeBlacklistContracts returns all globally configured source-code hash blacklist contract entries.",
+        "operationId": "ApplicationService_ListSourcecodeBlacklistContracts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListSourcecodeBlacklistContractsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "AddSourcecodeBlacklistContract adds a globally configured source-code hash blacklist contract entry.",
+        "operationId": "ApplicationService_AddSourcecodeBlacklistContract",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationAddSourcecodeBlacklistContractRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationAddSourcecodeBlacklistContractResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/source-code/blacklist-contracts/{contract}": {
+      "delete": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "DeleteSourcecodeBlacklistContract deletes a globally configured source-code hash blacklist contract entry.",
+        "operationId": "ApplicationService_DeleteSourcecodeBlacklistContract",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationDeleteSourcecodeBlacklistContractResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/source-code/blacklist-contracts/{contract}/note": {
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "UpdateSourcecodeBlacklistContractNote updates the note of a globally configured source-code hash blacklist contract entry.",
+        "operationId": "ApplicationService_UpdateSourcecodeBlacklistContractNote",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationUpdateSourcecodeBlacklistContractNoteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationUpdateSourcecodeBlacklistContractNoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/source-code/blacklist-fields": {
       "get": {
         "tags": [
@@ -1130,6 +1254,27 @@
         }
       }
     },
+    "applicationAddSourcecodeBlacklistContractRequest": {
+      "description": "AddSourcecodeBlacklistContractRequest adds a source-code hash blacklist contract entry.",
+      "type": "object",
+      "properties": {
+        "contract": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationAddSourcecodeBlacklistContractResponse": {
+      "description": "AddSourcecodeBlacklistContractResponse returns the stored source-code hash blacklist contract entry.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/applicationSourcecodeBlacklistContract"
+        }
+      }
+    },
     "applicationAddWalletBlacklistEntryRequest": {
       "description": "AddWalletBlacklistEntryRequest adds a wallet-blacklist entry.",
       "type": "object",
@@ -1186,6 +1331,10 @@
     },
     "applicationDeleteSourceCodeBlacklistFieldResponse": {
       "description": "DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.",
+      "type": "object"
+    },
+    "applicationDeleteSourcecodeBlacklistContractResponse": {
+      "description": "DeleteSourcecodeBlacklistContractResponse is returned after deleting a source-code hash blacklist contract entry.",
       "type": "object"
     },
     "applicationDeleteWalletBlacklistEntryResponse": {
@@ -1294,6 +1443,18 @@
         }
       }
     },
+    "applicationListSourcecodeBlacklistContractsResponse": {
+      "description": "ListSourcecodeBlacklistContractsResponse returns all source-code hash blacklist contract entries.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/applicationSourcecodeBlacklistContract"
+          }
+        }
+      }
+    },
     "applicationListWalletBlacklistEntriesResponse": {
       "description": "ListWalletBlacklistEntriesResponse returns all wallet-blacklist entries.",
       "type": "object",
@@ -1370,6 +1531,24 @@
         }
       }
     },
+    "applicationSourcecodeBlacklistContract": {
+      "description": "SourcecodeBlacklistContract is a globally maintained source-code hash blacklist contract entry.",
+      "type": "object",
+      "properties": {
+        "contract": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "source_hash": {
+          "type": "string"
+        }
+      }
+    },
     "applicationUnarchiveProjectRequest": {
       "type": "object",
       "properties": {
@@ -1399,6 +1578,27 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/applicationBytecodeBlacklistContract"
+        }
+      }
+    },
+    "applicationUpdateSourcecodeBlacklistContractNoteRequest": {
+      "description": "UpdateSourcecodeBlacklistContractNoteRequest updates the note of a source-code hash blacklist contract entry.",
+      "type": "object",
+      "properties": {
+        "contract": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationUpdateSourcecodeBlacklistContractNoteResponse": {
+      "description": "UpdateSourcecodeBlacklistContractNoteResponse returns the updated source-code hash blacklist contract entry.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/applicationSourcecodeBlacklistContract"
         }
       }
     },

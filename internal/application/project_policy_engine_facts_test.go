@@ -42,6 +42,23 @@ func (f *bytecodeBlacklistVersionedFake) Version(context.Context) (string, error
 	return f.version, nil
 }
 
+type sourcecodeBlacklistVersionedFake struct {
+	items        []appstore.SourcecodeBlacklistContract
+	version      string
+	listCalls    int
+	versionCalls int
+}
+
+func (f *sourcecodeBlacklistVersionedFake) List(context.Context) ([]appstore.SourcecodeBlacklistContract, error) {
+	f.listCalls++
+	return append([]appstore.SourcecodeBlacklistContract(nil), f.items...), nil
+}
+
+func (f *sourcecodeBlacklistVersionedFake) Version(context.Context) (string, error) {
+	f.versionCalls++
+	return f.version, nil
+}
+
 type walletBlacklistVersionedFake struct {
 	items        []appstore.WalletBlacklistEntry
 	version      string
@@ -69,15 +86,21 @@ func TestProjectPolicyEngineBuildFactsCachesByBlacklistVersion(t *testing.T) {
 		items:   []appstore.BytecodeBlacklistContract{{CodeHash: bytecodeHash}},
 		version: "bytecode-v1",
 	}
+	sourcecodeHash := common.HexToHash("0x2222222222222222222222222222222222222222222222222222222222222222")
+	sourcecode := &sourcecodeBlacklistVersionedFake{
+		items:   []appstore.SourcecodeBlacklistContract{{SourceHash: sourcecodeHash}},
+		version: "sourcecode-v1",
+	}
 	walletAddress := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	wallet := &walletBlacklistVersionedFake{
 		items:   []appstore.WalletBlacklistEntry{{Wallet: walletAddress}},
 		version: "wallet-v1",
 	}
 	engine := &projectPolicyEngineImpl{
-		sourceBlacklist:   source,
-		bytecodeBlacklist: bytecode,
-		walletBlacklist:   wallet,
+		sourceBlacklist:     source,
+		bytecodeBlacklist:   bytecode,
+		sourcecodeBlacklist: sourcecode,
+		walletBlacklist:     wallet,
 	}
 
 	facts, err := engine.buildFacts(context.Background())
@@ -87,6 +110,9 @@ func TestProjectPolicyEngineBuildFactsCachesByBlacklistVersion(t *testing.T) {
 	if _, ok := facts.BytecodeBlacklist[bytecodeHash]; !ok {
 		t.Fatal("bytecode blacklist fact missing")
 	}
+	if _, ok := facts.SourcecodeBlacklist[sourcecodeHash]; !ok {
+		t.Fatal("sourcecode blacklist fact missing")
+	}
 	if _, ok := facts.WalletBlacklist[walletAddress]; !ok {
 		t.Fatal("wallet blacklist fact missing")
 	}
@@ -94,16 +120,16 @@ func TestProjectPolicyEngineBuildFactsCachesByBlacklistVersion(t *testing.T) {
 	if _, err := engine.buildFacts(context.Background()); err != nil {
 		t.Fatalf("buildFacts second: %v", err)
 	}
-	if source.listCalls != 1 || bytecode.listCalls != 1 || wallet.listCalls != 1 {
-		t.Fatalf("list calls = source:%d bytecode:%d wallet:%d, want all 1", source.listCalls, bytecode.listCalls, wallet.listCalls)
+	if source.listCalls != 1 || bytecode.listCalls != 1 || sourcecode.listCalls != 1 || wallet.listCalls != 1 {
+		t.Fatalf("list calls = source:%d bytecode:%d sourcecode:%d wallet:%d, want all 1", source.listCalls, bytecode.listCalls, sourcecode.listCalls, wallet.listCalls)
 	}
 
 	wallet.version = "wallet-v2"
 	if _, err := engine.buildFacts(context.Background()); err != nil {
 		t.Fatalf("buildFacts after version change: %v", err)
 	}
-	if source.listCalls != 2 || bytecode.listCalls != 2 || wallet.listCalls != 2 {
-		t.Fatalf("list calls after version change = source:%d bytecode:%d wallet:%d, want all 2", source.listCalls, bytecode.listCalls, wallet.listCalls)
+	if source.listCalls != 2 || bytecode.listCalls != 2 || sourcecode.listCalls != 2 || wallet.listCalls != 2 {
+		t.Fatalf("list calls after version change = source:%d bytecode:%d sourcecode:%d wallet:%d, want all 2", source.listCalls, bytecode.listCalls, sourcecode.listCalls, wallet.listCalls)
 	}
 }
 

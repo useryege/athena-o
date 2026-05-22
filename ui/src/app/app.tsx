@@ -11,6 +11,7 @@ import help from './help';
 import login from './login';
 import projects from './projects';
 import sourceCodeBlacklist from './source-code-blacklist';
+import sourcecodeBlacklistContracts from './sourcecode-blacklist-contracts';
 import settings from './settings';
 import walletBlacklist from './wallet-blacklist';
 import {Layout, ThemeWrapper} from './shared/components/layout/layout';
@@ -37,6 +38,7 @@ const routes: Routes = {
     '/login': {component: login.component as any, noLayout: true},
     '/projects': {component: projects.component},
     '/source-code-blacklist': {component: sourceCodeBlacklist.component},
+    '/sourcecode-blacklist-contracts': {component: sourcecodeBlacklistContracts.component},
     '/bytecode-blacklist': {component: bytecodeBlacklist.component},
     '/wallet-blacklist': {component: walletBlacklist.component},
     // '/applications': {component: applications.component},
@@ -69,6 +71,12 @@ const navItems: NavItem[] = [
         title: 'Bytecode Blacklist',
         tooltip: 'Manage bytecode blacklist contracts',
         path: '/bytecode-blacklist',
+        iconClassName: 'fa fa-ban'
+    },
+    {
+        title: 'Sourcecode Blacklist',
+        tooltip: 'Manage sourcecode blacklist contracts',
+        path: '/sourcecode-blacklist-contracts',
         iconClassName: 'fa fa-ban'
     },
     {
