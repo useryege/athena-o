@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -94,13 +95,16 @@ func TestProjectStateReconcilerJobIntervals(t *testing.T) {
 
 	intervals := make(map[string]time.Duration, len(jobs))
 	for _, job := range jobs {
+		if strings.Contains(job.name, "_archived") {
+			t.Fatalf("unexpected archived reconciler job %q", job.name)
+		}
 		intervals[job.name] = job.interval
 	}
 
+	assertJobInterval(t, intervals, "state_refresh_active", activeProjectStateRefreshInterval)
+	assertJobInterval(t, intervals, "simulation_refresh_active", activeProjectSimulationRefreshInterval)
 	assertJobInterval(t, intervals, "sourcecode_refresh_active", 10*time.Second)
-	assertJobInterval(t, intervals, "sourcecode_refresh_archived", archivedProjectRefreshInterval)
 	assertJobInterval(t, intervals, "source_quality_refresh_active", sourceCodeRefreshInterval)
-	assertJobInterval(t, intervals, "source_quality_refresh_archived", archivedProjectRefreshInterval)
 	assertJobInterval(t, intervals, "runtime_code_hash_refresh_active", sourceCodeRefreshInterval)
 	assertJobInterval(t, intervals, "creator_other_projects_refresh_active", sourceCodeRefreshInterval)
 }

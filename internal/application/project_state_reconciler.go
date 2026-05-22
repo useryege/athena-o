@@ -121,17 +121,11 @@ func (r *projectStateReconcilerImpl) reconcileOnceJobs(ctx context.Context, jobs
 func (r *projectStateReconcilerImpl) reconcilerJobs() []reconcilerJob {
 	return []reconcilerJob{
 		{name: "state_refresh_active", interval: activeProjectStateRefreshInterval, run: r.refreshActiveProjectStates},
-		{name: "state_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectStates},
 		{name: "simulation_refresh_active", interval: activeProjectSimulationRefreshInterval, run: r.refreshActiveProjectSimulations},
-		{name: "simulation_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSimulations},
 		{name: "sourcecode_refresh_active", interval: activeProjectSourceCodeRefreshInterval, run: r.refreshActiveProjectSourceCodes},
-		{name: "sourcecode_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSourceCodes},
 		{name: "source_quality_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectSourceQualityReports},
-		{name: "source_quality_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSourceQualityReports},
 		{name: "runtime_code_hash_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectRuntimeCodeHashes},
-		{name: "runtime_code_hash_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectRuntimeCodeHashes},
 		{name: "creator_other_projects_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectCreatorOtherProjects},
-		{name: "creator_other_projects_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectCreatorOtherProjects},
 	}
 }
 
@@ -196,10 +190,6 @@ func (r *projectStateReconcilerImpl) refreshActiveProjectStates(ctx context.Cont
 	return r.refreshProjectStates(ctx, refreshTargetActive)
 }
 
-func (r *projectStateReconcilerImpl) refreshArchivedProjectStates(ctx context.Context) error {
-	return r.refreshProjectStates(ctx, refreshTargetArchived)
-}
-
 func (r *projectStateReconcilerImpl) refreshProjectStates(ctx context.Context, target refreshTarget) error {
 	projects, err := r.listProjectsByTarget(ctx, target)
 	if err != nil {
@@ -243,10 +233,6 @@ func (r *projectStateReconcilerImpl) refreshProjectStates(ctx context.Context, t
 
 func (r *projectStateReconcilerImpl) refreshActiveProjectSimulations(ctx context.Context) error {
 	return r.refreshProjectSimulations(ctx, refreshTargetActive)
-}
-
-func (r *projectStateReconcilerImpl) refreshArchivedProjectSimulations(ctx context.Context) error {
-	return r.refreshProjectSimulations(ctx, refreshTargetArchived)
 }
 
 func (r *projectStateReconcilerImpl) refreshProjectSimulations(ctx context.Context, target refreshTarget) error {
@@ -323,10 +309,6 @@ func (r *projectStateReconcilerImpl) refreshActiveProjectSourceCodes(ctx context
 	return r.refreshProjectSourceCodes(ctx, refreshTargetActive)
 }
 
-func (r *projectStateReconcilerImpl) refreshArchivedProjectSourceCodes(ctx context.Context) error {
-	return r.refreshProjectSourceCodes(ctx, refreshTargetArchived)
-}
-
 func (r *projectStateReconcilerImpl) refreshProjectSourceCodes(ctx context.Context, target refreshTarget) error {
 	projects, err := r.listProjectsByTarget(ctx, target)
 	if err != nil {
@@ -344,10 +326,6 @@ func (r *projectStateReconcilerImpl) refreshActiveProjectRuntimeCodeHashes(ctx c
 
 func (r *projectStateReconcilerImpl) refreshActiveProjectSourceQualityReports(ctx context.Context) error {
 	return r.refreshProjectSourceQualityReports(ctx, refreshTargetActive)
-}
-
-func (r *projectStateReconcilerImpl) refreshArchivedProjectSourceQualityReports(ctx context.Context) error {
-	return r.refreshProjectSourceQualityReports(ctx, refreshTargetArchived)
 }
 
 func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReports(ctx context.Context, target refreshTarget) error {
@@ -402,16 +380,8 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReports(ctx cont
 	return nil
 }
 
-func (r *projectStateReconcilerImpl) refreshArchivedProjectRuntimeCodeHashes(ctx context.Context) error {
-	return r.refreshProjectRuntimeCodeHashes(ctx, refreshTargetArchived)
-}
-
 func (r *projectStateReconcilerImpl) refreshActiveProjectCreatorOtherProjects(ctx context.Context) error {
 	return r.refreshProjectCreatorOtherProjects(ctx, refreshTargetActive)
-}
-
-func (r *projectStateReconcilerImpl) refreshArchivedProjectCreatorOtherProjects(ctx context.Context) error {
-	return r.refreshProjectCreatorOtherProjects(ctx, refreshTargetArchived)
 }
 
 func (r *projectStateReconcilerImpl) refreshProjectCreatorOtherProjects(ctx context.Context, target refreshTarget) error {
