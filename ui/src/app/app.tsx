@@ -50,8 +50,9 @@ const routes: Routes = {
 interface NavItem {
     title: string;
     tooltip?: string;
-    path: string;
-    iconClassName: string;
+    path?: string;
+    iconClassName?: string;
+    children?: NavItem[];
 }
 
 const navItems: NavItem[] = [
@@ -63,27 +64,30 @@ const navItems: NavItem[] = [
     },
     {
         title: 'Blacklist',
-        tooltip: 'Manage source-code blacklist fields',
-        path: '/source-code-blacklist',
-        iconClassName: 'fa fa-ban'
-    },
-    {
-        title: 'Bytecode Blacklist',
-        tooltip: 'Manage bytecode blacklist contracts',
-        path: '/bytecode-blacklist',
-        iconClassName: 'fa fa-ban'
-    },
-    {
-        title: 'Sourcecode Blacklist',
-        tooltip: 'Manage sourcecode blacklist contracts',
-        path: '/sourcecode-blacklist-contracts',
-        iconClassName: 'fa fa-ban'
-    },
-    {
-        title: 'Wallet Blacklist',
-        tooltip: 'Manage wallet blacklist addresses',
-        path: '/wallet-blacklist',
-        iconClassName: 'fa fa-ban'
+        tooltip: 'Manage blacklist modules',
+        iconClassName: 'fa fa-ban',
+        children: [
+            {
+                title: 'Field',
+                tooltip: 'Manage source-code blacklist fields',
+                path: '/source-code-blacklist'
+            },
+            {
+                title: 'ByteCode',
+                tooltip: 'Manage bytecode blacklist contracts',
+                path: '/bytecode-blacklist'
+            },
+            {
+                title: 'SourceCode',
+                tooltip: 'Manage sourcecode blacklist contracts',
+                path: '/sourcecode-blacklist-contracts'
+            },
+            {
+                title: 'Wallet',
+                tooltip: 'Manage wallet blacklist addresses',
+                path: '/wallet-blacklist'
+            }
+        ]
     },
     // {
     //     title: 'Applications',

@@ -7,9 +7,17 @@ import {services, ViewPreferences} from '../shared/services';
 
 require('./sidebar.scss');
 
+export interface SidebarNavItem {
+    path?: string;
+    iconClassName?: string;
+    title: string;
+    tooltip?: string;
+    children?: SidebarNavItem[];
+}
+
 interface SidebarProps {
     onVersionClick: () => void;
-    navItems: {path: string; iconClassName: string; title: string; tooltip?: string}[];
+    navItems: SidebarNavItem[];
     pref: ViewPreferences;
 }
 
@@ -45,6 +53,43 @@ export const Sidebar = (props: SidebarProps) => {
         }
     };
 
+    const isActive = (item: SidebarNavItem): boolean => {
+        if (item.path && (locationPath === item.path || locationPath.startsWith(`${item.path}/`))) {
+            return true;
+        }
+        return (item.children || []).some(child => isActive(child));
+    };
+
+    const renderNavItem = (item: SidebarNavItem, child = false) => {
+        if (child && props.pref.hideSidebar && !item.iconClassName) {
+            return null;
+        }
+
+        const active = isActive(item);
+        const isGroup = !child && (item.children || []).length > 0;
+        const className = [
+            'sidebar__nav-item',
+            child ? 'sidebar__nav-item--child' : '',
+            child && !item.iconClassName ? 'sidebar__nav-item--child-text' : '',
+            isGroup ? 'sidebar__nav-item--group' : '',
+            active ? 'sidebar__nav-item--active' : ''
+        ]
+            .filter(Boolean)
+            .join(' ');
+        const onClick = item.path ? () => context.history.push(item.path) : undefined;
+
+        return (
+            <Tooltip key={item.path || item.title} content={<div className='sidebar__tooltip'>{item?.tooltip || item.title}</div>} {...tooltipProps}>
+                <div className={className} onClick={onClick}>
+                    <div>
+                        {item.iconClassName && <i className={item.iconClassName} />}
+                        {!props.pref.hideSidebar && <span className='sidebar__nav-item-title'>{item.title}</span>}
+                    </div>
+                </div>
+            </Tooltip>
+        );
+    };
+
     return (
         <div className={`sidebar ${props.pref.hideSidebar ? 'sidebar--collapsed' : ''}`}>
             <div className='sidebar__container'>
@@ -70,17 +115,10 @@ export const Sidebar = (props: SidebarProps) => {
                 </div>
 
                 {(props.navItems || []).map(item => (
-                    <Tooltip key={item.path} content={<div className='sidebar__tooltip'>{item?.tooltip || item.title}</div>} {...tooltipProps}>
-                        <div
-                            key={item.title}
-                            className={`sidebar__nav-item ${locationPath === item.path || locationPath.startsWith(`${item.path}/`) ? 'sidebar__nav-item--active' : ''}`}
-                            onClick={() => context.history.push(item.path)}>
-                            <div>
-                                <i className={item?.iconClassName || ''} />
-                                {!props.pref.hideSidebar && item.title}
-                            </div>
-                        </div>
-                    </Tooltip>
+                    <React.Fragment key={item.path || item.title}>
+                        {renderNavItem(item)}
+                        {(item.children || []).length > 0 && <div className='sidebar__nav-children'>{item.children.map(child => renderNavItem(child, true))}</div>}
+                    </React.Fragment>
                 ))}
 
                 {props.pref.hideSidebar && (

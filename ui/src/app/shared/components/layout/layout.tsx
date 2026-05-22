@@ -6,7 +6,13 @@ import {useTheme} from '../../utils';
 require('./layout.scss');
 
 export interface LayoutProps {
-    navItems: Array<{path: string; iconClassName: string; title: string}>;
+    navItems: Array<{
+        path?: string;
+        iconClassName?: string;
+        title: string;
+        tooltip?: string;
+        children?: Array<{path?: string; iconClassName?: string; title: string; tooltip?: string}>;
+    }>;
     onVersionClick?: () => void;
     children?: React.ReactNode;
     pref: ViewPreferences;

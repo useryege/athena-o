@@ -78,6 +78,21 @@ $deselected-text: #818d94;
         line-height: $height;
         color: $deselected-text;
 
+        > div {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            width: 100%;
+        }
+
+        &-title {
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         i {
             font-size: 26px;
             color: white;
@@ -90,7 +105,7 @@ $deselected-text: #818d94;
             margin-left: 2px;
             margin-right: -2px;
             margin-top: 12px;
-            width: 32px;           
+            width: 32px;
         }
 
         &--active {
@@ -99,6 +114,37 @@ $deselected-text: #818d94;
                 color: #fe733f;
             }
         }
+
+        &--group {
+            cursor: default;
+        }
+
+        &--child {
+            font-size: 14px;
+            height: 2.1em;
+            line-height: 2.1em;
+            padding-left: 22px;
+
+            i {
+                font-size: 18px;
+                width: 28px;
+                padding-right: 28px;
+            }
+
+            i.fa {
+                font-size: 16px;
+                margin-top: 7px;
+                width: 24px;
+            }
+        }
+
+        &--child-text {
+            padding-left: 85px;
+        }
+    }
+
+    &__nav-children {
+        margin: -0.2em 0 0.35em;
     }
 
     &__collapse-button {
@@ -140,6 +186,26 @@ $deselected-text: #818d94;
 
         .sidebar__nav-item i.fa {
             margin-left: 9px;
+        }
+
+        .sidebar__nav-item--child {
+            padding-left: 0;
+        }
+
+        .sidebar__nav-item--child-text {
+            display: none;
+        }
+
+        .sidebar__nav-item--child i {
+            margin-left: 10px;
+        }
+
+        .sidebar__nav-item--child i.fa {
+            margin-left: 11px;
+        }
+
+        .sidebar__nav-children {
+            margin: 0;
         }
 
         .sidebar__filter-button {
