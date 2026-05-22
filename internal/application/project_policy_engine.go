@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	projectPolicyWorkerCount                = 4
+	projectPolicyWorkerCount                = 10
 	projectPolicyTaskQueueCapacity          = 4096
 	projectPolicyFallbackEvaluationInterval = 45 * time.Minute
 )

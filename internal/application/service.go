@@ -722,6 +722,80 @@ func (s *Service) triggerFullPolicyReevaluation() {
 	go s.enqueueAllProjectsForPolicy(ctx, policyTriggerCh)
 }
 
+func (s *Service) triggerSourceCodePolicyReevaluation() {
+	s.startStopMu.Lock()
+	ctx := s.lifecycleCtx
+	policyTriggerCh := s.policyTriggerCh
+	started := s.started
+	s.startStopMu.Unlock()
+	if !started || ctx == nil || policyTriggerCh == nil {
+		return
+	}
+	go func() {
+		if err := s.resetSourceCodeBlacklistReports(ctx); err != nil {
+			log.WithField("component", "sourcecode_policy_reevaluation").WithError(err).Warn("failed to reset source code blacklist reports")
+			return
+		}
+		s.enqueueAllProjectsForPolicy(ctx, policyTriggerCh)
+	}()
+}
+
+func (s *Service) resetSourceCodeBlacklistReports(ctx context.Context) error {
+	if s.projectCache == nil {
+		return nil
+	}
+	resetProject := func(project *Project) error {
+		if project == nil || project.Meta.Contract == (common.Address{}) {
+			return nil
+		}
+		_, err := s.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
+			if !exists || current == nil {
+				return nil, false, nil
+			}
+			report := current.Runtime.SourceCodeBlacklist
+			if !report.HasBlacklistFields && len(report.BlacklistFields) == 0 && report.ResolvedAt.IsZero() {
+				return nil, false, nil
+			}
+			current.Runtime.SourceCodeBlacklist = sourcecode.BlacklistReport{}
+			return current, true, nil
+		})
+		return err
+	}
+
+	activeProjects, err := s.projectCache.ListActiveProjects(ctx)
+	if err != nil {
+		return err
+	}
+	for _, project := range activeProjects {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := resetProject(project); err != nil {
+			return err
+		}
+	}
+
+	page := int32(1)
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		archivedProjects, total, _, pageSize, err := s.projectCache.ListArchivedProjects(ctx, page, sourceCodeScanPageSize)
+		if err != nil {
+			return err
+		}
+		for _, project := range archivedProjects {
+			if err := resetProject(project); err != nil {
+				return err
+			}
+		}
+		if len(archivedProjects) == 0 || int64(page)*int64(pageSize) >= total {
+			return nil
+		}
+		page++
+	}
+}
+
 func (s *Service) clearPipelineLocked() {
 	s.pipeline = nil
 	s.apiFetcher = nil
@@ -753,6 +827,7 @@ func (s *Service) AddSourceCodeBlacklistField(ctx context.Context, req *applicat
 	if err := s.sourceBlacklist.Add(ctx, field); err != nil {
 		return nil, err
 	}
+	s.triggerSourceCodePolicyReevaluation()
 	return &applicationpkg.AddSourceCodeBlacklistFieldResponse{Item: &applicationpkg.SourceCodeBlacklistField{Field: field}}, nil
 }
 
@@ -763,6 +838,7 @@ func (s *Service) DeleteSourceCodeBlacklistField(ctx context.Context, req *appli
 	if err := s.sourceBlacklist.Delete(ctx, req.GetField()); err != nil {
 		return nil, err
 	}
+	s.triggerSourceCodePolicyReevaluation()
 	return &applicationpkg.DeleteSourceCodeBlacklistFieldResponse{}, nil
 }
 
@@ -812,6 +888,7 @@ func (s *Service) AddBytecodeBlacklistContract(ctx context.Context, req *applica
 		}
 		return nil, err
 	}
+	s.triggerFullPolicyReevaluation()
 
 	items, err := s.bytecodeBlacklist.List(ctx)
 	if err != nil {
@@ -866,6 +943,7 @@ func (s *Service) DeleteBytecodeBlacklistContract(ctx context.Context, req *appl
 		}
 		return nil, err
 	}
+	s.triggerFullPolicyReevaluation()
 	return &applicationpkg.DeleteBytecodeBlacklistContractResponse{}, nil
 }
 
