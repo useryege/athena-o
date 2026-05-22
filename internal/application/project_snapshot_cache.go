@@ -27,6 +27,7 @@ const (
 	projectFieldCreatorOtherProjectContracts   = "creator_other_project_contracts"
 	projectFieldCreatorOtherProjectsResolvedAt = "creator_other_projects_resolved_at"
 	projectFieldSourceCode                     = "source_code"
+	projectFieldSourceCodeHash                 = "source_code_hash"
 	projectFieldSourceQualityReport            = "source_quality_report"
 	projectFieldSourceQualityReportedAt        = "source_quality_reported_at"
 	projectFieldCodeBinHash                    = "code_bin_hash"
@@ -34,7 +35,7 @@ const (
 	projectFieldGenesisWallets                 = "genesis_wallets"
 	projectFieldReport                         = "report"
 
-	projectSchemaVersion = "6"
+	projectSchemaVersion = "7"
 
 	projectIndexActive   = "project:index:active"
 	projectIndexArchived = "project:index:archived"
@@ -396,9 +397,10 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldCreatorOtherProjectContracts:   creatorOtherProjectContractsPayload,
 		projectFieldCreatorOtherProjectsResolvedAt: formatOptionalTime(project.Runtime.CreatorOtherProjectsResolvedAt),
 		projectFieldSourceCode:                     project.Meta.SourceCode,
+		projectFieldSourceCodeHash:                 project.Meta.SourceCodeHash.Hex(),
 		projectFieldSourceQualityReport:            project.Meta.SourceQualityReport,
 		projectFieldSourceQualityReportedAt:        formatOptionalTime(project.Meta.SourceQualityReportedAt),
-		projectFieldCodeBinHash:                    project.Runtime.CodeBinHash.Hex(),
+		projectFieldCodeBinHash:                    project.Meta.CodeBinHash.Hex(),
 		projectFieldSourceCodeBlacklist:            sourceCodeBlacklistPayload,
 		projectFieldReport:                         reportPayload,
 		projectFieldGenesisWallets:                 genesisWalletsPayload,
@@ -467,14 +469,17 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 	if current == nil || current.Meta.SourceCode != next.Meta.SourceCode {
 		fields[projectFieldSourceCode] = next.Meta.SourceCode
 	}
+	if current == nil || current.Meta.SourceCodeHash != next.Meta.SourceCodeHash {
+		fields[projectFieldSourceCodeHash] = next.Meta.SourceCodeHash.Hex()
+	}
 	if current == nil || current.Meta.SourceQualityReport != next.Meta.SourceQualityReport {
 		fields[projectFieldSourceQualityReport] = next.Meta.SourceQualityReport
 	}
 	if current == nil || !current.Meta.SourceQualityReportedAt.Equal(next.Meta.SourceQualityReportedAt) {
 		fields[projectFieldSourceQualityReportedAt] = formatOptionalTime(next.Meta.SourceQualityReportedAt)
 	}
-	if current == nil || current.Runtime.CodeBinHash != next.Runtime.CodeBinHash {
-		fields[projectFieldCodeBinHash] = next.Runtime.CodeBinHash.Hex()
+	if current == nil || current.Meta.CodeBinHash != next.Meta.CodeBinHash {
+		fields[projectFieldCodeBinHash] = next.Meta.CodeBinHash.Hex()
 	}
 
 	if current == nil || !reflect.DeepEqual(current.Runtime.SourceCodeBlacklist, next.Runtime.SourceCodeBlacklist) {
@@ -565,6 +570,9 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		project.Runtime.CreatorOtherProjectsResolvedAt = resolvedAt
 	}
 	project.Meta.SourceCode = values[projectFieldSourceCode]
+	if raw := values[projectFieldSourceCodeHash]; raw != "" {
+		project.Meta.SourceCodeHash = common.HexToHash(raw)
+	}
 	project.Meta.SourceQualityReport = values[projectFieldSourceQualityReport]
 	if raw := values[projectFieldSourceQualityReportedAt]; raw != "" {
 		reportedAt, err := time.Parse(time.RFC3339Nano, raw)
@@ -574,7 +582,7 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		project.Meta.SourceQualityReportedAt = reportedAt
 	}
 	if raw := values[projectFieldCodeBinHash]; raw != "" {
-		project.Runtime.CodeBinHash = common.HexToHash(raw)
+		project.Meta.CodeBinHash = common.HexToHash(raw)
 	}
 	if raw := values[projectFieldSourceCodeBlacklist]; raw != "" {
 		if err := json.Unmarshal([]byte(raw), &project.Runtime.SourceCodeBlacklist); err != nil {

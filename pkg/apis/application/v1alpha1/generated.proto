@@ -142,6 +142,10 @@ message ProjectMeta {
   optional string sourceQualityReportedAt = 15;
 
   optional bool isOpenSource = 16;
+
+  optional string sourceCodeHash = 17;
+
+  optional string codeBinHash = 18;
 }
 
 message ProjectOption {

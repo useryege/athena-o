@@ -39,6 +39,8 @@ type ProjectMeta struct {
 	SourceQualityReport          string                   `protobuf:"bytes,14,opt,name=sourceQualityReport" json:"sourceQualityReport"`
 	SourceQualityReportedAt      string                   `protobuf:"bytes,15,opt,name=sourceQualityReportedAt" json:"sourceQualityReportedAt"`
 	IsOpenSource                 bool                     `protobuf:"varint,16,opt,name=isOpenSource" json:"isOpenSource"`
+	SourceCodeHash               string                   `protobuf:"bytes,17,opt,name=sourceCodeHash" json:"sourceCodeHash"`
+	CodeBinHash                  string                   `protobuf:"bytes,18,opt,name=codeBinHash" json:"codeBinHash"`
 }
 
 type GenesisWalletState struct {

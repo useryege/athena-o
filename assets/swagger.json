@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-330-g4bb6bad-dirty"
+    "version": "v1.0.0-339-g470fc60-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -2121,6 +2121,9 @@
           "type": "string",
           "format": "uint64"
         },
+        "codeBinHash": {
+          "type": "string"
+        },
         "contract": {
           "type": "string"
         },
@@ -2153,6 +2156,9 @@
         },
         "sourceCodeBlacklist": {
           "$ref": "#/definitions/v1alpha1SourceCodeBlacklistState"
+        },
+        "sourceCodeHash": {
+          "type": "string"
         },
         "sourceQualityReport": {
           "type": "string"

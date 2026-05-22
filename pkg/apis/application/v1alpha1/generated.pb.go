@@ -470,6 +470,20 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.CodeBinHash)
+	copy(dAtA[i:], m.CodeBinHash)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CodeBinHash)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x92
+	i -= len(m.SourceCodeHash)
+	copy(dAtA[i:], m.SourceCodeHash)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCodeHash)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x8a
 	i--
 	if m.IsOpenSource {
 		dAtA[i] = 1
@@ -1014,6 +1028,10 @@ func (m *ProjectMeta) Size() (n int) {
 	l = len(m.SourceQualityReportedAt)
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 3
+	l = len(m.SourceCodeHash)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.CodeBinHash)
+	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -1232,6 +1250,8 @@ func (this *ProjectMeta) String() string {
 		`SourceQualityReport:` + fmt.Sprintf("%v", this.SourceQualityReport) + `,`,
 		`SourceQualityReportedAt:` + fmt.Sprintf("%v", this.SourceQualityReportedAt) + `,`,
 		`IsOpenSource:` + fmt.Sprintf("%v", this.IsOpenSource) + `,`,
+		`SourceCodeHash:` + fmt.Sprintf("%v", this.SourceCodeHash) + `,`,
+		`CodeBinHash:` + fmt.Sprintf("%v", this.CodeBinHash) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -3365,6 +3385,70 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.IsOpenSource = bool(v != 0)
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceCodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 18:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeBinHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeBinHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

@@ -744,14 +744,14 @@ type bytecodeBlacklistRule struct{}
 func (r bytecodeBlacklistRule) Name() string { return "bytecode_blacklist" }
 
 func (r bytecodeBlacklistRule) Evaluate(_ context.Context, project *Project, facts ProjectPolicyFacts) (bool, map[string]any, error) {
-	if project == nil || project.Runtime.CodeBinHash == (common.Hash{}) || len(facts.BytecodeBlacklist) == 0 {
+	if project == nil || project.Meta.CodeBinHash == (common.Hash{}) || len(facts.BytecodeBlacklist) == 0 {
 		return false, nil, nil
 	}
-	if _, ok := facts.BytecodeBlacklist[project.Runtime.CodeBinHash]; !ok {
+	if _, ok := facts.BytecodeBlacklist[project.Meta.CodeBinHash]; !ok {
 		return false, nil, nil
 	}
 	return true, map[string]any{
-		"code_bin_hash": strings.ToLower(project.Runtime.CodeBinHash.Hex()),
+		"code_bin_hash": strings.ToLower(project.Meta.CodeBinHash.Hex()),
 	}, nil
 }
 
@@ -763,7 +763,10 @@ func (r sourcecodeBlacklistContractRule) Evaluate(_ context.Context, project *Pr
 	if project == nil || project.Meta.SourceCode == "" || len(facts.SourcecodeBlacklist) == 0 {
 		return false, nil, nil
 	}
-	sourceHash := crypto.Keccak256Hash([]byte(project.Meta.SourceCode))
+	sourceHash := project.Meta.SourceCodeHash
+	if sourceHash == (common.Hash{}) {
+		sourceHash = crypto.Keccak256Hash([]byte(project.Meta.SourceCode))
+	}
 	if _, ok := facts.SourcecodeBlacklist[sourceHash]; !ok {
 		return false, nil, nil
 	}

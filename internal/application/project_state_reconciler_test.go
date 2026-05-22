@@ -9,6 +9,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/redis/go-redis/v9"
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
@@ -30,6 +31,7 @@ func (f *sourceQualityAnalyzerFake) AnalyzeContractSource(context.Context, strin
 
 type persistencePublisherFake struct {
 	sourceQualityReports map[common.Address]string
+	codeBinHashes        map[common.Address]common.Hash
 }
 
 func (p *persistencePublisherFake) Publish(context.Context, PersistenceEvent) error { return nil }
@@ -40,6 +42,13 @@ func (p *persistencePublisherFake) PublishProjectEventLog(context.Context, appst
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectSourceCodeUpdate(context.Context, common.Address, string) error {
+	return nil
+}
+func (p *persistencePublisherFake) PublishProjectCodeBinHashUpdate(_ context.Context, contract common.Address, codeBinHash common.Hash) error {
+	if p.codeBinHashes == nil {
+		p.codeBinHashes = map[common.Address]common.Hash{}
+	}
+	p.codeBinHashes[contract] = codeBinHash
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectSourceQualityReportUpdate(_ context.Context, contract common.Address, report string) error {
@@ -210,6 +219,40 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReports(t *testing.T) 
 	}
 	if publisher.sourceQualityReports[contract] != "## Report" {
 		t.Fatalf("persisted report = %q, want report", publisher.sourceQualityReports[contract])
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectCodeBinHashesPersistsMetaHash(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a3")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	code := []byte{0x60, 0x60, 0x60, 0x40}
+	wantHash := crypto.Keccak256Hash(code)
+	publisher := &persistencePublisherFake{}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:         cache,
+		persistencePublisher: publisher,
+		codeAtFunc: func(context.Context, common.Address) ([]byte, error) {
+			return code, nil
+		},
+	}
+
+	if err := reconciler.refreshProjectCodeBinHashes(ctx, refreshTargetActive); err != nil {
+		t.Fatalf("refresh code bin hashes: %v", err)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || project.Meta.CodeBinHash != wantHash {
+		t.Fatalf("code bin hash = %s, want %s", project.Meta.CodeBinHash.Hex(), wantHash.Hex())
+	}
+	if publisher.codeBinHashes[contract] != wantHash {
+		t.Fatalf("persisted code bin hash = %s, want %s", publisher.codeBinHashes[contract].Hex(), wantHash.Hex())
 	}
 }
 

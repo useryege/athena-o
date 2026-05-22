@@ -32,6 +32,10 @@ func (w *persistenceEventWriterFake) WriteProjectSourceCode(context.Context, com
 	return w.err
 }
 
+func (w *persistenceEventWriterFake) WriteProjectCodeBinHash(context.Context, common.Address, common.Hash) error {
+	return w.err
+}
+
 func (w *persistenceEventWriterFake) WriteProjectSourceQualityReport(context.Context, common.Address, string) error {
 	return w.err
 }

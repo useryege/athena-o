@@ -459,7 +459,7 @@ func (r *projectStateReconcilerImpl) refreshProjectCodeBinHashes(ctx context.Con
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if project == nil || project.Runtime.CodeBinHash != (common.Hash{}) {
+		if project == nil || project.Meta.CodeBinHash != (common.Hash{}) {
 			continue
 		}
 		code, err := r.fetchContractBytecode(ctx, project.Meta.Contract)
@@ -467,15 +467,22 @@ func (r *projectStateReconcilerImpl) refreshProjectCodeBinHashes(ctx context.Con
 			continue
 		}
 		codeBinHash := crypto.Keccak256Hash(code)
+		shouldPersistCodeBinHash := false
 		changed, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Runtime.CodeBinHash != (common.Hash{}) {
+			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Meta.CodeBinHash != (common.Hash{}) {
 				return nil, false, nil
 			}
-			current.Runtime.CodeBinHash = codeBinHash
+			current.Meta.CodeBinHash = codeBinHash
+			shouldPersistCodeBinHash = true
 			return current, true, nil
 		})
 		if err != nil {
 			continue
+		}
+		if shouldPersistCodeBinHash {
+			if err := r.persistProjectCodeBinHash(ctx, project.Meta.Contract, codeBinHash); err != nil {
+				continue
+			}
 		}
 		if changed {
 			r.triggerPolicyEvaluation(project.Meta.Contract, "refresh_project_code_bin_hash")
@@ -546,6 +553,7 @@ func (r *projectStateReconcilerImpl) fetchProjectSourceCodeBatch(ctx context.Con
 		if fetchErr != nil || sourceCode == "" {
 			continue
 		}
+		sourceCodeHash := crypto.Keccak256Hash([]byte(sourceCode))
 
 		shouldPersistSourceCode := false
 		changed, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
@@ -553,6 +561,7 @@ func (r *projectStateReconcilerImpl) fetchProjectSourceCodeBatch(ctx context.Con
 				return nil, false, nil
 			}
 			current.Meta.SourceCode = sourceCode
+			current.Meta.SourceCodeHash = sourceCodeHash
 			shouldPersistSourceCode = true
 			return current, true, nil
 		})
@@ -588,6 +597,13 @@ func (r *projectStateReconcilerImpl) persistProjectSourceCode(ctx context.Contex
 		return nil
 	}
 	return r.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode)
+}
+
+func (r *projectStateReconcilerImpl) persistProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {
+	if codeBinHash == (common.Hash{}) || r.persistencePublisher == nil {
+		return nil
+	}
+	return r.persistencePublisher.PublishProjectCodeBinHashUpdate(ctx, contract, codeBinHash)
 }
 
 func (r *projectStateReconcilerImpl) persistProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {

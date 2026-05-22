@@ -183,15 +183,16 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 	sourceHash := crypto.Keccak256Hash([]byte(sourceCode))
 	project := &Project{
 		Meta: ProjectMeta{
-			Contract:   contract,
-			Creator:    creator,
-			SourceCode: sourceCode,
+			Contract:       contract,
+			Creator:        creator,
+			SourceCode:     sourceCode,
+			SourceCodeHash: sourceHash,
+			CodeBinHash:    codeBinHash,
 			GenesisWallets: []GenesisWalletMeta{{
 				Wallet: genesisWallet,
 			}},
 		},
 		Runtime: ProjectRuntime{
-			CodeBinHash: codeBinHash,
 			SourceCodeBlacklist: sourcecode.BlacklistReport{
 				HasBlacklistFields: true,
 				BlacklistFields:    []string{"owner"},

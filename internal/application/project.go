@@ -39,6 +39,8 @@ type ProjectMeta struct {
 	IsArchived              bool
 	ArchivedAt              time.Time
 	SourceCode              string
+	SourceCodeHash          common.Hash
+	CodeBinHash             common.Hash
 	SourceQualityReport     string
 	SourceQualityReportedAt time.Time
 	GenesisWallets          []GenesisWalletMeta
@@ -50,7 +52,6 @@ type ProjectRuntime struct {
 	CreatorResult                  SimulateResult
 	CreatorOtherProjectContracts   []common.Address
 	CreatorOtherProjectsResolvedAt time.Time
-	CodeBinHash                    common.Hash
 	SourceCodeBlacklist            sourcecode.BlacklistReport
 }
 
@@ -177,6 +178,8 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 			SourceQualityReport:          sourceQualityReport,
 			SourceQualityReportedAt:      sourceQualityReportedAt,
 			IsOpenSource:                 strings.TrimSpace(project.Meta.SourceCode) != "",
+			SourceCodeHash:               hashToString(project.Meta.SourceCodeHash),
+			CodeBinHash:                  hashToString(project.Meta.CodeBinHash),
 		},
 		ChainState: v1alpha1.ProjectChainState{
 			Token: v1alpha1.TokenState{
@@ -227,6 +230,13 @@ func pairToView(pair athenacontract.AthenaPair) v1alpha1.PairV2State {
 		IsRemoveLiquidity:              pair.IsRemoveLiquidity,
 		FeeAddressHoldLiquidityRatio:   bigIntToString(pair.FeeAddressHoldLiquidityRatio),
 	}
+}
+
+func hashToString(value common.Hash) string {
+	if value == (common.Hash{}) {
+		return ""
+	}
+	return value.Hex()
 }
 
 func formatOptionalTime(value time.Time) string {

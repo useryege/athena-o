@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS project (
   tx_hash BYTEA NOT NULL,
   tx_index BIGINT NOT NULL,
   source_code TEXT,
+  source_code_hash BYTEA,
+  code_bin_hash BYTEA,
   source_quality_report TEXT,
   source_quality_reported_at TIMESTAMPTZ,
   is_archived BOOLEAN NOT NULL DEFAULT FALSE,
@@ -14,7 +16,9 @@ CREATE TABLE IF NOT EXISTS project (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_contract_len CHECK (length(contract) = 20),
   CONSTRAINT project_creator_len CHECK (length(creator) = 20),
-  CONSTRAINT project_tx_hash_len CHECK (length(tx_hash) = 32)
+  CONSTRAINT project_tx_hash_len CHECK (length(tx_hash) = 32),
+  CONSTRAINT project_source_code_hash_len CHECK (source_code_hash IS NULL OR length(source_code_hash) = 32),
+  CONSTRAINT project_code_bin_hash_len CHECK (code_bin_hash IS NULL OR length(code_bin_hash) = 32)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS project_contract_idx

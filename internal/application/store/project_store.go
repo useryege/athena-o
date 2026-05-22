@@ -8,6 +8,7 @@ import (
 	"math"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func (s *SQLStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error {
@@ -27,6 +28,9 @@ func (s *SQLStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error 
 	if meta.TxIndex > math.MaxInt64 {
 		return fmt.Errorf("project meta tx index %d exceeds postgres BIGINT", meta.TxIndex)
 	}
+	if meta.SourceCode != "" && meta.SourceCodeHash == (common.Hash{}) {
+		meta.SourceCodeHash = crypto.Keccak256Hash([]byte(meta.SourceCode))
+	}
 
 	_, err := s.db.ExecContext(ctx, `
 INSERT INTO project (
@@ -35,10 +39,13 @@ INSERT INTO project (
   contract,
   creator,
   tx_hash,
-  tx_index
-) VALUES ($1, $2, $3, $4, $5, $6)
+  tx_index,
+  source_code,
+  source_code_hash,
+  code_bin_hash
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 ON CONFLICT DO NOTHING
-`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), txHash.Bytes(), int64(meta.TxIndex))
+`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableHashBytes(meta.CodeBinHash))
 	if err != nil {
 		return fmt.Errorf("save project meta: %w", err)
 	}
@@ -55,6 +62,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_code_hash,
+  code_bin_hash,
   source_quality_report,
   source_quality_reported_at
 FROM project
@@ -90,6 +99,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_code_hash,
+  code_bin_hash,
   source_quality_report,
   source_quality_reported_at,
   is_archived,
@@ -126,6 +137,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_code_hash,
+  code_bin_hash,
   source_quality_report,
   source_quality_reported_at,
   is_archived,
@@ -154,13 +167,29 @@ ORDER BY block_number, tx_index, id
 }
 
 func (s *SQLStore) UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
+	sourceCodeHash := common.Hash{}
+	if sourceCode != "" {
+		sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
+	}
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project
-SET source_code = $2
+SET source_code = $2, source_code_hash = $3
 WHERE contract = $1
-`, contract.Bytes(), sourceCode)
+`, contract.Bytes(), sourceCode, nullableHashBytes(sourceCodeHash))
 	if err != nil {
 		return fmt.Errorf("update project source code: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) UpdateProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {
+	_, err := s.db.ExecContext(ctx, `
+UPDATE project
+SET code_bin_hash = $2
+WHERE contract = $1
+`, contract.Bytes(), nullableHashBytes(codeBinHash))
+	if err != nil {
+		return fmt.Errorf("update project code bin hash: %w", err)
 	}
 	return nil
 }
@@ -219,6 +248,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_code_hash,
+  code_bin_hash,
   source_quality_report,
   source_quality_reported_at,
   is_archived,
@@ -257,6 +288,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_code_hash,
+  code_bin_hash,
   source_quality_report,
   source_quality_reported_at,
   is_archived,
@@ -284,6 +317,8 @@ SELECT
   tx_hash,
   tx_index,
   source_code,
+  source_code_hash,
+  code_bin_hash,
   source_quality_report,
   source_quality_reported_at,
   is_archived,
@@ -314,6 +349,8 @@ func scanProjectMetaRow(scanner rowScanner, withArchiveFields bool) (ProjectMeta
 	var txHash []byte
 	var txIndex int64
 	var sourceCode sql.NullString
+	var sourceCodeHash []byte
+	var codeBinHash []byte
 	var sourceQualityReport sql.NullString
 	var sourceQualityReportedAt sql.NullTime
 	var isArchived bool
@@ -321,9 +358,9 @@ func scanProjectMetaRow(scanner rowScanner, withArchiveFields bool) (ProjectMeta
 
 	var err error
 	if withArchiveFields {
-		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceQualityReport, &sourceQualityReportedAt, &isArchived, &archivedAt)
+		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &codeBinHash, &sourceQualityReport, &sourceQualityReportedAt, &isArchived, &archivedAt)
 	} else {
-		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceQualityReport, &sourceQualityReportedAt)
+		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &codeBinHash, &sourceQualityReport, &sourceQualityReportedAt)
 	}
 	if err != nil {
 		return ProjectMeta{}, fmt.Errorf("scan project meta: %w", err)
@@ -345,6 +382,8 @@ func scanProjectMetaRow(scanner rowScanner, withArchiveFields bool) (ProjectMeta
 	meta.TxHash = common.BytesToHash(txHash)
 	meta.TxIndex = uint64(txIndex)
 	meta.SourceCode = sourceCode.String
+	meta.SourceCodeHash = common.BytesToHash(sourceCodeHash)
+	meta.CodeBinHash = common.BytesToHash(codeBinHash)
 	meta.SourceQualityReport = sourceQualityReport.String
 	if sourceQualityReportedAt.Valid {
 		meta.SourceQualityReportedAt = sourceQualityReportedAt.Time
@@ -354,6 +393,20 @@ func scanProjectMetaRow(scanner rowScanner, withArchiveFields bool) (ProjectMeta
 		meta.ArchivedAt = archivedAt.Time
 	}
 	return meta, nil
+}
+
+func nullableText(value string) any {
+	if value == "" {
+		return nil
+	}
+	return value
+}
+
+func nullableHashBytes(value common.Hash) any {
+	if value == (common.Hash{}) {
+		return nil
+	}
+	return value.Bytes()
 }
 
 func normalizePage(page int32, pageSize int32) (int32, int32) {

@@ -112,13 +112,17 @@ func TestRedisProjectSnapshotCachePersistsRuntimeResolutionFields(t *testing.T) 
 	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
 	contract := common.BigToAddress(big.NewInt(101))
 	resolvedAt := time.Date(2026, 5, 23, 12, 34, 56, 789, time.UTC)
+	sourceCodeHash := common.HexToHash("0x0101010101010101010101010101010101010101010101010101010101010101")
 	codeBinHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
 
 	if err := cache.SetProject(ctx, &Project{
-		Meta: ProjectMeta{Contract: contract},
+		Meta: ProjectMeta{
+			Contract:       contract,
+			SourceCodeHash: sourceCodeHash,
+			CodeBinHash:    codeBinHash,
+		},
 		Runtime: ProjectRuntime{
 			CreatorOtherProjectsResolvedAt: resolvedAt,
-			CodeBinHash:                    codeBinHash,
 		},
 	}); err != nil {
 		t.Fatalf("set project: %v", err)
@@ -134,7 +138,10 @@ func TestRedisProjectSnapshotCachePersistsRuntimeResolutionFields(t *testing.T) 
 	if got := project.Runtime.CreatorOtherProjectsResolvedAt; !got.Equal(resolvedAt) {
 		t.Fatalf("creator other projects resolved at = %s, want %s", got, resolvedAt)
 	}
-	if got := project.Runtime.CodeBinHash; got != codeBinHash {
+	if got := project.Meta.SourceCodeHash; got != sourceCodeHash {
+		t.Fatalf("source code hash = %s, want %s", got.Hex(), sourceCodeHash.Hex())
+	}
+	if got := project.Meta.CodeBinHash; got != codeBinHash {
 		t.Fatalf("code bin hash = %s, want %s", got.Hex(), codeBinHash.Hex())
 	}
 
@@ -144,6 +151,9 @@ func TestRedisProjectSnapshotCachePersistsRuntimeResolutionFields(t *testing.T) 
 	}
 	if got := values[projectFieldCreatorOtherProjectsResolvedAt]; got != resolvedAt.Format(time.RFC3339Nano) {
 		t.Fatalf("raw resolved at = %q, want %q", got, resolvedAt.Format(time.RFC3339Nano))
+	}
+	if got := values[projectFieldSourceCodeHash]; got != sourceCodeHash.Hex() {
+		t.Fatalf("raw source code hash = %q, want %q", got, sourceCodeHash.Hex())
 	}
 	if got := values[projectFieldCodeBinHash]; got != codeBinHash.Hex() {
 		t.Fatalf("raw code bin hash = %q, want %q", got, codeBinHash.Hex())
@@ -205,6 +215,8 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 		TxIndex:                 3,
 		IsArchived:              true,
 		SourceCode:              "contract Source {}",
+		SourceCodeHash:          common.HexToHash("0x3333333333333333333333333333333333333333333333333333333333333333"),
+		CodeBinHash:             common.HexToHash("0x4444444444444444444444444444444444444444444444444444444444444444"),
 		SourceQualityReport:     "## Report",
 		SourceQualityReportedAt: mustParseTimeForTest(t, "2026-05-22T00:00:00Z"),
 	}, Runtime: ProjectRuntime{
@@ -262,5 +274,8 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	}
 	if !detailView.Meta.IsOpenSource {
 		t.Fatal("detail isOpenSource = false, want true")
+	}
+	if detailView.Meta.SourceCodeHash != project.Meta.SourceCodeHash.Hex() || detailView.Meta.CodeBinHash != project.Meta.CodeBinHash.Hex() {
+		t.Fatalf("detail hashes = %q/%q, want %q/%q", detailView.Meta.SourceCodeHash, detailView.Meta.CodeBinHash, project.Meta.SourceCodeHash.Hex(), project.Meta.CodeBinHash.Hex())
 	}
 }

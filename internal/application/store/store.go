@@ -18,6 +18,8 @@ type ProjectMeta struct {
 	TxHash                  common.Hash
 	TxIndex                 uint64
 	SourceCode              string
+	SourceCodeHash          common.Hash
+	CodeBinHash             common.Hash
 	SourceQualityReport     string
 	SourceQualityReportedAt time.Time
 	IsArchived              bool
@@ -61,6 +63,7 @@ type ProjectStore interface {
 	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
 	ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, error)
 	UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
+	UpdateProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
 	ArchiveProjectByContract(ctx context.Context, contract common.Address) error
 	UnarchiveProjectByContract(ctx context.Context, contract common.Address) error

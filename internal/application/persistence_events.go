@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
@@ -34,6 +35,7 @@ const (
 	PersistenceOpProjectEventLogAdd              = "project_event_log_add"
 	PersistenceOpProjectGenesisReplace           = "project_genesis_wallet_replace"
 	PersistenceOpProjectSourceCode               = "project_source_code_update"
+	PersistenceOpProjectCodeBinHash              = "project_code_bin_hash_update"
 	PersistenceOpProjectSourceQualityReport      = "project_source_quality_report_update"
 	PersistenceOpProjectArchive                  = "project_archive"
 	PersistenceOpProjectUnarchive                = "project_unarchive"
@@ -60,20 +62,28 @@ type PersistenceEvent struct {
 }
 
 type projectMetaSavePayload struct {
-	BlockTime   uint64 `json:"block_time"`
-	BlockNumber uint64 `json:"block_number"`
-	Contract    string `json:"contract"`
-	Creator     string `json:"creator"`
-	TxHash      string `json:"tx_hash"`
-	TxIndex     uint64 `json:"tx_index"`
-	SourceCode  string `json:"source_code"`
-	IsArchived  bool   `json:"is_archived"`
-	ArchivedAt  string `json:"archived_at,omitempty"`
+	BlockTime      uint64 `json:"block_time"`
+	BlockNumber    uint64 `json:"block_number"`
+	Contract       string `json:"contract"`
+	Creator        string `json:"creator"`
+	TxHash         string `json:"tx_hash"`
+	TxIndex        uint64 `json:"tx_index"`
+	SourceCode     string `json:"source_code"`
+	SourceCodeHash string `json:"source_code_hash,omitempty"`
+	CodeBinHash    string `json:"code_bin_hash,omitempty"`
+	IsArchived     bool   `json:"is_archived"`
+	ArchivedAt     string `json:"archived_at,omitempty"`
 }
 
 type projectSourceCodeUpdatePayload struct {
-	Contract   string `json:"contract"`
-	SourceCode string `json:"source_code"`
+	Contract       string `json:"contract"`
+	SourceCode     string `json:"source_code"`
+	SourceCodeHash string `json:"source_code_hash,omitempty"`
+}
+
+type projectCodeBinHashUpdatePayload struct {
+	Contract    string `json:"contract"`
+	CodeBinHash string `json:"code_bin_hash"`
 }
 
 type projectSourceQualityReportUpdatePayload struct {
@@ -158,6 +168,7 @@ type PersistenceEventPublisher interface {
 	PublishProjectMetaSave(ctx context.Context, meta appstore.ProjectMeta) error
 	PublishProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error
 	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error
+	PublishProjectCodeBinHashUpdate(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error
 	PublishProjectArchive(ctx context.Context, contract common.Address) error
 	PublishProjectUnarchive(ctx context.Context, contract common.Address) error
@@ -178,6 +189,7 @@ type PersistenceEventWriter interface {
 	WriteProjectMeta(ctx context.Context, meta appstore.ProjectMeta) error
 	WriteProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error
 	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
+	WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
 	ArchiveProject(ctx context.Context, contract common.Address) error
 	UnarchiveProject(ctx context.Context, contract common.Address) error
@@ -259,14 +271,16 @@ func (b *RedisPersistenceEventBus) Publish(ctx context.Context, event Persistenc
 
 func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, meta appstore.ProjectMeta) error {
 	payload := projectMetaSavePayload{
-		BlockTime:   meta.BlockTime,
-		BlockNumber: meta.BlockNumber,
-		Contract:    meta.Contract.Hex(),
-		Creator:     meta.Creator.Hex(),
-		TxHash:      meta.TxHash.Hex(),
-		TxIndex:     meta.TxIndex,
-		SourceCode:  meta.SourceCode,
-		IsArchived:  meta.IsArchived,
+		BlockTime:      meta.BlockTime,
+		BlockNumber:    meta.BlockNumber,
+		Contract:       meta.Contract.Hex(),
+		Creator:        meta.Creator.Hex(),
+		TxHash:         meta.TxHash.Hex(),
+		TxIndex:        meta.TxIndex,
+		SourceCode:     meta.SourceCode,
+		SourceCodeHash: hashToPayload(meta.SourceCodeHash),
+		CodeBinHash:    hashToPayload(meta.CodeBinHash),
+		IsArchived:     meta.IsArchived,
 	}
 	if !meta.ArchivedAt.IsZero() {
 		payload.ArchivedAt = meta.ArchivedAt.UTC().Format(time.RFC3339Nano)
@@ -285,7 +299,11 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 }
 
 func (b *RedisPersistenceEventBus) PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error {
-	payload := projectSourceCodeUpdatePayload{Contract: contract.Hex(), SourceCode: sourceCode}
+	sourceCodeHash := common.Hash{}
+	if sourceCode != "" {
+		sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
+	}
+	payload := projectSourceCodeUpdatePayload{Contract: contract.Hex(), SourceCode: sourceCode, SourceCodeHash: hashToPayload(sourceCodeHash)}
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshal project source code payload: %w", err)
@@ -297,6 +315,28 @@ func (b *RedisPersistenceEventBus) PublishProjectSourceCodeUpdate(ctx context.Co
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
 	})
+}
+
+func (b *RedisPersistenceEventBus) PublishProjectCodeBinHashUpdate(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {
+	payload := projectCodeBinHashUpdatePayload{Contract: contract.Hex(), CodeBinHash: codeBinHash.Hex()}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal project code bin hash payload: %w", err)
+	}
+	return b.Publish(ctx, PersistenceEvent{
+		Version:    persistenceEventVersion,
+		Op:         PersistenceOpProjectCodeBinHash,
+		Contract:   contract.Hex(),
+		Payload:    data,
+		OccurredAt: time.Now().UTC(),
+	})
+}
+
+func hashToPayload(value common.Hash) string {
+	if value == (common.Hash{}) {
+		return ""
+	}
+	return value.Hex()
 }
 
 func (b *RedisPersistenceEventBus) PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error {
@@ -751,7 +791,13 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			TxHash:      txHash,
 			TxIndex:     payload.TxIndex,
 			SourceCode:  payload.SourceCode,
+			CodeBinHash: common.HexToHash(payload.CodeBinHash),
 			IsArchived:  payload.IsArchived,
+		}
+		if payload.SourceCodeHash != "" {
+			meta.SourceCodeHash = common.HexToHash(payload.SourceCodeHash)
+		} else if payload.SourceCode != "" {
+			meta.SourceCodeHash = crypto.Keccak256Hash([]byte(payload.SourceCode))
 		}
 		if payload.ArchivedAt != "" {
 			archivedAt, err := time.Parse(time.RFC3339Nano, payload.ArchivedAt)
@@ -770,6 +816,15 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
 		return writer.WriteProjectSourceCode(ctx, common.HexToAddress(payload.Contract), payload.SourceCode)
+	case PersistenceOpProjectCodeBinHash:
+		var payload projectCodeBinHashUpdatePayload
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("unmarshal project code bin hash payload: %w", err)
+		}
+		if !common.IsHexAddress(payload.Contract) {
+			return fmt.Errorf("invalid contract %q", payload.Contract)
+		}
+		return writer.WriteProjectCodeBinHash(ctx, common.HexToAddress(payload.Contract), common.HexToHash(payload.CodeBinHash))
 	case PersistenceOpProjectSourceQualityReport:
 		var payload projectSourceQualityReportUpdatePayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -1049,6 +1104,10 @@ func (w *storePersistenceWriter) WriteProjectEventLog(ctx context.Context, item 
 
 func (w *storePersistenceWriter) WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
 	return w.store.UpdateProjectSourceCode(ctx, contract, sourceCode)
+}
+
+func (w *storePersistenceWriter) WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {
+	return w.store.UpdateProjectCodeBinHash(ctx, contract, codeBinHash)
 }
 
 func (w *storePersistenceWriter) WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {

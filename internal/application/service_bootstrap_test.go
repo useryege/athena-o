@@ -33,6 +33,10 @@ func (s *bootstrapProjectStoreFake) UpdateProjectSourceCode(context.Context, com
 	return nil
 }
 
+func (s *bootstrapProjectStoreFake) UpdateProjectCodeBinHash(context.Context, common.Address, common.Hash) error {
+	return nil
+}
+
 func (s *bootstrapProjectStoreFake) UpdateProjectSourceQualityReport(context.Context, common.Address, string) error {
 	return nil
 }
@@ -130,6 +134,10 @@ func (s *bootstrapProjectStoreWithoutGenesisFake) ListAllProjectMetas(context.Co
 }
 
 func (s *bootstrapProjectStoreWithoutGenesisFake) UpdateProjectSourceCode(context.Context, common.Address, string) error {
+	return nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) UpdateProjectCodeBinHash(context.Context, common.Address, common.Hash) error {
 	return nil
 }
 
