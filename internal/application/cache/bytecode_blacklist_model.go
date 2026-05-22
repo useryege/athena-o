@@ -48,6 +48,13 @@ func (m *bytecodeBlacklistModel) List(ctx context.Context) ([]store.BytecodeBlac
 	})
 }
 
+func (m *bytecodeBlacklistModel) Version(ctx context.Context) (string, error) {
+	if m == nil || m.cache == nil {
+		return "", nil
+	}
+	return m.cache.Version(ctx)
+}
+
 func (m *bytecodeBlacklistModel) Add(ctx context.Context, item store.BytecodeBlacklistContract) error {
 	if m == nil {
 		return nil

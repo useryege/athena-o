@@ -43,6 +43,13 @@ func (m *sourceCodeBlacklistModel) List(ctx context.Context) ([]string, error) {
 	})
 }
 
+func (m *sourceCodeBlacklistModel) Version(ctx context.Context) (string, error) {
+	if m == nil || m.cache == nil {
+		return "", nil
+	}
+	return m.cache.Version(ctx)
+}
+
 func (m *sourceCodeBlacklistModel) Add(ctx context.Context, field string) error {
 	if m == nil {
 		return nil

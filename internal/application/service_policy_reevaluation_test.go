@@ -120,6 +120,10 @@ func (m *sourceCodeBlacklistModelFake) List(context.Context) ([]string, error) {
 	return nil, nil
 }
 
+func (m *sourceCodeBlacklistModelFake) Version(context.Context) (string, error) {
+	return "source", nil
+}
+
 func (m *sourceCodeBlacklistModelFake) Add(_ context.Context, field string) error {
 	m.added = append(m.added, field)
 	return nil
@@ -141,6 +145,10 @@ func (m *bytecodeBlacklistModelFake) Load(context.Context) error {
 
 func (m *bytecodeBlacklistModelFake) List(context.Context) ([]appstore.BytecodeBlacklistContract, error) {
 	return append([]appstore.BytecodeBlacklistContract(nil), m.items...), nil
+}
+
+func (m *bytecodeBlacklistModelFake) Version(context.Context) (string, error) {
+	return "bytecode", nil
 }
 
 func (m *bytecodeBlacklistModelFake) Add(_ context.Context, item appstore.BytecodeBlacklistContract) error {

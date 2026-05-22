@@ -48,6 +48,13 @@ func (m *walletBlacklistModel) List(ctx context.Context) ([]store.WalletBlacklis
 	})
 }
 
+func (m *walletBlacklistModel) Version(ctx context.Context) (string, error) {
+	if m == nil || m.cache == nil {
+		return "", nil
+	}
+	return m.cache.Version(ctx)
+}
+
 func (m *walletBlacklistModel) Add(ctx context.Context, item store.WalletBlacklistEntry) error {
 	if m == nil {
 		return nil
