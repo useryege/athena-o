@@ -71,8 +71,8 @@
         display: grid;
         grid-template-columns:
             minmax(36px, 0.45fr)
-            minmax(108px, 1.8fr)
-            minmax(62px, 0.8fr)
+            minmax(128px, 1.5fr)
+            minmax(180px, 1.85fr)
             minmax(74px, 0.85fr)
             minmax(64px, 0.8fr)
             minmax(66px, 0.8fr)
@@ -101,6 +101,20 @@
             font-weight: 600;
         }
 
+        &--contract {
+            align-items: center;
+            display: flex;
+            gap: 6px;
+            min-width: 0;
+
+            span {
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+
         &--block-time {
             display: flex;
             flex-direction: column;
@@ -110,6 +124,27 @@
             span {
                 white-space: nowrap;
             }
+        }
+    }
+
+    &__copy-button {
+        align-items: center;
+        background: transparent;
+        border: 0;
+        color: #6d7f8b;
+        cursor: pointer;
+        display: inline-flex;
+        flex: 0 0 auto;
+        height: 20px;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+        width: 20px;
+
+        &:hover,
+        &:focus {
+            color: #0dadea;
+            outline: none;
         }
     }
 }
@@ -163,8 +198,8 @@
         &__row {
             grid-template-columns:
                 minmax(28px, 0.42fr)
-                minmax(78px, 1.4fr)
-                minmax(48px, 0.7fr)
+                minmax(92px, 1.1fr)
+                minmax(130px, 1.4fr)
                 minmax(62px, 0.78fr)
                 minmax(56px, 0.72fr)
                 minmax(56px, 0.72fr)

@@ -1274,9 +1274,9 @@ func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProj
 		return nil, status.Errorf(codes.Internal, "unsupported project scope %v", scope)
 	}
 
-	items := make([]*v1alpha1.ProjectView, 0, len(projects))
+	items := make([]*v1alpha1.ProjectListItem, 0, len(projects))
 	for _, project := range projects {
-		items = append(items, projectToListView(project))
+		items = append(items, projectToListItem(project))
 	}
 
 	return &applicationpkg.ListProjectsResponse{

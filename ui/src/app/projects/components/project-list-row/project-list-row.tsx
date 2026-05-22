@@ -1,18 +1,11 @@
+import {Tooltip} from 'argo-ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {ProjectView} from '../../../shared/services/athena-application-service';
+import {ProjectListItem} from '../../../shared/services/athena-application-service';
 import {formatUsdtValue, PairMetricsCell} from '../pair-metrics-cell/pair-metrics-cell';
 
 const renderValue = (value: string | number | undefined) => (value === undefined || value === '' ? '-' : value);
-
-const isOpenSource = (project: ProjectView) => {
-    if (project.meta?.isOpenSource !== undefined) {
-        return project.meta.isOpenSource;
-    }
-    const sourceCode = project.meta?.sourceCode || '';
-    return sourceCode.trim().length > 0;
-};
 
 const formatBlockTime = (blockTime: number | undefined): {date: string; time: string} | null => {
     if (!blockTime || !Number.isFinite(blockTime) || blockTime <= 0) {
@@ -50,6 +43,14 @@ const formatBlockTime = (blockTime: number | undefined): {date: string; time: st
     return {date: `${year}-${month}-${day}`, time: `${hour}:${minute}:${second}`};
 };
 
+const renderProjectName = (project: ProjectListItem) => {
+    const name = renderValue(project.name);
+    if (!project.symbol) {
+        return name;
+    }
+    return `${name}(${project.symbol})`;
+};
+
 export const ProjectListRow = ({
     project,
     index,
@@ -57,66 +58,67 @@ export const ProjectListRow = ({
     defaultIsArchived,
     to
 }: {
-    project: ProjectView;
+    project: ProjectListItem;
     index: number;
     usdtDecimals?: number;
     defaultIsArchived?: boolean;
     to?: string;
 }) => {
-    const blockTime = formatBlockTime(project.meta?.blockTime);
-    const isArchived = project.meta?.isArchived ?? defaultIsArchived ?? false;
+    const [copied, setCopied] = React.useState(false);
+    const blockTime = formatBlockTime(project.blockTime);
+    const isArchived = project.isArchived ?? defaultIsArchived ?? false;
+
+    const copyContract = React.useCallback(
+        async (event: React.MouseEvent<HTMLButtonElement>) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!project.contract) {
+                return;
+            }
+            await navigator.clipboard.writeText(project.contract);
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 3000);
+        },
+        [project.contract]
+    );
 
     const rowContent = (
         <div className='projects-list__row'>
             <div className='projects-list__cell projects-list__cell--rank'>#{index + 1}</div>
-            <div className='projects-list__cell' title={project.chainState?.token?.name || ''}>
-                {renderValue(project.chainState?.token?.name)}
+            <div className='projects-list__cell' title={project.symbol ? `${project.name || '-'}(${project.symbol})` : project.name || ''}>
+                {renderProjectName(project)}
             </div>
-            <div className='projects-list__cell'>{renderValue(project.chainState?.token?.symbol)}</div>
+            <div className='projects-list__cell projects-list__cell--contract' title={project.contract || ''}>
+                <span>{renderValue(project.contract)}</span>
+                {project.contract && (
+                    <Tooltip content={copied ? 'Copied!' : 'Copy contract address'} hideOnClick={false}>
+                        <button type='button' className='projects-list__copy-button' aria-label='Copy contract address' onClick={copyContract}>
+                            <i className='fa fa-copy' />
+                        </button>
+                    </Tooltip>
+                )}
+            </div>
             <div className='projects-list__cell'>
                 <span className={`project-details__badge project-details__badge--${isArchived ? 'negative' : 'positive'}`}>{isArchived ? 'Archived' : 'Active'}</span>
             </div>
             <div className='projects-list__cell'>
-                {project.meta?.sourceCodeBlacklist?.hasBlacklistFields !== undefined ? (
-                    <span className={`project-details__badge project-details__badge--${project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'negative' : 'positive'}`}>
-                        {project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'Yes' : 'No'}
-                    </span>
-                ) : (
-                    '-'
-                )}
+                <span className={`project-details__badge project-details__badge--${project.hasSourceCodeBlacklist ? 'negative' : 'positive'}`}>
+                    {project.hasSourceCodeBlacklist ? 'Yes' : 'No'}
+                </span>
             </div>
             <div className='projects-list__cell'>
-                {project.meta?.creatorResult
-                    ? (() => {
-                          const hasRisk =
-                              project.meta.creatorResult.canMintViaTransferToWethPair ||
-                              project.meta.creatorResult.canMintViaTransferToUsdtPair ||
-                              project.meta.creatorResult.canMintFromDeadViaTransferFrom ||
-                              project.meta.creatorResult.canMintFromZeroViaTransferFrom ||
-                              project.meta.creatorResult.canMintFromWethPairViaTransferFrom ||
-                              project.meta.creatorResult.canMintFromUsdtPairViaTransferFrom;
-                          return <span className={`project-details__badge project-details__badge--${hasRisk ? 'negative' : 'positive'}`}>{hasRisk ? 'Yes' : 'No'}</span>;
-                      })()
-                    : '-'}
+                <span className={`project-details__badge project-details__badge--${project.hasMintRisk ? 'negative' : 'positive'}`}>{project.hasMintRisk ? 'Yes' : 'No'}</span>
             </div>
             <div className='projects-list__cell'>
-                <span className={`project-details__badge project-details__badge--${isOpenSource(project) ? 'positive' : 'negative'}`}>{isOpenSource(project) ? 'Yes' : 'No'}</span>
+                <span className={`project-details__badge project-details__badge--${project.isOpenSource ? 'positive' : 'negative'}`}>{project.isOpenSource ? 'Yes' : 'No'}</span>
             </div>
             <div className='projects-list__cell'>
-                <PairMetricsCell
-                    quoteValue={project.chainState?.wethPair?.quoteUsdtValue}
-                    removeLiquidity={project.chainState?.wethPair?.isRemoveLiquidity}
-                    usdtDecimals={usdtDecimals}
-                />
+                <PairMetricsCell quoteValue={project.wethPairQuoteUsdtValue} removeLiquidity={project.wethPairRemoveLiquidity} usdtDecimals={usdtDecimals} />
             </div>
             <div className='projects-list__cell'>
-                <PairMetricsCell
-                    quoteValue={project.chainState?.usdtPair?.quoteUsdtValue}
-                    removeLiquidity={project.chainState?.usdtPair?.isRemoveLiquidity}
-                    usdtDecimals={usdtDecimals}
-                />
+                <PairMetricsCell quoteValue={project.usdtPairQuoteUsdtValue} removeLiquidity={project.usdtPairRemoveLiquidity} usdtDecimals={usdtDecimals} />
             </div>
-            <div className='projects-list__cell'>{formatUsdtValue(project.chainState?.assetState?.usdtValue, usdtDecimals)}</div>
+            <div className='projects-list__cell'>{formatUsdtValue(project.creatorAssetUsdtValue, usdtDecimals)}</div>
             <div className='projects-list__cell projects-list__cell--block-time'>
                 {blockTime ? (
                     <>

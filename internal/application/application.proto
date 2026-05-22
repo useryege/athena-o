@@ -17,7 +17,7 @@ message ListProjectsRequest {
 
 // ListProjectsResponse returns the current known project snapshot.
 message ListProjectsResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView items = 1;
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectListItem items = 1;
   int64 total = 2;
   int32 page = 3;
   int32 pageSize = 4;

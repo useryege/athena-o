@@ -5,6 +5,24 @@ export interface ProjectView {
     chainState?: ProjectChainState;
 }
 
+export interface ProjectListItem {
+    contract?: string;
+    name?: string;
+    symbol?: string;
+    isArchived?: boolean;
+    hasSourceCodeBlacklist?: boolean;
+    hasMintRisk?: boolean;
+    isOpenSource?: boolean;
+    wethPairQuoteUsdtValue?: string;
+    wethPairRemoveLiquidity?: boolean;
+    usdtPairQuoteUsdtValue?: string;
+    usdtPairRemoveLiquidity?: boolean;
+    creatorAssetUsdtValue?: string;
+    blockTime?: number;
+    blockNumber?: number;
+    txIndex?: number;
+}
+
 export interface ProjectMeta {
     blockTime?: number;
     blockNumber?: number;
@@ -78,7 +96,7 @@ export interface GenesisWalletAssetState {
 }
 
 export interface ListProjectsResponse {
-    items?: ProjectView[];
+    items?: ProjectListItem[];
     total?: number;
     page?: number;
     pageSize?: number;
@@ -235,7 +253,7 @@ export class AthenaApplicationService {
         scope: ProjectScope = PROJECT_SCOPE.ACTIVE,
         page = 1,
         pageSize = 20
-    ): Promise<{items: ProjectView[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
+    ): Promise<{items: ProjectListItem[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
         const req = requests.get('/projects').query({scope, page, pageSize});
         const promise = req.then(res => {
             const body = (res.body || {}) as ListProjectsResponse;

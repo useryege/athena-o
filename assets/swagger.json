@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-327-g670afc0-dirty"
+    "version": "v1.0.0-330-g4bb6bad-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1414,7 +1414,7 @@
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1ProjectView"
+            "$ref": "#/definitions/v1alpha1ProjectListItem"
           }
         },
         "page": {
@@ -2054,6 +2054,59 @@
         },
         "wethPair": {
           "$ref": "#/definitions/v1alpha1PairV2State"
+        }
+      }
+    },
+    "v1alpha1ProjectListItem": {
+      "type": "object",
+      "properties": {
+        "blockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "blockTime": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "contract": {
+          "type": "string"
+        },
+        "creatorAssetUsdtValue": {
+          "type": "string"
+        },
+        "hasMintRisk": {
+          "type": "boolean"
+        },
+        "hasSourceCodeBlacklist": {
+          "type": "boolean"
+        },
+        "isArchived": {
+          "type": "boolean"
+        },
+        "isOpenSource": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "txIndex": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "usdtPairQuoteUsdtValue": {
+          "type": "string"
+        },
+        "usdtPairRemoveLiquidity": {
+          "type": "boolean"
+        },
+        "wethPairQuoteUsdtValue": {
+          "type": "string"
+        },
+        "wethPairRemoveLiquidity": {
+          "type": "boolean"
         }
       }
     },

@@ -80,6 +80,38 @@ message ProjectChainState {
   repeated GenesisWalletAssetState genesisWalletAssetStates = 5;
 }
 
+message ProjectListItem {
+  optional string contract = 1;
+
+  optional string name = 2;
+
+  optional string symbol = 3;
+
+  optional bool isArchived = 4;
+
+  optional bool hasSourceCodeBlacklist = 5;
+
+  optional bool hasMintRisk = 6;
+
+  optional bool isOpenSource = 7;
+
+  optional string wethPairQuoteUsdtValue = 8;
+
+  optional bool wethPairRemoveLiquidity = 9;
+
+  optional string usdtPairQuoteUsdtValue = 10;
+
+  optional bool usdtPairRemoveLiquidity = 11;
+
+  optional string creatorAssetUsdtValue = 12;
+
+  optional uint64 blockTime = 13;
+
+  optional uint64 blockNumber = 14;
+
+  optional uint64 txIndex = 15;
+}
+
 message ProjectMeta {
   optional uint64 blockTime = 2;
 

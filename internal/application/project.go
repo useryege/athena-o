@@ -53,8 +53,30 @@ func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.Proje
 	return projectToViewWithOptions(project, includeGenesisWallets, true)
 }
 
-func projectToListView(project *Project) *v1alpha1.ProjectView {
-	return projectToViewWithOptions(project, false, false)
+func projectToListItem(project *Project) *v1alpha1.ProjectListItem {
+	if project == nil {
+		return nil
+	}
+
+	chainState := project.Runtime.ChainState
+	creatorResult := project.Runtime.CreatorResult
+	return &v1alpha1.ProjectListItem{
+		Contract:                project.Meta.Contract.String(),
+		Name:                    chainState.Token.Name,
+		Symbol:                  chainState.Token.Symbol,
+		IsArchived:              project.Meta.IsArchived,
+		HasSourceCodeBlacklist:  project.Runtime.SourceCodeBlacklist.HasBlacklistFields,
+		HasMintRisk:             hasMintRisk(creatorResult),
+		IsOpenSource:            strings.TrimSpace(project.Meta.SourceCode) != "",
+		WethPairQuoteUsdtValue:  bigIntToString(chainState.WethPair.QuoteUsdtValue),
+		WethPairRemoveLiquidity: chainState.WethPair.IsRemoveLiquidity,
+		UsdtPairQuoteUsdtValue:  bigIntToString(chainState.UsdtPair.QuoteUsdtValue),
+		UsdtPairRemoveLiquidity: chainState.UsdtPair.IsRemoveLiquidity,
+		CreatorAssetUsdtValue:   bigIntToString(chainState.AssetState.UsdtValue),
+		BlockTime:               project.Meta.BlockTime,
+		BlockNumber:             project.Meta.BlockNumber,
+		TxIndex:                 project.Meta.TxIndex,
+	}
 }
 
 func projectToViewWithOptions(project *Project, includeGenesisWallets bool, includeDetailFields bool) *v1alpha1.ProjectView {
@@ -164,6 +186,15 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 			GenesisWalletAssetStates: genesisWalletAssetStates,
 		},
 	}
+}
+
+func hasMintRisk(result SimulateResult) bool {
+	return result.CanMintViaTransferToWethPair ||
+		result.CanMintViaTransferToUsdtPair ||
+		result.CanMintFromDeadViaTransferFrom ||
+		result.CanMintFromZeroViaTransferFrom ||
+		result.CanMintFromWethPairViaTransferFrom ||
+		result.CanMintFromUsdtPairViaTransferFrom
 }
 
 func pairToView(pair athenacontract.AthenaPair) v1alpha1.PairV2State {

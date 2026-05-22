@@ -41,13 +41,13 @@ func (s *Server) ListProjects(ctx context.Context, req *applicationpkg.ListProje
 
 	if req.GetScope() == v1.ProjectScope_PROJECT_SCOPE_UNSPECIFIED || req.GetScope() == v1.ProjectScope_PROJECT_SCOPE_ACTIVE {
 		sort.SliceStable(resp.Items, func(i, j int) bool {
-			if resp.Items[i].Meta.BlockNumber != resp.Items[j].Meta.BlockNumber {
-				return resp.Items[i].Meta.BlockNumber < resp.Items[j].Meta.BlockNumber
+			if resp.Items[i].BlockNumber != resp.Items[j].BlockNumber {
+				return resp.Items[i].BlockNumber < resp.Items[j].BlockNumber
 			}
-			if resp.Items[i].Meta.TxIndex != resp.Items[j].Meta.TxIndex {
-				return resp.Items[i].Meta.TxIndex > resp.Items[j].Meta.TxIndex
+			if resp.Items[i].TxIndex != resp.Items[j].TxIndex {
+				return resp.Items[i].TxIndex > resp.Items[j].TxIndex
 			}
-			return resp.Items[i].Meta.Contract > resp.Items[j].Meta.Contract
+			return resp.Items[i].Contract > resp.Items[j].Contract
 		})
 	}
 

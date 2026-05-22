@@ -10,6 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redis/go-redis/v9"
 	"github.com/useryege/athena/internal/application/redisport"
+	"github.com/useryege/athena/internal/application/sourcecode"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 func TestRedisProjectSnapshotCacheListActiveProjectsPage(t *testing.T) {
@@ -74,26 +76,63 @@ func mustParseTimeForTest(t *testing.T, value string) time.Time {
 	return parsed
 }
 
-func TestProjectListViewOmitsDetailOnlyFields(t *testing.T) {
+func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	project := &Project{Meta: ProjectMeta{
 		Contract:                common.BigToAddress(big.NewInt(1)),
+		BlockTime:               100,
+		BlockNumber:             200,
+		TxIndex:                 3,
+		IsArchived:              true,
 		SourceCode:              "contract Source {}",
 		SourceQualityReport:     "## Report",
 		SourceQualityReportedAt: mustParseTimeForTest(t, "2026-05-22T00:00:00Z"),
+	}, Runtime: ProjectRuntime{
+		ChainState: athenacontract.AthenaProject{
+			Token: athenacontract.AthenaToken{
+				Name:   "Token",
+				Symbol: "TKN",
+			},
+			WethPair: athenacontract.AthenaPair{
+				QuoteUsdtValue:    big.NewInt(123),
+				IsRemoveLiquidity: true,
+			},
+			UsdtPair: athenacontract.AthenaPair{
+				QuoteUsdtValue: big.NewInt(456),
+			},
+			AssetState: athenacontract.AthenaAssetState{
+				UsdtValue: big.NewInt(789),
+			},
+		},
+		CreatorResult: SimulateResult{
+			CanMintFromZeroViaTransferFrom: true,
+		},
+		SourceCodeBlacklist: sourcecode.BlacklistReport{
+			HasBlacklistFields: true,
+		},
 	}}
 
-	listView := projectToListView(project)
-	if listView.Meta.SourceCode != "" {
-		t.Fatalf("list sourceCode = %q, want empty", listView.Meta.SourceCode)
+	listItem := projectToListItem(project)
+	if listItem.Contract != project.Meta.Contract.String() {
+		t.Fatalf("list contract = %q, want %q", listItem.Contract, project.Meta.Contract.String())
 	}
-	if listView.Meta.SourceQualityReport != "" {
-		t.Fatalf("list sourceQualityReport = %q, want empty", listView.Meta.SourceQualityReport)
+	if listItem.Name != "Token" || listItem.Symbol != "TKN" {
+		t.Fatalf("list token = %q/%q, want Token/TKN", listItem.Name, listItem.Symbol)
 	}
-	if listView.Meta.SourceQualityReportedAt != "" {
-		t.Fatalf("list sourceQualityReportedAt = %q, want empty", listView.Meta.SourceQualityReportedAt)
+	if !listItem.IsArchived || !listItem.IsOpenSource || !listItem.HasSourceCodeBlacklist || !listItem.HasMintRisk {
+		t.Fatalf("list booleans = archived %t openSource %t blacklist %t mintRisk %t, want all true",
+			listItem.IsArchived, listItem.IsOpenSource, listItem.HasSourceCodeBlacklist, listItem.HasMintRisk)
 	}
-	if !listView.Meta.IsOpenSource {
-		t.Fatal("list isOpenSource = false, want true")
+	if listItem.WethPairQuoteUsdtValue != "123" || !listItem.WethPairRemoveLiquidity {
+		t.Fatalf("list WETH pair = %q/%t, want 123/true", listItem.WethPairQuoteUsdtValue, listItem.WethPairRemoveLiquidity)
+	}
+	if listItem.UsdtPairQuoteUsdtValue != "456" || listItem.UsdtPairRemoveLiquidity {
+		t.Fatalf("list USDT pair = %q/%t, want 456/false", listItem.UsdtPairQuoteUsdtValue, listItem.UsdtPairRemoveLiquidity)
+	}
+	if listItem.CreatorAssetUsdtValue != "789" {
+		t.Fatalf("list creator asset = %q, want 789", listItem.CreatorAssetUsdtValue)
+	}
+	if listItem.BlockTime != 100 || listItem.BlockNumber != 200 || listItem.TxIndex != 3 {
+		t.Fatalf("list chain position = %d/%d/%d, want 100/200/3", listItem.BlockTime, listItem.BlockNumber, listItem.TxIndex)
 	}
 
 	detailView := projectToView(project, true)

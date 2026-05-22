@@ -5,6 +5,24 @@ type ProjectView struct {
 	ChainState ProjectChainState `protobuf:"bytes,2,opt,name=chainState" json:"chainState"`
 }
 
+type ProjectListItem struct {
+	Contract                string `protobuf:"bytes,1,opt,name=contract" json:"contract"`
+	Name                    string `protobuf:"bytes,2,opt,name=name" json:"name"`
+	Symbol                  string `protobuf:"bytes,3,opt,name=symbol" json:"symbol"`
+	IsArchived              bool   `protobuf:"varint,4,opt,name=isArchived" json:"isArchived"`
+	HasSourceCodeBlacklist  bool   `protobuf:"varint,5,opt,name=hasSourceCodeBlacklist" json:"hasSourceCodeBlacklist"`
+	HasMintRisk             bool   `protobuf:"varint,6,opt,name=hasMintRisk" json:"hasMintRisk"`
+	IsOpenSource            bool   `protobuf:"varint,7,opt,name=isOpenSource" json:"isOpenSource"`
+	WethPairQuoteUsdtValue  string `protobuf:"bytes,8,opt,name=wethPairQuoteUsdtValue" json:"wethPairQuoteUsdtValue"`
+	WethPairRemoveLiquidity bool   `protobuf:"varint,9,opt,name=wethPairRemoveLiquidity" json:"wethPairRemoveLiquidity"`
+	UsdtPairQuoteUsdtValue  string `protobuf:"bytes,10,opt,name=usdtPairQuoteUsdtValue" json:"usdtPairQuoteUsdtValue"`
+	UsdtPairRemoveLiquidity bool   `protobuf:"varint,11,opt,name=usdtPairRemoveLiquidity" json:"usdtPairRemoveLiquidity"`
+	CreatorAssetUsdtValue   string `protobuf:"bytes,12,opt,name=creatorAssetUsdtValue" json:"creatorAssetUsdtValue"`
+	BlockTime               uint64 `protobuf:"varint,13,opt,name=blockTime" json:"blockTime"`
+	BlockNumber             uint64 `protobuf:"varint,14,opt,name=blockNumber" json:"blockNumber"`
+	TxIndex                 uint64 `protobuf:"varint,15,opt,name=txIndex" json:"txIndex"`
+}
+
 type ProjectMeta struct {
 	BlockTime                    uint64                   `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
 	BlockNumber                  uint64                   `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`

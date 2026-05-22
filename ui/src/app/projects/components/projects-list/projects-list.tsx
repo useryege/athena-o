@@ -2,7 +2,7 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {history} from '../../../app';
 import {services} from '../../../shared/services';
-import {PROJECT_SCOPE, ProjectOptions, ProjectScope, ProjectView} from '../../../shared/services/athena-application-service';
+import {PROJECT_SCOPE, ProjectListItem, ProjectOptions, ProjectScope} from '../../../shared/services/athena-application-service';
 import {ProjectListRow} from '../project-list-row/project-list-row';
 import {buildProjectsListSearch, parseProjectsListSearch} from './projects-list-query';
 
@@ -14,7 +14,7 @@ const ACTIVE_SCOPE = PROJECT_SCOPE.ACTIVE;
 const ARCHIVED_SCOPE = PROJECT_SCOPE.ARCHIVED;
 
 interface ProjectsListCacheEntry {
-    projects: ProjectView[];
+    projects: ProjectListItem[];
     scope: ProjectScope;
     page: number;
     total: number;
@@ -30,12 +30,12 @@ const isAbortedError = (err: unknown) =>
         .toLowerCase()
         .includes('abort');
 
-const getProjectRowKey = (project: ProjectView, index: number) => {
-    if (project.meta?.contract) {
-        return project.meta.contract;
+const getProjectRowKey = (project: ProjectListItem, index: number) => {
+    if (project.contract) {
+        return project.contract;
     }
-    if (project.meta?.blockNumber !== undefined && project.meta?.txIndex !== undefined) {
-        return `${project.meta.blockNumber}-${project.meta.txIndex}`;
+    if (project.blockNumber !== undefined && project.txIndex !== undefined) {
+        return `${project.blockNumber}-${project.txIndex}`;
     }
     return `project-${index}`;
 };
@@ -46,7 +46,7 @@ export const ProjectsList = () => {
         () => projectsListCache.get(buildProjectsListSearch(initialQueryState.page, initialQueryState.scope)),
         [initialQueryState.page, initialQueryState.scope]
     );
-    const [projects, setProjects] = React.useState<ProjectView[]>(initialCache?.projects || []);
+    const [projects, setProjects] = React.useState<ProjectListItem[]>(initialCache?.projects || []);
     const [scope, setScope] = React.useState<ProjectScope>(initialCache?.scope || initialQueryState.scope);
     const [loading, setLoading] = React.useState(!initialCache);
     const [refreshing, setRefreshing] = React.useState(false);
@@ -272,7 +272,7 @@ export const ProjectsList = () => {
                                     <div className='projects-list__row'>
                                         <div>#</div>
                                         <div>Name</div>
-                                        <div>Symbol</div>
+                                        <div>Contract</div>
                                         <div>Status</div>
                                         <div>Blacklist</div>
                                         <div>Mint Risk</div>
@@ -298,8 +298,8 @@ export const ProjectsList = () => {
                                             usdtDecimals={projectOptions?.usdtDecimals}
                                             defaultIsArchived={scope === ARCHIVED_SCOPE}
                                             to={
-                                                project.meta?.contract
-                                                    ? `/projects/${project.meta.contract}${buildProjectsListSearch(currentPageRef.current, currentScopeRef.current)}`
+                                                project.contract
+                                                    ? `/projects/${project.contract}${buildProjectsListSearch(currentPageRef.current, currentScopeRef.current)}`
                                                     : undefined
                                             }
                                         />
