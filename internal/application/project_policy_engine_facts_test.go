@@ -178,7 +178,7 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 	contract := common.HexToAddress("0x0000000000000000000000000000000000000201")
 	creator := common.HexToAddress("0x0000000000000000000000000000000000000202")
 	genesisWallet := common.HexToAddress("0x0000000000000000000000000000000000000203")
-	runtimeCodeHash := common.HexToHash("0x2020202020202020202020202020202020202020202020202020202020202020")
+	codeBinHash := common.HexToHash("0x2020202020202020202020202020202020202020202020202020202020202020")
 	sourceCode := "contract Source {}"
 	sourceHash := crypto.Keccak256Hash([]byte(sourceCode))
 	project := &Project{
@@ -191,7 +191,7 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 			}},
 		},
 		Runtime: ProjectRuntime{
-			RuntimeCodeHash: runtimeCodeHash,
+			CodeBinHash: codeBinHash,
 			SourceCodeBlacklist: sourcecode.BlacklistReport{
 				HasBlacklistFields: true,
 				BlacklistFields:    []string{"owner"},
@@ -216,7 +216,7 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 
 	if err := engine.evaluateRulesForProject(context.Background(), project, ProjectPolicyFacts{
 		BytecodeBlacklist: map[common.Hash]struct{}{
-			runtimeCodeHash: {},
+			codeBinHash: {},
 		},
 		SourcecodeBlacklist: map[common.Hash]struct{}{
 			sourceHash: {},

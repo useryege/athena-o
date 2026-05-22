@@ -105,7 +105,7 @@ func TestProjectStateReconcilerJobIntervals(t *testing.T) {
 	assertJobInterval(t, intervals, "simulation_refresh_active", activeProjectSimulationRefreshInterval)
 	assertJobInterval(t, intervals, "sourcecode_refresh_active", 10*time.Second)
 	assertJobInterval(t, intervals, "source_quality_refresh_active", sourceCodeRefreshInterval)
-	assertJobInterval(t, intervals, "runtime_code_hash_refresh_active", sourceCodeRefreshInterval)
+	assertJobInterval(t, intervals, "code_bin_hash_refresh_active", sourceCodeRefreshInterval)
 	assertJobInterval(t, intervals, "creator_other_projects_refresh_active", sourceCodeRefreshInterval)
 }
 

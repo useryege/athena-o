@@ -744,14 +744,14 @@ type bytecodeBlacklistRule struct{}
 func (r bytecodeBlacklistRule) Name() string { return "bytecode_blacklist" }
 
 func (r bytecodeBlacklistRule) Evaluate(_ context.Context, project *Project, facts ProjectPolicyFacts) (bool, map[string]any, error) {
-	if project == nil || project.Runtime.RuntimeCodeHash == (common.Hash{}) || len(facts.BytecodeBlacklist) == 0 {
+	if project == nil || project.Runtime.CodeBinHash == (common.Hash{}) || len(facts.BytecodeBlacklist) == 0 {
 		return false, nil, nil
 	}
-	if _, ok := facts.BytecodeBlacklist[project.Runtime.RuntimeCodeHash]; !ok {
+	if _, ok := facts.BytecodeBlacklist[project.Runtime.CodeBinHash]; !ok {
 		return false, nil, nil
 	}
 	return true, map[string]any{
-		"runtime_code_hash": strings.ToLower(project.Runtime.RuntimeCodeHash.Hex()),
+		"code_bin_hash": strings.ToLower(project.Runtime.CodeBinHash.Hex()),
 	}, nil
 }
 

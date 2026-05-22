@@ -19,8 +19,7 @@ type Project struct {
 }
 
 type ProjectReport struct {
-	IsPolicyEvaluated bool
-
+	IsPolicyEvaluated            bool
 	IsBlacklistedCreatorWallet   bool
 	IsBlacklistedGenesisWallet   bool
 	IsBlacklistedBytecode        bool
@@ -46,13 +45,13 @@ type ProjectMeta struct {
 }
 
 type ProjectRuntime struct {
-	GenesisTx                    *types.Transaction
-	ChainState                   athenacontract.AthenaProject
-	CreatorResult                SimulateResult
-	CreatorOtherProjectContracts []common.Address
-	CreatorOtherProjectsResolved bool
-	RuntimeCodeHash              common.Hash
-	SourceCodeBlacklist          sourcecode.BlacklistReport
+	GenesisTx                      *types.Transaction
+	ChainState                     athenacontract.AthenaProject
+	CreatorResult                  SimulateResult
+	CreatorOtherProjectContracts   []common.Address
+	CreatorOtherProjectsResolvedAt time.Time
+	CodeBinHash                    common.Hash
+	SourceCodeBlacklist            sourcecode.BlacklistReport
 }
 
 type GenesisWalletMeta struct {

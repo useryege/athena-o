@@ -124,7 +124,7 @@ func (r *projectStateReconcilerImpl) reconcilerJobs() []reconcilerJob {
 		{name: "simulation_refresh_active", interval: activeProjectSimulationRefreshInterval, run: r.refreshActiveProjectSimulations},
 		{name: "sourcecode_refresh_active", interval: activeProjectSourceCodeRefreshInterval, run: r.refreshActiveProjectSourceCodes},
 		{name: "source_quality_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectSourceQualityReports},
-		{name: "runtime_code_hash_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectRuntimeCodeHashes},
+		{name: "code_bin_hash_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectCodeBinHashes},
 		{name: "creator_other_projects_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectCreatorOtherProjects},
 	}
 }
@@ -320,8 +320,8 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceCodes(ctx context.Conte
 	return nil
 }
 
-func (r *projectStateReconcilerImpl) refreshActiveProjectRuntimeCodeHashes(ctx context.Context) error {
-	return r.refreshProjectRuntimeCodeHashes(ctx, refreshTargetActive)
+func (r *projectStateReconcilerImpl) refreshActiveProjectCodeBinHashes(ctx context.Context) error {
+	return r.refreshProjectCodeBinHashes(ctx, refreshTargetActive)
 }
 
 func (r *projectStateReconcilerImpl) refreshActiveProjectSourceQualityReports(ctx context.Context) error {
@@ -391,7 +391,7 @@ func (r *projectStateReconcilerImpl) refreshProjectCreatorOtherProjects(ctx cont
 	}
 	pendingByCreator := make(map[common.Address][]*Project)
 	for _, project := range projects {
-		if project == nil || project.Meta.Contract == (common.Address{}) || project.Meta.Creator == (common.Address{}) || project.Runtime.CreatorOtherProjectsResolved {
+		if project == nil || project.Meta.Contract == (common.Address{}) || project.Meta.Creator == (common.Address{}) || !project.Runtime.CreatorOtherProjectsResolvedAt.IsZero() {
 			continue
 		}
 		creator := project.Meta.Creator
@@ -430,12 +430,13 @@ func (r *projectStateReconcilerImpl) refreshProjectCreatorOtherProjects(ctx cont
 
 		for _, project := range creatorProjects {
 			otherContracts := excludeProjectContract(allContracts, project.Meta.Contract)
+			resolvedAt := time.Now().UTC()
 			changed, updateErr := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-				if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Runtime.CreatorOtherProjectsResolved {
+				if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || !current.Runtime.CreatorOtherProjectsResolvedAt.IsZero() {
 					return nil, false, nil
 				}
 				current.Runtime.CreatorOtherProjectContracts = cloneAddressSlice(otherContracts)
-				current.Runtime.CreatorOtherProjectsResolved = true
+				current.Runtime.CreatorOtherProjectsResolvedAt = resolvedAt
 				return current, true, nil
 			})
 			if updateErr != nil {
@@ -449,7 +450,7 @@ func (r *projectStateReconcilerImpl) refreshProjectCreatorOtherProjects(ctx cont
 	return nil
 }
 
-func (r *projectStateReconcilerImpl) refreshProjectRuntimeCodeHashes(ctx context.Context, target refreshTarget) error {
+func (r *projectStateReconcilerImpl) refreshProjectCodeBinHashes(ctx context.Context, target refreshTarget) error {
 	projects, err := r.listProjectsByTarget(ctx, target)
 	if err != nil {
 		return err
@@ -458,26 +459,26 @@ func (r *projectStateReconcilerImpl) refreshProjectRuntimeCodeHashes(ctx context
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if project == nil || project.Runtime.RuntimeCodeHash != (common.Hash{}) {
+		if project == nil || project.Runtime.CodeBinHash != (common.Hash{}) {
 			continue
 		}
 		code, err := r.fetchContractBytecode(ctx, project.Meta.Contract)
 		if err != nil || len(code) == 0 {
 			continue
 		}
-		codeHash := crypto.Keccak256Hash(code)
+		codeBinHash := crypto.Keccak256Hash(code)
 		changed, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Runtime.RuntimeCodeHash != (common.Hash{}) {
+			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Runtime.CodeBinHash != (common.Hash{}) {
 				return nil, false, nil
 			}
-			current.Runtime.RuntimeCodeHash = codeHash
+			current.Runtime.CodeBinHash = codeBinHash
 			return current, true, nil
 		})
 		if err != nil {
 			continue
 		}
 		if changed {
-			r.triggerPolicyEvaluation(project.Meta.Contract, "refresh_project_runtime_code_hash")
+			r.triggerPolicyEvaluation(project.Meta.Contract, "refresh_project_code_bin_hash")
 		}
 	}
 	return nil
