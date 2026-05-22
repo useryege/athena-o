@@ -2,6 +2,7 @@ package application
 
 import (
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -49,6 +50,14 @@ type GenesisWalletMeta struct {
 }
 
 func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.ProjectView {
+	return projectToViewWithOptions(project, includeGenesisWallets, true)
+}
+
+func projectToListView(project *Project) *v1alpha1.ProjectView {
+	return projectToViewWithOptions(project, false, false)
+}
+
+func projectToViewWithOptions(project *Project, includeGenesisWallets bool, includeDetailFields bool) *v1alpha1.ProjectView {
 	if project == nil {
 		return nil
 	}
@@ -61,7 +70,14 @@ func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.Proje
 	}
 
 	chainState := project.Runtime.ChainState
-	sourceCode := project.Meta.SourceCode
+	sourceCode := ""
+	sourceQualityReport := ""
+	sourceQualityReportedAt := ""
+	if includeDetailFields {
+		sourceCode = project.Meta.SourceCode
+		sourceQualityReport = project.Meta.SourceQualityReport
+		sourceQualityReportedAt = formatOptionalTime(project.Meta.SourceQualityReportedAt)
+	}
 	creatorResult := project.Runtime.CreatorResult
 	creatorOtherProjectContracts := make([]string, 0, len(project.Runtime.CreatorOtherProjectContracts))
 	for _, contract := range project.Runtime.CreatorOtherProjectContracts {
@@ -124,8 +140,9 @@ func projectToView(project *Project, includeGenesisWallets bool) *v1alpha1.Proje
 			IsArchived:                   project.Meta.IsArchived,
 			GenesisWallets:               genesisWallets,
 			CreatorOtherProjectContracts: creatorOtherProjectContracts,
-			SourceQualityReport:          project.Meta.SourceQualityReport,
-			SourceQualityReportedAt:      formatOptionalTime(project.Meta.SourceQualityReportedAt),
+			SourceQualityReport:          sourceQualityReport,
+			SourceQualityReportedAt:      sourceQualityReportedAt,
+			IsOpenSource:                 strings.TrimSpace(project.Meta.SourceCode) != "",
 		},
 		ChainState: v1alpha1.ProjectChainState{
 			Token: v1alpha1.TokenState{

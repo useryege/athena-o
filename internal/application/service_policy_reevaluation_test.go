@@ -87,6 +87,15 @@ func (c *policyReevaluationProjectCache) ListActiveProjects(context.Context) ([]
 	return projects, nil
 }
 
+func (c *policyReevaluationProjectCache) ListActiveProjectsPage(_ context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
+	projects, err := c.ListActiveProjects(context.Background())
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+	total, page, pageSize := paginateActiveProjects(page, pageSize, &projects)
+	return projects, total, page, pageSize, nil
+}
+
 func (c *policyReevaluationProjectCache) ListArchivedProjects(_ context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
 	page, pageSize = normalizeCachePage(page, pageSize)
 	total := int64(len(c.archived))

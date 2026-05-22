@@ -142,6 +142,10 @@ func (c *bootstrapProjectCacheFake) ListActiveProjects(context.Context) ([]*Proj
 	return nil, nil
 }
 
+func (c *bootstrapProjectCacheFake) ListActiveProjectsPage(context.Context, int32, int32) ([]*Project, int64, int32, int32, error) {
+	return nil, 0, 1, 1, nil
+}
+
 func (c *bootstrapProjectCacheFake) ListArchivedProjects(context.Context, int32, int32) ([]*Project, int64, int32, int32, error) {
 	return nil, 0, 1, 1, nil
 }

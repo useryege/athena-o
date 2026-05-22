@@ -1257,12 +1257,11 @@ func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProj
 	)
 	switch scope {
 	case v1.ProjectScope_PROJECT_SCOPE_ACTIVE:
-		projects, err = s.projectCache.ListActiveProjects(ctx)
+		projects, total, page, pageSize, err = s.projectCache.ListActiveProjectsPage(ctx, req.GetPage(), req.GetPageSize())
 		projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
 		if err != nil {
 			return nil, err
 		}
-		total, page, pageSize = paginateActiveProjects(req.GetPage(), req.GetPageSize(), &projects)
 	case v1.ProjectScope_PROJECT_SCOPE_ARCHIVED:
 		projects, total, page, pageSize, err = s.projectCache.ListArchivedProjects(ctx, req.GetPage(), req.GetPageSize())
 		projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
@@ -1275,7 +1274,7 @@ func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProj
 
 	items := make([]*v1alpha1.ProjectView, 0, len(projects))
 	for _, project := range projects {
-		items = append(items, projectToView(project, false))
+		items = append(items, projectToListView(project))
 	}
 
 	return &applicationpkg.ListProjectsResponse{

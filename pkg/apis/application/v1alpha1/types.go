@@ -20,6 +20,7 @@ type ProjectMeta struct {
 	CreatorOtherProjectContracts []string                 `protobuf:"bytes,13,rep,name=creatorOtherProjectContracts" json:"creatorOtherProjectContracts"`
 	SourceQualityReport          string                   `protobuf:"bytes,14,opt,name=sourceQualityReport" json:"sourceQualityReport"`
 	SourceQualityReportedAt      string                   `protobuf:"bytes,15,opt,name=sourceQualityReportedAt" json:"sourceQualityReportedAt"`
+	IsOpenSource                 bool                     `protobuf:"varint,16,opt,name=isOpenSource" json:"isOpenSource"`
 }
 
 type GenesisWalletState struct {

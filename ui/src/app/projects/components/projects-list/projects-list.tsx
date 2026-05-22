@@ -13,6 +13,16 @@ const PAGE_SIZE = 10;
 const ACTIVE_SCOPE = PROJECT_SCOPE.ACTIVE;
 const ARCHIVED_SCOPE = PROJECT_SCOPE.ARCHIVED;
 
+interface ProjectsListCacheEntry {
+    projects: ProjectView[];
+    scope: ProjectScope;
+    page: number;
+    total: number;
+    lastUpdatedAt: Date | null;
+}
+
+const projectsListCache = new Map<string, ProjectsListCacheEntry>();
+
 const renderLastUpdatedAt = (value: Date | null) => (value ? value.toLocaleTimeString() : 'Never');
 const renderScopeLabel = (scope: ProjectScope) => (scope === ARCHIVED_SCOPE ? 'Archived' : 'Active');
 const isAbortedError = (err: unknown) =>
@@ -32,14 +42,18 @@ const getProjectRowKey = (project: ProjectView, index: number) => {
 
 export const ProjectsList = () => {
     const initialQueryState = React.useMemo(() => parseProjectsListSearch(history.location.search), []);
-    const [projects, setProjects] = React.useState<ProjectView[]>([]);
-    const [scope, setScope] = React.useState<ProjectScope>(initialQueryState.scope);
-    const [loading, setLoading] = React.useState(true);
+    const initialCache = React.useMemo(
+        () => projectsListCache.get(buildProjectsListSearch(initialQueryState.page, initialQueryState.scope)),
+        [initialQueryState.page, initialQueryState.scope]
+    );
+    const [projects, setProjects] = React.useState<ProjectView[]>(initialCache?.projects || []);
+    const [scope, setScope] = React.useState<ProjectScope>(initialCache?.scope || initialQueryState.scope);
+    const [loading, setLoading] = React.useState(!initialCache);
     const [refreshing, setRefreshing] = React.useState(false);
     const [autoRefresh, setAutoRefresh] = React.useState(false);
-    const [page, setPage] = React.useState(initialQueryState.page);
-    const [total, setTotal] = React.useState(0);
-    const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
+    const [page, setPage] = React.useState(initialCache?.page || initialQueryState.page);
+    const [total, setTotal] = React.useState(initialCache?.total || 0);
+    const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(initialCache?.lastUpdatedAt || null);
     const [error, setError] = React.useState<Error | null>(null);
     const [projectOptions, setProjectOptions] = React.useState<ProjectOptions | null>(null);
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
@@ -110,6 +124,7 @@ export const ProjectsList = () => {
                 requestRef.current = req;
                 const data = await req;
                 if (isMountedRef.current) {
+                    const updatedAt = new Date();
                     setProjects(data.items);
                     setTotal(data.total);
                     setPage(data.page);
@@ -119,8 +134,15 @@ export const ProjectsList = () => {
                     if (syncSearch) {
                         syncUrlState(data.page, scopeToLoad);
                     }
-                    setLastUpdatedAt(new Date());
+                    setLastUpdatedAt(updatedAt);
                     setError(null);
+                    projectsListCache.set(buildProjectsListSearch(data.page, scopeToLoad), {
+                        projects: data.items,
+                        total: data.total,
+                        page: data.page,
+                        scope: scopeToLoad,
+                        lastUpdatedAt: updatedAt
+                    });
                 }
             } catch (err) {
                 if (isMountedRef.current) {

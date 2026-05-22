@@ -20,6 +20,7 @@ export interface ProjectMeta {
     creatorOtherProjectContracts?: string[];
     sourceQualityReport?: string;
     sourceQualityReportedAt?: string;
+    isOpenSource?: boolean;
 }
 
 export interface GenesisWalletState {
@@ -154,6 +155,11 @@ export const PROJECT_SCOPE = {
 } as const;
 
 export type ProjectScope = (typeof PROJECT_SCOPE)[keyof typeof PROJECT_SCOPE];
+
+let cachedProjectOptions: ProjectOptions | undefined;
+let projectOptionsRequest: (Promise<ProjectOptions | undefined> & {abort?: () => void}) | null = null;
+let cachedBytecodeBlacklistContracts: BytecodeBlacklistContract[] | undefined;
+let bytecodeBlacklistContractsRequest: (Promise<BytecodeBlacklistContract[]> & {abort?: () => void}) | null = null;
 
 export interface SourceCodeBlacklistField {
     id?: number;
@@ -312,22 +318,45 @@ export class AthenaApplicationService {
     }
 
     public getProjectOptions(): Promise<ProjectOptions | undefined> & {abort?: () => void} {
+        if (cachedProjectOptions) {
+            const promise = Promise.resolve(cachedProjectOptions) as Promise<ProjectOptions | undefined> & {abort?: () => void};
+            promise.abort = () => {};
+            return promise;
+        }
+        if (projectOptionsRequest) {
+            const promise = projectOptionsRequest as Promise<ProjectOptions | undefined> & {abort?: () => void};
+            promise.abort = () => {};
+            return promise;
+        }
         const req = requests.get('/project-options');
-        const promise = req.then(res => {
-            const body = (res.body || {}) as any;
-            const options = (body.options || body) as any;
-            if (!options || typeof options !== 'object') {
-                return undefined;
-            }
-            return {
-                factoryContract: options.factoryContract ?? options.factory_contract,
-                wethContract: options.wethContract ?? options.weth_contract,
-                usdtContract: options.usdtContract ?? options.usdt_contract,
-                wethDecimals: typeof options.wethDecimals === 'number' ? options.wethDecimals : typeof options.weth_decimals === 'number' ? options.weth_decimals : undefined,
-                usdtDecimals: typeof options.usdtDecimals === 'number' ? options.usdtDecimals : typeof options.usdt_decimals === 'number' ? options.usdt_decimals : undefined
-            } as ProjectOptions;
-        }) as any;
-        promise.abort = () => req.abort();
+        const promise = req
+            .then(res => {
+                const body = (res.body || {}) as any;
+                const options = (body.options || body) as any;
+                if (!options || typeof options !== 'object') {
+                    return undefined;
+                }
+                return {
+                    factoryContract: options.factoryContract ?? options.factory_contract,
+                    wethContract: options.wethContract ?? options.weth_contract,
+                    usdtContract: options.usdtContract ?? options.usdt_contract,
+                    wethDecimals: typeof options.wethDecimals === 'number' ? options.wethDecimals : typeof options.weth_decimals === 'number' ? options.weth_decimals : undefined,
+                    usdtDecimals: typeof options.usdtDecimals === 'number' ? options.usdtDecimals : typeof options.usdt_decimals === 'number' ? options.usdt_decimals : undefined
+                } as ProjectOptions;
+            })
+            .then(
+                options => {
+                    cachedProjectOptions = options;
+                    projectOptionsRequest = null;
+                    return options;
+                },
+                err => {
+                    projectOptionsRequest = null;
+                    throw err;
+                }
+            ) as any;
+        promise.abort = () => {};
+        projectOptionsRequest = promise;
         return promise;
     }
 
@@ -353,54 +382,89 @@ export class AthenaApplicationService {
     }
 
     public listBytecodeBlacklistContracts(): Promise<BytecodeBlacklistContract[]> & {abort?: () => void} {
+        if (cachedBytecodeBlacklistContracts) {
+            const promise = Promise.resolve(cachedBytecodeBlacklistContracts) as Promise<BytecodeBlacklistContract[]> & {abort?: () => void};
+            promise.abort = () => {};
+            return promise;
+        }
+        if (bytecodeBlacklistContractsRequest) {
+            const promise = bytecodeBlacklistContractsRequest as Promise<BytecodeBlacklistContract[]> & {abort?: () => void};
+            promise.abort = () => {};
+            return promise;
+        }
         const req = requests.get('/bytecode/blacklist-contracts');
-        const promise = req.then(res => {
-            const body = (res.body as ListBytecodeBlacklistContractsResponse) || {};
-            const items = body.items || [];
-            return items.map(item => ({
-                contract: item.contract,
-                codeHash: item.codeHash ?? (item as any).code_hash,
-                note: item.note,
-                createdAt: item.createdAt ?? (item as any).created_at
-            }));
-        }) as any;
-        promise.abort = () => req.abort();
+        const promise = req
+            .then(res => {
+                const body = (res.body as ListBytecodeBlacklistContractsResponse) || {};
+                const items = body.items || [];
+                return items.map(item => ({
+                    contract: item.contract,
+                    codeHash: item.codeHash ?? (item as any).code_hash,
+                    note: item.note,
+                    createdAt: item.createdAt ?? (item as any).created_at
+                }));
+            })
+            .then(
+                items => {
+                    cachedBytecodeBlacklistContracts = items;
+                    bytecodeBlacklistContractsRequest = null;
+                    return items;
+                },
+                err => {
+                    bytecodeBlacklistContractsRequest = null;
+                    throw err;
+                }
+            ) as any;
+        promise.abort = () => {};
+        bytecodeBlacklistContractsRequest = promise;
         return promise;
     }
 
     public addBytecodeBlacklistContract(contract: string, note: string): Promise<BytecodeBlacklistContract> & {abort?: () => void} {
         const req = requests.post('/bytecode/blacklist-contracts').send({contract, note});
-        const promise = req.then(res => {
-            const item = ((res.body as AddBytecodeBlacklistContractResponse) || {}).item || {};
-            return {
-                contract: item.contract,
-                codeHash: item.codeHash ?? (item as any).code_hash,
-                note: item.note,
-                createdAt: item.createdAt ?? (item as any).created_at
-            } as BytecodeBlacklistContract;
-        }) as any;
+        const promise = req
+            .then(res => {
+                const item = ((res.body as AddBytecodeBlacklistContractResponse) || {}).item || {};
+                return {
+                    contract: item.contract,
+                    codeHash: item.codeHash ?? (item as any).code_hash,
+                    note: item.note,
+                    createdAt: item.createdAt ?? (item as any).created_at
+                } as BytecodeBlacklistContract;
+            })
+            .then(item => {
+                cachedBytecodeBlacklistContracts = undefined;
+                return item;
+            }) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public updateBytecodeBlacklistContractNote(contract: string, note: string): Promise<BytecodeBlacklistContract> & {abort?: () => void} {
         const req = requests.post(`/bytecode/blacklist-contracts/${encodeURIComponent(contract)}/note`).send({contract, note});
-        const promise = req.then(res => {
-            const item = ((res.body as UpdateBytecodeBlacklistContractNoteResponse) || {}).item || {};
-            return {
-                contract: item.contract,
-                codeHash: item.codeHash ?? (item as any).code_hash,
-                note: item.note,
-                createdAt: item.createdAt ?? (item as any).created_at
-            } as BytecodeBlacklistContract;
-        }) as any;
+        const promise = req
+            .then(res => {
+                const item = ((res.body as UpdateBytecodeBlacklistContractNoteResponse) || {}).item || {};
+                return {
+                    contract: item.contract,
+                    codeHash: item.codeHash ?? (item as any).code_hash,
+                    note: item.note,
+                    createdAt: item.createdAt ?? (item as any).created_at
+                } as BytecodeBlacklistContract;
+            })
+            .then(item => {
+                cachedBytecodeBlacklistContracts = undefined;
+                return item;
+            }) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public deleteBytecodeBlacklistContract(contract: string): Promise<void> & {abort?: () => void} {
         const req = requests.delete(`/bytecode/blacklist-contracts/${encodeURIComponent(contract)}`);
-        const promise = req.then(() => {}) as any;
+        const promise = req.then(() => {
+            cachedBytecodeBlacklistContracts = undefined;
+        }) as any;
         promise.abort = () => req.abort();
         return promise;
     }

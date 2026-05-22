@@ -7,6 +7,9 @@ import {formatUsdtValue, PairMetricsCell} from '../pair-metrics-cell/pair-metric
 const renderValue = (value: string | number | undefined) => (value === undefined || value === '' ? '-' : value);
 
 const isOpenSource = (project: ProjectView) => {
+    if (project.meta?.isOpenSource !== undefined) {
+        return project.meta.isOpenSource;
+    }
     const sourceCode = project.meta?.sourceCode || '';
     return sourceCode.trim().length > 0;
 };

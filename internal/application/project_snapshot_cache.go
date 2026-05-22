@@ -50,6 +50,7 @@ type ProjectSnapshotCache interface {
 	GetProject(ctx context.Context, contract common.Address) (*Project, bool, error)
 	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
 	ListActiveProjects(ctx context.Context) ([]*Project, error)
+	ListActiveProjectsPage(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error)
 	ListArchivedProjects(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error)
 }
 
@@ -232,6 +233,28 @@ func (c *RedisProjectSnapshotCache) ListActiveProjects(ctx context.Context) ([]*
 		return projects[i].Meta.TxIndex < projects[j].Meta.TxIndex
 	})
 	return projects, nil
+}
+
+func (c *RedisProjectSnapshotCache) ListActiveProjectsPage(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
+	if c == nil || c.client == nil {
+		return nil, 0, 0, 0, nil
+	}
+	page, pageSize = normalizeCachePage(page, pageSize)
+	total, err := c.client.ZCard(ctx, projectIndexActive)
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+	start := int64(page-1) * int64(pageSize)
+	stop := start + int64(pageSize) - 1
+	contracts, err := c.client.ZRange(ctx, projectIndexActive, start, stop)
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+	projects, err := c.getProjectsByContracts(ctx, contracts)
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+	return projects, total, page, pageSize, nil
 }
 
 func (c *RedisProjectSnapshotCache) ListArchivedProjects(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {

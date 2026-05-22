@@ -398,7 +398,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const breadcrumbs = [{title: 'Projects', path: `/projects${props.location.search || ''}`}, {title: contract}];
     const isArchived = project?.meta?.isArchived ?? false;
     const sourceCode = project?.meta?.sourceCode || '';
-    const isOpenSource = sourceCode.trim().length > 0;
+    const isOpenSource = project?.meta?.isOpenSource ?? sourceCode.trim().length > 0;
     const sourceQualityReport = project?.meta?.sourceQualityReport || '';
 
     const handleArchiveStateChange = React.useCallback(async () => {

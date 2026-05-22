@@ -358,6 +358,16 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i--
+	if m.IsOpenSource {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x80
 	i -= len(m.SourceQualityReportedAt)
 	copy(dAtA[i:], m.SourceQualityReportedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceQualityReportedAt)))
@@ -861,6 +871,7 @@ func (m *ProjectMeta) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.SourceQualityReportedAt)
 	n += 1 + l + sovGenerated(uint64(l))
+	n += 3
 	return n
 }
 
@@ -1054,6 +1065,7 @@ func (this *ProjectMeta) String() string {
 		`CreatorOtherProjectContracts:` + fmt.Sprintf("%v", this.CreatorOtherProjectContracts) + `,`,
 		`SourceQualityReport:` + fmt.Sprintf("%v", this.SourceQualityReport) + `,`,
 		`SourceQualityReportedAt:` + fmt.Sprintf("%v", this.SourceQualityReportedAt) + `,`,
+		`IsOpenSource:` + fmt.Sprintf("%v", this.IsOpenSource) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -2748,6 +2760,26 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			}
 			m.SourceQualityReportedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsOpenSource", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsOpenSource = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

@@ -108,6 +108,8 @@ message ProjectMeta {
   optional string sourceQualityReport = 14;
 
   optional string sourceQualityReportedAt = 15;
+
+  optional bool isOpenSource = 16;
 }
 
 message ProjectOption {
