@@ -16,7 +16,8 @@ import (
 
 type ApplicationServer struct {
 	ApplicationServerOpts
-	service *Service
+	service       *Service
+	healthService *health.Server
 }
 
 type ApplicationServerOpts struct {
@@ -54,9 +55,12 @@ func NewServer(opts ApplicationServerOpts) (*ApplicationServer, error) {
 	if err != nil {
 		return nil, err
 	}
+	healthService := health.NewServer()
+	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &ApplicationServer{
 		ApplicationServerOpts: opts,
 		service:               service,
+		healthService:         healthService,
 	}, nil
 }
 
@@ -74,8 +78,7 @@ func (a *ApplicationServer) CreateGRPC() *grpc.Server {
 	applicationpkg.RegisterApplicationServiceServer(server, a.service)
 
 	// register the health service to the gRPC server
-	healthService := health.NewServer()
-	grpc_health_v1.RegisterHealthServer(server, healthService)
+	grpc_health_v1.RegisterHealthServer(server, a.healthService)
 	return server
 }
 
@@ -83,12 +86,20 @@ func (a *ApplicationServer) Start() error {
 	if err := a.service.Start(); err != nil {
 		return err
 	}
+	a.setHealthStatus(grpc_health_v1.HealthCheckResponse_SERVING)
 	return nil
 }
 
 func (a *ApplicationServer) Stop() error {
+	a.setHealthStatus(grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	if err := a.service.Stop(); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (a *ApplicationServer) setHealthStatus(status grpc_health_v1.HealthCheckResponse_ServingStatus) {
+	if a.healthService != nil {
+		a.healthService.SetServingStatus("", status)
+	}
 }

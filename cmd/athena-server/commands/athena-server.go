@@ -132,6 +132,9 @@ func NewCommand() *cobra.Command {
 			}
 
 			applicationclientset := applicationapiclient.NewApplicationClientset(applicationServerAddress)
+			log.Infof("waiting for athena application grpc service at %s", applicationServerAddress)
+			errors.CheckError(applicationapiclient.WaitForApplicationService(ctx, applicationServerAddress))
+			log.Infof("athena application grpc service is ready at %s", applicationServerAddress)
 
 			athenaOpts := server.AthenaServerOpts{
 				TLSConfigCustomizer:   tlsConfigCustomizer,
