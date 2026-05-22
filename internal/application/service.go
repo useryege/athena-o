@@ -31,6 +31,7 @@ import (
 const (
 	activeProjectStateRefreshInterval      = 3 * time.Second
 	activeProjectSimulationRefreshInterval = time.Minute
+	activeProjectSourceCodeRefreshInterval = 10 * time.Second
 	archivedProjectRefreshInterval         = 10 * time.Minute
 	sourceCodeRefreshInterval              = time.Minute
 	binBlacklistScanInterval               = time.Minute

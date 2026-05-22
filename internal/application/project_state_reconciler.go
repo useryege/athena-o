@@ -64,18 +64,7 @@ func NewProjectStateReconciler(
 }
 
 func (r *projectStateReconcilerImpl) Start(ctx context.Context) error {
-	jobs := []reconcilerJob{
-		{name: "state_refresh_active", interval: activeProjectStateRefreshInterval, run: r.refreshActiveProjectStates},
-		{name: "state_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectStates},
-		{name: "simulation_refresh_active", interval: activeProjectSimulationRefreshInterval, run: r.refreshActiveProjectSimulations},
-		{name: "simulation_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSimulations},
-		{name: "sourcecode_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectSourceCodes},
-		{name: "sourcecode_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSourceCodes},
-		{name: "runtime_code_hash_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectRuntimeCodeHashes},
-		{name: "runtime_code_hash_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectRuntimeCodeHashes},
-		{name: "creator_other_projects_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectCreatorOtherProjects},
-		{name: "creator_other_projects_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectCreatorOtherProjects},
-	}
+	jobs := r.reconcilerJobs()
 
 	for i := range jobs {
 		job := jobs[i]
@@ -86,6 +75,21 @@ func (r *projectStateReconcilerImpl) Start(ctx context.Context) error {
 		}()
 	}
 	return nil
+}
+
+func (r *projectStateReconcilerImpl) reconcilerJobs() []reconcilerJob {
+	return []reconcilerJob{
+		{name: "state_refresh_active", interval: activeProjectStateRefreshInterval, run: r.refreshActiveProjectStates},
+		{name: "state_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectStates},
+		{name: "simulation_refresh_active", interval: activeProjectSimulationRefreshInterval, run: r.refreshActiveProjectSimulations},
+		{name: "simulation_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSimulations},
+		{name: "sourcecode_refresh_active", interval: activeProjectSourceCodeRefreshInterval, run: r.refreshActiveProjectSourceCodes},
+		{name: "sourcecode_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectSourceCodes},
+		{name: "runtime_code_hash_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectRuntimeCodeHashes},
+		{name: "runtime_code_hash_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectRuntimeCodeHashes},
+		{name: "creator_other_projects_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectCreatorOtherProjects},
+		{name: "creator_other_projects_refresh_archived", interval: archivedProjectRefreshInterval, run: r.refreshArchivedProjectCreatorOtherProjects},
+	}
 }
 
 func (r *projectStateReconcilerImpl) Stop() error {
