@@ -24,7 +24,7 @@ import (
 	erc20contract "github.com/useryege/athena/pkg/abi/ERC20"
 )
 
-const initialProjectSyncLookback = 30 * 24 * time.Hour
+const initialProjectSyncLookback = 15 * 24 * time.Hour
 const defaultBlockHeaderQueueCapacity = 16
 
 var (
