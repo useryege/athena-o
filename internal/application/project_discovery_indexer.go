@@ -321,12 +321,6 @@ func (w *projectDiscoveryIndexerImpl) scanBlockPairSwaps(ctx context.Context, bl
 	if err != nil {
 		return fmt.Errorf("failed to fetch pancake v2 swap logs for block %d: %w", blockNumber, err)
 	}
-	for _, pairAddress := range swapPairAddresses {
-		log.WithFields(log.Fields{
-			"blockNumber": blockNumber,
-			"pairAddress": pairAddress.Hex(),
-		}).Info("pancake v2 swap pair detected")
-	}
 	if err := w.scheduleProjectsBySwapPairs(ctx, blockNumber, swapPairAddresses); err != nil {
 		return err
 	}
