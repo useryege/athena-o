@@ -67,7 +67,6 @@ SELECT
   source_quality_report,
   source_quality_reported_at
 FROM project
-WHERE is_archived = FALSE
 ORDER BY block_number, tx_index, id
 `)
 	if err != nil {
@@ -77,7 +76,7 @@ ORDER BY block_number, tx_index, id
 
 	metas := make([]ProjectMeta, 0)
 	for rows.Next() {
-		meta, err := scanProjectMetaRow(rows, false)
+		meta, err := scanProjectMetaRow(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -90,41 +89,7 @@ ORDER BY block_number, tx_index, id
 }
 
 func (s *SQLStore) ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, error) {
-	rows, err := s.db.QueryContext(ctx, `
-SELECT
-  block_number,
-  block_time,
-  contract,
-  creator,
-  tx_hash,
-  tx_index,
-  source_code,
-  source_code_hash,
-  code_bin_hash,
-  source_quality_report,
-  source_quality_reported_at,
-  is_archived,
-  archived_at
-FROM project
-ORDER BY block_number, tx_index, id
-`)
-	if err != nil {
-		return nil, fmt.Errorf("list all project metas: %w", err)
-	}
-	defer rows.Close()
-
-	metas := make([]ProjectMeta, 0)
-	for rows.Next() {
-		meta, err := scanProjectMetaRow(rows, true)
-		if err != nil {
-			return nil, err
-		}
-		metas = append(metas, meta)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate all project metas: %w", err)
-	}
-	return metas, nil
+	return s.ListProjectMetas(ctx)
 }
 
 func (s *SQLStore) ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error) {
@@ -140,9 +105,7 @@ SELECT
   source_code_hash,
   code_bin_hash,
   source_quality_report,
-  source_quality_reported_at,
-  is_archived,
-  archived_at
+  source_quality_reported_at
 FROM project
 WHERE creator = $1
 ORDER BY block_number, tx_index, id
@@ -154,7 +117,7 @@ ORDER BY block_number, tx_index, id
 
 	metas := make([]ProjectMeta, 0)
 	for rows.Next() {
-		meta, err := scanProjectMetaRow(rows, true)
+		meta, err := scanProjectMetaRow(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -206,107 +169,6 @@ WHERE contract = $1
 	return nil
 }
 
-func (s *SQLStore) ArchiveProjectByContract(ctx context.Context, contract common.Address) error {
-	_, err := s.db.ExecContext(ctx, `
-UPDATE project
-SET is_archived = TRUE, archived_at = now()
-WHERE contract = $1
-`, contract.Bytes())
-	if err != nil {
-		return fmt.Errorf("archive project: %w", err)
-	}
-	return nil
-}
-
-func (s *SQLStore) UnarchiveProjectByContract(ctx context.Context, contract common.Address) error {
-	_, err := s.db.ExecContext(ctx, `
-UPDATE project
-SET is_archived = FALSE, archived_at = NULL
-WHERE contract = $1
-`, contract.Bytes())
-	if err != nil {
-		return fmt.Errorf("unarchive project: %w", err)
-	}
-	return nil
-}
-
-func (s *SQLStore) ListArchivedProjectMetas(ctx context.Context, page int32, pageSize int32) ([]ProjectMeta, int64, int32, int32, error) {
-	page, pageSize = normalizePage(page, pageSize)
-
-	var total int64
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM project WHERE is_archived = TRUE`).Scan(&total); err != nil {
-		return nil, 0, 0, 0, fmt.Errorf("count archived project metas: %w", err)
-	}
-
-	offset := int64(page-1) * int64(pageSize)
-	rows, err := s.db.QueryContext(ctx, `
-SELECT
-  block_number,
-  block_time,
-  contract,
-  creator,
-  tx_hash,
-  tx_index,
-  source_code,
-  source_code_hash,
-  code_bin_hash,
-  source_quality_report,
-  source_quality_reported_at,
-  is_archived,
-  archived_at
-FROM project
-WHERE is_archived = TRUE
-ORDER BY archived_at DESC, id DESC
-LIMIT $1 OFFSET $2
-`, pageSize, offset)
-	if err != nil {
-		return nil, 0, 0, 0, fmt.Errorf("list archived project metas: %w", err)
-	}
-	defer rows.Close()
-
-	metas := make([]ProjectMeta, 0)
-	for rows.Next() {
-		meta, err := scanProjectMetaRow(rows, true)
-		if err != nil {
-			return nil, 0, 0, 0, err
-		}
-		metas = append(metas, meta)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, 0, 0, 0, fmt.Errorf("iterate archived project metas: %w", err)
-	}
-	return metas, total, page, pageSize, nil
-}
-
-func (s *SQLStore) GetArchivedProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error) {
-	row := s.db.QueryRowContext(ctx, `
-SELECT
-  block_number,
-  block_time,
-  contract,
-  creator,
-  tx_hash,
-  tx_index,
-  source_code,
-  source_code_hash,
-  code_bin_hash,
-  source_quality_report,
-  source_quality_reported_at,
-  is_archived,
-  archived_at
-FROM project
-WHERE contract = $1 AND is_archived = TRUE
-`, contract.Bytes())
-	meta, err := scanProjectMetaRow(row, true)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &meta, nil
-}
-
 func (s *SQLStore) GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error) {
 	row := s.db.QueryRowContext(ctx, `
 SELECT
@@ -320,13 +182,11 @@ SELECT
   source_code_hash,
   code_bin_hash,
   source_quality_report,
-  source_quality_reported_at,
-  is_archived,
-  archived_at
+  source_quality_reported_at
 FROM project
 WHERE contract = $1
 `, contract.Bytes())
-	meta, err := scanProjectMetaRow(row, true)
+	meta, err := scanProjectMetaRow(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -340,7 +200,7 @@ type rowScanner interface {
 	Scan(dest ...any) error
 }
 
-func scanProjectMetaRow(scanner rowScanner, withArchiveFields bool) (ProjectMeta, error) {
+func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	var meta ProjectMeta
 	var blockNumber int64
 	var blockTime int64
@@ -353,16 +213,8 @@ func scanProjectMetaRow(scanner rowScanner, withArchiveFields bool) (ProjectMeta
 	var codeBinHash []byte
 	var sourceQualityReport sql.NullString
 	var sourceQualityReportedAt sql.NullTime
-	var isArchived bool
-	var archivedAt sql.NullTime
 
-	var err error
-	if withArchiveFields {
-		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &codeBinHash, &sourceQualityReport, &sourceQualityReportedAt, &isArchived, &archivedAt)
-	} else {
-		err = scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &codeBinHash, &sourceQualityReport, &sourceQualityReportedAt)
-	}
-	if err != nil {
+	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &codeBinHash, &sourceQualityReport, &sourceQualityReportedAt); err != nil {
 		return ProjectMeta{}, fmt.Errorf("scan project meta: %w", err)
 	}
 	if blockNumber < 0 {
@@ -387,10 +239,6 @@ func scanProjectMetaRow(scanner rowScanner, withArchiveFields bool) (ProjectMeta
 	meta.SourceQualityReport = sourceQualityReport.String
 	if sourceQualityReportedAt.Valid {
 		meta.SourceQualityReportedAt = sourceQualityReportedAt.Time
-	}
-	meta.IsArchived = isArchived
-	if archivedAt.Valid {
-		meta.ArchivedAt = archivedAt.Time
 	}
 	return meta, nil
 }

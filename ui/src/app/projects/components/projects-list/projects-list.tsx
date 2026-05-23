@@ -2,7 +2,7 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {history} from '../../../app';
 import {services} from '../../../shared/services';
-import {PROJECT_SCOPE, ProjectListItem, ProjectOptions, ProjectScope} from '../../../shared/services/athena-application-service';
+import {ProjectListItem, ProjectOptions} from '../../../shared/services/athena-application-service';
 import {ProjectListRow} from '../project-list-row/project-list-row';
 import {buildProjectsListSearch, parseProjectsListSearch} from './projects-list-query';
 
@@ -10,12 +10,9 @@ require('./projects-list.scss');
 
 const AUTO_REFRESH_INTERVAL_MS = 3000;
 const PAGE_SIZE = 10;
-const ACTIVE_SCOPE = PROJECT_SCOPE.ACTIVE;
-const ARCHIVED_SCOPE = PROJECT_SCOPE.ARCHIVED;
 
 interface ProjectsListCacheEntry {
     projects: ProjectListItem[];
-    scope: ProjectScope;
     page: number;
     total: number;
     lastUpdatedAt: Date | null;
@@ -24,7 +21,6 @@ interface ProjectsListCacheEntry {
 const projectsListCache = new Map<string, ProjectsListCacheEntry>();
 
 const renderLastUpdatedAt = (value: Date | null) => (value ? value.toLocaleTimeString() : 'Never');
-const renderScopeLabel = (scope: ProjectScope) => (scope === ARCHIVED_SCOPE ? 'Archived' : 'Active');
 const isAbortedError = (err: unknown) =>
     String((err as any)?.message || '')
         .toLowerCase()
@@ -43,11 +39,10 @@ const getProjectRowKey = (project: ProjectListItem, index: number) => {
 export const ProjectsList = () => {
     const initialQueryState = React.useMemo(() => parseProjectsListSearch(history.location.search), []);
     const initialCache = React.useMemo(
-        () => projectsListCache.get(buildProjectsListSearch(initialQueryState.page, initialQueryState.scope)),
-        [initialQueryState.page, initialQueryState.scope]
+        () => projectsListCache.get(buildProjectsListSearch(initialQueryState.page)),
+        [initialQueryState.page]
     );
     const [projects, setProjects] = React.useState<ProjectListItem[]>(initialCache?.projects || []);
-    const [scope, setScope] = React.useState<ProjectScope>(initialCache?.scope || initialQueryState.scope);
     const [loading, setLoading] = React.useState(!initialCache);
     const [refreshing, setRefreshing] = React.useState(false);
     const [autoRefresh, setAutoRefresh] = React.useState(false);
@@ -61,10 +56,9 @@ export const ProjectsList = () => {
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
     const currentPageRef = React.useRef(initialQueryState.page);
-    const currentScopeRef = React.useRef<ProjectScope>(initialQueryState.scope);
 
-    const syncUrlState = React.useCallback((nextPage: number, nextScope: ProjectScope) => {
-        const nextSearch = buildProjectsListSearch(nextPage, nextScope);
+    const syncUrlState = React.useCallback((nextPage: number) => {
+        const nextSearch = buildProjectsListSearch(nextPage);
         if (history.location.search !== nextSearch) {
             history.replace({
                 pathname: history.location.pathname,
@@ -109,18 +103,17 @@ export const ProjectsList = () => {
     }, [projectOptions]);
 
     const loadProjects = React.useCallback(
-        async (targetPage?: number, targetScope?: ProjectScope, syncSearch = false) => {
+        async (targetPage?: number, syncSearch = false) => {
             if (requestRef.current) {
                 return;
             }
             const pageToLoad = targetPage ?? currentPageRef.current;
-            const scopeToLoad = targetScope ?? currentScopeRef.current;
             if (isMountedRef.current) {
                 setRefreshing(true);
             }
 
             try {
-                const req = services.athenaApplication.listProjects(scopeToLoad, pageToLoad, PAGE_SIZE);
+                const req = services.athenaApplication.listProjects(pageToLoad, PAGE_SIZE);
                 requestRef.current = req;
                 const data = await req;
                 if (isMountedRef.current) {
@@ -128,19 +121,16 @@ export const ProjectsList = () => {
                     setProjects(data.items);
                     setTotal(data.total);
                     setPage(data.page);
-                    setScope(scopeToLoad);
                     currentPageRef.current = data.page;
-                    currentScopeRef.current = scopeToLoad;
                     if (syncSearch) {
-                        syncUrlState(data.page, scopeToLoad);
+                        syncUrlState(data.page);
                     }
                     setLastUpdatedAt(updatedAt);
                     setError(null);
-                    projectsListCache.set(buildProjectsListSearch(data.page, scopeToLoad), {
+                    projectsListCache.set(buildProjectsListSearch(data.page), {
                         projects: data.items,
                         total: data.total,
                         page: data.page,
-                        scope: scopeToLoad,
                         lastUpdatedAt: updatedAt
                     });
                 }
@@ -161,23 +151,23 @@ export const ProjectsList = () => {
 
     React.useEffect(() => {
         isMountedRef.current = true;
-        loadProjects(initialQueryState.page, initialQueryState.scope, true);
+        loadProjects(initialQueryState.page, true);
         loadProjectOptions();
 
         return () => {
             isMountedRef.current = false;
             cleanupRequests();
         };
-    }, [cleanupRequests, initialQueryState.page, initialQueryState.scope, loadProjectOptions, loadProjects]);
+    }, [cleanupRequests, initialQueryState.page, loadProjectOptions, loadProjects]);
 
     const handleStart = React.useCallback(() => {
         if (intervalRef.current !== undefined) {
             return;
         }
         setAutoRefresh(true);
-        loadProjects(currentPageRef.current, currentScopeRef.current);
+        loadProjects(currentPageRef.current);
         intervalRef.current = window.setInterval(() => {
-            loadProjects(currentPageRef.current, currentScopeRef.current);
+            loadProjects(currentPageRef.current);
         }, AUTO_REFRESH_INTERVAL_MS);
     }, [loadProjects]);
 
@@ -190,29 +180,8 @@ export const ProjectsList = () => {
         if (autoRefresh) {
             return;
         }
-        loadProjects(currentPageRef.current, currentScopeRef.current);
+        loadProjects(currentPageRef.current);
     }, [autoRefresh, loadProjects]);
-
-    const handleScopeChange = React.useCallback(
-        (nextScope: ProjectScope) => {
-            if (currentScopeRef.current === nextScope) {
-                return;
-            }
-            if (requestRef.current?.abort) {
-                requestRef.current.abort();
-                requestRef.current = null;
-            }
-            currentScopeRef.current = nextScope;
-            currentPageRef.current = 1;
-            setPage(1);
-            setProjects([]);
-            setTotal(0);
-            setScope(nextScope);
-            setError(null);
-            loadProjects(1, nextScope, true);
-        },
-        [loadProjects]
-    );
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -232,20 +201,6 @@ export const ProjectsList = () => {
                         <div className='white-box projects-list__box'>
                             <div className='projects-list__controls'>
                                 <div className='projects-list__actions'>
-                                    <button
-                                        type='button'
-                                        className={`argo-button ${scope === ACTIVE_SCOPE ? 'argo-button--base' : 'argo-button--base-o'}`}
-                                        disabled={refreshing}
-                                        onClick={() => handleScopeChange(ACTIVE_SCOPE)}>
-                                        Active
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className={`argo-button ${scope === ARCHIVED_SCOPE ? 'argo-button--base' : 'argo-button--base-o'}`}
-                                        disabled={refreshing}
-                                        onClick={() => handleScopeChange(ARCHIVED_SCOPE)}>
-                                        Archived
-                                    </button>
                                     <button type='button' className='argo-button argo-button--base' disabled={autoRefresh} onClick={handleStart}>
                                         Start
                                     </button>
@@ -257,7 +212,6 @@ export const ProjectsList = () => {
                                     </button>
                                 </div>
                                 <div className='projects-list__status'>
-                                    <span>Scope: {renderScopeLabel(scope)}</span>
                                     <span>{autoRefresh ? 'Auto refresh: On' : 'Auto refresh: Off'}</span>
                                     <span>Total: {total}</span>
                                     <span>
@@ -273,7 +227,6 @@ export const ProjectsList = () => {
                                         <div>#</div>
                                         <div>Name</div>
                                         <div>Contract</div>
-                                        <div>Status</div>
                                         <div>Mint Risk</div>
                                         <div title='Is Open Source'>Open Src</div>
                                         <div title='WETH Quote + Remove Liquidity'>WETH Pair</div>
@@ -285,7 +238,7 @@ export const ProjectsList = () => {
                                 {projects.length === 0 ? (
                                     <div className='argo-table-list__row'>
                                         <div className='row'>
-                                            <div className='columns small-12 text-center'>No {renderScopeLabel(scope).toLowerCase()} projects found</div>
+                                            <div className='columns small-12 text-center'>No projects found</div>
                                         </div>
                                     </div>
                                 ) : (
@@ -295,12 +248,7 @@ export const ProjectsList = () => {
                                             project={project}
                                             index={(page - 1) * PAGE_SIZE + index}
                                             usdtDecimals={projectOptions?.usdtDecimals}
-                                            defaultIsArchived={scope === ARCHIVED_SCOPE}
-                                            to={
-                                                project.contract
-                                                    ? `/projects/${project.contract}${buildProjectsListSearch(currentPageRef.current, currentScopeRef.current)}`
-                                                    : undefined
-                                            }
+                                            to={project.contract ? `/projects/${project.contract}${buildProjectsListSearch(currentPageRef.current)}` : undefined}
                                         />
                                     ))
                                 )}
@@ -311,14 +259,14 @@ export const ProjectsList = () => {
                                         type='button'
                                         className='argo-button argo-button--base-o'
                                         disabled={page <= 1 || refreshing}
-                                        onClick={() => loadProjects(page - 1, undefined, true)}>
+                                        onClick={() => loadProjects(page - 1, true)}>
                                         Prev
                                     </button>
                                     <button
                                         type='button'
                                         className='argo-button argo-button--base-o'
                                         disabled={page >= totalPages || refreshing}
-                                        onClick={() => loadProjects(page + 1, undefined, true)}>
+                                        onClick={() => loadProjects(page + 1, true)}>
                                         Next
                                     </button>
                                 </div>

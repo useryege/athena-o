@@ -193,7 +193,6 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const [commentsError, setCommentsError] = React.useState<Error | null>(null);
     const [submittingComment, setSubmittingComment] = React.useState(false);
     const [loading, setLoading] = React.useState(true);
-    const [changingArchiveState, setChangingArchiveState] = React.useState(false);
     const [isBlacklistChecking, setIsBlacklistChecking] = React.useState(true);
     const [isBlacklisted, setIsBlacklisted] = React.useState(false);
     const [addingToBlacklist, setAddingToBlacklist] = React.useState(false);
@@ -396,33 +395,9 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     }, [cleanupRequests, loadBlacklistStatus, loadProject, loadProjectComments, loadProjectEventLogs, loadProjectOptions]);
 
     const breadcrumbs = [{title: 'Projects', path: `/projects${props.location.search || ''}`}, {title: contract}];
-    const isArchived = project?.meta?.isArchived ?? false;
     const sourceCode = project?.meta?.sourceCode || '';
     const isOpenSource = project?.meta?.isOpenSource ?? sourceCode.trim().length > 0;
     const sourceQualityReport = project?.meta?.sourceQualityReport || '';
-
-    const handleArchiveStateChange = React.useCallback(async () => {
-        if (changingArchiveState) {
-            return;
-        }
-        setChangingArchiveState(true);
-        try {
-            if (isArchived) {
-                await services.athenaApplication.unarchiveProject(contract);
-            } else {
-                await services.athenaApplication.archiveProject(contract);
-            }
-            await loadProject();
-        } catch (err) {
-            if (isMountedRef.current) {
-                setError(err as Error);
-            }
-        } finally {
-            if (isMountedRef.current) {
-                setChangingArchiveState(false);
-            }
-        }
-    }, [changingArchiveState, contract, isArchived, loadProject]);
 
     const handleAddToBlacklist = React.useCallback(async () => {
         if (addingToBlacklist || isBlacklistChecking) {
@@ -554,9 +529,6 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                 <button type='button' className='argo-button argo-button--base-o' disabled={blacklistButtonDisabled} onClick={handleAddToBlacklist}>
                                     {blacklistButtonText}
                                 </button>
-                                <button type='button' className='argo-button argo-button--base' disabled={changingArchiveState} onClick={handleArchiveStateChange}>
-                                    {changingArchiveState ? (isArchived ? 'Unarchiving...' : 'Archiving...') : isArchived ? 'Unarchive Project' : 'Archive Project'}
-                                </button>
                             </div>
                         </div>
 
@@ -582,14 +554,6 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Tx Index</span>
                                     <span className='project-details__field-value'>{renderValue(project.meta?.txIndex)}</span>
-                                </div>
-                                <div className='project-details__field'>
-                                    <span className='project-details__field-label'>Status</span>
-                                    <span className='project-details__field-value'>
-                                        <span className={`project-details__badge project-details__badge--${isArchived ? 'negative' : 'positive'}`}>
-                                            {isArchived ? 'Archived' : 'Active'}
-                                        </span>
-                                    </span>
                                 </div>
                                 <div className='project-details__field' style={{gridColumn: '1 / -1'}}>
                                     <span className='project-details__field-label'>Creator Other Projects</span>

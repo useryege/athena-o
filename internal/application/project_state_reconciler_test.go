@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 	"time"
 
@@ -58,12 +57,6 @@ func (p *persistencePublisherFake) PublishProjectSourceQualityReportUpdate(_ con
 	p.sourceQualityReports[contract] = report
 	return nil
 }
-func (p *persistencePublisherFake) PublishProjectArchive(context.Context, common.Address) error {
-	return nil
-}
-func (p *persistencePublisherFake) PublishProjectUnarchive(context.Context, common.Address) error {
-	return nil
-}
 func (p *persistencePublisherFake) PublishBytecodeBlacklistAdd(context.Context, appstore.BytecodeBlacklistContract) error {
 	return nil
 }
@@ -98,9 +91,6 @@ func TestProjectStateReconcilerJobIntervals(t *testing.T) {
 
 	intervals := make(map[string]time.Duration, len(jobs))
 	for _, job := range jobs {
-		if strings.Contains(job.name, "_archived") {
-			t.Fatalf("unexpected archived reconciler job %q", job.name)
-		}
 		intervals[job.name] = job.interval
 	}
 

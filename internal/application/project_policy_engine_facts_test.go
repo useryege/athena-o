@@ -123,12 +123,12 @@ func (r recordingPolicyRule) Evaluate(_ context.Context, project *Project, _ Pro
 	return false, nil, nil
 }
 
-func TestProjectPolicyEngineEvaluateAllOnceEvaluatesActiveAndArchivedProjects(t *testing.T) {
-	active := common.HexToAddress("0x00000000000000000000000000000000000000a1")
-	archived := common.HexToAddress("0x00000000000000000000000000000000000000a2")
+func TestProjectPolicyEngineEvaluateAllOnceEvaluatesCachedProjects(t *testing.T) {
+	contractA := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	contractB := common.HexToAddress("0x00000000000000000000000000000000000000a2")
 	cache := newPolicyReevaluationProjectCache(
-		&Project{Meta: ProjectMeta{Contract: active}},
-		&Project{Meta: ProjectMeta{Contract: archived, IsArchived: true}},
+		&Project{Meta: ProjectMeta{Contract: contractA}},
+		&Project{Meta: ProjectMeta{Contract: contractB}},
 	)
 	var got []common.Address
 	engine := &projectPolicyEngineImpl{
@@ -146,8 +146,8 @@ func TestProjectPolicyEngineEvaluateAllOnceEvaluatesActiveAndArchivedProjects(t 
 	for _, contract := range got {
 		seen[contract] = true
 	}
-	if !seen[active] || !seen[archived] {
-		t.Fatalf("evaluated contracts = %v, want active %s and archived %s", got, active.Hex(), archived.Hex())
+	if !seen[contractA] || !seen[contractB] {
+		t.Fatalf("evaluated contracts = %v, want %s and %s", got, contractA.Hex(), contractB.Hex())
 	}
 }
 

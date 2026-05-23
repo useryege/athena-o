@@ -5,7 +5,6 @@ syntax = "proto3";
 // Application Service API returns the list of projects.
 package application;
 
-import "github.com/useryege/athena/internal/pkg/proto/v1/v1.proto";
 import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
 import "google/api/annotations.proto";
 
@@ -13,9 +12,8 @@ option go_package = "github.com/useryege/athena/pkg/apiclient/application";
 
 // ListProjectsRequest queries the current known project snapshot.
 message ListProjectsRequest {
-  v1.ProjectScope scope = 1;
-  int32 page = 2;
-  int32 pageSize = 3;
+  int32 page = 1;
+  int32 pageSize = 2;
 }
 
 // ListProjectsResponse returns the current known project snapshot.
@@ -237,18 +235,6 @@ message GetProjectOptionsResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectOption options = 1;
 }
 
-message ArchiveProjectRequest {
-  string contract = 1;
-}
-
-message ArchiveProjectResponse {}
-
-message UnarchiveProjectRequest {
-  string contract = 1;
-}
-
-message UnarchiveProjectResponse {}
-
 service ApplicationService {
   // ListProjects returns the current known project snapshot.
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {
@@ -361,19 +347,4 @@ service ApplicationService {
     option (google.api.http) = {get: "/api/v1/project-options"};
   }
 
-  // ArchiveProject archives a project by contract.
-  rpc ArchiveProject(ArchiveProjectRequest) returns (ArchiveProjectResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/project/{contract}/archive"
-      body: "*"
-    };
-  }
-
-  // UnarchiveProject unarchives a project by contract.
-  rpc UnarchiveProject(UnarchiveProjectRequest) returns (UnarchiveProjectResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/project/{contract}/unarchive"
-      body: "*"
-    };
-  }
 }

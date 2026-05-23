@@ -55,18 +55,15 @@ export const ProjectListRow = ({
     project,
     index,
     usdtDecimals,
-    defaultIsArchived,
     to
 }: {
     project: ProjectListItem;
     index: number;
     usdtDecimals?: number;
-    defaultIsArchived?: boolean;
     to?: string;
 }) => {
     const [copied, setCopied] = React.useState(false);
     const blockTime = formatBlockTime(project.blockTime);
-    const isArchived = project.isArchived ?? defaultIsArchived ?? false;
 
     const copyContract = React.useCallback(
         async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -97,9 +94,6 @@ export const ProjectListRow = ({
                         </button>
                     </Tooltip>
                 )}
-            </div>
-            <div className='projects-list__cell'>
-                <span className={`project-details__badge project-details__badge--${isArchived ? 'negative' : 'positive'}`}>{isArchived ? 'Archived' : 'Active'}</span>
             </div>
             <div className='projects-list__cell'>
                 <span className={`project-details__badge project-details__badge--${project.hasMintRisk ? 'negative' : 'positive'}`}>{project.hasMintRisk ? 'Yes' : 'No'}</span>

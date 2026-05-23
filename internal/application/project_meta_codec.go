@@ -17,8 +17,6 @@ func projectMetaToStore(meta ProjectMeta) appstore.ProjectMeta {
 		CodeBinHash:             meta.CodeBinHash,
 		SourceQualityReport:     meta.SourceQualityReport,
 		SourceQualityReportedAt: meta.SourceQualityReportedAt,
-		IsArchived:              meta.IsArchived,
-		ArchivedAt:              meta.ArchivedAt,
 	}
 }
 
@@ -35,7 +33,5 @@ func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 		CodeBinHash:             meta.CodeBinHash,
 		SourceQualityReport:     meta.SourceQualityReport,
 		SourceQualityReportedAt: meta.SourceQualityReportedAt,
-		IsArchived:              meta.IsArchived,
-		ArchivedAt:              meta.ArchivedAt,
 	}
 }

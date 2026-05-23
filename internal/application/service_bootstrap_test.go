@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	appstore "github.com/useryege/athena/internal/application/store"
@@ -41,18 +40,6 @@ func (s *bootstrapProjectStoreFake) UpdateProjectSourceQualityReport(context.Con
 	return nil
 }
 
-func (s *bootstrapProjectStoreFake) ArchiveProjectByContract(context.Context, common.Address) error {
-	return nil
-}
-
-func (s *bootstrapProjectStoreFake) UnarchiveProjectByContract(context.Context, common.Address) error {
-	return nil
-}
-
-func (s *bootstrapProjectStoreFake) ListArchivedProjectMetas(context.Context, int32, int32) ([]appstore.ProjectMeta, int64, int32, int32, error) {
-	return nil, 0, 1, 1, nil
-}
-
 func (s *bootstrapProjectStoreFake) ListProjectMetasByCreator(_ context.Context, creator common.Address) ([]appstore.ProjectMeta, error) {
 	metas := make([]appstore.ProjectMeta, 0)
 	for _, meta := range s.metas {
@@ -61,10 +48,6 @@ func (s *bootstrapProjectStoreFake) ListProjectMetasByCreator(_ context.Context,
 		}
 	}
 	return metas, nil
-}
-
-func (s *bootstrapProjectStoreFake) GetArchivedProjectMetaByContract(context.Context, common.Address) (*appstore.ProjectMeta, error) {
-	return nil, nil
 }
 
 func (s *bootstrapProjectStoreFake) GetProjectMetaByContract(_ context.Context, contract common.Address) (*appstore.ProjectMeta, error) {
@@ -133,18 +116,6 @@ func (s *bootstrapProjectStoreWithoutGenesisFake) UpdateProjectSourceQualityRepo
 	return nil
 }
 
-func (s *bootstrapProjectStoreWithoutGenesisFake) ArchiveProjectByContract(context.Context, common.Address) error {
-	return nil
-}
-
-func (s *bootstrapProjectStoreWithoutGenesisFake) UnarchiveProjectByContract(context.Context, common.Address) error {
-	return nil
-}
-
-func (s *bootstrapProjectStoreWithoutGenesisFake) ListArchivedProjectMetas(context.Context, int32, int32) ([]appstore.ProjectMeta, int64, int32, int32, error) {
-	return nil, 0, 1, 1, nil
-}
-
 func (s *bootstrapProjectStoreWithoutGenesisFake) ListProjectMetasByCreator(_ context.Context, creator common.Address) ([]appstore.ProjectMeta, error) {
 	metas := make([]appstore.ProjectMeta, 0)
 	for _, meta := range s.metas {
@@ -153,10 +124,6 @@ func (s *bootstrapProjectStoreWithoutGenesisFake) ListProjectMetasByCreator(_ co
 		}
 	}
 	return metas, nil
-}
-
-func (s *bootstrapProjectStoreWithoutGenesisFake) GetArchivedProjectMetaByContract(context.Context, common.Address) (*appstore.ProjectMeta, error) {
-	return nil, nil
 }
 
 func (s *bootstrapProjectStoreWithoutGenesisFake) GetProjectMetaByContract(_ context.Context, contract common.Address) (*appstore.ProjectMeta, error) {
@@ -204,15 +171,10 @@ func (c *bootstrapProjectCacheFake) ListActiveProjectsPage(context.Context, int3
 	return nil, 0, 1, 1, nil
 }
 
-func (c *bootstrapProjectCacheFake) ListArchivedProjects(context.Context, int32, int32) ([]*Project, int64, int32, int32, error) {
-	return nil, 0, 1, 1, nil
-}
-
 func TestBootstrapProjectCachesRestoresDBProjectsOnly(t *testing.T) {
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	creator := common.HexToAddress("0x00000000000000000000000000000000000000b1")
 	wallet := common.HexToAddress("0x00000000000000000000000000000000000000c1")
-	archivedAt := time.Unix(123, 0).UTC()
 	store := &bootstrapProjectStoreFake{
 		metas: []appstore.ProjectMeta{{
 			BlockTime:   11,
@@ -222,8 +184,6 @@ func TestBootstrapProjectCachesRestoresDBProjectsOnly(t *testing.T) {
 			TxHash:      common.HexToHash("0x01"),
 			TxIndex:     3,
 			SourceCode:  "contract Source {}",
-			IsArchived:  true,
-			ArchivedAt:  archivedAt,
 		}},
 		genesis: map[common.Address][]appstore.ProjectGenesisWallet{
 			contract: {{
@@ -245,7 +205,7 @@ func TestBootstrapProjectCachesRestoresDBProjectsOnly(t *testing.T) {
 		t.Fatalf("replaced project count = %d, want 1", len(cache.replaced))
 	}
 	project := cache.replaced[0]
-	if project.Meta.Contract != contract || project.Meta.Creator != creator || !project.Meta.IsArchived || !project.Meta.ArchivedAt.Equal(archivedAt) {
+	if project.Meta.Contract != contract || project.Meta.Creator != creator {
 		t.Fatalf("restored meta = %+v", project.Meta)
 	}
 	if len(project.Meta.GenesisWallets) != 1 || project.Meta.GenesisWallets[0].Wallet != wallet || project.Meta.GenesisWallets[0].RatioBPS != 2500 {

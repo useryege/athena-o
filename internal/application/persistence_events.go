@@ -37,8 +37,6 @@ const (
 	PersistenceOpProjectSourceCode               = "project_source_code_update"
 	PersistenceOpProjectCodeBinHash              = "project_code_bin_hash_update"
 	PersistenceOpProjectSourceQualityReport      = "project_source_quality_report_update"
-	PersistenceOpProjectArchive                  = "project_archive"
-	PersistenceOpProjectUnarchive                = "project_unarchive"
 	PersistenceOpBytecodeBlacklistAdd            = "bytecode_blacklist_add"
 	PersistenceOpBytecodeBlacklistNote           = "bytecode_blacklist_update_note"
 	PersistenceOpBytecodeBlacklistDel            = "bytecode_blacklist_delete"
@@ -68,8 +66,6 @@ type projectMetaSavePayload struct {
 	SourceCode     string `json:"source_code"`
 	SourceCodeHash string `json:"source_code_hash,omitempty"`
 	CodeBinHash    string `json:"code_bin_hash,omitempty"`
-	IsArchived     bool   `json:"is_archived"`
-	ArchivedAt     string `json:"archived_at,omitempty"`
 }
 
 type projectSourceCodeUpdatePayload struct {
@@ -163,8 +159,6 @@ type PersistenceEventPublisher interface {
 	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error
 	PublishProjectCodeBinHashUpdate(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error
-	PublishProjectArchive(ctx context.Context, contract common.Address) error
-	PublishProjectUnarchive(ctx context.Context, contract common.Address) error
 	PublishBytecodeBlacklistAdd(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	PublishBytecodeBlacklistUpdateNote(ctx context.Context, contract common.Address, note string) error
 	PublishBytecodeBlacklistDelete(ctx context.Context, contract common.Address) error
@@ -182,8 +176,6 @@ type PersistenceEventWriter interface {
 	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
 	WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
-	ArchiveProject(ctx context.Context, contract common.Address) error
-	UnarchiveProject(ctx context.Context, contract common.Address) error
 	AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	UpdateBytecodeBlacklistContractNote(ctx context.Context, contract common.Address, note string) error
 	DeleteBytecodeBlacklistContract(ctx context.Context, contract common.Address) error
@@ -269,10 +261,6 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 		SourceCode:     meta.SourceCode,
 		SourceCodeHash: hashToPayload(meta.SourceCodeHash),
 		CodeBinHash:    hashToPayload(meta.CodeBinHash),
-		IsArchived:     meta.IsArchived,
-	}
-	if !meta.ArchivedAt.IsZero() {
-		payload.ArchivedAt = meta.ArchivedAt.UTC().Format(time.RFC3339Nano)
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -368,24 +356,6 @@ func (b *RedisPersistenceEventBus) PublishProjectEventLog(ctx context.Context, i
 		Contract:   item.Contract.Hex(),
 		Payload:    data,
 		OccurredAt: occurredAt,
-	})
-}
-
-func (b *RedisPersistenceEventBus) PublishProjectArchive(ctx context.Context, contract common.Address) error {
-	return b.Publish(ctx, PersistenceEvent{
-		Version:    persistenceEventVersion,
-		Op:         PersistenceOpProjectArchive,
-		Contract:   contract.Hex(),
-		OccurredAt: time.Now().UTC(),
-	})
-}
-
-func (b *RedisPersistenceEventBus) PublishProjectUnarchive(ctx context.Context, contract common.Address) error {
-	return b.Publish(ctx, PersistenceEvent{
-		Version:    persistenceEventVersion,
-		Op:         PersistenceOpProjectUnarchive,
-		Contract:   contract.Hex(),
-		OccurredAt: time.Now().UTC(),
 	})
 }
 
@@ -751,19 +721,11 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			TxIndex:     payload.TxIndex,
 			SourceCode:  payload.SourceCode,
 			CodeBinHash: common.HexToHash(payload.CodeBinHash),
-			IsArchived:  payload.IsArchived,
 		}
 		if payload.SourceCodeHash != "" {
 			meta.SourceCodeHash = common.HexToHash(payload.SourceCodeHash)
 		} else if payload.SourceCode != "" {
 			meta.SourceCodeHash = crypto.Keccak256Hash([]byte(payload.SourceCode))
-		}
-		if payload.ArchivedAt != "" {
-			archivedAt, err := time.Parse(time.RFC3339Nano, payload.ArchivedAt)
-			if err != nil {
-				return fmt.Errorf("parse archived_at %q: %w", payload.ArchivedAt, err)
-			}
-			meta.ArchivedAt = archivedAt
 		}
 		return writer.WriteProjectMeta(ctx, meta)
 	case PersistenceOpProjectSourceCode:
@@ -861,16 +823,6 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			return errors.New("project genesis wallet store is not configured")
 		}
 		return gwWriter.WriteProjectGenesisWallets(ctx, common.HexToAddress(payload.Contract), items)
-	case PersistenceOpProjectArchive:
-		if !common.IsHexAddress(event.Contract) {
-			return fmt.Errorf("invalid contract %q", event.Contract)
-		}
-		return writer.ArchiveProject(ctx, common.HexToAddress(event.Contract))
-	case PersistenceOpProjectUnarchive:
-		if !common.IsHexAddress(event.Contract) {
-			return fmt.Errorf("invalid contract %q", event.Contract)
-		}
-		return writer.UnarchiveProject(ctx, common.HexToAddress(event.Contract))
 	case PersistenceOpBytecodeBlacklistAdd:
 		var payload bytecodeBlacklistAddPayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -1047,14 +999,6 @@ func (w *storePersistenceWriter) WriteProjectCodeBinHash(ctx context.Context, co
 
 func (w *storePersistenceWriter) WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
 	return w.store.UpdateProjectSourceQualityReport(ctx, contract, report)
-}
-
-func (w *storePersistenceWriter) ArchiveProject(ctx context.Context, contract common.Address) error {
-	return w.store.ArchiveProjectByContract(ctx, contract)
-}
-
-func (w *storePersistenceWriter) UnarchiveProject(ctx context.Context, contract common.Address) error {
-	return w.store.UnarchiveProjectByContract(ctx, contract)
 }
 
 func (w *storePersistenceWriter) AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error {

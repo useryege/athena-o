@@ -414,14 +414,6 @@ func (m *ProjectListItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x30
-	i--
-	if m.IsArchived {
-		dAtA[i] = 1
-	} else {
-		dAtA[i] = 0
-	}
-	i--
-	dAtA[i] = 0x20
 	i -= len(m.Symbol)
 	copy(dAtA[i:], m.Symbol)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Symbol)))
@@ -517,14 +509,6 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x62
 		}
 	}
-	i--
-	if m.IsArchived {
-		dAtA[i] = 1
-	} else {
-		dAtA[i] = 0
-	}
-	i--
-	dAtA[i] = 0x58
 	{
 		size, err := m.CreatorResult.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
@@ -913,7 +897,6 @@ func (m *ProjectListItem) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 2
 	n += 2
-	n += 2
 	l = len(m.WethPairQuoteUsdtValue)
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 2
@@ -947,7 +930,6 @@ func (m *ProjectMeta) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = m.CreatorResult.Size()
 	n += 1 + l + sovGenerated(uint64(l))
-	n += 2
 	if len(m.GenesisWallets) > 0 {
 		for _, e := range m.GenesisWallets {
 			l = e.Size()
@@ -1130,7 +1112,6 @@ func (this *ProjectListItem) String() string {
 		`Contract:` + fmt.Sprintf("%v", this.Contract) + `,`,
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
 		`Symbol:` + fmt.Sprintf("%v", this.Symbol) + `,`,
-		`IsArchived:` + fmt.Sprintf("%v", this.IsArchived) + `,`,
 		`HasMintRisk:` + fmt.Sprintf("%v", this.HasMintRisk) + `,`,
 		`IsOpenSource:` + fmt.Sprintf("%v", this.IsOpenSource) + `,`,
 		`WethPairQuoteUsdtValue:` + fmt.Sprintf("%v", this.WethPairQuoteUsdtValue) + `,`,
@@ -1163,7 +1144,6 @@ func (this *ProjectMeta) String() string {
 		`TxIndex:` + fmt.Sprintf("%v", this.TxIndex) + `,`,
 		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
 		`CreatorResult:` + strings.Replace(strings.Replace(this.CreatorResult.String(), "SimulateResult", "SimulateResult", 1), `&`, ``, 1) + `,`,
-		`IsArchived:` + fmt.Sprintf("%v", this.IsArchived) + `,`,
 		`GenesisWallets:` + repeatedStringForGenesisWallets + `,`,
 		`CreatorOtherProjectContracts:` + fmt.Sprintf("%v", this.CreatorOtherProjectContracts) + `,`,
 		`SourceQualityReport:` + fmt.Sprintf("%v", this.SourceQualityReport) + `,`,
@@ -2549,26 +2529,6 @@ func (m *ProjectListItem) Unmarshal(dAtA []byte) error {
 			}
 			m.Symbol = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsArchived", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsArchived = bool(v != 0)
 		case 6:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field HasMintRisk", wireType)
@@ -3070,26 +3030,6 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 11:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsArchived", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsArchived = bool(v != 0)
 		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field GenesisWallets", wireType)

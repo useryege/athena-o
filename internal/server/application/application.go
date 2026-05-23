@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
-	v1 "github.com/useryege/athena/internal/pkg/proto/v1"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	"github.com/useryege/athena/util/session"
 	"google.golang.org/grpc/codes"
@@ -31,7 +30,6 @@ func (s *Server) ListProjects(ctx context.Context, req *applicationpkg.ListProje
 	defer closer.Close()
 
 	resp, err := client.ListProjects(ctx, &applicationapiclient.ListProjectsRequest{
-		Scope:    req.GetScope(),
 		Page:     req.GetPage(),
 		PageSize: req.GetPageSize(),
 	})
@@ -39,17 +37,15 @@ func (s *Server) ListProjects(ctx context.Context, req *applicationpkg.ListProje
 		return nil, err
 	}
 
-	if req.GetScope() == v1.ProjectScope_PROJECT_SCOPE_UNSPECIFIED || req.GetScope() == v1.ProjectScope_PROJECT_SCOPE_ACTIVE {
-		sort.SliceStable(resp.Items, func(i, j int) bool {
-			if resp.Items[i].BlockNumber != resp.Items[j].BlockNumber {
-				return resp.Items[i].BlockNumber < resp.Items[j].BlockNumber
-			}
-			if resp.Items[i].TxIndex != resp.Items[j].TxIndex {
-				return resp.Items[i].TxIndex > resp.Items[j].TxIndex
-			}
-			return resp.Items[i].Contract > resp.Items[j].Contract
-		})
-	}
+	sort.SliceStable(resp.Items, func(i, j int) bool {
+		if resp.Items[i].BlockNumber != resp.Items[j].BlockNumber {
+			return resp.Items[i].BlockNumber < resp.Items[j].BlockNumber
+		}
+		if resp.Items[i].TxIndex != resp.Items[j].TxIndex {
+			return resp.Items[i].TxIndex > resp.Items[j].TxIndex
+		}
+		return resp.Items[i].Contract > resp.Items[j].Contract
+	})
 
 	return &applicationpkg.ListProjectsResponse{
 		Items:    resp.Items,
@@ -364,32 +360,6 @@ func (s *Server) GetProjectOptions(ctx context.Context, _ *applicationpkg.GetPro
 		return nil, err
 	}
 	return &applicationpkg.GetProjectOptionsResponse{Options: resp.Options}, nil
-}
-
-func (s *Server) ArchiveProject(ctx context.Context, req *applicationpkg.ArchiveProjectRequest) (*applicationpkg.ArchiveProjectResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	if _, err := client.ArchiveProject(ctx, &applicationapiclient.ArchiveProjectRequest{Contract: req.GetContract()}); err != nil {
-		return nil, err
-	}
-	return &applicationpkg.ArchiveProjectResponse{}, nil
-}
-
-func (s *Server) UnarchiveProject(ctx context.Context, req *applicationpkg.UnarchiveProjectRequest) (*applicationpkg.UnarchiveProjectResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	if _, err := client.UnarchiveProject(ctx, &applicationapiclient.UnarchiveProjectRequest{Contract: req.GetContract()}); err != nil {
-		return nil, err
-	}
-	return &applicationpkg.UnarchiveProjectResponse{}, nil
 }
 
 func bytecodeBlacklistContractToAPI(item *applicationapiclient.BytecodeBlacklistContract) *applicationpkg.BytecodeBlacklistContract {

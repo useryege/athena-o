@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-343-gc32cd99-dirty"
+    "version": "v1.0.0-344-g89c3b6c-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -365,84 +365,6 @@
         }
       }
     },
-    "/api/v1/project/{contract}/archive": {
-      "post": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "ArchiveProject archives a project by contract.",
-        "operationId": "ApplicationService_ArchiveProject",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "contract",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/applicationArchiveProjectRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationArchiveProjectResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/project/{contract}/unarchive": {
-      "post": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "UnarchiveProject unarchives a project by contract.",
-        "operationId": "ApplicationService_UnarchiveProject",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "contract",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/applicationUnarchiveProjectRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationUnarchiveProjectResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
     "/api/v1/projects": {
       "get": {
         "tags": [
@@ -451,18 +373,6 @@
         "summary": "ListProjects returns the current known project snapshot.",
         "operationId": "ApplicationService_ListProjects",
         "parameters": [
-          {
-            "enum": [
-              "PROJECT_SCOPE_UNSPECIFIED",
-              "PROJECT_SCOPE_ACTIVE",
-              "PROJECT_SCOPE_ARCHIVED",
-              "PROJECT_SCOPE_ALL"
-            ],
-            "type": "string",
-            "default": "PROJECT_SCOPE_UNSPECIFIED",
-            "name": "scope",
-            "in": "query"
-          },
           {
             "type": "integer",
             "format": "int32",
@@ -1193,17 +1103,6 @@
         }
       }
     },
-    "applicationArchiveProjectRequest": {
-      "type": "object",
-      "properties": {
-        "contract": {
-          "type": "string"
-        }
-      }
-    },
-    "applicationArchiveProjectResponse": {
-      "type": "object"
-    },
     "applicationBytecodeBlacklistContract": {
       "description": "BytecodeBlacklistContract is a globally maintained bytecode-blacklist contract entry.",
       "type": "object",
@@ -1416,17 +1315,6 @@
           "type": "string"
         }
       }
-    },
-    "applicationUnarchiveProjectRequest": {
-      "type": "object",
-      "properties": {
-        "contract": {
-          "type": "string"
-        }
-      }
-    },
-    "applicationUnarchiveProjectResponse": {
-      "type": "object"
     },
     "applicationUpdateBytecodeBlacklistContractNoteRequest": {
       "description": "UpdateBytecodeBlacklistContractNoteRequest updates the note of a bytecode-blacklist contract entry.",
@@ -1791,16 +1679,6 @@
         }
       }
     },
-    "v1ProjectScope": {
-      "type": "string",
-      "default": "PROJECT_SCOPE_UNSPECIFIED",
-      "enum": [
-        "PROJECT_SCOPE_UNSPECIFIED",
-        "PROJECT_SCOPE_ACTIVE",
-        "PROJECT_SCOPE_ARCHIVED",
-        "PROJECT_SCOPE_ALL"
-      ]
-    },
     "v1alpha1AssetState": {
       "type": "object",
       "properties": {
@@ -1945,9 +1823,6 @@
         "hasMintRisk": {
           "type": "boolean"
         },
-        "isArchived": {
-          "type": "boolean"
-        },
         "isOpenSource": {
           "type": "boolean"
         },
@@ -2009,9 +1884,6 @@
           "items": {
             "$ref": "#/definitions/v1alpha1GenesisWalletState"
           }
-        },
-        "isArchived": {
-          "type": "boolean"
         },
         "isOpenSource": {
           "type": "boolean"

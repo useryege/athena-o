@@ -184,9 +184,9 @@ func TestListProjectMetasByCreator(t *testing.T) {
 	txHashB := common.HexToHash("0x5678")
 
 	rows := sqlmock.NewRows([]string{
-		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "source_code_hash", "code_bin_hash", "source_quality_report", "source_quality_reported_at", "is_archived", "archived_at",
-	}).AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), txHashA.Bytes(), int64(1), "contract A {}", nil, nil, "", nil, false, nil).
-		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), txHashB.Bytes(), int64(2), "contract B {}", nil, nil, "report", time.Now(), true, nil)
+		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "source_code_hash", "code_bin_hash", "source_quality_report", "source_quality_reported_at",
+	}).AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), txHashA.Bytes(), int64(1), "contract A {}", nil, nil, "", nil).
+		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), txHashB.Bytes(), int64(2), "contract B {}", nil, nil, "report", time.Now())
 
 	mock.ExpectQuery("SELECT").
 		WithArgs(creator.Bytes()).

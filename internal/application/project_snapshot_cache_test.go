@@ -210,7 +210,6 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 		BlockTime:               100,
 		BlockNumber:             200,
 		TxIndex:                 3,
-		IsArchived:              true,
 		SourceCode:              "contract Source {}",
 		SourceCodeHash:          common.HexToHash("0x3333333333333333333333333333333333333333333333333333333333333333"),
 		CodeBinHash:             common.HexToHash("0x4444444444444444444444444444444444444444444444444444444444444444"),
@@ -245,9 +244,9 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	if listItem.Name != "Token" || listItem.Symbol != "TKN" {
 		t.Fatalf("list token = %q/%q, want Token/TKN", listItem.Name, listItem.Symbol)
 	}
-	if !listItem.IsArchived || !listItem.IsOpenSource || !listItem.HasMintRisk {
-		t.Fatalf("list booleans = archived %t openSource %t mintRisk %t, want all true",
-			listItem.IsArchived, listItem.IsOpenSource, listItem.HasMintRisk)
+	if !listItem.IsOpenSource || !listItem.HasMintRisk {
+		t.Fatalf("list booleans = openSource %t mintRisk %t, want both true",
+			listItem.IsOpenSource, listItem.HasMintRisk)
 	}
 	if listItem.WethPairQuoteUsdtValue != "123" || !listItem.WethPairRemoveLiquidity {
 		t.Fatalf("list WETH pair = %q/%t, want 123/true", listItem.WethPairQuoteUsdtValue, listItem.WethPairRemoveLiquidity)

@@ -24,8 +24,6 @@ type ProjectMeta struct {
 	Creator                 common.Address
 	TxHash                  common.Hash
 	TxIndex                 uint64
-	IsArchived              bool
-	ArchivedAt              time.Time
 	SourceCode              string
 	SourceCodeHash          common.Hash
 	CodeBinHash             common.Hash
@@ -64,7 +62,6 @@ func projectToListItem(project *Project) *v1alpha1.ProjectListItem {
 		Contract:                project.Meta.Contract.String(),
 		Name:                    chainState.Token.Name,
 		Symbol:                  chainState.Token.Symbol,
-		IsArchived:              project.Meta.IsArchived,
 		HasMintRisk:             hasMintRisk(creatorResult),
 		IsOpenSource:            strings.TrimSpace(project.Meta.SourceCode) != "",
 		WethPairQuoteUsdtValue:  bigIntToString(chainState.WethPair.QuoteUsdtValue),
@@ -153,7 +150,6 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 				CanMintViaTransferToUsdtPair:       creatorResult.CanMintViaTransferToUsdtPair,
 				CanMintFromUsdtPairViaTransferFrom: creatorResult.CanMintFromUsdtPairViaTransferFrom,
 			},
-			IsArchived:                   project.Meta.IsArchived,
 			GenesisWallets:               genesisWallets,
 			CreatorOtherProjectContracts: creatorOtherProjectContracts,
 			SourceQualityReport:          sourceQualityReport,

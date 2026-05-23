@@ -3,10 +3,3 @@ syntax = "proto3";
 package v1;
 
 option go_package = "github.com/useryege/athena/internal/pkg/proto/v1";
-
-enum ProjectScope {
-  PROJECT_SCOPE_UNSPECIFIED = 0;
-  PROJECT_SCOPE_ACTIVE = 1;
-  PROJECT_SCOPE_ARCHIVED = 2;
-  PROJECT_SCOPE_ALL = 3;
-}

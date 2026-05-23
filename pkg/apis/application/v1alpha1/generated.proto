@@ -87,8 +87,6 @@ message ProjectListItem {
 
   optional string symbol = 3;
 
-  optional bool isArchived = 4;
-
   optional bool hasMintRisk = 6;
 
   optional bool isOpenSource = 7;
@@ -126,8 +124,6 @@ message ProjectMeta {
   optional string sourceCode = 8;
 
   optional SimulateResult creatorResult = 9;
-
-  optional bool isArchived = 11;
 
   repeated GenesisWalletState genesisWallets = 12;
 

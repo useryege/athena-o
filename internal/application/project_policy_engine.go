@@ -1,6 +1,6 @@
 package application
 
-// A project is automatically archived when any archive policy rule matches:
+// A project policy audit event is recorded when any policy rule matches:
 // - wallet_blacklist_creator: creator wallet matches the wallet blacklist.
 // - wallet_blacklist_genesis_wallet: a genesis wallet matches the wallet blacklist.
 // - bytecode_blacklist: runtime code hash matches the bytecode blacklist.
@@ -486,26 +486,8 @@ func (e *projectPolicyEngineImpl) listAllProjects(ctx context.Context) ([]*Proje
 	if err != nil {
 		return nil, err
 	}
-
-	archivedProjects := make([]*Project, 0)
-	page := int32(1)
-	for {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-		items, total, _, pageSize, err := e.projectCache.ListArchivedProjects(ctx, page, sourceCodeScanPageSize)
-		if err != nil {
-			return nil, err
-		}
-		archivedProjects = append(archivedProjects, items...)
-		if len(items) == 0 || int64(page)*int64(pageSize) >= total {
-			break
-		}
-		page++
-	}
-
-	all := make([]*Project, 0, len(activeProjects)+len(archivedProjects))
-	seen := make(map[common.Address]struct{}, len(activeProjects)+len(archivedProjects))
+	all := make([]*Project, 0, len(activeProjects))
+	seen := make(map[common.Address]struct{}, len(activeProjects))
 	appendUnique := func(items []*Project) {
 		for _, project := range items {
 			if project == nil {
@@ -520,7 +502,6 @@ func (e *projectPolicyEngineImpl) listAllProjects(ctx context.Context) ([]*Proje
 		}
 	}
 	appendUnique(activeProjects)
-	appendUnique(archivedProjects)
 	return all, nil
 }
 
@@ -559,14 +540,6 @@ func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, p
 
 	for _, match := range matches {
 		now := time.Now().UTC()
-		if !project.Meta.IsArchived {
-			if err := e.archiveProjectByPolicy(ctx, project, match.ruleName, match.evidence, now); err != nil {
-				continue
-			}
-			project.Meta.IsArchived = true
-			project.Meta.ArchivedAt = now
-			continue
-		}
 		if err := e.persistPolicyAuditEvent(ctx, project.Meta.Contract, match.ruleName, match.evidence, now); err != nil {
 			continue
 		}
@@ -606,41 +579,6 @@ func markProjectReportRuleMatch(report *ProjectReport, ruleName string) {
 	}
 }
 
-func (e *projectPolicyEngineImpl) archiveProjectByPolicy(ctx context.Context, project *Project, ruleName string, evidence map[string]any, now time.Time) error {
-	if project == nil || e.persistencePublisher == nil {
-		return nil
-	}
-	if err := e.persistencePublisher.PublishProjectArchive(ctx, project.Meta.Contract); err != nil {
-		return err
-	}
-	_, err := e.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil || current.Meta.IsArchived {
-			return nil, false, nil
-		}
-		current.Meta.IsArchived = true
-		current.Meta.ArchivedAt = now
-		return current, true, nil
-	})
-	if err != nil {
-		return err
-	}
-
-	payload, _ := json.Marshal(map[string]any{
-		"rule":     ruleName,
-		"evidence": evidence,
-		"source":   "policy_engine",
-	})
-
-	return e.persistencePublisher.PublishProjectEventLog(ctx, appstore.ProjectEventLog{
-		Contract:       project.Meta.Contract,
-		EventType:      projectEventTypeAutoArchivePolicy,
-		OccurredAt:     now,
-		Message:        fmt.Sprintf("Project auto archived by policy rule %s", ruleName),
-		Payload:        string(payload),
-		IdempotencyKey: projectEventIdempotencyAutoArchivePolicy(ruleName),
-	})
-}
-
 func (e *projectPolicyEngineImpl) persistPolicyAuditEvent(ctx context.Context, contract common.Address, ruleName string, evidence map[string]any, now time.Time) error {
 	if e.persistencePublisher == nil {
 		return nil
@@ -654,7 +592,7 @@ func (e *projectPolicyEngineImpl) persistPolicyAuditEvent(ctx context.Context, c
 		Contract:       contract,
 		EventType:      projectEventTypePolicyMatchAudit,
 		OccurredAt:     now,
-		Message:        fmt.Sprintf("Policy rule %s matched archived project", ruleName),
+		Message:        fmt.Sprintf("Policy rule %s matched project", ruleName),
 		Payload:        string(payload),
 		IdempotencyKey: projectEventIdempotencyPolicyMatch(ruleName),
 	})

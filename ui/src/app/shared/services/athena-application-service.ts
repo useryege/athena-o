@@ -9,7 +9,6 @@ export interface ProjectListItem {
     contract?: string;
     name?: string;
     symbol?: string;
-    isArchived?: boolean;
     hasMintRisk?: boolean;
     isOpenSource?: boolean;
     wethPairQuoteUsdtValue?: string;
@@ -31,7 +30,6 @@ export interface ProjectMeta {
     txIndex?: number;
     sourceCode?: string;
     creatorResult?: SimulateResult;
-    isArchived?: boolean;
     genesisWallets?: GenesisWalletState[];
     creatorOtherProjectContracts?: string[];
     sourceQualityReport?: string;
@@ -158,15 +156,6 @@ export interface GetProjectOptionsResponse {
     options?: ProjectOptions;
 }
 
-export const PROJECT_SCOPE = {
-    UNSPECIFIED: 0,
-    ACTIVE: 1,
-    ARCHIVED: 2,
-    ALL: 3
-} as const;
-
-export type ProjectScope = (typeof PROJECT_SCOPE)[keyof typeof PROJECT_SCOPE];
-
 let cachedProjectOptions: ProjectOptions | undefined;
 let projectOptionsRequest: (Promise<ProjectOptions | undefined> & {abort?: () => void}) | null = null;
 let cachedBytecodeBlacklistContracts: BytecodeBlacklistContract[] | undefined;
@@ -229,12 +218,8 @@ export interface UpdateWalletBlacklistEntryNoteResponse {
 }
 
 export class AthenaApplicationService {
-    public listProjects(
-        scope: ProjectScope = PROJECT_SCOPE.ACTIVE,
-        page = 1,
-        pageSize = 20
-    ): Promise<{items: ProjectListItem[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
-        const req = requests.get('/projects').query({scope, page, pageSize});
+    public listProjects(page = 1, pageSize = 20): Promise<{items: ProjectListItem[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
+        const req = requests.get('/projects').query({page, pageSize});
         const promise = req.then(res => {
             const body = (res.body || {}) as ListProjectsResponse;
             return {
@@ -549,17 +534,4 @@ export class AthenaApplicationService {
         return promise;
     }
 
-    public archiveProject(contract: string): Promise<void> & {abort?: () => void} {
-        const req = requests.post(`/project/${encodeURIComponent(contract)}/archive`).send({contract});
-        const promise = req.then(() => {}) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public unarchiveProject(contract: string): Promise<void> & {abort?: () => void} {
-        const req = requests.post(`/project/${encodeURIComponent(contract)}/unarchive`).send({contract});
-        const promise = req.then(() => {}) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
 }

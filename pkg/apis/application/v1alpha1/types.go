@@ -9,7 +9,6 @@ type ProjectListItem struct {
 	Contract                string `protobuf:"bytes,1,opt,name=contract" json:"contract"`
 	Name                    string `protobuf:"bytes,2,opt,name=name" json:"name"`
 	Symbol                  string `protobuf:"bytes,3,opt,name=symbol" json:"symbol"`
-	IsArchived              bool   `protobuf:"varint,4,opt,name=isArchived" json:"isArchived"`
 	HasMintRisk             bool   `protobuf:"varint,6,opt,name=hasMintRisk" json:"hasMintRisk"`
 	IsOpenSource            bool   `protobuf:"varint,7,opt,name=isOpenSource" json:"isOpenSource"`
 	WethPairQuoteUsdtValue  string `protobuf:"bytes,8,opt,name=wethPairQuoteUsdtValue" json:"wethPairQuoteUsdtValue"`
@@ -31,7 +30,6 @@ type ProjectMeta struct {
 	TxIndex                      uint64               `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
 	SourceCode                   string               `protobuf:"bytes,8,opt,name=sourceCode" json:"sourceCode"`
 	CreatorResult                SimulateResult       `protobuf:"bytes,9,opt,name=creatorResult" json:"creatorResult"`
-	IsArchived                   bool                 `protobuf:"varint,11,opt,name=isArchived" json:"isArchived"`
 	GenesisWallets               []GenesisWalletState `protobuf:"bytes,12,rep,name=genesisWallets" json:"genesisWallets"`
 	CreatorOtherProjectContracts []string             `protobuf:"bytes,13,rep,name=creatorOtherProjectContracts" json:"creatorOtherProjectContracts"`
 	SourceQualityReport          string               `protobuf:"bytes,14,opt,name=sourceQualityReport" json:"sourceQualityReport"`
@@ -112,12 +110,3 @@ type ProjectOption struct {
 	WethDecimals    uint32 `protobuf:"varint,4,opt,name=wethDecimals" json:"wethDecimals"`
 	UsdtDecimals    uint32 `protobuf:"varint,5,opt,name=usdtDecimals" json:"usdtDecimals"`
 }
-
-type ProjectScope int32
-
-const (
-	ProjectScopeUnspecified ProjectScope = 0
-	ProjectScopeActive      ProjectScope = 1
-	ProjectScopeArchived    ProjectScope = 2
-	ProjectScopeAll         ProjectScope = 3
-)

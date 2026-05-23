@@ -20,7 +20,6 @@ import (
 	"github.com/useryege/athena/internal/application/redisport"
 	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
-	v1 "github.com/useryege/athena/internal/pkg/proto/v1"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/deepseek"
@@ -46,7 +45,6 @@ type refreshTarget uint8
 
 const (
 	refreshTargetActive refreshTarget = iota
-	refreshTargetArchived
 )
 
 type Service struct {
@@ -537,15 +535,6 @@ func buildProjectQueries(projects []*Project) ([]athenacontract.AthenaProjectQue
 	return queries, contracts
 }
 
-func matchesTarget(isArchived bool, target refreshTarget) bool {
-	switch target {
-	case refreshTargetArchived:
-		return isArchived
-	default:
-		return !isArchived
-	}
-}
-
 func (s *Service) AnalyzeContractSourceQuality(ctx context.Context, sourceCode string) (string, error) {
 	if s.sourceQualityAnalyzer == nil {
 		return "", status.Error(codes.FailedPrecondition, "DeepSeek analyzer is not configured")
@@ -642,26 +631,6 @@ func (s *Service) enqueueAllProjectsForPolicy(ctx context.Context, policyTrigger
 		}
 	}
 
-	page := int32(1)
-	for {
-		archivedProjects, total, _, pageSize, err := s.projectCache.ListArchivedProjects(ctx, page, sourceCodeScanPageSize)
-		if err != nil {
-			log.WithField("component", "service_start").WithError(err).Warn("failed to list archived projects for initial policy enqueue")
-			return
-		}
-		for _, project := range archivedProjects {
-			if project == nil {
-				continue
-			}
-			if ok := sendContract(project.Meta.Contract); !ok {
-				return
-			}
-		}
-		if len(archivedProjects) == 0 || int64(page)*int64(pageSize) >= total {
-			return
-		}
-		page++
-	}
 }
 
 func (s *Service) triggerFullPolicyReevaluation() {
@@ -1125,33 +1094,11 @@ func (s *Service) fetchContractBytecode(ctx context.Context, contract common.Add
 }
 
 func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {
-	scope, err := normalizeProjectScope(req.GetScope())
+	startedAt := time.Now()
+	projects, total, page, pageSize, err := s.projectCache.ListActiveProjectsPage(ctx, req.GetPage(), req.GetPageSize())
+	projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
 	if err != nil {
 		return nil, err
-	}
-
-	startedAt := time.Now()
-	var (
-		projects []*Project
-		total    int64
-		page     int32
-		pageSize int32
-	)
-	switch scope {
-	case v1.ProjectScope_PROJECT_SCOPE_ACTIVE:
-		projects, total, page, pageSize, err = s.projectCache.ListActiveProjectsPage(ctx, req.GetPage(), req.GetPageSize())
-		projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
-		if err != nil {
-			return nil, err
-		}
-	case v1.ProjectScope_PROJECT_SCOPE_ARCHIVED:
-		projects, total, page, pageSize, err = s.projectCache.ListArchivedProjects(ctx, req.GetPage(), req.GetPageSize())
-		projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, status.Errorf(codes.Internal, "unsupported project scope %v", scope)
 	}
 
 	items := make([]*v1alpha1.ProjectListItem, 0, len(projects))
@@ -1303,89 +1250,6 @@ func (s *Service) GetProjectOptions(context.Context, *applicationpkg.GetProjectO
 			UsdtDecimals:    uint32(s.usdtDecimals),
 		},
 	}, nil
-}
-
-func (s *Service) ArchiveProject(ctx context.Context, req *applicationpkg.ArchiveProjectRequest) (*applicationpkg.ArchiveProjectResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-	contract := common.HexToAddress(req.GetContract())
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "project store is not configured")
-	}
-	meta, err := s.store.GetProjectMetaByContract(ctx, contract)
-	if err != nil {
-		return nil, err
-	}
-	if meta == nil {
-		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
-	}
-	if s.persistencePublisher == nil {
-		return nil, status.Error(codes.FailedPrecondition, "persistence publisher is not configured")
-	}
-	if err := s.persistencePublisher.PublishProjectArchive(ctx, contract); err != nil {
-		return nil, err
-	}
-	_, err = s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil {
-			current = &Project{Meta: projectMetaFromStore(*meta)}
-		}
-		current.Meta.IsArchived = true
-		current.Meta.ArchivedAt = time.Now().UTC()
-		return current, true, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.ArchiveProjectResponse{}, nil
-}
-
-func (s *Service) UnarchiveProject(ctx context.Context, req *applicationpkg.UnarchiveProjectRequest) (*applicationpkg.UnarchiveProjectResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-	contract := common.HexToAddress(req.GetContract())
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "project store is not configured")
-	}
-	meta, err := s.store.GetProjectMetaByContract(ctx, contract)
-	if err != nil {
-		return nil, err
-	}
-	if meta == nil {
-		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
-	}
-	if s.persistencePublisher == nil {
-		return nil, status.Error(codes.FailedPrecondition, "persistence publisher is not configured")
-	}
-	if err := s.persistencePublisher.PublishProjectUnarchive(ctx, contract); err != nil {
-		return nil, err
-	}
-	_, err = s.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil {
-			current = &Project{Meta: projectMetaFromStore(*meta)}
-		}
-		current.Meta.IsArchived = false
-		current.Meta.ArchivedAt = time.Time{}
-		return current, true, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.UnarchiveProjectResponse{}, nil
-}
-
-func normalizeProjectScope(scope v1.ProjectScope) (v1.ProjectScope, error) {
-	switch scope {
-	case v1.ProjectScope_PROJECT_SCOPE_UNSPECIFIED, v1.ProjectScope_PROJECT_SCOPE_ACTIVE:
-		return v1.ProjectScope_PROJECT_SCOPE_ACTIVE, nil
-	case v1.ProjectScope_PROJECT_SCOPE_ARCHIVED:
-		return v1.ProjectScope_PROJECT_SCOPE_ARCHIVED, nil
-	case v1.ProjectScope_PROJECT_SCOPE_ALL:
-		return 0, status.Error(codes.InvalidArgument, "scope PROJECT_SCOPE_ALL is not supported")
-	default:
-		return 0, status.Errorf(codes.InvalidArgument, "invalid scope %q", scope.String())
-	}
 }
 
 func normalizeProjectPage(page int32, pageSize int32) (int32, int32) {

@@ -13,7 +13,6 @@ import (
 type policyReevaluationProjectCache struct {
 	projects map[common.Address]*Project
 	active   []common.Address
-	archived []common.Address
 }
 
 func newPolicyReevaluationProjectCache(projects ...*Project) *policyReevaluationProjectCache {
@@ -26,10 +25,6 @@ func newPolicyReevaluationProjectCache(projects ...*Project) *policyReevaluation
 		}
 		contract := project.Meta.Contract
 		cache.projects[contract] = project
-		if project.Meta.IsArchived {
-			cache.archived = append(cache.archived, contract)
-			continue
-		}
 		cache.active = append(cache.active, contract)
 	}
 	return cache
@@ -91,26 +86,6 @@ func (c *policyReevaluationProjectCache) ListActiveProjectsPage(_ context.Contex
 		return nil, 0, 0, 0, err
 	}
 	total, page, pageSize := paginateActiveProjects(page, pageSize, &projects)
-	return projects, total, page, pageSize, nil
-}
-
-func (c *policyReevaluationProjectCache) ListArchivedProjects(_ context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
-	page, pageSize = normalizeCachePage(page, pageSize)
-	total := int64(len(c.archived))
-	start := int64(page-1) * int64(pageSize)
-	if start >= total {
-		return nil, total, page, pageSize, nil
-	}
-	stop := start + int64(pageSize)
-	if stop > total {
-		stop = total
-	}
-	projects := make([]*Project, 0, stop-start)
-	for _, contract := range c.archived[start:stop] {
-		if project := c.projects[contract]; project != nil {
-			projects = append(projects, project)
-		}
-	}
 	return projects, total, page, pageSize, nil
 }
 

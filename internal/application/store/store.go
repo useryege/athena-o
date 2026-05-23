@@ -22,8 +22,6 @@ type ProjectMeta struct {
 	CodeBinHash             common.Hash
 	SourceQualityReport     string
 	SourceQualityReportedAt time.Time
-	IsArchived              bool
-	ArchivedAt              time.Time
 }
 
 type ProjectEventLog struct {
@@ -65,11 +63,7 @@ type ProjectStore interface {
 	UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
 	UpdateProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
-	ArchiveProjectByContract(ctx context.Context, contract common.Address) error
-	UnarchiveProjectByContract(ctx context.Context, contract common.Address) error
-	ListArchivedProjectMetas(ctx context.Context, page int32, pageSize int32) ([]ProjectMeta, int64, int32, int32, error)
 	ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error)
-	GetArchivedProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error)
 	GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error)
 }
 

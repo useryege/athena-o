@@ -21,7 +21,6 @@ const (
 
 	projectFieldSchemaVersion                  = "schema_version"
 	projectFieldMetaBase                       = "meta_base"
-	projectFieldArchiveState                   = "archive_state"
 	projectFieldChainState                     = "chain_state"
 	projectFieldCreatorResult                  = "creator_result"
 	projectFieldCreatorOtherProjectContracts   = "creator_other_project_contracts"
@@ -36,9 +35,8 @@ const (
 
 	projectSchemaVersion = "7"
 
-	projectIndexActive   = "project:index:active"
-	projectIndexArchived = "project:index:archived"
-	projectMaxBlockKey   = "project:max_block_number"
+	projectIndexActive = "project:index:active"
+	projectMaxBlockKey = "project:max_block_number"
 )
 
 type ProjectUpdater func(current *Project, exists bool) (next *Project, changed bool, err error)
@@ -52,7 +50,6 @@ type ProjectSnapshotCache interface {
 	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
 	ListActiveProjects(ctx context.Context) ([]*Project, error)
 	ListActiveProjectsPage(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error)
-	ListArchivedProjects(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error)
 }
 
 type RedisProjectSnapshotCache struct {
@@ -79,11 +76,6 @@ type projectMetaBase struct {
 	TxIndex     uint64         `json:"tx_index"`
 }
 
-type projectArchiveState struct {
-	IsArchived bool      `json:"is_archived"`
-	ArchivedAt time.Time `json:"archived_at"`
-}
-
 func NewProjectSnapshotCache(client projectSnapshotRedisClient) ProjectSnapshotCache {
 	return &RedisProjectSnapshotCache{
 		client:        client,
@@ -104,7 +96,7 @@ func (c *RedisProjectSnapshotCache) ReplaceAll(ctx context.Context, projects []*
 		return err
 	}
 
-	deleteKeys := []string{projectDataHashKey, projectIndexActive, projectIndexArchived, projectMaxBlockKey}
+	deleteKeys := []string{projectDataHashKey, projectIndexActive, projectMaxBlockKey}
 	deleteKeys = append(deleteKeys, v2Keys...)
 
 	pipe := c.client.TxPipeline()
@@ -261,28 +253,6 @@ func (c *RedisProjectSnapshotCache) ListActiveProjectsPage(ctx context.Context, 
 	return projects, total, page, pageSize, nil
 }
 
-func (c *RedisProjectSnapshotCache) ListArchivedProjects(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
-	if c == nil || c.client == nil {
-		return nil, 0, 0, 0, nil
-	}
-	page, pageSize = normalizeCachePage(page, pageSize)
-	total, err := c.client.ZCard(ctx, projectIndexArchived)
-	if err != nil {
-		return nil, 0, 0, 0, err
-	}
-	start := int64(page-1) * int64(pageSize)
-	stop := start + int64(pageSize) - 1
-	contracts, err := c.client.ZRevRange(ctx, projectIndexArchived, start, stop)
-	if err != nil {
-		return nil, 0, 0, 0, err
-	}
-	projects, err := c.getProjectsByContracts(ctx, contracts)
-	if err != nil {
-		return nil, 0, 0, 0, err
-	}
-	return projects, total, page, pageSize, nil
-}
-
 func (c *RedisProjectSnapshotCache) listProjectDataV2Keys(ctx context.Context) ([]string, error) {
 	keys := make([]string, 0)
 	var cursor uint64
@@ -354,13 +324,6 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 	if err != nil {
 		return fmt.Errorf("marshal meta base for %s: %w", project.Meta.Contract.Hex(), err)
 	}
-	archivePayload, err := mustMarshalJSON(projectArchiveState{
-		IsArchived: project.Meta.IsArchived,
-		ArchivedAt: project.Meta.ArchivedAt,
-	})
-	if err != nil {
-		return fmt.Errorf("marshal archive state for %s: %w", project.Meta.Contract.Hex(), err)
-	}
 	chainStatePayload, err := mustMarshalJSON(project.Runtime.ChainState)
 	if err != nil {
 		return fmt.Errorf("marshal chain state for %s: %w", project.Meta.Contract.Hex(), err)
@@ -386,7 +349,6 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 	pipe.HSet(ctx, projectKey, map[string]any{
 		projectFieldSchemaVersion:                  projectSchemaVersion,
 		projectFieldMetaBase:                       metaBasePayload,
-		projectFieldArchiveState:                   archivePayload,
 		projectFieldChainState:                     chainStatePayload,
 		projectFieldCreatorResult:                  creatorResultPayload,
 		projectFieldCreatorOtherProjectContracts:   creatorOtherProjectContractsPayload,
@@ -421,17 +383,6 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 			return nil, fmt.Errorf("marshal meta base for %s: %w", next.Meta.Contract.Hex(), err)
 		}
 		fields[projectFieldMetaBase] = metaBasePayload
-	}
-
-	if current == nil || current.Meta.IsArchived != next.Meta.IsArchived || !current.Meta.ArchivedAt.Equal(next.Meta.ArchivedAt) {
-		archivePayload, err := mustMarshalJSON(projectArchiveState{
-			IsArchived: next.Meta.IsArchived,
-			ArchivedAt: next.Meta.ArchivedAt,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("marshal archive state for %s: %w", next.Meta.Contract.Hex(), err)
-		}
-		fields[projectFieldArchiveState] = archivePayload
 	}
 
 	if current == nil || !reflect.DeepEqual(current.Runtime.ChainState, next.Runtime.ChainState) {
@@ -500,7 +451,6 @@ func (c *RedisProjectSnapshotCache) deleteProjectUnlocked(ctx context.Context, c
 	pipe.Del(ctx, projectDataV2Key(contract))
 	pipe.HDel(ctx, projectDataHashKey, contractKey)
 	pipe.ZRem(ctx, projectIndexActive, contractKey)
-	pipe.ZRem(ctx, projectIndexArchived, contractKey)
 	return pipe.Exec(ctx)
 }
 
@@ -525,14 +475,6 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		project.Meta.Creator = meta.Creator
 		project.Meta.TxHash = meta.TxHash
 		project.Meta.TxIndex = meta.TxIndex
-	}
-	if raw := values[projectFieldArchiveState]; raw != "" {
-		var archive projectArchiveState
-		if err := json.Unmarshal([]byte(raw), &archive); err != nil {
-			return nil, false, err
-		}
-		project.Meta.IsArchived = archive.IsArchived
-		project.Meta.ArchivedAt = archive.ArchivedAt
 	}
 	if raw := values[projectFieldChainState]; raw != "" {
 		if err := json.Unmarshal([]byte(raw), &project.Runtime.ChainState); err != nil {
@@ -589,12 +531,6 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 
 func (c *RedisProjectSnapshotCache) applyProjectIndexes(ctx context.Context, pipe redisport.Pipeline, project *Project) {
 	contractKey := project.Meta.Contract.Hex()
-	if project.Meta.IsArchived {
-		pipe.ZRem(ctx, projectIndexActive, contractKey)
-		pipe.ZAdd(ctx, projectIndexArchived, redisport.ZMember{Score: archivedScore(project.Meta.ArchivedAt), Member: contractKey})
-		return
-	}
-	pipe.ZRem(ctx, projectIndexArchived, contractKey)
 	pipe.ZAdd(ctx, projectIndexActive, redisport.ZMember{Score: activeScore(project), Member: contractKey})
 }
 
@@ -646,13 +582,6 @@ func mustMarshalJSON(v interface{}) (string, error) {
 
 func activeScore(project *Project) float64 {
 	return float64(project.Meta.BlockNumber)*1_000_000 + float64(project.Meta.TxIndex)
-}
-
-func archivedScore(archivedAt time.Time) float64 {
-	if archivedAt.IsZero() {
-		return 0
-	}
-	return float64(archivedAt.Unix())
 }
 
 func normalizeCachePage(page int32, pageSize int32) (int32, int32) {

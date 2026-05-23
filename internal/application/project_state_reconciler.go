@@ -215,7 +215,7 @@ func (r *projectStateReconcilerImpl) refreshProjectStates(ctx context.Context, t
 	for i, contract := range contracts {
 		nextState := fetched[i].Project
 		changed, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
+			if !exists || current == nil {
 				return nil, false, nil
 			}
 			current.Runtime.ChainState = nextState
@@ -266,7 +266,7 @@ func (r *projectStateReconcilerImpl) refreshProjectSimulations(ctx context.Conte
 		if err != nil {
 			return err
 		}
-		if !ok || latest == nil || !matchesTarget(latest.Meta.IsArchived, target) {
+		if !ok || latest == nil {
 			continue
 		}
 
@@ -289,7 +289,7 @@ func (r *projectStateReconcilerImpl) refreshProjectSimulations(ctx context.Conte
 		}
 
 		changed, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) {
+			if !exists || current == nil {
 				return nil, false, nil
 			}
 			current.Runtime.CreatorResult = result
@@ -366,7 +366,7 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReports(ctx cont
 		}
 		reportedAt := time.Now().UTC()
 		_, err = r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Meta.SourceCode == "" || current.Meta.SourceQualityReport != "" {
+			if !exists || current == nil || current.Meta.SourceCode == "" || current.Meta.SourceQualityReport != "" {
 				return nil, false, nil
 			}
 			current.Meta.SourceQualityReport = report
@@ -432,7 +432,7 @@ func (r *projectStateReconcilerImpl) refreshProjectCreatorOtherProjects(ctx cont
 			otherContracts := excludeProjectContract(allContracts, project.Meta.Contract)
 			resolvedAt := time.Now().UTC()
 			changed, updateErr := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-				if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || !current.Runtime.CreatorOtherProjectsResolvedAt.IsZero() {
+				if !exists || current == nil || !current.Runtime.CreatorOtherProjectsResolvedAt.IsZero() {
 					return nil, false, nil
 				}
 				current.Runtime.CreatorOtherProjectContracts = cloneAddressSlice(otherContracts)
@@ -469,7 +469,7 @@ func (r *projectStateReconcilerImpl) refreshProjectCodeBinHashes(ctx context.Con
 		codeBinHash := crypto.Keccak256Hash(code)
 		shouldPersistCodeBinHash := false
 		changed, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Meta.CodeBinHash != (common.Hash{}) {
+			if !exists || current == nil || current.Meta.CodeBinHash != (common.Hash{}) {
 				return nil, false, nil
 			}
 			current.Meta.CodeBinHash = codeBinHash
@@ -510,34 +510,7 @@ func (r *projectStateReconcilerImpl) triggerPolicyEvaluation(contract common.Add
 }
 
 func (r *projectStateReconcilerImpl) listProjectsByTarget(ctx context.Context, target refreshTarget) ([]*Project, error) {
-	if target == refreshTargetActive {
-		return r.projectCache.ListActiveProjects(ctx)
-	}
-	return r.listAllArchivedProjects(ctx)
-}
-
-func (r *projectStateReconcilerImpl) listAllArchivedProjects(ctx context.Context) ([]*Project, error) {
-	projects := make([]*Project, 0)
-	page := int32(1)
-
-	for {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-
-		items, total, _, pageSize, err := r.projectCache.ListArchivedProjects(ctx, page, sourceCodeScanPageSize)
-		if err != nil {
-			return nil, err
-		}
-		projects = append(projects, items...)
-		if len(items) == 0 {
-			return projects, nil
-		}
-		if int64(page)*int64(pageSize) >= total {
-			return projects, nil
-		}
-		page++
-	}
+	return r.projectCache.ListActiveProjects(ctx)
 }
 
 func (r *projectStateReconcilerImpl) fetchProjectSourceCodeBatch(ctx context.Context, projects []*Project, target refreshTarget) error {
@@ -557,7 +530,7 @@ func (r *projectStateReconcilerImpl) fetchProjectSourceCodeBatch(ctx context.Con
 
 		shouldPersistSourceCode := false
 		changed, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || !matchesTarget(current.Meta.IsArchived, target) || current.Meta.SourceCode != "" {
+			if !exists || current == nil || current.Meta.SourceCode != "" {
 				return nil, false, nil
 			}
 			current.Meta.SourceCode = sourceCode
@@ -659,27 +632,13 @@ func (r *projectStateReconcilerImpl) buildCreatorProjectContractsIndexFromCache(
 }
 
 func (r *projectStateReconcilerImpl) listAllProjects(ctx context.Context) ([]*Project, error) {
-	activeProjects, err := r.projectCache.ListActiveProjects(ctx)
+	cachedProjects, err := r.projectCache.ListActiveProjects(ctx)
 	if err != nil {
 		return nil, err
 	}
-	archivedProjects, err := r.listAllArchivedProjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-	projects := make([]*Project, 0, len(activeProjects)+len(archivedProjects))
-	seen := make(map[common.Address]struct{}, len(activeProjects)+len(archivedProjects))
-	for _, project := range activeProjects {
-		if project == nil || project.Meta.Contract == (common.Address{}) {
-			continue
-		}
-		if _, ok := seen[project.Meta.Contract]; ok {
-			continue
-		}
-		seen[project.Meta.Contract] = struct{}{}
-		projects = append(projects, project)
-	}
-	for _, project := range archivedProjects {
+	projects := make([]*Project, 0, len(cachedProjects))
+	seen := make(map[common.Address]struct{}, len(cachedProjects))
+	for _, project := range cachedProjects {
 		if project == nil || project.Meta.Contract == (common.Address{}) {
 			continue
 		}

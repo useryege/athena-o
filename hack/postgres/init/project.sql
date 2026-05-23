@@ -11,8 +11,6 @@ CREATE TABLE IF NOT EXISTS project (
   code_bin_hash BYTEA,
   source_quality_report TEXT,
   source_quality_reported_at TIMESTAMPTZ,
-  is_archived BOOLEAN NOT NULL DEFAULT FALSE,
-  archived_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_contract_len CHECK (length(contract) = 20),
   CONSTRAINT project_creator_len CHECK (length(creator) = 20),
@@ -29,9 +27,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS project_tx_hash_idx
 
 CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (block_number, tx_index, id);
-
-CREATE INDEX IF NOT EXISTS project_archived_time_idx
-  ON project (is_archived, archived_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS project_creator_order_idx
   ON project (creator, block_number, tx_index, id);

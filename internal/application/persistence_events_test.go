@@ -16,8 +16,8 @@ import (
 )
 
 type persistenceEventWriterFake struct {
-	err          error
-	archiveCalls int
+	err             error
+	sourceCodeCalls int
 }
 
 func (w *persistenceEventWriterFake) WriteProjectMeta(context.Context, appstore.ProjectMeta) error {
@@ -29,6 +29,9 @@ func (w *persistenceEventWriterFake) WriteProjectEventLog(context.Context, appst
 }
 
 func (w *persistenceEventWriterFake) WriteProjectSourceCode(context.Context, common.Address, string) error {
+	if w.err == nil {
+		w.sourceCodeCalls++
+	}
 	return w.err
 }
 
@@ -37,18 +40,6 @@ func (w *persistenceEventWriterFake) WriteProjectCodeBinHash(context.Context, co
 }
 
 func (w *persistenceEventWriterFake) WriteProjectSourceQualityReport(context.Context, common.Address, string) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) ArchiveProject(context.Context, common.Address) error {
-	if w.err != nil {
-		return w.err
-	}
-	w.archiveCalls++
-	return nil
-}
-
-func (w *persistenceEventWriterFake) UnarchiveProject(context.Context, common.Address) error {
 	return w.err
 }
 
@@ -107,7 +98,7 @@ func TestNewRedisPersistenceEventBusNilClient(t *testing.T) {
 	if bus := NewRedisPersistenceEventBus(nil); bus != nil {
 		t.Fatal("expected nil bus")
 	}
-	if err := (*RedisPersistenceEventBus)(nil).Publish(context.Background(), PersistenceEvent{Op: PersistenceOpProjectArchive}); err == nil {
+	if err := (*RedisPersistenceEventBus)(nil).Publish(context.Background(), PersistenceEvent{Op: PersistenceOpProjectSourceCode}); err == nil {
 		t.Fatal("expected publish error for nil bus")
 	}
 	if err := (*RedisPersistenceEventBus)(nil).Start(context.Background(), &persistenceEventWriterFake{}); err == nil {
@@ -120,8 +111,8 @@ func TestRedisPersistenceEventBusConsumesAndAcks(t *testing.T) {
 	ctx := context.Background()
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 
-	if err := bus.PublishProjectArchive(ctx, contract); err != nil {
-		t.Fatalf("publish archive: %v", err)
+	if err := bus.PublishProjectSourceCodeUpdate(ctx, contract, "contract Source {}"); err != nil {
+		t.Fatalf("publish source code: %v", err)
 	}
 	writer := &persistenceEventWriterFake{}
 	processed, err := bus.consume(ctx, ">", writer, time.Millisecond)
@@ -131,8 +122,8 @@ func TestRedisPersistenceEventBusConsumesAndAcks(t *testing.T) {
 	if processed != 1 {
 		t.Fatalf("processed = %d, want 1", processed)
 	}
-	if writer.archiveCalls != 1 {
-		t.Fatalf("archive calls = %d, want 1", writer.archiveCalls)
+	if writer.sourceCodeCalls != 1 {
+		t.Fatalf("source code calls = %d, want 1", writer.sourceCodeCalls)
 	}
 	pending, err := client.XPending(ctx, persistenceStreamKey, persistenceGroupName).Result()
 	if err != nil {
@@ -161,7 +152,7 @@ func TestRedisPersistenceEventBusDeadLettersPoisonMessages(t *testing.T) {
 		},
 		{
 			name:   "writer failure",
-			values: map[string]any{"event": `{"version":1,"op":"project_archive","contract":"0x1000000000000000000000000000000000000001","occurred_at":"2026-05-22T00:00:00Z"}`},
+			values: map[string]any{"event": `{"version":1,"op":"project_source_code_update","contract":"0x1000000000000000000000000000000000000001","payload":{"contract":"0x1000000000000000000000000000000000000001","source_code":"contract Source {}"},"occurred_at":"2026-05-22T00:00:00Z"}`},
 			writer: &persistenceEventWriterFake{err: errors.New("store unavailable")},
 		},
 	}
