@@ -127,7 +127,7 @@ message ProjectMeta {
 
   repeated GenesisWalletState genesisWallets = 12;
 
-  repeated string creatorOtherProjectContracts = 13;
+  repeated string creatorHistoricalProjects = 13;
 
   optional string sourceQualityReport = 14;
 

@@ -31,7 +31,7 @@ export interface ProjectMeta {
     sourceCode?: string;
     creatorResult?: SimulateResult;
     genesisWallets?: GenesisWalletState[];
-    creatorOtherProjectContracts?: string[];
+    creatorHistoricalProjects?: string[];
     sourceQualityReport?: string;
     sourceQualityReportedAt?: string;
     isOpenSource?: boolean;
@@ -533,5 +533,4 @@ export class AthenaApplicationService {
         promise.abort = () => req.abort();
         return promise;
     }
-
 }

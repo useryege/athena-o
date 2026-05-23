@@ -556,10 +556,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                     <span className='project-details__field-value'>{renderValue(project.meta?.txIndex)}</span>
                                 </div>
                                 <div className='project-details__field' style={{gridColumn: '1 / -1'}}>
-                                    <span className='project-details__field-label'>Creator Other Projects</span>
+                                    <span className='project-details__field-label'>Creator Historical Projects</span>
                                     <div className='project-details__field-value'>
-                                        {project.meta?.creatorOtherProjectContracts && project.meta.creatorOtherProjectContracts.length > 0
-                                            ? project.meta.creatorOtherProjectContracts.map((item, index) => <div key={`${item}-${index}`}>{item}</div>)
+                                        {project.meta?.creatorHistoricalProjects && project.meta.creatorHistoricalProjects.length > 0
+                                            ? project.meta.creatorHistoricalProjects.map((item, index) => <div key={`${item}-${index}`}>{item}</div>)
                                             : '-'}
                                     </div>
                                 </div>

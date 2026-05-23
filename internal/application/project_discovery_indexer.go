@@ -27,6 +27,12 @@ import (
 const initialProjectSyncLookback = 15 * 24 * time.Hour
 const defaultBlockHeaderQueueCapacity = 16
 
+var creatorHistoricalProjectRetryDelays = []time.Duration{
+	200 * time.Millisecond,
+	500 * time.Millisecond,
+	time.Second,
+}
+
 var (
 	errGenesisReceiptNil   = errors.New("project transaction receipt is nil")
 	erc20TransferTopicHash = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
@@ -54,6 +60,7 @@ type projectDiscoveryIndexerImpl struct {
 type discoveryIntakeImpl struct {
 	nodeClient      projectDiscoveryNodeClient
 	projectCache    ProjectSnapshotCache
+	projectStore    appstore.ProjectStore
 	fetcher         evm.AthenaFetcher
 	publisher       PersistenceEventPublisher
 	policyTriggerCh chan<- common.Address
@@ -94,6 +101,7 @@ func NewProjectDiscoveryIndexer(
 func NewDiscoveryIntake(
 	nodeClient *ethclient.Client,
 	projectCache ProjectSnapshotCache,
+	projectStore appstore.ProjectStore,
 	fetcher evm.AthenaFetcher,
 	publisher PersistenceEventPublisher,
 	policyTriggerCh chan<- common.Address,
@@ -101,6 +109,7 @@ func NewDiscoveryIntake(
 	return &discoveryIntakeImpl{
 		nodeClient:      nodeClient,
 		projectCache:    projectCache,
+		projectStore:    projectStore,
 		fetcher:         fetcher,
 		publisher:       publisher,
 		policyTriggerCh: policyTriggerCh,
@@ -457,6 +466,12 @@ func (d *discoveryIntakeImpl) syncProjects(ctx context.Context, projects []*Proj
 			continue
 		}
 
+		historicalProjects, err := d.fetchCreatorHistoricalProjects(ctx, project)
+		if err != nil {
+			return err
+		}
+		project.Runtime.CreatorHistoricalProjects = historicalProjects
+
 		project.Runtime.ChainState = snapshot
 		if err := d.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
 			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
@@ -503,6 +518,86 @@ func (d *discoveryIntakeImpl) triggerPolicyEvaluation(contract common.Address, s
 			"source":    source,
 		}).Warn("project policy trigger channel is full, dropping trigger")
 	}
+}
+
+func (d *discoveryIntakeImpl) fetchCreatorHistoricalProjects(ctx context.Context, project *Project) ([]common.Address, error) {
+	if project == nil || project.Meta.Creator == (common.Address{}) || project.Meta.Contract == (common.Address{}) {
+		return nil, nil
+	}
+	if d.projectStore == nil {
+		log.WithFields(log.Fields{
+			"component": "project_discovery_intake",
+			"contract":  project.Meta.Contract.Hex(),
+			"creator":   project.Meta.Creator.Hex(),
+		}).Warn("project store is not configured; creator historical projects will be empty")
+		return nil, nil
+	}
+
+	var lastErr error
+	attempts := len(creatorHistoricalProjectRetryDelays) + 1
+	for attempt := 1; attempt <= attempts; attempt++ {
+		metas, err := d.projectStore.ListProjectMetasByCreatorBefore(ctx, project.Meta.Creator, project.Meta.BlockNumber, project.Meta.TxIndex)
+		if err == nil {
+			return projectContractsFromMetasPreserveOrder(metas, project.Meta.Contract), nil
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, ctxErr
+		}
+		lastErr = err
+		if attempt > len(creatorHistoricalProjectRetryDelays) {
+			break
+		}
+		delay := creatorHistoricalProjectRetryDelays[attempt-1]
+		log.WithFields(log.Fields{
+			"component":     "project_discovery_intake",
+			"contract":      project.Meta.Contract.Hex(),
+			"creator":       project.Meta.Creator.Hex(),
+			"attempt":       attempt,
+			"next_retry_in": delay.String(),
+			"error":         err.Error(),
+		}).Warn("list creator historical projects failed, retrying")
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			if !timer.Stop() {
+				<-timer.C
+			}
+			return nil, ctx.Err()
+		case <-timer.C:
+		}
+	}
+
+	log.WithFields(log.Fields{
+		"component": "project_discovery_intake",
+		"contract":  project.Meta.Contract.Hex(),
+		"creator":   project.Meta.Creator.Hex(),
+		"attempts":  attempts,
+		"error":     lastErr.Error(),
+	}).Warn("list creator historical projects failed; continuing with empty result")
+	return nil, nil
+}
+
+func projectContractsFromMetasPreserveOrder(metas []appstore.ProjectMeta, currentContract common.Address) []common.Address {
+	if len(metas) == 0 {
+		return nil
+	}
+	contracts := make([]common.Address, 0, len(metas))
+	for _, meta := range metas {
+		contracts = appendProjectContractPreserveOrder(contracts, meta.Contract, currentContract)
+	}
+	return contracts
+}
+
+func appendProjectContractPreserveOrder(contracts []common.Address, contract common.Address, currentContract common.Address) []common.Address {
+	if contract == (common.Address{}) || contract == currentContract {
+		return contracts
+	}
+	for _, existing := range contracts {
+		if existing == contract {
+			return contracts
+		}
+	}
+	return append(contracts, contract)
 }
 
 func genesisWalletMetasFromShares(shares []GenesisWalletShare) []GenesisWalletMeta {

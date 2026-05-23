@@ -1,11 +1,9 @@
 package application
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -125,7 +123,6 @@ func (r *projectStateReconcilerImpl) reconcilerJobs() []reconcilerJob {
 		{name: "sourcecode_refresh_active", interval: activeProjectSourceCodeRefreshInterval, run: r.refreshActiveProjectSourceCodes},
 		{name: "source_quality_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectSourceQualityReports},
 		{name: "code_bin_hash_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectCodeBinHashes},
-		{name: "creator_other_projects_refresh_active", interval: sourceCodeRefreshInterval, run: r.refreshActiveProjectCreatorOtherProjects},
 	}
 }
 
@@ -380,77 +377,6 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReports(ctx cont
 	return nil
 }
 
-func (r *projectStateReconcilerImpl) refreshActiveProjectCreatorOtherProjects(ctx context.Context) error {
-	return r.refreshProjectCreatorOtherProjects(ctx, refreshTargetActive)
-}
-
-func (r *projectStateReconcilerImpl) refreshProjectCreatorOtherProjects(ctx context.Context, target refreshTarget) error {
-	projects, err := r.listProjectsByTarget(ctx, target)
-	if err != nil {
-		return err
-	}
-	pendingByCreator := make(map[common.Address][]*Project)
-	for _, project := range projects {
-		if project == nil || project.Meta.Contract == (common.Address{}) || project.Meta.Creator == (common.Address{}) || !project.Runtime.CreatorOtherProjectsResolvedAt.IsZero() {
-			continue
-		}
-		creator := project.Meta.Creator
-		pendingByCreator[creator] = append(pendingByCreator[creator], project)
-	}
-	if len(pendingByCreator) == 0 {
-		return nil
-	}
-
-	creatorProjectsByMeta, err := r.buildCreatorProjectMetasIndexFromCache(ctx)
-	if err != nil {
-		return err
-	}
-
-	for creator, creatorProjects := range pendingByCreator {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		creatorMetas, hasCache := creatorProjectsByMeta[creator]
-
-		for _, project := range creatorProjects {
-			var otherContracts []common.Address
-			useDBFallback := !hasCache || len(creatorMetas) <= 1
-			if useDBFallback && r.projectStore != nil {
-				metas, queryErr := r.projectStore.ListProjectMetasByCreatorBefore(ctx, creator, project.Meta.BlockNumber, project.Meta.TxIndex)
-				if queryErr != nil {
-					log.WithFields(log.Fields{
-						"component":    "project_state_reconciler",
-						"creator":      creator.Hex(),
-						"block_number": project.Meta.BlockNumber,
-						"tx_index":     project.Meta.TxIndex,
-						"error":        queryErr.Error(),
-					}).Warn("list project metas by creator before failed")
-					continue
-				}
-				otherContracts = projectContractsFromMetasPreserveOrder(metas, project.Meta.Contract)
-			} else {
-				otherContracts = previousProjectContractsByCreationOrder(creatorMetas, project.Meta)
-			}
-			resolvedAt := time.Now().UTC()
-			changed, updateErr := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-				if !exists || current == nil || !current.Runtime.CreatorOtherProjectsResolvedAt.IsZero() {
-					return nil, false, nil
-				}
-				current.Runtime.CreatorOtherProjectContracts = cloneAddressSlice(otherContracts)
-				current.Runtime.CreatorOtherProjectsResolvedAt = resolvedAt
-				return current, true, nil
-			})
-			if updateErr != nil {
-				continue
-			}
-			if changed {
-				r.triggerPolicyEvaluation(project.Meta.Contract, "refresh_project_creator_other_projects")
-			}
-		}
-	}
-	return nil
-}
-
 func (r *projectStateReconcilerImpl) refreshProjectCodeBinHashes(ctx context.Context, target refreshTarget) error {
 	projects, err := r.listProjectsByTarget(ctx, target)
 	if err != nil {
@@ -610,120 +536,4 @@ func (r *projectStateReconcilerImpl) fetchContractBytecode(ctx context.Context, 
 		return r.codeAtFunc(ctx, contract)
 	}
 	return nil, errors.New("codeAt function is not configured")
-}
-
-func (r *projectStateReconcilerImpl) buildCreatorProjectMetasIndexFromCache(ctx context.Context) (map[common.Address][]appstore.ProjectMeta, error) {
-	projects, err := r.listAllProjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	creatorProjects := make(map[common.Address][]appstore.ProjectMeta)
-	for _, project := range projects {
-		if project == nil || project.Meta.Creator == (common.Address{}) || project.Meta.Contract == (common.Address{}) {
-			continue
-		}
-		creator := project.Meta.Creator
-		creatorProjects[creator] = append(creatorProjects[creator], appstore.ProjectMeta{
-			BlockNumber: project.Meta.BlockNumber,
-			BlockTime:   project.Meta.BlockTime,
-			Contract:    project.Meta.Contract,
-			Creator:     project.Meta.Creator,
-			TxHash:      project.Meta.TxHash,
-			TxIndex:     project.Meta.TxIndex,
-		})
-	}
-	for creator, metas := range creatorProjects {
-		sortProjectMetasByCreationOrder(metas)
-		creatorProjects[creator] = metas
-	}
-	return creatorProjects, nil
-}
-
-func (r *projectStateReconcilerImpl) listAllProjects(ctx context.Context) ([]*Project, error) {
-	cachedProjects, err := r.projectCache.ListActiveProjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-	projects := make([]*Project, 0, len(cachedProjects))
-	seen := make(map[common.Address]struct{}, len(cachedProjects))
-	for _, project := range cachedProjects {
-		if project == nil || project.Meta.Contract == (common.Address{}) {
-			continue
-		}
-		if _, ok := seen[project.Meta.Contract]; ok {
-			continue
-		}
-		seen[project.Meta.Contract] = struct{}{}
-		projects = append(projects, project)
-	}
-	return projects, nil
-}
-
-func previousProjectContractsByCreationOrder(metas []appstore.ProjectMeta, current ProjectMeta) []common.Address {
-	if len(metas) == 0 {
-		return nil
-	}
-	contracts := make([]common.Address, 0)
-	for _, meta := range metas {
-		if meta.Creator != current.Creator || !projectMetaCreatedBefore(meta, current) {
-			continue
-		}
-		contracts = appendProjectContractPreserveOrder(contracts, meta.Contract, current.Contract)
-	}
-	return contracts
-}
-
-func projectContractsFromMetasPreserveOrder(metas []appstore.ProjectMeta, currentContract common.Address) []common.Address {
-	if len(metas) == 0 {
-		return nil
-	}
-	contracts := make([]common.Address, 0, len(metas))
-	for _, meta := range metas {
-		contracts = appendProjectContractPreserveOrder(contracts, meta.Contract, currentContract)
-	}
-	return contracts
-}
-
-func appendProjectContractPreserveOrder(contracts []common.Address, contract common.Address, currentContract common.Address) []common.Address {
-	if contract == (common.Address{}) || contract == currentContract {
-		return contracts
-	}
-	for _, existing := range contracts {
-		if existing == contract {
-			return contracts
-		}
-	}
-	return append(contracts, contract)
-}
-
-func projectMetaCreatedBefore(candidate appstore.ProjectMeta, current ProjectMeta) bool {
-	if candidate.BlockNumber < current.BlockNumber {
-		return true
-	}
-	if candidate.BlockNumber > current.BlockNumber {
-		return false
-	}
-	return candidate.TxIndex < current.TxIndex
-}
-
-func sortProjectMetasByCreationOrder(metas []appstore.ProjectMeta) {
-	sort.SliceStable(metas, func(i, j int) bool {
-		if metas[i].BlockNumber != metas[j].BlockNumber {
-			return metas[i].BlockNumber < metas[j].BlockNumber
-		}
-		if metas[i].TxIndex != metas[j].TxIndex {
-			return metas[i].TxIndex < metas[j].TxIndex
-		}
-		return bytes.Compare(metas[i].Contract.Bytes(), metas[j].Contract.Bytes()) < 0
-	})
-}
-
-func cloneAddressSlice(addresses []common.Address) []common.Address {
-	if len(addresses) == 0 {
-		return nil
-	}
-	cloned := make([]common.Address, len(addresses))
-	copy(cloned, addresses)
-	return cloned
 }

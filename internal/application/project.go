@@ -33,11 +33,10 @@ type ProjectMeta struct {
 }
 
 type ProjectRuntime struct {
-	GenesisTx                      *types.Transaction
-	ChainState                     athenacontract.AthenaProject
-	CreatorResult                  SimulateResult
-	CreatorOtherProjectContracts   []common.Address
-	CreatorOtherProjectsResolvedAt time.Time
+	GenesisTx                 *types.Transaction
+	ChainState                athenacontract.AthenaProject
+	CreatorResult             SimulateResult
+	CreatorHistoricalProjects []common.Address
 }
 
 type GenesisWalletMeta struct {
@@ -97,12 +96,12 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 		sourceQualityReportedAt = formatOptionalTime(project.Meta.SourceQualityReportedAt)
 	}
 	creatorResult := project.Runtime.CreatorResult
-	creatorOtherProjectContracts := make([]string, 0, len(project.Runtime.CreatorOtherProjectContracts))
-	for _, contract := range project.Runtime.CreatorOtherProjectContracts {
+	creatorHistoricalProjects := make([]string, 0, len(project.Runtime.CreatorHistoricalProjects))
+	for _, contract := range project.Runtime.CreatorHistoricalProjects {
 		if contract == (common.Address{}) {
 			continue
 		}
-		creatorOtherProjectContracts = append(creatorOtherProjectContracts, contract.Hex())
+		creatorHistoricalProjects = append(creatorHistoricalProjects, contract.Hex())
 	}
 	var genesisWallets []v1alpha1.GenesisWalletState
 	var genesisWalletAssetStates []v1alpha1.GenesisWalletAssetState
@@ -150,13 +149,13 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 				CanMintViaTransferToUsdtPair:       creatorResult.CanMintViaTransferToUsdtPair,
 				CanMintFromUsdtPairViaTransferFrom: creatorResult.CanMintFromUsdtPairViaTransferFrom,
 			},
-			GenesisWallets:               genesisWallets,
-			CreatorOtherProjectContracts: creatorOtherProjectContracts,
-			SourceQualityReport:          sourceQualityReport,
-			SourceQualityReportedAt:      sourceQualityReportedAt,
-			IsOpenSource:                 strings.TrimSpace(project.Meta.SourceCode) != "",
-			SourceCodeHash:               hashToString(project.Meta.SourceCodeHash),
-			CodeBinHash:                  hashToString(project.Meta.CodeBinHash),
+			GenesisWallets:            genesisWallets,
+			CreatorHistoricalProjects: creatorHistoricalProjects,
+			SourceQualityReport:       sourceQualityReport,
+			SourceQualityReportedAt:   sourceQualityReportedAt,
+			IsOpenSource:              strings.TrimSpace(project.Meta.SourceCode) != "",
+			SourceCodeHash:            hashToString(project.Meta.SourceCodeHash),
+			CodeBinHash:               hashToString(project.Meta.CodeBinHash),
 		},
 		ChainState: v1alpha1.ProjectChainState{
 			Token: v1alpha1.TokenState{

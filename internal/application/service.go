@@ -263,7 +263,7 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 	}
 
 	policyTriggerCh = make(chan common.Address, projectPolicyTriggerQueueCapacity)
-	discoveryIntake := NewDiscoveryIntake(s.nodeClient, s.projectCache, athenaFetcher, s.persistencePublisher, policyTriggerCh)
+	discoveryIntake := NewDiscoveryIntake(s.nodeClient, s.projectCache, s.store, athenaFetcher, s.persistencePublisher, policyTriggerCh)
 
 	discoveryIndexer, err := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, discoveryIntake)
 	if err != nil {

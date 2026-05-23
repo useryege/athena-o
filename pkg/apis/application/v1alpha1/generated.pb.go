@@ -486,11 +486,11 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceQualityReport)))
 	i--
 	dAtA[i] = 0x72
-	if len(m.CreatorOtherProjectContracts) > 0 {
-		for iNdEx := len(m.CreatorOtherProjectContracts) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.CreatorOtherProjectContracts[iNdEx])
-			copy(dAtA[i:], m.CreatorOtherProjectContracts[iNdEx])
-			i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatorOtherProjectContracts[iNdEx])))
+	if len(m.CreatorHistoricalProjects) > 0 {
+		for iNdEx := len(m.CreatorHistoricalProjects) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.CreatorHistoricalProjects[iNdEx])
+			copy(dAtA[i:], m.CreatorHistoricalProjects[iNdEx])
+			i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatorHistoricalProjects[iNdEx])))
 			i--
 			dAtA[i] = 0x6a
 		}
@@ -936,8 +936,8 @@ func (m *ProjectMeta) Size() (n int) {
 			n += 1 + l + sovGenerated(uint64(l))
 		}
 	}
-	if len(m.CreatorOtherProjectContracts) > 0 {
-		for _, s := range m.CreatorOtherProjectContracts {
+	if len(m.CreatorHistoricalProjects) > 0 {
+		for _, s := range m.CreatorHistoricalProjects {
 			l = len(s)
 			n += 1 + l + sovGenerated(uint64(l))
 		}
@@ -1145,7 +1145,7 @@ func (this *ProjectMeta) String() string {
 		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
 		`CreatorResult:` + strings.Replace(strings.Replace(this.CreatorResult.String(), "SimulateResult", "SimulateResult", 1), `&`, ``, 1) + `,`,
 		`GenesisWallets:` + repeatedStringForGenesisWallets + `,`,
-		`CreatorOtherProjectContracts:` + fmt.Sprintf("%v", this.CreatorOtherProjectContracts) + `,`,
+		`CreatorHistoricalProjects:` + fmt.Sprintf("%v", this.CreatorHistoricalProjects) + `,`,
 		`SourceQualityReport:` + fmt.Sprintf("%v", this.SourceQualityReport) + `,`,
 		`SourceQualityReportedAt:` + fmt.Sprintf("%v", this.SourceQualityReportedAt) + `,`,
 		`IsOpenSource:` + fmt.Sprintf("%v", this.IsOpenSource) + `,`,
@@ -3066,7 +3066,7 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 13:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreatorOtherProjectContracts", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatorHistoricalProjects", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3094,7 +3094,7 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CreatorOtherProjectContracts = append(m.CreatorOtherProjectContracts, string(dAtA[iNdEx:postIndex]))
+			m.CreatorHistoricalProjects = append(m.CreatorHistoricalProjects, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		case 14:
 			if wireType != 2 {

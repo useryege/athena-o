@@ -101,14 +101,17 @@ func TestRedisProjectSnapshotCachePersistsProjectReport(t *testing.T) {
 	}
 }
 
-func TestRedisProjectSnapshotCachePersistsRuntimeResolutionFields(t *testing.T) {
+func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T) {
 	ctx := context.Background()
 	mini := miniredis.RunT(t)
 	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
 	t.Cleanup(func() { _ = client.Close() })
 	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
 	contract := common.BigToAddress(big.NewInt(101))
-	resolvedAt := time.Date(2026, 5, 23, 12, 34, 56, 789, time.UTC)
+	historicalProjects := []common.Address{
+		common.HexToAddress("0x00000000000000000000000000000000000000a1"),
+		common.HexToAddress("0x00000000000000000000000000000000000000a2"),
+	}
 	sourceCodeHash := common.HexToHash("0x0101010101010101010101010101010101010101010101010101010101010101")
 	codeBinHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
 
@@ -119,7 +122,7 @@ func TestRedisProjectSnapshotCachePersistsRuntimeResolutionFields(t *testing.T) 
 			CodeBinHash:    codeBinHash,
 		},
 		Runtime: ProjectRuntime{
-			CreatorOtherProjectsResolvedAt: resolvedAt,
+			CreatorHistoricalProjects: historicalProjects,
 		},
 	}); err != nil {
 		t.Fatalf("set project: %v", err)
@@ -132,8 +135,8 @@ func TestRedisProjectSnapshotCachePersistsRuntimeResolutionFields(t *testing.T) 
 	if !exists || project == nil {
 		t.Fatal("project missing after set")
 	}
-	if got := project.Runtime.CreatorOtherProjectsResolvedAt; !got.Equal(resolvedAt) {
-		t.Fatalf("creator other projects resolved at = %s, want %s", got, resolvedAt)
+	if got := project.Runtime.CreatorHistoricalProjects; len(got) != len(historicalProjects) || got[0] != historicalProjects[0] || got[1] != historicalProjects[1] {
+		t.Fatalf("creator historical projects = %v, want %v", addressHexes(got), addressHexes(historicalProjects))
 	}
 	if got := project.Meta.SourceCodeHash; got != sourceCodeHash {
 		t.Fatalf("source code hash = %s, want %s", got.Hex(), sourceCodeHash.Hex())
@@ -146,8 +149,8 @@ func TestRedisProjectSnapshotCachePersistsRuntimeResolutionFields(t *testing.T) 
 	if err != nil {
 		t.Fatalf("hgetall project: %v", err)
 	}
-	if got := values[projectFieldCreatorOtherProjectsResolvedAt]; got != resolvedAt.Format(time.RFC3339Nano) {
-		t.Fatalf("raw resolved at = %q, want %q", got, resolvedAt.Format(time.RFC3339Nano))
+	if got := values[projectFieldCreatorHistoricalProjects]; got == "" {
+		t.Fatal("raw creator historical projects is empty")
 	}
 	if got := values[projectFieldSourceCodeHash]; got != sourceCodeHash.Hex() {
 		t.Fatalf("raw source code hash = %q, want %q", got, sourceCodeHash.Hex())
@@ -158,40 +161,14 @@ func TestRedisProjectSnapshotCachePersistsRuntimeResolutionFields(t *testing.T) 
 	if _, ok := values["creator_other_projects_resolved"]; ok {
 		t.Fatal("old creator_other_projects_resolved field still present")
 	}
+	if _, ok := values["creator_other_projects_resolved_at"]; ok {
+		t.Fatal("old creator_other_projects_resolved_at field still present")
+	}
+	if _, ok := values["creator_other_project_contracts"]; ok {
+		t.Fatal("old creator_other_project_contracts field still present")
+	}
 	if _, ok := values["runtime_code_hash"]; ok {
 		t.Fatal("old runtime_code_hash field still present")
-	}
-}
-
-func TestRedisProjectSnapshotCacheKeepsZeroCreatorOtherProjectsResolvedAt(t *testing.T) {
-	ctx := context.Background()
-	mini := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
-	t.Cleanup(func() { _ = client.Close() })
-	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
-	contract := common.BigToAddress(big.NewInt(102))
-
-	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract}}); err != nil {
-		t.Fatalf("set project: %v", err)
-	}
-
-	project, exists, err := cache.GetProject(ctx, contract)
-	if err != nil {
-		t.Fatalf("get project: %v", err)
-	}
-	if !exists || project == nil {
-		t.Fatal("project missing after set")
-	}
-	if !project.Runtime.CreatorOtherProjectsResolvedAt.IsZero() {
-		t.Fatalf("creator other projects resolved at = %s, want zero", project.Runtime.CreatorOtherProjectsResolvedAt)
-	}
-
-	values, err := client.HGetAll(ctx, projectDataV2Key(contract)).Result()
-	if err != nil {
-		t.Fatalf("hgetall project: %v", err)
-	}
-	if got := values[projectFieldCreatorOtherProjectsResolvedAt]; got != "" {
-		t.Fatalf("raw resolved at = %q, want empty", got)
 	}
 }
 
