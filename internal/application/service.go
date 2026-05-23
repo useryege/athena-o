@@ -29,9 +29,8 @@ import (
 )
 
 const (
-	binBlacklistScanInterval          = time.Minute
-	sourceCodeScanPageSize            = 200
-	projectPolicyTriggerQueueCapacity = 4096
+	binBlacklistScanInterval = time.Minute
+	sourceCodeScanPageSize   = 200
 )
 
 type Service struct {
@@ -68,7 +67,6 @@ type Service struct {
 	startStopMu     sync.Mutex
 	lifecycleCtx    context.Context
 	lifecycleStop   context.CancelFunc
-	policyTriggerCh chan common.Address
 	bootstrapStop   context.CancelFunc
 	starting        bool
 	started         bool
@@ -159,7 +157,7 @@ func (s *Service) Start() error {
 	s.bootstrapStop = cancel
 	s.startStopMu.Unlock()
 
-	pipeline, apiFetcher, athenaFetcher, policyTriggerCh, err := s.startWithContext(ctx)
+	pipeline, apiFetcher, athenaFetcher, err := s.startWithContext(ctx)
 	if err != nil {
 		cancel()
 		s.startStopMu.Lock()
@@ -182,7 +180,6 @@ func (s *Service) Start() error {
 	s.athenaFetcher = athenaFetcher
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
-	s.policyTriggerCh = policyTriggerCh
 	s.bootstrapStop = nil
 	s.starting = false
 	s.started = true
@@ -191,7 +188,7 @@ func (s *Service) Start() error {
 	return nil
 }
 
-func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeline, apiFetcher ethereumapi.EthereumAPI, athenaFetcher evm.AthenaFetcher, policyTriggerCh chan common.Address, err error) {
+func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeline, apiFetcher ethereumapi.EthereumAPI, athenaFetcher evm.AthenaFetcher, err error) {
 	startedAt := time.Now()
 	startLogger := log.WithFields(log.Fields{
 		"component": "application_start",
@@ -214,12 +211,12 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 
 	athenaFetcher, err = evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	chainID, err := s.nodeClient.ChainID(ctx)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	apiFetcher = ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
@@ -227,19 +224,19 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 
 	if s.bytecodeBlacklist != nil {
 		if err := s.bytecodeBlacklist.Load(ctx); err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
 	if s.sourcecodeBlacklist != nil {
 		if err := s.sourcecodeBlacklist.Load(ctx); err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
 	if s.walletBlacklist != nil {
 		if err := s.walletBlacklist.Load(ctx); err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
@@ -247,7 +244,13 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		go s.runPersistenceEventLoop(ctx)
 	}
 
-	policyTriggerCh = make(chan common.Address, projectPolicyTriggerQueueCapacity)
+	policyEngine := NewProjectPolicyEngine(
+		s.projectCache,
+		s.bytecodeBlacklist,
+		s.sourcecodeBlacklist,
+		s.walletBlacklist,
+		s.persistencePublisher,
+	)
 	stateReconciler := NewProjectStateReconciler(
 		s.projectCache,
 		s.nodeClient,
@@ -258,28 +261,20 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		s.sourceQualityAnalyzer,
 		s.persistencePublisher,
 		s.fetchContractBytecode,
-		policyTriggerCh,
+		policyEngine,
 	)
 	discoveryIntake := NewDiscoveryIntake(stateReconciler)
 
 	discoveryIndexer, err := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, s.store, discoveryIntake)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
-	policyEngine := NewProjectPolicyEngine(
-		s.projectCache,
-		s.bytecodeBlacklist,
-		s.sourcecodeBlacklist,
-		s.walletBlacklist,
-		s.persistencePublisher,
-		policyTriggerCh,
-	)
 
-	pipeline = NewProjectPipeline(discoveryIndexer, stateReconciler, policyEngine)
+	pipeline = NewProjectPipeline(discoveryIndexer, stateReconciler)
 	if err := pipeline.Start(ctx); err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
-	return pipeline, apiFetcher, athenaFetcher, policyTriggerCh, nil
+	return pipeline, apiFetcher, athenaFetcher, nil
 }
 
 func genesisWalletAddressesFromMetas(items []GenesisWalletMeta) []common.Address {
@@ -383,7 +378,6 @@ func (s *Service) clearPipelineLocked() {
 	s.pipeline = nil
 	s.apiFetcher = nil
 	s.athenaFetcher = nil
-	s.policyTriggerCh = nil
 }
 
 func (s *Service) ListBytecodeBlacklistContracts(ctx context.Context, _ *applicationpkg.ListBytecodeBlacklistContractsRequest) (*applicationpkg.ListBytecodeBlacklistContractsResponse, error) {

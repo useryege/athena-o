@@ -8,14 +8,12 @@ import (
 type ProjectPipeline struct {
 	discoveryIndexer ProjectDiscoveryIndexer
 	stateReconciler  ProjectStateReconciler
-	policyEngine     ProjectPolicyEngine
 }
 
-func NewProjectPipeline(discoveryIndexer ProjectDiscoveryIndexer, stateReconciler ProjectStateReconciler, policyEngine ProjectPolicyEngine) *ProjectPipeline {
+func NewProjectPipeline(discoveryIndexer ProjectDiscoveryIndexer, stateReconciler ProjectStateReconciler) *ProjectPipeline {
 	return &ProjectPipeline{
 		discoveryIndexer: discoveryIndexer,
 		stateReconciler:  stateReconciler,
-		policyEngine:     policyEngine,
 	}
 }
 
@@ -36,27 +34,12 @@ func (p *ProjectPipeline) Start(ctx context.Context) error {
 			return err
 		}
 	}
-	if p.policyEngine != nil {
-		if err := p.policyEngine.Start(ctx); err != nil {
-			if p.stateReconciler != nil {
-				_ = p.stateReconciler.Stop()
-			}
-			if p.discoveryIndexer != nil {
-				_ = p.discoveryIndexer.Stop()
-			}
-			return err
-		}
-	}
 	return nil
 }
 
 func (p *ProjectPipeline) Stop() error {
 	if p == nil {
 		return nil
-	}
-	var policyErr error
-	if p.policyEngine != nil {
-		policyErr = p.policyEngine.Stop()
 	}
 	var reconcilerErr error
 	if p.stateReconciler != nil {
@@ -66,5 +49,5 @@ func (p *ProjectPipeline) Stop() error {
 	if p.discoveryIndexer != nil {
 		discoveryErr = p.discoveryIndexer.Stop()
 	}
-	return errors.Join(discoveryErr, reconcilerErr, policyErr)
+	return errors.Join(discoveryErr, reconcilerErr)
 }

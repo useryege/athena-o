@@ -22,7 +22,7 @@ type ProjectStateReconciler interface {
 }
 
 type ProjectPolicyEngine interface {
-	Lifecycle
+	EvaluateProject(ctx context.Context, contract common.Address) (ProjectReport, error)
 }
 
 type DiscoveredProjectCandidate struct {

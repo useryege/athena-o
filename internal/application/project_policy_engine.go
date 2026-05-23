@@ -17,14 +17,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	log "github.com/sirupsen/logrus"
 	appstore "github.com/useryege/athena/internal/application/store"
-)
-
-const (
-	projectPolicyWorkerCount                = 10
-	projectPolicyTaskQueueCapacity          = 4096
-	projectPolicyFallbackEvaluationInterval = 45 * time.Minute
 )
 
 type ProjectPolicyFacts struct {
@@ -44,12 +37,6 @@ type ProjectPolicyRule interface {
 	Evaluate(ctx context.Context, project *Project, facts ProjectPolicyFacts) (match bool, evidence map[string]any, err error)
 }
 
-type policyTaskState struct {
-	queued     bool
-	processing bool
-	dirty      bool
-}
-
 type projectPolicyEngineImpl struct {
 	projectCache ProjectSnapshotCache
 
@@ -59,15 +46,9 @@ type projectPolicyEngineImpl struct {
 
 	persistencePublisher PersistenceEventPublisher
 	rules                []ProjectPolicyRule
-	triggerCh            <-chan common.Address
-	taskCh               chan common.Address
 
-	pendingMu sync.Mutex
-	pending   map[common.Address]policyTaskState
-	factsMu   sync.RWMutex
-	facts     projectPolicyFactsSnapshot
-
-	wg sync.WaitGroup
+	factsMu sync.RWMutex
+	facts   projectPolicyFactsSnapshot
 }
 
 type bytecodeBlacklistLister interface {
@@ -92,7 +73,6 @@ func NewProjectPolicyEngine(
 	sourcecodeBlacklist sourcecodeBlacklistContractLister,
 	walletBlacklist walletBlacklistLister,
 	persistencePublisher PersistenceEventPublisher,
-	triggerCh <-chan common.Address,
 ) ProjectPolicyEngine {
 	return &projectPolicyEngineImpl{
 		projectCache:         projectCache,
@@ -100,9 +80,6 @@ func NewProjectPolicyEngine(
 		sourcecodeBlacklist:  sourcecodeBlacklist,
 		walletBlacklist:      walletBlacklist,
 		persistencePublisher: persistencePublisher,
-		triggerCh:            triggerCh,
-		taskCh:               make(chan common.Address, projectPolicyTaskQueueCapacity),
-		pending:              make(map[common.Address]policyTaskState),
 		rules: []ProjectPolicyRule{
 			walletBlacklistCreatorRule{},
 			walletBlacklistGenesisWalletRule{},
@@ -113,205 +90,24 @@ func NewProjectPolicyEngine(
 	}
 }
 
-func (e *projectPolicyEngineImpl) Start(ctx context.Context) error {
-	for i := 0; i < projectPolicyWorkerCount; i++ {
-		e.wg.Add(1)
-		go func(workerID int) {
-			defer e.wg.Done()
-			e.workerLoop(ctx, workerID)
-		}(i + 1)
-	}
-
-	e.wg.Add(1)
-	go func() {
-		defer e.wg.Done()
-		e.runLoop(ctx)
-	}()
-	return nil
-}
-
-func (e *projectPolicyEngineImpl) Stop() error {
-	e.wg.Wait()
-	return nil
-}
-
-func (e *projectPolicyEngineImpl) runLoop(ctx context.Context) {
-	ticker := time.NewTicker(projectPolicyFallbackEvaluationInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case contract := <-e.triggerCh:
-			e.enqueueContract(ctx, contract, "trigger")
-		case <-ticker.C:
-			if err := e.enqueueAllProjects(ctx); err != nil {
-				log.WithFields(log.Fields{
-					"component": "project_policy_engine",
-					"error":     err.Error(),
-				}).Warn("project policy fallback enqueue failed")
-			}
-		}
-	}
-}
-
-func (e *projectPolicyEngineImpl) workerLoop(ctx context.Context, workerID int) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case contract := <-e.taskCh:
-			e.markProcessing(contract)
-			if err := e.evaluateProject(ctx, contract); err != nil && ctx.Err() == nil {
-				log.WithFields(log.Fields{
-					"component": "project_policy_engine",
-					"worker":    workerID,
-					"contract":  contract.Hex(),
-					"error":     err.Error(),
-				}).Warn("project policy evaluation failed")
-			}
-			requeue := e.finishProcessing(contract)
-			if requeue {
-				e.requeueContract(ctx, contract)
-			}
-		}
-	}
-}
-
-func (e *projectPolicyEngineImpl) enqueueAllProjects(ctx context.Context) error {
-	projects, err := e.listAllProjects(ctx)
-	if err != nil {
-		return err
-	}
-	for _, project := range projects {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if project == nil {
-			continue
-		}
-		e.enqueueContract(ctx, project.Meta.Contract, "fallback")
-	}
-	return nil
-}
-
-func (e *projectPolicyEngineImpl) enqueueContract(ctx context.Context, contract common.Address, source string) {
+func (e *projectPolicyEngineImpl) EvaluateProject(ctx context.Context, contract common.Address) (ProjectReport, error) {
 	if contract == (common.Address{}) {
-		return
-	}
-
-	shouldQueue := false
-	e.pendingMu.Lock()
-	state := e.pending[contract]
-	if state.processing {
-		state.dirty = true
-		e.pending[contract] = state
-		e.pendingMu.Unlock()
-		return
-	}
-	if state.queued {
-		e.pendingMu.Unlock()
-		return
-	}
-	state.queued = true
-	e.pending[contract] = state
-	shouldQueue = true
-	e.pendingMu.Unlock()
-
-	if !shouldQueue {
-		return
-	}
-
-	select {
-	case <-ctx.Done():
-		e.clearQueuedState(contract)
-	case e.taskCh <- contract:
-		log.WithFields(log.Fields{
-			"component": "project_policy_engine",
-			"source":    source,
-			"contract":  contract.Hex(),
-		}).Debug("enqueued project policy task")
-	}
-}
-
-func (e *projectPolicyEngineImpl) markProcessing(contract common.Address) {
-	e.pendingMu.Lock()
-	defer e.pendingMu.Unlock()
-	state := e.pending[contract]
-	state.queued = false
-	state.processing = true
-	e.pending[contract] = state
-}
-
-func (e *projectPolicyEngineImpl) finishProcessing(contract common.Address) bool {
-	e.pendingMu.Lock()
-	defer e.pendingMu.Unlock()
-	state, ok := e.pending[contract]
-	if !ok {
-		return false
-	}
-	state.processing = false
-	if state.dirty {
-		state.dirty = false
-		state.queued = true
-		e.pending[contract] = state
-		return true
-	}
-	delete(e.pending, contract)
-	return false
-}
-
-func (e *projectPolicyEngineImpl) requeueContract(ctx context.Context, contract common.Address) {
-	select {
-	case <-ctx.Done():
-		e.clearQueuedState(contract)
-	case e.taskCh <- contract:
-		log.WithFields(log.Fields{
-			"component": "project_policy_engine",
-			"source":    "dirty_requeue",
-			"contract":  contract.Hex(),
-		}).Debug("requeued project policy task")
-	}
-}
-
-func (e *projectPolicyEngineImpl) clearQueuedState(contract common.Address) {
-	e.pendingMu.Lock()
-	defer e.pendingMu.Unlock()
-	state, ok := e.pending[contract]
-	if !ok {
-		return
-	}
-	state.queued = false
-	state.dirty = false
-	if state.processing {
-		e.pending[contract] = state
-		return
-	}
-	delete(e.pending, contract)
-}
-
-func (e *projectPolicyEngineImpl) evaluateProject(ctx context.Context, contract common.Address) error {
-	if contract == (common.Address{}) {
-		return nil
+		return ProjectReport{}, nil
 	}
 
 	facts, err := e.buildFacts(ctx)
 	if err != nil {
-		return err
+		return ProjectReport{}, err
 	}
 
 	project, exists, err := e.projectCache.GetProject(ctx, contract)
 	if err != nil {
-		return err
+		return ProjectReport{}, err
 	}
 	if !exists || project == nil {
-		return nil
+		return ProjectReport{}, nil
 	}
-	if err := e.evaluateRulesForProject(ctx, project, facts); err != nil {
-		return err
-	}
-	return nil
+	return e.evaluateRulesForProject(ctx, project, facts)
 }
 
 func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicyFacts, error) {
@@ -429,33 +225,9 @@ func cloneProjectPolicyFacts(facts ProjectPolicyFacts) ProjectPolicyFacts {
 	return cloned
 }
 
-func (e *projectPolicyEngineImpl) listAllProjects(ctx context.Context) ([]*Project, error) {
-	projects, err := e.projectCache.ListProjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-	all := make([]*Project, 0, len(projects))
-	seen := make(map[common.Address]struct{}, len(projects))
-	appendUnique := func(items []*Project) {
-		for _, project := range items {
-			if project == nil {
-				continue
-			}
-			contract := project.Meta.Contract
-			if _, ok := seen[contract]; ok {
-				continue
-			}
-			seen[contract] = struct{}{}
-			all = append(all, project)
-		}
-	}
-	appendUnique(projects)
-	return all, nil
-}
-
-func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, project *Project, facts ProjectPolicyFacts) error {
+func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, project *Project, facts ProjectPolicyFacts) (ProjectReport, error) {
 	if project == nil {
-		return nil
+		return ProjectReport{}, nil
 	}
 
 	report := ProjectReport{IsPolicyEvaluated: true}
@@ -482,7 +254,7 @@ func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, p
 		})
 	}
 	if err := e.updateProjectReport(ctx, project.Meta.Contract, report); err != nil {
-		return err
+		return ProjectReport{}, err
 	}
 	project.Report = report
 
@@ -492,7 +264,7 @@ func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, p
 			continue
 		}
 	}
-	return nil
+	return report, nil
 }
 
 func (e *projectPolicyEngineImpl) updateProjectReport(ctx context.Context, contract common.Address, report ProjectReport) error {

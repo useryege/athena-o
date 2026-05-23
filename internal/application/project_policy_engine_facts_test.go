@@ -157,7 +157,7 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 		},
 	}
 
-	if err := engine.evaluateRulesForProject(context.Background(), project, ProjectPolicyFacts{
+	if _, err := engine.evaluateRulesForProject(context.Background(), project, ProjectPolicyFacts{
 		BytecodeBlacklist: map[common.Hash]struct{}{
 			codeBinHash: {},
 		},
@@ -208,7 +208,7 @@ func TestProjectPolicyEngineEvaluateRulesRecomputesProjectReport(t *testing.T) {
 		},
 	}
 
-	if err := engine.evaluateRulesForProject(context.Background(), project, ProjectPolicyFacts{}); err != nil {
+	if _, err := engine.evaluateRulesForProject(context.Background(), project, ProjectPolicyFacts{}); err != nil {
 		t.Fatalf("evaluateRulesForProject: %v", err)
 	}
 

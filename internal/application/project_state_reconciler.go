@@ -11,7 +11,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -79,11 +78,10 @@ type projectStateReconcilerImpl struct {
 
 	persistencePublisher PersistenceEventPublisher
 	codeAtFunc           func(ctx context.Context, contract common.Address) ([]byte, error)
-	policyTriggerCh      chan<- common.Address
+	policyEngine         ProjectPolicyEngine
 
-	jobSem                 chan struct{}
-	wg                     sync.WaitGroup
-	suppressPolicyTriggers atomic.Bool
+	jobSem chan struct{}
+	wg     sync.WaitGroup
 
 	scheduleMu sync.Mutex
 	scheduled  map[common.Address]*scheduledProject
@@ -99,7 +97,7 @@ func NewProjectStateReconciler(
 	sourceQualityAnalyzer sourcequality.Analyzer,
 	persistencePublisher PersistenceEventPublisher,
 	codeAtFunc func(ctx context.Context, contract common.Address) ([]byte, error),
-	policyTriggerCh chan<- common.Address,
+	policyEngine ProjectPolicyEngine,
 ) ProjectStateReconciler {
 	return &projectStateReconcilerImpl{
 		projectCache:          projectCache,
@@ -111,7 +109,7 @@ func NewProjectStateReconciler(
 		sourceQualityAnalyzer: sourceQualityAnalyzer,
 		persistencePublisher:  persistencePublisher,
 		codeAtFunc:            codeAtFunc,
-		policyTriggerCh:       policyTriggerCh,
+		policyEngine:          policyEngine,
 		jobSem:                make(chan struct{}, reconcilerDefaultConcurrency),
 		scheduled:             map[common.Address]*scheduledProject{},
 	}
@@ -359,6 +357,11 @@ func (r *projectStateReconcilerImpl) refreshProject(ctx context.Context, contrac
 	if err := r.refreshProjectSourceQualityReport(ctx, contract); err != nil {
 		return err
 	}
+	if r.policyEngine != nil {
+		if _, err := r.policyEngine.EvaluateProject(ctx, contract); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -379,7 +382,7 @@ func (r *projectStateReconcilerImpl) refreshProjectChainAndSimulation(ctx contex
 	}
 	contract := contracts[0]
 	nextState := fetched[0].Project
-	changed, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 		if !exists || current == nil {
 			return nil, false, nil
 		}
@@ -388,9 +391,6 @@ func (r *projectStateReconcilerImpl) refreshProjectChainAndSimulation(ctx contex
 	})
 	if err != nil {
 		return err
-	}
-	if changed {
-		r.triggerPolicyEvaluation(contract, "refresh_project_state")
 	}
 	if r.simulator == nil {
 		return nil
@@ -427,7 +427,7 @@ func (r *projectStateReconcilerImpl) refreshProjectChainAndSimulation(ctx contex
 		return nil
 	}
 	fetchedAt := time.Now().UTC()
-	changed, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 		if !exists || current == nil {
 			return nil, false, nil
 		}
@@ -440,9 +440,6 @@ func (r *projectStateReconcilerImpl) refreshProjectChainAndSimulation(ctx contex
 	})
 	if err != nil {
 		return err
-	}
-	if changed {
-		r.triggerPolicyEvaluation(contract, "refresh_project_simulation")
 	}
 	return nil
 }
@@ -477,7 +474,7 @@ func (r *projectStateReconcilerImpl) refreshProjectGenesisWallets(ctx context.Co
 	}
 	genesisWallets := genesisWalletMetasFromShares(genesisWalletShares)
 	fetchedAt := time.Now().UTC()
-	changed, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 		if !exists || current == nil || !current.Meta.GenesisWalletsFetchedAt.IsZero() {
 			return nil, false, nil
 		}
@@ -487,9 +484,6 @@ func (r *projectStateReconcilerImpl) refreshProjectGenesisWallets(ctx context.Co
 	})
 	if err != nil {
 		return err
-	}
-	if changed {
-		r.triggerPolicyEvaluation(contract, "refresh_project_genesis_wallets")
 	}
 	return nil
 }
@@ -525,7 +519,7 @@ func (r *projectStateReconcilerImpl) refreshProjectCreatorHistoricalProjects(ctx
 		return nil
 	}
 	fetchedAt := time.Now().UTC()
-	changed, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 		if !exists || current == nil || !current.Meta.CreatorHistoricalProjectsFetchedAt.IsZero() {
 			return nil, false, nil
 		}
@@ -535,9 +529,6 @@ func (r *projectStateReconcilerImpl) refreshProjectCreatorHistoricalProjects(ctx
 	})
 	if err != nil {
 		return err
-	}
-	if changed {
-		r.triggerPolicyEvaluation(contract, "refresh_project_creator_historical_projects")
 	}
 	return nil
 }
@@ -577,7 +568,7 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceCode(ctx context.Contex
 		}
 	}
 	fetchedAt := time.Now().UTC()
-	changed, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 		if !exists || current == nil || !current.Meta.SourceCodeFetchedAt.IsZero() {
 			return nil, false, nil
 		}
@@ -588,9 +579,6 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceCode(ctx context.Contex
 	})
 	if err != nil {
 		return err
-	}
-	if changed {
-		r.triggerPolicyEvaluation(contract, "refresh_project_sourcecode")
 	}
 	return nil
 }
@@ -615,7 +603,7 @@ func (r *projectStateReconcilerImpl) refreshProjectCodeBinHash(ctx context.Conte
 		return nil
 	}
 	fetchedAt := time.Now().UTC()
-	changed, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 		if !exists || current == nil || !current.Meta.CodeBinHashFetchedAt.IsZero() {
 			return nil, false, nil
 		}
@@ -625,9 +613,6 @@ func (r *projectStateReconcilerImpl) refreshProjectCodeBinHash(ctx context.Conte
 	})
 	if err != nil {
 		return err
-	}
-	if changed {
-		r.triggerPolicyEvaluation(contract, "refresh_project_code_bin_hash")
 	}
 	return nil
 }
@@ -671,24 +656,6 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReport(ctx conte
 		return current, true, nil
 	})
 	return err
-}
-
-func (r *projectStateReconcilerImpl) triggerPolicyEvaluation(contract common.Address, source string) {
-	if r == nil || r.policyTriggerCh == nil || contract == (common.Address{}) {
-		return
-	}
-	if r.suppressPolicyTriggers.Load() {
-		return
-	}
-	select {
-	case r.policyTriggerCh <- contract:
-	default:
-		log.WithFields(log.Fields{
-			"component": "project_state_reconciler",
-			"contract":  contract.Hex(),
-			"source":    source,
-		}).Warn("project policy trigger channel is full, dropping trigger")
-	}
 }
 
 func (r *projectStateReconcilerImpl) persistProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {

@@ -24,6 +24,19 @@ type sourceQualityAnalyzerFake struct {
 	calls  int
 }
 
+type projectPolicyEngineFake struct {
+	calls     int
+	contracts []common.Address
+	report    ProjectReport
+	err       error
+}
+
+func (f *projectPolicyEngineFake) EvaluateProject(_ context.Context, contract common.Address) (ProjectReport, error) {
+	f.calls++
+	f.contracts = append(f.contracts, contract)
+	return f.report, f.err
+}
+
 type simulationFetcherFake struct {
 	projects []athenacontract.AthenaProject
 	states   []athenacontract.AthenaSimulationState
@@ -315,13 +328,11 @@ func TestProjectStateReconcilerInitProjectCachesValidERC20WithoutGetProject(t *t
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	cache := &initProjectNoGetCacheFake{}
 	fetcher := &initProjectFetcherFake{}
-	triggerCh := make(chan common.Address, 1)
 	reconciler := &projectStateReconcilerImpl{
-		projectCache:    cache,
-		fetcher:         fetcher,
-		policyTriggerCh: triggerCh,
-		scheduled:       map[common.Address]*scheduledProject{},
-		jobSem:          make(chan struct{}, 1),
+		projectCache: cache,
+		fetcher:      fetcher,
+		scheduled:    map[common.Address]*scheduledProject{},
+		jobSem:       make(chan struct{}, 1),
 	}
 
 	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{{
@@ -348,11 +359,6 @@ func TestProjectStateReconcilerInitProjectCachesValidERC20WithoutGetProject(t *t
 	if reconciler.scheduled[contract] == nil {
 		t.Fatal("project was not scheduled")
 	}
-	select {
-	case got := <-triggerCh:
-		t.Fatalf("unexpected policy trigger %s", got.Hex())
-	default:
-	}
 }
 
 func TestProjectStateReconcilerInitProjectCachesBatchBySnapshotIndex(t *testing.T) {
@@ -375,13 +381,11 @@ func TestProjectStateReconcilerInitProjectCachesBatchBySnapshotIndex(t *testing.
 			Token:         athenacontract.AthenaToken{IsValidERC20: true},
 		},
 	}}
-	triggerCh := make(chan common.Address, 3)
 	reconciler := &projectStateReconcilerImpl{
-		projectCache:    cache,
-		fetcher:         fetcher,
-		policyTriggerCh: triggerCh,
-		scheduled:       map[common.Address]*scheduledProject{},
-		jobSem:          make(chan struct{}, 1),
+		projectCache: cache,
+		fetcher:      fetcher,
+		scheduled:    map[common.Address]*scheduledProject{},
+		jobSem:       make(chan struct{}, 1),
 	}
 
 	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{
@@ -409,9 +413,6 @@ func TestProjectStateReconcilerInitProjectCachesBatchBySnapshotIndex(t *testing.
 	}
 	if reconciler.scheduled[invalid] != nil {
 		t.Fatalf("invalid ERC20 project was scheduled")
-	}
-	if len(triggerCh) != 0 {
-		t.Fatalf("policy trigger count = %d, want 0", len(triggerCh))
 	}
 }
 
@@ -452,13 +453,11 @@ func TestProjectStateReconcilerInitProjectDoesNotOverwriteExistingCache(t *testi
 			BlockNumber: 11,
 		}},
 	}}
-	triggerCh := make(chan common.Address, 1)
 	reconciler := &projectStateReconcilerImpl{
-		projectCache:    cache,
-		fetcher:         &initProjectFetcherFake{},
-		policyTriggerCh: triggerCh,
-		scheduled:       map[common.Address]*scheduledProject{},
-		jobSem:          make(chan struct{}, 1),
+		projectCache: cache,
+		fetcher:      &initProjectFetcherFake{},
+		scheduled:    map[common.Address]*scheduledProject{},
+		jobSem:       make(chan struct{}, 1),
 	}
 
 	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{{
@@ -478,11 +477,6 @@ func TestProjectStateReconcilerInitProjectDoesNotOverwriteExistingCache(t *testi
 	}
 	if reconciler.scheduled[contract] == nil {
 		t.Fatal("project was not scheduled")
-	}
-	select {
-	case got := <-triggerCh:
-		t.Fatalf("unexpected policy trigger %s", got.Hex())
-	default:
 	}
 }
 
@@ -552,12 +546,12 @@ func TestProjectStateReconcilerRefreshProjectGenesisWalletsPersistsAndCaches(t *
 	}
 
 	publisher := &persistencePublisherFake{}
-	triggerCh := make(chan common.Address, 1)
+	policyEngine := &projectPolicyEngineFake{}
 	reconciler := &projectStateReconcilerImpl{
 		projectCache:          cache,
 		discoveryNodeClient:   &reconcilerDiscoveryNodeClientFake{receipt: &types.Receipt{Logs: []*types.Log{erc20TransferLog(contract, common.Address{}, wallet, big.NewInt(250), txHash)}}},
 		persistencePublisher:  publisher,
-		policyTriggerCh:       triggerCh,
+		policyEngine:          policyEngine,
 		sourceQualityAnalyzer: nil,
 	}
 
@@ -580,13 +574,8 @@ func TestProjectStateReconcilerRefreshProjectGenesisWalletsPersistsAndCaches(t *
 	if len(publisher.events) != 1 || publisher.events[0].Op != PersistenceOpProjectGenesisReplace {
 		t.Fatalf("published events = %+v, want genesis replace", publisher.events)
 	}
-	select {
-	case got := <-triggerCh:
-		if got != contract {
-			t.Fatalf("policy trigger = %s, want %s", got.Hex(), contract.Hex())
-		}
-	default:
-		t.Fatal("missing policy trigger")
+	if policyEngine.calls != 1 || len(policyEngine.contracts) != 1 || policyEngine.contracts[0] != contract {
+		t.Fatalf("policy evaluations = %d/%v, want one for %s", policyEngine.calls, policyEngine.contracts, contract.Hex())
 	}
 }
 
@@ -607,7 +596,7 @@ func TestProjectStateReconcilerRefreshProjectCreatorHistoricalProjectsPersistsAn
 	}
 
 	publisher := &persistencePublisherFake{}
-	triggerCh := make(chan common.Address, 1)
+	policyEngine := &projectPolicyEngineFake{}
 	reconciler := &projectStateReconcilerImpl{
 		projectCache: cache,
 		projectStore: &discoveryProjectStoreFake{metas: []appstore.ProjectMeta{
@@ -617,7 +606,7 @@ func TestProjectStateReconcilerRefreshProjectCreatorHistoricalProjectsPersistsAn
 			{Contract: contract, Creator: creator},
 		}},
 		persistencePublisher: publisher,
-		policyTriggerCh:      triggerCh,
+		policyEngine:         policyEngine,
 	}
 
 	if err := reconciler.refreshProject(ctx, contract); err != nil {
@@ -636,13 +625,8 @@ func TestProjectStateReconcilerRefreshProjectCreatorHistoricalProjectsPersistsAn
 	if got := publisher.creatorHistorical[contract]; len(got) != 2 || got[0].HistoricalProjectContract != previousA || got[1].HistoricalProjectContract != previousB {
 		t.Fatalf("persisted creator historical projects = %+v", got)
 	}
-	select {
-	case got := <-triggerCh:
-		if got != contract {
-			t.Fatalf("policy trigger = %s, want %s", got.Hex(), contract.Hex())
-		}
-	default:
-		t.Fatal("missing policy trigger")
+	if policyEngine.calls != 1 || len(policyEngine.contracts) != 1 || policyEngine.contracts[0] != contract {
+		t.Fatalf("policy evaluations = %d/%v, want one for %s", policyEngine.calls, policyEngine.contracts, contract.Hex())
 	}
 }
 
