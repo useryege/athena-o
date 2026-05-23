@@ -258,6 +258,19 @@ func (s *projectSnapshotFallbackStore) SaveProjectMeta(context.Context, appstore
 	return nil
 }
 
+func (s *projectSnapshotFallbackStore) GetMaxProjectBlockNumber(context.Context) (uint64, bool, error) {
+	if len(s.metas) == 0 {
+		return 0, false, nil
+	}
+	maxBlock := s.metas[0].BlockNumber
+	for _, meta := range s.metas[1:] {
+		if meta.BlockNumber > maxBlock {
+			maxBlock = meta.BlockNumber
+		}
+	}
+	return maxBlock, true, nil
+}
+
 func (s *projectSnapshotFallbackStore) ListProjectMetas(context.Context) ([]appstore.ProjectMeta, error) {
 	if s.listErr != nil {
 		return nil, s.listErr

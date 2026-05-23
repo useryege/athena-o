@@ -152,9 +152,6 @@ func (c *initProjectNoGetCacheFake) DeleteProject(context.Context, common.Addres
 func (c *initProjectNoGetCacheFake) GetProject(context.Context, common.Address) (*Project, bool, error) {
 	return nil, false, errors.New("GetProject should not be called by InitProject")
 }
-func (c *initProjectNoGetCacheFake) GetMaxProjectBlockNumber(context.Context) (uint64, bool, error) {
-	return 0, false, nil
-}
 func (c *initProjectNoGetCacheFake) ListProjects(context.Context) ([]*Project, error) {
 	return nil, nil
 }

@@ -68,7 +68,6 @@ func TestRedisProjectSnapshotCacheSetsTTL(t *testing.T) {
 
 	assertRedisTTLNear(t, client, projectDataV2Key(contract), projectSnapshotCacheTTL)
 	assertRedisTTLNear(t, client, projectIndexAll, projectSnapshotCacheTTL)
-	assertRedisTTLNear(t, client, projectMaxBlockKey, projectSnapshotCacheTTL)
 }
 
 func TestRedisProjectSnapshotCacheUpdateRefreshesTTL(t *testing.T) {

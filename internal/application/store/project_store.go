@@ -66,6 +66,23 @@ ON CONFLICT DO NOTHING
 	return nil
 }
 
+func (s *SQLStore) GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error) {
+	var maxBlock sql.NullInt64
+	if err := s.db.QueryRowContext(ctx, `
+SELECT MAX(block_number)
+FROM project
+`).Scan(&maxBlock); err != nil {
+		return 0, false, fmt.Errorf("get max project block number: %w", err)
+	}
+	if !maxBlock.Valid {
+		return 0, false, nil
+	}
+	if maxBlock.Int64 < 0 {
+		return 0, false, fmt.Errorf("project meta block number %d is negative", maxBlock.Int64)
+	}
+	return uint64(maxBlock.Int64), true, nil
+}
+
 func (s *SQLStore) ListProjectMetas(ctx context.Context) ([]ProjectMeta, error) {
 	rows, err := s.db.QueryContext(ctx, `
 SELECT

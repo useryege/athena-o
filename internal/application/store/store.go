@@ -81,6 +81,7 @@ type ProjectCreatorHistoricalProject struct {
 
 type ProjectStore interface {
 	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
+	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
 	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
 	ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, error)
 	UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error

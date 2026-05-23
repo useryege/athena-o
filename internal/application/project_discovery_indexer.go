@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
+	appstore "github.com/useryege/athena/internal/application/store"
 )
 
 const initialProjectSyncLookback = 30 * 24 * time.Hour
@@ -31,6 +32,7 @@ type projectDiscoveryNodeClient interface {
 type projectDiscoveryIndexerImpl struct {
 	nodeClient   projectDiscoveryNodeClient
 	projectCache ProjectSnapshotCache
+	projectStore appstore.ProjectStore
 	intake       DiscoveryIntake
 	wg           sync.WaitGroup
 
@@ -44,6 +46,7 @@ type discoveryIntakeImpl struct {
 func NewProjectDiscoveryIndexer(
 	nodeClient *ethclient.Client,
 	projectCache ProjectSnapshotCache,
+	projectStore appstore.ProjectStore,
 	intake DiscoveryIntake,
 ) (ProjectDiscoveryIndexer, error) {
 	chainID, err := nodeClient.ChainID(context.Background())
@@ -54,6 +57,7 @@ func NewProjectDiscoveryIndexer(
 	return &projectDiscoveryIndexerImpl{
 		nodeClient:   nodeClient,
 		projectCache: projectCache,
+		projectStore: projectStore,
 		intake:       intake,
 		chainID:      chainID,
 	}, nil
@@ -106,17 +110,19 @@ func (w *projectDiscoveryIndexerImpl) run(ctx context.Context) error {
 }
 
 func (w *projectDiscoveryIndexerImpl) loadCursor(ctx context.Context) (uint64, error) {
-	maxBlock, ok, err := w.projectCache.GetMaxProjectBlockNumber(ctx)
-	if err != nil {
-		return 0, err
-	}
-	if ok {
-		cursor := resumeCursorFromProjectBlock(maxBlock)
-		log.WithFields(log.Fields{
-			"projectBlockNumber": maxBlock,
-			"cursor":             cursor,
-		}).Info("initialized project discovery cursor from persisted projects")
-		return cursor, nil
+	if w.projectStore != nil {
+		maxBlock, ok, err := w.projectStore.GetMaxProjectBlockNumber(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if ok {
+			cursor := resumeCursorFromProjectBlock(maxBlock)
+			log.WithFields(log.Fields{
+				"projectBlockNumber": maxBlock,
+				"cursor":             cursor,
+			}).Info("initialized project discovery cursor from persisted projects")
+			return cursor, nil
+		}
 	}
 
 	latestBlock, err := w.nodeClient.BlockByNumber(ctx, nil)

@@ -66,10 +66,6 @@ func (c *policyReevaluationProjectCache) GetProject(_ context.Context, contract 
 	return project, ok, nil
 }
 
-func (c *policyReevaluationProjectCache) GetMaxProjectBlockNumber(context.Context) (uint64, bool, error) {
-	return 0, false, nil
-}
-
 func (c *policyReevaluationProjectCache) ListProjects(context.Context) ([]*Project, error) {
 	projects := make([]*Project, 0, len(c.active))
 	for _, contract := range c.active {

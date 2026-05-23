@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"regexp"
 	"testing"
 	"time"
@@ -111,6 +112,54 @@ func TestSaveProjectMetaIncludesFetchedAtColumns(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("save project meta: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
+func TestGetMaxProjectBlockNumber(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	store := NewSQLStore(db)
+	rows := sqlmock.NewRows([]string{"max"}).AddRow(int64(123))
+	mock.ExpectQuery("SELECT MAX\\(block_number\\)").
+		WillReturnRows(rows)
+
+	maxBlock, ok, err := store.GetMaxProjectBlockNumber(context.Background())
+	if err != nil {
+		t.Fatalf("get max project block number: %v", err)
+	}
+	if !ok || maxBlock != 123 {
+		t.Fatalf("max block = %d ok=%t, want 123 true", maxBlock, ok)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
+func TestGetMaxProjectBlockNumberEmpty(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	store := NewSQLStore(db)
+	rows := sqlmock.NewRows([]string{"max"}).AddRow(sql.NullInt64{})
+	mock.ExpectQuery("SELECT MAX\\(block_number\\)").
+		WillReturnRows(rows)
+
+	maxBlock, ok, err := store.GetMaxProjectBlockNumber(context.Background())
+	if err != nil {
+		t.Fatalf("get max project block number: %v", err)
+	}
+	if ok || maxBlock != 0 {
+		t.Fatalf("max block = %d ok=%t, want 0 false", maxBlock, ok)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("expectations were not met: %v", err)

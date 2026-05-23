@@ -77,10 +77,41 @@ func (f *discoveryNodeClientFake) ChainID(context.Context) (*big.Int, error) {
 	return big.NewInt(1), nil
 }
 
+type discoveryCursorNodeClientFake struct {
+	blockByNumberCalls int
+	latestBlock        *types.Block
+}
+
+func (f *discoveryCursorNodeClientFake) SubscribeNewHead(context.Context, chan<- *types.Header) (ethereum.Subscription, error) {
+	return event.NewSubscription(func(<-chan struct{}) error { return nil }), nil
+}
+
+func (f *discoveryCursorNodeClientFake) BlockNumber(context.Context) (uint64, error) { return 0, nil }
+
+func (f *discoveryCursorNodeClientFake) BlockByNumber(context.Context, *big.Int) (*types.Block, error) {
+	f.blockByNumberCalls++
+	return f.latestBlock, nil
+}
+
+func (f *discoveryCursorNodeClientFake) TransactionReceipt(context.Context, common.Hash) (*types.Receipt, error) {
+	return &types.Receipt{}, nil
+}
+
+func (f *discoveryCursorNodeClientFake) FilterLogs(context.Context, ethereum.FilterQuery) ([]types.Log, error) {
+	return nil, nil
+}
+
+func (f *discoveryCursorNodeClientFake) ChainID(context.Context) (*big.Int, error) {
+	return big.NewInt(1), nil
+}
+
 type discoveryProjectStoreFake struct {
-	metas []appstore.ProjectMeta
-	errs  []error
-	calls int
+	metas       []appstore.ProjectMeta
+	errs        []error
+	calls       int
+	maxBlock    uint64
+	maxBlockOK  bool
+	maxBlockErr error
 
 	gotCreator     common.Address
 	gotBlockNumber uint64
@@ -89,6 +120,10 @@ type discoveryProjectStoreFake struct {
 
 func (s *discoveryProjectStoreFake) SaveProjectMeta(context.Context, appstore.ProjectMeta) error {
 	return nil
+}
+
+func (s *discoveryProjectStoreFake) GetMaxProjectBlockNumber(context.Context) (uint64, bool, error) {
+	return s.maxBlock, s.maxBlockOK, s.maxBlockErr
 }
 
 func (s *discoveryProjectStoreFake) ListProjectMetas(context.Context) ([]appstore.ProjectMeta, error) {
@@ -136,6 +171,26 @@ func (s *discoveryProjectStoreFake) ListProjectMetasByCreatorBefore(_ context.Co
 
 func (s *discoveryProjectStoreFake) GetProjectMetaByContract(context.Context, common.Address) (*appstore.ProjectMeta, error) {
 	return nil, nil
+}
+
+func TestProjectDiscoveryIndexerLoadCursorUsesStoreMaxProjectBlock(t *testing.T) {
+	ctx := context.Background()
+	node := &discoveryCursorNodeClientFake{}
+	indexer := &projectDiscoveryIndexerImpl{
+		nodeClient:   node,
+		projectStore: &discoveryProjectStoreFake{maxBlock: 103, maxBlockOK: true},
+	}
+
+	cursor, err := indexer.loadCursor(ctx)
+	if err != nil {
+		t.Fatalf("load cursor: %v", err)
+	}
+	if cursor != 102 {
+		t.Fatalf("cursor = %d, want 102", cursor)
+	}
+	if node.blockByNumberCalls != 0 {
+		t.Fatalf("block by number calls = %d, want 0", node.blockByNumberCalls)
+	}
 }
 
 type intakeReconcilerFake struct {

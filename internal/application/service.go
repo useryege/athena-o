@@ -262,7 +262,7 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 	)
 	discoveryIntake := NewDiscoveryIntake(stateReconciler)
 
-	discoveryIndexer, err := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, discoveryIntake)
+	discoveryIndexer, err := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, s.store, discoveryIntake)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
