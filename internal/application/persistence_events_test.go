@@ -19,6 +19,7 @@ type persistenceEventWriterFake struct {
 	err             error
 	sourceCodeCalls int
 	creatorResult   appstore.SimulateResult
+	projectReport   appstore.ProjectReport
 }
 
 func (w *persistenceEventWriterFake) WriteProjectMeta(context.Context, appstore.ProjectMeta) error {
@@ -47,6 +48,13 @@ func (w *persistenceEventWriterFake) WriteProjectSourceQualityReport(context.Con
 func (w *persistenceEventWriterFake) WriteProjectCreatorResult(_ context.Context, _ common.Address, result appstore.SimulateResult) error {
 	if w.err == nil {
 		w.creatorResult = result
+	}
+	return w.err
+}
+
+func (w *persistenceEventWriterFake) WriteProjectReport(_ context.Context, _ common.Address, report appstore.ProjectReport) error {
+	if w.err == nil {
+		w.projectReport = report
 	}
 	return w.err
 }
@@ -169,6 +177,33 @@ func TestRedisPersistenceEventBusAppliesProjectCreatorResult(t *testing.T) {
 	}
 	if writer.creatorResult != simulateResultToStore(want) {
 		t.Fatalf("creator result = %+v, want %+v", writer.creatorResult, simulateResultToStore(want))
+	}
+}
+
+func TestRedisPersistenceEventBusAppliesProjectReport(t *testing.T) {
+	_, bus := newPersistenceEventBusTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
+	want := ProjectReport{
+		IsPolicyEvaluated:          true,
+		IsBlacklistedCreatorWallet: true,
+		IsBlacklistedBytecode:      true,
+		HasMintRisk:                true,
+	}
+
+	if err := bus.PublishProjectReportUpdate(ctx, contract, want); err != nil {
+		t.Fatalf("publish project report: %v", err)
+	}
+	writer := &persistenceEventWriterFake{}
+	processed, err := bus.consume(ctx, ">", writer, time.Millisecond)
+	if err != nil {
+		t.Fatalf("consume: %v", err)
+	}
+	if processed != 1 {
+		t.Fatalf("processed = %d, want 1", processed)
+	}
+	if writer.projectReport != projectReportToStore(want) {
+		t.Fatalf("project report = %+v, want %+v", writer.projectReport, projectReportToStore(want))
 	}
 }
 

@@ -146,8 +146,10 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 		},
 	}
 	cache := newPolicyReevaluationProjectCache(project)
+	publisher := &persistencePublisherFake{}
 	engine := &projectPolicyEngineImpl{
-		projectCache: cache,
+		projectCache:         cache,
+		persistencePublisher: publisher,
 		rules: []ProjectPolicyRule{
 			walletBlacklistCreatorRule{},
 			walletBlacklistGenesisWalletRule{},
@@ -181,6 +183,9 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 		!report.HasMintRisk {
 		t.Fatalf("project report = %+v, want all policy fields true", report)
 	}
+	if publisher.projectReports[contract] != report {
+		t.Fatalf("persisted project report = %+v, want %+v", publisher.projectReports[contract], report)
+	}
 }
 
 func TestProjectPolicyEngineEvaluateRulesRecomputesProjectReport(t *testing.T) {
@@ -197,8 +202,10 @@ func TestProjectPolicyEngineEvaluateRulesRecomputesProjectReport(t *testing.T) {
 		},
 	}
 	cache := newPolicyReevaluationProjectCache(project)
+	publisher := &persistencePublisherFake{}
 	engine := &projectPolicyEngineImpl{
-		projectCache: cache,
+		projectCache:         cache,
+		persistencePublisher: publisher,
 		rules: []ProjectPolicyRule{
 			walletBlacklistCreatorRule{},
 			walletBlacklistGenesisWalletRule{},
@@ -215,5 +222,8 @@ func TestProjectPolicyEngineEvaluateRulesRecomputesProjectReport(t *testing.T) {
 	want := ProjectReport{IsPolicyEvaluated: true}
 	if got := cache.projects[contract].Report; got != want {
 		t.Fatalf("project report = %+v, want %+v", got, want)
+	}
+	if got := publisher.projectReports[contract]; got != want {
+		t.Fatalf("persisted project report = %+v, want %+v", got, want)
 	}
 }

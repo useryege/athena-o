@@ -48,6 +48,28 @@ func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 	}
 }
 
+func projectReportToStore(report ProjectReport) appstore.ProjectReport {
+	return appstore.ProjectReport{
+		IsPolicyEvaluated:          report.IsPolicyEvaluated,
+		IsBlacklistedCreatorWallet: report.IsBlacklistedCreatorWallet,
+		IsBlacklistedGenesisWallet: report.IsBlacklistedGenesisWallet,
+		IsBlacklistedBytecode:      report.IsBlacklistedBytecode,
+		IsBlacklistedSourceCode:    report.IsBlacklistedSourceCode,
+		HasMintRisk:                report.HasMintRisk,
+	}
+}
+
+func projectReportFromStore(report appstore.ProjectReport) ProjectReport {
+	return ProjectReport{
+		IsPolicyEvaluated:          report.IsPolicyEvaluated,
+		IsBlacklistedCreatorWallet: report.IsBlacklistedCreatorWallet,
+		IsBlacklistedGenesisWallet: report.IsBlacklistedGenesisWallet,
+		IsBlacklistedBytecode:      report.IsBlacklistedBytecode,
+		IsBlacklistedSourceCode:    report.IsBlacklistedSourceCode,
+		HasMintRisk:                report.HasMintRisk,
+	}
+}
+
 func simulateResultToStore(result SimulateResult) appstore.SimulateResult {
 	return appstore.SimulateResult{
 		CanMintFromDeadViaTransferFrom:     result.CanMintFromDeadViaTransferFrom,

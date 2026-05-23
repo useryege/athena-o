@@ -67,14 +67,19 @@ func TestServiceGetProjectFallbackLoadsDBFetchesChainAndRecaches(t *testing.T) {
 	fetchedAt := time.Date(2026, 5, 23, 1, 2, 3, 0, time.UTC)
 	store := &projectSnapshotFallbackStore{
 		metas: []appstore.ProjectMeta{{
-			BlockNumber:                        123,
-			BlockTime:                          456,
-			Contract:                           contract,
-			Creator:                            creator,
-			TxHash:                             common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
-			TxIndex:                            7,
-			SourceCode:                         "contract Source {}",
-			SourceCodeFetchedAt:                fetchedAt,
+			BlockNumber:         123,
+			BlockTime:           456,
+			Contract:            contract,
+			Creator:             creator,
+			TxHash:              common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+			TxIndex:             7,
+			SourceCode:          "contract Source {}",
+			SourceCodeFetchedAt: fetchedAt,
+			Report: appstore.ProjectReport{
+				IsPolicyEvaluated:          true,
+				IsBlacklistedCreatorWallet: true,
+				HasMintRisk:                true,
+			},
 			GenesisWalletsFetchedAt:            fetchedAt,
 			CreatorHistoricalProjectsFetchedAt: fetchedAt,
 		}},
@@ -126,8 +131,13 @@ func TestServiceGetProjectFallbackLoadsDBFetchesChainAndRecaches(t *testing.T) {
 	if !ok || cached.Meta.ChainState.Token.Name != "Fetched" {
 		t.Fatalf("cached project = %+v ok %t, want fetched token", cached, ok)
 	}
-	if cached.Report != (ProjectReport{}) {
-		t.Fatalf("cached report = %+v, want zero value after db fallback", cached.Report)
+	wantReport := ProjectReport{
+		IsPolicyEvaluated:          true,
+		IsBlacklistedCreatorWallet: true,
+		HasMintRisk:                true,
+	}
+	if cached.Report != wantReport {
+		t.Fatalf("cached report = %+v, want %+v", cached.Report, wantReport)
 	}
 }
 
@@ -295,6 +305,10 @@ func (s *projectSnapshotFallbackStore) UpdateProjectSourceQualityReport(context.
 }
 
 func (s *projectSnapshotFallbackStore) UpdateProjectCreatorResult(context.Context, common.Address, appstore.SimulateResult) error {
+	return nil
+}
+
+func (s *projectSnapshotFallbackStore) UpdateProjectReport(context.Context, common.Address, appstore.ProjectReport) error {
 	return nil
 }
 

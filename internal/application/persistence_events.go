@@ -39,6 +39,7 @@ const (
 	PersistenceOpProjectCodeBinHash              = "project_code_bin_hash_update"
 	PersistenceOpProjectSourceQualityReport      = "project_source_quality_report_update"
 	PersistenceOpProjectCreatorResult            = "project_creator_result_update"
+	PersistenceOpProjectReport                   = "project_report_update"
 	PersistenceOpBytecodeBlacklistAdd            = "bytecode_blacklist_add"
 	PersistenceOpBytecodeBlacklistNote           = "bytecode_blacklist_update_note"
 	PersistenceOpBytecodeBlacklistDel            = "bytecode_blacklist_delete"
@@ -72,6 +73,12 @@ type projectMetaSavePayload struct {
 	CodeBinHashFetchedAt               string `json:"code_bin_hash_fetched_at,omitempty"`
 	SourceQualityReport                string `json:"source_quality_report,omitempty"`
 	SourceQualityReportFetchedAt       string `json:"source_quality_report_fetched_at,omitempty"`
+	ReportIsPolicyEvaluated            bool   `json:"report_is_policy_evaluated,omitempty"`
+	ReportIsBlacklistedCreatorWallet   bool   `json:"report_is_blacklisted_creator_wallet,omitempty"`
+	ReportIsBlacklistedGenesisWallet   bool   `json:"report_is_blacklisted_genesis_wallet,omitempty"`
+	ReportIsBlacklistedBytecode        bool   `json:"report_is_blacklisted_bytecode,omitempty"`
+	ReportIsBlacklistedSourceCode      bool   `json:"report_is_blacklisted_source_code,omitempty"`
+	ReportHasMintRisk                  bool   `json:"report_has_mint_risk,omitempty"`
 	GenesisWalletsFetchedAt            string `json:"genesis_wallets_fetched_at,omitempty"`
 	CreatorHistoricalProjectsFetchedAt string `json:"creator_historical_projects_fetched_at,omitempty"`
 }
@@ -100,6 +107,16 @@ type projectCreatorResultUpdatePayload struct {
 	CanMintFromUsdtPairViaTransferFrom bool   `json:"can_mint_from_usdt_pair_via_transfer_from"`
 	CanMintViaTransferToWethPair       bool   `json:"can_mint_via_transfer_to_weth_pair"`
 	CanMintViaTransferToUsdtPair       bool   `json:"can_mint_via_transfer_to_usdt_pair"`
+}
+
+type projectReportUpdatePayload struct {
+	Contract                   string `json:"contract"`
+	IsPolicyEvaluated          bool   `json:"is_policy_evaluated"`
+	IsBlacklistedCreatorWallet bool   `json:"is_blacklisted_creator_wallet"`
+	IsBlacklistedGenesisWallet bool   `json:"is_blacklisted_genesis_wallet"`
+	IsBlacklistedBytecode      bool   `json:"is_blacklisted_bytecode"`
+	IsBlacklistedSourceCode    bool   `json:"is_blacklisted_source_code"`
+	HasMintRisk                bool   `json:"has_mint_risk"`
 }
 
 type projectEventLogAddPayload struct {
@@ -188,6 +205,7 @@ type PersistenceEventPublisher interface {
 	PublishProjectCodeBinHashUpdate(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error
 	PublishProjectCreatorResultUpdate(ctx context.Context, contract common.Address, result SimulateResult) error
+	PublishProjectReportUpdate(ctx context.Context, contract common.Address, report ProjectReport) error
 	PublishProjectCreatorHistoricalProjectsReplace(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
 	PublishBytecodeBlacklistAdd(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	PublishBytecodeBlacklistUpdateNote(ctx context.Context, contract common.Address, note string) error
@@ -207,6 +225,7 @@ type PersistenceEventWriter interface {
 	WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
 	WriteProjectCreatorResult(ctx context.Context, contract common.Address, result appstore.SimulateResult) error
+	WriteProjectReport(ctx context.Context, contract common.Address, report appstore.ProjectReport) error
 	WriteProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
 	AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	UpdateBytecodeBlacklistContractNote(ctx context.Context, contract common.Address, note string) error
@@ -297,6 +316,12 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 		CodeBinHashFetchedAt:               timeToPayload(meta.CodeBinHashFetchedAt),
 		SourceQualityReport:                meta.SourceQualityReport,
 		SourceQualityReportFetchedAt:       timeToPayload(meta.SourceQualityReportFetchedAt),
+		ReportIsPolicyEvaluated:            meta.Report.IsPolicyEvaluated,
+		ReportIsBlacklistedCreatorWallet:   meta.Report.IsBlacklistedCreatorWallet,
+		ReportIsBlacklistedGenesisWallet:   meta.Report.IsBlacklistedGenesisWallet,
+		ReportIsBlacklistedBytecode:        meta.Report.IsBlacklistedBytecode,
+		ReportIsBlacklistedSourceCode:      meta.Report.IsBlacklistedSourceCode,
+		ReportHasMintRisk:                  meta.Report.HasMintRisk,
 		GenesisWalletsFetchedAt:            timeToPayload(meta.GenesisWalletsFetchedAt),
 		CreatorHistoricalProjectsFetchedAt: timeToPayload(meta.CreatorHistoricalProjectsFetchedAt),
 	}
@@ -404,6 +429,29 @@ func (b *RedisPersistenceEventBus) PublishProjectCreatorResultUpdate(ctx context
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectCreatorResult,
+		Contract:   contract.Hex(),
+		Payload:    data,
+		OccurredAt: time.Now().UTC(),
+	})
+}
+
+func (b *RedisPersistenceEventBus) PublishProjectReportUpdate(ctx context.Context, contract common.Address, report ProjectReport) error {
+	payload := projectReportUpdatePayload{
+		Contract:                   contract.Hex(),
+		IsPolicyEvaluated:          report.IsPolicyEvaluated,
+		IsBlacklistedCreatorWallet: report.IsBlacklistedCreatorWallet,
+		IsBlacklistedGenesisWallet: report.IsBlacklistedGenesisWallet,
+		IsBlacklistedBytecode:      report.IsBlacklistedBytecode,
+		IsBlacklistedSourceCode:    report.IsBlacklistedSourceCode,
+		HasMintRisk:                report.HasMintRisk,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal project report payload: %w", err)
+	}
+	return b.Publish(ctx, PersistenceEvent{
+		Version:    persistenceEventVersion,
+		Op:         PersistenceOpProjectReport,
 		Contract:   contract.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
@@ -825,6 +873,14 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			SourceCode:          payload.SourceCode,
 			CodeBinHash:         common.HexToHash(payload.CodeBinHash),
 			SourceQualityReport: payload.SourceQualityReport,
+			Report: appstore.ProjectReport{
+				IsPolicyEvaluated:          payload.ReportIsPolicyEvaluated,
+				IsBlacklistedCreatorWallet: payload.ReportIsBlacklistedCreatorWallet,
+				IsBlacklistedGenesisWallet: payload.ReportIsBlacklistedGenesisWallet,
+				IsBlacklistedBytecode:      payload.ReportIsBlacklistedBytecode,
+				IsBlacklistedSourceCode:    payload.ReportIsBlacklistedSourceCode,
+				HasMintRisk:                payload.ReportHasMintRisk,
+			},
 		}
 		var err error
 		if meta.SourceCodeFetchedAt, err = timeFromPayload(payload.SourceCodeFetchedAt); err != nil {
@@ -890,6 +946,22 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			CanMintFromUsdtPairViaTransferFrom: payload.CanMintFromUsdtPairViaTransferFrom,
 			CanMintViaTransferToWethPair:       payload.CanMintViaTransferToWethPair,
 			CanMintViaTransferToUsdtPair:       payload.CanMintViaTransferToUsdtPair,
+		})
+	case PersistenceOpProjectReport:
+		var payload projectReportUpdatePayload
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("unmarshal project report payload: %w", err)
+		}
+		if !common.IsHexAddress(payload.Contract) {
+			return fmt.Errorf("invalid contract %q", payload.Contract)
+		}
+		return writer.WriteProjectReport(ctx, common.HexToAddress(payload.Contract), appstore.ProjectReport{
+			IsPolicyEvaluated:          payload.IsPolicyEvaluated,
+			IsBlacklistedCreatorWallet: payload.IsBlacklistedCreatorWallet,
+			IsBlacklistedGenesisWallet: payload.IsBlacklistedGenesisWallet,
+			IsBlacklistedBytecode:      payload.IsBlacklistedBytecode,
+			IsBlacklistedSourceCode:    payload.IsBlacklistedSourceCode,
+			HasMintRisk:                payload.HasMintRisk,
 		})
 	case PersistenceOpProjectCreatorHistoricalReplace:
 		var payload projectCreatorHistoricalProjectReplacePayload
@@ -1159,6 +1231,10 @@ func (w *storePersistenceWriter) WriteProjectSourceQualityReport(ctx context.Con
 
 func (w *storePersistenceWriter) WriteProjectCreatorResult(ctx context.Context, contract common.Address, result appstore.SimulateResult) error {
 	return w.store.UpdateProjectCreatorResult(ctx, contract, result)
+}
+
+func (w *storePersistenceWriter) WriteProjectReport(ctx context.Context, contract common.Address, report appstore.ProjectReport) error {
+	return w.store.UpdateProjectReport(ctx, contract, report)
 }
 
 func (w *storePersistenceWriter) WriteProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error {

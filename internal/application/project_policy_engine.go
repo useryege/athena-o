@@ -268,17 +268,27 @@ func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, p
 }
 
 func (e *projectPolicyEngineImpl) updateProjectReport(ctx context.Context, contract common.Address, report ProjectReport) error {
-	if e == nil || e.projectCache == nil {
+	if e == nil {
 		return nil
 	}
-	_, err := e.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil || current.Report == report {
-			return nil, false, nil
+	changed := e.projectCache == nil
+	if e.projectCache != nil {
+		_, err := e.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+			if !exists || current == nil || current.Report == report {
+				return nil, false, nil
+			}
+			current.Report = report
+			changed = true
+			return current, true, nil
+		})
+		if err != nil {
+			return err
 		}
-		current.Report = report
-		return current, true, nil
-	})
-	return err
+	}
+	if !changed || e.persistencePublisher == nil {
+		return nil
+	}
+	return e.persistencePublisher.PublishProjectReportUpdate(ctx, contract, report)
 }
 
 func markProjectReportRuleMatch(report *ProjectReport, ruleName string) {

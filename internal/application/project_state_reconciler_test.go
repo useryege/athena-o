@@ -235,6 +235,7 @@ type persistencePublisherFake struct {
 	sourceQualityReports map[common.Address]string
 	codeBinHashes        map[common.Address]common.Hash
 	creatorResults       map[common.Address]SimulateResult
+	projectReports       map[common.Address]ProjectReport
 	creatorHistorical    map[common.Address][]appstore.ProjectCreatorHistoricalProject
 	events               []PersistenceEvent
 	err                  error
@@ -288,6 +289,16 @@ func (p *persistencePublisherFake) PublishProjectCreatorResultUpdate(_ context.C
 		p.creatorResults = map[common.Address]SimulateResult{}
 	}
 	p.creatorResults[contract] = result
+	return nil
+}
+func (p *persistencePublisherFake) PublishProjectReportUpdate(_ context.Context, contract common.Address, report ProjectReport) error {
+	if p.err != nil {
+		return p.err
+	}
+	if p.projectReports == nil {
+		p.projectReports = map[common.Address]ProjectReport{}
+	}
+	p.projectReports[contract] = report
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectCreatorHistoricalProjectsReplace(_ context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error {

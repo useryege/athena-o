@@ -16,6 +16,15 @@ type Project struct {
 	Report ProjectReport
 }
 
+type ProjectReport struct {
+	IsPolicyEvaluated          bool
+	IsBlacklistedCreatorWallet bool
+	IsBlacklistedGenesisWallet bool
+	IsBlacklistedBytecode      bool
+	IsBlacklistedSourceCode    bool
+	HasMintRisk                bool
+}
+
 type ProjectMeta struct {
 	BlockTime                          uint64
 	BlockNumber                        uint64

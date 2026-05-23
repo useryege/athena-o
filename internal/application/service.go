@@ -903,7 +903,10 @@ func (s *Service) hydrateProjectSnapshotsFromMetas(ctx context.Context, metas []
 	projects := make([]*Project, 0, len(metas))
 	contracts := make([]common.Address, 0, len(metas))
 	for _, meta := range metas {
-		project := &Project{Meta: projectMetaFromStore(meta)}
+		project := &Project{
+			Meta:   projectMetaFromStore(meta),
+			Report: projectReportFromStore(meta.Report),
+		}
 		projects = append(projects, project)
 		contracts = append(contracts, project.Meta.Contract)
 	}

@@ -150,6 +150,10 @@ func (s *discoveryProjectStoreFake) UpdateProjectCreatorResult(context.Context, 
 	return nil
 }
 
+func (s *discoveryProjectStoreFake) UpdateProjectReport(context.Context, common.Address, appstore.ProjectReport) error {
+	return nil
+}
+
 func (s *discoveryProjectStoreFake) ListProjectMetasByCreator(context.Context, common.Address) ([]appstore.ProjectMeta, error) {
 	return nil, nil
 }
