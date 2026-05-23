@@ -70,6 +70,7 @@ type Pipeline interface {
 	ZRem(ctx context.Context, key string, members ...string)
 	ZAdd(ctx context.Context, key string, members ...ZMember)
 	Set(ctx context.Context, key string, value any, expiration time.Duration)
+	Expire(ctx context.Context, key string, expiration time.Duration)
 	Exec(ctx context.Context) error
 }
 

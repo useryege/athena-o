@@ -181,6 +181,10 @@ func (p *goRedisPipeline) Set(ctx context.Context, key string, value any, expira
 	p.inner.Set(ctx, key, value, expiration)
 }
 
+func (p *goRedisPipeline) Expire(ctx context.Context, key string, expiration time.Duration) {
+	p.inner.Expire(ctx, key, expiration)
+}
+
 func (p *goRedisPipeline) Exec(ctx context.Context) error {
 	_, err := p.inner.Exec(ctx)
 	return normalizeErr(err)

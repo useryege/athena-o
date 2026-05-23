@@ -41,12 +41,13 @@ const (
 
 	projectIndexAll    = "project:index:all"
 	projectMaxBlockKey = "project:max_block_number"
+
+	projectSnapshotCacheTTL = 24 * time.Hour
 )
 
 type ProjectUpdater func(current *Project, exists bool) (next *Project, changed bool, err error)
 
 type ProjectSnapshotCache interface {
-	ReplaceAll(ctx context.Context, projects []*Project) error
 	SetProject(ctx context.Context, project *Project) error
 	UpdateProject(ctx context.Context, contract common.Address, updater ProjectUpdater) (changed bool, err error)
 	DeleteProject(ctx context.Context, contract common.Address) error
@@ -85,48 +86,6 @@ func NewProjectSnapshotCache(client projectSnapshotRedisClient) ProjectSnapshotC
 		client:        client,
 		contractLocks: map[string]*sync.Mutex{},
 	}
-}
-
-func (c *RedisProjectSnapshotCache) ReplaceAll(ctx context.Context, projects []*Project) error {
-	if c == nil {
-		return errors.New("project snapshot cache is not configured")
-	}
-	if c.client == nil {
-		return errors.New("project snapshot cache redis client is not configured")
-	}
-
-	v2Keys, err := c.listProjectDataV2Keys(ctx)
-	if err != nil {
-		return err
-	}
-
-	deleteKeys := []string{projectDataHashKey, projectIndexAll, projectMaxBlockKey}
-	deleteKeys = append(deleteKeys, v2Keys...)
-
-	pipe := c.client.TxPipeline()
-	pipe.Del(ctx, deleteKeys...)
-	if len(projects) == 0 {
-		return pipe.Exec(ctx)
-	}
-
-	var maxBlock uint64
-	var hasMaxBlock bool
-	for _, project := range projects {
-		if project == nil {
-			continue
-		}
-		if err := c.writeProjectAllToPipeline(ctx, pipe, project); err != nil {
-			return err
-		}
-		if !hasMaxBlock || project.Meta.BlockNumber > maxBlock {
-			maxBlock = project.Meta.BlockNumber
-			hasMaxBlock = true
-		}
-	}
-	if hasMaxBlock {
-		pipe.Set(ctx, projectMaxBlockKey, strconv.FormatUint(maxBlock, 10), 0)
-	}
-	return pipe.Exec(ctx)
 }
 
 func (c *RedisProjectSnapshotCache) SetProject(ctx context.Context, project *Project) error {
@@ -310,9 +269,14 @@ func (c *RedisProjectSnapshotCache) updateProjectUnlocked(ctx context.Context, c
 		return err
 	}
 	if len(fields) > 0 {
-		pipe.HSet(ctx, projectDataV2Key(next.Meta.Contract), fields)
+		projectKey := projectDataV2Key(next.Meta.Contract)
+		pipe.HSet(ctx, projectKey, fields)
+		pipe.Expire(ctx, projectKey, projectSnapshotCacheTTL)
 	}
 	c.applyProjectIndexes(ctx, pipe, next)
+	if err := c.applyMaxProjectBlockNumber(ctx, pipe, next.Meta.BlockNumber); err != nil {
+		return err
+	}
 	return pipe.Exec(ctx)
 }
 
@@ -369,7 +333,11 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldGenesisWallets:                     genesisWalletsPayload,
 		projectFieldGenesisWalletsFetchedAt:            formatOptionalTime(project.Meta.GenesisWalletsFetchedAt),
 	})
+	pipe.Expire(ctx, projectKey, projectSnapshotCacheTTL)
 	c.applyProjectIndexes(ctx, pipe, project)
+	if err := c.applyMaxProjectBlockNumber(ctx, pipe, project.Meta.BlockNumber); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -580,6 +548,18 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 func (c *RedisProjectSnapshotCache) applyProjectIndexes(ctx context.Context, pipe redisport.Pipeline, project *Project) {
 	contractKey := project.Meta.Contract.Hex()
 	pipe.ZAdd(ctx, projectIndexAll, redisport.ZMember{Score: projectScore(project), Member: contractKey})
+	pipe.Expire(ctx, projectIndexAll, projectSnapshotCacheTTL)
+}
+
+func (c *RedisProjectSnapshotCache) applyMaxProjectBlockNumber(ctx context.Context, pipe redisport.Pipeline, blockNumber uint64) error {
+	current, ok, err := c.GetMaxProjectBlockNumber(ctx)
+	if err != nil {
+		return err
+	}
+	if !ok || blockNumber > current {
+		pipe.Set(ctx, projectMaxBlockKey, strconv.FormatUint(blockNumber, 10), projectSnapshotCacheTTL)
+	}
+	return nil
 }
 
 func (c *RedisProjectSnapshotCache) getProjectsByContracts(ctx context.Context, contracts []string) ([]*Project, error) {

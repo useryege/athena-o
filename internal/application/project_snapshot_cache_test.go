@@ -50,19 +50,73 @@ func TestRedisProjectSnapshotCacheListProjectsPage(t *testing.T) {
 	}
 }
 
-func TestRedisProjectSnapshotCacheReplaceAllRequiresCache(t *testing.T) {
-	var cache *RedisProjectSnapshotCache
+func TestRedisProjectSnapshotCacheSetsTTL(t *testing.T) {
+	ctx := context.Background()
+	mini := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
+	contract := common.BigToAddress(big.NewInt(10))
 
-	if err := cache.ReplaceAll(context.Background(), nil); err == nil {
-		t.Fatal("ReplaceAll error = nil, want error")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		BlockNumber: 100,
+		Contract:    contract,
+		TxIndex:     1,
+	}}); err != nil {
+		t.Fatalf("set project: %v", err)
 	}
+
+	assertRedisTTLNear(t, client, projectDataV2Key(contract), projectSnapshotCacheTTL)
+	assertRedisTTLNear(t, client, projectIndexAll, projectSnapshotCacheTTL)
+	assertRedisTTLNear(t, client, projectMaxBlockKey, projectSnapshotCacheTTL)
 }
 
-func TestRedisProjectSnapshotCacheReplaceAllRequiresClient(t *testing.T) {
-	cache := NewProjectSnapshotCache(nil)
+func TestRedisProjectSnapshotCacheUpdateRefreshesTTL(t *testing.T) {
+	ctx := context.Background()
+	mini := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
+	contract := common.BigToAddress(big.NewInt(11))
 
-	if err := cache.ReplaceAll(context.Background(), nil); err == nil {
-		t.Fatal("ReplaceAll error = nil, want error")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		BlockNumber: 100,
+		Contract:    contract,
+		TxIndex:     1,
+	}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	mini.FastForward(time.Hour)
+
+	changed, err := cache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+		if !exists || current == nil {
+			t.Fatal("project missing during update")
+		}
+		current.Meta.SourceCode = "contract Updated {}"
+		return current, true, nil
+	})
+	if err != nil {
+		t.Fatalf("update project: %v", err)
+	}
+	if !changed {
+		t.Fatal("changed = false, want true")
+	}
+
+	assertRedisTTLNear(t, client, projectDataV2Key(contract), projectSnapshotCacheTTL)
+	assertRedisTTLNear(t, client, projectIndexAll, projectSnapshotCacheTTL)
+}
+
+func assertRedisTTLNear(t *testing.T, client *redis.Client, key string, want time.Duration) {
+	t.Helper()
+	ttl, err := client.TTL(context.Background(), key).Result()
+	if err != nil {
+		t.Fatalf("ttl %s: %v", key, err)
+	}
+	if ttl <= 0 {
+		t.Fatalf("ttl %s = %s, want positive", key, ttl)
+	}
+	if ttl < want-time.Minute || ttl > want {
+		t.Fatalf("ttl %s = %s, want near %s", key, ttl, want)
 	}
 }
 
