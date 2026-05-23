@@ -123,34 +123,6 @@ func (r recordingPolicyRule) Evaluate(_ context.Context, project *Project, _ Pro
 	return false, nil, nil
 }
 
-func TestProjectPolicyEngineEvaluateAllOnceEvaluatesCachedProjects(t *testing.T) {
-	contractA := common.HexToAddress("0x00000000000000000000000000000000000000a1")
-	contractB := common.HexToAddress("0x00000000000000000000000000000000000000a2")
-	cache := newPolicyReevaluationProjectCache(
-		&Project{Meta: ProjectMeta{Contract: contractA}},
-		&Project{Meta: ProjectMeta{Contract: contractB}},
-	)
-	var got []common.Address
-	engine := &projectPolicyEngineImpl{
-		projectCache: cache,
-		rules:        []ProjectPolicyRule{recordingPolicyRule{contracts: &got}},
-	}
-
-	if err := engine.EvaluateAllOnce(context.Background()); err != nil {
-		t.Fatalf("EvaluateAllOnce: %v", err)
-	}
-	if len(got) != 2 {
-		t.Fatalf("evaluated contracts = %v, want 2 contracts", got)
-	}
-	seen := map[common.Address]bool{}
-	for _, contract := range got {
-		seen[contract] = true
-	}
-	if !seen[contractA] || !seen[contractB] {
-		t.Fatalf("evaluated contracts = %v, want %s and %s", got, contractA.Hex(), contractB.Hex())
-	}
-}
-
 func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 	contract := common.HexToAddress("0x0000000000000000000000000000000000000201")
 	creator := common.HexToAddress("0x0000000000000000000000000000000000000202")

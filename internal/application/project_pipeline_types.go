@@ -18,12 +18,11 @@ type ProjectDiscoveryIndexer interface {
 
 type ProjectStateReconciler interface {
 	Lifecycle
-	ReconcileOnce(ctx context.Context) error
+	InitProject(ctx context.Context, candidates []DiscoveredProjectCandidate) error
 }
 
 type ProjectPolicyEngine interface {
 	Lifecycle
-	EvaluateAllOnce(ctx context.Context) error
 }
 
 type DiscoveredProjectCandidate struct {
@@ -34,7 +33,15 @@ type DiscoveredProjectCandidate struct {
 	Creator     common.Address
 	TxHash      common.Hash
 	Tx          *types.Transaction
+	Source      ProjectDiscoverySource
 }
+
+type ProjectDiscoverySource string
+
+const (
+	ProjectDiscoverySourceCatchUp     ProjectDiscoverySource = "catch_up"
+	ProjectDiscoverySourceFollowHeads ProjectDiscoverySource = "follow_heads"
+)
 
 type DiscoveryIntake interface {
 	IntakeCandidates(ctx context.Context, items []DiscoveredProjectCandidate) error

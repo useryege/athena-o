@@ -70,7 +70,7 @@ func (c *policyReevaluationProjectCache) GetMaxProjectBlockNumber(context.Contex
 	return 0, false, nil
 }
 
-func (c *policyReevaluationProjectCache) ListActiveProjects(context.Context) ([]*Project, error) {
+func (c *policyReevaluationProjectCache) ListProjects(context.Context) ([]*Project, error) {
 	projects := make([]*Project, 0, len(c.active))
 	for _, contract := range c.active {
 		if project := c.projects[contract]; project != nil {
@@ -80,12 +80,12 @@ func (c *policyReevaluationProjectCache) ListActiveProjects(context.Context) ([]
 	return projects, nil
 }
 
-func (c *policyReevaluationProjectCache) ListActiveProjectsPage(_ context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
-	projects, err := c.ListActiveProjects(context.Background())
+func (c *policyReevaluationProjectCache) ListProjectsPage(_ context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
+	projects, err := c.ListProjects(context.Background())
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
-	total, page, pageSize := paginateActiveProjects(page, pageSize, &projects)
+	total, page, pageSize := paginateProjects(page, pageSize, &projects)
 	return projects, total, page, pageSize, nil
 }
 
@@ -189,7 +189,57 @@ func (m *sourcecodeBlacklistContractModelFake) Delete(_ context.Context, contrac
 	return nil
 }
 
-func TestAddBytecodeBlacklistContractTriggersFullPolicyReevaluation(t *testing.T) {
+type walletBlacklistModelFake struct {
+	items       []appstore.WalletBlacklistEntry
+	updatedNote bool
+}
+
+func (m *walletBlacklistModelFake) Load(context.Context) error {
+	return nil
+}
+
+func (m *walletBlacklistModelFake) List(context.Context) ([]appstore.WalletBlacklistEntry, error) {
+	return append([]appstore.WalletBlacklistEntry(nil), m.items...), nil
+}
+
+func (m *walletBlacklistModelFake) Version(context.Context) (string, error) {
+	return "wallet", nil
+}
+
+func (m *walletBlacklistModelFake) Add(_ context.Context, item appstore.WalletBlacklistEntry) error {
+	m.items = append([]appstore.WalletBlacklistEntry{item}, m.items...)
+	return nil
+}
+
+func (m *walletBlacklistModelFake) UpdateNote(_ context.Context, wallet common.Address, note string) error {
+	for i := range m.items {
+		if m.items[i].Wallet == wallet {
+			m.items[i].Note = note
+			m.updatedNote = true
+			return nil
+		}
+	}
+	return appstore.ErrWalletBlacklistEntryNotFound
+}
+
+func (m *walletBlacklistModelFake) Delete(_ context.Context, wallet common.Address) error {
+	filtered := make([]appstore.WalletBlacklistEntry, 0, len(m.items))
+	found := false
+	for _, item := range m.items {
+		if item.Wallet == wallet {
+			found = true
+			continue
+		}
+		filtered = append(filtered, item)
+	}
+	if !found {
+		return appstore.ErrWalletBlacklistEntryNotFound
+	}
+	m.items = filtered
+	return nil
+}
+
+func TestAddBytecodeBlacklistContractDoesNotTriggerPolicyReevaluation(t *testing.T) {
 	projectContract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
 	blacklistContract := common.HexToAddress("0x00000000000000000000000000000000000000c2")
 	cache := newPolicyReevaluationProjectCache(&Project{Meta: ProjectMeta{Contract: projectContract}})
@@ -204,12 +254,10 @@ func TestAddBytecodeBlacklistContractTriggersFullPolicyReevaluation(t *testing.T
 		t.Fatalf("add bytecode blacklist contract: %v", err)
 	}
 
-	if got := waitForContracts(t, triggerCh, 1); !sameAddressSet(got, []common.Address{projectContract}) {
-		t.Fatalf("triggered contracts = %v, want [%s]", got, projectContract.Hex())
-	}
+	assertNoContractTriggered(t, triggerCh)
 }
 
-func TestDeleteBytecodeBlacklistContractTriggersFullPolicyReevaluation(t *testing.T) {
+func TestDeleteBytecodeBlacklistContractDoesNotTriggerPolicyReevaluation(t *testing.T) {
 	projectContract := common.HexToAddress("0x00000000000000000000000000000000000000d1")
 	blacklistContract := common.HexToAddress("0x00000000000000000000000000000000000000d2")
 	cache := newPolicyReevaluationProjectCache(&Project{Meta: ProjectMeta{Contract: projectContract}})
@@ -221,9 +269,7 @@ func TestDeleteBytecodeBlacklistContractTriggersFullPolicyReevaluation(t *testin
 		t.Fatalf("delete bytecode blacklist contract: %v", err)
 	}
 
-	if got := waitForContracts(t, triggerCh, 1); !sameAddressSet(got, []common.Address{projectContract}) {
-		t.Fatalf("triggered contracts = %v, want [%s]", got, projectContract.Hex())
-	}
+	assertNoContractTriggered(t, triggerCh)
 }
 
 func TestUpdateBytecodeBlacklistContractNoteDoesNotTriggerPolicyReevaluation(t *testing.T) {
@@ -247,7 +293,7 @@ func TestUpdateBytecodeBlacklistContractNoteDoesNotTriggerPolicyReevaluation(t *
 	assertNoContractTriggered(t, triggerCh)
 }
 
-func TestAddSourcecodeBlacklistContractTriggersFullPolicyReevaluation(t *testing.T) {
+func TestAddSourcecodeBlacklistContractDoesNotTriggerPolicyReevaluation(t *testing.T) {
 	projectContract := common.HexToAddress("0x00000000000000000000000000000000000000f1")
 	blacklistContract := common.HexToAddress("0x00000000000000000000000000000000000000f2")
 	cache := newPolicyReevaluationProjectCache(
@@ -262,12 +308,10 @@ func TestAddSourcecodeBlacklistContractTriggersFullPolicyReevaluation(t *testing
 		t.Fatalf("add sourcecode blacklist contract: %v", err)
 	}
 
-	if got := waitForContracts(t, triggerCh, 2); !sameAddressSet(got, []common.Address{projectContract, blacklistContract}) {
-		t.Fatalf("triggered contracts = %v, want [%s %s]", got, projectContract.Hex(), blacklistContract.Hex())
-	}
+	assertNoContractTriggered(t, triggerCh)
 }
 
-func TestDeleteSourcecodeBlacklistContractTriggersFullPolicyReevaluation(t *testing.T) {
+func TestDeleteSourcecodeBlacklistContractDoesNotTriggerPolicyReevaluation(t *testing.T) {
 	projectContract := common.HexToAddress("0x0000000000000000000000000000000000000101")
 	blacklistContract := common.HexToAddress("0x0000000000000000000000000000000000000102")
 	cache := newPolicyReevaluationProjectCache(&Project{Meta: ProjectMeta{Contract: projectContract}})
@@ -279,9 +323,7 @@ func TestDeleteSourcecodeBlacklistContractTriggersFullPolicyReevaluation(t *test
 		t.Fatalf("delete sourcecode blacklist contract: %v", err)
 	}
 
-	if got := waitForContracts(t, triggerCh, 1); !sameAddressSet(got, []common.Address{projectContract}) {
-		t.Fatalf("triggered contracts = %v, want [%s]", got, projectContract.Hex())
-	}
+	assertNoContractTriggered(t, triggerCh)
 }
 
 func TestUpdateSourcecodeBlacklistContractNoteDoesNotTriggerPolicyReevaluation(t *testing.T) {
@@ -305,6 +347,60 @@ func TestUpdateSourcecodeBlacklistContractNoteDoesNotTriggerPolicyReevaluation(t
 	assertNoContractTriggered(t, triggerCh)
 }
 
+func TestAddWalletBlacklistEntryDoesNotTriggerPolicyReevaluation(t *testing.T) {
+	projectContract := common.HexToAddress("0x0000000000000000000000000000000000000121")
+	wallet := common.HexToAddress("0x0000000000000000000000000000000000000122")
+	cache := newPolicyReevaluationProjectCache(&Project{Meta: ProjectMeta{Contract: projectContract}})
+	triggerCh := make(chan common.Address, 2)
+	service := newStartedPolicyReevaluationService(cache, triggerCh)
+	service.walletBlacklist = &walletBlacklistModelFake{}
+	service.codeAtFunc = func(context.Context, common.Address) ([]byte, error) {
+		return nil, nil
+	}
+
+	if _, err := service.AddWalletBlacklistEntry(context.Background(), &applicationpkg.AddWalletBlacklistEntryRequest{Wallet: wallet.Hex()}); err != nil {
+		t.Fatalf("add wallet blacklist entry: %v", err)
+	}
+
+	assertNoContractTriggered(t, triggerCh)
+}
+
+func TestDeleteWalletBlacklistEntryDoesNotTriggerPolicyReevaluation(t *testing.T) {
+	projectContract := common.HexToAddress("0x0000000000000000000000000000000000000131")
+	wallet := common.HexToAddress("0x0000000000000000000000000000000000000132")
+	cache := newPolicyReevaluationProjectCache(&Project{Meta: ProjectMeta{Contract: projectContract}})
+	triggerCh := make(chan common.Address, 2)
+	service := newStartedPolicyReevaluationService(cache, triggerCh)
+	service.walletBlacklist = &walletBlacklistModelFake{items: []appstore.WalletBlacklistEntry{{Wallet: wallet}}}
+
+	if _, err := service.DeleteWalletBlacklistEntry(context.Background(), &applicationpkg.DeleteWalletBlacklistEntryRequest{Wallet: wallet.Hex()}); err != nil {
+		t.Fatalf("delete wallet blacklist entry: %v", err)
+	}
+
+	assertNoContractTriggered(t, triggerCh)
+}
+
+func TestUpdateWalletBlacklistEntryNoteDoesNotTriggerPolicyReevaluation(t *testing.T) {
+	projectContract := common.HexToAddress("0x0000000000000000000000000000000000000141")
+	wallet := common.HexToAddress("0x0000000000000000000000000000000000000142")
+	cache := newPolicyReevaluationProjectCache(&Project{Meta: ProjectMeta{Contract: projectContract}})
+	triggerCh := make(chan common.Address, 2)
+	model := &walletBlacklistModelFake{items: []appstore.WalletBlacklistEntry{{Wallet: wallet}}}
+	service := newStartedPolicyReevaluationService(cache, triggerCh)
+	service.walletBlacklist = model
+
+	if _, err := service.UpdateWalletBlacklistEntryNote(context.Background(), &applicationpkg.UpdateWalletBlacklistEntryNoteRequest{
+		Wallet: wallet.Hex(),
+		Note:   "new note",
+	}); err != nil {
+		t.Fatalf("update wallet blacklist note: %v", err)
+	}
+	if !model.updatedNote {
+		t.Fatalf("wallet blacklist note was not updated")
+	}
+	assertNoContractTriggered(t, triggerCh)
+}
+
 func newStartedPolicyReevaluationService(projectCache ProjectSnapshotCache, triggerCh chan common.Address) *Service {
 	return &Service{
 		projectCache:    projectCache,
@@ -314,21 +410,6 @@ func newStartedPolicyReevaluationService(projectCache ProjectSnapshotCache, trig
 	}
 }
 
-func waitForContracts(t *testing.T, ch <-chan common.Address, count int) []common.Address {
-	t.Helper()
-	got := make([]common.Address, 0, count)
-	timeout := time.After(2 * time.Second)
-	for len(got) < count {
-		select {
-		case contract := <-ch:
-			got = append(got, contract)
-		case <-timeout:
-			t.Fatalf("timed out waiting for %d policy triggers, got %d", count, len(got))
-		}
-	}
-	return got
-}
-
 func assertNoContractTriggered(t *testing.T, ch <-chan common.Address) {
 	t.Helper()
 	select {
@@ -336,28 +417,6 @@ func assertNoContractTriggered(t *testing.T, ch <-chan common.Address) {
 		t.Fatalf("unexpected policy trigger for %s", contract.Hex())
 	case <-time.After(50 * time.Millisecond):
 	}
-}
-
-func sameAddressSet(left []common.Address, right []common.Address) bool {
-	if len(left) != len(right) {
-		return false
-	}
-	counts := make(map[common.Address]int, len(left))
-	for _, item := range left {
-		counts[item]++
-	}
-	for _, item := range right {
-		counts[item]--
-		if counts[item] < 0 {
-			return false
-		}
-	}
-	for _, count := range counts {
-		if count != 0 {
-			return false
-		}
-	}
-	return true
 }
 
 var _ ProjectSnapshotCache = (*policyReevaluationProjectCache)(nil)

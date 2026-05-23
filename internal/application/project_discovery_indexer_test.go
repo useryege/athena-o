@@ -2,10 +2,8 @@ package application
 
 import (
 	"context"
-	"errors"
 	"math/big"
 	"testing"
-	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -140,36 +138,67 @@ func (s *discoveryProjectStoreFake) GetProjectMetaByContract(context.Context, co
 	return nil, nil
 }
 
-func TestDiscoverySyncProjectsSetsCreatorHistoricalProjects(t *testing.T) {
+type intakeReconcilerFake struct {
+	calls int
+	items []DiscoveredProjectCandidate
+}
+
+func (r *intakeReconcilerFake) Start(context.Context) error { return nil }
+func (r *intakeReconcilerFake) Stop() error                 { return nil }
+
+func (r *intakeReconcilerFake) InitProject(_ context.Context, items []DiscoveredProjectCandidate) error {
+	r.calls++
+	r.items = append([]DiscoveredProjectCandidate(nil), items...)
+	return nil
+}
+
+func TestDiscoveryIntakeCandidatesPassesBatchToInitProject(t *testing.T) {
+	ctx := context.Background()
+	reconciler := &intakeReconcilerFake{}
+	intake := &discoveryIntakeImpl{reconciler: reconciler}
+	items := []DiscoveredProjectCandidate{
+		{Contract: common.HexToAddress("0x00000000000000000000000000000000000000a1")},
+		{Contract: common.HexToAddress("0x00000000000000000000000000000000000000a2")},
+	}
+
+	if err := intake.IntakeCandidates(ctx, items); err != nil {
+		t.Fatalf("intake candidates: %v", err)
+	}
+	if reconciler.calls != 1 {
+		t.Fatalf("init project calls = %d, want 1", reconciler.calls)
+	}
+	if len(reconciler.items) != len(items) {
+		t.Fatalf("init project item count = %d, want %d", len(reconciler.items), len(items))
+	}
+}
+
+func TestDiscoveryInitProjectCachesValidERC20WithoutCreatorHistoryQuery(t *testing.T) {
 	ctx := context.Background()
 	cache := newProjectSnapshotCacheTest(t)
 	creator := common.HexToAddress("0x00000000000000000000000000000000000000a0")
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000c0")
-	previousA := common.HexToAddress("0x00000000000000000000000000000000000000a1")
-	previousB := common.HexToAddress("0x00000000000000000000000000000000000000a2")
 	store := &discoveryProjectStoreFake{metas: []appstore.ProjectMeta{
-		{Contract: previousA, Creator: creator},
-		{Contract: previousB, Creator: creator},
-		{Contract: previousA, Creator: creator},
+		{Contract: common.HexToAddress("0x00000000000000000000000000000000000000a1"), Creator: creator},
 		{Contract: contract, Creator: creator},
 	}}
-	intake := &discoveryIntakeImpl{
-		nodeClient:   &discoveryNodeClientFake{},
-		projectCache: cache,
-		projectStore: store,
-		fetcher:      &discoveryFetcherFake{},
-		publisher:    &persistencePublisherFake{},
+	reconciler := &projectStateReconcilerImpl{
+		discoveryNodeClient: &discoveryNodeClientFake{},
+		projectCache:        cache,
+		projectStore:        store,
+		fetcher:             &discoveryFetcherFake{},
+		scheduled:           map[common.Address]*scheduledProject{},
 	}
 
-	err := intake.syncProjects(ctx, []*Project{{Meta: ProjectMeta{
+	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{{
 		Contract:    contract,
 		Creator:     creator,
 		TxHash:      common.HexToHash("0x0101010101010101010101010101010101010101010101010101010101010101"),
 		BlockNumber: 103,
 		TxIndex:     7,
-	}}})
+		Source:      ProjectDiscoverySourceCatchUp,
+	}})
 	if err != nil {
-		t.Fatalf("sync projects: %v", err)
+		t.Fatalf("init project: %v", err)
 	}
 
 	project, exists, err := cache.GetProject(ctx, contract)
@@ -179,112 +208,51 @@ func TestDiscoverySyncProjectsSetsCreatorHistoricalProjects(t *testing.T) {
 	if !exists || project == nil {
 		t.Fatal("project missing after sync")
 	}
-	want := []common.Address{previousA, previousB}
-	if got := project.Meta.CreatorHistoricalProjects; len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
-		t.Fatalf("creator historical projects = %v, want %v", addressHexes(got), addressHexes(want))
-	}
-	if store.calls != 1 || store.gotCreator != creator || store.gotBlockNumber != 103 || store.gotTxIndex != 7 {
-		t.Fatalf("store query = calls %d creator %s block %d tx %d", store.calls, store.gotCreator.Hex(), store.gotBlockNumber, store.gotTxIndex)
-	}
-}
-
-func TestDiscoverySyncProjectsRetriesCreatorHistoricalProjects(t *testing.T) {
-	restore := setCreatorHistoricalProjectRetryDelaysForTest(t)
-	defer restore()
-
-	ctx := context.Background()
-	cache := newProjectSnapshotCacheTest(t)
-	creator := common.HexToAddress("0x00000000000000000000000000000000000000a0")
-	contract := common.HexToAddress("0x00000000000000000000000000000000000000c0")
-	previous := common.HexToAddress("0x00000000000000000000000000000000000000a1")
-	store := &discoveryProjectStoreFake{
-		metas: []appstore.ProjectMeta{{Contract: previous, Creator: creator}},
-		errs:  []error{errors.New("one"), errors.New("two"), errors.New("three"), nil},
-	}
-	intake := &discoveryIntakeImpl{
-		nodeClient:   &discoveryNodeClientFake{},
-		projectCache: cache,
-		projectStore: store,
-		fetcher:      &discoveryFetcherFake{},
-		publisher:    &persistencePublisherFake{},
-	}
-
-	err := intake.syncProjects(ctx, []*Project{{Meta: ProjectMeta{
-		Contract:    contract,
-		Creator:     creator,
-		TxHash:      common.HexToHash("0x0202020202020202020202020202020202020202020202020202020202020202"),
-		BlockNumber: 103,
-		TxIndex:     7,
-	}}})
-	if err != nil {
-		t.Fatalf("sync projects: %v", err)
-	}
-
-	project, exists, err := cache.GetProject(ctx, contract)
-	if err != nil {
-		t.Fatalf("get project: %v", err)
-	}
-	if !exists || project == nil {
-		t.Fatal("project missing after sync")
-	}
-	if store.calls != 4 {
-		t.Fatalf("store calls = %d, want 4", store.calls)
-	}
-	if got := project.Meta.CreatorHistoricalProjects; len(got) != 1 || got[0] != previous {
-		t.Fatalf("creator historical projects = %v, want [%s]", addressHexes(got), previous.Hex())
-	}
-}
-
-func TestDiscoverySyncProjectsContinuesWithEmptyCreatorHistoricalProjectsAfterRetryFailure(t *testing.T) {
-	restore := setCreatorHistoricalProjectRetryDelaysForTest(t)
-	defer restore()
-
-	ctx := context.Background()
-	cache := newProjectSnapshotCacheTest(t)
-	creator := common.HexToAddress("0x00000000000000000000000000000000000000a0")
-	contract := common.HexToAddress("0x00000000000000000000000000000000000000c0")
-	store := &discoveryProjectStoreFake{
-		errs: []error{errors.New("one"), errors.New("two"), errors.New("three"), errors.New("four")},
-	}
-	intake := &discoveryIntakeImpl{
-		nodeClient:   &discoveryNodeClientFake{},
-		projectCache: cache,
-		projectStore: store,
-		fetcher:      &discoveryFetcherFake{},
-		publisher:    &persistencePublisherFake{},
-	}
-
-	err := intake.syncProjects(ctx, []*Project{{Meta: ProjectMeta{
-		Contract:    contract,
-		Creator:     creator,
-		TxHash:      common.HexToHash("0x0303030303030303030303030303030303030303030303030303030303030303"),
-		BlockNumber: 103,
-		TxIndex:     7,
-	}}})
-	if err != nil {
-		t.Fatalf("sync projects: %v", err)
-	}
-
-	project, exists, err := cache.GetProject(ctx, contract)
-	if err != nil {
-		t.Fatalf("get project: %v", err)
-	}
-	if !exists || project == nil {
-		t.Fatal("project missing after sync")
-	}
-	if store.calls != 4 {
-		t.Fatalf("store calls = %d, want 4", store.calls)
+	if project.Meta.ChainState.TokenContract != contract {
+		t.Fatalf("chain state token contract = %s, want %s", project.Meta.ChainState.TokenContract.Hex(), contract.Hex())
 	}
 	if len(project.Meta.CreatorHistoricalProjects) != 0 {
 		t.Fatalf("creator historical projects = %v, want empty", addressHexes(project.Meta.CreatorHistoricalProjects))
 	}
+	if store.calls != 0 {
+		t.Fatalf("store calls = %d, want 0", store.calls)
+	}
+	if reconciler.scheduled[contract] == nil {
+		t.Fatal("project was not scheduled")
+	}
 }
 
-func setCreatorHistoricalProjectRetryDelaysForTest(t *testing.T) func() {
-	t.Helper()
-	original := creatorHistoricalProjectRetryDelays
-	creatorHistoricalProjectRetryDelays = []time.Duration{0, 0, 0}
-	return func() {
-		creatorHistoricalProjectRetryDelays = original
+func TestDiscoveryInitProjectSkipsInvalidERC20(t *testing.T) {
+	ctx := context.Background()
+	cache := newProjectSnapshotCacheTest(t)
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000c0")
+	reconciler := &projectStateReconcilerImpl{
+		projectCache: cache,
+		fetcher: &discoveryFetcherFake{snapshots: []athenacontract.AthenaProject{{
+			TokenContract: contract,
+			Token: athenacontract.AthenaToken{
+				IsValidERC20: false,
+			},
+		}}},
+		scheduled: map[common.Address]*scheduledProject{},
+	}
+
+	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{{
+		Contract: contract,
+		Source:   ProjectDiscoverySourceCatchUp,
+	}})
+	if err != nil {
+		t.Fatalf("init project: %v", err)
+	}
+
+	_, exists, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if exists {
+		t.Fatal("project exists after invalid ERC20 init")
+	}
+	if len(reconciler.scheduled) != 0 {
+		t.Fatalf("scheduled count = %d, want 0", len(reconciler.scheduled))
 	}
 }

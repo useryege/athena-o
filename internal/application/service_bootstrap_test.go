@@ -215,11 +215,11 @@ func (c *bootstrapProjectCacheFake) GetMaxProjectBlockNumber(context.Context) (u
 	return 0, false, nil
 }
 
-func (c *bootstrapProjectCacheFake) ListActiveProjects(context.Context) ([]*Project, error) {
+func (c *bootstrapProjectCacheFake) ListProjects(context.Context) ([]*Project, error) {
 	return nil, nil
 }
 
-func (c *bootstrapProjectCacheFake) ListActiveProjectsPage(context.Context, int32, int32) ([]*Project, int64, int32, int32, error) {
+func (c *bootstrapProjectCacheFake) ListProjectsPage(context.Context, int32, int32) ([]*Project, int64, int32, int32, error) {
 	return nil, 0, 1, 1, nil
 }
 

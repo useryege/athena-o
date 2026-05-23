@@ -39,7 +39,7 @@ const (
 
 	projectSchemaVersion = "10"
 
-	projectIndexActive = "project:index:active"
+	projectIndexAll    = "project:index:all"
 	projectMaxBlockKey = "project:max_block_number"
 )
 
@@ -52,8 +52,8 @@ type ProjectSnapshotCache interface {
 	DeleteProject(ctx context.Context, contract common.Address) error
 	GetProject(ctx context.Context, contract common.Address) (*Project, bool, error)
 	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
-	ListActiveProjects(ctx context.Context) ([]*Project, error)
-	ListActiveProjectsPage(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error)
+	ListProjects(ctx context.Context) ([]*Project, error)
+	ListProjectsPage(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error)
 }
 
 type RedisProjectSnapshotCache struct {
@@ -100,7 +100,7 @@ func (c *RedisProjectSnapshotCache) ReplaceAll(ctx context.Context, projects []*
 		return err
 	}
 
-	deleteKeys := []string{projectDataHashKey, projectIndexActive, projectMaxBlockKey}
+	deleteKeys := []string{projectDataHashKey, projectIndexAll, projectMaxBlockKey}
 	deleteKeys = append(deleteKeys, v2Keys...)
 
 	pipe := c.client.TxPipeline()
@@ -214,11 +214,11 @@ func (c *RedisProjectSnapshotCache) GetMaxProjectBlockNumber(ctx context.Context
 	return maxBlock, true, nil
 }
 
-func (c *RedisProjectSnapshotCache) ListActiveProjects(ctx context.Context) ([]*Project, error) {
+func (c *RedisProjectSnapshotCache) ListProjects(ctx context.Context) ([]*Project, error) {
 	if c == nil || c.client == nil {
 		return nil, nil
 	}
-	contracts, err := c.client.ZRange(ctx, projectIndexActive, 0, -1)
+	contracts, err := c.client.ZRange(ctx, projectIndexAll, 0, -1)
 	if err != nil {
 		return nil, err
 	}
@@ -235,18 +235,18 @@ func (c *RedisProjectSnapshotCache) ListActiveProjects(ctx context.Context) ([]*
 	return projects, nil
 }
 
-func (c *RedisProjectSnapshotCache) ListActiveProjectsPage(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
+func (c *RedisProjectSnapshotCache) ListProjectsPage(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
 	if c == nil || c.client == nil {
 		return nil, 0, 0, 0, nil
 	}
 	page, pageSize = normalizeCachePage(page, pageSize)
-	total, err := c.client.ZCard(ctx, projectIndexActive)
+	total, err := c.client.ZCard(ctx, projectIndexAll)
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
 	start := int64(page-1) * int64(pageSize)
 	stop := start + int64(pageSize) - 1
-	contracts, err := c.client.ZRange(ctx, projectIndexActive, start, stop)
+	contracts, err := c.client.ZRange(ctx, projectIndexAll, start, stop)
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
@@ -470,7 +470,7 @@ func (c *RedisProjectSnapshotCache) deleteProjectUnlocked(ctx context.Context, c
 	pipe := c.client.TxPipeline()
 	pipe.Del(ctx, projectDataV2Key(contract))
 	pipe.HDel(ctx, projectDataHashKey, contractKey)
-	pipe.ZRem(ctx, projectIndexActive, contractKey)
+	pipe.ZRem(ctx, projectIndexAll, contractKey)
 	return pipe.Exec(ctx)
 }
 
@@ -579,7 +579,7 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 
 func (c *RedisProjectSnapshotCache) applyProjectIndexes(ctx context.Context, pipe redisport.Pipeline, project *Project) {
 	contractKey := project.Meta.Contract.Hex()
-	pipe.ZAdd(ctx, projectIndexActive, redisport.ZMember{Score: activeScore(project), Member: contractKey})
+	pipe.ZAdd(ctx, projectIndexAll, redisport.ZMember{Score: projectScore(project), Member: contractKey})
 }
 
 func (c *RedisProjectSnapshotCache) getProjectsByContracts(ctx context.Context, contracts []string) ([]*Project, error) {
@@ -628,7 +628,7 @@ func mustMarshalJSON(v interface{}) (string, error) {
 	return string(payload), nil
 }
 
-func activeScore(project *Project) float64 {
+func projectScore(project *Project) float64 {
 	return float64(project.Meta.BlockNumber)*1_000_000 + float64(project.Meta.TxIndex)
 }
 

@@ -130,58 +130,6 @@ func (e *projectPolicyEngineImpl) Start(ctx context.Context) error {
 	return nil
 }
 
-func (e *projectPolicyEngineImpl) EvaluateAllOnce(ctx context.Context) error {
-	if e == nil {
-		return nil
-	}
-	startedAt := time.Now()
-	logger := log.WithFields(log.Fields{
-		"component": "project_policy_engine",
-		"stage":     "evaluate_all_once",
-	})
-	logger.Info("project policy evaluation stage started")
-
-	projects, err := e.listAllProjects(ctx)
-	if err != nil {
-		logger.WithFields(log.Fields{
-			"duration": time.Since(startedAt).String(),
-			"error":    err.Error(),
-		}).Warn("project policy evaluation stage failed")
-		return err
-	}
-	evaluatedCount := 0
-	for _, project := range projects {
-		if err := ctx.Err(); err != nil {
-			logger.WithFields(log.Fields{
-				"duration":        time.Since(startedAt).String(),
-				"error":           err.Error(),
-				"project_count":   len(projects),
-				"evaluated_count": evaluatedCount,
-			}).Warn("project policy evaluation stage failed")
-			return err
-		}
-		if project == nil {
-			continue
-		}
-		if err := e.evaluateProject(ctx, project.Meta.Contract); err != nil {
-			logger.WithFields(log.Fields{
-				"duration":        time.Since(startedAt).String(),
-				"error":           err.Error(),
-				"project_count":   len(projects),
-				"evaluated_count": evaluatedCount,
-			}).Warn("project policy evaluation stage failed")
-			return err
-		}
-		evaluatedCount++
-	}
-	logger.WithFields(log.Fields{
-		"duration":        time.Since(startedAt).String(),
-		"project_count":   len(projects),
-		"evaluated_count": evaluatedCount,
-	}).Info("project policy evaluation stage completed")
-	return nil
-}
-
 func (e *projectPolicyEngineImpl) Stop() error {
 	e.wg.Wait()
 	return nil
@@ -482,12 +430,12 @@ func cloneProjectPolicyFacts(facts ProjectPolicyFacts) ProjectPolicyFacts {
 }
 
 func (e *projectPolicyEngineImpl) listAllProjects(ctx context.Context) ([]*Project, error) {
-	activeProjects, err := e.projectCache.ListActiveProjects(ctx)
+	projects, err := e.projectCache.ListProjects(ctx)
 	if err != nil {
 		return nil, err
 	}
-	all := make([]*Project, 0, len(activeProjects))
-	seen := make(map[common.Address]struct{}, len(activeProjects))
+	all := make([]*Project, 0, len(projects))
+	seen := make(map[common.Address]struct{}, len(projects))
 	appendUnique := func(items []*Project) {
 		for _, project := range items {
 			if project == nil {
@@ -501,7 +449,7 @@ func (e *projectPolicyEngineImpl) listAllProjects(ctx context.Context) ([]*Proje
 			all = append(all, project)
 		}
 	}
-	appendUnique(activeProjects)
+	appendUnique(projects)
 	return all, nil
 }
 

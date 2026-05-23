@@ -29,22 +29,12 @@ import (
 )
 
 const (
-	activeProjectStateRefreshInterval      = 3 * time.Second
-	activeProjectSimulationRefreshInterval = time.Minute
-	activeProjectSourceCodeRefreshInterval = 10 * time.Second
-	sourceCodeRefreshInterval              = time.Minute
-	binBlacklistScanInterval               = time.Minute
-	sourceCodeScanPageSize                 = 200
-	bootstrapRetryInterval                 = 3 * time.Second
-	bootstrapMaxRetryInterval              = 30 * time.Second
-	bootstrapMaxRetryWindow                = 10 * time.Minute
-	projectPolicyTriggerQueueCapacity      = 4096
-)
-
-type refreshTarget uint8
-
-const (
-	refreshTargetActive refreshTarget = iota
+	binBlacklistScanInterval          = time.Minute
+	sourceCodeScanPageSize            = 200
+	bootstrapRetryInterval            = 3 * time.Second
+	bootstrapMaxRetryInterval         = 30 * time.Second
+	bootstrapMaxRetryWindow           = 10 * time.Minute
+	projectPolicyTriggerQueueCapacity = 4096
 )
 
 type Service struct {
@@ -263,15 +253,10 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 	}
 
 	policyTriggerCh = make(chan common.Address, projectPolicyTriggerQueueCapacity)
-	discoveryIntake := NewDiscoveryIntake(s.nodeClient, s.projectCache, s.store, athenaFetcher, s.persistencePublisher, policyTriggerCh)
-
-	discoveryIndexer, err := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, discoveryIntake)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
 	stateReconciler := NewProjectStateReconciler(
 		s.projectCache,
+		s.nodeClient,
+		s.store,
 		athenaFetcher,
 		projectSimulator,
 		apiFetcher,
@@ -280,6 +265,12 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		s.fetchContractBytecode,
 		policyTriggerCh,
 	)
+	discoveryIntake := NewDiscoveryIntake(stateReconciler)
+
+	discoveryIndexer, err := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, discoveryIntake)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	policyEngine := NewProjectPolicyEngine(
 		s.projectCache,
 		s.bytecodeBlacklist,
@@ -288,14 +279,6 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		s.persistencePublisher,
 		policyTriggerCh,
 	)
-
-	if err := stateReconciler.ReconcileOnce(ctx); err != nil {
-		return nil, nil, nil, err
-	}
-
-	if err := policyEngine.EvaluateAllOnce(ctx); err != nil {
-		return nil, nil, nil, err
-	}
 
 	pipeline = NewProjectPipeline(discoveryIndexer, stateReconciler, policyEngine)
 	if err := pipeline.Start(ctx); err != nil {
@@ -630,50 +613,6 @@ func nextBootstrapBackoff(current time.Duration) time.Duration {
 	return next
 }
 
-func (s *Service) enqueueAllProjectsForPolicy(ctx context.Context, policyTriggerCh chan<- common.Address) {
-	if policyTriggerCh == nil {
-		return
-	}
-	sendContract := func(contract common.Address) bool {
-		if contract == (common.Address{}) {
-			return true
-		}
-		select {
-		case <-ctx.Done():
-			return false
-		case policyTriggerCh <- contract:
-			return true
-		}
-	}
-
-	activeProjects, err := s.projectCache.ListActiveProjects(ctx)
-	if err != nil {
-		log.WithField("component", "service_start").WithError(err).Warn("failed to list active projects for initial policy enqueue")
-		return
-	}
-	for _, project := range activeProjects {
-		if project == nil {
-			continue
-		}
-		if ok := sendContract(project.Meta.Contract); !ok {
-			return
-		}
-	}
-
-}
-
-func (s *Service) triggerFullPolicyReevaluation() {
-	s.startStopMu.Lock()
-	ctx := s.lifecycleCtx
-	policyTriggerCh := s.policyTriggerCh
-	started := s.started
-	s.startStopMu.Unlock()
-	if !started || ctx == nil || policyTriggerCh == nil {
-		return
-	}
-	go s.enqueueAllProjectsForPolicy(ctx, policyTriggerCh)
-}
-
 func (s *Service) clearPipelineLocked() {
 	s.pipeline = nil
 	s.apiFetcher = nil
@@ -726,7 +665,6 @@ func (s *Service) AddBytecodeBlacklistContract(ctx context.Context, req *applica
 		}
 		return nil, err
 	}
-	s.triggerFullPolicyReevaluation()
 
 	items, err := s.bytecodeBlacklist.List(ctx)
 	if err != nil {
@@ -781,7 +719,6 @@ func (s *Service) DeleteBytecodeBlacklistContract(ctx context.Context, req *appl
 		}
 		return nil, err
 	}
-	s.triggerFullPolicyReevaluation()
 	return &applicationpkg.DeleteBytecodeBlacklistContractResponse{}, nil
 }
 
@@ -831,7 +768,6 @@ func (s *Service) AddSourcecodeBlacklistContract(ctx context.Context, req *appli
 		}
 		return nil, err
 	}
-	s.triggerFullPolicyReevaluation()
 
 	items, err := s.sourcecodeBlacklist.List(ctx)
 	if err != nil {
@@ -886,7 +822,6 @@ func (s *Service) DeleteSourcecodeBlacklistContract(ctx context.Context, req *ap
 		}
 		return nil, err
 	}
-	s.triggerFullPolicyReevaluation()
 	return &applicationpkg.DeleteSourcecodeBlacklistContractResponse{}, nil
 }
 
@@ -935,7 +870,6 @@ func (s *Service) AddWalletBlacklistEntry(ctx context.Context, req *applicationp
 		}
 		return nil, err
 	}
-	s.triggerFullPolicyReevaluation()
 
 	items, err := s.walletBlacklist.List(ctx)
 	if err != nil {
@@ -990,7 +924,6 @@ func (s *Service) DeleteWalletBlacklistEntry(ctx context.Context, req *applicati
 		}
 		return nil, err
 	}
-	s.triggerFullPolicyReevaluation()
 	return &applicationpkg.DeleteWalletBlacklistEntryResponse{}, nil
 }
 
@@ -1124,7 +1057,7 @@ func (s *Service) fetchContractBytecode(ctx context.Context, contract common.Add
 
 func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {
 	startedAt := time.Now()
-	projects, total, page, pageSize, err := s.projectCache.ListActiveProjectsPage(ctx, req.GetPage(), req.GetPageSize())
+	projects, total, page, pageSize, err := s.projectCache.ListProjectsPage(ctx, req.GetPage(), req.GetPageSize())
 	projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
 	if err != nil {
 		return nil, err
@@ -1294,7 +1227,7 @@ func normalizeProjectPage(page int32, pageSize int32) (int32, int32) {
 	return page, pageSize
 }
 
-func paginateActiveProjects(page int32, pageSize int32, projects *[]*Project) (int64, int32, int32) {
+func paginateProjects(page int32, pageSize int32, projects *[]*Project) (int64, int32, int32) {
 	normalizedPage, normalizedPageSize := normalizeProjectPage(page, pageSize)
 	total := int64(len(*projects))
 	start := int64(normalizedPage-1) * int64(normalizedPageSize)

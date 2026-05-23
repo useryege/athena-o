@@ -12,7 +12,7 @@ type Server struct {
 	handler  http.Handler
 	registry *prometheus.Registry
 
-	// activeProjectCount       *prometheus.GaugeVec
+	// projectCount       *prometheus.GaugeVec
 	// reconcileDurationSeconds *prometheus.HistogramVec
 }
 
@@ -39,10 +39,10 @@ func (s *Server) GetHandler() http.Handler {
 }
 
 func (s *Server) registerBusinessMetrics() {
-	// s.activeProjectCount = prometheus.NewGaugeVec(
+	// s.projectCount = prometheus.NewGaugeVec(
 	// 	prometheus.GaugeOpts{
 	// 		Name: "athena_project_controller_active_project_count",
-	// 		Help: "Current number of active projects tracked by project controller.",
+	// 		Help: "Current number of projects tracked by project controller.",
 	// 	},
 	// 	[]string{"chain_id"},
 	// )
@@ -57,13 +57,13 @@ func (s *Server) registerBusinessMetrics() {
 	// )
 
 	// s.registry.MustRegister(
-	// 	s.activeProjectCount,
+	// 	s.projectCount,
 	// 	s.reconcileDurationSeconds,
 	// )
 }
 
 // func (s *Server) SetActiveProjectCount(chainID string, count uint64) {
-// 	s.activeProjectCount.WithLabelValues(chainID).Set(float64(count))
+// 	s.projectCount.WithLabelValues(chainID).Set(float64(count))
 // }
 
 // func (s *Server) ObserveReconcileDuration(chainID string, d time.Duration) {

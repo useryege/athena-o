@@ -13,7 +13,7 @@ import (
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
-func TestRedisProjectSnapshotCacheListActiveProjectsPage(t *testing.T) {
+func TestRedisProjectSnapshotCacheListProjectsPage(t *testing.T) {
 	ctx := context.Background()
 	mini := miniredis.RunT(t)
 	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
@@ -32,9 +32,9 @@ func TestRedisProjectSnapshotCacheListActiveProjectsPage(t *testing.T) {
 		}
 	}
 
-	projects, total, page, pageSize, err := cache.ListActiveProjectsPage(ctx, 2, 2)
+	projects, total, page, pageSize, err := cache.ListProjectsPage(ctx, 2, 2)
 	if err != nil {
-		t.Fatalf("list active projects page: %v", err)
+		t.Fatalf("list projects page: %v", err)
 	}
 	if total != 5 || page != 2 || pageSize != 2 {
 		t.Fatalf("pagination = total %d page %d pageSize %d, want 5/2/2", total, page, pageSize)

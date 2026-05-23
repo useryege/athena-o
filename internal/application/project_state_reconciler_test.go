@@ -3,11 +3,14 @@ package application
 import (
 	"context"
 	"errors"
+	"math/big"
 	"testing"
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/redis/go-redis/v9"
 	"github.com/useryege/athena/internal/application/redisport"
@@ -22,8 +25,9 @@ type sourceQualityAnalyzerFake struct {
 }
 
 type simulationFetcherFake struct {
-	states []athenacontract.AthenaSimulationState
-	err    error
+	projects []athenacontract.AthenaProject
+	states   []athenacontract.AthenaSimulationState
+	err      error
 }
 
 func (f *simulationFetcherFake) FetchProject(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaProject, error) {
@@ -34,8 +38,22 @@ func (f *simulationFetcherFake) FetchProjects(context.Context, []athenacontract.
 	return nil, f.err
 }
 
-func (f *simulationFetcherFake) FetchProjectsWithSimulationState(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {
-	return nil, f.err
+func (f *simulationFetcherFake) FetchProjectsWithSimulationState(_ context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	items := make([]athenacontract.AthenaProjectWithSimulationState, 0, len(queries))
+	for i := range queries {
+		item := athenacontract.AthenaProjectWithSimulationState{}
+		if i < len(f.projects) {
+			item.Project = f.projects[i]
+		}
+		if i < len(f.states) {
+			item.SimulationState = f.states[i]
+		}
+		items = append(items, item)
+	}
+	return items, nil
 }
 
 func (f *simulationFetcherFake) FetchSimulationState(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaSimulationState, error) {
@@ -47,6 +65,142 @@ func (f *simulationFetcherFake) FetchSimulationState(context.Context, athenacont
 
 func (f *simulationFetcherFake) FetchSimulationStates(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaSimulationState, error) {
 	return append([]athenacontract.AthenaSimulationState(nil), f.states...), f.err
+}
+
+type initProjectFetcherFake struct {
+	snapshots []athenacontract.AthenaProject
+	calls     int
+	queryLen  int
+	err       error
+}
+
+func (f *initProjectFetcherFake) FetchProject(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaProject, error) {
+	return athenacontract.AthenaProject{}, f.err
+}
+
+func (f *initProjectFetcherFake) FetchProjects(_ context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProject, error) {
+	f.calls++
+	f.queryLen = len(queries)
+	if f.err != nil {
+		return nil, f.err
+	}
+	if len(f.snapshots) > 0 {
+		return f.snapshots, nil
+	}
+	snapshots := make([]athenacontract.AthenaProject, 0, len(queries))
+	for _, query := range queries {
+		snapshots = append(snapshots, athenacontract.AthenaProject{
+			TokenContract: query.TokenContract,
+			Token: athenacontract.AthenaToken{
+				IsValidERC20: true,
+			},
+		})
+	}
+	return snapshots, nil
+}
+
+func (f *initProjectFetcherFake) FetchProjectsWithSimulationState(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {
+	return nil, f.err
+}
+
+func (f *initProjectFetcherFake) FetchSimulationState(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaSimulationState, error) {
+	return athenacontract.AthenaSimulationState{}, f.err
+}
+
+func (f *initProjectFetcherFake) FetchSimulationStates(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaSimulationState, error) {
+	return nil, f.err
+}
+
+type initProjectNoGetCacheFake struct {
+	projects map[common.Address]*Project
+}
+
+func (c *initProjectNoGetCacheFake) ReplaceAll(context.Context, []*Project) error { return nil }
+func (c *initProjectNoGetCacheFake) SetProject(_ context.Context, project *Project) error {
+	if c.projects == nil {
+		c.projects = map[common.Address]*Project{}
+	}
+	c.projects[project.Meta.Contract] = project
+	return nil
+}
+func (c *initProjectNoGetCacheFake) UpdateProject(_ context.Context, contract common.Address, updater ProjectUpdater) (bool, error) {
+	var current *Project
+	if c.projects != nil {
+		current = c.projects[contract]
+	}
+	next, changed, err := updater(current, current != nil)
+	if err != nil || !changed {
+		return false, err
+	}
+	if next != nil && next.Meta.Contract == (common.Address{}) {
+		next.Meta.Contract = contract
+	}
+	if c.projects == nil {
+		c.projects = map[common.Address]*Project{}
+	}
+	if next == nil {
+		delete(c.projects, contract)
+		return true, nil
+	}
+	c.projects[contract] = next
+	return true, nil
+}
+func (c *initProjectNoGetCacheFake) DeleteProject(context.Context, common.Address) error {
+	c.projects = nil
+	return nil
+}
+func (c *initProjectNoGetCacheFake) GetProject(context.Context, common.Address) (*Project, bool, error) {
+	return nil, false, errors.New("GetProject should not be called by InitProject")
+}
+func (c *initProjectNoGetCacheFake) GetMaxProjectBlockNumber(context.Context) (uint64, bool, error) {
+	return 0, false, nil
+}
+func (c *initProjectNoGetCacheFake) ListProjects(context.Context) ([]*Project, error) {
+	return nil, nil
+}
+func (c *initProjectNoGetCacheFake) ListProjectsPage(context.Context, int32, int32) ([]*Project, int64, int32, int32, error) {
+	return nil, 0, 0, 0, nil
+}
+
+type reconcilerDiscoveryNodeClientFake struct {
+	receipt      *types.Receipt
+	receiptErr   error
+	logs         []types.Log
+	filterErr    error
+	receiptCalls int
+	filterCalls  int
+}
+
+func (f *reconcilerDiscoveryNodeClientFake) SubscribeNewHead(context.Context, chan<- *types.Header) (ethereum.Subscription, error) {
+	return nil, nil
+}
+
+func (f *reconcilerDiscoveryNodeClientFake) BlockNumber(context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (f *reconcilerDiscoveryNodeClientFake) BlockByNumber(context.Context, *big.Int) (*types.Block, error) {
+	return nil, nil
+}
+
+func (f *reconcilerDiscoveryNodeClientFake) TransactionReceipt(context.Context, common.Hash) (*types.Receipt, error) {
+	f.receiptCalls++
+	if f.receiptErr != nil {
+		return nil, f.receiptErr
+	}
+	return f.receipt, nil
+}
+
+func (f *reconcilerDiscoveryNodeClientFake) FilterLogs(context.Context, ethereum.FilterQuery) ([]types.Log, error) {
+	f.filterCalls++
+	if f.filterErr != nil {
+		return nil, f.filterErr
+	}
+	return append([]types.Log(nil), f.logs...), nil
+}
+
+func (f *reconcilerDiscoveryNodeClientFake) ChainID(context.Context) (*big.Int, error) {
+	return big.NewInt(1), nil
 }
 
 type projectSimulatorFake struct {
@@ -70,10 +224,18 @@ type persistencePublisherFake struct {
 	sourceQualityReports map[common.Address]string
 	codeBinHashes        map[common.Address]common.Hash
 	creatorResults       map[common.Address]SimulateResult
+	creatorHistorical    map[common.Address][]appstore.ProjectCreatorHistoricalProject
+	events               []PersistenceEvent
 	err                  error
 }
 
-func (p *persistencePublisherFake) Publish(context.Context, PersistenceEvent) error { return nil }
+func (p *persistencePublisherFake) Publish(_ context.Context, event PersistenceEvent) error {
+	if p.err != nil {
+		return p.err
+	}
+	p.events = append(p.events, event)
+	return nil
+}
 func (p *persistencePublisherFake) PublishProjectMetaSave(context.Context, appstore.ProjectMeta) error {
 	return nil
 }
@@ -113,7 +275,14 @@ func (p *persistencePublisherFake) PublishProjectCreatorResultUpdate(_ context.C
 	p.creatorResults[contract] = result
 	return nil
 }
-func (p *persistencePublisherFake) PublishProjectCreatorHistoricalProjectsReplace(context.Context, common.Address, []appstore.ProjectCreatorHistoricalProject) error {
+func (p *persistencePublisherFake) PublishProjectCreatorHistoricalProjectsReplace(_ context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error {
+	if p.err != nil {
+		return p.err
+	}
+	if p.creatorHistorical == nil {
+		p.creatorHistorical = map[common.Address][]appstore.ProjectCreatorHistoricalProject{}
+	}
+	p.creatorHistorical[contract] = append([]appstore.ProjectCreatorHistoricalProject(nil), items...)
 	return nil
 }
 func (p *persistencePublisherFake) PublishBytecodeBlacklistAdd(context.Context, appstore.BytecodeBlacklistContract) error {
@@ -144,86 +313,434 @@ func (p *persistencePublisherFake) PublishWalletBlacklistDelete(context.Context,
 	return nil
 }
 
-func TestProjectStateReconcilerJobIntervals(t *testing.T) {
-	reconciler := &projectStateReconcilerImpl{}
-	jobs := reconciler.reconcilerJobs()
-
-	intervals := make(map[string]time.Duration, len(jobs))
-	for _, job := range jobs {
-		intervals[job.name] = job.interval
-	}
-
-	assertJobInterval(t, intervals, "state_refresh_active", activeProjectStateRefreshInterval)
-	assertJobInterval(t, intervals, "simulation_refresh_active", activeProjectSimulationRefreshInterval)
-	assertJobInterval(t, intervals, "sourcecode_refresh_active", 10*time.Second)
-	assertJobInterval(t, intervals, "source_quality_refresh_active", sourceCodeRefreshInterval)
-	assertJobInterval(t, intervals, "code_bin_hash_refresh_active", sourceCodeRefreshInterval)
-}
-
-func assertJobInterval(t *testing.T, intervals map[string]time.Duration, name string, want time.Duration) {
-	t.Helper()
-
-	got, ok := intervals[name]
-	if !ok {
-		t.Fatalf("job %q not found", name)
-	}
-	if got != want {
-		t.Fatalf("job %q interval = %s, want %s", name, got, want)
-	}
-}
-
-func TestProjectStateReconcilerReconcileOnceRunsJobsInOrderAndReturnsError(t *testing.T) {
-	wantErr := errors.New("stop")
-	var got []string
-	reconciler := &projectStateReconcilerImpl{
-		jobSem: make(chan struct{}, 1),
-	}
-	jobs := []reconcilerJob{
-		{name: "first", run: func(context.Context) error {
-			got = append(got, "first")
-			return nil
-		}},
-		{name: "second", run: func(context.Context) error {
-			got = append(got, "second")
-			return wantErr
-		}},
-		{name: "third", run: func(context.Context) error {
-			got = append(got, "third")
-			return nil
-		}},
-	}
-
-	err := reconciler.reconcileOnceJobs(context.Background(), jobs)
-	if !errors.Is(err, wantErr) {
-		t.Fatalf("ReconcileOnce error = %v, want %v", err, wantErr)
-	}
-	if len(got) != 2 || got[0] != "first" || got[1] != "second" {
-		t.Fatalf("job order = %v, want [first second]", got)
-	}
-}
-
-func TestProjectStateReconcilerReconcileOnceSuppressesPolicyTriggers(t *testing.T) {
-	triggerCh := make(chan common.Address, 1)
+func TestProjectStateReconcilerInitProjectCachesValidERC20WithoutGetProject(t *testing.T) {
+	ctx := context.Background()
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	cache := &initProjectNoGetCacheFake{}
+	fetcher := &initProjectFetcherFake{}
+	triggerCh := make(chan common.Address, 1)
 	reconciler := &projectStateReconcilerImpl{
+		projectCache:    cache,
+		fetcher:         fetcher,
 		policyTriggerCh: triggerCh,
+		scheduled:       map[common.Address]*scheduledProject{},
 		jobSem:          make(chan struct{}, 1),
 	}
 
-	err := reconciler.reconcileOnceJobs(context.Background(), []reconcilerJob{{
-		name: "trigger",
-		run: func(context.Context) error {
-			reconciler.triggerPolicyEvaluation(contract, "test")
-			return nil
-		},
+	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{{
+		Contract:    contract,
+		BlockNumber: 103,
+		TxIndex:     7,
 	}})
 	if err != nil {
-		t.Fatalf("ReconcileOnce: %v", err)
+		t.Fatalf("init project: %v", err)
+	}
+	if fetcher.calls != 1 {
+		t.Fatalf("fetch projects calls = %d, want 1", fetcher.calls)
+	}
+	project := cache.projects[contract]
+	if project == nil {
+		t.Fatal("project missing after init")
+	}
+	if project.Meta.Contract != contract {
+		t.Fatalf("cached contract = %s, want %s", project.Meta.Contract.Hex(), contract.Hex())
+	}
+	if project.Meta.ChainState.TokenContract != contract {
+		t.Fatalf("chain state token contract = %s, want %s", project.Meta.ChainState.TokenContract.Hex(), contract.Hex())
+	}
+	if reconciler.scheduled[contract] == nil {
+		t.Fatal("project was not scheduled")
 	}
 	select {
 	case got := <-triggerCh:
 		t.Fatalf("unexpected policy trigger %s", got.Hex())
 	default:
+	}
+}
+
+func TestProjectStateReconcilerInitProjectCachesBatchBySnapshotIndex(t *testing.T) {
+	ctx := context.Background()
+	validA := common.HexToAddress("0x00000000000000000000000000000000000000b1")
+	invalid := common.HexToAddress("0x00000000000000000000000000000000000000b2")
+	validB := common.HexToAddress("0x00000000000000000000000000000000000000b3")
+	cache := &initProjectNoGetCacheFake{}
+	fetcher := &initProjectFetcherFake{snapshots: []athenacontract.AthenaProject{
+		{
+			TokenContract: validA,
+			Token:         athenacontract.AthenaToken{IsValidERC20: true},
+		},
+		{
+			TokenContract: invalid,
+			Token:         athenacontract.AthenaToken{IsValidERC20: false},
+		},
+		{
+			TokenContract: validB,
+			Token:         athenacontract.AthenaToken{IsValidERC20: true},
+		},
+	}}
+	triggerCh := make(chan common.Address, 3)
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:    cache,
+		fetcher:         fetcher,
+		policyTriggerCh: triggerCh,
+		scheduled:       map[common.Address]*scheduledProject{},
+		jobSem:          make(chan struct{}, 1),
+	}
+
+	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{
+		{Contract: validA, BlockNumber: 101},
+		{Contract: invalid, BlockNumber: 102},
+		{Contract: validB, BlockNumber: 103, Source: ProjectDiscoverySourceFollowHeads},
+	})
+	if err != nil {
+		t.Fatalf("init project: %v", err)
+	}
+	if fetcher.calls != 1 || fetcher.queryLen != 3 {
+		t.Fatalf("fetch projects calls/query len = %d/%d, want 1/3", fetcher.calls, fetcher.queryLen)
+	}
+	if cache.projects[validA] == nil || cache.projects[validA].Meta.ChainState.TokenContract != validA {
+		t.Fatalf("valid A was not cached with matching snapshot")
+	}
+	if cache.projects[invalid] != nil {
+		t.Fatalf("invalid ERC20 project was cached")
+	}
+	if cache.projects[validB] == nil || cache.projects[validB].Meta.ChainState.TokenContract != validB {
+		t.Fatalf("valid B was not cached with matching snapshot")
+	}
+	if reconciler.scheduled[validA] == nil || reconciler.scheduled[validB] == nil {
+		t.Fatalf("valid projects were not scheduled")
+	}
+	if reconciler.scheduled[invalid] != nil {
+		t.Fatalf("invalid ERC20 project was scheduled")
+	}
+	if len(triggerCh) != 0 {
+		t.Fatalf("policy trigger count = %d, want 0", len(triggerCh))
+	}
+}
+
+func TestProjectStateReconcilerInitProjectReturnsErrorOnIndexedSnapshotMismatch(t *testing.T) {
+	ctx := context.Background()
+	contractA := common.HexToAddress("0x00000000000000000000000000000000000000c1")
+	contractB := common.HexToAddress("0x00000000000000000000000000000000000000c2")
+	reconciler := &projectStateReconcilerImpl{
+		projectCache: &initProjectNoGetCacheFake{},
+		fetcher: &initProjectFetcherFake{snapshots: []athenacontract.AthenaProject{
+			{
+				TokenContract: contractA,
+				Token:         athenacontract.AthenaToken{IsValidERC20: true},
+			},
+			{
+				TokenContract: contractA,
+				Token:         athenacontract.AthenaToken{IsValidERC20: true},
+			},
+		}},
+		scheduled: map[common.Address]*scheduledProject{},
+	}
+
+	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{
+		{Contract: contractA},
+		{Contract: contractB},
+	})
+	if err == nil {
+		t.Fatal("init project succeeded, want mismatch error")
+	}
+}
+
+func TestProjectStateReconcilerInitProjectDoesNotOverwriteExistingCache(t *testing.T) {
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a2")
+	cache := &initProjectNoGetCacheFake{projects: map[common.Address]*Project{
+		contract: {Meta: ProjectMeta{
+			Contract:    contract,
+			BlockNumber: 11,
+		}},
+	}}
+	triggerCh := make(chan common.Address, 1)
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:    cache,
+		fetcher:         &initProjectFetcherFake{},
+		policyTriggerCh: triggerCh,
+		scheduled:       map[common.Address]*scheduledProject{},
+		jobSem:          make(chan struct{}, 1),
+	}
+
+	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{{
+		Contract:    contract,
+		BlockNumber: 103,
+		Source:      ProjectDiscoverySourceFollowHeads,
+	}})
+	if err != nil {
+		t.Fatalf("init project: %v", err)
+	}
+	project := cache.projects[contract]
+	if project == nil {
+		t.Fatal("existing project missing")
+	}
+	if project.Meta.BlockNumber != 11 {
+		t.Fatalf("cached block number = %d, want existing 11", project.Meta.BlockNumber)
+	}
+	if reconciler.scheduled[contract] == nil {
+		t.Fatal("project was not scheduled")
+	}
+	select {
+	case got := <-triggerCh:
+		t.Fatalf("unexpected policy trigger %s", got.Hex())
+	default:
+	}
+}
+
+func TestProjectStateReconcilerSchedulePolicies(t *testing.T) {
+	reconciler := &projectStateReconcilerImpl{}
+	catchUpContract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	followContract := common.HexToAddress("0x00000000000000000000000000000000000000a2")
+
+	reconciler.scheduleProject(DiscoveredProjectCandidate{Contract: catchUpContract, Source: ProjectDiscoverySourceCatchUp})
+	reconciler.scheduleProject(DiscoveredProjectCandidate{Contract: followContract, Source: ProjectDiscoverySourceFollowHeads})
+
+	catchUp := reconciler.scheduled[catchUpContract]
+	follow := reconciler.scheduled[followContract]
+	if catchUp == nil || catchUp.interval != time.Minute {
+		t.Fatalf("catch-up schedule = %+v, want 1m interval", catchUp)
+	}
+	if ttl := catchUp.expiresAt.Sub(catchUp.nextRunAt); ttl < 2*time.Minute || ttl > 3*time.Minute {
+		t.Fatalf("catch-up ttl after first run = %s, want about 2m", ttl)
+	}
+	if follow == nil || follow.interval != time.Minute {
+		t.Fatalf("follow-heads schedule = %+v, want 1m interval", follow)
+	}
+	if ttl := follow.expiresAt.Sub(follow.nextRunAt); ttl < 359*time.Minute || ttl > 360*time.Minute {
+		t.Fatalf("follow-heads ttl after first run = %s, want about 359m", ttl)
+	}
+}
+
+func TestProjectStateReconcilerScheduleDeduplicatesAndExpires(t *testing.T) {
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	reconciler := &projectStateReconcilerImpl{}
+
+	reconciler.scheduleProject(DiscoveredProjectCandidate{Contract: contract, Source: ProjectDiscoverySourceCatchUp})
+	reconciler.scheduleProject(DiscoveredProjectCandidate{Contract: contract, Source: ProjectDiscoverySourceFollowHeads})
+	if len(reconciler.scheduled) != 1 {
+		t.Fatalf("scheduled count = %d, want 1", len(reconciler.scheduled))
+	}
+
+	item := reconciler.scheduled[contract]
+	item.nextRunAt = time.Now().Add(-time.Minute)
+	item.expiresAt = time.Now().Add(-time.Second)
+	due := reconciler.dueProjectContracts(time.Now())
+	if len(due) != 0 {
+		t.Fatalf("due contracts = %v, want empty", due)
+	}
+	if len(reconciler.scheduled) != 0 {
+		t.Fatalf("scheduled count after expiry = %d, want 0", len(reconciler.scheduled))
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectGenesisWalletsPersistsAndCaches(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a6")
+	creator := common.HexToAddress("0x00000000000000000000000000000000000000b6")
+	wallet := common.HexToAddress("0x00000000000000000000000000000000000000c6")
+	txHash := common.HexToHash("0x0606060606060606060606060606060606060606060606060606060606060606")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		Contract:    contract,
+		Creator:     creator,
+		TxHash:      txHash,
+		BlockNumber: 106,
+		ChainState: athenacontract.AthenaProject{
+			Token: athenacontract.AthenaToken{TotalSupply: big.NewInt(1000)},
+		},
+	}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	publisher := &persistencePublisherFake{}
+	triggerCh := make(chan common.Address, 1)
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:          cache,
+		discoveryNodeClient:   &reconcilerDiscoveryNodeClientFake{receipt: &types.Receipt{Logs: []*types.Log{erc20TransferLog(contract, common.Address{}, wallet, big.NewInt(250), txHash)}}},
+		persistencePublisher:  publisher,
+		policyTriggerCh:       triggerCh,
+		sourceQualityAnalyzer: nil,
+	}
+
+	if err := reconciler.refreshProject(ctx, contract); err != nil {
+		t.Fatalf("refresh project: %v", err)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || len(project.Meta.GenesisWallets) != 1 {
+		t.Fatalf("genesis wallets = %+v, want one", project.Meta.GenesisWallets)
+	}
+	if project.Meta.GenesisWallets[0].Wallet != wallet || project.Meta.GenesisWallets[0].RatioBPS != 2500 {
+		t.Fatalf("genesis wallet = %+v, want wallet %s 2500bps", project.Meta.GenesisWallets[0], wallet.Hex())
+	}
+	if project.Meta.GenesisWalletsFetchedAt.IsZero() {
+		t.Fatal("genesis wallets fetched at is zero")
+	}
+	if len(publisher.events) != 1 || publisher.events[0].Op != PersistenceOpProjectGenesisReplace {
+		t.Fatalf("published events = %+v, want genesis replace", publisher.events)
+	}
+	select {
+	case got := <-triggerCh:
+		if got != contract {
+			t.Fatalf("policy trigger = %s, want %s", got.Hex(), contract.Hex())
+		}
+	default:
+		t.Fatal("missing policy trigger")
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectCreatorHistoricalProjectsPersistsAndCaches(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	creator := common.HexToAddress("0x00000000000000000000000000000000000000b7")
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a7")
+	previousA := common.HexToAddress("0x00000000000000000000000000000000000000c7")
+	previousB := common.HexToAddress("0x00000000000000000000000000000000000000d7")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		Contract:    contract,
+		Creator:     creator,
+		BlockNumber: 107,
+		TxIndex:     2,
+	}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	publisher := &persistencePublisherFake{}
+	triggerCh := make(chan common.Address, 1)
+	reconciler := &projectStateReconcilerImpl{
+		projectCache: cache,
+		projectStore: &discoveryProjectStoreFake{metas: []appstore.ProjectMeta{
+			{Contract: previousA, Creator: creator},
+			{Contract: previousB, Creator: creator},
+			{Contract: previousA, Creator: creator},
+			{Contract: contract, Creator: creator},
+		}},
+		persistencePublisher: publisher,
+		policyTriggerCh:      triggerCh,
+	}
+
+	if err := reconciler.refreshProject(ctx, contract); err != nil {
+		t.Fatalf("refresh project: %v", err)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || len(project.Meta.CreatorHistoricalProjects) != 2 || project.Meta.CreatorHistoricalProjects[0] != previousA || project.Meta.CreatorHistoricalProjects[1] != previousB {
+		t.Fatalf("creator historical projects = %v, want [%s %s]", addressHexes(project.Meta.CreatorHistoricalProjects), previousA.Hex(), previousB.Hex())
+	}
+	if project.Meta.CreatorHistoricalProjectsFetchedAt.IsZero() {
+		t.Fatal("creator historical projects fetched at is zero")
+	}
+	if got := publisher.creatorHistorical[contract]; len(got) != 2 || got[0].HistoricalProjectContract != previousA || got[1].HistoricalProjectContract != previousB {
+		t.Fatalf("persisted creator historical projects = %+v", got)
+	}
+	select {
+	case got := <-triggerCh:
+		if got != contract {
+			t.Fatalf("policy trigger = %s, want %s", got.Hex(), contract.Hex())
+		}
+	default:
+		t.Fatal("missing policy trigger")
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSkipsFetchedGenesisAndHistory(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a8")
+	fetchedAt := time.Now().UTC()
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		Contract:                           contract,
+		GenesisWalletsFetchedAt:            fetchedAt,
+		CreatorHistoricalProjectsFetchedAt: fetchedAt,
+	}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	nodeClient := &reconcilerDiscoveryNodeClientFake{}
+	store := &discoveryProjectStoreFake{}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:        cache,
+		discoveryNodeClient: nodeClient,
+		projectStore:        store,
+	}
+
+	if err := reconciler.refreshProject(ctx, contract); err != nil {
+		t.Fatalf("refresh project: %v", err)
+	}
+	if nodeClient.receiptCalls != 0 || nodeClient.filterCalls != 0 {
+		t.Fatalf("genesis fetch calls = receipt %d filter %d, want zero", nodeClient.receiptCalls, nodeClient.filterCalls)
+	}
+	if store.calls != 0 {
+		t.Fatalf("creator historical store calls = %d, want zero", store.calls)
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectIgnoresGenesisAndHistoryFailures(t *testing.T) {
+	restore := setCreatorHistoricalProjectRetryDelaysForTest(t)
+	defer restore()
+
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	creator := common.HexToAddress("0x00000000000000000000000000000000000000b9")
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a9")
+	txHash := common.HexToHash("0x0909090909090909090909090909090909090909090909090909090909090909")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		Contract:    contract,
+		Creator:     creator,
+		TxHash:      txHash,
+		BlockNumber: 109,
+		TxIndex:     1,
+	}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:        cache,
+		discoveryNodeClient: &reconcilerDiscoveryNodeClientFake{receiptErr: errors.New("receipt failed")},
+		projectStore:        &discoveryProjectStoreFake{errs: []error{errors.New("one"), errors.New("two"), errors.New("three"), errors.New("four")}},
+	}
+
+	if err := reconciler.refreshProject(ctx, contract); err != nil {
+		t.Fatalf("refresh project: %v", err)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok {
+		t.Fatal("project missing")
+	}
+	if !project.Meta.GenesisWalletsFetchedAt.IsZero() {
+		t.Fatalf("genesis wallets fetched at = %s, want zero", project.Meta.GenesisWalletsFetchedAt)
+	}
+	if !project.Meta.CreatorHistoricalProjectsFetchedAt.IsZero() {
+		t.Fatalf("creator historical projects fetched at = %s, want zero", project.Meta.CreatorHistoricalProjectsFetchedAt)
+	}
+}
+
+func erc20TransferLog(contract common.Address, from common.Address, to common.Address, amount *big.Int, txHash common.Hash) *types.Log {
+	return &types.Log{
+		Address: contract,
+		Topics: []common.Hash{
+			erc20TransferTopicHash,
+			common.BytesToHash(from.Bytes()),
+			common.BytesToHash(to.Bytes()),
+		},
+		Data:   common.LeftPadBytes(amount.Bytes(), 32),
+		TxHash: txHash,
+	}
+}
+
+func setCreatorHistoricalProjectRetryDelaysForTest(t *testing.T) func() {
+	t.Helper()
+	original := creatorHistoricalProjectRetryDelays
+	creatorHistoricalProjectRetryDelays = []time.Duration{0, 0, 0}
+	return func() {
+		creatorHistoricalProjectRetryDelays = original
 	}
 }
 
@@ -243,7 +760,7 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReports(t *testing.T) 
 		persistencePublisher:  publisher,
 	}
 
-	if err := reconciler.refreshProjectSourceQualityReports(ctx, refreshTargetActive); err != nil {
+	if err := reconciler.refreshProjectSourceQualityReport(ctx, contract); err != nil {
 		t.Fatalf("refresh source quality reports: %v", err)
 	}
 	if analyzer.calls != 1 {
@@ -283,7 +800,7 @@ func TestProjectStateReconcilerRefreshProjectCodeBinHashesPersistsMetaHash(t *te
 		},
 	}
 
-	if err := reconciler.refreshProjectCodeBinHashes(ctx, refreshTargetActive); err != nil {
+	if err := reconciler.refreshProjectCodeBinHash(ctx, contract); err != nil {
 		t.Fatalf("refresh code bin hashes: %v", err)
 	}
 	project, ok, err := cache.GetProject(ctx, contract)
@@ -319,14 +836,18 @@ func TestProjectStateReconcilerRefreshProjectSimulationsPersistsCreatorResult(t 
 		CanMintViaTransferToWethPair:   true,
 	}
 	publisher := &persistencePublisherFake{}
+	chainState := athenacontract.AthenaProject{
+		WethPair: athenacontract.AthenaPair{ContractAddress: wethPair},
+		UsdtPair: athenacontract.AthenaPair{ContractAddress: usdtPair},
+	}
 	reconciler := &projectStateReconcilerImpl{
 		projectCache:         cache,
-		fetcher:              &simulationFetcherFake{states: []athenacontract.AthenaSimulationState{{}}},
+		fetcher:              &simulationFetcherFake{projects: []athenacontract.AthenaProject{chainState}, states: []athenacontract.AthenaSimulationState{{}}},
 		simulator:            &projectSimulatorFake{result: want},
 		persistencePublisher: publisher,
 	}
 
-	if err := reconciler.refreshProjectSimulations(ctx, refreshTargetActive); err != nil {
+	if err := reconciler.refreshProject(ctx, contract); err != nil {
 		t.Fatalf("refresh project simulations: %v", err)
 	}
 	project, ok, err := cache.GetProject(ctx, contract)
@@ -361,14 +882,17 @@ func TestProjectStateReconcilerRefreshProjectSimulationsSkipsCacheWhenPersistFai
 
 	reconciler := &projectStateReconcilerImpl{
 		projectCache: cache,
-		fetcher:      &simulationFetcherFake{states: []athenacontract.AthenaSimulationState{{}}},
+		fetcher: &simulationFetcherFake{projects: []athenacontract.AthenaProject{{
+			WethPair: athenacontract.AthenaPair{ContractAddress: wethPair},
+			UsdtPair: athenacontract.AthenaPair{ContractAddress: usdtPair},
+		}}, states: []athenacontract.AthenaSimulationState{{}}},
 		simulator: &projectSimulatorFake{result: SimulateResult{
 			CanMintFromDeadViaTransferFrom: true,
 		}},
 		persistencePublisher: &persistencePublisherFake{err: errors.New("persist failed")},
 	}
 
-	if err := reconciler.refreshProjectSimulations(ctx, refreshTargetActive); err != nil {
+	if err := reconciler.refreshProject(ctx, contract); err != nil {
 		t.Fatalf("refresh project simulations: %v", err)
 	}
 	project, ok, err := cache.GetProject(ctx, contract)
@@ -405,7 +929,10 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReportsSkipsCompletedA
 		persistencePublisher:  &persistencePublisherFake{},
 	}
 
-	if err := reconciler.refreshProjectSourceQualityReports(ctx, refreshTargetActive); err != nil {
+	if err := reconciler.refreshProjectSourceQualityReport(ctx, closedSource); err != nil {
+		t.Fatalf("refresh source quality reports: %v", err)
+	}
+	if err := reconciler.refreshProjectSourceQualityReport(ctx, completed); err != nil {
 		t.Fatalf("refresh source quality reports: %v", err)
 	}
 	if analyzer.calls != 0 {
