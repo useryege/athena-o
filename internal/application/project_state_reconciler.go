@@ -29,7 +29,7 @@ const (
 	reconcilerDefaultConcurrency       = 2
 	reconcilerSchedulerTickInterval    = 5 * time.Second
 	reconcilerScheduledRefreshInterval = time.Minute
-	reconcilerCatchUpTTL               = 3 * time.Minute
+	reconcilerCatchUpTTL               = 60 * time.Minute
 	reconcilerFollowHeadsTTL           = 360 * time.Minute
 )
 
@@ -83,8 +83,9 @@ type projectStateReconcilerImpl struct {
 	jobSem chan struct{}
 	wg     sync.WaitGroup
 
-	scheduleMu sync.Mutex
-	scheduled  map[common.Address]*scheduledProject
+	scheduleMu   sync.Mutex
+	scheduled    map[common.Address]*scheduledProject
+	lifecycleCtx context.Context
 }
 
 func NewProjectStateReconciler(
@@ -116,6 +117,10 @@ func NewProjectStateReconciler(
 }
 
 func (r *projectStateReconcilerImpl) Start(ctx context.Context) error {
+	r.scheduleMu.Lock()
+	r.lifecycleCtx = ctx
+	r.scheduleMu.Unlock()
+
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
@@ -167,6 +172,7 @@ func (r *projectStateReconcilerImpl) InitProject(ctx context.Context, candidates
 		return fmt.Errorf("athena list returned %d projects for %d queries", len(snapshots), len(queries))
 	}
 	fetchAt := time.Now().UTC()
+	immediateRefreshContracts := make([]common.Address, 0, len(snapshots))
 	for i, snapshot := range snapshots {
 		project := projects[i]
 		candidate := validCandidates[i]
@@ -193,6 +199,10 @@ func (r *projectStateReconcilerImpl) InitProject(ctx context.Context, candidates
 			return fmt.Errorf("failed to cache project %s: %w", project.Meta.Contract.Hex(), err)
 		}
 		r.scheduleProject(candidate)
+		immediateRefreshContracts = append(immediateRefreshContracts, project.Meta.Contract)
+	}
+	for _, contract := range immediateRefreshContracts {
+		r.triggerImmediateScheduledRefresh(ctx, contract)
 	}
 	return nil
 }
@@ -262,6 +272,44 @@ func (r *projectStateReconcilerImpl) runDueProjects(ctx context.Context, now tim
 		}
 		r.finishScheduledProject(contract, time.Now().UTC())
 	}
+}
+
+func (r *projectStateReconcilerImpl) triggerImmediateScheduledRefresh(ctx context.Context, contract common.Address) {
+	if r == nil || contract == (common.Address{}) {
+		return
+	}
+	runCtx := ctx
+	r.scheduleMu.Lock()
+	if r.lifecycleCtx != nil {
+		runCtx = r.lifecycleCtx
+	}
+	item := r.scheduled[contract]
+	now := time.Now().UTC()
+	if item == nil || !now.Before(item.expiresAt) || item.processing {
+		if item != nil && !now.Before(item.expiresAt) {
+			delete(r.scheduled, contract)
+		}
+		r.scheduleMu.Unlock()
+		return
+	}
+	item.processing = true
+	r.scheduleMu.Unlock()
+
+	if runCtx == nil {
+		runCtx = context.Background()
+	}
+	r.wg.Add(1)
+	go func(ctx context.Context) {
+		defer r.wg.Done()
+		if err := r.runScheduledProject(ctx, contract); err != nil {
+			log.WithFields(log.Fields{
+				"component": "project_state_reconciler",
+				"contract":  contract.Hex(),
+				"error":     err.Error(),
+			}).Warn("project immediate refresh failed")
+		}
+		r.finishScheduledProject(contract, time.Now().UTC())
+	}(runCtx)
 }
 
 func (r *projectStateReconcilerImpl) dueProjectContracts(now time.Time) []common.Address {

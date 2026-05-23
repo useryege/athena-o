@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"sync"
 	"testing"
 	"time"
 
@@ -81,10 +82,15 @@ func (f *simulationFetcherFake) FetchSimulationStates(context.Context, []athenac
 }
 
 type initProjectFetcherFake struct {
-	snapshots []athenacontract.AthenaProject
-	calls     int
-	queryLen  int
-	err       error
+	mu               sync.Mutex
+	snapshots        []athenacontract.AthenaProject
+	calls            int
+	queryLen         int
+	withSimCalls     int
+	withSimContracts []common.Address
+	withSimStarted   chan common.Address
+	withSimRelease   chan struct{}
+	err              error
 }
 
 func (f *initProjectFetcherFake) FetchProject(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaProject, error) {
@@ -92,8 +98,10 @@ func (f *initProjectFetcherFake) FetchProject(context.Context, athenacontract.At
 }
 
 func (f *initProjectFetcherFake) FetchProjects(_ context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProject, error) {
+	f.mu.Lock()
 	f.calls++
 	f.queryLen = len(queries)
+	f.mu.Unlock()
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -112,8 +120,40 @@ func (f *initProjectFetcherFake) FetchProjects(_ context.Context, queries []athe
 	return snapshots, nil
 }
 
-func (f *initProjectFetcherFake) FetchProjectsWithSimulationState(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {
-	return nil, f.err
+func (f *initProjectFetcherFake) FetchProjectsWithSimulationState(ctx context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {
+	f.mu.Lock()
+	f.withSimCalls++
+	for _, query := range queries {
+		f.withSimContracts = append(f.withSimContracts, query.TokenContract)
+		if f.withSimStarted != nil {
+			select {
+			case f.withSimStarted <- query.TokenContract:
+			default:
+			}
+		}
+	}
+	release := f.withSimRelease
+	f.mu.Unlock()
+	if release != nil {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-release:
+		}
+	}
+	if f.err != nil {
+		return nil, f.err
+	}
+	items := make([]athenacontract.AthenaProjectWithSimulationState, 0, len(queries))
+	for _, query := range queries {
+		items = append(items, athenacontract.AthenaProjectWithSimulationState{
+			Project: athenacontract.AthenaProject{
+				TokenContract: query.TokenContract,
+				Token:         athenacontract.AthenaToken{IsValidERC20: true},
+			},
+		})
+	}
+	return items, nil
 }
 
 func (f *initProjectFetcherFake) FetchSimulationState(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaSimulationState, error) {
@@ -588,6 +628,122 @@ func TestProjectStateReconcilerScheduleDeduplicatesAndExpires(t *testing.T) {
 	}
 }
 
+func TestProjectStateReconcilerInitProjectTriggersImmediateRefreshForValidProjects(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	validA := common.HexToAddress("0x00000000000000000000000000000000000001a1")
+	invalid := common.HexToAddress("0x00000000000000000000000000000000000001a2")
+	validB := common.HexToAddress("0x00000000000000000000000000000000000001a3")
+	fetcher := &initProjectFetcherFake{
+		snapshots: []athenacontract.AthenaProject{
+			{
+				TokenContract: validA,
+				Token:         athenacontract.AthenaToken{IsValidERC20: true},
+			},
+			{
+				TokenContract: invalid,
+				Token:         athenacontract.AthenaToken{IsValidERC20: false},
+			},
+			{
+				TokenContract: validB,
+				Token:         athenacontract.AthenaToken{IsValidERC20: true},
+			},
+		},
+		withSimStarted: make(chan common.Address, 2),
+	}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:         cache,
+		fetcher:              fetcher,
+		persistencePublisher: &persistencePublisherFake{},
+		scheduled:            map[common.Address]*scheduledProject{},
+		jobSem:               make(chan struct{}, 2),
+	}
+
+	if err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{
+		{Contract: validA, Source: ProjectDiscoverySourceCatchUp},
+		{Contract: invalid, Source: ProjectDiscoverySourceCatchUp},
+		{Contract: validB, Source: ProjectDiscoverySourceFollowHeads},
+	}); err != nil {
+		t.Fatalf("init project: %v", err)
+	}
+
+	started := waitForImmediateRefreshStarts(t, fetcher.withSimStarted, 2)
+	if !started[validA] || !started[validB] {
+		t.Fatalf("immediate refresh starts = %v, want %s and %s", addressSetHexes(started), validA.Hex(), validB.Hex())
+	}
+	if started[invalid] {
+		t.Fatalf("invalid ERC20 project was refreshed immediately")
+	}
+	waitForScheduledIdle(t, reconciler, validA)
+	waitForScheduledIdle(t, reconciler, validB)
+}
+
+func TestProjectStateReconcilerImmediateRefreshSkipsProcessingAndReschedulesAfterFinish(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000001b1")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	release := make(chan struct{})
+	fetcher := &initProjectFetcherFake{
+		withSimStarted: make(chan common.Address, 2),
+		withSimRelease: release,
+	}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:         cache,
+		fetcher:              fetcher,
+		persistencePublisher: &persistencePublisherFake{},
+		scheduled: map[common.Address]*scheduledProject{
+			contract: {
+				candidate: DiscoveredProjectCandidate{Contract: contract},
+				source:    ProjectDiscoverySourceCatchUp,
+				interval:  reconcilerScheduledRefreshInterval,
+				expiresAt: time.Now().UTC().Add(reconcilerCatchUpTTL),
+				nextRunAt: time.Now().UTC().Add(reconcilerScheduledRefreshInterval),
+			},
+		},
+		jobSem: make(chan struct{}, 1),
+	}
+
+	reconciler.triggerImmediateScheduledRefresh(ctx, contract)
+	started := waitForImmediateRefreshStarts(t, fetcher.withSimStarted, 1)
+	if !started[contract] {
+		t.Fatalf("immediate refresh did not start for %s", contract.Hex())
+	}
+	if !scheduledProcessing(reconciler, contract) {
+		t.Fatal("scheduled project is not marked processing")
+	}
+
+	reconciler.triggerImmediateScheduledRefresh(ctx, contract)
+	select {
+	case extra := <-fetcher.withSimStarted:
+		t.Fatalf("duplicate immediate refresh started for %s", extra.Hex())
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	finishedAfter := time.Now().UTC()
+	close(release)
+	waitForScheduledIdle(t, reconciler, contract)
+	item := scheduledItem(reconciler, contract)
+	if item == nil {
+		t.Fatal("scheduled project was removed")
+	}
+	if !item.nextRunAt.After(finishedAfter) {
+		t.Fatalf("next run at = %s, want after %s", item.nextRunAt, finishedAfter)
+	}
+	if item.nextRunAt.Sub(finishedAfter) > reconcilerScheduledRefreshInterval+time.Second {
+		t.Fatalf("next run at = %s, want about one interval after finish", item.nextRunAt)
+	}
+
+	fetcher.mu.Lock()
+	withSimCalls := fetcher.withSimCalls
+	fetcher.mu.Unlock()
+	if withSimCalls != 1 {
+		t.Fatalf("refresh calls = %d, want 1", withSimCalls)
+	}
+}
+
 func TestProjectStateReconcilerRefreshProjectGenesisWalletsPersistsAndCaches(t *testing.T) {
 	cache := newProjectSnapshotCacheTest(t)
 	ctx := context.Background()
@@ -989,6 +1145,57 @@ func addressHexes(addresses []common.Address) []string {
 		hexes = append(hexes, address.Hex())
 	}
 	return hexes
+}
+
+func addressSetHexes(addresses map[common.Address]bool) []string {
+	hexes := make([]string, 0, len(addresses))
+	for address := range addresses {
+		hexes = append(hexes, address.Hex())
+	}
+	return hexes
+}
+
+func waitForImmediateRefreshStarts(t *testing.T, started <-chan common.Address, count int) map[common.Address]bool {
+	t.Helper()
+	got := map[common.Address]bool{}
+	timeout := time.After(2 * time.Second)
+	for len(got) < count {
+		select {
+		case contract := <-started:
+			got[contract] = true
+		case <-timeout:
+			t.Fatalf("timed out waiting for %d immediate refresh starts, got %v", count, addressSetHexes(got))
+		}
+	}
+	return got
+}
+
+func waitForScheduledIdle(t *testing.T, reconciler *projectStateReconcilerImpl, contract common.Address) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		if !scheduledProcessing(reconciler, contract) {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("scheduled project %s stayed processing", contract.Hex())
+}
+
+func scheduledProcessing(reconciler *projectStateReconcilerImpl, contract common.Address) bool {
+	item := scheduledItem(reconciler, contract)
+	return item != nil && item.processing
+}
+
+func scheduledItem(reconciler *projectStateReconcilerImpl, contract common.Address) *scheduledProject {
+	reconciler.scheduleMu.Lock()
+	defer reconciler.scheduleMu.Unlock()
+	item := reconciler.scheduled[contract]
+	if item == nil {
+		return nil
+	}
+	copy := *item
+	return &copy
 }
 
 func newProjectSnapshotCacheTest(t *testing.T) ProjectSnapshotCache {
