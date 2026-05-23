@@ -25,6 +25,4 @@ func (*ProjectView) ProtoMessage() {}
 
 func (*SimulateResult) ProtoMessage() {}
 
-func (*SourceCodeBlacklistState) ProtoMessage() {}
-
 func (*TokenState) ProtoMessage() {}

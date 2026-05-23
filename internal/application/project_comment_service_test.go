@@ -50,18 +50,6 @@ type projectOnlyStore struct {
 	appstore.ProjectStore
 }
 
-func (s *projectOnlyStore) ListSourceCodeBlacklistFields(context.Context) ([]string, error) {
-	return nil, nil
-}
-
-func (s *projectOnlyStore) AddSourceCodeBlacklistField(context.Context, string) error {
-	return nil
-}
-
-func (s *projectOnlyStore) DeleteSourceCodeBlacklistField(context.Context, string) error {
-	return nil
-}
-
 func TestAddProjectCommentValidation(t *testing.T) {
 	service := &Service{}
 

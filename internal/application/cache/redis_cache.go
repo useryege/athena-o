@@ -10,8 +10,6 @@ import (
 )
 
 const (
-	SourceCodeBlacklistRedisKey        = "source_code:blacklist:fields"
-	SourceCodeBlacklistVersionRedisKey = "source_code:blacklist:fields:version"
 	BytecodeBlacklistRedisKey          = "bytecode:blacklist:contracts"
 	BytecodeBlacklistVersionRedisKey   = "bytecode:blacklist:contracts:version"
 	SourcecodeBlacklistRedisKey        = "sourcecode:blacklist:contracts"
@@ -20,95 +18,9 @@ const (
 	WalletBlacklistVersionRedisKey     = "wallet:blacklist:entries:version"
 )
 
-var _ SourceCodeBlacklistRemoteCache = &RedisBlacklistCache{}
 var _ BytecodeBlacklistRemoteCache = &RedisBytecodeBlacklistCache{}
 var _ SourcecodeBlacklistContractRemoteCache = &RedisSourcecodeBlacklistContractCache{}
 var _ WalletBlacklistRemoteCache = &RedisWalletBlacklistCache{}
-
-type RedisBlacklistCache struct {
-	client redisport.KVReaderWriter
-}
-
-func NewSourceCodeBlacklistRedisCache(client redisport.KVReaderWriter) SourceCodeBlacklistRemoteCache {
-	if client == nil {
-		return NoopRedisBlacklistCache{}
-	}
-	return &RedisBlacklistCache{client: client}
-}
-
-func (c *RedisBlacklistCache) Get(ctx context.Context) ([]string, string, bool, error) {
-	if c == nil || c.client == nil {
-		return nil, "", false, nil
-	}
-
-	value, err := c.client.Get(ctx, SourceCodeBlacklistRedisKey)
-	if errors.Is(err, redisport.ErrNotFound) {
-		return nil, "", false, nil
-	}
-	if err != nil {
-		return nil, "", false, err
-	}
-
-	var fields []string
-	if err := json.Unmarshal([]byte(value), &fields); err != nil {
-		return nil, "", false, err
-	}
-	version, ok, err := getRedisVersion(ctx, c.client, SourceCodeBlacklistVersionRedisKey)
-	if err != nil {
-		return nil, "", false, err
-	}
-	if !ok {
-		version, err = setRedisVersion(ctx, c.client, SourceCodeBlacklistVersionRedisKey)
-		if err != nil {
-			return nil, "", false, err
-		}
-	}
-	return fields, version, true, nil
-}
-
-func (c *RedisBlacklistCache) Set(ctx context.Context, fields []string) (string, error) {
-	if c == nil || c.client == nil {
-		return "", nil
-	}
-
-	payload, err := json.Marshal(fields)
-	if err != nil {
-		return "", err
-	}
-	return setRedisPayloadWithVersion(ctx, c.client, SourceCodeBlacklistRedisKey, SourceCodeBlacklistVersionRedisKey, payload)
-}
-
-func (c *RedisBlacklistCache) Del(ctx context.Context) error {
-	if c == nil || c.client == nil {
-		return nil
-	}
-	return c.client.Del(ctx, SourceCodeBlacklistRedisKey, SourceCodeBlacklistVersionRedisKey)
-}
-
-func (c *RedisBlacklistCache) Version(ctx context.Context) (string, bool, error) {
-	if c == nil || c.client == nil {
-		return "", false, nil
-	}
-	return getRedisVersion(ctx, c.client, SourceCodeBlacklistVersionRedisKey)
-}
-
-type NoopRedisBlacklistCache struct{}
-
-func (NoopRedisBlacklistCache) Get(context.Context) ([]string, string, bool, error) {
-	return nil, "", false, nil
-}
-
-func (NoopRedisBlacklistCache) Set(context.Context, []string) (string, error) {
-	return "", nil
-}
-
-func (NoopRedisBlacklistCache) Del(context.Context) error {
-	return nil
-}
-
-func (NoopRedisBlacklistCache) Version(context.Context) (string, bool, error) {
-	return "", false, nil
-}
 
 type RedisBytecodeBlacklistCache struct {
 	client redisport.KVReaderWriter

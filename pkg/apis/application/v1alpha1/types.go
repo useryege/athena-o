@@ -10,7 +10,6 @@ type ProjectListItem struct {
 	Name                    string `protobuf:"bytes,2,opt,name=name" json:"name"`
 	Symbol                  string `protobuf:"bytes,3,opt,name=symbol" json:"symbol"`
 	IsArchived              bool   `protobuf:"varint,4,opt,name=isArchived" json:"isArchived"`
-	HasSourceCodeBlacklist  bool   `protobuf:"varint,5,opt,name=hasSourceCodeBlacklist" json:"hasSourceCodeBlacklist"`
 	HasMintRisk             bool   `protobuf:"varint,6,opt,name=hasMintRisk" json:"hasMintRisk"`
 	IsOpenSource            bool   `protobuf:"varint,7,opt,name=isOpenSource" json:"isOpenSource"`
 	WethPairQuoteUsdtValue  string `protobuf:"bytes,8,opt,name=wethPairQuoteUsdtValue" json:"wethPairQuoteUsdtValue"`
@@ -24,23 +23,22 @@ type ProjectListItem struct {
 }
 
 type ProjectMeta struct {
-	BlockTime                    uint64                   `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
-	BlockNumber                  uint64                   `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
-	Contract                     string                   `protobuf:"bytes,4,opt,name=contract" json:"contract"`
-	Creator                      string                   `protobuf:"bytes,5,opt,name=creator" json:"creator"`
-	TxHash                       string                   `protobuf:"bytes,6,opt,name=txHash" json:"txHash"`
-	TxIndex                      uint64                   `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
-	SourceCode                   string                   `protobuf:"bytes,8,opt,name=sourceCode" json:"sourceCode"`
-	CreatorResult                SimulateResult           `protobuf:"bytes,9,opt,name=creatorResult" json:"creatorResult"`
-	SourceCodeBlacklist          SourceCodeBlacklistState `protobuf:"bytes,10,opt,name=sourceCodeBlacklist" json:"sourceCodeBlacklist"`
-	IsArchived                   bool                     `protobuf:"varint,11,opt,name=isArchived" json:"isArchived"`
-	GenesisWallets               []GenesisWalletState     `protobuf:"bytes,12,rep,name=genesisWallets" json:"genesisWallets"`
-	CreatorOtherProjectContracts []string                 `protobuf:"bytes,13,rep,name=creatorOtherProjectContracts" json:"creatorOtherProjectContracts"`
-	SourceQualityReport          string                   `protobuf:"bytes,14,opt,name=sourceQualityReport" json:"sourceQualityReport"`
-	SourceQualityReportedAt      string                   `protobuf:"bytes,15,opt,name=sourceQualityReportedAt" json:"sourceQualityReportedAt"`
-	IsOpenSource                 bool                     `protobuf:"varint,16,opt,name=isOpenSource" json:"isOpenSource"`
-	SourceCodeHash               string                   `protobuf:"bytes,17,opt,name=sourceCodeHash" json:"sourceCodeHash"`
-	CodeBinHash                  string                   `protobuf:"bytes,18,opt,name=codeBinHash" json:"codeBinHash"`
+	BlockTime                    uint64               `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
+	BlockNumber                  uint64               `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
+	Contract                     string               `protobuf:"bytes,4,opt,name=contract" json:"contract"`
+	Creator                      string               `protobuf:"bytes,5,opt,name=creator" json:"creator"`
+	TxHash                       string               `protobuf:"bytes,6,opt,name=txHash" json:"txHash"`
+	TxIndex                      uint64               `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
+	SourceCode                   string               `protobuf:"bytes,8,opt,name=sourceCode" json:"sourceCode"`
+	CreatorResult                SimulateResult       `protobuf:"bytes,9,opt,name=creatorResult" json:"creatorResult"`
+	IsArchived                   bool                 `protobuf:"varint,11,opt,name=isArchived" json:"isArchived"`
+	GenesisWallets               []GenesisWalletState `protobuf:"bytes,12,rep,name=genesisWallets" json:"genesisWallets"`
+	CreatorOtherProjectContracts []string             `protobuf:"bytes,13,rep,name=creatorOtherProjectContracts" json:"creatorOtherProjectContracts"`
+	SourceQualityReport          string               `protobuf:"bytes,14,opt,name=sourceQualityReport" json:"sourceQualityReport"`
+	SourceQualityReportedAt      string               `protobuf:"bytes,15,opt,name=sourceQualityReportedAt" json:"sourceQualityReportedAt"`
+	IsOpenSource                 bool                 `protobuf:"varint,16,opt,name=isOpenSource" json:"isOpenSource"`
+	SourceCodeHash               string               `protobuf:"bytes,17,opt,name=sourceCodeHash" json:"sourceCodeHash"`
+	CodeBinHash                  string               `protobuf:"bytes,18,opt,name=codeBinHash" json:"codeBinHash"`
 }
 
 type GenesisWalletState struct {
@@ -105,11 +103,6 @@ type SimulateResult struct {
 	CanMintFromUsdtPairViaTransferFrom bool `protobuf:"varint,5,opt,name=canMintFromUsdtPairViaTransferFrom" json:"canMintFromUsdtPairViaTransferFrom"`
 	CanMintViaTransferToWethPair       bool `protobuf:"varint,6,opt,name=canMintViaTransferToWethPair" json:"canMintViaTransferToWethPair"`
 	CanMintViaTransferToUsdtPair       bool `protobuf:"varint,7,opt,name=canMintViaTransferToUsdtPair" json:"canMintViaTransferToUsdtPair"`
-}
-
-type SourceCodeBlacklistState struct {
-	HasBlacklistFields bool     `protobuf:"varint,1,opt,name=hasBlacklistFields" json:"hasBlacklistFields"`
-	BlacklistFields    []string `protobuf:"bytes,2,rep,name=blacklistFields" json:"blacklistFields"`
 }
 
 type ProjectOption struct {

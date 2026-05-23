@@ -10,7 +10,6 @@ import bytecodeBlacklist from './bytecode-blacklist';
 import help from './help';
 import login from './login';
 import projects from './projects';
-import sourceCodeBlacklist from './source-code-blacklist';
 import sourcecodeBlacklistContracts from './sourcecode-blacklist-contracts';
 import settings from './settings';
 import walletBlacklist from './wallet-blacklist';
@@ -37,7 +36,6 @@ type Routes = {[path: string]: {component: React.ComponentType<RouteComponentPro
 const routes: Routes = {
     '/login': {component: login.component as any, noLayout: true},
     '/projects': {component: projects.component},
-    '/source-code-blacklist': {component: sourceCodeBlacklist.component},
     '/sourcecode-blacklist-contracts': {component: sourcecodeBlacklistContracts.component},
     '/bytecode-blacklist': {component: bytecodeBlacklist.component},
     '/wallet-blacklist': {component: walletBlacklist.component},
@@ -67,11 +65,6 @@ const navItems: NavItem[] = [
         tooltip: 'Manage blacklist modules',
         iconClassName: 'fa fa-ban',
         children: [
-            {
-                title: 'Field',
-                tooltip: 'Manage source-code blacklist fields',
-                path: '/source-code-blacklist'
-            },
             {
                 title: 'ByteCode',
                 tooltip: 'Manage bytecode blacklist contracts',

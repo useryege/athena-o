@@ -90,38 +90,6 @@ message ListProjectCommentsResponse {
   int32 pageSize = 4;
 }
 
-// SourceCodeBlacklistField is a globally maintained source-code blacklist field.
-message SourceCodeBlacklistField {
-  int64 id = 1;
-  string field = 2;
-}
-
-// ListSourceCodeBlacklistFieldsRequest queries all source-code blacklist fields.
-message ListSourceCodeBlacklistFieldsRequest {}
-
-// ListSourceCodeBlacklistFieldsResponse returns all source-code blacklist fields.
-message ListSourceCodeBlacklistFieldsResponse {
-  repeated SourceCodeBlacklistField items = 1;
-}
-
-// AddSourceCodeBlacklistFieldRequest adds a source-code blacklist field.
-message AddSourceCodeBlacklistFieldRequest {
-  string field = 1;
-}
-
-// AddSourceCodeBlacklistFieldResponse returns the stored source-code blacklist field.
-message AddSourceCodeBlacklistFieldResponse {
-  SourceCodeBlacklistField item = 1;
-}
-
-// DeleteSourceCodeBlacklistFieldRequest deletes a source-code blacklist field.
-message DeleteSourceCodeBlacklistFieldRequest {
-  string field = 1;
-}
-
-// DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.
-message DeleteSourceCodeBlacklistFieldResponse {}
-
 // BytecodeBlacklistContract is a globally maintained bytecode-blacklist contract entry.
 message BytecodeBlacklistContract {
   string contract = 1;
@@ -290,12 +258,6 @@ service ApplicationService {
   rpc AddProjectComment(AddProjectCommentRequest) returns (AddProjectCommentResponse);
   // ListProjectComments returns comments for a given contract.
   rpc ListProjectComments(ListProjectCommentsRequest) returns (ListProjectCommentsResponse);
-  // ListSourceCodeBlacklistFields returns all globally configured source-code blacklist fields.
-  rpc ListSourceCodeBlacklistFields(ListSourceCodeBlacklistFieldsRequest) returns (ListSourceCodeBlacklistFieldsResponse);
-  // AddSourceCodeBlacklistField adds a globally configured source-code blacklist field.
-  rpc AddSourceCodeBlacklistField(AddSourceCodeBlacklistFieldRequest) returns (AddSourceCodeBlacklistFieldResponse);
-  // DeleteSourceCodeBlacklistField deletes a globally configured source-code blacklist field.
-  rpc DeleteSourceCodeBlacklistField(DeleteSourceCodeBlacklistFieldRequest) returns (DeleteSourceCodeBlacklistFieldResponse);
   // ListBytecodeBlacklistContracts returns all globally configured bytecode-blacklist contract entries.
   rpc ListBytecodeBlacklistContracts(ListBytecodeBlacklistContractsRequest) returns (ListBytecodeBlacklistContractsResponse);
   // AddBytecodeBlacklistContract adds a globally configured bytecode-blacklist contract entry.

@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redis/go-redis/v9"
 	"github.com/useryege/athena/internal/application/redisport"
-	"github.com/useryege/athena/internal/application/sourcecode"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
@@ -75,13 +74,12 @@ func TestRedisProjectSnapshotCachePersistsProjectReport(t *testing.T) {
 	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
 	contract := common.BigToAddress(big.NewInt(100))
 	want := ProjectReport{
-		IsPolicyEvaluated:            true,
-		IsBlacklistedCreatorWallet:   true,
-		IsBlacklistedGenesisWallet:   true,
-		IsBlacklistedBytecode:        true,
-		IsBlacklistedSourceCode:      true,
-		IsBlacklistedSourceCodeField: true,
-		HasMintRisk:                  true,
+		IsPolicyEvaluated:          true,
+		IsBlacklistedCreatorWallet: true,
+		IsBlacklistedGenesisWallet: true,
+		IsBlacklistedBytecode:      true,
+		IsBlacklistedSourceCode:    true,
+		HasMintRisk:                true,
 	}
 
 	if err := cache.SetProject(ctx, &Project{
@@ -238,9 +236,6 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 		CreatorResult: SimulateResult{
 			CanMintFromZeroViaTransferFrom: true,
 		},
-		SourceCodeBlacklist: sourcecode.BlacklistReport{
-			HasBlacklistFields: true,
-		},
 	}}
 
 	listItem := projectToListItem(project)
@@ -250,9 +245,9 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	if listItem.Name != "Token" || listItem.Symbol != "TKN" {
 		t.Fatalf("list token = %q/%q, want Token/TKN", listItem.Name, listItem.Symbol)
 	}
-	if !listItem.IsArchived || !listItem.IsOpenSource || !listItem.HasSourceCodeBlacklist || !listItem.HasMintRisk {
-		t.Fatalf("list booleans = archived %t openSource %t blacklist %t mintRisk %t, want all true",
-			listItem.IsArchived, listItem.IsOpenSource, listItem.HasSourceCodeBlacklist, listItem.HasMintRisk)
+	if !listItem.IsArchived || !listItem.IsOpenSource || !listItem.HasMintRisk {
+		t.Fatalf("list booleans = archived %t openSource %t mintRisk %t, want all true",
+			listItem.IsArchived, listItem.IsOpenSource, listItem.HasMintRisk)
 	}
 	if listItem.WethPairQuoteUsdtValue != "123" || !listItem.WethPairRemoveLiquidity {
 		t.Fatalf("list WETH pair = %q/%t, want 123/true", listItem.WethPairQuoteUsdtValue, listItem.WethPairRemoveLiquidity)

@@ -10,7 +10,6 @@ export interface ProjectListItem {
     name?: string;
     symbol?: string;
     isArchived?: boolean;
-    hasSourceCodeBlacklist?: boolean;
     hasMintRisk?: boolean;
     isOpenSource?: boolean;
     wethPairQuoteUsdtValue?: string;
@@ -32,7 +31,6 @@ export interface ProjectMeta {
     txIndex?: number;
     sourceCode?: string;
     creatorResult?: SimulateResult;
-    sourceCodeBlacklist?: SourceCodeBlacklistState;
     isArchived?: boolean;
     genesisWallets?: GenesisWalletState[];
     creatorOtherProjectContracts?: string[];
@@ -111,11 +109,6 @@ export interface SimulateResult {
     canMintViaTransferToUsdtPair?: boolean;
 }
 
-export interface SourceCodeBlacklistState {
-    hasBlacklistFields?: boolean;
-    blacklistFields?: string[];
-}
-
 export interface GetProjectResponse {
     item?: ProjectView;
 }
@@ -178,19 +171,6 @@ let cachedProjectOptions: ProjectOptions | undefined;
 let projectOptionsRequest: (Promise<ProjectOptions | undefined> & {abort?: () => void}) | null = null;
 let cachedBytecodeBlacklistContracts: BytecodeBlacklistContract[] | undefined;
 let bytecodeBlacklistContractsRequest: (Promise<BytecodeBlacklistContract[]> & {abort?: () => void}) | null = null;
-
-export interface SourceCodeBlacklistField {
-    id?: number;
-    field?: string;
-}
-
-export interface ListSourceCodeBlacklistFieldsResponse {
-    items?: SourceCodeBlacklistField[];
-}
-
-export interface AddSourceCodeBlacklistFieldResponse {
-    item?: SourceCodeBlacklistField;
-}
 
 export interface BytecodeBlacklistContract {
     contract?: string;
@@ -375,27 +355,6 @@ export class AthenaApplicationService {
             ) as any;
         promise.abort = () => {};
         projectOptionsRequest = promise;
-        return promise;
-    }
-
-    public listSourceCodeBlacklistFields(): Promise<SourceCodeBlacklistField[]> & {abort?: () => void} {
-        const req = requests.get('/source-code/blacklist-fields');
-        const promise = req.then(res => (res.body as ListSourceCodeBlacklistFieldsResponse).items || []) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public addSourceCodeBlacklistField(field: string): Promise<SourceCodeBlacklistField> & {abort?: () => void} {
-        const req = requests.post('/source-code/blacklist-fields').send({field});
-        const promise = req.then(res => (res.body as AddSourceCodeBlacklistFieldResponse).item) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public deleteSourceCodeBlacklistField(field: string): Promise<void> & {abort?: () => void} {
-        const req = requests.delete(`/source-code/blacklist-fields/${encodeURIComponent(field)}`);
-        const promise = req.then(() => {}) as any;
-        promise.abort = () => req.abort();
         return promise;
     }
 

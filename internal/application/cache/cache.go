@@ -7,33 +7,6 @@ import (
 	"github.com/useryege/athena/internal/application/store"
 )
 
-type SourceCodeBlacklistCache interface {
-	Take(ctx context.Context, loader func(context.Context) ([]string, error)) ([]string, error)
-	Set(ctx context.Context, fields []string) error
-	Del(ctx context.Context) error
-	Version(ctx context.Context) (string, error)
-}
-
-type SourceCodeBlacklistRemoteCache interface {
-	Get(ctx context.Context) ([]string, string, bool, error)
-	Set(ctx context.Context, fields []string) (string, error)
-	Del(ctx context.Context) error
-	Version(ctx context.Context) (string, bool, error)
-}
-
-type SourceCodeBlacklistModel interface {
-	Load(ctx context.Context) error
-	List(ctx context.Context) ([]string, error)
-	Add(ctx context.Context, field string) error
-	Delete(ctx context.Context, field string) error
-	Version(ctx context.Context) (string, error)
-}
-
-type SourceCodeBlacklistWritePublisher interface {
-	PublishAdd(ctx context.Context, field string) error
-	PublishDelete(ctx context.Context, field string) error
-}
-
 type BytecodeBlacklistCache interface {
 	Take(ctx context.Context, loader func(context.Context) ([]store.BytecodeBlacklistContract, error)) ([]store.BytecodeBlacklistContract, error)
 	Set(ctx context.Context, items []store.BytecodeBlacklistContract) error

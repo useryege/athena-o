@@ -52,14 +52,6 @@ func (w *persistenceEventWriterFake) UnarchiveProject(context.Context, common.Ad
 	return w.err
 }
 
-func (w *persistenceEventWriterFake) AddSourceCodeBlacklistField(context.Context, string) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) DeleteSourceCodeBlacklistField(context.Context, string) error {
-	return w.err
-}
-
 func (w *persistenceEventWriterFake) AddBytecodeBlacklistContract(context.Context, appstore.BytecodeBlacklistContract) error {
 	return w.err
 }

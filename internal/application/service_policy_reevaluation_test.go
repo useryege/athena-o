@@ -2,13 +2,11 @@ package application
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
-	"github.com/useryege/athena/internal/application/sourcecode"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -116,33 +114,6 @@ func (c *policyReevaluationProjectCache) ListArchivedProjects(_ context.Context,
 	return projects, total, page, pageSize, nil
 }
 
-type sourceCodeBlacklistModelFake struct {
-	added   []string
-	deleted []string
-}
-
-func (m *sourceCodeBlacklistModelFake) Load(context.Context) error {
-	return nil
-}
-
-func (m *sourceCodeBlacklistModelFake) List(context.Context) ([]string, error) {
-	return nil, nil
-}
-
-func (m *sourceCodeBlacklistModelFake) Version(context.Context) (string, error) {
-	return "source", nil
-}
-
-func (m *sourceCodeBlacklistModelFake) Add(_ context.Context, field string) error {
-	m.added = append(m.added, field)
-	return nil
-}
-
-func (m *sourceCodeBlacklistModelFake) Delete(_ context.Context, field string) error {
-	m.deleted = append(m.deleted, field)
-	return nil
-}
-
 type bytecodeBlacklistModelFake struct {
 	items       []appstore.BytecodeBlacklistContract
 	updatedNote bool
@@ -241,84 +212,6 @@ func (m *sourcecodeBlacklistContractModelFake) Delete(_ context.Context, contrac
 	}
 	m.items = filtered
 	return nil
-}
-
-func TestAddSourceCodeBlacklistFieldResetsReportsAndEnqueuesProjects(t *testing.T) {
-	activeContract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
-	archivedContract := common.HexToAddress("0x00000000000000000000000000000000000000a2")
-	cache := newPolicyReevaluationProjectCache(
-		&Project{
-			Meta: ProjectMeta{Contract: activeContract},
-			Runtime: ProjectRuntime{SourceCodeBlacklist: sourcecode.BlacklistReport{
-				ResolvedAt: time.Now().Add(-time.Hour),
-			}},
-		},
-		&Project{
-			Meta: ProjectMeta{Contract: archivedContract, IsArchived: true},
-			Runtime: ProjectRuntime{SourceCodeBlacklist: sourcecode.BlacklistReport{
-				HasBlacklistFields: true,
-				BlacklistFields:    []string{"owner"},
-				ResolvedAt:         time.Now().Add(-time.Hour),
-			}},
-		},
-	)
-	triggerCh := make(chan common.Address, 4)
-	model := &sourceCodeBlacklistModelFake{}
-	service := newStartedPolicyReevaluationService(cache, triggerCh)
-	service.sourceBlacklist = model
-
-	if _, err := service.AddSourceCodeBlacklistField(context.Background(), &applicationpkg.AddSourceCodeBlacklistFieldRequest{Field: "owner"}); err != nil {
-		t.Fatalf("add source blacklist field: %v", err)
-	}
-
-	wantContracts := []common.Address{activeContract, archivedContract}
-	if got := waitForContracts(t, triggerCh, len(wantContracts)); !sameAddressSet(got, wantContracts) {
-		t.Fatalf("triggered contracts = %v, want %v", got, wantContracts)
-	}
-	assertSourceCodeReportReset(t, cache.projects[activeContract])
-	assertSourceCodeReportReset(t, cache.projects[archivedContract])
-	if !reflect.DeepEqual(model.added, []string{"owner"}) {
-		t.Fatalf("source blacklist added = %v, want [owner]", model.added)
-	}
-}
-
-func TestDeleteSourceCodeBlacklistFieldResetsReportsAndEnqueuesProjects(t *testing.T) {
-	activeContract := common.HexToAddress("0x00000000000000000000000000000000000000b1")
-	archivedContract := common.HexToAddress("0x00000000000000000000000000000000000000b2")
-	cache := newPolicyReevaluationProjectCache(
-		&Project{
-			Meta: ProjectMeta{Contract: activeContract},
-			Runtime: ProjectRuntime{SourceCodeBlacklist: sourcecode.BlacklistReport{
-				HasBlacklistFields: true,
-				BlacklistFields:    []string{"admin"},
-				ResolvedAt:         time.Now().Add(-time.Hour),
-			}},
-		},
-		&Project{
-			Meta: ProjectMeta{Contract: archivedContract, IsArchived: true},
-			Runtime: ProjectRuntime{SourceCodeBlacklist: sourcecode.BlacklistReport{
-				ResolvedAt: time.Now().Add(-time.Hour),
-			}},
-		},
-	)
-	triggerCh := make(chan common.Address, 4)
-	model := &sourceCodeBlacklistModelFake{}
-	service := newStartedPolicyReevaluationService(cache, triggerCh)
-	service.sourceBlacklist = model
-
-	if _, err := service.DeleteSourceCodeBlacklistField(context.Background(), &applicationpkg.DeleteSourceCodeBlacklistFieldRequest{Field: "admin"}); err != nil {
-		t.Fatalf("delete source blacklist field: %v", err)
-	}
-
-	wantContracts := []common.Address{activeContract, archivedContract}
-	if got := waitForContracts(t, triggerCh, len(wantContracts)); !sameAddressSet(got, wantContracts) {
-		t.Fatalf("triggered contracts = %v, want %v", got, wantContracts)
-	}
-	assertSourceCodeReportReset(t, cache.projects[activeContract])
-	assertSourceCodeReportReset(t, cache.projects[archivedContract])
-	if !reflect.DeepEqual(model.deleted, []string{"admin"}) {
-		t.Fatalf("source blacklist deleted = %v, want [admin]", model.deleted)
-	}
 }
 
 func TestAddBytecodeBlacklistContractTriggersFullPolicyReevaluation(t *testing.T) {
@@ -467,17 +360,6 @@ func assertNoContractTriggered(t *testing.T, ch <-chan common.Address) {
 	case contract := <-ch:
 		t.Fatalf("unexpected policy trigger for %s", contract.Hex())
 	case <-time.After(50 * time.Millisecond):
-	}
-}
-
-func assertSourceCodeReportReset(t *testing.T, project *Project) {
-	t.Helper()
-	if project == nil {
-		t.Fatalf("project is nil")
-	}
-	report := project.Runtime.SourceCodeBlacklist
-	if report.HasBlacklistFields || len(report.BlacklistFields) != 0 || !report.ResolvedAt.IsZero() {
-		t.Fatalf("source code blacklist report = %+v, want zero value", report)
 	}
 }
 

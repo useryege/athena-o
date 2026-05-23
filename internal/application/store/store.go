@@ -90,13 +90,6 @@ type ProjectGenesisWalletStore interface {
 	ListProjectGenesisWalletsByWallet(ctx context.Context, wallet common.Address) ([]ProjectGenesisWallet, error)
 }
 
-type SourceCodeBlacklistStore interface {
-	ListSourceCodeBlacklistFields(ctx context.Context) ([]string, error)
-	AddSourceCodeBlacklistField(ctx context.Context, field string) error
-	DeleteSourceCodeBlacklistField(ctx context.Context, field string) error
-}
-
 type Store interface {
 	ProjectStore
-	SourceCodeBlacklistStore
 }

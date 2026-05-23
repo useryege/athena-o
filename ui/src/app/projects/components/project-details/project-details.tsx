@@ -840,37 +840,6 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                 </div>
                             </div>
                         )}
-
-                        {project.meta?.sourceCodeBlacklist && (
-                            <div className='white-box project-details__box'>
-                                <div className='project-details__section-title'>Analysis</div>
-                                <div className='project-details__grid'>
-                                    <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Has Blacklist Fields</span>
-                                        <span className='project-details__field-value'>
-                                            <span
-                                                className={`project-details__badge project-details__badge--${project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'negative' : 'positive'}`}>
-                                                {project.meta.sourceCodeBlacklist.hasBlacklistFields ? 'Yes' : 'No'}
-                                            </span>
-                                        </span>
-                                    </div>
-                                    <div className='project-details__field' style={{gridColumn: '1 / -1'}}>
-                                        <span className='project-details__field-label'>Blacklist Fields</span>
-                                        <div className='project-details__chip-list'>
-                                            {project.meta.sourceCodeBlacklist.blacklistFields && project.meta.sourceCodeBlacklist.blacklistFields.length > 0 ? (
-                                                project.meta.sourceCodeBlacklist.blacklistFields.map((field, i) => (
-                                                    <span key={i} className='project-details__chip'>
-                                                        {field}
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className='project-details__field-value'>-</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 ) : null}
             </div>

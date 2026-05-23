@@ -274,7 +274,6 @@ export const ProjectsList = () => {
                                         <div>Name</div>
                                         <div>Contract</div>
                                         <div>Status</div>
-                                        <div>Blacklist</div>
                                         <div>Mint Risk</div>
                                         <div title='Is Open Source'>Open Src</div>
                                         <div title='WETH Quote + Remove Liquidity'>WETH Pair</div>

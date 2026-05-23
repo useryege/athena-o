@@ -32,8 +32,6 @@ func (m *ProjectView) Reset() { *m = ProjectView{} }
 
 func (m *SimulateResult) Reset() { *m = SimulateResult{} }
 
-func (m *SourceCodeBlacklistState) Reset() { *m = SourceCodeBlacklistState{} }
-
 func (m *TokenState) Reset() { *m = TokenState{} }
 
 func (m *AssetState) Marshal() (dAtA []byte, err error) {
@@ -417,14 +415,6 @@ func (m *ProjectListItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0x30
 	i--
-	if m.HasSourceCodeBlacklist {
-		dAtA[i] = 1
-	} else {
-		dAtA[i] = 0
-	}
-	i--
-	dAtA[i] = 0x28
-	i--
 	if m.IsArchived {
 		dAtA[i] = 1
 	} else {
@@ -535,16 +525,6 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x58
-	{
-		size, err := m.SourceCodeBlacklist.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x52
 	{
 		size, err := m.CreatorResult.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
@@ -753,46 +733,6 @@ func (m *SimulateResult) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SourceCodeBlacklistState) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *SourceCodeBlacklistState) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SourceCodeBlacklistState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.BlacklistFields) > 0 {
-		for iNdEx := len(m.BlacklistFields) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.BlacklistFields[iNdEx])
-			copy(dAtA[i:], m.BlacklistFields[iNdEx])
-			i = encodeVarintGenerated(dAtA, i, uint64(len(m.BlacklistFields[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	i--
-	if m.HasBlacklistFields {
-		dAtA[i] = 1
-	} else {
-		dAtA[i] = 0
-	}
-	i--
-	dAtA[i] = 0x8
-	return len(dAtA) - i, nil
-}
-
 func (m *TokenState) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -974,7 +914,6 @@ func (m *ProjectListItem) Size() (n int) {
 	n += 2
 	n += 2
 	n += 2
-	n += 2
 	l = len(m.WethPairQuoteUsdtValue)
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 2
@@ -1007,8 +946,6 @@ func (m *ProjectMeta) Size() (n int) {
 	l = len(m.SourceCode)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = m.CreatorResult.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.SourceCodeBlacklist.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 2
 	if len(m.GenesisWallets) > 0 {
@@ -1078,22 +1015,6 @@ func (m *SimulateResult) Size() (n int) {
 	n += 2
 	n += 2
 	n += 2
-	return n
-}
-
-func (m *SourceCodeBlacklistState) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 2
-	if len(m.BlacklistFields) > 0 {
-		for _, s := range m.BlacklistFields {
-			l = len(s)
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
 	return n
 }
 
@@ -1210,7 +1131,6 @@ func (this *ProjectListItem) String() string {
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
 		`Symbol:` + fmt.Sprintf("%v", this.Symbol) + `,`,
 		`IsArchived:` + fmt.Sprintf("%v", this.IsArchived) + `,`,
-		`HasSourceCodeBlacklist:` + fmt.Sprintf("%v", this.HasSourceCodeBlacklist) + `,`,
 		`HasMintRisk:` + fmt.Sprintf("%v", this.HasMintRisk) + `,`,
 		`IsOpenSource:` + fmt.Sprintf("%v", this.IsOpenSource) + `,`,
 		`WethPairQuoteUsdtValue:` + fmt.Sprintf("%v", this.WethPairQuoteUsdtValue) + `,`,
@@ -1243,7 +1163,6 @@ func (this *ProjectMeta) String() string {
 		`TxIndex:` + fmt.Sprintf("%v", this.TxIndex) + `,`,
 		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
 		`CreatorResult:` + strings.Replace(strings.Replace(this.CreatorResult.String(), "SimulateResult", "SimulateResult", 1), `&`, ``, 1) + `,`,
-		`SourceCodeBlacklist:` + strings.Replace(strings.Replace(this.SourceCodeBlacklist.String(), "SourceCodeBlacklistState", "SourceCodeBlacklistState", 1), `&`, ``, 1) + `,`,
 		`IsArchived:` + fmt.Sprintf("%v", this.IsArchived) + `,`,
 		`GenesisWallets:` + repeatedStringForGenesisWallets + `,`,
 		`CreatorOtherProjectContracts:` + fmt.Sprintf("%v", this.CreatorOtherProjectContracts) + `,`,
@@ -1293,17 +1212,6 @@ func (this *SimulateResult) String() string {
 		`CanMintFromUsdtPairViaTransferFrom:` + fmt.Sprintf("%v", this.CanMintFromUsdtPairViaTransferFrom) + `,`,
 		`CanMintViaTransferToWethPair:` + fmt.Sprintf("%v", this.CanMintViaTransferToWethPair) + `,`,
 		`CanMintViaTransferToUsdtPair:` + fmt.Sprintf("%v", this.CanMintViaTransferToUsdtPair) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *SourceCodeBlacklistState) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&SourceCodeBlacklistState{`,
-		`HasBlacklistFields:` + fmt.Sprintf("%v", this.HasBlacklistFields) + `,`,
-		`BlacklistFields:` + fmt.Sprintf("%v", this.BlacklistFields) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -2661,26 +2569,6 @@ func (m *ProjectListItem) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.IsArchived = bool(v != 0)
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field HasSourceCodeBlacklist", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.HasSourceCodeBlacklist = bool(v != 0)
 		case 6:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field HasMintRisk", wireType)
@@ -3179,39 +3067,6 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.CreatorResult.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeBlacklist", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.SourceCodeBlacklist.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3939,108 +3794,6 @@ func (m *SimulateResult) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.CanMintViaTransferToUsdtPair = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *SourceCodeBlacklistState) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: SourceCodeBlacklistState: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SourceCodeBlacklistState: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field HasBlacklistFields", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.HasBlacklistFields = bool(v != 0)
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BlacklistFields", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.BlacklistFields = append(m.BlacklistFields, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

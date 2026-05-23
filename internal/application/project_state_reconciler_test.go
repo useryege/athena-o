@@ -64,12 +64,6 @@ func (p *persistencePublisherFake) PublishProjectArchive(context.Context, common
 func (p *persistencePublisherFake) PublishProjectUnarchive(context.Context, common.Address) error {
 	return nil
 }
-func (p *persistencePublisherFake) PublishSourceCodeBlacklistAdd(context.Context, string) error {
-	return nil
-}
-func (p *persistencePublisherFake) PublishSourceCodeBlacklistDelete(context.Context, string) error {
-	return nil
-}
 func (p *persistencePublisherFake) PublishBytecodeBlacklistAdd(context.Context, appstore.BytecodeBlacklistContract) error {
 	return nil
 }

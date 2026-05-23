@@ -89,8 +89,6 @@ message ProjectListItem {
 
   optional bool isArchived = 4;
 
-  optional bool hasSourceCodeBlacklist = 5;
-
   optional bool hasMintRisk = 6;
 
   optional bool isOpenSource = 7;
@@ -128,8 +126,6 @@ message ProjectMeta {
   optional string sourceCode = 8;
 
   optional SimulateResult creatorResult = 9;
-
-  optional SourceCodeBlacklistState sourceCodeBlacklist = 10;
 
   optional bool isArchived = 11;
 
@@ -180,12 +176,6 @@ message SimulateResult {
   optional bool canMintViaTransferToWethPair = 6;
 
   optional bool canMintViaTransferToUsdtPair = 7;
-}
-
-message SourceCodeBlacklistState {
-  optional bool hasBlacklistFields = 1;
-
-  repeated string blacklistFields = 2;
 }
 
 message TokenState {

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-339-g470fc60-dirty"
+    "version": "v1.0.0-343-gc32cd99-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -858,91 +858,6 @@
         }
       }
     },
-    "/api/v1/source-code/blacklist-fields": {
-      "get": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "ListSourceCodeBlacklistFields returns all globally configured source-code blacklist fields.",
-        "operationId": "ApplicationService_ListSourceCodeBlacklistFields",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationListSourceCodeBlacklistFieldsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "AddSourceCodeBlacklistField adds a globally configured source-code blacklist field.",
-        "operationId": "ApplicationService_AddSourceCodeBlacklistField",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/applicationAddSourceCodeBlacklistFieldRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationAddSourceCodeBlacklistFieldResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/source-code/blacklist-fields/{field}": {
-      "delete": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "DeleteSourceCodeBlacklistField deletes a globally configured source-code blacklist field.",
-        "operationId": "ApplicationService_DeleteSourceCodeBlacklistField",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "field",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationDeleteSourceCodeBlacklistFieldResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
     "/api/v1/wallet-blacklist": {
       "get": {
         "tags": [
@@ -1236,24 +1151,6 @@
         }
       }
     },
-    "applicationAddSourceCodeBlacklistFieldRequest": {
-      "description": "AddSourceCodeBlacklistFieldRequest adds a source-code blacklist field.",
-      "type": "object",
-      "properties": {
-        "field": {
-          "type": "string"
-        }
-      }
-    },
-    "applicationAddSourceCodeBlacklistFieldResponse": {
-      "description": "AddSourceCodeBlacklistFieldResponse returns the stored source-code blacklist field.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/applicationSourceCodeBlacklistField"
-        }
-      }
-    },
     "applicationAddSourcecodeBlacklistContractRequest": {
       "description": "AddSourcecodeBlacklistContractRequest adds a source-code hash blacklist contract entry.",
       "type": "object",
@@ -1327,10 +1224,6 @@
     },
     "applicationDeleteBytecodeBlacklistContractResponse": {
       "description": "DeleteBytecodeBlacklistContractResponse is returned after deleting a bytecode-blacklist contract entry.",
-      "type": "object"
-    },
-    "applicationDeleteSourceCodeBlacklistFieldResponse": {
-      "description": "DeleteSourceCodeBlacklistFieldResponse is returned after deleting a source-code blacklist field.",
       "type": "object"
     },
     "applicationDeleteSourcecodeBlacklistContractResponse": {
@@ -1431,18 +1324,6 @@
         }
       }
     },
-    "applicationListSourceCodeBlacklistFieldsResponse": {
-      "description": "ListSourceCodeBlacklistFieldsResponse returns all source-code blacklist fields.",
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/applicationSourceCodeBlacklistField"
-          }
-        }
-      }
-    },
     "applicationListSourcecodeBlacklistContractsResponse": {
       "description": "ListSourcecodeBlacklistContractsResponse returns all source-code hash blacklist contract entries.",
       "type": "object",
@@ -1515,19 +1396,6 @@
         },
         "payload": {
           "type": "string"
-        }
-      }
-    },
-    "applicationSourceCodeBlacklistField": {
-      "description": "SourceCodeBlacklistField is a globally maintained source-code blacklist field.",
-      "type": "object",
-      "properties": {
-        "field": {
-          "type": "string"
-        },
-        "id": {
-          "type": "integer",
-          "format": "int64"
         }
       }
     },
@@ -2077,9 +1945,6 @@
         "hasMintRisk": {
           "type": "boolean"
         },
-        "hasSourceCodeBlacklist": {
-          "type": "boolean"
-        },
         "isArchived": {
           "type": "boolean"
         },
@@ -2154,9 +2019,6 @@
         "sourceCode": {
           "type": "string"
         },
-        "sourceCodeBlacklist": {
-          "$ref": "#/definitions/v1alpha1SourceCodeBlacklistState"
-        },
         "sourceCodeHash": {
           "type": "string"
         },
@@ -2230,20 +2092,6 @@
           "type": "boolean"
         },
         "canMintViaTransferToWethPair": {
-          "type": "boolean"
-        }
-      }
-    },
-    "v1alpha1SourceCodeBlacklistState": {
-      "type": "object",
-      "properties": {
-        "blacklistFields": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "hasBlacklistFields": {
           "type": "boolean"
         }
       }

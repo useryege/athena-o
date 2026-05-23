@@ -102,11 +102,6 @@ export const ProjectListRow = ({
                 <span className={`project-details__badge project-details__badge--${isArchived ? 'negative' : 'positive'}`}>{isArchived ? 'Archived' : 'Active'}</span>
             </div>
             <div className='projects-list__cell'>
-                <span className={`project-details__badge project-details__badge--${project.hasSourceCodeBlacklist ? 'negative' : 'positive'}`}>
-                    {project.hasSourceCodeBlacklist ? 'Yes' : 'No'}
-                </span>
-            </div>
-            <div className='projects-list__cell'>
                 <span className={`project-details__badge project-details__badge--${project.hasMintRisk ? 'negative' : 'positive'}`}>{project.hasMintRisk ? 'Yes' : 'No'}</span>
             </div>
             <div className='projects-list__cell'>

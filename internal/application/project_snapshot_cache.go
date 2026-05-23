@@ -31,7 +31,6 @@ const (
 	projectFieldSourceQualityReport            = "source_quality_report"
 	projectFieldSourceQualityReportedAt        = "source_quality_reported_at"
 	projectFieldCodeBinHash                    = "code_bin_hash"
-	projectFieldSourceCodeBlacklist            = "source_code_blacklist"
 	projectFieldGenesisWallets                 = "genesis_wallets"
 	projectFieldReport                         = "report"
 
@@ -374,10 +373,6 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 	if err != nil {
 		return fmt.Errorf("marshal creator other project contracts for %s: %w", project.Meta.Contract.Hex(), err)
 	}
-	sourceCodeBlacklistPayload, err := mustMarshalJSON(project.Runtime.SourceCodeBlacklist)
-	if err != nil {
-		return fmt.Errorf("marshal source code blacklist for %s: %w", project.Meta.Contract.Hex(), err)
-	}
 	reportPayload, err := mustMarshalJSON(project.Report)
 	if err != nil {
 		return fmt.Errorf("marshal report for %s: %w", project.Meta.Contract.Hex(), err)
@@ -401,7 +396,6 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldSourceQualityReport:            project.Meta.SourceQualityReport,
 		projectFieldSourceQualityReportedAt:        formatOptionalTime(project.Meta.SourceQualityReportedAt),
 		projectFieldCodeBinHash:                    project.Meta.CodeBinHash.Hex(),
-		projectFieldSourceCodeBlacklist:            sourceCodeBlacklistPayload,
 		projectFieldReport:                         reportPayload,
 		projectFieldGenesisWallets:                 genesisWalletsPayload,
 	})
@@ -482,13 +476,6 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 		fields[projectFieldCodeBinHash] = next.Meta.CodeBinHash.Hex()
 	}
 
-	if current == nil || !reflect.DeepEqual(current.Runtime.SourceCodeBlacklist, next.Runtime.SourceCodeBlacklist) {
-		sourceCodeBlacklistPayload, err := mustMarshalJSON(next.Runtime.SourceCodeBlacklist)
-		if err != nil {
-			return nil, fmt.Errorf("marshal source code blacklist for %s: %w", next.Meta.Contract.Hex(), err)
-		}
-		fields[projectFieldSourceCodeBlacklist] = sourceCodeBlacklistPayload
-	}
 	if current == nil || current.Report != next.Report {
 		reportPayload, err := mustMarshalJSON(next.Report)
 		if err != nil {
@@ -583,11 +570,6 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 	}
 	if raw := values[projectFieldCodeBinHash]; raw != "" {
 		project.Meta.CodeBinHash = common.HexToHash(raw)
-	}
-	if raw := values[projectFieldSourceCodeBlacklist]; raw != "" {
-		if err := json.Unmarshal([]byte(raw), &project.Runtime.SourceCodeBlacklist); err != nil {
-			return nil, false, err
-		}
 	}
 	if raw := values[projectFieldReport]; raw != "" {
 		if err := json.Unmarshal([]byte(raw), &project.Report); err != nil {

@@ -39,8 +39,6 @@ const (
 	PersistenceOpProjectSourceQualityReport      = "project_source_quality_report_update"
 	PersistenceOpProjectArchive                  = "project_archive"
 	PersistenceOpProjectUnarchive                = "project_unarchive"
-	PersistenceOpSourceBlacklistAdd              = "blacklist_add"
-	PersistenceOpSourceBlacklistDelete           = "blacklist_delete"
 	PersistenceOpBytecodeBlacklistAdd            = "bytecode_blacklist_add"
 	PersistenceOpBytecodeBlacklistNote           = "bytecode_blacklist_update_note"
 	PersistenceOpBytecodeBlacklistDel            = "bytecode_blacklist_delete"
@@ -56,7 +54,6 @@ type PersistenceEvent struct {
 	Version    int             `json:"version"`
 	Op         string          `json:"op"`
 	Contract   string          `json:"contract,omitempty"`
-	Field      string          `json:"field,omitempty"`
 	Payload    json.RawMessage `json:"payload,omitempty"`
 	OccurredAt time.Time       `json:"occurred_at"`
 }
@@ -115,10 +112,6 @@ type projectGenesisWalletItemPayload struct {
 	RankIndex int32  `json:"rank_index"`
 }
 
-type blacklistFieldPayload struct {
-	Field string `json:"field"`
-}
-
 type bytecodeBlacklistAddPayload struct {
 	Contract string `json:"contract"`
 	CodeHash string `json:"code_hash"`
@@ -172,8 +165,6 @@ type PersistenceEventPublisher interface {
 	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error
 	PublishProjectArchive(ctx context.Context, contract common.Address) error
 	PublishProjectUnarchive(ctx context.Context, contract common.Address) error
-	PublishSourceCodeBlacklistAdd(ctx context.Context, field string) error
-	PublishSourceCodeBlacklistDelete(ctx context.Context, field string) error
 	PublishBytecodeBlacklistAdd(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	PublishBytecodeBlacklistUpdateNote(ctx context.Context, contract common.Address, note string) error
 	PublishBytecodeBlacklistDelete(ctx context.Context, contract common.Address) error
@@ -193,8 +184,6 @@ type PersistenceEventWriter interface {
 	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
 	ArchiveProject(ctx context.Context, contract common.Address) error
 	UnarchiveProject(ctx context.Context, contract common.Address) error
-	AddSourceCodeBlacklistField(ctx context.Context, field string) error
-	DeleteSourceCodeBlacklistField(ctx context.Context, field string) error
 	AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	UpdateBytecodeBlacklistContractNote(ctx context.Context, contract common.Address, note string) error
 	DeleteBytecodeBlacklistContract(ctx context.Context, contract common.Address) error
@@ -396,36 +385,6 @@ func (b *RedisPersistenceEventBus) PublishProjectUnarchive(ctx context.Context, 
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectUnarchive,
 		Contract:   contract.Hex(),
-		OccurredAt: time.Now().UTC(),
-	})
-}
-
-func (b *RedisPersistenceEventBus) PublishSourceCodeBlacklistAdd(ctx context.Context, field string) error {
-	payload := blacklistFieldPayload{Field: field}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal blacklist add payload: %w", err)
-	}
-	return b.Publish(ctx, PersistenceEvent{
-		Version:    persistenceEventVersion,
-		Op:         PersistenceOpSourceBlacklistAdd,
-		Field:      field,
-		Payload:    data,
-		OccurredAt: time.Now().UTC(),
-	})
-}
-
-func (b *RedisPersistenceEventBus) PublishSourceCodeBlacklistDelete(ctx context.Context, field string) error {
-	payload := blacklistFieldPayload{Field: field}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal blacklist delete payload: %w", err)
-	}
-	return b.Publish(ctx, PersistenceEvent{
-		Version:    persistenceEventVersion,
-		Op:         PersistenceOpSourceBlacklistDelete,
-		Field:      field,
-		Payload:    data,
 		OccurredAt: time.Now().UTC(),
 	})
 }
@@ -912,30 +871,6 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			return fmt.Errorf("invalid contract %q", event.Contract)
 		}
 		return writer.UnarchiveProject(ctx, common.HexToAddress(event.Contract))
-	case PersistenceOpSourceBlacklistAdd:
-		field := event.Field
-		if len(event.Payload) > 0 {
-			var payload blacklistFieldPayload
-			if err := json.Unmarshal(event.Payload, &payload); err == nil && payload.Field != "" {
-				field = payload.Field
-			}
-		}
-		if field == "" {
-			return errors.New("blacklist field is empty")
-		}
-		return writer.AddSourceCodeBlacklistField(ctx, field)
-	case PersistenceOpSourceBlacklistDelete:
-		field := event.Field
-		if len(event.Payload) > 0 {
-			var payload blacklistFieldPayload
-			if err := json.Unmarshal(event.Payload, &payload); err == nil && payload.Field != "" {
-				field = payload.Field
-			}
-		}
-		if field == "" {
-			return errors.New("blacklist field is empty")
-		}
-		return writer.DeleteSourceCodeBlacklistField(ctx, field)
 	case PersistenceOpBytecodeBlacklistAdd:
 		var payload bytecodeBlacklistAddPayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -1120,14 +1055,6 @@ func (w *storePersistenceWriter) ArchiveProject(ctx context.Context, contract co
 
 func (w *storePersistenceWriter) UnarchiveProject(ctx context.Context, contract common.Address) error {
 	return w.store.UnarchiveProjectByContract(ctx, contract)
-}
-
-func (w *storePersistenceWriter) AddSourceCodeBlacklistField(ctx context.Context, field string) error {
-	return w.store.AddSourceCodeBlacklistField(ctx, field)
-}
-
-func (w *storePersistenceWriter) DeleteSourceCodeBlacklistField(ctx context.Context, field string) error {
-	return w.store.DeleteSourceCodeBlacklistField(ctx, field)
 }
 
 func (w *storePersistenceWriter) AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error {

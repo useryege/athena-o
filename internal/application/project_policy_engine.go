@@ -3,7 +3,6 @@ package application
 // A project is automatically archived when any archive policy rule matches:
 // - wallet_blacklist_creator: creator wallet matches the wallet blacklist.
 // - wallet_blacklist_genesis_wallet: a genesis wallet matches the wallet blacklist.
-// - sourcecode_blacklist_field: source analysis reports blacklisted fields.
 // - bytecode_blacklist: runtime code hash matches the bytecode blacklist.
 // - sourcecode_blacklist_contract: source code hash matches the sourcecode blacklist.
 // - simulate_result_mint_risk: creator simulation result has mint risk.
@@ -19,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/application/sourcecode"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -30,10 +28,9 @@ const (
 )
 
 type ProjectPolicyFacts struct {
-	SourceCodeBlacklistFields []string
-	BytecodeBlacklist         map[common.Hash]struct{}
-	SourcecodeBlacklist       map[common.Hash]struct{}
-	WalletBlacklist           map[common.Address]struct{}
+	BytecodeBlacklist   map[common.Hash]struct{}
+	SourcecodeBlacklist map[common.Hash]struct{}
+	WalletBlacklist     map[common.Address]struct{}
 }
 
 type projectPolicyFactsSnapshot struct {
@@ -56,8 +53,6 @@ type policyTaskState struct {
 type projectPolicyEngineImpl struct {
 	projectCache ProjectSnapshotCache
 
-	sourceAnalyzer      sourcecode.Analyzer
-	sourceBlacklist     sourceCodeBlacklistLister
 	bytecodeBlacklist   bytecodeBlacklistLister
 	sourcecodeBlacklist sourcecodeBlacklistContractLister
 	walletBlacklist     walletBlacklistLister
@@ -73,10 +68,6 @@ type projectPolicyEngineImpl struct {
 	facts     projectPolicyFactsSnapshot
 
 	wg sync.WaitGroup
-}
-
-type sourceCodeBlacklistLister interface {
-	List(ctx context.Context) ([]string, error)
 }
 
 type bytecodeBlacklistLister interface {
@@ -97,8 +88,6 @@ type blacklistVersionReader interface {
 
 func NewProjectPolicyEngine(
 	projectCache ProjectSnapshotCache,
-	sourceAnalyzer sourcecode.Analyzer,
-	sourceBlacklist sourceCodeBlacklistLister,
 	bytecodeBlacklist bytecodeBlacklistLister,
 	sourcecodeBlacklist sourcecodeBlacklistContractLister,
 	walletBlacklist walletBlacklistLister,
@@ -107,8 +96,6 @@ func NewProjectPolicyEngine(
 ) ProjectPolicyEngine {
 	return &projectPolicyEngineImpl{
 		projectCache:         projectCache,
-		sourceAnalyzer:       sourceAnalyzer,
-		sourceBlacklist:      sourceBlacklist,
 		bytecodeBlacklist:    bytecodeBlacklist,
 		sourcecodeBlacklist:  sourcecodeBlacklist,
 		walletBlacklist:      walletBlacklist,
@@ -119,7 +106,6 @@ func NewProjectPolicyEngine(
 		rules: []ProjectPolicyRule{
 			walletBlacklistCreatorRule{},
 			walletBlacklistGenesisWalletRule{},
-			sourceCodeBlacklistFieldRule{},
 			bytecodeBlacklistRule{},
 			sourcecodeBlacklistContractRule{},
 			simulateMintRiskRule{},
@@ -374,9 +360,6 @@ func (e *projectPolicyEngineImpl) evaluateProject(ctx context.Context, contract 
 	if !exists || project == nil {
 		return nil
 	}
-	if err := e.analyzeSourceCodeIfNeeded(ctx, project, facts.SourceCodeBlacklistFields); err != nil {
-		return err
-	}
 	if err := e.evaluateRulesForProject(ctx, project, facts); err != nil {
 		return err
 	}
@@ -399,14 +382,6 @@ func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicy
 	}
 
 	facts := ProjectPolicyFacts{}
-	if e.sourceBlacklist != nil {
-		fields, err := e.sourceBlacklist.List(ctx)
-		if err != nil {
-			return facts, err
-		}
-		facts.SourceCodeBlacklistFields = fields
-	}
-
 	if e.bytecodeBlacklist != nil {
 		records, err := e.bytecodeBlacklist.List(ctx)
 		if err != nil {
@@ -450,10 +425,6 @@ func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicy
 }
 
 func (e *projectPolicyEngineImpl) blacklistFactsVersion(ctx context.Context) (string, bool, error) {
-	sourceVersion, sourceOK, err := blacklistVersion(ctx, e.sourceBlacklist)
-	if err != nil {
-		return "", false, err
-	}
 	bytecodeVersion, bytecodeOK, err := blacklistVersion(ctx, e.bytecodeBlacklist)
 	if err != nil {
 		return "", false, err
@@ -466,10 +437,10 @@ func (e *projectPolicyEngineImpl) blacklistFactsVersion(ctx context.Context) (st
 	if err != nil {
 		return "", false, err
 	}
-	if !sourceOK || !bytecodeOK || !sourcecodeOK || !walletOK {
+	if !bytecodeOK || !sourcecodeOK || !walletOK {
 		return "", false, nil
 	}
-	return sourceVersion + "|" + bytecodeVersion + "|" + sourcecodeVersion + "|" + walletVersion, true, nil
+	return bytecodeVersion + "|" + sourcecodeVersion + "|" + walletVersion, true, nil
 }
 
 func blacklistVersion(ctx context.Context, value any) (string, bool, error) {
@@ -488,9 +459,7 @@ func blacklistVersion(ctx context.Context, value any) (string, bool, error) {
 }
 
 func cloneProjectPolicyFacts(facts ProjectPolicyFacts) ProjectPolicyFacts {
-	cloned := ProjectPolicyFacts{
-		SourceCodeBlacklistFields: append([]string(nil), facts.SourceCodeBlacklistFields...),
-	}
+	cloned := ProjectPolicyFacts{}
 	if facts.BytecodeBlacklist != nil {
 		cloned.BytecodeBlacklist = make(map[common.Hash]struct{}, len(facts.BytecodeBlacklist))
 		for key := range facts.BytecodeBlacklist {
@@ -553,25 +522,6 @@ func (e *projectPolicyEngineImpl) listAllProjects(ctx context.Context) ([]*Proje
 	appendUnique(activeProjects)
 	appendUnique(archivedProjects)
 	return all, nil
-}
-
-func (e *projectPolicyEngineImpl) analyzeSourceCodeIfNeeded(ctx context.Context, project *Project, fields []string) error {
-	if project == nil || project.Meta.SourceCode == "" || e.sourceAnalyzer == nil || !project.Runtime.SourceCodeBlacklist.ResolvedAt.IsZero() {
-		return nil
-	}
-	report := e.sourceAnalyzer.AnalyzeSourceCode(project.Meta.SourceCode, fields)
-	_, err := e.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil || current.Meta.SourceCode == "" || !current.Runtime.SourceCodeBlacklist.ResolvedAt.IsZero() {
-			return nil, false, nil
-		}
-		current.Runtime.SourceCodeBlacklist = report
-		return current, true, nil
-	})
-	if err != nil {
-		return err
-	}
-	project.Runtime.SourceCodeBlacklist = report
-	return nil
 }
 
 func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, project *Project, facts ProjectPolicyFacts) error {
@@ -651,8 +601,6 @@ func markProjectReportRuleMatch(report *ProjectReport, ruleName string) {
 		report.IsBlacklistedBytecode = true
 	case sourcecodeBlacklistContractRule{}.Name():
 		report.IsBlacklistedSourceCode = true
-	case sourceCodeBlacklistFieldRule{}.Name():
-		report.IsBlacklistedSourceCodeField = true
 	case simulateMintRiskRule{}.Name():
 		report.HasMintRisk = true
 	}
@@ -710,23 +658,6 @@ func (e *projectPolicyEngineImpl) persistPolicyAuditEvent(ctx context.Context, c
 		Payload:        string(payload),
 		IdempotencyKey: projectEventIdempotencyPolicyMatch(ruleName),
 	})
-}
-
-type sourceCodeBlacklistFieldRule struct{}
-
-func (r sourceCodeBlacklistFieldRule) Name() string { return "sourcecode_blacklist_field" }
-
-func (r sourceCodeBlacklistFieldRule) Evaluate(_ context.Context, project *Project, _ ProjectPolicyFacts) (bool, map[string]any, error) {
-	if project == nil || project.Meta.SourceCode == "" {
-		return false, nil, nil
-	}
-	report := project.Runtime.SourceCodeBlacklist
-	if !report.HasBlacklistFields {
-		return false, nil, nil
-	}
-	return true, map[string]any{
-		"blacklist_fields": report.BlacklistFields,
-	}, nil
 }
 
 type bytecodeBlacklistRule struct{}

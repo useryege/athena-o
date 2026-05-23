@@ -148,52 +148,6 @@ func (s *Server) ListProjectComments(ctx context.Context, req *applicationpkg.Li
 	}, nil
 }
 
-func (s *Server) ListSourceCodeBlacklistFields(ctx context.Context, _ *applicationpkg.ListSourceCodeBlacklistFieldsRequest) (*applicationpkg.ListSourceCodeBlacklistFieldsResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListSourceCodeBlacklistFields(ctx, &applicationapiclient.ListSourceCodeBlacklistFieldsRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]*applicationpkg.SourceCodeBlacklistField, 0, len(resp.Items))
-	for _, item := range resp.Items {
-		items = append(items, sourceCodeBlacklistFieldToAPI(item))
-	}
-	return &applicationpkg.ListSourceCodeBlacklistFieldsResponse{Items: items}, nil
-}
-
-func (s *Server) AddSourceCodeBlacklistField(ctx context.Context, req *applicationpkg.AddSourceCodeBlacklistFieldRequest) (*applicationpkg.AddSourceCodeBlacklistFieldResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.AddSourceCodeBlacklistField(ctx, &applicationapiclient.AddSourceCodeBlacklistFieldRequest{Field: req.GetField()})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.AddSourceCodeBlacklistFieldResponse{Item: sourceCodeBlacklistFieldToAPI(resp.Item)}, nil
-}
-
-func (s *Server) DeleteSourceCodeBlacklistField(ctx context.Context, req *applicationpkg.DeleteSourceCodeBlacklistFieldRequest) (*applicationpkg.DeleteSourceCodeBlacklistFieldResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	if _, err := client.DeleteSourceCodeBlacklistField(ctx, &applicationapiclient.DeleteSourceCodeBlacklistFieldRequest{Field: req.GetField()}); err != nil {
-		return nil, err
-	}
-	return &applicationpkg.DeleteSourceCodeBlacklistFieldResponse{}, nil
-}
-
 func (s *Server) ListBytecodeBlacklistContracts(ctx context.Context, _ *applicationpkg.ListBytecodeBlacklistContractsRequest) (*applicationpkg.ListBytecodeBlacklistContractsResponse, error) {
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {
@@ -436,16 +390,6 @@ func (s *Server) UnarchiveProject(ctx context.Context, req *applicationpkg.Unarc
 		return nil, err
 	}
 	return &applicationpkg.UnarchiveProjectResponse{}, nil
-}
-
-func sourceCodeBlacklistFieldToAPI(item *applicationapiclient.SourceCodeBlacklistField) *applicationpkg.SourceCodeBlacklistField {
-	if item == nil {
-		return nil
-	}
-	return &applicationpkg.SourceCodeBlacklistField{
-		Id:    item.Id,
-		Field: item.Field,
-	}
 }
 
 func bytecodeBlacklistContractToAPI(item *applicationapiclient.BytecodeBlacklistContract) *applicationpkg.BytecodeBlacklistContract {

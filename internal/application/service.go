@@ -18,7 +18,6 @@ import (
 	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/redisport"
-	"github.com/useryege/athena/internal/application/sourcecode"
 	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
 	v1 "github.com/useryege/athena/internal/pkg/proto/v1"
@@ -67,9 +66,7 @@ type Service struct {
 
 	pipeline              *ProjectPipeline
 	apiFetcher            ethereumapi.EthereumAPI
-	sourceAnalyzer        sourcecode.Analyzer
 	sourceQualityAnalyzer sourcequality.Analyzer
-	sourceBlacklist       appcache.SourceCodeBlacklistModel
 	bytecodeBlacklist     appcache.BytecodeBlacklistModel
 	sourcecodeBlacklist   appcache.SourcecodeBlacklistContractModel
 	walletBlacklist       appcache.WalletBlacklistModel
@@ -93,7 +90,6 @@ type Service struct {
 
 func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, deepseekConfig deepseek.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client) (*Service, error) {
 	persistenceBus := NewRedisPersistenceEventBus(redisClient)
-	sourceAnalyzer := sourcecode.NewAnalyzer()
 	var sourceQualityAnalyzer sourcequality.Analyzer
 	if strings.TrimSpace(deepseekConfig.APIKey) != "" {
 		deepseekClient, err := deepseek.NewClient(deepseekConfig)
@@ -122,11 +118,6 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 	if s, ok := store.(appstore.WalletBlacklistStore); ok {
 		walletStore = s
 	}
-	sourceBlacklist := appcache.NewSourceCodeBlacklistModel(
-		store,
-		appcache.NewLayeredBlacklistCache(appcache.NewLocalBlacklistCache(), appcache.NewSourceCodeBlacklistRedisCache(redisClient)),
-		newSourceCodeBlacklistEventPublisher(persistenceBus),
-	)
 	bytecodeBlacklist := appcache.NewBytecodeBlacklistModel(
 		bytecodeStore,
 		appcache.NewLayeredBytecodeBlacklistCache(appcache.NewLocalBytecodeBlacklistCache(), appcache.NewBytecodeBlacklistRedisCache(redisClient)),
@@ -147,9 +138,7 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		nodeClient:            nodeClient,
 		store:                 store,
 		projectCache:          NewProjectSnapshotCache(redisClient),
-		sourceAnalyzer:        sourceAnalyzer,
 		sourceQualityAnalyzer: sourceQualityAnalyzer,
-		sourceBlacklist:       sourceBlacklist,
 		bytecodeBlacklist:     bytecodeBlacklist,
 		sourcecodeBlacklist:   sourcecodeBlacklist,
 		walletBlacklist:       walletBlacklist,
@@ -249,12 +238,6 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 	apiFetcher = ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
 	projectSimulator := NewProjectSimulator(s.nodeClient)
 
-	if s.sourceBlacklist != nil {
-		if err := s.sourceBlacklist.Load(ctx); err != nil {
-			return nil, nil, nil, err
-		}
-	}
-
 	if s.bytecodeBlacklist != nil {
 		if err := s.bytecodeBlacklist.Load(ctx); err != nil {
 			return nil, nil, nil, err
@@ -302,8 +285,6 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 	)
 	policyEngine := NewProjectPolicyEngine(
 		s.projectCache,
-		s.sourceAnalyzer,
-		s.sourceBlacklist,
 		s.bytecodeBlacklist,
 		s.sourcecodeBlacklist,
 		s.walletBlacklist,
@@ -565,13 +546,6 @@ func matchesTarget(isArchived bool, target refreshTarget) bool {
 	}
 }
 
-func (s *Service) sourceCodeBlacklistFields(ctx context.Context) ([]string, error) {
-	if s.sourceBlacklist == nil {
-		return nil, nil
-	}
-	return s.sourceBlacklist.List(ctx)
-}
-
 func (s *Service) AnalyzeContractSourceQuality(ctx context.Context, sourceCode string) (string, error) {
 	if s.sourceQualityAnalyzer == nil {
 		return "", status.Error(codes.FailedPrecondition, "DeepSeek analyzer is not configured")
@@ -702,124 +676,10 @@ func (s *Service) triggerFullPolicyReevaluation() {
 	go s.enqueueAllProjectsForPolicy(ctx, policyTriggerCh)
 }
 
-func (s *Service) triggerSourceCodePolicyReevaluation() {
-	s.startStopMu.Lock()
-	ctx := s.lifecycleCtx
-	policyTriggerCh := s.policyTriggerCh
-	started := s.started
-	s.startStopMu.Unlock()
-	if !started || ctx == nil || policyTriggerCh == nil {
-		return
-	}
-	go func() {
-		if err := s.resetSourceCodeBlacklistReports(ctx); err != nil {
-			log.WithField("component", "sourcecode_policy_reevaluation").WithError(err).Warn("failed to reset source code blacklist reports")
-			return
-		}
-		s.enqueueAllProjectsForPolicy(ctx, policyTriggerCh)
-	}()
-}
-
-func (s *Service) resetSourceCodeBlacklistReports(ctx context.Context) error {
-	if s.projectCache == nil {
-		return nil
-	}
-	resetProject := func(project *Project) error {
-		if project == nil || project.Meta.Contract == (common.Address{}) {
-			return nil
-		}
-		_, err := s.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil {
-				return nil, false, nil
-			}
-			report := current.Runtime.SourceCodeBlacklist
-			if !report.HasBlacklistFields && len(report.BlacklistFields) == 0 && report.ResolvedAt.IsZero() {
-				return nil, false, nil
-			}
-			current.Runtime.SourceCodeBlacklist = sourcecode.BlacklistReport{}
-			return current, true, nil
-		})
-		return err
-	}
-
-	activeProjects, err := s.projectCache.ListActiveProjects(ctx)
-	if err != nil {
-		return err
-	}
-	for _, project := range activeProjects {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if err := resetProject(project); err != nil {
-			return err
-		}
-	}
-
-	page := int32(1)
-	for {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		archivedProjects, total, _, pageSize, err := s.projectCache.ListArchivedProjects(ctx, page, sourceCodeScanPageSize)
-		if err != nil {
-			return err
-		}
-		for _, project := range archivedProjects {
-			if err := resetProject(project); err != nil {
-				return err
-			}
-		}
-		if len(archivedProjects) == 0 || int64(page)*int64(pageSize) >= total {
-			return nil
-		}
-		page++
-	}
-}
-
 func (s *Service) clearPipelineLocked() {
 	s.pipeline = nil
 	s.apiFetcher = nil
 	s.policyTriggerCh = nil
-}
-
-func (s *Service) ListSourceCodeBlacklistFields(ctx context.Context, _ *applicationpkg.ListSourceCodeBlacklistFieldsRequest) (*applicationpkg.ListSourceCodeBlacklistFieldsResponse, error) {
-	if s.sourceBlacklist == nil {
-		return &applicationpkg.ListSourceCodeBlacklistFieldsResponse{}, nil
-	}
-
-	fields, err := s.sourceBlacklist.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]*applicationpkg.SourceCodeBlacklistField, 0, len(fields))
-	for _, field := range fields {
-		items = append(items, &applicationpkg.SourceCodeBlacklistField{Field: field})
-	}
-	return &applicationpkg.ListSourceCodeBlacklistFieldsResponse{Items: items}, nil
-}
-
-func (s *Service) AddSourceCodeBlacklistField(ctx context.Context, req *applicationpkg.AddSourceCodeBlacklistFieldRequest) (*applicationpkg.AddSourceCodeBlacklistFieldResponse, error) {
-	if s.sourceBlacklist == nil {
-		return &applicationpkg.AddSourceCodeBlacklistFieldResponse{}, nil
-	}
-	field := req.GetField()
-	if err := s.sourceBlacklist.Add(ctx, field); err != nil {
-		return nil, err
-	}
-	s.triggerSourceCodePolicyReevaluation()
-	return &applicationpkg.AddSourceCodeBlacklistFieldResponse{Item: &applicationpkg.SourceCodeBlacklistField{Field: field}}, nil
-}
-
-func (s *Service) DeleteSourceCodeBlacklistField(ctx context.Context, req *applicationpkg.DeleteSourceCodeBlacklistFieldRequest) (*applicationpkg.DeleteSourceCodeBlacklistFieldResponse, error) {
-	if s.sourceBlacklist == nil {
-		return &applicationpkg.DeleteSourceCodeBlacklistFieldResponse{}, nil
-	}
-	if err := s.sourceBlacklist.Delete(ctx, req.GetField()); err != nil {
-		return nil, err
-	}
-	s.triggerSourceCodePolicyReevaluation()
-	return &applicationpkg.DeleteSourceCodeBlacklistFieldResponse{}, nil
 }
 
 func (s *Service) ListBytecodeBlacklistContracts(ctx context.Context, _ *applicationpkg.ListBytecodeBlacklistContractsRequest) (*applicationpkg.ListBytecodeBlacklistContractsResponse, error) {

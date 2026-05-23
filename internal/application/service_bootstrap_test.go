@@ -77,18 +77,6 @@ func (s *bootstrapProjectStoreFake) GetProjectMetaByContract(_ context.Context, 
 	return nil, nil
 }
 
-func (s *bootstrapProjectStoreFake) ListSourceCodeBlacklistFields(context.Context) ([]string, error) {
-	return nil, nil
-}
-
-func (s *bootstrapProjectStoreFake) AddSourceCodeBlacklistField(context.Context, string) error {
-	return nil
-}
-
-func (s *bootstrapProjectStoreFake) DeleteSourceCodeBlacklistField(context.Context, string) error {
-	return nil
-}
-
 func (s *bootstrapProjectStoreFake) ReplaceProjectGenesisWallets(context.Context, common.Address, []appstore.ProjectGenesisWallet) error {
 	return nil
 }
@@ -179,18 +167,6 @@ func (s *bootstrapProjectStoreWithoutGenesisFake) GetProjectMetaByContract(_ con
 		}
 	}
 	return nil, nil
-}
-
-func (s *bootstrapProjectStoreWithoutGenesisFake) ListSourceCodeBlacklistFields(context.Context) ([]string, error) {
-	return nil, nil
-}
-
-func (s *bootstrapProjectStoreWithoutGenesisFake) AddSourceCodeBlacklistField(context.Context, string) error {
-	return nil
-}
-
-func (s *bootstrapProjectStoreWithoutGenesisFake) DeleteSourceCodeBlacklistField(context.Context, string) error {
-	return nil
 }
 
 type bootstrapProjectCacheFake struct {

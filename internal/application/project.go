@@ -7,7 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/useryege/athena/internal/application/sourcecode"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
@@ -41,7 +40,6 @@ type ProjectRuntime struct {
 	CreatorResult                  SimulateResult
 	CreatorOtherProjectContracts   []common.Address
 	CreatorOtherProjectsResolvedAt time.Time
-	SourceCodeBlacklist            sourcecode.BlacklistReport
 }
 
 type GenesisWalletMeta struct {
@@ -67,7 +65,6 @@ func projectToListItem(project *Project) *v1alpha1.ProjectListItem {
 		Name:                    chainState.Token.Name,
 		Symbol:                  chainState.Token.Symbol,
 		IsArchived:              project.Meta.IsArchived,
-		HasSourceCodeBlacklist:  project.Runtime.SourceCodeBlacklist.HasBlacklistFields,
 		HasMintRisk:             hasMintRisk(creatorResult),
 		IsOpenSource:            strings.TrimSpace(project.Meta.SourceCode) != "",
 		WethPairQuoteUsdtValue:  bigIntToString(chainState.WethPair.QuoteUsdtValue),
@@ -110,7 +107,6 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 		}
 		creatorOtherProjectContracts = append(creatorOtherProjectContracts, contract.Hex())
 	}
-	sourceCodeBlacklist := project.Runtime.SourceCodeBlacklist
 	var genesisWallets []v1alpha1.GenesisWalletState
 	var genesisWalletAssetStates []v1alpha1.GenesisWalletAssetState
 	if includeGenesisWallets && len(project.Meta.GenesisWallets) > 0 {
@@ -156,10 +152,6 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 				CanMintViaTransferToWethPair:       creatorResult.CanMintViaTransferToWethPair,
 				CanMintViaTransferToUsdtPair:       creatorResult.CanMintViaTransferToUsdtPair,
 				CanMintFromUsdtPairViaTransferFrom: creatorResult.CanMintFromUsdtPairViaTransferFrom,
-			},
-			SourceCodeBlacklist: v1alpha1.SourceCodeBlacklistState{
-				HasBlacklistFields: sourceCodeBlacklist.HasBlacklistFields,
-				BlacklistFields:    sourceCodeBlacklist.BlacklistFields,
 			},
 			IsArchived:                   project.Meta.IsArchived,
 			GenesisWallets:               genesisWallets,
