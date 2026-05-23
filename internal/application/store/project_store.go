@@ -39,6 +39,9 @@ INSERT INTO project (
   block_time,
   contract,
   creator,
+  weth_pair,
+  usdt_pair,
+  fetch_at,
   tx_hash,
   tx_index,
   source_code,
@@ -63,9 +66,9 @@ INSERT INTO project (
   report_has_mint_risk,
   genesis_wallets_fetched_at,
   creator_historical_projects_fetched_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31)
 ON CONFLICT DO NOTHING
-`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableTime(meta.SourceCodeFetchedAt), nullableHashBytes(meta.CodeBinHash), nullableTime(meta.CodeBinHashFetchedAt), nullableText(meta.SourceQualityReport), nullableTime(meta.SourceQualityReportFetchedAt), meta.CreatorResult.CanMintFromDeadViaTransferFrom, meta.CreatorResult.CanMintFromZeroViaTransferFrom, meta.CreatorResult.CanMintFromWethPairViaTransferFrom, meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, meta.CreatorResult.CanMintViaTransferToWethPair, meta.CreatorResult.CanMintViaTransferToUsdtPair, nullableTime(meta.CreatorResultFetchedAt), meta.Report.IsPolicyEvaluated, meta.Report.IsBlacklistedCreatorWallet, meta.Report.IsBlacklistedGenesisWallet, meta.Report.IsBlacklistedBytecode, meta.Report.IsBlacklistedSourceCode, meta.Report.HasMintRisk, nullableTime(meta.GenesisWalletsFetchedAt), nullableTime(meta.CreatorHistoricalProjectsFetchedAt))
+`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), meta.WethPair.Bytes(), meta.UsdtPair.Bytes(), meta.FetchAt, txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableTime(meta.SourceCodeFetchedAt), nullableHashBytes(meta.CodeBinHash), nullableTime(meta.CodeBinHashFetchedAt), nullableText(meta.SourceQualityReport), nullableTime(meta.SourceQualityReportFetchedAt), meta.CreatorResult.CanMintFromDeadViaTransferFrom, meta.CreatorResult.CanMintFromZeroViaTransferFrom, meta.CreatorResult.CanMintFromWethPairViaTransferFrom, meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, meta.CreatorResult.CanMintViaTransferToWethPair, meta.CreatorResult.CanMintViaTransferToUsdtPair, nullableTime(meta.CreatorResultFetchedAt), meta.Report.IsPolicyEvaluated, meta.Report.IsBlacklistedCreatorWallet, meta.Report.IsBlacklistedGenesisWallet, meta.Report.IsBlacklistedBytecode, meta.Report.IsBlacklistedSourceCode, meta.Report.HasMintRisk, nullableTime(meta.GenesisWalletsFetchedAt), nullableTime(meta.CreatorHistoricalProjectsFetchedAt))
 	if err != nil {
 		return fmt.Errorf("save project meta: %w", err)
 	}
@@ -96,6 +99,9 @@ SELECT
   block_time,
   contract,
   creator,
+  weth_pair,
+  usdt_pair,
+  fetch_at,
   tx_hash,
   tx_index,
   source_code,
@@ -153,6 +159,9 @@ SELECT
   block_time,
   contract,
   creator,
+  weth_pair,
+  usdt_pair,
+  fetch_at,
   tx_hash,
   tx_index,
   source_code,
@@ -214,6 +223,9 @@ SELECT
   block_time,
   contract,
   creator,
+  weth_pair,
+  usdt_pair,
+  fetch_at,
   tx_hash,
   tx_index,
   source_code,
@@ -344,6 +356,9 @@ SELECT
   block_time,
   contract,
   creator,
+  weth_pair,
+  usdt_pair,
+  fetch_at,
   tx_hash,
   tx_index,
   source_code,
@@ -391,6 +406,9 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	var blockTime int64
 	var contract []byte
 	var creator []byte
+	var wethPair []byte
+	var usdtPair []byte
+	var fetchAt time.Time
 	var txHash []byte
 	var txIndex int64
 	var sourceCode sql.NullString
@@ -404,7 +422,7 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	var genesisWalletsFetchedAt sql.NullTime
 	var creatorHistoricalProjectsFetchedAt sql.NullTime
 
-	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &codeBinHash, &codeBinHashFetchedAt, &sourceQualityReport, &sourceQualityReportFetchedAt, &meta.CreatorResult.CanMintFromDeadViaTransferFrom, &meta.CreatorResult.CanMintFromZeroViaTransferFrom, &meta.CreatorResult.CanMintFromWethPairViaTransferFrom, &meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, &meta.CreatorResult.CanMintViaTransferToWethPair, &meta.CreatorResult.CanMintViaTransferToUsdtPair, &creatorResultFetchedAt, &meta.Report.IsPolicyEvaluated, &meta.Report.IsBlacklistedCreatorWallet, &meta.Report.IsBlacklistedGenesisWallet, &meta.Report.IsBlacklistedBytecode, &meta.Report.IsBlacklistedSourceCode, &meta.Report.HasMintRisk, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
+	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &wethPair, &usdtPair, &fetchAt, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &codeBinHash, &codeBinHashFetchedAt, &sourceQualityReport, &sourceQualityReportFetchedAt, &meta.CreatorResult.CanMintFromDeadViaTransferFrom, &meta.CreatorResult.CanMintFromZeroViaTransferFrom, &meta.CreatorResult.CanMintFromWethPairViaTransferFrom, &meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, &meta.CreatorResult.CanMintViaTransferToWethPair, &meta.CreatorResult.CanMintViaTransferToUsdtPair, &creatorResultFetchedAt, &meta.Report.IsPolicyEvaluated, &meta.Report.IsBlacklistedCreatorWallet, &meta.Report.IsBlacklistedGenesisWallet, &meta.Report.IsBlacklistedBytecode, &meta.Report.IsBlacklistedSourceCode, &meta.Report.HasMintRisk, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
 		return ProjectMeta{}, fmt.Errorf("scan project meta: %w", err)
 	}
 	if blockNumber < 0 {
@@ -421,6 +439,9 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	meta.BlockTime = uint64(blockTime)
 	meta.Contract = common.BytesToAddress(contract)
 	meta.Creator = common.BytesToAddress(creator)
+	meta.WethPair = common.BytesToAddress(wethPair)
+	meta.UsdtPair = common.BytesToAddress(usdtPair)
+	meta.FetchAt = fetchAt
 	meta.TxHash = common.BytesToHash(txHash)
 	meta.TxIndex = uint64(txIndex)
 	meta.SourceCode = sourceCode.String

@@ -64,6 +64,9 @@ type projectMetaSavePayload struct {
 	BlockNumber                        uint64 `json:"block_number"`
 	Contract                           string `json:"contract"`
 	Creator                            string `json:"creator"`
+	WethPair                           string `json:"weth_pair"`
+	UsdtPair                           string `json:"usdt_pair"`
+	FetchAt                            string `json:"fetch_at"`
 	TxHash                             string `json:"tx_hash"`
 	TxIndex                            uint64 `json:"tx_index"`
 	SourceCode                         string `json:"source_code"`
@@ -307,6 +310,9 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 		BlockNumber:                        meta.BlockNumber,
 		Contract:                           meta.Contract.Hex(),
 		Creator:                            meta.Creator.Hex(),
+		WethPair:                           meta.WethPair.Hex(),
+		UsdtPair:                           meta.UsdtPair.Hex(),
+		FetchAt:                            timeToPayload(meta.FetchAt),
 		TxHash:                             meta.TxHash.Hex(),
 		TxIndex:                            meta.TxIndex,
 		SourceCode:                         meta.SourceCode,
@@ -868,6 +874,8 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			BlockNumber:         payload.BlockNumber,
 			Contract:            contract,
 			Creator:             creator,
+			WethPair:            common.HexToAddress(payload.WethPair),
+			UsdtPair:            common.HexToAddress(payload.UsdtPair),
 			TxHash:              txHash,
 			TxIndex:             payload.TxIndex,
 			SourceCode:          payload.SourceCode,
@@ -883,6 +891,9 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			},
 		}
 		var err error
+		if meta.FetchAt, err = timeFromPayload(payload.FetchAt); err != nil {
+			return fmt.Errorf("parse fetch_at %q: %w", payload.FetchAt, err)
+		}
 		if meta.SourceCodeFetchedAt, err = timeFromPayload(payload.SourceCodeFetchedAt); err != nil {
 			return fmt.Errorf("parse source_code_fetched_at %q: %w", payload.SourceCodeFetchedAt, err)
 		}

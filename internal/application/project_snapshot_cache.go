@@ -19,6 +19,9 @@ const (
 
 	projectFieldSchemaVersion                      = "schema_version"
 	projectFieldMetaBase                           = "meta_base"
+	projectFieldWethPair                           = "weth_pair"
+	projectFieldUsdtPair                           = "usdt_pair"
+	projectFieldFetchAt                            = "fetch_at"
 	projectFieldChainState                         = "chain_state"
 	projectFieldCreatorResult                      = "creator_result"
 	projectFieldCreatorResultFetchedAt             = "creator_result_fetched_at"
@@ -35,7 +38,7 @@ const (
 	projectFieldGenesisWalletsFetchedAt            = "genesis_wallets_fetched_at"
 	projectFieldReport                             = "report"
 
-	projectSchemaVersion = "10"
+	projectSchemaVersion = "11"
 
 	projectIndexAll = "project:index:all"
 
@@ -292,6 +295,9 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 	pipe.HSet(ctx, projectKey, map[string]any{
 		projectFieldSchemaVersion:                      projectSchemaVersion,
 		projectFieldMetaBase:                           metaBasePayload,
+		projectFieldWethPair:                           project.Meta.WethPair.Hex(),
+		projectFieldUsdtPair:                           project.Meta.UsdtPair.Hex(),
+		projectFieldFetchAt:                            formatOptionalTime(project.Meta.FetchAt),
 		projectFieldChainState:                         chainStatePayload,
 		projectFieldCreatorResult:                      creatorResultPayload,
 		projectFieldCreatorResultFetchedAt:             formatOptionalTime(project.Meta.CreatorResultFetchedAt),
@@ -331,6 +337,15 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 			return nil, fmt.Errorf("marshal meta base for %s: %w", next.Meta.Contract.Hex(), err)
 		}
 		fields[projectFieldMetaBase] = metaBasePayload
+	}
+	if current == nil || current.Meta.WethPair != next.Meta.WethPair {
+		fields[projectFieldWethPair] = next.Meta.WethPair.Hex()
+	}
+	if current == nil || current.Meta.UsdtPair != next.Meta.UsdtPair {
+		fields[projectFieldUsdtPair] = next.Meta.UsdtPair.Hex()
+	}
+	if current == nil || !current.Meta.FetchAt.Equal(next.Meta.FetchAt) {
+		fields[projectFieldFetchAt] = formatOptionalTime(next.Meta.FetchAt)
 	}
 
 	if current == nil || !reflect.DeepEqual(current.Meta.ChainState, next.Meta.ChainState) {
@@ -440,6 +455,19 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		if err := json.Unmarshal([]byte(raw), &project.Meta.ChainState); err != nil {
 			return nil, false, err
 		}
+	}
+	if raw := values[projectFieldWethPair]; raw != "" {
+		project.Meta.WethPair = common.HexToAddress(raw)
+	}
+	if raw := values[projectFieldUsdtPair]; raw != "" {
+		project.Meta.UsdtPair = common.HexToAddress(raw)
+	}
+	if raw := values[projectFieldFetchAt]; raw != "" {
+		fetchAt, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return nil, false, err
+		}
+		project.Meta.FetchAt = fetchAt
 	}
 	if raw := values[projectFieldCreatorResult]; raw != "" {
 		if err := json.Unmarshal([]byte(raw), &project.Meta.CreatorResult); err != nil {

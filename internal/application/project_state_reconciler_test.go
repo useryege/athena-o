@@ -342,8 +342,15 @@ func (p *persistencePublisherFake) PublishWalletBlacklistDelete(context.Context,
 func TestProjectStateReconcilerInitProjectCachesValidERC20WithoutGetProject(t *testing.T) {
 	ctx := context.Background()
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	wethPair := common.HexToAddress("0x00000000000000000000000000000000000000e1")
+	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000e2")
 	cache := &initProjectNoGetCacheFake{}
-	fetcher := &initProjectFetcherFake{}
+	fetcher := &initProjectFetcherFake{snapshots: []athenacontract.AthenaProject{{
+		TokenContract: contract,
+		Token:         athenacontract.AthenaToken{IsValidERC20: true},
+		WethPair:      athenacontract.AthenaPair{ContractAddress: wethPair},
+		UsdtPair:      athenacontract.AthenaPair{ContractAddress: usdtPair},
+	}}}
 	publisher := &persistencePublisherFake{}
 	reconciler := &projectStateReconcilerImpl{
 		projectCache:         cache,
@@ -374,6 +381,12 @@ func TestProjectStateReconcilerInitProjectCachesValidERC20WithoutGetProject(t *t
 	if project.Meta.ChainState.TokenContract != contract {
 		t.Fatalf("chain state token contract = %s, want %s", project.Meta.ChainState.TokenContract.Hex(), contract.Hex())
 	}
+	if project.Meta.WethPair != wethPair || project.Meta.UsdtPair != usdtPair {
+		t.Fatalf("cached pair addresses = %s/%s, want %s/%s", project.Meta.WethPair.Hex(), project.Meta.UsdtPair.Hex(), wethPair.Hex(), usdtPair.Hex())
+	}
+	if project.Meta.FetchAt.IsZero() {
+		t.Fatal("cached fetch at is zero")
+	}
 	if len(publisher.metas) != 1 {
 		t.Fatalf("persisted project metas = %d, want 1", len(publisher.metas))
 	}
@@ -382,6 +395,12 @@ func TestProjectStateReconcilerInitProjectCachesValidERC20WithoutGetProject(t *t
 	}
 	if publisher.metas[0].BlockNumber != 103 || publisher.metas[0].TxIndex != 7 {
 		t.Fatalf("persisted block/tx index = %d/%d, want 103/7", publisher.metas[0].BlockNumber, publisher.metas[0].TxIndex)
+	}
+	if publisher.metas[0].WethPair != wethPair || publisher.metas[0].UsdtPair != usdtPair {
+		t.Fatalf("persisted pair addresses = %s/%s, want %s/%s", publisher.metas[0].WethPair.Hex(), publisher.metas[0].UsdtPair.Hex(), wethPair.Hex(), usdtPair.Hex())
+	}
+	if publisher.metas[0].FetchAt.IsZero() {
+		t.Fatal("persisted fetch at is zero")
 	}
 	if reconciler.scheduled[contract] == nil {
 		t.Fatal("project was not scheduled")

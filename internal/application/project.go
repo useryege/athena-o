@@ -30,6 +30,9 @@ type ProjectMeta struct {
 	BlockNumber                        uint64
 	Contract                           common.Address
 	Creator                            common.Address
+	WethPair                           common.Address
+	UsdtPair                           common.Address
+	FetchAt                            time.Time
 	TxHash                             common.Hash
 	TxIndex                            uint64
 	GenesisTx                          *types.Transaction

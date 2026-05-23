@@ -166,6 +166,7 @@ func (r *projectStateReconcilerImpl) InitProject(ctx context.Context, candidates
 	if len(snapshots) != len(queries) {
 		return fmt.Errorf("athena list returned %d projects for %d queries", len(snapshots), len(queries))
 	}
+	fetchAt := time.Now().UTC()
 	for i, snapshot := range snapshots {
 		project := projects[i]
 		candidate := validCandidates[i]
@@ -176,6 +177,9 @@ func (r *projectStateReconcilerImpl) InitProject(ctx context.Context, candidates
 			continue
 		}
 		project.Meta.ChainState = snapshot
+		project.Meta.WethPair = snapshot.WethPair.ContractAddress
+		project.Meta.UsdtPair = snapshot.UsdtPair.ContractAddress
+		project.Meta.FetchAt = fetchAt
 		if err := r.persistProjectMeta(ctx, project.Meta); err != nil {
 			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
 		}

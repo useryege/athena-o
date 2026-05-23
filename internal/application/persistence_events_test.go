@@ -18,11 +18,15 @@ import (
 type persistenceEventWriterFake struct {
 	err             error
 	sourceCodeCalls int
+	projectMeta     appstore.ProjectMeta
 	creatorResult   appstore.SimulateResult
 	projectReport   appstore.ProjectReport
 }
 
-func (w *persistenceEventWriterFake) WriteProjectMeta(context.Context, appstore.ProjectMeta) error {
+func (w *persistenceEventWriterFake) WriteProjectMeta(_ context.Context, meta appstore.ProjectMeta) error {
+	if w.err == nil {
+		w.projectMeta = meta
+	}
 	return w.err
 }
 
@@ -177,6 +181,45 @@ func TestRedisPersistenceEventBusAppliesProjectCreatorResult(t *testing.T) {
 	}
 	if writer.creatorResult != simulateResultToStore(want) {
 		t.Fatalf("creator result = %+v, want %+v", writer.creatorResult, simulateResultToStore(want))
+	}
+}
+
+func TestRedisPersistenceEventBusAppliesProjectMetaPairAddressesAndFetchAt(t *testing.T) {
+	_, bus := newPersistenceEventBusTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
+	creator := common.HexToAddress("0x1000000000000000000000000000000000000002")
+	wethPair := common.HexToAddress("0x1000000000000000000000000000000000000003")
+	usdtPair := common.HexToAddress("0x1000000000000000000000000000000000000004")
+	txHash := common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	fetchAt := time.Date(2026, 5, 23, 4, 5, 6, 0, time.UTC)
+
+	if err := bus.PublishProjectMetaSave(ctx, appstore.ProjectMeta{
+		BlockTime:   100,
+		BlockNumber: 200,
+		Contract:    contract,
+		Creator:     creator,
+		WethPair:    wethPair,
+		UsdtPair:    usdtPair,
+		FetchAt:     fetchAt,
+		TxHash:      txHash,
+		TxIndex:     7,
+	}); err != nil {
+		t.Fatalf("publish project meta: %v", err)
+	}
+	writer := &persistenceEventWriterFake{}
+	processed, err := bus.consume(ctx, ">", writer, time.Millisecond)
+	if err != nil {
+		t.Fatalf("consume: %v", err)
+	}
+	if processed != 1 {
+		t.Fatalf("processed = %d, want 1", processed)
+	}
+	if writer.projectMeta.WethPair != wethPair || writer.projectMeta.UsdtPair != usdtPair {
+		t.Fatalf("pair addresses = %s/%s, want %s/%s", writer.projectMeta.WethPair.Hex(), writer.projectMeta.UsdtPair.Hex(), wethPair.Hex(), usdtPair.Hex())
+	}
+	if !writer.projectMeta.FetchAt.Equal(fetchAt) {
+		t.Fatalf("fetch at = %s, want %s", writer.projectMeta.FetchAt, fetchAt)
 	}
 }
 

@@ -4,6 +4,9 @@ CREATE TABLE IF NOT EXISTS project (
   block_time BIGINT NOT NULL,
   contract BYTEA NOT NULL,
   creator BYTEA NOT NULL,
+  weth_pair BYTEA NOT NULL,
+  usdt_pair BYTEA NOT NULL,
+  fetch_at TIMESTAMPTZ NOT NULL,
   tx_hash BYTEA NOT NULL,
   tx_index BIGINT NOT NULL,
   source_code TEXT,
@@ -31,6 +34,8 @@ CREATE TABLE IF NOT EXISTS project (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_contract_len CHECK (length(contract) = 20),
   CONSTRAINT project_creator_len CHECK (length(creator) = 20),
+  CONSTRAINT project_weth_pair_len CHECK (length(weth_pair) = 20),
+  CONSTRAINT project_usdt_pair_len CHECK (length(usdt_pair) = 20),
   CONSTRAINT project_tx_hash_len CHECK (length(tx_hash) = 32),
   CONSTRAINT project_source_code_hash_len CHECK (source_code_hash IS NULL OR length(source_code_hash) = 32),
   CONSTRAINT project_code_bin_hash_len CHECK (code_bin_hash IS NULL OR length(code_bin_hash) = 32)

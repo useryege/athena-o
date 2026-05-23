@@ -165,6 +165,9 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 		common.HexToAddress("0x00000000000000000000000000000000000000a1"),
 		common.HexToAddress("0x00000000000000000000000000000000000000a2"),
 	}
+	wethPair := common.HexToAddress("0x00000000000000000000000000000000000000b1")
+	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000b2")
+	fetchAt := mustParseTimeForTest(t, "2026-05-22T00:30:00Z")
 	sourceCodeHash := common.HexToHash("0x0101010101010101010101010101010101010101010101010101010101010101")
 	codeBinHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
 	creatorResultFetchedAt := mustParseTimeForTest(t, "2026-05-22T01:00:00Z")
@@ -172,6 +175,9 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	if err := cache.SetProject(ctx, &Project{
 		Meta: ProjectMeta{
 			Contract:                  contract,
+			WethPair:                  wethPair,
+			UsdtPair:                  usdtPair,
+			FetchAt:                   fetchAt,
 			SourceCodeHash:            sourceCodeHash,
 			CodeBinHash:               codeBinHash,
 			CreatorHistoricalProjects: historicalProjects,
@@ -194,6 +200,15 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	if got := project.Meta.CreatorHistoricalProjects; len(got) != len(historicalProjects) || got[0] != historicalProjects[0] || got[1] != historicalProjects[1] {
 		t.Fatalf("creator historical projects = %v, want %v", addressHexes(got), addressHexes(historicalProjects))
 	}
+	if got := project.Meta.WethPair; got != wethPair {
+		t.Fatalf("weth pair = %s, want %s", got.Hex(), wethPair.Hex())
+	}
+	if got := project.Meta.UsdtPair; got != usdtPair {
+		t.Fatalf("usdt pair = %s, want %s", got.Hex(), usdtPair.Hex())
+	}
+	if got := project.Meta.FetchAt; !got.Equal(fetchAt) {
+		t.Fatalf("fetch at = %s, want %s", got, fetchAt)
+	}
 	if got := project.Meta.SourceCodeHash; got != sourceCodeHash {
 		t.Fatalf("source code hash = %s, want %s", got.Hex(), sourceCodeHash.Hex())
 	}
@@ -213,6 +228,15 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	}
 	if got := values[projectFieldCreatorHistoricalProjects]; got == "" {
 		t.Fatal("raw creator historical projects is empty")
+	}
+	if got := values[projectFieldWethPair]; got != wethPair.Hex() {
+		t.Fatalf("raw weth pair = %q, want %q", got, wethPair.Hex())
+	}
+	if got := values[projectFieldUsdtPair]; got != usdtPair.Hex() {
+		t.Fatalf("raw usdt pair = %q, want %q", got, usdtPair.Hex())
+	}
+	if got := values[projectFieldFetchAt]; got != fetchAt.Format(time.RFC3339Nano) {
+		t.Fatalf("raw fetch at = %q, want %q", got, fetchAt.Format(time.RFC3339Nano))
 	}
 	if got := values[projectFieldSourceCodeHash]; got != sourceCodeHash.Hex() {
 		t.Fatalf("raw source code hash = %q, want %q", got, sourceCodeHash.Hex())
