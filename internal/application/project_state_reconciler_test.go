@@ -306,8 +306,7 @@ func TestProjectStateReconcilerRefreshProjectSimulationsPersistsCreatorResult(t 
 	wethPair := common.HexToAddress("0x00000000000000000000000000000000000000c4")
 	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000d4")
 	if err := cache.SetProject(ctx, &Project{
-		Meta: ProjectMeta{Contract: contract, Creator: creator},
-		Runtime: ProjectRuntime{ChainState: athenacontract.AthenaProject{
+		Meta: ProjectMeta{Contract: contract, Creator: creator, ChainState: athenacontract.AthenaProject{
 			WethPair: athenacontract.AthenaPair{ContractAddress: wethPair},
 			UsdtPair: athenacontract.AthenaPair{ContractAddress: usdtPair},
 		}},
@@ -334,10 +333,10 @@ func TestProjectStateReconcilerRefreshProjectSimulationsPersistsCreatorResult(t 
 	if err != nil {
 		t.Fatalf("get project: %v", err)
 	}
-	if !ok || project.Runtime.CreatorResult != want {
-		t.Fatalf("creator result = %+v, want %+v", project.Runtime.CreatorResult, want)
+	if !ok || project.Meta.CreatorResult != want {
+		t.Fatalf("creator result = %+v, want %+v", project.Meta.CreatorResult, want)
 	}
-	if project.Runtime.CreatorResultFetchedAt.IsZero() {
+	if project.Meta.CreatorResultFetchedAt.IsZero() {
 		t.Fatal("creator result fetched at is zero")
 	}
 	if publisher.creatorResults[contract] != want {
@@ -352,8 +351,7 @@ func TestProjectStateReconcilerRefreshProjectSimulationsSkipsCacheWhenPersistFai
 	wethPair := common.HexToAddress("0x00000000000000000000000000000000000000c5")
 	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000d5")
 	if err := cache.SetProject(ctx, &Project{
-		Meta: ProjectMeta{Contract: contract},
-		Runtime: ProjectRuntime{ChainState: athenacontract.AthenaProject{
+		Meta: ProjectMeta{Contract: contract, ChainState: athenacontract.AthenaProject{
 			WethPair: athenacontract.AthenaPair{ContractAddress: wethPair},
 			UsdtPair: athenacontract.AthenaPair{ContractAddress: usdtPair},
 		}},
@@ -380,11 +378,11 @@ func TestProjectStateReconcilerRefreshProjectSimulationsSkipsCacheWhenPersistFai
 	if !ok {
 		t.Fatal("project missing")
 	}
-	if project.Runtime.CreatorResult.CanMintFromDeadViaTransferFrom {
-		t.Fatalf("creator result = %+v, want unchanged zero value", project.Runtime.CreatorResult)
+	if project.Meta.CreatorResult.CanMintFromDeadViaTransferFrom {
+		t.Fatalf("creator result = %+v, want unchanged zero value", project.Meta.CreatorResult)
 	}
-	if !project.Runtime.CreatorResultFetchedAt.IsZero() {
-		t.Fatalf("creator result fetched at = %s, want zero", project.Runtime.CreatorResultFetchedAt)
+	if !project.Meta.CreatorResultFetchedAt.IsZero() {
+		t.Fatalf("creator result fetched at = %s, want zero", project.Meta.CreatorResultFetchedAt)
 	}
 }
 

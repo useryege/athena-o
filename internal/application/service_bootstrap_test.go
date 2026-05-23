@@ -266,14 +266,14 @@ func TestBootstrapProjectCachesRestoresDBProjectsOnly(t *testing.T) {
 	if len(project.Meta.GenesisWallets) != 1 || project.Meta.GenesisWallets[0].Wallet != wallet || project.Meta.GenesisWallets[0].RatioBPS != 2500 {
 		t.Fatalf("restored genesis wallets = %+v", project.Meta.GenesisWallets)
 	}
-	if project.Runtime.ChainState.TokenContract != (common.Address{}) {
+	if project.Meta.ChainState.TokenContract != (common.Address{}) {
 		t.Fatalf("bootstrap populated chain state, want zero runtime state")
 	}
-	if !project.Runtime.CreatorResult.CanMintViaTransferToWethPair {
-		t.Fatalf("restored creator result = %+v, want weth transfer mint flag", project.Runtime.CreatorResult)
+	if !project.Meta.CreatorResult.CanMintViaTransferToWethPair {
+		t.Fatalf("restored creator result = %+v, want weth transfer mint flag", project.Meta.CreatorResult)
 	}
-	if !project.Runtime.CreatorResultFetchedAt.Equal(creatorResultFetchedAt) {
-		t.Fatalf("restored creator result fetched at = %s, want %s", project.Runtime.CreatorResultFetchedAt, creatorResultFetchedAt)
+	if !project.Meta.CreatorResultFetchedAt.Equal(creatorResultFetchedAt) {
+		t.Fatalf("restored creator result fetched at = %s, want %s", project.Meta.CreatorResultFetchedAt, creatorResultFetchedAt)
 	}
 }
 

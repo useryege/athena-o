@@ -474,17 +474,12 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 	for _, meta := range metas {
 		project := &Project{
 			Meta: projectMetaFromStore(meta),
-			Runtime: ProjectRuntime{
-				CreatorResult:                      simulateResultFromStore(meta.CreatorResult),
-				CreatorResultFetchedAt:             meta.CreatorResultFetchedAt,
-				CreatorHistoricalProjectsFetchedAt: meta.CreatorHistoricalProjectsFetchedAt,
-			},
 		}
 		if genesisWallets, ok := genesisWalletsByContract[meta.Contract]; ok {
 			project.Meta.GenesisWallets = genesisWallets
 		}
 		if historicalProjects, ok := creatorHistoricalProjectsByContract[meta.Contract]; ok {
-			project.Runtime.CreatorHistoricalProjects = historicalProjects
+			project.Meta.CreatorHistoricalProjects = historicalProjects
 		}
 		projects = append(projects, project)
 	}

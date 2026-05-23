@@ -13,8 +13,6 @@ func (*GenesisWalletState) ProtoMessage() {}
 
 func (*PairV2State) ProtoMessage() {}
 
-func (*ProjectChainState) ProtoMessage() {}
-
 func (*ProjectListItem) ProtoMessage() {}
 
 func (*ProjectMeta) ProtoMessage() {}

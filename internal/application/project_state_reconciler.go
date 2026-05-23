@@ -215,7 +215,7 @@ func (r *projectStateReconcilerImpl) refreshProjectStates(ctx context.Context, t
 			if !exists || current == nil {
 				return nil, false, nil
 			}
-			current.Runtime.ChainState = nextState
+			current.Meta.ChainState = nextState
 			return current, true, nil
 		})
 		if err != nil {
@@ -267,8 +267,8 @@ func (r *projectStateReconcilerImpl) refreshProjectSimulations(ctx context.Conte
 			continue
 		}
 
-		wethPairContract := latest.Runtime.ChainState.WethPair.ContractAddress
-		usdtPairContract := latest.Runtime.ChainState.UsdtPair.ContractAddress
+		wethPairContract := latest.Meta.ChainState.WethPair.ContractAddress
+		usdtPairContract := latest.Meta.ChainState.UsdtPair.ContractAddress
 		if wethPairContract == (common.Address{}) || usdtPairContract == (common.Address{}) {
 			continue
 		}
@@ -298,8 +298,8 @@ func (r *projectStateReconcilerImpl) refreshProjectSimulations(ctx context.Conte
 			if !exists || current == nil {
 				return nil, false, nil
 			}
-			current.Runtime.CreatorResult = result
-			current.Runtime.CreatorResultFetchedAt = fetchedAt
+			current.Meta.CreatorResult = result
+			current.Meta.CreatorResultFetchedAt = fetchedAt
 			return current, true, nil
 		})
 		if err != nil {

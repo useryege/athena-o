@@ -24,7 +24,7 @@ import (
 	erc20contract "github.com/useryege/athena/pkg/abi/ERC20"
 )
 
-const initialProjectSyncLookback = 15 * 24 * time.Hour
+const initialProjectSyncLookback = 30 * 24 * time.Hour
 const defaultBlockHeaderQueueCapacity = 16
 
 var creatorHistoricalProjectRetryDelays = []time.Duration{
@@ -369,9 +369,7 @@ func (d *discoveryIntakeImpl) IntakeCandidates(ctx context.Context, items []Disc
 				TxHash:      item.TxHash,
 				Contract:    item.Contract,
 				Creator:     item.Creator,
-			},
-			Runtime: ProjectRuntime{
-				GenesisTx: item.Tx,
+				GenesisTx:   item.Tx,
 			},
 		})
 	}
@@ -474,12 +472,12 @@ func (d *discoveryIntakeImpl) syncProjects(ctx context.Context, projects []*Proj
 		if err != nil {
 			return err
 		}
-		project.Runtime.CreatorHistoricalProjects = historicalProjects
+		project.Meta.CreatorHistoricalProjects = historicalProjects
 		if creatorHistoricalProjectsFetched {
-			project.Runtime.CreatorHistoricalProjectsFetchedAt = time.Now().UTC()
+			project.Meta.CreatorHistoricalProjectsFetchedAt = time.Now().UTC()
 		}
 
-		project.Runtime.ChainState = snapshot
+		project.Meta.ChainState = snapshot
 		if err := d.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
 			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
 		}
@@ -715,8 +713,8 @@ func projectTxHash(project *Project) common.Hash {
 		return common.Hash{}
 	}
 	txHash := project.Meta.TxHash
-	if txHash == (common.Hash{}) && project.Runtime.GenesisTx != nil {
-		txHash = project.Runtime.GenesisTx.Hash()
+	if txHash == (common.Hash{}) && project.Meta.GenesisTx != nil {
+		txHash = project.Meta.GenesisTx.Hash()
 	}
 	return txHash
 }
@@ -869,8 +867,8 @@ func (d *discoveryIntakeImpl) publishProjectCreatorHistoricalProjects(ctx contex
 	if project == nil {
 		return errors.New("project is nil")
 	}
-	items := make([]appstore.ProjectCreatorHistoricalProject, 0, len(project.Runtime.CreatorHistoricalProjects))
-	for i, contract := range project.Runtime.CreatorHistoricalProjects {
+	items := make([]appstore.ProjectCreatorHistoricalProject, 0, len(project.Meta.CreatorHistoricalProjects))
+	for i, contract := range project.Meta.CreatorHistoricalProjects {
 		if contract == (common.Address{}) {
 			continue
 		}

@@ -12,32 +12,28 @@ import (
 )
 
 type Project struct {
-	Meta    ProjectMeta
-	Runtime ProjectRuntime
-	Report  ProjectReport
+	Meta   ProjectMeta
+	Report ProjectReport
 }
 
 type ProjectMeta struct {
-	BlockTime                    uint64
-	BlockNumber                  uint64
-	Contract                     common.Address
-	Creator                      common.Address
-	TxHash                       common.Hash
-	TxIndex                      uint64
-	SourceCode                   string
-	SourceCodeHash               common.Hash
-	SourceCodeFetchedAt          time.Time
-	CodeBinHash                  common.Hash
-	CodeBinHashFetchedAt         time.Time
-	SourceQualityReport          string
-	SourceQualityReportFetchedAt time.Time
-	GenesisWallets               []GenesisWalletMeta
-	GenesisWalletsFetchedAt      time.Time
-}
-
-type ProjectRuntime struct {
+	BlockTime                          uint64
+	BlockNumber                        uint64
+	Contract                           common.Address
+	Creator                            common.Address
+	TxHash                             common.Hash
+	TxIndex                            uint64
 	GenesisTx                          *types.Transaction
 	ChainState                         athenacontract.AthenaProject
+	SourceCode                         string
+	SourceCodeHash                     common.Hash
+	SourceCodeFetchedAt                time.Time
+	CodeBinHash                        common.Hash
+	CodeBinHashFetchedAt               time.Time
+	SourceQualityReport                string
+	SourceQualityReportFetchedAt       time.Time
+	GenesisWallets                     []GenesisWalletMeta
+	GenesisWalletsFetchedAt            time.Time
 	CreatorResult                      SimulateResult
 	CreatorResultFetchedAt             time.Time
 	CreatorHistoricalProjects          []common.Address
@@ -60,8 +56,8 @@ func projectToListItem(project *Project) *v1alpha1.ProjectListItem {
 		return nil
 	}
 
-	chainState := project.Runtime.ChainState
-	creatorResult := project.Runtime.CreatorResult
+	chainState := project.Meta.ChainState
+	creatorResult := project.Meta.CreatorResult
 	return &v1alpha1.ProjectListItem{
 		Contract:                project.Meta.Contract.String(),
 		Name:                    chainState.Token.Name,
@@ -87,11 +83,11 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 	txHash := ""
 	if project.Meta.TxHash != (common.Hash{}) {
 		txHash = project.Meta.TxHash.Hex()
-	} else if project.Runtime.GenesisTx != nil {
-		txHash = project.Runtime.GenesisTx.Hash().Hex()
+	} else if project.Meta.GenesisTx != nil {
+		txHash = project.Meta.GenesisTx.Hash().Hex()
 	}
 
-	chainState := project.Runtime.ChainState
+	chainState := project.Meta.ChainState
 	sourceCode := ""
 	sourceCodeFetchedAt := ""
 	sourceQualityReport := ""
@@ -107,12 +103,12 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 		sourceQualityReportFetchedAt = formatOptionalTime(project.Meta.SourceQualityReportFetchedAt)
 		codeBinHashFetchedAt = formatOptionalTime(project.Meta.CodeBinHashFetchedAt)
 		genesisWalletsFetchedAt = formatOptionalTime(project.Meta.GenesisWalletsFetchedAt)
-		creatorHistoricalProjectsFetchedAt = formatOptionalTime(project.Runtime.CreatorHistoricalProjectsFetchedAt)
-		creatorResultFetchedAt = formatOptionalTime(project.Runtime.CreatorResultFetchedAt)
+		creatorHistoricalProjectsFetchedAt = formatOptionalTime(project.Meta.CreatorHistoricalProjectsFetchedAt)
+		creatorResultFetchedAt = formatOptionalTime(project.Meta.CreatorResultFetchedAt)
 	}
-	creatorResult := project.Runtime.CreatorResult
-	creatorHistoricalProjects := make([]string, 0, len(project.Runtime.CreatorHistoricalProjects))
-	for _, contract := range project.Runtime.CreatorHistoricalProjects {
+	creatorResult := project.Meta.CreatorResult
+	creatorHistoricalProjects := make([]string, 0, len(project.Meta.CreatorHistoricalProjects))
+	for _, contract := range project.Meta.CreatorHistoricalProjects {
 		if contract == (common.Address{}) {
 			continue
 		}
@@ -176,8 +172,6 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 			GenesisWalletsFetchedAt:            genesisWalletsFetchedAt,
 			CreatorHistoricalProjectsFetchedAt: creatorHistoricalProjectsFetchedAt,
 			CreatorResultFetchedAt:             creatorResultFetchedAt,
-		},
-		ChainState: v1alpha1.ProjectChainState{
 			Token: v1alpha1.TokenState{
 				Name:         chainState.Token.Name,
 				Symbol:       chainState.Token.Symbol,

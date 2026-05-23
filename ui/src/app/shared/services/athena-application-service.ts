@@ -2,7 +2,6 @@ import requests from './requests';
 
 export interface ProjectView {
     meta?: ProjectMeta;
-    chainState?: ProjectChainState;
 }
 
 export interface ProjectListItem {
@@ -41,6 +40,11 @@ export interface ProjectMeta {
     isOpenSource?: boolean;
     sourceCodeHash?: string;
     codeBinHash?: string;
+    token?: TokenState;
+    wethPair?: PairV2State;
+    usdtPair?: PairV2State;
+    assetState?: AssetState;
+    genesisWalletAssetStates?: GenesisWalletAssetState[];
 }
 
 export interface GenesisWalletState {
@@ -48,14 +52,6 @@ export interface GenesisWalletState {
     netAmount?: string;
     ratioBps?: number;
     rank?: number;
-}
-
-export interface ProjectChainState {
-    token?: TokenState;
-    wethPair?: PairV2State;
-    usdtPair?: PairV2State;
-    assetState?: AssetState;
-    genesisWalletAssetStates?: GenesisWalletAssetState[];
 }
 
 export interface TokenState {

@@ -20,8 +20,6 @@ func (m *GenesisWalletState) Reset() { *m = GenesisWalletState{} }
 
 func (m *PairV2State) Reset() { *m = PairV2State{} }
 
-func (m *ProjectChainState) Reset() { *m = ProjectChainState{} }
-
 func (m *ProjectListItem) Reset() { *m = ProjectListItem{} }
 
 func (m *ProjectMeta) Reset() { *m = ProjectMeta{} }
@@ -261,83 +259,6 @@ func (m *PairV2State) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProjectChainState) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ProjectChainState) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ProjectChainState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.GenesisWalletAssetStates) > 0 {
-		for iNdEx := len(m.GenesisWalletAssetStates) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.GenesisWalletAssetStates[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	{
-		size, err := m.AssetState.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x22
-	{
-		size, err := m.UsdtPair.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x1a
-	{
-		size, err := m.WethPair.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	{
-		size, err := m.Token.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
 func (m *ProjectListItem) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -452,6 +373,70 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.GenesisWalletAssetStates) > 0 {
+		for iNdEx := len(m.GenesisWalletAssetStates) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.GenesisWalletAssetStates[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0xe2
+		}
+	}
+	{
+		size, err := m.AssetState.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xda
+	{
+		size, err := m.UsdtPair.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xd2
+	{
+		size, err := m.WethPair.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xca
+	{
+		size, err := m.Token.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xc2
 	i -= len(m.CreatorResultFetchedAt)
 	copy(dAtA[i:], m.CreatorResultFetchedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatorResultFetchedAt)))
@@ -650,16 +635,6 @@ func (m *ProjectView) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	{
-		size, err := m.ChainState.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
 	{
 		size, err := m.Meta.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
@@ -895,29 +870,6 @@ func (m *PairV2State) Size() (n int) {
 	return n
 }
 
-func (m *ProjectChainState) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.Token.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.WethPair.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.UsdtPair.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.AssetState.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	if len(m.GenesisWalletAssetStates) > 0 {
-		for _, e := range m.GenesisWalletAssetStates {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	return n
-}
-
 func (m *ProjectListItem) Size() (n int) {
 	if m == nil {
 		return 0
@@ -996,6 +948,20 @@ func (m *ProjectMeta) Size() (n int) {
 	n += 2 + l + sovGenerated(uint64(l))
 	l = len(m.CreatorResultFetchedAt)
 	n += 2 + l + sovGenerated(uint64(l))
+	l = m.Token.Size()
+	n += 2 + l + sovGenerated(uint64(l))
+	l = m.WethPair.Size()
+	n += 2 + l + sovGenerated(uint64(l))
+	l = m.UsdtPair.Size()
+	n += 2 + l + sovGenerated(uint64(l))
+	l = m.AssetState.Size()
+	n += 2 + l + sovGenerated(uint64(l))
+	if len(m.GenesisWalletAssetStates) > 0 {
+		for _, e := range m.GenesisWalletAssetStates {
+			l = e.Size()
+			n += 2 + l + sovGenerated(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -1023,8 +989,6 @@ func (m *ProjectView) Size() (n int) {
 	var l int
 	_ = l
 	l = m.Meta.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.ChainState.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -1130,25 +1094,6 @@ func (this *PairV2State) String() string {
 	}, "")
 	return s
 }
-func (this *ProjectChainState) String() string {
-	if this == nil {
-		return "nil"
-	}
-	repeatedStringForGenesisWalletAssetStates := "[]GenesisWalletAssetState{"
-	for _, f := range this.GenesisWalletAssetStates {
-		repeatedStringForGenesisWalletAssetStates += strings.Replace(strings.Replace(f.String(), "GenesisWalletAssetState", "GenesisWalletAssetState", 1), `&`, ``, 1) + ","
-	}
-	repeatedStringForGenesisWalletAssetStates += "}"
-	s := strings.Join([]string{`&ProjectChainState{`,
-		`Token:` + strings.Replace(strings.Replace(this.Token.String(), "TokenState", "TokenState", 1), `&`, ``, 1) + `,`,
-		`WethPair:` + strings.Replace(strings.Replace(this.WethPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
-		`UsdtPair:` + strings.Replace(strings.Replace(this.UsdtPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
-		`AssetState:` + strings.Replace(strings.Replace(this.AssetState.String(), "AssetState", "AssetState", 1), `&`, ``, 1) + `,`,
-		`GenesisWalletAssetStates:` + repeatedStringForGenesisWalletAssetStates + `,`,
-		`}`,
-	}, "")
-	return s
-}
 func (this *ProjectListItem) String() string {
 	if this == nil {
 		return "nil"
@@ -1180,6 +1125,11 @@ func (this *ProjectMeta) String() string {
 		repeatedStringForGenesisWallets += strings.Replace(strings.Replace(f.String(), "GenesisWalletState", "GenesisWalletState", 1), `&`, ``, 1) + ","
 	}
 	repeatedStringForGenesisWallets += "}"
+	repeatedStringForGenesisWalletAssetStates := "[]GenesisWalletAssetState{"
+	for _, f := range this.GenesisWalletAssetStates {
+		repeatedStringForGenesisWalletAssetStates += strings.Replace(strings.Replace(f.String(), "GenesisWalletAssetState", "GenesisWalletAssetState", 1), `&`, ``, 1) + ","
+	}
+	repeatedStringForGenesisWalletAssetStates += "}"
 	s := strings.Join([]string{`&ProjectMeta{`,
 		`BlockTime:` + fmt.Sprintf("%v", this.BlockTime) + `,`,
 		`BlockNumber:` + fmt.Sprintf("%v", this.BlockNumber) + `,`,
@@ -1201,6 +1151,11 @@ func (this *ProjectMeta) String() string {
 		`GenesisWalletsFetchedAt:` + fmt.Sprintf("%v", this.GenesisWalletsFetchedAt) + `,`,
 		`CreatorHistoricalProjectsFetchedAt:` + fmt.Sprintf("%v", this.CreatorHistoricalProjectsFetchedAt) + `,`,
 		`CreatorResultFetchedAt:` + fmt.Sprintf("%v", this.CreatorResultFetchedAt) + `,`,
+		`Token:` + strings.Replace(strings.Replace(this.Token.String(), "TokenState", "TokenState", 1), `&`, ``, 1) + `,`,
+		`WethPair:` + strings.Replace(strings.Replace(this.WethPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
+		`UsdtPair:` + strings.Replace(strings.Replace(this.UsdtPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
+		`AssetState:` + strings.Replace(strings.Replace(this.AssetState.String(), "AssetState", "AssetState", 1), `&`, ``, 1) + `,`,
+		`GenesisWalletAssetStates:` + repeatedStringForGenesisWalletAssetStates + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1225,7 +1180,6 @@ func (this *ProjectView) String() string {
 	}
 	s := strings.Join([]string{`&ProjectView{`,
 		`Meta:` + strings.Replace(strings.Replace(this.Meta.String(), "ProjectMeta", "ProjectMeta", 1), `&`, ``, 1) + `,`,
-		`ChainState:` + strings.Replace(strings.Replace(this.ChainState.String(), "ProjectChainState", "ProjectChainState", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -2216,222 +2170,6 @@ func (m *PairV2State) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.FeeAddressHoldLiquidityRatio = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ProjectChainState) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ProjectChainState: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ProjectChainState: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Token.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field WethPair", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.WethPair.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UsdtPair", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.UsdtPair.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AssetState", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.AssetState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GenesisWalletAssetStates", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.GenesisWalletAssetStates = append(m.GenesisWalletAssetStates, GenesisWalletAssetState{})
-			if err := m.GenesisWalletAssetStates[len(m.GenesisWalletAssetStates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3454,6 +3192,172 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			}
 			m.CreatorResultFetchedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 24:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Token.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 25:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WethPair", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.WethPair.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 26:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UsdtPair", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.UsdtPair.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 27:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AssetState", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.AssetState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 28:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GenesisWalletAssetStates", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GenesisWalletAssetStates = append(m.GenesisWalletAssetStates, GenesisWalletAssetState{})
+			if err := m.GenesisWalletAssetStates[len(m.GenesisWalletAssetStates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -3718,39 +3622,6 @@ func (m *ProjectView) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.Meta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ChainState", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ChainState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

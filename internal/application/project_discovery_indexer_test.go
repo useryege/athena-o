@@ -180,7 +180,7 @@ func TestDiscoverySyncProjectsSetsCreatorHistoricalProjects(t *testing.T) {
 		t.Fatal("project missing after sync")
 	}
 	want := []common.Address{previousA, previousB}
-	if got := project.Runtime.CreatorHistoricalProjects; len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+	if got := project.Meta.CreatorHistoricalProjects; len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
 		t.Fatalf("creator historical projects = %v, want %v", addressHexes(got), addressHexes(want))
 	}
 	if store.calls != 1 || store.gotCreator != creator || store.gotBlockNumber != 103 || store.gotTxIndex != 7 {
@@ -230,7 +230,7 @@ func TestDiscoverySyncProjectsRetriesCreatorHistoricalProjects(t *testing.T) {
 	if store.calls != 4 {
 		t.Fatalf("store calls = %d, want 4", store.calls)
 	}
-	if got := project.Runtime.CreatorHistoricalProjects; len(got) != 1 || got[0] != previous {
+	if got := project.Meta.CreatorHistoricalProjects; len(got) != 1 || got[0] != previous {
 		t.Fatalf("creator historical projects = %v, want [%s]", addressHexes(got), previous.Hex())
 	}
 }
@@ -275,8 +275,8 @@ func TestDiscoverySyncProjectsContinuesWithEmptyCreatorHistoricalProjectsAfterRe
 	if store.calls != 4 {
 		t.Fatalf("store calls = %d, want 4", store.calls)
 	}
-	if len(project.Runtime.CreatorHistoricalProjects) != 0 {
-		t.Fatalf("creator historical projects = %v, want empty", addressHexes(project.Runtime.CreatorHistoricalProjects))
+	if len(project.Meta.CreatorHistoricalProjects) != 0 {
+		t.Fatalf("creator historical projects = %v, want empty", addressHexes(project.Meta.CreatorHistoricalProjects))
 	}
 }
 

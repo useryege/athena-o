@@ -168,8 +168,6 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 			GenesisWallets: []GenesisWalletMeta{{
 				Wallet: genesisWallet,
 			}},
-		},
-		Runtime: ProjectRuntime{
 			CreatorResult: SimulateResult{
 				CanMintFromZeroViaTransferFrom: true,
 			},

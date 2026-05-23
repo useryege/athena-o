@@ -570,7 +570,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             <div className='project-details__section-title'>Genesis Wallets</div>
                             <GenesisWalletRankList
                                 genesisWallets={project.meta?.genesisWallets}
-                                genesisWalletAssetStates={project.chainState?.genesisWalletAssetStates}
+                                genesisWalletAssetStates={project.meta?.genesisWalletAssetStates}
                                 usdtDecimals={projectOptions?.usdtDecimals}
                             />
                         </div>
@@ -658,26 +658,26 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             <div className='project-details__grid'>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Name</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.token?.name)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.meta?.token?.name)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Symbol</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.token?.symbol)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.meta?.token?.symbol)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Decimals</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.token?.decimals)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.meta?.token?.decimals)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Total Supply</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.token?.totalSupply)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.meta?.token?.totalSupply)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Valid ERC20</span>
                                     <span className='project-details__field-value'>
-                                        {project.chainState?.token?.isValidERC20 !== undefined ? (
-                                            <span className={`project-details__badge project-details__badge--${project.chainState.token.isValidERC20 ? 'positive' : 'negative'}`}>
-                                                {project.chainState.token.isValidERC20 ? 'Yes' : 'No'}
+                                        {project.meta?.token?.isValidERC20 !== undefined ? (
+                                            <span className={`project-details__badge project-details__badge--${project.meta.token.isValidERC20 ? 'positive' : 'negative'}`}>
+                                                {project.meta.token.isValidERC20 ? 'Yes' : 'No'}
                                             </span>
                                         ) : (
                                             '-'
@@ -692,23 +692,23 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             <div className='project-details__grid'>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Token Balance</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.assetState?.tokenBalance)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.meta?.assetState?.tokenBalance)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>WETH Balance</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.assetState?.wethBalance)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.meta?.assetState?.wethBalance)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>USDT Balance</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.assetState?.usdtBalance)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.meta?.assetState?.usdtBalance)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Native Balance</span>
-                                    <span className='project-details__field-value'>{renderValue(project.chainState?.assetState?.nativeBalance)}</span>
+                                    <span className='project-details__field-value'>{renderValue(project.meta?.assetState?.nativeBalance)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Total Asset (USDT)</span>
-                                    <span className='project-details__field-value'>{formatUsdtValue(project.chainState?.assetState?.usdtValue, projectOptions?.usdtDecimals)}</span>
+                                    <span className='project-details__field-value'>{formatUsdtValue(project.meta?.assetState?.usdtValue, projectOptions?.usdtDecimals)}</span>
                                 </div>
                             </div>
                         </div>
@@ -740,8 +740,8 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             </div>
                         )}
 
-                        {renderPairSection('WETH V2 Pool', project.chainState?.wethPair)}
-                        {renderPairSection('USDT V2 Pool', project.chainState?.usdtPair)}
+                        {renderPairSection('WETH V2 Pool', project.meta?.wethPair)}
+                        {renderPairSection('USDT V2 Pool', project.meta?.usdtPair)}
 
                         {project.meta?.creatorResult && (
                             <div className='white-box project-details__box'>

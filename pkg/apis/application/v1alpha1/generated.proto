@@ -68,18 +68,6 @@ message PairV2State {
   optional string feeAddressHoldLiquidityRatio = 15;
 }
 
-message ProjectChainState {
-  optional TokenState token = 1;
-
-  optional PairV2State wethPair = 2;
-
-  optional PairV2State usdtPair = 3;
-
-  optional AssetState assetState = 4;
-
-  repeated GenesisWalletAssetState genesisWalletAssetStates = 5;
-}
-
 message ProjectListItem {
   optional string contract = 1;
 
@@ -148,6 +136,16 @@ message ProjectMeta {
   optional string creatorHistoricalProjectsFetchedAt = 22;
 
   optional string creatorResultFetchedAt = 23;
+
+  optional TokenState token = 24;
+
+  optional PairV2State wethPair = 25;
+
+  optional PairV2State usdtPair = 26;
+
+  optional AssetState assetState = 27;
+
+  repeated GenesisWalletAssetState genesisWalletAssetStates = 28;
 }
 
 message ProjectOption {
@@ -164,8 +162,6 @@ message ProjectOption {
 
 message ProjectView {
   optional ProjectMeta meta = 1;
-
-  optional ProjectChainState chainState = 2;
 }
 
 message SimulateResult {

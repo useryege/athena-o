@@ -1,8 +1,7 @@
 package v1alpha1
 
 type ProjectView struct {
-	Meta       ProjectMeta       `protobuf:"bytes,1,opt,name=meta" json:"meta"`
-	ChainState ProjectChainState `protobuf:"bytes,2,opt,name=chainState" json:"chainState"`
+	Meta ProjectMeta `protobuf:"bytes,1,opt,name=meta" json:"meta"`
 }
 
 type ProjectListItem struct {
@@ -22,26 +21,31 @@ type ProjectListItem struct {
 }
 
 type ProjectMeta struct {
-	BlockTime                          uint64               `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
-	BlockNumber                        uint64               `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
-	Contract                           string               `protobuf:"bytes,4,opt,name=contract" json:"contract"`
-	Creator                            string               `protobuf:"bytes,5,opt,name=creator" json:"creator"`
-	TxHash                             string               `protobuf:"bytes,6,opt,name=txHash" json:"txHash"`
-	TxIndex                            uint64               `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
-	SourceCode                         string               `protobuf:"bytes,8,opt,name=sourceCode" json:"sourceCode"`
-	CreatorResult                      SimulateResult       `protobuf:"bytes,9,opt,name=creatorResult" json:"creatorResult"`
-	GenesisWallets                     []GenesisWalletState `protobuf:"bytes,12,rep,name=genesisWallets" json:"genesisWallets"`
-	CreatorHistoricalProjects          []string             `protobuf:"bytes,13,rep,name=creatorHistoricalProjects" json:"creatorHistoricalProjects"`
-	SourceQualityReport                string               `protobuf:"bytes,14,opt,name=sourceQualityReport" json:"sourceQualityReport"`
-	SourceQualityReportFetchedAt       string               `protobuf:"bytes,15,opt,name=sourceQualityReportFetchedAt" json:"sourceQualityReportFetchedAt"`
-	IsOpenSource                       bool                 `protobuf:"varint,16,opt,name=isOpenSource" json:"isOpenSource"`
-	SourceCodeHash                     string               `protobuf:"bytes,17,opt,name=sourceCodeHash" json:"sourceCodeHash"`
-	CodeBinHash                        string               `protobuf:"bytes,18,opt,name=codeBinHash" json:"codeBinHash"`
-	SourceCodeFetchedAt                string               `protobuf:"bytes,19,opt,name=sourceCodeFetchedAt" json:"sourceCodeFetchedAt"`
-	CodeBinHashFetchedAt               string               `protobuf:"bytes,20,opt,name=codeBinHashFetchedAt" json:"codeBinHashFetchedAt"`
-	GenesisWalletsFetchedAt            string               `protobuf:"bytes,21,opt,name=genesisWalletsFetchedAt" json:"genesisWalletsFetchedAt"`
-	CreatorHistoricalProjectsFetchedAt string               `protobuf:"bytes,22,opt,name=creatorHistoricalProjectsFetchedAt" json:"creatorHistoricalProjectsFetchedAt"`
-	CreatorResultFetchedAt             string               `protobuf:"bytes,23,opt,name=creatorResultFetchedAt" json:"creatorResultFetchedAt"`
+	BlockTime                          uint64                    `protobuf:"varint,2,opt,name=blockTime" json:"blockTime"`
+	BlockNumber                        uint64                    `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
+	Contract                           string                    `protobuf:"bytes,4,opt,name=contract" json:"contract"`
+	Creator                            string                    `protobuf:"bytes,5,opt,name=creator" json:"creator"`
+	TxHash                             string                    `protobuf:"bytes,6,opt,name=txHash" json:"txHash"`
+	TxIndex                            uint64                    `protobuf:"varint,7,opt,name=txIndex" json:"txIndex"`
+	SourceCode                         string                    `protobuf:"bytes,8,opt,name=sourceCode" json:"sourceCode"`
+	CreatorResult                      SimulateResult            `protobuf:"bytes,9,opt,name=creatorResult" json:"creatorResult"`
+	GenesisWallets                     []GenesisWalletState      `protobuf:"bytes,12,rep,name=genesisWallets" json:"genesisWallets"`
+	CreatorHistoricalProjects          []string                  `protobuf:"bytes,13,rep,name=creatorHistoricalProjects" json:"creatorHistoricalProjects"`
+	SourceQualityReport                string                    `protobuf:"bytes,14,opt,name=sourceQualityReport" json:"sourceQualityReport"`
+	SourceQualityReportFetchedAt       string                    `protobuf:"bytes,15,opt,name=sourceQualityReportFetchedAt" json:"sourceQualityReportFetchedAt"`
+	IsOpenSource                       bool                      `protobuf:"varint,16,opt,name=isOpenSource" json:"isOpenSource"`
+	SourceCodeHash                     string                    `protobuf:"bytes,17,opt,name=sourceCodeHash" json:"sourceCodeHash"`
+	CodeBinHash                        string                    `protobuf:"bytes,18,opt,name=codeBinHash" json:"codeBinHash"`
+	SourceCodeFetchedAt                string                    `protobuf:"bytes,19,opt,name=sourceCodeFetchedAt" json:"sourceCodeFetchedAt"`
+	CodeBinHashFetchedAt               string                    `protobuf:"bytes,20,opt,name=codeBinHashFetchedAt" json:"codeBinHashFetchedAt"`
+	GenesisWalletsFetchedAt            string                    `protobuf:"bytes,21,opt,name=genesisWalletsFetchedAt" json:"genesisWalletsFetchedAt"`
+	CreatorHistoricalProjectsFetchedAt string                    `protobuf:"bytes,22,opt,name=creatorHistoricalProjectsFetchedAt" json:"creatorHistoricalProjectsFetchedAt"`
+	CreatorResultFetchedAt             string                    `protobuf:"bytes,23,opt,name=creatorResultFetchedAt" json:"creatorResultFetchedAt"`
+	Token                              TokenState                `protobuf:"bytes,24,opt,name=token" json:"token"`
+	WethPair                           PairV2State               `protobuf:"bytes,25,opt,name=wethPair" json:"wethPair"`
+	UsdtPair                           PairV2State               `protobuf:"bytes,26,opt,name=usdtPair" json:"usdtPair"`
+	AssetState                         AssetState                `protobuf:"bytes,27,opt,name=assetState" json:"assetState"`
+	GenesisWalletAssetStates           []GenesisWalletAssetState `protobuf:"bytes,28,rep,name=genesisWalletAssetStates" json:"genesisWalletAssetStates"`
 }
 
 type GenesisWalletState struct {
@@ -49,14 +53,6 @@ type GenesisWalletState struct {
 	NetAmount string `protobuf:"bytes,2,opt,name=netAmount" json:"netAmount"`
 	RatioBps  int64  `protobuf:"varint,3,opt,name=ratioBps" json:"ratioBps"`
 	Rank      int32  `protobuf:"varint,4,opt,name=rank" json:"rank"`
-}
-
-type ProjectChainState struct {
-	Token                    TokenState                `protobuf:"bytes,1,opt,name=token" json:"token"`
-	WethPair                 PairV2State               `protobuf:"bytes,2,opt,name=wethPair" json:"wethPair"`
-	UsdtPair                 PairV2State               `protobuf:"bytes,3,opt,name=usdtPair" json:"usdtPair"`
-	AssetState               AssetState                `protobuf:"bytes,4,opt,name=assetState" json:"assetState"`
-	GenesisWalletAssetStates []GenesisWalletAssetState `protobuf:"bytes,5,rep,name=genesisWalletAssetStates" json:"genesisWalletAssetStates"`
 }
 
 type TokenState struct {

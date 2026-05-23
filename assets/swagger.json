@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-348-ga6e52a5-dirty"
+    "version": "v1.0.0-349-gcf25c4b-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1780,29 +1780,6 @@
         }
       }
     },
-    "v1alpha1ProjectChainState": {
-      "type": "object",
-      "properties": {
-        "assetState": {
-          "$ref": "#/definitions/v1alpha1AssetState"
-        },
-        "genesisWalletAssetStates": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1GenesisWalletAssetState"
-          }
-        },
-        "token": {
-          "$ref": "#/definitions/v1alpha1TokenState"
-        },
-        "usdtPair": {
-          "$ref": "#/definitions/v1alpha1PairV2State"
-        },
-        "wethPair": {
-          "$ref": "#/definitions/v1alpha1PairV2State"
-        }
-      }
-    },
     "v1alpha1ProjectListItem": {
       "type": "object",
       "properties": {
@@ -1853,6 +1830,9 @@
     "v1alpha1ProjectMeta": {
       "type": "object",
       "properties": {
+        "assetState": {
+          "$ref": "#/definitions/v1alpha1AssetState"
+        },
         "blockNumber": {
           "type": "string",
           "format": "uint64"
@@ -1888,6 +1868,12 @@
         "creatorResultFetchedAt": {
           "type": "string"
         },
+        "genesisWalletAssetStates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1GenesisWalletAssetState"
+          }
+        },
         "genesisWallets": {
           "type": "array",
           "items": {
@@ -1915,12 +1901,21 @@
         "sourceQualityReportFetchedAt": {
           "type": "string"
         },
+        "token": {
+          "$ref": "#/definitions/v1alpha1TokenState"
+        },
         "txHash": {
           "type": "string"
         },
         "txIndex": {
           "type": "string",
           "format": "uint64"
+        },
+        "usdtPair": {
+          "$ref": "#/definitions/v1alpha1PairV2State"
+        },
+        "wethPair": {
+          "$ref": "#/definitions/v1alpha1PairV2State"
         }
       }
     },
@@ -1949,9 +1944,6 @@
     "v1alpha1ProjectView": {
       "type": "object",
       "properties": {
-        "chainState": {
-          "$ref": "#/definitions/v1alpha1ProjectChainState"
-        },
         "meta": {
           "$ref": "#/definitions/v1alpha1ProjectMeta"
         }

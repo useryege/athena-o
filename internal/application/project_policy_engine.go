@@ -642,11 +642,11 @@ func (r simulateMintRiskRule) Evaluate(_ context.Context, project *Project, _ Pr
 	if project == nil {
 		return false, nil, nil
 	}
-	if !project.Runtime.CreatorResult.HasMintRisk() {
+	if !project.Meta.CreatorResult.HasMintRisk() {
 		return false, nil, nil
 	}
 	return true, map[string]any{
-		"mintable_paths": project.Runtime.CreatorResult.MintablePaths(),
+		"mintable_paths": project.Meta.CreatorResult.MintablePaths(),
 	}, nil
 }
 
