@@ -20,6 +20,8 @@ import (
 const initialProjectSyncLookback = 30 * 24 * time.Hour
 const defaultBlockHeaderQueueCapacity = 16
 
+var pancakeV2SwapTopicHash = common.HexToHash("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822")
+
 type projectDiscoveryNodeClient interface {
 	SubscribeNewHead(ctx context.Context, ch chan<- *types.Header) (ethereum.Subscription, error)
 	BlockNumber(ctx context.Context) (uint64, error)
@@ -275,6 +277,17 @@ func (w *projectDiscoveryIndexerImpl) scanBlock(ctx context.Context, blockNumber
 		return fmt.Errorf("failed to get block %d: %w", blockNumber, err)
 	}
 
+	swapPairAddresses, err := w.fetchPancakeV2SwapPairAddresses(ctx, blockNumber)
+	if err != nil {
+		return fmt.Errorf("failed to fetch pancake v2 swap logs for block %d: %w", blockNumber, err)
+	}
+	for _, pairAddress := range swapPairAddresses {
+		log.WithFields(log.Fields{
+			"blockNumber": blockNumber,
+			"pairAddress": pairAddress.Hex(),
+		}).Info("pancake v2 swap pair detected")
+	}
+
 	candidates := w.discoverBlockCandidates(block, blockNumber, source)
 	if len(candidates) == 0 {
 		return nil
@@ -283,6 +296,32 @@ func (w *projectDiscoveryIndexerImpl) scanBlock(ctx context.Context, blockNumber
 		return errors.New("discovery intake is not configured")
 	}
 	return w.intake.IntakeCandidates(ctx, candidates)
+}
+
+func (w *projectDiscoveryIndexerImpl) fetchPancakeV2SwapPairAddresses(ctx context.Context, blockNumber uint64) ([]common.Address, error) {
+	block := new(big.Int).SetUint64(blockNumber)
+	query := ethereum.FilterQuery{
+		FromBlock: block,
+		ToBlock:   block,
+		Topics: [][]common.Hash{
+			{pancakeV2SwapTopicHash},
+		},
+	}
+	logs, err := w.nodeClient.FilterLogs(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make(map[common.Address]struct{}, len(logs))
+	pairAddresses := make([]common.Address, 0, len(logs))
+	for _, entry := range logs {
+		if _, ok := seen[entry.Address]; ok {
+			continue
+		}
+		seen[entry.Address] = struct{}{}
+		pairAddresses = append(pairAddresses, entry.Address)
+	}
+	return pairAddresses, nil
 }
 
 func (w *projectDiscoveryIndexerImpl) discoverBlockCandidates(block *types.Block, blockNumber uint64, source ProjectDiscoverySource) []DiscoveredProjectCandidate {

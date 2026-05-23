@@ -105,6 +105,41 @@ func (f *discoveryCursorNodeClientFake) ChainID(context.Context) (*big.Int, erro
 	return big.NewInt(1), nil
 }
 
+type swapLogDiscoveryNodeClientFake struct {
+	blockByNumberCalls int
+	filterLogsCalls    int
+	block              *types.Block
+	logs               []types.Log
+	gotQuery           ethereum.FilterQuery
+}
+
+func (f *swapLogDiscoveryNodeClientFake) SubscribeNewHead(context.Context, chan<- *types.Header) (ethereum.Subscription, error) {
+	return event.NewSubscription(func(<-chan struct{}) error { return nil }), nil
+}
+
+func (f *swapLogDiscoveryNodeClientFake) BlockNumber(context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (f *swapLogDiscoveryNodeClientFake) BlockByNumber(context.Context, *big.Int) (*types.Block, error) {
+	f.blockByNumberCalls++
+	return f.block, nil
+}
+
+func (f *swapLogDiscoveryNodeClientFake) TransactionReceipt(context.Context, common.Hash) (*types.Receipt, error) {
+	return &types.Receipt{}, nil
+}
+
+func (f *swapLogDiscoveryNodeClientFake) FilterLogs(_ context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
+	f.filterLogsCalls++
+	f.gotQuery = q
+	return append([]types.Log(nil), f.logs...), nil
+}
+
+func (f *swapLogDiscoveryNodeClientFake) ChainID(context.Context) (*big.Int, error) {
+	return big.NewInt(1), nil
+}
+
 type discoveryProjectStoreFake struct {
 	metas       []appstore.ProjectMeta
 	errs        []error
@@ -194,6 +229,64 @@ func TestProjectDiscoveryIndexerLoadCursorUsesStoreMaxProjectBlock(t *testing.T)
 	}
 	if node.blockByNumberCalls != 0 {
 		t.Fatalf("block by number calls = %d, want 0", node.blockByNumberCalls)
+	}
+}
+
+func TestProjectDiscoveryIndexerFetchPancakeV2SwapPairAddresses(t *testing.T) {
+	ctx := context.Background()
+	pairA := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	pairB := common.HexToAddress("0x00000000000000000000000000000000000000b2")
+	node := &swapLogDiscoveryNodeClientFake{
+		logs: []types.Log{
+			{Address: pairA},
+			{Address: pairA},
+			{Address: pairB},
+		},
+	}
+	indexer := &projectDiscoveryIndexerImpl{nodeClient: node}
+
+	addresses, err := indexer.fetchPancakeV2SwapPairAddresses(ctx, 123)
+	if err != nil {
+		t.Fatalf("fetch pancake v2 swap pair addresses: %v", err)
+	}
+	if node.filterLogsCalls != 1 {
+		t.Fatalf("filter logs calls = %d, want 1", node.filterLogsCalls)
+	}
+	if node.gotQuery.FromBlock == nil || node.gotQuery.FromBlock.Uint64() != 123 {
+		t.Fatalf("from block = %v, want 123", node.gotQuery.FromBlock)
+	}
+	if node.gotQuery.ToBlock == nil || node.gotQuery.ToBlock.Uint64() != 123 {
+		t.Fatalf("to block = %v, want 123", node.gotQuery.ToBlock)
+	}
+	if len(node.gotQuery.Topics) != 1 || len(node.gotQuery.Topics[0]) != 1 || node.gotQuery.Topics[0][0] != pancakeV2SwapTopicHash {
+		t.Fatalf("topics = %v, want pancake v2 swap topic", node.gotQuery.Topics)
+	}
+	if len(addresses) != 2 {
+		t.Fatalf("address count = %d, want 2", len(addresses))
+	}
+	if addresses[0] != pairA || addresses[1] != pairB {
+		t.Fatalf("addresses = %v, want %s then %s", addresses, pairA.Hex(), pairB.Hex())
+	}
+}
+
+func TestProjectDiscoveryIndexerScanBlockScansSwapLogsWithoutCandidatesOrIntake(t *testing.T) {
+	ctx := context.Background()
+	node := &swapLogDiscoveryNodeClientFake{
+		block: types.NewBlockWithHeader(&types.Header{Number: big.NewInt(123)}),
+		logs: []types.Log{
+			{Address: common.HexToAddress("0x00000000000000000000000000000000000000a1")},
+		},
+	}
+	indexer := &projectDiscoveryIndexerImpl{nodeClient: node}
+
+	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
+		t.Fatalf("scan block: %v", err)
+	}
+	if node.blockByNumberCalls != 1 {
+		t.Fatalf("block by number calls = %d, want 1", node.blockByNumberCalls)
+	}
+	if node.filterLogsCalls != 1 {
+		t.Fatalf("filter logs calls = %d, want 1", node.filterLogsCalls)
 	}
 }
 
