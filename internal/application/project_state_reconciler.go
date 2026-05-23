@@ -28,7 +28,6 @@ type reconcilerJob struct {
 
 type projectStateReconcilerImpl struct {
 	projectCache          ProjectSnapshotCache
-	projectStore          appstore.ProjectStore
 	fetcher               evm.AthenaFetcher
 	simulator             ProjectSimulator
 	apiFetcher            ethereumapi.EthereumAPI
@@ -45,7 +44,6 @@ type projectStateReconcilerImpl struct {
 
 func NewProjectStateReconciler(
 	projectCache ProjectSnapshotCache,
-	projectStore appstore.ProjectStore,
 	fetcher evm.AthenaFetcher,
 	simulator ProjectSimulator,
 	apiFetcher ethereumapi.EthereumAPI,
@@ -56,7 +54,6 @@ func NewProjectStateReconciler(
 ) ProjectStateReconciler {
 	return &projectStateReconcilerImpl{
 		projectCache:          projectCache,
-		projectStore:          projectStore,
 		fetcher:               fetcher,
 		simulator:             simulator,
 		apiFetcher:            apiFetcher,
