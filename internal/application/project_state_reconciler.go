@@ -176,6 +176,9 @@ func (r *projectStateReconcilerImpl) InitProject(ctx context.Context, candidates
 			continue
 		}
 		project.Meta.ChainState = snapshot
+		if err := r.persistProjectMeta(ctx, project.Meta); err != nil {
+			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
+		}
 		_, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if exists && current != nil {
 				return nil, false, nil
@@ -663,6 +666,13 @@ func (r *projectStateReconcilerImpl) persistProjectSourceCode(ctx context.Contex
 		return nil
 	}
 	return r.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode)
+}
+
+func (r *projectStateReconcilerImpl) persistProjectMeta(ctx context.Context, meta ProjectMeta) error {
+	if r.persistencePublisher == nil {
+		return nil
+	}
+	return r.persistencePublisher.PublishProjectMetaSave(ctx, projectMetaToStore(meta))
 }
 
 func (r *projectStateReconcilerImpl) persistProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {

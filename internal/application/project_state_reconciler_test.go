@@ -231,6 +231,7 @@ func (f *sourceQualityAnalyzerFake) AnalyzeContractSource(context.Context, strin
 }
 
 type persistencePublisherFake struct {
+	metas                []appstore.ProjectMeta
 	sourceQualityReports map[common.Address]string
 	codeBinHashes        map[common.Address]common.Hash
 	creatorResults       map[common.Address]SimulateResult
@@ -246,7 +247,11 @@ func (p *persistencePublisherFake) Publish(_ context.Context, event PersistenceE
 	p.events = append(p.events, event)
 	return nil
 }
-func (p *persistencePublisherFake) PublishProjectMetaSave(context.Context, appstore.ProjectMeta) error {
+func (p *persistencePublisherFake) PublishProjectMetaSave(_ context.Context, meta appstore.ProjectMeta) error {
+	if p.err != nil {
+		return p.err
+	}
+	p.metas = append(p.metas, meta)
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectEventLog(context.Context, appstore.ProjectEventLog) error {
@@ -328,11 +333,13 @@ func TestProjectStateReconcilerInitProjectCachesValidERC20WithoutGetProject(t *t
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	cache := &initProjectNoGetCacheFake{}
 	fetcher := &initProjectFetcherFake{}
+	publisher := &persistencePublisherFake{}
 	reconciler := &projectStateReconcilerImpl{
-		projectCache: cache,
-		fetcher:      fetcher,
-		scheduled:    map[common.Address]*scheduledProject{},
-		jobSem:       make(chan struct{}, 1),
+		projectCache:         cache,
+		fetcher:              fetcher,
+		persistencePublisher: publisher,
+		scheduled:            map[common.Address]*scheduledProject{},
+		jobSem:               make(chan struct{}, 1),
 	}
 
 	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{{
@@ -355,6 +362,15 @@ func TestProjectStateReconcilerInitProjectCachesValidERC20WithoutGetProject(t *t
 	}
 	if project.Meta.ChainState.TokenContract != contract {
 		t.Fatalf("chain state token contract = %s, want %s", project.Meta.ChainState.TokenContract.Hex(), contract.Hex())
+	}
+	if len(publisher.metas) != 1 {
+		t.Fatalf("persisted project metas = %d, want 1", len(publisher.metas))
+	}
+	if publisher.metas[0].Contract != contract {
+		t.Fatalf("persisted contract = %s, want %s", publisher.metas[0].Contract.Hex(), contract.Hex())
+	}
+	if publisher.metas[0].BlockNumber != 103 || publisher.metas[0].TxIndex != 7 {
+		t.Fatalf("persisted block/tx index = %d/%d, want 103/7", publisher.metas[0].BlockNumber, publisher.metas[0].TxIndex)
 	}
 	if reconciler.scheduled[contract] == nil {
 		t.Fatal("project was not scheduled")
@@ -381,11 +397,13 @@ func TestProjectStateReconcilerInitProjectCachesBatchBySnapshotIndex(t *testing.
 			Token:         athenacontract.AthenaToken{IsValidERC20: true},
 		},
 	}}
+	publisher := &persistencePublisherFake{}
 	reconciler := &projectStateReconcilerImpl{
-		projectCache: cache,
-		fetcher:      fetcher,
-		scheduled:    map[common.Address]*scheduledProject{},
-		jobSem:       make(chan struct{}, 1),
+		projectCache:         cache,
+		fetcher:              fetcher,
+		persistencePublisher: publisher,
+		scheduled:            map[common.Address]*scheduledProject{},
+		jobSem:               make(chan struct{}, 1),
 	}
 
 	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{
@@ -407,6 +425,12 @@ func TestProjectStateReconcilerInitProjectCachesBatchBySnapshotIndex(t *testing.
 	}
 	if cache.projects[validB] == nil || cache.projects[validB].Meta.ChainState.TokenContract != validB {
 		t.Fatalf("valid B was not cached with matching snapshot")
+	}
+	if len(publisher.metas) != 2 {
+		t.Fatalf("persisted project metas = %d, want 2", len(publisher.metas))
+	}
+	if publisher.metas[0].Contract != validA || publisher.metas[1].Contract != validB {
+		t.Fatalf("persisted contracts = %s/%s, want %s/%s", publisher.metas[0].Contract.Hex(), publisher.metas[1].Contract.Hex(), validA.Hex(), validB.Hex())
 	}
 	if reconciler.scheduled[validA] == nil || reconciler.scheduled[validB] == nil {
 		t.Fatalf("valid projects were not scheduled")
@@ -453,11 +477,13 @@ func TestProjectStateReconcilerInitProjectDoesNotOverwriteExistingCache(t *testi
 			BlockNumber: 11,
 		}},
 	}}
+	publisher := &persistencePublisherFake{}
 	reconciler := &projectStateReconcilerImpl{
-		projectCache: cache,
-		fetcher:      &initProjectFetcherFake{},
-		scheduled:    map[common.Address]*scheduledProject{},
-		jobSem:       make(chan struct{}, 1),
+		projectCache:         cache,
+		fetcher:              &initProjectFetcherFake{},
+		persistencePublisher: publisher,
+		scheduled:            map[common.Address]*scheduledProject{},
+		jobSem:               make(chan struct{}, 1),
 	}
 
 	err := reconciler.InitProject(ctx, []DiscoveredProjectCandidate{{
@@ -474,6 +500,12 @@ func TestProjectStateReconcilerInitProjectDoesNotOverwriteExistingCache(t *testi
 	}
 	if project.Meta.BlockNumber != 11 {
 		t.Fatalf("cached block number = %d, want existing 11", project.Meta.BlockNumber)
+	}
+	if len(publisher.metas) != 1 {
+		t.Fatalf("persisted project metas = %d, want 1", len(publisher.metas))
+	}
+	if publisher.metas[0].Contract != contract || publisher.metas[0].BlockNumber != 103 {
+		t.Fatalf("persisted meta = %s/%d, want %s/103", publisher.metas[0].Contract.Hex(), publisher.metas[0].BlockNumber, contract.Hex())
 	}
 	if reconciler.scheduled[contract] == nil {
 		t.Fatal("project was not scheduled")
