@@ -64,6 +64,7 @@ type ProjectStore interface {
 	UpdateProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
 	ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error)
+	ListProjectMetasByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error)
 	GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error)
 }
 

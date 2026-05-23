@@ -401,7 +401,7 @@ func (r *projectStateReconcilerImpl) refreshProjectCreatorOtherProjects(ctx cont
 		return nil
 	}
 
-	creatorProjectContracts, err := r.buildCreatorProjectContractsIndexFromCache(ctx)
+	creatorProjectsByMeta, err := r.buildCreatorProjectMetasIndexFromCache(ctx)
 	if err != nil {
 		return err
 	}
@@ -410,26 +410,27 @@ func (r *projectStateReconcilerImpl) refreshProjectCreatorOtherProjects(ctx cont
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		allContracts, hasCache := creatorProjectContracts[creator]
-		useDBFallback := !hasCache || len(allContracts) <= 1
-		if useDBFallback {
-			if r.projectStore == nil {
-				continue
-			}
-			metas, queryErr := r.projectStore.ListProjectMetasByCreator(ctx, creator)
-			if queryErr != nil {
-				log.WithFields(log.Fields{
-					"component": "project_state_reconciler",
-					"creator":   creator.Hex(),
-					"error":     queryErr.Error(),
-				}).Warn("list project metas by creator failed")
-				continue
-			}
-			allContracts = dedupeAndSortProjectContracts(metasToProjectContracts(metas))
-		}
+		creatorMetas, hasCache := creatorProjectsByMeta[creator]
 
 		for _, project := range creatorProjects {
-			otherContracts := excludeProjectContract(allContracts, project.Meta.Contract)
+			var otherContracts []common.Address
+			useDBFallback := !hasCache || len(creatorMetas) <= 1
+			if useDBFallback && r.projectStore != nil {
+				metas, queryErr := r.projectStore.ListProjectMetasByCreatorBefore(ctx, creator, project.Meta.BlockNumber, project.Meta.TxIndex)
+				if queryErr != nil {
+					log.WithFields(log.Fields{
+						"component":    "project_state_reconciler",
+						"creator":      creator.Hex(),
+						"block_number": project.Meta.BlockNumber,
+						"tx_index":     project.Meta.TxIndex,
+						"error":        queryErr.Error(),
+					}).Warn("list project metas by creator before failed")
+					continue
+				}
+				otherContracts = projectContractsFromMetasPreserveOrder(metas, project.Meta.Contract)
+			} else {
+				otherContracts = previousProjectContractsByCreationOrder(creatorMetas, project.Meta)
+			}
 			resolvedAt := time.Now().UTC()
 			changed, updateErr := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
 				if !exists || current == nil || !current.Runtime.CreatorOtherProjectsResolvedAt.IsZero() {
@@ -611,22 +612,30 @@ func (r *projectStateReconcilerImpl) fetchContractBytecode(ctx context.Context, 
 	return nil, errors.New("codeAt function is not configured")
 }
 
-func (r *projectStateReconcilerImpl) buildCreatorProjectContractsIndexFromCache(ctx context.Context) (map[common.Address][]common.Address, error) {
+func (r *projectStateReconcilerImpl) buildCreatorProjectMetasIndexFromCache(ctx context.Context) (map[common.Address][]appstore.ProjectMeta, error) {
 	projects, err := r.listAllProjects(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	creatorProjects := make(map[common.Address][]common.Address)
+	creatorProjects := make(map[common.Address][]appstore.ProjectMeta)
 	for _, project := range projects {
 		if project == nil || project.Meta.Creator == (common.Address{}) || project.Meta.Contract == (common.Address{}) {
 			continue
 		}
 		creator := project.Meta.Creator
-		creatorProjects[creator] = append(creatorProjects[creator], project.Meta.Contract)
+		creatorProjects[creator] = append(creatorProjects[creator], appstore.ProjectMeta{
+			BlockNumber: project.Meta.BlockNumber,
+			BlockTime:   project.Meta.BlockTime,
+			Contract:    project.Meta.Contract,
+			Creator:     project.Meta.Creator,
+			TxHash:      project.Meta.TxHash,
+			TxIndex:     project.Meta.TxIndex,
+		})
 	}
-	for creator, contracts := range creatorProjects {
-		creatorProjects[creator] = dedupeAndSortProjectContracts(contracts)
+	for creator, metas := range creatorProjects {
+		sortProjectMetasByCreationOrder(metas)
+		creatorProjects[creator] = metas
 	}
 	return creatorProjects, nil
 }
@@ -651,54 +660,63 @@ func (r *projectStateReconcilerImpl) listAllProjects(ctx context.Context) ([]*Pr
 	return projects, nil
 }
 
-func metasToProjectContracts(metas []appstore.ProjectMeta) []common.Address {
+func previousProjectContractsByCreationOrder(metas []appstore.ProjectMeta, current ProjectMeta) []common.Address {
+	if len(metas) == 0 {
+		return nil
+	}
+	contracts := make([]common.Address, 0)
+	for _, meta := range metas {
+		if meta.Creator != current.Creator || !projectMetaCreatedBefore(meta, current) {
+			continue
+		}
+		contracts = appendProjectContractPreserveOrder(contracts, meta.Contract, current.Contract)
+	}
+	return contracts
+}
+
+func projectContractsFromMetasPreserveOrder(metas []appstore.ProjectMeta, currentContract common.Address) []common.Address {
 	if len(metas) == 0 {
 		return nil
 	}
 	contracts := make([]common.Address, 0, len(metas))
 	for _, meta := range metas {
-		if meta.Contract == (common.Address{}) {
-			continue
-		}
-		contracts = append(contracts, meta.Contract)
+		contracts = appendProjectContractPreserveOrder(contracts, meta.Contract, currentContract)
 	}
 	return contracts
 }
 
-func excludeProjectContract(contracts []common.Address, contract common.Address) []common.Address {
-	if len(contracts) == 0 {
-		return nil
+func appendProjectContractPreserveOrder(contracts []common.Address, contract common.Address, currentContract common.Address) []common.Address {
+	if contract == (common.Address{}) || contract == currentContract {
+		return contracts
 	}
-	others := make([]common.Address, 0, len(contracts))
-	for _, item := range contracts {
-		if item == (common.Address{}) || item == contract {
-			continue
+	for _, existing := range contracts {
+		if existing == contract {
+			return contracts
 		}
-		others = append(others, item)
 	}
-	return dedupeAndSortProjectContracts(others)
+	return append(contracts, contract)
 }
 
-func dedupeAndSortProjectContracts(contracts []common.Address) []common.Address {
-	if len(contracts) == 0 {
-		return nil
+func projectMetaCreatedBefore(candidate appstore.ProjectMeta, current ProjectMeta) bool {
+	if candidate.BlockNumber < current.BlockNumber {
+		return true
 	}
-	seen := make(map[common.Address]struct{}, len(contracts))
-	filtered := make([]common.Address, 0, len(contracts))
-	for _, contract := range contracts {
-		if contract == (common.Address{}) {
-			continue
-		}
-		if _, ok := seen[contract]; ok {
-			continue
-		}
-		seen[contract] = struct{}{}
-		filtered = append(filtered, contract)
+	if candidate.BlockNumber > current.BlockNumber {
+		return false
 	}
-	sort.Slice(filtered, func(i, j int) bool {
-		return bytes.Compare(filtered[i].Bytes(), filtered[j].Bytes()) < 0
+	return candidate.TxIndex < current.TxIndex
+}
+
+func sortProjectMetasByCreationOrder(metas []appstore.ProjectMeta) {
+	sort.SliceStable(metas, func(i, j int) bool {
+		if metas[i].BlockNumber != metas[j].BlockNumber {
+			return metas[i].BlockNumber < metas[j].BlockNumber
+		}
+		if metas[i].TxIndex != metas[j].TxIndex {
+			return metas[i].TxIndex < metas[j].TxIndex
+		}
+		return bytes.Compare(metas[i].Contract.Bytes(), metas[j].Contract.Bytes()) < 0
 	})
-	return filtered
 }
 
 func cloneAddressSlice(addresses []common.Address) []common.Address {

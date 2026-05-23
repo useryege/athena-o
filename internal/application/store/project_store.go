@@ -129,6 +129,51 @@ ORDER BY block_number, tx_index, id
 	return metas, nil
 }
 
+func (s *SQLStore) ListProjectMetasByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error) {
+	if blockNumber > math.MaxInt64 {
+		return nil, fmt.Errorf("project meta block number %d exceeds postgres BIGINT", blockNumber)
+	}
+	if txIndex > math.MaxInt64 {
+		return nil, fmt.Errorf("project meta tx index %d exceeds postgres BIGINT", txIndex)
+	}
+
+	rows, err := s.db.QueryContext(ctx, `
+SELECT
+  block_number,
+  block_time,
+  contract,
+  creator,
+  tx_hash,
+  tx_index,
+  source_code,
+  source_code_hash,
+  code_bin_hash,
+  source_quality_report,
+  source_quality_reported_at
+FROM project
+WHERE creator = $1
+  AND (block_number < $2 OR (block_number = $2 AND tx_index < $3))
+ORDER BY block_number, tx_index, id
+`, creator.Bytes(), int64(blockNumber), int64(txIndex))
+	if err != nil {
+		return nil, fmt.Errorf("list project metas by creator before: %w", err)
+	}
+	defer rows.Close()
+
+	metas := make([]ProjectMeta, 0)
+	for rows.Next() {
+		meta, err := scanProjectMetaRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		metas = append(metas, meta)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate project metas by creator before: %w", err)
+	}
+	return metas, nil
+}
+
 func (s *SQLStore) UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
 	sourceCodeHash := common.Hash{}
 	if sourceCode != "" {

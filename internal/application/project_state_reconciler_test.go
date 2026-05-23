@@ -267,6 +267,77 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReportsSkipsCompletedA
 	}
 }
 
+func TestProjectStateReconcilerRefreshProjectCreatorOtherProjectsUsesEarlierProjectsOnly(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	creator := common.HexToAddress("0x00000000000000000000000000000000000000a0")
+	otherCreator := common.HexToAddress("0x00000000000000000000000000000000000000b0")
+
+	contractB := common.HexToAddress("0x0000000000000000000000000000000000000050")
+	contractC := common.HexToAddress("0x0000000000000000000000000000000000000010")
+	contractD := common.HexToAddress("0x0000000000000000000000000000000000000040")
+	contractF := common.HexToAddress("0x0000000000000000000000000000000000000030")
+	contractG := common.HexToAddress("0x0000000000000000000000000000000000000005")
+	otherContract := common.HexToAddress("0x0000000000000000000000000000000000000020")
+
+	projects := []*Project{
+		{Meta: ProjectMeta{Contract: contractF, Creator: creator, BlockNumber: 102, TxIndex: 1}},
+		{Meta: ProjectMeta{Contract: otherContract, Creator: otherCreator, BlockNumber: 100, TxIndex: 4}},
+		{Meta: ProjectMeta{Contract: contractD, Creator: creator, BlockNumber: 101, TxIndex: 0}},
+		{Meta: ProjectMeta{Contract: contractG, Creator: creator, BlockNumber: 103, TxIndex: 0}},
+		{Meta: ProjectMeta{Contract: contractC, Creator: creator, BlockNumber: 100, TxIndex: 5}},
+		{Meta: ProjectMeta{Contract: contractB, Creator: creator, BlockNumber: 100, TxIndex: 3}},
+	}
+	for _, project := range projects {
+		if err := cache.SetProject(ctx, project); err != nil {
+			t.Fatalf("set project %s: %v", project.Meta.Contract.Hex(), err)
+		}
+	}
+
+	reconciler := &projectStateReconcilerImpl{projectCache: cache}
+	if err := reconciler.refreshProjectCreatorOtherProjects(ctx, refreshTargetActive); err != nil {
+		t.Fatalf("refresh creator other projects: %v", err)
+	}
+
+	assertCreatorOtherProjectContracts(t, cache, contractB, nil)
+	assertCreatorOtherProjectContracts(t, cache, contractC, []common.Address{contractB})
+	assertCreatorOtherProjectContracts(t, cache, contractD, []common.Address{contractB, contractC})
+	assertCreatorOtherProjectContracts(t, cache, contractF, []common.Address{contractB, contractC, contractD})
+	assertCreatorOtherProjectContracts(t, cache, contractG, []common.Address{contractB, contractC, contractD, contractF})
+	assertCreatorOtherProjectContracts(t, cache, otherContract, nil)
+}
+
+func assertCreatorOtherProjectContracts(t *testing.T, cache ProjectSnapshotCache, contract common.Address, want []common.Address) {
+	t.Helper()
+	project, ok, err := cache.GetProject(context.Background(), contract)
+	if err != nil {
+		t.Fatalf("get project %s: %v", contract.Hex(), err)
+	}
+	if !ok {
+		t.Fatalf("project %s not found", contract.Hex())
+	}
+	got := project.Runtime.CreatorOtherProjectContracts
+	if len(got) != len(want) {
+		t.Fatalf("creator other contracts for %s = %v, want %v", contract.Hex(), addressHexes(got), addressHexes(want))
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("creator other contracts for %s = %v, want %v", contract.Hex(), addressHexes(got), addressHexes(want))
+		}
+	}
+	if project.Runtime.CreatorOtherProjectsResolvedAt.IsZero() {
+		t.Fatalf("creator other projects resolved at is zero for %s", contract.Hex())
+	}
+}
+
+func addressHexes(addresses []common.Address) []string {
+	hexes := make([]string, 0, len(addresses))
+	for _, address := range addresses {
+		hexes = append(hexes, address.Hex())
+	}
+	return hexes
+}
+
 func newProjectSnapshotCacheTest(t *testing.T) ProjectSnapshotCache {
 	t.Helper()
 	mini := miniredis.RunT(t)

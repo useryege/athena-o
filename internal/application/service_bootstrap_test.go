@@ -50,6 +50,19 @@ func (s *bootstrapProjectStoreFake) ListProjectMetasByCreator(_ context.Context,
 	return metas, nil
 }
 
+func (s *bootstrapProjectStoreFake) ListProjectMetasByCreatorBefore(_ context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectMeta, error) {
+	metas := make([]appstore.ProjectMeta, 0)
+	for _, meta := range s.metas {
+		if meta.Creator != creator {
+			continue
+		}
+		if meta.BlockNumber < blockNumber || (meta.BlockNumber == blockNumber && meta.TxIndex < txIndex) {
+			metas = append(metas, meta)
+		}
+	}
+	return metas, nil
+}
+
 func (s *bootstrapProjectStoreFake) GetProjectMetaByContract(_ context.Context, contract common.Address) (*appstore.ProjectMeta, error) {
 	for _, meta := range s.metas {
 		if meta.Contract == contract {
@@ -120,6 +133,19 @@ func (s *bootstrapProjectStoreWithoutGenesisFake) ListProjectMetasByCreator(_ co
 	metas := make([]appstore.ProjectMeta, 0)
 	for _, meta := range s.metas {
 		if meta.Creator == creator {
+			metas = append(metas, meta)
+		}
+	}
+	return metas, nil
+}
+
+func (s *bootstrapProjectStoreWithoutGenesisFake) ListProjectMetasByCreatorBefore(_ context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectMeta, error) {
+	metas := make([]appstore.ProjectMeta, 0)
+	for _, meta := range s.metas {
+		if meta.Creator != creator {
+			continue
+		}
+		if meta.BlockNumber < blockNumber || (meta.BlockNumber == blockNumber && meta.TxIndex < txIndex) {
 			metas = append(metas, meta)
 		}
 	}
