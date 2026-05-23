@@ -19,20 +19,24 @@ const (
 	projectDataHashKey     = "project:data" // obsolete v1 key; cleared during ReplaceAll cutover
 	projectDataV2KeyPrefix = "project:data:v2:"
 
-	projectFieldSchemaVersion             = "schema_version"
-	projectFieldMetaBase                  = "meta_base"
-	projectFieldChainState                = "chain_state"
-	projectFieldCreatorResult             = "creator_result"
-	projectFieldCreatorHistoricalProjects = "creator_historical_projects"
-	projectFieldSourceCode                = "source_code"
-	projectFieldSourceCodeHash            = "source_code_hash"
-	projectFieldSourceQualityReport       = "source_quality_report"
-	projectFieldSourceQualityReportedAt   = "source_quality_reported_at"
-	projectFieldCodeBinHash               = "code_bin_hash"
-	projectFieldGenesisWallets            = "genesis_wallets"
-	projectFieldReport                    = "report"
+	projectFieldSchemaVersion                      = "schema_version"
+	projectFieldMetaBase                           = "meta_base"
+	projectFieldChainState                         = "chain_state"
+	projectFieldCreatorResult                      = "creator_result"
+	projectFieldCreatorHistoricalProjects          = "creator_historical_projects"
+	projectFieldCreatorHistoricalProjectsFetchedAt = "creator_historical_projects_fetched_at"
+	projectFieldSourceCode                         = "source_code"
+	projectFieldSourceCodeHash                     = "source_code_hash"
+	projectFieldSourceCodeFetchedAt                = "source_code_fetched_at"
+	projectFieldSourceQualityReport                = "source_quality_report"
+	projectFieldSourceQualityReportFetchedAt       = "source_quality_report_fetched_at"
+	projectFieldCodeBinHash                        = "code_bin_hash"
+	projectFieldCodeBinHashFetchedAt               = "code_bin_hash_fetched_at"
+	projectFieldGenesisWallets                     = "genesis_wallets"
+	projectFieldGenesisWalletsFetchedAt            = "genesis_wallets_fetched_at"
+	projectFieldReport                             = "report"
 
-	projectSchemaVersion = "8"
+	projectSchemaVersion = "9"
 
 	projectIndexActive = "project:index:active"
 	projectMaxBlockKey = "project:max_block_number"
@@ -346,18 +350,22 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 
 	projectKey := projectDataV2Key(project.Meta.Contract)
 	pipe.HSet(ctx, projectKey, map[string]any{
-		projectFieldSchemaVersion:             projectSchemaVersion,
-		projectFieldMetaBase:                  metaBasePayload,
-		projectFieldChainState:                chainStatePayload,
-		projectFieldCreatorResult:             creatorResultPayload,
-		projectFieldCreatorHistoricalProjects: creatorHistoricalProjectsPayload,
-		projectFieldSourceCode:                project.Meta.SourceCode,
-		projectFieldSourceCodeHash:            project.Meta.SourceCodeHash.Hex(),
-		projectFieldSourceQualityReport:       project.Meta.SourceQualityReport,
-		projectFieldSourceQualityReportedAt:   formatOptionalTime(project.Meta.SourceQualityReportedAt),
-		projectFieldCodeBinHash:               project.Meta.CodeBinHash.Hex(),
-		projectFieldReport:                    reportPayload,
-		projectFieldGenesisWallets:            genesisWalletsPayload,
+		projectFieldSchemaVersion:                      projectSchemaVersion,
+		projectFieldMetaBase:                           metaBasePayload,
+		projectFieldChainState:                         chainStatePayload,
+		projectFieldCreatorResult:                      creatorResultPayload,
+		projectFieldCreatorHistoricalProjects:          creatorHistoricalProjectsPayload,
+		projectFieldCreatorHistoricalProjectsFetchedAt: formatOptionalTime(project.Runtime.CreatorHistoricalProjectsFetchedAt),
+		projectFieldSourceCode:                         project.Meta.SourceCode,
+		projectFieldSourceCodeHash:                     project.Meta.SourceCodeHash.Hex(),
+		projectFieldSourceCodeFetchedAt:                formatOptionalTime(project.Meta.SourceCodeFetchedAt),
+		projectFieldSourceQualityReport:                project.Meta.SourceQualityReport,
+		projectFieldSourceQualityReportFetchedAt:       formatOptionalTime(project.Meta.SourceQualityReportFetchedAt),
+		projectFieldCodeBinHash:                        project.Meta.CodeBinHash.Hex(),
+		projectFieldCodeBinHashFetchedAt:               formatOptionalTime(project.Meta.CodeBinHashFetchedAt),
+		projectFieldReport:                             reportPayload,
+		projectFieldGenesisWallets:                     genesisWalletsPayload,
+		projectFieldGenesisWalletsFetchedAt:            formatOptionalTime(project.Meta.GenesisWalletsFetchedAt),
 	})
 	c.applyProjectIndexes(ctx, pipe, project)
 	return nil
@@ -405,6 +413,9 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 		}
 		fields[projectFieldCreatorHistoricalProjects] = creatorHistoricalProjectsPayload
 	}
+	if current == nil || !current.Runtime.CreatorHistoricalProjectsFetchedAt.Equal(next.Runtime.CreatorHistoricalProjectsFetchedAt) {
+		fields[projectFieldCreatorHistoricalProjectsFetchedAt] = formatOptionalTime(next.Runtime.CreatorHistoricalProjectsFetchedAt)
+	}
 
 	if current == nil || current.Meta.SourceCode != next.Meta.SourceCode {
 		fields[projectFieldSourceCode] = next.Meta.SourceCode
@@ -412,14 +423,20 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 	if current == nil || current.Meta.SourceCodeHash != next.Meta.SourceCodeHash {
 		fields[projectFieldSourceCodeHash] = next.Meta.SourceCodeHash.Hex()
 	}
+	if current == nil || !current.Meta.SourceCodeFetchedAt.Equal(next.Meta.SourceCodeFetchedAt) {
+		fields[projectFieldSourceCodeFetchedAt] = formatOptionalTime(next.Meta.SourceCodeFetchedAt)
+	}
 	if current == nil || current.Meta.SourceQualityReport != next.Meta.SourceQualityReport {
 		fields[projectFieldSourceQualityReport] = next.Meta.SourceQualityReport
 	}
-	if current == nil || !current.Meta.SourceQualityReportedAt.Equal(next.Meta.SourceQualityReportedAt) {
-		fields[projectFieldSourceQualityReportedAt] = formatOptionalTime(next.Meta.SourceQualityReportedAt)
+	if current == nil || !current.Meta.SourceQualityReportFetchedAt.Equal(next.Meta.SourceQualityReportFetchedAt) {
+		fields[projectFieldSourceQualityReportFetchedAt] = formatOptionalTime(next.Meta.SourceQualityReportFetchedAt)
 	}
 	if current == nil || current.Meta.CodeBinHash != next.Meta.CodeBinHash {
 		fields[projectFieldCodeBinHash] = next.Meta.CodeBinHash.Hex()
+	}
+	if current == nil || !current.Meta.CodeBinHashFetchedAt.Equal(next.Meta.CodeBinHashFetchedAt) {
+		fields[projectFieldCodeBinHashFetchedAt] = formatOptionalTime(next.Meta.CodeBinHashFetchedAt)
 	}
 
 	if current == nil || current.Report != next.Report {
@@ -435,6 +452,9 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 			return nil, fmt.Errorf("marshal genesis wallets for %s: %w", next.Meta.Contract.Hex(), err)
 		}
 		fields[projectFieldGenesisWallets] = genesisWalletsPayload
+	}
+	if current == nil || !current.Meta.GenesisWalletsFetchedAt.Equal(next.Meta.GenesisWalletsFetchedAt) {
+		fields[projectFieldGenesisWalletsFetchedAt] = formatOptionalTime(next.Meta.GenesisWalletsFetchedAt)
 	}
 
 	return fields, nil
@@ -486,20 +506,41 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 			return nil, false, err
 		}
 	}
+	if raw := values[projectFieldCreatorHistoricalProjectsFetchedAt]; raw != "" {
+		fetchedAt, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return nil, false, err
+		}
+		project.Runtime.CreatorHistoricalProjectsFetchedAt = fetchedAt
+	}
 	project.Meta.SourceCode = values[projectFieldSourceCode]
 	if raw := values[projectFieldSourceCodeHash]; raw != "" {
 		project.Meta.SourceCodeHash = common.HexToHash(raw)
 	}
-	project.Meta.SourceQualityReport = values[projectFieldSourceQualityReport]
-	if raw := values[projectFieldSourceQualityReportedAt]; raw != "" {
-		reportedAt, err := time.Parse(time.RFC3339Nano, raw)
+	if raw := values[projectFieldSourceCodeFetchedAt]; raw != "" {
+		fetchedAt, err := time.Parse(time.RFC3339Nano, raw)
 		if err != nil {
 			return nil, false, err
 		}
-		project.Meta.SourceQualityReportedAt = reportedAt
+		project.Meta.SourceCodeFetchedAt = fetchedAt
+	}
+	project.Meta.SourceQualityReport = values[projectFieldSourceQualityReport]
+	if raw := values[projectFieldSourceQualityReportFetchedAt]; raw != "" {
+		fetchedAt, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return nil, false, err
+		}
+		project.Meta.SourceQualityReportFetchedAt = fetchedAt
 	}
 	if raw := values[projectFieldCodeBinHash]; raw != "" {
 		project.Meta.CodeBinHash = common.HexToHash(raw)
+	}
+	if raw := values[projectFieldCodeBinHashFetchedAt]; raw != "" {
+		fetchedAt, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return nil, false, err
+		}
+		project.Meta.CodeBinHashFetchedAt = fetchedAt
 	}
 	if raw := values[projectFieldReport]; raw != "" {
 		if err := json.Unmarshal([]byte(raw), &project.Report); err != nil {
@@ -510,6 +551,13 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		if err := json.Unmarshal([]byte(raw), &project.Meta.GenesisWallets); err != nil {
 			return nil, false, err
 		}
+	}
+	if raw := values[projectFieldGenesisWalletsFetchedAt]; raw != "" {
+		fetchedAt, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return nil, false, err
+		}
+		project.Meta.GenesisWalletsFetchedAt = fetchedAt
 	}
 	if project.Meta.Contract == (common.Address{}) {
 		project.Meta.Contract = contract

@@ -191,7 +191,7 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 		SourceCodeHash:          common.HexToHash("0x3333333333333333333333333333333333333333333333333333333333333333"),
 		CodeBinHash:             common.HexToHash("0x4444444444444444444444444444444444444444444444444444444444444444"),
 		SourceQualityReport:     "## Report",
-		SourceQualityReportedAt: mustParseTimeForTest(t, "2026-05-22T00:00:00Z"),
+		SourceQualityReportFetchedAt: mustParseTimeForTest(t, "2026-05-22T00:00:00Z"),
 	}, Runtime: ProjectRuntime{
 		ChainState: athenacontract.AthenaProject{
 			Token: athenacontract.AthenaToken{
@@ -239,7 +239,7 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	}
 
 	detailView := projectToView(project, true)
-	if detailView.Meta.SourceCode == "" || detailView.Meta.SourceQualityReport == "" || detailView.Meta.SourceQualityReportedAt == "" {
+	if detailView.Meta.SourceCode == "" || detailView.Meta.SourceQualityReport == "" || detailView.Meta.SourceQualityReportFetchedAt == "" {
 		t.Fatalf("detail view missing source detail fields: %#v", detailView.Meta)
 	}
 	if !detailView.Meta.IsOpenSource {

@@ -337,7 +337,7 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReports(ctx cont
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if project == nil || project.Meta.SourceCode == "" || project.Meta.SourceQualityReport != "" {
+		if project == nil || project.Meta.SourceCode == "" || project.Meta.SourceQualityReport != "" || !project.Meta.SourceQualityReportFetchedAt.IsZero() {
 			continue
 		}
 		report, err := r.sourceQualityAnalyzer.AnalyzeContractSource(ctx, project.Meta.SourceCode)
@@ -350,9 +350,6 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReports(ctx cont
 			continue
 		}
 		report = strings.TrimSpace(report)
-		if report == "" {
-			continue
-		}
 		if err := r.persistProjectSourceQualityReport(ctx, project.Meta.Contract, report); err != nil {
 			log.WithFields(log.Fields{
 				"component": "project_state_reconciler",
@@ -361,13 +358,13 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReports(ctx cont
 			}).Warn("failed to persist project source quality report")
 			continue
 		}
-		reportedAt := time.Now().UTC()
+		fetchedAt := time.Now().UTC()
 		_, err = r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || current.Meta.SourceCode == "" || current.Meta.SourceQualityReport != "" {
+			if !exists || current == nil || current.Meta.SourceCode == "" || current.Meta.SourceQualityReport != "" || !current.Meta.SourceQualityReportFetchedAt.IsZero() {
 				return nil, false, nil
 			}
 			current.Meta.SourceQualityReport = report
-			current.Meta.SourceQualityReportedAt = reportedAt
+			current.Meta.SourceQualityReportFetchedAt = fetchedAt
 			return current, true, nil
 		})
 		if err != nil {
@@ -386,20 +383,25 @@ func (r *projectStateReconcilerImpl) refreshProjectCodeBinHashes(ctx context.Con
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if project == nil || project.Meta.CodeBinHash != (common.Hash{}) {
+		if project == nil || !project.Meta.CodeBinHashFetchedAt.IsZero() {
 			continue
 		}
 		code, err := r.fetchContractBytecode(ctx, project.Meta.Contract)
-		if err != nil || len(code) == 0 {
+		if err != nil {
 			continue
 		}
-		codeBinHash := crypto.Keccak256Hash(code)
+		codeBinHash := common.Hash{}
+		if len(code) > 0 {
+			codeBinHash = crypto.Keccak256Hash(code)
+		}
+		fetchedAt := time.Now().UTC()
 		shouldPersistCodeBinHash := false
 		changed, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || current.Meta.CodeBinHash != (common.Hash{}) {
+			if !exists || current == nil || !current.Meta.CodeBinHashFetchedAt.IsZero() {
 				return nil, false, nil
 			}
 			current.Meta.CodeBinHash = codeBinHash
+			current.Meta.CodeBinHashFetchedAt = fetchedAt
 			shouldPersistCodeBinHash = true
 			return current, true, nil
 		})
@@ -445,23 +447,28 @@ func (r *projectStateReconcilerImpl) fetchProjectSourceCodeBatch(ctx context.Con
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if project == nil || project.Meta.SourceCode != "" || r.apiFetcher == nil {
+		if project == nil || !project.Meta.SourceCodeFetchedAt.IsZero() || r.apiFetcher == nil {
 			continue
 		}
 
 		sourceCode, _, fetchErr := r.fetchSourceCode(ctx, project)
-		if fetchErr != nil || sourceCode == "" {
+		if fetchErr != nil {
 			continue
 		}
-		sourceCodeHash := crypto.Keccak256Hash([]byte(sourceCode))
+		sourceCodeHash := common.Hash{}
+		if sourceCode != "" {
+			sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
+		}
+		fetchedAt := time.Now().UTC()
 
 		shouldPersistSourceCode := false
 		changed, err := r.projectCache.UpdateProject(ctx, project.Meta.Contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || current.Meta.SourceCode != "" {
+			if !exists || current == nil || !current.Meta.SourceCodeFetchedAt.IsZero() {
 				return nil, false, nil
 			}
 			current.Meta.SourceCode = sourceCode
 			current.Meta.SourceCodeHash = sourceCodeHash
+			current.Meta.SourceCodeFetchedAt = fetchedAt
 			shouldPersistSourceCode = true
 			return current, true, nil
 		})
@@ -478,36 +485,38 @@ func (r *projectStateReconcilerImpl) fetchProjectSourceCodeBatch(ctx context.Con
 		if err := r.persistProjectSourceCode(ctx, project.Meta.Contract, sourceCode); err != nil {
 			continue
 		}
-		if err := r.persistProjectEventLog(ctx, appstore.ProjectEventLog{
-			Contract:       project.Meta.Contract,
-			EventType:      projectEventTypeOpenSource,
-			OccurredAt:     time.Now().UTC(),
-			Message:        "Contract source code opened",
-			Payload:        "{}",
-			IdempotencyKey: projectEventIdempotencyOpenSource,
-		}); err != nil {
-			continue
+		if sourceCode != "" {
+			if err := r.persistProjectEventLog(ctx, appstore.ProjectEventLog{
+				Contract:       project.Meta.Contract,
+				EventType:      projectEventTypeOpenSource,
+				OccurredAt:     time.Now().UTC(),
+				Message:        "Contract source code opened",
+				Payload:        "{}",
+				IdempotencyKey: projectEventIdempotencyOpenSource,
+			}); err != nil {
+				continue
+			}
 		}
 	}
 	return nil
 }
 
 func (r *projectStateReconcilerImpl) persistProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
-	if sourceCode == "" || r.persistencePublisher == nil {
+	if r.persistencePublisher == nil {
 		return nil
 	}
 	return r.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode)
 }
 
 func (r *projectStateReconcilerImpl) persistProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {
-	if codeBinHash == (common.Hash{}) || r.persistencePublisher == nil {
+	if r.persistencePublisher == nil {
 		return nil
 	}
 	return r.persistencePublisher.PublishProjectCodeBinHashUpdate(ctx, contract, codeBinHash)
 }
 
 func (r *projectStateReconcilerImpl) persistProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
-	if report == "" || r.persistencePublisher == nil {
+	if r.persistencePublisher == nil {
 		return nil
 	}
 	return r.persistencePublisher.PublishProjectSourceQualityReportUpdate(ctx, contract, report)

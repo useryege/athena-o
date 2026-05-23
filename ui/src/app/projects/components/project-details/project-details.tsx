@@ -726,10 +726,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                         {isOpenSource && (
                             <div className='white-box project-details__box'>
                                 <div className='project-details__section-title'>Quality Report</div>
-                                {project.meta?.sourceQualityReportedAt && (
+                                {project.meta?.sourceQualityReportFetchedAt && (
                                     <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Reported At</span>
-                                        <span className='project-details__field-value'>{renderValue(project.meta.sourceQualityReportedAt)}</span>
+                                        <span className='project-details__field-label'>Fetched At</span>
+                                        <span className='project-details__field-value'>{renderValue(project.meta.sourceQualityReportFetchedAt)}</span>
                                     </div>
                                 )}
                                 {sourceQualityReport.trim() ? (

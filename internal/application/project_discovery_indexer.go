@@ -420,6 +420,7 @@ func (d *discoveryIntakeImpl) syncProjects(ctx context.Context, projects []*Proj
 		}
 
 		genesisWalletShares, err := d.fetchGenesisWallets(ctx, project, snapshot.Token.TotalSupply)
+		genesisWalletsFetched := err == nil
 		if err != nil {
 			log.WithFields(log.Fields{
 				"contract":    project.Meta.Contract.Hex(),
@@ -454,6 +455,9 @@ func (d *discoveryIntakeImpl) syncProjects(ctx context.Context, projects []*Proj
 			}).Info("extracted genesis wallets from project creation receipt")
 		}
 		project.Meta.GenesisWallets = genesisWalletMetasFromShares(genesisWalletShares)
+		if genesisWalletsFetched {
+			project.Meta.GenesisWalletsFetchedAt = time.Now().UTC()
+		}
 
 		if d.publisher == nil {
 			return errors.New("persistence publisher is not configured")
@@ -466,18 +470,28 @@ func (d *discoveryIntakeImpl) syncProjects(ctx context.Context, projects []*Proj
 			continue
 		}
 
-		historicalProjects, err := d.fetchCreatorHistoricalProjects(ctx, project)
+		historicalProjects, creatorHistoricalProjectsFetched, err := d.fetchCreatorHistoricalProjects(ctx, project)
 		if err != nil {
 			return err
 		}
 		project.Runtime.CreatorHistoricalProjects = historicalProjects
+		if creatorHistoricalProjectsFetched {
+			project.Runtime.CreatorHistoricalProjectsFetchedAt = time.Now().UTC()
+		}
 
 		project.Runtime.ChainState = snapshot
 		if err := d.publisher.PublishProjectMetaSave(ctx, projectMetaToStore(project.Meta)); err != nil {
 			return fmt.Errorf("failed to persist project %s: %w", project.Meta.Contract.Hex(), err)
 		}
-		if err := d.publishProjectGenesisWallets(ctx, project, snapshot.Token.TotalSupply, genesisWalletShares); err != nil {
-			return fmt.Errorf("failed to persist project genesis wallets %s: %w", project.Meta.Contract.Hex(), err)
+		if creatorHistoricalProjectsFetched {
+			if err := d.publishProjectCreatorHistoricalProjects(ctx, project); err != nil {
+				return fmt.Errorf("failed to persist project creator historical projects %s: %w", project.Meta.Contract.Hex(), err)
+			}
+		}
+		if genesisWalletsFetched {
+			if err := d.publishProjectGenesisWallets(ctx, project, snapshot.Token.TotalSupply, genesisWalletShares); err != nil {
+				return fmt.Errorf("failed to persist project genesis wallets %s: %w", project.Meta.Contract.Hex(), err)
+			}
 		}
 		if err := d.publisher.PublishProjectEventLog(ctx, appstore.ProjectEventLog{
 			Contract:       project.Meta.Contract,
@@ -520,9 +534,9 @@ func (d *discoveryIntakeImpl) triggerPolicyEvaluation(contract common.Address, s
 	}
 }
 
-func (d *discoveryIntakeImpl) fetchCreatorHistoricalProjects(ctx context.Context, project *Project) ([]common.Address, error) {
+func (d *discoveryIntakeImpl) fetchCreatorHistoricalProjects(ctx context.Context, project *Project) ([]common.Address, bool, error) {
 	if project == nil || project.Meta.Creator == (common.Address{}) || project.Meta.Contract == (common.Address{}) {
-		return nil, nil
+		return nil, false, nil
 	}
 	if d.projectStore == nil {
 		log.WithFields(log.Fields{
@@ -530,7 +544,7 @@ func (d *discoveryIntakeImpl) fetchCreatorHistoricalProjects(ctx context.Context
 			"contract":  project.Meta.Contract.Hex(),
 			"creator":   project.Meta.Creator.Hex(),
 		}).Warn("project store is not configured; creator historical projects will be empty")
-		return nil, nil
+		return nil, false, nil
 	}
 
 	var lastErr error
@@ -538,10 +552,10 @@ func (d *discoveryIntakeImpl) fetchCreatorHistoricalProjects(ctx context.Context
 	for attempt := 1; attempt <= attempts; attempt++ {
 		metas, err := d.projectStore.ListProjectMetasByCreatorBefore(ctx, project.Meta.Creator, project.Meta.BlockNumber, project.Meta.TxIndex)
 		if err == nil {
-			return projectContractsFromMetasPreserveOrder(metas, project.Meta.Contract), nil
+			return projectContractsFromMetasPreserveOrder(metas, project.Meta.Contract), true, nil
 		}
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			return nil, ctxErr
+			return nil, false, ctxErr
 		}
 		lastErr = err
 		if attempt > len(creatorHistoricalProjectRetryDelays) {
@@ -562,7 +576,7 @@ func (d *discoveryIntakeImpl) fetchCreatorHistoricalProjects(ctx context.Context
 			if !timer.Stop() {
 				<-timer.C
 			}
-			return nil, ctx.Err()
+			return nil, false, ctx.Err()
 		case <-timer.C:
 		}
 	}
@@ -574,7 +588,7 @@ func (d *discoveryIntakeImpl) fetchCreatorHistoricalProjects(ctx context.Context
 		"attempts":  attempts,
 		"error":     lastErr.Error(),
 	}).Warn("list creator historical projects failed; continuing with empty result")
-	return nil, nil
+	return nil, false, nil
 }
 
 func projectContractsFromMetasPreserveOrder(metas []appstore.ProjectMeta, currentContract common.Address) []common.Address {
@@ -846,4 +860,25 @@ func (d *discoveryIntakeImpl) publishProjectGenesisWallets(ctx context.Context, 
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
 	})
+}
+
+func (d *discoveryIntakeImpl) publishProjectCreatorHistoricalProjects(ctx context.Context, project *Project) error {
+	if d.publisher == nil {
+		return errors.New("persistence publisher is not configured")
+	}
+	if project == nil {
+		return errors.New("project is nil")
+	}
+	items := make([]appstore.ProjectCreatorHistoricalProject, 0, len(project.Runtime.CreatorHistoricalProjects))
+	for i, contract := range project.Runtime.CreatorHistoricalProjects {
+		if contract == (common.Address{}) {
+			continue
+		}
+		items = append(items, appstore.ProjectCreatorHistoricalProject{
+			ProjectContract:           project.Meta.Contract,
+			HistoricalProjectContract: contract,
+			RankIndex:                 int32(i),
+		})
+	}
+	return d.publisher.PublishProjectCreatorHistoricalProjectsReplace(ctx, project.Meta.Contract, items)
 }

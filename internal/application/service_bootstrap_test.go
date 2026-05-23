@@ -12,8 +12,9 @@ import (
 )
 
 type bootstrapProjectStoreFake struct {
-	metas   []appstore.ProjectMeta
-	genesis map[common.Address][]appstore.ProjectGenesisWallet
+	metas          []appstore.ProjectMeta
+	genesis        map[common.Address][]appstore.ProjectGenesisWallet
+	creatorHistory map[common.Address][]appstore.ProjectCreatorHistoricalProject
 }
 
 func (s *bootstrapProjectStoreFake) SaveProjectMeta(context.Context, appstore.ProjectMeta) error {
@@ -99,6 +100,22 @@ func (s *bootstrapProjectStoreFake) ListProjectGenesisWalletsByWallet(_ context.
 		}
 	}
 	return items, nil
+}
+
+func (s *bootstrapProjectStoreFake) ReplaceProjectCreatorHistoricalProjects(context.Context, common.Address, []appstore.ProjectCreatorHistoricalProject) error {
+	return nil
+}
+
+func (s *bootstrapProjectStoreFake) ListProjectCreatorHistoricalProjectsByContract(_ context.Context, contract common.Address) ([]appstore.ProjectCreatorHistoricalProject, error) {
+	return append([]appstore.ProjectCreatorHistoricalProject(nil), s.creatorHistory[contract]...), nil
+}
+
+func (s *bootstrapProjectStoreFake) ListProjectCreatorHistoricalProjectsByContracts(_ context.Context, contracts []common.Address) (map[common.Address][]appstore.ProjectCreatorHistoricalProject, error) {
+	result := make(map[common.Address][]appstore.ProjectCreatorHistoricalProject, len(contracts))
+	for _, contract := range contracts {
+		result[contract] = append([]appstore.ProjectCreatorHistoricalProject(nil), s.creatorHistory[contract]...)
+	}
+	return result, nil
 }
 
 type bootstrapProjectStoreWithoutGenesisFake struct {

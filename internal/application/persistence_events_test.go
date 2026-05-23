@@ -43,6 +43,10 @@ func (w *persistenceEventWriterFake) WriteProjectSourceQualityReport(context.Con
 	return w.err
 }
 
+func (w *persistenceEventWriterFake) WriteProjectCreatorHistoricalProjects(context.Context, common.Address, []appstore.ProjectCreatorHistoricalProject) error {
+	return w.err
+}
+
 func (w *persistenceEventWriterFake) AddBytecodeBlacklistContract(context.Context, appstore.BytecodeBlacklistContract) error {
 	return w.err
 }

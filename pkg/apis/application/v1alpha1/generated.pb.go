@@ -452,6 +452,34 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.CreatorHistoricalProjectsFetchedAt)
+	copy(dAtA[i:], m.CreatorHistoricalProjectsFetchedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatorHistoricalProjectsFetchedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xb2
+	i -= len(m.GenesisWalletsFetchedAt)
+	copy(dAtA[i:], m.GenesisWalletsFetchedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.GenesisWalletsFetchedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xaa
+	i -= len(m.CodeBinHashFetchedAt)
+	copy(dAtA[i:], m.CodeBinHashFetchedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CodeBinHashFetchedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xa2
+	i -= len(m.SourceCodeFetchedAt)
+	copy(dAtA[i:], m.SourceCodeFetchedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCodeFetchedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x9a
 	i -= len(m.CodeBinHash)
 	copy(dAtA[i:], m.CodeBinHash)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CodeBinHash)))
@@ -476,9 +504,9 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x1
 	i--
 	dAtA[i] = 0x80
-	i -= len(m.SourceQualityReportedAt)
-	copy(dAtA[i:], m.SourceQualityReportedAt)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceQualityReportedAt)))
+	i -= len(m.SourceQualityReportFetchedAt)
+	copy(dAtA[i:], m.SourceQualityReportFetchedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceQualityReportFetchedAt)))
 	i--
 	dAtA[i] = 0x7a
 	i -= len(m.SourceQualityReport)
@@ -944,12 +972,20 @@ func (m *ProjectMeta) Size() (n int) {
 	}
 	l = len(m.SourceQualityReport)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.SourceQualityReportedAt)
+	l = len(m.SourceQualityReportFetchedAt)
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 3
 	l = len(m.SourceCodeHash)
 	n += 2 + l + sovGenerated(uint64(l))
 	l = len(m.CodeBinHash)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.SourceCodeFetchedAt)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.CodeBinHashFetchedAt)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.GenesisWalletsFetchedAt)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.CreatorHistoricalProjectsFetchedAt)
 	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -1147,10 +1183,14 @@ func (this *ProjectMeta) String() string {
 		`GenesisWallets:` + repeatedStringForGenesisWallets + `,`,
 		`CreatorHistoricalProjects:` + fmt.Sprintf("%v", this.CreatorHistoricalProjects) + `,`,
 		`SourceQualityReport:` + fmt.Sprintf("%v", this.SourceQualityReport) + `,`,
-		`SourceQualityReportedAt:` + fmt.Sprintf("%v", this.SourceQualityReportedAt) + `,`,
+		`SourceQualityReportFetchedAt:` + fmt.Sprintf("%v", this.SourceQualityReportFetchedAt) + `,`,
 		`IsOpenSource:` + fmt.Sprintf("%v", this.IsOpenSource) + `,`,
 		`SourceCodeHash:` + fmt.Sprintf("%v", this.SourceCodeHash) + `,`,
 		`CodeBinHash:` + fmt.Sprintf("%v", this.CodeBinHash) + `,`,
+		`SourceCodeFetchedAt:` + fmt.Sprintf("%v", this.SourceCodeFetchedAt) + `,`,
+		`CodeBinHashFetchedAt:` + fmt.Sprintf("%v", this.CodeBinHashFetchedAt) + `,`,
+		`GenesisWalletsFetchedAt:` + fmt.Sprintf("%v", this.GenesisWalletsFetchedAt) + `,`,
+		`CreatorHistoricalProjectsFetchedAt:` + fmt.Sprintf("%v", this.CreatorHistoricalProjectsFetchedAt) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -3130,7 +3170,7 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 15:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceQualityReportedAt", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceQualityReportFetchedAt", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3158,7 +3198,7 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.SourceQualityReportedAt = string(dAtA[iNdEx:postIndex])
+			m.SourceQualityReportFetchedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 16:
 			if wireType != 0 {
@@ -3243,6 +3283,134 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.CodeBinHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeFetchedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceCodeFetchedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeBinHashFetchedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeBinHashFetchedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 21:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GenesisWalletsFetchedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GenesisWalletsFetchedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatorHistoricalProjectsFetchedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CreatorHistoricalProjectsFetchedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

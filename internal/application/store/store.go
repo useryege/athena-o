@@ -10,18 +10,22 @@ import (
 )
 
 type ProjectMeta struct {
-	BlockTime               uint64
-	BlockNumber             uint64
-	Contract                common.Address
-	Creator                 common.Address
-	Tx                      *types.Transaction
-	TxHash                  common.Hash
-	TxIndex                 uint64
-	SourceCode              string
-	SourceCodeHash          common.Hash
-	CodeBinHash             common.Hash
-	SourceQualityReport     string
-	SourceQualityReportedAt time.Time
+	BlockTime                          uint64
+	BlockNumber                        uint64
+	Contract                           common.Address
+	Creator                            common.Address
+	Tx                                 *types.Transaction
+	TxHash                             common.Hash
+	TxIndex                            uint64
+	SourceCode                         string
+	SourceCodeHash                     common.Hash
+	SourceCodeFetchedAt                time.Time
+	CodeBinHash                        common.Hash
+	CodeBinHashFetchedAt               time.Time
+	SourceQualityReport                string
+	SourceQualityReportFetchedAt       time.Time
+	GenesisWalletsFetchedAt            time.Time
+	CreatorHistoricalProjectsFetchedAt time.Time
 }
 
 type ProjectEventLog struct {
@@ -56,6 +60,14 @@ type ProjectGenesisWallet struct {
 	CreatedAt         time.Time
 }
 
+type ProjectCreatorHistoricalProject struct {
+	ID                        int64
+	ProjectContract           common.Address
+	HistoricalProjectContract common.Address
+	RankIndex                 int32
+	CreatedAt                 time.Time
+}
+
 type ProjectStore interface {
 	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
 	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
@@ -83,6 +95,12 @@ type ProjectGenesisWalletStore interface {
 	ListProjectGenesisWalletsByContract(ctx context.Context, contract common.Address) ([]ProjectGenesisWallet, error)
 	ListProjectGenesisWalletsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address][]ProjectGenesisWallet, error)
 	ListProjectGenesisWalletsByWallet(ctx context.Context, wallet common.Address) ([]ProjectGenesisWallet, error)
+}
+
+type ProjectCreatorHistoricalProjectStore interface {
+	ReplaceProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address, items []ProjectCreatorHistoricalProject) error
+	ListProjectCreatorHistoricalProjectsByContract(ctx context.Context, contract common.Address) ([]ProjectCreatorHistoricalProject, error)
+	ListProjectCreatorHistoricalProjectsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address][]ProjectCreatorHistoricalProject, error)
 }
 
 type Store interface {

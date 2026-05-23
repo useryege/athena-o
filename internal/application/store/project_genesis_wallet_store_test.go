@@ -33,6 +33,9 @@ func TestReplaceProjectGenesisWallets(t *testing.T) {
 	mock.ExpectExec("INSERT INTO project_genesis_wallet").
 		WithArgs(projectContract.Bytes(), walletB.Bytes(), "50", int64(2500), int32(1), "200", txHash.Bytes(), int64(1000)).
 		WillReturnResult(sqlmock.NewResult(2, 1))
+	mock.ExpectExec("UPDATE project").
+		WithArgs(projectContract.Bytes()).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
 	err = store.ReplaceProjectGenesisWallets(context.Background(), projectContract, []ProjectGenesisWallet{

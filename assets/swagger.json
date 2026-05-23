@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-346-g5f65de3-dirty"
+    "version": "v1.0.0-347-gf899f34-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1864,6 +1864,9 @@
         "codeBinHash": {
           "type": "string"
         },
+        "codeBinHashFetchedAt": {
+          "type": "string"
+        },
         "contract": {
           "type": "string"
         },
@@ -1876,6 +1879,9 @@
             "type": "string"
           }
         },
+        "creatorHistoricalProjectsFetchedAt": {
+          "type": "string"
+        },
         "creatorResult": {
           "$ref": "#/definitions/v1alpha1SimulateResult"
         },
@@ -1885,10 +1891,16 @@
             "$ref": "#/definitions/v1alpha1GenesisWalletState"
           }
         },
+        "genesisWalletsFetchedAt": {
+          "type": "string"
+        },
         "isOpenSource": {
           "type": "boolean"
         },
         "sourceCode": {
+          "type": "string"
+        },
+        "sourceCodeFetchedAt": {
           "type": "string"
         },
         "sourceCodeHash": {
@@ -1897,7 +1909,7 @@
         "sourceQualityReport": {
           "type": "string"
         },
-        "sourceQualityReportedAt": {
+        "sourceQualityReportFetchedAt": {
           "type": "string"
         },
         "txHash": {

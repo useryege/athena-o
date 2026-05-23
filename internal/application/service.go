@@ -314,6 +314,10 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context) error {
 	if !ok || genesisWalletStore == nil {
 		return status.Error(codes.FailedPrecondition, "project genesis wallet store is not configured")
 	}
+	creatorHistoricalProjectStore, ok := s.store.(appstore.ProjectCreatorHistoricalProjectStore)
+	if !ok || creatorHistoricalProjectStore == nil {
+		return status.Error(codes.FailedPrecondition, "project creator historical project store is not configured")
+	}
 	if s.projectCache == nil {
 		return status.Error(codes.FailedPrecondition, "project snapshot cache is not configured")
 	}
@@ -365,7 +369,7 @@ func (s *Service) bootstrapProjectCaches(ctx context.Context) error {
 		}
 
 		stageStartedAt = time.Now()
-		projects, stats, err := s.bootstrapBuildProjects(ctx, metas, genesisWalletStore)
+		projects, stats, err := s.bootstrapBuildProjects(ctx, metas, genesisWalletStore, creatorHistoricalProjectStore)
 		if err != nil {
 			logger.WithFields(log.Fields{
 				"attempt":       attempt,
@@ -419,15 +423,15 @@ func (s *Service) bootstrapLoadProjectMetas(ctx context.Context, store appstore.
 	return store.ListAllProjectMetas(ctx)
 }
 
-func (s *Service) bootstrapBuildProjects(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore) ([]*Project, bootstrapBuildStats, error) {
-	return s.buildProjectsFromMetas(ctx, metas, genesisWalletStore)
+func (s *Service) bootstrapBuildProjects(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore, creatorHistoricalProjectStore appstore.ProjectCreatorHistoricalProjectStore) ([]*Project, bootstrapBuildStats, error) {
+	return s.buildProjectsFromMetas(ctx, metas, genesisWalletStore, creatorHistoricalProjectStore)
 }
 
 func (s *Service) bootstrapReplaceCache(ctx context.Context, projects []*Project) error {
 	return s.projectCache.ReplaceAll(ctx, projects)
 }
 
-func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore) ([]*Project, bootstrapBuildStats, error) {
+func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore, creatorHistoricalProjectStore appstore.ProjectCreatorHistoricalProjectStore) ([]*Project, bootstrapBuildStats, error) {
 	stats := bootstrapBuildStats{Total: len(metas)}
 	projects := make([]*Project, 0, len(metas))
 	if len(metas) == 0 {
@@ -435,6 +439,9 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 	}
 	if genesisWalletStore == nil {
 		return nil, stats, status.Error(codes.FailedPrecondition, "project genesis wallet store is not configured")
+	}
+	if creatorHistoricalProjectStore == nil {
+		return nil, stats, status.Error(codes.FailedPrecondition, "project creator historical project store is not configured")
 	}
 
 	contracts := make([]common.Address, 0, len(metas))
@@ -455,16 +462,42 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 	stats.GenesisProjectCount = len(itemsByContract)
 	stats.GenesisWalletCount = genesisWalletCount
 
+	creatorHistoricalProjectsByContract := make(map[common.Address][]common.Address, len(metas))
+	historicalItemsByContract, err := creatorHistoricalProjectStore.ListProjectCreatorHistoricalProjectsByContracts(ctx, contracts)
+	if err != nil {
+		return nil, stats, err
+	}
+	for contract, items := range historicalItemsByContract {
+		creatorHistoricalProjectsByContract[contract] = projectCreatorHistoricalProjectsFromStore(items)
+	}
+
 	for _, meta := range metas {
 		project := &Project{
 			Meta: projectMetaFromStore(meta),
+			Runtime: ProjectRuntime{
+				CreatorHistoricalProjectsFetchedAt: meta.CreatorHistoricalProjectsFetchedAt,
+			},
 		}
 		if genesisWallets, ok := genesisWalletsByContract[meta.Contract]; ok {
 			project.Meta.GenesisWallets = genesisWallets
 		}
+		if historicalProjects, ok := creatorHistoricalProjectsByContract[meta.Contract]; ok {
+			project.Runtime.CreatorHistoricalProjects = historicalProjects
+		}
 		projects = append(projects, project)
 	}
 	return projects, stats, nil
+}
+
+func projectCreatorHistoricalProjectsFromStore(items []appstore.ProjectCreatorHistoricalProject) []common.Address {
+	if len(items) == 0 {
+		return nil
+	}
+	converted := make([]common.Address, 0, len(items))
+	for _, item := range items {
+		converted = append(converted, item.HistoricalProjectContract)
+	}
+	return converted
 }
 
 func projectGenesisWalletsFromStore(items []appstore.ProjectGenesisWallet) []GenesisWalletMeta {

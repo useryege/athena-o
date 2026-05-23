@@ -131,13 +131,21 @@ message ProjectMeta {
 
   optional string sourceQualityReport = 14;
 
-  optional string sourceQualityReportedAt = 15;
+  optional string sourceQualityReportFetchedAt = 15;
 
   optional bool isOpenSource = 16;
 
   optional string sourceCodeHash = 17;
 
   optional string codeBinHash = 18;
+
+  optional string sourceCodeFetchedAt = 19;
+
+  optional string codeBinHashFetchedAt = 20;
+
+  optional string genesisWalletsFetchedAt = 21;
+
+  optional string creatorHistoricalProjectsFetchedAt = 22;
 }
 
 message ProjectOption {

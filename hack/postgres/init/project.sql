@@ -8,9 +8,13 @@ CREATE TABLE IF NOT EXISTS project (
   tx_index BIGINT NOT NULL,
   source_code TEXT,
   source_code_hash BYTEA,
+  source_code_fetched_at TIMESTAMPTZ,
   code_bin_hash BYTEA,
+  code_bin_hash_fetched_at TIMESTAMPTZ,
   source_quality_report TEXT,
-  source_quality_reported_at TIMESTAMPTZ,
+  source_quality_report_fetched_at TIMESTAMPTZ,
+  genesis_wallets_fetched_at TIMESTAMPTZ,
+  creator_historical_projects_fetched_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_contract_len CHECK (length(contract) = 20),
   CONSTRAINT project_creator_len CHECK (length(creator) = 20),
@@ -30,6 +34,22 @@ CREATE INDEX IF NOT EXISTS project_block_order_idx
 
 CREATE INDEX IF NOT EXISTS project_creator_order_idx
   ON project (creator, block_number, tx_index, id);
+
+CREATE TABLE IF NOT EXISTS project_creator_historical_project (
+  id BIGSERIAL PRIMARY KEY,
+  project_contract BYTEA NOT NULL,
+  historical_project_contract BYTEA NOT NULL,
+  rank_index INT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_creator_historical_project_project_contract_len CHECK (length(project_contract) = 20),
+  CONSTRAINT project_creator_historical_project_historical_project_contract_len CHECK (length(historical_project_contract) = 20),
+  CONSTRAINT project_creator_historical_project_rank_index_nonnegative CHECK (rank_index >= 0),
+  CONSTRAINT project_creator_historical_project_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract),
+  CONSTRAINT project_creator_historical_project_uidx UNIQUE (project_contract, historical_project_contract)
+);
+
+CREATE INDEX IF NOT EXISTS project_creator_historical_project_rank_idx
+  ON project_creator_historical_project (project_contract, rank_index);
 
 CREATE TABLE IF NOT EXISTS bytecode_blacklist_contract (
   contract BYTEA PRIMARY KEY,

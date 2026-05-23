@@ -57,6 +57,9 @@ func (p *persistencePublisherFake) PublishProjectSourceQualityReportUpdate(_ con
 	p.sourceQualityReports[contract] = report
 	return nil
 }
+func (p *persistencePublisherFake) PublishProjectCreatorHistoricalProjectsReplace(context.Context, common.Address, []appstore.ProjectCreatorHistoricalProject) error {
+	return nil
+}
 func (p *persistencePublisherFake) PublishBytecodeBlacklistAdd(context.Context, appstore.BytecodeBlacklistContract) error {
 	return nil
 }
@@ -197,8 +200,8 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReports(t *testing.T) 
 	if !ok || project.Meta.SourceQualityReport != "## Report" {
 		t.Fatalf("source quality report = %q, want report", project.Meta.SourceQualityReport)
 	}
-	if project.Meta.SourceQualityReportedAt.IsZero() {
-		t.Fatal("source quality reported at is zero")
+	if project.Meta.SourceQualityReportFetchedAt.IsZero() {
+		t.Fatal("source quality report fetched at is zero")
 	}
 	if publisher.sourceQualityReports[contract] != "## Report" {
 		t.Fatalf("persisted report = %q, want report", publisher.sourceQualityReports[contract])

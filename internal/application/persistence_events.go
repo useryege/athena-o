@@ -34,6 +34,7 @@ const (
 	PersistenceOpProjectMetaSave                 = "project_meta_save"
 	PersistenceOpProjectEventLogAdd              = "project_event_log_add"
 	PersistenceOpProjectGenesisReplace           = "project_genesis_wallet_replace"
+	PersistenceOpProjectCreatorHistoricalReplace = "project_creator_historical_project_replace"
 	PersistenceOpProjectSourceCode               = "project_source_code_update"
 	PersistenceOpProjectCodeBinHash              = "project_code_bin_hash_update"
 	PersistenceOpProjectSourceQualityReport      = "project_source_quality_report_update"
@@ -57,15 +58,21 @@ type PersistenceEvent struct {
 }
 
 type projectMetaSavePayload struct {
-	BlockTime      uint64 `json:"block_time"`
-	BlockNumber    uint64 `json:"block_number"`
-	Contract       string `json:"contract"`
-	Creator        string `json:"creator"`
-	TxHash         string `json:"tx_hash"`
-	TxIndex        uint64 `json:"tx_index"`
-	SourceCode     string `json:"source_code"`
-	SourceCodeHash string `json:"source_code_hash,omitempty"`
-	CodeBinHash    string `json:"code_bin_hash,omitempty"`
+	BlockTime                          uint64 `json:"block_time"`
+	BlockNumber                        uint64 `json:"block_number"`
+	Contract                           string `json:"contract"`
+	Creator                            string `json:"creator"`
+	TxHash                             string `json:"tx_hash"`
+	TxIndex                            uint64 `json:"tx_index"`
+	SourceCode                         string `json:"source_code"`
+	SourceCodeHash                     string `json:"source_code_hash,omitempty"`
+	SourceCodeFetchedAt                string `json:"source_code_fetched_at,omitempty"`
+	CodeBinHash                        string `json:"code_bin_hash,omitempty"`
+	CodeBinHashFetchedAt               string `json:"code_bin_hash_fetched_at,omitempty"`
+	SourceQualityReport                string `json:"source_quality_report,omitempty"`
+	SourceQualityReportFetchedAt       string `json:"source_quality_report_fetched_at,omitempty"`
+	GenesisWalletsFetchedAt            string `json:"genesis_wallets_fetched_at,omitempty"`
+	CreatorHistoricalProjectsFetchedAt string `json:"creator_historical_projects_fetched_at,omitempty"`
 }
 
 type projectSourceCodeUpdatePayload struct {
@@ -105,6 +112,16 @@ type projectGenesisWalletItemPayload struct {
 	Wallet    string `json:"wallet"`
 	NetAmount string `json:"net_amount"`
 	RatioBPS  int64  `json:"ratio_bps"`
+	RankIndex int32  `json:"rank_index"`
+}
+
+type projectCreatorHistoricalProjectReplacePayload struct {
+	Contract string                                       `json:"contract"`
+	Items    []projectCreatorHistoricalProjectItemPayload `json:"items"`
+}
+
+type projectCreatorHistoricalProjectItemPayload struct {
+	Contract  string `json:"contract"`
 	RankIndex int32  `json:"rank_index"`
 }
 
@@ -159,6 +176,7 @@ type PersistenceEventPublisher interface {
 	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error
 	PublishProjectCodeBinHashUpdate(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error
+	PublishProjectCreatorHistoricalProjectsReplace(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
 	PublishBytecodeBlacklistAdd(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	PublishBytecodeBlacklistUpdateNote(ctx context.Context, contract common.Address, note string) error
 	PublishBytecodeBlacklistDelete(ctx context.Context, contract common.Address) error
@@ -176,6 +194,7 @@ type PersistenceEventWriter interface {
 	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
 	WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
+	WriteProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
 	AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	UpdateBytecodeBlacklistContractNote(ctx context.Context, contract common.Address, note string) error
 	DeleteBytecodeBlacklistContract(ctx context.Context, contract common.Address) error
@@ -252,15 +271,21 @@ func (b *RedisPersistenceEventBus) Publish(ctx context.Context, event Persistenc
 
 func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, meta appstore.ProjectMeta) error {
 	payload := projectMetaSavePayload{
-		BlockTime:      meta.BlockTime,
-		BlockNumber:    meta.BlockNumber,
-		Contract:       meta.Contract.Hex(),
-		Creator:        meta.Creator.Hex(),
-		TxHash:         meta.TxHash.Hex(),
-		TxIndex:        meta.TxIndex,
-		SourceCode:     meta.SourceCode,
-		SourceCodeHash: hashToPayload(meta.SourceCodeHash),
-		CodeBinHash:    hashToPayload(meta.CodeBinHash),
+		BlockTime:                          meta.BlockTime,
+		BlockNumber:                        meta.BlockNumber,
+		Contract:                           meta.Contract.Hex(),
+		Creator:                            meta.Creator.Hex(),
+		TxHash:                             meta.TxHash.Hex(),
+		TxIndex:                            meta.TxIndex,
+		SourceCode:                         meta.SourceCode,
+		SourceCodeHash:                     hashToPayload(meta.SourceCodeHash),
+		SourceCodeFetchedAt:                timeToPayload(meta.SourceCodeFetchedAt),
+		CodeBinHash:                        hashToPayload(meta.CodeBinHash),
+		CodeBinHashFetchedAt:               timeToPayload(meta.CodeBinHashFetchedAt),
+		SourceQualityReport:                meta.SourceQualityReport,
+		SourceQualityReportFetchedAt:       timeToPayload(meta.SourceQualityReportFetchedAt),
+		GenesisWalletsFetchedAt:            timeToPayload(meta.GenesisWalletsFetchedAt),
+		CreatorHistoricalProjectsFetchedAt: timeToPayload(meta.CreatorHistoricalProjectsFetchedAt),
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -316,6 +341,24 @@ func hashToPayload(value common.Hash) string {
 	return value.Hex()
 }
 
+func timeToPayload(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+	return value.UTC().Format(time.RFC3339Nano)
+}
+
+func timeFromPayload(value string) (time.Time, error) {
+	if strings.TrimSpace(value) == "" {
+		return time.Time{}, nil
+	}
+	parsed, err := time.Parse(time.RFC3339Nano, value)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return parsed.UTC(), nil
+}
+
 func (b *RedisPersistenceEventBus) PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error {
 	payload := projectSourceQualityReportUpdatePayload{Contract: contract.Hex(), Report: report}
 	data, err := json.Marshal(payload)
@@ -325,6 +368,30 @@ func (b *RedisPersistenceEventBus) PublishProjectSourceQualityReportUpdate(ctx c
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectSourceQualityReport,
+		Contract:   contract.Hex(),
+		Payload:    data,
+		OccurredAt: time.Now().UTC(),
+	})
+}
+
+func (b *RedisPersistenceEventBus) PublishProjectCreatorHistoricalProjectsReplace(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error {
+	payload := projectCreatorHistoricalProjectReplacePayload{
+		Contract: contract.Hex(),
+		Items:    make([]projectCreatorHistoricalProjectItemPayload, 0, len(items)),
+	}
+	for _, item := range items {
+		payload.Items = append(payload.Items, projectCreatorHistoricalProjectItemPayload{
+			Contract:  item.HistoricalProjectContract.Hex(),
+			RankIndex: item.RankIndex,
+		})
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal project creator historical projects payload: %w", err)
+	}
+	return b.Publish(ctx, PersistenceEvent{
+		Version:    persistenceEventVersion,
+		Op:         PersistenceOpProjectCreatorHistoricalReplace,
 		Contract:   contract.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
@@ -713,14 +780,31 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		creator := common.HexToAddress(payload.Creator)
 		txHash := common.HexToHash(payload.TxHash)
 		meta := appstore.ProjectMeta{
-			BlockTime:   payload.BlockTime,
-			BlockNumber: payload.BlockNumber,
-			Contract:    contract,
-			Creator:     creator,
-			TxHash:      txHash,
-			TxIndex:     payload.TxIndex,
-			SourceCode:  payload.SourceCode,
-			CodeBinHash: common.HexToHash(payload.CodeBinHash),
+			BlockTime:           payload.BlockTime,
+			BlockNumber:         payload.BlockNumber,
+			Contract:            contract,
+			Creator:             creator,
+			TxHash:              txHash,
+			TxIndex:             payload.TxIndex,
+			SourceCode:          payload.SourceCode,
+			CodeBinHash:         common.HexToHash(payload.CodeBinHash),
+			SourceQualityReport: payload.SourceQualityReport,
+		}
+		var err error
+		if meta.SourceCodeFetchedAt, err = timeFromPayload(payload.SourceCodeFetchedAt); err != nil {
+			return fmt.Errorf("parse source_code_fetched_at %q: %w", payload.SourceCodeFetchedAt, err)
+		}
+		if meta.CodeBinHashFetchedAt, err = timeFromPayload(payload.CodeBinHashFetchedAt); err != nil {
+			return fmt.Errorf("parse code_bin_hash_fetched_at %q: %w", payload.CodeBinHashFetchedAt, err)
+		}
+		if meta.SourceQualityReportFetchedAt, err = timeFromPayload(payload.SourceQualityReportFetchedAt); err != nil {
+			return fmt.Errorf("parse source_quality_report_fetched_at %q: %w", payload.SourceQualityReportFetchedAt, err)
+		}
+		if meta.GenesisWalletsFetchedAt, err = timeFromPayload(payload.GenesisWalletsFetchedAt); err != nil {
+			return fmt.Errorf("parse genesis_wallets_fetched_at %q: %w", payload.GenesisWalletsFetchedAt, err)
+		}
+		if meta.CreatorHistoricalProjectsFetchedAt, err = timeFromPayload(payload.CreatorHistoricalProjectsFetchedAt); err != nil {
+			return fmt.Errorf("parse creator_historical_projects_fetched_at %q: %w", payload.CreatorHistoricalProjectsFetchedAt, err)
 		}
 		if payload.SourceCodeHash != "" {
 			meta.SourceCodeHash = common.HexToHash(payload.SourceCodeHash)
@@ -755,6 +839,26 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
 		return writer.WriteProjectSourceQualityReport(ctx, common.HexToAddress(payload.Contract), payload.Report)
+	case PersistenceOpProjectCreatorHistoricalReplace:
+		var payload projectCreatorHistoricalProjectReplacePayload
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("unmarshal project creator historical projects replace payload: %w", err)
+		}
+		if !common.IsHexAddress(payload.Contract) {
+			return fmt.Errorf("invalid contract %q", payload.Contract)
+		}
+		items := make([]appstore.ProjectCreatorHistoricalProject, 0, len(payload.Items))
+		for _, entry := range payload.Items {
+			if !common.IsHexAddress(entry.Contract) {
+				return fmt.Errorf("invalid historical project contract %q", entry.Contract)
+			}
+			items = append(items, appstore.ProjectCreatorHistoricalProject{
+				ProjectContract:           common.HexToAddress(payload.Contract),
+				HistoricalProjectContract: common.HexToAddress(entry.Contract),
+				RankIndex:                 entry.RankIndex,
+			})
+		}
+		return writer.WriteProjectCreatorHistoricalProjects(ctx, common.HexToAddress(payload.Contract), items)
 	case PersistenceOpProjectEventLogAdd:
 		var payload projectEventLogAddPayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -999,6 +1103,14 @@ func (w *storePersistenceWriter) WriteProjectCodeBinHash(ctx context.Context, co
 
 func (w *storePersistenceWriter) WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
 	return w.store.UpdateProjectSourceQualityReport(ctx, contract, report)
+}
+
+func (w *storePersistenceWriter) WriteProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error {
+	store, ok := w.store.(appstore.ProjectCreatorHistoricalProjectStore)
+	if !ok || store == nil {
+		return errors.New("project creator historical project store is not configured")
+	}
+	return store.ReplaceProjectCreatorHistoricalProjects(ctx, contract, items)
 }
 
 func (w *storePersistenceWriter) AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error {

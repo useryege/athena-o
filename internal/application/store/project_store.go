@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -42,10 +43,16 @@ INSERT INTO project (
   tx_index,
   source_code,
   source_code_hash,
-  code_bin_hash
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+  source_code_fetched_at,
+  code_bin_hash,
+  code_bin_hash_fetched_at,
+  source_quality_report,
+  source_quality_report_fetched_at,
+  genesis_wallets_fetched_at,
+  creator_historical_projects_fetched_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 ON CONFLICT DO NOTHING
-`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableHashBytes(meta.CodeBinHash))
+`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableTime(meta.SourceCodeFetchedAt), nullableHashBytes(meta.CodeBinHash), nullableTime(meta.CodeBinHashFetchedAt), nullableText(meta.SourceQualityReport), nullableTime(meta.SourceQualityReportFetchedAt), nullableTime(meta.GenesisWalletsFetchedAt), nullableTime(meta.CreatorHistoricalProjectsFetchedAt))
 	if err != nil {
 		return fmt.Errorf("save project meta: %w", err)
 	}
@@ -63,9 +70,13 @@ SELECT
   tx_index,
   source_code,
   source_code_hash,
+  source_code_fetched_at,
   code_bin_hash,
+  code_bin_hash_fetched_at,
   source_quality_report,
-  source_quality_reported_at
+  source_quality_report_fetched_at,
+  genesis_wallets_fetched_at,
+  creator_historical_projects_fetched_at
 FROM project
 ORDER BY block_number, tx_index, id
 `)
@@ -103,9 +114,13 @@ SELECT
   tx_index,
   source_code,
   source_code_hash,
+  source_code_fetched_at,
   code_bin_hash,
+  code_bin_hash_fetched_at,
   source_quality_report,
-  source_quality_reported_at
+  source_quality_report_fetched_at,
+  genesis_wallets_fetched_at,
+  creator_historical_projects_fetched_at
 FROM project
 WHERE creator = $1
 ORDER BY block_number, tx_index, id
@@ -147,9 +162,13 @@ SELECT
   tx_index,
   source_code,
   source_code_hash,
+  source_code_fetched_at,
   code_bin_hash,
+  code_bin_hash_fetched_at,
   source_quality_report,
-  source_quality_reported_at
+  source_quality_report_fetched_at,
+  genesis_wallets_fetched_at,
+  creator_historical_projects_fetched_at
 FROM project
 WHERE creator = $1
   AND (block_number < $2 OR (block_number = $2 AND tx_index < $3))
@@ -181,7 +200,7 @@ func (s *SQLStore) UpdateProjectSourceCode(ctx context.Context, contract common.
 	}
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project
-SET source_code = $2, source_code_hash = $3
+SET source_code = $2, source_code_hash = $3, source_code_fetched_at = now()
 WHERE contract = $1
 `, contract.Bytes(), sourceCode, nullableHashBytes(sourceCodeHash))
 	if err != nil {
@@ -193,7 +212,7 @@ WHERE contract = $1
 func (s *SQLStore) UpdateProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project
-SET code_bin_hash = $2
+SET code_bin_hash = $2, code_bin_hash_fetched_at = now()
 WHERE contract = $1
 `, contract.Bytes(), nullableHashBytes(codeBinHash))
 	if err != nil {
@@ -205,7 +224,7 @@ WHERE contract = $1
 func (s *SQLStore) UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project
-SET source_quality_report = $2, source_quality_reported_at = now()
+SET source_quality_report = $2, source_quality_report_fetched_at = now()
 WHERE contract = $1
 `, contract.Bytes(), report)
 	if err != nil {
@@ -225,9 +244,13 @@ SELECT
   tx_index,
   source_code,
   source_code_hash,
+  source_code_fetched_at,
   code_bin_hash,
+  code_bin_hash_fetched_at,
   source_quality_report,
-  source_quality_reported_at
+  source_quality_report_fetched_at,
+  genesis_wallets_fetched_at,
+  creator_historical_projects_fetched_at
 FROM project
 WHERE contract = $1
 `, contract.Bytes())
@@ -255,11 +278,15 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	var txIndex int64
 	var sourceCode sql.NullString
 	var sourceCodeHash []byte
+	var sourceCodeFetchedAt sql.NullTime
 	var codeBinHash []byte
+	var codeBinHashFetchedAt sql.NullTime
 	var sourceQualityReport sql.NullString
-	var sourceQualityReportedAt sql.NullTime
+	var sourceQualityReportFetchedAt sql.NullTime
+	var genesisWalletsFetchedAt sql.NullTime
+	var creatorHistoricalProjectsFetchedAt sql.NullTime
 
-	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &codeBinHash, &sourceQualityReport, &sourceQualityReportedAt); err != nil {
+	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &codeBinHash, &codeBinHashFetchedAt, &sourceQualityReport, &sourceQualityReportFetchedAt, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
 		return ProjectMeta{}, fmt.Errorf("scan project meta: %w", err)
 	}
 	if blockNumber < 0 {
@@ -280,10 +307,22 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	meta.TxIndex = uint64(txIndex)
 	meta.SourceCode = sourceCode.String
 	meta.SourceCodeHash = common.BytesToHash(sourceCodeHash)
+	if sourceCodeFetchedAt.Valid {
+		meta.SourceCodeFetchedAt = sourceCodeFetchedAt.Time
+	}
 	meta.CodeBinHash = common.BytesToHash(codeBinHash)
+	if codeBinHashFetchedAt.Valid {
+		meta.CodeBinHashFetchedAt = codeBinHashFetchedAt.Time
+	}
 	meta.SourceQualityReport = sourceQualityReport.String
-	if sourceQualityReportedAt.Valid {
-		meta.SourceQualityReportedAt = sourceQualityReportedAt.Time
+	if sourceQualityReportFetchedAt.Valid {
+		meta.SourceQualityReportFetchedAt = sourceQualityReportFetchedAt.Time
+	}
+	if genesisWalletsFetchedAt.Valid {
+		meta.GenesisWalletsFetchedAt = genesisWalletsFetchedAt.Time
+	}
+	if creatorHistoricalProjectsFetchedAt.Valid {
+		meta.CreatorHistoricalProjectsFetchedAt = creatorHistoricalProjectsFetchedAt.Time
 	}
 	return meta, nil
 }
@@ -300,6 +339,13 @@ func nullableHashBytes(value common.Hash) any {
 		return nil
 	}
 	return value.Bytes()
+}
+
+func nullableTime(value time.Time) any {
+	if value.IsZero() {
+		return nil
+	}
+	return value.UTC()
 }
 
 func normalizePage(page int32, pageSize int32) (int32, int32) {

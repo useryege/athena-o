@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"regexp"
 	"testing"
 	"time"
 
@@ -9,6 +10,71 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
+
+func TestSaveProjectMetaIncludesFetchedAtColumns(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	store := NewSQLStore(db)
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000A1")
+	creator := common.HexToAddress("0x00000000000000000000000000000000000000B2")
+	txHash := common.HexToHash("0x1234")
+	sourceCode := "contract C {}"
+	sourceCodeHash := crypto.Keccak256Hash([]byte(sourceCode))
+	codeBinHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
+	sourceCodeFetchedAt := time.Date(2026, 5, 23, 1, 0, 0, 0, time.UTC)
+	codeBinHashFetchedAt := time.Date(2026, 5, 23, 2, 0, 0, 0, time.UTC)
+	sourceQualityReportFetchedAt := time.Date(2026, 5, 23, 3, 0, 0, 0, time.UTC)
+	genesisWalletsFetchedAt := time.Date(2026, 5, 23, 4, 0, 0, 0, time.UTC)
+	creatorHistoricalProjectsFetchedAt := time.Date(2026, 5, 23, 5, 0, 0, 0, time.UTC)
+
+	mock.ExpectExec(regexp.QuoteMeta("VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)")).
+		WithArgs(
+			int64(100),
+			int64(200),
+			contract.Bytes(),
+			creator.Bytes(),
+			txHash.Bytes(),
+			int64(3),
+			sourceCode,
+			sourceCodeHash.Bytes(),
+			sourceCodeFetchedAt,
+			codeBinHash.Bytes(),
+			codeBinHashFetchedAt,
+			"## Report",
+			sourceQualityReportFetchedAt,
+			genesisWalletsFetchedAt,
+			creatorHistoricalProjectsFetchedAt,
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	err = store.SaveProjectMeta(context.Background(), ProjectMeta{
+		BlockNumber:                        100,
+		BlockTime:                          200,
+		Contract:                           contract,
+		Creator:                            creator,
+		TxHash:                             txHash,
+		TxIndex:                            3,
+		SourceCode:                         sourceCode,
+		SourceCodeHash:                     sourceCodeHash,
+		SourceCodeFetchedAt:                sourceCodeFetchedAt,
+		CodeBinHash:                        codeBinHash,
+		CodeBinHashFetchedAt:               codeBinHashFetchedAt,
+		SourceQualityReport:                "## Report",
+		SourceQualityReportFetchedAt:       sourceQualityReportFetchedAt,
+		GenesisWalletsFetchedAt:            genesisWalletsFetchedAt,
+		CreatorHistoricalProjectsFetchedAt: creatorHistoricalProjectsFetchedAt,
+	})
+	if err != nil {
+		t.Fatalf("save project meta: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
 
 func TestUpdateProjectSourceCode(t *testing.T) {
 	db, mock, err := sqlmock.New()
@@ -98,8 +164,8 @@ func TestListProjectMetasIncludesSourceCode(t *testing.T) {
 	codeBinHash := common.HexToHash("0x2222222222222222222222222222222222222222222222222222222222222222")
 
 	rows := sqlmock.NewRows([]string{
-		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "source_code_hash", "code_bin_hash", "source_quality_report", "source_quality_reported_at",
-	}).AddRow(int64(100), int64(200), contract.Bytes(), creator.Bytes(), txHash.Bytes(), int64(3), sourceCode, sourceCodeHash.Bytes(), codeBinHash.Bytes(), report, reportedAt)
+		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "source_code_hash", "source_code_fetched_at", "code_bin_hash", "code_bin_hash_fetched_at", "source_quality_report", "source_quality_report_fetched_at", "genesis_wallets_fetched_at", "creator_historical_projects_fetched_at",
+	}).AddRow(int64(100), int64(200), contract.Bytes(), creator.Bytes(), txHash.Bytes(), int64(3), sourceCode, sourceCodeHash.Bytes(), reportedAt, codeBinHash.Bytes(), reportedAt, report, reportedAt, reportedAt, reportedAt)
 
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 
@@ -122,8 +188,8 @@ func TestListProjectMetasIncludesSourceCode(t *testing.T) {
 	if metas[0].SourceQualityReport != report {
 		t.Fatalf("source quality report = %q, want %q", metas[0].SourceQualityReport, report)
 	}
-	if !metas[0].SourceQualityReportedAt.Equal(reportedAt) {
-		t.Fatalf("source quality reported at = %s, want %s", metas[0].SourceQualityReportedAt, reportedAt)
+	if !metas[0].SourceQualityReportFetchedAt.Equal(reportedAt) {
+		t.Fatalf("source quality report fetched at = %s, want %s", metas[0].SourceQualityReportFetchedAt, reportedAt)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("expectations were not met: %v", err)
@@ -143,8 +209,8 @@ func TestListProjectMetasNullSourceCodeReturnsEmptyString(t *testing.T) {
 	txHash := common.HexToHash("0x5678")
 
 	rows := sqlmock.NewRows([]string{
-		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "source_code_hash", "code_bin_hash", "source_quality_report", "source_quality_reported_at",
-	}).AddRow(int64(101), int64(201), contract.Bytes(), creator.Bytes(), txHash.Bytes(), int64(4), nil, nil, nil, nil, nil)
+		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "source_code_hash", "source_code_fetched_at", "code_bin_hash", "code_bin_hash_fetched_at", "source_quality_report", "source_quality_report_fetched_at", "genesis_wallets_fetched_at", "creator_historical_projects_fetched_at",
+	}).AddRow(int64(101), int64(201), contract.Bytes(), creator.Bytes(), txHash.Bytes(), int64(4), nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 
@@ -161,8 +227,8 @@ func TestListProjectMetasNullSourceCodeReturnsEmptyString(t *testing.T) {
 	if metas[0].SourceQualityReport != "" {
 		t.Fatalf("source quality report = %q, want empty", metas[0].SourceQualityReport)
 	}
-	if !metas[0].SourceQualityReportedAt.IsZero() {
-		t.Fatalf("source quality reported at = %s, want zero", metas[0].SourceQualityReportedAt)
+	if !metas[0].SourceQualityReportFetchedAt.IsZero() {
+		t.Fatalf("source quality report fetched at = %s, want zero", metas[0].SourceQualityReportFetchedAt)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("expectations were not met: %v", err)
@@ -184,9 +250,9 @@ func TestListProjectMetasByCreator(t *testing.T) {
 	txHashB := common.HexToHash("0x5678")
 
 	rows := sqlmock.NewRows([]string{
-		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "source_code_hash", "code_bin_hash", "source_quality_report", "source_quality_reported_at",
-	}).AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), txHashA.Bytes(), int64(1), "contract A {}", nil, nil, "", nil).
-		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), txHashB.Bytes(), int64(2), "contract B {}", nil, nil, "report", time.Now())
+		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "source_code_hash", "source_code_fetched_at", "code_bin_hash", "code_bin_hash_fetched_at", "source_quality_report", "source_quality_report_fetched_at", "genesis_wallets_fetched_at", "creator_historical_projects_fetched_at",
+	}).AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), txHashA.Bytes(), int64(1), "contract A {}", nil, nil, nil, nil, "", nil, nil, nil).
+		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), txHashB.Bytes(), int64(2), "contract B {}", nil, nil, nil, nil, "report", time.Now(), nil, nil)
 
 	mock.ExpectQuery("SELECT").
 		WithArgs(creator.Bytes()).
@@ -222,9 +288,9 @@ func TestListProjectMetasByCreatorBefore(t *testing.T) {
 	txHashB := common.HexToHash("0x5678")
 
 	rows := sqlmock.NewRows([]string{
-		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "source_code_hash", "code_bin_hash", "source_quality_report", "source_quality_reported_at",
-	}).AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), txHashA.Bytes(), int64(1), "contract A {}", nil, nil, "", nil).
-		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), txHashB.Bytes(), int64(2), "contract B {}", nil, nil, "report", time.Now())
+		"block_number", "block_time", "contract", "creator", "tx_hash", "tx_index", "source_code", "source_code_hash", "source_code_fetched_at", "code_bin_hash", "code_bin_hash_fetched_at", "source_quality_report", "source_quality_report_fetched_at", "genesis_wallets_fetched_at", "creator_historical_projects_fetched_at",
+	}).AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), txHashA.Bytes(), int64(1), "contract A {}", nil, nil, nil, nil, "", nil, nil, nil).
+		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), txHashB.Bytes(), int64(2), "contract B {}", nil, nil, nil, nil, "report", time.Now(), nil, nil)
 
 	mock.ExpectQuery("WHERE creator = \\$1").
 		WithArgs(creator.Bytes(), int64(102), int64(0)).

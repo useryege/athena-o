@@ -33,8 +33,14 @@ export interface ProjectMeta {
     genesisWallets?: GenesisWalletState[];
     creatorHistoricalProjects?: string[];
     sourceQualityReport?: string;
-    sourceQualityReportedAt?: string;
+    sourceQualityReportFetchedAt?: string;
+    sourceCodeFetchedAt?: string;
+    codeBinHashFetchedAt?: string;
+    genesisWalletsFetchedAt?: string;
+    creatorHistoricalProjectsFetchedAt?: string;
     isOpenSource?: boolean;
+    sourceCodeHash?: string;
+    codeBinHash?: string;
 }
 
 export interface GenesisWalletState {

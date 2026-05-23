@@ -59,6 +59,14 @@ INSERT INTO project_genesis_wallet (
 		}
 	}
 
+	if _, err := tx.ExecContext(ctx, `
+UPDATE project
+SET genesis_wallets_fetched_at = now()
+WHERE contract = $1
+`, contract.Bytes()); err != nil {
+		return fmt.Errorf("update project genesis wallets fetched at: %w", err)
+	}
+
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit replace project genesis wallets tx: %w", err)
 	}
