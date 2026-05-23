@@ -75,6 +75,27 @@ func (c *policyReevaluationProjectCache) ListProjects(context.Context) ([]*Proje
 	return projects, nil
 }
 
+func (c *policyReevaluationProjectCache) ListProjectsByPairAddresses(_ context.Context, pairs []common.Address) ([]*Project, error) {
+	pairSet := make(map[common.Address]struct{}, len(pairs))
+	for _, pair := range pairs {
+		pairSet[pair] = struct{}{}
+	}
+	projects := make([]*Project, 0)
+	for _, project := range c.projects {
+		if project == nil {
+			continue
+		}
+		if _, ok := pairSet[project.Meta.WethPair]; ok {
+			projects = append(projects, project)
+			continue
+		}
+		if _, ok := pairSet[project.Meta.UsdtPair]; ok {
+			projects = append(projects, project)
+		}
+	}
+	return projects, nil
+}
+
 func (c *policyReevaluationProjectCache) ListProjectsPage(_ context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
 	projects, err := c.ListProjects(context.Background())
 	if err != nil {

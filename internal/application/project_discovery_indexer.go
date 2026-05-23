@@ -272,20 +272,38 @@ func (w *projectDiscoveryIndexerImpl) processNextBlock(ctx context.Context, curs
 }
 
 func (w *projectDiscoveryIndexerImpl) scanBlock(ctx context.Context, blockNumber uint64, source ProjectDiscoverySource) error {
+	errCh := make(chan error, 2)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		if err := w.scanBlockProjectCreations(ctx, blockNumber, source); err != nil {
+			errCh <- err
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		if err := w.scanBlockPairSwaps(ctx, blockNumber); err != nil {
+			errCh <- err
+		}
+	}()
+
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (w *projectDiscoveryIndexerImpl) scanBlockProjectCreations(ctx context.Context, blockNumber uint64, source ProjectDiscoverySource) error {
 	block, err := w.nodeClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
 	if err != nil {
 		return fmt.Errorf("failed to get block %d: %w", blockNumber, err)
-	}
-
-	swapPairAddresses, err := w.fetchPancakeV2SwapPairAddresses(ctx, blockNumber)
-	if err != nil {
-		return fmt.Errorf("failed to fetch pancake v2 swap logs for block %d: %w", blockNumber, err)
-	}
-	for _, pairAddress := range swapPairAddresses {
-		log.WithFields(log.Fields{
-			"blockNumber": blockNumber,
-			"pairAddress": pairAddress.Hex(),
-		}).Info("pancake v2 swap pair detected")
 	}
 
 	candidates := w.discoverBlockCandidates(block, blockNumber, source)
@@ -296,6 +314,23 @@ func (w *projectDiscoveryIndexerImpl) scanBlock(ctx context.Context, blockNumber
 		return errors.New("discovery intake is not configured")
 	}
 	return w.intake.IntakeCandidates(ctx, candidates)
+}
+
+func (w *projectDiscoveryIndexerImpl) scanBlockPairSwaps(ctx context.Context, blockNumber uint64) error {
+	swapPairAddresses, err := w.fetchPancakeV2SwapPairAddresses(ctx, blockNumber)
+	if err != nil {
+		return fmt.Errorf("failed to fetch pancake v2 swap logs for block %d: %w", blockNumber, err)
+	}
+	for _, pairAddress := range swapPairAddresses {
+		log.WithFields(log.Fields{
+			"blockNumber": blockNumber,
+			"pairAddress": pairAddress.Hex(),
+		}).Info("pancake v2 swap pair detected")
+	}
+	if err := w.scheduleProjectsBySwapPairs(ctx, blockNumber, swapPairAddresses); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (w *projectDiscoveryIndexerImpl) fetchPancakeV2SwapPairAddresses(ctx context.Context, blockNumber uint64) ([]common.Address, error) {
@@ -322,6 +357,129 @@ func (w *projectDiscoveryIndexerImpl) fetchPancakeV2SwapPairAddresses(ctx contex
 		pairAddresses = append(pairAddresses, entry.Address)
 	}
 	return pairAddresses, nil
+}
+
+func (w *projectDiscoveryIndexerImpl) scheduleProjectsBySwapPairs(ctx context.Context, blockNumber uint64, pairAddresses []common.Address) error {
+	pairAddresses = uniqueProjectPairAddresses(pairAddresses)
+	if len(pairAddresses) == 0 {
+		return nil
+	}
+	projects, matchedPairs, err := w.projectsByCachedSwapPairs(ctx, pairAddresses)
+	if err != nil {
+		return fmt.Errorf("match swap pairs from cache: %w", err)
+	}
+	unmatchedPairs := unmatchedProjectPairAddresses(pairAddresses, matchedPairs)
+	if len(unmatchedPairs) > 0 {
+		dbProjects, err := w.projectsByStoredSwapPairs(ctx, unmatchedPairs)
+		if err != nil {
+			return fmt.Errorf("match swap pairs from store: %w", err)
+		}
+		projects = append(projects, dbProjects...)
+	}
+
+	candidates := discoveredCandidatesFromSwapProjects(blockNumber, projects)
+	if len(candidates) == 0 {
+		return nil
+	}
+	if w.intake == nil {
+		return errors.New("discovery intake is not configured")
+	}
+	log.WithFields(log.Fields{
+		"blockNumber":  blockNumber,
+		"projectCount": len(candidates),
+	}).Info("scheduling projects from pancake v2 swap pairs")
+	return w.intake.ScheduleProjects(ctx, candidates)
+}
+
+func (w *projectDiscoveryIndexerImpl) projectsByCachedSwapPairs(ctx context.Context, pairAddresses []common.Address) ([]*Project, map[common.Address]struct{}, error) {
+	matchedPairs := make(map[common.Address]struct{})
+	if w.projectCache == nil {
+		return nil, matchedPairs, nil
+	}
+	projects, err := w.projectCache.ListProjectsByPairAddresses(ctx, pairAddresses)
+	if err != nil {
+		return nil, nil, err
+	}
+	pairSet := addressSet(pairAddresses)
+	for _, project := range projects {
+		markProjectMatchedPairs(project, pairSet, matchedPairs)
+	}
+	return projects, matchedPairs, nil
+}
+
+func (w *projectDiscoveryIndexerImpl) projectsByStoredSwapPairs(ctx context.Context, pairAddresses []common.Address) ([]*Project, error) {
+	if w.projectStore == nil {
+		return nil, nil
+	}
+	metas, err := w.projectStore.ListProjectMetasByPairAddresses(ctx, pairAddresses)
+	if err != nil {
+		return nil, err
+	}
+	projects := make([]*Project, 0, len(metas))
+	for _, meta := range metas {
+		project := &Project{Meta: projectMetaFromStore(meta)}
+		projects = append(projects, project)
+		if w.projectCache != nil {
+			if err := w.projectCache.SetProject(ctx, project); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return projects, nil
+}
+
+func discoveredCandidatesFromSwapProjects(blockNumber uint64, projects []*Project) []DiscoveredProjectCandidate {
+	seen := make(map[common.Address]struct{}, len(projects))
+	candidates := make([]DiscoveredProjectCandidate, 0, len(projects))
+	for _, project := range projects {
+		if project == nil || project.Meta.Contract == (common.Address{}) {
+			continue
+		}
+		if _, ok := seen[project.Meta.Contract]; ok {
+			continue
+		}
+		seen[project.Meta.Contract] = struct{}{}
+		candidates = append(candidates, DiscoveredProjectCandidate{
+			BlockTime:   project.Meta.BlockTime,
+			BlockNumber: blockNumber,
+			TxIndex:     project.Meta.TxIndex,
+			TxHash:      project.Meta.TxHash,
+			Contract:    project.Meta.Contract,
+			Creator:     project.Meta.Creator,
+			Source:      ProjectDiscoverySourcePairSwap,
+		})
+	}
+	return candidates
+}
+
+func unmatchedProjectPairAddresses(pairAddresses []common.Address, matchedPairs map[common.Address]struct{}) []common.Address {
+	unmatched := make([]common.Address, 0, len(pairAddresses))
+	for _, pair := range pairAddresses {
+		if _, ok := matchedPairs[pair]; ok {
+			continue
+		}
+		unmatched = append(unmatched, pair)
+	}
+	return unmatched
+}
+
+func markProjectMatchedPairs(project *Project, pairSet map[common.Address]struct{}, matchedPairs map[common.Address]struct{}) {
+	if project == nil {
+		return
+	}
+	for _, pair := range projectPairAddresses(project) {
+		if _, ok := pairSet[pair]; ok {
+			matchedPairs[pair] = struct{}{}
+		}
+	}
+}
+
+func addressSet(items []common.Address) map[common.Address]struct{} {
+	result := make(map[common.Address]struct{}, len(items))
+	for _, item := range items {
+		result[item] = struct{}{}
+	}
+	return result
 }
 
 func (w *projectDiscoveryIndexerImpl) discoverBlockCandidates(block *types.Block, blockNumber uint64, source ProjectDiscoverySource) []DiscoveredProjectCandidate {
@@ -360,4 +518,14 @@ func (d *discoveryIntakeImpl) IntakeCandidates(ctx context.Context, items []Disc
 		return nil
 	}
 	return d.reconciler.InitProject(ctx, items)
+}
+
+func (d *discoveryIntakeImpl) ScheduleProjects(ctx context.Context, items []DiscoveredProjectCandidate) error {
+	if len(items) == 0 {
+		return nil
+	}
+	if d == nil || d.reconciler == nil {
+		return nil
+	}
+	return d.reconciler.ScheduleProjects(ctx, items)
 }

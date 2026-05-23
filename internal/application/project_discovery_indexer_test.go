@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"math/big"
 	"testing"
 
@@ -109,7 +110,9 @@ type swapLogDiscoveryNodeClientFake struct {
 	blockByNumberCalls int
 	filterLogsCalls    int
 	block              *types.Block
+	blockErr           error
 	logs               []types.Log
+	filterErr          error
 	gotQuery           ethereum.FilterQuery
 }
 
@@ -123,6 +126,9 @@ func (f *swapLogDiscoveryNodeClientFake) BlockNumber(context.Context) (uint64, e
 
 func (f *swapLogDiscoveryNodeClientFake) BlockByNumber(context.Context, *big.Int) (*types.Block, error) {
 	f.blockByNumberCalls++
+	if f.blockErr != nil {
+		return nil, f.blockErr
+	}
 	return f.block, nil
 }
 
@@ -133,6 +139,9 @@ func (f *swapLogDiscoveryNodeClientFake) TransactionReceipt(context.Context, com
 func (f *swapLogDiscoveryNodeClientFake) FilterLogs(_ context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
 	f.filterLogsCalls++
 	f.gotQuery = q
+	if f.filterErr != nil {
+		return nil, f.filterErr
+	}
 	return append([]types.Log(nil), f.logs...), nil
 }
 
@@ -142,8 +151,10 @@ func (f *swapLogDiscoveryNodeClientFake) ChainID(context.Context) (*big.Int, err
 
 type discoveryProjectStoreFake struct {
 	metas       []appstore.ProjectMeta
+	pairMetas   []appstore.ProjectMeta
 	errs        []error
 	calls       int
+	pairCalls   int
 	maxBlock    uint64
 	maxBlockOK  bool
 	maxBlockErr error
@@ -151,6 +162,7 @@ type discoveryProjectStoreFake struct {
 	gotCreator     common.Address
 	gotBlockNumber uint64
 	gotTxIndex     uint64
+	gotPairs       []common.Address
 }
 
 func (s *discoveryProjectStoreFake) SaveProjectMeta(context.Context, appstore.ProjectMeta) error {
@@ -167,6 +179,12 @@ func (s *discoveryProjectStoreFake) ListProjectMetas(context.Context) ([]appstor
 
 func (s *discoveryProjectStoreFake) ListAllProjectMetas(context.Context) ([]appstore.ProjectMeta, error) {
 	return nil, nil
+}
+
+func (s *discoveryProjectStoreFake) ListProjectMetasByPairAddresses(_ context.Context, pairs []common.Address) ([]appstore.ProjectMeta, error) {
+	s.pairCalls++
+	s.gotPairs = append([]common.Address(nil), pairs...)
+	return append([]appstore.ProjectMeta(nil), s.pairMetas...), nil
 }
 
 func (s *discoveryProjectStoreFake) UpdateProjectSourceCode(context.Context, common.Address, string) error {
@@ -290,9 +308,222 @@ func TestProjectDiscoveryIndexerScanBlockScansSwapLogsWithoutCandidatesOrIntake(
 	}
 }
 
+func TestProjectDiscoveryIndexerScanBlockRunsProjectCreationAndSwapTasks(t *testing.T) {
+	ctx := context.Background()
+	node := &swapLogDiscoveryNodeClientFake{
+		block: types.NewBlockWithHeader(&types.Header{Number: big.NewInt(123)}),
+		logs: []types.Log{
+			{Address: common.HexToAddress("0x00000000000000000000000000000000000000a1")},
+		},
+	}
+	indexer := &projectDiscoveryIndexerImpl{
+		nodeClient: node,
+		intake:     &discoveryIntakeImpl{reconciler: &intakeReconcilerFake{}},
+	}
+
+	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
+		t.Fatalf("scan block: %v", err)
+	}
+	if node.blockByNumberCalls != 1 {
+		t.Fatalf("block by number calls = %d, want 1", node.blockByNumberCalls)
+	}
+	if node.filterLogsCalls != 1 {
+		t.Fatalf("filter logs calls = %d, want 1", node.filterLogsCalls)
+	}
+}
+
+func TestProjectDiscoveryIndexerScanBlockReturnsProjectCreationTaskError(t *testing.T) {
+	ctx := context.Background()
+	node := &swapLogDiscoveryNodeClientFake{
+		blockErr: errors.New("block failed"),
+	}
+	indexer := &projectDiscoveryIndexerImpl{nodeClient: node}
+
+	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err == nil {
+		t.Fatal("scan block error = nil, want error")
+	}
+	if node.blockByNumberCalls != 1 {
+		t.Fatalf("block by number calls = %d, want 1", node.blockByNumberCalls)
+	}
+	if node.filterLogsCalls != 1 {
+		t.Fatalf("filter logs calls = %d, want 1", node.filterLogsCalls)
+	}
+}
+
+func TestProjectDiscoveryIndexerScanBlockReturnsPairSwapTaskError(t *testing.T) {
+	ctx := context.Background()
+	node := &swapLogDiscoveryNodeClientFake{
+		block:     types.NewBlockWithHeader(&types.Header{Number: big.NewInt(123)}),
+		filterErr: errors.New("filter failed"),
+	}
+	indexer := &projectDiscoveryIndexerImpl{nodeClient: node}
+
+	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err == nil {
+		t.Fatal("scan block error = nil, want error")
+	}
+	if node.blockByNumberCalls != 1 {
+		t.Fatalf("block by number calls = %d, want 1", node.blockByNumberCalls)
+	}
+	if node.filterLogsCalls != 1 {
+		t.Fatalf("filter logs calls = %d, want 1", node.filterLogsCalls)
+	}
+}
+
+func TestProjectDiscoveryIndexerSchedulesCachedProjectBySwapPair(t *testing.T) {
+	ctx := context.Background()
+	cache := newProjectSnapshotCacheTest(t)
+	pair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		BlockNumber: 77,
+		Contract:    contract,
+		WethPair:    pair,
+	}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	node := &swapLogDiscoveryNodeClientFake{
+		block: types.NewBlockWithHeader(&types.Header{Number: big.NewInt(123)}),
+		logs:  []types.Log{{Address: pair}},
+	}
+	store := &discoveryProjectStoreFake{}
+	reconciler := &intakeReconcilerFake{}
+	indexer := &projectDiscoveryIndexerImpl{
+		nodeClient:   node,
+		projectCache: cache,
+		projectStore: store,
+		intake:       &discoveryIntakeImpl{reconciler: reconciler},
+	}
+
+	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
+		t.Fatalf("scan block: %v", err)
+	}
+	if store.pairCalls != 0 {
+		t.Fatalf("store pair calls = %d, want 0", store.pairCalls)
+	}
+	if reconciler.scheduleCalls != 1 || len(reconciler.scheduled) != 1 {
+		t.Fatalf("scheduled = calls %d items %d, want 1/1", reconciler.scheduleCalls, len(reconciler.scheduled))
+	}
+	if got := reconciler.scheduled[0]; got.Contract != contract || got.Source != ProjectDiscoverySourcePairSwap {
+		t.Fatalf("scheduled candidate = %+v, want contract %s source %s", got, contract.Hex(), ProjectDiscoverySourcePairSwap)
+	}
+}
+
+func TestProjectDiscoveryIndexerSchedulesStoredProjectBySwapPairAndSeedsCache(t *testing.T) {
+	ctx := context.Background()
+	cache := newProjectSnapshotCacheTest(t)
+	pair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
+	node := &swapLogDiscoveryNodeClientFake{
+		block: types.NewBlockWithHeader(&types.Header{Number: big.NewInt(123)}),
+		logs:  []types.Log{{Address: pair}},
+	}
+	store := &discoveryProjectStoreFake{pairMetas: []appstore.ProjectMeta{{
+		BlockNumber: 77,
+		Contract:    contract,
+		WethPair:    pair,
+	}}}
+	reconciler := &intakeReconcilerFake{}
+	indexer := &projectDiscoveryIndexerImpl{
+		nodeClient:   node,
+		projectCache: cache,
+		projectStore: store,
+		intake:       &discoveryIntakeImpl{reconciler: reconciler},
+	}
+
+	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
+		t.Fatalf("scan block: %v", err)
+	}
+	if store.pairCalls != 1 || len(store.gotPairs) != 1 || store.gotPairs[0] != pair {
+		t.Fatalf("store pair query = calls %d pairs %v, want one call with %s", store.pairCalls, store.gotPairs, pair.Hex())
+	}
+	if reconciler.scheduleCalls != 1 || len(reconciler.scheduled) != 1 {
+		t.Fatalf("scheduled = calls %d items %d, want 1/1", reconciler.scheduleCalls, len(reconciler.scheduled))
+	}
+	if got := reconciler.scheduled[0]; got.Contract != contract || got.Source != ProjectDiscoverySourcePairSwap {
+		t.Fatalf("scheduled candidate = %+v, want contract %s source %s", got, contract.Hex(), ProjectDiscoverySourcePairSwap)
+	}
+	cached, exists, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get cached project: %v", err)
+	}
+	if !exists || cached == nil || cached.Meta.WethPair != pair {
+		t.Fatalf("cached project = %+v exists %t, want weth pair %s", cached, exists, pair.Hex())
+	}
+}
+
+func TestProjectDiscoveryIndexerSkipsSwapPairsWithoutProjectMatch(t *testing.T) {
+	ctx := context.Background()
+	cache := newProjectSnapshotCacheTest(t)
+	pair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	node := &swapLogDiscoveryNodeClientFake{
+		block: types.NewBlockWithHeader(&types.Header{Number: big.NewInt(123)}),
+		logs:  []types.Log{{Address: pair}},
+	}
+	store := &discoveryProjectStoreFake{}
+	reconciler := &intakeReconcilerFake{}
+	indexer := &projectDiscoveryIndexerImpl{
+		nodeClient:   node,
+		projectCache: cache,
+		projectStore: store,
+		intake:       &discoveryIntakeImpl{reconciler: reconciler},
+	}
+
+	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
+		t.Fatalf("scan block: %v", err)
+	}
+	if store.pairCalls != 1 {
+		t.Fatalf("store pair calls = %d, want 1", store.pairCalls)
+	}
+	if reconciler.scheduleCalls != 0 {
+		t.Fatalf("schedule calls = %d, want 0", reconciler.scheduleCalls)
+	}
+}
+
+func TestProjectDiscoveryIndexerDeduplicatesSwapPairProjectSchedules(t *testing.T) {
+	ctx := context.Background()
+	cache := newProjectSnapshotCacheTest(t)
+	wethPair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000a2")
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		Contract: contract,
+		WethPair: wethPair,
+		UsdtPair: usdtPair,
+	}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	node := &swapLogDiscoveryNodeClientFake{
+		block: types.NewBlockWithHeader(&types.Header{Number: big.NewInt(123)}),
+		logs: []types.Log{
+			{Address: wethPair},
+			{Address: wethPair},
+			{Address: usdtPair},
+		},
+	}
+	reconciler := &intakeReconcilerFake{}
+	indexer := &projectDiscoveryIndexerImpl{
+		nodeClient:   node,
+		projectCache: cache,
+		projectStore: &discoveryProjectStoreFake{},
+		intake:       &discoveryIntakeImpl{reconciler: reconciler},
+	}
+
+	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
+		t.Fatalf("scan block: %v", err)
+	}
+	if reconciler.scheduleCalls != 1 || len(reconciler.scheduled) != 1 {
+		t.Fatalf("scheduled = calls %d items %d, want 1/1", reconciler.scheduleCalls, len(reconciler.scheduled))
+	}
+	if reconciler.scheduled[0].Contract != contract {
+		t.Fatalf("scheduled contract = %s, want %s", reconciler.scheduled[0].Contract.Hex(), contract.Hex())
+	}
+}
+
 type intakeReconcilerFake struct {
-	calls int
-	items []DiscoveredProjectCandidate
+	calls         int
+	scheduleCalls int
+	items         []DiscoveredProjectCandidate
+	scheduled     []DiscoveredProjectCandidate
 }
 
 func (r *intakeReconcilerFake) Start(context.Context) error { return nil }
@@ -301,6 +532,12 @@ func (r *intakeReconcilerFake) Stop() error                 { return nil }
 func (r *intakeReconcilerFake) InitProject(_ context.Context, items []DiscoveredProjectCandidate) error {
 	r.calls++
 	r.items = append([]DiscoveredProjectCandidate(nil), items...)
+	return nil
+}
+
+func (r *intakeReconcilerFake) ScheduleProjects(_ context.Context, items []DiscoveredProjectCandidate) error {
+	r.scheduleCalls++
+	r.scheduled = append([]DiscoveredProjectCandidate(nil), items...)
 	return nil
 }
 

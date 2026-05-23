@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -152,6 +153,75 @@ func (s *SQLStore) ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, erro
 	return s.ListProjectMetas(ctx)
 }
 
+func (s *SQLStore) ListProjectMetasByPairAddresses(ctx context.Context, pairs []common.Address) ([]ProjectMeta, error) {
+	uniquePairs := uniqueNonZeroAddresses(pairs)
+	if len(uniquePairs) == 0 {
+		return nil, nil
+	}
+
+	placeholders := make([]string, 0, len(uniquePairs))
+	args := make([]any, 0, len(uniquePairs))
+	for i, pair := range uniquePairs {
+		placeholders = append(placeholders, fmt.Sprintf("$%d", i+1))
+		args = append(args, pair.Bytes())
+	}
+	inClause := strings.Join(placeholders, ", ")
+	rows, err := s.db.QueryContext(ctx, fmt.Sprintf(`
+SELECT
+  block_number,
+  block_time,
+  contract,
+  creator,
+  weth_pair,
+  usdt_pair,
+  fetch_at,
+  tx_hash,
+  tx_index,
+  source_code,
+  source_code_hash,
+  source_code_fetched_at,
+  code_bin_hash,
+  code_bin_hash_fetched_at,
+  source_quality_report,
+  source_quality_report_fetched_at,
+  creator_result_can_mint_from_dead_via_transfer_from,
+  creator_result_can_mint_from_zero_via_transfer_from,
+  creator_result_can_mint_from_weth_pair_via_transfer_from,
+  creator_result_can_mint_from_usdt_pair_via_transfer_from,
+  creator_result_can_mint_via_transfer_to_weth_pair,
+  creator_result_can_mint_via_transfer_to_usdt_pair,
+  creator_result_fetched_at,
+  report_is_policy_evaluated,
+  report_is_blacklisted_creator_wallet,
+  report_is_blacklisted_genesis_wallet,
+  report_is_blacklisted_bytecode,
+  report_is_blacklisted_source_code,
+  report_has_mint_risk,
+  genesis_wallets_fetched_at,
+  creator_historical_projects_fetched_at
+FROM project
+WHERE weth_pair IN (%s) OR usdt_pair IN (%s)
+ORDER BY block_number, tx_index, id
+`, inClause, inClause), args...)
+	if err != nil {
+		return nil, fmt.Errorf("list project metas by pair addresses: %w", err)
+	}
+	defer rows.Close()
+
+	metas := make([]ProjectMeta, 0)
+	for rows.Next() {
+		meta, err := scanProjectMetaRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		metas = append(metas, meta)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate project metas by pair addresses: %w", err)
+	}
+	return metas, nil
+}
+
 func (s *SQLStore) ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error) {
 	rows, err := s.db.QueryContext(ctx, `
 SELECT
@@ -207,6 +277,22 @@ ORDER BY block_number, tx_index, id
 		return nil, fmt.Errorf("iterate project metas by creator: %w", err)
 	}
 	return metas, nil
+}
+
+func uniqueNonZeroAddresses(items []common.Address) []common.Address {
+	seen := make(map[common.Address]struct{}, len(items))
+	unique := make([]common.Address, 0, len(items))
+	for _, item := range items {
+		if item == (common.Address{}) {
+			continue
+		}
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		unique = append(unique, item)
+	}
+	return unique
 }
 
 func (s *SQLStore) ListProjectMetasByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error) {

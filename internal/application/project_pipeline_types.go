@@ -19,6 +19,7 @@ type ProjectDiscoveryIndexer interface {
 type ProjectStateReconciler interface {
 	Lifecycle
 	InitProject(ctx context.Context, candidates []DiscoveredProjectCandidate) error
+	ScheduleProjects(ctx context.Context, candidates []DiscoveredProjectCandidate) error
 }
 
 type ProjectPolicyEngine interface {
@@ -41,8 +42,10 @@ type ProjectDiscoverySource string
 const (
 	ProjectDiscoverySourceCatchUp     ProjectDiscoverySource = "catch_up"
 	ProjectDiscoverySourceFollowHeads ProjectDiscoverySource = "follow_heads"
+	ProjectDiscoverySourcePairSwap    ProjectDiscoverySource = "pair_swap"
 )
 
 type DiscoveryIntake interface {
 	IntakeCandidates(ctx context.Context, items []DiscoveredProjectCandidate) error
+	ScheduleProjects(ctx context.Context, items []DiscoveredProjectCandidate) error
 }

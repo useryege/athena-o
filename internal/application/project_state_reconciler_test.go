@@ -208,6 +208,9 @@ func (c *initProjectNoGetCacheFake) GetProject(context.Context, common.Address) 
 func (c *initProjectNoGetCacheFake) ListProjects(context.Context) ([]*Project, error) {
 	return nil, nil
 }
+func (c *initProjectNoGetCacheFake) ListProjectsByPairAddresses(context.Context, []common.Address) ([]*Project, error) {
+	return nil, nil
+}
 func (c *initProjectNoGetCacheFake) ListProjectsPage(context.Context, int32, int32) ([]*Project, int64, int32, int32, error) {
 	return nil, 0, 0, 0, nil
 }
@@ -586,23 +589,52 @@ func TestProjectStateReconcilerSchedulePolicies(t *testing.T) {
 	reconciler := &projectStateReconcilerImpl{}
 	catchUpContract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	followContract := common.HexToAddress("0x00000000000000000000000000000000000000a2")
+	pairSwapContract := common.HexToAddress("0x00000000000000000000000000000000000000a3")
 
 	reconciler.scheduleProject(DiscoveredProjectCandidate{Contract: catchUpContract, Source: ProjectDiscoverySourceCatchUp})
 	reconciler.scheduleProject(DiscoveredProjectCandidate{Contract: followContract, Source: ProjectDiscoverySourceFollowHeads})
+	reconciler.scheduleProject(DiscoveredProjectCandidate{Contract: pairSwapContract, Source: ProjectDiscoverySourcePairSwap})
 
 	catchUp := reconciler.scheduled[catchUpContract]
 	follow := reconciler.scheduled[followContract]
+	pairSwap := reconciler.scheduled[pairSwapContract]
 	if catchUp == nil || catchUp.interval != time.Minute {
 		t.Fatalf("catch-up schedule = %+v, want 1m interval", catchUp)
 	}
-	if ttl := catchUp.expiresAt.Sub(catchUp.nextRunAt); ttl < 2*time.Minute || ttl > 3*time.Minute {
-		t.Fatalf("catch-up ttl after first run = %s, want about 2m", ttl)
+	if ttl := catchUp.expiresAt.Sub(catchUp.nextRunAt); ttl < 59*time.Minute || ttl > 60*time.Minute {
+		t.Fatalf("catch-up ttl after first run = %s, want about 59m", ttl)
 	}
 	if follow == nil || follow.interval != time.Minute {
 		t.Fatalf("follow-heads schedule = %+v, want 1m interval", follow)
 	}
 	if ttl := follow.expiresAt.Sub(follow.nextRunAt); ttl < 359*time.Minute || ttl > 360*time.Minute {
 		t.Fatalf("follow-heads ttl after first run = %s, want about 359m", ttl)
+	}
+	if pairSwap == nil || pairSwap.interval != time.Minute {
+		t.Fatalf("pair-swap schedule = %+v, want 1m interval", pairSwap)
+	}
+	if ttl := pairSwap.expiresAt.Sub(pairSwap.nextRunAt); ttl < 59*time.Minute || ttl > 60*time.Minute {
+		t.Fatalf("pair-swap ttl after first run = %s, want about 59m", ttl)
+	}
+}
+
+func TestProjectStateReconcilerScheduleProjectsDoesNotUseInitFetcher(t *testing.T) {
+	ctx := context.Background()
+	reconciler := &projectStateReconcilerImpl{scheduled: map[common.Address]*scheduledProject{}}
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+
+	if err := reconciler.ScheduleProjects(ctx, []DiscoveredProjectCandidate{{
+		Contract: contract,
+		Source:   ProjectDiscoverySourcePairSwap,
+	}}); err != nil {
+		t.Fatalf("schedule projects: %v", err)
+	}
+	item := reconciler.scheduled[contract]
+	if item == nil {
+		t.Fatal("project was not scheduled")
+	}
+	if item.source != ProjectDiscoverySourcePairSwap {
+		t.Fatalf("schedule source = %s, want %s", item.source, ProjectDiscoverySourcePairSwap)
 	}
 }
 

@@ -207,6 +207,19 @@ func (r *projectStateReconcilerImpl) InitProject(ctx context.Context, candidates
 	return nil
 }
 
+func (r *projectStateReconcilerImpl) ScheduleProjects(ctx context.Context, candidates []DiscoveredProjectCandidate) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	for _, candidate := range candidates {
+		if candidate.Source == "" {
+			candidate.Source = ProjectDiscoverySourceCatchUp
+		}
+		r.scheduleProject(candidate)
+	}
+	return nil
+}
+
 func projectFromCandidate(candidate DiscoveredProjectCandidate) *Project {
 	if candidate.Contract == (common.Address{}) {
 		return nil

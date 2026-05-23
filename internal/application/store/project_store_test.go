@@ -476,6 +476,40 @@ func TestListProjectMetasByCreator(t *testing.T) {
 	}
 }
 
+func TestListProjectMetasByPairAddresses(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	store := NewSQLStore(db)
+	pair := common.HexToAddress("0x00000000000000000000000000000000000000C3")
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000A1")
+	creator := common.HexToAddress("0x00000000000000000000000000000000000000B2")
+	txHash := common.HexToHash("0x1234")
+	rows := sqlmock.NewRows(projectMetaRowColumns()).
+		AddRow(int64(100), int64(200), contract.Bytes(), creator.Bytes(), pair.Bytes(), common.Address{}.Bytes(), time.Now(), txHash.Bytes(), int64(1), "contract A {}", nil, nil, nil, nil, "", nil, false, false, false, false, false, false, nil, false, false, false, false, false, false, nil, nil)
+
+	mock.ExpectQuery("WHERE weth_pair IN \\(\\$1\\) OR usdt_pair IN \\(\\$1\\)").
+		WithArgs(pair.Bytes()).
+		WillReturnRows(rows)
+
+	metas, err := store.ListProjectMetasByPairAddresses(context.Background(), []common.Address{common.Address{}, pair, pair})
+	if err != nil {
+		t.Fatalf("list project metas by pair addresses: %v", err)
+	}
+	if len(metas) != 1 {
+		t.Fatalf("metas len = %d, want 1", len(metas))
+	}
+	if metas[0].Contract != contract || metas[0].WethPair != pair {
+		t.Fatalf("meta contract/pair = %s/%s, want %s/%s", metas[0].Contract.Hex(), metas[0].WethPair.Hex(), contract.Hex(), pair.Hex())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
 func TestListProjectMetasByCreatorBefore(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {

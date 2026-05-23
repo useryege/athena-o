@@ -292,6 +292,10 @@ func (s *projectSnapshotFallbackStore) ListAllProjectMetas(ctx context.Context) 
 	return s.ListProjectMetas(ctx)
 }
 
+func (s *projectSnapshotFallbackStore) ListProjectMetasByPairAddresses(context.Context, []common.Address) ([]appstore.ProjectMeta, error) {
+	return nil, nil
+}
+
 func (s *projectSnapshotFallbackStore) UpdateProjectSourceCode(context.Context, common.Address, string) error {
 	return nil
 }

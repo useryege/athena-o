@@ -40,7 +40,8 @@ const (
 
 	projectSchemaVersion = "11"
 
-	projectIndexAll = "project:index:all"
+	projectIndexAll        = "project:index:all"
+	projectIndexPairPrefix = "project:index:pair:"
 
 	projectSnapshotCacheTTL = 24 * time.Hour
 )
@@ -53,6 +54,7 @@ type ProjectSnapshotCache interface {
 	DeleteProject(ctx context.Context, contract common.Address) error
 	GetProject(ctx context.Context, contract common.Address) (*Project, bool, error)
 	ListProjects(ctx context.Context) ([]*Project, error)
+	ListProjectsByPairAddresses(ctx context.Context, pairs []common.Address) ([]*Project, error)
 	ListProjectsPage(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error)
 }
 
@@ -175,6 +177,38 @@ func (c *RedisProjectSnapshotCache) ListProjects(ctx context.Context) ([]*Projec
 	return projects, nil
 }
 
+func (c *RedisProjectSnapshotCache) ListProjectsByPairAddresses(ctx context.Context, pairs []common.Address) ([]*Project, error) {
+	if c == nil || c.client == nil {
+		return nil, nil
+	}
+	seenContracts := make(map[string]struct{})
+	contracts := make([]string, 0)
+	for _, pair := range uniqueProjectPairAddresses(pairs) {
+		items, err := c.client.ZRange(ctx, projectPairIndexKey(pair), 0, -1)
+		if err != nil {
+			return nil, err
+		}
+		for _, contract := range items {
+			if _, ok := seenContracts[contract]; ok {
+				continue
+			}
+			seenContracts[contract] = struct{}{}
+			contracts = append(contracts, contract)
+		}
+	}
+	projects, err := c.getProjectsByContracts(ctx, contracts)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(projects, func(i, j int) bool {
+		if projects[i].Meta.BlockNumber != projects[j].Meta.BlockNumber {
+			return projects[i].Meta.BlockNumber < projects[j].Meta.BlockNumber
+		}
+		return projects[i].Meta.TxIndex < projects[j].Meta.TxIndex
+	})
+	return projects, nil
+}
+
 func (c *RedisProjectSnapshotCache) ListProjectsPage(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
 	if c == nil || c.client == nil {
 		return nil, 0, 0, 0, nil
@@ -235,7 +269,15 @@ func (c *RedisProjectSnapshotCache) contractLock(contractKey string) *sync.Mutex
 }
 
 func (c *RedisProjectSnapshotCache) setProjectUnlocked(ctx context.Context, project *Project) error {
+	current, exists, err := c.getProjectUnlocked(ctx, project.Meta.Contract)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		current = nil
+	}
 	pipe := c.client.TxPipeline()
+	c.removeProjectPairIndexes(ctx, pipe, current)
 	if err := c.writeProjectAllToPipeline(ctx, pipe, project); err != nil {
 		return err
 	}
@@ -253,6 +295,9 @@ func (c *RedisProjectSnapshotCache) updateProjectUnlocked(ctx context.Context, c
 		projectKey := projectDataV2Key(next.Meta.Contract)
 		pipe.HSet(ctx, projectKey, fields)
 		pipe.Expire(ctx, projectKey, projectSnapshotCacheTTL)
+	}
+	if current == nil || current.Meta.WethPair != next.Meta.WethPair || current.Meta.UsdtPair != next.Meta.UsdtPair {
+		c.removeProjectPairIndexes(ctx, pipe, current)
 	}
 	c.applyProjectIndexes(ctx, pipe, next)
 	return pipe.Exec(ctx)
@@ -421,11 +466,19 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 }
 
 func (c *RedisProjectSnapshotCache) deleteProjectUnlocked(ctx context.Context, contract common.Address) error {
+	current, exists, err := c.getProjectUnlocked(ctx, contract)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		current = nil
+	}
 	contractKey := contract.Hex()
 	pipe := c.client.TxPipeline()
 	pipe.Del(ctx, projectDataV2Key(contract))
 	pipe.HDel(ctx, projectDataHashKey, contractKey)
 	pipe.ZRem(ctx, projectIndexAll, contractKey)
+	c.removeProjectPairIndexes(ctx, pipe, current)
 	return pipe.Exec(ctx)
 }
 
@@ -549,6 +602,21 @@ func (c *RedisProjectSnapshotCache) applyProjectIndexes(ctx context.Context, pip
 	contractKey := project.Meta.Contract.Hex()
 	pipe.ZAdd(ctx, projectIndexAll, redisport.ZMember{Score: projectScore(project), Member: contractKey})
 	pipe.Expire(ctx, projectIndexAll, projectSnapshotCacheTTL)
+	for _, pair := range projectPairAddresses(project) {
+		key := projectPairIndexKey(pair)
+		pipe.ZAdd(ctx, key, redisport.ZMember{Score: projectScore(project), Member: contractKey})
+		pipe.Expire(ctx, key, projectSnapshotCacheTTL)
+	}
+}
+
+func (c *RedisProjectSnapshotCache) removeProjectPairIndexes(ctx context.Context, pipe redisport.Pipeline, project *Project) {
+	if project == nil {
+		return
+	}
+	contractKey := project.Meta.Contract.Hex()
+	for _, pair := range projectPairAddresses(project) {
+		pipe.ZRem(ctx, projectPairIndexKey(pair), contractKey)
+	}
 }
 
 func (c *RedisProjectSnapshotCache) getProjectsByContracts(ctx context.Context, contracts []string) ([]*Project, error) {
@@ -570,6 +638,33 @@ func (c *RedisProjectSnapshotCache) getProjectsByContracts(ctx context.Context, 
 
 func projectDataV2Key(contract common.Address) string {
 	return projectDataV2KeyPrefix + contract.Hex()
+}
+
+func projectPairIndexKey(pair common.Address) string {
+	return projectIndexPairPrefix + pair.Hex()
+}
+
+func projectPairAddresses(project *Project) []common.Address {
+	if project == nil {
+		return nil
+	}
+	return uniqueProjectPairAddresses([]common.Address{project.Meta.WethPair, project.Meta.UsdtPair})
+}
+
+func uniqueProjectPairAddresses(items []common.Address) []common.Address {
+	seen := make(map[common.Address]struct{}, len(items))
+	unique := make([]common.Address, 0, len(items))
+	for _, item := range items {
+		if item == (common.Address{}) {
+			continue
+		}
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		unique = append(unique, item)
+	}
+	return unique
 }
 
 func cloneProjectForCache(project *Project) *Project {

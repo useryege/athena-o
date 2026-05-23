@@ -47,6 +47,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS project_contract_idx
 CREATE UNIQUE INDEX IF NOT EXISTS project_tx_hash_idx
   ON project (tx_hash);
 
+CREATE INDEX IF NOT EXISTS project_weth_pair_idx
+  ON project (weth_pair);
+
+CREATE INDEX IF NOT EXISTS project_usdt_pair_idx
+  ON project (usdt_pair);
+
 CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (block_number, tx_index, id);
 

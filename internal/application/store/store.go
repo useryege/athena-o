@@ -97,6 +97,7 @@ type ProjectStore interface {
 	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
 	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
 	ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, error)
+	ListProjectMetasByPairAddresses(ctx context.Context, pairs []common.Address) ([]ProjectMeta, error)
 	UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
 	UpdateProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error

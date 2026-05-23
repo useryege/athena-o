@@ -105,6 +105,100 @@ func TestRedisProjectSnapshotCacheUpdateRefreshesTTL(t *testing.T) {
 	assertRedisTTLNear(t, client, projectIndexAll, projectSnapshotCacheTTL)
 }
 
+func TestRedisProjectSnapshotCacheListProjectsByPairAddresses(t *testing.T) {
+	ctx := context.Background()
+	mini := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
+	wethPair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000a2")
+	first := common.HexToAddress("0x00000000000000000000000000000000000000c1")
+	second := common.HexToAddress("0x00000000000000000000000000000000000000c2")
+
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		BlockNumber: 1,
+		Contract:    first,
+		WethPair:    wethPair,
+	}}); err != nil {
+		t.Fatalf("set first project: %v", err)
+	}
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		BlockNumber: 2,
+		Contract:    second,
+		UsdtPair:    usdtPair,
+	}}); err != nil {
+		t.Fatalf("set second project: %v", err)
+	}
+
+	projects, err := cache.ListProjectsByPairAddresses(ctx, []common.Address{wethPair, usdtPair, wethPair, common.Address{}})
+	if err != nil {
+		t.Fatalf("list projects by pair addresses: %v", err)
+	}
+	if len(projects) != 2 {
+		t.Fatalf("project count = %d, want 2", len(projects))
+	}
+	if projects[0].Meta.Contract != first || projects[1].Meta.Contract != second {
+		t.Fatalf("projects = %s/%s, want %s/%s", projects[0].Meta.Contract.Hex(), projects[1].Meta.Contract.Hex(), first.Hex(), second.Hex())
+	}
+}
+
+func TestRedisProjectSnapshotCacheUpdatesAndDeletesPairIndexes(t *testing.T) {
+	ctx := context.Background()
+	mini := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
+	oldPair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+	newPair := common.HexToAddress("0x00000000000000000000000000000000000000a2")
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
+
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		Contract: contract,
+		WethPair: oldPair,
+	}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	changed, err := cache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+		if !exists || current == nil {
+			t.Fatal("project missing during update")
+		}
+		current.Meta.WethPair = newPair
+		return current, true, nil
+	})
+	if err != nil {
+		t.Fatalf("update project: %v", err)
+	}
+	if !changed {
+		t.Fatal("changed = false, want true")
+	}
+	oldProjects, err := cache.ListProjectsByPairAddresses(ctx, []common.Address{oldPair})
+	if err != nil {
+		t.Fatalf("list old pair projects: %v", err)
+	}
+	if len(oldProjects) != 0 {
+		t.Fatalf("old pair project count = %d, want 0", len(oldProjects))
+	}
+	newProjects, err := cache.ListProjectsByPairAddresses(ctx, []common.Address{newPair})
+	if err != nil {
+		t.Fatalf("list new pair projects: %v", err)
+	}
+	if len(newProjects) != 1 || newProjects[0].Meta.Contract != contract {
+		t.Fatalf("new pair projects = %+v, want contract %s", newProjects, contract.Hex())
+	}
+
+	if err := cache.DeleteProject(ctx, contract); err != nil {
+		t.Fatalf("delete project: %v", err)
+	}
+	deletedProjects, err := cache.ListProjectsByPairAddresses(ctx, []common.Address{newPair})
+	if err != nil {
+		t.Fatalf("list deleted pair projects: %v", err)
+	}
+	if len(deletedProjects) != 0 {
+		t.Fatalf("deleted pair project count = %d, want 0", len(deletedProjects))
+	}
+}
+
 func assertRedisTTLNear(t *testing.T, client *redis.Client, key string, want time.Duration) {
 	t.Helper()
 	ttl, err := client.TTL(context.Background(), key).Result()
