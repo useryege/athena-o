@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
 	"strings"
 	"sync"
 	"time"
@@ -31,9 +30,6 @@ import (
 const (
 	binBlacklistScanInterval          = time.Minute
 	sourceCodeScanPageSize            = 200
-	bootstrapRetryInterval            = 3 * time.Second
-	bootstrapMaxRetryInterval         = 30 * time.Second
-	bootstrapMaxRetryWindow           = 10 * time.Minute
 	projectPolicyTriggerQueueCapacity = 4096
 )
 
@@ -244,10 +240,6 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		}
 	}
 
-	if err := s.bootstrapProjectCaches(ctx); err != nil {
-		return nil, nil, nil, err
-	}
-
 	if s.persistenceBus != nil && s.persistenceWriter != nil {
 		go s.runPersistenceEventLoop(ctx)
 	}
@@ -285,218 +277,6 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		return nil, nil, nil, err
 	}
 	return pipeline, apiFetcher, policyTriggerCh, nil
-}
-
-func (s *Service) bootstrapProjectCaches(ctx context.Context) error {
-	store, ok := s.store.(appstore.ProjectStore)
-	if !ok || store == nil {
-		return status.Error(codes.FailedPrecondition, "project store is not configured")
-	}
-	genesisWalletStore, ok := s.store.(appstore.ProjectGenesisWalletStore)
-	if !ok || genesisWalletStore == nil {
-		return status.Error(codes.FailedPrecondition, "project genesis wallet store is not configured")
-	}
-	creatorHistoricalProjectStore, ok := s.store.(appstore.ProjectCreatorHistoricalProjectStore)
-	if !ok || creatorHistoricalProjectStore == nil {
-		return status.Error(codes.FailedPrecondition, "project creator historical project store is not configured")
-	}
-	if s.projectCache == nil {
-		return status.Error(codes.FailedPrecondition, "project snapshot cache is not configured")
-	}
-	if redisCache, ok := s.projectCache.(*RedisProjectSnapshotCache); ok && (redisCache == nil || redisCache.client == nil) {
-		return status.Error(codes.FailedPrecondition, "project snapshot cache redis client is not configured")
-	}
-
-	startedAt := time.Now()
-	logger := log.WithField("component", "bootstrapProjectCaches")
-	logger.WithFields(log.Fields{
-		"retry_interval": bootstrapRetryInterval.String(),
-		"retry_max":      bootstrapMaxRetryInterval.String(),
-		"retry_window":   bootstrapMaxRetryWindow.String(),
-	}).Info("starting project cache bootstrap")
-
-	attempt := 0
-	backoff := bootstrapRetryInterval
-	for {
-		if err := ctx.Err(); err != nil {
-			logger.WithFields(log.Fields{
-				"attempt": attempt,
-				"elapsed": time.Since(startedAt).String(),
-				"reason":  err.Error(),
-			}).Info("project cache bootstrap canceled")
-			return err
-		}
-		if time.Since(startedAt) > bootstrapMaxRetryWindow {
-			return fmt.Errorf("project cache bootstrap exceeded max retry window %s after %d attempts", bootstrapMaxRetryWindow, attempt)
-		}
-
-		attempt++
-
-		stageStartedAt := time.Now()
-		metas, err := s.bootstrapLoadProjectMetas(ctx, store)
-		if err != nil {
-			logger.WithFields(log.Fields{
-				"attempt":       attempt,
-				"stage":         "list_all_project_metas",
-				"duration":      time.Since(stageStartedAt).String(),
-				"error":         err.Error(),
-				"next_retry_in": backoff.String(),
-				"elapsed":       time.Since(startedAt).String(),
-			}).Warn("project cache bootstrap stage failed, retrying")
-			if err := waitBootstrapRetry(ctx, backoff); err != nil {
-				return err
-			}
-			backoff = nextBootstrapBackoff(backoff)
-			continue
-		}
-
-		stageStartedAt = time.Now()
-		projects, stats, err := s.bootstrapBuildProjects(ctx, metas, genesisWalletStore, creatorHistoricalProjectStore)
-		if err != nil {
-			logger.WithFields(log.Fields{
-				"attempt":       attempt,
-				"stage":         "build_projects_from_metas",
-				"duration":      time.Since(stageStartedAt).String(),
-				"error":         err.Error(),
-				"next_retry_in": backoff.String(),
-				"elapsed":       time.Since(startedAt).String(),
-			}).Warn("project cache bootstrap stage failed, retrying")
-			if err := waitBootstrapRetry(ctx, backoff); err != nil {
-				return err
-			}
-			backoff = nextBootstrapBackoff(backoff)
-			continue
-		}
-
-		stageStartedAt = time.Now()
-		if err := s.bootstrapReplaceCache(ctx, projects); err != nil {
-			logger.WithFields(log.Fields{
-				"attempt":       attempt,
-				"stage":         "replace_all_cache",
-				"duration":      time.Since(stageStartedAt).String(),
-				"error":         err.Error(),
-				"next_retry_in": backoff.String(),
-				"elapsed":       time.Since(startedAt).String(),
-			}).Warn("project cache bootstrap stage failed, retrying")
-			if err := waitBootstrapRetry(ctx, backoff); err != nil {
-				return err
-			}
-			backoff = nextBootstrapBackoff(backoff)
-			continue
-		}
-
-		logger.WithFields(log.Fields{
-			"attempt":          attempt,
-			"project_count":    len(projects),
-			"total_meta_count": stats.Total,
-			"elapsed":          time.Since(startedAt).String(),
-		}).Info("project cache bootstrap completed")
-		return nil
-	}
-}
-
-type bootstrapBuildStats struct {
-	Total               int
-	GenesisProjectCount int
-	GenesisWalletCount  int
-}
-
-func (s *Service) bootstrapLoadProjectMetas(ctx context.Context, store appstore.ProjectStore) ([]appstore.ProjectMeta, error) {
-	return store.ListAllProjectMetas(ctx)
-}
-
-func (s *Service) bootstrapBuildProjects(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore, creatorHistoricalProjectStore appstore.ProjectCreatorHistoricalProjectStore) ([]*Project, bootstrapBuildStats, error) {
-	return s.buildProjectsFromMetas(ctx, metas, genesisWalletStore, creatorHistoricalProjectStore)
-}
-
-func (s *Service) bootstrapReplaceCache(ctx context.Context, projects []*Project) error {
-	return s.projectCache.ReplaceAll(ctx, projects)
-}
-
-func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.ProjectMeta, genesisWalletStore appstore.ProjectGenesisWalletStore, creatorHistoricalProjectStore appstore.ProjectCreatorHistoricalProjectStore) ([]*Project, bootstrapBuildStats, error) {
-	stats := bootstrapBuildStats{Total: len(metas)}
-	projects := make([]*Project, 0, len(metas))
-	if len(metas) == 0 {
-		return projects, stats, nil
-	}
-	if genesisWalletStore == nil {
-		return nil, stats, status.Error(codes.FailedPrecondition, "project genesis wallet store is not configured")
-	}
-	if creatorHistoricalProjectStore == nil {
-		return nil, stats, status.Error(codes.FailedPrecondition, "project creator historical project store is not configured")
-	}
-
-	contracts := make([]common.Address, 0, len(metas))
-	for _, meta := range metas {
-		contracts = append(contracts, meta.Contract)
-	}
-
-	genesisWalletsByContract := make(map[common.Address][]GenesisWalletMeta, len(metas))
-	itemsByContract, err := genesisWalletStore.ListProjectGenesisWalletsByContracts(ctx, contracts)
-	if err != nil {
-		return nil, stats, err
-	}
-	genesisWalletCount := 0
-	for contract, items := range itemsByContract {
-		genesisWalletCount += len(items)
-		genesisWalletsByContract[contract] = projectGenesisWalletsFromStore(items)
-	}
-	stats.GenesisProjectCount = len(itemsByContract)
-	stats.GenesisWalletCount = genesisWalletCount
-
-	creatorHistoricalProjectsByContract := make(map[common.Address][]common.Address, len(metas))
-	historicalItemsByContract, err := creatorHistoricalProjectStore.ListProjectCreatorHistoricalProjectsByContracts(ctx, contracts)
-	if err != nil {
-		return nil, stats, err
-	}
-	for contract, items := range historicalItemsByContract {
-		creatorHistoricalProjectsByContract[contract] = projectCreatorHistoricalProjectsFromStore(items)
-	}
-
-	for _, meta := range metas {
-		project := &Project{
-			Meta: projectMetaFromStore(meta),
-		}
-		if genesisWallets, ok := genesisWalletsByContract[meta.Contract]; ok {
-			project.Meta.GenesisWallets = genesisWallets
-		}
-		if historicalProjects, ok := creatorHistoricalProjectsByContract[meta.Contract]; ok {
-			project.Meta.CreatorHistoricalProjects = historicalProjects
-		}
-		projects = append(projects, project)
-	}
-	return projects, stats, nil
-}
-
-func projectCreatorHistoricalProjectsFromStore(items []appstore.ProjectCreatorHistoricalProject) []common.Address {
-	if len(items) == 0 {
-		return nil
-	}
-	converted := make([]common.Address, 0, len(items))
-	for _, item := range items {
-		converted = append(converted, item.HistoricalProjectContract)
-	}
-	return converted
-}
-
-func projectGenesisWalletsFromStore(items []appstore.ProjectGenesisWallet) []GenesisWalletMeta {
-	if len(items) == 0 {
-		return nil
-	}
-	converted := make([]GenesisWalletMeta, 0, len(items))
-	for _, item := range items {
-		netAmount := new(big.Int)
-		if item.NetAmount != nil {
-			netAmount = new(big.Int).Set(item.NetAmount)
-		}
-		converted = append(converted, GenesisWalletMeta{
-			Wallet:    item.Wallet,
-			NetAmount: netAmount,
-			RatioBPS:  item.RatioBPS,
-			RankIndex: item.RankIndex,
-		})
-	}
-	return converted
 }
 
 func genesisWalletAddressesFromMetas(items []GenesisWalletMeta) []common.Address {
@@ -594,23 +374,6 @@ func (s *Service) Stop() error {
 	}
 
 	return pipelineErr
-}
-
-func waitBootstrapRetry(ctx context.Context, delay time.Duration) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-time.After(delay):
-		return nil
-	}
-}
-
-func nextBootstrapBackoff(current time.Duration) time.Duration {
-	next := current * 2
-	if next > bootstrapMaxRetryInterval {
-		return bootstrapMaxRetryInterval
-	}
-	return next
 }
 
 func (s *Service) clearPipelineLocked() {
