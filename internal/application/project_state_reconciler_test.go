@@ -12,12 +12,50 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 type sourceQualityAnalyzerFake struct {
 	report string
 	err    error
 	calls  int
+}
+
+type simulationFetcherFake struct {
+	states []athenacontract.AthenaSimulationState
+	err    error
+}
+
+func (f *simulationFetcherFake) FetchProject(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaProject, error) {
+	return athenacontract.AthenaProject{}, f.err
+}
+
+func (f *simulationFetcherFake) FetchProjects(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProject, error) {
+	return nil, f.err
+}
+
+func (f *simulationFetcherFake) FetchProjectsWithSimulationState(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {
+	return nil, f.err
+}
+
+func (f *simulationFetcherFake) FetchSimulationState(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaSimulationState, error) {
+	if len(f.states) == 0 {
+		return athenacontract.AthenaSimulationState{}, f.err
+	}
+	return f.states[0], f.err
+}
+
+func (f *simulationFetcherFake) FetchSimulationStates(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaSimulationState, error) {
+	return append([]athenacontract.AthenaSimulationState(nil), f.states...), f.err
+}
+
+type projectSimulatorFake struct {
+	result SimulateResult
+	err    error
+}
+
+func (s *projectSimulatorFake) SimulatePrimary(context.Context, common.Address, common.Address, common.Address, common.Address, athenacontract.AthenaSimulationState) (SimulateResult, error) {
+	return s.result, s.err
 }
 
 func (f *sourceQualityAnalyzerFake) AnalyzeContractSource(context.Context, string) (string, error) {
@@ -31,6 +69,8 @@ func (f *sourceQualityAnalyzerFake) AnalyzeContractSource(context.Context, strin
 type persistencePublisherFake struct {
 	sourceQualityReports map[common.Address]string
 	codeBinHashes        map[common.Address]common.Hash
+	creatorResults       map[common.Address]SimulateResult
+	err                  error
 }
 
 func (p *persistencePublisherFake) Publish(context.Context, PersistenceEvent) error { return nil }
@@ -44,6 +84,9 @@ func (p *persistencePublisherFake) PublishProjectSourceCodeUpdate(context.Contex
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectCodeBinHashUpdate(_ context.Context, contract common.Address, codeBinHash common.Hash) error {
+	if p.err != nil {
+		return p.err
+	}
 	if p.codeBinHashes == nil {
 		p.codeBinHashes = map[common.Address]common.Hash{}
 	}
@@ -51,10 +94,23 @@ func (p *persistencePublisherFake) PublishProjectCodeBinHashUpdate(_ context.Con
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectSourceQualityReportUpdate(_ context.Context, contract common.Address, report string) error {
+	if p.err != nil {
+		return p.err
+	}
 	if p.sourceQualityReports == nil {
 		p.sourceQualityReports = map[common.Address]string{}
 	}
 	p.sourceQualityReports[contract] = report
+	return nil
+}
+func (p *persistencePublisherFake) PublishProjectCreatorResultUpdate(_ context.Context, contract common.Address, result SimulateResult) error {
+	if p.err != nil {
+		return p.err
+	}
+	if p.creatorResults == nil {
+		p.creatorResults = map[common.Address]SimulateResult{}
+	}
+	p.creatorResults[contract] = result
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectCreatorHistoricalProjectsReplace(context.Context, common.Address, []appstore.ProjectCreatorHistoricalProject) error {
@@ -239,6 +295,96 @@ func TestProjectStateReconcilerRefreshProjectCodeBinHashesPersistsMetaHash(t *te
 	}
 	if publisher.codeBinHashes[contract] != wantHash {
 		t.Fatalf("persisted code bin hash = %s, want %s", publisher.codeBinHashes[contract].Hex(), wantHash.Hex())
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSimulationsPersistsCreatorResult(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a4")
+	creator := common.HexToAddress("0x00000000000000000000000000000000000000b4")
+	wethPair := common.HexToAddress("0x00000000000000000000000000000000000000c4")
+	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000d4")
+	if err := cache.SetProject(ctx, &Project{
+		Meta: ProjectMeta{Contract: contract, Creator: creator},
+		Runtime: ProjectRuntime{ChainState: athenacontract.AthenaProject{
+			WethPair: athenacontract.AthenaPair{ContractAddress: wethPair},
+			UsdtPair: athenacontract.AthenaPair{ContractAddress: usdtPair},
+		}},
+	}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	want := SimulateResult{
+		CanMintFromDeadViaTransferFrom: true,
+		CanMintViaTransferToWethPair:   true,
+	}
+	publisher := &persistencePublisherFake{}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:         cache,
+		fetcher:              &simulationFetcherFake{states: []athenacontract.AthenaSimulationState{{}}},
+		simulator:            &projectSimulatorFake{result: want},
+		persistencePublisher: publisher,
+	}
+
+	if err := reconciler.refreshProjectSimulations(ctx, refreshTargetActive); err != nil {
+		t.Fatalf("refresh project simulations: %v", err)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || project.Runtime.CreatorResult != want {
+		t.Fatalf("creator result = %+v, want %+v", project.Runtime.CreatorResult, want)
+	}
+	if project.Runtime.CreatorResultFetchedAt.IsZero() {
+		t.Fatal("creator result fetched at is zero")
+	}
+	if publisher.creatorResults[contract] != want {
+		t.Fatalf("persisted creator result = %+v, want %+v", publisher.creatorResults[contract], want)
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSimulationsSkipsCacheWhenPersistFails(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a5")
+	wethPair := common.HexToAddress("0x00000000000000000000000000000000000000c5")
+	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000d5")
+	if err := cache.SetProject(ctx, &Project{
+		Meta: ProjectMeta{Contract: contract},
+		Runtime: ProjectRuntime{ChainState: athenacontract.AthenaProject{
+			WethPair: athenacontract.AthenaPair{ContractAddress: wethPair},
+			UsdtPair: athenacontract.AthenaPair{ContractAddress: usdtPair},
+		}},
+	}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	reconciler := &projectStateReconcilerImpl{
+		projectCache: cache,
+		fetcher:      &simulationFetcherFake{states: []athenacontract.AthenaSimulationState{{}}},
+		simulator: &projectSimulatorFake{result: SimulateResult{
+			CanMintFromDeadViaTransferFrom: true,
+		}},
+		persistencePublisher: &persistencePublisherFake{err: errors.New("persist failed")},
+	}
+
+	if err := reconciler.refreshProjectSimulations(ctx, refreshTargetActive); err != nil {
+		t.Fatalf("refresh project simulations: %v", err)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok {
+		t.Fatal("project missing")
+	}
+	if project.Runtime.CreatorResult.CanMintFromDeadViaTransferFrom {
+		t.Fatalf("creator result = %+v, want unchanged zero value", project.Runtime.CreatorResult)
+	}
+	if !project.Runtime.CreatorResultFetchedAt.IsZero() {
+		t.Fatalf("creator result fetched at = %s, want zero", project.Runtime.CreatorResultFetchedAt)
 	}
 }
 

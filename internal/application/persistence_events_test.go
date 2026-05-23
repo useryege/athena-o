@@ -18,6 +18,7 @@ import (
 type persistenceEventWriterFake struct {
 	err             error
 	sourceCodeCalls int
+	creatorResult   appstore.SimulateResult
 }
 
 func (w *persistenceEventWriterFake) WriteProjectMeta(context.Context, appstore.ProjectMeta) error {
@@ -40,6 +41,13 @@ func (w *persistenceEventWriterFake) WriteProjectCodeBinHash(context.Context, co
 }
 
 func (w *persistenceEventWriterFake) WriteProjectSourceQualityReport(context.Context, common.Address, string) error {
+	return w.err
+}
+
+func (w *persistenceEventWriterFake) WriteProjectCreatorResult(_ context.Context, _ common.Address, result appstore.SimulateResult) error {
+	if w.err == nil {
+		w.creatorResult = result
+	}
 	return w.err
 }
 
@@ -135,6 +143,32 @@ func TestRedisPersistenceEventBusConsumesAndAcks(t *testing.T) {
 	}
 	if pending.Count != 0 {
 		t.Fatalf("pending count = %d, want 0", pending.Count)
+	}
+}
+
+func TestRedisPersistenceEventBusAppliesProjectCreatorResult(t *testing.T) {
+	_, bus := newPersistenceEventBusTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
+	want := SimulateResult{
+		CanMintFromDeadViaTransferFrom:     true,
+		CanMintFromWethPairViaTransferFrom: true,
+		CanMintViaTransferToWethPair:       true,
+	}
+
+	if err := bus.PublishProjectCreatorResultUpdate(ctx, contract, want); err != nil {
+		t.Fatalf("publish creator result: %v", err)
+	}
+	writer := &persistenceEventWriterFake{}
+	processed, err := bus.consume(ctx, ">", writer, time.Millisecond)
+	if err != nil {
+		t.Fatalf("consume: %v", err)
+	}
+	if processed != 1 {
+		t.Fatalf("processed = %d, want 1", processed)
+	}
+	if writer.creatorResult != simulateResultToStore(want) {
+		t.Fatalf("creator result = %+v, want %+v", writer.creatorResult, simulateResultToStore(want))
 	}
 }
 

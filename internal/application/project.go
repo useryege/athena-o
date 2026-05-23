@@ -39,6 +39,7 @@ type ProjectRuntime struct {
 	GenesisTx                          *types.Transaction
 	ChainState                         athenacontract.AthenaProject
 	CreatorResult                      SimulateResult
+	CreatorResultFetchedAt             time.Time
 	CreatorHistoricalProjects          []common.Address
 	CreatorHistoricalProjectsFetchedAt time.Time
 }
@@ -98,6 +99,7 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 	codeBinHashFetchedAt := ""
 	genesisWalletsFetchedAt := ""
 	creatorHistoricalProjectsFetchedAt := ""
+	creatorResultFetchedAt := ""
 	if includeDetailFields {
 		sourceCode = project.Meta.SourceCode
 		sourceCodeFetchedAt = formatOptionalTime(project.Meta.SourceCodeFetchedAt)
@@ -106,6 +108,7 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 		codeBinHashFetchedAt = formatOptionalTime(project.Meta.CodeBinHashFetchedAt)
 		genesisWalletsFetchedAt = formatOptionalTime(project.Meta.GenesisWalletsFetchedAt)
 		creatorHistoricalProjectsFetchedAt = formatOptionalTime(project.Runtime.CreatorHistoricalProjectsFetchedAt)
+		creatorResultFetchedAt = formatOptionalTime(project.Runtime.CreatorResultFetchedAt)
 	}
 	creatorResult := project.Runtime.CreatorResult
 	creatorHistoricalProjects := make([]string, 0, len(project.Runtime.CreatorHistoricalProjects))
@@ -172,6 +175,7 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 			CodeBinHashFetchedAt:               codeBinHashFetchedAt,
 			GenesisWalletsFetchedAt:            genesisWalletsFetchedAt,
 			CreatorHistoricalProjectsFetchedAt: creatorHistoricalProjectsFetchedAt,
+			CreatorResultFetchedAt:             creatorResultFetchedAt,
 		},
 		ChainState: v1alpha1.ProjectChainState{
 			Token: v1alpha1.TokenState{

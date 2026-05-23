@@ -146,6 +146,8 @@ message ProjectMeta {
   optional string genesisWalletsFetchedAt = 21;
 
   optional string creatorHistoricalProjectsFetchedAt = 22;
+
+  optional string creatorResultFetchedAt = 23;
 }
 
 message ProjectOption {

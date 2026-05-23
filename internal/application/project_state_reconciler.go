@@ -284,12 +284,22 @@ func (r *projectStateReconcilerImpl) refreshProjectSimulations(ctx context.Conte
 		if err != nil {
 			continue
 		}
+		if err := r.persistProjectCreatorResult(ctx, contract, result); err != nil {
+			log.WithFields(log.Fields{
+				"component": "project_state_reconciler",
+				"contract":  contract.Hex(),
+				"error":     err.Error(),
+			}).Warn("failed to persist project creator result")
+			continue
+		}
+		fetchedAt := time.Now().UTC()
 
 		changed, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if !exists || current == nil {
 				return nil, false, nil
 			}
 			current.Runtime.CreatorResult = result
+			current.Runtime.CreatorResultFetchedAt = fetchedAt
 			return current, true, nil
 		})
 		if err != nil {
@@ -520,6 +530,13 @@ func (r *projectStateReconcilerImpl) persistProjectSourceQualityReport(ctx conte
 		return nil
 	}
 	return r.persistencePublisher.PublishProjectSourceQualityReportUpdate(ctx, contract, report)
+}
+
+func (r *projectStateReconcilerImpl) persistProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error {
+	if r.persistencePublisher == nil {
+		return nil
+	}
+	return r.persistencePublisher.PublishProjectCreatorResultUpdate(ctx, contract, result)
 }
 
 func (r *projectStateReconcilerImpl) persistProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {

@@ -41,3 +41,25 @@ func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 		GenesisWalletsFetchedAt:      meta.GenesisWalletsFetchedAt,
 	}
 }
+
+func simulateResultToStore(result SimulateResult) appstore.SimulateResult {
+	return appstore.SimulateResult{
+		CanMintFromDeadViaTransferFrom:     result.CanMintFromDeadViaTransferFrom,
+		CanMintFromZeroViaTransferFrom:     result.CanMintFromZeroViaTransferFrom,
+		CanMintFromWethPairViaTransferFrom: result.CanMintFromWethPairViaTransferFrom,
+		CanMintFromUsdtPairViaTransferFrom: result.CanMintFromUsdtPairViaTransferFrom,
+		CanMintViaTransferToWethPair:       result.CanMintViaTransferToWethPair,
+		CanMintViaTransferToUsdtPair:       result.CanMintViaTransferToUsdtPair,
+	}
+}
+
+func simulateResultFromStore(result appstore.SimulateResult) SimulateResult {
+	return SimulateResult{
+		CanMintFromDeadViaTransferFrom:     result.CanMintFromDeadViaTransferFrom,
+		CanMintFromZeroViaTransferFrom:     result.CanMintFromZeroViaTransferFrom,
+		CanMintFromWethPairViaTransferFrom: result.CanMintFromWethPairViaTransferFrom,
+		CanMintFromUsdtPairViaTransferFrom: result.CanMintFromUsdtPairViaTransferFrom,
+		CanMintViaTransferToWethPair:       result.CanMintViaTransferToWethPair,
+		CanMintViaTransferToUsdtPair:       result.CanMintViaTransferToUsdtPair,
+	}
+}

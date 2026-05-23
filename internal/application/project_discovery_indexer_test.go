@@ -113,6 +113,10 @@ func (s *discoveryProjectStoreFake) UpdateProjectSourceQualityReport(context.Con
 	return nil
 }
 
+func (s *discoveryProjectStoreFake) UpdateProjectCreatorResult(context.Context, common.Address, appstore.SimulateResult) error {
+	return nil
+}
+
 func (s *discoveryProjectStoreFake) ListProjectMetasByCreator(context.Context, common.Address) ([]appstore.ProjectMeta, error) {
 	return nil, nil
 }

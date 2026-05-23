@@ -48,11 +48,18 @@ INSERT INTO project (
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  creator_result_can_mint_from_dead_via_transfer_from,
+  creator_result_can_mint_from_zero_via_transfer_from,
+  creator_result_can_mint_from_weth_pair_via_transfer_from,
+  creator_result_can_mint_from_usdt_pair_via_transfer_from,
+  creator_result_can_mint_via_transfer_to_weth_pair,
+  creator_result_can_mint_via_transfer_to_usdt_pair,
+  creator_result_fetched_at,
   genesis_wallets_fetched_at,
   creator_historical_projects_fetched_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
 ON CONFLICT DO NOTHING
-`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableTime(meta.SourceCodeFetchedAt), nullableHashBytes(meta.CodeBinHash), nullableTime(meta.CodeBinHashFetchedAt), nullableText(meta.SourceQualityReport), nullableTime(meta.SourceQualityReportFetchedAt), nullableTime(meta.GenesisWalletsFetchedAt), nullableTime(meta.CreatorHistoricalProjectsFetchedAt))
+`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableTime(meta.SourceCodeFetchedAt), nullableHashBytes(meta.CodeBinHash), nullableTime(meta.CodeBinHashFetchedAt), nullableText(meta.SourceQualityReport), nullableTime(meta.SourceQualityReportFetchedAt), meta.CreatorResult.CanMintFromDeadViaTransferFrom, meta.CreatorResult.CanMintFromZeroViaTransferFrom, meta.CreatorResult.CanMintFromWethPairViaTransferFrom, meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, meta.CreatorResult.CanMintViaTransferToWethPair, meta.CreatorResult.CanMintViaTransferToUsdtPair, nullableTime(meta.CreatorResultFetchedAt), nullableTime(meta.GenesisWalletsFetchedAt), nullableTime(meta.CreatorHistoricalProjectsFetchedAt))
 	if err != nil {
 		return fmt.Errorf("save project meta: %w", err)
 	}
@@ -75,6 +82,13 @@ SELECT
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  creator_result_can_mint_from_dead_via_transfer_from,
+  creator_result_can_mint_from_zero_via_transfer_from,
+  creator_result_can_mint_from_weth_pair_via_transfer_from,
+  creator_result_can_mint_from_usdt_pair_via_transfer_from,
+  creator_result_can_mint_via_transfer_to_weth_pair,
+  creator_result_can_mint_via_transfer_to_usdt_pair,
+  creator_result_fetched_at,
   genesis_wallets_fetched_at,
   creator_historical_projects_fetched_at
 FROM project
@@ -119,6 +133,13 @@ SELECT
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  creator_result_can_mint_from_dead_via_transfer_from,
+  creator_result_can_mint_from_zero_via_transfer_from,
+  creator_result_can_mint_from_weth_pair_via_transfer_from,
+  creator_result_can_mint_from_usdt_pair_via_transfer_from,
+  creator_result_can_mint_via_transfer_to_weth_pair,
+  creator_result_can_mint_via_transfer_to_usdt_pair,
+  creator_result_fetched_at,
   genesis_wallets_fetched_at,
   creator_historical_projects_fetched_at
 FROM project
@@ -167,6 +188,13 @@ SELECT
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  creator_result_can_mint_from_dead_via_transfer_from,
+  creator_result_can_mint_from_zero_via_transfer_from,
+  creator_result_can_mint_from_weth_pair_via_transfer_from,
+  creator_result_can_mint_from_usdt_pair_via_transfer_from,
+  creator_result_can_mint_via_transfer_to_weth_pair,
+  creator_result_can_mint_via_transfer_to_usdt_pair,
+  creator_result_fetched_at,
   genesis_wallets_fetched_at,
   creator_historical_projects_fetched_at
 FROM project
@@ -233,6 +261,24 @@ WHERE contract = $1
 	return nil
 }
 
+func (s *SQLStore) UpdateProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error {
+	_, err := s.db.ExecContext(ctx, `
+UPDATE project
+SET creator_result_can_mint_from_dead_via_transfer_from = $2,
+  creator_result_can_mint_from_zero_via_transfer_from = $3,
+  creator_result_can_mint_from_weth_pair_via_transfer_from = $4,
+  creator_result_can_mint_from_usdt_pair_via_transfer_from = $5,
+  creator_result_can_mint_via_transfer_to_weth_pair = $6,
+  creator_result_can_mint_via_transfer_to_usdt_pair = $7,
+  creator_result_fetched_at = now()
+WHERE contract = $1
+`, contract.Bytes(), result.CanMintFromDeadViaTransferFrom, result.CanMintFromZeroViaTransferFrom, result.CanMintFromWethPairViaTransferFrom, result.CanMintFromUsdtPairViaTransferFrom, result.CanMintViaTransferToWethPair, result.CanMintViaTransferToUsdtPair)
+	if err != nil {
+		return fmt.Errorf("update project creator result: %w", err)
+	}
+	return nil
+}
+
 func (s *SQLStore) GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error) {
 	row := s.db.QueryRowContext(ctx, `
 SELECT
@@ -249,6 +295,13 @@ SELECT
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  creator_result_can_mint_from_dead_via_transfer_from,
+  creator_result_can_mint_from_zero_via_transfer_from,
+  creator_result_can_mint_from_weth_pair_via_transfer_from,
+  creator_result_can_mint_from_usdt_pair_via_transfer_from,
+  creator_result_can_mint_via_transfer_to_weth_pair,
+  creator_result_can_mint_via_transfer_to_usdt_pair,
+  creator_result_fetched_at,
   genesis_wallets_fetched_at,
   creator_historical_projects_fetched_at
 FROM project
@@ -283,10 +336,11 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	var codeBinHashFetchedAt sql.NullTime
 	var sourceQualityReport sql.NullString
 	var sourceQualityReportFetchedAt sql.NullTime
+	var creatorResultFetchedAt sql.NullTime
 	var genesisWalletsFetchedAt sql.NullTime
 	var creatorHistoricalProjectsFetchedAt sql.NullTime
 
-	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &codeBinHash, &codeBinHashFetchedAt, &sourceQualityReport, &sourceQualityReportFetchedAt, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
+	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &codeBinHash, &codeBinHashFetchedAt, &sourceQualityReport, &sourceQualityReportFetchedAt, &meta.CreatorResult.CanMintFromDeadViaTransferFrom, &meta.CreatorResult.CanMintFromZeroViaTransferFrom, &meta.CreatorResult.CanMintFromWethPairViaTransferFrom, &meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, &meta.CreatorResult.CanMintViaTransferToWethPair, &meta.CreatorResult.CanMintViaTransferToUsdtPair, &creatorResultFetchedAt, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
 		return ProjectMeta{}, fmt.Errorf("scan project meta: %w", err)
 	}
 	if blockNumber < 0 {
@@ -317,6 +371,9 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	meta.SourceQualityReport = sourceQualityReport.String
 	if sourceQualityReportFetchedAt.Valid {
 		meta.SourceQualityReportFetchedAt = sourceQualityReportFetchedAt.Time
+	}
+	if creatorResultFetchedAt.Valid {
+		meta.CreatorResultFetchedAt = creatorResultFetchedAt.Time
 	}
 	if genesisWalletsFetchedAt.Valid {
 		meta.GenesisWalletsFetchedAt = genesisWalletsFetchedAt.Time

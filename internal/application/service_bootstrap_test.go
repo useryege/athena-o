@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	appstore "github.com/useryege/athena/internal/application/store"
@@ -38,6 +39,10 @@ func (s *bootstrapProjectStoreFake) UpdateProjectCodeBinHash(context.Context, co
 }
 
 func (s *bootstrapProjectStoreFake) UpdateProjectSourceQualityReport(context.Context, common.Address, string) error {
+	return nil
+}
+
+func (s *bootstrapProjectStoreFake) UpdateProjectCreatorResult(context.Context, common.Address, appstore.SimulateResult) error {
 	return nil
 }
 
@@ -146,6 +151,10 @@ func (s *bootstrapProjectStoreWithoutGenesisFake) UpdateProjectSourceQualityRepo
 	return nil
 }
 
+func (s *bootstrapProjectStoreWithoutGenesisFake) UpdateProjectCreatorResult(context.Context, common.Address, appstore.SimulateResult) error {
+	return nil
+}
+
 func (s *bootstrapProjectStoreWithoutGenesisFake) ListProjectMetasByCreator(_ context.Context, creator common.Address) ([]appstore.ProjectMeta, error) {
 	metas := make([]appstore.ProjectMeta, 0)
 	for _, meta := range s.metas {
@@ -218,15 +227,18 @@ func TestBootstrapProjectCachesRestoresDBProjectsOnly(t *testing.T) {
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	creator := common.HexToAddress("0x00000000000000000000000000000000000000b1")
 	wallet := common.HexToAddress("0x00000000000000000000000000000000000000c1")
+	creatorResultFetchedAt := time.Date(2026, 5, 23, 6, 0, 0, 0, time.UTC)
 	store := &bootstrapProjectStoreFake{
 		metas: []appstore.ProjectMeta{{
-			BlockTime:   11,
-			BlockNumber: 22,
-			Contract:    contract,
-			Creator:     creator,
-			TxHash:      common.HexToHash("0x01"),
-			TxIndex:     3,
-			SourceCode:  "contract Source {}",
+			BlockTime:              11,
+			BlockNumber:            22,
+			Contract:               contract,
+			Creator:                creator,
+			TxHash:                 common.HexToHash("0x01"),
+			TxIndex:                3,
+			SourceCode:             "contract Source {}",
+			CreatorResult:          appstore.SimulateResult{CanMintViaTransferToWethPair: true},
+			CreatorResultFetchedAt: creatorResultFetchedAt,
 		}},
 		genesis: map[common.Address][]appstore.ProjectGenesisWallet{
 			contract: {{
@@ -257,8 +269,11 @@ func TestBootstrapProjectCachesRestoresDBProjectsOnly(t *testing.T) {
 	if project.Runtime.ChainState.TokenContract != (common.Address{}) {
 		t.Fatalf("bootstrap populated chain state, want zero runtime state")
 	}
-	if project.Runtime.CreatorResult.HasMintRisk() {
-		t.Fatal("bootstrap populated simulation result, want zero runtime simulation")
+	if !project.Runtime.CreatorResult.CanMintViaTransferToWethPair {
+		t.Fatalf("restored creator result = %+v, want weth transfer mint flag", project.Runtime.CreatorResult)
+	}
+	if !project.Runtime.CreatorResultFetchedAt.Equal(creatorResultFetchedAt) {
+		t.Fatalf("restored creator result fetched at = %s, want %s", project.Runtime.CreatorResultFetchedAt, creatorResultFetchedAt)
 	}
 }
 

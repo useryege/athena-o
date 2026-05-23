@@ -23,6 +23,7 @@ const (
 	projectFieldMetaBase                           = "meta_base"
 	projectFieldChainState                         = "chain_state"
 	projectFieldCreatorResult                      = "creator_result"
+	projectFieldCreatorResultFetchedAt             = "creator_result_fetched_at"
 	projectFieldCreatorHistoricalProjects          = "creator_historical_projects"
 	projectFieldCreatorHistoricalProjectsFetchedAt = "creator_historical_projects_fetched_at"
 	projectFieldSourceCode                         = "source_code"
@@ -36,7 +37,7 @@ const (
 	projectFieldGenesisWalletsFetchedAt            = "genesis_wallets_fetched_at"
 	projectFieldReport                             = "report"
 
-	projectSchemaVersion = "9"
+	projectSchemaVersion = "10"
 
 	projectIndexActive = "project:index:active"
 	projectMaxBlockKey = "project:max_block_number"
@@ -354,6 +355,7 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldMetaBase:                           metaBasePayload,
 		projectFieldChainState:                         chainStatePayload,
 		projectFieldCreatorResult:                      creatorResultPayload,
+		projectFieldCreatorResultFetchedAt:             formatOptionalTime(project.Runtime.CreatorResultFetchedAt),
 		projectFieldCreatorHistoricalProjects:          creatorHistoricalProjectsPayload,
 		projectFieldCreatorHistoricalProjectsFetchedAt: formatOptionalTime(project.Runtime.CreatorHistoricalProjectsFetchedAt),
 		projectFieldSourceCode:                         project.Meta.SourceCode,
@@ -405,6 +407,9 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 			return nil, fmt.Errorf("marshal creator result for %s: %w", next.Meta.Contract.Hex(), err)
 		}
 		fields[projectFieldCreatorResult] = creatorResultPayload
+	}
+	if current == nil || !current.Runtime.CreatorResultFetchedAt.Equal(next.Runtime.CreatorResultFetchedAt) {
+		fields[projectFieldCreatorResultFetchedAt] = formatOptionalTime(next.Runtime.CreatorResultFetchedAt)
 	}
 	if current == nil || !reflect.DeepEqual(current.Runtime.CreatorHistoricalProjects, next.Runtime.CreatorHistoricalProjects) {
 		creatorHistoricalProjectsPayload, err := mustMarshalJSON(next.Runtime.CreatorHistoricalProjects)
@@ -500,6 +505,13 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		if err := json.Unmarshal([]byte(raw), &project.Runtime.CreatorResult); err != nil {
 			return nil, false, err
 		}
+	}
+	if raw := values[projectFieldCreatorResultFetchedAt]; raw != "" {
+		fetchedAt, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return nil, false, err
+		}
+		project.Runtime.CreatorResultFetchedAt = fetchedAt
 	}
 	if raw := values[projectFieldCreatorHistoricalProjects]; raw != "" {
 		if err := json.Unmarshal([]byte(raw), &project.Runtime.CreatorHistoricalProjects); err != nil {

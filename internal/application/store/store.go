@@ -24,8 +24,19 @@ type ProjectMeta struct {
 	CodeBinHashFetchedAt               time.Time
 	SourceQualityReport                string
 	SourceQualityReportFetchedAt       time.Time
+	CreatorResult                      SimulateResult
+	CreatorResultFetchedAt             time.Time
 	GenesisWalletsFetchedAt            time.Time
 	CreatorHistoricalProjectsFetchedAt time.Time
+}
+
+type SimulateResult struct {
+	CanMintFromDeadViaTransferFrom     bool
+	CanMintFromZeroViaTransferFrom     bool
+	CanMintFromWethPairViaTransferFrom bool
+	CanMintFromUsdtPairViaTransferFrom bool
+	CanMintViaTransferToWethPair       bool
+	CanMintViaTransferToUsdtPair       bool
 }
 
 type ProjectEventLog struct {
@@ -75,6 +86,7 @@ type ProjectStore interface {
 	UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
 	UpdateProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
+	UpdateProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error
 	ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error)
 	ListProjectMetasByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error)
 	GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error)

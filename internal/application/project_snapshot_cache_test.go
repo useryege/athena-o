@@ -114,6 +114,7 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	}
 	sourceCodeHash := common.HexToHash("0x0101010101010101010101010101010101010101010101010101010101010101")
 	codeBinHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
+	creatorResultFetchedAt := mustParseTimeForTest(t, "2026-05-22T01:00:00Z")
 
 	if err := cache.SetProject(ctx, &Project{
 		Meta: ProjectMeta{
@@ -123,6 +124,10 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 		},
 		Runtime: ProjectRuntime{
 			CreatorHistoricalProjects: historicalProjects,
+			CreatorResult: SimulateResult{
+				CanMintViaTransferToWethPair: true,
+			},
+			CreatorResultFetchedAt: creatorResultFetchedAt,
 		},
 	}); err != nil {
 		t.Fatalf("set project: %v", err)
@@ -144,6 +149,12 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	if got := project.Meta.CodeBinHash; got != codeBinHash {
 		t.Fatalf("code bin hash = %s, want %s", got.Hex(), codeBinHash.Hex())
 	}
+	if got := project.Runtime.CreatorResult; !got.CanMintViaTransferToWethPair {
+		t.Fatalf("creator result = %+v, want weth transfer mint flag", got)
+	}
+	if got := project.Runtime.CreatorResultFetchedAt; !got.Equal(creatorResultFetchedAt) {
+		t.Fatalf("creator result fetched at = %s, want %s", got, creatorResultFetchedAt)
+	}
 
 	values, err := client.HGetAll(ctx, projectDataV2Key(contract)).Result()
 	if err != nil {
@@ -157,6 +168,9 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	}
 	if got := values[projectFieldCodeBinHash]; got != codeBinHash.Hex() {
 		t.Fatalf("raw code bin hash = %q, want %q", got, codeBinHash.Hex())
+	}
+	if got := values[projectFieldCreatorResultFetchedAt]; got != creatorResultFetchedAt.Format(time.RFC3339Nano) {
+		t.Fatalf("raw creator result fetched at = %q, want %q", got, creatorResultFetchedAt.Format(time.RFC3339Nano))
 	}
 	if _, ok := values["creator_other_projects_resolved"]; ok {
 		t.Fatal("old creator_other_projects_resolved field still present")
@@ -183,14 +197,14 @@ func mustParseTimeForTest(t *testing.T, value string) time.Time {
 
 func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	project := &Project{Meta: ProjectMeta{
-		Contract:                common.BigToAddress(big.NewInt(1)),
-		BlockTime:               100,
-		BlockNumber:             200,
-		TxIndex:                 3,
-		SourceCode:              "contract Source {}",
-		SourceCodeHash:          common.HexToHash("0x3333333333333333333333333333333333333333333333333333333333333333"),
-		CodeBinHash:             common.HexToHash("0x4444444444444444444444444444444444444444444444444444444444444444"),
-		SourceQualityReport:     "## Report",
+		Contract:                     common.BigToAddress(big.NewInt(1)),
+		BlockTime:                    100,
+		BlockNumber:                  200,
+		TxIndex:                      3,
+		SourceCode:                   "contract Source {}",
+		SourceCodeHash:               common.HexToHash("0x3333333333333333333333333333333333333333333333333333333333333333"),
+		CodeBinHash:                  common.HexToHash("0x4444444444444444444444444444444444444444444444444444444444444444"),
+		SourceQualityReport:          "## Report",
 		SourceQualityReportFetchedAt: mustParseTimeForTest(t, "2026-05-22T00:00:00Z"),
 	}, Runtime: ProjectRuntime{
 		ChainState: athenacontract.AthenaProject{
@@ -212,6 +226,7 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 		CreatorResult: SimulateResult{
 			CanMintFromZeroViaTransferFrom: true,
 		},
+		CreatorResultFetchedAt: mustParseTimeForTest(t, "2026-05-22T01:00:00Z"),
 	}}
 
 	listItem := projectToListItem(project)
@@ -239,7 +254,7 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	}
 
 	detailView := projectToView(project, true)
-	if detailView.Meta.SourceCode == "" || detailView.Meta.SourceQualityReport == "" || detailView.Meta.SourceQualityReportFetchedAt == "" {
+	if detailView.Meta.SourceCode == "" || detailView.Meta.SourceQualityReport == "" || detailView.Meta.SourceQualityReportFetchedAt == "" || detailView.Meta.CreatorResultFetchedAt == "" {
 		t.Fatalf("detail view missing source detail fields: %#v", detailView.Meta)
 	}
 	if !detailView.Meta.IsOpenSource {

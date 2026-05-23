@@ -38,6 +38,7 @@ const (
 	PersistenceOpProjectSourceCode               = "project_source_code_update"
 	PersistenceOpProjectCodeBinHash              = "project_code_bin_hash_update"
 	PersistenceOpProjectSourceQualityReport      = "project_source_quality_report_update"
+	PersistenceOpProjectCreatorResult            = "project_creator_result_update"
 	PersistenceOpBytecodeBlacklistAdd            = "bytecode_blacklist_add"
 	PersistenceOpBytecodeBlacklistNote           = "bytecode_blacklist_update_note"
 	PersistenceOpBytecodeBlacklistDel            = "bytecode_blacklist_delete"
@@ -89,6 +90,16 @@ type projectCodeBinHashUpdatePayload struct {
 type projectSourceQualityReportUpdatePayload struct {
 	Contract string `json:"contract"`
 	Report   string `json:"report"`
+}
+
+type projectCreatorResultUpdatePayload struct {
+	Contract                           string `json:"contract"`
+	CanMintFromDeadViaTransferFrom     bool   `json:"can_mint_from_dead_via_transfer_from"`
+	CanMintFromZeroViaTransferFrom     bool   `json:"can_mint_from_zero_via_transfer_from"`
+	CanMintFromWethPairViaTransferFrom bool   `json:"can_mint_from_weth_pair_via_transfer_from"`
+	CanMintFromUsdtPairViaTransferFrom bool   `json:"can_mint_from_usdt_pair_via_transfer_from"`
+	CanMintViaTransferToWethPair       bool   `json:"can_mint_via_transfer_to_weth_pair"`
+	CanMintViaTransferToUsdtPair       bool   `json:"can_mint_via_transfer_to_usdt_pair"`
 }
 
 type projectEventLogAddPayload struct {
@@ -176,6 +187,7 @@ type PersistenceEventPublisher interface {
 	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error
 	PublishProjectCodeBinHashUpdate(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error
+	PublishProjectCreatorResultUpdate(ctx context.Context, contract common.Address, result SimulateResult) error
 	PublishProjectCreatorHistoricalProjectsReplace(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
 	PublishBytecodeBlacklistAdd(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	PublishBytecodeBlacklistUpdateNote(ctx context.Context, contract common.Address, note string) error
@@ -194,6 +206,7 @@ type PersistenceEventWriter interface {
 	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
 	WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
+	WriteProjectCreatorResult(ctx context.Context, contract common.Address, result appstore.SimulateResult) error
 	WriteProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
 	AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error
 	UpdateBytecodeBlacklistContractNote(ctx context.Context, contract common.Address, note string) error
@@ -368,6 +381,29 @@ func (b *RedisPersistenceEventBus) PublishProjectSourceQualityReportUpdate(ctx c
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectSourceQualityReport,
+		Contract:   contract.Hex(),
+		Payload:    data,
+		OccurredAt: time.Now().UTC(),
+	})
+}
+
+func (b *RedisPersistenceEventBus) PublishProjectCreatorResultUpdate(ctx context.Context, contract common.Address, result SimulateResult) error {
+	payload := projectCreatorResultUpdatePayload{
+		Contract:                           contract.Hex(),
+		CanMintFromDeadViaTransferFrom:     result.CanMintFromDeadViaTransferFrom,
+		CanMintFromZeroViaTransferFrom:     result.CanMintFromZeroViaTransferFrom,
+		CanMintFromWethPairViaTransferFrom: result.CanMintFromWethPairViaTransferFrom,
+		CanMintFromUsdtPairViaTransferFrom: result.CanMintFromUsdtPairViaTransferFrom,
+		CanMintViaTransferToWethPair:       result.CanMintViaTransferToWethPair,
+		CanMintViaTransferToUsdtPair:       result.CanMintViaTransferToUsdtPair,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal project creator result payload: %w", err)
+	}
+	return b.Publish(ctx, PersistenceEvent{
+		Version:    persistenceEventVersion,
+		Op:         PersistenceOpProjectCreatorResult,
 		Contract:   contract.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
@@ -839,6 +875,22 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
 		return writer.WriteProjectSourceQualityReport(ctx, common.HexToAddress(payload.Contract), payload.Report)
+	case PersistenceOpProjectCreatorResult:
+		var payload projectCreatorResultUpdatePayload
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("unmarshal project creator result payload: %w", err)
+		}
+		if !common.IsHexAddress(payload.Contract) {
+			return fmt.Errorf("invalid contract %q", payload.Contract)
+		}
+		return writer.WriteProjectCreatorResult(ctx, common.HexToAddress(payload.Contract), appstore.SimulateResult{
+			CanMintFromDeadViaTransferFrom:     payload.CanMintFromDeadViaTransferFrom,
+			CanMintFromZeroViaTransferFrom:     payload.CanMintFromZeroViaTransferFrom,
+			CanMintFromWethPairViaTransferFrom: payload.CanMintFromWethPairViaTransferFrom,
+			CanMintFromUsdtPairViaTransferFrom: payload.CanMintFromUsdtPairViaTransferFrom,
+			CanMintViaTransferToWethPair:       payload.CanMintViaTransferToWethPair,
+			CanMintViaTransferToUsdtPair:       payload.CanMintViaTransferToUsdtPair,
+		})
 	case PersistenceOpProjectCreatorHistoricalReplace:
 		var payload projectCreatorHistoricalProjectReplacePayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -1103,6 +1155,10 @@ func (w *storePersistenceWriter) WriteProjectCodeBinHash(ctx context.Context, co
 
 func (w *storePersistenceWriter) WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
 	return w.store.UpdateProjectSourceQualityReport(ctx, contract, report)
+}
+
+func (w *storePersistenceWriter) WriteProjectCreatorResult(ctx context.Context, contract common.Address, result appstore.SimulateResult) error {
+	return w.store.UpdateProjectCreatorResult(ctx, contract, result)
 }
 
 func (w *storePersistenceWriter) WriteProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error {

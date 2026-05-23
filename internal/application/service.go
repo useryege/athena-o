@@ -475,6 +475,8 @@ func (s *Service) buildProjectsFromMetas(ctx context.Context, metas []appstore.P
 		project := &Project{
 			Meta: projectMetaFromStore(meta),
 			Runtime: ProjectRuntime{
+				CreatorResult:                      simulateResultFromStore(meta.CreatorResult),
+				CreatorResultFetchedAt:             meta.CreatorResultFetchedAt,
 				CreatorHistoricalProjectsFetchedAt: meta.CreatorHistoricalProjectsFetchedAt,
 			},
 		}

@@ -41,6 +41,7 @@ type ProjectMeta struct {
 	CodeBinHashFetchedAt               string               `protobuf:"bytes,20,opt,name=codeBinHashFetchedAt" json:"codeBinHashFetchedAt"`
 	GenesisWalletsFetchedAt            string               `protobuf:"bytes,21,opt,name=genesisWalletsFetchedAt" json:"genesisWalletsFetchedAt"`
 	CreatorHistoricalProjectsFetchedAt string               `protobuf:"bytes,22,opt,name=creatorHistoricalProjectsFetchedAt" json:"creatorHistoricalProjectsFetchedAt"`
+	CreatorResultFetchedAt             string               `protobuf:"bytes,23,opt,name=creatorResultFetchedAt" json:"creatorResultFetchedAt"`
 }
 
 type GenesisWalletState struct {
