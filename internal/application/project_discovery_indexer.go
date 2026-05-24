@@ -17,7 +17,7 @@ import (
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
-const initialProjectSyncLookback = 30 * 24 * time.Hour
+const initialProjectSyncLookback = 15 * 24 * time.Hour
 const defaultBlockHeaderQueueCapacity = 16
 
 var pancakeV2SwapTopicHash = common.HexToHash("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822")
