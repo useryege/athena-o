@@ -99,6 +99,7 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 	}
 
 	chainState := project.Meta.ChainState
+	fetchAt := ""
 	sourceCode := ""
 	sourceCodeFetchedAt := ""
 	sourceQualityReport := ""
@@ -107,6 +108,7 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 	genesisWalletsFetchedAt := ""
 	creatorHistoricalProjectsFetchedAt := ""
 	if includeDetailFields {
+		fetchAt = formatOptionalTime(project.Meta.FetchAt)
 		sourceCode = project.Meta.SourceCode
 		sourceCodeFetchedAt = formatOptionalTime(project.Meta.SourceCodeFetchedAt)
 		sourceQualityReport = project.Meta.SourceQualityReport
@@ -180,6 +182,7 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 			CodeBinHashFetchedAt:               codeBinHashFetchedAt,
 			GenesisWalletsFetchedAt:            genesisWalletsFetchedAt,
 			CreatorHistoricalProjectsFetchedAt: creatorHistoricalProjectsFetchedAt,
+			FetchAt:                            fetchAt,
 			Token: v1alpha1.TokenState{
 				Name:         chainState.Token.Name,
 				Symbol:       chainState.Token.Symbol,

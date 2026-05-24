@@ -4,7 +4,7 @@ import {Text} from 'react-form';
 import {RouteComponentProps} from 'react-router';
 import {Context} from '../../../shared/context';
 import {services} from '../../../shared/services';
-import {PairV2State, ProjectComment, ProjectEventLog, ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
+import {PairV2State, ProjectComment, ProjectEventLog, ProjectMeta, ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
 import {formatUsdtValue} from '../pair-metrics-cell/pair-metrics-cell';
 import {GenesisWalletRankList} from './genesis-wallet-rank-list';
 
@@ -36,6 +36,86 @@ const renderEventType = (eventType?: number) => {
         default:
             return `Unknown(${eventType ?? 0})`;
     }
+};
+
+const parseTimelineTime = (value?: string) => {
+    if (!value) {
+        return null;
+    }
+    const time = Date.parse(value);
+    return isNaN(time) ? null : time;
+};
+
+const formatTimelineDuration = (milliseconds: number) => {
+    const sign = milliseconds < 0 ? '-' : '+';
+    let remainingSeconds = Math.floor(Math.abs(milliseconds) / 1000);
+    const days = Math.floor(remainingSeconds / 86400);
+    remainingSeconds %= 86400;
+    const hours = Math.floor(remainingSeconds / 3600);
+    remainingSeconds %= 3600;
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+    const parts: string[] = [];
+
+    if (days > 0) {
+        parts.push(`${days}d`);
+    }
+    if (hours > 0 || parts.length > 0) {
+        parts.push(`${hours}h`);
+    }
+    if (minutes > 0 || parts.length > 0) {
+        parts.push(`${minutes}m`);
+    }
+    if (parts.length === 0 || seconds > 0) {
+        parts.push(`${seconds}s`);
+    }
+
+    return `${sign}${parts.join(' ')}`;
+};
+
+const renderFetchTimeline = (meta?: ProjectMeta) => {
+    const baseTime = parseTimelineTime(meta?.fetchAt);
+    const items = [
+        {label: 'Project Discovered', value: meta?.fetchAt},
+        {label: 'Source Code Fetched', value: meta?.sourceCodeFetchedAt},
+        {label: 'Code BIN Hash Fetched', value: meta?.codeBinHashFetchedAt},
+        {label: 'Source Quality Report Fetched', value: meta?.sourceQualityReportFetchedAt},
+        {label: 'Genesis Wallets Fetched', value: meta?.genesisWalletsFetchedAt},
+        {label: 'Creator Historical Projects Fetched', value: meta?.creatorHistoricalProjectsFetchedAt}
+    ].map((item, index) => ({...item, index, time: parseTimelineTime(item.value)}));
+    const sortedItems = items
+        .filter(item => item.time !== null)
+        .sort((left, right) => (left.time as number) - (right.time as number))
+        .concat(items.filter(item => item.time === null));
+
+    return (
+        <div className='white-box project-details__box'>
+            <div className='project-details__section-title'>Fetch Timeline</div>
+            <div className='project-details__timeline'>
+                {sortedItems.map(item => {
+                    const isCompleted = item.time !== null;
+                    const duration = isCompleted && baseTime !== null ? formatTimelineDuration((item.time as number) - baseTime) : '';
+                    return (
+                        <div key={`${item.label}-${item.index}`} className={`project-details__timeline-item ${isCompleted ? 'project-details__timeline-item--done' : ''}`}>
+                            <div className='project-details__timeline-marker' />
+                            <div className='project-details__timeline-content'>
+                                <div className='project-details__timeline-main'>
+                                    <span className='project-details__timeline-label'>{item.label}</span>
+                                    <span className={`project-details__timeline-status ${isCompleted ? 'project-details__timeline-status--done' : ''}`}>
+                                        {isCompleted ? 'Done' : 'Pending'}
+                                    </span>
+                                </div>
+                                <div className='project-details__timeline-meta'>
+                                    <span>{isCompleted ? renderValue(item.value) : 'Pending'}</span>
+                                    {duration && <span className='project-details__timeline-duration'>{duration}</span>}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
 };
 
 const renderQualityReportMarkdown = (markdown: string) => {
@@ -565,6 +645,8 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                 </div>
                             </div>
                         </div>
+
+                        {renderFetchTimeline(project.meta)}
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Genesis Wallets</div>

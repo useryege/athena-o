@@ -135,6 +135,8 @@ message ProjectMeta {
 
   optional string creatorHistoricalProjectsFetchedAt = 22;
 
+  optional string fetchAt = 23;
+
   optional TokenState token = 24;
 
   optional PairV2State wethPair = 25;

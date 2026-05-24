@@ -40,6 +40,7 @@ type ProjectMeta struct {
 	CodeBinHashFetchedAt               string                    `protobuf:"bytes,20,opt,name=codeBinHashFetchedAt" json:"codeBinHashFetchedAt"`
 	GenesisWalletsFetchedAt            string                    `protobuf:"bytes,21,opt,name=genesisWalletsFetchedAt" json:"genesisWalletsFetchedAt"`
 	CreatorHistoricalProjectsFetchedAt string                    `protobuf:"bytes,22,opt,name=creatorHistoricalProjectsFetchedAt" json:"creatorHistoricalProjectsFetchedAt"`
+	FetchAt                            string                    `protobuf:"bytes,23,opt,name=fetchAt" json:"fetchAt"`
 	Token                              TokenState                `protobuf:"bytes,24,opt,name=token" json:"token"`
 	WethPair                           PairV2State               `protobuf:"bytes,25,opt,name=wethPair" json:"wethPair"`
 	UsdtPair                           PairV2State               `protobuf:"bytes,26,opt,name=usdtPair" json:"usdtPair"`

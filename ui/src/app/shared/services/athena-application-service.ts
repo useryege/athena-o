@@ -37,6 +37,7 @@ export interface ProjectMeta {
     codeBinHashFetchedAt?: string;
     genesisWalletsFetchedAt?: string;
     creatorHistoricalProjectsFetchedAt?: string;
+    fetchAt?: string;
     isOpenSource?: boolean;
     sourceCodeHash?: string;
     codeBinHash?: string;

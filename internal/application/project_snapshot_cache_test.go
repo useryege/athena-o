@@ -362,11 +362,15 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 		BlockTime:                    100,
 		BlockNumber:                  200,
 		TxIndex:                      3,
+		FetchAt:                      mustParseTimeForTest(t, "2026-05-21T23:58:00.123456789Z"),
 		SourceCode:                   "contract Source {}",
 		SourceCodeHash:               common.HexToHash("0x3333333333333333333333333333333333333333333333333333333333333333"),
+		SourceCodeFetchedAt:          mustParseTimeForTest(t, "2026-05-21T23:59:00Z"),
 		CodeBinHash:                  common.HexToHash("0x4444444444444444444444444444444444444444444444444444444444444444"),
+		CodeBinHashFetchedAt:         mustParseTimeForTest(t, "2026-05-21T23:59:30Z"),
 		SourceQualityReport:          "## Report",
 		SourceQualityReportFetchedAt: mustParseTimeForTest(t, "2026-05-22T00:00:00Z"),
+		GenesisWalletsFetchedAt:      mustParseTimeForTest(t, "2026-05-22T00:01:00Z"),
 		ChainState: athenacontract.AthenaProject{
 			Token: athenacontract.AthenaToken{
 				Name:   "Token",
@@ -415,6 +419,12 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	detailView := projectToView(project, true)
 	if detailView.Meta.SourceCode == "" || detailView.Meta.SourceQualityReport == "" || detailView.Meta.SourceQualityReportFetchedAt == "" {
 		t.Fatalf("detail view missing source detail fields: %#v", detailView.Meta)
+	}
+	if detailView.Meta.FetchAt != project.Meta.FetchAt.UTC().Format(time.RFC3339Nano) {
+		t.Fatalf("detail fetch at = %q, want %q", detailView.Meta.FetchAt, project.Meta.FetchAt.UTC().Format(time.RFC3339Nano))
+	}
+	if detailView.Meta.SourceCodeFetchedAt == "" || detailView.Meta.CodeBinHashFetchedAt == "" || detailView.Meta.GenesisWalletsFetchedAt == "" {
+		t.Fatalf("detail view missing fetched-at fields: %#v", detailView.Meta)
 	}
 	if !detailView.Meta.IsOpenSource {
 		t.Fatal("detail isOpenSource = false, want true")
