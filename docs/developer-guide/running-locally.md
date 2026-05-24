@@ -123,14 +123,16 @@ Supported PostgreSQL env vars for local development:
 - `ATHENA_POSTGRES_PORT` (default: `5432`)
 - `POSTGRES_USER` (default: `athena`)
 - `POSTGRES_PASSWORD` (default: empty; Docker mode falls back to trust auth if empty)
-- `POSTGRES_DB` (default: `athena`)
+- `POSTGRES_DB` (default: `athena`; the default Athena services use separate `application` and `worm` databases)
 - `ATHENA_POSTGRES_IMAGE_TAG` (default: `16`)
 - `ATHENA_POSTGRES_INIT_DIR` (default: `hack/postgres/init`)
 
 Startup initializes PostgreSQL from SQL files in `ATHENA_POSTGRES_INIT_DIR`.
-The default init directory creates the `project` table used by the application service to persist discovered project metadata.
+The default init directory creates separate `application` and `worm` databases in the same PostgreSQL instance.
+`application.sql` runs against the `application` database and creates the project tables used by the application service.
+`worm.sql` runs against the `worm` database and is intentionally schema-free until worm business data is defined.
 Docker mode mounts the init directory into `/docker-entrypoint-initdb.d`, so scripts run when the container initializes its database.
-With `ATHENA_POSTGRES_LOCAL=true`, the startup script runs the same SQL files with `psql` after creating the target database; scripts must be idempotent because the local data directory can be reused across restarts.
+With `ATHENA_POSTGRES_LOCAL=true`, the startup script creates the service databases and runs each SQL file against its matching database; scripts must be idempotent because the local data directory can be reused across restarts.
 
 #### With "goreman start"
 ```shell

@@ -1,3 +1,5 @@
+\connect application
+
 CREATE TABLE IF NOT EXISTS project (
   id BIGSERIAL PRIMARY KEY,
   block_number BIGINT NOT NULL,

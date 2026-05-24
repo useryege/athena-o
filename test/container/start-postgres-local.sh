@@ -7,6 +7,17 @@ POSTGRES_USER="${POSTGRES_USER:-athena}"
 POSTGRES_DB="${POSTGRES_DB:-athena}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
 POSTGRES_DATA_DIR="${ATHENA_POSTGRES_DATA_DIR:-/tmp/athena-local/postgres}"
+APPLICATION_DB="application"
+WORM_DB="worm"
+
+ensure_database() {
+  local database="$1"
+
+  db_exists="$(PGPASSWORD="${POSTGRES_PASSWORD}" psql -h 127.0.0.1 -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${database}'")"
+  if [ "${db_exists}" != "1" ]; then
+    PGPASSWORD="${POSTGRES_PASSWORD}" createdb -h 127.0.0.1 -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" "${database}"
+  fi
+}
 
 echo "Starting postgres on port ${POSTGRES_PORT}"
 mkdir -p "${POSTGRES_DATA_DIR}"
@@ -37,11 +48,10 @@ fi
 if ! pg_ctl -D "${POSTGRES_DATA_DIR}" status >/dev/null 2>&1; then
   pg_ctl -D "${POSTGRES_DATA_DIR}" -w start -o "-p ${POSTGRES_PORT} -c listen_addresses=127.0.0.1 -c fsync=off -c full_page_writes=off -c synchronous_commit=off"
   if [ "${POSTGRES_DB}" != "postgres" ]; then
-    db_exists="$(PGPASSWORD="${POSTGRES_PASSWORD}" psql -h 127.0.0.1 -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'")"
-    if [ "${db_exists}" != "1" ]; then
-      PGPASSWORD="${POSTGRES_PASSWORD}" createdb -h 127.0.0.1 -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" "${POSTGRES_DB}"
-    fi
+    ensure_database "${POSTGRES_DB}"
   fi
+  ensure_database "${APPLICATION_DB}"
+  ensure_database "${WORM_DB}"
   pg_ctl -D "${POSTGRES_DATA_DIR}" -m fast -w stop
 fi
 

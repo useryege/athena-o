@@ -13,6 +13,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 POSTGRES_DATA_DIR="${ATHENA_POSTGRES_DATA_DIR:-/tmp/athena-local/postgres}"
 POSTGRES_INIT_DIR="${ATHENA_POSTGRES_INIT_DIR:-$REPO_ROOT/hack/postgres/init}"
+APPLICATION_DB="application"
+WORM_DB="worm"
 
 perf_opts=(
   "-c" "fsync=off"
@@ -20,20 +22,37 @@ perf_opts=(
   "-c" "synchronous_commit=off"
 )
 
-run_postgres_init() {
+ensure_database() {
     local database="$1"
 
+    if ! PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${database}'" | grep -q 1; then
+        PGPASSWORD="$POSTGRES_PASSWORD" createdb -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" "$database"
+    fi
+}
+
+run_postgres_init() {
     if [ ! -d "$POSTGRES_INIT_DIR" ]; then
         return
     fi
 
-    for init_sql in "$POSTGRES_INIT_DIR"/*.sql; do
-        if [ ! -e "$init_sql" ]; then
-            continue
-        fi
-        echo "Running PostgreSQL init script: $init_sql"
-        PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$database" -v ON_ERROR_STOP=1 -f "$init_sql"
-    done
+    local databases_sql="$POSTGRES_INIT_DIR/00-databases.sql"
+    local application_sql="$POSTGRES_INIT_DIR/application.sql"
+    local worm_sql="$POSTGRES_INIT_DIR/worm.sql"
+
+    if [ -f "$databases_sql" ]; then
+        echo "Running PostgreSQL init script: $databases_sql"
+        PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -f "$databases_sql"
+    fi
+    ensure_database "$APPLICATION_DB"
+    ensure_database "$WORM_DB"
+    if [ -f "$application_sql" ]; then
+        echo "Running PostgreSQL init script: $application_sql"
+        PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$APPLICATION_DB" -v ON_ERROR_STOP=1 -f "$application_sql"
+    fi
+    if [ -f "$worm_sql" ]; then
+        echo "Running PostgreSQL init script: $worm_sql"
+        PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$WORM_DB" -v ON_ERROR_STOP=1 -f "$worm_sql"
+    fi
 }
 
 if [ "${ATHENA_POSTGRES_LOCAL:-false}" = 'true' ]; then
@@ -62,11 +81,9 @@ if [ "${ATHENA_POSTGRES_LOCAL:-false}" = 'true' ]; then
         echo "Bootstrapping local PostgreSQL cluster."
         pg_ctl -D "$POSTGRES_DATA_DIR" -w start -o "-p $POSTGRES_PORT -c listen_addresses=127.0.0.1 ${perf_opts[*]}" >/dev/null
         if [ "$POSTGRES_DB" != "postgres" ]; then
-            if ! PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" | grep -q 1; then
-                PGPASSWORD="$POSTGRES_PASSWORD" createdb -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" "$POSTGRES_DB"
-            fi
+            ensure_database "$POSTGRES_DB"
         fi
-        run_postgres_init "$POSTGRES_DB"
+        run_postgres_init
         pg_ctl -D "$POSTGRES_DATA_DIR" -m fast -w stop >/dev/null
     fi
 

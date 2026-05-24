@@ -75,7 +75,7 @@ func defaultPostgresDSN() string {
 		Scheme: "postgres",
 		User:   url.User(postgresUser),
 		Host:   net.JoinHostPort("127.0.0.1", env.StringFromEnv("ATHENA_POSTGRES_PORT", "5432")),
-		Path:   env.StringFromEnv("POSTGRES_DB", "athena"),
+		Path:   "worm",
 	}
 	if postgresPassword != "" {
 		postgresURL.User = url.UserPassword(postgresUser, postgresPassword)
