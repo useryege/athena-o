@@ -14,6 +14,12 @@ import (
 
 func (m *AssetState) Reset() { *m = AssetState{} }
 
+func (m *AveDetail) Reset() { *m = AveDetail{} }
+
+func (m *AvePair) Reset() { *m = AvePair{} }
+
+func (m *AveTokenDetail) Reset() { *m = AveTokenDetail{} }
+
 func (m *GenesisWalletAssetState) Reset() { *m = GenesisWalletAssetState{} }
 
 func (m *GenesisWalletState) Reset() { *m = GenesisWalletState{} }
@@ -75,6 +81,656 @@ func (m *AssetState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i -= len(m.TokenBalance)
 	copy(dAtA[i:], m.TokenBalance)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenBalance)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *AveDetail) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AveDetail) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AveDetail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Pairs) > 0 {
+		for iNdEx := len(m.Pairs) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Pairs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x3a
+		}
+	}
+	{
+		size, err := m.Token.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x32
+	i -= len(m.FetchedAt)
+	copy(dAtA[i:], m.FetchedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.FetchedAt)))
+	i--
+	dAtA[i] = 0x2a
+	i--
+	if m.IsAudited {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x20
+	i = encodeVarintGenerated(dAtA, i, uint64(m.DataType))
+	i--
+	dAtA[i] = 0x18
+	i -= len(m.Msg)
+	copy(dAtA[i:], m.Msg)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Msg)))
+	i--
+	dAtA[i] = 0x12
+	i = encodeVarintGenerated(dAtA, i, uint64(m.Status))
+	i--
+	dAtA[i] = 0x8
+	return len(dAtA) - i, nil
+}
+
+func (m *AvePair) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AvePair) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AvePair) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i--
+	if m.IsFake {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0x80
+	i -= len(m.FDV)
+	copy(dAtA[i:], m.FDV)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.FDV)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xfa
+	i -= len(m.MarketCap)
+	copy(dAtA[i:], m.MarketCap)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MarketCap)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xf2
+	i = encodeVarintGenerated(dAtA, i, uint64(m.UpdatedAt))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xe8
+	i = encodeVarintGenerated(dAtA, i, uint64(m.TxCount))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xe0
+	i = encodeVarintGenerated(dAtA, i, uint64(m.CreatedAt))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xd8
+	i -= len(m.PriceChange1D)
+	copy(dAtA[i:], m.PriceChange1D)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.PriceChange1D)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xd2
+	i -= len(m.TargetToken)
+	copy(dAtA[i:], m.TargetToken)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TargetToken)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xca
+	i = encodeVarintGenerated(dAtA, i, uint64(m.Token1Decimal))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xc0
+	i -= len(m.Token1Symbol)
+	copy(dAtA[i:], m.Token1Symbol)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Token1Symbol)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xba
+	i -= len(m.Token1Address)
+	copy(dAtA[i:], m.Token1Address)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Token1Address)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xb2
+	i = encodeVarintGenerated(dAtA, i, uint64(m.Token0Decimal))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xa8
+	i -= len(m.Token0Symbol)
+	copy(dAtA[i:], m.Token0Symbol)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Token0Symbol)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xa2
+	i -= len(m.Token0Address)
+	copy(dAtA[i:], m.Token0Address)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Token0Address)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x9a
+	i -= len(m.AMM)
+	copy(dAtA[i:], m.AMM)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AMM)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x92
+	i -= len(m.Chain)
+	copy(dAtA[i:], m.Chain)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Chain)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x8a
+	i -= len(m.Pair)
+	copy(dAtA[i:], m.Pair)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Pair)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x82
+	i -= len(m.TxAmount)
+	copy(dAtA[i:], m.TxAmount)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TxAmount)))
+	i--
+	dAtA[i] = 0x7a
+	i -= len(m.TotalSupply)
+	copy(dAtA[i:], m.TotalSupply)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TotalSupply)))
+	i--
+	dAtA[i] = 0x72
+	i -= len(m.Fee)
+	copy(dAtA[i:], m.Fee)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Fee)))
+	i--
+	dAtA[i] = 0x6a
+	i -= len(m.HighU)
+	copy(dAtA[i:], m.HighU)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.HighU)))
+	i--
+	dAtA[i] = 0x62
+	i -= len(m.LowU)
+	copy(dAtA[i:], m.LowU)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LowU)))
+	i--
+	dAtA[i] = 0x5a
+	i -= len(m.VolumeU)
+	copy(dAtA[i:], m.VolumeU)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.VolumeU)))
+	i--
+	dAtA[i] = 0x52
+	i -= len(m.PriceChange1H)
+	copy(dAtA[i:], m.PriceChange1H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.PriceChange1H)))
+	i--
+	dAtA[i] = 0x4a
+	i -= len(m.PriceChange24H)
+	copy(dAtA[i:], m.PriceChange24H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.PriceChange24H)))
+	i--
+	dAtA[i] = 0x42
+	i -= len(m.PriceChange)
+	copy(dAtA[i:], m.PriceChange)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.PriceChange)))
+	i--
+	dAtA[i] = 0x3a
+	i -= len(m.Token1PriceUSD)
+	copy(dAtA[i:], m.Token1PriceUSD)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Token1PriceUSD)))
+	i--
+	dAtA[i] = 0x32
+	i -= len(m.Token1PriceETH)
+	copy(dAtA[i:], m.Token1PriceETH)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Token1PriceETH)))
+	i--
+	dAtA[i] = 0x2a
+	i -= len(m.Token0PriceUSD)
+	copy(dAtA[i:], m.Token0PriceUSD)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Token0PriceUSD)))
+	i--
+	dAtA[i] = 0x22
+	i -= len(m.Token0PriceETH)
+	copy(dAtA[i:], m.Token0PriceETH)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Token0PriceETH)))
+	i--
+	dAtA[i] = 0x1a
+	i -= len(m.Reserve1)
+	copy(dAtA[i:], m.Reserve1)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Reserve1)))
+	i--
+	dAtA[i] = 0x12
+	i -= len(m.Reserve0)
+	copy(dAtA[i:], m.Reserve0)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Reserve0)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *AveTokenDetail) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AveTokenDetail) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AveTokenDetail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AveRiskLevel))
+	i--
+	dAtA[i] = 0x3
+	i--
+	dAtA[i] = 0xa8
+	i--
+	if m.IsHoneypot {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x3
+	i--
+	dAtA[i] = 0xa0
+	i--
+	if m.IsInBlacklist {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x3
+	i--
+	dAtA[i] = 0x98
+	i--
+	if m.HasNotOpenSource {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x3
+	i--
+	dAtA[i] = 0x90
+	i--
+	if m.HasNotAudited {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x3
+	i--
+	dAtA[i] = 0x88
+	i--
+	if m.HasNotRenounced {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x3
+	i--
+	dAtA[i] = 0x80
+	i--
+	if m.IsLPNotLocked {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xf8
+	i--
+	if m.HasMintMethod {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xf0
+	i -= len(m.MainPair)
+	copy(dAtA[i:], m.MainPair)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MainPair)))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xea
+	i = encodeVarintGenerated(dAtA, i, uint64(m.UpdatedAt))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xe0
+	i -= len(m.IsMintable)
+	copy(dAtA[i:], m.IsMintable)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.IsMintable)))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xda
+	i -= len(m.LockPlatform)
+	copy(dAtA[i:], m.LockPlatform)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LockPlatform)))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xd2
+	i = encodeVarintGenerated(dAtA, i, uint64(m.TxCount24H))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xc8
+	i = encodeVarintGenerated(dAtA, i, uint64(m.CreatedAt))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xc0
+	i = encodeVarintGenerated(dAtA, i, uint64(m.LaunchAt))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xb8
+	i -= len(m.RiskScore)
+	copy(dAtA[i:], m.RiskScore)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.RiskScore)))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xb2
+	i -= len(m.RiskInfo)
+	copy(dAtA[i:], m.RiskInfo)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.RiskInfo)))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xaa
+	i -= len(m.LogoURL)
+	copy(dAtA[i:], m.LogoURL)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LogoURL)))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0xa2
+	i = encodeVarintGenerated(dAtA, i, uint64(m.RiskLevel))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0x98
+	i -= len(m.Appendix)
+	copy(dAtA[i:], m.Appendix)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Appendix)))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0x92
+	i = encodeVarintGenerated(dAtA, i, uint64(m.Holders))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0x88
+	i -= len(m.Symbol)
+	copy(dAtA[i:], m.Symbol)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Symbol)))
+	i--
+	dAtA[i] = 0x2
+	i--
+	dAtA[i] = 0x82
+	i -= len(m.Name)
+	copy(dAtA[i:], m.Name)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Name)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xfa
+	i = encodeVarintGenerated(dAtA, i, uint64(m.Decimal))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xf0
+	i -= len(m.Chain)
+	copy(dAtA[i:], m.Chain)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Chain)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xea
+	i -= len(m.Token)
+	copy(dAtA[i:], m.Token)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Token)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xe2
+	i -= len(m.TokenSellVolumeU5M)
+	copy(dAtA[i:], m.TokenSellVolumeU5M)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenSellVolumeU5M)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xda
+	i -= len(m.TokenBuyVolumeU5M)
+	copy(dAtA[i:], m.TokenBuyVolumeU5M)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenBuyVolumeU5M)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xd2
+	i -= len(m.TokenTxVolumeUSD24H)
+	copy(dAtA[i:], m.TokenTxVolumeUSD24H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenTxVolumeUSD24H)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xca
+	i -= len(m.TokenTxVolumeUSD4H)
+	copy(dAtA[i:], m.TokenTxVolumeUSD4H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenTxVolumeUSD4H)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xc2
+	i -= len(m.TokenTxVolumeUSD1H)
+	copy(dAtA[i:], m.TokenTxVolumeUSD1H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenTxVolumeUSD1H)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xba
+	i -= len(m.TokenTxVolumeUSD5M)
+	copy(dAtA[i:], m.TokenTxVolumeUSD5M)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenTxVolumeUSD5M)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xb2
+	i -= len(m.TokenPriceChange24H)
+	copy(dAtA[i:], m.TokenPriceChange24H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenPriceChange24H)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xaa
+	i -= len(m.TokenPriceChange4H)
+	copy(dAtA[i:], m.TokenPriceChange4H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenPriceChange4H)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xa2
+	i -= len(m.TokenPriceChange1H)
+	copy(dAtA[i:], m.TokenPriceChange1H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenPriceChange1H)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x9a
+	i -= len(m.TokenPriceChange5M)
+	copy(dAtA[i:], m.TokenPriceChange5M)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenPriceChange5M)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x92
+	i -= len(m.MainPairTVL)
+	copy(dAtA[i:], m.MainPairTVL)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MainPairTVL)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x8a
+	i -= len(m.TVL)
+	copy(dAtA[i:], m.TVL)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TVL)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x82
+	i -= len(m.FDV)
+	copy(dAtA[i:], m.FDV)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.FDV)))
+	i--
+	dAtA[i] = 0x7a
+	i -= len(m.MarketCap)
+	copy(dAtA[i:], m.MarketCap)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MarketCap)))
+	i--
+	dAtA[i] = 0x72
+	i -= len(m.LockedPercent)
+	copy(dAtA[i:], m.LockedPercent)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LockedPercent)))
+	i--
+	dAtA[i] = 0x6a
+	i -= len(m.TxVolumeU24H)
+	copy(dAtA[i:], m.TxVolumeU24H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TxVolumeU24H)))
+	i--
+	dAtA[i] = 0x62
+	i -= len(m.TxAmount24H)
+	copy(dAtA[i:], m.TxAmount24H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TxAmount24H)))
+	i--
+	dAtA[i] = 0x5a
+	i -= len(m.OtherAmount)
+	copy(dAtA[i:], m.OtherAmount)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.OtherAmount)))
+	i--
+	dAtA[i] = 0x52
+	i -= len(m.BurnAmount)
+	copy(dAtA[i:], m.BurnAmount)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.BurnAmount)))
+	i--
+	dAtA[i] = 0x4a
+	i -= len(m.LockAmount)
+	copy(dAtA[i:], m.LockAmount)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LockAmount)))
+	i--
+	dAtA[i] = 0x42
+	i -= len(m.PriceChange1H)
+	copy(dAtA[i:], m.PriceChange1H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.PriceChange1H)))
+	i--
+	dAtA[i] = 0x3a
+	i -= len(m.PriceChange24H)
+	copy(dAtA[i:], m.PriceChange24H)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.PriceChange24H)))
+	i--
+	dAtA[i] = 0x32
+	i -= len(m.PriceChange1D)
+	copy(dAtA[i:], m.PriceChange1D)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.PriceChange1D)))
+	i--
+	dAtA[i] = 0x2a
+	i -= len(m.CurrentPriceUSD)
+	copy(dAtA[i:], m.CurrentPriceUSD)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CurrentPriceUSD)))
+	i--
+	dAtA[i] = 0x22
+	i -= len(m.CurrentPriceETH)
+	copy(dAtA[i:], m.CurrentPriceETH)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CurrentPriceETH)))
+	i--
+	dAtA[i] = 0x1a
+	i -= len(m.LaunchPrice)
+	copy(dAtA[i:], m.LaunchPrice)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LaunchPrice)))
+	i--
+	dAtA[i] = 0x12
+	i -= len(m.Total)
+	copy(dAtA[i:], m.Total)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Total)))
 	i--
 	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
@@ -380,20 +1036,6 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	i -= len(m.AveLogoFetchedAt)
-	copy(dAtA[i:], m.AveLogoFetchedAt)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AveLogoFetchedAt)))
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0xf2
-	i -= len(m.AveLogo)
-	copy(dAtA[i:], m.AveLogo)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AveLogo)))
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0xea
 	if len(m.GenesisWalletAssetStates) > 0 {
 		for iNdEx := len(m.GenesisWalletAssetStates) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -657,6 +1299,16 @@ func (m *ProjectView) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
+		size, err := m.AveDetail.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
 		size, err := m.Meta.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
@@ -827,6 +1479,197 @@ func (m *AssetState) Size() (n int) {
 	return n
 }
 
+func (m *AveDetail) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 1 + sovGenerated(uint64(m.Status))
+	l = len(m.Msg)
+	n += 1 + l + sovGenerated(uint64(l))
+	n += 1 + sovGenerated(uint64(m.DataType))
+	n += 2
+	l = len(m.FetchedAt)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = m.Token.Size()
+	n += 1 + l + sovGenerated(uint64(l))
+	if len(m.Pairs) > 0 {
+		for _, e := range m.Pairs {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *AvePair) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Reserve0)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Reserve1)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Token0PriceETH)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Token0PriceUSD)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Token1PriceETH)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Token1PriceUSD)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.PriceChange)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.PriceChange24H)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.PriceChange1H)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.VolumeU)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.LowU)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.HighU)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Fee)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.TotalSupply)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.TxAmount)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Pair)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.Chain)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.AMM)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.Token0Address)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.Token0Symbol)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.Token0Decimal))
+	l = len(m.Token1Address)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.Token1Symbol)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.Token1Decimal))
+	l = len(m.TargetToken)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.PriceChange1D)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.CreatedAt))
+	n += 2 + sovGenerated(uint64(m.TxCount))
+	n += 2 + sovGenerated(uint64(m.UpdatedAt))
+	l = len(m.MarketCap)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.FDV)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 3
+	return n
+}
+
+func (m *AveTokenDetail) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Total)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.LaunchPrice)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.CurrentPriceETH)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.CurrentPriceUSD)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.PriceChange1D)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.PriceChange24H)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.PriceChange1H)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.LockAmount)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.BurnAmount)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.OtherAmount)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.TxAmount24H)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.TxVolumeU24H)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.LockedPercent)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.MarketCap)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.FDV)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.TVL)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.MainPairTVL)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.TokenPriceChange5M)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.TokenPriceChange1H)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.TokenPriceChange4H)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.TokenPriceChange24H)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.TokenTxVolumeUSD5M)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.TokenTxVolumeUSD1H)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.TokenTxVolumeUSD4H)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.TokenTxVolumeUSD24H)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.TokenBuyVolumeU5M)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.TokenSellVolumeU5M)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.Token)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.Chain)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.Decimal))
+	l = len(m.Name)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.Symbol)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.Holders))
+	l = len(m.Appendix)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.RiskLevel))
+	l = len(m.LogoURL)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.RiskInfo)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.RiskScore)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.LaunchAt))
+	n += 2 + sovGenerated(uint64(m.CreatedAt))
+	n += 2 + sovGenerated(uint64(m.TxCount24H))
+	l = len(m.LockPlatform)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.IsMintable)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.UpdatedAt))
+	l = len(m.MainPair)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 3
+	n += 3
+	n += 3
+	n += 3
+	n += 3
+	n += 3
+	n += 3
+	n += 2 + sovGenerated(uint64(m.AveRiskLevel))
+	return n
+}
+
 func (m *GenesisWalletAssetState) Size() (n int) {
 	if m == nil {
 		return 0
@@ -985,10 +1828,6 @@ func (m *ProjectMeta) Size() (n int) {
 			n += 2 + l + sovGenerated(uint64(l))
 		}
 	}
-	l = len(m.AveLogo)
-	n += 2 + l + sovGenerated(uint64(l))
-	l = len(m.AveLogoFetchedAt)
-	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -1016,6 +1855,8 @@ func (m *ProjectView) Size() (n int) {
 	var l int
 	_ = l
 	l = m.Meta.Size()
+	n += 1 + l + sovGenerated(uint64(l))
+	l = m.AveDetail.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -1069,6 +1910,130 @@ func (this *AssetState) String() string {
 		`UsdtBalance:` + fmt.Sprintf("%v", this.UsdtBalance) + `,`,
 		`NativeBalance:` + fmt.Sprintf("%v", this.NativeBalance) + `,`,
 		`UsdtValue:` + fmt.Sprintf("%v", this.UsdtValue) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *AveDetail) String() string {
+	if this == nil {
+		return "nil"
+	}
+	repeatedStringForPairs := "[]AvePair{"
+	for _, f := range this.Pairs {
+		repeatedStringForPairs += strings.Replace(strings.Replace(f.String(), "AvePair", "AvePair", 1), `&`, ``, 1) + ","
+	}
+	repeatedStringForPairs += "}"
+	s := strings.Join([]string{`&AveDetail{`,
+		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
+		`Msg:` + fmt.Sprintf("%v", this.Msg) + `,`,
+		`DataType:` + fmt.Sprintf("%v", this.DataType) + `,`,
+		`IsAudited:` + fmt.Sprintf("%v", this.IsAudited) + `,`,
+		`FetchedAt:` + fmt.Sprintf("%v", this.FetchedAt) + `,`,
+		`Token:` + strings.Replace(strings.Replace(this.Token.String(), "AveTokenDetail", "AveTokenDetail", 1), `&`, ``, 1) + `,`,
+		`Pairs:` + repeatedStringForPairs + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *AvePair) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&AvePair{`,
+		`Reserve0:` + fmt.Sprintf("%v", this.Reserve0) + `,`,
+		`Reserve1:` + fmt.Sprintf("%v", this.Reserve1) + `,`,
+		`Token0PriceETH:` + fmt.Sprintf("%v", this.Token0PriceETH) + `,`,
+		`Token0PriceUSD:` + fmt.Sprintf("%v", this.Token0PriceUSD) + `,`,
+		`Token1PriceETH:` + fmt.Sprintf("%v", this.Token1PriceETH) + `,`,
+		`Token1PriceUSD:` + fmt.Sprintf("%v", this.Token1PriceUSD) + `,`,
+		`PriceChange:` + fmt.Sprintf("%v", this.PriceChange) + `,`,
+		`PriceChange24H:` + fmt.Sprintf("%v", this.PriceChange24H) + `,`,
+		`PriceChange1H:` + fmt.Sprintf("%v", this.PriceChange1H) + `,`,
+		`VolumeU:` + fmt.Sprintf("%v", this.VolumeU) + `,`,
+		`LowU:` + fmt.Sprintf("%v", this.LowU) + `,`,
+		`HighU:` + fmt.Sprintf("%v", this.HighU) + `,`,
+		`Fee:` + fmt.Sprintf("%v", this.Fee) + `,`,
+		`TotalSupply:` + fmt.Sprintf("%v", this.TotalSupply) + `,`,
+		`TxAmount:` + fmt.Sprintf("%v", this.TxAmount) + `,`,
+		`Pair:` + fmt.Sprintf("%v", this.Pair) + `,`,
+		`Chain:` + fmt.Sprintf("%v", this.Chain) + `,`,
+		`AMM:` + fmt.Sprintf("%v", this.AMM) + `,`,
+		`Token0Address:` + fmt.Sprintf("%v", this.Token0Address) + `,`,
+		`Token0Symbol:` + fmt.Sprintf("%v", this.Token0Symbol) + `,`,
+		`Token0Decimal:` + fmt.Sprintf("%v", this.Token0Decimal) + `,`,
+		`Token1Address:` + fmt.Sprintf("%v", this.Token1Address) + `,`,
+		`Token1Symbol:` + fmt.Sprintf("%v", this.Token1Symbol) + `,`,
+		`Token1Decimal:` + fmt.Sprintf("%v", this.Token1Decimal) + `,`,
+		`TargetToken:` + fmt.Sprintf("%v", this.TargetToken) + `,`,
+		`PriceChange1D:` + fmt.Sprintf("%v", this.PriceChange1D) + `,`,
+		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
+		`TxCount:` + fmt.Sprintf("%v", this.TxCount) + `,`,
+		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
+		`MarketCap:` + fmt.Sprintf("%v", this.MarketCap) + `,`,
+		`FDV:` + fmt.Sprintf("%v", this.FDV) + `,`,
+		`IsFake:` + fmt.Sprintf("%v", this.IsFake) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *AveTokenDetail) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&AveTokenDetail{`,
+		`Total:` + fmt.Sprintf("%v", this.Total) + `,`,
+		`LaunchPrice:` + fmt.Sprintf("%v", this.LaunchPrice) + `,`,
+		`CurrentPriceETH:` + fmt.Sprintf("%v", this.CurrentPriceETH) + `,`,
+		`CurrentPriceUSD:` + fmt.Sprintf("%v", this.CurrentPriceUSD) + `,`,
+		`PriceChange1D:` + fmt.Sprintf("%v", this.PriceChange1D) + `,`,
+		`PriceChange24H:` + fmt.Sprintf("%v", this.PriceChange24H) + `,`,
+		`PriceChange1H:` + fmt.Sprintf("%v", this.PriceChange1H) + `,`,
+		`LockAmount:` + fmt.Sprintf("%v", this.LockAmount) + `,`,
+		`BurnAmount:` + fmt.Sprintf("%v", this.BurnAmount) + `,`,
+		`OtherAmount:` + fmt.Sprintf("%v", this.OtherAmount) + `,`,
+		`TxAmount24H:` + fmt.Sprintf("%v", this.TxAmount24H) + `,`,
+		`TxVolumeU24H:` + fmt.Sprintf("%v", this.TxVolumeU24H) + `,`,
+		`LockedPercent:` + fmt.Sprintf("%v", this.LockedPercent) + `,`,
+		`MarketCap:` + fmt.Sprintf("%v", this.MarketCap) + `,`,
+		`FDV:` + fmt.Sprintf("%v", this.FDV) + `,`,
+		`TVL:` + fmt.Sprintf("%v", this.TVL) + `,`,
+		`MainPairTVL:` + fmt.Sprintf("%v", this.MainPairTVL) + `,`,
+		`TokenPriceChange5M:` + fmt.Sprintf("%v", this.TokenPriceChange5M) + `,`,
+		`TokenPriceChange1H:` + fmt.Sprintf("%v", this.TokenPriceChange1H) + `,`,
+		`TokenPriceChange4H:` + fmt.Sprintf("%v", this.TokenPriceChange4H) + `,`,
+		`TokenPriceChange24H:` + fmt.Sprintf("%v", this.TokenPriceChange24H) + `,`,
+		`TokenTxVolumeUSD5M:` + fmt.Sprintf("%v", this.TokenTxVolumeUSD5M) + `,`,
+		`TokenTxVolumeUSD1H:` + fmt.Sprintf("%v", this.TokenTxVolumeUSD1H) + `,`,
+		`TokenTxVolumeUSD4H:` + fmt.Sprintf("%v", this.TokenTxVolumeUSD4H) + `,`,
+		`TokenTxVolumeUSD24H:` + fmt.Sprintf("%v", this.TokenTxVolumeUSD24H) + `,`,
+		`TokenBuyVolumeU5M:` + fmt.Sprintf("%v", this.TokenBuyVolumeU5M) + `,`,
+		`TokenSellVolumeU5M:` + fmt.Sprintf("%v", this.TokenSellVolumeU5M) + `,`,
+		`Token:` + fmt.Sprintf("%v", this.Token) + `,`,
+		`Chain:` + fmt.Sprintf("%v", this.Chain) + `,`,
+		`Decimal:` + fmt.Sprintf("%v", this.Decimal) + `,`,
+		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
+		`Symbol:` + fmt.Sprintf("%v", this.Symbol) + `,`,
+		`Holders:` + fmt.Sprintf("%v", this.Holders) + `,`,
+		`Appendix:` + fmt.Sprintf("%v", this.Appendix) + `,`,
+		`RiskLevel:` + fmt.Sprintf("%v", this.RiskLevel) + `,`,
+		`LogoURL:` + fmt.Sprintf("%v", this.LogoURL) + `,`,
+		`RiskInfo:` + fmt.Sprintf("%v", this.RiskInfo) + `,`,
+		`RiskScore:` + fmt.Sprintf("%v", this.RiskScore) + `,`,
+		`LaunchAt:` + fmt.Sprintf("%v", this.LaunchAt) + `,`,
+		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
+		`TxCount24H:` + fmt.Sprintf("%v", this.TxCount24H) + `,`,
+		`LockPlatform:` + fmt.Sprintf("%v", this.LockPlatform) + `,`,
+		`IsMintable:` + fmt.Sprintf("%v", this.IsMintable) + `,`,
+		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
+		`MainPair:` + fmt.Sprintf("%v", this.MainPair) + `,`,
+		`HasMintMethod:` + fmt.Sprintf("%v", this.HasMintMethod) + `,`,
+		`IsLPNotLocked:` + fmt.Sprintf("%v", this.IsLPNotLocked) + `,`,
+		`HasNotRenounced:` + fmt.Sprintf("%v", this.HasNotRenounced) + `,`,
+		`HasNotAudited:` + fmt.Sprintf("%v", this.HasNotAudited) + `,`,
+		`HasNotOpenSource:` + fmt.Sprintf("%v", this.HasNotOpenSource) + `,`,
+		`IsInBlacklist:` + fmt.Sprintf("%v", this.IsInBlacklist) + `,`,
+		`IsHoneypot:` + fmt.Sprintf("%v", this.IsHoneypot) + `,`,
+		`AveRiskLevel:` + fmt.Sprintf("%v", this.AveRiskLevel) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1184,8 +2149,6 @@ func (this *ProjectMeta) String() string {
 		`UsdtPair:` + strings.Replace(strings.Replace(this.UsdtPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
 		`AssetState:` + strings.Replace(strings.Replace(this.AssetState.String(), "AssetState", "AssetState", 1), `&`, ``, 1) + `,`,
 		`GenesisWalletAssetStates:` + repeatedStringForGenesisWalletAssetStates + `,`,
-		`AveLogo:` + fmt.Sprintf("%v", this.AveLogo) + `,`,
-		`AveLogoFetchedAt:` + fmt.Sprintf("%v", this.AveLogoFetchedAt) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1210,6 +2173,7 @@ func (this *ProjectView) String() string {
 	}
 	s := strings.Join([]string{`&ProjectView{`,
 		`Meta:` + strings.Replace(strings.Replace(this.Meta.String(), "ProjectMeta", "ProjectMeta", 1), `&`, ``, 1) + `,`,
+		`AveDetail:` + strings.Replace(strings.Replace(this.AveDetail.String(), "AveDetail", "AveDetail", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1441,6 +2405,2800 @@ func (m *AssetState) Unmarshal(dAtA []byte) error {
 			}
 			m.UsdtValue = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AveDetail) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AveDetail: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AveDetail: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Msg", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Msg = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataType", wireType)
+			}
+			m.DataType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataType |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsAudited", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsAudited = bool(v != 0)
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FetchedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FetchedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Token.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pairs", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Pairs = append(m.Pairs, AvePair{})
+			if err := m.Pairs[len(m.Pairs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AvePair) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AvePair: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AvePair: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reserve0", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Reserve0 = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reserve1", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Reserve1 = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token0PriceETH", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token0PriceETH = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token0PriceUSD", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token0PriceUSD = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token1PriceETH", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token1PriceETH = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token1PriceUSD", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token1PriceUSD = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PriceChange", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PriceChange = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PriceChange24H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PriceChange24H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PriceChange1H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PriceChange1H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VolumeU", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.VolumeU = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LowU", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LowU = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HighU", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.HighU = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Fee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Fee = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalSupply", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TotalSupply = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TxAmount = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pair", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Pair = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 18:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AMM", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AMM = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token0Address", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token0Address = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token0Symbol", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token0Symbol = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 21:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token0Decimal", wireType)
+			}
+			m.Token0Decimal = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Token0Decimal |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token1Address", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token1Address = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 23:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token1Symbol", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token1Symbol = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 24:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token1Decimal", wireType)
+			}
+			m.Token1Decimal = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Token1Decimal |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 25:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TargetToken", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TargetToken = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 26:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PriceChange1D", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PriceChange1D = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 27:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			m.CreatedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CreatedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 28:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxCount", wireType)
+			}
+			m.TxCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TxCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 29:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
+			}
+			m.UpdatedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UpdatedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 30:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MarketCap", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MarketCap = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 31:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FDV", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FDV = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 32:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsFake", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsFake = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AveTokenDetail) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AveTokenDetail: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AveTokenDetail: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Total = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LaunchPrice", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LaunchPrice = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CurrentPriceETH", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CurrentPriceETH = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CurrentPriceUSD", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CurrentPriceUSD = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PriceChange1D", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PriceChange1D = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PriceChange24H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PriceChange24H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PriceChange1H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PriceChange1H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LockAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LockAmount = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BurnAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.BurnAmount = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OtherAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OtherAmount = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxAmount24H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TxAmount24H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxVolumeU24H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TxVolumeU24H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LockedPercent", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LockedPercent = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MarketCap", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MarketCap = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FDV", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FDV = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TVL", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TVL = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MainPairTVL", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MainPairTVL = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 18:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenPriceChange5M", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenPriceChange5M = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenPriceChange1H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenPriceChange1H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenPriceChange4H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenPriceChange4H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 21:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenPriceChange24H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenPriceChange24H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenTxVolumeUSD5M", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenTxVolumeUSD5M = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 23:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenTxVolumeUSD1H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenTxVolumeUSD1H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 24:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenTxVolumeUSD4H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenTxVolumeUSD4H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 25:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenTxVolumeUSD24H", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenTxVolumeUSD24H = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 26:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenBuyVolumeU5M", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenBuyVolumeU5M = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 27:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenSellVolumeU5M", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenSellVolumeU5M = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 28:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 29:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 30:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Decimal", wireType)
+			}
+			m.Decimal = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Decimal |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 31:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 32:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Symbol", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Symbol = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 33:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Holders", wireType)
+			}
+			m.Holders = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Holders |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 34:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Appendix", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Appendix = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 35:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskLevel", wireType)
+			}
+			m.RiskLevel = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskLevel |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 36:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LogoURL", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LogoURL = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 37:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskInfo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RiskInfo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 38:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskScore", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RiskScore = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 39:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LaunchAt", wireType)
+			}
+			m.LaunchAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LaunchAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 40:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			m.CreatedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CreatedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 41:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxCount24H", wireType)
+			}
+			m.TxCount24H = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TxCount24H |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 42:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LockPlatform", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LockPlatform = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 43:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsMintable", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IsMintable = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 44:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
+			}
+			m.UpdatedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UpdatedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 45:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MainPair", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MainPair = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 46:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HasMintMethod", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.HasMintMethod = bool(v != 0)
+		case 47:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsLPNotLocked", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsLPNotLocked = bool(v != 0)
+		case 48:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HasNotRenounced", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.HasNotRenounced = bool(v != 0)
+		case 49:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HasNotAudited", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.HasNotAudited = bool(v != 0)
+		case 50:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HasNotOpenSource", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.HasNotOpenSource = bool(v != 0)
+		case 51:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsInBlacklist", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsInBlacklist = bool(v != 0)
+		case 52:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsHoneypot", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsHoneypot = bool(v != 0)
+		case 53:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveRiskLevel", wireType)
+			}
+			m.AveRiskLevel = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AveRiskLevel |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -3420,70 +7178,6 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 29:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AveLogo", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AveLogo = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 30:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AveLogoFetchedAt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AveLogoFetchedAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -3748,6 +7442,39 @@ func (m *ProjectView) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.Meta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveDetail", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.AveDetail.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

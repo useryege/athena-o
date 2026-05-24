@@ -7,6 +7,12 @@ package v1alpha1
 
 func (*AssetState) ProtoMessage() {}
 
+func (*AveDetail) ProtoMessage() {}
+
+func (*AvePair) ProtoMessage() {}
+
+func (*AveTokenDetail) ProtoMessage() {}
+
 func (*GenesisWalletAssetState) ProtoMessage() {}
 
 func (*GenesisWalletState) ProtoMessage() {}

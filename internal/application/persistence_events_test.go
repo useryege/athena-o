@@ -19,7 +19,7 @@ type persistenceEventWriterFake struct {
 	err             error
 	sourceCodeCalls int
 	projectMeta     appstore.ProjectMeta
-	aveLogo         string
+	aveDetail       appstore.ProjectAveDetail
 	creatorResult   appstore.SimulateResult
 	projectReport   appstore.ProjectReport
 }
@@ -50,9 +50,9 @@ func (w *persistenceEventWriterFake) WriteProjectSourceQualityReport(context.Con
 	return w.err
 }
 
-func (w *persistenceEventWriterFake) WriteProjectAveLogo(_ context.Context, _ common.Address, logo string) error {
+func (w *persistenceEventWriterFake) WriteProjectAveDetail(_ context.Context, _ common.Address, detail appstore.ProjectAveDetail) error {
 	if w.err == nil {
-		w.aveLogo = logo
+		w.aveDetail = detail
 	}
 	return w.err
 }
@@ -192,14 +192,26 @@ func TestRedisPersistenceEventBusAppliesProjectCreatorResult(t *testing.T) {
 	}
 }
 
-func TestRedisPersistenceEventBusAppliesProjectAveLogo(t *testing.T) {
+func TestRedisPersistenceEventBusAppliesProjectAveDetail(t *testing.T) {
 	_, bus := newPersistenceEventBusTest(t)
 	ctx := context.Background()
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
-	logo := "https://example.com/logo.png"
+	detail := appstore.ProjectAveDetail{
+		Status:    1,
+		Msg:       "SUCCESS",
+		DataType:  1,
+		IsAudited: true,
+		FetchedAt: time.Date(2026, 5, 23, 4, 6, 6, 0, time.UTC),
+		Token: appstore.ProjectAveTokenDetail{
+			Token:   "token",
+			Chain:   "bsc",
+			LogoURL: "https://example.com/logo.png",
+		},
+		Pairs: []appstore.ProjectAvePair{{Pair: "pair-1", Chain: "bsc"}},
+	}
 
-	if err := bus.PublishProjectAveLogoUpdate(ctx, contract, logo); err != nil {
-		t.Fatalf("publish ave logo: %v", err)
+	if err := bus.PublishProjectAveDetailUpsert(ctx, contract, detail); err != nil {
+		t.Fatalf("publish ave detail: %v", err)
 	}
 	writer := &persistenceEventWriterFake{}
 	processed, err := bus.consume(ctx, ">", writer, time.Millisecond)
@@ -209,8 +221,8 @@ func TestRedisPersistenceEventBusAppliesProjectAveLogo(t *testing.T) {
 	if processed != 1 {
 		t.Fatalf("processed = %d, want 1", processed)
 	}
-	if writer.aveLogo != logo {
-		t.Fatalf("ave logo = %q, want %q", writer.aveLogo, logo)
+	if writer.aveDetail.Token.LogoURL != detail.Token.LogoURL || len(writer.aveDetail.Pairs) != 1 {
+		t.Fatalf("ave detail = %+v, want %+v", writer.aveDetail, detail)
 	}
 }
 
@@ -223,20 +235,17 @@ func TestRedisPersistenceEventBusAppliesProjectMetaPairAddressesAndFetchAt(t *te
 	usdtPair := common.HexToAddress("0x1000000000000000000000000000000000000004")
 	txHash := common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 	fetchAt := time.Date(2026, 5, 23, 4, 5, 6, 0, time.UTC)
-	aveLogoFetchedAt := time.Date(2026, 5, 23, 4, 6, 6, 0, time.UTC)
 
 	if err := bus.PublishProjectMetaSave(ctx, appstore.ProjectMeta{
-		BlockTime:        100,
-		BlockNumber:      200,
-		Contract:         contract,
-		Creator:          creator,
-		WethPair:         wethPair,
-		UsdtPair:         usdtPair,
-		FetchAt:          fetchAt,
-		TxHash:           txHash,
-		TxIndex:          7,
-		AveLogo:          "https://example.com/logo.png",
-		AveLogoFetchedAt: aveLogoFetchedAt,
+		BlockTime:   100,
+		BlockNumber: 200,
+		Contract:    contract,
+		Creator:     creator,
+		WethPair:    wethPair,
+		UsdtPair:    usdtPair,
+		FetchAt:     fetchAt,
+		TxHash:      txHash,
+		TxIndex:     7,
 	}); err != nil {
 		t.Fatalf("publish project meta: %v", err)
 	}
@@ -253,9 +262,6 @@ func TestRedisPersistenceEventBusAppliesProjectMetaPairAddressesAndFetchAt(t *te
 	}
 	if !writer.projectMeta.FetchAt.Equal(fetchAt) {
 		t.Fatalf("fetch at = %s, want %s", writer.projectMeta.FetchAt, fetchAt)
-	}
-	if writer.projectMeta.AveLogo != "https://example.com/logo.png" || !writer.projectMeta.AveLogoFetchedAt.Equal(aveLogoFetchedAt) {
-		t.Fatalf("ave logo = %q fetched at %s, want logo and %s", writer.projectMeta.AveLogo, writer.projectMeta.AveLogoFetchedAt, aveLogoFetchedAt)
 	}
 }
 

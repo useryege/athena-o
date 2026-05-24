@@ -31,15 +31,14 @@ const (
 	projectFieldSourceCodeFetchedAt                = "source_code_fetched_at"
 	projectFieldSourceQualityReport                = "source_quality_report"
 	projectFieldSourceQualityReportFetchedAt       = "source_quality_report_fetched_at"
-	projectFieldAveLogo                            = "ave_logo"
-	projectFieldAveLogoFetchedAt                   = "ave_logo_fetched_at"
+	projectFieldAveDetail                          = "ave_detail"
 	projectFieldCodeBinHash                        = "code_bin_hash"
 	projectFieldCodeBinHashFetchedAt               = "code_bin_hash_fetched_at"
 	projectFieldGenesisWallets                     = "genesis_wallets"
 	projectFieldGenesisWalletsFetchedAt            = "genesis_wallets_fetched_at"
 	projectFieldReport                             = "report"
 
-	projectSchemaVersion = "12"
+	projectSchemaVersion = "13"
 
 	projectIndexAll        = "project:index:all"
 	projectIndexPairPrefix = "project:index:pair:"
@@ -336,6 +335,10 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 	if err != nil {
 		return fmt.Errorf("marshal genesis wallets for %s: %w", project.Meta.Contract.Hex(), err)
 	}
+	aveDetailPayload, err := mustMarshalJSON(project.AveDetail)
+	if err != nil {
+		return fmt.Errorf("marshal ave detail for %s: %w", project.Meta.Contract.Hex(), err)
+	}
 
 	projectKey := projectDataV2Key(project.Meta.Contract)
 	pipe.HSet(ctx, projectKey, map[string]any{
@@ -353,8 +356,7 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldSourceCodeFetchedAt:                formatOptionalTime(project.Meta.SourceCodeFetchedAt),
 		projectFieldSourceQualityReport:                project.Meta.SourceQualityReport,
 		projectFieldSourceQualityReportFetchedAt:       formatOptionalTime(project.Meta.SourceQualityReportFetchedAt),
-		projectFieldAveLogo:                            project.Meta.AveLogo,
-		projectFieldAveLogoFetchedAt:                   formatOptionalTime(project.Meta.AveLogoFetchedAt),
+		projectFieldAveDetail:                          aveDetailPayload,
 		projectFieldCodeBinHash:                        project.Meta.CodeBinHash.Hex(),
 		projectFieldCodeBinHashFetchedAt:               formatOptionalTime(project.Meta.CodeBinHashFetchedAt),
 		projectFieldReport:                             reportPayload,
@@ -436,11 +438,12 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 	if current == nil || !current.Meta.SourceQualityReportFetchedAt.Equal(next.Meta.SourceQualityReportFetchedAt) {
 		fields[projectFieldSourceQualityReportFetchedAt] = formatOptionalTime(next.Meta.SourceQualityReportFetchedAt)
 	}
-	if current == nil || current.Meta.AveLogo != next.Meta.AveLogo {
-		fields[projectFieldAveLogo] = next.Meta.AveLogo
-	}
-	if current == nil || !current.Meta.AveLogoFetchedAt.Equal(next.Meta.AveLogoFetchedAt) {
-		fields[projectFieldAveLogoFetchedAt] = formatOptionalTime(next.Meta.AveLogoFetchedAt)
+	if current == nil || !reflect.DeepEqual(current.AveDetail, next.AveDetail) {
+		aveDetailPayload, err := mustMarshalJSON(next.AveDetail)
+		if err != nil {
+			return nil, fmt.Errorf("marshal ave detail for %s: %w", next.Meta.Contract.Hex(), err)
+		}
+		fields[projectFieldAveDetail] = aveDetailPayload
 	}
 	if current == nil || current.Meta.CodeBinHash != next.Meta.CodeBinHash {
 		fields[projectFieldCodeBinHash] = next.Meta.CodeBinHash.Hex()
@@ -563,13 +566,12 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		}
 		project.Meta.SourceQualityReportFetchedAt = fetchedAt
 	}
-	project.Meta.AveLogo = values[projectFieldAveLogo]
-	if raw := values[projectFieldAveLogoFetchedAt]; raw != "" {
-		fetchedAt, err := time.Parse(time.RFC3339Nano, raw)
-		if err != nil {
+	if raw := values[projectFieldAveDetail]; raw != "" && raw != "null" {
+		var detail ProjectAveDetail
+		if err := json.Unmarshal([]byte(raw), &detail); err != nil {
 			return nil, false, err
 		}
-		project.Meta.AveLogoFetchedAt = fetchedAt
+		project.AveDetail = &detail
 	}
 	if raw := values[projectFieldCodeBinHash]; raw != "" {
 		project.Meta.CodeBinHash = common.HexToHash(raw)
@@ -678,6 +680,13 @@ func cloneProjectForCache(project *Project) *Project {
 		return nil
 	}
 	cloned := *project
+	if project.AveDetail != nil {
+		detail := *project.AveDetail
+		if project.AveDetail.Pairs != nil {
+			detail.Pairs = append([]ProjectAvePair(nil), project.AveDetail.Pairs...)
+		}
+		cloned.AveDetail = &detail
+	}
 	return &cloned
 }
 

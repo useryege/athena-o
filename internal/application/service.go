@@ -224,12 +224,12 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 	}
 
 	apiFetcher = ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
-	aveLogoFetcher, aveChain, err := newAveLogoFetcherForChain(s.aveConfig, chainID.Int64())
+	aveDetailFetcher, aveChain, err := newAveDetailFetcherForChain(s.aveConfig, chainID.Int64())
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	if aveLogoFetcher != nil {
-		log.WithField("chain", aveChain).Info("Ave logo fetcher configured successfully")
+	if aveDetailFetcher != nil {
+		log.WithField("chain", aveChain).Info("Ave detail fetcher configured successfully")
 	}
 	projectSimulator := NewProjectSimulator(s.nodeClient)
 
@@ -269,7 +269,7 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		athenaFetcher,
 		projectSimulator,
 		apiFetcher,
-		aveLogoFetcher,
+		aveDetailFetcher,
 		aveChain,
 		s.sourceQualityAnalyzer,
 		s.persistencePublisher,
@@ -338,18 +338,18 @@ func buildProjectQueries(projects []*Project) ([]athenacontract.AthenaProjectQue
 	return queries, contracts
 }
 
-func newAveLogoFetcherForChain(config ave.Config, chainID int64) (avelogo.Fetcher, string, error) {
+func newAveDetailFetcherForChain(config ave.Config, chainID int64) (avelogo.Fetcher, string, error) {
 	if strings.TrimSpace(config.APIKey) == "" {
 		return nil, "", nil
 	}
 	aveChain, ok := aveChainNameForChainID(chainID)
 	if !ok {
-		log.WithField("chainID", chainID).Warn("Ave logo fetcher disabled for unsupported chain")
+		log.WithField("chainID", chainID).Warn("Ave detail fetcher disabled for unsupported chain")
 		return nil, "", nil
 	}
 	client, err := ave.NewClient(config)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to configure Ave logo fetcher: %w", err)
+		return nil, "", fmt.Errorf("failed to configure Ave detail fetcher: %w", err)
 	}
 	return avelogo.NewFetcher(client), aveChain, nil
 }
@@ -975,6 +975,17 @@ func (s *Service) hydrateProjectSnapshotsFromMetas(ctx context.Context, metas []
 		}
 		for _, project := range projects {
 			project.Meta.CreatorHistoricalProjects = creatorHistoricalProjectContractsFromStore(byContract[project.Meta.Contract])
+		}
+	}
+	if store, ok := s.store.(appstore.ProjectAveDetailStore); ok && store != nil {
+		byContract, err := store.ListProjectAveDetailsByContracts(ctx, contracts)
+		if err != nil {
+			return nil, err
+		}
+		for _, project := range projects {
+			if detail, ok := byContract[project.Meta.Contract]; ok {
+				project.AveDetail = projectAveDetailFromStore(detail)
+			}
 		}
 	}
 

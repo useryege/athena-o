@@ -27,12 +27,111 @@ type ProjectMeta struct {
 	CodeBinHashFetchedAt               time.Time
 	SourceQualityReport                string
 	SourceQualityReportFetchedAt       time.Time
-	AveLogo                            string
-	AveLogoFetchedAt                   time.Time
 	CreatorResult                      SimulateResult
 	Report                             ProjectReport
 	GenesisWalletsFetchedAt            time.Time
 	CreatorHistoricalProjectsFetchedAt time.Time
+}
+
+type ProjectAveDetail struct {
+	Status    int
+	Msg       string
+	DataType  int
+	IsAudited bool
+	FetchedAt time.Time
+	Token     ProjectAveTokenDetail
+	Pairs     []ProjectAvePair
+}
+
+type ProjectAveTokenDetail struct {
+	Total               string
+	LaunchPrice         string
+	CurrentPriceETH     string
+	CurrentPriceUSD     string
+	PriceChange1D       string
+	PriceChange24H      string
+	PriceChange1H       string
+	LockAmount          string
+	BurnAmount          string
+	OtherAmount         string
+	TxAmount24H         string
+	TxVolumeU24H        string
+	LockedPercent       string
+	MarketCap           string
+	FDV                 string
+	TVL                 string
+	MainPairTVL         string
+	TokenPriceChange5M  string
+	TokenPriceChange1H  string
+	TokenPriceChange4H  string
+	TokenPriceChange24H string
+	TokenTxVolumeUSD5M  string
+	TokenTxVolumeUSD1H  string
+	TokenTxVolumeUSD4H  string
+	TokenTxVolumeUSD24H string
+	TokenBuyVolumeU5M   string
+	TokenSellVolumeU5M  string
+	Token               string
+	Chain               string
+	Decimal             int
+	Name                string
+	Symbol              string
+	Holders             int
+	Appendix            string
+	RiskLevel           int
+	LogoURL             string
+	RiskInfo            string
+	RiskScore           string
+	LaunchAt            int64
+	CreatedAt           int64
+	TxCount24H          int
+	LockPlatform        string
+	IsMintable          string
+	UpdatedAt           int64
+	MainPair            string
+	HasMintMethod       bool
+	IsLPNotLocked       bool
+	HasNotRenounced     bool
+	HasNotAudited       bool
+	HasNotOpenSource    bool
+	IsInBlacklist       bool
+	IsHoneypot          bool
+	AveRiskLevel        int
+}
+
+type ProjectAvePair struct {
+	Reserve0       string
+	Reserve1       string
+	Token0PriceETH string
+	Token0PriceUSD string
+	Token1PriceETH string
+	Token1PriceUSD string
+	PriceChange    string
+	PriceChange24H string
+	PriceChange1H  string
+	VolumeU        string
+	LowU           string
+	HighU          string
+	Fee            string
+	TotalSupply    string
+	TxAmount       string
+	Pair           string
+	Chain          string
+	AMM            string
+	Token0Address  string
+	Token0Symbol   string
+	Token0Decimal  int
+	Token1Address  string
+	Token1Symbol   string
+	Token1Decimal  int
+	TargetToken    string
+	PriceChange1D  string
+	CreatedAt      int64
+	TxCount        int
+	UpdatedAt      int64
+	MarketCap      string
+	FDV            string
+	IsFake         bool
 }
 
 type SimulateResult struct {
@@ -102,12 +201,18 @@ type ProjectStore interface {
 	UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
 	UpdateProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
-	UpdateProjectAveLogo(ctx context.Context, contract common.Address, logo string) error
+	UpsertProjectAveDetail(ctx context.Context, contract common.Address, detail ProjectAveDetail) error
 	UpdateProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error
 	UpdateProjectReport(ctx context.Context, contract common.Address, report ProjectReport) error
 	ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error)
 	ListProjectMetasByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error)
 	GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error)
+}
+
+type ProjectAveDetailStore interface {
+	UpsertProjectAveDetail(ctx context.Context, contract common.Address, detail ProjectAveDetail) error
+	GetProjectAveDetail(ctx context.Context, contract common.Address) (*ProjectAveDetail, error)
+	ListProjectAveDetailsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectAveDetail, error)
 }
 
 type ProjectEventLogStore interface {

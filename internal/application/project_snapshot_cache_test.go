@@ -262,7 +262,7 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	wethPair := common.HexToAddress("0x00000000000000000000000000000000000000b1")
 	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000b2")
 	fetchAt := mustParseTimeForTest(t, "2026-05-22T00:30:00Z")
-	aveLogoFetchedAt := mustParseTimeForTest(t, "2026-05-22T00:31:00Z")
+	aveDetailFetchedAt := mustParseTimeForTest(t, "2026-05-22T00:31:00Z")
 	sourceCodeHash := common.HexToHash("0x0101010101010101010101010101010101010101010101010101010101010101")
 	codeBinHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
 
@@ -272,14 +272,21 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 			WethPair:                  wethPair,
 			UsdtPair:                  usdtPair,
 			FetchAt:                   fetchAt,
-			AveLogo:                   "https://example.com/logo.png",
-			AveLogoFetchedAt:          aveLogoFetchedAt,
 			SourceCodeHash:            sourceCodeHash,
 			CodeBinHash:               codeBinHash,
 			CreatorHistoricalProjects: historicalProjects,
 			CreatorResult: SimulateResult{
 				CanMintViaTransferToWethPair: true,
 			},
+		},
+		AveDetail: &ProjectAveDetail{
+			Status:    1,
+			Msg:       "SUCCESS",
+			DataType:  1,
+			IsAudited: true,
+			FetchedAt: aveDetailFetchedAt,
+			Token:     ProjectAveTokenDetail{LogoURL: "https://example.com/logo.png", Token: "token", Chain: "bsc"},
+			Pairs:     []ProjectAvePair{{Pair: "pair-1", Chain: "bsc"}},
 		},
 	}); err != nil {
 		t.Fatalf("set project: %v", err)
@@ -304,11 +311,8 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	if got := project.Meta.FetchAt; !got.Equal(fetchAt) {
 		t.Fatalf("fetch at = %s, want %s", got, fetchAt)
 	}
-	if got := project.Meta.AveLogo; got != "https://example.com/logo.png" {
-		t.Fatalf("ave logo = %q, want logo", got)
-	}
-	if got := project.Meta.AveLogoFetchedAt; !got.Equal(aveLogoFetchedAt) {
-		t.Fatalf("ave logo fetched at = %s, want %s", got, aveLogoFetchedAt)
+	if project.AveDetail == nil || project.AveDetail.Token.LogoURL != "https://example.com/logo.png" {
+		t.Fatalf("ave detail = %+v, want logo", project.AveDetail)
 	}
 	if got := project.Meta.SourceCodeHash; got != sourceCodeHash {
 		t.Fatalf("source code hash = %s, want %s", got.Hex(), sourceCodeHash.Hex())
@@ -336,11 +340,8 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	if got := values[projectFieldFetchAt]; got != fetchAt.Format(time.RFC3339Nano) {
 		t.Fatalf("raw fetch at = %q, want %q", got, fetchAt.Format(time.RFC3339Nano))
 	}
-	if got := values[projectFieldAveLogo]; got != "https://example.com/logo.png" {
-		t.Fatalf("raw ave logo = %q, want logo", got)
-	}
-	if got := values[projectFieldAveLogoFetchedAt]; got != aveLogoFetchedAt.Format(time.RFC3339Nano) {
-		t.Fatalf("raw ave logo fetched at = %q, want %q", got, aveLogoFetchedAt.Format(time.RFC3339Nano))
+	if got := values[projectFieldAveDetail]; got == "" || got == "null" {
+		t.Fatalf("raw ave detail = %q, want detail", got)
 	}
 	if got := values[projectFieldSourceCodeHash]; got != sourceCodeHash.Hex() {
 		t.Fatalf("raw source code hash = %q, want %q", got, sourceCodeHash.Hex())
@@ -385,8 +386,6 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 		CodeBinHashFetchedAt:         mustParseTimeForTest(t, "2026-05-21T23:59:30Z"),
 		SourceQualityReport:          "## Report",
 		SourceQualityReportFetchedAt: mustParseTimeForTest(t, "2026-05-22T00:00:00Z"),
-		AveLogo:                      "https://example.com/logo.png",
-		AveLogoFetchedAt:             mustParseTimeForTest(t, "2026-05-22T00:00:30Z"),
 		GenesisWalletsFetchedAt:      mustParseTimeForTest(t, "2026-05-22T00:01:00Z"),
 		ChainState: athenacontract.AthenaProject{
 			Token: athenacontract.AthenaToken{
@@ -407,6 +406,12 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 		CreatorResult: SimulateResult{
 			CanMintFromZeroViaTransferFrom: true,
 		},
+	}, AveDetail: &ProjectAveDetail{
+		Status:    1,
+		Msg:       "SUCCESS",
+		DataType:  1,
+		FetchedAt: mustParseTimeForTest(t, "2026-05-22T00:00:30Z"),
+		Token:     ProjectAveTokenDetail{LogoURL: "https://example.com/logo.png", Token: "token", Chain: "bsc"},
 	}}
 
 	listItem := projectToListItem(project)
@@ -432,8 +437,8 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	if listItem.BlockTime != 100 || listItem.BlockNumber != 200 || listItem.TxIndex != 3 {
 		t.Fatalf("list chain position = %d/%d/%d, want 100/200/3", listItem.BlockTime, listItem.BlockNumber, listItem.TxIndex)
 	}
-	if listItem.AveLogo != project.Meta.AveLogo {
-		t.Fatalf("list ave logo = %q, want %q", listItem.AveLogo, project.Meta.AveLogo)
+	if listItem.AveLogo != project.AveDetail.Token.LogoURL {
+		t.Fatalf("list ave logo = %q, want %q", listItem.AveLogo, project.AveDetail.Token.LogoURL)
 	}
 
 	detailView := projectToView(project, true)
@@ -446,8 +451,8 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	if detailView.Meta.SourceCodeFetchedAt == "" || detailView.Meta.CodeBinHashFetchedAt == "" || detailView.Meta.GenesisWalletsFetchedAt == "" {
 		t.Fatalf("detail view missing fetched-at fields: %#v", detailView.Meta)
 	}
-	if detailView.Meta.AveLogo != project.Meta.AveLogo || detailView.Meta.AveLogoFetchedAt == "" {
-		t.Fatalf("detail view missing ave logo fields: %#v", detailView.Meta)
+	if detailView.AveDetail.Token.LogoURL != project.AveDetail.Token.LogoURL || detailView.AveDetail.FetchedAt == "" {
+		t.Fatalf("detail view missing ave detail fields: %#v", detailView.AveDetail)
 	}
 	if !detailView.Meta.IsOpenSource {
 		t.Fatal("detail isOpenSource = false, want true")

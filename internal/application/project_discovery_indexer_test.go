@@ -199,7 +199,7 @@ func (s *discoveryProjectStoreFake) UpdateProjectSourceQualityReport(context.Con
 	return nil
 }
 
-func (s *discoveryProjectStoreFake) UpdateProjectAveLogo(context.Context, common.Address, string) error {
+func (s *discoveryProjectStoreFake) UpsertProjectAveDetail(context.Context, common.Address, appstore.ProjectAveDetail) error {
 	return nil
 }
 

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-368-g204f306-dirty"
+    "version": "v1.0.0-370-g179557b-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1699,6 +1699,315 @@
         }
       }
     },
+    "v1alpha1AveDetail": {
+      "type": "object",
+      "properties": {
+        "dataType": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fetchedAt": {
+          "type": "string"
+        },
+        "isAudited": {
+          "type": "boolean"
+        },
+        "msg": {
+          "type": "string"
+        },
+        "pairs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1AvePair"
+          }
+        },
+        "status": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "token": {
+          "$ref": "#/definitions/v1alpha1AveTokenDetail"
+        }
+      }
+    },
+    "v1alpha1AvePair": {
+      "type": "object",
+      "properties": {
+        "amm": {
+          "type": "string"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fdv": {
+          "type": "string"
+        },
+        "fee": {
+          "type": "string"
+        },
+        "highU": {
+          "type": "string"
+        },
+        "isFake": {
+          "type": "boolean"
+        },
+        "lowU": {
+          "type": "string"
+        },
+        "marketCap": {
+          "type": "string"
+        },
+        "pair": {
+          "type": "string"
+        },
+        "priceChange": {
+          "type": "string"
+        },
+        "priceChange1d": {
+          "type": "string"
+        },
+        "priceChange1h": {
+          "type": "string"
+        },
+        "priceChange24h": {
+          "type": "string"
+        },
+        "reserve0": {
+          "type": "string"
+        },
+        "reserve1": {
+          "type": "string"
+        },
+        "targetToken": {
+          "type": "string"
+        },
+        "token0Address": {
+          "type": "string"
+        },
+        "token0Decimal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "token0PriceEth": {
+          "type": "string"
+        },
+        "token0PriceUsd": {
+          "type": "string"
+        },
+        "token0Symbol": {
+          "type": "string"
+        },
+        "token1Address": {
+          "type": "string"
+        },
+        "token1Decimal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "token1PriceEth": {
+          "type": "string"
+        },
+        "token1PriceUsd": {
+          "type": "string"
+        },
+        "token1Symbol": {
+          "type": "string"
+        },
+        "totalSupply": {
+          "type": "string"
+        },
+        "txAmount": {
+          "type": "string"
+        },
+        "txCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "updatedAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "volumeU": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1AveTokenDetail": {
+      "type": "object",
+      "properties": {
+        "appendix": {
+          "type": "string"
+        },
+        "aveRiskLevel": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "burnAmount": {
+          "type": "string"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "currentPriceEth": {
+          "type": "string"
+        },
+        "currentPriceUsd": {
+          "type": "string"
+        },
+        "decimal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fdv": {
+          "type": "string"
+        },
+        "hasMintMethod": {
+          "type": "boolean"
+        },
+        "hasNotAudited": {
+          "type": "boolean"
+        },
+        "hasNotOpenSource": {
+          "type": "boolean"
+        },
+        "hasNotRenounced": {
+          "type": "boolean"
+        },
+        "holders": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "isHoneypot": {
+          "type": "boolean"
+        },
+        "isInBlacklist": {
+          "type": "boolean"
+        },
+        "isLpNotLocked": {
+          "type": "boolean"
+        },
+        "isMintable": {
+          "type": "string"
+        },
+        "launchAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "launchPrice": {
+          "type": "string"
+        },
+        "lockAmount": {
+          "type": "string"
+        },
+        "lockPlatform": {
+          "type": "string"
+        },
+        "lockedPercent": {
+          "type": "string"
+        },
+        "logoUrl": {
+          "type": "string"
+        },
+        "mainPair": {
+          "type": "string"
+        },
+        "mainPairTvl": {
+          "type": "string"
+        },
+        "marketCap": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "otherAmount": {
+          "type": "string"
+        },
+        "priceChange1d": {
+          "type": "string"
+        },
+        "priceChange1h": {
+          "type": "string"
+        },
+        "priceChange24h": {
+          "type": "string"
+        },
+        "riskInfo": {
+          "type": "string"
+        },
+        "riskLevel": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "riskScore": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        },
+        "tokenBuyVolumeU5m": {
+          "type": "string"
+        },
+        "tokenPriceChange1h": {
+          "type": "string"
+        },
+        "tokenPriceChange24h": {
+          "type": "string"
+        },
+        "tokenPriceChange4h": {
+          "type": "string"
+        },
+        "tokenPriceChange5m": {
+          "type": "string"
+        },
+        "tokenSellVolumeU5m": {
+          "type": "string"
+        },
+        "tokenTxVolumeUsd1h": {
+          "type": "string"
+        },
+        "tokenTxVolumeUsd24h": {
+          "type": "string"
+        },
+        "tokenTxVolumeUsd4h": {
+          "type": "string"
+        },
+        "tokenTxVolumeUsd5m": {
+          "type": "string"
+        },
+        "total": {
+          "type": "string"
+        },
+        "tvl": {
+          "type": "string"
+        },
+        "txAmount24h": {
+          "type": "string"
+        },
+        "txCount24h": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "txVolumeU24h": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "v1alpha1GenesisWalletAssetState": {
       "type": "object",
       "properties": {
@@ -1836,12 +2145,6 @@
         "assetState": {
           "$ref": "#/definitions/v1alpha1AssetState"
         },
-        "aveLogo": {
-          "type": "string"
-        },
-        "aveLogoFetchedAt": {
-          "type": "string"
-        },
         "blockNumber": {
           "type": "string",
           "format": "uint64"
@@ -1953,6 +2256,9 @@
     "v1alpha1ProjectView": {
       "type": "object",
       "properties": {
+        "aveDetail": {
+          "$ref": "#/definitions/v1alpha1AveDetail"
+        },
         "meta": {
           "$ref": "#/definitions/v1alpha1ProjectMeta"
         }

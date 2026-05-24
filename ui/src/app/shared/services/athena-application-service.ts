@@ -2,6 +2,7 @@ import requests from './requests';
 
 export interface ProjectView {
     meta?: ProjectMeta;
+    aveDetail?: AveDetail;
 }
 
 export interface ProjectListItem {
@@ -38,8 +39,6 @@ export interface ProjectMeta {
     codeBinHashFetchedAt?: string;
     genesisWalletsFetchedAt?: string;
     creatorHistoricalProjectsFetchedAt?: string;
-    aveLogo?: string;
-    aveLogoFetchedAt?: string;
     fetchAt?: string;
     isOpenSource?: boolean;
     sourceCodeHash?: string;
@@ -49,6 +48,107 @@ export interface ProjectMeta {
     usdtPair?: PairV2State;
     assetState?: AssetState;
     genesisWalletAssetStates?: GenesisWalletAssetState[];
+}
+
+export interface AveDetail {
+    status?: number;
+    msg?: string;
+    dataType?: number;
+    isAudited?: boolean;
+    fetchedAt?: string;
+    token?: AveTokenDetail;
+    pairs?: AvePair[];
+}
+
+export interface AveTokenDetail {
+    total?: string;
+    launchPrice?: string;
+    currentPriceEth?: string;
+    currentPriceUsd?: string;
+    priceChange1d?: string;
+    priceChange24h?: string;
+    priceChange1h?: string;
+    lockAmount?: string;
+    burnAmount?: string;
+    otherAmount?: string;
+    txAmount24h?: string;
+    txVolumeU24h?: string;
+    lockedPercent?: string;
+    marketCap?: string;
+    fdv?: string;
+    tvl?: string;
+    mainPairTvl?: string;
+    tokenPriceChange5m?: string;
+    tokenPriceChange1h?: string;
+    tokenPriceChange4h?: string;
+    tokenPriceChange24h?: string;
+    tokenTxVolumeUsd5m?: string;
+    tokenTxVolumeUsd1h?: string;
+    tokenTxVolumeUsd4h?: string;
+    tokenTxVolumeUsd24h?: string;
+    tokenBuyVolumeU5m?: string;
+    tokenSellVolumeU5m?: string;
+    token?: string;
+    chain?: string;
+    decimal?: number;
+    name?: string;
+    symbol?: string;
+    holders?: number;
+    appendix?: string;
+    riskLevel?: number;
+    logoUrl?: string;
+    riskInfo?: string;
+    riskScore?: string;
+    launchAt?: number;
+    createdAt?: number;
+    txCount24h?: number;
+    lockPlatform?: string;
+    isMintable?: string;
+    updatedAt?: number;
+    mainPair?: string;
+    hasMintMethod?: boolean;
+    isLpNotLocked?: boolean;
+    hasNotRenounced?: boolean;
+    hasNotAudited?: boolean;
+    hasNotOpenSource?: boolean;
+    isInBlacklist?: boolean;
+    isHoneypot?: boolean;
+    aveRiskLevel?: number;
+}
+
+export interface AvePair {
+    reserve0?: string;
+    reserve1?: string;
+    token0PriceEth?: string;
+    token0PriceUsd?: string;
+    token1PriceEth?: string;
+    token1PriceUsd?: string;
+    priceChange?: string;
+    priceChange24h?: string;
+    priceChange1h?: string;
+    volumeU?: string;
+    lowU?: string;
+    highU?: string;
+    fee?: string;
+    totalSupply?: string;
+    txAmount?: string;
+    pair?: string;
+    chain?: string;
+    amm?: string;
+    token0Address?: string;
+    token0Symbol?: string;
+    token0Decimal?: number;
+    token1Address?: string;
+    token1Symbol?: string;
+    token1Decimal?: number;
+    targetToken?: string;
+    priceChange1d?: string;
+    createdAt?: number;
+    txCount?: number;
+    updatedAt?: number;
+    marketCap?: string;
+    fdv?: string;
+    isFake?: boolean;
 }
 
 export interface GenesisWalletState {

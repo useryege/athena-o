@@ -75,7 +75,7 @@ type projectStateReconcilerImpl struct {
 	fetcher               evm.AthenaFetcher
 	simulator             ProjectSimulator
 	apiFetcher            ethereumapi.EthereumAPI
-	aveLogoFetcher        avelogo.Fetcher
+	aveDetailFetcher      avelogo.Fetcher
 	aveChain              string
 	sourceQualityAnalyzer sourcequality.Analyzer
 
@@ -98,7 +98,7 @@ func NewProjectStateReconciler(
 	fetcher evm.AthenaFetcher,
 	simulator ProjectSimulator,
 	apiFetcher ethereumapi.EthereumAPI,
-	aveLogoFetcher avelogo.Fetcher,
+	aveDetailFetcher avelogo.Fetcher,
 	aveChain string,
 	sourceQualityAnalyzer sourcequality.Analyzer,
 	persistencePublisher PersistenceEventPublisher,
@@ -112,7 +112,7 @@ func NewProjectStateReconciler(
 		fetcher:               fetcher,
 		simulator:             simulator,
 		apiFetcher:            apiFetcher,
-		aveLogoFetcher:        aveLogoFetcher,
+		aveDetailFetcher:      aveDetailFetcher,
 		aveChain:              strings.TrimSpace(aveChain),
 		sourceQualityAnalyzer: sourceQualityAnalyzer,
 		persistencePublisher:  persistencePublisher,
@@ -417,7 +417,7 @@ func (r *projectStateReconcilerImpl) refreshProject(ctx context.Context, contrac
 	if err := r.refreshProjectChainAndSimulation(ctx, project); err != nil {
 		return err
 	}
-	if err := r.refreshProjectAveLogo(ctx, contract); err != nil {
+	if err := r.refreshProjectAveDetail(ctx, contract); err != nil {
 		return err
 	}
 	if err := r.refreshProjectGenesisWallets(ctx, contract); err != nil {
@@ -564,36 +564,34 @@ func (r *projectStateReconcilerImpl) refreshProjectGenesisWallets(ctx context.Co
 	return nil
 }
 
-func (r *projectStateReconcilerImpl) refreshProjectAveLogo(ctx context.Context, contract common.Address) error {
-	if r.aveLogoFetcher == nil || strings.TrimSpace(r.aveChain) == "" {
+func (r *projectStateReconcilerImpl) refreshProjectAveDetail(ctx context.Context, contract common.Address) error {
+	if r.aveDetailFetcher == nil || strings.TrimSpace(r.aveChain) == "" {
 		return nil
 	}
 	project, ok, err := r.projectCache.GetProject(ctx, contract)
 	if err != nil {
 		return err
 	}
-	if !ok || project == nil || strings.TrimSpace(project.Meta.AveLogo) != "" || !project.Meta.AveLogoFetchedAt.IsZero() {
+	if !ok || project == nil || project.AveDetail != nil {
 		return nil
 	}
 	tokenID := strings.ToLower(project.Meta.Contract.Hex()) + "-" + r.aveChain
-	logo, err := r.aveLogoFetcher.FetchLogo(ctx, tokenID)
+	response, err := r.aveDetailFetcher.FetchDetail(ctx, tokenID)
 	if err != nil {
 		return nil
 	}
-	logo = strings.TrimSpace(logo)
-	if logo == "" {
+	detail := projectAveDetailFromAveResponse(response, time.Now().UTC())
+	if detail == nil {
 		return nil
 	}
-	if err := r.persistProjectAveLogo(ctx, contract, logo); err != nil {
+	if err := r.persistProjectAveDetail(ctx, contract, detail); err != nil {
 		return nil
 	}
-	fetchedAt := time.Now().UTC()
 	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil || strings.TrimSpace(current.Meta.AveLogo) != "" || !current.Meta.AveLogoFetchedAt.IsZero() {
+		if !exists || current == nil || current.AveDetail != nil {
 			return nil, false, nil
 		}
-		current.Meta.AveLogo = logo
-		current.Meta.AveLogoFetchedAt = fetchedAt
+		current.AveDetail = detail
 		return current, true, nil
 	})
 	return err
@@ -796,11 +794,11 @@ func (r *projectStateReconcilerImpl) persistProjectSourceQualityReport(ctx conte
 	return r.persistencePublisher.PublishProjectSourceQualityReportUpdate(ctx, contract, report)
 }
 
-func (r *projectStateReconcilerImpl) persistProjectAveLogo(ctx context.Context, contract common.Address, logo string) error {
+func (r *projectStateReconcilerImpl) persistProjectAveDetail(ctx context.Context, contract common.Address, detail *ProjectAveDetail) error {
 	if r.persistencePublisher == nil {
 		return nil
 	}
-	return r.persistencePublisher.PublishProjectAveLogoUpdate(ctx, contract, logo)
+	return r.persistencePublisher.PublishProjectAveDetailUpsert(ctx, contract, projectAveDetailToStore(detail))
 }
 
 func (r *projectStateReconcilerImpl) persistProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error {

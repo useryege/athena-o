@@ -4,7 +4,7 @@ import {Text} from 'react-form';
 import {RouteComponentProps} from 'react-router';
 import {Context} from '../../../shared/context';
 import {services} from '../../../shared/services';
-import {PairV2State, ProjectComment, ProjectEventLog, ProjectMeta, ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
+import {AveDetail, PairV2State, ProjectComment, ProjectEventLog, ProjectMeta, ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
 import {formatUsdtValue} from '../pair-metrics-cell/pair-metrics-cell';
 import {GenesisWalletRankList} from './genesis-wallet-rank-list';
 
@@ -73,13 +73,13 @@ const formatTimelineDuration = (milliseconds: number) => {
     return `${sign}${parts.join(' ')}`;
 };
 
-const renderFetchTimeline = (meta?: ProjectMeta) => {
+const renderFetchTimeline = (meta?: ProjectMeta, aveDetail?: AveDetail) => {
     const baseTime = parseTimelineTime(meta?.fetchAt);
     const items = [
         {label: 'Project Discovered', value: meta?.fetchAt},
         {label: 'Source Code Fetched', value: meta?.sourceCodeFetchedAt},
         {label: 'Code BIN Hash Fetched', value: meta?.codeBinHashFetchedAt},
-        {label: 'Ave Logo Fetched', value: meta?.aveLogoFetchedAt},
+        {label: 'Ave Detail Fetched', value: aveDetail?.fetchedAt},
         {label: 'Source Quality Report Fetched', value: meta?.sourceQualityReportFetchedAt},
         {label: 'Genesis Wallets Fetched', value: meta?.genesisWalletsFetchedAt},
         {label: 'Creator Historical Projects Fetched', value: meta?.creatorHistoricalProjectsFetchedAt}
@@ -482,11 +482,12 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const sourceCode = project?.meta?.sourceCode || '';
     const isOpenSource = project?.meta?.isOpenSource ?? sourceCode.trim().length > 0;
     const sourceQualityReport = project?.meta?.sourceQualityReport || '';
-    const showLogo = !!project?.meta?.aveLogo && !logoFailed;
+    const aveLogo = project?.aveDetail?.token?.logoUrl;
+    const showLogo = !!aveLogo && !logoFailed;
 
     React.useEffect(() => {
         setLogoFailed(false);
-    }, [project?.meta?.aveLogo]);
+    }, [aveLogo]);
 
     const handleAddToBlacklist = React.useCallback(async () => {
         if (addingToBlacklist || isBlacklistChecking) {
@@ -625,7 +626,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             <div className='project-details__section-title'>Meta</div>
                             <div className='project-details__identity'>
                                 <div className='project-details__logo' aria-hidden='true'>
-                                    {showLogo ? <img src={project.meta?.aveLogo} alt='' onError={() => setLogoFailed(true)} /> : <span>{projectInitial(project.meta)}</span>}
+                                    {showLogo ? <img src={aveLogo} alt='' onError={() => setLogoFailed(true)} /> : <span>{projectInitial(project.meta)}</span>}
                                 </div>
                                 <div className='project-details__identity-main'>
                                     <div className='project-details__identity-title'>{renderValue(project.meta?.token?.name)}</div>
@@ -664,7 +665,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             </div>
                         </div>
 
-                        {renderFetchTimeline(project.meta)}
+                        {renderFetchTimeline(project.meta, project.aveDetail)}
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Genesis Wallets</div>

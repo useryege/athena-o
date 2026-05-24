@@ -11,7 +11,7 @@ import (
 )
 
 type Fetcher interface {
-	FetchLogo(ctx context.Context, tokenID string) (string, error)
+	FetchDetail(ctx context.Context, tokenID string) (*ave.TokenDetailResponse, error)
 }
 
 type fetcherImpl struct {
@@ -22,17 +22,18 @@ func NewFetcher(client ave.Client) Fetcher {
 	return &fetcherImpl{client: client}
 }
 
-func (f *fetcherImpl) FetchLogo(ctx context.Context, tokenID string) (string, error) {
+func (f *fetcherImpl) FetchDetail(ctx context.Context, tokenID string) (*ave.TokenDetailResponse, error) {
 	if f == nil || f.client == nil {
-		return "", status.Error(codes.FailedPrecondition, "Ave logo fetcher is not configured")
+		return nil, status.Error(codes.FailedPrecondition, "Ave detail fetcher is not configured")
 	}
 	tokenID = strings.TrimSpace(tokenID)
 	if tokenID == "" {
-		return "", status.Error(codes.InvalidArgument, "Ave token id is empty")
+		return nil, status.Error(codes.InvalidArgument, "Ave token id is empty")
 	}
 	response, err := f.client.GetTokenDetail(ctx, tokenID)
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch Ave token detail: %w", err)
+		return nil, fmt.Errorf("failed to fetch Ave token detail: %w", err)
 	}
-	return strings.TrimSpace(response.Data.Token.LogoURL), nil
+	response.Data.Token.LogoURL = strings.TrimSpace(response.Data.Token.LogoURL)
+	return response, nil
 }
