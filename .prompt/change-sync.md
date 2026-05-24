@@ -3,7 +3,7 @@
 【变更背景】
 - 业务目标：<一句话说明本次需求>
 - 涉及范围：
-  - SQL：<是否涉及 hack/postgres/init/project.sql>
+  - SQL：<是否涉及 hack/postgres/init/application.sql>
   - 合约：<是否涉及 pkg/abi/ATHENA/ATHENA.sol>
   - API types：<是否涉及 pkg/apis/application/v1alpha1/types.go>
   - application proto：<是否涉及 internal/application 下 proto 文件>
@@ -12,8 +12,8 @@
   - 前端 UI：<ui/src/app 下页面/表单/列表/详情/筛选等变化>
 
 【总体变更顺序】
-1. 先处理 `hack/postgres/init/project.sql` 或 `pkg/abi/ATHENA/ATHENA.sol`
-2. 再处理另一个底层源文件：`project.sql` 或 `ATHENA.sol`
+1. 先处理 `hack/postgres/init/application.sql` 或 `pkg/abi/ATHENA/ATHENA.sol`
+2. 再处理另一个底层源文件：`application.sql` 或 `ATHENA.sol`
 3. 再处理 `pkg/apis/application/v1alpha1/types.go`
 4. 再处理 `internal/application` 下 proto 文件，然后立刻生成
 5. 再处理 `internal/server` 下 proto 文件，然后立刻生成
@@ -22,7 +22,7 @@
 8. 最后处理 `ui/src/app` 前端代码
 
 【顺序约束】
-- `project.sql` 与 `ATHENA.sol` 可以根据需求先后互换，但二者都必须早于 `types.go`、proto、后端代码和前端代码。
+- `application.sql` 与 `ATHENA.sol` 可以根据需求先后互换，但二者都必须早于 `types.go`、proto、后端代码和前端代码。
 - 不涉及的阶段可以跳过，但剩余阶段的相对顺序必须保持不变。
 - 后端必须先处理 `internal/application`，再处理 `internal/server`。
 - 每个后端目录内必须先处理 proto 文件，执行生成命令并核对生成结果后，才能处理普通后端代码。
