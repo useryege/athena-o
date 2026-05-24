@@ -29,8 +29,10 @@ const (
 	projectFieldSourceCode                         = "source_code"
 	projectFieldSourceCodeHash                     = "source_code_hash"
 	projectFieldSourceCodeFetchedAt                = "source_code_fetched_at"
+	projectFieldSourceCodeOrigin                   = "source_code_origin"
 	projectFieldSourceQualityReport                = "source_quality_report"
 	projectFieldSourceQualityReportFetchedAt       = "source_quality_report_fetched_at"
+	projectFieldSourceQualityReportOrigin          = "source_quality_report_origin"
 	projectFieldAveDetail                          = "ave_detail"
 	projectFieldCodeBinHash                        = "code_bin_hash"
 	projectFieldCodeBinHashFetchedAt               = "code_bin_hash_fetched_at"
@@ -38,7 +40,7 @@ const (
 	projectFieldGenesisWalletsFetchedAt            = "genesis_wallets_fetched_at"
 	projectFieldReport                             = "report"
 
-	projectSchemaVersion = "13"
+	projectSchemaVersion = "14"
 
 	projectIndexAll        = "project:index:all"
 	projectIndexPairPrefix = "project:index:pair:"
@@ -354,8 +356,10 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldSourceCode:                         project.Meta.SourceCode,
 		projectFieldSourceCodeHash:                     project.Meta.SourceCodeHash.Hex(),
 		projectFieldSourceCodeFetchedAt:                formatOptionalTime(project.Meta.SourceCodeFetchedAt),
+		projectFieldSourceCodeOrigin:                   project.Meta.SourceCodeOrigin,
 		projectFieldSourceQualityReport:                project.Meta.SourceQualityReport,
 		projectFieldSourceQualityReportFetchedAt:       formatOptionalTime(project.Meta.SourceQualityReportFetchedAt),
+		projectFieldSourceQualityReportOrigin:          project.Meta.SourceQualityReportOrigin,
 		projectFieldAveDetail:                          aveDetailPayload,
 		projectFieldCodeBinHash:                        project.Meta.CodeBinHash.Hex(),
 		projectFieldCodeBinHashFetchedAt:               formatOptionalTime(project.Meta.CodeBinHashFetchedAt),
@@ -432,11 +436,17 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 	if current == nil || !current.Meta.SourceCodeFetchedAt.Equal(next.Meta.SourceCodeFetchedAt) {
 		fields[projectFieldSourceCodeFetchedAt] = formatOptionalTime(next.Meta.SourceCodeFetchedAt)
 	}
+	if current == nil || current.Meta.SourceCodeOrigin != next.Meta.SourceCodeOrigin {
+		fields[projectFieldSourceCodeOrigin] = next.Meta.SourceCodeOrigin
+	}
 	if current == nil || current.Meta.SourceQualityReport != next.Meta.SourceQualityReport {
 		fields[projectFieldSourceQualityReport] = next.Meta.SourceQualityReport
 	}
 	if current == nil || !current.Meta.SourceQualityReportFetchedAt.Equal(next.Meta.SourceQualityReportFetchedAt) {
 		fields[projectFieldSourceQualityReportFetchedAt] = formatOptionalTime(next.Meta.SourceQualityReportFetchedAt)
+	}
+	if current == nil || current.Meta.SourceQualityReportOrigin != next.Meta.SourceQualityReportOrigin {
+		fields[projectFieldSourceQualityReportOrigin] = next.Meta.SourceQualityReportOrigin
 	}
 	if current == nil || !reflect.DeepEqual(current.AveDetail, next.AveDetail) {
 		aveDetailPayload, err := mustMarshalJSON(next.AveDetail)
@@ -558,6 +568,7 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		}
 		project.Meta.SourceCodeFetchedAt = fetchedAt
 	}
+	project.Meta.SourceCodeOrigin = values[projectFieldSourceCodeOrigin]
 	project.Meta.SourceQualityReport = values[projectFieldSourceQualityReport]
 	if raw := values[projectFieldSourceQualityReportFetchedAt]; raw != "" {
 		fetchedAt, err := time.Parse(time.RFC3339Nano, raw)
@@ -566,6 +577,7 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		}
 		project.Meta.SourceQualityReportFetchedAt = fetchedAt
 	}
+	project.Meta.SourceQualityReportOrigin = values[projectFieldSourceQualityReportOrigin]
 	if raw := values[projectFieldAveDetail]; raw != "" && raw != "null" {
 		var detail ProjectAveDetail
 		if err := json.Unmarshal([]byte(raw), &detail); err != nil {

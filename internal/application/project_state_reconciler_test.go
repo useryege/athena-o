@@ -331,7 +331,9 @@ func (f *aveLogoFetcherFake) FetchDetail(_ context.Context, tokenID string) (*av
 type persistencePublisherFake struct {
 	metas                []appstore.ProjectMeta
 	sourceCodes          map[common.Address]string
+	sourceCodeOrigins    map[common.Address]string
 	sourceQualityReports map[common.Address]string
+	sourceQualityOrigins map[common.Address]string
 	aveDetails           map[common.Address]appstore.ProjectAveDetail
 	codeBinHashes        map[common.Address]common.Hash
 	creatorResults       map[common.Address]SimulateResult
@@ -363,14 +365,18 @@ func (p *persistencePublisherFake) PublishProjectEventLog(_ context.Context, ite
 	p.projectEventLogs = append(p.projectEventLogs, item)
 	return nil
 }
-func (p *persistencePublisherFake) PublishProjectSourceCodeUpdate(_ context.Context, contract common.Address, sourceCode string) error {
+func (p *persistencePublisherFake) PublishProjectSourceCodeUpdate(_ context.Context, contract common.Address, sourceCode string, origin string) error {
 	if p.err != nil {
 		return p.err
 	}
 	if p.sourceCodes == nil {
 		p.sourceCodes = map[common.Address]string{}
 	}
+	if p.sourceCodeOrigins == nil {
+		p.sourceCodeOrigins = map[common.Address]string{}
+	}
 	p.sourceCodes[contract] = sourceCode
+	p.sourceCodeOrigins[contract] = origin
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectCodeBinHashUpdate(_ context.Context, contract common.Address, codeBinHash common.Hash) error {
@@ -383,14 +389,18 @@ func (p *persistencePublisherFake) PublishProjectCodeBinHashUpdate(_ context.Con
 	p.codeBinHashes[contract] = codeBinHash
 	return nil
 }
-func (p *persistencePublisherFake) PublishProjectSourceQualityReportUpdate(_ context.Context, contract common.Address, report string) error {
+func (p *persistencePublisherFake) PublishProjectSourceQualityReportUpdate(_ context.Context, contract common.Address, report string, origin string) error {
 	if p.err != nil {
 		return p.err
 	}
 	if p.sourceQualityReports == nil {
 		p.sourceQualityReports = map[common.Address]string{}
 	}
+	if p.sourceQualityOrigins == nil {
+		p.sourceQualityOrigins = map[common.Address]string{}
+	}
 	p.sourceQualityReports[contract] = report
+	p.sourceQualityOrigins[contract] = origin
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectAveDetailUpsert(_ context.Context, contract common.Address, detail appstore.ProjectAveDetail) error {
@@ -1146,8 +1156,14 @@ func TestProjectStateReconcilerRefreshProjectSourceCodePersistsLongSource(t *tes
 	if project.Meta.SourceCodeHash != wantHash {
 		t.Fatalf("source code hash = %s, want %s", project.Meta.SourceCodeHash.Hex(), wantHash.Hex())
 	}
+	if project.Meta.SourceCodeOrigin != projectSourceOriginThirdPartyAPI {
+		t.Fatalf("source code origin = %q, want %q", project.Meta.SourceCodeOrigin, projectSourceOriginThirdPartyAPI)
+	}
 	if got := publisher.sourceCodes[contract]; got != sourceCode {
 		t.Fatalf("persisted source code = %q, want %q", got, sourceCode)
+	}
+	if got := publisher.sourceCodeOrigins[contract]; got != projectSourceOriginThirdPartyAPI {
+		t.Fatalf("persisted source code origin = %q, want %q", got, projectSourceOriginThirdPartyAPI)
 	}
 	if len(publisher.projectEventLogs) != 1 {
 		t.Fatalf("project event logs = %d, want 1", len(publisher.projectEventLogs))
@@ -1226,8 +1242,14 @@ func TestProjectStateReconcilerRefreshProjectSourceCodeReusesCacheByCodeBinHash(
 	if !ok || project.Meta.SourceCode != sourceCode || project.Meta.SourceCodeHash != sourceCodeHash {
 		t.Fatalf("source code/hash = %q/%s, want %q/%s", project.Meta.SourceCode, project.Meta.SourceCodeHash.Hex(), sourceCode, sourceCodeHash.Hex())
 	}
+	if project.Meta.SourceCodeOrigin != projectSourceOriginReuse {
+		t.Fatalf("source code origin = %q, want %q", project.Meta.SourceCodeOrigin, projectSourceOriginReuse)
+	}
 	if got := publisher.sourceCodes[contract]; got != sourceCode {
 		t.Fatalf("persisted source code = %q, want %q", got, sourceCode)
+	}
+	if got := publisher.sourceCodeOrigins[contract]; got != projectSourceOriginReuse {
+		t.Fatalf("persisted source code origin = %q, want %q", got, projectSourceOriginReuse)
 	}
 	if len(publisher.projectEventLogs) != 1 {
 		t.Fatalf("project event logs = %d, want 1", len(publisher.projectEventLogs))
@@ -1275,6 +1297,9 @@ func TestProjectStateReconcilerRefreshProjectSourceCodeReusesStoreByCodeBinHash(
 	wantHash := crypto.Keccak256Hash([]byte(sourceCode))
 	if !ok || project.Meta.SourceCode != sourceCode || project.Meta.SourceCodeHash != wantHash {
 		t.Fatalf("source code/hash = %q/%s, want %q/%s", project.Meta.SourceCode, project.Meta.SourceCodeHash.Hex(), sourceCode, wantHash.Hex())
+	}
+	if project.Meta.SourceCodeOrigin != projectSourceOriginReuse {
+		t.Fatalf("source code origin = %q, want %q", project.Meta.SourceCodeOrigin, projectSourceOriginReuse)
 	}
 }
 
@@ -1333,8 +1358,14 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReports(t *testing.T) 
 	if project.Meta.SourceQualityReportFetchedAt.IsZero() {
 		t.Fatal("source quality report fetched at is zero")
 	}
+	if project.Meta.SourceQualityReportOrigin != projectSourceOriginThirdPartyAPI {
+		t.Fatalf("source quality report origin = %q, want %q", project.Meta.SourceQualityReportOrigin, projectSourceOriginThirdPartyAPI)
+	}
 	if publisher.sourceQualityReports[contract] != "## Report" {
 		t.Fatalf("persisted report = %q, want report", publisher.sourceQualityReports[contract])
+	}
+	if publisher.sourceQualityOrigins[contract] != projectSourceOriginThirdPartyAPI {
+		t.Fatalf("persisted report origin = %q, want %q", publisher.sourceQualityOrigins[contract], projectSourceOriginThirdPartyAPI)
 	}
 }
 
@@ -1381,8 +1412,14 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReportReusesCacheByCod
 	if !ok || project.Meta.SourceQualityReport != "## Cached Report" {
 		t.Fatalf("source quality report = %q, want cached report", project.Meta.SourceQualityReport)
 	}
+	if project.Meta.SourceQualityReportOrigin != projectSourceOriginReuse {
+		t.Fatalf("source quality report origin = %q, want %q", project.Meta.SourceQualityReportOrigin, projectSourceOriginReuse)
+	}
 	if publisher.sourceQualityReports[contract] != "## Cached Report" {
 		t.Fatalf("persisted report = %q, want cached report", publisher.sourceQualityReports[contract])
+	}
+	if publisher.sourceQualityOrigins[contract] != projectSourceOriginReuse {
+		t.Fatalf("persisted report origin = %q, want %q", publisher.sourceQualityOrigins[contract], projectSourceOriginReuse)
 	}
 }
 
@@ -1426,8 +1463,14 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReportReusesStoreByCod
 	if !ok || project.Meta.SourceQualityReport != "## Store Report" {
 		t.Fatalf("source quality report = %q, want store report", project.Meta.SourceQualityReport)
 	}
+	if project.Meta.SourceQualityReportOrigin != projectSourceOriginReuse {
+		t.Fatalf("source quality report origin = %q, want %q", project.Meta.SourceQualityReportOrigin, projectSourceOriginReuse)
+	}
 	if publisher.sourceQualityReports[contract] != "## Store Report" {
 		t.Fatalf("persisted report = %q, want store report", publisher.sourceQualityReports[contract])
+	}
+	if publisher.sourceQualityOrigins[contract] != projectSourceOriginReuse {
+		t.Fatalf("persisted report origin = %q, want %q", publisher.sourceQualityOrigins[contract], projectSourceOriginReuse)
 	}
 }
 

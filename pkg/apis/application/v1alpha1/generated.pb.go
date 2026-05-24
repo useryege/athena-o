@@ -1036,6 +1036,20 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.SourceQualityReportOrigin)
+	copy(dAtA[i:], m.SourceQualityReportOrigin)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceQualityReportOrigin)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xf2
+	i -= len(m.SourceCodeOrigin)
+	copy(dAtA[i:], m.SourceCodeOrigin)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCodeOrigin)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xea
 	if len(m.GenesisWalletAssetStates) > 0 {
 		for iNdEx := len(m.GenesisWalletAssetStates) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -1828,6 +1842,10 @@ func (m *ProjectMeta) Size() (n int) {
 			n += 2 + l + sovGenerated(uint64(l))
 		}
 	}
+	l = len(m.SourceCodeOrigin)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.SourceQualityReportOrigin)
+	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -2149,6 +2167,8 @@ func (this *ProjectMeta) String() string {
 		`UsdtPair:` + strings.Replace(strings.Replace(this.UsdtPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
 		`AssetState:` + strings.Replace(strings.Replace(this.AssetState.String(), "AssetState", "AssetState", 1), `&`, ``, 1) + `,`,
 		`GenesisWalletAssetStates:` + repeatedStringForGenesisWalletAssetStates + `,`,
+		`SourceCodeOrigin:` + fmt.Sprintf("%v", this.SourceCodeOrigin) + `,`,
+		`SourceQualityReportOrigin:` + fmt.Sprintf("%v", this.SourceQualityReportOrigin) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -7177,6 +7197,70 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			if err := m.GenesisWalletAssetStates[len(m.GenesisWalletAssetStates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 29:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeOrigin", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceCodeOrigin = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 30:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceQualityReportOrigin", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceQualityReportOrigin = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

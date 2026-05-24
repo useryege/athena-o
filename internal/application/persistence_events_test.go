@@ -16,12 +16,14 @@ import (
 )
 
 type persistenceEventWriterFake struct {
-	err             error
-	sourceCodeCalls int
-	projectMeta     appstore.ProjectMeta
-	aveDetail       appstore.ProjectAveDetail
-	creatorResult   appstore.SimulateResult
-	projectReport   appstore.ProjectReport
+	err              error
+	sourceCodeCalls  int
+	sourceCodeOrigin string
+	reportOrigin     string
+	projectMeta      appstore.ProjectMeta
+	aveDetail        appstore.ProjectAveDetail
+	creatorResult    appstore.SimulateResult
+	projectReport    appstore.ProjectReport
 }
 
 func (w *persistenceEventWriterFake) WriteProjectMeta(_ context.Context, meta appstore.ProjectMeta) error {
@@ -35,9 +37,10 @@ func (w *persistenceEventWriterFake) WriteProjectEventLog(context.Context, appst
 	return w.err
 }
 
-func (w *persistenceEventWriterFake) WriteProjectSourceCode(context.Context, common.Address, string) error {
+func (w *persistenceEventWriterFake) WriteProjectSourceCode(_ context.Context, _ common.Address, _ string, origin string) error {
 	if w.err == nil {
 		w.sourceCodeCalls++
+		w.sourceCodeOrigin = origin
 	}
 	return w.err
 }
@@ -46,7 +49,10 @@ func (w *persistenceEventWriterFake) WriteProjectCodeBinHash(context.Context, co
 	return w.err
 }
 
-func (w *persistenceEventWriterFake) WriteProjectSourceQualityReport(context.Context, common.Address, string) error {
+func (w *persistenceEventWriterFake) WriteProjectSourceQualityReport(_ context.Context, _ common.Address, _ string, origin string) error {
+	if w.err == nil {
+		w.reportOrigin = origin
+	}
 	return w.err
 }
 
@@ -143,7 +149,7 @@ func TestRedisPersistenceEventBusConsumesAndAcks(t *testing.T) {
 	ctx := context.Background()
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 
-	if err := bus.PublishProjectSourceCodeUpdate(ctx, contract, "contract Source {}"); err != nil {
+	if err := bus.PublishProjectSourceCodeUpdate(ctx, contract, "contract Source {}", projectSourceOriginThirdPartyAPI); err != nil {
 		t.Fatalf("publish source code: %v", err)
 	}
 	writer := &persistenceEventWriterFake{}
@@ -156,6 +162,9 @@ func TestRedisPersistenceEventBusConsumesAndAcks(t *testing.T) {
 	}
 	if writer.sourceCodeCalls != 1 {
 		t.Fatalf("source code calls = %d, want 1", writer.sourceCodeCalls)
+	}
+	if writer.sourceCodeOrigin != projectSourceOriginThirdPartyAPI {
+		t.Fatalf("source code origin = %q, want %q", writer.sourceCodeOrigin, projectSourceOriginThirdPartyAPI)
 	}
 	pending, err := client.XPending(ctx, persistenceStreamKey, persistenceGroupName).Result()
 	if err != nil {
@@ -237,15 +246,17 @@ func TestRedisPersistenceEventBusAppliesProjectMetaPairAddressesAndFetchAt(t *te
 	fetchAt := time.Date(2026, 5, 23, 4, 5, 6, 0, time.UTC)
 
 	if err := bus.PublishProjectMetaSave(ctx, appstore.ProjectMeta{
-		BlockTime:   100,
-		BlockNumber: 200,
-		Contract:    contract,
-		Creator:     creator,
-		WethPair:    wethPair,
-		UsdtPair:    usdtPair,
-		FetchAt:     fetchAt,
-		TxHash:      txHash,
-		TxIndex:     7,
+		BlockTime:                 100,
+		BlockNumber:               200,
+		Contract:                  contract,
+		Creator:                   creator,
+		WethPair:                  wethPair,
+		UsdtPair:                  usdtPair,
+		FetchAt:                   fetchAt,
+		TxHash:                    txHash,
+		TxIndex:                   7,
+		SourceCodeOrigin:          projectSourceOriginThirdPartyAPI,
+		SourceQualityReportOrigin: projectSourceOriginReuse,
 	}); err != nil {
 		t.Fatalf("publish project meta: %v", err)
 	}
@@ -262,6 +273,9 @@ func TestRedisPersistenceEventBusAppliesProjectMetaPairAddressesAndFetchAt(t *te
 	}
 	if !writer.projectMeta.FetchAt.Equal(fetchAt) {
 		t.Fatalf("fetch at = %s, want %s", writer.projectMeta.FetchAt, fetchAt)
+	}
+	if writer.projectMeta.SourceCodeOrigin != projectSourceOriginThirdPartyAPI || writer.projectMeta.SourceQualityReportOrigin != projectSourceOriginReuse {
+		t.Fatalf("origins = %q/%q, want %q/%q", writer.projectMeta.SourceCodeOrigin, writer.projectMeta.SourceQualityReportOrigin, projectSourceOriginThirdPartyAPI, projectSourceOriginReuse)
 	}
 }
 

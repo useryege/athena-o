@@ -300,7 +300,7 @@ func (s *projectSnapshotFallbackStore) ListProjectMetasByCodeBinHash(context.Con
 	return nil, nil
 }
 
-func (s *projectSnapshotFallbackStore) UpdateProjectSourceCode(context.Context, common.Address, string) error {
+func (s *projectSnapshotFallbackStore) UpdateProjectSourceCode(context.Context, common.Address, string, string) error {
 	return nil
 }
 
@@ -308,7 +308,7 @@ func (s *projectSnapshotFallbackStore) UpdateProjectCodeBinHash(context.Context,
 	return nil
 }
 
-func (s *projectSnapshotFallbackStore) UpdateProjectSourceQualityReport(context.Context, common.Address, string) error {
+func (s *projectSnapshotFallbackStore) UpdateProjectSourceQualityReport(context.Context, common.Address, string, string) error {
 	return nil
 }
 

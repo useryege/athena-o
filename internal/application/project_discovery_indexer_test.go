@@ -196,7 +196,7 @@ func (s *discoveryProjectStoreFake) ListProjectMetasByCodeBinHash(_ context.Cont
 	return append([]appstore.ProjectMeta(nil), s.codeBinMetas...), nil
 }
 
-func (s *discoveryProjectStoreFake) UpdateProjectSourceCode(context.Context, common.Address, string) error {
+func (s *discoveryProjectStoreFake) UpdateProjectSourceCode(context.Context, common.Address, string, string) error {
 	return nil
 }
 
@@ -204,7 +204,7 @@ func (s *discoveryProjectStoreFake) UpdateProjectCodeBinHash(context.Context, co
 	return nil
 }
 
-func (s *discoveryProjectStoreFake) UpdateProjectSourceQualityReport(context.Context, common.Address, string) error {
+func (s *discoveryProjectStoreFake) UpdateProjectSourceQualityReport(context.Context, common.Address, string, string) error {
 	return nil
 }
 

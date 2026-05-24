@@ -658,7 +658,7 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceCode(ctx context.Contex
 		if sourceCodeHash == (common.Hash{}) {
 			sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
 		}
-		return r.applyProjectSourceCode(ctx, contract, project.Meta.CodeBinHash, sourceCode, sourceCodeHash)
+		return r.applyProjectSourceCode(ctx, contract, project.Meta.CodeBinHash, sourceCode, sourceCodeHash, projectSourceOriginReuse)
 	}
 	if r.apiFetcher == nil {
 		return nil
@@ -671,11 +671,11 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceCode(ctx context.Contex
 		return nil
 	}
 	sourceCodeHash := crypto.Keccak256Hash([]byte(sourceCode))
-	return r.applyProjectSourceCode(ctx, contract, project.Meta.CodeBinHash, sourceCode, sourceCodeHash)
+	return r.applyProjectSourceCode(ctx, contract, project.Meta.CodeBinHash, sourceCode, sourceCodeHash, projectSourceOriginThirdPartyAPI)
 }
 
-func (r *projectStateReconcilerImpl) applyProjectSourceCode(ctx context.Context, contract common.Address, codeBinHash common.Hash, sourceCode string, sourceCodeHash common.Hash) error {
-	if err := r.persistProjectSourceCode(ctx, contract, sourceCode); err != nil {
+func (r *projectStateReconcilerImpl) applyProjectSourceCode(ctx context.Context, contract common.Address, codeBinHash common.Hash, sourceCode string, sourceCodeHash common.Hash, origin string) error {
+	if err := r.persistProjectSourceCode(ctx, contract, sourceCode, origin); err != nil {
 		return nil
 	}
 	if err := r.persistProjectEventLog(ctx, appstore.ProjectEventLog{
@@ -696,6 +696,7 @@ func (r *projectStateReconcilerImpl) applyProjectSourceCode(ctx context.Context,
 		current.Meta.SourceCode = sourceCode
 		current.Meta.SourceCodeHash = sourceCodeHash
 		current.Meta.SourceCodeFetchedAt = fetchedAt
+		current.Meta.SourceCodeOrigin = origin
 		return current, true, nil
 	})
 	if err != nil {
@@ -749,7 +750,7 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReport(ctx conte
 	if reportMeta, found, err := r.findReusableProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash); err != nil {
 		return err
 	} else if found {
-		return r.applyProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash, strings.TrimSpace(reportMeta.SourceQualityReport))
+		return r.applyProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash, strings.TrimSpace(reportMeta.SourceQualityReport), projectSourceOriginReuse)
 	}
 	if r.sourceQualityAnalyzer == nil {
 		return nil
@@ -764,11 +765,11 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReport(ctx conte
 		return nil
 	}
 	report = strings.TrimSpace(report)
-	return r.applyProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash, report)
+	return r.applyProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash, report, projectSourceOriginThirdPartyAPI)
 }
 
-func (r *projectStateReconcilerImpl) applyProjectSourceQualityReport(ctx context.Context, contract common.Address, codeBinHash common.Hash, report string) error {
-	if err := r.persistProjectSourceQualityReport(ctx, contract, report); err != nil {
+func (r *projectStateReconcilerImpl) applyProjectSourceQualityReport(ctx context.Context, contract common.Address, codeBinHash common.Hash, report string, origin string) error {
+	if err := r.persistProjectSourceQualityReport(ctx, contract, report, origin); err != nil {
 		log.WithFields(log.Fields{
 			"component": "project_state_reconciler",
 			"contract":  contract.Hex(),
@@ -783,6 +784,7 @@ func (r *projectStateReconcilerImpl) applyProjectSourceQualityReport(ctx context
 		}
 		current.Meta.SourceQualityReport = report
 		current.Meta.SourceQualityReportFetchedAt = fetchedAt
+		current.Meta.SourceQualityReportOrigin = origin
 		return current, true, nil
 	})
 	return err
@@ -837,11 +839,11 @@ func (r *projectStateReconcilerImpl) findReusableProjectByCodeBinHash(ctx contex
 	return ProjectMeta{}, false, nil
 }
 
-func (r *projectStateReconcilerImpl) persistProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
+func (r *projectStateReconcilerImpl) persistProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string, origin string) error {
 	if r.persistencePublisher == nil {
 		return nil
 	}
-	return r.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode)
+	return r.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode, origin)
 }
 
 func (r *projectStateReconcilerImpl) persistProjectMeta(ctx context.Context, meta ProjectMeta) error {
@@ -858,11 +860,11 @@ func (r *projectStateReconcilerImpl) persistProjectCodeBinHash(ctx context.Conte
 	return r.persistencePublisher.PublishProjectCodeBinHashUpdate(ctx, contract, codeBinHash)
 }
 
-func (r *projectStateReconcilerImpl) persistProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
+func (r *projectStateReconcilerImpl) persistProjectSourceQualityReport(ctx context.Context, contract common.Address, report string, origin string) error {
 	if r.persistencePublisher == nil {
 		return nil
 	}
-	return r.persistencePublisher.PublishProjectSourceQualityReportUpdate(ctx, contract, report)
+	return r.persistencePublisher.PublishProjectSourceQualityReportUpdate(ctx, contract, report, origin)
 }
 
 func (r *projectStateReconcilerImpl) persistProjectAveDetail(ctx context.Context, contract common.Address, detail *ProjectAveDetail) error {

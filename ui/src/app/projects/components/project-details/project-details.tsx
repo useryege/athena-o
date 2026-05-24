@@ -27,6 +27,17 @@ const renderPercent = (value?: string) => {
     return `${value}%`;
 };
 
+const renderOrigin = (value?: string) => {
+    switch (value) {
+        case 'third_party_api':
+            return '第三方 API';
+        case 'reuse':
+            return '复用';
+        default:
+            return '-';
+    }
+};
+
 const renderEventType = (eventType?: number) => {
     switch (eventType) {
         case 1:
@@ -818,6 +829,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             <div className='white-box project-details__box'>
                                 <div className='project-details__section-title'>Source Code</div>
                                 <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Source</span>
+                                    <span className='project-details__field-value'>{renderOrigin(project.meta?.sourceCodeOrigin)}</span>
+                                </div>
+                                <div className='project-details__field'>
                                     <span className='project-details__field-label'>Contract Source Code</span>
                                     <div className='project-details__code-block'>{sourceCode}</div>
                                 </div>
@@ -833,6 +848,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                         <span className='project-details__field-value'>{renderValue(project.meta.sourceQualityReportFetchedAt)}</span>
                                     </div>
                                 )}
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Source</span>
+                                    <span className='project-details__field-value'>{renderOrigin(project.meta?.sourceQualityReportOrigin)}</span>
+                                </div>
                                 {sourceQualityReport.trim() ? (
                                     <div className='project-details__quality-report'>{renderQualityReportMarkdown(sourceQualityReport)}</div>
                                 ) : (

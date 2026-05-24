@@ -41,16 +41,23 @@ type ProjectMeta struct {
 	SourceCode                         string
 	SourceCodeHash                     common.Hash
 	SourceCodeFetchedAt                time.Time
+	SourceCodeOrigin                   string
 	CodeBinHash                        common.Hash
 	CodeBinHashFetchedAt               time.Time
 	SourceQualityReport                string
 	SourceQualityReportFetchedAt       time.Time
+	SourceQualityReportOrigin          string
 	GenesisWallets                     []GenesisWalletMeta
 	GenesisWalletsFetchedAt            time.Time
 	CreatorResult                      SimulateResult
 	CreatorHistoricalProjects          []common.Address
 	CreatorHistoricalProjectsFetchedAt time.Time
 }
+
+const (
+	projectSourceOriginThirdPartyAPI = "third_party_api"
+	projectSourceOriginReuse         = "reuse"
+)
 
 type ProjectAveDetail struct {
 	Status    int
@@ -205,8 +212,10 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 	fetchAt := ""
 	sourceCode := ""
 	sourceCodeFetchedAt := ""
+	sourceCodeOrigin := ""
 	sourceQualityReport := ""
 	sourceQualityReportFetchedAt := ""
+	sourceQualityReportOrigin := ""
 	codeBinHashFetchedAt := ""
 	genesisWalletsFetchedAt := ""
 	creatorHistoricalProjectsFetchedAt := ""
@@ -214,8 +223,10 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 		fetchAt = formatOptionalTime(project.Meta.FetchAt)
 		sourceCode = project.Meta.SourceCode
 		sourceCodeFetchedAt = formatOptionalTime(project.Meta.SourceCodeFetchedAt)
+		sourceCodeOrigin = project.Meta.SourceCodeOrigin
 		sourceQualityReport = project.Meta.SourceQualityReport
 		sourceQualityReportFetchedAt = formatOptionalTime(project.Meta.SourceQualityReportFetchedAt)
+		sourceQualityReportOrigin = project.Meta.SourceQualityReportOrigin
 		codeBinHashFetchedAt = formatOptionalTime(project.Meta.CodeBinHashFetchedAt)
 		genesisWalletsFetchedAt = formatOptionalTime(project.Meta.GenesisWalletsFetchedAt)
 		creatorHistoricalProjectsFetchedAt = formatOptionalTime(project.Meta.CreatorHistoricalProjectsFetchedAt)
@@ -278,7 +289,9 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 			CreatorHistoricalProjects:          creatorHistoricalProjects,
 			SourceQualityReport:                sourceQualityReport,
 			SourceCodeFetchedAt:                sourceCodeFetchedAt,
+			SourceCodeOrigin:                   sourceCodeOrigin,
 			SourceQualityReportFetchedAt:       sourceQualityReportFetchedAt,
+			SourceQualityReportOrigin:          sourceQualityReportOrigin,
 			IsOpenSource:                       strings.TrimSpace(project.Meta.SourceCode) != "",
 			SourceCodeHash:                     hashToString(project.Meta.SourceCodeHash),
 			CodeBinHash:                        hashToString(project.Meta.CodeBinHash),

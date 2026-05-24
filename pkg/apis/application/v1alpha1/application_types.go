@@ -149,6 +149,8 @@ type ProjectMeta struct {
 	UsdtPair                           PairV2State               `protobuf:"bytes,26,opt,name=usdtPair" json:"usdtPair"`
 	AssetState                         AssetState                `protobuf:"bytes,27,opt,name=assetState" json:"assetState"`
 	GenesisWalletAssetStates           []GenesisWalletAssetState `protobuf:"bytes,28,rep,name=genesisWalletAssetStates" json:"genesisWalletAssetStates"`
+	SourceCodeOrigin                   string                    `protobuf:"bytes,29,opt,name=sourceCodeOrigin" json:"sourceCodeOrigin"`
+	SourceQualityReportOrigin          string                    `protobuf:"bytes,30,opt,name=sourceQualityReportOrigin" json:"sourceQualityReportOrigin"`
 }
 
 type GenesisWalletState struct {

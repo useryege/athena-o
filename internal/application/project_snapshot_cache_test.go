@@ -273,7 +273,9 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 			UsdtPair:                  usdtPair,
 			FetchAt:                   fetchAt,
 			SourceCodeHash:            sourceCodeHash,
+			SourceCodeOrigin:          projectSourceOriginThirdPartyAPI,
 			CodeBinHash:               codeBinHash,
+			SourceQualityReportOrigin: projectSourceOriginReuse,
 			CreatorHistoricalProjects: historicalProjects,
 			CreatorResult: SimulateResult{
 				CanMintViaTransferToWethPair: true,
@@ -317,8 +319,14 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	if got := project.Meta.SourceCodeHash; got != sourceCodeHash {
 		t.Fatalf("source code hash = %s, want %s", got.Hex(), sourceCodeHash.Hex())
 	}
+	if got := project.Meta.SourceCodeOrigin; got != projectSourceOriginThirdPartyAPI {
+		t.Fatalf("source code origin = %q, want %q", got, projectSourceOriginThirdPartyAPI)
+	}
 	if got := project.Meta.CodeBinHash; got != codeBinHash {
 		t.Fatalf("code bin hash = %s, want %s", got.Hex(), codeBinHash.Hex())
+	}
+	if got := project.Meta.SourceQualityReportOrigin; got != projectSourceOriginReuse {
+		t.Fatalf("source quality report origin = %q, want %q", got, projectSourceOriginReuse)
 	}
 	if got := project.Meta.CreatorResult; !got.CanMintViaTransferToWethPair {
 		t.Fatalf("creator result = %+v, want weth transfer mint flag", got)
@@ -346,8 +354,14 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	if got := values[projectFieldSourceCodeHash]; got != sourceCodeHash.Hex() {
 		t.Fatalf("raw source code hash = %q, want %q", got, sourceCodeHash.Hex())
 	}
+	if got := values[projectFieldSourceCodeOrigin]; got != projectSourceOriginThirdPartyAPI {
+		t.Fatalf("raw source code origin = %q, want %q", got, projectSourceOriginThirdPartyAPI)
+	}
 	if got := values[projectFieldCodeBinHash]; got != codeBinHash.Hex() {
 		t.Fatalf("raw code bin hash = %q, want %q", got, codeBinHash.Hex())
+	}
+	if got := values[projectFieldSourceQualityReportOrigin]; got != projectSourceOriginReuse {
+		t.Fatalf("raw source quality report origin = %q, want %q", got, projectSourceOriginReuse)
 	}
 	if _, ok := values["creator_other_projects_resolved"]; ok {
 		t.Fatal("old creator_other_projects_resolved field still present")
@@ -382,10 +396,12 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 		SourceCode:                   "contract Source {}",
 		SourceCodeHash:               common.HexToHash("0x3333333333333333333333333333333333333333333333333333333333333333"),
 		SourceCodeFetchedAt:          mustParseTimeForTest(t, "2026-05-21T23:59:00Z"),
+		SourceCodeOrigin:             projectSourceOriginThirdPartyAPI,
 		CodeBinHash:                  common.HexToHash("0x4444444444444444444444444444444444444444444444444444444444444444"),
 		CodeBinHashFetchedAt:         mustParseTimeForTest(t, "2026-05-21T23:59:30Z"),
 		SourceQualityReport:          "## Report",
 		SourceQualityReportFetchedAt: mustParseTimeForTest(t, "2026-05-22T00:00:00Z"),
+		SourceQualityReportOrigin:    projectSourceOriginReuse,
 		GenesisWalletsFetchedAt:      mustParseTimeForTest(t, "2026-05-22T00:01:00Z"),
 		ChainState: athenacontract.AthenaProject{
 			Token: athenacontract.AthenaToken{
@@ -459,5 +475,8 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	}
 	if detailView.Meta.SourceCodeHash != project.Meta.SourceCodeHash.Hex() || detailView.Meta.CodeBinHash != project.Meta.CodeBinHash.Hex() {
 		t.Fatalf("detail hashes = %q/%q, want %q/%q", detailView.Meta.SourceCodeHash, detailView.Meta.CodeBinHash, project.Meta.SourceCodeHash.Hex(), project.Meta.CodeBinHash.Hex())
+	}
+	if detailView.Meta.SourceCodeOrigin != projectSourceOriginThirdPartyAPI || detailView.Meta.SourceQualityReportOrigin != projectSourceOriginReuse {
+		t.Fatalf("detail origins = %q/%q, want %q/%q", detailView.Meta.SourceCodeOrigin, detailView.Meta.SourceQualityReportOrigin, projectSourceOriginThirdPartyAPI, projectSourceOriginReuse)
 	}
 }

@@ -35,7 +35,9 @@ export interface ProjectMeta {
     creatorHistoricalProjects?: string[];
     sourceQualityReport?: string;
     sourceQualityReportFetchedAt?: string;
+    sourceQualityReportOrigin?: string;
     sourceCodeFetchedAt?: string;
+    sourceCodeOrigin?: string;
     codeBinHashFetchedAt?: string;
     genesisWalletsFetchedAt?: string;
     creatorHistoricalProjectsFetchedAt?: string;

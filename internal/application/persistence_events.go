@@ -73,10 +73,12 @@ type projectMetaSavePayload struct {
 	SourceCode                         string `json:"source_code"`
 	SourceCodeHash                     string `json:"source_code_hash,omitempty"`
 	SourceCodeFetchedAt                string `json:"source_code_fetched_at,omitempty"`
+	SourceCodeOrigin                   string `json:"source_code_origin,omitempty"`
 	CodeBinHash                        string `json:"code_bin_hash,omitempty"`
 	CodeBinHashFetchedAt               string `json:"code_bin_hash_fetched_at,omitempty"`
 	SourceQualityReport                string `json:"source_quality_report,omitempty"`
 	SourceQualityReportFetchedAt       string `json:"source_quality_report_fetched_at,omitempty"`
+	SourceQualityReportOrigin          string `json:"source_quality_report_origin,omitempty"`
 	ReportIsPolicyEvaluated            bool   `json:"report_is_policy_evaluated,omitempty"`
 	ReportIsBlacklistedCreatorWallet   bool   `json:"report_is_blacklisted_creator_wallet,omitempty"`
 	ReportIsBlacklistedGenesisWallet   bool   `json:"report_is_blacklisted_genesis_wallet,omitempty"`
@@ -91,6 +93,7 @@ type projectSourceCodeUpdatePayload struct {
 	Contract       string `json:"contract"`
 	SourceCode     string `json:"source_code"`
 	SourceCodeHash string `json:"source_code_hash,omitempty"`
+	Origin         string `json:"origin,omitempty"`
 }
 
 type projectCodeBinHashUpdatePayload struct {
@@ -101,6 +104,7 @@ type projectCodeBinHashUpdatePayload struct {
 type projectSourceQualityReportUpdatePayload struct {
 	Contract string `json:"contract"`
 	Report   string `json:"report"`
+	Origin   string `json:"origin,omitempty"`
 }
 
 type projectAveDetailUpsertPayload struct {
@@ -210,9 +214,9 @@ type PersistenceEventPublisher interface {
 	Publish(ctx context.Context, event PersistenceEvent) error
 	PublishProjectMetaSave(ctx context.Context, meta appstore.ProjectMeta) error
 	PublishProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error
-	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error
+	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string, origin string) error
 	PublishProjectCodeBinHashUpdate(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
-	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error
+	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string, origin string) error
 	PublishProjectAveDetailUpsert(ctx context.Context, contract common.Address, detail appstore.ProjectAveDetail) error
 	PublishProjectCreatorResultUpdate(ctx context.Context, contract common.Address, result SimulateResult) error
 	PublishProjectReportUpdate(ctx context.Context, contract common.Address, report ProjectReport) error
@@ -231,9 +235,9 @@ type PersistenceEventPublisher interface {
 type PersistenceEventWriter interface {
 	WriteProjectMeta(ctx context.Context, meta appstore.ProjectMeta) error
 	WriteProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error
-	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
+	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string, origin string) error
 	WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
-	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
+	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string, origin string) error
 	WriteProjectAveDetail(ctx context.Context, contract common.Address, detail appstore.ProjectAveDetail) error
 	WriteProjectCreatorResult(ctx context.Context, contract common.Address, result appstore.SimulateResult) error
 	WriteProjectReport(ctx context.Context, contract common.Address, report appstore.ProjectReport) error
@@ -326,10 +330,12 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 		SourceCode:                         meta.SourceCode,
 		SourceCodeHash:                     hashToPayload(meta.SourceCodeHash),
 		SourceCodeFetchedAt:                timeToPayload(meta.SourceCodeFetchedAt),
+		SourceCodeOrigin:                   meta.SourceCodeOrigin,
 		CodeBinHash:                        hashToPayload(meta.CodeBinHash),
 		CodeBinHashFetchedAt:               timeToPayload(meta.CodeBinHashFetchedAt),
 		SourceQualityReport:                meta.SourceQualityReport,
 		SourceQualityReportFetchedAt:       timeToPayload(meta.SourceQualityReportFetchedAt),
+		SourceQualityReportOrigin:          meta.SourceQualityReportOrigin,
 		ReportIsPolicyEvaluated:            meta.Report.IsPolicyEvaluated,
 		ReportIsBlacklistedCreatorWallet:   meta.Report.IsBlacklistedCreatorWallet,
 		ReportIsBlacklistedGenesisWallet:   meta.Report.IsBlacklistedGenesisWallet,
@@ -352,12 +358,12 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 	})
 }
 
-func (b *RedisPersistenceEventBus) PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error {
+func (b *RedisPersistenceEventBus) PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string, origin string) error {
 	sourceCodeHash := common.Hash{}
 	if sourceCode != "" {
 		sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
 	}
-	payload := projectSourceCodeUpdatePayload{Contract: contract.Hex(), SourceCode: sourceCode, SourceCodeHash: hashToPayload(sourceCodeHash)}
+	payload := projectSourceCodeUpdatePayload{Contract: contract.Hex(), SourceCode: sourceCode, SourceCodeHash: hashToPayload(sourceCodeHash), Origin: origin}
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshal project source code payload: %w", err)
@@ -411,8 +417,8 @@ func timeFromPayload(value string) (time.Time, error) {
 	return parsed.UTC(), nil
 }
 
-func (b *RedisPersistenceEventBus) PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error {
-	payload := projectSourceQualityReportUpdatePayload{Contract: contract.Hex(), Report: report}
+func (b *RedisPersistenceEventBus) PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string, origin string) error {
+	payload := projectSourceQualityReportUpdatePayload{Contract: contract.Hex(), Report: report, Origin: origin}
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshal project source quality report payload: %w", err)
@@ -893,17 +899,19 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		creator := common.HexToAddress(payload.Creator)
 		txHash := common.HexToHash(payload.TxHash)
 		meta := appstore.ProjectMeta{
-			BlockTime:           payload.BlockTime,
-			BlockNumber:         payload.BlockNumber,
-			Contract:            contract,
-			Creator:             creator,
-			WethPair:            common.HexToAddress(payload.WethPair),
-			UsdtPair:            common.HexToAddress(payload.UsdtPair),
-			TxHash:              txHash,
-			TxIndex:             payload.TxIndex,
-			SourceCode:          payload.SourceCode,
-			CodeBinHash:         common.HexToHash(payload.CodeBinHash),
-			SourceQualityReport: payload.SourceQualityReport,
+			BlockTime:                 payload.BlockTime,
+			BlockNumber:               payload.BlockNumber,
+			Contract:                  contract,
+			Creator:                   creator,
+			WethPair:                  common.HexToAddress(payload.WethPair),
+			UsdtPair:                  common.HexToAddress(payload.UsdtPair),
+			TxHash:                    txHash,
+			TxIndex:                   payload.TxIndex,
+			SourceCode:                payload.SourceCode,
+			SourceCodeOrigin:          payload.SourceCodeOrigin,
+			CodeBinHash:               common.HexToHash(payload.CodeBinHash),
+			SourceQualityReport:       payload.SourceQualityReport,
+			SourceQualityReportOrigin: payload.SourceQualityReportOrigin,
 			Report: appstore.ProjectReport{
 				IsPolicyEvaluated:          payload.ReportIsPolicyEvaluated,
 				IsBlacklistedCreatorWallet: payload.ReportIsBlacklistedCreatorWallet,
@@ -946,7 +954,7 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		if !common.IsHexAddress(payload.Contract) {
 			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
-		return writer.WriteProjectSourceCode(ctx, common.HexToAddress(payload.Contract), payload.SourceCode)
+		return writer.WriteProjectSourceCode(ctx, common.HexToAddress(payload.Contract), payload.SourceCode, payload.Origin)
 	case PersistenceOpProjectCodeBinHash:
 		var payload projectCodeBinHashUpdatePayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -964,7 +972,7 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		if !common.IsHexAddress(payload.Contract) {
 			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
-		return writer.WriteProjectSourceQualityReport(ctx, common.HexToAddress(payload.Contract), payload.Report)
+		return writer.WriteProjectSourceQualityReport(ctx, common.HexToAddress(payload.Contract), payload.Report, payload.Origin)
 	case PersistenceOpProjectAveDetail:
 		var payload projectAveDetailUpsertPayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -1260,16 +1268,16 @@ func (w *storePersistenceWriter) WriteProjectEventLog(ctx context.Context, item 
 	return store.AddProjectEventLog(ctx, item)
 }
 
-func (w *storePersistenceWriter) WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
-	return w.store.UpdateProjectSourceCode(ctx, contract, sourceCode)
+func (w *storePersistenceWriter) WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string, origin string) error {
+	return w.store.UpdateProjectSourceCode(ctx, contract, sourceCode, origin)
 }
 
 func (w *storePersistenceWriter) WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {
 	return w.store.UpdateProjectCodeBinHash(ctx, contract, codeBinHash)
 }
 
-func (w *storePersistenceWriter) WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
-	return w.store.UpdateProjectSourceQualityReport(ctx, contract, report)
+func (w *storePersistenceWriter) WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string, origin string) error {
+	return w.store.UpdateProjectSourceQualityReport(ctx, contract, report, origin)
 }
 
 func (w *storePersistenceWriter) WriteProjectAveDetail(ctx context.Context, contract common.Address, detail appstore.ProjectAveDetail) error {

@@ -48,10 +48,12 @@ INSERT INTO project (
   source_code,
   source_code_hash,
   source_code_fetched_at,
+  source_code_origin,
   code_bin_hash,
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  source_quality_report_origin,
   creator_result_can_mint_from_dead_via_transfer_from,
   creator_result_can_mint_from_zero_via_transfer_from,
   creator_result_can_mint_from_weth_pair_via_transfer_from,
@@ -66,9 +68,9 @@ INSERT INTO project (
   report_has_mint_risk,
   genesis_wallets_fetched_at,
   creator_historical_projects_fetched_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
 ON CONFLICT DO NOTHING
-`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), meta.WethPair.Bytes(), meta.UsdtPair.Bytes(), meta.FetchAt, txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableTime(meta.SourceCodeFetchedAt), nullableHashBytes(meta.CodeBinHash), nullableTime(meta.CodeBinHashFetchedAt), nullableText(meta.SourceQualityReport), nullableTime(meta.SourceQualityReportFetchedAt), meta.CreatorResult.CanMintFromDeadViaTransferFrom, meta.CreatorResult.CanMintFromZeroViaTransferFrom, meta.CreatorResult.CanMintFromWethPairViaTransferFrom, meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, meta.CreatorResult.CanMintViaTransferToWethPair, meta.CreatorResult.CanMintViaTransferToUsdtPair, meta.Report.IsPolicyEvaluated, meta.Report.IsBlacklistedCreatorWallet, meta.Report.IsBlacklistedGenesisWallet, meta.Report.IsBlacklistedBytecode, meta.Report.IsBlacklistedSourceCode, meta.Report.HasMintRisk, nullableTime(meta.GenesisWalletsFetchedAt), nullableTime(meta.CreatorHistoricalProjectsFetchedAt))
+`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), meta.WethPair.Bytes(), meta.UsdtPair.Bytes(), meta.FetchAt, txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableTime(meta.SourceCodeFetchedAt), nullableText(meta.SourceCodeOrigin), nullableHashBytes(meta.CodeBinHash), nullableTime(meta.CodeBinHashFetchedAt), nullableText(meta.SourceQualityReport), nullableTime(meta.SourceQualityReportFetchedAt), nullableText(meta.SourceQualityReportOrigin), meta.CreatorResult.CanMintFromDeadViaTransferFrom, meta.CreatorResult.CanMintFromZeroViaTransferFrom, meta.CreatorResult.CanMintFromWethPairViaTransferFrom, meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, meta.CreatorResult.CanMintViaTransferToWethPair, meta.CreatorResult.CanMintViaTransferToUsdtPair, meta.Report.IsPolicyEvaluated, meta.Report.IsBlacklistedCreatorWallet, meta.Report.IsBlacklistedGenesisWallet, meta.Report.IsBlacklistedBytecode, meta.Report.IsBlacklistedSourceCode, meta.Report.HasMintRisk, nullableTime(meta.GenesisWalletsFetchedAt), nullableTime(meta.CreatorHistoricalProjectsFetchedAt))
 	if err != nil {
 		return fmt.Errorf("save project meta: %w", err)
 	}
@@ -107,10 +109,12 @@ SELECT
   source_code,
   source_code_hash,
   source_code_fetched_at,
+  source_code_origin,
   code_bin_hash,
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  source_quality_report_origin,
   creator_result_can_mint_from_dead_via_transfer_from,
   creator_result_can_mint_from_zero_via_transfer_from,
   creator_result_can_mint_from_weth_pair_via_transfer_from,
@@ -178,10 +182,12 @@ SELECT
   source_code,
   source_code_hash,
   source_code_fetched_at,
+  source_code_origin,
   code_bin_hash,
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  source_quality_report_origin,
   creator_result_can_mint_from_dead_via_transfer_from,
   creator_result_can_mint_from_zero_via_transfer_from,
   creator_result_can_mint_from_weth_pair_via_transfer_from,
@@ -237,10 +243,12 @@ SELECT
   source_code,
   source_code_hash,
   source_code_fetched_at,
+  source_code_origin,
   code_bin_hash,
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  source_quality_report_origin,
   creator_result_can_mint_from_dead_via_transfer_from,
   creator_result_can_mint_from_zero_via_transfer_from,
   creator_result_can_mint_from_weth_pair_via_transfer_from,
@@ -293,10 +301,12 @@ SELECT
   source_code,
   source_code_hash,
   source_code_fetched_at,
+  source_code_origin,
   code_bin_hash,
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  source_quality_report_origin,
   creator_result_can_mint_from_dead_via_transfer_from,
   creator_result_can_mint_from_zero_via_transfer_from,
   creator_result_can_mint_from_weth_pair_via_transfer_from,
@@ -372,10 +382,12 @@ SELECT
   source_code,
   source_code_hash,
   source_code_fetched_at,
+  source_code_origin,
   code_bin_hash,
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  source_quality_report_origin,
   creator_result_can_mint_from_dead_via_transfer_from,
   creator_result_can_mint_from_zero_via_transfer_from,
   creator_result_can_mint_from_weth_pair_via_transfer_from,
@@ -414,16 +426,16 @@ ORDER BY block_number, tx_index, id
 	return metas, nil
 }
 
-func (s *SQLStore) UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {
+func (s *SQLStore) UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string, origin string) error {
 	sourceCodeHash := common.Hash{}
 	if sourceCode != "" {
 		sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
 	}
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project
-SET source_code = $2, source_code_hash = $3, source_code_fetched_at = now()
+SET source_code = $2, source_code_hash = $3, source_code_fetched_at = now(), source_code_origin = $4
 WHERE contract = $1
-`, contract.Bytes(), sourceCode, nullableHashBytes(sourceCodeHash))
+`, contract.Bytes(), sourceCode, nullableHashBytes(sourceCodeHash), nullableText(origin))
 	if err != nil {
 		return fmt.Errorf("update project source code: %w", err)
 	}
@@ -442,12 +454,12 @@ WHERE contract = $1
 	return nil
 }
 
-func (s *SQLStore) UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
+func (s *SQLStore) UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string, origin string) error {
 	_, err := s.db.ExecContext(ctx, `
 UPDATE project
-SET source_quality_report = $2, source_quality_report_fetched_at = now()
+SET source_quality_report = $2, source_quality_report_fetched_at = now(), source_quality_report_origin = $3
 WHERE contract = $1
-`, contract.Bytes(), report)
+`, contract.Bytes(), report, nullableText(origin))
 	if err != nil {
 		return fmt.Errorf("update project source quality report: %w", err)
 	}
@@ -503,10 +515,12 @@ SELECT
   source_code,
   source_code_hash,
   source_code_fetched_at,
+  source_code_origin,
   code_bin_hash,
   code_bin_hash_fetched_at,
   source_quality_report,
   source_quality_report_fetched_at,
+  source_quality_report_origin,
   creator_result_can_mint_from_dead_via_transfer_from,
   creator_result_can_mint_from_zero_via_transfer_from,
   creator_result_can_mint_from_weth_pair_via_transfer_from,
@@ -552,14 +566,16 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	var sourceCode sql.NullString
 	var sourceCodeHash []byte
 	var sourceCodeFetchedAt sql.NullTime
+	var sourceCodeOrigin sql.NullString
 	var codeBinHash []byte
 	var codeBinHashFetchedAt sql.NullTime
 	var sourceQualityReport sql.NullString
 	var sourceQualityReportFetchedAt sql.NullTime
+	var sourceQualityReportOrigin sql.NullString
 	var genesisWalletsFetchedAt sql.NullTime
 	var creatorHistoricalProjectsFetchedAt sql.NullTime
 
-	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &wethPair, &usdtPair, &fetchAt, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &codeBinHash, &codeBinHashFetchedAt, &sourceQualityReport, &sourceQualityReportFetchedAt, &meta.CreatorResult.CanMintFromDeadViaTransferFrom, &meta.CreatorResult.CanMintFromZeroViaTransferFrom, &meta.CreatorResult.CanMintFromWethPairViaTransferFrom, &meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, &meta.CreatorResult.CanMintViaTransferToWethPair, &meta.CreatorResult.CanMintViaTransferToUsdtPair, &meta.Report.IsPolicyEvaluated, &meta.Report.IsBlacklistedCreatorWallet, &meta.Report.IsBlacklistedGenesisWallet, &meta.Report.IsBlacklistedBytecode, &meta.Report.IsBlacklistedSourceCode, &meta.Report.HasMintRisk, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
+	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &wethPair, &usdtPair, &fetchAt, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &sourceCodeOrigin, &codeBinHash, &codeBinHashFetchedAt, &sourceQualityReport, &sourceQualityReportFetchedAt, &sourceQualityReportOrigin, &meta.CreatorResult.CanMintFromDeadViaTransferFrom, &meta.CreatorResult.CanMintFromZeroViaTransferFrom, &meta.CreatorResult.CanMintFromWethPairViaTransferFrom, &meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, &meta.CreatorResult.CanMintViaTransferToWethPair, &meta.CreatorResult.CanMintViaTransferToUsdtPair, &meta.Report.IsPolicyEvaluated, &meta.Report.IsBlacklistedCreatorWallet, &meta.Report.IsBlacklistedGenesisWallet, &meta.Report.IsBlacklistedBytecode, &meta.Report.IsBlacklistedSourceCode, &meta.Report.HasMintRisk, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
 		return ProjectMeta{}, fmt.Errorf("scan project meta: %w", err)
 	}
 	if blockNumber < 0 {
@@ -586,6 +602,7 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	if sourceCodeFetchedAt.Valid {
 		meta.SourceCodeFetchedAt = sourceCodeFetchedAt.Time
 	}
+	meta.SourceCodeOrigin = sourceCodeOrigin.String
 	meta.CodeBinHash = common.BytesToHash(codeBinHash)
 	if codeBinHashFetchedAt.Valid {
 		meta.CodeBinHashFetchedAt = codeBinHashFetchedAt.Time
@@ -594,6 +611,7 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	if sourceQualityReportFetchedAt.Valid {
 		meta.SourceQualityReportFetchedAt = sourceQualityReportFetchedAt.Time
 	}
+	meta.SourceQualityReportOrigin = sourceQualityReportOrigin.String
 	if genesisWalletsFetchedAt.Valid {
 		meta.GenesisWalletsFetchedAt = genesisWalletsFetchedAt.Time
 	}
