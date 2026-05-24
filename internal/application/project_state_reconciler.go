@@ -494,16 +494,14 @@ func (r *projectStateReconcilerImpl) refreshProjectChainAndSimulation(ctx contex
 		}).Warn("failed to persist project creator result")
 		return nil
 	}
-	fetchedAt := time.Now().UTC()
 	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 		if !exists || current == nil {
 			return nil, false, nil
 		}
-		if current.Meta.CreatorResult == result && !current.Meta.CreatorResultFetchedAt.IsZero() {
+		if current.Meta.CreatorResult == result {
 			return nil, false, nil
 		}
 		current.Meta.CreatorResult = result
-		current.Meta.CreatorResultFetchedAt = fetchedAt
 		return current, true, nil
 	})
 	if err != nil {
@@ -616,24 +614,23 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceCode(ctx context.Contex
 	if fetchErr != nil {
 		return nil
 	}
-	sourceCodeHash := common.Hash{}
-	if sourceCode != "" {
-		sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
+	if len(strings.TrimSpace(sourceCode)) <= 100 {
+		return nil
 	}
+	sourceCodeHash := common.Hash{}
+	sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
 	if err := r.persistProjectSourceCode(ctx, contract, sourceCode); err != nil {
 		return nil
 	}
-	if sourceCode != "" {
-		if err := r.persistProjectEventLog(ctx, appstore.ProjectEventLog{
-			Contract:       contract,
-			EventType:      projectEventTypeOpenSource,
-			OccurredAt:     time.Now().UTC(),
-			Message:        "Contract source code opened",
-			Payload:        "{}",
-			IdempotencyKey: projectEventIdempotencyOpenSource,
-		}); err != nil {
-			return nil
-		}
+	if err := r.persistProjectEventLog(ctx, appstore.ProjectEventLog{
+		Contract:       contract,
+		EventType:      projectEventTypeOpenSource,
+		OccurredAt:     time.Now().UTC(),
+		Message:        "Contract source code opened",
+		Payload:        "{}",
+		IdempotencyKey: projectEventIdempotencyOpenSource,
+	}); err != nil {
+		return nil
 	}
 	fetchedAt := time.Now().UTC()
 	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {

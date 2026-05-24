@@ -437,13 +437,6 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x1
 	i--
 	dAtA[i] = 0xc2
-	i -= len(m.CreatorResultFetchedAt)
-	copy(dAtA[i:], m.CreatorResultFetchedAt)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatorResultFetchedAt)))
-	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0xba
 	i -= len(m.CreatorHistoricalProjectsFetchedAt)
 	copy(dAtA[i:], m.CreatorHistoricalProjectsFetchedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatorHistoricalProjectsFetchedAt)))
@@ -946,8 +939,6 @@ func (m *ProjectMeta) Size() (n int) {
 	n += 2 + l + sovGenerated(uint64(l))
 	l = len(m.CreatorHistoricalProjectsFetchedAt)
 	n += 2 + l + sovGenerated(uint64(l))
-	l = len(m.CreatorResultFetchedAt)
-	n += 2 + l + sovGenerated(uint64(l))
 	l = m.Token.Size()
 	n += 2 + l + sovGenerated(uint64(l))
 	l = m.WethPair.Size()
@@ -1150,7 +1141,6 @@ func (this *ProjectMeta) String() string {
 		`CodeBinHashFetchedAt:` + fmt.Sprintf("%v", this.CodeBinHashFetchedAt) + `,`,
 		`GenesisWalletsFetchedAt:` + fmt.Sprintf("%v", this.GenesisWalletsFetchedAt) + `,`,
 		`CreatorHistoricalProjectsFetchedAt:` + fmt.Sprintf("%v", this.CreatorHistoricalProjectsFetchedAt) + `,`,
-		`CreatorResultFetchedAt:` + fmt.Sprintf("%v", this.CreatorResultFetchedAt) + `,`,
 		`Token:` + strings.Replace(strings.Replace(this.Token.String(), "TokenState", "TokenState", 1), `&`, ``, 1) + `,`,
 		`WethPair:` + strings.Replace(strings.Replace(this.WethPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
 		`UsdtPair:` + strings.Replace(strings.Replace(this.UsdtPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
@@ -3159,38 +3149,6 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.CreatorHistoricalProjectsFetchedAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 23:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreatorResultFetchedAt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.CreatorResultFetchedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 24:
 			if wireType != 2 {

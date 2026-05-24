@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
+	"github.com/useryege/athena/util/ethereumapi"
 )
 
 type sourceQualityAnalyzerFake struct {
@@ -265,6 +267,42 @@ func (s *projectSimulatorFake) SimulatePrimary(context.Context, common.Address, 
 	return s.result, s.err
 }
 
+type ethereumAPIFake struct {
+	sourceCode string
+	abi        string
+	err        error
+	calls      int
+}
+
+func (f *ethereumAPIFake) GetSourceCode(context.Context, string) (*ethereumapi.SourceCodeResponse, error) {
+	f.calls++
+	if f.err != nil {
+		return nil, f.err
+	}
+	resp := &ethereumapi.SourceCodeResponse{Result: make([]struct {
+		SourceCode           string `json:"SourceCode"`
+		ABI                  string `json:"ABI"`
+		ContractName         string `json:"ContractName"`
+		CompilerVersion      string `json:"CompilerVersion"`
+		OptimizationUsed     string `json:"OptimizationUsed"`
+		Runs                 string `json:"Runs"`
+		ConstructorArguments string `json:"ConstructorArguments"`
+		EVMVersion           string `json:"EVMVersion"`
+		Library              string `json:"Library"`
+		LicenseType          string `json:"LicenseType"`
+		Proxy                string `json:"Proxy"`
+		Implementation       string `json:"Implementation"`
+		SwarmSource          string `json:"SwarmSource"`
+	}, 1)}
+	resp.Result[0].SourceCode = f.sourceCode
+	resp.Result[0].ABI = f.abi
+	return resp, nil
+}
+
+func (f *ethereumAPIFake) GetABI(context.Context, string) (*ethereumapi.ABIResponse, error) {
+	return &ethereumapi.ABIResponse{Result: f.abi}, f.err
+}
+
 func (f *sourceQualityAnalyzerFake) AnalyzeContractSource(context.Context, string) (string, error) {
 	f.calls++
 	if f.err != nil {
@@ -275,11 +313,13 @@ func (f *sourceQualityAnalyzerFake) AnalyzeContractSource(context.Context, strin
 
 type persistencePublisherFake struct {
 	metas                []appstore.ProjectMeta
+	sourceCodes          map[common.Address]string
 	sourceQualityReports map[common.Address]string
 	codeBinHashes        map[common.Address]common.Hash
 	creatorResults       map[common.Address]SimulateResult
 	projectReports       map[common.Address]ProjectReport
 	creatorHistorical    map[common.Address][]appstore.ProjectCreatorHistoricalProject
+	projectEventLogs     []appstore.ProjectEventLog
 	events               []PersistenceEvent
 	err                  error
 }
@@ -298,10 +338,21 @@ func (p *persistencePublisherFake) PublishProjectMetaSave(_ context.Context, met
 	p.metas = append(p.metas, meta)
 	return nil
 }
-func (p *persistencePublisherFake) PublishProjectEventLog(context.Context, appstore.ProjectEventLog) error {
+func (p *persistencePublisherFake) PublishProjectEventLog(_ context.Context, item appstore.ProjectEventLog) error {
+	if p.err != nil {
+		return p.err
+	}
+	p.projectEventLogs = append(p.projectEventLogs, item)
 	return nil
 }
-func (p *persistencePublisherFake) PublishProjectSourceCodeUpdate(context.Context, common.Address, string) error {
+func (p *persistencePublisherFake) PublishProjectSourceCodeUpdate(_ context.Context, contract common.Address, sourceCode string) error {
+	if p.err != nil {
+		return p.err
+	}
+	if p.sourceCodes == nil {
+		p.sourceCodes = map[common.Address]string{}
+	}
+	p.sourceCodes[contract] = sourceCode
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectCodeBinHashUpdate(_ context.Context, contract common.Address, codeBinHash common.Hash) error {
@@ -975,6 +1026,129 @@ func setCreatorHistoricalProjectRetryDelaysForTest(t *testing.T) func() {
 	}
 }
 
+func TestProjectStateReconcilerRefreshProjectSourceCodeRequiresLongSource(t *testing.T) {
+	tests := []struct {
+		name       string
+		sourceCode string
+	}{
+		{name: "empty", sourceCode: ""},
+		{name: "short", sourceCode: strings.Repeat("a", 100)},
+		{name: "trimmed short", sourceCode: "  " + strings.Repeat("a", 100) + "  "},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cache := newProjectSnapshotCacheTest(t)
+			ctx := context.Background()
+			contract := common.HexToAddress("0x00000000000000000000000000000000000000b1")
+			if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract}}); err != nil {
+				t.Fatalf("set project: %v", err)
+			}
+			api := &ethereumAPIFake{sourceCode: tt.sourceCode}
+			publisher := &persistencePublisherFake{}
+			reconciler := &projectStateReconcilerImpl{
+				projectCache:         cache,
+				apiFetcher:           api,
+				persistencePublisher: publisher,
+			}
+
+			if err := reconciler.refreshProjectSourceCode(ctx, contract); err != nil {
+				t.Fatalf("refresh source code: %v", err)
+			}
+			if api.calls != 1 {
+				t.Fatalf("api calls = %d, want 1", api.calls)
+			}
+			project, ok, err := cache.GetProject(ctx, contract)
+			if err != nil {
+				t.Fatalf("get project: %v", err)
+			}
+			if !ok {
+				t.Fatal("project missing")
+			}
+			if project.Meta.SourceCode != "" {
+				t.Fatalf("source code = %q, want empty", project.Meta.SourceCode)
+			}
+			if !project.Meta.SourceCodeFetchedAt.IsZero() {
+				t.Fatalf("source code fetched at = %s, want zero", project.Meta.SourceCodeFetchedAt)
+			}
+			if len(publisher.sourceCodes) != 0 {
+				t.Fatalf("persisted source codes = %d, want 0", len(publisher.sourceCodes))
+			}
+			if len(publisher.projectEventLogs) != 0 {
+				t.Fatalf("project event logs = %d, want 0", len(publisher.projectEventLogs))
+			}
+		})
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSourceCodePersistsLongSource(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000b2")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	sourceCode := "contract LongSource {\n" + strings.Repeat("    function f() public pure returns (uint256) { return 1; }\n", 3) + "}"
+	publisher := &persistencePublisherFake{}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:         cache,
+		apiFetcher:           &ethereumAPIFake{sourceCode: sourceCode},
+		persistencePublisher: publisher,
+	}
+
+	if err := reconciler.refreshProjectSourceCode(ctx, contract); err != nil {
+		t.Fatalf("refresh source code: %v", err)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok {
+		t.Fatal("project missing")
+	}
+	if project.Meta.SourceCode != sourceCode {
+		t.Fatalf("source code = %q, want %q", project.Meta.SourceCode, sourceCode)
+	}
+	if project.Meta.SourceCodeFetchedAt.IsZero() {
+		t.Fatal("source code fetched at is zero")
+	}
+	wantHash := crypto.Keccak256Hash([]byte(sourceCode))
+	if project.Meta.SourceCodeHash != wantHash {
+		t.Fatalf("source code hash = %s, want %s", project.Meta.SourceCodeHash.Hex(), wantHash.Hex())
+	}
+	if got := publisher.sourceCodes[contract]; got != sourceCode {
+		t.Fatalf("persisted source code = %q, want %q", got, sourceCode)
+	}
+	if len(publisher.projectEventLogs) != 1 {
+		t.Fatalf("project event logs = %d, want 1", len(publisher.projectEventLogs))
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSourceCodeSkipsCompleted(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000b3")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		Contract:            contract,
+		SourceCodeFetchedAt: time.Now().UTC(),
+	}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	api := &ethereumAPIFake{sourceCode: strings.Repeat("a", 101)}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:         cache,
+		apiFetcher:           api,
+		persistencePublisher: &persistencePublisherFake{},
+	}
+
+	if err := reconciler.refreshProjectSourceCode(ctx, contract); err != nil {
+		t.Fatalf("refresh source code: %v", err)
+	}
+	if api.calls != 0 {
+		t.Fatalf("api calls = %d, want 0", api.calls)
+	}
+}
+
 func TestProjectStateReconcilerRefreshProjectSourceQualityReports(t *testing.T) {
 	cache := newProjectSnapshotCacheTest(t)
 	ctx := context.Background()
@@ -1088,9 +1262,6 @@ func TestProjectStateReconcilerRefreshProjectSimulationsPersistsCreatorResult(t 
 	if !ok || project.Meta.CreatorResult != want {
 		t.Fatalf("creator result = %+v, want %+v", project.Meta.CreatorResult, want)
 	}
-	if project.Meta.CreatorResultFetchedAt.IsZero() {
-		t.Fatal("creator result fetched at is zero")
-	}
 	if publisher.creatorResults[contract] != want {
 		t.Fatalf("persisted creator result = %+v, want %+v", publisher.creatorResults[contract], want)
 	}
@@ -1135,9 +1306,6 @@ func TestProjectStateReconcilerRefreshProjectSimulationsSkipsCacheWhenPersistFai
 	}
 	if project.Meta.CreatorResult.CanMintFromDeadViaTransferFrom {
 		t.Fatalf("creator result = %+v, want unchanged zero value", project.Meta.CreatorResult)
-	}
-	if !project.Meta.CreatorResultFetchedAt.IsZero() {
-		t.Fatalf("creator result fetched at = %s, want zero", project.Meta.CreatorResultFetchedAt)
 	}
 }
 

@@ -28,7 +28,6 @@ type ProjectMeta struct {
 	SourceQualityReport                string
 	SourceQualityReportFetchedAt       time.Time
 	CreatorResult                      SimulateResult
-	CreatorResultFetchedAt             time.Time
 	Report                             ProjectReport
 	GenesisWalletsFetchedAt            time.Time
 	CreatorHistoricalProjectsFetchedAt time.Time

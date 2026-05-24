@@ -24,7 +24,6 @@ const (
 	projectFieldFetchAt                            = "fetch_at"
 	projectFieldChainState                         = "chain_state"
 	projectFieldCreatorResult                      = "creator_result"
-	projectFieldCreatorResultFetchedAt             = "creator_result_fetched_at"
 	projectFieldCreatorHistoricalProjects          = "creator_historical_projects"
 	projectFieldCreatorHistoricalProjectsFetchedAt = "creator_historical_projects_fetched_at"
 	projectFieldSourceCode                         = "source_code"
@@ -345,7 +344,6 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldFetchAt:                            formatOptionalTime(project.Meta.FetchAt),
 		projectFieldChainState:                         chainStatePayload,
 		projectFieldCreatorResult:                      creatorResultPayload,
-		projectFieldCreatorResultFetchedAt:             formatOptionalTime(project.Meta.CreatorResultFetchedAt),
 		projectFieldCreatorHistoricalProjects:          creatorHistoricalProjectsPayload,
 		projectFieldCreatorHistoricalProjectsFetchedAt: formatOptionalTime(project.Meta.CreatorHistoricalProjectsFetchedAt),
 		projectFieldSourceCode:                         project.Meta.SourceCode,
@@ -407,9 +405,6 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 			return nil, fmt.Errorf("marshal creator result for %s: %w", next.Meta.Contract.Hex(), err)
 		}
 		fields[projectFieldCreatorResult] = creatorResultPayload
-	}
-	if current == nil || !current.Meta.CreatorResultFetchedAt.Equal(next.Meta.CreatorResultFetchedAt) {
-		fields[projectFieldCreatorResultFetchedAt] = formatOptionalTime(next.Meta.CreatorResultFetchedAt)
 	}
 	if current == nil || !reflect.DeepEqual(current.Meta.CreatorHistoricalProjects, next.Meta.CreatorHistoricalProjects) {
 		creatorHistoricalProjectsPayload, err := mustMarshalJSON(next.Meta.CreatorHistoricalProjects)
@@ -526,13 +521,6 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 		if err := json.Unmarshal([]byte(raw), &project.Meta.CreatorResult); err != nil {
 			return nil, false, err
 		}
-	}
-	if raw := values[projectFieldCreatorResultFetchedAt]; raw != "" {
-		fetchedAt, err := time.Parse(time.RFC3339Nano, raw)
-		if err != nil {
-			return nil, false, err
-		}
-		project.Meta.CreatorResultFetchedAt = fetchedAt
 	}
 	if raw := values[projectFieldCreatorHistoricalProjects]; raw != "" {
 		if err := json.Unmarshal([]byte(raw), &project.Meta.CreatorHistoricalProjects); err != nil {

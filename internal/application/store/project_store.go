@@ -58,7 +58,6 @@ INSERT INTO project (
   creator_result_can_mint_from_usdt_pair_via_transfer_from,
   creator_result_can_mint_via_transfer_to_weth_pair,
   creator_result_can_mint_via_transfer_to_usdt_pair,
-  creator_result_fetched_at,
   report_is_policy_evaluated,
   report_is_blacklisted_creator_wallet,
   report_is_blacklisted_genesis_wallet,
@@ -67,9 +66,9 @@ INSERT INTO project (
   report_has_mint_risk,
   genesis_wallets_fetched_at,
   creator_historical_projects_fetched_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30)
 ON CONFLICT DO NOTHING
-`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), meta.WethPair.Bytes(), meta.UsdtPair.Bytes(), meta.FetchAt, txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableTime(meta.SourceCodeFetchedAt), nullableHashBytes(meta.CodeBinHash), nullableTime(meta.CodeBinHashFetchedAt), nullableText(meta.SourceQualityReport), nullableTime(meta.SourceQualityReportFetchedAt), meta.CreatorResult.CanMintFromDeadViaTransferFrom, meta.CreatorResult.CanMintFromZeroViaTransferFrom, meta.CreatorResult.CanMintFromWethPairViaTransferFrom, meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, meta.CreatorResult.CanMintViaTransferToWethPair, meta.CreatorResult.CanMintViaTransferToUsdtPair, nullableTime(meta.CreatorResultFetchedAt), meta.Report.IsPolicyEvaluated, meta.Report.IsBlacklistedCreatorWallet, meta.Report.IsBlacklistedGenesisWallet, meta.Report.IsBlacklistedBytecode, meta.Report.IsBlacklistedSourceCode, meta.Report.HasMintRisk, nullableTime(meta.GenesisWalletsFetchedAt), nullableTime(meta.CreatorHistoricalProjectsFetchedAt))
+`, int64(meta.BlockNumber), int64(meta.BlockTime), meta.Contract.Bytes(), meta.Creator.Bytes(), meta.WethPair.Bytes(), meta.UsdtPair.Bytes(), meta.FetchAt, txHash.Bytes(), int64(meta.TxIndex), nullableText(meta.SourceCode), nullableHashBytes(meta.SourceCodeHash), nullableTime(meta.SourceCodeFetchedAt), nullableHashBytes(meta.CodeBinHash), nullableTime(meta.CodeBinHashFetchedAt), nullableText(meta.SourceQualityReport), nullableTime(meta.SourceQualityReportFetchedAt), meta.CreatorResult.CanMintFromDeadViaTransferFrom, meta.CreatorResult.CanMintFromZeroViaTransferFrom, meta.CreatorResult.CanMintFromWethPairViaTransferFrom, meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, meta.CreatorResult.CanMintViaTransferToWethPair, meta.CreatorResult.CanMintViaTransferToUsdtPair, meta.Report.IsPolicyEvaluated, meta.Report.IsBlacklistedCreatorWallet, meta.Report.IsBlacklistedGenesisWallet, meta.Report.IsBlacklistedBytecode, meta.Report.IsBlacklistedSourceCode, meta.Report.HasMintRisk, nullableTime(meta.GenesisWalletsFetchedAt), nullableTime(meta.CreatorHistoricalProjectsFetchedAt))
 	if err != nil {
 		return fmt.Errorf("save project meta: %w", err)
 	}
@@ -118,7 +117,6 @@ SELECT
   creator_result_can_mint_from_usdt_pair_via_transfer_from,
   creator_result_can_mint_via_transfer_to_weth_pair,
   creator_result_can_mint_via_transfer_to_usdt_pair,
-  creator_result_fetched_at,
   report_is_policy_evaluated,
   report_is_blacklisted_creator_wallet,
   report_is_blacklisted_genesis_wallet,
@@ -190,7 +188,6 @@ SELECT
   creator_result_can_mint_from_usdt_pair_via_transfer_from,
   creator_result_can_mint_via_transfer_to_weth_pair,
   creator_result_can_mint_via_transfer_to_usdt_pair,
-  creator_result_fetched_at,
   report_is_policy_evaluated,
   report_is_blacklisted_creator_wallet,
   report_is_blacklisted_genesis_wallet,
@@ -247,7 +244,6 @@ SELECT
   creator_result_can_mint_from_usdt_pair_via_transfer_from,
   creator_result_can_mint_via_transfer_to_weth_pair,
   creator_result_can_mint_via_transfer_to_usdt_pair,
-  creator_result_fetched_at,
   report_is_policy_evaluated,
   report_is_blacklisted_creator_wallet,
   report_is_blacklisted_genesis_wallet,
@@ -327,7 +323,6 @@ SELECT
   creator_result_can_mint_from_usdt_pair_via_transfer_from,
   creator_result_can_mint_via_transfer_to_weth_pair,
   creator_result_can_mint_via_transfer_to_usdt_pair,
-  creator_result_fetched_at,
   report_is_policy_evaluated,
   report_is_blacklisted_creator_wallet,
   report_is_blacklisted_genesis_wallet,
@@ -408,8 +403,7 @@ SET creator_result_can_mint_from_dead_via_transfer_from = $2,
   creator_result_can_mint_from_weth_pair_via_transfer_from = $4,
   creator_result_can_mint_from_usdt_pair_via_transfer_from = $5,
   creator_result_can_mint_via_transfer_to_weth_pair = $6,
-  creator_result_can_mint_via_transfer_to_usdt_pair = $7,
-  creator_result_fetched_at = now()
+  creator_result_can_mint_via_transfer_to_usdt_pair = $7
 WHERE contract = $1
 `, contract.Bytes(), result.CanMintFromDeadViaTransferFrom, result.CanMintFromZeroViaTransferFrom, result.CanMintFromWethPairViaTransferFrom, result.CanMintFromUsdtPairViaTransferFrom, result.CanMintViaTransferToWethPair, result.CanMintViaTransferToUsdtPair)
 	if err != nil {
@@ -460,7 +454,6 @@ SELECT
   creator_result_can_mint_from_usdt_pair_via_transfer_from,
   creator_result_can_mint_via_transfer_to_weth_pair,
   creator_result_can_mint_via_transfer_to_usdt_pair,
-  creator_result_fetched_at,
   report_is_policy_evaluated,
   report_is_blacklisted_creator_wallet,
   report_is_blacklisted_genesis_wallet,
@@ -504,11 +497,10 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	var codeBinHashFetchedAt sql.NullTime
 	var sourceQualityReport sql.NullString
 	var sourceQualityReportFetchedAt sql.NullTime
-	var creatorResultFetchedAt sql.NullTime
 	var genesisWalletsFetchedAt sql.NullTime
 	var creatorHistoricalProjectsFetchedAt sql.NullTime
 
-	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &wethPair, &usdtPair, &fetchAt, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &codeBinHash, &codeBinHashFetchedAt, &sourceQualityReport, &sourceQualityReportFetchedAt, &meta.CreatorResult.CanMintFromDeadViaTransferFrom, &meta.CreatorResult.CanMintFromZeroViaTransferFrom, &meta.CreatorResult.CanMintFromWethPairViaTransferFrom, &meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, &meta.CreatorResult.CanMintViaTransferToWethPair, &meta.CreatorResult.CanMintViaTransferToUsdtPair, &creatorResultFetchedAt, &meta.Report.IsPolicyEvaluated, &meta.Report.IsBlacklistedCreatorWallet, &meta.Report.IsBlacklistedGenesisWallet, &meta.Report.IsBlacklistedBytecode, &meta.Report.IsBlacklistedSourceCode, &meta.Report.HasMintRisk, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
+	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &wethPair, &usdtPair, &fetchAt, &txHash, &txIndex, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &codeBinHash, &codeBinHashFetchedAt, &sourceQualityReport, &sourceQualityReportFetchedAt, &meta.CreatorResult.CanMintFromDeadViaTransferFrom, &meta.CreatorResult.CanMintFromZeroViaTransferFrom, &meta.CreatorResult.CanMintFromWethPairViaTransferFrom, &meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, &meta.CreatorResult.CanMintViaTransferToWethPair, &meta.CreatorResult.CanMintViaTransferToUsdtPair, &meta.Report.IsPolicyEvaluated, &meta.Report.IsBlacklistedCreatorWallet, &meta.Report.IsBlacklistedGenesisWallet, &meta.Report.IsBlacklistedBytecode, &meta.Report.IsBlacklistedSourceCode, &meta.Report.HasMintRisk, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
 		return ProjectMeta{}, fmt.Errorf("scan project meta: %w", err)
 	}
 	if blockNumber < 0 {
@@ -542,9 +534,6 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	meta.SourceQualityReport = sourceQualityReport.String
 	if sourceQualityReportFetchedAt.Valid {
 		meta.SourceQualityReportFetchedAt = sourceQualityReportFetchedAt.Time
-	}
-	if creatorResultFetchedAt.Valid {
-		meta.CreatorResultFetchedAt = creatorResultFetchedAt.Time
 	}
 	if genesisWalletsFetchedAt.Valid {
 		meta.GenesisWalletsFetchedAt = genesisWalletsFetchedAt.Time

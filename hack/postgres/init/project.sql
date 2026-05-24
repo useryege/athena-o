@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS project (
   creator_result_can_mint_from_usdt_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
   creator_result_can_mint_via_transfer_to_weth_pair BOOLEAN NOT NULL DEFAULT false,
   creator_result_can_mint_via_transfer_to_usdt_pair BOOLEAN NOT NULL DEFAULT false,
-  creator_result_fetched_at TIMESTAMPTZ,
   report_is_policy_evaluated BOOLEAN NOT NULL DEFAULT false,
   report_is_blacklisted_creator_wallet BOOLEAN NOT NULL DEFAULT false,
   report_is_blacklisted_genesis_wallet BOOLEAN NOT NULL DEFAULT false,

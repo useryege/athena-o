@@ -23,7 +23,6 @@ func projectMetaToStore(meta ProjectMeta) appstore.ProjectMeta {
 		SourceQualityReport:                meta.SourceQualityReport,
 		SourceQualityReportFetchedAt:       meta.SourceQualityReportFetchedAt,
 		CreatorResult:                      simulateResultToStore(meta.CreatorResult),
-		CreatorResultFetchedAt:             meta.CreatorResultFetchedAt,
 		GenesisWalletsFetchedAt:            meta.GenesisWalletsFetchedAt,
 		CreatorHistoricalProjectsFetchedAt: meta.CreatorHistoricalProjectsFetchedAt,
 	}
@@ -48,7 +47,6 @@ func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 		SourceQualityReport:                meta.SourceQualityReport,
 		SourceQualityReportFetchedAt:       meta.SourceQualityReportFetchedAt,
 		CreatorResult:                      simulateResultFromStore(meta.CreatorResult),
-		CreatorResultFetchedAt:             meta.CreatorResultFetchedAt,
 		GenesisWalletsFetchedAt:            meta.GenesisWalletsFetchedAt,
 		CreatorHistoricalProjectsFetchedAt: meta.CreatorHistoricalProjectsFetchedAt,
 	}

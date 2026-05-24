@@ -47,7 +47,6 @@ type ProjectMeta struct {
 	GenesisWallets                     []GenesisWalletMeta
 	GenesisWalletsFetchedAt            time.Time
 	CreatorResult                      SimulateResult
-	CreatorResultFetchedAt             time.Time
 	CreatorHistoricalProjects          []common.Address
 	CreatorHistoricalProjectsFetchedAt time.Time
 }
@@ -107,7 +106,6 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 	codeBinHashFetchedAt := ""
 	genesisWalletsFetchedAt := ""
 	creatorHistoricalProjectsFetchedAt := ""
-	creatorResultFetchedAt := ""
 	if includeDetailFields {
 		sourceCode = project.Meta.SourceCode
 		sourceCodeFetchedAt = formatOptionalTime(project.Meta.SourceCodeFetchedAt)
@@ -116,7 +114,6 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 		codeBinHashFetchedAt = formatOptionalTime(project.Meta.CodeBinHashFetchedAt)
 		genesisWalletsFetchedAt = formatOptionalTime(project.Meta.GenesisWalletsFetchedAt)
 		creatorHistoricalProjectsFetchedAt = formatOptionalTime(project.Meta.CreatorHistoricalProjectsFetchedAt)
-		creatorResultFetchedAt = formatOptionalTime(project.Meta.CreatorResultFetchedAt)
 	}
 	creatorResult := project.Meta.CreatorResult
 	creatorHistoricalProjects := make([]string, 0, len(project.Meta.CreatorHistoricalProjects))
@@ -183,7 +180,6 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 			CodeBinHashFetchedAt:               codeBinHashFetchedAt,
 			GenesisWalletsFetchedAt:            genesisWalletsFetchedAt,
 			CreatorHistoricalProjectsFetchedAt: creatorHistoricalProjectsFetchedAt,
-			CreatorResultFetchedAt:             creatorResultFetchedAt,
 			Token: v1alpha1.TokenState{
 				Name:         chainState.Token.Name,
 				Symbol:       chainState.Token.Symbol,

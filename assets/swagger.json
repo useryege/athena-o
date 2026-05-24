@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-349-gcf25c4b-dirty"
+    "version": "v1.0.0-365-gdf8f882-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1864,9 +1864,6 @@
         },
         "creatorResult": {
           "$ref": "#/definitions/v1alpha1SimulateResult"
-        },
-        "creatorResultFetchedAt": {
-          "type": "string"
         },
         "genesisWalletAssetStates": {
           "type": "array",
