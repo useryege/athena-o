@@ -55,28 +55,35 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     {
-        title: 'Projects',
-        tooltip: 'View Athena projects',
-        path: '/projects',
-        iconClassName: 'fa fa-cubes'
-    },
-    {
-        title: 'ByteCode',
-        tooltip: 'Manage bytecode blacklist contracts',
-        path: '/bytecode-blacklist',
-        iconClassName: 'fa fa-cube'
-    },
-    {
-        title: 'SourceCode',
-        tooltip: 'Manage sourcecode blacklist contracts',
-        path: '/sourcecode-blacklist-contracts',
-        iconClassName: 'fa fa-code'
-    },
-    {
-        title: 'Wallet',
-        tooltip: 'Manage wallet blacklist addresses',
-        path: '/wallet-blacklist',
-        iconClassName: 'fa fa-wallet'
+        title: 'Application',
+        tooltip: 'Manage Athena applications',
+        iconClassName: 'argo-icon argo-icon-application',
+        children: [
+            {
+                title: 'Projects',
+                tooltip: 'View Athena projects',
+                path: '/projects',
+                iconClassName: 'fa fa-cubes'
+            },
+            {
+                title: 'SourceCode',
+                tooltip: 'Manage sourcecode blacklist contracts',
+                path: '/sourcecode-blacklist-contracts',
+                iconClassName: 'fa fa-code'
+            },
+            {
+                title: 'ByteCode',
+                tooltip: 'Manage bytecode blacklist contracts',
+                path: '/bytecode-blacklist',
+                iconClassName: 'fa fa-cube'
+            },
+            {
+                title: 'Wallet',
+                tooltip: 'Manage wallet blacklist addresses',
+                path: '/wallet-blacklist',
+                iconClassName: 'fa fa-wallet'
+            }
+        ]
     },
     // {
     //     title: 'Applications',
