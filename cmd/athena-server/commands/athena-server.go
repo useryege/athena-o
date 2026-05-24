@@ -16,6 +16,7 @@ import (
 	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
+	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
 	"github.com/useryege/athena/pkg/stats"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
@@ -58,6 +59,7 @@ func NewCommand() *cobra.Command {
 		dexServerPlaintext       bool
 		dexServerStrictTLS       bool
 		applicationServerAddress string
+		wormServerAddress        string
 		// hydratorEnabled        bool
 		// syncWithReplaceAllowed bool
 
@@ -135,6 +137,9 @@ func NewCommand() *cobra.Command {
 			log.Infof("waiting for athena application grpc service at %s", applicationServerAddress)
 			errors.CheckError(applicationapiclient.WaitForApplicationService(ctx, applicationServerAddress))
 			log.Infof("athena application grpc service is ready at %s", applicationServerAddress)
+			log.Infof("waiting for athena worm grpc service at %s", wormServerAddress)
+			errors.CheckError(wormapiclient.WaitForWormService(ctx, wormServerAddress))
+			log.Infof("athena worm grpc service is ready at %s", wormServerAddress)
 
 			athenaOpts := server.AthenaServerOpts{
 				TLSConfigCustomizer:   tlsConfigCustomizer,
@@ -224,6 +229,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().BoolVar(&dexServerPlaintext, "dex-server-plaintext", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_PLAINTEXT", false), "Use a plaintext client (non-TLS) to connect to dex server")
 	command.Flags().BoolVar(&dexServerStrictTLS, "dex-server-strict-tls", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_STRICT_TLS", false), "Perform strict validation of TLS certificates when connecting to dex server")
 	command.Flags().StringVar(&applicationServerAddress, "application-server-address", env.StringFromEnv("ATHENA_APPLICATION_SERVER_ADDRESS", "localhost:8082"), "Athena application server address")
+	command.Flags().StringVar(&wormServerAddress, "worm-server-address", env.StringFromEnv("ATHENA_WORM_SERVER_ADDRESS", "localhost:8084"), "Athena worm server address")
 	// command.Flags().BoolVar(&hydratorEnabled, "hydrator-enabled", env.ParseBoolFromEnv("ATHENA_SERVER_HYDRATOR_ENABLED", false), "Feature flag to enable Hydrator. Default (\"false\")")
 	// command.Flags().BoolVar(&syncWithReplaceAllowed, "sync-with-replace-allowed", env.ParseBoolFromEnv("ATHENA_SERVER_SYNC_WITH_REPLACE_ALLOWED", true), "Whether to allow users to select replace for syncs from UI/CLI")
 	tlsConfigCustomizerSrc = tls.AddTLSFlagsToCmd(command)

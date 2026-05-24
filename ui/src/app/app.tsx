@@ -13,6 +13,7 @@ import projects from './projects';
 import sourcecodeBlacklistContracts from './sourcecode-blacklist-contracts';
 import settings from './settings';
 import walletBlacklist from './wallet-blacklist';
+import worm from './worm';
 import {Layout, ThemeWrapper} from './shared/components/layout/layout';
 import {Page} from './shared/components/page/page';
 import {VersionPanel} from './shared/components/version-info/version-info-panel';
@@ -39,6 +40,7 @@ const routes: Routes = {
     '/sourcecode-blacklist-contracts': {component: sourcecodeBlacklistContracts.component},
     '/bytecode-blacklist': {component: bytecodeBlacklist.component},
     '/wallet-blacklist': {component: walletBlacklist.component},
+    '/worm': {component: worm.component},
     // '/applications': {component: applications.component},
     '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
@@ -84,6 +86,12 @@ const navItems: NavItem[] = [
                 iconClassName: 'fa fa-wallet'
             }
         ]
+    },
+    {
+        title: 'Worm',
+        tooltip: 'View Athena worm module',
+        path: '/worm',
+        iconClassName: 'fa fa-bug'
     },
     // {
     //     title: 'Applications',
