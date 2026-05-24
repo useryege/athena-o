@@ -38,6 +38,7 @@ const (
 	PersistenceOpProjectSourceCode               = "project_source_code_update"
 	PersistenceOpProjectCodeBinHash              = "project_code_bin_hash_update"
 	PersistenceOpProjectSourceQualityReport      = "project_source_quality_report_update"
+	PersistenceOpProjectAveLogo                  = "project_ave_logo_update"
 	PersistenceOpProjectCreatorResult            = "project_creator_result_update"
 	PersistenceOpProjectReport                   = "project_report_update"
 	PersistenceOpBytecodeBlacklistAdd            = "bytecode_blacklist_add"
@@ -76,6 +77,8 @@ type projectMetaSavePayload struct {
 	CodeBinHashFetchedAt               string `json:"code_bin_hash_fetched_at,omitempty"`
 	SourceQualityReport                string `json:"source_quality_report,omitempty"`
 	SourceQualityReportFetchedAt       string `json:"source_quality_report_fetched_at,omitempty"`
+	AveLogo                            string `json:"ave_logo,omitempty"`
+	AveLogoFetchedAt                   string `json:"ave_logo_fetched_at,omitempty"`
 	ReportIsPolicyEvaluated            bool   `json:"report_is_policy_evaluated,omitempty"`
 	ReportIsBlacklistedCreatorWallet   bool   `json:"report_is_blacklisted_creator_wallet,omitempty"`
 	ReportIsBlacklistedGenesisWallet   bool   `json:"report_is_blacklisted_genesis_wallet,omitempty"`
@@ -100,6 +103,11 @@ type projectCodeBinHashUpdatePayload struct {
 type projectSourceQualityReportUpdatePayload struct {
 	Contract string `json:"contract"`
 	Report   string `json:"report"`
+}
+
+type projectAveLogoUpdatePayload struct {
+	Contract string `json:"contract"`
+	Logo     string `json:"logo"`
 }
 
 type projectCreatorResultUpdatePayload struct {
@@ -207,6 +215,7 @@ type PersistenceEventPublisher interface {
 	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string) error
 	PublishProjectCodeBinHashUpdate(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string) error
+	PublishProjectAveLogoUpdate(ctx context.Context, contract common.Address, logo string) error
 	PublishProjectCreatorResultUpdate(ctx context.Context, contract common.Address, result SimulateResult) error
 	PublishProjectReportUpdate(ctx context.Context, contract common.Address, report ProjectReport) error
 	PublishProjectCreatorHistoricalProjectsReplace(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
@@ -227,6 +236,7 @@ type PersistenceEventWriter interface {
 	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
 	WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
+	WriteProjectAveLogo(ctx context.Context, contract common.Address, logo string) error
 	WriteProjectCreatorResult(ctx context.Context, contract common.Address, result appstore.SimulateResult) error
 	WriteProjectReport(ctx context.Context, contract common.Address, report appstore.ProjectReport) error
 	WriteProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
@@ -322,6 +332,8 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 		CodeBinHashFetchedAt:               timeToPayload(meta.CodeBinHashFetchedAt),
 		SourceQualityReport:                meta.SourceQualityReport,
 		SourceQualityReportFetchedAt:       timeToPayload(meta.SourceQualityReportFetchedAt),
+		AveLogo:                            meta.AveLogo,
+		AveLogoFetchedAt:                   timeToPayload(meta.AveLogoFetchedAt),
 		ReportIsPolicyEvaluated:            meta.Report.IsPolicyEvaluated,
 		ReportIsBlacklistedCreatorWallet:   meta.Report.IsBlacklistedCreatorWallet,
 		ReportIsBlacklistedGenesisWallet:   meta.Report.IsBlacklistedGenesisWallet,
@@ -412,6 +424,21 @@ func (b *RedisPersistenceEventBus) PublishProjectSourceQualityReportUpdate(ctx c
 	return b.Publish(ctx, PersistenceEvent{
 		Version:    persistenceEventVersion,
 		Op:         PersistenceOpProjectSourceQualityReport,
+		Contract:   contract.Hex(),
+		Payload:    data,
+		OccurredAt: time.Now().UTC(),
+	})
+}
+
+func (b *RedisPersistenceEventBus) PublishProjectAveLogoUpdate(ctx context.Context, contract common.Address, logo string) error {
+	payload := projectAveLogoUpdatePayload{Contract: contract.Hex(), Logo: logo}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal project ave logo payload: %w", err)
+	}
+	return b.Publish(ctx, PersistenceEvent{
+		Version:    persistenceEventVersion,
+		Op:         PersistenceOpProjectAveLogo,
 		Contract:   contract.Hex(),
 		Payload:    data,
 		OccurredAt: time.Now().UTC(),
@@ -881,6 +908,7 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			SourceCode:          payload.SourceCode,
 			CodeBinHash:         common.HexToHash(payload.CodeBinHash),
 			SourceQualityReport: payload.SourceQualityReport,
+			AveLogo:             payload.AveLogo,
 			Report: appstore.ProjectReport{
 				IsPolicyEvaluated:          payload.ReportIsPolicyEvaluated,
 				IsBlacklistedCreatorWallet: payload.ReportIsBlacklistedCreatorWallet,
@@ -902,6 +930,9 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		}
 		if meta.SourceQualityReportFetchedAt, err = timeFromPayload(payload.SourceQualityReportFetchedAt); err != nil {
 			return fmt.Errorf("parse source_quality_report_fetched_at %q: %w", payload.SourceQualityReportFetchedAt, err)
+		}
+		if meta.AveLogoFetchedAt, err = timeFromPayload(payload.AveLogoFetchedAt); err != nil {
+			return fmt.Errorf("parse ave_logo_fetched_at %q: %w", payload.AveLogoFetchedAt, err)
 		}
 		if meta.GenesisWalletsFetchedAt, err = timeFromPayload(payload.GenesisWalletsFetchedAt); err != nil {
 			return fmt.Errorf("parse genesis_wallets_fetched_at %q: %w", payload.GenesisWalletsFetchedAt, err)
@@ -942,6 +973,15 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
 		return writer.WriteProjectSourceQualityReport(ctx, common.HexToAddress(payload.Contract), payload.Report)
+	case PersistenceOpProjectAveLogo:
+		var payload projectAveLogoUpdatePayload
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("unmarshal project ave logo payload: %w", err)
+		}
+		if !common.IsHexAddress(payload.Contract) {
+			return fmt.Errorf("invalid contract %q", payload.Contract)
+		}
+		return writer.WriteProjectAveLogo(ctx, common.HexToAddress(payload.Contract), payload.Logo)
 	case PersistenceOpProjectCreatorResult:
 		var payload projectCreatorResultUpdatePayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -1238,6 +1278,10 @@ func (w *storePersistenceWriter) WriteProjectCodeBinHash(ctx context.Context, co
 
 func (w *storePersistenceWriter) WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error {
 	return w.store.UpdateProjectSourceQualityReport(ctx, contract, report)
+}
+
+func (w *storePersistenceWriter) WriteProjectAveLogo(ctx context.Context, contract common.Address, logo string) error {
+	return w.store.UpdateProjectAveLogo(ctx, contract, logo)
 }
 
 func (w *storePersistenceWriter) WriteProjectCreatorResult(ctx context.Context, contract common.Address, result appstore.SimulateResult) error {

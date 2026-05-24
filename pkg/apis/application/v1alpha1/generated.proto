@@ -94,6 +94,8 @@ message ProjectListItem {
   optional uint64 blockNumber = 14;
 
   optional uint64 txIndex = 15;
+
+  optional string aveLogo = 16;
 }
 
 message ProjectMeta {
@@ -146,6 +148,10 @@ message ProjectMeta {
   optional AssetState assetState = 27;
 
   repeated GenesisWalletAssetState genesisWalletAssetStates = 28;
+
+  optional string aveLogo = 29;
+
+  optional string aveLogoFetchedAt = 30;
 }
 
 message ProjectOption {

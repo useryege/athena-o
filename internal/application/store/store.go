@@ -27,6 +27,8 @@ type ProjectMeta struct {
 	CodeBinHashFetchedAt               time.Time
 	SourceQualityReport                string
 	SourceQualityReportFetchedAt       time.Time
+	AveLogo                            string
+	AveLogoFetchedAt                   time.Time
 	CreatorResult                      SimulateResult
 	Report                             ProjectReport
 	GenesisWalletsFetchedAt            time.Time
@@ -100,6 +102,7 @@ type ProjectStore interface {
 	UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error
 	UpdateProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
 	UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string) error
+	UpdateProjectAveLogo(ctx context.Context, contract common.Address, logo string) error
 	UpdateProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error
 	UpdateProjectReport(ctx context.Context, contract common.Address, report ProjectReport) error
 	ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error)

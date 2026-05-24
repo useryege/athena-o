@@ -18,6 +18,7 @@ type ProjectListItem struct {
 	BlockTime               uint64 `protobuf:"varint,13,opt,name=blockTime" json:"blockTime"`
 	BlockNumber             uint64 `protobuf:"varint,14,opt,name=blockNumber" json:"blockNumber"`
 	TxIndex                 uint64 `protobuf:"varint,15,opt,name=txIndex" json:"txIndex"`
+	AveLogo                 string `protobuf:"bytes,16,opt,name=aveLogo" json:"aveLogo"`
 }
 
 type ProjectMeta struct {
@@ -46,6 +47,8 @@ type ProjectMeta struct {
 	UsdtPair                           PairV2State               `protobuf:"bytes,26,opt,name=usdtPair" json:"usdtPair"`
 	AssetState                         AssetState                `protobuf:"bytes,27,opt,name=assetState" json:"assetState"`
 	GenesisWalletAssetStates           []GenesisWalletAssetState `protobuf:"bytes,28,rep,name=genesisWalletAssetStates" json:"genesisWalletAssetStates"`
+	AveLogo                            string                    `protobuf:"bytes,29,opt,name=aveLogo" json:"aveLogo"`
+	AveLogoFetchedAt                   string                    `protobuf:"bytes,30,opt,name=aveLogoFetchedAt" json:"aveLogoFetchedAt"`
 }
 
 type GenesisWalletState struct {

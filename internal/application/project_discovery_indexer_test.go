@@ -199,6 +199,10 @@ func (s *discoveryProjectStoreFake) UpdateProjectSourceQualityReport(context.Con
 	return nil
 }
 
+func (s *discoveryProjectStoreFake) UpdateProjectAveLogo(context.Context, common.Address, string) error {
+	return nil
+}
+
 func (s *discoveryProjectStoreFake) UpdateProjectCreatorResult(context.Context, common.Address, appstore.SimulateResult) error {
 	return nil
 }

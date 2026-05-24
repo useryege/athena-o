@@ -18,6 +18,7 @@ export interface ProjectListItem {
     blockTime?: number;
     blockNumber?: number;
     txIndex?: number;
+    aveLogo?: string;
 }
 
 export interface ProjectMeta {
@@ -37,6 +38,8 @@ export interface ProjectMeta {
     codeBinHashFetchedAt?: string;
     genesisWalletsFetchedAt?: string;
     creatorHistoricalProjectsFetchedAt?: string;
+    aveLogo?: string;
+    aveLogoFetchedAt?: string;
     fetchAt?: string;
     isOpenSource?: boolean;
     sourceCodeHash?: string;

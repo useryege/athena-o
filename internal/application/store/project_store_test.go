@@ -30,6 +30,8 @@ func projectMetaRowColumns() []string {
 		"code_bin_hash_fetched_at",
 		"source_quality_report",
 		"source_quality_report_fetched_at",
+		"ave_logo",
+		"ave_logo_fetched_at",
 		"creator_result_can_mint_from_dead_via_transfer_from",
 		"creator_result_can_mint_from_zero_via_transfer_from",
 		"creator_result_can_mint_from_weth_pair_via_transfer_from",
@@ -66,11 +68,12 @@ func TestSaveProjectMetaIncludesFetchedAtColumns(t *testing.T) {
 	sourceCodeFetchedAt := time.Date(2026, 5, 23, 1, 0, 0, 0, time.UTC)
 	codeBinHashFetchedAt := time.Date(2026, 5, 23, 2, 0, 0, 0, time.UTC)
 	sourceQualityReportFetchedAt := time.Date(2026, 5, 23, 3, 0, 0, 0, time.UTC)
+	aveLogoFetchedAt := time.Date(2026, 5, 23, 3, 30, 0, 0, time.UTC)
 	fetchAt := time.Date(2026, 5, 23, 3, 15, 0, 0, time.UTC)
 	genesisWalletsFetchedAt := time.Date(2026, 5, 23, 4, 0, 0, 0, time.UTC)
 	creatorHistoricalProjectsFetchedAt := time.Date(2026, 5, 23, 5, 0, 0, 0, time.UTC)
 
-	mock.ExpectExec(regexp.QuoteMeta("VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30)")).
+	mock.ExpectExec(regexp.QuoteMeta("VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)")).
 		WithArgs(
 			int64(100),
 			int64(200),
@@ -88,6 +91,8 @@ func TestSaveProjectMetaIncludesFetchedAtColumns(t *testing.T) {
 			codeBinHashFetchedAt,
 			"## Report",
 			sourceQualityReportFetchedAt,
+			"https://example.com/logo.png",
+			aveLogoFetchedAt,
 			true,
 			false,
 			true,
@@ -122,6 +127,8 @@ func TestSaveProjectMetaIncludesFetchedAtColumns(t *testing.T) {
 		CodeBinHashFetchedAt:         codeBinHashFetchedAt,
 		SourceQualityReport:          "## Report",
 		SourceQualityReportFetchedAt: sourceQualityReportFetchedAt,
+		AveLogo:                      "https://example.com/logo.png",
+		AveLogoFetchedAt:             aveLogoFetchedAt,
 		CreatorResult: SimulateResult{
 			CanMintFromDeadViaTransferFrom:     true,
 			CanMintFromWethPairViaTransferFrom: true,
@@ -262,6 +269,29 @@ func TestUpdateProjectSourceQualityReport(t *testing.T) {
 	}
 }
 
+func TestUpdateProjectAveLogo(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	store := NewSQLStore(db)
+	contract := common.HexToAddress("0x0000000000000000000000000000000000000001")
+	logo := "https://example.com/logo.png"
+
+	mock.ExpectExec("UPDATE project").
+		WithArgs(contract.Bytes(), logo).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	if err := store.UpdateProjectAveLogo(context.Background(), contract, logo); err != nil {
+		t.Fatalf("update project ave logo: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
 func TestUpdateProjectCreatorResult(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -342,7 +372,7 @@ func TestListProjectMetasIncludesSourceCode(t *testing.T) {
 	codeBinHash := common.HexToHash("0x2222222222222222222222222222222222222222222222222222222222222222")
 
 	rows := sqlmock.NewRows(projectMetaRowColumns()).
-		AddRow(int64(100), int64(200), contract.Bytes(), creator.Bytes(), wethPair.Bytes(), usdtPair.Bytes(), reportedAt, txHash.Bytes(), int64(3), sourceCode, sourceCodeHash.Bytes(), reportedAt, codeBinHash.Bytes(), reportedAt, report, reportedAt, true, false, true, false, true, false, true, true, false, true, false, true, reportedAt, reportedAt)
+		AddRow(int64(100), int64(200), contract.Bytes(), creator.Bytes(), wethPair.Bytes(), usdtPair.Bytes(), reportedAt, txHash.Bytes(), int64(3), sourceCode, sourceCodeHash.Bytes(), reportedAt, codeBinHash.Bytes(), reportedAt, report, reportedAt, "https://example.com/logo.png", reportedAt, true, false, true, false, true, false, true, true, false, true, false, true, reportedAt, reportedAt)
 
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 
@@ -374,6 +404,9 @@ func TestListProjectMetasIncludesSourceCode(t *testing.T) {
 	if !metas[0].SourceQualityReportFetchedAt.Equal(reportedAt) {
 		t.Fatalf("source quality report fetched at = %s, want %s", metas[0].SourceQualityReportFetchedAt, reportedAt)
 	}
+	if metas[0].AveLogo != "https://example.com/logo.png" || !metas[0].AveLogoFetchedAt.Equal(reportedAt) {
+		t.Fatalf("ave logo = %q fetched at %s, want logo and %s", metas[0].AveLogo, metas[0].AveLogoFetchedAt, reportedAt)
+	}
 	if !metas[0].CreatorResult.CanMintFromDeadViaTransferFrom || !metas[0].CreatorResult.CanMintFromWethPairViaTransferFrom || !metas[0].CreatorResult.CanMintViaTransferToWethPair {
 		t.Fatalf("creator result = %+v, want selected mint flags", metas[0].CreatorResult)
 	}
@@ -404,7 +437,7 @@ func TestListProjectMetasNullSourceCodeReturnsEmptyString(t *testing.T) {
 	txHash := common.HexToHash("0x5678")
 
 	rows := sqlmock.NewRows(projectMetaRowColumns()).
-		AddRow(int64(101), int64(201), contract.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHash.Bytes(), int64(4), nil, nil, nil, nil, nil, nil, nil, false, false, false, false, false, false, false, false, false, false, false, false, nil, nil)
+		AddRow(int64(101), int64(201), contract.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHash.Bytes(), int64(4), nil, nil, nil, nil, nil, nil, nil, nil, nil, false, false, false, false, false, false, false, false, false, false, false, false, nil, nil)
 
 	mock.ExpectQuery("SELECT").WillReturnRows(rows)
 
@@ -444,8 +477,8 @@ func TestListProjectMetasByCreator(t *testing.T) {
 	txHashB := common.HexToHash("0x5678")
 
 	rows := sqlmock.NewRows(projectMetaRowColumns()).
-		AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHashA.Bytes(), int64(1), "contract A {}", nil, nil, nil, nil, "", nil, false, false, false, false, false, false, false, false, false, false, false, false, nil, nil).
-		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHashB.Bytes(), int64(2), "contract B {}", nil, nil, nil, nil, "report", time.Now(), false, false, false, false, false, false, false, false, false, false, false, false, nil, nil)
+		AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHashA.Bytes(), int64(1), "contract A {}", nil, nil, nil, nil, "", nil, nil, nil, false, false, false, false, false, false, false, false, false, false, false, false, nil, nil).
+		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHashB.Bytes(), int64(2), "contract B {}", nil, nil, nil, nil, "report", time.Now(), nil, nil, false, false, false, false, false, false, false, false, false, false, false, false, nil, nil)
 
 	mock.ExpectQuery("SELECT").
 		WithArgs(creator.Bytes()).
@@ -479,7 +512,7 @@ func TestListProjectMetasByPairAddresses(t *testing.T) {
 	creator := common.HexToAddress("0x00000000000000000000000000000000000000B2")
 	txHash := common.HexToHash("0x1234")
 	rows := sqlmock.NewRows(projectMetaRowColumns()).
-		AddRow(int64(100), int64(200), contract.Bytes(), creator.Bytes(), pair.Bytes(), common.Address{}.Bytes(), time.Now(), txHash.Bytes(), int64(1), "contract A {}", nil, nil, nil, nil, "", nil, false, false, false, false, false, false, false, false, false, false, false, false, nil, nil)
+		AddRow(int64(100), int64(200), contract.Bytes(), creator.Bytes(), pair.Bytes(), common.Address{}.Bytes(), time.Now(), txHash.Bytes(), int64(1), "contract A {}", nil, nil, nil, nil, "", nil, nil, nil, false, false, false, false, false, false, false, false, false, false, false, false, nil, nil)
 
 	mock.ExpectQuery("WHERE weth_pair IN \\(\\$1\\) OR usdt_pair IN \\(\\$1\\)").
 		WithArgs(pair.Bytes()).
@@ -515,8 +548,8 @@ func TestListProjectMetasByCreatorBefore(t *testing.T) {
 	txHashB := common.HexToHash("0x5678")
 
 	rows := sqlmock.NewRows(projectMetaRowColumns()).
-		AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHashA.Bytes(), int64(1), "contract A {}", nil, nil, nil, nil, "", nil, false, false, false, false, false, false, false, false, false, false, false, false, nil, nil).
-		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHashB.Bytes(), int64(2), "contract B {}", nil, nil, nil, nil, "report", time.Now(), false, false, false, false, false, false, false, false, false, false, false, false, nil, nil)
+		AddRow(int64(100), int64(200), contractA.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHashA.Bytes(), int64(1), "contract A {}", nil, nil, nil, nil, "", nil, nil, nil, false, false, false, false, false, false, false, false, false, false, false, false, nil, nil).
+		AddRow(int64(101), int64(201), contractB.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHashB.Bytes(), int64(2), "contract B {}", nil, nil, nil, nil, "report", time.Now(), nil, nil, false, false, false, false, false, false, false, false, false, false, false, false, nil, nil)
 
 	mock.ExpectQuery("WHERE creator = \\$1").
 		WithArgs(creator.Bytes(), int64(102), int64(0)).

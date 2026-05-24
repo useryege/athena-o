@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-366-g23ae762-dirty"
+    "version": "v1.0.0-368-g204f306-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1783,6 +1783,9 @@
     "v1alpha1ProjectListItem": {
       "type": "object",
       "properties": {
+        "aveLogo": {
+          "type": "string"
+        },
         "blockNumber": {
           "type": "string",
           "format": "uint64"
@@ -1832,6 +1835,12 @@
       "properties": {
         "assetState": {
           "$ref": "#/definitions/v1alpha1AssetState"
+        },
+        "aveLogo": {
+          "type": "string"
+        },
+        "aveLogoFetchedAt": {
+          "type": "string"
         },
         "blockNumber": {
           "type": "string",

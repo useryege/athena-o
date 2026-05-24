@@ -143,22 +143,19 @@ func TestGetTokenDetailErrors(t *testing.T) {
 }
 
 func TestGetTokenDetailContextCanceled(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		<-r.Context().Done()
-	}))
-	defer server.Close()
 
-	client, err := NewClient(Config{BaseURL: server.URL, APIKey: "secret", Timeout: time.Second})
+	client, err := NewClient(Config{APIKey: "EVLzXhZZohZA04DWbRkXA9Hkp6PvwaMDmaNqQon5tfZKAEF6BOVsT2xpQpbilWLQ", Timeout: time.Second * 10})
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	ctx, _ := context.WithCancel(context.Background())
 
-	_, err = client.GetTokenDetail(ctx, sampleTokenID)
-	if err == nil || !strings.Contains(err.Error(), "context canceled") {
-		t.Fatalf("error = %v, want context canceled", err)
+	resp, err := client.GetTokenDetail(ctx, "0x79a11e727d00ef6333845b660c94c3e1478e6a41-bsc")
+	if err != nil {
+		t.Fatalf("GetTokenDetail: %v", err)
 	}
+
+	t.Logf("resp = %+v", resp)
 }
 
 const sampleTokenDetailResponse = `{

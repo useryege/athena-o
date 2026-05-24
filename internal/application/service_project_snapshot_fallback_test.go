@@ -308,6 +308,10 @@ func (s *projectSnapshotFallbackStore) UpdateProjectSourceQualityReport(context.
 	return nil
 }
 
+func (s *projectSnapshotFallbackStore) UpdateProjectAveLogo(context.Context, common.Address, string) error {
+	return nil
+}
+
 func (s *projectSnapshotFallbackStore) UpdateProjectCreatorResult(context.Context, common.Address, appstore.SimulateResult) error {
 	return nil
 }

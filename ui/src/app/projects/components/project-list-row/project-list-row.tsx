@@ -51,19 +51,17 @@ const renderProjectName = (project: ProjectListItem) => {
     return `${name}(${project.symbol})`;
 };
 
-export const ProjectListRow = ({
-    project,
-    index,
-    usdtDecimals,
-    to
-}: {
-    project: ProjectListItem;
-    index: number;
-    usdtDecimals?: number;
-    to?: string;
-}) => {
+const projectInitial = (project: ProjectListItem) => (project.symbol || project.name || '?').trim().slice(0, 1).toUpperCase() || '?';
+
+export const ProjectListRow = ({project, index, usdtDecimals, to}: {project: ProjectListItem; index: number; usdtDecimals?: number; to?: string}) => {
     const [copied, setCopied] = React.useState(false);
+    const [logoFailed, setLogoFailed] = React.useState(false);
     const blockTime = formatBlockTime(project.blockTime);
+    const showLogo = !!project.aveLogo && !logoFailed;
+
+    React.useEffect(() => {
+        setLogoFailed(false);
+    }, [project.aveLogo]);
 
     const copyContract = React.useCallback(
         async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -82,8 +80,11 @@ export const ProjectListRow = ({
     const rowContent = (
         <div className='projects-list__row'>
             <div className='projects-list__cell projects-list__cell--rank'>#{index + 1}</div>
-            <div className='projects-list__cell' title={project.symbol ? `${project.name || '-'}(${project.symbol})` : project.name || ''}>
-                {renderProjectName(project)}
+            <div className='projects-list__cell projects-list__cell--name' title={project.symbol ? `${project.name || '-'}(${project.symbol})` : project.name || ''}>
+                <span className='projects-list__logo' aria-hidden='true'>
+                    {showLogo ? <img src={project.aveLogo} alt='' onError={() => setLogoFailed(true)} /> : <span>{projectInitial(project)}</span>}
+                </span>
+                <span className='projects-list__name-text'>{renderProjectName(project)}</span>
             </div>
             <div className='projects-list__cell projects-list__cell--contract' title={project.contract || ''}>
                 <span>{renderValue(project.contract)}</span>

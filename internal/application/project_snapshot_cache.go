@@ -31,13 +31,15 @@ const (
 	projectFieldSourceCodeFetchedAt                = "source_code_fetched_at"
 	projectFieldSourceQualityReport                = "source_quality_report"
 	projectFieldSourceQualityReportFetchedAt       = "source_quality_report_fetched_at"
+	projectFieldAveLogo                            = "ave_logo"
+	projectFieldAveLogoFetchedAt                   = "ave_logo_fetched_at"
 	projectFieldCodeBinHash                        = "code_bin_hash"
 	projectFieldCodeBinHashFetchedAt               = "code_bin_hash_fetched_at"
 	projectFieldGenesisWallets                     = "genesis_wallets"
 	projectFieldGenesisWalletsFetchedAt            = "genesis_wallets_fetched_at"
 	projectFieldReport                             = "report"
 
-	projectSchemaVersion = "11"
+	projectSchemaVersion = "12"
 
 	projectIndexAll        = "project:index:all"
 	projectIndexPairPrefix = "project:index:pair:"
@@ -351,6 +353,8 @@ func (c *RedisProjectSnapshotCache) writeProjectAllToPipeline(ctx context.Contex
 		projectFieldSourceCodeFetchedAt:                formatOptionalTime(project.Meta.SourceCodeFetchedAt),
 		projectFieldSourceQualityReport:                project.Meta.SourceQualityReport,
 		projectFieldSourceQualityReportFetchedAt:       formatOptionalTime(project.Meta.SourceQualityReportFetchedAt),
+		projectFieldAveLogo:                            project.Meta.AveLogo,
+		projectFieldAveLogoFetchedAt:                   formatOptionalTime(project.Meta.AveLogoFetchedAt),
 		projectFieldCodeBinHash:                        project.Meta.CodeBinHash.Hex(),
 		projectFieldCodeBinHashFetchedAt:               formatOptionalTime(project.Meta.CodeBinHashFetchedAt),
 		projectFieldReport:                             reportPayload,
@@ -431,6 +435,12 @@ func (c *RedisProjectSnapshotCache) projectFieldsDelta(current *Project, next *P
 	}
 	if current == nil || !current.Meta.SourceQualityReportFetchedAt.Equal(next.Meta.SourceQualityReportFetchedAt) {
 		fields[projectFieldSourceQualityReportFetchedAt] = formatOptionalTime(next.Meta.SourceQualityReportFetchedAt)
+	}
+	if current == nil || current.Meta.AveLogo != next.Meta.AveLogo {
+		fields[projectFieldAveLogo] = next.Meta.AveLogo
+	}
+	if current == nil || !current.Meta.AveLogoFetchedAt.Equal(next.Meta.AveLogoFetchedAt) {
+		fields[projectFieldAveLogoFetchedAt] = formatOptionalTime(next.Meta.AveLogoFetchedAt)
 	}
 	if current == nil || current.Meta.CodeBinHash != next.Meta.CodeBinHash {
 		fields[projectFieldCodeBinHash] = next.Meta.CodeBinHash.Hex()
@@ -552,6 +562,14 @@ func (c *RedisProjectSnapshotCache) getProjectUnlocked(ctx context.Context, cont
 			return nil, false, err
 		}
 		project.Meta.SourceQualityReportFetchedAt = fetchedAt
+	}
+	project.Meta.AveLogo = values[projectFieldAveLogo]
+	if raw := values[projectFieldAveLogoFetchedAt]; raw != "" {
+		fetchedAt, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return nil, false, err
+		}
+		project.Meta.AveLogoFetchedAt = fetchedAt
 	}
 	if raw := values[projectFieldCodeBinHash]; raw != "" {
 		project.Meta.CodeBinHash = common.HexToHash(raw)

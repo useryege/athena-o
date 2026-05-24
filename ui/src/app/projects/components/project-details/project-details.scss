@@ -35,6 +35,58 @@
         padding-bottom: 8px;
     }
 
+    &__identity {
+        align-items: center;
+        display: flex;
+        gap: 14px;
+        margin-bottom: 18px;
+        min-width: 0;
+    }
+
+    &__logo {
+        align-items: center;
+        background-color: #edf0f2;
+        border: 1px solid #d9dde0;
+        border-radius: 8px;
+        color: #6d7f8b;
+        display: inline-flex;
+        flex: 0 0 auto;
+        font-size: 20px;
+        font-weight: 600;
+        height: 56px;
+        justify-content: center;
+        overflow: hidden;
+        width: 56px;
+
+        img {
+            height: 100%;
+            object-fit: cover;
+            width: 100%;
+        }
+    }
+
+    &__identity-main {
+        min-width: 0;
+    }
+
+    &__identity-title {
+        color: #243746;
+        font-size: 18px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__identity-subtitle {
+        color: #6d7f8b;
+        font-size: 13px;
+        margin-top: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     &__field {
         margin-bottom: 12px;
         display: flex;

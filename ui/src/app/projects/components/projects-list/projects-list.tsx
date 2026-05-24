@@ -38,10 +38,7 @@ const getProjectRowKey = (project: ProjectListItem, index: number) => {
 
 export const ProjectsList = () => {
     const initialQueryState = React.useMemo(() => parseProjectsListSearch(history.location.search), []);
-    const initialCache = React.useMemo(
-        () => projectsListCache.get(buildProjectsListSearch(initialQueryState.page)),
-        [initialQueryState.page]
-    );
+    const initialCache = React.useMemo(() => projectsListCache.get(buildProjectsListSearch(initialQueryState.page)), [initialQueryState.page]);
     const [projects, setProjects] = React.useState<ProjectListItem[]>(initialCache?.projects || []);
     const [loading, setLoading] = React.useState(!initialCache);
     const [refreshing, setRefreshing] = React.useState(false);

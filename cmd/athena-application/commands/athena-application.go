@@ -29,6 +29,7 @@ import (
 	"github.com/useryege/athena/internal/application/metrics"
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
+	"github.com/useryege/athena/util/ave"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/deepseek"
@@ -55,6 +56,8 @@ func NewCommand() *cobra.Command {
 		deepseekAPIKey      string
 		deepseekAPIBaseURL  string
 		deepseekModel       string
+		aveAPIKey           string
+		aveAPIBaseURL       string
 		liquidityLockers    []string
 		storeSrc            func(context.Context) (*appstore.SQLStore, error)
 		redisClient         *redis.Client
@@ -156,6 +159,10 @@ func NewCommand() *cobra.Command {
 					APIKey:  deepseekAPIKey,
 					Model:   deepseekModel,
 				},
+				AveConfig: ave.Config{
+					BaseURL: aveAPIBaseURL,
+					APIKey:  aveAPIKey,
+				},
 				Store:           store,
 				LiquidityLocker: liquidityLockerAddresses,
 				RedisClient:     redisport.NewGoRedisAdapter(redisClient),
@@ -244,6 +251,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&deepseekAPIKey, "deepseek-api-key", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_API_KEY", ""), "DeepSeek API key")
 	command.Flags().StringVar(&deepseekAPIBaseURL, "deepseek-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_BASE_URL", deepseek.DefaultBaseURL), "DeepSeek API base URL")
 	command.Flags().StringVar(&deepseekModel, "deepseek-model", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_MODEL", deepseek.DefaultModel), "DeepSeek model for contract source quality analysis")
+	command.Flags().StringVar(&aveAPIKey, "ave-api-key", env.StringFromEnv("ATHENA_APPLICATION_AVE_API_KEY", ""), "Ave API key for project logo fetching")
+	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL")
 	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")
 	storeSrc = appstore.NewSQLStoreSource()
 	cacheSrc = cacheutil.AddCacheFlagsToCmd(command, cacheutil.Options{

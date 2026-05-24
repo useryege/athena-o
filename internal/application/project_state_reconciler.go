@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/application/avelogo"
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
@@ -74,6 +75,8 @@ type projectStateReconcilerImpl struct {
 	fetcher               evm.AthenaFetcher
 	simulator             ProjectSimulator
 	apiFetcher            ethereumapi.EthereumAPI
+	aveLogoFetcher        avelogo.Fetcher
+	aveChain              string
 	sourceQualityAnalyzer sourcequality.Analyzer
 
 	persistencePublisher PersistenceEventPublisher
@@ -95,6 +98,8 @@ func NewProjectStateReconciler(
 	fetcher evm.AthenaFetcher,
 	simulator ProjectSimulator,
 	apiFetcher ethereumapi.EthereumAPI,
+	aveLogoFetcher avelogo.Fetcher,
+	aveChain string,
 	sourceQualityAnalyzer sourcequality.Analyzer,
 	persistencePublisher PersistenceEventPublisher,
 	codeAtFunc func(ctx context.Context, contract common.Address) ([]byte, error),
@@ -107,6 +112,8 @@ func NewProjectStateReconciler(
 		fetcher:               fetcher,
 		simulator:             simulator,
 		apiFetcher:            apiFetcher,
+		aveLogoFetcher:        aveLogoFetcher,
+		aveChain:              strings.TrimSpace(aveChain),
 		sourceQualityAnalyzer: sourceQualityAnalyzer,
 		persistencePublisher:  persistencePublisher,
 		codeAtFunc:            codeAtFunc,
@@ -410,6 +417,9 @@ func (r *projectStateReconcilerImpl) refreshProject(ctx context.Context, contrac
 	if err := r.refreshProjectChainAndSimulation(ctx, project); err != nil {
 		return err
 	}
+	if err := r.refreshProjectAveLogo(ctx, contract); err != nil {
+		return err
+	}
 	if err := r.refreshProjectGenesisWallets(ctx, contract); err != nil {
 		return err
 	}
@@ -552,6 +562,41 @@ func (r *projectStateReconcilerImpl) refreshProjectGenesisWallets(ctx context.Co
 		return err
 	}
 	return nil
+}
+
+func (r *projectStateReconcilerImpl) refreshProjectAveLogo(ctx context.Context, contract common.Address) error {
+	if r.aveLogoFetcher == nil || strings.TrimSpace(r.aveChain) == "" {
+		return nil
+	}
+	project, ok, err := r.projectCache.GetProject(ctx, contract)
+	if err != nil {
+		return err
+	}
+	if !ok || project == nil || strings.TrimSpace(project.Meta.AveLogo) != "" || !project.Meta.AveLogoFetchedAt.IsZero() {
+		return nil
+	}
+	tokenID := strings.ToLower(project.Meta.Contract.Hex()) + "-" + r.aveChain
+	logo, err := r.aveLogoFetcher.FetchLogo(ctx, tokenID)
+	if err != nil {
+		return nil
+	}
+	logo = strings.TrimSpace(logo)
+	if logo == "" {
+		return nil
+	}
+	if err := r.persistProjectAveLogo(ctx, contract, logo); err != nil {
+		return nil
+	}
+	fetchedAt := time.Now().UTC()
+	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+		if !exists || current == nil || strings.TrimSpace(current.Meta.AveLogo) != "" || !current.Meta.AveLogoFetchedAt.IsZero() {
+			return nil, false, nil
+		}
+		current.Meta.AveLogo = logo
+		current.Meta.AveLogoFetchedAt = fetchedAt
+		return current, true, nil
+	})
+	return err
 }
 
 func (r *projectStateReconcilerImpl) refreshProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address) error {
@@ -749,6 +794,13 @@ func (r *projectStateReconcilerImpl) persistProjectSourceQualityReport(ctx conte
 		return nil
 	}
 	return r.persistencePublisher.PublishProjectSourceQualityReportUpdate(ctx, contract, report)
+}
+
+func (r *projectStateReconcilerImpl) persistProjectAveLogo(ctx context.Context, contract common.Address, logo string) error {
+	if r.persistencePublisher == nil {
+		return nil
+	}
+	return r.persistencePublisher.PublishProjectAveLogoUpdate(ctx, contract, logo)
 }
 
 func (r *projectStateReconcilerImpl) persistProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error {

@@ -119,6 +119,13 @@
             }
         }
 
+        &--name {
+            align-items: center;
+            display: flex;
+            gap: 8px;
+            min-width: 0;
+        }
+
         &--block-time {
             display: flex;
             flex-direction: column;
@@ -129,6 +136,35 @@
                 white-space: nowrap;
             }
         }
+    }
+
+    &__logo {
+        align-items: center;
+        background-color: #edf0f2;
+        border: 1px solid #d9dde0;
+        border-radius: 6px;
+        color: #6d7f8b;
+        display: inline-flex;
+        flex: 0 0 auto;
+        font-size: 12px;
+        font-weight: 600;
+        height: 32px;
+        justify-content: center;
+        overflow: hidden;
+        width: 32px;
+
+        img {
+            height: 100%;
+            object-fit: cover;
+            width: 100%;
+        }
+    }
+
+    &__name-text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     &__copy-button {

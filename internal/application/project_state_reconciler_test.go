@@ -27,6 +27,13 @@ type sourceQualityAnalyzerFake struct {
 	calls  int
 }
 
+type aveLogoFetcherFake struct {
+	logo    string
+	err     error
+	calls   int
+	tokenID string
+}
+
 type projectPolicyEngineFake struct {
 	calls     int
 	contracts []common.Address
@@ -311,10 +318,20 @@ func (f *sourceQualityAnalyzerFake) AnalyzeContractSource(context.Context, strin
 	return f.report, nil
 }
 
+func (f *aveLogoFetcherFake) FetchLogo(_ context.Context, tokenID string) (string, error) {
+	f.calls++
+	f.tokenID = tokenID
+	if f.err != nil {
+		return "", f.err
+	}
+	return f.logo, nil
+}
+
 type persistencePublisherFake struct {
 	metas                []appstore.ProjectMeta
 	sourceCodes          map[common.Address]string
 	sourceQualityReports map[common.Address]string
+	aveLogos             map[common.Address]string
 	codeBinHashes        map[common.Address]common.Hash
 	creatorResults       map[common.Address]SimulateResult
 	projectReports       map[common.Address]ProjectReport
@@ -373,6 +390,16 @@ func (p *persistencePublisherFake) PublishProjectSourceQualityReportUpdate(_ con
 		p.sourceQualityReports = map[common.Address]string{}
 	}
 	p.sourceQualityReports[contract] = report
+	return nil
+}
+func (p *persistencePublisherFake) PublishProjectAveLogoUpdate(_ context.Context, contract common.Address, logo string) error {
+	if p.err != nil {
+		return p.err
+	}
+	if p.aveLogos == nil {
+		p.aveLogos = map[common.Address]string{}
+	}
+	p.aveLogos[contract] = logo
 	return nil
 }
 func (p *persistencePublisherFake) PublishProjectCreatorResultUpdate(_ context.Context, contract common.Address, result SimulateResult) error {
@@ -1183,6 +1210,94 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReports(t *testing.T) 
 	}
 	if publisher.sourceQualityReports[contract] != "## Report" {
 		t.Fatalf("persisted report = %q, want report", publisher.sourceQualityReports[contract])
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectAveLogo(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000a2")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	fetcher := &aveLogoFetcherFake{logo: " https://example.com/logo.png "}
+	publisher := &persistencePublisherFake{}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:         cache,
+		aveLogoFetcher:       fetcher,
+		aveChain:             "bsc",
+		persistencePublisher: publisher,
+	}
+
+	if err := reconciler.refreshProjectAveLogo(ctx, contract); err != nil {
+		t.Fatalf("refresh ave logo: %v", err)
+	}
+	if fetcher.calls != 1 {
+		t.Fatalf("fetcher calls = %d, want 1", fetcher.calls)
+	}
+	if fetcher.tokenID != strings.ToLower(contract.Hex())+"-bsc" {
+		t.Fatalf("token id = %q, want contract-bsc", fetcher.tokenID)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || project.Meta.AveLogo != "https://example.com/logo.png" {
+		t.Fatalf("ave logo = %q, want logo", project.Meta.AveLogo)
+	}
+	if project.Meta.AveLogoFetchedAt.IsZero() {
+		t.Fatal("ave logo fetched at is zero")
+	}
+	if publisher.aveLogos[contract] != "https://example.com/logo.png" {
+		t.Fatalf("persisted ave logo = %q, want logo", publisher.aveLogos[contract])
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectAveLogoRetriesFailures(t *testing.T) {
+	tests := []struct {
+		name string
+		logo string
+		err  error
+	}{
+		{name: "empty logo", logo: "  "},
+		{name: "fetch error", err: errors.New("ave down")},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cache := newProjectSnapshotCacheTest(t)
+			ctx := context.Background()
+			contract := common.HexToAddress("0x00000000000000000000000000000000000000a4")
+			if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract}}); err != nil {
+				t.Fatalf("set project: %v", err)
+			}
+			fetcher := &aveLogoFetcherFake{logo: tt.logo, err: tt.err}
+			publisher := &persistencePublisherFake{}
+			reconciler := &projectStateReconcilerImpl{
+				projectCache:         cache,
+				aveLogoFetcher:       fetcher,
+				aveChain:             "bsc",
+				persistencePublisher: publisher,
+			}
+
+			if err := reconciler.refreshProjectAveLogo(ctx, contract); err != nil {
+				t.Fatalf("refresh ave logo: %v", err)
+			}
+			project, ok, err := cache.GetProject(ctx, contract)
+			if err != nil {
+				t.Fatalf("get project: %v", err)
+			}
+			if !ok {
+				t.Fatal("project missing")
+			}
+			if project.Meta.AveLogo != "" || !project.Meta.AveLogoFetchedAt.IsZero() {
+				t.Fatalf("ave logo = %q fetched at %s, want retry state", project.Meta.AveLogo, project.Meta.AveLogoFetchedAt)
+			}
+			if len(publisher.aveLogos) != 0 {
+				t.Fatalf("persisted ave logos = %v, want none", publisher.aveLogos)
+			}
+		})
 	}
 }
 

@@ -79,6 +79,7 @@ const renderFetchTimeline = (meta?: ProjectMeta) => {
         {label: 'Project Discovered', value: meta?.fetchAt},
         {label: 'Source Code Fetched', value: meta?.sourceCodeFetchedAt},
         {label: 'Code BIN Hash Fetched', value: meta?.codeBinHashFetchedAt},
+        {label: 'Ave Logo Fetched', value: meta?.aveLogoFetchedAt},
         {label: 'Source Quality Report Fetched', value: meta?.sourceQualityReportFetchedAt},
         {label: 'Genesis Wallets Fetched', value: meta?.genesisWalletsFetchedAt},
         {label: 'Creator Historical Projects Fetched', value: meta?.creatorHistoricalProjectsFetchedAt}
@@ -260,6 +261,8 @@ interface RouteParams {
     contract: string;
 }
 
+const projectInitial = (meta?: ProjectMeta) => (meta?.token?.symbol || meta?.token?.name || '?').trim().slice(0, 1).toUpperCase() || '?';
+
 export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const ctx = React.useContext(Context);
     const contract = props.match.params.contract;
@@ -279,6 +282,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
     const [projectOptions, setProjectOptions] = React.useState<ProjectOptions | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
+    const [logoFailed, setLogoFailed] = React.useState(false);
 
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const eventRequestRef = React.useRef<{abort?: () => void} | null>(null);
@@ -478,6 +482,11 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const sourceCode = project?.meta?.sourceCode || '';
     const isOpenSource = project?.meta?.isOpenSource ?? sourceCode.trim().length > 0;
     const sourceQualityReport = project?.meta?.sourceQualityReport || '';
+    const showLogo = !!project?.meta?.aveLogo && !logoFailed;
+
+    React.useEffect(() => {
+        setLogoFailed(false);
+    }, [project?.meta?.aveLogo]);
 
     const handleAddToBlacklist = React.useCallback(async () => {
         if (addingToBlacklist || isBlacklistChecking) {
@@ -614,6 +623,15 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Meta</div>
+                            <div className='project-details__identity'>
+                                <div className='project-details__logo' aria-hidden='true'>
+                                    {showLogo ? <img src={project.meta?.aveLogo} alt='' onError={() => setLogoFailed(true)} /> : <span>{projectInitial(project.meta)}</span>}
+                                </div>
+                                <div className='project-details__identity-main'>
+                                    <div className='project-details__identity-title'>{renderValue(project.meta?.token?.name)}</div>
+                                    <div className='project-details__identity-subtitle'>{renderValue(project.meta?.token?.symbol)}</div>
+                                </div>
+                            </div>
                             <div className='project-details__grid'>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Contract</span>

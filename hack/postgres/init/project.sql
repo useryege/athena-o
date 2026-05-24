@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS project (
   code_bin_hash_fetched_at TIMESTAMPTZ,
   source_quality_report TEXT,
   source_quality_report_fetched_at TIMESTAMPTZ,
+  ave_logo TEXT,
+  ave_logo_fetched_at TIMESTAMPTZ,
   creator_result_can_mint_from_dead_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
   creator_result_can_mint_from_zero_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
   creator_result_can_mint_from_weth_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,

@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
+	"github.com/useryege/athena/internal/application/avelogo"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/redisport"
@@ -22,6 +23,7 @@ import (
 	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
+	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/deepseek"
 	"github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc/codes"
@@ -46,6 +48,7 @@ type Service struct {
 
 	etherscanAPIBaseURL string
 	etherscanAPIKey     string
+	aveConfig           ave.Config
 	liquidityLocker     []common.Address
 
 	pipeline              *ProjectPipeline
@@ -72,7 +75,7 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, deepseekConfig deepseek.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client) (*Service, error) {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, deepseekConfig deepseek.Config, aveConfig ave.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client) (*Service, error) {
 	persistenceBus := NewRedisPersistenceEventBus(redisClient)
 	var sourceQualityAnalyzer sourcequality.Analyzer
 	if strings.TrimSpace(deepseekConfig.APIKey) != "" {
@@ -137,6 +140,7 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		athenaContract:        athenaContract,
 		etherscanAPIBaseURL:   etherscanAPIBaseURL,
 		etherscanAPIKey:       etherscanAPIKey,
+		aveConfig:             aveConfig,
 		liquidityLocker:       liquidityLocker,
 	}, nil
 }
@@ -220,6 +224,13 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 	}
 
 	apiFetcher = ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
+	aveLogoFetcher, aveChain, err := newAveLogoFetcherForChain(s.aveConfig, chainID.Int64())
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if aveLogoFetcher != nil {
+		log.WithField("chain", aveChain).Info("Ave logo fetcher configured successfully")
+	}
 	projectSimulator := NewProjectSimulator(s.nodeClient)
 
 	if s.bytecodeBlacklist != nil {
@@ -258,6 +269,8 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		athenaFetcher,
 		projectSimulator,
 		apiFetcher,
+		aveLogoFetcher,
+		aveChain,
 		s.sourceQualityAnalyzer,
 		s.persistencePublisher,
 		s.fetchContractBytecode,
@@ -323,6 +336,41 @@ func buildProjectQueries(projects []*Project) ([]athenacontract.AthenaProjectQue
 		contracts = append(contracts, project.Meta.Contract)
 	}
 	return queries, contracts
+}
+
+func newAveLogoFetcherForChain(config ave.Config, chainID int64) (avelogo.Fetcher, string, error) {
+	if strings.TrimSpace(config.APIKey) == "" {
+		return nil, "", nil
+	}
+	aveChain, ok := aveChainNameForChainID(chainID)
+	if !ok {
+		log.WithField("chainID", chainID).Warn("Ave logo fetcher disabled for unsupported chain")
+		return nil, "", nil
+	}
+	client, err := ave.NewClient(config)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to configure Ave logo fetcher: %w", err)
+	}
+	return avelogo.NewFetcher(client), aveChain, nil
+}
+
+func aveChainNameForChainID(chainID int64) (string, bool) {
+	switch chainID {
+	case 1:
+		return "eth", true
+	case 56:
+		return "bsc", true
+	case 137:
+		return "polygon", true
+	case 42161:
+		return "arbitrum", true
+	case 10:
+		return "optimism", true
+	case 8453:
+		return "base", true
+	default:
+		return "", false
+	}
 }
 
 func (s *Service) AnalyzeContractSourceQuality(ctx context.Context, sourceCode string) (string, error) {

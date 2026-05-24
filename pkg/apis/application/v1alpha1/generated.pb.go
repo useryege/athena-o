@@ -279,6 +279,13 @@ func (m *ProjectListItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.AveLogo)
+	copy(dAtA[i:], m.AveLogo)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AveLogo)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x82
 	i = encodeVarintGenerated(dAtA, i, uint64(m.TxIndex))
 	i--
 	dAtA[i] = 0x78
@@ -373,6 +380,20 @@ func (m *ProjectMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.AveLogoFetchedAt)
+	copy(dAtA[i:], m.AveLogoFetchedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AveLogoFetchedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xf2
+	i -= len(m.AveLogo)
+	copy(dAtA[i:], m.AveLogo)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AveLogo)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xea
 	if len(m.GenesisWalletAssetStates) > 0 {
 		for iNdEx := len(m.GenesisWalletAssetStates) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -895,6 +916,8 @@ func (m *ProjectListItem) Size() (n int) {
 	n += 1 + sovGenerated(uint64(m.BlockTime))
 	n += 1 + sovGenerated(uint64(m.BlockNumber))
 	n += 1 + sovGenerated(uint64(m.TxIndex))
+	l = len(m.AveLogo)
+	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -962,6 +985,10 @@ func (m *ProjectMeta) Size() (n int) {
 			n += 2 + l + sovGenerated(uint64(l))
 		}
 	}
+	l = len(m.AveLogo)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.AveLogoFetchedAt)
+	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -1112,6 +1139,7 @@ func (this *ProjectListItem) String() string {
 		`BlockTime:` + fmt.Sprintf("%v", this.BlockTime) + `,`,
 		`BlockNumber:` + fmt.Sprintf("%v", this.BlockNumber) + `,`,
 		`TxIndex:` + fmt.Sprintf("%v", this.TxIndex) + `,`,
+		`AveLogo:` + fmt.Sprintf("%v", this.AveLogo) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1156,6 +1184,8 @@ func (this *ProjectMeta) String() string {
 		`UsdtPair:` + strings.Replace(strings.Replace(this.UsdtPair.String(), "PairV2State", "PairV2State", 1), `&`, ``, 1) + `,`,
 		`AssetState:` + strings.Replace(strings.Replace(this.AssetState.String(), "AssetState", "AssetState", 1), `&`, ``, 1) + `,`,
 		`GenesisWalletAssetStates:` + repeatedStringForGenesisWalletAssetStates + `,`,
+		`AveLogo:` + fmt.Sprintf("%v", this.AveLogo) + `,`,
+		`AveLogoFetchedAt:` + fmt.Sprintf("%v", this.AveLogoFetchedAt) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -2550,6 +2580,38 @@ func (m *ProjectListItem) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveLogo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AveLogo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -3357,6 +3419,70 @@ func (m *ProjectMeta) Unmarshal(dAtA []byte) error {
 			if err := m.GenesisWalletAssetStates[len(m.GenesisWalletAssetStates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 29:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveLogo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AveLogo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 30:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveLogoFetchedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AveLogoFetchedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
