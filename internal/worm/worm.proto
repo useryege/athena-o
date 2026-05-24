@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 // Worm Service API exposes worm-level workload status.
-package worm;
+package athena.internal.worm;
 
 option go_package = "github.com/useryege/athena/internal/worm/apiclient";
 

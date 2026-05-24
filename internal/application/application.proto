@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 // Application Service API exposes project discovery snapshots.
-package application;
+package athena.internal.application;
 
 import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
 
