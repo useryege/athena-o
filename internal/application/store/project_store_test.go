@@ -545,6 +545,88 @@ func TestListProjectMetasByPairAddresses(t *testing.T) {
 	}
 }
 
+func TestListProjectMetasByCodeBinHash(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	store := NewSQLStore(db)
+	codeBinHash := common.HexToHash("0x2222222222222222222222222222222222222222222222222222222222222222")
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000A1")
+	creator := common.HexToAddress("0x00000000000000000000000000000000000000B2")
+	txHash := common.HexToHash("0x1234")
+	sourceCode := "contract A {}"
+	sourceCodeHash := crypto.Keccak256Hash([]byte(sourceCode))
+	rows := sqlmock.NewRows(projectMetaRowColumns()).
+		AddRow(int64(100), int64(200), contract.Bytes(), creator.Bytes(), common.Address{}.Bytes(), common.Address{}.Bytes(), time.Now(), txHash.Bytes(), int64(1), sourceCode, sourceCodeHash.Bytes(), time.Now(), codeBinHash.Bytes(), time.Now(), "report", time.Now(), false, false, false, false, false, false, false, false, false, false, false, false, nil, nil)
+
+	mock.ExpectQuery("WHERE code_bin_hash = \\$1").
+		WithArgs(codeBinHash.Bytes()).
+		WillReturnRows(rows)
+
+	metas, err := store.ListProjectMetasByCodeBinHash(context.Background(), codeBinHash)
+	if err != nil {
+		t.Fatalf("list project metas by code bin hash: %v", err)
+	}
+	if len(metas) != 1 {
+		t.Fatalf("metas len = %d, want 1", len(metas))
+	}
+	if metas[0].Contract != contract || metas[0].CodeBinHash != codeBinHash {
+		t.Fatalf("meta contract/hash = %s/%s, want %s/%s", metas[0].Contract.Hex(), metas[0].CodeBinHash.Hex(), contract.Hex(), codeBinHash.Hex())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
+func TestListProjectMetasByCodeBinHashNoRows(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	store := NewSQLStore(db)
+	codeBinHash := common.HexToHash("0x3333333333333333333333333333333333333333333333333333333333333333")
+	rows := sqlmock.NewRows(projectMetaRowColumns())
+	mock.ExpectQuery("WHERE code_bin_hash = \\$1").
+		WithArgs(codeBinHash.Bytes()).
+		WillReturnRows(rows)
+
+	metas, err := store.ListProjectMetasByCodeBinHash(context.Background(), codeBinHash)
+	if err != nil {
+		t.Fatalf("list project metas by code bin hash: %v", err)
+	}
+	if len(metas) != 0 {
+		t.Fatalf("metas len = %d, want 0", len(metas))
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
+func TestListProjectMetasByCodeBinHashSkipsZeroHash(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	store := NewSQLStore(db)
+	metas, err := store.ListProjectMetasByCodeBinHash(context.Background(), common.Hash{})
+	if err != nil {
+		t.Fatalf("list project metas by code bin hash: %v", err)
+	}
+	if len(metas) != 0 {
+		t.Fatalf("metas len = %d, want 0", len(metas))
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
 func TestListProjectMetasByCreatorBefore(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {

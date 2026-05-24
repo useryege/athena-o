@@ -1069,7 +1069,8 @@ func TestProjectStateReconcilerRefreshProjectSourceCodeRequiresLongSource(t *tes
 			cache := newProjectSnapshotCacheTest(t)
 			ctx := context.Background()
 			contract := common.HexToAddress("0x00000000000000000000000000000000000000b1")
-			if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract}}); err != nil {
+			codeBinHash := common.HexToHash("0x11111111111111111111111111111111111111111111111111111111111111b1")
+			if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract, CodeBinHash: codeBinHash}}); err != nil {
 				t.Fatalf("set project: %v", err)
 			}
 			api := &ethereumAPIFake{sourceCode: tt.sourceCode}
@@ -1113,7 +1114,8 @@ func TestProjectStateReconcilerRefreshProjectSourceCodePersistsLongSource(t *tes
 	cache := newProjectSnapshotCacheTest(t)
 	ctx := context.Background()
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000b2")
-	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract}}); err != nil {
+	codeBinHash := common.HexToHash("0x11111111111111111111111111111111111111111111111111111111111111b2")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract, CodeBinHash: codeBinHash}}); err != nil {
 		t.Fatalf("set project: %v", err)
 	}
 	sourceCode := "contract LongSource {\n" + strings.Repeat("    function f() public pure returns (uint256) { return 1; }\n", 3) + "}"
@@ -1158,8 +1160,129 @@ func TestProjectStateReconcilerRefreshProjectSourceCodeSkipsCompleted(t *testing
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000b3")
 	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
 		Contract:            contract,
+		CodeBinHash:         common.HexToHash("0x11111111111111111111111111111111111111111111111111111111111111b3"),
 		SourceCodeFetchedAt: time.Now().UTC(),
 	}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	api := &ethereumAPIFake{sourceCode: strings.Repeat("a", 101)}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:         cache,
+		apiFetcher:           api,
+		persistencePublisher: &persistencePublisherFake{},
+	}
+
+	if err := reconciler.refreshProjectSourceCode(ctx, contract); err != nil {
+		t.Fatalf("refresh source code: %v", err)
+	}
+	if api.calls != 0 {
+		t.Fatalf("api calls = %d, want 0", api.calls)
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSourceCodeReusesCacheByCodeBinHash(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000b4")
+	reusableContract := common.HexToAddress("0x00000000000000000000000000000000000000b5")
+	codeBinHash := common.HexToHash("0x11111111111111111111111111111111111111111111111111111111111111b4")
+	sourceCode := "contract CachedSource {}"
+	sourceCodeHash := crypto.Keccak256Hash([]byte(sourceCode))
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract, CodeBinHash: codeBinHash}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		Contract:       reusableContract,
+		CodeBinHash:    codeBinHash,
+		SourceCode:     sourceCode,
+		SourceCodeHash: sourceCodeHash,
+	}}); err != nil {
+		t.Fatalf("set reusable project: %v", err)
+	}
+
+	api := &ethereumAPIFake{sourceCode: strings.Repeat("a", 101)}
+	store := &discoveryProjectStoreFake{}
+	publisher := &persistencePublisherFake{}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:         cache,
+		projectStore:         store,
+		apiFetcher:           api,
+		persistencePublisher: publisher,
+	}
+
+	if err := reconciler.refreshProjectSourceCode(ctx, contract); err != nil {
+		t.Fatalf("refresh source code: %v", err)
+	}
+	if api.calls != 0 {
+		t.Fatalf("api calls = %d, want 0", api.calls)
+	}
+	if store.codeBinCalls != 0 {
+		t.Fatalf("store code bin calls = %d, want 0", store.codeBinCalls)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || project.Meta.SourceCode != sourceCode || project.Meta.SourceCodeHash != sourceCodeHash {
+		t.Fatalf("source code/hash = %q/%s, want %q/%s", project.Meta.SourceCode, project.Meta.SourceCodeHash.Hex(), sourceCode, sourceCodeHash.Hex())
+	}
+	if got := publisher.sourceCodes[contract]; got != sourceCode {
+		t.Fatalf("persisted source code = %q, want %q", got, sourceCode)
+	}
+	if len(publisher.projectEventLogs) != 1 {
+		t.Fatalf("project event logs = %d, want 1", len(publisher.projectEventLogs))
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSourceCodeReusesStoreByCodeBinHash(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000b6")
+	reusableContract := common.HexToAddress("0x00000000000000000000000000000000000000b7")
+	codeBinHash := common.HexToHash("0x11111111111111111111111111111111111111111111111111111111111111b6")
+	sourceCode := "contract StoreSource {}"
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract, CodeBinHash: codeBinHash}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	api := &ethereumAPIFake{sourceCode: strings.Repeat("a", 101)}
+	store := &discoveryProjectStoreFake{codeBinMetas: []appstore.ProjectMeta{{
+		Contract:    reusableContract,
+		CodeBinHash: codeBinHash,
+		SourceCode:  sourceCode,
+	}}}
+	publisher := &persistencePublisherFake{}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:         cache,
+		projectStore:         store,
+		apiFetcher:           api,
+		persistencePublisher: publisher,
+	}
+
+	if err := reconciler.refreshProjectSourceCode(ctx, contract); err != nil {
+		t.Fatalf("refresh source code: %v", err)
+	}
+	if api.calls != 0 {
+		t.Fatalf("api calls = %d, want 0", api.calls)
+	}
+	if store.codeBinCalls != 1 || store.gotCodeBinHash != codeBinHash {
+		t.Fatalf("store code bin calls/hash = %d/%s, want 1/%s", store.codeBinCalls, store.gotCodeBinHash.Hex(), codeBinHash.Hex())
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	wantHash := crypto.Keccak256Hash([]byte(sourceCode))
+	if !ok || project.Meta.SourceCode != sourceCode || project.Meta.SourceCodeHash != wantHash {
+		t.Fatalf("source code/hash = %q/%s, want %q/%s", project.Meta.SourceCode, project.Meta.SourceCodeHash.Hex(), sourceCode, wantHash.Hex())
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSourceCodeSkipsMissingCodeBinHash(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000b8")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract}}); err != nil {
 		t.Fatalf("set project: %v", err)
 	}
 	api := &ethereumAPIFake{sourceCode: strings.Repeat("a", 101)}
@@ -1181,7 +1304,8 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReports(t *testing.T) 
 	cache := newProjectSnapshotCacheTest(t)
 	ctx := context.Background()
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000a1")
-	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract, SourceCode: "contract A {}"}}); err != nil {
+	codeBinHash := common.HexToHash("0x11111111111111111111111111111111111111111111111111111111111111a1")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract, SourceCode: "contract A {}", CodeBinHash: codeBinHash}}); err != nil {
 		t.Fatalf("set project: %v", err)
 	}
 
@@ -1211,6 +1335,99 @@ func TestProjectStateReconcilerRefreshProjectSourceQualityReports(t *testing.T) 
 	}
 	if publisher.sourceQualityReports[contract] != "## Report" {
 		t.Fatalf("persisted report = %q, want report", publisher.sourceQualityReports[contract])
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSourceQualityReportReusesCacheByCodeBinHash(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
+	reusableContract := common.HexToAddress("0x00000000000000000000000000000000000000c2")
+	codeBinHash := common.HexToHash("0x11111111111111111111111111111111111111111111111111111111111111c1")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract, CodeBinHash: codeBinHash, SourceCode: "contract A {}"}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
+		Contract:            reusableContract,
+		CodeBinHash:         codeBinHash,
+		SourceQualityReport: "## Cached Report",
+	}}); err != nil {
+		t.Fatalf("set reusable project: %v", err)
+	}
+
+	analyzer := &sourceQualityAnalyzerFake{report: "## Analyzer Report"}
+	store := &discoveryProjectStoreFake{}
+	publisher := &persistencePublisherFake{}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:          cache,
+		projectStore:          store,
+		sourceQualityAnalyzer: analyzer,
+		persistencePublisher:  publisher,
+	}
+
+	if err := reconciler.refreshProjectSourceQualityReport(ctx, contract); err != nil {
+		t.Fatalf("refresh source quality reports: %v", err)
+	}
+	if analyzer.calls != 0 {
+		t.Fatalf("analyzer calls = %d, want 0", analyzer.calls)
+	}
+	if store.codeBinCalls != 0 {
+		t.Fatalf("store code bin calls = %d, want 0", store.codeBinCalls)
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || project.Meta.SourceQualityReport != "## Cached Report" {
+		t.Fatalf("source quality report = %q, want cached report", project.Meta.SourceQualityReport)
+	}
+	if publisher.sourceQualityReports[contract] != "## Cached Report" {
+		t.Fatalf("persisted report = %q, want cached report", publisher.sourceQualityReports[contract])
+	}
+}
+
+func TestProjectStateReconcilerRefreshProjectSourceQualityReportReusesStoreByCodeBinHash(t *testing.T) {
+	cache := newProjectSnapshotCacheTest(t)
+	ctx := context.Background()
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000c3")
+	reusableContract := common.HexToAddress("0x00000000000000000000000000000000000000c4")
+	codeBinHash := common.HexToHash("0x11111111111111111111111111111111111111111111111111111111111111c3")
+	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{Contract: contract, CodeBinHash: codeBinHash, SourceCode: "contract A {}"}}); err != nil {
+		t.Fatalf("set project: %v", err)
+	}
+
+	analyzer := &sourceQualityAnalyzerFake{report: "## Analyzer Report"}
+	store := &discoveryProjectStoreFake{codeBinMetas: []appstore.ProjectMeta{{
+		Contract:            reusableContract,
+		CodeBinHash:         codeBinHash,
+		SourceQualityReport: "  ## Store Report  ",
+	}}}
+	publisher := &persistencePublisherFake{}
+	reconciler := &projectStateReconcilerImpl{
+		projectCache:          cache,
+		projectStore:          store,
+		sourceQualityAnalyzer: analyzer,
+		persistencePublisher:  publisher,
+	}
+
+	if err := reconciler.refreshProjectSourceQualityReport(ctx, contract); err != nil {
+		t.Fatalf("refresh source quality reports: %v", err)
+	}
+	if analyzer.calls != 0 {
+		t.Fatalf("analyzer calls = %d, want 0", analyzer.calls)
+	}
+	if store.codeBinCalls != 1 || store.gotCodeBinHash != codeBinHash {
+		t.Fatalf("store code bin calls/hash = %d/%s, want 1/%s", store.codeBinCalls, store.gotCodeBinHash.Hex(), codeBinHash.Hex())
+	}
+	project, ok, err := cache.GetProject(ctx, contract)
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if !ok || project.Meta.SourceQualityReport != "## Store Report" {
+		t.Fatalf("source quality report = %q, want store report", project.Meta.SourceQualityReport)
+	}
+	if publisher.sourceQualityReports[contract] != "## Store Report" {
+		t.Fatalf("persisted report = %q, want store report", publisher.sourceQualityReports[contract])
 	}
 }
 

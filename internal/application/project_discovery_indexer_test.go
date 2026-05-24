@@ -150,19 +150,22 @@ func (f *swapLogDiscoveryNodeClientFake) ChainID(context.Context) (*big.Int, err
 }
 
 type discoveryProjectStoreFake struct {
-	metas       []appstore.ProjectMeta
-	pairMetas   []appstore.ProjectMeta
-	errs        []error
-	calls       int
-	pairCalls   int
-	maxBlock    uint64
-	maxBlockOK  bool
-	maxBlockErr error
+	metas        []appstore.ProjectMeta
+	pairMetas    []appstore.ProjectMeta
+	codeBinMetas []appstore.ProjectMeta
+	errs         []error
+	calls        int
+	pairCalls    int
+	codeBinCalls int
+	maxBlock     uint64
+	maxBlockOK   bool
+	maxBlockErr  error
 
 	gotCreator     common.Address
 	gotBlockNumber uint64
 	gotTxIndex     uint64
 	gotPairs       []common.Address
+	gotCodeBinHash common.Hash
 }
 
 func (s *discoveryProjectStoreFake) SaveProjectMeta(context.Context, appstore.ProjectMeta) error {
@@ -185,6 +188,12 @@ func (s *discoveryProjectStoreFake) ListProjectMetasByPairAddresses(_ context.Co
 	s.pairCalls++
 	s.gotPairs = append([]common.Address(nil), pairs...)
 	return append([]appstore.ProjectMeta(nil), s.pairMetas...), nil
+}
+
+func (s *discoveryProjectStoreFake) ListProjectMetasByCodeBinHash(_ context.Context, codeBinHash common.Hash) ([]appstore.ProjectMeta, error) {
+	s.codeBinCalls++
+	s.gotCodeBinHash = codeBinHash
+	return append([]appstore.ProjectMeta(nil), s.codeBinMetas...), nil
 }
 
 func (s *discoveryProjectStoreFake) UpdateProjectSourceCode(context.Context, common.Address, string) error {

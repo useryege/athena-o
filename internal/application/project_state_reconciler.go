@@ -426,10 +426,10 @@ func (r *projectStateReconcilerImpl) refreshProject(ctx context.Context, contrac
 	if err := r.refreshProjectCreatorHistoricalProjects(ctx, contract); err != nil {
 		return err
 	}
-	if err := r.refreshProjectSourceCode(ctx, contract); err != nil {
+	if err := r.refreshProjectCodeBinHash(ctx, contract); err != nil {
 		return err
 	}
-	if err := r.refreshProjectCodeBinHash(ctx, contract); err != nil {
+	if err := r.refreshProjectSourceCode(ctx, contract); err != nil {
 		return err
 	}
 	if err := r.refreshProjectSourceQualityReport(ctx, contract); err != nil {
@@ -643,14 +643,24 @@ func (r *projectStateReconcilerImpl) refreshProjectCreatorHistoricalProjects(ctx
 }
 
 func (r *projectStateReconcilerImpl) refreshProjectSourceCode(ctx context.Context, contract common.Address) error {
-	if r.apiFetcher == nil {
-		return nil
-	}
 	project, ok, err := r.projectCache.GetProject(ctx, contract)
 	if err != nil {
 		return err
 	}
-	if !ok || project == nil || !project.Meta.SourceCodeFetchedAt.IsZero() {
+	if !ok || project == nil || project.Meta.CodeBinHash == (common.Hash{}) || !project.Meta.SourceCodeFetchedAt.IsZero() {
+		return nil
+	}
+	if sourceMeta, found, err := r.findReusableProjectSourceCode(ctx, contract, project.Meta.CodeBinHash); err != nil {
+		return err
+	} else if found {
+		sourceCode := sourceMeta.SourceCode
+		sourceCodeHash := sourceMeta.SourceCodeHash
+		if sourceCodeHash == (common.Hash{}) {
+			sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
+		}
+		return r.applyProjectSourceCode(ctx, contract, project.Meta.CodeBinHash, sourceCode, sourceCodeHash)
+	}
+	if r.apiFetcher == nil {
 		return nil
 	}
 	sourceCode, _, fetchErr := r.fetchSourceCode(ctx, project)
@@ -660,8 +670,11 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceCode(ctx context.Contex
 	if len(strings.TrimSpace(sourceCode)) <= 100 {
 		return nil
 	}
-	sourceCodeHash := common.Hash{}
-	sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
+	sourceCodeHash := crypto.Keccak256Hash([]byte(sourceCode))
+	return r.applyProjectSourceCode(ctx, contract, project.Meta.CodeBinHash, sourceCode, sourceCodeHash)
+}
+
+func (r *projectStateReconcilerImpl) applyProjectSourceCode(ctx context.Context, contract common.Address, codeBinHash common.Hash, sourceCode string, sourceCodeHash common.Hash) error {
 	if err := r.persistProjectSourceCode(ctx, contract, sourceCode); err != nil {
 		return nil
 	}
@@ -676,8 +689,8 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceCode(ctx context.Contex
 		return nil
 	}
 	fetchedAt := time.Now().UTC()
-	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil || !current.Meta.SourceCodeFetchedAt.IsZero() {
+	_, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+		if !exists || current == nil || current.Meta.CodeBinHash != codeBinHash || !current.Meta.SourceCodeFetchedAt.IsZero() {
 			return nil, false, nil
 		}
 		current.Meta.SourceCode = sourceCode
@@ -726,14 +739,19 @@ func (r *projectStateReconcilerImpl) refreshProjectCodeBinHash(ctx context.Conte
 }
 
 func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReport(ctx context.Context, contract common.Address) error {
-	if r.sourceQualityAnalyzer == nil {
-		return nil
-	}
 	project, ok, err := r.projectCache.GetProject(ctx, contract)
 	if err != nil {
 		return err
 	}
-	if !ok || project == nil || project.Meta.SourceCode == "" || project.Meta.SourceQualityReport != "" || !project.Meta.SourceQualityReportFetchedAt.IsZero() {
+	if !ok || project == nil || project.Meta.SourceCode == "" || project.Meta.CodeBinHash == (common.Hash{}) || project.Meta.SourceQualityReport != "" || !project.Meta.SourceQualityReportFetchedAt.IsZero() {
+		return nil
+	}
+	if reportMeta, found, err := r.findReusableProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash); err != nil {
+		return err
+	} else if found {
+		return r.applyProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash, strings.TrimSpace(reportMeta.SourceQualityReport))
+	}
+	if r.sourceQualityAnalyzer == nil {
 		return nil
 	}
 	report, err := r.sourceQualityAnalyzer.AnalyzeContractSource(ctx, project.Meta.SourceCode)
@@ -746,6 +764,10 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReport(ctx conte
 		return nil
 	}
 	report = strings.TrimSpace(report)
+	return r.applyProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash, report)
+}
+
+func (r *projectStateReconcilerImpl) applyProjectSourceQualityReport(ctx context.Context, contract common.Address, codeBinHash common.Hash, report string) error {
 	if err := r.persistProjectSourceQualityReport(ctx, contract, report); err != nil {
 		log.WithFields(log.Fields{
 			"component": "project_state_reconciler",
@@ -755,8 +777,8 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReport(ctx conte
 		return nil
 	}
 	fetchedAt := time.Now().UTC()
-	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil || current.Meta.SourceCode == "" || current.Meta.SourceQualityReport != "" || !current.Meta.SourceQualityReportFetchedAt.IsZero() {
+	_, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
+		if !exists || current == nil || current.Meta.SourceCode == "" || current.Meta.CodeBinHash != codeBinHash || current.Meta.SourceQualityReport != "" || !current.Meta.SourceQualityReportFetchedAt.IsZero() {
 			return nil, false, nil
 		}
 		current.Meta.SourceQualityReport = report
@@ -764,6 +786,55 @@ func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReport(ctx conte
 		return current, true, nil
 	})
 	return err
+}
+
+func (r *projectStateReconcilerImpl) findReusableProjectSourceCode(ctx context.Context, contract common.Address, codeBinHash common.Hash) (ProjectMeta, bool, error) {
+	return r.findReusableProjectByCodeBinHash(ctx, contract, codeBinHash, func(meta ProjectMeta) bool {
+		return strings.TrimSpace(meta.SourceCode) != ""
+	})
+}
+
+func (r *projectStateReconcilerImpl) findReusableProjectSourceQualityReport(ctx context.Context, contract common.Address, codeBinHash common.Hash) (ProjectMeta, bool, error) {
+	return r.findReusableProjectByCodeBinHash(ctx, contract, codeBinHash, func(meta ProjectMeta) bool {
+		return strings.TrimSpace(meta.SourceQualityReport) != ""
+	})
+}
+
+func (r *projectStateReconcilerImpl) findReusableProjectByCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash, reusable func(ProjectMeta) bool) (ProjectMeta, bool, error) {
+	if codeBinHash == (common.Hash{}) {
+		return ProjectMeta{}, false, nil
+	}
+	if r.projectCache != nil {
+		projects, err := r.projectCache.ListProjects(ctx)
+		if err != nil {
+			return ProjectMeta{}, false, err
+		}
+		for _, project := range projects {
+			if project == nil || project.Meta.Contract == contract || project.Meta.CodeBinHash != codeBinHash {
+				continue
+			}
+			if reusable(project.Meta) {
+				return project.Meta, true, nil
+			}
+		}
+	}
+	if r.projectStore == nil {
+		return ProjectMeta{}, false, nil
+	}
+	metas, err := r.projectStore.ListProjectMetasByCodeBinHash(ctx, codeBinHash)
+	if err != nil {
+		return ProjectMeta{}, false, err
+	}
+	for _, meta := range metas {
+		if meta.Contract == contract {
+			continue
+		}
+		projectMeta := projectMetaFromStore(meta)
+		if reusable(projectMeta) {
+			return projectMeta, true, nil
+		}
+	}
+	return ProjectMeta{}, false, nil
 }
 
 func (r *projectStateReconcilerImpl) persistProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string) error {

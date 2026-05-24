@@ -219,6 +219,65 @@ ORDER BY block_number, tx_index, id
 	return metas, nil
 }
 
+func (s *SQLStore) ListProjectMetasByCodeBinHash(ctx context.Context, codeBinHash common.Hash) ([]ProjectMeta, error) {
+	if codeBinHash == (common.Hash{}) {
+		return nil, nil
+	}
+	rows, err := s.db.QueryContext(ctx, `
+SELECT
+  block_number,
+  block_time,
+  contract,
+  creator,
+  weth_pair,
+  usdt_pair,
+  fetch_at,
+  tx_hash,
+  tx_index,
+  source_code,
+  source_code_hash,
+  source_code_fetched_at,
+  code_bin_hash,
+  code_bin_hash_fetched_at,
+  source_quality_report,
+  source_quality_report_fetched_at,
+  creator_result_can_mint_from_dead_via_transfer_from,
+  creator_result_can_mint_from_zero_via_transfer_from,
+  creator_result_can_mint_from_weth_pair_via_transfer_from,
+  creator_result_can_mint_from_usdt_pair_via_transfer_from,
+  creator_result_can_mint_via_transfer_to_weth_pair,
+  creator_result_can_mint_via_transfer_to_usdt_pair,
+  report_is_policy_evaluated,
+  report_is_blacklisted_creator_wallet,
+  report_is_blacklisted_genesis_wallet,
+  report_is_blacklisted_bytecode,
+  report_is_blacklisted_source_code,
+  report_has_mint_risk,
+  genesis_wallets_fetched_at,
+  creator_historical_projects_fetched_at
+FROM project
+WHERE code_bin_hash = $1
+ORDER BY block_number, tx_index, id
+`, codeBinHash.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("list project metas by code bin hash: %w", err)
+	}
+	defer rows.Close()
+
+	metas := make([]ProjectMeta, 0)
+	for rows.Next() {
+		meta, err := scanProjectMetaRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		metas = append(metas, meta)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate project metas by code bin hash: %w", err)
+	}
+	return metas, nil
+}
+
 func (s *SQLStore) ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error) {
 	rows, err := s.db.QueryContext(ctx, `
 SELECT

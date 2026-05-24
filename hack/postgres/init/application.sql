@@ -54,6 +54,9 @@ CREATE INDEX IF NOT EXISTS project_weth_pair_idx
 CREATE INDEX IF NOT EXISTS project_usdt_pair_idx
   ON project (usdt_pair);
 
+CREATE INDEX IF NOT EXISTS project_code_bin_hash_idx
+  ON project (code_bin_hash);
+
 CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (block_number, tx_index, id);
 
