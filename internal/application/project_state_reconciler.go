@@ -30,7 +30,7 @@ const (
 	reconcilerDefaultConcurrency       = 2
 	reconcilerSchedulerTickInterval    = 5 * time.Second
 	reconcilerScheduledRefreshInterval = time.Minute
-	reconcilerCatchUpTTL               = 60 * time.Minute
+	reconcilerCatchUpTTL               = 5 * time.Minute
 	reconcilerFollowHeadsTTL           = 360 * time.Minute
 )
 
