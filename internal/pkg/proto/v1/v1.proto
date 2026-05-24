@@ -1,5 +1,0 @@
-syntax = "proto3";
-
-package v1;
-
-option go_package = "github.com/useryege/athena/internal/pkg/proto/v1";
