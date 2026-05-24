@@ -17,6 +17,29 @@ import (
 
 var MaxGRPCMessageSize = env.ParseNumFromEnv(common.EnvGRPCMaxSizeMB, 100, 0, math.MaxInt32) * 1024 * 1024
 
+// Clientset represents worm api clients.
+type Clientset interface {
+	NewWormServiceClient() (utilio.Closer, WormServiceClient, error)
+}
+
+type clientSet struct {
+	address string
+}
+
+// NewWormServiceClient creates a new worm client.
+func (c *clientSet) NewWormServiceClient() (utilio.Closer, WormServiceClient, error) {
+	conn, err := NewConnection(c.address)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to open a new connection to worm service: %w", err)
+	}
+	return conn, NewWormServiceClient(conn), nil
+}
+
+// NewWormClientset creates a new instance of worm Clientset.
+func NewWormClientset(address string) Clientset {
+	return &clientSet{address: address}
+}
+
 func NewConnection(address string) (*grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

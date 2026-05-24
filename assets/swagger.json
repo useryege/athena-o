@@ -892,6 +892,29 @@
         }
       }
     },
+    "/api/v1/worm/status": {
+      "get": {
+        "tags": [
+          "WormService"
+        ],
+        "summary": "GetWormStatus returns the worm service runtime status.",
+        "operationId": "WormService_GetWormStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/wormGetWormStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/version": {
       "get": {
         "tags": [
@@ -2352,6 +2375,18 @@
           "type": "string"
         },
         "Version": {
+          "type": "string"
+        }
+      }
+    },
+    "wormGetWormStatusResponse": {
+      "description": "GetWormStatusResponse returns the worm service runtime status.",
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
           "type": "string"
         }
       }

@@ -134,6 +134,7 @@ func NewCommand() *cobra.Command {
 			}
 
 			applicationclientset := applicationapiclient.NewApplicationClientset(applicationServerAddress)
+			wormclientset := wormapiclient.NewWormClientset(wormServerAddress)
 			log.Infof("waiting for athena application grpc service at %s", applicationServerAddress)
 			errors.CheckError(applicationapiclient.WaitForApplicationService(ctx, applicationServerAddress))
 			log.Infof("athena application grpc service is ready at %s", applicationServerAddress)
@@ -161,6 +162,7 @@ func NewCommand() *cobra.Command {
 				DexServerAddr:         dexServerAddress,
 				DexTLSConfig:          dexTLSConfig,
 				ApplicationClientset:  applicationclientset,
+				WormClientset:         wormclientset,
 				// HydratorEnabled:        hydratorEnabled,
 				// SyncWithReplaceAllowed: syncWithReplaceAllowed,
 			}

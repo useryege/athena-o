@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+// Worm Service
+//
+// Worm Service API returns worm-level workload status.
+package worm;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/worm";
+
+// GetWormStatusRequest queries the worm service runtime status.
+message GetWormStatusRequest {}
+
+// GetWormStatusResponse returns the worm service runtime status.
+message GetWormStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+service WormService {
+  // GetWormStatus returns the worm service runtime status.
+  rpc GetWormStatus(GetWormStatusRequest) returns (GetWormStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/worm/status"};
+  }
+}

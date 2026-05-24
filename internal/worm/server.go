@@ -36,6 +36,7 @@ func (s *Server) CreateGRPC() *grpc.Server {
 		return true, nil
 	})
 	versionpkg.RegisterVersionServiceServer(server, versionService)
+	apiclient.RegisterWormServiceServer(server, s.service)
 	grpc_health_v1.RegisterHealthServer(server, s.healthService)
 	return server
 }

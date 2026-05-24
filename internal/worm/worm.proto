@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+// Worm Service API exposes worm-level workload status.
+package worm;
+
+option go_package = "github.com/useryege/athena/internal/worm/apiclient";
+
+// GetWormStatusRequest queries the worm service runtime status.
+message GetWormStatusRequest {}
+
+// GetWormStatusResponse returns the worm service runtime status.
+message GetWormStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+service WormService {
+  // GetWormStatus returns the worm service runtime status.
+  rpc GetWormStatus(GetWormStatusRequest) returns (GetWormStatusResponse);
+}
