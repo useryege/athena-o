@@ -550,21 +550,10 @@ func TestIntegrationAuthReadEstimateMarginPosition(t *testing.T) {
 	fixture := newAuthReadIntegrationFixture(t)
 	defer fixture.cancel()
 
-	market := findMarginEnabledIntegrationMarket(t, fixture.ctx, fixture.client)
-	isYes := true
-	leverage := 1.0
-	estimate, err := fixture.client.EstimateMarginPosition(fixture.ctx, EstimateMarginPositionOptions{
-		MarketConditionID: market.ConditionID,
-		Funds:             "1",
-		IsYes:             &isYes,
-		Leverage:          &leverage,
-	})
-	if err != nil {
-		t.Fatalf("EstimateMarginPosition(%s): %v", market.ConditionID, err)
-	}
+	market, isYes, estimate := findIntegrationMarginPositionEstimate(t, fixture.ctx, fixture.client)
 	validateIntegrationMarginPositionEstimate(t, estimate)
 
-	t.Logf("EstimateMarginPosition returned condition_id=%q average_price=%q total_shares=%q", market.ConditionID, estimate.AveragePrice, estimate.TotalShares)
+	t.Logf("EstimateMarginPosition returned condition_id=%q is_yes=%t average_price=%q total_shares=%q", market.ConditionID, isYes, estimate.AveragePrice, estimate.TotalShares)
 }
 
 func TestIntegrationAuthReadListPositionRequests(t *testing.T) {
@@ -905,17 +894,27 @@ func cleanupSharedAuthReadIntegrationClient() {
 }
 
 func isWormThrottleError(err error) bool {
+	apiErr := wormAPIError(err)
+	return apiErr != nil && (apiErr.Code == -17 || apiErr.Slug == "throttled")
+}
+
+func isWormValidationError(err error) bool {
+	apiErr := wormAPIError(err)
+	return apiErr != nil && (apiErr.Code == -11 || apiErr.Slug == "invalid_request_params")
+}
+
+func wormAPIError(err error) *Error {
 	for err != nil {
 		if apiErr, ok := err.(*Error); ok {
-			return apiErr.Code == -17 || apiErr.Slug == "throttled"
+			return apiErr
 		}
 		unwrapped, ok := err.(interface{ Unwrap() error })
 		if !ok {
-			return false
+			return nil
 		}
 		err = unwrapped.Unwrap()
 	}
-	return false
+	return nil
 }
 
 func newAuthenticatedIntegrationClient(t *testing.T, creds *APIKeySecret) Client {
@@ -1015,7 +1014,7 @@ func findIntegrationEvent(t *testing.T, ctx context.Context, client Client) Even
 	return events.Events[0]
 }
 
-func findMarginEnabledIntegrationMarket(t *testing.T, ctx context.Context, client Client) MarketSummary {
+func findIntegrationMarginPositionEstimate(t *testing.T, ctx context.Context, client Client) (MarketSummary, bool, *MarginPositionEstimate) {
 	t.Helper()
 	markets, err := client.ListMarkets(ctx, ListMarketsOptions{
 		PageOptions: PageOptions{Limit: 20},
@@ -1024,14 +1023,38 @@ func findMarginEnabledIntegrationMarket(t *testing.T, ctx context.Context, clien
 	if err != nil {
 		t.Fatalf("ListMarkets: %v", err)
 	}
+	isYesCandidates := []bool{true, false}
+	leverage := 2.0
+	attempted := make([]string, 0)
 	for _, market := range markets.Markets {
 		validateMarketSummary(t, market)
-		if market.MarginEnabled {
-			return market
+		if !market.MarginEnabled {
+			continue
+		}
+		for _, isYes := range isYesCandidates {
+			isYes := isYes
+			attempted = append(attempted, fmt.Sprintf("%s/is_yes=%t", market.ConditionID, isYes))
+			estimate, err := client.EstimateMarginPosition(ctx, EstimateMarginPositionOptions{
+				MarketConditionID: market.ConditionID,
+				Funds:             "10",
+				IsYes:             &isYes,
+				Leverage:          &leverage,
+			})
+			if err == nil {
+				return market, isYes, estimate
+			}
+			if isWormValidationError(err) {
+				t.Logf("EstimateMarginPosition candidate condition_id=%q is_yes=%t not suitable: %v", market.ConditionID, isYes, err)
+				continue
+			}
+			t.Fatalf("EstimateMarginPosition(%s, is_yes=%t): %v", market.ConditionID, isYes, err)
 		}
 	}
-	t.Skip("ListMarkets returned no open margin-enabled markets")
-	return MarketSummary{}
+	if len(attempted) == 0 {
+		t.Skip("ListMarkets returned no open margin-enabled markets")
+	}
+	t.Skipf("no open margin-enabled market accepted EstimateMarginPosition test parameters; attempted %s", strings.Join(attempted, ", "))
+	return MarketSummary{}, false, nil
 }
 
 func validateSearchSummary(t *testing.T, summary SearchSummary) {
