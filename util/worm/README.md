@@ -107,30 +107,18 @@ The test only checks that Worm returns non-empty credentials. It does not log th
 
 ## Run CreateOrderDraft Integration Test
 
-This authenticated integration test bootstraps Worm API credentials from `WORM_PRIVATE_KEY`, then calls `CreateOrderDraft`. It may create a server-side order draft, but it does not submit the order and does not call `SubmitOrder`, `SubmitOrderCancel`, cancel, redeem, position, or other finalization endpoints.
+This authenticated integration test bootstraps Worm API credentials from `WORM_PRIVATE_KEY`, selects one open market, then calls `CreateOrderDraft` with a market buy draft for YES using `funds="1.00"`. It may create a server-side order draft, but it does not submit the order and does not call `SubmitOrder`, `SubmitOrderCancel`, cancel, redeem, position, or other finalization endpoints.
 
-It is protected by two opt-in switches and requires explicit draft parameters:
+It is protected by two opt-in switches:
 
 ```bash
 WORM_INTEGRATION=1 \
 WORM_ORDER_DRAFT_INTEGRATION=1 \
-WORM_PRIVATE_KEY='...' \
-WORM_ORDER_DRAFT_MARKET_CONDITION_ID='...' \
-WORM_ORDER_DRAFT_IS_YES=true \
-WORM_ORDER_DRAFT_SIDE=BUY \
-WORM_ORDER_DRAFT_ORDER_TYPE=MARKET \
-WORM_ORDER_DRAFT_FUNDS='1.00' \
+WORM_PRIVATE_KEY='59mJJLBC22xe2Bg9mTozn47fYdwfeDkwswE9t8RFnmrNmn3Lr6bf3Abo8ua4GUpFdaEnikfLhrhAfkykWWwyoejN' \
 go test -v ./util/worm -run TestIntegrationCreateOrderDraft
 ```
 
-Optional parameters:
-
-```bash
-WORM_ORDER_DRAFT_PRICE='0.50'
-WORM_ORDER_DRAFT_AMOUNT='10'
-```
-
-Use parameters that are valid for the selected market. The test fails before calling the API if the private key or required draft parameters are missing. It does not log the private key, API key, API secret, signatures, or request payloads. The test creates a real Worm API key and the secret is returned only once; store generated credentials securely, or revoke the generated key if the test was only for validation.
+The test fails if the private key is missing, no open market is returned, or the draft response does not include a pubkey or message. It does not log the private key, API key, API secret, signatures, or request payloads. The test creates a real Worm API key and the secret is returned only once; store generated credentials securely, or revoke the generated key if the test was only for validation.
 
 
 

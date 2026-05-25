@@ -3,7 +3,6 @@ package worm
 import (
 	"context"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 )
@@ -113,16 +112,6 @@ func TestIntegrationCreateOrderDraft(t *testing.T) {
 	}
 
 	privateKey := requiredIntegrationEnv(t, "WORM_PRIVATE_KEY")
-	conditionID := requiredIntegrationEnv(t, "WORM_ORDER_DRAFT_MARKET_CONDITION_ID")
-	isYesRaw := requiredIntegrationEnv(t, "WORM_ORDER_DRAFT_IS_YES")
-	side := requiredIntegrationEnv(t, "WORM_ORDER_DRAFT_SIDE")
-	orderType := requiredIntegrationEnv(t, "WORM_ORDER_DRAFT_ORDER_TYPE")
-	funds := requiredIntegrationEnv(t, "WORM_ORDER_DRAFT_FUNDS")
-
-	isYes, err := strconv.ParseBool(isYesRaw)
-	if err != nil {
-		t.Fatalf("WORM_ORDER_DRAFT_IS_YES = %q, want true or false", isYesRaw)
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -131,6 +120,24 @@ func TestIntegrationCreateOrderDraft(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
+
+	markets, err := client.ListMarkets(ctx, ListMarketsOptions{
+		PageOptions: PageOptions{Limit: 1},
+		State:       "open",
+	})
+	if err != nil {
+		t.Fatalf("ListMarkets: %v", err)
+	}
+	if len(markets.Markets) == 0 {
+		t.Fatal("ListMarkets returned no open markets")
+	}
+	t.Logf("ListMarkets returned %d open markets", len(markets.Markets))
+	conditionID := markets.Markets[0].ConditionID
+	if conditionID == "" {
+		t.Fatal("ListMarkets returned empty condition_id")
+	}
+	t.Logf("ListMarkets returned condition_id=%q", conditionID)
+
 	creds, err := client.CreateAPIKeyFromPrivateKey(ctx, privateKey)
 	if err != nil {
 		t.Fatalf("CreateAPIKeyFromPrivateKey: %v", err)
@@ -141,6 +148,7 @@ func TestIntegrationCreateOrderDraft(t *testing.T) {
 	if creds.Secret == "" {
 		t.Fatal("CreateAPIKeyFromPrivateKey returned empty Secret")
 	}
+	t.Logf("CreateAPIKeyFromPrivateKey returned api_key=%s secret=%s", creds.APIKey, creds.Secret)
 
 	client, err = NewClient(Config{
 		APIKey:    creds.APIKey,
@@ -152,12 +160,10 @@ func TestIntegrationCreateOrderDraft(t *testing.T) {
 
 	resp, err := client.CreateOrderDraft(ctx, CreateOrderDraftRequest{
 		MarketConditionID: conditionID,
-		IsYes:             isYes,
-		Side:              side,
-		OrderType:         orderType,
-		Price:             os.Getenv("WORM_ORDER_DRAFT_PRICE"),
-		Amount:            os.Getenv("WORM_ORDER_DRAFT_AMOUNT"),
-		Funds:             funds,
+		IsYes:             true,
+		Side:              "BUY",
+		OrderType:         "MARKET",
+		Funds:             "1.00",
 	})
 	if err != nil {
 		t.Fatalf("CreateOrderDraft: %v", err)
@@ -167,7 +173,8 @@ func TestIntegrationCreateOrderDraft(t *testing.T) {
 	}
 
 	t.Logf(
-		"CreateOrderDraft bootstrapped credentials=%t returned pubkey=%t message=%t",
+		"CreateOrderDraft market_selected=%t bootstrapped credentials=%t returned pubkey=%t message=%t",
+		conditionID != "",
 		creds.APIKey != "" && creds.Secret != "",
 		resp.Pubkey != nil && *resp.Pubkey != "",
 		resp.Message != nil && *resp.Message != "",
