@@ -384,6 +384,57 @@ func TestIntegrationAuthReadListTrades(t *testing.T) {
 	t.Logf("ListTrades returned trades=%d", len(trades.Trades))
 }
 
+func TestIntegrationAuthReadListOrders(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	limit := 5
+	orders, err := fixture.client.ListOrders(fixture.ctx, ListOrdersOptions{
+		PageOptions: PageOptions{Limit: limit},
+	})
+	if err != nil {
+		t.Fatalf("ListOrders: %v", err)
+	}
+	if len(orders.Orders) > limit {
+		t.Fatalf("ListOrders returned %d orders, want <= %d", len(orders.Orders), limit)
+	}
+	for i, order := range orders.Orders {
+		validateIntegrationOrder(t, i, order)
+	}
+
+	t.Logf("ListOrders returned orders=%d", len(orders.Orders))
+}
+
+func TestIntegrationAuthReadGetOrderFromList(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	orders, err := fixture.client.ListOrders(fixture.ctx, ListOrdersOptions{
+		PageOptions: PageOptions{Limit: 1},
+	})
+	if err != nil {
+		t.Fatalf("ListOrders: %v", err)
+	}
+	if len(orders.Orders) == 0 {
+		t.Skip("authenticated account has no orders to fetch by pubkey")
+	}
+	if orders.Orders[0].Pubkey == nil || *orders.Orders[0].Pubkey == "" {
+		t.Skip("authenticated account returned an order without a pubkey to fetch")
+	}
+
+	wantPubkey := *orders.Orders[0].Pubkey
+	order, err := fixture.client.GetOrder(fixture.ctx, wantPubkey)
+	if err != nil {
+		t.Fatalf("GetOrder(%s): %v", wantPubkey, err)
+	}
+	validateIntegrationOrder(t, 0, *order)
+	if order.Pubkey == nil || *order.Pubkey != wantPubkey {
+		t.Fatalf("GetOrder returned pubkey=%#v, want %q", order.Pubkey, wantPubkey)
+	}
+
+	t.Logf("GetOrder returned pubkey=%q status_present=%t", wantPubkey, order.Status != nil)
+}
+
 func TestIntegrationAuthReadAccountSummaryAndPnL(t *testing.T) {
 	fixture := newAuthReadIntegrationFixture(t)
 	defer fixture.cancel()
@@ -478,6 +529,150 @@ func TestIntegrationAuthReadGetRedeemFromList(t *testing.T) {
 	}
 
 	t.Logf("GetRedeem returned pubkey=%q state=%q", redeem.Pubkey, redeem.State)
+}
+
+func TestIntegrationAuthReadEstimateMarginPosition(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	market := findMarginEnabledIntegrationMarket(t, fixture.ctx, fixture.client)
+	isYes := true
+	leverage := 1.0
+	estimate, err := fixture.client.EstimateMarginPosition(fixture.ctx, EstimateMarginPositionOptions{
+		MarketConditionID: market.ConditionID,
+		Funds:             "1",
+		IsYes:             &isYes,
+		Leverage:          &leverage,
+	})
+	if err != nil {
+		t.Fatalf("EstimateMarginPosition(%s): %v", market.ConditionID, err)
+	}
+	validateIntegrationMarginPositionEstimate(t, estimate)
+
+	t.Logf("EstimateMarginPosition returned condition_id=%q average_price=%q total_shares=%q", market.ConditionID, estimate.AveragePrice, estimate.TotalShares)
+}
+
+func TestIntegrationAuthReadListPositionRequests(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	limit := 5
+	requests, err := fixture.client.ListPositionRequests(fixture.ctx, ListPositionRequestsOptions{
+		PageOptions: PageOptions{Limit: limit},
+	})
+	if err != nil {
+		t.Fatalf("ListPositionRequests: %v", err)
+	}
+	if len(requests.Requests) > limit {
+		t.Fatalf("ListPositionRequests returned %d requests, want <= %d", len(requests.Requests), limit)
+	}
+	for i, request := range requests.Requests {
+		validateIntegrationPositionRequest(t, i, request)
+	}
+
+	t.Logf("ListPositionRequests returned requests=%d", len(requests.Requests))
+}
+
+func TestIntegrationAuthReadGetPositionRequestFromList(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	requests, err := fixture.client.ListPositionRequests(fixture.ctx, ListPositionRequestsOptions{
+		PageOptions: PageOptions{Limit: 1},
+	})
+	if err != nil {
+		t.Fatalf("ListPositionRequests: %v", err)
+	}
+	if len(requests.Requests) == 0 {
+		t.Skip("authenticated account has no position requests to fetch by pubkey")
+	}
+	wantPubkey := requests.Requests[0].Pubkey
+	if wantPubkey == "" {
+		t.Skip("authenticated account returned a position request without a pubkey to fetch")
+	}
+
+	request, err := fixture.client.GetPositionRequest(fixture.ctx, wantPubkey)
+	if err != nil {
+		t.Fatalf("GetPositionRequest(%s): %v", wantPubkey, err)
+	}
+	validateIntegrationPositionRequest(t, 0, *request)
+	if request.Pubkey != wantPubkey {
+		t.Fatalf("GetPositionRequest returned pubkey=%q, want %q", request.Pubkey, wantPubkey)
+	}
+
+	t.Logf("GetPositionRequest returned pubkey=%q state=%q", request.Pubkey, request.State)
+}
+
+func TestIntegrationAuthReadListMarginPositions(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	limit := 5
+	positions, err := fixture.client.ListMarginPositions(fixture.ctx, ListMarginPositionsOptions{
+		PageOptions: PageOptions{Limit: limit},
+	})
+	if err != nil {
+		t.Fatalf("ListMarginPositions: %v", err)
+	}
+	if len(positions.Positions) > limit {
+		t.Fatalf("ListMarginPositions returned %d positions, want <= %d", len(positions.Positions), limit)
+	}
+	for i, position := range positions.Positions {
+		validateIntegrationMarginPosition(t, i, position)
+	}
+
+	t.Logf("ListMarginPositions returned positions=%d", len(positions.Positions))
+}
+
+func TestIntegrationAuthReadGetMarginPositionFromList(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	positions, err := fixture.client.ListMarginPositions(fixture.ctx, ListMarginPositionsOptions{
+		PageOptions: PageOptions{Limit: 1},
+	})
+	if err != nil {
+		t.Fatalf("ListMarginPositions: %v", err)
+	}
+	if len(positions.Positions) == 0 {
+		t.Skip("authenticated account has no margin positions to fetch by pubkey")
+	}
+	wantPubkey := positions.Positions[0].Pubkey
+	if wantPubkey == "" {
+		t.Skip("authenticated account returned a margin position without a pubkey to fetch")
+	}
+
+	position, err := fixture.client.GetMarginPosition(fixture.ctx, wantPubkey)
+	if err != nil {
+		t.Fatalf("GetMarginPosition(%s): %v", wantPubkey, err)
+	}
+	validateIntegrationMarginPosition(t, 0, *position)
+	if position.Pubkey != wantPubkey {
+		t.Fatalf("GetMarginPosition returned pubkey=%q, want %q", position.Pubkey, wantPubkey)
+	}
+
+	t.Logf("GetMarginPosition returned pubkey=%q closed=%t claimed=%t", position.Pubkey, position.IsClosed, position.IsClaimed)
+}
+
+func TestIntegrationAuthReadListMarginSettlements(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	limit := 5
+	settlements, err := fixture.client.ListMarginSettlements(fixture.ctx, ListMarginSettlementsOptions{
+		PageOptions: PageOptions{Limit: limit},
+	})
+	if err != nil {
+		t.Fatalf("ListMarginSettlements: %v", err)
+	}
+	if len(settlements.Settlements) > limit {
+		t.Fatalf("ListMarginSettlements returned %d settlements, want <= %d", len(settlements.Settlements), limit)
+	}
+	for i, settlement := range settlements.Settlements {
+		validateIntegrationMarginSettlement(t, i, settlement)
+	}
+
+	t.Logf("ListMarginSettlements returned settlements=%d", len(settlements.Settlements))
 }
 
 func TestIntegrationCreateOrderDraft(t *testing.T) {
@@ -748,6 +943,25 @@ func findIntegrationEvent(t *testing.T, ctx context.Context, client Client) Even
 	return events.Events[0]
 }
 
+func findMarginEnabledIntegrationMarket(t *testing.T, ctx context.Context, client Client) MarketSummary {
+	t.Helper()
+	markets, err := client.ListMarkets(ctx, ListMarketsOptions{
+		PageOptions: PageOptions{Limit: 20},
+		State:       "open",
+	})
+	if err != nil {
+		t.Fatalf("ListMarkets: %v", err)
+	}
+	for _, market := range markets.Markets {
+		validateMarketSummary(t, market)
+		if market.MarginEnabled {
+			return market
+		}
+	}
+	t.Skip("ListMarkets returned no open margin-enabled markets")
+	return MarketSummary{}
+}
+
 func validateSearchSummary(t *testing.T, summary SearchSummary) {
 	t.Helper()
 	if summary.ConditionID == "" {
@@ -837,6 +1051,37 @@ func validateIntegrationTrade(t *testing.T, i int, trade Trade) {
 	}
 }
 
+func validateIntegrationOrder(t *testing.T, i int, order Order) {
+	t.Helper()
+	if order.Pubkey != nil && *order.Pubkey == "" {
+		t.Fatalf("order[%d] has empty non-nil pubkey", i)
+	}
+	if order.Status != nil && *order.Status == "" {
+		t.Fatalf("order[%d] has empty non-nil status", i)
+	}
+	if order.Side == "" {
+		t.Fatalf("order[%d] has empty side: %#v", i, order)
+	}
+	if order.Price != nil && *order.Price == "" {
+		t.Fatalf("order[%d] has empty non-nil price", i)
+	}
+	if order.Amount != nil && *order.Amount == "" {
+		t.Fatalf("order[%d] has empty non-nil amount", i)
+	}
+	if order.Funds != nil && *order.Funds == "" {
+		t.Fatalf("order[%d] has empty non-nil funds", i)
+	}
+	if order.Market.ConditionID == "" {
+		t.Fatalf("order[%d] has empty market condition_id", i)
+	}
+	if order.Market.Title == "" {
+		t.Fatalf("order[%d] has empty market title", i)
+	}
+	if order.Outcome.Text == "" {
+		t.Fatalf("order[%d] has empty outcome text", i)
+	}
+}
+
 func validateIntegrationAccountPnL(t *testing.T, pnl *AccountPnL) {
 	t.Helper()
 	if pnl.MarginPositionSettlementsPnL == "" ||
@@ -872,6 +1117,127 @@ func validateIntegrationAccountAsset(t *testing.T, i int, asset AccountAsset) {
 	}
 	if asset.Created != nil && *asset.Created <= 0 {
 		t.Fatalf("asset[%d] has created=%d, want positive timestamp", i, *asset.Created)
+	}
+}
+
+func validateIntegrationMarginPositionEstimate(t *testing.T, estimate *MarginPositionEstimate) {
+	t.Helper()
+	if estimate.AveragePrice == "" ||
+		estimate.TotalShares == "" ||
+		estimate.TotalCost == "" ||
+		estimate.BestAsk == "" ||
+		estimate.WorstFillPrice == "" ||
+		estimate.FeeAmount == "" ||
+		estimate.UserFundsNeeded == "" {
+		t.Fatalf("EstimateMarginPosition returned empty required fields: %#v", estimate)
+	}
+	if estimate.LiquidationPrice != nil && *estimate.LiquidationPrice == "" {
+		t.Fatal("EstimateMarginPosition returned empty non-nil liquidation_price")
+	}
+}
+
+func validateIntegrationPositionRequest(t *testing.T, i int, request PositionRequest) {
+	t.Helper()
+	if request.Pubkey == "" {
+		t.Fatalf("position request[%d] has empty pubkey", i)
+	}
+	if request.Type == "" || request.State == "" || request.Leverage == "" || request.Funds == "" {
+		t.Fatalf("position request[%d] has empty required fields: %#v", i, request)
+	}
+	if request.Message != nil && *request.Message == "" {
+		t.Fatalf("position request[%d] has empty non-nil message", i)
+	}
+	if request.FundingTxID != nil && *request.FundingTxID == "" {
+		t.Fatalf("position request[%d] has empty non-nil funding_txid", i)
+	}
+	if request.RefundTxID != nil && *request.RefundTxID == "" {
+		t.Fatalf("position request[%d] has empty non-nil refund_txid", i)
+	}
+	if request.Market != nil {
+		validateMarketSummary(t, *request.Market)
+	}
+	if request.Price != nil && *request.Price == "" {
+		t.Fatalf("position request[%d] has empty non-nil price", i)
+	}
+	if request.Shares != nil && *request.Shares == "" {
+		t.Fatalf("position request[%d] has empty non-nil shares", i)
+	}
+	if request.TakeProfitPrice != nil && *request.TakeProfitPrice == "" {
+		t.Fatalf("position request[%d] has empty non-nil take_profit_price", i)
+	}
+	if request.StopLossPrice != nil && *request.StopLossPrice == "" {
+		t.Fatalf("position request[%d] has empty non-nil stop_loss_price", i)
+	}
+	if request.Created != nil && *request.Created <= 0 {
+		t.Fatalf("position request[%d] has created=%d, want positive timestamp", i, *request.Created)
+	}
+}
+
+func validateIntegrationMarginPosition(t *testing.T, i int, position MarginPosition) {
+	t.Helper()
+	if position.Pubkey == "" {
+		t.Fatalf("margin position[%d] has empty pubkey", i)
+	}
+	if position.PositionRequestPubkey != nil && *position.PositionRequestPubkey == "" {
+		t.Fatalf("margin position[%d] has empty non-nil position_request_pubkey", i)
+	}
+	validateMarketSummary(t, position.Market)
+	if position.Leverage == "" ||
+		position.TotalShares == "" ||
+		position.AvgEntryPrice == "" ||
+		position.RealizedPnL == "" ||
+		position.UserLiquidity == "" ||
+		position.TotalLiquidity == "" ||
+		position.LiquidationPrice == "" {
+		t.Fatalf("margin position[%d] has empty required fields: %#v", i, position)
+	}
+	if position.ClosingPrice != nil && *position.ClosingPrice == "" {
+		t.Fatalf("margin position[%d] has empty non-nil closing_price", i)
+	}
+	if position.UnrealizedPnL != nil && *position.UnrealizedPnL == "" {
+		t.Fatalf("margin position[%d] has empty non-nil unrealized_pnl", i)
+	}
+	if position.TPSL != nil {
+		validateIntegrationTPSL(t, i, *position.TPSL)
+	}
+	if position.Created != nil && *position.Created <= 0 {
+		t.Fatalf("margin position[%d] has created=%d, want positive timestamp", i, *position.Created)
+	}
+}
+
+func validateIntegrationTPSL(t *testing.T, i int, tpsl TPSL) {
+	t.Helper()
+	if tpsl.TakeProfitPrice != nil && *tpsl.TakeProfitPrice == "" {
+		t.Fatalf("tp_sl[%d] has empty non-nil take_profit_price", i)
+	}
+	if tpsl.StopLossPrice != nil && *tpsl.StopLossPrice == "" {
+		t.Fatalf("tp_sl[%d] has empty non-nil stop_loss_price", i)
+	}
+	if tpsl.State == "" {
+		t.Fatalf("tp_sl[%d] has empty state", i)
+	}
+	if tpsl.TriggerType != nil && *tpsl.TriggerType == "" {
+		t.Fatalf("tp_sl[%d] has empty non-nil trigger_type", i)
+	}
+	if tpsl.TriggeredPrice != nil && *tpsl.TriggeredPrice == "" {
+		t.Fatalf("tp_sl[%d] has empty non-nil triggered_price", i)
+	}
+	if tpsl.TriggeredAt != nil && *tpsl.TriggeredAt <= 0 {
+		t.Fatalf("tp_sl[%d] has triggered_at=%d, want positive timestamp", i, *tpsl.TriggeredAt)
+	}
+}
+
+func validateIntegrationMarginSettlement(t *testing.T, i int, settlement MarginSettlement) {
+	t.Helper()
+	if settlement.PositionPubkey == "" {
+		t.Fatalf("margin settlement[%d] has empty position_pubkey", i)
+	}
+	validateIntegrationMarginPosition(t, i, settlement.Position)
+	if settlement.TotalPnL == "" || settlement.UserLiquidity == "" || settlement.State == "" {
+		t.Fatalf("margin settlement[%d] has empty required fields: %#v", i, settlement)
+	}
+	if settlement.Created != nil && *settlement.Created <= 0 {
+		t.Fatalf("margin settlement[%d] has created=%d, want positive timestamp", i, *settlement.Created)
 	}
 }
 

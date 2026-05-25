@@ -122,7 +122,7 @@ The tests do not use `WORM_API_KEY` or `WORM_API_SECRET`, and they do not revoke
 
 ## Run Authenticated READ Integration Tests
 
-These authenticated read-only integration tests cover account-scoped Worm API endpoints. They do not create orders, redeems, positions, submit signatures, cancel requests, or finalize anything on chain.
+These authenticated read-only integration tests cover account-scoped Worm API endpoints. They do not create or cancel orders, create or close positions, set or delete TP/SL, submit signatures, claim settlements, create redeems, or finalize anything on chain.
 
 They are protected by two opt-in switches and can use existing API credentials:
 
@@ -146,13 +146,21 @@ go test -v ./util/worm -run '^TestIntegrationAuthRead'
 The suite covers:
 
 - `ListTrades`
+- `ListOrders`
+- `GetOrder`, only when the authenticated account already has at least one order
 - `GetAccountSummary`
 - `GetAccountPnL`
 - `ListAccountAssets`
 - `ListRedeems`
 - `GetRedeem`, only when the authenticated account already has at least one redeem
+- `EstimateMarginPosition`, using an open margin-enabled market when one is returned by the public market list
+- `ListPositionRequests`
+- `GetPositionRequest`, only when the authenticated account already has at least one position request
+- `ListMarginPositions`
+- `GetMarginPosition`, only when the authenticated account already has at least one margin position
+- `ListMarginSettlements`
 
-Empty trades, assets, and redeems are valid account states; the tests only validate row fields when the API returns rows. `StartRedeem` and `SubmitRedeem` are intentionally excluded because they create or finalize real redeem state and require a stronger opt-in test plan.
+Empty trades, orders, assets, redeems, position requests, margin positions, and settlements are valid account states; the tests only validate row fields when the API returns rows. Detail tests derive a pubkey from the corresponding list response and skip when there is no existing row to fetch. `StartRedeem`, `SubmitRedeem`, order submit/cancel, position create/submit/cancel/close, TP/SL changes, and settlement claims are intentionally excluded because they create, mutate, or finalize real state and require a stronger opt-in test plan.
 
 ## Run CreateOrderDraft Integration Test
 
