@@ -20,8 +20,10 @@ func (f *fakeWormClientset) NewWormServiceClient() (utilio.Closer, wormapiclient
 }
 
 type fakeWormServiceClient struct {
-	listReq  *wormapiclient.ListWormMarketsRequest
-	listResp *wormapiclient.ListWormMarketsResponse
+	listReq       *wormapiclient.ListWormMarketsRequest
+	listResp      *wormapiclient.ListWormMarketsResponse
+	getMarketReq  *wormapiclient.GetWormMarketRequest
+	getMarketResp *wormapiclient.GetWormMarketResponse
 }
 
 func (f *fakeWormServiceClient) GetWormStatus(context.Context, *wormapiclient.GetWormStatusRequest, ...grpc.CallOption) (*wormapiclient.GetWormStatusResponse, error) {
@@ -31,6 +33,11 @@ func (f *fakeWormServiceClient) GetWormStatus(context.Context, *wormapiclient.Ge
 func (f *fakeWormServiceClient) ListWormMarkets(_ context.Context, req *wormapiclient.ListWormMarketsRequest, _ ...grpc.CallOption) (*wormapiclient.ListWormMarketsResponse, error) {
 	f.listReq = req
 	return f.listResp, nil
+}
+
+func (f *fakeWormServiceClient) GetWormMarket(_ context.Context, req *wormapiclient.GetWormMarketRequest, _ ...grpc.CallOption) (*wormapiclient.GetWormMarketResponse, error) {
+	f.getMarketReq = req
+	return f.getMarketResp, nil
 }
 
 func TestListWormMarketsForwardsRequestAndMapsResponse(t *testing.T) {
@@ -79,5 +86,56 @@ func TestListWormMarketsForwardsRequestAndMapsResponse(t *testing.T) {
 	}
 	if item.LastTradePrice != "0.68" || !item.MarginEnabled {
 		t.Fatalf("market fields = %#v", item)
+	}
+}
+
+func TestGetWormMarketForwardsRequestAndMapsResponse(t *testing.T) {
+	client := &fakeWormServiceClient{
+		getMarketResp: &wormapiclient.GetWormMarketResponse{
+			Market: &v1alpha1.WormMarketDetail{
+				Market: v1alpha1.WormMarketItem{
+					ConditionID:    "market-1",
+					Title:          "Will Team A beat Team B?",
+					LastTradePrice: "0.68",
+					State:          "open",
+					MarginEnabled:  true,
+				},
+				Stats: v1alpha1.WormMarketStats{
+					TotalVolume24H: "250",
+					TradeCount:     42,
+				},
+				Prices: []v1alpha1.WormMarketPrice{{
+					ConditionID: "market-1",
+					Price:       "0.71",
+					IsYes:       true,
+				}},
+				OrderBooks: []v1alpha1.WormMarketOrderBook{{
+					Market: "market-1",
+					IsYes:  true,
+					Bid:    []v1alpha1.WormOrderBookLevel{{Price: "0.70", TotalAmount: "12"}},
+				}},
+			},
+		},
+	}
+
+	resp, err := NewServer(&fakeWormClientset{client: client}).GetWormMarket(context.Background(), &wormpkg.GetWormMarketRequest{ConditionId: "market-1"})
+	if err != nil {
+		t.Fatalf("GetWormMarket: %v", err)
+	}
+	if client.getMarketReq.GetConditionId() != "market-1" {
+		t.Fatalf("condition id = %q, want market-1", client.getMarketReq.GetConditionId())
+	}
+	market := resp.GetMarket()
+	if market.Market.ConditionID != "market-1" || market.Market.Title != "Will Team A beat Team B?" {
+		t.Fatalf("market = %#v", market)
+	}
+	if market.Stats.TotalVolume24H != "250" || market.Stats.TradeCount != 42 {
+		t.Fatalf("stats = %#v", market.Stats)
+	}
+	if len(market.Prices) != 1 || market.Prices[0].Price != "0.71" || !market.Prices[0].IsYes {
+		t.Fatalf("prices = %#v", market.Prices)
+	}
+	if len(market.OrderBooks) != 1 || market.OrderBooks[0].Bid[0].TotalAmount != "12" {
+		t.Fatalf("order books = %#v", market.OrderBooks)
 	}
 }

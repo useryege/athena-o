@@ -28,10 +28,23 @@ message ListWormMarketsResponse {
   string next_cursor = 2;
 }
 
+// GetWormMarketRequest queries one Worm market detail by condition id.
+message GetWormMarketRequest {
+  string condition_id = 1;
+}
+
+// GetWormMarketResponse returns a Worm market detail with pricing context.
+message GetWormMarketResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketDetail market = 1;
+}
+
 service WormService {
   // GetWormStatus returns the worm service runtime status.
   rpc GetWormStatus(GetWormStatusRequest) returns (GetWormStatusResponse);
 
   // ListWormMarkets returns sports markets sorted by leverage.
   rpc ListWormMarkets(ListWormMarketsRequest) returns (ListWormMarketsResponse);
+
+  // GetWormMarket returns one market with stats, prices, and shallow order books.
+  rpc GetWormMarket(GetWormMarketRequest) returns (GetWormMarketResponse);
 }

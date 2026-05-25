@@ -390,6 +390,74 @@ message TokenState {
   optional bool isValidERC20 = 5;
 }
 
+message WormMarketConfig {
+  optional string kind = 1;
+
+  optional string maxLeverage = 2;
+
+  optional string openingFee = 3;
+
+  optional string closingFee = 4;
+
+  optional string annualFeeRate = 5;
+
+  optional string orderMinSize = 6;
+
+  optional int32 priceDecimals = 7;
+
+  optional int32 sharesDecimals = 8;
+
+  optional string minPrice = 9;
+
+  optional string maxPrice = 10;
+
+  optional string minAmount = 11;
+
+  optional string maxAmount = 12;
+
+  optional string minFunds = 13;
+
+  optional string maxFunds = 14;
+
+  optional int32 pricePrecision = 15;
+
+  optional int32 amountPrecision = 16;
+
+  optional int32 fundsPrecision = 17;
+
+  optional string makerFeeRate = 18;
+
+  optional string takerFeeRate = 19;
+
+  optional string defaultSlippageRate = 20;
+}
+
+message WormMarketDetail {
+  optional WormMarketItem market = 1;
+
+  optional string yesOutcomeLabel = 2;
+
+  optional string noOutcomeLabel = 3;
+
+  repeated WormMarketOutcome outcomes = 4;
+
+  repeated string rules = 5;
+
+  optional int64 resolutionDate = 6;
+
+  optional string makerFee = 7;
+
+  optional string takerFee = 8;
+
+  optional WormMarketConfig config = 9;
+
+  optional WormMarketStats stats = 10;
+
+  repeated WormMarketPrice prices = 11;
+
+  repeated WormMarketOrderBook orderBooks = 12;
+}
+
 message WormMarketItem {
   optional string conditionId = 1;
 
@@ -414,5 +482,47 @@ message WormMarketItem {
   optional string eventLogo = 11;
 
   optional bool marginEnabled = 12;
+}
+
+message WormMarketOrderBook {
+  optional string market = 1;
+
+  optional bool isYes = 2;
+
+  repeated WormOrderBookLevel bid = 3;
+
+  repeated WormOrderBookLevel ask = 4;
+}
+
+message WormMarketOutcome {
+  optional bool isYes = 1;
+
+  optional string text = 2;
+}
+
+message WormMarketPrice {
+  optional string conditionId = 1;
+
+  optional string price = 2;
+
+  optional string priceKind = 3;
+
+  optional bool isYes = 4;
+}
+
+message WormMarketStats {
+  optional string totalVolume = 1;
+
+  optional string totalVolume24h = 2;
+
+  optional string marketCap = 3;
+
+  optional int64 tradeCount = 4;
+}
+
+message WormOrderBookLevel {
+  optional string price = 1;
+
+  optional string totalAmount = 2;
 }
 

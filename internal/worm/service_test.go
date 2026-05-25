@@ -2,6 +2,7 @@ package worm
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/useryege/athena/internal/worm/apiclient"
@@ -11,14 +12,60 @@ import (
 )
 
 type fakeWormMarketClient struct {
-	options utilworm.ListMarketsOptions
-	resp    *utilworm.ListMarketsResponse
-	err     error
+	options          utilworm.ListMarketsOptions
+	resp             *utilworm.ListMarketsResponse
+	err              error
+	conditionID      string
+	marketResp       *utilworm.Market
+	marketStatsResp  *utilworm.MarketStats
+	priceOptions     []utilworm.GetMarketPriceOptions
+	priceResp        []*utilworm.MarketPrice
+	orderBookOptions []utilworm.GetMarketOrderBookOptions
+	orderBookResp    []*utilworm.MarketOrderBook
+	detailErr        error
 }
 
 func (f *fakeWormMarketClient) ListMarkets(_ context.Context, options utilworm.ListMarketsOptions) (*utilworm.ListMarketsResponse, error) {
 	f.options = options
 	return f.resp, f.err
+}
+
+func (f *fakeWormMarketClient) GetMarket(_ context.Context, conditionID string) (*utilworm.Market, error) {
+	f.conditionID = conditionID
+	if f.detailErr != nil {
+		return nil, f.detailErr
+	}
+	return f.marketResp, nil
+}
+
+func (f *fakeWormMarketClient) GetMarketStats(_ context.Context, conditionID string) (*utilworm.MarketStats, error) {
+	f.conditionID = conditionID
+	if f.detailErr != nil {
+		return nil, f.detailErr
+	}
+	return f.marketStatsResp, nil
+}
+
+func (f *fakeWormMarketClient) GetMarketPrice(_ context.Context, conditionID string, options utilworm.GetMarketPriceOptions) (*utilworm.MarketPrice, error) {
+	f.conditionID = conditionID
+	f.priceOptions = append(f.priceOptions, options)
+	if f.detailErr != nil {
+		return nil, f.detailErr
+	}
+	price := f.priceResp[0]
+	f.priceResp = f.priceResp[1:]
+	return price, nil
+}
+
+func (f *fakeWormMarketClient) GetMarketOrderBook(_ context.Context, conditionID string, options utilworm.GetMarketOrderBookOptions) (*utilworm.MarketOrderBook, error) {
+	f.conditionID = conditionID
+	f.orderBookOptions = append(f.orderBookOptions, options)
+	if f.detailErr != nil {
+		return nil, f.detailErr
+	}
+	book := f.orderBookResp[0]
+	f.orderBookResp = f.orderBookResp[1:]
+	return book, nil
 }
 
 func TestListWormMarketsUsesSportsLeverageDefaults(t *testing.T) {
@@ -168,5 +215,141 @@ func TestListWormMarketsPreservesAbsoluteAndEmptyAssetURLs(t *testing.T) {
 	}
 	if market.EventLogo != "" {
 		t.Fatalf("event logo = %q, want empty", market.EventLogo)
+	}
+}
+
+func TestGetWormMarketMapsDetail(t *testing.T) {
+	description := "market description"
+	logo := "/media/events/logos/market.webp"
+	price := "0.68"
+	created := int64(1714300100)
+	eventLogo := "/media/events/logos/event.webp"
+	yesLabel := "Team A"
+	noLabel := "Team B"
+	resolutionDate := int64(1714386500)
+	makerFee := "0.01"
+	takerFee := "0.02"
+	maxLeverage := "5"
+	orderMinSize := "10"
+	priceDecimals := 3
+	yesPrice := "0.71"
+	noPrice := "0.29"
+	client := &fakeWormMarketClient{
+		marketResp: &utilworm.Market{
+			MarketSummary: utilworm.MarketSummary{
+				ConditionID:    "market-1",
+				Title:          "Will Team A beat Team B?",
+				Description:    &description,
+				Logo:           &logo,
+				LastTradePrice: &price,
+				State:          "open",
+				Category:       "sports",
+				Created:        &created,
+				Event: &utilworm.EventMini{
+					Title:       "Team A vs Team B",
+					ConditionID: "event-1",
+					Logo:        &eventLogo,
+				},
+				MarginEnabled: true,
+			},
+			YesOutcomeLabel: &yesLabel,
+			NoOutcomeLabel:  &noLabel,
+			Outcomes: []utilworm.Outcome{
+				{IsYes: true, Text: "Yes"},
+				{IsYes: false, Text: "No"},
+			},
+			Rules:          []string{"Rule 1", "Rule 2"},
+			ResolutionDate: &resolutionDate,
+			MakerFee:       &makerFee,
+			TakerFee:       &takerFee,
+			Config: &utilworm.MarketConfig{
+				Kind:          "binary",
+				MaxLeverage:   &maxLeverage,
+				OrderMinSize:  &orderMinSize,
+				PriceDecimals: &priceDecimals,
+			},
+		},
+		marketStatsResp: &utilworm.MarketStats{
+			TotalVolume:    "1000",
+			TotalVolume24H: "250",
+			MarketCap:      "5000",
+			TradeCount:     42,
+		},
+		priceResp: []*utilworm.MarketPrice{
+			{ConditionID: "market-1", Price: &yesPrice, PriceKind: "last", IsYes: true},
+			{ConditionID: "market-1", Price: &noPrice, PriceKind: "last", IsYes: false},
+		},
+		orderBookResp: []*utilworm.MarketOrderBook{
+			{
+				Market: "market-1",
+				IsYes:  true,
+				Bid:    []utilworm.OrderBookLevel{{Price: "0.70", TotalAmount: "12"}},
+				Ask:    []utilworm.OrderBookLevel{{Price: "0.72", TotalAmount: "8"}},
+			},
+			{
+				Market: "market-1",
+				IsYes:  false,
+				Bid:    []utilworm.OrderBookLevel{{Price: "0.28", TotalAmount: "9"}},
+				Ask:    []utilworm.OrderBookLevel{{Price: "0.30", TotalAmount: "11"}},
+			},
+		},
+	}
+
+	resp, err := NewService(nil, client, "https://api.worm.wtf").GetWormMarket(context.Background(), &apiclient.GetWormMarketRequest{ConditionId: " market-1 "})
+	if err != nil {
+		t.Fatalf("GetWormMarket: %v", err)
+	}
+	if client.conditionID != "market-1" {
+		t.Fatalf("condition id = %q, want market-1", client.conditionID)
+	}
+	if len(client.priceOptions) != 2 || client.priceOptions[0].IsYes == nil || !*client.priceOptions[0].IsYes || client.priceOptions[1].IsYes == nil || *client.priceOptions[1].IsYes {
+		t.Fatalf("price options = %#v", client.priceOptions)
+	}
+	if len(client.orderBookOptions) != 2 || client.orderBookOptions[0].Depth != 5 || client.orderBookOptions[1].Depth != 5 {
+		t.Fatalf("order book options = %#v", client.orderBookOptions)
+	}
+
+	market := resp.GetMarket()
+	if market.Market.Logo != "https://api.worm.wtf/media/events/logos/market.webp" || market.Market.EventLogo != "https://api.worm.wtf/media/events/logos/event.webp" {
+		t.Fatalf("logos = %#v", market.Market)
+	}
+	if market.YesOutcomeLabel != yesLabel || market.NoOutcomeLabel != noLabel || market.ResolutionDate != resolutionDate {
+		t.Fatalf("detail labels/date = %#v", market)
+	}
+	if len(market.Outcomes) != 2 || !market.Outcomes[0].IsYes || market.Outcomes[1].Text != "No" {
+		t.Fatalf("outcomes = %#v", market.Outcomes)
+	}
+	if len(market.Rules) != 2 || market.Rules[1] != "Rule 2" {
+		t.Fatalf("rules = %#v", market.Rules)
+	}
+	if market.MakerFee != makerFee || market.TakerFee != takerFee {
+		t.Fatalf("fees = %#v", market)
+	}
+	if market.Config.Kind != "binary" || market.Config.MaxLeverage != maxLeverage || market.Config.PriceDecimals != int32(priceDecimals) {
+		t.Fatalf("config = %#v", market.Config)
+	}
+	if market.Stats.TotalVolume24H != "250" || market.Stats.TradeCount != 42 {
+		t.Fatalf("stats = %#v", market.Stats)
+	}
+	if len(market.Prices) != 2 || market.Prices[0].Price != yesPrice || market.Prices[1].Price != noPrice {
+		t.Fatalf("prices = %#v", market.Prices)
+	}
+	if len(market.OrderBooks) != 2 || market.OrderBooks[0].Bid[0].Price != "0.70" || market.OrderBooks[1].Ask[0].TotalAmount != "11" {
+		t.Fatalf("order books = %#v", market.OrderBooks)
+	}
+}
+
+func TestGetWormMarketRejectsEmptyConditionID(t *testing.T) {
+	_, err := NewService(nil, &fakeWormMarketClient{}, utilworm.DefaultBaseURL).GetWormMarket(context.Background(), &apiclient.GetWormMarketRequest{ConditionId: "  "})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("code = %s, want %s", status.Code(err), codes.InvalidArgument)
+	}
+}
+
+func TestGetWormMarketPropagatesClientError(t *testing.T) {
+	wantErr := errors.New("worm detail failed")
+	_, err := NewService(nil, &fakeWormMarketClient{detailErr: wantErr}, utilworm.DefaultBaseURL).GetWormMarket(context.Background(), &apiclient.GetWormMarketRequest{ConditionId: "market-1"})
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("err = %v, want %v", err, wantErr)
 	}
 }

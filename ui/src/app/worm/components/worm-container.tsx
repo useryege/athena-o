@@ -1,8 +1,9 @@
-import {MockupList, Page} from 'argo-ui';
+import {MockupList, Page, SlidingPanel} from 'argo-ui';
 import * as React from 'react';
 
 import {services} from '../../shared/services';
 import {WormMarketItem} from '../../shared/services/worm-service';
+import {WormMarketDetailPanel} from './worm-market-detail-panel';
 
 require('./worm-container.scss');
 
@@ -37,6 +38,7 @@ export const WormContainer = () => {
     const [nextCursor, setNextCursor] = React.useState('');
     const [cursorStack, setCursorStack] = React.useState<string[]>([]);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
+    const [selectedConditionId, setSelectedConditionId] = React.useState('');
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const mountedRef = React.useRef(false);
 
@@ -98,8 +100,15 @@ export const WormContainer = () => {
         const nextStack = cursorStack.slice(0, -1);
         loadMarkets(cursorStack[cursorStack.length - 1], nextStack);
     }, [cursorStack, loadMarkets]);
+    const handleMarketKeyDown = React.useCallback((event: React.KeyboardEvent, conditionId: string) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setSelectedConditionId(conditionId);
+        }
+    }, []);
 
     const page = cursorStack.length + 1;
+    const selectedMarket = markets.find(market => market.conditionId === selectedConditionId);
 
     return (
         <Page title='Worm' toolbar={{breadcrumbs: [{title: 'Worm'}]}}>
@@ -138,7 +147,13 @@ export const WormContainer = () => {
                                     </div>
                                 ) : (
                                     markets.map((market, index) => (
-                                        <div className='worm-markets__item' key={getMarketKey(market, index)}>
+                                        <div
+                                            className={`worm-markets__item ${market.conditionId === selectedConditionId ? 'worm-markets__item--selected' : ''}`}
+                                            key={getMarketKey(market, index)}
+                                            role='button'
+                                            tabIndex={0}
+                                            onClick={() => setSelectedConditionId(market.conditionId)}
+                                            onKeyDown={event => handleMarketKeyDown(event, market.conditionId)}>
                                             <MarketLogo market={market} />
                                             <div className='worm-markets__main'>
                                                 <div className='worm-markets__title' title={market.title}>
@@ -187,6 +202,12 @@ export const WormContainer = () => {
                         </div>
                     </div>
                 )}
+                <SlidingPanel
+                    header={<div className='worm-market-detail__panel-title'>Market Detail</div>}
+                    isShown={!!selectedConditionId}
+                    onClose={() => setSelectedConditionId('')}>
+                    {selectedConditionId && <WormMarketDetailPanel key={selectedConditionId} conditionId={selectedConditionId} initialMarket={selectedMarket} />}
+                </SlidingPanel>
             </div>
         </Page>
     );
