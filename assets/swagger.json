@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-407-g26bb898-dirty"
+    "version": "v1.0.0-415-g1a063d3-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -331,6 +331,29 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationUpdateBytecodeBlacklistContractNoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notification/status": {
+      "get": {
+        "tags": [
+          "NotificationService"
+        ],
+        "summary": "GetNotificationStatus returns the notification service runtime status.",
+        "operationId": "NotificationService_GetNotificationStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/notificationGetNotificationStatusResponse"
             }
           },
           "default": {
@@ -1681,6 +1704,18 @@
         },
         "userLoginsDisabled": {
           "type": "boolean"
+        }
+      }
+    },
+    "notificationGetNotificationStatusResponse": {
+      "description": "GetNotificationStatusResponse returns the notification service runtime status.",
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
         }
       }
     },

@@ -14,6 +14,7 @@ import (
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
+	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
@@ -42,24 +43,25 @@ func NewCommand() *cobra.Command {
 		rootPath        string
 		glogLevel       int
 		// dexServerAddress      string
-		disableAuth              bool
-		contentTypes             string
-		enableGZip               bool
-		listenHost               string
-		listenPort               int
-		metricsHost              string
-		metricsPort              int
-		otlpAddress              string
-		otlpInsecure             bool
-		otlpHeaders              map[string]string
-		otlpAttrs                []string
-		frameOptions             string
-		contentSecurityPolicy    string
-		dexServerAddress         string
-		dexServerPlaintext       bool
-		dexServerStrictTLS       bool
-		applicationServerAddress string
-		wormServerAddress        string
+		disableAuth               bool
+		contentTypes              string
+		enableGZip                bool
+		listenHost                string
+		listenPort                int
+		metricsHost               string
+		metricsPort               int
+		otlpAddress               string
+		otlpInsecure              bool
+		otlpHeaders               map[string]string
+		otlpAttrs                 []string
+		frameOptions              string
+		contentSecurityPolicy     string
+		dexServerAddress          string
+		dexServerPlaintext        bool
+		dexServerStrictTLS        bool
+		applicationServerAddress  string
+		notificationServerAddress string
+		wormServerAddress         string
 		// hydratorEnabled        bool
 		// syncWithReplaceAllowed bool
 
@@ -134,10 +136,14 @@ func NewCommand() *cobra.Command {
 			}
 
 			applicationclientset := applicationapiclient.NewApplicationClientset(applicationServerAddress)
+			notificationclientset := notificationapiclient.NewNotificationClientset(notificationServerAddress)
 			wormclientset := wormapiclient.NewWormClientset(wormServerAddress)
 			log.Infof("waiting for athena application grpc service at %s", applicationServerAddress)
 			errors.CheckError(applicationapiclient.WaitForApplicationService(ctx, applicationServerAddress))
 			log.Infof("athena application grpc service is ready at %s", applicationServerAddress)
+			log.Infof("waiting for athena notification grpc service at %s", notificationServerAddress)
+			errors.CheckError(notificationapiclient.WaitForNotificationService(ctx, notificationServerAddress))
+			log.Infof("athena notification grpc service is ready at %s", notificationServerAddress)
 			log.Infof("waiting for athena worm grpc service at %s", wormServerAddress)
 			errors.CheckError(wormapiclient.WaitForWormService(ctx, wormServerAddress))
 			log.Infof("athena worm grpc service is ready at %s", wormServerAddress)
@@ -162,6 +168,7 @@ func NewCommand() *cobra.Command {
 				DexServerAddr:         dexServerAddress,
 				DexTLSConfig:          dexTLSConfig,
 				ApplicationClientset:  applicationclientset,
+				NotificationClientset: notificationclientset,
 				WormClientset:         wormclientset,
 				// HydratorEnabled:        hydratorEnabled,
 				// SyncWithReplaceAllowed: syncWithReplaceAllowed,
@@ -231,6 +238,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().BoolVar(&dexServerPlaintext, "dex-server-plaintext", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_PLAINTEXT", false), "Use a plaintext client (non-TLS) to connect to dex server")
 	command.Flags().BoolVar(&dexServerStrictTLS, "dex-server-strict-tls", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_STRICT_TLS", false), "Perform strict validation of TLS certificates when connecting to dex server")
 	command.Flags().StringVar(&applicationServerAddress, "application-server-address", env.StringFromEnv("ATHENA_APPLICATION_SERVER_ADDRESS", "localhost:8082"), "Athena application server address")
+	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_NOTIFICATION_SERVER_ADDRESS", "localhost:8086"), "Athena notification server address")
 	command.Flags().StringVar(&wormServerAddress, "worm-server-address", env.StringFromEnv("ATHENA_WORM_SERVER_ADDRESS", "localhost:8084"), "Athena worm server address")
 	// command.Flags().BoolVar(&hydratorEnabled, "hydrator-enabled", env.ParseBoolFromEnv("ATHENA_SERVER_HYDRATOR_ENABLED", false), "Feature flag to enable Hydrator. Default (\"false\")")
 	// command.Flags().BoolVar(&syncWithReplaceAllowed, "sync-with-replace-allowed", env.ParseBoolFromEnv("ATHENA_SERVER_SYNC_WITH_REPLACE_ALLOWED", true), "Whether to allow users to select replace for syncs from UI/CLI")

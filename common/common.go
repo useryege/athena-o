@@ -63,17 +63,22 @@ const (
 	// Athena Worm
 	DefaultPortWorm        = 8084
 	DefaultPortWormMetrics = 8085
+	// Athena Notification
+	DefaultPortNotification        = 8086
+	DefaultPortNotificationMetrics = 8087
 )
 
 // DefaultAddressAPIServer for Athena components
 const (
-	DefaultAddressAdminDashboard     = "localhost"
-	DefaultAddressAPIServer          = "0.0.0.0"
-	DefaultAddressAPIServerMetrics   = "0.0.0.0"
-	DefaultAddressApplication        = "0.0.0.0"
-	DefaultAddressApplicationMetrics = "0.0.0.0"
-	DefaultAddressWorm               = "0.0.0.0"
-	DefaultAddressWormMetrics        = "0.0.0.0"
+	DefaultAddressAdminDashboard      = "localhost"
+	DefaultAddressAPIServer           = "0.0.0.0"
+	DefaultAddressAPIServerMetrics    = "0.0.0.0"
+	DefaultAddressApplication         = "0.0.0.0"
+	DefaultAddressApplicationMetrics  = "0.0.0.0"
+	DefaultAddressWorm                = "0.0.0.0"
+	DefaultAddressWormMetrics         = "0.0.0.0"
+	DefaultAddressNotification        = "0.0.0.0"
+	DefaultAddressNotificationMetrics = "0.0.0.0"
 )
 
 // Default paths on the pod's file system

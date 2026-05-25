@@ -41,11 +41,13 @@ import (
 	"github.com/soheilhy/cmux"
 	"github.com/useryege/athena/common"
 	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
+	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/server/account"
 	"github.com/useryege/athena/internal/server/application"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/internal/server/logout"
 	"github.com/useryege/athena/internal/server/metrics"
+	servernotification "github.com/useryege/athena/internal/server/notification"
 	"github.com/useryege/athena/internal/server/rbacpolicy"
 	"github.com/useryege/athena/internal/server/session"
 	"github.com/useryege/athena/internal/server/settings"
@@ -90,6 +92,7 @@ import (
 
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
+	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	wormpkg "github.com/useryege/athena/pkg/apiclient/worm"
 )
@@ -212,6 +215,7 @@ type AthenaServerOpts struct {
 	XFrameOptions         string
 	ContentSecurityPolicy string
 	ApplicationClientset  applicationapiclient.Clientset
+	NotificationClientset notificationapiclient.Clientset
 	WormClientset         wormapiclient.Clientset
 	// ApplicationNamespaces []string
 	// EnableProxyExtension  bool
@@ -449,6 +453,7 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 	settingspkg.RegisterSettingsServiceServer(grpcS, server.serviceSet.SettingsService)
 	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
 	applicationpkg.RegisterApplicationServiceServer(grpcS, server.serviceSet.ApplicationService)
+	notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
 	wormpkg.RegisterWormServiceServer(grpcS, server.serviceSet.WormService)
 
 	// Register reflection service on gRPC server.
@@ -460,13 +465,14 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 }
 
 type AthenaServiceSet struct {
-	HealthService      *health.Server
-	SessionService     *session.Server
-	SettingsService    *settings.Server
-	AccountService     *account.Server
-	VersionService     *version.Server
-	ApplicationService *application.Server
-	WormService        *serverworm.Server
+	HealthService       *health.Server
+	SessionService      *session.Server
+	SettingsService     *settings.Server
+	AccountService      *account.Server
+	VersionService      *version.Server
+	ApplicationService  *application.Server
+	NotificationService *servernotification.Server
+	WormService         *serverworm.Server
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
@@ -486,10 +492,11 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf)
 	// application service
 	applicationService := application.NewServer(server.ApplicationClientset)
+	// notification service
+	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// worm service
 	wormService := serverworm.NewServer(server.WormClientset)
 
-	// notificationService := notification.NewServer(a.apiFactory)
 	// certificateService := certificate.NewServer(a.db, a.enf)
 	// gpgkeyService := gpgkey.NewServer(a.db, a.enf)
 	versionService := version.NewServer(server, func() (bool, error) {
@@ -505,13 +512,14 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
-		HealthService:      healthService,
-		SessionService:     sessionService,
-		SettingsService:    settingsService,
-		AccountService:     accountService,
-		VersionService:     versionService,
-		ApplicationService: applicationService,
-		WormService:        wormService,
+		HealthService:       healthService,
+		SessionService:      sessionService,
+		SettingsService:     settingsService,
+		AccountService:      accountService,
+		VersionService:      versionService,
+		ApplicationService:  applicationService,
+		NotificationService: notificationService,
+		WormService:         wormService,
 	}
 }
 
@@ -843,6 +851,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 
 	mustRegisterGWHandler(ctx, versionpkg.RegisterVersionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, applicationpkg.RegisterApplicationServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, notificationpkg.RegisterNotificationServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormpkg.RegisterWormServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, settingspkg.RegisterSettingsServiceHandler, gwmux, conn)
