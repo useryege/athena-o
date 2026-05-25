@@ -56,7 +56,6 @@ ENV GOPATH=/go
 # # Install build and test dependencies
 COPY hack/install.sh hack/tool-versions.sh go.* ./
 COPY hack/installers installers
-# COPY gitops-engine/go.* ./gitops-engine/
 
 RUN ./install.sh helm && \
     ./install.sh kustomize && \

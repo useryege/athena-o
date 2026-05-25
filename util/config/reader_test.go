@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -69,42 +69,20 @@ func TestUnmarshalRemoteFile(t *testing.T) {
 		field2 = 42
 	)
 	sentinel := fmt.Sprintf("---\nfield1: %q\nfield2: %d", field1, field2)
-	lc := &net.ListenConfig{}
 
-	serve := func(c chan<- string) {
-		// listen on first available dynamic (unprivileged) port
-		listener, err := lc.Listen(t.Context(), "tcp", ":0")
-		if err != nil {
-			panic(err)
-		}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, sentinel)
+	}))
+	defer server.Close()
 
-		// send back the address so that it can be used
-		c <- listener.Addr().String()
-
-		http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
-			// return the sentinel text at root URL
-			fmt.Fprint(w, sentinel)
-		})
-
-		panic(http.Serve(listener, nil))
-	}
-
-	c := make(chan string, 1)
-
-	// run a local webserver to test data retrieval
-	go serve(c)
-
-	address := <-c
-	t.Logf("Listening at address: %s", address)
-
-	data, err := ReadRemoteFile("http://" + address)
+	data, err := ReadRemoteFile(server.URL)
 	assert.Equal(t, string(data), sentinel, "Test data did not match (err = %v)! Expected %q and received %q", err, sentinel, string(data))
 
 	var testStruct struct {
 		Field1 string
 		Field2 int
 	}
-	err = UnmarshalRemoteFile("http://"+address, &testStruct)
+	err = UnmarshalRemoteFile(server.URL, &testStruct)
 	require.NoError(t, err, "Could not unmarshal test data")
 
 	if testStruct.Field1 != field1 || testStruct.Field2 != field2 {

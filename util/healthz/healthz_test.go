@@ -2,8 +2,8 @@ package healthz
 
 import (
 	"errors"
-	"net"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -15,40 +15,20 @@ import (
 
 func TestHealthCheck(t *testing.T) {
 	sentinel := false
-	lc := &net.ListenConfig{}
 	ctx := t.Context()
 	svcErrMsg := "This is a dummy error"
-	serve := func(c chan<- string) {
-		// listen on first available dynamic (unprivileged) port
-		listener, err := lc.Listen(ctx, "tcp", ":0")
-		if err != nil {
-			panic(err)
+
+	mux := http.NewServeMux()
+	ServeHealthCheck(mux, func(_ *http.Request) error {
+		if sentinel {
+			return errors.New(svcErrMsg)
 		}
+		return nil
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
 
-		// send back the address so that it can be used
-		c <- listener.Addr().String()
-
-		mux := http.NewServeMux()
-		ServeHealthCheck(mux, func(_ *http.Request) error {
-			if sentinel {
-				return errors.New(svcErrMsg)
-			}
-			return nil
-		})
-		panic(http.Serve(listener, mux))
-	}
-
-	c := make(chan string, 1)
-
-	// run a local webserver to test data retrieval
-	go serve(c)
-
-	address := <-c
-	t.Logf("Listening at address: %s", address)
-
-	server := "http://" + address
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, server+"/healthz", http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/healthz", http.NoBody)
 	require.NoError(t, err)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -58,7 +38,7 @@ func TestHealthCheck(t *testing.T) {
 	sentinel = true
 	hook := test.NewGlobal()
 
-	req, err = http.NewRequestWithContext(ctx, http.MethodGet, server+"/healthz", http.NoBody)
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/healthz", http.NoBody)
 	require.NoError(t, err)
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)

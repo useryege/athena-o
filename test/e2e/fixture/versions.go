@@ -23,10 +23,3 @@ func (v Version) String() string {
 // 	require.NoError(t, json.Unmarshal([]byte(output), versions))
 // 	return versions
 // }
-
-// func GetApiResources(t *testing.T) string { //nolint:revive //FIXME(var-naming)
-// 	t.Helper()
-// 	kubectl := kubeutil.NewKubectl()
-// 	resources := errors.NewHandler(t).FailOnErr(kubectl.GetAPIResources(KubeConfig, false, cache.NewNoopSettings())).([]kube.APIResourceInfo)
-// 	return strings.Join(athena.APIResourcesToStrings(resources, true), ",")
-// }

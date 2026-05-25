@@ -470,11 +470,6 @@ type AthenaServiceSet struct {
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
-	// kubectl := kubeutil.NewKubectl()
-	// clusterService := cluster.NewServer(a.db, a.enf, a.Cache, kubectl)
-	// repoService := repository.NewServer(a.RepoClientset, a.db, a.enf, a.Cache, a.appLister, a.projInformer, a.Namespace, a.settingsMgr, a.HydratorEnabled)
-	// repoCredsService := repocreds.NewServer(a.db, a.enf)
-
 	// create a login rate limiter
 	// used by the session service
 	var loginRateLimiter func() (utilio.Closer, error)
@@ -484,7 +479,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 
 	// session service
 	sessionService := session.NewServer(server.sessionMgr, server.settingsMgr, server, server.policyEnforcer, loginRateLimiter)
-	// projectLock := sync.NewKeyLock()
 
 	// settings service
 	settingsService := settings.NewServer(server.settingsMgr, server, server.DisableAuth)

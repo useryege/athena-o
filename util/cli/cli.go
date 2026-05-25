@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/useryege/athena/common"
-	"github.com/useryege/athena/gitops-engine/pkg/utils/text"
 	"github.com/useryege/athena/util/errors"
 	utilio "github.com/useryege/athena/util/io"
 	utillog "github.com/useryege/athena/util/log"
@@ -198,7 +197,10 @@ func SetLogFormat(logFormat string) {
 
 // SetLogLevel parses and sets a logrus log level
 func SetLogLevel(logLevel string) {
-	level, err := log.ParseLevel(text.FirstNonEmpty(logLevel, log.InfoLevel.String()))
+	if logLevel == "" {
+		logLevel = log.InfoLevel.String()
+	}
+	level, err := log.ParseLevel(logLevel)
 	errors.CheckError(err)
 	os.Setenv(common.EnvLogLevel, level.String())
 	log.SetLevel(level)

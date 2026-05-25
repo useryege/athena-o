@@ -1,16 +1,5 @@
 package kube
 
-// import (
-// 	"fmt"
-// 	"regexp"
-
-// 	"github.com/useryege/gitops-engine/pkg/utils/kube"
-// 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-// 	"k8s.io/apimachinery/pkg/runtime/schema"
-
-// 	"github.com/useryege/athena/common"
-// )
-
 // var resourceNamePattern = regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
 
 // // IsValidResourceName returns true if given string a valid Kubernetes resource name
