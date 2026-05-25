@@ -42,8 +42,10 @@ func (s *Server) ListWormMarkets(ctx context.Context, req *wormpkg.ListWormMarke
 	defer closer.Close()
 
 	resp, err := client.ListWormMarkets(ctx, &wormapiclient.ListWormMarketsRequest{
-		Limit:  req.GetLimit(),
-		Cursor: req.GetCursor(),
+		Limit:        req.GetLimit(),
+		Cursor:       req.GetCursor(),
+		SortOption:   req.GetSortOption(),
+		CategorySlug: req.GetCategorySlug(),
 	})
 	if err != nil {
 		return nil, err

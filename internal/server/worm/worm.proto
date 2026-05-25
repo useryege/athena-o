@@ -23,6 +23,8 @@ message GetWormStatusResponse {
 message ListWormMarketsRequest {
   int32 limit = 1;
   string cursor = 2;
+  string sort_option = 3;
+  string category_slug = 4;
 }
 
 // ListWormMarketsResponse returns Worm market rows and cursor pagination.
@@ -47,7 +49,7 @@ service WormService {
     option (google.api.http) = {get: "/api/v1/worm/status"};
   }
 
-  // ListWormMarkets returns sports markets sorted by leverage.
+  // ListWormMarkets returns markets for the requested browse filters.
   rpc ListWormMarkets(ListWormMarketsRequest) returns (ListWormMarketsResponse) {
     option (google.api.http) = {get: "/api/v1/worm/markets"};
   }

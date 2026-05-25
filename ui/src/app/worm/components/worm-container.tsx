@@ -2,12 +2,29 @@ import {MockupList, Page, SlidingPanel} from 'argo-ui';
 import * as React from 'react';
 
 import {services} from '../../shared/services';
-import {WormMarketItem} from '../../shared/services/worm-service';
+import {WormMarketCategorySlug, WormMarketItem, WormMarketSortOption} from '../../shared/services/worm-service';
 import {WormMarketDetailPanel} from './worm-market-detail-panel';
 
 require('./worm-container.scss');
 
 const PAGE_SIZE = 20;
+
+const SORT_OPTIONS: Array<{label: string; value: WormMarketSortOption}> = [
+    {label: 'New', value: 'new'},
+    {label: 'Trending', value: 'trending'},
+    {label: 'Ending Soon', value: 'ending_soon'},
+    {label: 'Leverage', value: 'leverage'}
+];
+
+const CATEGORY_OPTIONS: Array<{label: string; value: WormMarketCategorySlug}> = [
+    {label: 'All', value: 'all'},
+    {label: 'Politics', value: 'politics'},
+    {label: 'Sports', value: 'sports'},
+    {label: 'Crypto', value: 'crypto'},
+    {label: 'Tech', value: 'tech'},
+    {label: 'Finance', value: 'finance'},
+    {label: 'WTF', value: 'wtf'}
+];
 
 const isAbortedError = (err: unknown) =>
     String((err as any)?.message || '')
@@ -31,6 +48,8 @@ const MarketLogo = ({market}: {market: WormMarketItem}) => {
 
 export const WormContainer = () => {
     const [markets, setMarkets] = React.useState<WormMarketItem[]>([]);
+    const [sortOption, setSortOption] = React.useState<WormMarketSortOption>('new');
+    const [categorySlug, setCategorySlug] = React.useState<WormMarketCategorySlug>('all');
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
     const [error, setError] = React.useState<Error | null>(null);
@@ -42,43 +61,58 @@ export const WormContainer = () => {
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const mountedRef = React.useRef(false);
 
-    const loadMarkets = React.useCallback(async (targetCursor = '', nextStack?: string[]) => {
-        if (requestRef.current) {
-            return;
-        }
-        if (mountedRef.current) {
-            setRefreshing(true);
-        }
-        try {
-            const req = services.worm.listMarkets(PAGE_SIZE, targetCursor);
+    const loadMarkets = React.useCallback(
+        async (targetCursor = '', nextStack?: string[]) => {
+            if (requestRef.current?.abort) {
+                requestRef.current.abort();
+            }
+            if (mountedRef.current) {
+                setRefreshing(true);
+            }
+            const req = services.worm.listMarkets({
+                limit: PAGE_SIZE,
+                cursor: targetCursor,
+                sortOption,
+                categorySlug
+            });
             requestRef.current = req;
-            const data = await req;
-            if (mountedRef.current) {
-                setMarkets(data.items);
-                setCursor(targetCursor);
-                setNextCursor(data.nextCursor || '');
-                if (nextStack) {
-                    setCursorStack(nextStack);
+            try {
+                const data = await req;
+                if (mountedRef.current && requestRef.current === req) {
+                    setMarkets(data.items);
+                    setCursor(targetCursor);
+                    setNextCursor(data.nextCursor || '');
+                    if (nextStack) {
+                        setCursorStack(nextStack);
+                    }
+                    setLastUpdatedAt(new Date());
+                    setError(null);
                 }
-                setLastUpdatedAt(new Date());
-                setError(null);
+            } catch (err) {
+                if (mountedRef.current && requestRef.current === req && !isAbortedError(err)) {
+                    setError(err as Error);
+                }
+            } finally {
+                if (requestRef.current === req) {
+                    requestRef.current = null;
+                }
+                if (mountedRef.current && requestRef.current === null) {
+                    setLoading(false);
+                    setRefreshing(false);
+                }
             }
-        } catch (err) {
-            if (mountedRef.current && !isAbortedError(err)) {
-                setError(err as Error);
-            }
-        } finally {
-            requestRef.current = null;
-            if (mountedRef.current) {
-                setLoading(false);
-                setRefreshing(false);
-            }
-        }
-    }, []);
+        },
+        [categorySlug, sortOption]
+    );
 
     React.useEffect(() => {
         mountedRef.current = true;
-        loadMarkets('');
+        setLoading(true);
+        setCursor('');
+        setNextCursor('');
+        setCursorStack([]);
+        setSelectedConditionId('');
+        loadMarkets('', []);
         return () => {
             mountedRef.current = false;
             if (requestRef.current?.abort) {
@@ -109,6 +143,8 @@ export const WormContainer = () => {
 
     const page = cursorStack.length + 1;
     const selectedMarket = markets.find(market => market.conditionId === selectedConditionId);
+    const activeSortLabel = SORT_OPTIONS.find(item => item.value === sortOption)?.label || 'New';
+    const activeCategoryLabel = CATEGORY_OPTIONS.find(item => item.value === categorySlug)?.label || 'All';
 
     return (
         <Page title='Worm' toolbar={{breadcrumbs: [{title: 'Worm'}]}}>
@@ -124,6 +160,30 @@ export const WormContainer = () => {
                 ) : (
                     <div className='argo-container'>
                         <div className='white-box worm-markets__box'>
+                            <div className='worm-markets__filters'>
+                                <div className='worm-markets__filter-group'>
+                                    {SORT_OPTIONS.map(item => (
+                                        <button
+                                            type='button'
+                                            key={item.value}
+                                            className={`worm-markets__filter ${sortOption === item.value ? 'worm-markets__filter--active' : ''}`}
+                                            onClick={() => setSortOption(item.value)}>
+                                            {item.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className='worm-markets__filter-group'>
+                                    {CATEGORY_OPTIONS.map(item => (
+                                        <button
+                                            type='button'
+                                            key={item.value}
+                                            className={`worm-markets__filter ${categorySlug === item.value ? 'worm-markets__filter--active' : ''}`}
+                                            onClick={() => setCategorySlug(item.value)}>
+                                            {item.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                             <div className='worm-markets__controls'>
                                 <div className='worm-markets__actions'>
                                     <button type='button' className='argo-button argo-button--base' disabled={refreshing} onClick={handleRefresh}>
@@ -131,8 +191,8 @@ export const WormContainer = () => {
                                     </button>
                                 </div>
                                 <div className='worm-markets__status'>
-                                    <span>Category: sports</span>
-                                    <span>Sort: leverage</span>
+                                    <span>Section: {activeSortLabel}</span>
+                                    <span>Category: {activeCategoryLabel}</span>
                                     <span>Page: {page}</span>
                                     <span>Last updated: {lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : 'Never'}</span>
                                 </div>

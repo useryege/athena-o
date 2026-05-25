@@ -18,8 +18,8 @@ const (
 	defaultWormMarketsLimit = 20
 	maxWormMarketsLimit     = 100
 
-	wormMarketsCategory = "sports"
-	wormMarketsSort     = "leverage"
+	defaultWormMarketsCategorySlug = "all"
+	defaultWormMarketsSortOption   = "new"
 )
 
 type wormMarketClient interface {
@@ -92,14 +92,26 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 
 	limit := defaultWormMarketsLimit
 	cursor := ""
+	sortOption := defaultWormMarketsSortOption
+	categorySlug := defaultWormMarketsCategorySlug
 	if req != nil {
 		if req.GetLimit() != 0 {
 			limit = int(req.GetLimit())
 		}
 		cursor = req.GetCursor()
+		sortOption = strings.TrimSpace(req.GetSortOption())
+		categorySlug = strings.TrimSpace(req.GetCategorySlug())
 	}
 	if limit < 1 || limit > maxWormMarketsLimit {
 		return nil, status.Errorf(codes.InvalidArgument, "limit must be between 1 and %d", maxWormMarketsLimit)
+	}
+	sortOption, err := normalizeWormMarketSortOption(sortOption)
+	if err != nil {
+		return nil, err
+	}
+	categorySlug, err = normalizeWormMarketCategorySlug(categorySlug)
+	if err != nil {
+		return nil, err
 	}
 
 	markets, err := s.wormClient.ListMarkets(ctx, utilworm.ListMarketsOptions{
@@ -107,8 +119,8 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 			Limit:  limit,
 			Cursor: cursor,
 		},
-		Category: wormMarketsCategory,
-		Sort:     wormMarketsSort,
+		Category: upstreamWormMarketCategory(categorySlug),
+		Sort:     upstreamWormMarketSort(sortOption),
 	})
 	if err != nil {
 		return nil, err
@@ -123,6 +135,46 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 		resp.Markets = append(resp.Markets, s.toAPIMarketSummary(markets.Markets[i]))
 	}
 	return resp, nil
+}
+
+func normalizeWormMarketSortOption(value string) (string, error) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "" {
+		return defaultWormMarketsSortOption, nil
+	}
+	switch value {
+	case "new", "trending", "ending_soon", "leverage":
+		return value, nil
+	default:
+		return "", status.Errorf(codes.InvalidArgument, "sort_option must be one of new, trending, ending_soon, leverage")
+	}
+}
+
+func normalizeWormMarketCategorySlug(value string) (string, error) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "" {
+		return defaultWormMarketsCategorySlug, nil
+	}
+	switch value {
+	case "all", "politics", "sports", "crypto", "tech", "finance", "wtf":
+		return value, nil
+	default:
+		return "", status.Errorf(codes.InvalidArgument, "category_slug must be one of all, politics, sports, crypto, tech, finance, wtf")
+	}
+}
+
+func upstreamWormMarketSort(value string) string {
+	if value == defaultWormMarketsSortOption {
+		return ""
+	}
+	return value
+}
+
+func upstreamWormMarketCategory(value string) string {
+	if value == defaultWormMarketsCategorySlug {
+		return ""
+	}
+	return value
 }
 
 func (s *Service) GetWormMarket(ctx context.Context, req *apiclient.GetWormMarketRequest) (*apiclient.GetWormMarketResponse, error) {

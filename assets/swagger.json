@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-405-g5616c0e-dirty"
+    "version": "v1.0.0-406-gb980e28-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -897,7 +897,7 @@
         "tags": [
           "WormService"
         ],
-        "summary": "ListWormMarkets returns sports markets sorted by leverage.",
+        "summary": "ListWormMarkets returns markets for the requested browse filters.",
         "operationId": "WormService_ListWormMarkets",
         "parameters": [
           {
@@ -909,6 +909,16 @@
           {
             "type": "string",
             "name": "cursor",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "sort_option",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "category_slug",
             "in": "query"
           }
         ],

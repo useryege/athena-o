@@ -20,6 +20,16 @@ export interface ListWormMarketsResult {
     nextCursor?: string;
 }
 
+export type WormMarketSortOption = 'new' | 'trending' | 'ending_soon' | 'leverage';
+export type WormMarketCategorySlug = 'all' | 'politics' | 'sports' | 'crypto' | 'tech' | 'finance' | 'wtf';
+
+export interface ListWormMarketsOptions {
+    limit?: number;
+    cursor?: string;
+    sortOption?: WormMarketSortOption;
+    categorySlug?: WormMarketCategorySlug;
+}
+
 export interface WormMarketOutcome {
     isYes: boolean;
     text: string;
@@ -187,8 +197,18 @@ const normalizeMarketDetail = (item: any): WormMarketDetail => ({
 });
 
 export class WormService {
-    public listMarkets(limit = 20, cursor = ''): Promise<ListWormMarketsResult> & {abort?: () => void} {
-        const req = requests.get('/worm/markets').query({limit, cursor});
+    public listMarkets(options: ListWormMarketsOptions = {}): Promise<ListWormMarketsResult> & {abort?: () => void} {
+        const query: any = {
+            limit: options.limit || 20,
+            cursor: options.cursor || ''
+        };
+        if (options.sortOption && options.sortOption !== 'new') {
+            query.sort_option = options.sortOption;
+        }
+        if (options.categorySlug && options.categorySlug !== 'all') {
+            query.category_slug = options.categorySlug;
+        }
+        const req = requests.get('/worm/markets').query(query);
         const promise = req.then(res => {
             const body = res.body || {};
             return {

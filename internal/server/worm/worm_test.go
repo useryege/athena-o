@@ -61,7 +61,12 @@ func TestListWormMarketsForwardsRequestAndMapsResponse(t *testing.T) {
 		},
 	}
 
-	resp, err := NewServer(&fakeWormClientset{client: client}).ListWormMarkets(context.Background(), &wormpkg.ListWormMarketsRequest{Limit: 20, Cursor: "cursor-1"})
+	resp, err := NewServer(&fakeWormClientset{client: client}).ListWormMarkets(context.Background(), &wormpkg.ListWormMarketsRequest{
+		Limit:        20,
+		Cursor:       "cursor-1",
+		SortOption:   "ending_soon",
+		CategorySlug: "crypto",
+	})
 	if err != nil {
 		t.Fatalf("ListWormMarkets: %v", err)
 	}
@@ -70,6 +75,12 @@ func TestListWormMarketsForwardsRequestAndMapsResponse(t *testing.T) {
 	}
 	if client.listReq.GetCursor() != "cursor-1" {
 		t.Fatalf("cursor = %q, want cursor-1", client.listReq.GetCursor())
+	}
+	if client.listReq.GetSortOption() != "ending_soon" {
+		t.Fatalf("sort option = %q, want ending_soon", client.listReq.GetSortOption())
+	}
+	if client.listReq.GetCategorySlug() != "crypto" {
+		t.Fatalf("category slug = %q, want crypto", client.listReq.GetCategorySlug())
 	}
 	if resp.GetNextCursor() != "next-page" {
 		t.Fatalf("next cursor = %q, want next-page", resp.GetNextCursor())

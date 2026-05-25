@@ -68,7 +68,7 @@ func (f *fakeWormMarketClient) GetMarketOrderBook(_ context.Context, conditionID
 	return book, nil
 }
 
-func TestListWormMarketsUsesSportsLeverageDefaults(t *testing.T) {
+func TestListWormMarketsUsesNewAllDefaults(t *testing.T) {
 	nextCursor := "next-page"
 	description := "market description"
 	logo := "https://cdn.worm.wtf/m/1.png"
@@ -107,11 +107,11 @@ func TestListWormMarketsUsesSportsLeverageDefaults(t *testing.T) {
 	if client.options.Cursor != "" {
 		t.Fatalf("cursor = %q, want empty", client.options.Cursor)
 	}
-	if client.options.Category != wormMarketsCategory {
-		t.Fatalf("category = %q, want %q", client.options.Category, wormMarketsCategory)
+	if client.options.Category != "" {
+		t.Fatalf("category = %q, want empty", client.options.Category)
 	}
-	if client.options.Sort != wormMarketsSort {
-		t.Fatalf("sort = %q, want %q", client.options.Sort, wormMarketsSort)
+	if client.options.Sort != "" {
+		t.Fatalf("sort = %q, want empty", client.options.Sort)
 	}
 	if resp.GetNextCursor() != nextCursor {
 		t.Fatalf("next cursor = %q, want %q", resp.GetNextCursor(), nextCursor)
@@ -149,11 +149,60 @@ func TestListWormMarketsUsesRequestedPage(t *testing.T) {
 	}
 }
 
+func TestListWormMarketsUsesRequestedBrowseFilters(t *testing.T) {
+	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{}}
+
+	_, err := NewService(nil, client, utilworm.DefaultBaseURL).ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{
+		SortOption:   "leverage",
+		CategorySlug: "sports",
+	})
+	if err != nil {
+		t.Fatalf("ListWormMarkets: %v", err)
+	}
+	if client.options.Sort != "leverage" {
+		t.Fatalf("sort = %q, want leverage", client.options.Sort)
+	}
+	if client.options.Category != "sports" {
+		t.Fatalf("category = %q, want sports", client.options.Category)
+	}
+}
+
+func TestListWormMarketsMapsEndingSoonCryptoFilters(t *testing.T) {
+	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{}}
+
+	_, err := NewService(nil, client, utilworm.DefaultBaseURL).ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{
+		SortOption:   "ending_soon",
+		CategorySlug: "crypto",
+	})
+	if err != nil {
+		t.Fatalf("ListWormMarkets: %v", err)
+	}
+	if client.options.Sort != "ending_soon" {
+		t.Fatalf("sort = %q, want ending_soon", client.options.Sort)
+	}
+	if client.options.Category != "crypto" {
+		t.Fatalf("category = %q, want crypto", client.options.Category)
+	}
+}
+
 func TestListWormMarketsRejectsInvalidLimit(t *testing.T) {
 	for _, limit := range []int32{-1, 101} {
 		_, err := NewService(nil, &fakeWormMarketClient{}, utilworm.DefaultBaseURL).ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{Limit: limit})
 		if status.Code(err) != codes.InvalidArgument {
 			t.Fatalf("limit %d code = %s, want %s", limit, status.Code(err), codes.InvalidArgument)
+		}
+	}
+}
+
+func TestListWormMarketsRejectsInvalidBrowseFilters(t *testing.T) {
+	tests := []apiclient.ListWormMarketsRequest{
+		{SortOption: "oldest"},
+		{CategorySlug: "gaming"},
+	}
+	for i := range tests {
+		_, err := NewService(nil, &fakeWormMarketClient{}, utilworm.DefaultBaseURL).ListWormMarkets(context.Background(), &tests[i])
+		if status.Code(err) != codes.InvalidArgument {
+			t.Fatalf("case %d code = %s, want %s", i, status.Code(err), codes.InvalidArgument)
 		}
 	}
 }
