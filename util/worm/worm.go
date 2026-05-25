@@ -362,7 +362,7 @@ type Market struct {
 	YesOutcomeLabel *string          `json:"yes_outcome_label,omitempty"`
 	NoOutcomeLabel  *string          `json:"no_outcome_label,omitempty"`
 	Outcomes        []Outcome        `json:"outcomes,omitempty"`
-	Rules           map[string]any   `json:"rules,omitempty"`
+	Rules           []string         `json:"rules,omitempty"`
 	ResolutionDate  *int64           `json:"resolution_date,omitempty"`
 	MakerFee        *string          `json:"maker_fee,omitempty"`
 	TakerFee        *string          `json:"taker_fee,omitempty"`

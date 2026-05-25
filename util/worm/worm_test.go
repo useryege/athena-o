@@ -89,6 +89,42 @@ func TestListMarketsPublicRequest(t *testing.T) {
 	}
 }
 
+func TestGetMarketDecodesRulesList(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/markets/market-1/" {
+			t.Fatalf("path = %q, want /markets/market-1/", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"data": {
+				"condition_id": "market-1",
+				"title": "Example market",
+				"state": "open",
+				"category": "crypto",
+				"rules": [
+					"The market resolves YES if the source resolves YES.",
+					"The market resolves NO if the source resolves NO."
+				]
+			},
+			"meta": {},
+			"error": null
+		}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{BaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	resp, err := client.GetMarket(context.Background(), "market-1")
+	if err != nil {
+		t.Fatalf("GetMarket: %v", err)
+	}
+	if len(resp.Rules) != 2 || resp.Rules[0] == "" {
+		t.Fatalf("rules = %#v, want decoded rules list", resp.Rules)
+	}
+}
+
 func TestAuthenticatedRequestSignsExactPayload(t *testing.T) {
 	var gotPath string
 	var gotBody string
