@@ -71,6 +71,10 @@
             margin-bottom: 0;
             margin-top: 12px;
         }
+
+        &--status {
+            justify-content: flex-end;
+        }
     }
 
     &__actions {
@@ -275,17 +279,8 @@
         border-bottom: 1px solid #edf0f2;
         display: grid;
         gap: 12px;
-        grid-template-columns: 52px minmax(0, 1fr) auto;
+        grid-template-columns: 52px minmax(0, 1fr);
         padding: 0 0 16px;
-
-        button {
-            margin: 0;
-            white-space: nowrap;
-        }
-
-        i {
-            margin-right: 6px;
-        }
     }
 
     &__logo {
@@ -550,10 +545,6 @@
         &__header {
             align-items: start;
             grid-template-columns: 52px minmax(0, 1fr);
-
-            button {
-                grid-column: 1 / -1;
-            }
         }
 
         &__metrics,

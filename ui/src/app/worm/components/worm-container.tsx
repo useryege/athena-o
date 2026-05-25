@@ -163,7 +163,6 @@ export const WormContainer = () => {
         };
     }, [cursor, loadMarkets]);
 
-    const handleRefresh = React.useCallback(() => loadMarkets(cursor), [cursor, loadMarkets]);
     const handleNext = React.useCallback(() => {
         if (nextCursor) {
             loadMarkets(nextCursor, [...cursorStack, cursor]);
@@ -226,12 +225,7 @@ export const WormContainer = () => {
                                     ))}
                                 </div>
                             </div>
-                            <div className='worm-markets__controls'>
-                                <div className='worm-markets__actions'>
-                                    <button type='button' className='argo-button argo-button--base' disabled={refreshing} onClick={handleRefresh}>
-                                        <i className='fa fa-refresh' /> {refreshing ? 'Refreshing...' : 'Refresh'}
-                                    </button>
-                                </div>
+                            <div className='worm-markets__controls worm-markets__controls--status'>
                                 <div className='worm-markets__status'>
                                     <span>Section: {activeSortLabel}</span>
                                     <span>Category: {activeCategoryLabel}</span>

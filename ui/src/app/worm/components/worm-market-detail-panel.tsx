@@ -72,7 +72,6 @@ const OrderBookTable = ({isYes, book, detail}: {isYes: boolean; book?: WormMarke
 export const WormMarketDetailPanel = ({conditionId, initialMarket}: {conditionId: string; initialMarket?: WormMarketItem}) => {
     const [detail, setDetail] = React.useState<WormMarketDetail | null>(null);
     const [loading, setLoading] = React.useState(true);
-    const [refreshing, setRefreshing] = React.useState(false);
     const [error, setError] = React.useState<Error | null>(null);
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const mountedRef = React.useRef(false);
@@ -80,9 +79,6 @@ export const WormMarketDetailPanel = ({conditionId, initialMarket}: {conditionId
     const loadDetail = React.useCallback(async () => {
         if (!conditionId || requestRef.current) {
             return;
-        }
-        if (mountedRef.current) {
-            setRefreshing(true);
         }
         try {
             const req = services.worm.getMarket(conditionId);
@@ -100,7 +96,6 @@ export const WormMarketDetailPanel = ({conditionId, initialMarket}: {conditionId
             requestRef.current = null;
             if (mountedRef.current) {
                 setLoading(false);
-                setRefreshing(false);
             }
         }
     }, [conditionId]);
@@ -180,9 +175,6 @@ export const WormMarketDetailPanel = ({conditionId, initialMarket}: {conditionId
                         {conditionId}
                     </div>
                 </div>
-                <button type='button' className='argo-button argo-button--base-o' disabled={refreshing} onClick={loadDetail}>
-                    <i className='fa fa-refresh' /> {refreshing ? 'Refreshing...' : 'Refresh'}
-                </button>
             </div>
 
             {error && (
