@@ -89,7 +89,7 @@ func NewCommand() *cobra.Command {
 				errors.CheckError(http.ListenAndServe(fmt.Sprintf("%s:%d", metricsHost, metricsPort), metricsMux))
 			}()
 
-			server, err := worm.NewServer(worm.ServerOpts{Store: store, WormClient: wormClient})
+			server, err := worm.NewServer(worm.ServerOpts{Store: store, WormClient: wormClient, WormAPIBaseURL: wormAPIBaseURL})
 			if err != nil {
 				return err
 			}

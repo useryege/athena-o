@@ -2,6 +2,8 @@ package worm
 
 import (
 	"context"
+	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/useryege/athena/internal/worm/apiclient"
@@ -25,14 +27,19 @@ type wormMarketClient interface {
 
 type Service struct {
 	apiclient.UnimplementedWormServiceServer
-	store       *wormstore.SQLStore
-	wormClient  wormMarketClient
-	startStopMu sync.Mutex
-	started     bool
+	store        *wormstore.SQLStore
+	wormClient   wormMarketClient
+	assetBaseURL string
+	startStopMu  sync.Mutex
+	started      bool
 }
 
-func NewService(store *wormstore.SQLStore, wormClient wormMarketClient) *Service {
-	return &Service{store: store, wormClient: wormClient}
+func NewService(store *wormstore.SQLStore, wormClient wormMarketClient, assetBaseURL string) *Service {
+	assetBaseURL = strings.TrimSpace(assetBaseURL)
+	if assetBaseURL == "" {
+		assetBaseURL = utilworm.DefaultBaseURL
+	}
+	return &Service{store: store, wormClient: wormClient, assetBaseURL: assetBaseURL}
 }
 
 func (s *Service) Start() error {
@@ -108,17 +115,17 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 	}
 	resp.Markets = make([]*apiclient.WormMarketSummary, 0, len(markets.Markets))
 	for i := range markets.Markets {
-		resp.Markets = append(resp.Markets, toAPIMarketSummary(markets.Markets[i]))
+		resp.Markets = append(resp.Markets, s.toAPIMarketSummary(markets.Markets[i]))
 	}
 	return resp, nil
 }
 
-func toAPIMarketSummary(market utilworm.MarketSummary) *apiclient.WormMarketSummary {
+func (s *Service) toAPIMarketSummary(market utilworm.MarketSummary) *apiclient.WormMarketSummary {
 	item := &apiclient.WormMarketSummary{
 		ConditionId:    market.ConditionID,
 		Title:          market.Title,
 		Description:    stringValue(market.Description),
-		Logo:           stringValue(market.Logo),
+		Logo:           s.normalizeAssetURL(stringValue(market.Logo)),
 		LastTradePrice: stringValue(market.LastTradePrice),
 		State:          market.State,
 		Category:       market.Category,
@@ -128,9 +135,25 @@ func toAPIMarketSummary(market utilworm.MarketSummary) *apiclient.WormMarketSumm
 	if market.Event != nil {
 		item.EventTitle = market.Event.Title
 		item.EventConditionId = market.Event.ConditionID
-		item.EventLogo = stringValue(market.Event.Logo)
+		item.EventLogo = s.normalizeAssetURL(stringValue(market.Event.Logo))
 	}
 	return item
+}
+
+func (s *Service) normalizeAssetURL(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	assetURL, err := url.Parse(value)
+	if err != nil || assetURL.IsAbs() {
+		return value
+	}
+	baseURL, err := url.Parse(s.assetBaseURL)
+	if err != nil || baseURL.Scheme == "" || baseURL.Host == "" {
+		return value
+	}
+	return baseURL.ResolveReference(assetURL).String()
 }
 
 func stringValue(value *string) string {

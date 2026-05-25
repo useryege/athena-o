@@ -21,7 +21,11 @@ const getMarketKey = (market: WormMarketItem, index: number) => market.condition
 
 const MarketLogo = ({market}: {market: WormMarketItem}) => {
     const logo = market.logo || market.eventLogo;
-    return <span className='worm-markets__logo'>{logo ? <img src={logo} alt='' /> : <span>W</span>}</span>;
+    const [failed, setFailed] = React.useState(false);
+
+    React.useEffect(() => setFailed(false), [logo]);
+
+    return <span className='worm-markets__logo'>{logo && !failed ? <img src={logo} alt='' onError={() => setFailed(true)} /> : <span>W</span>}</span>;
 };
 
 export const WormContainer = () => {
@@ -125,44 +129,45 @@ export const WormContainer = () => {
                                 </div>
                             </div>
 
-                            <div className='argo-table-list worm-markets__table'>
-                                <div className='argo-table-list__head'>
-                                    <div className='worm-markets__row'>
-                                        <div>Market</div>
-                                        <div>Event</div>
-                                        <div>Price</div>
-                                        <div>State</div>
-                                        <div>Margin</div>
-                                        <div>Created</div>
-                                    </div>
-                                </div>
+                            <div className='worm-markets__list'>
                                 {markets.length === 0 ? (
-                                    <div className='argo-table-list__row'>
+                                    <div className='worm-markets__empty'>
                                         <div className='row'>
                                             <div className='columns small-12 text-center'>No Worm markets found</div>
                                         </div>
                                     </div>
                                 ) : (
                                     markets.map((market, index) => (
-                                        <div className='argo-table-list__row' key={getMarketKey(market, index)}>
-                                            <div className='worm-markets__row'>
-                                                <div className='worm-markets__market'>
-                                                    <MarketLogo market={market} />
-                                                    <div className='worm-markets__title'>
-                                                        <span>{market.title || '-'}</span>
-                                                        <small>{market.conditionId}</small>
-                                                    </div>
+                                        <div className='worm-markets__item' key={getMarketKey(market, index)}>
+                                            <MarketLogo market={market} />
+                                            <div className='worm-markets__main'>
+                                                <div className='worm-markets__title' title={market.title}>
+                                                    {market.title || '-'}
                                                 </div>
-                                                <div className='worm-markets__cell worm-markets__cell--event' title={market.eventTitle || market.eventConditionId}>
-                                                    <span>{market.eventTitle || '-'}</span>
-                                                    {market.eventConditionId && <small>{market.eventConditionId}</small>}
+                                                <div className='worm-markets__event' title={market.eventTitle || market.eventConditionId}>
+                                                    {market.eventTitle || '-'}
                                                 </div>
-                                                <div className='worm-markets__cell'>{renderPrice(market.lastTradePrice)}</div>
-                                                <div className='worm-markets__cell'>
-                                                    <span className={`worm-markets__badge worm-markets__badge--${market.state || 'unknown'}`}>{market.state || '-'}</span>
+                                                <div className='worm-markets__condition' title={market.conditionId}>
+                                                    {market.conditionId}
                                                 </div>
-                                                <div className='worm-markets__cell'>{market.marginEnabled ? 'Yes' : 'No'}</div>
-                                                <div className='worm-markets__cell'>{renderCreated(market.created)}</div>
+                                            </div>
+                                            <div className='worm-markets__meta'>
+                                                <div className='worm-markets__metric'>
+                                                    <span>Price</span>
+                                                    <strong>{renderPrice(market.lastTradePrice)}</strong>
+                                                </div>
+                                                <div className='worm-markets__metric'>
+                                                    <span>State</span>
+                                                    <strong className={`worm-markets__badge worm-markets__badge--${market.state || 'unknown'}`}>{market.state || '-'}</strong>
+                                                </div>
+                                                <div className='worm-markets__metric'>
+                                                    <span>Margin</span>
+                                                    <strong>{market.marginEnabled ? 'Yes' : 'No'}</strong>
+                                                </div>
+                                                <div className='worm-markets__metric worm-markets__metric--created'>
+                                                    <span>Created</span>
+                                                    <strong>{renderCreated(market.created)}</strong>
+                                                </div>
                                             </div>
                                         </div>
                                     ))

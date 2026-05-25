@@ -50,7 +50,7 @@ func TestListWormMarketsUsesSportsLeverageDefaults(t *testing.T) {
 		},
 	}
 
-	resp, err := NewService(nil, client).ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{})
+	resp, err := NewService(nil, client, utilworm.DefaultBaseURL).ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{})
 	if err != nil {
 		t.Fatalf("ListWormMarkets: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestListWormMarketsUsesSportsLeverageDefaults(t *testing.T) {
 func TestListWormMarketsUsesRequestedPage(t *testing.T) {
 	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{}}
 
-	_, err := NewService(nil, client).ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{Limit: 50, Cursor: "cursor-1"})
+	_, err := NewService(nil, client, utilworm.DefaultBaseURL).ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{Limit: 50, Cursor: "cursor-1"})
 	if err != nil {
 		t.Fatalf("ListWormMarkets: %v", err)
 	}
@@ -104,9 +104,69 @@ func TestListWormMarketsUsesRequestedPage(t *testing.T) {
 
 func TestListWormMarketsRejectsInvalidLimit(t *testing.T) {
 	for _, limit := range []int32{-1, 101} {
-		_, err := NewService(nil, &fakeWormMarketClient{}).ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{Limit: limit})
+		_, err := NewService(nil, &fakeWormMarketClient{}, utilworm.DefaultBaseURL).ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{Limit: limit})
 		if status.Code(err) != codes.InvalidArgument {
 			t.Fatalf("limit %d code = %s, want %s", limit, status.Code(err), codes.InvalidArgument)
 		}
+	}
+}
+
+func TestListWormMarketsNormalizesRelativeAssetURLs(t *testing.T) {
+	logo := "/media/events/logos/market.webp"
+	eventLogo := "/media/events/logos/event.webp"
+	client := &fakeWormMarketClient{
+		resp: &utilworm.ListMarketsResponse{
+			Markets: []utilworm.MarketSummary{{
+				ConditionID: "market-1",
+				Title:       "Market",
+				Logo:        &logo,
+				Event: &utilworm.EventMini{
+					Title:       "Event",
+					ConditionID: "event-1",
+					Logo:        &eventLogo,
+				},
+			}},
+		},
+	}
+
+	resp, err := NewService(nil, client, "https://api.worm.wtf").ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{})
+	if err != nil {
+		t.Fatalf("ListWormMarkets: %v", err)
+	}
+	market := resp.GetMarkets()[0]
+	if market.GetLogo() != "https://api.worm.wtf/media/events/logos/market.webp" {
+		t.Fatalf("logo = %q", market.GetLogo())
+	}
+	if market.GetEventLogo() != "https://api.worm.wtf/media/events/logos/event.webp" {
+		t.Fatalf("event logo = %q", market.GetEventLogo())
+	}
+}
+
+func TestListWormMarketsPreservesAbsoluteAndEmptyAssetURLs(t *testing.T) {
+	logo := "https://cdn.worm.wtf/m/1.png"
+	client := &fakeWormMarketClient{
+		resp: &utilworm.ListMarketsResponse{
+			Markets: []utilworm.MarketSummary{{
+				ConditionID: "market-1",
+				Title:       "Market",
+				Logo:        &logo,
+				Event: &utilworm.EventMini{
+					Title:       "Event",
+					ConditionID: "event-1",
+				},
+			}},
+		},
+	}
+
+	resp, err := NewService(nil, client, "https://api.worm.wtf").ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{})
+	if err != nil {
+		t.Fatalf("ListWormMarkets: %v", err)
+	}
+	market := resp.GetMarkets()[0]
+	if market.GetLogo() != logo {
+		t.Fatalf("logo = %q, want %q", market.GetLogo(), logo)
+	}
+	if market.GetEventLogo() != "" {
+		t.Fatalf("event logo = %q, want empty", market.GetEventLogo())
 	}
 }

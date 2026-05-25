@@ -69,39 +69,9 @@
         }
     }
 
-    &__table {
-        width: 100%;
-    }
-
-    &__row {
-        align-items: center;
-        column-gap: 12px;
-        display: grid;
-        grid-template-columns:
-            minmax(280px, 3fr)
-            minmax(180px, 1.7fr)
-            minmax(72px, 0.6fr)
-            minmax(86px, 0.7fr)
-            minmax(72px, 0.55fr)
-            minmax(160px, 1.1fr);
-        width: 100%;
-    }
-
-    .argo-table-list__head .worm-markets__row > div {
-        line-height: 1.25;
-        white-space: normal;
-    }
-
-    &__market,
-    &__title,
-    &__cell {
-        min-width: 0;
-    }
-
-    &__market {
-        align-items: center;
+    &__list {
         display: flex;
-        gap: 10px;
+        flex-direction: column;
     }
 
     &__logo {
@@ -112,12 +82,12 @@
         color: #6d7f8b;
         display: inline-flex;
         flex: 0 0 auto;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 600;
-        height: 34px;
+        height: 42px;
         justify-content: center;
         overflow: hidden;
-        width: 34px;
+        width: 42px;
 
         img {
             height: 100%;
@@ -126,29 +96,88 @@
         }
     }
 
-    &__title,
-    &__cell--event {
+    &__item {
+        align-items: center;
+        border-top: 1px solid #edf0f2;
+        column-gap: 14px;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr) minmax(330px, auto);
+        min-height: 86px;
+        padding: 14px 0;
+
+        &:first-child {
+            border-top: 0;
+            padding-top: 2px;
+        }
+    }
+
+    &__main {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 4px;
+        min-width: 0;
+    }
 
-        span,
-        small {
+    &__title {
+        color: #243b53;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__event,
+    &__condition {
+        color: #6d7f8b;
+        font-size: 12px;
+        line-height: 1.3;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__condition {
+        color: #8b9aa5;
+        font-family: monospace;
+    }
+
+    &__meta {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: minmax(64px, 0.7fr) minmax(72px, 0.7fr) minmax(64px, 0.6fr) minmax(142px, 1fr);
+        min-width: 0;
+    }
+
+    &__metric {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+
+        span {
+            color: #8b9aa5;
+            font-size: 11px;
+            line-height: 1;
+        }
+
+        strong {
+            color: #243b53;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.25;
+            min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-
-        small {
-            color: #8b9aa5;
-            font-size: 11px;
-        }
     }
 
-    &__cell {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    &__empty {
+        color: #6d7f8b;
+        padding: 28px 0;
     }
 
     &__badge {
@@ -186,14 +215,27 @@
             justify-content: flex-start;
         }
 
-        &__row {
-            grid-template-columns:
-                minmax(220px, 2fr)
-                minmax(120px, 1.2fr)
-                minmax(64px, 0.6fr)
-                minmax(76px, 0.7fr)
-                minmax(64px, 0.55fr)
-                minmax(130px, 1fr);
+        &__item {
+            align-items: start;
+            grid-template-columns: 42px minmax(0, 1fr);
+            row-gap: 12px;
+        }
+
+        &__meta {
+            grid-column: 1 / -1;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+}
+
+@media (max-width: 560px) {
+    .worm-markets {
+        &__meta {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        &__metric--created {
+            grid-column: span 2;
         }
     }
 }
