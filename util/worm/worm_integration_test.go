@@ -72,6 +72,38 @@ func TestIntegrationPublicReadFlow(t *testing.T) {
 	)
 }
 
+func TestIntegrationCreateAPIKeyFromPrivateKey(t *testing.T) {
+	if os.Getenv("WORM_INTEGRATION") != "1" {
+		t.Skip("set WORM_INTEGRATION=1 to run real Worm API integration tests")
+	}
+	if os.Getenv("WORM_API_KEY_BOOTSTRAP_INTEGRATION") != "1" {
+		t.Skip("set WORM_API_KEY_BOOTSTRAP_INTEGRATION=1 to run real CreateAPIKeyFromPrivateKey integration test")
+	}
+
+	privateKey := requiredIntegrationEnv(t, "WORM_PRIVATE_KEY")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	client, err := NewClient(Config{})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	creds, err := client.CreateAPIKeyFromPrivateKey(ctx, privateKey)
+	if err != nil {
+		t.Fatalf("CreateAPIKeyFromPrivateKey: %v", err)
+	}
+	if creds.APIKey == "" {
+		t.Fatal("CreateAPIKeyFromPrivateKey returned empty APIKey")
+	}
+	if creds.Secret == "" {
+		t.Fatal("CreateAPIKeyFromPrivateKey returned empty Secret")
+	}
+
+	t.Logf("CreateAPIKeyFromPrivateKey returned api_key=%t secret=%t", creds.APIKey != "", creds.Secret != "")
+}
+
 func TestIntegrationCreateOrderDraft(t *testing.T) {
 	if os.Getenv("WORM_INTEGRATION") != "1" {
 		t.Skip("set WORM_INTEGRATION=1 to run real Worm API integration tests")

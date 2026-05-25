@@ -2,15 +2,19 @@ package worm
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mr-tron/base58/base58"
 )
 
 func TestConfigWithDefaults(t *testing.T) {
@@ -443,6 +447,119 @@ func TestInvalidJSONResponse(t *testing.T) {
 	}
 }
 
+func TestParseSolanaPrivateKeyFormats(t *testing.T) {
+	seed := testSeed()
+	key := ed25519.NewKeyFromSeed(seed)
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{name: "base58 keypair", input: base58.Encode(key)},
+		{name: "hex keypair", input: hex.EncodeToString(key)},
+		{name: "json keypair", input: mustJSONBytes(t, key)},
+		{name: "base58 seed", input: base58.Encode(seed)},
+		{name: "hex seed", input: hex.EncodeToString(seed)},
+		{name: "json seed", input: mustJSONBytes(t, seed)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseSolanaPrivateKey(tt.input)
+			if err != nil {
+				t.Fatalf("parseSolanaPrivateKey: %v", err)
+			}
+			if !ed25519.PrivateKey(got).Equal(key) {
+				t.Fatalf("private key mismatch")
+			}
+		})
+	}
+}
+
+func TestParseSolanaPrivateKeyInvalid(t *testing.T) {
+	key := ed25519.NewKeyFromSeed(testSeed())
+	mismatched := append([]byte(nil), key...)
+	mismatched[len(mismatched)-1] ^= 0xff
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "empty", in: "  ", want: "required"},
+		{name: "malformed json", in: "[1,", want: "json"},
+		{name: "wrong length json", in: "[1,2,3]", want: "length"},
+		{name: "wrong length base58", in: base58.Encode([]byte{1, 2, 3}), want: "length"},
+		{name: "invalid base58", in: "0OIl", want: "base58"},
+		{name: "mismatched keypair", in: base58.Encode(mismatched), want: "public key does not match seed"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseSolanaPrivateKey(tt.in)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("error = %v, want contains %q", err, tt.want)
+			}
+		})
+	}
+}
+
+func TestCreateAPIKeyFromPrivateKey(t *testing.T) {
+	privateKey := ed25519.NewKeyFromSeed(testSeed())
+	walletAddress := solanaWalletAddress(privateKey)
+	const message = "Sign this message to create your Worm API key. Nonce: nonce_test"
+	const nonce = "nonce_test"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/auth/keys/challenge/":
+			if r.Method != http.MethodPost {
+				t.Fatalf("challenge method = %s, want POST", r.Method)
+			}
+			var req CreateAuthChallengeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Fatalf("decode challenge request: %v", err)
+			}
+			if req.WalletAddress != walletAddress {
+				t.Fatalf("wallet_address = %q, want %q", req.WalletAddress, walletAddress)
+			}
+			_, _ = w.Write([]byte(`{"data":{"nonce":"nonce_test","message":"Sign this message to create your Worm API key. Nonce: nonce_test","expires_in_seconds":600},"meta":{},"error":null}`))
+		case "/auth/keys/create/":
+			if r.Method != http.MethodPost {
+				t.Fatalf("create method = %s, want POST", r.Method)
+			}
+			var req CreateAPIKeyRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Fatalf("decode create request: %v", err)
+			}
+			if req.WalletAddress != walletAddress || req.Message != message || req.Nonce != nonce {
+				t.Fatalf("create request = %#v", req)
+			}
+			signature, err := hex.DecodeString(req.Signature)
+			if err != nil {
+				t.Fatalf("signature is not hex: %v", err)
+			}
+			publicKey := privateKey.Public().(ed25519.PublicKey)
+			if !ed25519.Verify(publicKey, []byte(message), signature) {
+				t.Fatal("signature did not verify")
+			}
+			_, _ = w.Write([]byte(`{"data":{"api_key":"wk_test","secret":"ws_test"},"meta":{},"error":null}`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{BaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	creds, err := client.CreateAPIKeyFromPrivateKey(context.Background(), base58.Encode(privateKey))
+	if err != nil {
+		t.Fatalf("CreateAPIKeyFromPrivateKey: %v", err)
+	}
+	if creds.APIKey != "wk_test" || creds.Secret != "ws_test" {
+		t.Fatalf("creds = %#v", creds)
+	}
+}
+
 func TestContextCanceled(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		<-r.Context().Done()
@@ -504,6 +621,27 @@ func TestRepresentativeEndpoints(t *testing.T) {
 	if resp, err := client.StartRedeem(context.Background(), StartRedeemRequest{MarketConditionID: "market-1"}); err != nil || resp.Pubkey == nil || *resp.Pubkey != "redeem-1" {
 		t.Fatalf("StartRedeem = %#v, %v", resp, err)
 	}
+}
+
+func testSeed() []byte {
+	seed := make([]byte, ed25519.SeedSize)
+	for i := range seed {
+		seed[i] = byte(i + 1)
+	}
+	return seed
+}
+
+func mustJSONBytes(t *testing.T, value []byte) string {
+	t.Helper()
+	items := make([]int, len(value))
+	for i, b := range value {
+		items[i] = int(b)
+	}
+	body, err := json.Marshal(items)
+	if err != nil {
+		t.Fatalf("json marshal: %v", err)
+	}
+	return string(body)
 }
 
 func testSignature(secret string, payload string) string {

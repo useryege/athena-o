@@ -37,6 +37,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
+	github.com/mr-tron/base58 v1.3.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/patrickmn/go-cache v2.1.1-0.20191004192108-46f407853014+incompatible
 	github.com/prometheus/client_golang v1.23.2

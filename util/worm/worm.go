@@ -3,6 +3,7 @@ package worm
 import (
 	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -15,6 +16,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mr-tron/base58/base58"
 )
 
 const (
@@ -38,6 +41,7 @@ type Client interface {
 	GetEvent(ctx context.Context, conditionID string) (*Event, error)
 	CreateAuthChallenge(ctx context.Context, request CreateAuthChallengeRequest) (*AuthChallenge, error)
 	CreateAPIKey(ctx context.Context, request CreateAPIKeyRequest) (*APIKeySecret, error)
+	CreateAPIKeyFromPrivateKey(ctx context.Context, privateKey string) (*APIKeySecret, error)
 	ListAPIKeys(ctx context.Context) (*ListAPIKeysResponse, error)
 	RevokeAPIKey(ctx context.Context, keyID string) (*APIKey, error)
 	CreateOrderDraft(ctx context.Context, request CreateOrderDraftRequest) (*DraftMessage, error)
@@ -883,6 +887,27 @@ func (c *clientImpl) CreateAPIKey(ctx context.Context, request CreateAPIKeyReque
 	return &data, err
 }
 
+func (c *clientImpl) CreateAPIKeyFromPrivateKey(ctx context.Context, privateKey string) (*APIKeySecret, error) {
+	key, err := parseSolanaPrivateKey(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	walletAddress := solanaWalletAddress(key)
+
+	challenge, err := c.CreateAuthChallenge(ctx, CreateAuthChallengeRequest{WalletAddress: walletAddress})
+	if err != nil {
+		return nil, err
+	}
+
+	signature := ed25519.Sign(key, []byte(challenge.Message))
+	return c.CreateAPIKey(ctx, CreateAPIKeyRequest{
+		WalletAddress: walletAddress,
+		Message:       challenge.Message,
+		Signature:     hex.EncodeToString(signature),
+		Nonce:         challenge.Nonce,
+	})
+}
+
 func (c *clientImpl) ListAPIKeys(ctx context.Context) (*ListAPIKeysResponse, error) {
 	var data []APIKey
 	meta, err := c.do(ctx, http.MethodGet, "/auth/keys/", nil, nil, true, &data)
@@ -1187,6 +1212,62 @@ func (c *clientImpl) buildURL(path string, query url.Values) (*url.URL, error) {
 		endpoint.RawQuery = query.Encode()
 	}
 	return endpoint, nil
+}
+
+func parseSolanaPrivateKey(input string) (ed25519.PrivateKey, error) {
+	trimmed := strings.TrimSpace(input)
+	if trimmed == "" {
+		return nil, errors.New("solana private key is required")
+	}
+
+	var raw []byte
+	var err error
+	if strings.HasPrefix(trimmed, "[") {
+		if err := json.Unmarshal([]byte(trimmed), &raw); err != nil {
+			return nil, fmt.Errorf("invalid solana private key json: %w", err)
+		}
+	} else if isHexEncodedKey(trimmed) {
+		raw, err = hex.DecodeString(trimmed)
+		if err != nil {
+			return nil, fmt.Errorf("invalid solana private key hex: %w", err)
+		}
+	} else {
+		raw, err = base58.Decode(trimmed)
+		if err != nil {
+			return nil, fmt.Errorf("invalid solana private key base58: %w", err)
+		}
+	}
+
+	switch len(raw) {
+	case ed25519.SeedSize:
+		return ed25519.NewKeyFromSeed(raw), nil
+	case ed25519.PrivateKeySize:
+		key := ed25519.PrivateKey(raw)
+		derived := ed25519.NewKeyFromSeed(key.Seed())
+		if !bytes.Equal(derived, key) {
+			return nil, errors.New("invalid solana private key: public key does not match seed")
+		}
+		return key, nil
+	default:
+		return nil, fmt.Errorf("invalid solana private key length: got %d bytes, want 32-byte seed or 64-byte keypair", len(raw))
+	}
+}
+
+func isHexEncodedKey(input string) bool {
+	if len(input) != ed25519.SeedSize*2 && len(input) != ed25519.PrivateKeySize*2 {
+		return false
+	}
+	for _, r := range input {
+		if (r < '0' || r > '9') && (r < 'a' || r > 'f') && (r < 'A' || r > 'F') {
+			return false
+		}
+	}
+	return true
+}
+
+func solanaWalletAddress(privateKey ed25519.PrivateKey) string {
+	publicKey := privateKey.Public().(ed25519.PublicKey)
+	return base58.Encode(publicKey)
 }
 
 func (c *clientImpl) sign(req *http.Request, method string, rawBody []byte) {

@@ -15,6 +15,46 @@ go test ./util/worm
 
 These tests validate request construction, response decoding, signing behavior, and error handling against local fake HTTP servers.
 
+## Create API Credentials From a Solana Private Key
+
+`CreateAPIKeyFromPrivateKey` performs the Worm API key bootstrap flow:
+
+1. request an auth challenge for the wallet derived from the private key;
+2. sign the challenge message with the Solana keypair;
+3. exchange the signed challenge for `WORM_API_KEY` and `WORM_API_SECRET`.
+
+The private key input can be a Solana base58 keypair, a 128-character hex keypair, a Solana CLI JSON byte array, or a 32-byte seed in one of those encodings.
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/useryege/athena/util/worm"
+)
+
+func main() {
+	client, err := worm.NewClient(worm.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	creds, err := client.CreateAPIKeyFromPrivateKey(context.Background(), os.Getenv("WORM_PRIVATE_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("export WORM_API_KEY=%q\n", creds.APIKey)
+	fmt.Printf("export WORM_API_SECRET=%q\n", creds.Secret)
+}
+```
+
+The secret is returned by Worm only once. Store it in a local environment variable, CI secret, or secret manager. Do not commit private keys, API secrets, `.env` files, or generated credentials to git.
+
 ## Run Public READ Integration Test
 
 The integration test is opt-in because it depends on the external Worm API and network availability:
@@ -49,6 +89,21 @@ ok  	github.com/useryege/athena/util/worm	1.908s
 ```
 
 If the integration test fails, first check network connectivity and whether `https://api.worm.wtf` is reachable. Empty bid or ask levels are valid; the test only requires the order book response to decode successfully.
+
+## Run API Key Bootstrap Integration Test
+
+This authenticated bootstrap integration test calls `CreateAPIKeyFromPrivateKey` with a real Solana private key from the environment. It creates a real Worm API key and secret.
+
+It is protected by two opt-in switches:
+
+```bash
+WORM_INTEGRATION=1 \
+WORM_API_KEY_BOOTSTRAP_INTEGRATION=1 \
+WORM_PRIVATE_KEY='59mJJLBC22xe2Bg9mTozn47fYdwfeDkwswE9t8RFnmrNmn3Lr6bf3Abo8ua4GUpFdaEnikfLhrhAfkykWWwyoejN' \
+go test -v ./util/worm -run TestIntegrationCreateAPIKeyFromPrivateKey
+```
+
+The test only checks that Worm returns non-empty credentials. It does not log the private key, signature, request payload, API secret, or full credentials. The secret is returned by Worm only once; store generated credentials securely, or revoke the generated key if the test was only for validation.
 
 ## Run CreateOrderDraft Integration Test
 
