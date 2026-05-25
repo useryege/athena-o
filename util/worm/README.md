@@ -55,40 +55,47 @@ func main() {
 
 The secret is returned by Worm only once. Store it in a local environment variable, CI secret, or secret manager. Do not commit private keys, API secrets, `.env` files, or generated credentials to git.
 
-## Run Public READ Integration Test
+## Run Public READ Integration Tests
 
-The integration test is opt-in because it depends on the external Worm API and network availability:
+The public READ integration tests are opt-in because they depend on the external Worm API and network availability:
 
 ```bash
-WORM_INTEGRATION=1 go test -v ./util/worm -run TestIntegrationPublicReadFlow
+WORM_INTEGRATION=1 go test -v ./util/worm -run '^TestIntegrationPublic'
 ```
 
-The test uses the default base URL:
+The tests use the default base URL:
 
 ```text
 https://api.worm.wtf
 ```
 
-It only calls public READ endpoints:
+They only call public READ endpoints:
 
+- `Search`
 - `ListMarkets`
 - `GetMarket`
+- `GetMarketStats`
 - `GetMarketPrice`
 - `GetMarketOrderBook`
+- `GetMarketCandles`
+- `ListMarketTrades`
+- `ListMarketMarginActivity`
+- `ListEvents`
+- `GetEvent`
 
-It does not require `WORM_API_KEY` or `WORM_API_SECRET`, and it does not call account, order, redeem, position, submit, cancel, or other WRITE/authenticated endpoints.
+They do not require `WORM_API_KEY` or `WORM_API_SECRET`, and they do not call account, order, redeem, position, submit, cancel, or other WRITE/authenticated endpoints.
 
 Example successful output:
 
 ```text
-=== RUN   TestIntegrationPublicReadFlow
-    worm_integration_test.go:63: market="Above 76,772" state=open price=0.987365 rules=3 bid_levels=0 ask_levels=0
---- PASS: TestIntegrationPublicReadFlow (1.91s)
+=== RUN   TestIntegrationPublicGetMarketOrderBook
+    worm_integration_test.go:155: GetMarketOrderBook returned market="..." is_yes=false bid_levels=0 ask_levels=0
+--- PASS: TestIntegrationPublicGetMarketOrderBook (1.91s)
 PASS
 ok  	github.com/useryege/athena/util/worm	1.908s
 ```
 
-If the integration test fails, first check network connectivity and whether `https://api.worm.wtf` is reachable. Empty bid or ask levels are valid; the test only requires the order book response to decode successfully.
+If the integration tests fail, first check network connectivity and whether `https://api.worm.wtf` is reachable. Empty bid or ask levels, candles, trades, and margin activity rows are valid external API states; the tests only validate returned rows when the API returns them.
 
 ## Run API Key Bootstrap Integration Test
 
