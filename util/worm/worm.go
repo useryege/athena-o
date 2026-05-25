@@ -29,6 +29,7 @@ const (
 
 type Client interface {
 	Search(ctx context.Context, options SearchOptions) (*SearchResponse, error)
+	// MARKETS
 	ListMarkets(ctx context.Context, options ListMarketsOptions) (*ListMarketsResponse, error)
 	GetMarket(ctx context.Context, conditionID string) (*Market, error)
 	GetMarketStats(ctx context.Context, conditionID string) (*MarketStats, error)
@@ -37,23 +38,29 @@ type Client interface {
 	GetMarketCandles(ctx context.Context, conditionID string, options GetMarketCandlesOptions) (*ListMarketCandlesResponse, error)
 	ListMarketTrades(ctx context.Context, conditionID string, options ListMarketTradesOptions) (*ListMarketTradesResponse, error)
 	ListMarketMarginActivity(ctx context.Context, conditionID string, options ListMarketMarginActivityOptions) (*ListMarketMarginActivityResponse, error)
+	// EVENTS
 	ListEvents(ctx context.Context, options ListEventsOptions) (*ListEventsResponse, error)
 	GetEvent(ctx context.Context, conditionID string) (*Event, error)
+	// AUTH KEYS
 	CreateAuthChallenge(ctx context.Context, request CreateAuthChallengeRequest) (*AuthChallenge, error)
 	CreateAPIKey(ctx context.Context, request CreateAPIKeyRequest) (*APIKeySecret, error)
 	CreateAPIKeyFromPrivateKey(ctx context.Context, privateKey string) (*APIKeySecret, error)
 	ListAPIKeys(ctx context.Context) (*ListAPIKeysResponse, error)
 	RevokeAPIKey(ctx context.Context, keyID string) (*APIKey, error)
+	// ORDER
 	CreateOrderDraft(ctx context.Context, request CreateOrderDraftRequest) (*DraftMessage, error)
 	SubmitOrder(ctx context.Context, pubkey string, request SubmitSignatureRequest) (*Order, error)
 	GetOrder(ctx context.Context, pubkey string) (*Order, error)
 	ListOrders(ctx context.Context, options ListOrdersOptions) (*ListOrdersResponse, error)
 	CreateCancelDraft(ctx context.Context, pubkey string) (*DraftMessage, error)
 	SubmitOrderCancel(ctx context.Context, pubkey string, request SubmitSignatureRequest) (*Order, error)
+	// TRADE
 	ListTrades(ctx context.Context, options ListTradesOptions) (*ListTradesResponse, error)
+	// ACCOUNT
 	GetAccountSummary(ctx context.Context) (*AccountSummary, error)
 	GetAccountPnL(ctx context.Context, options GetAccountPnLOptions) (*AccountPnL, error)
 	ListAccountAssets(ctx context.Context, options ListAccountAssetsOptions) (*ListAccountAssetsResponse, error)
+	// MARGIN
 	EstimateMarginPosition(ctx context.Context, options EstimateMarginPositionOptions) (*MarginPositionEstimate, error)
 	CreatePositionRequest(ctx context.Context, request CreatePositionRequestRequest) (*PositionRequest, error)
 	SubmitPositionRequest(ctx context.Context, pubkey string, request SubmitSignatureRequest) (*PositionRequest, error)
@@ -67,6 +74,7 @@ type Client interface {
 	CloseMarginPosition(ctx context.Context, pubkey string, options CloseMarginPositionOptions) (*CloseMarginPositionResult, error)
 	ListMarginSettlements(ctx context.Context, options ListMarginSettlementsOptions) (*ListMarginSettlementsResponse, error)
 	ClaimPositionSettlement(ctx context.Context, pubkey string) (*ClaimPositionSettlementResult, error)
+	// REDEEMS
 	ListRedeems(ctx context.Context, options ListRedeemsOptions) (*ListRedeemsResponse, error)
 	StartRedeem(ctx context.Context, request StartRedeemRequest) (*DraftMessage, error)
 	GetRedeem(ctx context.Context, pubkey string) (*Redeem, error)

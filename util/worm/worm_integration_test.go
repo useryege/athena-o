@@ -2,6 +2,8 @@ package worm
 
 import (
 	"context"
+	"crypto/ed25519"
+	"encoding/hex"
 	"os"
 	"testing"
 	"time"
@@ -274,36 +276,89 @@ func TestIntegrationPublicGetEvent(t *testing.T) {
 	t.Logf("GetEvent returned condition_id=%q title=%q markets=%d", event.ConditionID, event.Title, len(event.Markets))
 }
 
-func TestIntegrationCreateAPIKeyFromPrivateKey(t *testing.T) {
-	if os.Getenv("WORM_INTEGRATION") != "1" {
-		t.Skip("set WORM_INTEGRATION=1 to run real Worm API integration tests")
-	}
-	if os.Getenv("WORM_API_KEY_BOOTSTRAP_INTEGRATION") != "1" {
-		t.Skip("set WORM_API_KEY_BOOTSTRAP_INTEGRATION=1 to run real CreateAPIKeyFromPrivateKey integration test")
-	}
+func TestIntegrationAuthKeysCreateAuthChallenge(t *testing.T) {
+	fixture := newAuthKeysIntegrationFixture(t)
+	defer fixture.cancel()
 
-	privateKey := requiredIntegrationEnv(t, "WORM_PRIVATE_KEY")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	client, err := NewClient(Config{})
+	challenge, err := fixture.client.CreateAuthChallenge(fixture.ctx, CreateAuthChallengeRequest{WalletAddress: fixture.walletAddress})
 	if err != nil {
-		t.Fatalf("NewClient: %v", err)
+		t.Fatalf("CreateAuthChallenge: %v", err)
 	}
+	validateAuthChallenge(t, challenge)
 
-	creds, err := client.CreateAPIKeyFromPrivateKey(ctx, privateKey)
+	t.Logf("CreateAuthChallenge returned nonce=%t message=%t expires_in_seconds=%d", challenge.Nonce != "", challenge.Message != "", challenge.ExpiresInSeconds)
+}
+
+func TestIntegrationAuthKeysCreateAPIKey(t *testing.T) {
+	fixture := newAuthKeysIntegrationFixture(t)
+	defer fixture.cancel()
+
+	challenge, err := fixture.client.CreateAuthChallenge(fixture.ctx, CreateAuthChallengeRequest{WalletAddress: fixture.walletAddress})
+	if err != nil {
+		t.Fatalf("CreateAuthChallenge: %v", err)
+	}
+	validateAuthChallenge(t, challenge)
+
+	signature := ed25519.Sign(fixture.privateKey, []byte(challenge.Message))
+	creds, err := fixture.client.CreateAPIKey(fixture.ctx, CreateAPIKeyRequest{
+		WalletAddress: fixture.walletAddress,
+		Message:       challenge.Message,
+		Signature:     hex.EncodeToString(signature),
+		Nonce:         challenge.Nonce,
+	})
+	if err != nil {
+		t.Fatalf("CreateAPIKey: %v", err)
+	}
+	validateAPIKeySecret(t, creds)
+	revoke := registerTemporaryAPIKeyCleanup(t, creds)
+
+	revoked := revoke(fixture.ctx)
+	validateRevokedAPIKey(t, revoked, creds.APIKey)
+
+	t.Logf("CreateAPIKey returned api_key=%t secret=%t and revoked temporary key=%t", creds.APIKey != "", creds.Secret != "", revoked.RevokedAt != nil)
+}
+
+func TestIntegrationAuthKeysCreateAPIKeyFromPrivateKey(t *testing.T) {
+	fixture := newAuthKeysIntegrationFixture(t)
+	defer fixture.cancel()
+
+	creds, err := fixture.client.CreateAPIKeyFromPrivateKey(fixture.ctx, fixture.privateKeyInput)
 	if err != nil {
 		t.Fatalf("CreateAPIKeyFromPrivateKey: %v", err)
 	}
-	if creds.APIKey == "" {
-		t.Fatal("CreateAPIKeyFromPrivateKey returned empty APIKey")
+	validateAPIKeySecret(t, creds)
+	revoke := registerTemporaryAPIKeyCleanup(t, creds)
+
+	revoked := revoke(fixture.ctx)
+	validateRevokedAPIKey(t, revoked, creds.APIKey)
+
+	t.Logf("CreateAPIKeyFromPrivateKey returned api_key=%t secret=%t and revoked temporary key=%t", creds.APIKey != "", creds.Secret != "", revoked.RevokedAt != nil)
+}
+
+func TestIntegrationAuthKeysListAndRevokeAPIKeys(t *testing.T) {
+	fixture := newAuthKeysIntegrationFixture(t)
+	defer fixture.cancel()
+
+	creds, err := fixture.client.CreateAPIKeyFromPrivateKey(fixture.ctx, fixture.privateKeyInput)
+	if err != nil {
+		t.Fatalf("CreateAPIKeyFromPrivateKey: %v", err)
 	}
-	if creds.Secret == "" {
-		t.Fatal("CreateAPIKeyFromPrivateKey returned empty Secret")
+	validateAPIKeySecret(t, creds)
+	revoke := registerTemporaryAPIKeyCleanup(t, creds)
+
+	authClient := newAuthenticatedIntegrationClient(t, creds)
+	keys, err := authClient.ListAPIKeys(fixture.ctx)
+	if err != nil {
+		t.Fatalf("ListAPIKeys: %v", err)
+	}
+	if !hasAPIKey(keys.Keys, creds.APIKey) {
+		t.Fatalf("ListAPIKeys did not include newly created temporary key")
 	}
 
-	t.Logf("CreateAPIKeyFromPrivateKey returned api_key=%t secret=%t", creds.APIKey != "", creds.Secret != "")
+	revoked := revoke(fixture.ctx)
+	validateRevokedAPIKey(t, revoked, creds.APIKey)
+
+	t.Logf("ListAPIKeys returned keys=%d and RevokeAPIKey revoked temporary key=%t", len(keys.Keys), revoked.RevokedAt != nil)
 }
 
 func TestIntegrationCreateOrderDraft(t *testing.T) {
@@ -382,6 +437,98 @@ func TestIntegrationCreateOrderDraft(t *testing.T) {
 		resp.Pubkey != nil && *resp.Pubkey != "",
 		resp.Message != nil && *resp.Message != "",
 	)
+}
+
+type authKeysIntegrationFixture struct {
+	ctx             context.Context
+	cancel          context.CancelFunc
+	client          Client
+	privateKeyInput string
+	privateKey      ed25519.PrivateKey
+	walletAddress   string
+}
+
+func newAuthKeysIntegrationFixture(t *testing.T) authKeysIntegrationFixture {
+	t.Helper()
+	if os.Getenv("WORM_INTEGRATION") != "1" {
+		t.Skip("set WORM_INTEGRATION=1 to run real Worm API integration tests")
+	}
+	if os.Getenv("WORM_AUTH_KEYS_INTEGRATION") != "1" {
+		t.Skip("set WORM_AUTH_KEYS_INTEGRATION=1 to run real auth-key integration tests")
+	}
+
+	privateKeyInput := requiredIntegrationEnv(t, "WORM_PRIVATE_KEY")
+	privateKey, err := parseSolanaPrivateKey(privateKeyInput)
+	if err != nil {
+		t.Fatalf("parse WORM_PRIVATE_KEY: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	client, err := NewClient(Config{})
+	if err != nil {
+		cancel()
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	return authKeysIntegrationFixture{
+		ctx:             ctx,
+		cancel:          cancel,
+		client:          client,
+		privateKeyInput: privateKeyInput,
+		privateKey:      privateKey,
+		walletAddress:   solanaWalletAddress(privateKey),
+	}
+}
+
+func newAuthenticatedIntegrationClient(t *testing.T, creds *APIKeySecret) Client {
+	t.Helper()
+	client, err := NewClient(Config{
+		APIKey:    creds.APIKey,
+		APISecret: creds.Secret,
+	})
+	if err != nil {
+		t.Fatalf("NewClient with temporary credentials: %v", err)
+	}
+	return client
+}
+
+func registerTemporaryAPIKeyCleanup(t *testing.T, creds *APIKeySecret) func(context.Context) *APIKey {
+	t.Helper()
+	revoked := false
+	t.Cleanup(func() {
+		if revoked {
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		key, err := revokeTemporaryAPIKey(ctx, creds)
+		if err != nil {
+			t.Logf("failed to cleanup temporary Worm API key: %v", err)
+			return
+		}
+		t.Logf("cleanup revoked temporary Worm API key=%t revoked_at=%t", key.KeyID != "", key.RevokedAt != nil)
+	})
+
+	return func(ctx context.Context) *APIKey {
+		t.Helper()
+		key, err := revokeTemporaryAPIKey(ctx, creds)
+		if err != nil {
+			t.Fatalf("RevokeAPIKey: %v", err)
+		}
+		revoked = true
+		return key
+	}
+}
+
+func revokeTemporaryAPIKey(ctx context.Context, creds *APIKeySecret) (*APIKey, error) {
+	client, err := NewClient(Config{
+		APIKey:    creds.APIKey,
+		APISecret: creds.Secret,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return client.RevokeAPIKey(ctx, creds.APIKey)
 }
 
 func newPublicIntegrationClient(t *testing.T) (context.Context, context.CancelFunc, Client) {
@@ -486,6 +633,51 @@ func validateOrderBookLevels(t *testing.T, side string, levels []OrderBookLevel)
 			t.Fatalf("%s[%d] has empty total_amount", side, i)
 		}
 	}
+}
+
+func validateAuthChallenge(t *testing.T, challenge *AuthChallenge) {
+	t.Helper()
+	if challenge.Nonce == "" {
+		t.Fatal("CreateAuthChallenge returned empty nonce")
+	}
+	if challenge.Message == "" {
+		t.Fatal("CreateAuthChallenge returned empty message")
+	}
+	if challenge.ExpiresInSeconds <= 0 {
+		t.Fatalf("CreateAuthChallenge returned expires_in_seconds=%d, want positive", challenge.ExpiresInSeconds)
+	}
+}
+
+func validateAPIKeySecret(t *testing.T, creds *APIKeySecret) {
+	t.Helper()
+	if creds.APIKey == "" {
+		t.Fatal("API key response returned empty api_key")
+	}
+	if creds.Secret == "" {
+		t.Fatal("API key response returned empty secret")
+	}
+}
+
+func validateRevokedAPIKey(t *testing.T, key *APIKey, wantKeyID string) {
+	t.Helper()
+	if key.KeyID == "" {
+		t.Fatal("RevokeAPIKey returned empty key_id")
+	}
+	if key.KeyID != wantKeyID {
+		t.Fatalf("RevokeAPIKey returned key_id=%q, want %q", key.KeyID, wantKeyID)
+	}
+	if key.RevokedAt == nil {
+		t.Fatal("RevokeAPIKey returned nil revoked_at")
+	}
+}
+
+func hasAPIKey(keys []APIKey, keyID string) bool {
+	for _, key := range keys {
+		if key.KeyID == keyID {
+			return true
+		}
+	}
+	return false
 }
 
 func requiredIntegrationEnv(t *testing.T, name string) string {

@@ -97,20 +97,28 @@ ok  	github.com/useryege/athena/util/worm	1.908s
 
 If the integration tests fail, first check network connectivity and whether `https://api.worm.wtf` is reachable. Empty bid or ask levels, candles, trades, and margin activity rows are valid external API states; the tests only validate returned rows when the API returns them.
 
-## Run API Key Bootstrap Integration Test
+## Run Auth-Key Integration Tests
 
-This authenticated bootstrap integration test calls `CreateAPIKeyFromPrivateKey` with a real Solana private key from the environment. It creates a real Worm API key and secret.
+These authenticated integration tests cover the Worm auth-key bootstrap and key-management endpoints with a real Solana private key from the environment. They create real temporary Worm API keys and revoke the temporary keys they create.
 
 It is protected by two opt-in switches:
 
 ```bash
 WORM_INTEGRATION=1 \
-WORM_API_KEY_BOOTSTRAP_INTEGRATION=1 \
-WORM_PRIVATE_KEY='...' \
-go test -v ./util/worm -run TestIntegrationCreateAPIKeyFromPrivateKey
+WORM_AUTH_KEYS_INTEGRATION=1 \
+WORM_PRIVATE_KEY='59mJJLBC22xe2Bg9mTozn47fYdwfeDkwswE9t8RFnmrNmn3Lr6bf3Abo8ua4GUpFdaEnikfLhrhAfkykWWwyoejN' \
+go test -v ./util/worm -run '^TestIntegrationAuthKeys'
 ```
 
-The test only checks that Worm returns non-empty credentials. It does not log the private key, signature, request payload, API secret, or full credentials. The secret is returned by Worm only once; store generated credentials securely, or revoke the generated key if the test was only for validation.
+The suite covers:
+
+- `CreateAuthChallenge`
+- `CreateAPIKey`
+- `CreateAPIKeyFromPrivateKey`
+- `ListAPIKeys`
+- `RevokeAPIKey`
+
+The tests do not use `WORM_API_KEY` or `WORM_API_SECRET`, and they do not revoke user-provided credentials. They do not log the private key, signatures, request payloads, API secrets, or full credentials. The secret is returned by Worm only once; store any manually generated credentials securely.
 
 ## Run CreateOrderDraft Integration Test
 
