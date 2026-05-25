@@ -37,7 +37,7 @@ func TestListMarketsPublicRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		gotRawQuery = r.URL.RawQuery
-		gotAPIKey = r.Header.Get("WORM_API_KEY")
+		gotAPIKey = r.Header.Get(headerAPIKey)
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %s, want GET", r.Method)
 		}
@@ -83,7 +83,7 @@ func TestListMarketsPublicRequest(t *testing.T) {
 		}
 	}
 	if gotAPIKey != "" {
-		t.Fatalf("WORM_API_KEY = %q, want empty for public endpoint", gotAPIKey)
+		t.Fatalf("%s = %q, want empty for public endpoint", headerAPIKey, gotAPIKey)
 	}
 	if len(resp.Markets) != 1 || resp.Markets[0].ConditionID != "market-1" {
 		t.Fatalf("markets = %#v", resp.Markets)
@@ -310,9 +310,9 @@ func TestAuthenticatedRequestSignsExactPayload(t *testing.T) {
 	var gotSignature string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.RequestURI()
-		gotAPIKey = r.Header.Get("WORM_API_KEY")
-		gotTimestamp = r.Header.Get("WORM_TIMESTAMP")
-		gotSignature = r.Header.Get("WORM_SIGNATURE")
+		gotAPIKey = r.Header.Get(headerAPIKey)
+		gotTimestamp = r.Header.Get(headerTimestamp)
+		gotSignature = r.Header.Get(headerSignature)
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Fatalf("read request: %v", err)

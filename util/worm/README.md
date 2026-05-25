@@ -21,7 +21,7 @@ These tests validate request construction, response decoding, signing behavior, 
 
 1. request an auth challenge for the wallet derived from the private key;
 2. sign the challenge message with the Solana keypair;
-3. exchange the signed challenge for `WORM_API_KEY` and `WORM_API_SECRET`.
+3. exchange the signed challenge for a Worm API key and API secret.
 
 The private key input can be a Solana base58 keypair, a 128-character hex keypair, a Solana CLI JSON byte array, or a 32-byte seed in one of those encodings.
 
@@ -106,7 +106,7 @@ It is protected by two opt-in switches:
 ```bash
 WORM_INTEGRATION=1 \
 WORM_AUTH_KEYS_INTEGRATION=1 \
-WORM_PRIVATE_KEY='59mJJLBC22xe2Bg9mTozn47fYdwfeDkwswE9t8RFnmrNmn3Lr6bf3Abo8ua4GUpFdaEnikfLhrhAfkykWWwyoejN' \
+WORM_PRIVATE_KEY='<your-solana-private-key>' \
 go test -v ./util/worm -run '^TestIntegrationAuthKeys'
 ```
 
@@ -129,7 +129,7 @@ It is protected by two opt-in switches:
 ```bash
 WORM_INTEGRATION=1 \
 WORM_ORDER_DRAFT_INTEGRATION=1 \
-WORM_PRIVATE_KEY='59mJJLBC22xe2Bg9mTozn47fYdwfeDkwswE9t8RFnmrNmn3Lr6bf3Abo8ua4GUpFdaEnikfLhrhAfkykWWwyoejN' \
+WORM_PRIVATE_KEY='<your-solana-private-key>' \
 go test -v ./util/worm -run TestIntegrationCreateOrderDraft
 ```
 

@@ -19,17 +19,21 @@ Most read-only endpoints are public. Auth is required for trading, account, marg
 
 All authenticated requests require these headers:
 
-<ParamField header="WORM_API_KEY" type="string" required>
+<ParamField header="WORM-API-KEY" type="string" required>
   API key id.
 </ParamField>
 
-<ParamField header="WORM_TIMESTAMP" type="string" required>
+<ParamField header="WORM-TIMESTAMP" type="string" required>
   Current unix timestamp in seconds.
 </ParamField>
 
-<ParamField header="WORM_SIGNATURE" type="string" required>
+<ParamField header="WORM-SIGNATURE" type="string" required>
   Lowercase hex `HMAC-SHA256` digest of the signing payload.
 </ParamField>
+
+<Note>
+  The live API currently recognizes the hyphenated HTTP header names above. Underscore header names such as `WORM_API_KEY` may be dropped or ignored by intermediaries.
+</Note>
 
 ## Signature Payload
 
@@ -158,9 +162,9 @@ worm_signature = hmac.new(API_SECRET.encode(), payload, hashlib.sha256).hexdiges
 resp = requests.get(
     f"{BASE}{path}",
     headers={
-        "WORM_API_KEY": API_KEY,
-        "WORM_TIMESTAMP": timestamp,
-        "WORM_SIGNATURE": worm_signature,
+        "WORM-API-KEY": API_KEY,
+        "WORM-TIMESTAMP": timestamp,
+        "WORM-SIGNATURE": worm_signature,
     },
     timeout=30,
 )

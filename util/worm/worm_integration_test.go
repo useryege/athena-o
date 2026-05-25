@@ -310,6 +310,7 @@ func TestIntegrationAuthKeysCreateAPIKey(t *testing.T) {
 		t.Fatalf("CreateAPIKey: %v", err)
 	}
 	validateAPIKeySecret(t, creds)
+
 	revoke := registerTemporaryAPIKeyCleanup(t, creds)
 
 	revoked := revoke(fixture.ctx)

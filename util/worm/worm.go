@@ -25,6 +25,10 @@ const (
 	DefaultTimeout = 30 * time.Second
 
 	errorBodyLimit = 4096
+
+	headerAPIKey    = "WORM-API-KEY"
+	headerTimestamp = "WORM-TIMESTAMP"
+	headerSignature = "WORM-SIGNATURE"
 )
 
 type Client interface {
@@ -1283,9 +1287,9 @@ func (c *clientImpl) sign(req *http.Request, method string, rawBody []byte) {
 	payload := timestamp + method + req.URL.RequestURI() + string(rawBody)
 	mac := hmac.New(sha256.New, []byte(c.config.APISecret))
 	_, _ = mac.Write([]byte(payload))
-	req.Header.Set("WORM_API_KEY", c.config.APIKey)
-	req.Header.Set("WORM_TIMESTAMP", timestamp)
-	req.Header.Set("WORM_SIGNATURE", hex.EncodeToString(mac.Sum(nil)))
+	req.Header.Set(headerAPIKey, c.config.APIKey)
+	req.Header.Set(headerTimestamp, timestamp)
+	req.Header.Set(headerSignature, hex.EncodeToString(mac.Sum(nil)))
 }
 
 type responseEnvelope struct {
