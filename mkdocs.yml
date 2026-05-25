@@ -32,7 +32,7 @@ site_name: Athena - Declarative GitOps CD for Kubernetes
 site_url: !ENV READTHEDOCS_CANONICAL_URL
 strict: true
 theme:
-  custom_dir: overrides
+  custom_dir: docs/overrides
   favicon: assets/favicon.png
   font:
     text: Work Sans
