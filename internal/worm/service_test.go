@@ -19,9 +19,11 @@ import (
 type fakeWormMarketClient struct {
 	mu               sync.Mutex
 	listCalls        int
+	listRequests     []utilworm.ListMarketsOptions
 	options          utilworm.ListMarketsOptions
 	resp             *utilworm.ListMarketsResponse
 	err              error
+	detailCalls      int
 	conditionID      string
 	marketResp       *utilworm.Market
 	marketStatsResp  *utilworm.MarketStats
@@ -37,12 +39,17 @@ func (f *fakeWormMarketClient) ListMarkets(_ context.Context, options utilworm.L
 	defer f.mu.Unlock()
 	f.listCalls++
 	f.options = options
+	f.listRequests = append(f.listRequests, options)
+	if f.resp == nil {
+		return &utilworm.ListMarketsResponse{}, f.err
+	}
 	return f.resp, f.err
 }
 
 func (f *fakeWormMarketClient) GetMarket(_ context.Context, conditionID string) (*utilworm.Market, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.detailCalls++
 	f.conditionID = conditionID
 	if f.detailErr != nil {
 		return nil, f.detailErr
@@ -68,6 +75,9 @@ func (f *fakeWormMarketClient) GetMarketPrice(_ context.Context, conditionID str
 	if f.detailErr != nil {
 		return nil, f.detailErr
 	}
+	if len(f.priceResp) == 0 {
+		return &utilworm.MarketPrice{ConditionID: conditionID, IsYes: boolValue(options.IsYes)}, nil
+	}
 	price := f.priceResp[0]
 	f.priceResp = f.priceResp[1:]
 	return price, nil
@@ -81,6 +91,9 @@ func (f *fakeWormMarketClient) GetMarketOrderBook(_ context.Context, conditionID
 	if f.detailErr != nil {
 		return nil, f.detailErr
 	}
+	if len(f.orderBookResp) == 0 {
+		return &utilworm.MarketOrderBook{Market: conditionID, IsYes: boolValue(options.IsYes)}, nil
+	}
 	book := f.orderBookResp[0]
 	f.orderBookResp = f.orderBookResp[1:]
 	return book, nil
@@ -92,10 +105,32 @@ func (f *fakeWormMarketClient) getListCalls() int {
 	return f.listCalls
 }
 
+func (f *fakeWormMarketClient) getListCallsForCursor(cursor string) int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	calls := 0
+	for _, req := range f.listRequests {
+		if req.Cursor == cursor {
+			calls++
+		}
+	}
+	return calls
+}
+
+func (f *fakeWormMarketClient) getDetailCalls() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.detailCalls
+}
+
 func (f *fakeWormMarketClient) setListError(err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.err = err
+}
+
+func boolValue(value *bool) bool {
+	return value != nil && *value
 }
 
 func newTestRedisService(t *testing.T, client *fakeWormMarketClient, config CacheConfig) (*Service, func()) {
@@ -107,6 +142,7 @@ func newTestRedisService(t *testing.T, client *fakeWormMarketClient, config Cach
 	redisClient := redis.NewClient(&redis.Options{Addr: server.Addr()})
 	service := NewService(&wormstore.SQLStore{}, client, utilworm.DefaultBaseURL, WithRedisClient(redisClient), WithCacheConfig(config))
 	return service, func() {
+		_ = service.Stop()
 		_ = redisClient.Close()
 		server.Close()
 	}
@@ -409,6 +445,99 @@ func TestListWormMarketsMissReturnsUnavailableWhenBudgetExhausted(t *testing.T) 
 	}
 }
 
+func TestActiveListRefreshesRecentlyVisitedPage(t *testing.T) {
+	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{
+		Markets: []utilworm.MarketSummary{{ConditionID: "market-1", Title: "Market"}},
+	}}
+	service, cleanup := newTestRedisService(t, client, CacheConfig{
+		ActiveRefreshInterval: 10 * time.Millisecond,
+		ActiveRefreshTTL:      time.Second,
+		StaleTTL:              time.Minute,
+	})
+	defer cleanup()
+
+	if err := service.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if _, err := service.ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{Cursor: "cursor-1"}); err != nil {
+		t.Fatalf("ListWormMarkets: %v", err)
+	}
+
+	waitUntil(t, time.Second, func() bool {
+		return client.getListCallsForCursor("cursor-1") >= 2
+	}, "active list page to refresh")
+}
+
+func TestActiveDetailRefreshesRecentlyVisitedMarket(t *testing.T) {
+	client := &fakeWormMarketClient{
+		marketResp:      &utilworm.Market{MarketSummary: utilworm.MarketSummary{ConditionID: "market-1", Title: "Market"}},
+		marketStatsResp: &utilworm.MarketStats{},
+	}
+	service, cleanup := newTestRedisService(t, client, CacheConfig{
+		ActiveRefreshInterval: 10 * time.Millisecond,
+		ActiveRefreshTTL:      time.Second,
+		StaleTTL:              time.Minute,
+	})
+	defer cleanup()
+
+	if err := service.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if _, err := service.GetWormMarket(context.Background(), &apiclient.GetWormMarketRequest{ConditionId: "market-1"}); err != nil {
+		t.Fatalf("GetWormMarket: %v", err)
+	}
+
+	waitUntil(t, time.Second, func() bool {
+		return client.getDetailCalls() >= 2
+	}, "active detail to refresh")
+}
+
+func TestInactiveListIsNotRefreshedAfterActiveTTL(t *testing.T) {
+	now := time.Unix(1714300100, 0)
+	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{
+		Markets: []utilworm.MarketSummary{{ConditionID: "market-1", Title: "Market"}},
+	}}
+	service, cleanup := newTestRedisService(t, client, CacheConfig{
+		ActiveRefreshInterval: 25 * time.Millisecond,
+		ActiveRefreshTTL:      time.Second,
+		StaleTTL:              time.Minute,
+		Now:                   func() time.Time { return now },
+	})
+	defer cleanup()
+
+	if err := service.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if _, err := service.ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{Cursor: "old-cursor"}); err != nil {
+		t.Fatalf("ListWormMarkets: %v", err)
+	}
+	now = now.Add(2 * time.Second)
+	time.Sleep(100 * time.Millisecond)
+
+	if calls := client.getListCallsForCursor("old-cursor"); calls != 1 {
+		t.Fatalf("old-cursor list calls = %d, want 1", calls)
+	}
+}
+
+func TestWarmupLoopRefreshesDefaultFirstPage(t *testing.T) {
+	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{
+		Markets: []utilworm.MarketSummary{{ConditionID: "market-1", Title: "Market"}},
+	}}
+	service, cleanup := newTestRedisService(t, client, CacheConfig{
+		ActiveRefreshInterval: 10 * time.Millisecond,
+		StaleTTL:              time.Minute,
+	})
+	defer cleanup()
+
+	if err := service.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+
+	waitUntil(t, time.Second, func() bool {
+		return client.getListCallsForCursor("") >= 1
+	}, "default first page to warm up")
+}
+
 func TestGetWormMarketMapsDetail(t *testing.T) {
 	description := "market description"
 	logo := "/media/events/logos/market.webp"
@@ -543,4 +672,16 @@ func TestGetWormMarketPropagatesClientError(t *testing.T) {
 	if !errors.Is(err, wantErr) {
 		t.Fatalf("err = %v, want %v", err, wantErr)
 	}
+}
+
+func waitUntil(t *testing.T, timeout time.Duration, condition func() bool, description string) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if condition() {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("timed out waiting for %s", description)
 }

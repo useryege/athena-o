@@ -21,12 +21,14 @@ import (
 )
 
 const (
-	defaultWormUpstreamLimitPerMinute = 100
+	defaultWormUpstreamLimitPerMinute = 1000
 	defaultWormListDefaultFreshTTL    = 5 * time.Second
 	defaultWormListFreshTTL           = 15 * time.Second
 	defaultWormDetailFreshTTL         = 10 * time.Second
 	defaultWormStaleTTL               = 15 * time.Minute
 	defaultWormRefreshWorkers         = 2
+	defaultWormActiveRefreshInterval  = time.Second
+	defaultWormActiveRefreshTTL       = 3 * time.Second
 
 	wormRefreshLockTTL       = 30 * time.Second
 	wormRefreshLockWait      = 2 * time.Second
@@ -44,6 +46,8 @@ type CacheConfig struct {
 	DetailFreshTTL         time.Duration
 	StaleTTL               time.Duration
 	RefreshWorkers         int
+	ActiveRefreshInterval  time.Duration
+	ActiveRefreshTTL       time.Duration
 	Now                    func() time.Time
 }
 
@@ -69,6 +73,12 @@ func (c CacheConfig) withDefaults() CacheConfig {
 	}
 	if c.RefreshWorkers <= 0 {
 		c.RefreshWorkers = defaultWormRefreshWorkers
+	}
+	if c.ActiveRefreshInterval <= 0 {
+		c.ActiveRefreshInterval = defaultWormActiveRefreshInterval
+	}
+	if c.ActiveRefreshTTL <= 0 {
+		c.ActiveRefreshTTL = defaultWormActiveRefreshTTL
 	}
 	if c.Now == nil {
 		c.Now = time.Now
@@ -262,7 +272,7 @@ func (s *Service) warmupLoop(ctx context.Context) {
 		CategorySlug: defaultWormMarketsCategorySlug,
 	}
 	s.enqueueRefresh(refreshRequest{kind: refreshKindList, listParams: defaultParams})
-	ticker := time.NewTicker(s.cacheConfig.ListDefaultFreshTTL)
+	ticker := time.NewTicker(s.cacheConfig.ActiveRefreshInterval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -339,20 +349,28 @@ func (s *Service) enqueueHotRefreshes(ctx context.Context) {
 		return
 	}
 	now := s.cacheConfig.Now().Unix()
-	minScore := strconv.FormatInt(now-int64(wormHotKeyRetention.Seconds()), 10)
-	_ = s.redisClient.ZRemRangeByScore(ctx, wormHotListKey(), "-inf", minScore).Err()
-	_ = s.redisClient.ZRemRangeByScore(ctx, wormHotDetailKey(), "-inf", minScore).Err()
+	retentionMinScore := strconv.FormatInt(now-int64(wormHotKeyRetention.Seconds()), 10)
+	_ = s.redisClient.ZRemRangeByScore(ctx, wormHotListKey(), "-inf", retentionMinScore).Err()
+	_ = s.redisClient.ZRemRangeByScore(ctx, wormHotDetailKey(), "-inf", retentionMinScore).Err()
 
-	lists, err := s.redisClient.ZRevRange(ctx, wormHotListKey(), 0, wormWarmupHotListLimit-1).Result()
+	activeMinScore := strconv.FormatInt(now-int64(s.cacheConfig.ActiveRefreshTTL.Seconds()), 10)
+	activeRange := &redis.ZRangeBy{
+		Min:    activeMinScore,
+		Max:    "+inf",
+		Offset: 0,
+		Count:  wormWarmupHotListLimit,
+	}
+	lists, err := s.redisClient.ZRevRangeByScore(ctx, wormHotListKey(), activeRange).Result()
 	if err == nil {
 		for _, member := range lists {
 			var params listWormMarketsParams
-			if json.Unmarshal([]byte(member), &params) == nil {
+			if json.Unmarshal([]byte(member), &params) == nil && !params.isDefaultFirstPage() {
 				s.enqueueRefresh(refreshRequest{kind: refreshKindList, listParams: params})
 			}
 		}
 	}
-	details, err := s.redisClient.ZRevRange(ctx, wormHotDetailKey(), 0, wormWarmupHotDetailLimit-1).Result()
+	activeRange.Count = wormWarmupHotDetailLimit
+	details, err := s.redisClient.ZRevRangeByScore(ctx, wormHotDetailKey(), activeRange).Result()
 	if err == nil {
 		for _, conditionID := range details {
 			if strings.TrimSpace(conditionID) != "" {

@@ -8,6 +8,7 @@ import {WormMarketDetailPanel} from './worm-market-detail-panel';
 require('./worm-container.scss');
 
 const PAGE_SIZE = 20;
+const POLL_INTERVAL_MS = 1000;
 
 const SORT_OPTIONS: Array<{label: string; value: WormMarketSortOption}> = [
     {label: 'New', value: 'new'},
@@ -122,6 +123,45 @@ export const WormContainer = () => {
             }
         };
     }, [loadMarkets]);
+
+    React.useEffect(() => {
+        let interval: number | undefined;
+
+        const stopPolling = () => {
+            if (interval !== undefined) {
+                window.clearInterval(interval);
+                interval = undefined;
+            }
+        };
+        const abortCurrentRequest = () => {
+            if (requestRef.current?.abort) {
+                requestRef.current.abort();
+            }
+        };
+        const startPolling = () => {
+            stopPolling();
+            if (!document.hidden) {
+                interval = window.setInterval(() => loadMarkets(cursor), POLL_INTERVAL_MS);
+            }
+        };
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                stopPolling();
+                abortCurrentRequest();
+                return;
+            }
+            loadMarkets(cursor);
+            startPolling();
+        };
+
+        startPolling();
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            stopPolling();
+            abortCurrentRequest();
+        };
+    }, [cursor, loadMarkets]);
 
     const handleRefresh = React.useCallback(() => loadMarkets(cursor), [cursor, loadMarkets]);
     const handleNext = React.useCallback(() => {

@@ -4,6 +4,8 @@ import * as React from 'react';
 import {services} from '../../shared/services';
 import {WormMarketDetail, WormMarketItem, WormMarketOrderBook, WormMarketPrice} from '../../shared/services/worm-service';
 
+const POLL_INTERVAL_MS = 1000;
+
 const isAbortedError = (err: unknown) =>
     String((err as any)?.message || '')
         .toLowerCase()
@@ -114,6 +116,45 @@ export const WormMarketDetailPanel = ({conditionId, initialMarket}: {conditionId
             if (requestRef.current?.abort) {
                 requestRef.current.abort();
             }
+        };
+    }, [loadDetail]);
+
+    React.useEffect(() => {
+        let interval: number | undefined;
+
+        const stopPolling = () => {
+            if (interval !== undefined) {
+                window.clearInterval(interval);
+                interval = undefined;
+            }
+        };
+        const abortCurrentRequest = () => {
+            if (requestRef.current?.abort) {
+                requestRef.current.abort();
+            }
+        };
+        const startPolling = () => {
+            stopPolling();
+            if (!document.hidden) {
+                interval = window.setInterval(loadDetail, POLL_INTERVAL_MS);
+            }
+        };
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                stopPolling();
+                abortCurrentRequest();
+                return;
+            }
+            loadDetail();
+            startPolling();
+        };
+
+        startPolling();
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            stopPolling();
+            abortCurrentRequest();
         };
     }, [loadDetail]);
 
