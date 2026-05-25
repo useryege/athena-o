@@ -28,6 +28,8 @@ message ListWormMarketsRequest {
 message ListWormMarketsResponse {
   repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketItem markets = 1;
   string next_cursor = 2;
+  int64 fetched_at = 3;
+  bool stale = 4;
 }
 
 // GetWormMarketRequest queries one Worm market detail by condition id.
@@ -38,6 +40,8 @@ message GetWormMarketRequest {
 // GetWormMarketResponse returns a Worm market detail with pricing context.
 message GetWormMarketResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketDetail market = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
 }
 
 service WormService {

@@ -18,6 +18,8 @@ export interface WormMarketItem {
 export interface ListWormMarketsResult {
     items: WormMarketItem[];
     nextCursor?: string;
+    fetchedAt?: number;
+    stale?: boolean;
 }
 
 export type WormMarketSortOption = 'new' | 'trending' | 'ending_soon' | 'leverage';
@@ -86,6 +88,8 @@ export interface WormMarketOrderBook {
 
 export interface WormMarketDetail {
     market: WormMarketItem;
+    fetchedAt?: number;
+    stale?: boolean;
     yesOutcomeLabel?: string;
     noOutcomeLabel?: string;
     outcomes: WormMarketOutcome[];
@@ -183,6 +187,8 @@ const normalizeOrderBook = (item: any): WormMarketOrderBook => ({
 
 const normalizeMarketDetail = (item: any): WormMarketDetail => ({
     market: normalizeMarket(item?.market || {}),
+    fetchedAt: readNumber(item, 'fetchedAt', 'fetched_at'),
+    stale: readBoolean(item, 'stale', 'stale'),
     yesOutcomeLabel: readString(item, 'yesOutcomeLabel', 'yes_outcome_label'),
     noOutcomeLabel: readString(item, 'noOutcomeLabel', 'no_outcome_label'),
     outcomes: (item?.outcomes || []).map(normalizeOutcome),
@@ -213,7 +219,9 @@ export class WormService {
             const body = res.body || {};
             return {
                 items: (body.items || []).map(normalizeMarket),
-                nextCursor: body.nextCursor || body.next_cursor || ''
+                nextCursor: body.nextCursor || body.next_cursor || '',
+                fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
+                stale: readBoolean(body, 'stale', 'stale')
             };
         }) as any;
         promise.abort = () => req.abort();
@@ -222,7 +230,15 @@ export class WormService {
 
     public getMarket(conditionId: string): Promise<WormMarketDetail> & {abort?: () => void} {
         const req = requests.get(`/worm/markets/${encodeURIComponent(conditionId)}`);
-        const promise = req.then(res => normalizeMarketDetail((res.body || {}).market || {})) as any;
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return normalizeMarketDetail({
+                ...(body.market || {}),
+                fetchedAt: body.fetchedAt,
+                fetched_at: body.fetched_at,
+                stale: body.stale
+            });
+        }) as any;
         promise.abort = () => req.abort();
         return promise;
     }

@@ -31,6 +31,8 @@ message ListWormMarketsRequest {
 message ListWormMarketsResponse {
   repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketItem items = 1;
   string next_cursor = 2;
+  int64 fetched_at = 3;
+  bool stale = 4;
 }
 
 // GetWormMarketRequest queries one public Worm market detail.
@@ -41,6 +43,8 @@ message GetWormMarketRequest {
 // GetWormMarketResponse returns one Worm market detail.
 message GetWormMarketResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketDetail market = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
 }
 
 service WormService {

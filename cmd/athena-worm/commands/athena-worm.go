@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -38,12 +39,18 @@ const cliName = "athena-worm"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost     string
-		listenPort     int
-		metricsHost    string
-		metricsPort    int
-		wormAPIBaseURL string
-		redisClient    *redis.Client
+		listenHost             string
+		listenPort             int
+		metricsHost            string
+		metricsPort            int
+		wormAPIBaseURL         string
+		redisClient            *redis.Client
+		upstreamLimitPerMinute int
+		listDefaultFreshTTL    time.Duration
+		listFreshTTL           time.Duration
+		detailFreshTTL         time.Duration
+		staleTTL               time.Duration
+		refreshWorkers         int
 
 		storeSrc func(context.Context) (*wormstore.SQLStore, error)
 		cacheSrc func() (*cacheutil.Cache, error)
@@ -89,7 +96,20 @@ func NewCommand() *cobra.Command {
 				errors.CheckError(http.ListenAndServe(fmt.Sprintf("%s:%d", metricsHost, metricsPort), metricsMux))
 			}()
 
-			server, err := worm.NewServer(worm.ServerOpts{Store: store, WormClient: wormClient, WormAPIBaseURL: wormAPIBaseURL})
+			server, err := worm.NewServer(worm.ServerOpts{
+				Store:          store,
+				WormClient:     wormClient,
+				WormAPIBaseURL: wormAPIBaseURL,
+				RedisClient:    redisClient,
+				CacheConfig: worm.CacheConfig{
+					UpstreamLimitPerMinute: upstreamLimitPerMinute,
+					ListDefaultFreshTTL:    listDefaultFreshTTL,
+					ListFreshTTL:           listFreshTTL,
+					DetailFreshTTL:         detailFreshTTL,
+					StaleTTL:               staleTTL,
+					RefreshWorkers:         refreshWorkers,
+				},
+			})
 			if err != nil {
 				return err
 			}
@@ -160,6 +180,12 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&metricsHost, "metrics-address", env.StringFromEnv("ATHENA_WORM_METRICS_LISTEN_ADDRESS", common.DefaultAddressWormMetrics), "Listen on given address for metrics and health checks")
 	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortWormMetrics, "Start metrics server on given port")
 	command.Flags().StringVar(&wormAPIBaseURL, "worm-api-base-url", env.StringFromEnv("ATHENA_WORM_API_BASE_URL", utilworm.DefaultBaseURL), "Worm API base URL")
+	command.Flags().IntVar(&upstreamLimitPerMinute, "worm-upstream-limit-per-minute", env.ParseNumFromEnv("ATHENA_WORM_UPSTREAM_LIMIT_PER_MINUTE", 100, 1, math.MaxInt32), "Maximum Worm upstream API request budget per minute")
+	command.Flags().DurationVar(&listDefaultFreshTTL, "worm-list-default-fresh-ttl", env.ParseDurationFromEnv("ATHENA_WORM_LIST_DEFAULT_FRESH_TTL", 5*time.Second, time.Second, math.MaxInt64), "Fresh TTL for the default Worm markets list cache")
+	command.Flags().DurationVar(&listFreshTTL, "worm-list-fresh-ttl", env.ParseDurationFromEnv("ATHENA_WORM_LIST_FRESH_TTL", 15*time.Second, time.Second, math.MaxInt64), "Fresh TTL for non-default Worm markets list caches")
+	command.Flags().DurationVar(&detailFreshTTL, "worm-detail-fresh-ttl", env.ParseDurationFromEnv("ATHENA_WORM_DETAIL_FRESH_TTL", 10*time.Second, time.Second, math.MaxInt64), "Fresh TTL for Worm market detail caches")
+	command.Flags().DurationVar(&staleTTL, "worm-stale-ttl", env.ParseDurationFromEnv("ATHENA_WORM_STALE_TTL", 15*time.Minute, time.Second, math.MaxInt64), "Maximum stale TTL for Worm cache fallback")
+	command.Flags().IntVar(&refreshWorkers, "worm-refresh-workers", env.ParseNumFromEnv("ATHENA_WORM_REFRESH_WORKERS", 2, 1, math.MaxInt32), "Number of Worm cache refresh workers")
 
 	storeSrc = wormstore.NewSQLStoreSource()
 	cacheSrc = cacheutil.AddCacheFlagsToCmd(command, cacheutil.Options{

@@ -58,6 +58,8 @@ func TestListWormMarketsForwardsRequestAndMapsResponse(t *testing.T) {
 				MarginEnabled:    true,
 			}},
 			NextCursor: "next-page",
+			FetchedAt:  1714300100,
+			Stale:      true,
 		},
 	}
 
@@ -84,6 +86,9 @@ func TestListWormMarketsForwardsRequestAndMapsResponse(t *testing.T) {
 	}
 	if resp.GetNextCursor() != "next-page" {
 		t.Fatalf("next cursor = %q, want next-page", resp.GetNextCursor())
+	}
+	if resp.GetFetchedAt() != 1714300100 || !resp.GetStale() {
+		t.Fatalf("cache metadata = fetched_at:%d stale:%t", resp.GetFetchedAt(), resp.GetStale())
 	}
 	if len(resp.GetItems()) != 1 {
 		t.Fatalf("items len = %d, want 1", len(resp.GetItems()))
@@ -126,6 +131,8 @@ func TestGetWormMarketForwardsRequestAndMapsResponse(t *testing.T) {
 					Bid:    []v1alpha1.WormOrderBookLevel{{Price: "0.70", TotalAmount: "12"}},
 				}},
 			},
+			FetchedAt: 1714300100,
+			Stale:     true,
 		},
 	}
 
@@ -135,6 +142,9 @@ func TestGetWormMarketForwardsRequestAndMapsResponse(t *testing.T) {
 	}
 	if client.getMarketReq.GetConditionId() != "market-1" {
 		t.Fatalf("condition id = %q, want market-1", client.getMarketReq.GetConditionId())
+	}
+	if resp.GetFetchedAt() != 1714300100 || !resp.GetStale() {
+		t.Fatalf("cache metadata = fetched_at:%d stale:%t", resp.GetFetchedAt(), resp.GetStale())
 	}
 	market := resp.GetMarket()
 	if market.Market.ConditionID != "market-1" || market.Market.Title != "Will Team A beat Team B?" {

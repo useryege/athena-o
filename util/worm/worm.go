@@ -132,11 +132,16 @@ func (c Config) withDefaults() Config {
 }
 
 type Error struct {
-	Code    int              `json:"code"`
-	Slug    string           `json:"slug"`
-	Message string           `json:"message"`
-	Details []map[string]any `json:"details"`
-	Status  string           `json:"-"`
+	Code               int              `json:"code"`
+	Slug               string           `json:"slug"`
+	Message            string           `json:"message"`
+	Details            []map[string]any `json:"details"`
+	Status             string           `json:"-"`
+	StatusCode         int              `json:"-"`
+	RetryAfter         time.Duration    `json:"-"`
+	RateLimitLimit     int              `json:"-"`
+	RateLimitRemaining int              `json:"-"`
+	RateLimitReset     int64            `json:"-"`
 }
 
 func (e *Error) Error() string {
@@ -1306,9 +1311,43 @@ func decodeHTTPError(resp *http.Response) error {
 	var envelope responseEnvelope
 	if err := json.Unmarshal(body, &envelope); err == nil && envelope.Error != nil {
 		envelope.Error.Status = resp.Status
+		envelope.Error.StatusCode = resp.StatusCode
+		envelope.Error.RetryAfter = parseRetryAfter(resp.Header.Get("Retry-After"))
+		envelope.Error.RateLimitLimit = parseHeaderInt(resp.Header.Get("X-RateLimit-Limit"))
+		envelope.Error.RateLimitRemaining = parseHeaderInt(resp.Header.Get("X-RateLimit-Remaining"))
+		envelope.Error.RateLimitReset = int64(parseHeaderInt(resp.Header.Get("X-RateLimit-Reset")))
 		return envelope.Error
 	}
 	return fmt.Errorf("worm http request failed with status %s: %s", resp.Status, string(body))
+}
+
+func parseRetryAfter(value string) time.Duration {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0
+	}
+	if seconds, err := strconv.Atoi(value); err == nil && seconds > 0 {
+		return time.Duration(seconds) * time.Second
+	}
+	if retryAt, err := http.ParseTime(value); err == nil {
+		duration := time.Until(retryAt)
+		if duration > 0 {
+			return duration
+		}
+	}
+	return 0
+}
+
+func parseHeaderInt(value string) int {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0
+	}
+	num, err := strconv.Atoi(value)
+	if err != nil {
+		return 0
+	}
+	return num
 }
 
 func (p PageOptions) pageValues() url.Values {

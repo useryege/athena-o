@@ -3,15 +3,22 @@ package worm
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
+	"time"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"github.com/useryege/athena/internal/worm/apiclient"
+	wormstore "github.com/useryege/athena/internal/worm/store"
 	utilworm "github.com/useryege/athena/util/worm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type fakeWormMarketClient struct {
+	mu               sync.Mutex
+	listCalls        int
 	options          utilworm.ListMarketsOptions
 	resp             *utilworm.ListMarketsResponse
 	err              error
@@ -26,11 +33,16 @@ type fakeWormMarketClient struct {
 }
 
 func (f *fakeWormMarketClient) ListMarkets(_ context.Context, options utilworm.ListMarketsOptions) (*utilworm.ListMarketsResponse, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.listCalls++
 	f.options = options
 	return f.resp, f.err
 }
 
 func (f *fakeWormMarketClient) GetMarket(_ context.Context, conditionID string) (*utilworm.Market, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.conditionID = conditionID
 	if f.detailErr != nil {
 		return nil, f.detailErr
@@ -39,6 +51,8 @@ func (f *fakeWormMarketClient) GetMarket(_ context.Context, conditionID string) 
 }
 
 func (f *fakeWormMarketClient) GetMarketStats(_ context.Context, conditionID string) (*utilworm.MarketStats, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.conditionID = conditionID
 	if f.detailErr != nil {
 		return nil, f.detailErr
@@ -47,6 +61,8 @@ func (f *fakeWormMarketClient) GetMarketStats(_ context.Context, conditionID str
 }
 
 func (f *fakeWormMarketClient) GetMarketPrice(_ context.Context, conditionID string, options utilworm.GetMarketPriceOptions) (*utilworm.MarketPrice, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.conditionID = conditionID
 	f.priceOptions = append(f.priceOptions, options)
 	if f.detailErr != nil {
@@ -58,6 +74,8 @@ func (f *fakeWormMarketClient) GetMarketPrice(_ context.Context, conditionID str
 }
 
 func (f *fakeWormMarketClient) GetMarketOrderBook(_ context.Context, conditionID string, options utilworm.GetMarketOrderBookOptions) (*utilworm.MarketOrderBook, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.conditionID = conditionID
 	f.orderBookOptions = append(f.orderBookOptions, options)
 	if f.detailErr != nil {
@@ -66,6 +84,32 @@ func (f *fakeWormMarketClient) GetMarketOrderBook(_ context.Context, conditionID
 	book := f.orderBookResp[0]
 	f.orderBookResp = f.orderBookResp[1:]
 	return book, nil
+}
+
+func (f *fakeWormMarketClient) getListCalls() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.listCalls
+}
+
+func (f *fakeWormMarketClient) setListError(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.err = err
+}
+
+func newTestRedisService(t *testing.T, client *fakeWormMarketClient, config CacheConfig) (*Service, func()) {
+	t.Helper()
+	server, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	redisClient := redis.NewClient(&redis.Options{Addr: server.Addr()})
+	service := NewService(&wormstore.SQLStore{}, client, utilworm.DefaultBaseURL, WithRedisClient(redisClient), WithCacheConfig(config))
+	return service, func() {
+		_ = redisClient.Close()
+		server.Close()
+	}
 }
 
 func TestListWormMarketsUsesNewAllDefaults(t *testing.T) {
@@ -264,6 +308,104 @@ func TestListWormMarketsPreservesAbsoluteAndEmptyAssetURLs(t *testing.T) {
 	}
 	if market.EventLogo != "" {
 		t.Fatalf("event logo = %q, want empty", market.EventLogo)
+	}
+}
+
+func TestListWormMarketsCacheCollapsesConcurrentRequests(t *testing.T) {
+	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{
+		Markets: []utilworm.MarketSummary{{ConditionID: "market-1", Title: "Market"}},
+	}}
+	service, cleanup := newTestRedisService(t, client, CacheConfig{StaleTTL: time.Minute})
+	defer cleanup()
+
+	const workers = 100
+	var wg sync.WaitGroup
+	errCh := make(chan error, workers)
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			resp, err := service.ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{})
+			if err != nil {
+				errCh <- err
+				return
+			}
+			if len(resp.GetMarkets()) != 1 || resp.GetMarkets()[0].ConditionID != "market-1" {
+				errCh <- errors.New("unexpected cached market response")
+			}
+		}()
+	}
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if calls := client.getListCalls(); calls != 1 {
+		t.Fatalf("list calls = %d, want 1", calls)
+	}
+}
+
+func TestListWormMarketsFreshCacheSkipsUpstream(t *testing.T) {
+	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{
+		Markets: []utilworm.MarketSummary{{ConditionID: "market-1", Title: "Market"}},
+	}}
+	service, cleanup := newTestRedisService(t, client, CacheConfig{ListDefaultFreshTTL: time.Minute, StaleTTL: time.Hour})
+	defer cleanup()
+
+	if _, err := service.ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{}); err != nil {
+		t.Fatalf("first ListWormMarkets: %v", err)
+	}
+	if _, err := service.ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{}); err != nil {
+		t.Fatalf("second ListWormMarkets: %v", err)
+	}
+	if calls := client.getListCalls(); calls != 1 {
+		t.Fatalf("list calls = %d, want 1", calls)
+	}
+}
+
+func TestListWormMarketsReturnsStaleOnUpstreamError(t *testing.T) {
+	now := time.Unix(1714300100, 0)
+	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{
+		Markets: []utilworm.MarketSummary{{ConditionID: "market-1", Title: "Market"}},
+	}}
+	service, cleanup := newTestRedisService(t, client, CacheConfig{
+		ListDefaultFreshTTL: time.Second,
+		StaleTTL:            time.Hour,
+		Now:                 func() time.Time { return now },
+	})
+	defer cleanup()
+
+	if _, err := service.ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{}); err != nil {
+		t.Fatalf("first ListWormMarkets: %v", err)
+	}
+	client.setListError(errors.New("worm upstream failed"))
+	now = now.Add(2 * time.Hour)
+
+	resp, err := service.ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{})
+	if err != nil {
+		t.Fatalf("stale ListWormMarkets: %v", err)
+	}
+	if !resp.GetStale() {
+		t.Fatal("stale = false, want true")
+	}
+	if len(resp.GetMarkets()) != 1 || resp.GetMarkets()[0].ConditionID != "market-1" {
+		t.Fatalf("markets = %#v", resp.GetMarkets())
+	}
+}
+
+func TestListWormMarketsMissReturnsUnavailableWhenBudgetExhausted(t *testing.T) {
+	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{}}
+	service, cleanup := newTestRedisService(t, client, CacheConfig{UpstreamLimitPerMinute: 1, StaleTTL: time.Minute})
+	defer cleanup()
+
+	if _, err := service.ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{}); err != nil {
+		t.Fatalf("first ListWormMarkets: %v", err)
+	}
+	_, err := service.ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{Cursor: "next-page"})
+	if status.Code(err) != codes.Unavailable {
+		t.Fatalf("code = %s, want %s (err=%v)", status.Code(err), codes.Unavailable, err)
 	}
 }
 

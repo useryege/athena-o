@@ -54,6 +54,8 @@ func (s *Server) ListWormMarkets(ctx context.Context, req *wormpkg.ListWormMarke
 	return &wormpkg.ListWormMarketsResponse{
 		Items:      resp.GetMarkets(),
 		NextCursor: resp.GetNextCursor(),
+		FetchedAt:  resp.GetFetchedAt(),
+		Stale:      resp.GetStale(),
 	}, nil
 }
 
@@ -72,6 +74,8 @@ func (s *Server) GetWormMarket(ctx context.Context, req *wormpkg.GetWormMarketRe
 	}
 
 	return &wormpkg.GetWormMarketResponse{
-		Market: resp.GetMarket(),
+		Market:    resp.GetMarket(),
+		FetchedAt: resp.GetFetchedAt(),
+		Stale:     resp.GetStale(),
 	}, nil
 }

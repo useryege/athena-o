@@ -57,6 +57,7 @@ export const WormContainer = () => {
     const [nextCursor, setNextCursor] = React.useState('');
     const [cursorStack, setCursorStack] = React.useState<string[]>([]);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
+    const [stale, setStale] = React.useState(false);
     const [selectedConditionId, setSelectedConditionId] = React.useState('');
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const mountedRef = React.useRef(false);
@@ -85,7 +86,8 @@ export const WormContainer = () => {
                     if (nextStack) {
                         setCursorStack(nextStack);
                     }
-                    setLastUpdatedAt(new Date());
+                    setLastUpdatedAt(data.fetchedAt ? new Date(data.fetchedAt * 1000) : new Date());
+                    setStale(Boolean(data.stale));
                     setError(null);
                 }
             } catch (err) {
@@ -194,7 +196,10 @@ export const WormContainer = () => {
                                     <span>Section: {activeSortLabel}</span>
                                     <span>Category: {activeCategoryLabel}</span>
                                     <span>Page: {page}</span>
-                                    <span>Last updated: {lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : 'Never'}</span>
+                                    <span>
+                                        Last updated: {lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : 'Never'}
+                                        {stale ? ' (stale)' : ''}
+                                    </span>
                                 </div>
                             </div>
 

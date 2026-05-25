@@ -5,11 +5,14 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/useryege/athena/internal/worm/apiclient"
 	wormstore "github.com/useryege/athena/internal/worm/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilworm "github.com/useryege/athena/util/worm"
+	"golang.org/x/sync/singleflight"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -32,19 +35,49 @@ type wormMarketClient interface {
 
 type Service struct {
 	apiclient.UnimplementedWormServiceServer
-	store        *wormstore.SQLStore
-	wormClient   wormMarketClient
-	assetBaseURL string
-	startStopMu  sync.Mutex
-	started      bool
+	store         *wormstore.SQLStore
+	wormClient    wormMarketClient
+	assetBaseURL  string
+	redisClient   *redis.Client
+	cacheConfig   CacheConfig
+	refreshCh     chan refreshRequest
+	refreshGroup  singleflight.Group
+	refreshCancel context.CancelFunc
+	refreshWG     sync.WaitGroup
+	startStopMu   sync.Mutex
+	started       bool
 }
 
-func NewService(store *wormstore.SQLStore, wormClient wormMarketClient, assetBaseURL string) *Service {
+type ServiceOption func(*Service)
+
+func WithRedisClient(client *redis.Client) ServiceOption {
+	return func(s *Service) {
+		s.redisClient = client
+	}
+}
+
+func WithCacheConfig(config CacheConfig) ServiceOption {
+	return func(s *Service) {
+		s.cacheConfig = config.withDefaults()
+	}
+}
+
+func NewService(store *wormstore.SQLStore, wormClient wormMarketClient, assetBaseURL string, opts ...ServiceOption) *Service {
 	assetBaseURL = strings.TrimSpace(assetBaseURL)
 	if assetBaseURL == "" {
 		assetBaseURL = utilworm.DefaultBaseURL
 	}
-	return &Service{store: store, wormClient: wormClient, assetBaseURL: assetBaseURL}
+	service := &Service{
+		store:        store,
+		wormClient:   wormClient,
+		assetBaseURL: assetBaseURL,
+		cacheConfig:  DefaultCacheConfig(),
+		refreshCh:    make(chan refreshRequest, 256),
+	}
+	for _, opt := range opts {
+		opt(service)
+	}
+	return service
 }
 
 func (s *Service) Start() error {
@@ -59,14 +92,30 @@ func (s *Service) Start() error {
 	if s.wormClient == nil {
 		return status.Error(codes.FailedPrecondition, "worm API client is required")
 	}
+	if s.redisClient != nil && s.cacheConfig.RefreshWorkers > 0 {
+		ctx, cancel := context.WithCancel(context.Background())
+		s.refreshCancel = cancel
+		for i := 0; i < s.cacheConfig.RefreshWorkers; i++ {
+			s.refreshWG.Add(1)
+			go s.refreshWorker(ctx)
+		}
+		s.refreshWG.Add(1)
+		go s.warmupLoop(ctx)
+	}
 	s.started = true
 	return nil
 }
 
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
-	defer s.startStopMu.Unlock()
+	cancel := s.refreshCancel
+	s.refreshCancel = nil
 	s.started = false
+	s.startStopMu.Unlock()
+	if cancel != nil {
+		cancel()
+		s.refreshWG.Wait()
+	}
 	return nil
 }
 
@@ -90,43 +139,53 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 		return nil, status.Error(codes.FailedPrecondition, "worm API client is required")
 	}
 
-	limit := defaultWormMarketsLimit
-	cursor := ""
-	sortOption := defaultWormMarketsSortOption
-	categorySlug := defaultWormMarketsCategorySlug
+	params := listWormMarketsParams{
+		Limit:        defaultWormMarketsLimit,
+		SortOption:   defaultWormMarketsSortOption,
+		CategorySlug: defaultWormMarketsCategorySlug,
+	}
 	if req != nil {
 		if req.GetLimit() != 0 {
-			limit = int(req.GetLimit())
+			params.Limit = int(req.GetLimit())
 		}
-		cursor = req.GetCursor()
-		sortOption = strings.TrimSpace(req.GetSortOption())
-		categorySlug = strings.TrimSpace(req.GetCategorySlug())
+		params.Cursor = req.GetCursor()
+		params.SortOption = strings.TrimSpace(req.GetSortOption())
+		params.CategorySlug = strings.TrimSpace(req.GetCategorySlug())
 	}
-	if limit < 1 || limit > maxWormMarketsLimit {
+	if params.Limit < 1 || params.Limit > maxWormMarketsLimit {
 		return nil, status.Errorf(codes.InvalidArgument, "limit must be between 1 and %d", maxWormMarketsLimit)
 	}
-	sortOption, err := normalizeWormMarketSortOption(sortOption)
+	sortOption, err := normalizeWormMarketSortOption(params.SortOption)
 	if err != nil {
 		return nil, err
 	}
-	categorySlug, err = normalizeWormMarketCategorySlug(categorySlug)
+	categorySlug, err := normalizeWormMarketCategorySlug(params.CategorySlug)
 	if err != nil {
 		return nil, err
 	}
+	params.SortOption = sortOption
+	params.CategorySlug = categorySlug
 
+	if s.redisClient != nil {
+		return s.listWormMarketsCached(ctx, params)
+	}
+	return s.fetchWormMarkets(ctx, params)
+}
+
+func (s *Service) fetchWormMarkets(ctx context.Context, params listWormMarketsParams) (*apiclient.ListWormMarketsResponse, error) {
 	markets, err := s.wormClient.ListMarkets(ctx, utilworm.ListMarketsOptions{
 		PageOptions: utilworm.PageOptions{
-			Limit:  limit,
-			Cursor: cursor,
+			Limit:  params.Limit,
+			Cursor: params.Cursor,
 		},
-		Category: upstreamWormMarketCategory(categorySlug),
-		Sort:     upstreamWormMarketSort(sortOption),
+		Category: upstreamWormMarketCategory(params.CategorySlug),
+		Sort:     upstreamWormMarketSort(params.SortOption),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	resp := &apiclient.ListWormMarketsResponse{}
+	resp := &apiclient.ListWormMarketsResponse{FetchedAt: time.Now().Unix()}
 	if markets.Meta.NextCursor != nil {
 		resp.NextCursor = *markets.Meta.NextCursor
 	}
@@ -189,7 +248,13 @@ func (s *Service) GetWormMarket(ctx context.Context, req *apiclient.GetWormMarke
 	if conditionID == "" {
 		return nil, status.Error(codes.InvalidArgument, "condition_id is required")
 	}
+	if s.redisClient != nil {
+		return s.getWormMarketCached(ctx, conditionID)
+	}
+	return s.fetchWormMarket(ctx, conditionID)
+}
 
+func (s *Service) fetchWormMarket(ctx context.Context, conditionID string) (*apiclient.GetWormMarketResponse, error) {
 	market, err := s.wormClient.GetMarket(ctx, conditionID)
 	if err != nil {
 		return nil, err
@@ -224,7 +289,8 @@ func (s *Service) GetWormMarket(ctx context.Context, req *apiclient.GetWormMarke
 	}
 
 	return &apiclient.GetWormMarketResponse{
-		Market: s.toAPIMarketDetail(market, stats, []*utilworm.MarketPrice{yesPrice, noPrice}, []*utilworm.MarketOrderBook{yesBook, noBook}),
+		Market:    s.toAPIMarketDetail(market, stats, []*utilworm.MarketPrice{yesPrice, noPrice}, []*utilworm.MarketOrderBook{yesBook, noBook}),
+		FetchedAt: time.Now().Unix(),
 	}, nil
 }
 

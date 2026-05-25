@@ -630,6 +630,10 @@ func TestEnvelopeError(t *testing.T) {
 func TestHTTPErrorWithEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Retry-After", "12")
+		w.Header().Set("X-RateLimit-Limit", "120")
+		w.Header().Set("X-RateLimit-Remaining", "0")
+		w.Header().Set("X-RateLimit-Reset", "1714300120")
 		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte(`{
 			"data": null,
@@ -654,6 +658,12 @@ func TestHTTPErrorWithEnvelope(t *testing.T) {
 	}
 	if apiErr.Status != "401 Unauthorized" || apiErr.Slug != "authentication_failed" {
 		t.Fatalf("api error = %#v", apiErr)
+	}
+	if apiErr.StatusCode != http.StatusUnauthorized || apiErr.RetryAfter != 12*time.Second {
+		t.Fatalf("api error retry/status metadata = %#v", apiErr)
+	}
+	if apiErr.RateLimitLimit != 120 || apiErr.RateLimitRemaining != 0 || apiErr.RateLimitReset != 1714300120 {
+		t.Fatalf("api error rate limit metadata = %#v", apiErr)
 	}
 }
 

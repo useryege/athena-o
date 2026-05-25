@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-406-gb980e28-dirty"
+    "version": "v1.0.0-407-g26bb898-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -2712,8 +2712,15 @@
       "description": "GetWormMarketResponse returns one Worm market detail.",
       "type": "object",
       "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
         "market": {
           "$ref": "#/definitions/v1alpha1WormMarketDetail"
+        },
+        "stale": {
+          "type": "boolean"
         }
       }
     },
@@ -2733,6 +2740,10 @@
       "description": "ListWormMarketsResponse returns Worm market rows and cursor pagination.",
       "type": "object",
       "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
         "items": {
           "type": "array",
           "items": {
@@ -2741,6 +2752,9 @@
         },
         "next_cursor": {
           "type": "string"
+        },
+        "stale": {
+          "type": "boolean"
         }
       }
     }
