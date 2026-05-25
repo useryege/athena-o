@@ -22,14 +22,12 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/util/env"
-	"github.com/useryege/athena/util/kube"
 	"github.com/useryege/athena/util/localconfig"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
-	"k8s.io/client-go/tools/clientcmd"
 
 	// "context"
 	// "crypto/tls"
@@ -57,7 +55,6 @@ import (
 	// "google.golang.org/grpc/credentials"
 	// "google.golang.org/grpc/metadata"
 	// "google.golang.org/grpc/status"
-	// "k8s.io/client-go/tools/clientcmd"
 	// "github.com/useryege/athena/v3/common"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 
@@ -80,7 +77,6 @@ import (
 	http_util "github.com/useryege/athena/util/http"
 	utilio "github.com/useryege/athena/util/io"
 
-	// "github.com/useryege/athena/v3/util/kube"
 	// "github.com/useryege/athena/v3/util/localconfig"
 	oidcutil "github.com/useryege/athena/util/oidc"
 	tls_util "github.com/useryege/athena/util/tls"
@@ -133,31 +129,28 @@ type Client interface {
 
 // ClientOptions hold address, security, and other settings for the API client.
 type ClientOptions struct {
-	ServerAddr           string
-	PlainText            bool
-	Insecure             bool
-	CertFile             string
-	ClientCertFile       string
-	ClientCertKeyFile    string
-	AuthToken            string
-	ConfigPath           string
-	Context              string
-	UserAgent            string
-	GRPCWeb              bool
-	GRPCWebRootPath      string
-	Core                 bool
-	PortForward          bool
-	PortForwardNamespace string
-	Headers              []string
-	HttpRetryMax         int //nolint:revive //FIXME(var-naming)
-	KubeOverrides        *clientcmd.ConfigOverrides
-	AppControllerName    string
-	ServerName           string
-	RedisHaProxyName     string
-	RedisName            string
-	RedisCompression     string
-	RepoServerName       string
-	PromptsEnabled       bool
+	ServerAddr        string
+	PlainText         bool
+	Insecure          bool
+	CertFile          string
+	ClientCertFile    string
+	ClientCertKeyFile string
+	AuthToken         string
+	ConfigPath        string
+	Context           string
+	UserAgent         string
+	GRPCWeb           bool
+	GRPCWebRootPath   string
+	Core              bool
+	Headers           []string
+	HttpRetryMax      int //nolint:revive //FIXME(var-naming)
+	AppControllerName string
+	ServerName        string
+	RedisHaProxyName  string
+	RedisName         string
+	RedisCompression  string
+	RepoServerName    string
+	PromptsEnabled    bool
 }
 
 type client struct {
@@ -235,18 +228,6 @@ func NewClient(opts *ClientOptions) (Client, error) {
 	}
 	// Override server address if specified in env or CLI flag
 	c.ServerAddr = env.StringFromEnv(EnvAthenaServer, c.ServerAddr)
-	if opts.PortForward || opts.PortForwardNamespace != "" {
-		if opts.KubeOverrides == nil {
-			opts.KubeOverrides = &clientcmd.ConfigOverrides{}
-		}
-		serverPodLabelSelector := common.LabelKeyAppName + "=" + opts.ServerName
-		port, err := kube.PortForward(8080, opts.PortForwardNamespace, opts.KubeOverrides, serverPodLabelSelector)
-		if err != nil {
-			return nil, err
-		}
-		opts.ServerAddr = fmt.Sprintf("127.0.0.1:%d", port)
-		opts.Insecure = true
-	}
 	if opts.ServerAddr != "" {
 		c.ServerAddr = opts.ServerAddr
 	}
