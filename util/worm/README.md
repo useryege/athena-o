@@ -120,6 +120,40 @@ The suite covers:
 
 The tests do not use `WORM_API_KEY` or `WORM_API_SECRET`, and they do not revoke user-provided credentials. They do not log the private key, signatures, request payloads, API secrets, or full credentials. The secret is returned by Worm only once; store any manually generated credentials securely.
 
+## Run Authenticated READ Integration Tests
+
+These authenticated read-only integration tests cover account-scoped Worm API endpoints. They do not create orders, redeems, positions, submit signatures, cancel requests, or finalize anything on chain.
+
+They are protected by two opt-in switches and can use existing API credentials:
+
+```bash
+WORM_INTEGRATION=1 \
+WORM_AUTH_READ_INTEGRATION=1 \
+WORM_API_KEY='<your-worm-api-key>' \
+WORM_API_SECRET='<your-worm-api-secret>' \
+go test -v ./util/worm -run '^TestIntegrationAuthRead'
+```
+
+If `WORM_API_KEY` and `WORM_API_SECRET` are not set, the tests can bootstrap a temporary API key from a Solana private key and revoke that temporary key during cleanup:
+
+```bash
+WORM_INTEGRATION=1 \
+WORM_AUTH_READ_INTEGRATION=1 \
+WORM_PRIVATE_KEY='<your-solana-private-key>' \
+go test -v ./util/worm -run '^TestIntegrationAuthRead'
+```
+
+The suite covers:
+
+- `ListTrades`
+- `GetAccountSummary`
+- `GetAccountPnL`
+- `ListAccountAssets`
+- `ListRedeems`
+- `GetRedeem`, only when the authenticated account already has at least one redeem
+
+Empty trades, assets, and redeems are valid account states; the tests only validate row fields when the API returns rows. `StartRedeem` and `SubmitRedeem` are intentionally excluded because they create or finalize real redeem state and require a stronger opt-in test plan.
+
 ## Run CreateOrderDraft Integration Test
 
 This authenticated integration test bootstraps Worm API credentials from `WORM_PRIVATE_KEY`, selects one open market, then calls `CreateOrderDraft` with a market buy draft for YES using `funds="1.00"`. It may create a server-side order draft, but it does not submit the order and does not call `SubmitOrder`, `SubmitOrderCancel`, cancel, redeem, position, or other finalization endpoints.

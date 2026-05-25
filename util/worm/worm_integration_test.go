@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"encoding/hex"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -362,6 +363,123 @@ func TestIntegrationAuthKeysListAndRevokeAPIKeys(t *testing.T) {
 	t.Logf("ListAPIKeys returned keys=%d and RevokeAPIKey revoked temporary key=%t", len(keys.Keys), revoked.RevokedAt != nil)
 }
 
+func TestIntegrationAuthReadListTrades(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	limit := 5
+	trades, err := fixture.client.ListTrades(fixture.ctx, ListTradesOptions{
+		PageOptions: PageOptions{Limit: limit},
+	})
+	if err != nil {
+		t.Fatalf("ListTrades: %v", err)
+	}
+	if len(trades.Trades) > limit {
+		t.Fatalf("ListTrades returned %d trades, want <= %d", len(trades.Trades), limit)
+	}
+	for i, trade := range trades.Trades {
+		validateIntegrationTrade(t, i, trade)
+	}
+
+	t.Logf("ListTrades returned trades=%d", len(trades.Trades))
+}
+
+func TestIntegrationAuthReadAccountSummaryAndPnL(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	account, err := fixture.client.GetAccountSummary(fixture.ctx)
+	if err != nil {
+		t.Fatalf("GetAccountSummary: %v", err)
+	}
+	if account.Username == "" {
+		t.Fatal("GetAccountSummary returned empty username")
+	}
+	if account.TwitterUsername != nil && *account.TwitterUsername == "" {
+		t.Fatal("GetAccountSummary returned empty non-nil twitter_username")
+	}
+	if account.JoinedAt != nil && *account.JoinedAt <= 0 {
+		t.Fatalf("GetAccountSummary returned joined_at=%d, want positive timestamp", *account.JoinedAt)
+	}
+
+	pnl, err := fixture.client.GetAccountPnL(fixture.ctx, GetAccountPnLOptions{})
+	if err != nil {
+		t.Fatalf("GetAccountPnL: %v", err)
+	}
+	validateIntegrationAccountPnL(t, pnl)
+
+	t.Logf("GetAccountSummaryAndPnL returned username=%q joined_at=%t total_pnl=%q", account.Username, account.JoinedAt != nil, pnl.TotalPnL)
+}
+
+func TestIntegrationAuthReadListAccountAssets(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	limit := 5
+	assets, err := fixture.client.ListAccountAssets(fixture.ctx, ListAccountAssetsOptions{
+		PageOptions: PageOptions{Limit: limit},
+	})
+	if err != nil {
+		t.Fatalf("ListAccountAssets: %v", err)
+	}
+	if len(assets.Assets) > limit {
+		t.Fatalf("ListAccountAssets returned %d assets, want <= %d", len(assets.Assets), limit)
+	}
+	for i, asset := range assets.Assets {
+		validateIntegrationAccountAsset(t, i, asset)
+	}
+
+	t.Logf("ListAccountAssets returned assets=%d", len(assets.Assets))
+}
+
+func TestIntegrationAuthReadListRedeems(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	limit := 5
+	redeems, err := fixture.client.ListRedeems(fixture.ctx, ListRedeemsOptions{
+		PageOptions: PageOptions{Limit: limit},
+	})
+	if err != nil {
+		t.Fatalf("ListRedeems: %v", err)
+	}
+	if len(redeems.Redeems) > limit {
+		t.Fatalf("ListRedeems returned %d redeems, want <= %d", len(redeems.Redeems), limit)
+	}
+	for i, redeem := range redeems.Redeems {
+		validateIntegrationRedeem(t, i, redeem)
+	}
+
+	t.Logf("ListRedeems returned redeems=%d", len(redeems.Redeems))
+}
+
+func TestIntegrationAuthReadGetRedeemFromList(t *testing.T) {
+	fixture := newAuthReadIntegrationFixture(t)
+	defer fixture.cancel()
+
+	redeems, err := fixture.client.ListRedeems(fixture.ctx, ListRedeemsOptions{
+		PageOptions: PageOptions{Limit: 1},
+	})
+	if err != nil {
+		t.Fatalf("ListRedeems: %v", err)
+	}
+	if len(redeems.Redeems) == 0 {
+		t.Skip("authenticated account has no redeems to fetch by pubkey")
+	}
+
+	wantPubkey := redeems.Redeems[0].Pubkey
+	redeem, err := fixture.client.GetRedeem(fixture.ctx, wantPubkey)
+	if err != nil {
+		t.Fatalf("GetRedeem(%s): %v", wantPubkey, err)
+	}
+	validateIntegrationRedeem(t, 0, *redeem)
+	if redeem.Pubkey != wantPubkey {
+		t.Fatalf("GetRedeem returned pubkey=%q, want %q", redeem.Pubkey, wantPubkey)
+	}
+
+	t.Logf("GetRedeem returned pubkey=%q state=%q", redeem.Pubkey, redeem.State)
+}
+
 func TestIntegrationCreateOrderDraft(t *testing.T) {
 	if os.Getenv("WORM_INTEGRATION") != "1" {
 		t.Skip("set WORM_INTEGRATION=1 to run real Worm API integration tests")
@@ -479,6 +597,58 @@ func newAuthKeysIntegrationFixture(t *testing.T) authKeysIntegrationFixture {
 		privateKey:      privateKey,
 		walletAddress:   solanaWalletAddress(privateKey),
 	}
+}
+
+type authReadIntegrationFixture struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+	client Client
+}
+
+func newAuthReadIntegrationFixture(t *testing.T) authReadIntegrationFixture {
+	t.Helper()
+	if os.Getenv("WORM_INTEGRATION") != "1" {
+		t.Skip("set WORM_INTEGRATION=1 to run real Worm API integration tests")
+	}
+	if os.Getenv("WORM_AUTH_READ_INTEGRATION") != "1" {
+		t.Skip("set WORM_AUTH_READ_INTEGRATION=1 to run real authenticated read integration tests")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	apiKey := strings.TrimSpace(os.Getenv("WORM_API_KEY"))
+	apiSecret := strings.TrimSpace(os.Getenv("WORM_API_SECRET"))
+	if apiKey != "" && apiSecret != "" {
+		client, err := NewClient(Config{
+			APIKey:    apiKey,
+			APISecret: apiSecret,
+		})
+		if err != nil {
+			cancel()
+			t.Fatalf("NewClient with WORM_API_KEY/WORM_API_SECRET: %v", err)
+		}
+		return authReadIntegrationFixture{ctx: ctx, cancel: cancel, client: client}
+	}
+	if apiKey != "" || apiSecret != "" {
+		cancel()
+		t.Fatalf("both WORM_API_KEY and WORM_API_SECRET are required when using user-provided Worm API credentials")
+	}
+
+	privateKey := requiredIntegrationEnv(t, "WORM_PRIVATE_KEY")
+	publicClient, err := NewClient(Config{})
+	if err != nil {
+		cancel()
+		t.Fatalf("NewClient: %v", err)
+	}
+	creds, err := publicClient.CreateAPIKeyFromPrivateKey(ctx, privateKey)
+	if err != nil {
+		cancel()
+		t.Fatalf("CreateAPIKeyFromPrivateKey: %v", err)
+	}
+	validateAPIKeySecret(t, creds)
+	registerTemporaryAPIKeyCleanup(t, creds)
+
+	client := newAuthenticatedIntegrationClient(t, creds)
+	return authReadIntegrationFixture{ctx: ctx, cancel: cancel, client: client}
 }
 
 func newAuthenticatedIntegrationClient(t *testing.T, creds *APIKeySecret) Client {
@@ -633,6 +803,98 @@ func validateOrderBookLevels(t *testing.T, side string, levels []OrderBookLevel)
 		if level.TotalAmount == "" {
 			t.Fatalf("%s[%d] has empty total_amount", side, i)
 		}
+	}
+}
+
+func validateIntegrationTrade(t *testing.T, i int, trade Trade) {
+	t.Helper()
+	if trade.Pubkey == "" {
+		t.Fatalf("trade[%d] has empty pubkey", i)
+	}
+	if trade.MarketConditionID != nil && *trade.MarketConditionID == "" {
+		t.Fatalf("trade[%d] has empty non-nil market_condition_id", i)
+	}
+	if trade.Amount == "" || trade.Price == "" || trade.State == "" {
+		t.Fatalf("trade[%d] has empty required fields: %#v", i, trade)
+	}
+	if trade.Timestamp <= 0 {
+		t.Fatalf("trade[%d] has timestamp=%d, want positive", i, trade.Timestamp)
+	}
+	if trade.Fee != nil && *trade.Fee == "" {
+		t.Fatalf("trade[%d] has empty non-nil fee", i)
+	}
+	if trade.Order.Side == "" {
+		t.Fatalf("trade[%d] has empty order side: %#v", i, trade.Order)
+	}
+	if trade.Order.Pubkey != nil && *trade.Order.Pubkey == "" {
+		t.Fatalf("trade[%d] has empty non-nil order pubkey", i)
+	}
+	if trade.Order.Market.ConditionID == "" {
+		t.Fatalf("trade[%d] has empty order market condition_id", i)
+	}
+	if trade.Order.Market.Title == "" {
+		t.Fatalf("trade[%d] has empty order market title", i)
+	}
+}
+
+func validateIntegrationAccountPnL(t *testing.T, pnl *AccountPnL) {
+	t.Helper()
+	if pnl.MarginPositionSettlementsPnL == "" ||
+		pnl.MarginPositionsUnrealizedPnL == "" ||
+		pnl.RedeemsFunds == "" ||
+		pnl.ActiveAssetsValue == "" ||
+		pnl.CreatorFees == "" ||
+		pnl.TotalPnL == "" {
+		t.Fatalf("GetAccountPnL returned empty required fields: %#v", pnl)
+	}
+}
+
+func validateIntegrationAccountAsset(t *testing.T, i int, asset AccountAsset) {
+	t.Helper()
+	if asset.AssetKind == "" {
+		t.Fatalf("asset[%d] has empty asset_kind", i)
+	}
+	if asset.Amounts.Total == "" || asset.Amounts.Locked == "" || asset.Amounts.Available == "" {
+		t.Fatalf("asset[%d] has empty amounts fields: %#v", i, asset.Amounts)
+	}
+	if asset.Token.Symbol == "" {
+		t.Fatalf("asset[%d] has empty token symbol", i)
+	}
+	if asset.Token.Address != nil && *asset.Token.Address == "" {
+		t.Fatalf("asset[%d] has empty non-nil token address", i)
+	}
+	if asset.Value.USDT == "" || asset.Value.Basis == "" {
+		t.Fatalf("asset[%d] has empty value fields: %#v", i, asset.Value)
+	}
+	validateMarketSummary(t, asset.Position.Market)
+	if asset.Position.OutcomeText == "" || asset.Position.AvgTradePrice == "" {
+		t.Fatalf("asset[%d] has empty position fields: %#v", i, asset.Position)
+	}
+	if asset.Created != nil && *asset.Created <= 0 {
+		t.Fatalf("asset[%d] has created=%d, want positive timestamp", i, *asset.Created)
+	}
+}
+
+func validateIntegrationRedeem(t *testing.T, i int, redeem Redeem) {
+	t.Helper()
+	if redeem.Pubkey == "" {
+		t.Fatalf("redeem[%d] has empty pubkey", i)
+	}
+	if redeem.MarketConditionID != nil && *redeem.MarketConditionID == "" {
+		t.Fatalf("redeem[%d] has empty non-nil market_condition_id", i)
+	}
+	if redeem.State == "" ||
+		redeem.Funds == "" ||
+		redeem.OnchainFunds == "" ||
+		redeem.YesShares == "" ||
+		redeem.NoShares == "" {
+		t.Fatalf("redeem[%d] has empty required fields: %#v", i, redeem)
+	}
+	if redeem.Message != nil && *redeem.Message == "" {
+		t.Fatalf("redeem[%d] has empty non-nil message", i)
+	}
+	if redeem.Created != nil && *redeem.Created <= 0 {
+		t.Fatalf("redeem[%d] has created=%d, want positive timestamp", i, *redeem.Created)
 	}
 }
 
