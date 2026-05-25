@@ -4,10 +4,25 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
+	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
+)
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	cleanupSharedAuthReadIntegrationClient()
+	os.Exit(code)
+}
+
+var (
+	sharedAuthReadOnce   sync.Once
+	sharedAuthReadClient Client
+	sharedAuthReadCreds  *APIKeySecret
+	sharedAuthReadErr    error
 )
 
 func TestIntegrationPublicSearch(t *testing.T) {
@@ -810,40 +825,97 @@ func newAuthReadIntegrationFixture(t *testing.T) authReadIntegrationFixture {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	apiKey := strings.TrimSpace(os.Getenv("WORM_API_KEY"))
-	apiSecret := strings.TrimSpace(os.Getenv("WORM_API_SECRET"))
-	if apiKey != "" && apiSecret != "" {
-		client, err := NewClient(Config{
-			APIKey:    apiKey,
-			APISecret: apiSecret,
-		})
-		if err != nil {
-			cancel()
-			t.Fatalf("NewClient with WORM_API_KEY/WORM_API_SECRET: %v", err)
+	client, err := sharedAuthReadIntegrationClient()
+	if err != nil {
+		cancel()
+		if isWormThrottleError(err) {
+			t.Skipf("skipping authenticated read integration test because Worm API key bootstrap was throttled: %v", err)
 		}
-		return authReadIntegrationFixture{ctx: ctx, cancel: cancel, client: client}
-	}
-	if apiKey != "" || apiSecret != "" {
-		cancel()
-		t.Fatalf("both WORM_API_KEY and WORM_API_SECRET are required when using user-provided Worm API credentials")
+		t.Fatalf("authenticated read integration client: %v", err)
 	}
 
-	privateKey := requiredIntegrationEnv(t, "WORM_PRIVATE_KEY")
-	publicClient, err := NewClient(Config{})
-	if err != nil {
-		cancel()
-		t.Fatalf("NewClient: %v", err)
-	}
-	creds, err := publicClient.CreateAPIKeyFromPrivateKey(ctx, privateKey)
-	if err != nil {
-		cancel()
-		t.Fatalf("CreateAPIKeyFromPrivateKey: %v", err)
-	}
-	validateAPIKeySecret(t, creds)
-	registerTemporaryAPIKeyCleanup(t, creds)
-
-	client := newAuthenticatedIntegrationClient(t, creds)
 	return authReadIntegrationFixture{ctx: ctx, cancel: cancel, client: client}
+}
+
+func sharedAuthReadIntegrationClient() (Client, error) {
+	sharedAuthReadOnce.Do(func() {
+		apiKey := strings.TrimSpace(os.Getenv("WORM_API_KEY"))
+		apiSecret := strings.TrimSpace(os.Getenv("WORM_API_SECRET"))
+		if apiKey != "" && apiSecret != "" {
+			sharedAuthReadClient, sharedAuthReadErr = NewClient(Config{
+				APIKey:    apiKey,
+				APISecret: apiSecret,
+			})
+			return
+		}
+		if apiKey != "" || apiSecret != "" {
+			sharedAuthReadErr = fmt.Errorf("both WORM_API_KEY and WORM_API_SECRET are required when using user-provided Worm API credentials")
+			return
+		}
+
+		privateKey := strings.TrimSpace(os.Getenv("WORM_PRIVATE_KEY"))
+		if privateKey == "" {
+			sharedAuthReadErr = fmt.Errorf("WORM_PRIVATE_KEY is required for authenticated read integration tests when WORM_API_KEY/WORM_API_SECRET are not set")
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		publicClient, err := NewClient(Config{})
+		if err != nil {
+			sharedAuthReadErr = fmt.Errorf("NewClient: %w", err)
+			return
+		}
+		creds, err := publicClient.CreateAPIKeyFromPrivateKey(ctx, privateKey)
+		if err != nil {
+			sharedAuthReadErr = fmt.Errorf("CreateAPIKeyFromPrivateKey: %w", err)
+			return
+		}
+		if creds.APIKey == "" || creds.Secret == "" {
+			sharedAuthReadErr = fmt.Errorf("CreateAPIKeyFromPrivateKey returned incomplete credentials")
+			return
+		}
+
+		sharedAuthReadCreds = creds
+		sharedAuthReadClient, sharedAuthReadErr = NewClient(Config{
+			APIKey:    creds.APIKey,
+			APISecret: creds.Secret,
+		})
+		if sharedAuthReadErr != nil {
+			sharedAuthReadErr = fmt.Errorf("NewClient with temporary credentials: %w", sharedAuthReadErr)
+			return
+		}
+	})
+	return sharedAuthReadClient, sharedAuthReadErr
+}
+
+func cleanupSharedAuthReadIntegrationClient() {
+	if sharedAuthReadCreds == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	key, err := revokeTemporaryAPIKey(ctx, sharedAuthReadCreds)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to cleanup shared temporary Worm API key: %v\n", err)
+		return
+	}
+	fmt.Fprintf(os.Stderr, "cleanup revoked shared temporary Worm API key=%t revoked_at=%t\n", key.KeyID != "", key.RevokedAt != nil)
+}
+
+func isWormThrottleError(err error) bool {
+	for err != nil {
+		if apiErr, ok := err.(*Error); ok {
+			return apiErr.Code == -17 || apiErr.Slug == "throttled"
+		}
+		unwrapped, ok := err.(interface{ Unwrap() error })
+		if !ok {
+			return false
+		}
+		err = unwrapped.Unwrap()
+	}
+	return false
 }
 
 func newAuthenticatedIntegrationClient(t *testing.T, creds *APIKeySecret) Client {
