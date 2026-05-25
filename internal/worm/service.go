@@ -8,6 +8,7 @@ import (
 
 	"github.com/useryege/athena/internal/worm/apiclient"
 	wormstore "github.com/useryege/athena/internal/worm/store"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilworm "github.com/useryege/athena/util/worm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -113,16 +114,16 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 	if markets.Meta.NextCursor != nil {
 		resp.NextCursor = *markets.Meta.NextCursor
 	}
-	resp.Markets = make([]*apiclient.WormMarketSummary, 0, len(markets.Markets))
+	resp.Markets = make([]*v1alpha1.WormMarketItem, 0, len(markets.Markets))
 	for i := range markets.Markets {
 		resp.Markets = append(resp.Markets, s.toAPIMarketSummary(markets.Markets[i]))
 	}
 	return resp, nil
 }
 
-func (s *Service) toAPIMarketSummary(market utilworm.MarketSummary) *apiclient.WormMarketSummary {
-	item := &apiclient.WormMarketSummary{
-		ConditionId:    market.ConditionID,
+func (s *Service) toAPIMarketSummary(market utilworm.MarketSummary) *v1alpha1.WormMarketItem {
+	item := &v1alpha1.WormMarketItem{
+		ConditionID:    market.ConditionID,
 		Title:          market.Title,
 		Description:    stringValue(market.Description),
 		Logo:           s.normalizeAssetURL(stringValue(market.Logo)),
@@ -134,7 +135,7 @@ func (s *Service) toAPIMarketSummary(market utilworm.MarketSummary) *apiclient.W
 	}
 	if market.Event != nil {
 		item.EventTitle = market.Event.Title
-		item.EventConditionId = market.Event.ConditionID
+		item.EventConditionID = market.Event.ConditionID
 		item.EventLogo = s.normalizeAssetURL(stringValue(market.Event.Logo))
 	}
 	return item

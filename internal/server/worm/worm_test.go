@@ -6,6 +6,7 @@ import (
 
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
 	wormpkg "github.com/useryege/athena/pkg/apiclient/worm"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilio "github.com/useryege/athena/util/io"
 	"google.golang.org/grpc"
 )
@@ -35,8 +36,8 @@ func (f *fakeWormServiceClient) ListWormMarkets(_ context.Context, req *wormapic
 func TestListWormMarketsForwardsRequestAndMapsResponse(t *testing.T) {
 	client := &fakeWormServiceClient{
 		listResp: &wormapiclient.ListWormMarketsResponse{
-			Markets: []*wormapiclient.WormMarketSummary{{
-				ConditionId:      "market-1",
+			Markets: []*v1alpha1.WormMarketItem{{
+				ConditionID:      "market-1",
 				Title:            "Will Team A beat Team B?",
 				Description:      "description",
 				Logo:             "market-logo",
@@ -45,7 +46,7 @@ func TestListWormMarketsForwardsRequestAndMapsResponse(t *testing.T) {
 				Category:         "sports",
 				Created:          1714300100,
 				EventTitle:       "Team A vs Team B",
-				EventConditionId: "event-1",
+				EventConditionID: "event-1",
 				EventLogo:        "event-logo",
 				MarginEnabled:    true,
 			}},
@@ -70,13 +71,13 @@ func TestListWormMarketsForwardsRequestAndMapsResponse(t *testing.T) {
 		t.Fatalf("items len = %d, want 1", len(resp.GetItems()))
 	}
 	item := resp.GetItems()[0]
-	if item.GetConditionId() != "market-1" || item.GetTitle() != "Will Team A beat Team B?" {
+	if item.ConditionID != "market-1" || item.Title != "Will Team A beat Team B?" {
 		t.Fatalf("item = %#v", item)
 	}
-	if item.GetEventTitle() != "Team A vs Team B" || item.GetEventConditionId() != "event-1" {
+	if item.EventTitle != "Team A vs Team B" || item.EventConditionID != "event-1" {
 		t.Fatalf("event fields = %#v", item)
 	}
-	if item.GetLastTradePrice() != "0.68" || !item.GetMarginEnabled() {
+	if item.LastTradePrice != "0.68" || !item.MarginEnabled {
 		t.Fatalf("market fields = %#v", item)
 	}
 }

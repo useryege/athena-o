@@ -3,6 +3,8 @@ syntax = "proto3";
 // Worm Service API exposes worm-level workload status.
 package athena.internal.worm;
 
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+
 option go_package = "github.com/useryege/athena/internal/worm/apiclient";
 
 // GetWormStatusRequest queries the worm service runtime status.
@@ -20,25 +22,9 @@ message ListWormMarketsRequest {
   string cursor = 2;
 }
 
-// WormMarketSummary is the Athena-facing subset of a Worm market row.
-message WormMarketSummary {
-  string condition_id = 1;
-  string title = 2;
-  string description = 3;
-  string logo = 4;
-  string last_trade_price = 5;
-  string state = 6;
-  string category = 7;
-  int64 created = 8;
-  string event_title = 9;
-  string event_condition_id = 10;
-  string event_logo = 11;
-  bool margin_enabled = 12;
-}
-
 // ListWormMarketsResponse returns Worm market rows and cursor pagination.
 message ListWormMarketsResponse {
-  repeated WormMarketSummary markets = 1;
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketItem markets = 1;
   string next_cursor = 2;
 }
 

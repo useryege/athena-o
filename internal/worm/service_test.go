@@ -73,16 +73,16 @@ func TestListWormMarketsUsesSportsLeverageDefaults(t *testing.T) {
 		t.Fatalf("markets len = %d, want 1", len(resp.GetMarkets()))
 	}
 	market := resp.GetMarkets()[0]
-	if market.GetConditionId() != "market-1" || market.GetTitle() != "Will Team A beat Team B?" {
+	if market.ConditionID != "market-1" || market.Title != "Will Team A beat Team B?" {
 		t.Fatalf("market = %#v", market)
 	}
-	if market.GetDescription() != description || market.GetLogo() != logo || market.GetLastTradePrice() != price {
+	if market.Description != description || market.Logo != logo || market.LastTradePrice != price {
 		t.Fatalf("market optional fields = %#v", market)
 	}
-	if market.GetEventTitle() != "Team A vs Team B" || market.GetEventConditionId() != "event-1" || market.GetEventLogo() != eventLogo {
+	if market.EventTitle != "Team A vs Team B" || market.EventConditionID != "event-1" || market.EventLogo != eventLogo {
 		t.Fatalf("event fields = %#v", market)
 	}
-	if market.GetCreated() != created || !market.GetMarginEnabled() {
+	if market.Created != created || !market.MarginEnabled {
 		t.Fatalf("created/margin = %#v", market)
 	}
 }
@@ -134,11 +134,11 @@ func TestListWormMarketsNormalizesRelativeAssetURLs(t *testing.T) {
 		t.Fatalf("ListWormMarkets: %v", err)
 	}
 	market := resp.GetMarkets()[0]
-	if market.GetLogo() != "https://api.worm.wtf/media/events/logos/market.webp" {
-		t.Fatalf("logo = %q", market.GetLogo())
+	if market.Logo != "https://api.worm.wtf/media/events/logos/market.webp" {
+		t.Fatalf("logo = %q", market.Logo)
 	}
-	if market.GetEventLogo() != "https://api.worm.wtf/media/events/logos/event.webp" {
-		t.Fatalf("event logo = %q", market.GetEventLogo())
+	if market.EventLogo != "https://api.worm.wtf/media/events/logos/event.webp" {
+		t.Fatalf("event logo = %q", market.EventLogo)
 	}
 }
 
@@ -163,10 +163,10 @@ func TestListWormMarketsPreservesAbsoluteAndEmptyAssetURLs(t *testing.T) {
 		t.Fatalf("ListWormMarkets: %v", err)
 	}
 	market := resp.GetMarkets()[0]
-	if market.GetLogo() != logo {
-		t.Fatalf("logo = %q, want %q", market.GetLogo(), logo)
+	if market.Logo != logo {
+		t.Fatalf("logo = %q, want %q", market.Logo, logo)
 	}
-	if market.GetEventLogo() != "" {
-		t.Fatalf("event logo = %q, want empty", market.GetEventLogo())
+	if market.EventLogo != "" {
+		t.Fatalf("event logo = %q, want empty", market.EventLogo)
 	}
 }

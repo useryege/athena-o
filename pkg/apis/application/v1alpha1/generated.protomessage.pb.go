@@ -30,3 +30,5 @@ func (*ProjectView) ProtoMessage() {}
 func (*SimulateResult) ProtoMessage() {}
 
 func (*TokenState) ProtoMessage() {}
+
+func (*WormMarketItem) ProtoMessage() {}

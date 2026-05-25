@@ -49,26 +49,8 @@ func (s *Server) ListWormMarkets(ctx context.Context, req *wormpkg.ListWormMarke
 		return nil, err
 	}
 
-	items := make([]*wormpkg.WormMarketItem, 0, len(resp.GetMarkets()))
-	for _, market := range resp.GetMarkets() {
-		items = append(items, &wormpkg.WormMarketItem{
-			ConditionId:      market.GetConditionId(),
-			Title:            market.GetTitle(),
-			Description:      market.GetDescription(),
-			Logo:             market.GetLogo(),
-			LastTradePrice:   market.GetLastTradePrice(),
-			State:            market.GetState(),
-			Category:         market.GetCategory(),
-			Created:          market.GetCreated(),
-			EventTitle:       market.GetEventTitle(),
-			EventConditionId: market.GetEventConditionId(),
-			EventLogo:        market.GetEventLogo(),
-			MarginEnabled:    market.GetMarginEnabled(),
-		})
-	}
-
 	return &wormpkg.ListWormMarketsResponse{
-		Items:      items,
+		Items:      resp.GetMarkets(),
 		NextCursor: resp.GetNextCursor(),
 	}, nil
 }

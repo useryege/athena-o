@@ -390,3 +390,29 @@ message TokenState {
   optional bool isValidERC20 = 5;
 }
 
+message WormMarketItem {
+  optional string conditionId = 1;
+
+  optional string title = 2;
+
+  optional string description = 3;
+
+  optional string logo = 4;
+
+  optional string lastTradePrice = 5;
+
+  optional string state = 6;
+
+  optional string category = 7;
+
+  optional int64 created = 8;
+
+  optional string eventTitle = 9;
+
+  optional string eventConditionId = 10;
+
+  optional string eventLogo = 11;
+
+  optional bool marginEnabled = 12;
+}
+

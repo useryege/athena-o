@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-401-g50fb520-dirty"
+    "version": "v1.0.0-403-gae8d199-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -2376,6 +2376,48 @@
         }
       }
     },
+    "v1alpha1WormMarketItem": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "created": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "description": {
+          "type": "string"
+        },
+        "eventConditionId": {
+          "type": "string"
+        },
+        "eventLogo": {
+          "type": "string"
+        },
+        "eventTitle": {
+          "type": "string"
+        },
+        "lastTradePrice": {
+          "type": "string"
+        },
+        "logo": {
+          "type": "string"
+        },
+        "marginEnabled": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
     "versionVersionMessage": {
       "type": "object",
       "title": "VersionMessage represents version of the Athena API server",
@@ -2440,53 +2482,10 @@
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/wormWormMarketItem"
+            "$ref": "#/definitions/v1alpha1WormMarketItem"
           }
         },
         "next_cursor": {
-          "type": "string"
-        }
-      }
-    },
-    "wormWormMarketItem": {
-      "description": "WormMarketItem is the UI-facing subset of a Worm market row.",
-      "type": "object",
-      "properties": {
-        "category": {
-          "type": "string"
-        },
-        "condition_id": {
-          "type": "string"
-        },
-        "created": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "description": {
-          "type": "string"
-        },
-        "event_condition_id": {
-          "type": "string"
-        },
-        "event_logo": {
-          "type": "string"
-        },
-        "event_title": {
-          "type": "string"
-        },
-        "last_trade_price": {
-          "type": "string"
-        },
-        "logo": {
-          "type": "string"
-        },
-        "margin_enabled": {
-          "type": "boolean"
-        },
-        "state": {
-          "type": "string"
-        },
-        "title": {
           "type": "string"
         }
       }
