@@ -112,8 +112,7 @@ func TestIntegrationCreateOrderDraft(t *testing.T) {
 		t.Skip("set WORM_ORDER_DRAFT_INTEGRATION=1 to run real CreateOrderDraft integration test")
 	}
 
-	apiKey := requiredIntegrationEnv(t, "WORM_API_KEY")
-	apiSecret := requiredIntegrationEnv(t, "WORM_API_SECRET")
+	privateKey := requiredIntegrationEnv(t, "WORM_PRIVATE_KEY")
 	conditionID := requiredIntegrationEnv(t, "WORM_ORDER_DRAFT_MARKET_CONDITION_ID")
 	isYesRaw := requiredIntegrationEnv(t, "WORM_ORDER_DRAFT_IS_YES")
 	side := requiredIntegrationEnv(t, "WORM_ORDER_DRAFT_SIDE")
@@ -128,12 +127,27 @@ func TestIntegrationCreateOrderDraft(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	client, err := NewClient(Config{
-		APIKey:    apiKey,
-		APISecret: apiSecret,
-	})
+	client, err := NewClient(Config{})
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
+	}
+	creds, err := client.CreateAPIKeyFromPrivateKey(ctx, privateKey)
+	if err != nil {
+		t.Fatalf("CreateAPIKeyFromPrivateKey: %v", err)
+	}
+	if creds.APIKey == "" {
+		t.Fatal("CreateAPIKeyFromPrivateKey returned empty APIKey")
+	}
+	if creds.Secret == "" {
+		t.Fatal("CreateAPIKeyFromPrivateKey returned empty Secret")
+	}
+
+	client, err = NewClient(Config{
+		APIKey:    creds.APIKey,
+		APISecret: creds.Secret,
+	})
+	if err != nil {
+		t.Fatalf("NewClient with bootstrapped credentials: %v", err)
 	}
 
 	resp, err := client.CreateOrderDraft(ctx, CreateOrderDraftRequest{
@@ -153,7 +167,8 @@ func TestIntegrationCreateOrderDraft(t *testing.T) {
 	}
 
 	t.Logf(
-		"CreateOrderDraft returned pubkey=%t message=%t",
+		"CreateOrderDraft bootstrapped credentials=%t returned pubkey=%t message=%t",
+		creds.APIKey != "" && creds.Secret != "",
 		resp.Pubkey != nil && *resp.Pubkey != "",
 		resp.Message != nil && *resp.Message != "",
 	)
