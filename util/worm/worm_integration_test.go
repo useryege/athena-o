@@ -52,7 +52,7 @@ func TestIntegrationPublicReadFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetMarketPrice(%s): %v", conditionID, err)
 	}
-	if price.Price == "" {
+	if price.Price == nil || *price.Price == "" {
 		t.Fatalf("GetMarketPrice(%s) returned empty price", conditionID)
 	}
 
@@ -65,7 +65,7 @@ func TestIntegrationPublicReadFlow(t *testing.T) {
 		"market=%q state=%s price=%s rules=%d bid_levels=%d ask_levels=%d",
 		market.Title,
 		market.State,
-		price.Price,
+		*price.Price,
 		len(market.Rules),
 		len(book.Bid),
 		len(book.Ask),

@@ -367,7 +367,53 @@ type Market struct {
 	MakerFee        *string          `json:"maker_fee,omitempty"`
 	TakerFee        *string          `json:"taker_fee,omitempty"`
 	Config          *MarketConfig    `json:"config,omitempty"`
+	RawRules        *json.RawMessage `json:"-"`
 	RawConfig       *json.RawMessage `json:"-"`
+}
+
+func (m *Market) UnmarshalJSON(data []byte) error {
+	var raw struct {
+		MarketSummary
+		YesOutcomeLabel *string         `json:"yes_outcome_label,omitempty"`
+		NoOutcomeLabel  *string         `json:"no_outcome_label,omitempty"`
+		Outcomes        []Outcome       `json:"outcomes,omitempty"`
+		Rules           json.RawMessage `json:"rules"`
+		ResolutionDate  *int64          `json:"resolution_date,omitempty"`
+		MakerFee        *string         `json:"maker_fee,omitempty"`
+		TakerFee        *string         `json:"taker_fee,omitempty"`
+		Config          *MarketConfig   `json:"config,omitempty"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	m.MarketSummary = raw.MarketSummary
+	m.YesOutcomeLabel = raw.YesOutcomeLabel
+	m.NoOutcomeLabel = raw.NoOutcomeLabel
+	m.Outcomes = raw.Outcomes
+	m.ResolutionDate = raw.ResolutionDate
+	m.MakerFee = raw.MakerFee
+	m.TakerFee = raw.TakerFee
+	m.Config = raw.Config
+	m.Rules = nil
+	m.RawRules = nil
+	if len(raw.Rules) > 0 && string(raw.Rules) != "null" {
+		rulesCopy := append(json.RawMessage(nil), raw.Rules...)
+		m.RawRules = &rulesCopy
+		var rules []string
+		if err := json.Unmarshal(raw.Rules, &rules); err == nil {
+			m.Rules = rules
+		}
+	}
+	if raw.Config != nil {
+		var rawFields map[string]json.RawMessage
+		if err := json.Unmarshal(data, &rawFields); err == nil && len(rawFields["config"]) > 0 && string(rawFields["config"]) != "null" {
+			configCopy := append(json.RawMessage(nil), rawFields["config"]...)
+			m.RawConfig = &configCopy
+		}
+	} else {
+		m.RawConfig = nil
+	}
+	return nil
 }
 
 type Outcome struct {
@@ -406,10 +452,10 @@ type MarketStats struct {
 }
 
 type MarketPrice struct {
-	ConditionID string `json:"condition_id"`
-	Price       string `json:"price"`
-	PriceKind   string `json:"price_kind"`
-	IsYes       bool   `json:"is_yes"`
+	ConditionID string  `json:"condition_id"`
+	Price       *string `json:"price"`
+	PriceKind   string  `json:"price_kind"`
+	IsYes       bool    `json:"is_yes"`
 }
 
 type MarketOrderBook struct {
@@ -435,26 +481,26 @@ type MarketCandle struct {
 }
 
 type MarketTrade struct {
-	MarketConditionID string `json:"market_condition_id"`
-	Amount            string `json:"amount"`
-	Price             string `json:"price"`
-	MakerFee          string `json:"maker_fee"`
-	TakerFee          string `json:"taker_fee"`
-	Timestamp         int64  `json:"timestamp"`
-	State             string `json:"state"`
-	IsYes             bool   `json:"is_yes"`
+	MarketConditionID *string `json:"market_condition_id"`
+	Amount            string  `json:"amount"`
+	Price             string  `json:"price"`
+	MakerFee          string  `json:"maker_fee"`
+	TakerFee          string  `json:"taker_fee"`
+	Timestamp         int64   `json:"timestamp"`
+	State             string  `json:"state"`
+	IsYes             bool    `json:"is_yes"`
 }
 
 type MarketMarginActivity struct {
-	ActivityType string        `json:"activity_type"`
-	User         UserSummary   `json:"user"`
-	Market       MarketSummary `json:"market"`
-	Shares       string        `json:"shares"`
-	Price        string        `json:"price"`
-	RealizedPnL  *string       `json:"realized_pnl"`
-	Leverage     string        `json:"leverage"`
-	IsYes        *bool         `json:"is_yes"`
-	Created      int64         `json:"created"`
+	ActivityType string         `json:"activity_type"`
+	User         UserSummary    `json:"user"`
+	Market       *MarketSummary `json:"market"`
+	Shares       *string        `json:"shares"`
+	Price        *string        `json:"price"`
+	RealizedPnL  *string        `json:"realized_pnl"`
+	Leverage     *string        `json:"leverage"`
+	IsYes        *bool          `json:"is_yes"`
+	Created      int64          `json:"created"`
 }
 
 type Event struct {
@@ -464,7 +510,7 @@ type Event struct {
 	Logo        *string         `json:"logo,omitempty"`
 	VideoURL    *string         `json:"video_url,omitempty"`
 	Category    string          `json:"category"`
-	Created     int64           `json:"created"`
+	Created     *int64          `json:"created"`
 	Markets     []MarketSummary `json:"markets,omitempty"`
 }
 
@@ -526,8 +572,8 @@ type DraftMessage struct {
 }
 
 type Order struct {
-	Pubkey          string     `json:"pubkey"`
-	Status          string     `json:"status"`
+	Pubkey          *string    `json:"pubkey"`
+	Status          *string    `json:"status"`
 	Side            string     `json:"side"`
 	Price           *string    `json:"price"`
 	Amount          *string    `json:"amount"`
@@ -541,21 +587,21 @@ type Order struct {
 }
 
 type Trade struct {
-	Pubkey            string `json:"pubkey"`
-	MarketConditionID string `json:"market_condition_id"`
-	Amount            string `json:"amount"`
-	Price             string `json:"price"`
-	Timestamp         int64  `json:"timestamp"`
-	Fee               string `json:"fee"`
-	IsMaker           bool   `json:"is_maker"`
-	State             string `json:"state"`
-	Order             Order  `json:"order"`
+	Pubkey            string  `json:"pubkey"`
+	MarketConditionID *string `json:"market_condition_id"`
+	Amount            string  `json:"amount"`
+	Price             string  `json:"price"`
+	Timestamp         int64   `json:"timestamp"`
+	Fee               *string `json:"fee"`
+	IsMaker           bool    `json:"is_maker"`
+	State             string  `json:"state"`
+	Order             Order   `json:"order"`
 }
 
 type AccountSummary struct {
 	Username        string  `json:"username"`
 	TwitterUsername *string `json:"twitter_username"`
-	JoinedAt        int64   `json:"joined_at"`
+	JoinedAt        *int64  `json:"joined_at"`
 }
 
 type AccountPnL struct {
@@ -573,7 +619,7 @@ type AccountAsset struct {
 	Token     TokenReference       `json:"token"`
 	Value     AccountAssetValue    `json:"value"`
 	Position  AccountAssetPosition `json:"position"`
-	Created   int64                `json:"created"`
+	Created   *int64               `json:"created"`
 }
 
 type AssetAmounts struct {
@@ -601,15 +647,15 @@ type AccountAssetPosition struct {
 }
 
 type MarginPositionEstimate struct {
-	AveragePrice     string `json:"average_price"`
-	TotalShares      string `json:"total_shares"`
-	TotalCost        string `json:"total_cost"`
-	BestAsk          string `json:"best_ask"`
-	WorstFillPrice   string `json:"worst_fill_price"`
-	IsFullyFilled    bool   `json:"is_fully_filled"`
-	FeeAmount        string `json:"fee_amount"`
-	UserFundsNeeded  string `json:"user_funds_needed"`
-	LiquidationPrice string `json:"liquidation_price"`
+	AveragePrice     string  `json:"average_price"`
+	TotalShares      string  `json:"total_shares"`
+	TotalCost        string  `json:"total_cost"`
+	BestAsk          string  `json:"best_ask"`
+	WorstFillPrice   string  `json:"worst_fill_price"`
+	IsFullyFilled    bool    `json:"is_fully_filled"`
+	FeeAmount        string  `json:"fee_amount"`
+	UserFundsNeeded  string  `json:"user_funds_needed"`
+	LiquidationPrice *string `json:"liquidation_price"`
 }
 
 type CreatePositionRequestRequest struct {
@@ -625,26 +671,26 @@ type CreatePositionRequestRequest struct {
 }
 
 type PositionRequest struct {
-	Pubkey          string        `json:"pubkey"`
-	Type            string        `json:"type"`
-	State           string        `json:"state"`
-	Message         *string       `json:"message"`
-	FundingTxID     *string       `json:"funding_txid"`
-	RefundTxID      *string       `json:"refund_txid"`
-	Market          MarketSummary `json:"market"`
-	IsYes           bool          `json:"is_yes"`
-	Leverage        string        `json:"leverage"`
-	Funds           string        `json:"funds"`
-	Price           *string       `json:"price"`
-	Shares          *string       `json:"shares"`
-	TakeProfitPrice *string       `json:"take_profit_price"`
-	StopLossPrice   *string       `json:"stop_loss_price"`
-	Created         *int64        `json:"created"`
+	Pubkey          string         `json:"pubkey"`
+	Type            string         `json:"type"`
+	State           string         `json:"state"`
+	Message         *string        `json:"message"`
+	FundingTxID     *string        `json:"funding_txid"`
+	RefundTxID      *string        `json:"refund_txid"`
+	Market          *MarketSummary `json:"market"`
+	IsYes           bool           `json:"is_yes"`
+	Leverage        string         `json:"leverage"`
+	Funds           string         `json:"funds"`
+	Price           *string        `json:"price"`
+	Shares          *string        `json:"shares"`
+	TakeProfitPrice *string        `json:"take_profit_price"`
+	StopLossPrice   *string        `json:"stop_loss_price"`
+	Created         *int64         `json:"created"`
 }
 
 type MarginPosition struct {
 	Pubkey                string        `json:"pubkey"`
-	PositionRequestPubkey string        `json:"position_request_pubkey"`
+	PositionRequestPubkey *string       `json:"position_request_pubkey"`
 	Market                MarketSummary `json:"market"`
 	IsYes                 bool          `json:"is_yes"`
 	Leverage              string        `json:"leverage"`
@@ -660,7 +706,7 @@ type MarginPosition struct {
 	IsLiquidated          bool          `json:"is_liquidated"`
 	IsClaimed             bool          `json:"is_claimed"`
 	TPSL                  *TPSL         `json:"tp_sl"`
-	Created               int64         `json:"created"`
+	Created               *int64        `json:"created"`
 }
 
 type SetTPSLRequest struct {
@@ -689,7 +735,7 @@ type MarginSettlement struct {
 	TotalPnL       string         `json:"total_pnl"`
 	UserLiquidity  string         `json:"user_liquidity"`
 	State          string         `json:"state"`
-	Created        int64          `json:"created"`
+	Created        *int64         `json:"created"`
 }
 
 type ClaimPositionSettlementResult struct {
@@ -703,14 +749,14 @@ type StartRedeemRequest struct {
 
 type Redeem struct {
 	Pubkey            string  `json:"pubkey"`
-	MarketConditionID string  `json:"market_condition_id"`
+	MarketConditionID *string `json:"market_condition_id"`
 	State             string  `json:"state"`
 	Funds             string  `json:"funds"`
 	OnchainFunds      string  `json:"onchain_funds"`
 	YesShares         string  `json:"yes_shares"`
 	NoShares          string  `json:"no_shares"`
 	Message           *string `json:"message"`
-	Created           int64   `json:"created"`
+	Created           *int64  `json:"created"`
 }
 
 func (c *clientImpl) Search(ctx context.Context, options SearchOptions) (*SearchResponse, error) {
