@@ -17,6 +17,8 @@ func (*GenesisWalletAssetState) ProtoMessage() {}
 
 func (*GenesisWalletState) ProtoMessage() {}
 
+func (*NotificationStatus) ProtoMessage() {}
+
 func (*PairV2State) ProtoMessage() {}
 
 func (*ProjectListItem) ProtoMessage() {}

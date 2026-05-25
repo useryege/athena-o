@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-415-g1a063d3-dirty"
+    "version": "v1.0.0-416-g82c9fc5-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -353,7 +353,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/notificationGetNotificationStatusResponse"
+              "$ref": "#/definitions/v1alpha1NotificationStatus"
             }
           },
           "default": {
@@ -1707,18 +1707,6 @@
         }
       }
     },
-    "notificationGetNotificationStatusResponse": {
-      "description": "GetNotificationStatusResponse returns the notification service runtime status.",
-      "type": "object",
-      "properties": {
-        "started": {
-          "type": "boolean"
-        },
-        "status": {
-          "type": "string"
-        }
-      }
-    },
     "oidcClaim": {
       "type": "object",
       "properties": {
@@ -2169,6 +2157,17 @@
           "format": "int64"
         },
         "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1NotificationStatus": {
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
           "type": "string"
         }
       }

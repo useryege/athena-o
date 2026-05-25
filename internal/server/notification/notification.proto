@@ -5,6 +5,7 @@ syntax = "proto3";
 // Notification Service API returns notification-level workload status.
 package notification;
 
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
 import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/notification";
@@ -12,15 +13,9 @@ option go_package = "github.com/useryege/athena/pkg/apiclient/notification";
 // GetNotificationStatusRequest queries the notification service runtime status.
 message GetNotificationStatusRequest {}
 
-// GetNotificationStatusResponse returns the notification service runtime status.
-message GetNotificationStatusResponse {
-  bool started = 1;
-  string status = 2;
-}
-
 service NotificationService {
   // GetNotificationStatus returns the notification service runtime status.
-  rpc GetNotificationStatus(GetNotificationStatusRequest) returns (GetNotificationStatusResponse) {
+  rpc GetNotificationStatus(GetNotificationStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationStatus) {
     option (google.api.http) = {get: "/api/v1/notification/status"};
   }
 }

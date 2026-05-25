@@ -5,6 +5,7 @@ import (
 
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
 type Server struct {
@@ -16,20 +17,12 @@ func NewServer(notificationClientSet notificationapiclient.Clientset) *Server {
 	return &Server{notificationClientSet: notificationClientSet}
 }
 
-func (s *Server) GetNotificationStatus(ctx context.Context, _ *notificationpkg.GetNotificationStatusRequest) (*notificationpkg.GetNotificationStatusResponse, error) {
+func (s *Server) GetNotificationStatus(ctx context.Context, _ *notificationpkg.GetNotificationStatusRequest) (*v1alpha1.NotificationStatus, error) {
 	closer, client, err := s.notificationClientSet.NewNotificationServiceClient()
 	if err != nil {
 		return nil, err
 	}
 	defer closer.Close()
 
-	resp, err := client.GetNotificationStatus(ctx, &notificationapiclient.GetNotificationStatusRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	return &notificationpkg.GetNotificationStatusResponse{
-		Started: resp.GetStarted(),
-		Status:  resp.GetStatus(),
-	}, nil
+	return client.GetNotificationStatus(ctx, &notificationapiclient.GetNotificationStatusRequest{})
 }

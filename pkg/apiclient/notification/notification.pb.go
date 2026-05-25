@@ -11,6 +11,7 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/gogo/protobuf/proto"
+	v1alpha1 "github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -71,65 +72,8 @@ func (m *GetNotificationStatusRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetNotificationStatusRequest proto.InternalMessageInfo
 
-// GetNotificationStatusResponse returns the notification service runtime status.
-type GetNotificationStatusResponse struct {
-	Started              bool     `protobuf:"varint,1,opt,name=started,proto3" json:"started,omitempty"`
-	Status               string   `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetNotificationStatusResponse) Reset()         { *m = GetNotificationStatusResponse{} }
-func (m *GetNotificationStatusResponse) String() string { return proto.CompactTextString(m) }
-func (*GetNotificationStatusResponse) ProtoMessage()    {}
-func (*GetNotificationStatusResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ea81c05babd59533, []int{1}
-}
-func (m *GetNotificationStatusResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *GetNotificationStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_GetNotificationStatusResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *GetNotificationStatusResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetNotificationStatusResponse.Merge(m, src)
-}
-func (m *GetNotificationStatusResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *GetNotificationStatusResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetNotificationStatusResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetNotificationStatusResponse proto.InternalMessageInfo
-
-func (m *GetNotificationStatusResponse) GetStarted() bool {
-	if m != nil {
-		return m.Started
-	}
-	return false
-}
-
-func (m *GetNotificationStatusResponse) GetStatus() string {
-	if m != nil {
-		return m.Status
-	}
-	return ""
-}
-
 func init() {
 	proto.RegisterType((*GetNotificationStatusRequest)(nil), "notification.GetNotificationStatusRequest")
-	proto.RegisterType((*GetNotificationStatusResponse)(nil), "notification.GetNotificationStatusResponse")
 }
 
 func init() {
@@ -137,25 +81,25 @@ func init() {
 }
 
 var fileDescriptor_ea81c05babd59533 = []byte{
-	// 274 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x50, 0x41, 0x4a, 0xc4, 0x40,
-	0x10, 0x64, 0xf6, 0xb0, 0xea, 0xe0, 0x69, 0x44, 0x09, 0xeb, 0x6e, 0x58, 0xe2, 0x65, 0x51, 0xc8,
-	0xa0, 0xe2, 0x07, 0xf4, 0xe0, 0x4d, 0x30, 0xde, 0xbc, 0xcd, 0xc6, 0x76, 0x76, 0x30, 0xce, 0xc4,
-	0xe9, 0x4e, 0xc0, 0xab, 0x5f, 0x10, 0x9f, 0xe1, 0x3f, 0x3c, 0x0a, 0x7e, 0x40, 0x82, 0x0f, 0x11,
-	0x13, 0x85, 0x0c, 0xa8, 0xec, 0xb1, 0xaa, 0xab, 0xab, 0xab, 0x8b, 0x4b, 0x63, 0x09, 0xbc, 0x55,
-	0x85, 0x44, 0xf0, 0x35, 0x78, 0x69, 0x1d, 0x99, 0x6b, 0x93, 0x2b, 0x32, 0xce, 0x06, 0x20, 0x2d,
-	0xbd, 0x23, 0x27, 0xd6, 0xfb, 0xdc, 0x68, 0xac, 0x9d, 0xd3, 0x05, 0x48, 0x55, 0x1a, 0xa9, 0xac,
-	0x75, 0xd4, 0xd2, 0xd8, 0x69, 0x93, 0x98, 0x8f, 0x4f, 0x81, 0xce, 0x7a, 0x0b, 0x17, 0xa4, 0xa8,
-	0xc2, 0x0c, 0xee, 0x2a, 0x40, 0x4a, 0xce, 0xf9, 0xe4, 0x8f, 0x39, 0x96, 0xce, 0x22, 0x88, 0x88,
-	0xaf, 0x20, 0x29, 0x4f, 0x70, 0x15, 0xb1, 0x29, 0x9b, 0xad, 0x66, 0x3f, 0x50, 0x6c, 0xf1, 0x21,
-	0xb6, 0xda, 0x68, 0x30, 0x65, 0xb3, 0xb5, 0xec, 0x1b, 0x1d, 0x3c, 0x33, 0xbe, 0x11, 0x18, 0x82,
-	0xaf, 0x4d, 0x0e, 0xe2, 0x89, 0xf1, 0xcd, 0x5f, 0x6f, 0x89, 0xdd, 0x34, 0xf8, 0xf2, 0xbf, 0xc0,
-	0xa3, 0xbd, 0xa5, 0xb4, 0x5d, 0xf8, 0x64, 0xe7, 0xe1, 0xed, 0xe3, 0x71, 0x30, 0x11, 0xdb, 0x6d,
-	0x3b, 0xf5, 0x7e, 0x58, 0x6d, 0x97, 0xf7, 0xf8, 0xe4, 0xa5, 0x89, 0xd9, 0x6b, 0x13, 0xb3, 0xf7,
-	0x26, 0x66, 0x97, 0x47, 0xda, 0xd0, 0xa2, 0x9a, 0xa7, 0xb9, 0xbb, 0x95, 0x15, 0x82, 0xbf, 0x07,
-	0x0d, 0x52, 0xd1, 0x02, 0xac, 0x92, 0xe5, 0x8d, 0xfe, 0x32, 0xca, 0x0b, 0x03, 0x96, 0x02, 0xaf,
-	0xf9, 0xb0, 0xad, 0xfb, 0xf0, 0x33, 0x00, 0x00, 0xff, 0xff, 0x78, 0x84, 0x85, 0xfc, 0xcd, 0x01,
-	0x00, 0x00,
+	// 275 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x90, 0x31, 0x4a, 0xc5, 0x40,
+	0x10, 0x86, 0x89, 0x85, 0x45, 0xb0, 0x8a, 0xd8, 0xc4, 0x67, 0x8a, 0x67, 0x67, 0x31, 0x43, 0x14,
+	0x2f, 0xa0, 0x85, 0x16, 0x62, 0xa1, 0x9d, 0xdd, 0xbc, 0x38, 0x6e, 0x96, 0x17, 0x77, 0xd7, 0xdd,
+	0x49, 0xc0, 0xd6, 0x2b, 0x78, 0x17, 0xcf, 0x60, 0x25, 0x82, 0x17, 0x90, 0xe0, 0x41, 0xe4, 0x25,
+	0x04, 0x13, 0x14, 0x5f, 0xb9, 0x3b, 0xf3, 0x7f, 0xc3, 0xf7, 0xc7, 0xa8, 0x8d, 0xb0, 0x37, 0x54,
+	0x61, 0x60, 0xdf, 0xb0, 0x47, 0x63, 0x45, 0xdf, 0xe9, 0x82, 0x44, 0x5b, 0x33, 0x79, 0x80, 0xf3,
+	0x56, 0x6c, 0xb2, 0x35, 0xfe, 0x4b, 0xcf, 0x95, 0x96, 0xb2, 0x5e, 0x40, 0x61, 0xef, 0xb1, 0x0e,
+	0xec, 0x1f, 0x59, 0x31, 0x92, 0x94, 0x6c, 0x08, 0xdd, 0x52, 0x21, 0x39, 0x1d, 0x90, 0x9c, 0xab,
+	0x06, 0x62, 0x93, 0x53, 0xe5, 0x4a, 0xca, 0x51, 0xb1, 0x61, 0x4f, 0xc2, 0xb7, 0x3d, 0x37, 0x9d,
+	0x29, 0x6b, 0x55, 0xc5, 0xab, 0x04, 0x92, 0x31, 0x56, 0xba, 0xfd, 0xd0, 0x4f, 0xe7, 0x59, 0x3c,
+	0x3b, 0x63, 0xb9, 0x1c, 0x9d, 0xbe, 0x16, 0x92, 0x3a, 0x5c, 0xf1, 0x43, 0xcd, 0x41, 0x0e, 0xdf,
+	0xa2, 0x78, 0x7b, 0x32, 0x65, 0xdf, 0xe8, 0x82, 0x93, 0x97, 0x28, 0xde, 0xf9, 0x33, 0x98, 0x1c,
+	0xc0, 0x44, 0xee, 0x3f, 0x7a, 0x7a, 0x01, 0x3f, 0x9a, 0x30, 0x68, 0x42, 0xaf, 0x09, 0x6e, 0xa9,
+	0x60, 0xa5, 0x09, 0x23, 0x4d, 0x18, 0x34, 0xe1, 0x37, 0x74, 0xbe, 0xff, 0xf4, 0xf1, 0xf5, 0xbc,
+	0xb1, 0x97, 0xec, 0x76, 0xae, 0x4d, 0x3e, 0xad, 0x3c, 0x74, 0x4b, 0x27, 0xa7, 0xaf, 0x6d, 0x16,
+	0xbd, 0xb7, 0x59, 0xf4, 0xd9, 0x66, 0xd1, 0xcd, 0xf1, 0xfa, 0x9a, 0x8b, 0x4a, 0xb3, 0x91, 0x09,
+	0x6b, 0xb1, 0xd9, 0x95, 0x77, 0xf4, 0x1d, 0x00, 0x00, 0xff, 0xff, 0xbc, 0xff, 0xee, 0x54, 0xe5,
+	0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -171,7 +115,7 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type NotificationServiceClient interface {
 	// GetNotificationStatus returns the notification service runtime status.
-	GetNotificationStatus(ctx context.Context, in *GetNotificationStatusRequest, opts ...grpc.CallOption) (*GetNotificationStatusResponse, error)
+	GetNotificationStatus(ctx context.Context, in *GetNotificationStatusRequest, opts ...grpc.CallOption) (*v1alpha1.NotificationStatus, error)
 }
 
 type notificationServiceClient struct {
@@ -182,8 +126,8 @@ func NewNotificationServiceClient(cc *grpc.ClientConn) NotificationServiceClient
 	return &notificationServiceClient{cc}
 }
 
-func (c *notificationServiceClient) GetNotificationStatus(ctx context.Context, in *GetNotificationStatusRequest, opts ...grpc.CallOption) (*GetNotificationStatusResponse, error) {
-	out := new(GetNotificationStatusResponse)
+func (c *notificationServiceClient) GetNotificationStatus(ctx context.Context, in *GetNotificationStatusRequest, opts ...grpc.CallOption) (*v1alpha1.NotificationStatus, error) {
+	out := new(v1alpha1.NotificationStatus)
 	err := c.cc.Invoke(ctx, "/notification.NotificationService/GetNotificationStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -194,14 +138,14 @@ func (c *notificationServiceClient) GetNotificationStatus(ctx context.Context, i
 // NotificationServiceServer is the server API for NotificationService service.
 type NotificationServiceServer interface {
 	// GetNotificationStatus returns the notification service runtime status.
-	GetNotificationStatus(context.Context, *GetNotificationStatusRequest) (*GetNotificationStatusResponse, error)
+	GetNotificationStatus(context.Context, *GetNotificationStatusRequest) (*v1alpha1.NotificationStatus, error)
 }
 
 // UnimplementedNotificationServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedNotificationServiceServer struct {
 }
 
-func (*UnimplementedNotificationServiceServer) GetNotificationStatus(ctx context.Context, req *GetNotificationStatusRequest) (*GetNotificationStatusResponse, error) {
+func (*UnimplementedNotificationServiceServer) GetNotificationStatus(ctx context.Context, req *GetNotificationStatusRequest) (*v1alpha1.NotificationStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNotificationStatus not implemented")
 }
 
@@ -267,50 +211,6 @@ func (m *GetNotificationStatusRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNotificationStatusResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GetNotificationStatusResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GetNotificationStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Status) > 0 {
-		i -= len(m.Status)
-		copy(dAtA[i:], m.Status)
-		i = encodeVarintNotification(dAtA, i, uint64(len(m.Status)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if m.Started {
-		i--
-		if m.Started {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintNotification(dAtA []byte, offset int, v uint64) int {
 	offset -= sovNotification(v)
 	base := offset
@@ -328,25 +228,6 @@ func (m *GetNotificationStatusRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *GetNotificationStatusResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Started {
-		n += 2
-	}
-	l = len(m.Status)
-	if l > 0 {
-		n += 1 + l + sovNotification(uint64(l))
-	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -388,109 +269,6 @@ func (m *GetNotificationStatusRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: GetNotificationStatusRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipNotification(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthNotification
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetNotificationStatusResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowNotification
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetNotificationStatusResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetNotificationStatusResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Started", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNotification
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Started = bool(v != 0)
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNotification
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthNotification
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthNotification
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Status = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipNotification(dAtA[iNdEx:])

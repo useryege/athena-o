@@ -17,7 +17,7 @@ func TestNotificationStatusTransitions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetNotificationStatus before start: %v", err)
 	}
-	if resp.GetStarted() || resp.GetStatus() != "stopped" {
+	if resp.Started || resp.Status != "stopped" {
 		t.Fatalf("status before start = %#v, want stopped", resp)
 	}
 
@@ -28,7 +28,7 @@ func TestNotificationStatusTransitions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetNotificationStatus after start: %v", err)
 	}
-	if !resp.GetStarted() || resp.GetStatus() != "running" {
+	if !resp.Started || resp.Status != "running" {
 		t.Fatalf("status after start = %#v, want running", resp)
 	}
 
@@ -39,7 +39,7 @@ func TestNotificationStatusTransitions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetNotificationStatus after stop: %v", err)
 	}
-	if resp.GetStarted() || resp.GetStatus() != "stopped" {
+	if resp.Started || resp.Status != "stopped" {
 		t.Fatalf("status after stop = %#v, want stopped", resp)
 	}
 }

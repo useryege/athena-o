@@ -6,6 +6,7 @@ import (
 
 	"github.com/useryege/athena/internal/notification/apiclient"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -41,7 +42,7 @@ func (s *Service) Stop() error {
 	return nil
 }
 
-func (s *Service) GetNotificationStatus(context.Context, *apiclient.GetNotificationStatusRequest) (*apiclient.GetNotificationStatusResponse, error) {
+func (s *Service) GetNotificationStatus(context.Context, *apiclient.GetNotificationStatusRequest) (*v1alpha1.NotificationStatus, error) {
 	s.startStopMu.Lock()
 	started := s.started
 	s.startStopMu.Unlock()
@@ -50,7 +51,7 @@ func (s *Service) GetNotificationStatus(context.Context, *apiclient.GetNotificat
 	if started {
 		statusText = "running"
 	}
-	return &apiclient.GetNotificationStatusResponse{
+	return &v1alpha1.NotificationStatus{
 		Started: started,
 		Status:  statusText,
 	}, nil

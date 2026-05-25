@@ -3,18 +3,14 @@ syntax = "proto3";
 // Notification Service API exposes notification service runtime status.
 package athena.internal.notification;
 
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+
 option go_package = "github.com/useryege/athena/internal/notification/apiclient";
 
 // GetNotificationStatusRequest queries the notification service runtime status.
 message GetNotificationStatusRequest {}
 
-// GetNotificationStatusResponse returns the notification service runtime status.
-message GetNotificationStatusResponse {
-  bool started = 1;
-  string status = 2;
-}
-
 service NotificationService {
   // GetNotificationStatus returns the notification service runtime status.
-  rpc GetNotificationStatus(GetNotificationStatusRequest) returns (GetNotificationStatusResponse);
+  rpc GetNotificationStatus(GetNotificationStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationStatus);
 }
