@@ -13,6 +13,7 @@ import {RepoCredsService} from './repocreds-service';
 import {UserService} from './user-service';
 import {VersionService} from './version-service';
 import {ViewPreferencesService} from './view-preferences-service';
+import {WormService} from './worm-service';
 export interface Services {
     athenaApplication: AthenaApplicationService;
     applications: ApplicationsService;
@@ -29,6 +30,7 @@ export interface Services {
     gpgkeys: GnuPGPublicKeyService;
     extensions: ExtensionsService;
     notification: NotificationService;
+    worm: WormService;
 }
 
 export const services: Services = {
@@ -46,7 +48,8 @@ export const services: Services = {
     accounts: new AccountsService(),
     gpgkeys: new GnuPGPublicKeyService(),
     extensions: new ExtensionsService(),
-    notification: new NotificationService()
+    notification: new NotificationService(),
+    worm: new WormService()
 };
 
 export * from './projects-service';

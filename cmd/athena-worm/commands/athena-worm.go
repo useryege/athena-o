@@ -31,17 +31,19 @@ import (
 	"github.com/useryege/athena/util/healthz"
 	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/templates"
+	utilworm "github.com/useryege/athena/util/worm"
 )
 
 const cliName = "athena-worm"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost  string
-		listenPort  int
-		metricsHost string
-		metricsPort int
-		redisClient *redis.Client
+		listenHost     string
+		listenPort     int
+		metricsHost    string
+		metricsPort    int
+		wormAPIBaseURL string
+		redisClient    *redis.Client
 
 		storeSrc func(context.Context) (*wormstore.SQLStore, error)
 		cacheSrc func() (*cacheutil.Cache, error)
@@ -75,6 +77,10 @@ func NewCommand() *cobra.Command {
 			if err := requireWormRedis(ctx, redisClient); err != nil {
 				return err
 			}
+			wormClient, err := utilworm.NewClient(utilworm.Config{BaseURL: wormAPIBaseURL})
+			if err != nil {
+				return err
+			}
 
 			metricsServer := metrics.NewMetricsServer()
 			metricsMux := http.NewServeMux()
@@ -83,7 +89,7 @@ func NewCommand() *cobra.Command {
 				errors.CheckError(http.ListenAndServe(fmt.Sprintf("%s:%d", metricsHost, metricsPort), metricsMux))
 			}()
 
-			server, err := worm.NewServer(worm.ServerOpts{Store: store})
+			server, err := worm.NewServer(worm.ServerOpts{Store: store, WormClient: wormClient})
 			if err != nil {
 				return err
 			}
@@ -153,6 +159,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortWorm, "Listen on given port for incoming connections")
 	command.Flags().StringVar(&metricsHost, "metrics-address", env.StringFromEnv("ATHENA_WORM_METRICS_LISTEN_ADDRESS", common.DefaultAddressWormMetrics), "Listen on given address for metrics and health checks")
 	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortWormMetrics, "Start metrics server on given port")
+	command.Flags().StringVar(&wormAPIBaseURL, "worm-api-base-url", env.StringFromEnv("ATHENA_WORM_API_BASE_URL", utilworm.DefaultBaseURL), "Worm API base URL")
 
 	storeSrc = wormstore.NewSQLStoreSource()
 	cacheSrc = cacheutil.AddCacheFlagsToCmd(command, cacheutil.Options{

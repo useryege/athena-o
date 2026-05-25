@@ -14,7 +14,38 @@ message GetWormStatusResponse {
   string status = 2;
 }
 
+// ListWormMarketsRequest queries Worm markets for the configured browse view.
+message ListWormMarketsRequest {
+  int32 limit = 1;
+  string cursor = 2;
+}
+
+// WormMarketSummary is the Athena-facing subset of a Worm market row.
+message WormMarketSummary {
+  string condition_id = 1;
+  string title = 2;
+  string description = 3;
+  string logo = 4;
+  string last_trade_price = 5;
+  string state = 6;
+  string category = 7;
+  int64 created = 8;
+  string event_title = 9;
+  string event_condition_id = 10;
+  string event_logo = 11;
+  bool margin_enabled = 12;
+}
+
+// ListWormMarketsResponse returns Worm market rows and cursor pagination.
+message ListWormMarketsResponse {
+  repeated WormMarketSummary markets = 1;
+  string next_cursor = 2;
+}
+
 service WormService {
   // GetWormStatus returns the worm service runtime status.
   rpc GetWormStatus(GetWormStatusRequest) returns (GetWormStatusResponse);
+
+  // ListWormMarkets returns sports markets sorted by leverage.
+  rpc ListWormMarkets(ListWormMarketsRequest) returns (ListWormMarketsResponse);
 }

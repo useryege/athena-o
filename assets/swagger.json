@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-384-gb9729f8-dirty"
+    "version": "v1.0.0-401-g50fb520-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -881,6 +881,42 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationUpdateWalletBlacklistEntryNoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/worm/markets": {
+      "get": {
+        "tags": [
+          "WormService"
+        ],
+        "summary": "ListWormMarkets returns sports markets sorted by leverage.",
+        "operationId": "WormService_ListWormMarkets",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/wormListWormMarketsResponse"
             }
           },
           "default": {
@@ -2393,6 +2429,64 @@
           "type": "boolean"
         },
         "status": {
+          "type": "string"
+        }
+      }
+    },
+    "wormListWormMarketsResponse": {
+      "description": "ListWormMarketsResponse returns Worm market rows and cursor pagination.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/wormWormMarketItem"
+          }
+        },
+        "next_cursor": {
+          "type": "string"
+        }
+      }
+    },
+    "wormWormMarketItem": {
+      "description": "WormMarketItem is the UI-facing subset of a Worm market row.",
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "condition_id": {
+          "type": "string"
+        },
+        "created": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "description": {
+          "type": "string"
+        },
+        "event_condition_id": {
+          "type": "string"
+        },
+        "event_logo": {
+          "type": "string"
+        },
+        "event_title": {
+          "type": "string"
+        },
+        "last_trade_price": {
+          "type": "string"
+        },
+        "logo": {
+          "type": "string"
+        },
+        "margin_enabled": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        },
+        "title": {
           "type": "string"
         }
       }
