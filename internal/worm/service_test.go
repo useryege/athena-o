@@ -117,6 +117,17 @@ func (f *fakeWormMarketClient) getListCallsForCursor(cursor string) int {
 	return calls
 }
 
+func (f *fakeWormMarketClient) getLastListRequestForCursor(cursor string) (utilworm.ListMarketsOptions, bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for i := len(f.listRequests) - 1; i >= 0; i-- {
+		if f.listRequests[i].Cursor == cursor {
+			return f.listRequests[i], true
+		}
+	}
+	return utilworm.ListMarketsOptions{}, false
+}
+
 func (f *fakeWormMarketClient) getDetailCalls() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -148,7 +159,7 @@ func newTestRedisService(t *testing.T, client *fakeWormMarketClient, config Cach
 	}
 }
 
-func TestListWormMarketsUsesNewAllDefaults(t *testing.T) {
+func TestListWormMarketsUsesLeverageSportsDefaults(t *testing.T) {
 	nextCursor := "next-page"
 	description := "market description"
 	logo := "https://cdn.worm.wtf/m/1.png"
@@ -187,11 +198,11 @@ func TestListWormMarketsUsesNewAllDefaults(t *testing.T) {
 	if client.options.Cursor != "" {
 		t.Fatalf("cursor = %q, want empty", client.options.Cursor)
 	}
-	if client.options.Category != "" {
-		t.Fatalf("category = %q, want empty", client.options.Category)
+	if client.options.Category != "sports" {
+		t.Fatalf("category = %q, want sports", client.options.Category)
 	}
-	if client.options.Sort != "" {
-		t.Fatalf("sort = %q, want empty", client.options.Sort)
+	if client.options.Sort != "leverage" {
+		t.Fatalf("sort = %q, want leverage", client.options.Sort)
 	}
 	if resp.GetNextCursor() != nextCursor {
 		t.Fatalf("next cursor = %q, want %q", resp.GetNextCursor(), nextCursor)
@@ -211,6 +222,24 @@ func TestListWormMarketsUsesNewAllDefaults(t *testing.T) {
 	}
 	if market.Created != created || !market.MarginEnabled {
 		t.Fatalf("created/margin = %#v", market)
+	}
+}
+
+func TestListWormMarketsMapsNewAllFiltersToUpstreamDefaults(t *testing.T) {
+	client := &fakeWormMarketClient{resp: &utilworm.ListMarketsResponse{}}
+
+	_, err := NewService(nil, client, utilworm.DefaultBaseURL).ListWormMarkets(context.Background(), &apiclient.ListWormMarketsRequest{
+		SortOption:   "new",
+		CategorySlug: "all",
+	})
+	if err != nil {
+		t.Fatalf("ListWormMarkets: %v", err)
+	}
+	if client.options.Sort != "" {
+		t.Fatalf("sort = %q, want empty", client.options.Sort)
+	}
+	if client.options.Category != "" {
+		t.Fatalf("category = %q, want empty", client.options.Category)
 	}
 }
 
@@ -534,8 +563,9 @@ func TestWarmupLoopRefreshesDefaultFirstPage(t *testing.T) {
 	}
 
 	waitUntil(t, time.Second, func() bool {
-		return client.getListCallsForCursor("") >= 1
-	}, "default first page to warm up")
+		req, ok := client.getLastListRequestForCursor("")
+		return ok && req.Sort == "leverage" && req.Category == "sports"
+	}, "default leverage sports first page to warm up")
 }
 
 func TestGetWormMarketMapsDetail(t *testing.T) {

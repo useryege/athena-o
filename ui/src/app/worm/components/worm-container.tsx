@@ -49,8 +49,8 @@ const MarketLogo = ({market}: {market: WormMarketItem}) => {
 
 export const WormContainer = () => {
     const [markets, setMarkets] = React.useState<WormMarketItem[]>([]);
-    const [sortOption, setSortOption] = React.useState<WormMarketSortOption>('new');
-    const [categorySlug, setCategorySlug] = React.useState<WormMarketCategorySlug>('all');
+    const [sortOption, setSortOption] = React.useState<WormMarketSortOption>('leverage');
+    const [categorySlug, setCategorySlug] = React.useState<WormMarketCategorySlug>('sports');
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
     const [error, setError] = React.useState<Error | null>(null);
@@ -184,8 +184,8 @@ export const WormContainer = () => {
 
     const page = cursorStack.length + 1;
     const selectedMarket = markets.find(market => market.conditionId === selectedConditionId);
-    const activeSortLabel = SORT_OPTIONS.find(item => item.value === sortOption)?.label || 'New';
-    const activeCategoryLabel = CATEGORY_OPTIONS.find(item => item.value === categorySlug)?.label || 'All';
+    const activeSortLabel = SORT_OPTIONS.find(item => item.value === sortOption)?.label || 'Leverage';
+    const activeCategoryLabel = CATEGORY_OPTIONS.find(item => item.value === categorySlug)?.label || 'Sports';
 
     return (
         <Page title='Worm' toolbar={{breadcrumbs: [{title: 'Worm'}]}}>

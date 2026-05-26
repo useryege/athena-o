@@ -208,10 +208,10 @@ export class WormService {
             limit: options.limit || 20,
             cursor: options.cursor || ''
         };
-        if (options.sortOption && options.sortOption !== 'new') {
+        if (options.sortOption) {
             query.sort_option = options.sortOption;
         }
-        if (options.categorySlug && options.categorySlug !== 'all') {
+        if (options.categorySlug) {
             query.category_slug = options.categorySlug;
         }
         const req = requests.get('/worm/markets').query(query);

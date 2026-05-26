@@ -21,8 +21,8 @@ const (
 	defaultWormMarketsLimit = 20
 	maxWormMarketsLimit     = 100
 
-	defaultWormMarketsCategorySlug = "all"
-	defaultWormMarketsSortOption   = "new"
+	defaultWormMarketsCategorySlug = "sports"
+	defaultWormMarketsSortOption   = "leverage"
 )
 
 type wormMarketClient interface {
@@ -223,14 +223,14 @@ func normalizeWormMarketCategorySlug(value string) (string, error) {
 }
 
 func upstreamWormMarketSort(value string) string {
-	if value == defaultWormMarketsSortOption {
+	if value == "new" {
 		return ""
 	}
 	return value
 }
 
 func upstreamWormMarketCategory(value string) string {
-	if value == defaultWormMarketsCategorySlug {
+	if value == "all" {
 		return ""
 	}
 	return value
