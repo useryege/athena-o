@@ -456,12 +456,6 @@ message WormMarketDetail {
   optional string takerFee = 8;
 
   optional WormMarketConfig config = 9;
-
-  optional WormMarketStats stats = 10;
-
-  repeated WormMarketPrice prices = 11;
-
-  repeated WormMarketOrderBook orderBooks = 12;
 }
 
 message WormMarketItem {
@@ -490,45 +484,9 @@ message WormMarketItem {
   optional bool marginEnabled = 12;
 }
 
-message WormMarketOrderBook {
-  optional string market = 1;
-
-  optional bool isYes = 2;
-
-  repeated WormOrderBookLevel bid = 3;
-
-  repeated WormOrderBookLevel ask = 4;
-}
-
 message WormMarketOutcome {
   optional bool isYes = 1;
 
   optional string text = 2;
-}
-
-message WormMarketPrice {
-  optional string conditionId = 1;
-
-  optional string price = 2;
-
-  optional string priceKind = 3;
-
-  optional bool isYes = 4;
-}
-
-message WormMarketStats {
-  optional string totalVolume = 1;
-
-  optional string totalVolume24h = 2;
-
-  optional string marketCap = 3;
-
-  optional int64 tradeCount = 4;
-}
-
-message WormOrderBookLevel {
-  optional string price = 1;
-
-  optional string totalAmount = 2;
 }
 

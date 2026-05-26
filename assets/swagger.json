@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-416-g82c9fc5-dirty"
+    "version": "v1.0.0-419-g16f0b65-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -966,7 +966,7 @@
         "tags": [
           "WormService"
         ],
-        "summary": "GetWormMarket returns one market with stats, prices, and shallow order books.",
+        "summary": "GetWormMarket returns one market detail from Worm.",
         "operationId": "WormService_GetWormMarket",
         "parameters": [
           {
@@ -2536,22 +2536,10 @@
         "noOutcomeLabel": {
           "type": "string"
         },
-        "orderBooks": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1WormMarketOrderBook"
-          }
-        },
         "outcomes": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1alpha1WormMarketOutcome"
-          }
-        },
-        "prices": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1WormMarketPrice"
           }
         },
         "resolutionDate": {
@@ -2563,9 +2551,6 @@
           "items": {
             "type": "string"
           }
-        },
-        "stats": {
-          "$ref": "#/definitions/v1alpha1WormMarketStats"
         },
         "takerFee": {
           "type": "string"
@@ -2617,29 +2602,6 @@
         }
       }
     },
-    "v1alpha1WormMarketOrderBook": {
-      "type": "object",
-      "properties": {
-        "ask": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1WormOrderBookLevel"
-          }
-        },
-        "bid": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1WormOrderBookLevel"
-          }
-        },
-        "isYes": {
-          "type": "boolean"
-        },
-        "market": {
-          "type": "string"
-        }
-      }
-    },
     "v1alpha1WormMarketOutcome": {
       "type": "object",
       "properties": {
@@ -2647,52 +2609,6 @@
           "type": "boolean"
         },
         "text": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1WormMarketPrice": {
-      "type": "object",
-      "properties": {
-        "conditionId": {
-          "type": "string"
-        },
-        "isYes": {
-          "type": "boolean"
-        },
-        "price": {
-          "type": "string"
-        },
-        "priceKind": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1WormMarketStats": {
-      "type": "object",
-      "properties": {
-        "marketCap": {
-          "type": "string"
-        },
-        "totalVolume": {
-          "type": "string"
-        },
-        "totalVolume24h": {
-          "type": "string"
-        },
-        "tradeCount": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "v1alpha1WormOrderBookLevel": {
-      "type": "object",
-      "properties": {
-        "price": {
-          "type": "string"
-        },
-        "totalAmount": {
           "type": "string"
         }
       }

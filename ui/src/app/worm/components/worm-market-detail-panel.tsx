@@ -2,7 +2,7 @@ import {MockupList} from 'argo-ui';
 import * as React from 'react';
 
 import {services} from '../../shared/services';
-import {WormMarketDetail, WormMarketItem, WormMarketOrderBook, WormMarketPrice} from '../../shared/services/worm-service';
+import {WormMarketDetail, WormMarketItem} from '../../shared/services/worm-service';
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -13,7 +13,6 @@ const isAbortedError = (err: unknown) =>
 
 const renderValue = (value?: string | number) => (value !== undefined && value !== null && String(value) !== '' ? String(value) : '-');
 const renderTimestamp = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '-');
-const outcomeName = (isYes: boolean, detail?: WormMarketDetail) => (isYes ? detail?.yesOutcomeLabel || 'YES' : detail?.noOutcomeLabel || 'NO');
 
 const DetailLogo = ({market}: {market?: WormMarketItem}) => {
     const logo = market?.logo || market?.eventLogo;
@@ -28,44 +27,6 @@ const DetailMetric = ({label, value}: {label: string; value?: string | number}) 
     <div className='worm-market-detail__metric'>
         <span>{label}</span>
         <strong title={renderValue(value)}>{renderValue(value)}</strong>
-    </div>
-);
-
-const PriceMetric = ({isYes, price, detail}: {isYes: boolean; price?: WormMarketPrice; detail?: WormMarketDetail}) => (
-    <DetailMetric label={`${outcomeName(isYes, detail)} Price`} value={price?.price} />
-);
-
-const OrderBookTable = ({isYes, book, detail}: {isYes: boolean; book?: WormMarketOrderBook; detail?: WormMarketDetail}) => (
-    <div className='worm-market-detail__book'>
-        <div className='worm-market-detail__book-title'>{outcomeName(isYes, detail)} Order Book</div>
-        <div className='worm-market-detail__book-grid'>
-            <div>
-                <div className='worm-market-detail__book-side'>Bid</div>
-                {(book?.bid || []).length === 0 ? (
-                    <div className='worm-market-detail__empty-line'>-</div>
-                ) : (
-                    (book?.bid || []).map((level, index) => (
-                        <div className='worm-market-detail__book-row' key={`bid-${index}`}>
-                            <span>{renderValue(level.price)}</span>
-                            <strong>{renderValue(level.totalAmount)}</strong>
-                        </div>
-                    ))
-                )}
-            </div>
-            <div>
-                <div className='worm-market-detail__book-side'>Ask</div>
-                {(book?.ask || []).length === 0 ? (
-                    <div className='worm-market-detail__empty-line'>-</div>
-                ) : (
-                    (book?.ask || []).map((level, index) => (
-                        <div className='worm-market-detail__book-row' key={`ask-${index}`}>
-                            <span>{renderValue(level.price)}</span>
-                            <strong>{renderValue(level.totalAmount)}</strong>
-                        </div>
-                    ))
-                )}
-            </div>
-        </div>
     </div>
 );
 
@@ -154,10 +115,6 @@ export const WormMarketDetailPanel = ({conditionId, initialMarket}: {conditionId
     }, [loadDetail]);
 
     const market = detail?.market || initialMarket;
-    const yesPrice = detail?.prices.find(item => item.isYes);
-    const noPrice = detail?.prices.find(item => !item.isYes);
-    const yesBook = detail?.orderBooks.find(item => item.isYes);
-    const noBook = detail?.orderBooks.find(item => !item.isYes);
     const config = detail?.config || {};
 
     return (
@@ -217,32 +174,6 @@ export const WormMarketDetailPanel = ({conditionId, initialMarket}: {conditionId
                                     </div>
                                 ))
                             )}
-                        </div>
-                    </section>
-
-                    <section className='worm-market-detail__section'>
-                        <h3>Stats</h3>
-                        <div className='worm-market-detail__metrics worm-market-detail__metrics--compact'>
-                            <DetailMetric label='Volume' value={detail?.stats.totalVolume} />
-                            <DetailMetric label='24H Volume' value={detail?.stats.totalVolume24H} />
-                            <DetailMetric label='Market Cap' value={detail?.stats.marketCap} />
-                            <DetailMetric label='Trades' value={detail?.stats.tradeCount} />
-                        </div>
-                    </section>
-
-                    <section className='worm-market-detail__section'>
-                        <h3>Prices</h3>
-                        <div className='worm-market-detail__metrics worm-market-detail__metrics--compact'>
-                            <PriceMetric isYes={true} price={yesPrice} detail={detail || undefined} />
-                            <PriceMetric isYes={false} price={noPrice} detail={detail || undefined} />
-                        </div>
-                    </section>
-
-                    <section className='worm-market-detail__section'>
-                        <h3>Order Books</h3>
-                        <div className='worm-market-detail__books'>
-                            <OrderBookTable isYes={true} book={yesBook} detail={detail || undefined} />
-                            <OrderBookTable isYes={false} book={noBook} detail={detail || undefined} />
                         </div>
                     </section>
 

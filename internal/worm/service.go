@@ -28,9 +28,6 @@ const (
 type wormMarketClient interface {
 	ListMarkets(context.Context, utilworm.ListMarketsOptions) (*utilworm.ListMarketsResponse, error)
 	GetMarket(context.Context, string) (*utilworm.Market, error)
-	GetMarketStats(context.Context, string) (*utilworm.MarketStats, error)
-	GetMarketPrice(context.Context, string, utilworm.GetMarketPriceOptions) (*utilworm.MarketPrice, error)
-	GetMarketOrderBook(context.Context, string, utilworm.GetMarketOrderBookOptions) (*utilworm.MarketOrderBook, error)
 }
 
 type Service struct {
@@ -263,33 +260,8 @@ func (s *Service) fetchWormMarket(ctx context.Context, conditionID string) (*api
 		return nil, status.Error(codes.NotFound, "worm market not found")
 	}
 
-	stats, err := s.wormClient.GetMarketStats(ctx, conditionID)
-	if err != nil {
-		return nil, err
-	}
-
-	yes := true
-	no := false
-	yesPrice, err := s.wormClient.GetMarketPrice(ctx, conditionID, utilworm.GetMarketPriceOptions{IsYes: &yes})
-	if err != nil {
-		return nil, err
-	}
-	noPrice, err := s.wormClient.GetMarketPrice(ctx, conditionID, utilworm.GetMarketPriceOptions{IsYes: &no})
-	if err != nil {
-		return nil, err
-	}
-
-	yesBook, err := s.wormClient.GetMarketOrderBook(ctx, conditionID, utilworm.GetMarketOrderBookOptions{Depth: 5, IsYes: &yes})
-	if err != nil {
-		return nil, err
-	}
-	noBook, err := s.wormClient.GetMarketOrderBook(ctx, conditionID, utilworm.GetMarketOrderBookOptions{Depth: 5, IsYes: &no})
-	if err != nil {
-		return nil, err
-	}
-
 	return &apiclient.GetWormMarketResponse{
-		Market:    s.toAPIMarketDetail(market, stats, []*utilworm.MarketPrice{yesPrice, noPrice}, []*utilworm.MarketOrderBook{yesBook, noBook}),
+		Market:    s.toAPIMarketDetail(market),
 		FetchedAt: time.Now().Unix(),
 	}, nil
 }
@@ -314,12 +286,7 @@ func (s *Service) toAPIMarketSummary(market utilworm.MarketSummary) *v1alpha1.Wo
 	return item
 }
 
-func (s *Service) toAPIMarketDetail(
-	market *utilworm.Market,
-	stats *utilworm.MarketStats,
-	prices []*utilworm.MarketPrice,
-	orderBooks []*utilworm.MarketOrderBook,
-) *v1alpha1.WormMarketDetail {
+func (s *Service) toAPIMarketDetail(market *utilworm.Market) *v1alpha1.WormMarketDetail {
 	item := s.toAPIMarketSummary(market.MarketSummary)
 	detail := &v1alpha1.WormMarketDetail{
 		Market:          *item,
@@ -330,10 +297,7 @@ func (s *Service) toAPIMarketDetail(
 		MakerFee:        stringValue(market.MakerFee),
 		TakerFee:        stringValue(market.TakerFee),
 		Config:          toAPIMarketConfig(market.Config),
-		Stats:           toAPIMarketStats(stats),
 		Outcomes:        make([]v1alpha1.WormMarketOutcome, 0, len(market.Outcomes)),
-		Prices:          make([]v1alpha1.WormMarketPrice, 0, len(prices)),
-		OrderBooks:      make([]v1alpha1.WormMarketOrderBook, 0, len(orderBooks)),
 	}
 	for i := range market.Outcomes {
 		detail.Outcomes = append(detail.Outcomes, v1alpha1.WormMarketOutcome{
@@ -341,36 +305,7 @@ func (s *Service) toAPIMarketDetail(
 			Text:  market.Outcomes[i].Text,
 		})
 	}
-	for _, price := range prices {
-		if price == nil {
-			continue
-		}
-		detail.Prices = append(detail.Prices, v1alpha1.WormMarketPrice{
-			ConditionID: price.ConditionID,
-			Price:       stringValue(price.Price),
-			PriceKind:   price.PriceKind,
-			IsYes:       price.IsYes,
-		})
-	}
-	for _, book := range orderBooks {
-		if book == nil {
-			continue
-		}
-		detail.OrderBooks = append(detail.OrderBooks, toAPIOrderBook(book))
-	}
 	return detail
-}
-
-func toAPIMarketStats(stats *utilworm.MarketStats) v1alpha1.WormMarketStats {
-	if stats == nil {
-		return v1alpha1.WormMarketStats{}
-	}
-	return v1alpha1.WormMarketStats{
-		TotalVolume:    stats.TotalVolume,
-		TotalVolume24H: stats.TotalVolume24H,
-		MarketCap:      stats.MarketCap,
-		TradeCount:     stats.TradeCount,
-	}
 }
 
 func toAPIMarketConfig(config *utilworm.MarketConfig) v1alpha1.WormMarketConfig {
@@ -398,29 +333,6 @@ func toAPIMarketConfig(config *utilworm.MarketConfig) v1alpha1.WormMarketConfig 
 		MakerFeeRate:        stringValue(config.MakerFeeRate),
 		TakerFeeRate:        stringValue(config.TakerFeeRate),
 		DefaultSlippageRate: stringValue(config.DefaultSlippageRate),
-	}
-}
-
-func toAPIOrderBook(book *utilworm.MarketOrderBook) v1alpha1.WormMarketOrderBook {
-	apiBook := v1alpha1.WormMarketOrderBook{
-		Market: book.Market,
-		IsYes:  book.IsYes,
-		Bid:    make([]v1alpha1.WormOrderBookLevel, 0, len(book.Bid)),
-		Ask:    make([]v1alpha1.WormOrderBookLevel, 0, len(book.Ask)),
-	}
-	for i := range book.Bid {
-		apiBook.Bid = append(apiBook.Bid, toAPIOrderBookLevel(book.Bid[i]))
-	}
-	for i := range book.Ask {
-		apiBook.Ask = append(apiBook.Ask, toAPIOrderBookLevel(book.Ask[i]))
-	}
-	return apiBook
-}
-
-func toAPIOrderBookLevel(level utilworm.OrderBookLevel) v1alpha1.WormOrderBookLevel {
-	return v1alpha1.WormOrderBookLevel{
-		Price:       level.Price,
-		TotalAmount: level.TotalAmount,
 	}
 }
 

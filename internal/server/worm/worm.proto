@@ -58,7 +58,7 @@ service WormService {
     option (google.api.http) = {get: "/api/v1/worm/markets"};
   }
 
-  // GetWormMarket returns one market with stats, prices, and shallow order books.
+  // GetWormMarket returns one market detail from Worm.
   rpc GetWormMarket(GetWormMarketRequest) returns (GetWormMarketResponse) {
     option (google.api.http) = {get: "/api/v1/worm/markets/{condition_id}"};
   }

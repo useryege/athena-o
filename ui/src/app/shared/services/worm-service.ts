@@ -60,32 +60,6 @@ export interface WormMarketConfig {
     defaultSlippageRate?: string;
 }
 
-export interface WormMarketStats {
-    totalVolume?: string;
-    totalVolume24H?: string;
-    marketCap?: string;
-    tradeCount?: number;
-}
-
-export interface WormMarketPrice {
-    conditionId: string;
-    price?: string;
-    priceKind?: string;
-    isYes: boolean;
-}
-
-export interface WormOrderBookLevel {
-    price: string;
-    totalAmount: string;
-}
-
-export interface WormMarketOrderBook {
-    market: string;
-    isYes: boolean;
-    bid: WormOrderBookLevel[];
-    ask: WormOrderBookLevel[];
-}
-
 export interface WormMarketDetail {
     market: WormMarketItem;
     fetchedAt?: number;
@@ -98,9 +72,6 @@ export interface WormMarketDetail {
     makerFee?: string;
     takerFee?: string;
     config: WormMarketConfig;
-    stats: WormMarketStats;
-    prices: WormMarketPrice[];
-    orderBooks: WormMarketOrderBook[];
 }
 
 const readValue = (item: any, ...names: string[]) => {
@@ -159,32 +130,6 @@ const normalizeConfig = (item: any = {}): WormMarketConfig => ({
     defaultSlippageRate: readString(item, 'defaultSlippageRate', 'default_slippage_rate')
 });
 
-const normalizeStats = (item: any = {}): WormMarketStats => ({
-    totalVolume: readString(item, 'totalVolume', 'total_volume'),
-    totalVolume24H: readString(item, 'totalVolume24H', 'totalVolume24h', 'total_volume_24h'),
-    marketCap: readString(item, 'marketCap', 'market_cap'),
-    tradeCount: readNumber(item, 'tradeCount', 'trade_count')
-});
-
-const normalizePrice = (item: any): WormMarketPrice => ({
-    conditionId: readString(item, 'conditionId', 'condition_id'),
-    price: readString(item, 'price', 'price'),
-    priceKind: readString(item, 'priceKind', 'price_kind'),
-    isYes: readBoolean(item, 'isYes', 'is_yes')
-});
-
-const normalizeOrderBookLevel = (item: any): WormOrderBookLevel => ({
-    price: readString(item, 'price', 'price'),
-    totalAmount: readString(item, 'totalAmount', 'total_amount')
-});
-
-const normalizeOrderBook = (item: any): WormMarketOrderBook => ({
-    market: readString(item, 'market', 'market'),
-    isYes: readBoolean(item, 'isYes', 'is_yes'),
-    bid: (item?.bid || []).map(normalizeOrderBookLevel),
-    ask: (item?.ask || []).map(normalizeOrderBookLevel)
-});
-
 const normalizeMarketDetail = (item: any): WormMarketDetail => ({
     market: normalizeMarket(item?.market || {}),
     fetchedAt: readNumber(item, 'fetchedAt', 'fetched_at'),
@@ -196,10 +141,7 @@ const normalizeMarketDetail = (item: any): WormMarketDetail => ({
     resolutionDate: readNumber(item, 'resolutionDate', 'resolution_date'),
     makerFee: readString(item, 'makerFee', 'maker_fee'),
     takerFee: readString(item, 'takerFee', 'taker_fee'),
-    config: normalizeConfig(item?.config || {}),
-    stats: normalizeStats(item?.stats || {}),
-    prices: (item?.prices || []).map(normalizePrice),
-    orderBooks: (item?.orderBooks || item?.order_books || []).map(normalizeOrderBook)
+    config: normalizeConfig(item?.config || {})
 });
 
 export class WormService {

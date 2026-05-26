@@ -116,20 +116,6 @@ func TestGetWormMarketForwardsRequestAndMapsResponse(t *testing.T) {
 					State:          "open",
 					MarginEnabled:  true,
 				},
-				Stats: v1alpha1.WormMarketStats{
-					TotalVolume24H: "250",
-					TradeCount:     42,
-				},
-				Prices: []v1alpha1.WormMarketPrice{{
-					ConditionID: "market-1",
-					Price:       "0.71",
-					IsYes:       true,
-				}},
-				OrderBooks: []v1alpha1.WormMarketOrderBook{{
-					Market: "market-1",
-					IsYes:  true,
-					Bid:    []v1alpha1.WormOrderBookLevel{{Price: "0.70", TotalAmount: "12"}},
-				}},
 			},
 			FetchedAt: 1714300100,
 			Stale:     true,
@@ -149,14 +135,5 @@ func TestGetWormMarketForwardsRequestAndMapsResponse(t *testing.T) {
 	market := resp.GetMarket()
 	if market.Market.ConditionID != "market-1" || market.Market.Title != "Will Team A beat Team B?" {
 		t.Fatalf("market = %#v", market)
-	}
-	if market.Stats.TotalVolume24H != "250" || market.Stats.TradeCount != 42 {
-		t.Fatalf("stats = %#v", market.Stats)
-	}
-	if len(market.Prices) != 1 || market.Prices[0].Price != "0.71" || !market.Prices[0].IsYes {
-		t.Fatalf("prices = %#v", market.Prices)
-	}
-	if len(market.OrderBooks) != 1 || market.OrderBooks[0].Bid[0].TotalAmount != "12" {
-		t.Fatalf("order books = %#v", market.OrderBooks)
 	}
 }

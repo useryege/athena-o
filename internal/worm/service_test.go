@@ -17,21 +17,16 @@ import (
 )
 
 type fakeWormMarketClient struct {
-	mu               sync.Mutex
-	listCalls        int
-	listRequests     []utilworm.ListMarketsOptions
-	options          utilworm.ListMarketsOptions
-	resp             *utilworm.ListMarketsResponse
-	err              error
-	detailCalls      int
-	conditionID      string
-	marketResp       *utilworm.Market
-	marketStatsResp  *utilworm.MarketStats
-	priceOptions     []utilworm.GetMarketPriceOptions
-	priceResp        []*utilworm.MarketPrice
-	orderBookOptions []utilworm.GetMarketOrderBookOptions
-	orderBookResp    []*utilworm.MarketOrderBook
-	detailErr        error
+	mu           sync.Mutex
+	listCalls    int
+	listRequests []utilworm.ListMarketsOptions
+	options      utilworm.ListMarketsOptions
+	resp         *utilworm.ListMarketsResponse
+	err          error
+	detailCalls  int
+	conditionID  string
+	marketResp   *utilworm.Market
+	detailErr    error
 }
 
 func (f *fakeWormMarketClient) ListMarkets(_ context.Context, options utilworm.ListMarketsOptions) (*utilworm.ListMarketsResponse, error) {
@@ -55,48 +50,6 @@ func (f *fakeWormMarketClient) GetMarket(_ context.Context, conditionID string) 
 		return nil, f.detailErr
 	}
 	return f.marketResp, nil
-}
-
-func (f *fakeWormMarketClient) GetMarketStats(_ context.Context, conditionID string) (*utilworm.MarketStats, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.conditionID = conditionID
-	if f.detailErr != nil {
-		return nil, f.detailErr
-	}
-	return f.marketStatsResp, nil
-}
-
-func (f *fakeWormMarketClient) GetMarketPrice(_ context.Context, conditionID string, options utilworm.GetMarketPriceOptions) (*utilworm.MarketPrice, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.conditionID = conditionID
-	f.priceOptions = append(f.priceOptions, options)
-	if f.detailErr != nil {
-		return nil, f.detailErr
-	}
-	if len(f.priceResp) == 0 {
-		return &utilworm.MarketPrice{ConditionID: conditionID, IsYes: boolValue(options.IsYes)}, nil
-	}
-	price := f.priceResp[0]
-	f.priceResp = f.priceResp[1:]
-	return price, nil
-}
-
-func (f *fakeWormMarketClient) GetMarketOrderBook(_ context.Context, conditionID string, options utilworm.GetMarketOrderBookOptions) (*utilworm.MarketOrderBook, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.conditionID = conditionID
-	f.orderBookOptions = append(f.orderBookOptions, options)
-	if f.detailErr != nil {
-		return nil, f.detailErr
-	}
-	if len(f.orderBookResp) == 0 {
-		return &utilworm.MarketOrderBook{Market: conditionID, IsYes: boolValue(options.IsYes)}, nil
-	}
-	book := f.orderBookResp[0]
-	f.orderBookResp = f.orderBookResp[1:]
-	return book, nil
 }
 
 func (f *fakeWormMarketClient) getListCalls() int {
@@ -138,10 +91,6 @@ func (f *fakeWormMarketClient) setListError(err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.err = err
-}
-
-func boolValue(value *bool) bool {
-	return value != nil && *value
 }
 
 func newTestRedisService(t *testing.T, client *fakeWormMarketClient, config CacheConfig) (*Service, func()) {
@@ -499,8 +448,7 @@ func TestActiveListRefreshesRecentlyVisitedPage(t *testing.T) {
 
 func TestActiveDetailRefreshesRecentlyVisitedMarket(t *testing.T) {
 	client := &fakeWormMarketClient{
-		marketResp:      &utilworm.Market{MarketSummary: utilworm.MarketSummary{ConditionID: "market-1", Title: "Market"}},
-		marketStatsResp: &utilworm.MarketStats{},
+		marketResp: &utilworm.Market{MarketSummary: utilworm.MarketSummary{ConditionID: "market-1", Title: "Market"}},
 	}
 	service, cleanup := newTestRedisService(t, client, CacheConfig{
 		ActiveRefreshInterval: 10 * time.Millisecond,
@@ -582,8 +530,6 @@ func TestGetWormMarketMapsDetail(t *testing.T) {
 	maxLeverage := "5"
 	orderMinSize := "10"
 	priceDecimals := 3
-	yesPrice := "0.71"
-	noPrice := "0.29"
 	client := &fakeWormMarketClient{
 		marketResp: &utilworm.Market{
 			MarketSummary: utilworm.MarketSummary{
@@ -619,30 +565,6 @@ func TestGetWormMarketMapsDetail(t *testing.T) {
 				PriceDecimals: &priceDecimals,
 			},
 		},
-		marketStatsResp: &utilworm.MarketStats{
-			TotalVolume:    "1000",
-			TotalVolume24H: "250",
-			MarketCap:      "5000",
-			TradeCount:     42,
-		},
-		priceResp: []*utilworm.MarketPrice{
-			{ConditionID: "market-1", Price: &yesPrice, PriceKind: "last", IsYes: true},
-			{ConditionID: "market-1", Price: &noPrice, PriceKind: "last", IsYes: false},
-		},
-		orderBookResp: []*utilworm.MarketOrderBook{
-			{
-				Market: "market-1",
-				IsYes:  true,
-				Bid:    []utilworm.OrderBookLevel{{Price: "0.70", TotalAmount: "12"}},
-				Ask:    []utilworm.OrderBookLevel{{Price: "0.72", TotalAmount: "8"}},
-			},
-			{
-				Market: "market-1",
-				IsYes:  false,
-				Bid:    []utilworm.OrderBookLevel{{Price: "0.28", TotalAmount: "9"}},
-				Ask:    []utilworm.OrderBookLevel{{Price: "0.30", TotalAmount: "11"}},
-			},
-		},
 	}
 
 	resp, err := NewService(nil, client, "https://api.worm.wtf").GetWormMarket(context.Background(), &apiclient.GetWormMarketRequest{ConditionId: " market-1 "})
@@ -652,11 +574,8 @@ func TestGetWormMarketMapsDetail(t *testing.T) {
 	if client.conditionID != "market-1" {
 		t.Fatalf("condition id = %q, want market-1", client.conditionID)
 	}
-	if len(client.priceOptions) != 2 || client.priceOptions[0].IsYes == nil || !*client.priceOptions[0].IsYes || client.priceOptions[1].IsYes == nil || *client.priceOptions[1].IsYes {
-		t.Fatalf("price options = %#v", client.priceOptions)
-	}
-	if len(client.orderBookOptions) != 2 || client.orderBookOptions[0].Depth != 5 || client.orderBookOptions[1].Depth != 5 {
-		t.Fatalf("order book options = %#v", client.orderBookOptions)
+	if client.getDetailCalls() != 1 {
+		t.Fatalf("detail calls = %d, want 1", client.getDetailCalls())
 	}
 
 	market := resp.GetMarket()
@@ -677,15 +596,6 @@ func TestGetWormMarketMapsDetail(t *testing.T) {
 	}
 	if market.Config.Kind != "binary" || market.Config.MaxLeverage != maxLeverage || market.Config.PriceDecimals != int32(priceDecimals) {
 		t.Fatalf("config = %#v", market.Config)
-	}
-	if market.Stats.TotalVolume24H != "250" || market.Stats.TradeCount != 42 {
-		t.Fatalf("stats = %#v", market.Stats)
-	}
-	if len(market.Prices) != 2 || market.Prices[0].Price != yesPrice || market.Prices[1].Price != noPrice {
-		t.Fatalf("prices = %#v", market.Prices)
-	}
-	if len(market.OrderBooks) != 2 || market.OrderBooks[0].Bid[0].Price != "0.70" || market.OrderBooks[1].Ask[0].TotalAmount != "11" {
-		t.Fatalf("order books = %#v", market.OrderBooks)
 	}
 }
 

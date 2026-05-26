@@ -227,7 +227,7 @@ func (s *Service) getWormMarketCached(ctx context.Context, conditionID string) (
 		}
 		defer unlock()
 
-		if limitErr := s.reserveUpstream(ctx, 5); limitErr != nil {
+		if limitErr := s.reserveUpstream(ctx, 1); limitErr != nil {
 			if found {
 				return detailResponseFromCache(entry, true), nil
 			}
@@ -322,7 +322,7 @@ func (s *Service) refreshCachedDetail(ctx context.Context, conditionID string) {
 		return
 	}
 	defer unlock()
-	if err := s.reserveUpstream(ctx, 5); err != nil {
+	if err := s.reserveUpstream(ctx, 1); err != nil {
 		return
 	}
 	resp, err := s.fetchWormMarket(ctx, conditionID)
@@ -607,7 +607,7 @@ func wormListCacheKey(params listWormMarketsParams) string {
 }
 
 func wormDetailCacheKey(conditionID string) string {
-	return "worm:detail:v1:" + strings.TrimSpace(conditionID) + ":depth5"
+	return "worm:detail:v2:" + strings.TrimSpace(conditionID)
 }
 
 func wormRefreshLockKey(key string) string {

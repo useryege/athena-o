@@ -446,7 +446,7 @@ type WormServiceClient interface {
 	GetWormStatus(ctx context.Context, in *GetWormStatusRequest, opts ...grpc.CallOption) (*GetWormStatusResponse, error)
 	// ListWormMarkets returns markets for the requested browse filters.
 	ListWormMarkets(ctx context.Context, in *ListWormMarketsRequest, opts ...grpc.CallOption) (*ListWormMarketsResponse, error)
-	// GetWormMarket returns one market with stats, prices, and shallow order books.
+	// GetWormMarket returns one market detail from Worm.
 	GetWormMarket(ctx context.Context, in *GetWormMarketRequest, opts ...grpc.CallOption) (*GetWormMarketResponse, error)
 }
 
@@ -491,7 +491,7 @@ type WormServiceServer interface {
 	GetWormStatus(context.Context, *GetWormStatusRequest) (*GetWormStatusResponse, error)
 	// ListWormMarkets returns markets for the requested browse filters.
 	ListWormMarkets(context.Context, *ListWormMarketsRequest) (*ListWormMarketsResponse, error)
-	// GetWormMarket returns one market with stats, prices, and shallow order books.
+	// GetWormMarket returns one market detail from Worm.
 	GetWormMarket(context.Context, *GetWormMarketRequest) (*GetWormMarketResponse, error)
 }
 

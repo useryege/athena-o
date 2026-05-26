@@ -39,12 +39,4 @@ func (*WormMarketDetail) ProtoMessage() {}
 
 func (*WormMarketItem) ProtoMessage() {}
 
-func (*WormMarketOrderBook) ProtoMessage() {}
-
 func (*WormMarketOutcome) ProtoMessage() {}
-
-func (*WormMarketPrice) ProtoMessage() {}
-
-func (*WormMarketStats) ProtoMessage() {}
-
-func (*WormOrderBookLevel) ProtoMessage() {}

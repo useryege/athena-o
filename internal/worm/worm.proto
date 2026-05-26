@@ -51,6 +51,6 @@ service WormService {
   // ListWormMarkets returns markets for the requested browse filters.
   rpc ListWormMarkets(ListWormMarketsRequest) returns (ListWormMarketsResponse);
 
-  // GetWormMarket returns one market with stats, prices, and shallow order books.
+  // GetWormMarket returns one market detail from Worm.
   rpc GetWormMarket(GetWormMarketRequest) returns (GetWormMarketResponse);
 }

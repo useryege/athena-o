@@ -20,7 +20,7 @@ const SORT_OPTIONS: Array<{label: string; value: WormMarketSortOption}> = [
 const CATEGORY_OPTIONS: Array<{label: string; value: WormMarketCategorySlug}> = [
     // {label: 'All', value: 'all'},
     // {label: 'Politics', value: 'politics'},
-    {label: 'Sports', value: 'sports'},
+    {label: 'Sports', value: 'sports'}
     // {label: 'Crypto', value: 'crypto'},
     // {label: 'Tech', value: 'tech'},
     // {label: 'Finance', value: 'finance'},
