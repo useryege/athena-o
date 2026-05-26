@@ -189,6 +189,50 @@ Required environment variables:
 
 The test validates the estimate response fields and logs `average_price`, `total_shares`, `total_cost`, `user_funds_needed`, `is_fully_filled`, and whether `liquidation_price` is present. `is_fully_filled=false` does not fail this estimate-only test, but that parameter set should not be used for a real submit test.
 
+## Run CreatePositionRequest Integration Test
+
+This authenticated integration test creates a real Worm margin position request draft from environment variables. It bootstraps temporary API credentials from `WORM_PRIVATE_KEY`, calls `CreatePositionRequest`, verifies the draft can be fetched with `GetPositionRequest`, then attempts to cancel the draft with `CancelPositionRequest`.
+
+It does not sign the draft message and does not call `SubmitPositionRequest`, so it should not open a real position. It may still create server-side draft state, so it has a separate opt-in switch and cleanup.
+
+It is protected by two opt-in switches:
+
+```bash
+WORM_INTEGRATION=1 \
+WORM_POSITION_REQUEST_DRAFT_INTEGRATION=1 \
+WORM_PRIVATE_KEY='<your-solana-private-key>' \
+WORM_POSITION_REQUEST_MARKET_CONDITION_ID='4YnAc9NUg1beqUafykRLP7hKVVpHZmJGGDhW7Ei81cYW' \
+WORM_POSITION_REQUEST_TYPE='MARKET' \
+WORM_POSITION_REQUEST_IS_YES='true' \
+WORM_POSITION_REQUEST_LEVERAGE='2' \
+WORM_POSITION_REQUEST_FUNDS='6' \
+go test -v ./util/worm -run '^TestIntegrationCreatePositionRequestFromEnv$'
+```
+
+Required environment variables:
+
+- `WORM_PRIVATE_KEY`: Solana base58 keypair, 128-character hex keypair, Solana CLI JSON byte array, or 32-byte seed in one of those encodings.
+- `WORM_POSITION_REQUEST_MARKET_CONDITION_ID`: target market condition id.
+- `WORM_POSITION_REQUEST_TYPE`: `MARKET` or `LIMIT`.
+- `WORM_POSITION_REQUEST_IS_YES`: `true` or `false`.
+- `WORM_POSITION_REQUEST_LEVERAGE`: leverage multiplier, such as `2` or `2.5`.
+
+For `MARKET` drafts, also set:
+
+- `WORM_POSITION_REQUEST_FUNDS`: funds amount, for example `6`.
+
+For `LIMIT` drafts, set these instead:
+
+- `WORM_POSITION_REQUEST_PRICE`: limit entry price.
+- `WORM_POSITION_REQUEST_SHARES`: share size.
+
+Optional take-profit and stop-loss settings:
+
+- `WORM_POSITION_REQUEST_TAKE_PROFIT_PRICE`
+- `WORM_POSITION_REQUEST_STOP_LOSS_PRICE`
+
+The test logs only safe status information, such as whether `pubkey` and `message` are present, message length, state, funds, and whether cleanup cancellation returned tx ids. It does not log the private key, API secret, draft message text, signatures, or full request payload.
+
 ## Run CreateOrderDraft Integration Test
 
 This authenticated integration test bootstraps Worm API credentials from `WORM_PRIVATE_KEY`, selects one open market, then calls `CreateOrderDraft` with a market buy draft for YES using `funds="1.00"`. It may create a server-side order draft, but it does not submit the order and does not call `SubmitOrder`, `SubmitOrderCancel`, cancel, redeem, position, or other finalization endpoints.

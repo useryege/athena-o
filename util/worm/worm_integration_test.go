@@ -607,6 +607,92 @@ func TestIntegrationEstimateMarginPositionFromEnv(t *testing.T) {
 	}
 }
 
+func TestIntegrationCreatePositionRequestFromEnv(t *testing.T) {
+	if os.Getenv("WORM_INTEGRATION") != "1" {
+		t.Skip("set WORM_INTEGRATION=1 to run real Worm API integration tests")
+	}
+	if os.Getenv("WORM_POSITION_REQUEST_DRAFT_INTEGRATION") != "1" {
+		t.Skip("set WORM_POSITION_REQUEST_DRAFT_INTEGRATION=1 to run real CreatePositionRequest integration test")
+	}
+
+	privateKey := requiredTrimmedIntegrationEnv(t, "WORM_PRIVATE_KEY")
+	request := positionRequestDraftIntegrationRequest(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	publicClient, err := NewClient(Config{})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	if request.Type == "MARKET" {
+		estimate, err := publicClient.EstimateMarginPosition(ctx, EstimateMarginPositionOptions{
+			MarketConditionID: request.MarketConditionID,
+			Funds:             request.Funds,
+			IsYes:             request.IsYes,
+			Leverage:          request.Leverage,
+		})
+		if err != nil {
+			t.Fatalf("EstimateMarginPosition preflight: %v", err)
+		}
+		validateIntegrationMarginPositionEstimate(t, estimate)
+		t.Logf(
+			"EstimateMarginPosition preflight average_price=%q total_shares=%q total_cost=%q is_fully_filled=%t user_funds_needed=%q liquidation_price_present=%t",
+			estimate.AveragePrice,
+			estimate.TotalShares,
+			estimate.TotalCost,
+			estimate.IsFullyFilled,
+			estimate.UserFundsNeeded,
+			estimate.LiquidationPrice != nil && *estimate.LiquidationPrice != "",
+		)
+	}
+
+	creds, err := publicClient.CreateAPIKeyFromPrivateKey(ctx, privateKey)
+	if err != nil {
+		t.Fatalf("CreateAPIKeyFromPrivateKey: %v", err)
+	}
+	validateAPIKeySecret(t, creds)
+	registerTemporaryAPIKeyCleanup(t, creds)
+
+	client := newAuthenticatedIntegrationClient(t, creds)
+	draft, err := client.CreatePositionRequest(ctx, request)
+	if err != nil {
+		t.Fatalf("CreatePositionRequest: %v", err)
+	}
+	validateCreatedPositionRequestDraft(t, draft, request.Type)
+	cancelDraft := registerPositionRequestDraftCleanup(t, client, draft.Pubkey)
+
+	fetched, err := client.GetPositionRequest(ctx, draft.Pubkey)
+	if err != nil {
+		t.Fatalf("GetPositionRequest(%s): %v", draft.Pubkey, err)
+	}
+	validateCreatedPositionRequestDraft(t, fetched, request.Type)
+	if fetched.Pubkey != draft.Pubkey {
+		t.Fatalf("GetPositionRequest returned pubkey=%q, want %q", fetched.Pubkey, draft.Pubkey)
+	}
+
+	cancelled := cancelDraft(ctx)
+	t.Logf(
+		"CancelPositionRequest cleanup pubkey_present=%t state=%q funding_txid_present=%t refund_txid_present=%t",
+		cancelled.Pubkey != "",
+		cancelled.State,
+		cancelled.FundingTxID != nil && *cancelled.FundingTxID != "",
+		cancelled.RefundTxID != nil && *cancelled.RefundTxID != "",
+	)
+
+	t.Logf(
+		"CreatePositionRequest returned pubkey_present=%t state=%q type=%q message_present=%t message_len=%d leverage=%q funds=%q market_present=%t",
+		draft.Pubkey != "",
+		draft.State,
+		draft.Type,
+		draft.Message != nil && *draft.Message != "",
+		stringPtrLen(draft.Message),
+		draft.Leverage,
+		draft.Funds,
+		draft.Market != nil,
+	)
+}
+
 func TestIntegrationAuthReadListPositionRequests(t *testing.T) {
 	fixture := newAuthReadIntegrationFixture(t)
 	defer fixture.cancel()
@@ -1453,6 +1539,102 @@ func hasAPIKey(keys []APIKey, keyID string) bool {
 		}
 	}
 	return false
+}
+
+func positionRequestDraftIntegrationRequest(t *testing.T) CreatePositionRequestRequest {
+	t.Helper()
+	requestType := strings.ToUpper(requiredTrimmedIntegrationEnv(t, "WORM_POSITION_REQUEST_TYPE"))
+	isYes := requiredBoolIntegrationEnv(t, "WORM_POSITION_REQUEST_IS_YES")
+	leverage := requiredFloatIntegrationEnv(t, "WORM_POSITION_REQUEST_LEVERAGE")
+	request := CreatePositionRequestRequest{
+		Type:              requestType,
+		MarketConditionID: requiredTrimmedIntegrationEnv(t, "WORM_POSITION_REQUEST_MARKET_CONDITION_ID"),
+		IsYes:             &isYes,
+		Leverage:          &leverage,
+		TakeProfitPrice:   strings.TrimSpace(os.Getenv("WORM_POSITION_REQUEST_TAKE_PROFIT_PRICE")),
+		StopLossPrice:     strings.TrimSpace(os.Getenv("WORM_POSITION_REQUEST_STOP_LOSS_PRICE")),
+	}
+
+	switch requestType {
+	case "MARKET":
+		request.Funds = requiredTrimmedIntegrationEnv(t, "WORM_POSITION_REQUEST_FUNDS")
+	case "LIMIT":
+		request.Price = requiredTrimmedIntegrationEnv(t, "WORM_POSITION_REQUEST_PRICE")
+		request.Shares = requiredTrimmedIntegrationEnv(t, "WORM_POSITION_REQUEST_SHARES")
+	default:
+		t.Fatalf("WORM_POSITION_REQUEST_TYPE=%q, want MARKET or LIMIT", requestType)
+	}
+
+	return request
+}
+
+func validateCreatedPositionRequestDraft(t *testing.T, request *PositionRequest, wantType string) {
+	t.Helper()
+	if request.Pubkey == "" {
+		t.Fatal("CreatePositionRequest returned empty pubkey")
+	}
+	if request.Type == "" {
+		t.Fatal("CreatePositionRequest returned empty type")
+	}
+	if !strings.EqualFold(request.Type, wantType) {
+		t.Fatalf("CreatePositionRequest returned type=%q, want %q", request.Type, wantType)
+	}
+	if request.State == "" {
+		t.Fatal("CreatePositionRequest returned empty state")
+	}
+	if request.Message == nil || *request.Message == "" {
+		t.Fatal("CreatePositionRequest returned empty message")
+	}
+	if request.Leverage == "" {
+		t.Fatal("CreatePositionRequest returned empty leverage")
+	}
+	if request.Funds == "" {
+		t.Fatal("CreatePositionRequest returned empty funds")
+	}
+	if request.Market != nil {
+		validateMarketSummary(t, *request.Market)
+	}
+}
+
+func registerPositionRequestDraftCleanup(t *testing.T, client Client, pubkey string) func(context.Context) *PositionRequest {
+	t.Helper()
+	cancelled := false
+	t.Cleanup(func() {
+		if cancelled {
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		request, err := client.CancelPositionRequest(ctx, pubkey)
+		if err != nil {
+			t.Logf("failed to cleanup temporary Worm position request draft: %v", err)
+			return
+		}
+		t.Logf(
+			"cleanup canceled temporary Worm position request draft pubkey_present=%t state=%q funding_txid_present=%t refund_txid_present=%t",
+			request.Pubkey != "",
+			request.State,
+			request.FundingTxID != nil && *request.FundingTxID != "",
+			request.RefundTxID != nil && *request.RefundTxID != "",
+		)
+	})
+
+	return func(ctx context.Context) *PositionRequest {
+		t.Helper()
+		request, err := client.CancelPositionRequest(ctx, pubkey)
+		if err != nil {
+			t.Fatalf("CancelPositionRequest(%s): %v", pubkey, err)
+		}
+		cancelled = true
+		return request
+	}
+}
+
+func stringPtrLen(value *string) int {
+	if value == nil {
+		return 0
+	}
+	return len(*value)
 }
 
 func requiredIntegrationEnv(t *testing.T, name string) string {
