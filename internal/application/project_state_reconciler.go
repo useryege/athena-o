@@ -145,9 +145,6 @@ func (r *projectStateReconcilerImpl) InitProject(ctx context.Context, candidates
 	if len(candidates) == 0 {
 		return nil
 	}
-	if r.fetcher == nil {
-		return errors.New("athena fetcher is not configured")
-	}
 
 	projects := make([]*Project, 0, len(candidates))
 	validCandidates := make([]DiscoveredProjectCandidate, 0, len(candidates))
@@ -173,7 +170,9 @@ func (r *projectStateReconcilerImpl) InitProject(ctx context.Context, candidates
 			"error":   err,
 			"queries": queries,
 		}).Error("failed to fetch projects")
-		return err
+		// Here return nil to fix the bug contract at https://bscscan.com/address/0x868e9962fb1d9346d74547603b04f3d66a6f537b
+		// avoid out of gas error
+		return nil
 	}
 	if len(snapshots) != len(queries) {
 		return fmt.Errorf("athena list returned %d projects for %d queries", len(snapshots), len(queries))
