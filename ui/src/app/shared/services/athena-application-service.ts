@@ -20,6 +20,12 @@ export interface ProjectListItem {
     blockNumber?: number;
     txIndex?: number;
     aveLogo?: string;
+    aveDetailAvailable?: boolean;
+    aveIsHoneypot?: boolean;
+    aveHasMintMethod?: boolean;
+    aveIsMintable?: string;
+    aveHolders?: number;
+    aveMarketCap?: string;
 }
 
 export interface ProjectMeta {

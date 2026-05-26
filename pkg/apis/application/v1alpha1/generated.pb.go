@@ -981,6 +981,55 @@ func (m *ProjectListItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.AveMarketCap)
+	copy(dAtA[i:], m.AveMarketCap)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AveMarketCap)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xb2
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AveHolders))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xa8
+	i -= len(m.AveIsMintable)
+	copy(dAtA[i:], m.AveIsMintable)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AveIsMintable)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xa2
+	i--
+	if m.AveHasMintMethod {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x98
+	i--
+	if m.AveIsHoneypot {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x90
+	i--
+	if m.AveDetailAvailable {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x88
 	i -= len(m.AveLogo)
 	copy(dAtA[i:], m.AveLogo)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AveLogo)))
@@ -2165,6 +2214,14 @@ func (m *ProjectListItem) Size() (n int) {
 	n += 1 + sovGenerated(uint64(m.TxIndex))
 	l = len(m.AveLogo)
 	n += 2 + l + sovGenerated(uint64(l))
+	n += 3
+	n += 3
+	n += 3
+	l = len(m.AveIsMintable)
+	n += 2 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.AveHolders))
+	l = len(m.AveMarketCap)
+	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -2645,6 +2702,12 @@ func (this *ProjectListItem) String() string {
 		`BlockNumber:` + fmt.Sprintf("%v", this.BlockNumber) + `,`,
 		`TxIndex:` + fmt.Sprintf("%v", this.TxIndex) + `,`,
 		`AveLogo:` + fmt.Sprintf("%v", this.AveLogo) + `,`,
+		`AveDetailAvailable:` + fmt.Sprintf("%v", this.AveDetailAvailable) + `,`,
+		`AveIsHoneypot:` + fmt.Sprintf("%v", this.AveIsHoneypot) + `,`,
+		`AveHasMintMethod:` + fmt.Sprintf("%v", this.AveHasMintMethod) + `,`,
+		`AveIsMintable:` + fmt.Sprintf("%v", this.AveIsMintable) + `,`,
+		`AveHolders:` + fmt.Sprintf("%v", this.AveHolders) + `,`,
+		`AveMarketCap:` + fmt.Sprintf("%v", this.AveMarketCap) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -7097,6 +7160,149 @@ func (m *ProjectListItem) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AveLogo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 17:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveDetailAvailable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AveDetailAvailable = bool(v != 0)
+		case 18:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveIsHoneypot", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AveIsHoneypot = bool(v != 0)
+		case 19:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveHasMintMethod", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AveHasMintMethod = bool(v != 0)
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveIsMintable", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AveIsMintable = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 21:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveHolders", wireType)
+			}
+			m.AveHolders = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AveHolders |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveMarketCap", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AveMarketCap = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

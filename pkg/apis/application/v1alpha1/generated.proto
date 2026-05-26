@@ -292,6 +292,18 @@ message ProjectListItem {
   optional uint64 txIndex = 15;
 
   optional string aveLogo = 16;
+
+  optional bool aveDetailAvailable = 17;
+
+  optional bool aveIsHoneypot = 18;
+
+  optional bool aveHasMintMethod = 19;
+
+  optional string aveIsMintable = 20;
+
+  optional int32 aveHolders = 21;
+
+  optional string aveMarketCap = 22;
 }
 
 message ProjectMeta {

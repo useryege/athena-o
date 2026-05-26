@@ -81,6 +81,9 @@
             minmax(220px, 2.5fr)
             minmax(66px, 0.8fr)
             minmax(66px, 0.8fr)
+            minmax(132px, 1.4fr)
+            minmax(82px, 0.85fr)
+            minmax(96px, 0.95fr)
             minmax(126px, 1.25fr)
             minmax(126px, 1.25fr)
             minmax(104px, 1.05fr)
@@ -187,6 +190,43 @@
             outline: none;
         }
     }
+
+    &__ave-risk {
+        align-items: flex-start;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+
+    &__badge {
+        border-radius: 12px;
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.2;
+        max-width: 100%;
+        overflow: hidden;
+        padding: 2px 8px;
+        text-overflow: ellipsis;
+        text-transform: uppercase;
+        white-space: nowrap;
+
+        &--positive {
+            background-color: #e6f4ea;
+            color: #18ab56;
+        }
+
+        &--negative {
+            background-color: #fdf2f2;
+            color: #d9534f;
+        }
+
+        &--neutral {
+            background-color: #f4f4f4;
+            color: #6d7f8b;
+        }
+    }
 }
 
 .pair-metrics-cell {
@@ -242,6 +282,9 @@
                 minmax(150px, 1.6fr)
                 minmax(56px, 0.72fr)
                 minmax(56px, 0.72fr)
+                minmax(116px, 1.12fr)
+                minmax(72px, 0.78fr)
+                minmax(88px, 0.86fr)
                 minmax(98px, 1.05fr)
                 minmax(98px, 1.05fr)
                 minmax(88px, 0.9fr)

@@ -226,6 +226,9 @@ export const ProjectsList = () => {
                                         <div>Contract</div>
                                         <div>Mint Risk</div>
                                         <div title='Is Open Source'>Open Src</div>
+                                        <div title='Ave honeypot, mint method, and mintable signals'>Ave Risk</div>
+                                        <div title='Ave token holder count'>Holders</div>
+                                        <div title='Ave token market capitalization'>Market Cap</div>
                                         <div title='WETH Quote + Remove Liquidity'>WETH Pair</div>
                                         <div title='USDT Quote + Remove Liquidity'>USDT Pair</div>
                                         <div title='Creator total asset in USDT'>Creator Asset</div>

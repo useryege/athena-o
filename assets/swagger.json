@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-419-g16f0b65-dirty"
+    "version": "v1.0.0-426-g4b4afe5-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -2226,7 +2226,26 @@
     "v1alpha1ProjectListItem": {
       "type": "object",
       "properties": {
+        "aveDetailAvailable": {
+          "type": "boolean"
+        },
+        "aveHasMintMethod": {
+          "type": "boolean"
+        },
+        "aveHolders": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "aveIsHoneypot": {
+          "type": "boolean"
+        },
+        "aveIsMintable": {
+          "type": "string"
+        },
         "aveLogo": {
+          "type": "string"
+        },
+        "aveMarketCap": {
           "type": "string"
         },
         "blockNumber": {

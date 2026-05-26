@@ -20,6 +20,12 @@ type ProjectListItem struct {
 	BlockNumber             uint64 `protobuf:"varint,14,opt,name=blockNumber" json:"blockNumber"`
 	TxIndex                 uint64 `protobuf:"varint,15,opt,name=txIndex" json:"txIndex"`
 	AveLogo                 string `protobuf:"bytes,16,opt,name=aveLogo" json:"aveLogo"`
+	AveDetailAvailable      bool   `protobuf:"varint,17,opt,name=aveDetailAvailable" json:"aveDetailAvailable"`
+	AveIsHoneypot           bool   `protobuf:"varint,18,opt,name=aveIsHoneypot" json:"aveIsHoneypot"`
+	AveHasMintMethod        bool   `protobuf:"varint,19,opt,name=aveHasMintMethod" json:"aveHasMintMethod"`
+	AveIsMintable           string `protobuf:"bytes,20,opt,name=aveIsMintable" json:"aveIsMintable"`
+	AveHolders              int32  `protobuf:"varint,21,opt,name=aveHolders" json:"aveHolders"`
+	AveMarketCap            string `protobuf:"bytes,22,opt,name=aveMarketCap" json:"aveMarketCap"`
 }
 
 type AveDetail struct {

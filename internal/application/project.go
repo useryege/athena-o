@@ -178,6 +178,11 @@ func projectToListItem(project *Project) *v1alpha1.ProjectListItem {
 
 	chainState := project.Meta.ChainState
 	creatorResult := project.Meta.CreatorResult
+	aveToken := ProjectAveTokenDetail{}
+	aveDetailAvailable := project.AveDetail != nil
+	if aveDetailAvailable {
+		aveToken = project.AveDetail.Token
+	}
 	return &v1alpha1.ProjectListItem{
 		Contract:                project.Meta.Contract.String(),
 		Name:                    chainState.Token.Name,
@@ -193,6 +198,12 @@ func projectToListItem(project *Project) *v1alpha1.ProjectListItem {
 		BlockNumber:             project.Meta.BlockNumber,
 		TxIndex:                 project.Meta.TxIndex,
 		AveLogo:                 projectAveLogo(project),
+		AveDetailAvailable:      aveDetailAvailable,
+		AveIsHoneypot:           aveToken.IsHoneypot,
+		AveHasMintMethod:        aveToken.HasMintMethod,
+		AveIsMintable:           aveToken.IsMintable,
+		AveHolders:              int32(aveToken.Holders),
+		AveMarketCap:            aveToken.MarketCap,
 	}
 }
 

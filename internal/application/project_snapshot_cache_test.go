@@ -427,7 +427,16 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 		Msg:       "SUCCESS",
 		DataType:  1,
 		FetchedAt: mustParseTimeForTest(t, "2026-05-22T00:00:30Z"),
-		Token:     ProjectAveTokenDetail{LogoURL: "https://example.com/logo.png", Token: "token", Chain: "bsc"},
+		Token: ProjectAveTokenDetail{
+			LogoURL:       "https://example.com/logo.png",
+			Token:         "token",
+			Chain:         "bsc",
+			HasMintMethod: true,
+			IsMintable:    "1",
+			Holders:       1234,
+			MarketCap:     "5678.9",
+			IsHoneypot:    true,
+		},
 	}}
 
 	listItem := projectToListItem(project)
@@ -455,6 +464,17 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	}
 	if listItem.AveLogo != project.AveDetail.Token.LogoURL {
 		t.Fatalf("list ave logo = %q, want %q", listItem.AveLogo, project.AveDetail.Token.LogoURL)
+	}
+	if !listItem.AveDetailAvailable || !listItem.AveIsHoneypot || !listItem.AveHasMintMethod || listItem.AveIsMintable != "1" || listItem.AveHolders != 1234 || listItem.AveMarketCap != "5678.9" {
+		t.Fatalf("list ave fields = available %t honeypot %t mintMethod %t mintable %q holders %d marketCap %q, want populated ave values",
+			listItem.AveDetailAvailable, listItem.AveIsHoneypot, listItem.AveHasMintMethod, listItem.AveIsMintable, listItem.AveHolders, listItem.AveMarketCap)
+	}
+	projectWithoutAve := *project
+	projectWithoutAve.AveDetail = nil
+	listItemWithoutAve := projectToListItem(&projectWithoutAve)
+	if listItemWithoutAve.AveDetailAvailable || listItemWithoutAve.AveIsHoneypot || listItemWithoutAve.AveHasMintMethod || listItemWithoutAve.AveIsMintable != "" || listItemWithoutAve.AveHolders != 0 || listItemWithoutAve.AveMarketCap != "" {
+		t.Fatalf("list ave fields without detail = available %t honeypot %t mintMethod %t mintable %q holders %d marketCap %q, want zero values",
+			listItemWithoutAve.AveDetailAvailable, listItemWithoutAve.AveIsHoneypot, listItemWithoutAve.AveHasMintMethod, listItemWithoutAve.AveIsMintable, listItemWithoutAve.AveHolders, listItemWithoutAve.AveMarketCap)
 	}
 
 	detailView := projectToView(project, true)
