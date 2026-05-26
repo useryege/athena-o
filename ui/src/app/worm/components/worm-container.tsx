@@ -11,20 +11,28 @@ const PAGE_SIZE = 20;
 const POLL_INTERVAL_MS = 1000;
 
 const SORT_OPTIONS: Array<{label: string; value: WormMarketSortOption}> = [
-    {label: 'New', value: 'new'},
-    {label: 'Trending', value: 'trending'},
-    {label: 'Ending Soon', value: 'ending_soon'},
+    // {label: 'New', value: 'new'},
+    // {label: 'Trending', value: 'trending'},
+    // {label: 'Ending Soon', value: 'ending_soon'},
     {label: 'Leverage', value: 'leverage'}
 ];
 
 const CATEGORY_OPTIONS: Array<{label: string; value: WormMarketCategorySlug}> = [
-    {label: 'All', value: 'all'},
-    {label: 'Politics', value: 'politics'},
+    // {label: 'All', value: 'all'},
+    // {label: 'Politics', value: 'politics'},
     {label: 'Sports', value: 'sports'},
-    {label: 'Crypto', value: 'crypto'},
-    {label: 'Tech', value: 'tech'},
-    {label: 'Finance', value: 'finance'},
-    {label: 'WTF', value: 'wtf'}
+    // {label: 'Crypto', value: 'crypto'},
+    // {label: 'Tech', value: 'tech'},
+    // {label: 'Finance', value: 'finance'},
+    // {label: 'WTF', value: 'wtf'}
+];
+
+type WormMarketStateFilter = 'all' | 'open' | 'resolved';
+
+const STATE_OPTIONS: Array<{label: string; value: WormMarketStateFilter}> = [
+    {label: 'All States', value: 'all'},
+    {label: 'Open', value: 'open'},
+    {label: 'Resolved', value: 'resolved'}
 ];
 
 const isAbortedError = (err: unknown) =>
@@ -51,6 +59,7 @@ export const WormContainer = () => {
     const [markets, setMarkets] = React.useState<WormMarketItem[]>([]);
     const [sortOption, setSortOption] = React.useState<WormMarketSortOption>('leverage');
     const [categorySlug, setCategorySlug] = React.useState<WormMarketCategorySlug>('sports');
+    const [stateFilter, setStateFilter] = React.useState<WormMarketStateFilter>('open');
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
     const [error, setError] = React.useState<Error | null>(null);
@@ -181,11 +190,17 @@ export const WormContainer = () => {
             setSelectedConditionId(conditionId);
         }
     }, []);
+    const handleStateFilterChange = React.useCallback((value: WormMarketStateFilter) => {
+        setStateFilter(value);
+        setSelectedConditionId('');
+    }, []);
 
     const page = cursorStack.length + 1;
+    const visibleMarkets = stateFilter === 'all' ? markets : markets.filter(market => (market.state || '').toLowerCase() === stateFilter);
     const selectedMarket = markets.find(market => market.conditionId === selectedConditionId);
     const activeSortLabel = SORT_OPTIONS.find(item => item.value === sortOption)?.label || 'Leverage';
     const activeCategoryLabel = CATEGORY_OPTIONS.find(item => item.value === categorySlug)?.label || 'Sports';
+    const activeStateLabel = STATE_OPTIONS.find(item => item.value === stateFilter)?.label || 'Open';
 
     return (
         <Page title='Worm' toolbar={{breadcrumbs: [{title: 'Worm'}]}}>
@@ -224,11 +239,23 @@ export const WormContainer = () => {
                                         </button>
                                     ))}
                                 </div>
+                                <div className='worm-markets__filter-group'>
+                                    {STATE_OPTIONS.map(item => (
+                                        <button
+                                            type='button'
+                                            key={item.value}
+                                            className={`worm-markets__filter ${stateFilter === item.value ? 'worm-markets__filter--active' : ''}`}
+                                            onClick={() => handleStateFilterChange(item.value)}>
+                                            {item.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                             <div className='worm-markets__controls worm-markets__controls--status'>
                                 <div className='worm-markets__status'>
                                     <span>Section: {activeSortLabel}</span>
                                     <span>Category: {activeCategoryLabel}</span>
+                                    <span>State: {activeStateLabel}</span>
                                     <span>Page: {page}</span>
                                     <span>
                                         Last updated: {lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : 'Never'}
@@ -238,14 +265,14 @@ export const WormContainer = () => {
                             </div>
 
                             <div className='worm-markets__list'>
-                                {markets.length === 0 ? (
+                                {visibleMarkets.length === 0 ? (
                                     <div className='worm-markets__empty'>
                                         <div className='row'>
                                             <div className='columns small-12 text-center'>No Worm markets found</div>
                                         </div>
                                     </div>
                                 ) : (
-                                    markets.map((market, index) => (
+                                    visibleMarkets.map((market, index) => (
                                         <div
                                             className={`worm-markets__item ${market.conditionId === selectedConditionId ? 'worm-markets__item--selected' : ''}`}
                                             key={getMarketKey(market, index)}
