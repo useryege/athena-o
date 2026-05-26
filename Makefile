@@ -608,6 +608,8 @@ prod-stop-local:
 prod-logs-local:
 	$(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) logs -f $(PROD_LOG_SERVICE)
 
+# ssh -L 8080:127.0.0.1:8080 root@47.254.169.196
+# use http://127.0.0.1:8080
 .PHONY: prod-deploy-remote
 prod-deploy-remote: 
 	PROD_IMAGE=$(PROD_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) bash ./hack/prod-remote-deploy.sh
