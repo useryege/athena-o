@@ -233,6 +233,30 @@ Optional take-profit and stop-loss settings:
 
 The test logs only safe status information, such as whether `pubkey` and `message` are present, message length, state, funds, and whether cleanup cancellation returned tx ids. It does not log the private key, API secret, draft message text, signatures, or full request payload.
 
+## Run SubmitPositionRequest Integration Test
+
+This authenticated integration test creates a real Worm margin position request draft, signs the draft `message` with `WORM_PRIVATE_KEY`, and calls `SubmitPositionRequest`. It may open or fund a real leveraged position. Run it only with a rotated test wallet and parameters you intend to submit.
+
+It does not cancel the position request after submit because the request may already be funding, processing, completed, or otherwise finalized. Cleanup only revokes the temporary Worm API key created for the test.
+
+It is protected by two opt-in switches:
+
+```bash
+WORM_INTEGRATION=1 \
+WORM_POSITION_REQUEST_SUBMIT_INTEGRATION=1 \
+WORM_PRIVATE_KEY='<your-solana-private-key>' \
+WORM_POSITION_REQUEST_MARKET_CONDITION_ID='4YnAc9NUg1beqUafykRLP7hKVVpHZmJGGDhW7Ei81cYW' \
+WORM_POSITION_REQUEST_TYPE='MARKET' \
+WORM_POSITION_REQUEST_IS_YES='true' \
+WORM_POSITION_REQUEST_LEVERAGE='2' \
+WORM_POSITION_REQUEST_FUNDS='6' \
+go test -v ./util/worm -run '^TestIntegrationSubmitPositionRequestFromEnv$'
+```
+
+The test uses the same `WORM_POSITION_REQUEST_*` parameters as the draft test. For `MARKET` requests it first calls `EstimateMarginPosition` and requires `is_fully_filled=true` before creating credentials or drafts.
+
+On submit failure, the test logs the structured Worm API error and fetches the created position request to log safe lifecycle fields such as `state`, tx id presence, message length, funds, and market id. It does not log the private key, API secret, draft message text, signature, or full request payload.
+
 ## Run CreateOrderDraft Integration Test
 
 This authenticated integration test bootstraps Worm API credentials from `WORM_PRIVATE_KEY`, selects one open market, then calls `CreateOrderDraft` with a market buy draft for YES using `funds="1.00"`. It may create a server-side order draft, but it does not submit the order and does not call `SubmitOrder`, `SubmitOrderCancel`, cancel, redeem, position, or other finalization endpoints.

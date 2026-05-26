@@ -693,6 +693,97 @@ func TestIntegrationCreatePositionRequestFromEnv(t *testing.T) {
 	)
 }
 
+func TestIntegrationSubmitPositionRequestFromEnv(t *testing.T) {
+	if os.Getenv("WORM_INTEGRATION") != "1" {
+		t.Skip("set WORM_INTEGRATION=1 to run real Worm API integration tests")
+	}
+	if os.Getenv("WORM_POSITION_REQUEST_SUBMIT_INTEGRATION") != "1" {
+		t.Skip("set WORM_POSITION_REQUEST_SUBMIT_INTEGRATION=1 to run real SubmitPositionRequest integration test")
+	}
+
+	privateKeyInput := requiredTrimmedIntegrationEnv(t, "WORM_PRIVATE_KEY")
+	privateKey, err := parseSolanaPrivateKey(privateKeyInput)
+	if err != nil {
+		t.Fatalf("parse WORM_PRIVATE_KEY: %v", err)
+	}
+	request := positionRequestDraftIntegrationRequest(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	publicClient, err := NewClient(Config{})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	if request.Type == "MARKET" {
+		estimate, err := publicClient.EstimateMarginPosition(ctx, EstimateMarginPositionOptions{
+			MarketConditionID: request.MarketConditionID,
+			Funds:             request.Funds,
+			IsYes:             request.IsYes,
+			Leverage:          request.Leverage,
+		})
+		if err != nil {
+			t.Fatalf("EstimateMarginPosition preflight: %v", err)
+		}
+		validateIntegrationMarginPositionEstimate(t, estimate)
+		if !estimate.IsFullyFilled {
+			t.Fatalf(
+				"EstimateMarginPosition preflight returned is_fully_filled=false for market=%q is_yes=%t funds=%q leverage=%.8g; choose a more liquid side/market or adjust funds",
+				request.MarketConditionID,
+				boolPtrValue(request.IsYes),
+				request.Funds,
+				floatPtrValue(request.Leverage),
+			)
+		}
+		t.Logf(
+			"EstimateMarginPosition preflight average_price=%q total_shares=%q total_cost=%q is_fully_filled=%t user_funds_needed=%q liquidation_price_present=%t",
+			estimate.AveragePrice,
+			estimate.TotalShares,
+			estimate.TotalCost,
+			estimate.IsFullyFilled,
+			estimate.UserFundsNeeded,
+			estimate.LiquidationPrice != nil && *estimate.LiquidationPrice != "",
+		)
+	}
+
+	creds, err := publicClient.CreateAPIKeyFromPrivateKey(ctx, privateKeyInput)
+	if err != nil {
+		t.Fatalf("CreateAPIKeyFromPrivateKey: %v", err)
+	}
+	validateAPIKeySecret(t, creds)
+	registerTemporaryAPIKeyCleanup(t, creds)
+
+	client := newAuthenticatedIntegrationClient(t, creds)
+	draft, err := client.CreatePositionRequest(ctx, request)
+	if err != nil {
+		t.Fatalf("CreatePositionRequest: %v", err)
+	}
+	validateCreatedPositionRequestDraft(t, draft, request.Type)
+
+	signature := ed25519.Sign(privateKey, []byte(*draft.Message))
+	submitted, err := client.SubmitPositionRequest(ctx, draft.Pubkey, SubmitSignatureRequest{
+		Signature: hex.EncodeToString(signature),
+	})
+	if err != nil {
+		logWormAPIErrorDetails(t, "SubmitPositionRequest", err)
+		logPositionRequestSnapshot(t, ctx, client, draft.Pubkey)
+		t.Fatalf("SubmitPositionRequest: %v", err)
+	}
+	validateSubmittedPositionRequest(t, submitted, draft.Pubkey)
+
+	t.Logf(
+		"SubmitPositionRequest returned pubkey_present=%t state=%q type=%q leverage=%q funds=%q funding_txid_present=%t refund_txid_present=%t market_condition_id=%q",
+		submitted.Pubkey != "",
+		submitted.State,
+		submitted.Type,
+		submitted.Leverage,
+		submitted.Funds,
+		submitted.FundingTxID != nil && *submitted.FundingTxID != "",
+		submitted.RefundTxID != nil && *submitted.RefundTxID != "",
+		positionRequestMarketConditionID(submitted),
+	)
+}
+
 func TestIntegrationAuthReadListPositionRequests(t *testing.T) {
 	fixture := newAuthReadIntegrationFixture(t)
 	defer fixture.cancel()
@@ -1596,6 +1687,31 @@ func validateCreatedPositionRequestDraft(t *testing.T, request *PositionRequest,
 	}
 }
 
+func validateSubmittedPositionRequest(t *testing.T, request *PositionRequest, wantPubkey string) {
+	t.Helper()
+	if request.Pubkey == "" {
+		t.Fatal("SubmitPositionRequest returned empty pubkey")
+	}
+	if request.Pubkey != wantPubkey {
+		t.Fatalf("SubmitPositionRequest returned pubkey=%q, want %q", request.Pubkey, wantPubkey)
+	}
+	if request.State == "" {
+		t.Fatal("SubmitPositionRequest returned empty state")
+	}
+	if request.Type == "" {
+		t.Fatal("SubmitPositionRequest returned empty type")
+	}
+	if request.Leverage == "" {
+		t.Fatal("SubmitPositionRequest returned empty leverage")
+	}
+	if request.Funds == "" {
+		t.Fatal("SubmitPositionRequest returned empty funds")
+	}
+	if request.Market != nil {
+		validateMarketSummary(t, *request.Market)
+	}
+}
+
 func registerPositionRequestDraftCleanup(t *testing.T, client Client, pubkey string) func(context.Context) *PositionRequest {
 	t.Helper()
 	cancelled := false
@@ -1635,6 +1751,71 @@ func stringPtrLen(value *string) int {
 		return 0
 	}
 	return len(*value)
+}
+
+func boolPtrValue(value *bool) bool {
+	return value != nil && *value
+}
+
+func floatPtrValue(value *float64) float64 {
+	if value == nil {
+		return 0
+	}
+	return *value
+}
+
+func positionRequestMarketConditionID(request *PositionRequest) string {
+	if request == nil || request.Market == nil {
+		return ""
+	}
+	return request.Market.ConditionID
+}
+
+func logWormAPIErrorDetails(t *testing.T, operation string, err error) {
+	t.Helper()
+	apiErr := wormAPIError(err)
+	if apiErr == nil {
+		t.Logf("%s returned non-Worm API error type=%T", operation, err)
+		return
+	}
+	t.Logf(
+		"%s API error status_code=%d code=%d slug=%q message=%q details=%v retry_after=%s rate_limit_limit=%d rate_limit_remaining=%d rate_limit_reset=%d",
+		operation,
+		apiErr.StatusCode,
+		apiErr.Code,
+		apiErr.Slug,
+		apiErr.Message,
+		apiErr.Details,
+		apiErr.RetryAfter,
+		apiErr.RateLimitLimit,
+		apiErr.RateLimitRemaining,
+		apiErr.RateLimitReset,
+	)
+}
+
+func logPositionRequestSnapshot(t *testing.T, ctx context.Context, client Client, pubkey string) {
+	t.Helper()
+	request, err := client.GetPositionRequest(ctx, pubkey)
+	if err != nil {
+		logWormAPIErrorDetails(t, "GetPositionRequest after SubmitPositionRequest failure", err)
+		t.Logf("GetPositionRequest after SubmitPositionRequest failure: %v", err)
+		return
+	}
+
+	t.Logf(
+		"PositionRequest snapshot after SubmitPositionRequest failure pubkey_present=%t state=%q type=%q funding_txid_present=%t refund_txid_present=%t message_present=%t message_len=%d funds=%q price_present=%t shares_present=%t market_condition_id=%q",
+		request.Pubkey != "",
+		request.State,
+		request.Type,
+		request.FundingTxID != nil && *request.FundingTxID != "",
+		request.RefundTxID != nil && *request.RefundTxID != "",
+		request.Message != nil && *request.Message != "",
+		stringPtrLen(request.Message),
+		request.Funds,
+		request.Price != nil && *request.Price != "",
+		request.Shares != nil && *request.Shares != "",
+		positionRequestMarketConditionID(request),
+	)
 }
 
 func requiredIntegrationEnv(t *testing.T, name string) string {
