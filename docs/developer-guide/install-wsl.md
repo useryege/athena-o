@@ -175,7 +175,59 @@ npm install --global yarn
 yarn -v
 ```
 
-### 7.3 Install the goreman
+### 7.3 Install Python
+
+Install Python with `apt` inside Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-pip python3-venv
+```
+
+Check the installed versions:
+
+```bash
+python3 --version
+pip3 --version
+```
+
+If you want `python` to call Python 3, install:
+
+```bash
+sudo apt install -y python-is-python3
+```
+
+Then check:
+
+```bash
+python --version
+```
+
+It is recommended to test with a virtual environment:
+
+```bash
+mkdir -p ~/python-test
+cd ~/python-test
+python3 -m venv .venv
+source .venv/bin/activate
+python --version
+```
+
+Exit the virtual environment:
+
+```bash
+deactivate
+```
+
+Install packages with:
+
+```bash
+pip install requests
+```
+
+If installing packages outside a virtual environment is restricted, prefer using a virtual environment instead of installing many packages into the system Python.
+
+### 7.4 Install the goreman
 
 Your must install go first
 
@@ -191,7 +243,7 @@ source ~/.bashrc
 goreman -v
 ```
 
-### 7.4 Install the abigen
+### 7.5 Install the abigen
 
 ```bash
 # Install abigen
@@ -201,7 +253,7 @@ go install github.com/ethereum/go-ethereum/cmd/abigen@v1.17.2
 abigen -version
 ```
 
-### 7.4 Install the buf
+### 7.6 Install the buf
 
 ```bash
 # Download and install buf into /usr/local/bin
@@ -215,7 +267,7 @@ sudo chmod +x /usr/local/bin/buf
 buf --version
 ```
 
-### 7.5 Install the solc 
+### 7.7 Install the solc 
 
 ```bash
 npm install -g solc
@@ -256,4 +308,3 @@ git clone <your-repository-url> athena
 cd athena
 cursor .
 ```
-
