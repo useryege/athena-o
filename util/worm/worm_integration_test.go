@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -554,6 +555,56 @@ func TestIntegrationAuthReadEstimateMarginPosition(t *testing.T) {
 	validateIntegrationMarginPositionEstimate(t, estimate)
 
 	t.Logf("EstimateMarginPosition returned condition_id=%q is_yes=%t average_price=%q total_shares=%q", market.ConditionID, isYes, estimate.AveragePrice, estimate.TotalShares)
+}
+
+func TestIntegrationEstimateMarginPositionFromEnv(t *testing.T) {
+	if os.Getenv("WORM_INTEGRATION") != "1" {
+		t.Skip("set WORM_INTEGRATION=1 to run real Worm API integration tests")
+	}
+	if os.Getenv("WORM_MARGIN_ESTIMATE_INTEGRATION") != "1" {
+		t.Skip("set WORM_MARGIN_ESTIMATE_INTEGRATION=1 to run real EstimateMarginPosition integration test")
+	}
+
+	marketConditionID := requiredTrimmedIntegrationEnv(t, "WORM_MARGIN_ESTIMATE_MARKET_CONDITION_ID")
+	funds := requiredTrimmedIntegrationEnv(t, "WORM_MARGIN_ESTIMATE_FUNDS")
+	isYes := requiredBoolIntegrationEnv(t, "WORM_MARGIN_ESTIMATE_IS_YES")
+	leverage := requiredFloatIntegrationEnv(t, "WORM_MARGIN_ESTIMATE_LEVERAGE")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	client, err := NewClient(Config{})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	estimate, err := client.EstimateMarginPosition(ctx, EstimateMarginPositionOptions{
+		MarketConditionID: marketConditionID,
+		Funds:             funds,
+		IsYes:             &isYes,
+		Leverage:          &leverage,
+	})
+	if err != nil {
+		t.Fatalf("EstimateMarginPosition: %v", err)
+	}
+	validateIntegrationMarginPositionEstimate(t, estimate)
+
+	t.Logf(
+		"EstimateMarginPosition returned condition_id=%q is_yes=%t funds=%q leverage=%.8g average_price=%q total_shares=%q total_cost=%q is_fully_filled=%t liquidation_price_present=%t user_funds_needed=%q",
+		marketConditionID,
+		isYes,
+		funds,
+		leverage,
+		estimate.AveragePrice,
+		estimate.TotalShares,
+		estimate.TotalCost,
+		estimate.IsFullyFilled,
+		estimate.LiquidationPrice != nil && *estimate.LiquidationPrice != "",
+		estimate.UserFundsNeeded,
+	)
+	if !estimate.IsFullyFilled {
+		t.Logf("EstimateMarginPosition returned is_fully_filled=false; this parameter set should not be used for the submit integration test")
+	}
 }
 
 func TestIntegrationAuthReadListPositionRequests(t *testing.T) {
@@ -1411,4 +1462,36 @@ func requiredIntegrationEnv(t *testing.T, name string) string {
 		t.Fatalf("%s is required for this integration test", name)
 	}
 	return value
+}
+
+func requiredTrimmedIntegrationEnv(t *testing.T, name string) string {
+	t.Helper()
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		t.Fatalf("%s is required for this integration test", name)
+	}
+	return value
+}
+
+func requiredBoolIntegrationEnv(t *testing.T, name string) bool {
+	t.Helper()
+	value := requiredTrimmedIntegrationEnv(t, name)
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		t.Fatalf("%s=%q must be a boolean: %v", name, value, err)
+	}
+	return parsed
+}
+
+func requiredFloatIntegrationEnv(t *testing.T, name string) float64 {
+	t.Helper()
+	value := requiredTrimmedIntegrationEnv(t, name)
+	parsed, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		t.Fatalf("%s=%q must be a number: %v", name, value, err)
+	}
+	if parsed <= 0 {
+		t.Fatalf("%s=%q must be greater than zero", name, value)
+	}
+	return parsed
 }

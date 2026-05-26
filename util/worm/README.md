@@ -162,6 +162,33 @@ The suite covers:
 
 Empty trades, orders, assets, redeems, position requests, margin positions, and settlements are valid account states; the tests only validate row fields when the API returns rows. Detail tests derive a pubkey from the corresponding list response and skip when there is no existing row to fetch. `StartRedeem`, `SubmitRedeem`, order submit/cancel, position create/submit/cancel/close, TP/SL changes, and settlement claims are intentionally excluded because they create, mutate, or finalize real state and require a stronger opt-in test plan.
 
+## Run EstimateMarginPosition Integration Test
+
+This public read-only integration test calls `EstimateMarginPosition` with parameters from the environment. Use it before a leverage submit test to confirm a market, side, funds, and leverage combination can be estimated and to inspect whether Worm reports `is_fully_filled=true`.
+
+It does not require `WORM_PRIVATE_KEY`, does not create API credentials, does not create a draft, and does not submit an order.
+
+It is protected by two opt-in switches:
+
+```bash
+WORM_INTEGRATION=1 \
+WORM_MARGIN_ESTIMATE_INTEGRATION=1 \
+WORM_MARGIN_ESTIMATE_MARKET_CONDITION_ID='4YnAc9NUg1beqUafykRLP7hKVVpHZmJGGDhW7Ei81cYW' \
+WORM_MARGIN_ESTIMATE_IS_YES='true' \
+WORM_MARGIN_ESTIMATE_LEVERAGE='2' \
+WORM_MARGIN_ESTIMATE_FUNDS='6' \
+go test -v ./util/worm -run '^TestIntegrationEstimateMarginPositionFromEnv$'
+```
+
+Required environment variables:
+
+- `WORM_MARGIN_ESTIMATE_MARKET_CONDITION_ID`: target market condition id.
+- `WORM_MARGIN_ESTIMATE_IS_YES`: `true` or `false`.
+- `WORM_MARGIN_ESTIMATE_LEVERAGE`: leverage multiplier, such as `2` or `2.5`.
+- `WORM_MARGIN_ESTIMATE_FUNDS`: funds amount, for example `6`.
+
+The test validates the estimate response fields and logs `average_price`, `total_shares`, `total_cost`, `user_funds_needed`, `is_fully_filled`, and whether `liquidation_price` is present. `is_fully_filled=false` does not fail this estimate-only test, but that parameter set should not be used for a real submit test.
+
 ## Run CreateOrderDraft Integration Test
 
 This authenticated integration test bootstraps Worm API credentials from `WORM_PRIVATE_KEY`, selects one open market, then calls `CreateOrderDraft` with a market buy draft for YES using `funds="1.00"`. It may create a server-side order draft, but it does not submit the order and does not call `SubmitOrder`, `SubmitOrderCancel`, cancel, redeem, position, or other finalization endpoints.
