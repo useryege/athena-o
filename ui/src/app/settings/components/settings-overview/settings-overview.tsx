@@ -7,31 +7,6 @@ import {AppContext} from '../../../shared/context';
 require('./settings-overview.scss');
 
 const settings = [
-    // {
-    //     title: 'Repositories',
-    //     description: 'Configure connected repositories',
-    //     path: './repos'
-    // },
-    // {
-    //     title: 'Repository certificates and known hosts',
-    //     description: 'Configure repository certificates and known hosts for connecting Git repositories',
-    //     path: './certs'
-    // },
-    // {
-    //     title: 'GnuPG keys',
-    //     description: 'Configure GnuPG public keys for commit verification',
-    //     path: './gpgkeys'
-    // },
-    // {
-    //     title: 'Clusters',
-    //     description: 'Configure connected Kubernetes clusters',
-    //     path: './clusters'
-    // },
-    // {
-    //     title: 'Projects',
-    //     description: 'Configure Athena projects',
-    //     path: './projects'
-    // },
     {
         title: 'Accounts',
         description: 'Configure Accounts',

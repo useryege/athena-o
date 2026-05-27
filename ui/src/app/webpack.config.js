@@ -1,6 +1,5 @@
 'use strict;';
 
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const {codecovWebpackPlugin} = require("@codecov/webpack-plugin");
@@ -44,7 +43,6 @@ const config = {
             },
             {
                 enforce: 'pre',
-                exclude: [/node_modules\/react-paginate/, /node_modules\/monaco-editor/],
                 test: /\.js$/,
                 use: ['esbuild-loader'],
             },
@@ -81,24 +79,12 @@ const config = {
                 {
                     from: 'node_modules/@fortawesome/fontawesome-free/webfonts',
                     to: 'assets/fonts'
-                },
-                {
-                    from: 'node_modules/redoc/bundles/redoc.standalone.js',
-                    to: 'assets/scripts/redoc.standalone.js'
-                },
-                {
-                    from: 'node_modules/monaco-editor/min/vs/base/browser/ui/codicons/codicon',
-                    to: 'assets/fonts'
                 }
             ]
         }),
-        new MonacoWebpackPlugin({
-            // https://github.com/microsoft/monaco-editor-webpack-plugin#options
-            languages: ['yaml']
-        }),
         codecovWebpackPlugin({
             enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
-            bundleName: "argo-cd-ui",
+            bundleName: "athena-ui",
             uploadToken: process.env.CODECOV_TOKEN,
         }),
     ],
@@ -110,13 +96,8 @@ const config = {
         port: 4000,
         host: process.env.ATHENA_E2E_YARN_HOST || 'localhost',
         proxy: {
-            '/extensions': proxyConf,
             '/api': proxyConf,
             '/auth': proxyConf,
-            '/terminal': {
-              target: process.env.ATHENA_API_URL || 'ws://localhost:8080',
-              ws: true,
-            },
             '/swagger-ui': proxyConf,
             '/swagger.json': proxyConf
         }
@@ -126,7 +107,6 @@ const config = {
 if (isProd) {
     config.performance = {
         hints: 'error',
-        // Max size is 6MB before gzip.
         maxEntrypointSize: 6 * 1024 * 1024,
         maxAssetSize: 6 * 1024 * 1024,
     };

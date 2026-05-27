@@ -5,7 +5,6 @@ import * as React from 'react';
 import {Helmet} from 'react-helmet';
 import {Redirect, Route, RouteComponentProps, Router, Switch} from 'react-router';
 import {Subscription} from 'rxjs';
-// import applications from './applications';
 import bytecodeBlacklist from './bytecode-blacklist';
 import help from './help';
 import login from './login';
@@ -16,7 +15,6 @@ import settings from './settings';
 import walletBlacklist from './wallet-blacklist';
 import worm from './worm';
 import {Layout, ThemeWrapper} from './shared/components/layout/layout';
-import {Page} from './shared/components/page/page';
 import {VersionPanel} from './shared/components/version-info/version-info-panel';
 import {AuthSettingsCtx, Provider} from './shared/context';
 import {services} from './shared/services';
@@ -25,7 +23,6 @@ import {hashCode} from './shared/utils';
 import {Banner} from './ui-banner/ui-banner';
 import userInfo from './user-info';
 import {AuthSettings} from './shared/models';
-import {SystemLevelExtension} from './shared/services/extensions-service';
 
 services.viewPreferences.init();
 const bases = document.getElementsByTagName('base');
@@ -43,7 +40,6 @@ const routes: Routes = {
     '/wallet-blacklist': {component: walletBlacklist.component},
     '/worm': {component: worm.component},
     '/notifications': {component: notifications.component},
-    // '/applications': {component: applications.component},
     '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
     '/help': {component: help.component}
@@ -101,12 +97,6 @@ const navItems: NavItem[] = [
         path: '/notifications',
         iconClassName: 'fa fa-bell'
     },
-    // {
-    //     title: 'Applications',
-    //     tooltip: 'Manage your applications, and diagnose health problems.',
-    //     path: '/applications',
-    //     iconClassName: 'argo-icon argo-icon-application'
-    // },
     {
         title: 'Settings',
         tooltip: 'Manage your repositories, projects, settings',
@@ -169,7 +159,6 @@ export class App extends React.Component<{}, {popupProps: PopupProps; showVersio
         this.routes = routes;
         this.popupPropsSubscription = null;
         this.unauthorizedSubscription = null;
-        services.extensions.addEventListener('systemLevel', this.onAddSystemLevelExtension.bind(this));
     }
 
     public async componentDidMount() {
@@ -216,14 +205,10 @@ export class App extends React.Component<{}, {popupProps: PopupProps; showVersio
     public render() {
         if (this.state.error != null) {
             const stack = this.state.error.stack;
-            const url = 'https://github.com/argoproj/argo-cd/issues/new?labels=bug&template=bug_report.md';
 
             return (
                 <React.Fragment>
                     <p>Something went wrong!</p>
-                    <p>
-                        Consider submitting an issue <a href={url}>here</a>.
-                    </p>
                     <br />
                     <p>Stacktrace:</p>
                     <pre>{stack}</pre>
@@ -309,29 +294,5 @@ export class App extends React.Component<{}, {popupProps: PopupProps; showVersio
                 }
             }
         });
-    }
-
-    private onAddSystemLevelExtension(extension: SystemLevelExtension) {
-        const extendedNavItems = this.navItems;
-        const extendedRoutes = this.routes;
-        extendedNavItems.push({
-            title: extension.title,
-            path: extension.path,
-            iconClassName: `fa ${extension.icon}`
-        });
-        const component = () => (
-            <>
-                <Helmet>
-                    <title>{extension.title} - Athena</title>
-                </Helmet>
-                <Page title={extension.title}>
-                    <extension.component />
-                </Page>
-            </>
-        );
-        extendedRoutes[extension.path] = {
-            component: component as React.ComponentType<React.ComponentProps<any>>
-        };
-        this.setState({...this.state, navItems: extendedNavItems, routes: extendedRoutes});
     }
 }

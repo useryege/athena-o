@@ -9,6 +9,7 @@
         "jsx": "react",
         "experimentalDecorators": true,
         "allowSyntheticDefaultImports": true,
+        "skipLibCheck": true,
         "noUnusedLocals": true,
         "declaration": false,
         "lib": [

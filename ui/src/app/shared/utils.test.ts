@@ -1,14 +1,16 @@
-import {concatMaps} from './utils';
+import {hashCode, isValidURL} from './utils';
 
-test('map concatenation', () => {
-    const map1 = {
-        a: '1',
-        b: '2',
-    };
-    const map2 = {
-        a: '9',
-        c: '8',
-    };
-    const map3 = concatMaps(map1, map2);
-    expect(map3).toEqual(new Map(Object.entries({a: '9', b: '2', c: '8'})));
+describe('utils', () => {
+    test('hashCode', () => {
+        expect(hashCode('test')).toBe(hashCode('test'));
+        expect(hashCode('a')).not.toBe(hashCode('b'));
+    });
+
+    test('isValidURL rejects javascript protocol', () => {
+        expect(isValidURL('javascript:alert(1)')).toBe(false);
+    });
+
+    test('isValidURL accepts https URL', () => {
+        expect(isValidURL('https://example.com')).toBe(true);
+    });
 });

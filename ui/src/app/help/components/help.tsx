@@ -29,8 +29,8 @@ export const Help = () => {
                                     <div className='columns large-4 small-6'>
                                         <div className='help-box'>
                                             <p>New to Athena?</p>
-                                            <a className='user-info-panel-buttons argo-button argo-button--base' href='https://argo-cd.readthedocs.io'>
-                                                Read the docs
+                                            <a className='user-info-panel-buttons argo-button argo-button--base' href='swagger-ui'>
+                                                Browse the API docs
                                             </a>
                                         </div>
                                     </div>
