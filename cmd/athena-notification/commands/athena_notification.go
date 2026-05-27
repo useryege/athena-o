@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -27,6 +28,7 @@ import (
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/healthz"
 	utilio "github.com/useryege/athena/util/io"
+	utiltelegram "github.com/useryege/athena/util/telegram"
 	"github.com/useryege/athena/util/templates"
 )
 
@@ -65,6 +67,16 @@ func NewCommand() *cobra.Command {
 			errors.CheckError(err)
 			defer utilio.Close(store)
 
+			telegramClient, err := utiltelegram.NewClient(utiltelegram.Config{
+				BotToken: env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN", ""),
+				ChatID:   env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_ID", ""),
+				BaseURL:  env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_API_URL", utiltelegram.DefaultBaseURL),
+				Timeout:  time.Duration(env.ParseNumFromEnv("ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS", int(utiltelegram.DefaultTimeout/time.Second), 1, 300)) * time.Second,
+			})
+			if err != nil {
+				return err
+			}
+
 			metricsServer := metrics.NewMetricsServer()
 			metricsMux := http.NewServeMux()
 			metricsMux.Handle("/", metricsServer.GetHandler())
@@ -72,7 +84,7 @@ func NewCommand() *cobra.Command {
 				errors.CheckError(http.ListenAndServe(fmt.Sprintf("%s:%d", metricsHost, metricsPort), metricsMux))
 			}()
 
-			server, err := notification.NewServer(notification.ServerOpts{Store: store})
+			server, err := notification.NewServer(notification.ServerOpts{Store: store, Sender: notification.NewTelegramSender(telegramClient)})
 			if err != nil {
 				return err
 			}

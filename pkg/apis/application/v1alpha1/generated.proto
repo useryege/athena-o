@@ -226,6 +226,58 @@ message GenesisWalletState {
   optional int32 rank = 4;
 }
 
+message NotificationDeliveryDetail {
+  optional int64 id = 1;
+
+  optional string source = 2;
+
+  optional string severity = 3;
+
+  optional string title = 4;
+
+  optional string body = 5;
+
+  optional string link = 6;
+
+  optional string channel = 7;
+
+  optional string status = 8;
+
+  optional string provider_message_id = 9;
+
+  optional string error_message = 10;
+
+  optional string created_at = 11;
+
+  optional string sent_at = 12;
+}
+
+message NotificationDeliveryItem {
+  optional int64 id = 1;
+
+  optional string source = 2;
+
+  optional string severity = 3;
+
+  optional string title = 4;
+
+  optional string body = 5;
+
+  optional string link = 6;
+
+  optional string channel = 7;
+
+  optional string status = 8;
+
+  optional string provider_message_id = 9;
+
+  optional string error_message = 10;
+
+  optional string created_at = 11;
+
+  optional string sent_at = 12;
+}
+
 message NotificationStatus {
   optional bool started = 1;
 

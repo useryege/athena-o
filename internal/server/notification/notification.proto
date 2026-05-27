@@ -13,9 +13,47 @@ option go_package = "github.com/useryege/athena/pkg/apiclient/notification";
 // GetNotificationStatusRequest queries the notification service runtime status.
 message GetNotificationStatusRequest {}
 
+// ListNotificationDeliveriesRequest queries notification delivery records.
+message ListNotificationDeliveriesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string status = 3;
+  string severity = 4;
+  string source = 5;
+  string keyword = 6;
+}
+
+// ListNotificationDeliveriesResponse returns a page of notification delivery records.
+message ListNotificationDeliveriesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationDeliveryItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// GetNotificationDeliveryRequest queries one notification delivery record.
+message GetNotificationDeliveryRequest {
+  int64 id = 1;
+}
+
+// GetNotificationDeliveryResponse returns one notification delivery record.
+message GetNotificationDeliveryResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationDeliveryDetail item = 1;
+}
+
 service NotificationService {
   // GetNotificationStatus returns the notification service runtime status.
   rpc GetNotificationStatus(GetNotificationStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationStatus) {
     option (google.api.http) = {get: "/api/v1/notification/status"};
+  }
+
+  // ListNotificationDeliveries returns notification delivery records.
+  rpc ListNotificationDeliveries(ListNotificationDeliveriesRequest) returns (ListNotificationDeliveriesResponse) {
+    option (google.api.http) = {get: "/api/v1/notifications"};
+  }
+
+  // GetNotificationDelivery returns one notification delivery record.
+  rpc GetNotificationDelivery(GetNotificationDeliveryRequest) returns (GetNotificationDeliveryResponse) {
+    option (google.api.http) = {get: "/api/v1/notifications/{id}"};
   }
 }

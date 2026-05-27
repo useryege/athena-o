@@ -9,6 +9,7 @@ import {Subscription} from 'rxjs';
 import bytecodeBlacklist from './bytecode-blacklist';
 import help from './help';
 import login from './login';
+import notifications from './notifications';
 import projects from './projects';
 import sourcecodeBlacklistContracts from './sourcecode-blacklist-contracts';
 import settings from './settings';
@@ -41,6 +42,7 @@ const routes: Routes = {
     '/bytecode-blacklist': {component: bytecodeBlacklist.component},
     '/wallet-blacklist': {component: walletBlacklist.component},
     '/worm': {component: worm.component},
+    '/notifications': {component: notifications.component},
     // '/applications': {component: applications.component},
     '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
@@ -92,6 +94,12 @@ const navItems: NavItem[] = [
         tooltip: 'View Athena worm module',
         path: '/worm',
         iconClassName: 'fa fa-bug'
+    },
+    {
+        title: 'Notifications',
+        tooltip: 'View notification deliveries',
+        path: '/notifications',
+        iconClassName: 'fa fa-bell'
     },
     // {
     //     title: 'Applications',

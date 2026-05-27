@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-426-g4b4afe5-dirty"
+    "version": "v1.0.0-434-gfa95d85-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -354,6 +354,95 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v1alpha1NotificationStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "tags": [
+          "NotificationService"
+        ],
+        "summary": "ListNotificationDeliveries returns notification delivery records.",
+        "operationId": "NotificationService_ListNotificationDeliveries",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "severity",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "source",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "keyword",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/notificationListNotificationDeliveriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{id}": {
+      "get": {
+        "tags": [
+          "NotificationService"
+        ],
+        "summary": "GetNotificationDelivery returns one notification delivery record.",
+        "operationId": "NotificationService_GetNotificationDelivery",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/notificationGetNotificationDeliveryResponse"
             }
           },
           "default": {
@@ -1707,6 +1796,39 @@
         }
       }
     },
+    "notificationGetNotificationDeliveryResponse": {
+      "description": "GetNotificationDeliveryResponse returns one notification delivery record.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1NotificationDeliveryDetail"
+        }
+      }
+    },
+    "notificationListNotificationDeliveriesResponse": {
+      "description": "ListNotificationDeliveriesResponse returns a page of notification delivery records.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1NotificationDeliveryItem"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "oidcClaim": {
       "type": "object",
       "properties": {
@@ -2157,6 +2279,90 @@
           "format": "int64"
         },
         "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1NotificationDeliveryDetail": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "link": {
+          "type": "string"
+        },
+        "provider_message_id": {
+          "type": "string"
+        },
+        "sent_at": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1NotificationDeliveryItem": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "link": {
+          "type": "string"
+        },
+        "provider_message_id": {
+          "type": "string"
+        },
+        "sent_at": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "title": {
           "type": "string"
         }
       }

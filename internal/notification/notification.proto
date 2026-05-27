@@ -10,7 +10,78 @@ option go_package = "github.com/useryege/athena/internal/notification/apiclient"
 // GetNotificationStatusRequest queries the notification service runtime status.
 message GetNotificationStatusRequest {}
 
+// NotificationSeverity describes the urgency of a notification.
+enum NotificationSeverity {
+  NOTIFICATION_SEVERITY_UNSPECIFIED = 0;
+  NOTIFICATION_SEVERITY_INFO = 1;
+  NOTIFICATION_SEVERITY_WARNING = 2;
+  NOTIFICATION_SEVERITY_ERROR = 3;
+  NOTIFICATION_SEVERITY_CRITICAL = 4;
+}
+
+// NotificationDeliveryStatus describes a notification delivery result.
+enum NotificationDeliveryStatus {
+  NOTIFICATION_DELIVERY_STATUS_UNSPECIFIED = 0;
+  NOTIFICATION_DELIVERY_STATUS_PENDING = 1;
+  NOTIFICATION_DELIVERY_STATUS_SENT = 2;
+  NOTIFICATION_DELIVERY_STATUS_FAILED = 3;
+}
+
+// SendNotificationRequest sends one notification through the configured channel.
+message SendNotificationRequest {
+  string source = 1;
+  NotificationSeverity severity = 2;
+  string title = 3;
+  string body = 4;
+  string link = 5;
+}
+
+// SendNotificationResponse returns the delivery result for a sent notification.
+message SendNotificationResponse {
+  int64 notification_id = 1;
+  NotificationDeliveryStatus status = 2;
+  string provider_message_id = 3;
+  string error_message = 4;
+}
+
+// ListNotificationDeliveriesRequest queries persisted notification deliveries.
+message ListNotificationDeliveriesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string status = 3;
+  string severity = 4;
+  string source = 5;
+  string keyword = 6;
+}
+
+// ListNotificationDeliveriesResponse returns persisted notification deliveries.
+message ListNotificationDeliveriesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationDeliveryItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// GetNotificationDeliveryRequest queries one persisted notification delivery.
+message GetNotificationDeliveryRequest {
+  int64 id = 1;
+}
+
+// GetNotificationDeliveryResponse returns one persisted notification delivery.
+message GetNotificationDeliveryResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationDeliveryDetail item = 1;
+}
+
 service NotificationService {
   // GetNotificationStatus returns the notification service runtime status.
   rpc GetNotificationStatus(GetNotificationStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationStatus);
+
+  // SendNotification sends one notification through the configured channel.
+  rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+
+  // ListNotificationDeliveries returns persisted notification delivery records.
+  rpc ListNotificationDeliveries(ListNotificationDeliveriesRequest) returns (ListNotificationDeliveriesResponse);
+
+  // GetNotificationDelivery returns one persisted notification delivery record.
+  rpc GetNotificationDelivery(GetNotificationDeliveryRequest) returns (GetNotificationDeliveryResponse);
 }
