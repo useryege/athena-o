@@ -36,12 +36,10 @@ func (a *analyzerImpl) AnalyzeContractSource(ctx context.Context, sourceCode str
 	if a == nil || a.client == nil {
 		return "", status.Error(codes.FailedPrecondition, "DeepSeek analyzer is not configured")
 	}
-
 	sourceCode = strings.TrimSpace(sourceCode)
 	if sourceCode == "" {
 		return "", status.Error(codes.InvalidArgument, "contract source code is empty")
 	}
-
 	request := deepseek.ChatCompletionRequest{
 		Model:       a.options.Model,
 		MaxTokens:   a.options.MaxTokens,

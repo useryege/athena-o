@@ -13,6 +13,10 @@ func (*AvePair) ProtoMessage() {}
 
 func (*AveTokenDetail) ProtoMessage() {}
 
+func (*BytecodeBlacklistEntry) ProtoMessage() {}
+
+func (*ContractSourceInfo) ProtoMessage() {}
+
 func (*GenesisWalletAssetState) ProtoMessage() {}
 
 func (*GenesisWalletState) ProtoMessage() {}

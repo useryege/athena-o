@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-441-g3302cd0-dirty"
+    "version": "v1.0.0-442-g9d905c4-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -207,130 +207,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountEmptyResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/bytecode/blacklist-contracts": {
-      "get": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "ListBytecodeBlacklistContracts returns all globally configured bytecode-blacklist contract entries.",
-        "operationId": "ApplicationService_ListBytecodeBlacklistContracts",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationListBytecodeBlacklistContractsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "AddBytecodeBlacklistContract adds a globally configured bytecode-blacklist contract entry.",
-        "operationId": "ApplicationService_AddBytecodeBlacklistContract",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/applicationAddBytecodeBlacklistContractRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationAddBytecodeBlacklistContractResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/bytecode/blacklist-contracts/{contract}": {
-      "delete": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "DeleteBytecodeBlacklistContract deletes a globally configured bytecode-blacklist contract entry.",
-        "operationId": "ApplicationService_DeleteBytecodeBlacklistContract",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "contract",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationDeleteBytecodeBlacklistContractResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/bytecode/blacklist-contracts/{contract}/note": {
-      "post": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "UpdateBytecodeBlacklistContractNote updates the note of a globally configured bytecode-blacklist contract entry.",
-        "operationId": "ApplicationService_UpdateBytecodeBlacklistContractNote",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "contract",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/applicationUpdateBytecodeBlacklistContractNoteRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationUpdateBytecodeBlacklistContractNoteResponse"
             }
           },
           "default": {
@@ -768,6 +644,167 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/clusterSettings"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/bytecode/blacklist": {
+      "get": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "ListBytecodeBlacklistEntries returns configured bytecode blacklist entries.",
+        "operationId": "SolidityService_ListBytecodeBlacklistEntries",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityListBytecodeBlacklistEntriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "AddBytecodeBlacklistEntry adds a bytecode blacklist entry.",
+        "operationId": "SolidityService_AddBytecodeBlacklistEntry",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/solidityAddBytecodeBlacklistEntryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityAddBytecodeBlacklistEntryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/bytecode/blacklist/{code_hash}": {
+      "delete": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "DeleteBytecodeBlacklist deletes a bytecode blacklist entry.",
+        "operationId": "SolidityService_DeleteBytecodeBlacklist",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityDeleteBytecodeBlacklistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/bytecode/blacklist/{code_hash}/note": {
+      "post": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "UpdateBytecodeBlacklistNote updates a bytecode blacklist note.",
+        "operationId": "SolidityService_UpdateBytecodeBlacklistNote",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/solidityUpdateBytecodeBlacklistNoteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityUpdateBytecodeBlacklistNoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/contracts/{contract}/source": {
+      "get": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "GetContractSourceInfo resolves bytecode/source facts for a contract.",
+        "operationId": "SolidityService_GetContractSourceInfo",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ContractSourceInfo"
             }
           },
           "default": {
@@ -1399,27 +1436,6 @@
     "accountUpdatePasswordResponse": {
       "type": "object"
     },
-    "applicationAddBytecodeBlacklistContractRequest": {
-      "description": "AddBytecodeBlacklistContractRequest adds a bytecode-blacklist contract entry.",
-      "type": "object",
-      "properties": {
-        "contract": {
-          "type": "string"
-        },
-        "note": {
-          "type": "string"
-        }
-      }
-    },
-    "applicationAddBytecodeBlacklistContractResponse": {
-      "description": "AddBytecodeBlacklistContractResponse returns the stored bytecode-blacklist contract entry.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/applicationBytecodeBlacklistContract"
-        }
-      }
-    },
     "applicationAddProjectCommentRequest": {
       "description": "AddProjectCommentRequest creates a project comment.",
       "type": "object",
@@ -1462,28 +1478,6 @@
         }
       }
     },
-    "applicationBytecodeBlacklistContract": {
-      "description": "BytecodeBlacklistContract is a globally maintained bytecode-blacklist contract entry.",
-      "type": "object",
-      "properties": {
-        "code_hash": {
-          "type": "string"
-        },
-        "contract": {
-          "type": "string"
-        },
-        "created_at": {
-          "type": "string"
-        },
-        "note": {
-          "type": "string"
-        }
-      }
-    },
-    "applicationDeleteBytecodeBlacklistContractResponse": {
-      "description": "DeleteBytecodeBlacklistContractResponse is returned after deleting a bytecode-blacklist contract entry.",
-      "type": "object"
-    },
     "applicationDeleteWalletBlacklistEntryResponse": {
       "description": "DeleteWalletBlacklistEntryResponse is returned after deleting a wallet-blacklist entry.",
       "type": "object"
@@ -1503,18 +1497,6 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1ProjectView"
-        }
-      }
-    },
-    "applicationListBytecodeBlacklistContractsResponse": {
-      "description": "ListBytecodeBlacklistContractsResponse returns all bytecode-blacklist contract entries.",
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/applicationBytecodeBlacklistContract"
-          }
         }
       }
     },
@@ -1638,27 +1620,6 @@
         },
         "payload": {
           "type": "string"
-        }
-      }
-    },
-    "applicationUpdateBytecodeBlacklistContractNoteRequest": {
-      "description": "UpdateBytecodeBlacklistContractNoteRequest updates the note of a bytecode-blacklist contract entry.",
-      "type": "object",
-      "properties": {
-        "contract": {
-          "type": "string"
-        },
-        "note": {
-          "type": "string"
-        }
-      }
-    },
-    "applicationUpdateBytecodeBlacklistContractNoteResponse": {
-      "description": "UpdateBytecodeBlacklistContractNoteResponse returns the updated bytecode-blacklist contract entry.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/applicationBytecodeBlacklistContract"
         }
       }
     },
@@ -2035,6 +1996,71 @@
         }
       }
     },
+    "solidityAddBytecodeBlacklistEntryRequest": {
+      "description": "AddBytecodeBlacklistEntryRequest adds a bytecode blacklist entry by code hash or source contract.",
+      "type": "object",
+      "properties": {
+        "code_hash": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "source_chain_id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "source_contract": {
+          "type": "string"
+        }
+      }
+    },
+    "solidityAddBytecodeBlacklistEntryResponse": {
+      "description": "AddBytecodeBlacklistEntryResponse returns the stored bytecode blacklist entry.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1BytecodeBlacklistEntry"
+        }
+      }
+    },
+    "solidityDeleteBytecodeBlacklistResponse": {
+      "description": "DeleteBytecodeBlacklistResponse is returned after deleting a bytecode blacklist entry.",
+      "type": "object"
+    },
+    "solidityListBytecodeBlacklistEntriesResponse": {
+      "description": "ListBytecodeBlacklistEntriesResponse returns bytecode blacklist entries.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1BytecodeBlacklistEntry"
+          }
+        }
+      }
+    },
+    "solidityUpdateBytecodeBlacklistNoteRequest": {
+      "description": "UpdateBytecodeBlacklistNoteRequest updates a bytecode blacklist note.",
+      "type": "object",
+      "properties": {
+        "code_hash": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "solidityUpdateBytecodeBlacklistNoteResponse": {
+      "description": "UpdateBytecodeBlacklistNoteResponse returns the updated bytecode blacklist entry.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1BytecodeBlacklistEntry"
+        }
+      }
+    },
     "v1alpha1AssetState": {
       "type": "object",
       "properties": {
@@ -2364,6 +2390,69 @@
         }
       }
     },
+    "v1alpha1BytecodeBlacklistEntry": {
+      "type": "object",
+      "properties": {
+        "codeHash": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "sourceChainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "sourceContract": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1ContractSourceInfo": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "codeBinHash": {
+          "type": "string"
+        },
+        "contract": {
+          "type": "string"
+        },
+        "isBytecodeBlacklisted": {
+          "type": "boolean"
+        },
+        "isOpenSource": {
+          "type": "boolean"
+        },
+        "sourceCode": {
+          "type": "string"
+        },
+        "sourceCodeFetchedAt": {
+          "type": "string"
+        },
+        "sourceCodeHash": {
+          "type": "string"
+        },
+        "sourceCodeOrigin": {
+          "type": "string"
+        },
+        "sourceQualityReport": {
+          "type": "string"
+        },
+        "sourceQualityReportFetchedAt": {
+          "type": "string"
+        },
+        "sourceQualityReportOrigin": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1GenesisWalletAssetState": {
       "type": "object",
       "properties": {
@@ -2623,12 +2712,6 @@
           "type": "string",
           "format": "uint64"
         },
-        "codeBinHash": {
-          "type": "string"
-        },
-        "codeBinHashFetchedAt": {
-          "type": "string"
-        },
         "contract": {
           "type": "string"
         },
@@ -2663,30 +2746,6 @@
           }
         },
         "genesisWalletsFetchedAt": {
-          "type": "string"
-        },
-        "isOpenSource": {
-          "type": "boolean"
-        },
-        "sourceCode": {
-          "type": "string"
-        },
-        "sourceCodeFetchedAt": {
-          "type": "string"
-        },
-        "sourceCodeHash": {
-          "type": "string"
-        },
-        "sourceCodeOrigin": {
-          "type": "string"
-        },
-        "sourceQualityReport": {
-          "type": "string"
-        },
-        "sourceQualityReportFetchedAt": {
-          "type": "string"
-        },
-        "sourceQualityReportOrigin": {
           "type": "string"
         },
         "token": {

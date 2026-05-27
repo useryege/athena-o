@@ -16,14 +16,11 @@ import (
 )
 
 type persistenceEventWriterFake struct {
-	err              error
-	sourceCodeCalls  int
-	sourceCodeOrigin string
-	reportOrigin     string
-	projectMeta      appstore.ProjectMeta
-	aveDetail        appstore.ProjectAveDetail
-	creatorResult    appstore.SimulateResult
-	projectReport    appstore.ProjectReport
+	err           error
+	projectMeta   appstore.ProjectMeta
+	aveDetail     appstore.ProjectAveDetail
+	creatorResult appstore.SimulateResult
+	projectReport appstore.ProjectReport
 }
 
 func (w *persistenceEventWriterFake) WriteProjectMeta(_ context.Context, meta appstore.ProjectMeta) error {
@@ -34,25 +31,6 @@ func (w *persistenceEventWriterFake) WriteProjectMeta(_ context.Context, meta ap
 }
 
 func (w *persistenceEventWriterFake) WriteProjectEventLog(context.Context, appstore.ProjectEventLog) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) WriteProjectSourceCode(_ context.Context, _ common.Address, _ string, origin string) error {
-	if w.err == nil {
-		w.sourceCodeCalls++
-		w.sourceCodeOrigin = origin
-	}
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) WriteProjectCodeBinHash(context.Context, common.Address, common.Hash) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) WriteProjectSourceQualityReport(_ context.Context, _ common.Address, _ string, origin string) error {
-	if w.err == nil {
-		w.reportOrigin = origin
-	}
 	return w.err
 }
 
@@ -78,18 +56,6 @@ func (w *persistenceEventWriterFake) WriteProjectReport(_ context.Context, _ com
 }
 
 func (w *persistenceEventWriterFake) WriteProjectCreatorHistoricalProjects(context.Context, common.Address, []appstore.ProjectCreatorHistoricalProject) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) AddBytecodeBlacklistContract(context.Context, appstore.BytecodeBlacklistContract) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) UpdateBytecodeBlacklistContractNote(context.Context, common.Address, string) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) DeleteBytecodeBlacklistContract(context.Context, common.Address) error {
 	return w.err
 }
 
@@ -124,7 +90,7 @@ func TestNewRedisPersistenceEventBusNilClient(t *testing.T) {
 	if bus := NewRedisPersistenceEventBus(nil); bus != nil {
 		t.Fatal("expected nil bus")
 	}
-	if err := (*RedisPersistenceEventBus)(nil).Publish(context.Background(), PersistenceEvent{Op: PersistenceOpProjectSourceCode}); err == nil {
+	if err := (*RedisPersistenceEventBus)(nil).Publish(context.Background(), PersistenceEvent{Op: PersistenceOpProjectReport}); err == nil {
 		t.Fatal("expected publish error for nil bus")
 	}
 	if err := (*RedisPersistenceEventBus)(nil).Start(context.Background(), &persistenceEventWriterFake{}); err == nil {
@@ -137,8 +103,8 @@ func TestRedisPersistenceEventBusConsumesAndAcks(t *testing.T) {
 	ctx := context.Background()
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 
-	if err := bus.PublishProjectSourceCodeUpdate(ctx, contract, "contract Source {}", projectSourceOriginThirdPartyAPI); err != nil {
-		t.Fatalf("publish source code: %v", err)
+	if err := bus.PublishProjectReportUpdate(ctx, contract, ProjectReport{IsPolicyEvaluated: true}); err != nil {
+		t.Fatalf("publish project report: %v", err)
 	}
 	writer := &persistenceEventWriterFake{}
 	processed, err := bus.consume(ctx, ">", writer, time.Millisecond)
@@ -148,11 +114,8 @@ func TestRedisPersistenceEventBusConsumesAndAcks(t *testing.T) {
 	if processed != 1 {
 		t.Fatalf("processed = %d, want 1", processed)
 	}
-	if writer.sourceCodeCalls != 1 {
-		t.Fatalf("source code calls = %d, want 1", writer.sourceCodeCalls)
-	}
-	if writer.sourceCodeOrigin != projectSourceOriginThirdPartyAPI {
-		t.Fatalf("source code origin = %q, want %q", writer.sourceCodeOrigin, projectSourceOriginThirdPartyAPI)
+	if !writer.projectReport.IsPolicyEvaluated {
+		t.Fatalf("project report = %+v, want policy evaluated", writer.projectReport)
 	}
 	pending, err := client.XPending(ctx, persistenceStreamKey, persistenceGroupName).Result()
 	if err != nil {
@@ -234,17 +197,15 @@ func TestRedisPersistenceEventBusAppliesProjectMetaPairAddressesAndFetchAt(t *te
 	fetchAt := time.Date(2026, 5, 23, 4, 5, 6, 0, time.UTC)
 
 	if err := bus.PublishProjectMetaSave(ctx, appstore.ProjectMeta{
-		BlockTime:                 100,
-		BlockNumber:               200,
-		Contract:                  contract,
-		Creator:                   creator,
-		WethPair:                  wethPair,
-		UsdtPair:                  usdtPair,
-		FetchAt:                   fetchAt,
-		TxHash:                    txHash,
-		TxIndex:                   7,
-		SourceCodeOrigin:          projectSourceOriginThirdPartyAPI,
-		SourceQualityReportOrigin: projectSourceOriginReuse,
+		BlockTime:   100,
+		BlockNumber: 200,
+		Contract:    contract,
+		Creator:     creator,
+		WethPair:    wethPair,
+		UsdtPair:    usdtPair,
+		FetchAt:     fetchAt,
+		TxHash:      txHash,
+		TxIndex:     7,
 	}); err != nil {
 		t.Fatalf("publish project meta: %v", err)
 	}
@@ -261,9 +222,6 @@ func TestRedisPersistenceEventBusAppliesProjectMetaPairAddressesAndFetchAt(t *te
 	}
 	if !writer.projectMeta.FetchAt.Equal(fetchAt) {
 		t.Fatalf("fetch at = %s, want %s", writer.projectMeta.FetchAt, fetchAt)
-	}
-	if writer.projectMeta.SourceCodeOrigin != projectSourceOriginThirdPartyAPI || writer.projectMeta.SourceQualityReportOrigin != projectSourceOriginReuse {
-		t.Fatalf("origins = %q/%q, want %q/%q", writer.projectMeta.SourceCodeOrigin, writer.projectMeta.SourceQualityReportOrigin, projectSourceOriginThirdPartyAPI, projectSourceOriginReuse)
 	}
 }
 
@@ -312,7 +270,7 @@ func TestRedisPersistenceEventBusDeadLettersPoisonMessages(t *testing.T) {
 		},
 		{
 			name:   "writer failure",
-			values: map[string]any{"event": `{"version":1,"op":"project_source_code_update","contract":"0x1000000000000000000000000000000000000001","payload":{"contract":"0x1000000000000000000000000000000000000001","source_code":"contract Source {}"},"occurred_at":"2026-05-22T00:00:00Z"}`},
+			values: map[string]any{"event": `{"version":1,"op":"project_report_update","contract":"0x1000000000000000000000000000000000000001","payload":{"contract":"0x1000000000000000000000000000000000000001","is_policy_evaluated":true},"occurred_at":"2026-05-22T00:00:00Z"}`},
 			writer: &persistenceEventWriterFake{err: errors.New("store unavailable")},
 		},
 	}

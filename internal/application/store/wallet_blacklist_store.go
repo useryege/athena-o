@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var (
@@ -118,4 +120,17 @@ func scanWalletBlacklistEntryRow(scanner rowScanner) (WalletBlacklistEntry, erro
 		Note:      note.String,
 		CreatedAt: createdAt,
 	}, nil
+}
+
+func nullableTrimmedText(value string) any {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	return value
+}
+
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }

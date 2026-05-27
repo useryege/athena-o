@@ -210,6 +210,44 @@ message AveTokenDetail {
   optional int32 aveRiskLevel = 53;
 }
 
+message BytecodeBlacklistEntry {
+  optional string codeHash = 1;
+
+  optional string note = 2;
+
+  optional int64 sourceChainId = 3;
+
+  optional string sourceContract = 4;
+
+  optional string createdAt = 5;
+}
+
+message ContractSourceInfo {
+  optional string contract = 1;
+
+  optional int64 chainId = 2;
+
+  optional string codeBinHash = 3;
+
+  optional string sourceCode = 4;
+
+  optional string sourceCodeHash = 5;
+
+  optional string sourceCodeFetchedAt = 6;
+
+  optional string sourceCodeOrigin = 7;
+
+  optional string sourceQualityReport = 8;
+
+  optional string sourceQualityReportFetchedAt = 9;
+
+  optional string sourceQualityReportOrigin = 10;
+
+  optional bool isOpenSource = 11;
+
+  optional bool isBytecodeBlacklisted = 12;
+}
+
 message GenesisWalletAssetState {
   optional string wallet = 1;
 
@@ -371,27 +409,11 @@ message ProjectMeta {
 
   optional uint64 txIndex = 7;
 
-  optional string sourceCode = 8;
-
   optional SimulateResult creatorResult = 9;
 
   repeated GenesisWalletState genesisWallets = 12;
 
   repeated string creatorHistoricalProjects = 13;
-
-  optional string sourceQualityReport = 14;
-
-  optional string sourceQualityReportFetchedAt = 15;
-
-  optional bool isOpenSource = 16;
-
-  optional string sourceCodeHash = 17;
-
-  optional string codeBinHash = 18;
-
-  optional string sourceCodeFetchedAt = 19;
-
-  optional string codeBinHashFetchedAt = 20;
 
   optional string genesisWalletsFetchedAt = 21;
 
@@ -408,10 +430,6 @@ message ProjectMeta {
   optional AssetState assetState = 27;
 
   repeated GenesisWalletAssetState genesisWalletAssetStates = 28;
-
-  optional string sourceCodeOrigin = 29;
-
-  optional string sourceQualityReportOrigin = 30;
 }
 
 message ProjectOption {

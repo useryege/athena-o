@@ -105,56 +105,6 @@ func (c *policyReevaluationProjectCache) ListProjectsPage(_ context.Context, pag
 	return projects, total, page, pageSize, nil
 }
 
-type bytecodeBlacklistModelFake struct {
-	items       []appstore.BytecodeBlacklistContract
-	updatedNote bool
-}
-
-func (m *bytecodeBlacklistModelFake) Load(context.Context) error {
-	return nil
-}
-
-func (m *bytecodeBlacklistModelFake) List(context.Context) ([]appstore.BytecodeBlacklistContract, error) {
-	return append([]appstore.BytecodeBlacklistContract(nil), m.items...), nil
-}
-
-func (m *bytecodeBlacklistModelFake) Version(context.Context) (string, error) {
-	return "bytecode", nil
-}
-
-func (m *bytecodeBlacklistModelFake) Add(_ context.Context, item appstore.BytecodeBlacklistContract) error {
-	m.items = append([]appstore.BytecodeBlacklistContract{item}, m.items...)
-	return nil
-}
-
-func (m *bytecodeBlacklistModelFake) UpdateNote(_ context.Context, contract common.Address, note string) error {
-	for i := range m.items {
-		if m.items[i].Contract == contract {
-			m.items[i].Note = note
-			m.updatedNote = true
-			return nil
-		}
-	}
-	return appstore.ErrBytecodeBlacklistContractNotFound
-}
-
-func (m *bytecodeBlacklistModelFake) Delete(_ context.Context, contract common.Address) error {
-	filtered := make([]appstore.BytecodeBlacklistContract, 0, len(m.items))
-	found := false
-	for _, item := range m.items {
-		if item.Contract == contract {
-			found = true
-			continue
-		}
-		filtered = append(filtered, item)
-	}
-	if !found {
-		return appstore.ErrBytecodeBlacklistContractNotFound
-	}
-	m.items = filtered
-	return nil
-}
-
 type walletBlacklistModelFake struct {
 	items       []appstore.WalletBlacklistEntry
 	updatedNote bool
@@ -203,52 +153,6 @@ func (m *walletBlacklistModelFake) Delete(_ context.Context, wallet common.Addre
 	}
 	m.items = filtered
 	return nil
-}
-
-func TestAddBytecodeBlacklistContractDoesNotTriggerPolicyReevaluation(t *testing.T) {
-	projectContract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
-	blacklistContract := common.HexToAddress("0x00000000000000000000000000000000000000c2")
-	cache := newPolicyReevaluationProjectCache(&Project{Meta: ProjectMeta{Contract: projectContract}})
-	service := newStartedPolicyReevaluationService(cache)
-	service.bytecodeBlacklist = &bytecodeBlacklistModelFake{}
-	service.codeAtFunc = func(context.Context, common.Address) ([]byte, error) {
-		return []byte{0x1, 0x2}, nil
-	}
-
-	if _, err := service.AddBytecodeBlacklistContract(context.Background(), &applicationpkg.AddBytecodeBlacklistContractRequest{Contract: blacklistContract.Hex()}); err != nil {
-		t.Fatalf("add bytecode blacklist contract: %v", err)
-	}
-}
-
-func TestDeleteBytecodeBlacklistContractDoesNotTriggerPolicyReevaluation(t *testing.T) {
-	projectContract := common.HexToAddress("0x00000000000000000000000000000000000000d1")
-	blacklistContract := common.HexToAddress("0x00000000000000000000000000000000000000d2")
-	cache := newPolicyReevaluationProjectCache(&Project{Meta: ProjectMeta{Contract: projectContract}})
-	service := newStartedPolicyReevaluationService(cache)
-	service.bytecodeBlacklist = &bytecodeBlacklistModelFake{items: []appstore.BytecodeBlacklistContract{{Contract: blacklistContract}}}
-
-	if _, err := service.DeleteBytecodeBlacklistContract(context.Background(), &applicationpkg.DeleteBytecodeBlacklistContractRequest{Contract: blacklistContract.Hex()}); err != nil {
-		t.Fatalf("delete bytecode blacklist contract: %v", err)
-	}
-}
-
-func TestUpdateBytecodeBlacklistContractNoteDoesNotTriggerPolicyReevaluation(t *testing.T) {
-	projectContract := common.HexToAddress("0x00000000000000000000000000000000000000e1")
-	blacklistContract := common.HexToAddress("0x00000000000000000000000000000000000000e2")
-	cache := newPolicyReevaluationProjectCache(&Project{Meta: ProjectMeta{Contract: projectContract}})
-	model := &bytecodeBlacklistModelFake{items: []appstore.BytecodeBlacklistContract{{Contract: blacklistContract}}}
-	service := newStartedPolicyReevaluationService(cache)
-	service.bytecodeBlacklist = model
-
-	if _, err := service.UpdateBytecodeBlacklistContractNote(context.Background(), &applicationpkg.UpdateBytecodeBlacklistContractNoteRequest{
-		Contract: blacklistContract.Hex(),
-		Note:     "new note",
-	}); err != nil {
-		t.Fatalf("update bytecode blacklist note: %v", err)
-	}
-	if !model.updatedNote {
-		t.Fatalf("bytecode blacklist note was not updated")
-	}
 }
 
 func TestAddWalletBlacklistEntryDoesNotTriggerPolicyReevaluation(t *testing.T) {

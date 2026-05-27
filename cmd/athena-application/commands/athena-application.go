@@ -29,39 +29,34 @@ import (
 	"github.com/useryege/athena/internal/application/metrics"
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
+	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/util/ave"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
-	"github.com/useryege/athena/util/deepseek"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/healthz"
 	utilio "github.com/useryege/athena/util/io"
-
-	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 const cliName = "athena-application"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost          string
-		listenPort          int
-		metricsHost         string
-		metricsPort         int
-		nodewsurl           string
-		athenaContract      string
-		etherscanAPIBaseURL string
-		etherscanAPIKey     string
-		deepseekAPIKey      string
-		deepseekAPIBaseURL  string
-		deepseekModel       string
-		aveAPIKey           string
-		aveAPIBaseURL       string
-		liquidityLockers    []string
-		storeSrc            func(context.Context) (*appstore.SQLStore, error)
-		redisClient         *redis.Client
-		cacheSrc            func() (*cacheutil.Cache, error)
+		listenHost            string
+		listenPort            int
+		metricsHost           string
+		metricsPort           int
+		nodewsurl             string
+		athenaContract        string
+		solidityServerAddress string
+		aveAPIKey             string
+		aveAPIBaseURL         string
+		liquidityLockers      []string
+		storeSrc              func(context.Context) (*appstore.SQLStore, error)
+		redisClient           *redis.Client
+		cacheSrc              func() (*cacheutil.Cache, error)
 	)
 
 	command := &cobra.Command{
@@ -136,36 +131,27 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 
-			if err := validateRequiredString("Etherscan API base URL", etherscanAPIBaseURL, "--etherscan-api-base-url", "ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL"); err != nil {
-				return err
-			}
-
-			if err := validateRequiredString("Etherscan API key", etherscanAPIKey, "--etherscan-api-key", "ATHENA_APPLICATION_ETHERSCAN_API_KEY"); err != nil {
-				return err
-			}
+			log.Infof("waiting for athena solidity grpc service at %s", solidityServerAddress)
+			errors.CheckError(solidityapiclient.WaitForSolidityService(ctx, solidityServerAddress))
+			log.Infof("athena solidity grpc service is ready at %s", solidityServerAddress)
 
 			liquidityLockerAddresses, err := parseLiquidityLockerAddresses(liquidityLockers)
 			if err != nil {
 				return err
 			}
 
+			solidityClientset := solidityapiclient.NewSolidityClientset(solidityServerAddress)
 			server, err := application.NewServer(application.ApplicationServerOpts{
-				NodeClient:          nodeClient,
-				AthenaContract:      athenaContractAddress,
-				EtherscanAPIBaseURL: etherscanAPIBaseURL,
-				EtherscanAPIKey:     etherscanAPIKey,
-				DeepSeekConfig: deepseek.Config{
-					BaseURL: deepseekAPIBaseURL,
-					APIKey:  deepseekAPIKey,
-					Model:   deepseekModel,
-				},
+				NodeClient:     nodeClient,
+				AthenaContract: athenaContractAddress,
 				AveConfig: ave.Config{
 					BaseURL: aveAPIBaseURL,
 					APIKey:  aveAPIKey,
 				},
-				Store:           store,
-				LiquidityLocker: liquidityLockerAddresses,
-				RedisClient:     redisport.NewGoRedisAdapter(redisClient),
+				Store:             store,
+				LiquidityLocker:   liquidityLockerAddresses,
+				RedisClient:       redisport.NewGoRedisAdapter(redisClient),
+				SolidityClientset: solidityClientset,
 
 				// Fetch from Athena contract
 				V2FactoryContract: v2FactoryContractAddress,
@@ -246,11 +232,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortApplicationMetrics, "Start metrics server on given port")
 	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_APPLICATION_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
 	command.Flags().StringVar(&athenaContract, "athena-contract", env.StringFromEnv("ATHENA_APPLICATION_ATHENA_CONTRACT", ""), "ATHENA aggregation contract address")
-	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
-	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")
-	command.Flags().StringVar(&deepseekAPIKey, "deepseek-api-key", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_API_KEY", ""), "DeepSeek API key")
-	command.Flags().StringVar(&deepseekAPIBaseURL, "deepseek-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_BASE_URL", deepseek.DefaultBaseURL), "DeepSeek API base URL")
-	command.Flags().StringVar(&deepseekModel, "deepseek-model", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_MODEL", deepseek.DefaultModel), "DeepSeek model for contract source quality analysis")
+	command.Flags().StringVar(&solidityServerAddress, "solidity-server-address", env.StringFromEnv("ATHENA_APPLICATION_SOLIDITY_SERVER_ADDRESS", "athena-solidity:9997"), "Solidity service gRPC address")
 	command.Flags().StringVar(&aveAPIKey, "ave-api-key", env.StringFromEnv("ATHENA_APPLICATION_AVE_API_KEY", ""), "Ave API key for project logo fetching")
 	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL")
 	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")
@@ -279,13 +261,6 @@ func parseRequiredAddress(name string, value string, flag string, envVar string)
 		return ethcommon.Address{}, fmt.Errorf("%s cannot be zero address", name)
 	}
 	return address, nil
-}
-
-func validateRequiredString(name string, value string, flag string, envVar string) error {
-	if strings.TrimSpace(value) == "" {
-		return fmt.Errorf("%s is required.Set it by %s flag or %s environment variable", name, flag, envVar)
-	}
-	return nil
 }
 
 func parseLiquidityLockerAddresses(values []string) ([]ethcommon.Address, error) {

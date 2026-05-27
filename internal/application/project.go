@@ -37,26 +37,13 @@ type ProjectMeta struct {
 	TxIndex                            uint64
 	GenesisTx                          *types.Transaction
 	ChainState                         athenacontract.AthenaProject
-	SourceCode                         string
-	SourceCodeHash                     common.Hash
-	SourceCodeFetchedAt                time.Time
-	SourceCodeOrigin                   string
-	CodeBinHash                        common.Hash
-	CodeBinHashFetchedAt               time.Time
-	SourceQualityReport                string
-	SourceQualityReportFetchedAt       time.Time
-	SourceQualityReportOrigin          string
+	IsBytecodeBlacklisted              bool
 	GenesisWallets                     []GenesisWalletMeta
 	GenesisWalletsFetchedAt            time.Time
 	CreatorResult                      SimulateResult
 	CreatorHistoricalProjects          []common.Address
 	CreatorHistoricalProjectsFetchedAt time.Time
 }
-
-const (
-	projectSourceOriginThirdPartyAPI = "third_party_api"
-	projectSourceOriginReuse         = "reuse"
-)
 
 type ProjectAveDetail struct {
 	Status    int
@@ -187,7 +174,7 @@ func projectToListItem(project *Project) *v1alpha1.ProjectListItem {
 		Name:                    chainState.Token.Name,
 		Symbol:                  chainState.Token.Symbol,
 		HasMintRisk:             hasMintRisk(creatorResult),
-		IsOpenSource:            strings.TrimSpace(project.Meta.SourceCode) != "",
+		IsOpenSource:            false,
 		WethPairQuoteUsdtValue:  bigIntToString(chainState.WethPair.QuoteUsdtValue),
 		WethPairRemoveLiquidity: chainState.WethPair.IsRemoveLiquidity,
 		UsdtPairQuoteUsdtValue:  bigIntToString(chainState.UsdtPair.QuoteUsdtValue),
@@ -220,24 +207,10 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 
 	chainState := project.Meta.ChainState
 	fetchAt := ""
-	sourceCode := ""
-	sourceCodeFetchedAt := ""
-	sourceCodeOrigin := ""
-	sourceQualityReport := ""
-	sourceQualityReportFetchedAt := ""
-	sourceQualityReportOrigin := ""
-	codeBinHashFetchedAt := ""
 	genesisWalletsFetchedAt := ""
 	creatorHistoricalProjectsFetchedAt := ""
 	if includeDetailFields {
 		fetchAt = formatOptionalTime(project.Meta.FetchAt)
-		sourceCode = project.Meta.SourceCode
-		sourceCodeFetchedAt = formatOptionalTime(project.Meta.SourceCodeFetchedAt)
-		sourceCodeOrigin = project.Meta.SourceCodeOrigin
-		sourceQualityReport = project.Meta.SourceQualityReport
-		sourceQualityReportFetchedAt = formatOptionalTime(project.Meta.SourceQualityReportFetchedAt)
-		sourceQualityReportOrigin = project.Meta.SourceQualityReportOrigin
-		codeBinHashFetchedAt = formatOptionalTime(project.Meta.CodeBinHashFetchedAt)
 		genesisWalletsFetchedAt = formatOptionalTime(project.Meta.GenesisWalletsFetchedAt)
 		creatorHistoricalProjectsFetchedAt = formatOptionalTime(project.Meta.CreatorHistoricalProjectsFetchedAt)
 	}
@@ -286,7 +259,6 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 			Creator:     project.Meta.Creator.String(),
 			TxHash:      txHash,
 			TxIndex:     project.Meta.TxIndex,
-			SourceCode:  sourceCode,
 			CreatorResult: v1alpha1.SimulateResult{
 				CanMintFromDeadViaTransferFrom:     creatorResult.CanMintFromDeadViaTransferFrom,
 				CanMintFromZeroViaTransferFrom:     creatorResult.CanMintFromZeroViaTransferFrom,
@@ -297,15 +269,6 @@ func projectToViewWithOptions(project *Project, includeGenesisWallets bool, incl
 			},
 			GenesisWallets:                     genesisWallets,
 			CreatorHistoricalProjects:          creatorHistoricalProjects,
-			SourceQualityReport:                sourceQualityReport,
-			SourceCodeFetchedAt:                sourceCodeFetchedAt,
-			SourceCodeOrigin:                   sourceCodeOrigin,
-			SourceQualityReportFetchedAt:       sourceQualityReportFetchedAt,
-			SourceQualityReportOrigin:          sourceQualityReportOrigin,
-			IsOpenSource:                       strings.TrimSpace(project.Meta.SourceCode) != "",
-			SourceCodeHash:                     hashToString(project.Meta.SourceCodeHash),
-			CodeBinHash:                        hashToString(project.Meta.CodeBinHash),
-			CodeBinHashFetchedAt:               codeBinHashFetchedAt,
 			GenesisWalletsFetchedAt:            genesisWalletsFetchedAt,
 			CreatorHistoricalProjectsFetchedAt: creatorHistoricalProjectsFetchedAt,
 			FetchAt:                            fetchAt,

@@ -67,14 +67,12 @@ func TestServiceGetProjectFallbackLoadsDBFetchesChainAndRecaches(t *testing.T) {
 	fetchedAt := time.Date(2026, 5, 23, 1, 2, 3, 0, time.UTC)
 	store := &projectSnapshotFallbackStore{
 		metas: []appstore.ProjectMeta{{
-			BlockNumber:         123,
-			BlockTime:           456,
-			Contract:            contract,
-			Creator:             creator,
-			TxHash:              common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
-			TxIndex:             7,
-			SourceCode:          "contract Source {}",
-			SourceCodeFetchedAt: fetchedAt,
+			BlockNumber: 123,
+			BlockTime:   456,
+			Contract:    contract,
+			Creator:     creator,
+			TxHash:      common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+			TxIndex:     7,
 			Report: appstore.ProjectReport{
 				IsPolicyEvaluated:          true,
 				IsBlacklistedCreatorWallet: true,

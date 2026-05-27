@@ -35,22 +35,12 @@ export interface ProjectMeta {
     creator?: string;
     txHash?: string;
     txIndex?: number;
-    sourceCode?: string;
     creatorResult?: SimulateResult;
     genesisWallets?: GenesisWalletState[];
     creatorHistoricalProjects?: string[];
-    sourceQualityReport?: string;
-    sourceQualityReportFetchedAt?: string;
-    sourceQualityReportOrigin?: string;
-    sourceCodeFetchedAt?: string;
-    sourceCodeOrigin?: string;
-    codeBinHashFetchedAt?: string;
     genesisWalletsFetchedAt?: string;
     creatorHistoricalProjectsFetchedAt?: string;
     fetchAt?: string;
-    isOpenSource?: boolean;
-    sourceCodeHash?: string;
-    codeBinHash?: string;
     token?: TokenState;
     wethPair?: PairV2State;
     usdtPair?: PairV2State;
@@ -272,27 +262,6 @@ export interface GetProjectOptionsResponse {
 
 let cachedProjectOptions: ProjectOptions | undefined;
 let projectOptionsRequest: (Promise<ProjectOptions | undefined> & {abort?: () => void}) | null = null;
-let cachedBytecodeBlacklistContracts: BytecodeBlacklistContract[] | undefined;
-let bytecodeBlacklistContractsRequest: (Promise<BytecodeBlacklistContract[]> & {abort?: () => void}) | null = null;
-
-export interface BytecodeBlacklistContract {
-    contract?: string;
-    codeHash?: string;
-    note?: string;
-    createdAt?: string;
-}
-
-export interface ListBytecodeBlacklistContractsResponse {
-    items?: BytecodeBlacklistContract[];
-}
-
-export interface AddBytecodeBlacklistContractResponse {
-    item?: BytecodeBlacklistContract;
-}
-
-export interface UpdateBytecodeBlacklistContractNoteResponse {
-    item?: BytecodeBlacklistContract;
-}
 
 export interface WalletBlacklistEntry {
     wallet?: string;
@@ -435,94 +404,6 @@ export class AthenaApplicationService {
             ) as any;
         promise.abort = () => {};
         projectOptionsRequest = promise;
-        return promise;
-    }
-
-    public listBytecodeBlacklistContracts(): Promise<BytecodeBlacklistContract[]> & {abort?: () => void} {
-        if (cachedBytecodeBlacklistContracts) {
-            const promise = Promise.resolve(cachedBytecodeBlacklistContracts) as Promise<BytecodeBlacklistContract[]> & {abort?: () => void};
-            promise.abort = () => {};
-            return promise;
-        }
-        if (bytecodeBlacklistContractsRequest) {
-            const promise = bytecodeBlacklistContractsRequest as Promise<BytecodeBlacklistContract[]> & {abort?: () => void};
-            promise.abort = () => {};
-            return promise;
-        }
-        const req = requests.get('/bytecode/blacklist-contracts');
-        const promise = req
-            .then(res => {
-                const body = (res.body as ListBytecodeBlacklistContractsResponse) || {};
-                const items = body.items || [];
-                return items.map(item => ({
-                    contract: item.contract,
-                    codeHash: item.codeHash ?? (item as any).code_hash,
-                    note: item.note,
-                    createdAt: item.createdAt ?? (item as any).created_at
-                }));
-            })
-            .then(
-                items => {
-                    cachedBytecodeBlacklistContracts = items;
-                    bytecodeBlacklistContractsRequest = null;
-                    return items;
-                },
-                err => {
-                    bytecodeBlacklistContractsRequest = null;
-                    throw err;
-                }
-            ) as any;
-        promise.abort = () => {};
-        bytecodeBlacklistContractsRequest = promise;
-        return promise;
-    }
-
-    public addBytecodeBlacklistContract(contract: string, note: string): Promise<BytecodeBlacklistContract> & {abort?: () => void} {
-        const req = requests.post('/bytecode/blacklist-contracts').send({contract, note});
-        const promise = req
-            .then(res => {
-                const item = ((res.body as AddBytecodeBlacklistContractResponse) || {}).item || {};
-                return {
-                    contract: item.contract,
-                    codeHash: item.codeHash ?? (item as any).code_hash,
-                    note: item.note,
-                    createdAt: item.createdAt ?? (item as any).created_at
-                } as BytecodeBlacklistContract;
-            })
-            .then(item => {
-                cachedBytecodeBlacklistContracts = undefined;
-                return item;
-            }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public updateBytecodeBlacklistContractNote(contract: string, note: string): Promise<BytecodeBlacklistContract> & {abort?: () => void} {
-        const req = requests.post(`/bytecode/blacklist-contracts/${encodeURIComponent(contract)}/note`).send({contract, note});
-        const promise = req
-            .then(res => {
-                const item = ((res.body as UpdateBytecodeBlacklistContractNoteResponse) || {}).item || {};
-                return {
-                    contract: item.contract,
-                    codeHash: item.codeHash ?? (item as any).code_hash,
-                    note: item.note,
-                    createdAt: item.createdAt ?? (item as any).created_at
-                } as BytecodeBlacklistContract;
-            })
-            .then(item => {
-                cachedBytecodeBlacklistContracts = undefined;
-                return item;
-            }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public deleteBytecodeBlacklistContract(contract: string): Promise<void> & {abort?: () => void} {
-        const req = requests.delete(`/bytecode/blacklist-contracts/${encodeURIComponent(contract)}`);
-        const promise = req.then(() => {
-            cachedBytecodeBlacklistContracts = undefined;
-        }) as any;
-        promise.abort = () => req.abort();
         return promise;
     }
 

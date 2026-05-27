@@ -67,7 +67,7 @@ const navItems: NavItem[] = [
             },
             {
                 title: 'ByteCode',
-                tooltip: 'Manage bytecode blacklist contracts',
+                tooltip: 'Manage bytecode blacklist entries',
                 path: '/bytecode-blacklist',
                 iconClassName: 'fa fa-cube'
             },

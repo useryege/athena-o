@@ -26,7 +26,6 @@ func TestRedisProjectSnapshotCacheListProjectsPage(t *testing.T) {
 			BlockNumber: uint64(i),
 			Contract:    contract,
 			TxIndex:     uint64(i),
-			SourceCode:  "contract Source {}",
 		}}); err != nil {
 			t.Fatalf("set project %d: %v", i, err)
 		}
@@ -91,7 +90,7 @@ func TestRedisProjectSnapshotCacheUpdateRefreshesTTL(t *testing.T) {
 		if !exists || current == nil {
 			t.Fatal("project missing during update")
 		}
-		current.Meta.SourceCode = "contract Updated {}"
+		current.Meta.IsBytecodeBlacklisted = true
 		return current, true, nil
 	})
 	if err != nil {
@@ -262,8 +261,6 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000b2")
 	fetchAt := mustParseTimeForTest(t, "2026-05-22T00:30:00Z")
 	aveDetailFetchedAt := mustParseTimeForTest(t, "2026-05-22T00:31:00Z")
-	sourceCodeHash := common.HexToHash("0x0101010101010101010101010101010101010101010101010101010101010101")
-	codeBinHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
 
 	if err := cache.SetProject(ctx, &Project{
 		Meta: ProjectMeta{
@@ -271,10 +268,7 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 			WethPair:                  wethPair,
 			UsdtPair:                  usdtPair,
 			FetchAt:                   fetchAt,
-			SourceCodeHash:            sourceCodeHash,
-			SourceCodeOrigin:          projectSourceOriginThirdPartyAPI,
-			CodeBinHash:               codeBinHash,
-			SourceQualityReportOrigin: projectSourceOriginReuse,
+			IsBytecodeBlacklisted:     true,
 			CreatorHistoricalProjects: historicalProjects,
 			CreatorResult: SimulateResult{
 				CanMintViaTransferToWethPair: true,
@@ -315,17 +309,8 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	if project.AveDetail == nil || project.AveDetail.Token.LogoURL != "https://example.com/logo.png" {
 		t.Fatalf("ave detail = %+v, want logo", project.AveDetail)
 	}
-	if got := project.Meta.SourceCodeHash; got != sourceCodeHash {
-		t.Fatalf("source code hash = %s, want %s", got.Hex(), sourceCodeHash.Hex())
-	}
-	if got := project.Meta.SourceCodeOrigin; got != projectSourceOriginThirdPartyAPI {
-		t.Fatalf("source code origin = %q, want %q", got, projectSourceOriginThirdPartyAPI)
-	}
-	if got := project.Meta.CodeBinHash; got != codeBinHash {
-		t.Fatalf("code bin hash = %s, want %s", got.Hex(), codeBinHash.Hex())
-	}
-	if got := project.Meta.SourceQualityReportOrigin; got != projectSourceOriginReuse {
-		t.Fatalf("source quality report origin = %q, want %q", got, projectSourceOriginReuse)
+	if !project.Meta.IsBytecodeBlacklisted {
+		t.Fatal("is bytecode blacklisted = false, want true")
 	}
 	if got := project.Meta.CreatorResult; !got.CanMintViaTransferToWethPair {
 		t.Fatalf("creator result = %+v, want weth transfer mint flag", got)
@@ -350,17 +335,8 @@ func TestRedisProjectSnapshotCachePersistsCreatorHistoricalProjects(t *testing.T
 	if got := values[projectFieldAveDetail]; got == "" || got == "null" {
 		t.Fatalf("raw ave detail = %q, want detail", got)
 	}
-	if got := values[projectFieldSourceCodeHash]; got != sourceCodeHash.Hex() {
-		t.Fatalf("raw source code hash = %q, want %q", got, sourceCodeHash.Hex())
-	}
-	if got := values[projectFieldSourceCodeOrigin]; got != projectSourceOriginThirdPartyAPI {
-		t.Fatalf("raw source code origin = %q, want %q", got, projectSourceOriginThirdPartyAPI)
-	}
-	if got := values[projectFieldCodeBinHash]; got != codeBinHash.Hex() {
-		t.Fatalf("raw code bin hash = %q, want %q", got, codeBinHash.Hex())
-	}
-	if got := values[projectFieldSourceQualityReportOrigin]; got != projectSourceOriginReuse {
-		t.Fatalf("raw source quality report origin = %q, want %q", got, projectSourceOriginReuse)
+	if got := values[projectFieldBytecodeBlacklisted]; got != "1" {
+		t.Fatalf("raw bytecode blacklist = %q, want 1", got)
 	}
 	if _, ok := values["creator_other_projects_resolved"]; ok {
 		t.Fatal("old creator_other_projects_resolved field still present")
@@ -387,21 +363,12 @@ func mustParseTimeForTest(t *testing.T, value string) time.Time {
 
 func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	project := &Project{Meta: ProjectMeta{
-		Contract:                     common.BigToAddress(big.NewInt(1)),
-		BlockTime:                    100,
-		BlockNumber:                  200,
-		TxIndex:                      3,
-		FetchAt:                      mustParseTimeForTest(t, "2026-05-21T23:58:00.123456789Z"),
-		SourceCode:                   "contract Source {}",
-		SourceCodeHash:               common.HexToHash("0x3333333333333333333333333333333333333333333333333333333333333333"),
-		SourceCodeFetchedAt:          mustParseTimeForTest(t, "2026-05-21T23:59:00Z"),
-		SourceCodeOrigin:             projectSourceOriginThirdPartyAPI,
-		CodeBinHash:                  common.HexToHash("0x4444444444444444444444444444444444444444444444444444444444444444"),
-		CodeBinHashFetchedAt:         mustParseTimeForTest(t, "2026-05-21T23:59:30Z"),
-		SourceQualityReport:          "## Report",
-		SourceQualityReportFetchedAt: mustParseTimeForTest(t, "2026-05-22T00:00:00Z"),
-		SourceQualityReportOrigin:    projectSourceOriginReuse,
-		GenesisWalletsFetchedAt:      mustParseTimeForTest(t, "2026-05-22T00:01:00Z"),
+		Contract:                common.BigToAddress(big.NewInt(1)),
+		BlockTime:               100,
+		BlockNumber:             200,
+		TxIndex:                 3,
+		FetchAt:                 mustParseTimeForTest(t, "2026-05-21T23:58:00.123456789Z"),
+		GenesisWalletsFetchedAt: mustParseTimeForTest(t, "2026-05-22T00:01:00Z"),
 		ChainState: athenacontract.AthenaProject{
 			Token: athenacontract.AthenaToken{
 				Name:   "Token",
@@ -445,8 +412,8 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	if listItem.Name != "Token" || listItem.Symbol != "TKN" {
 		t.Fatalf("list token = %q/%q, want Token/TKN", listItem.Name, listItem.Symbol)
 	}
-	if !listItem.IsOpenSource || !listItem.HasMintRisk {
-		t.Fatalf("list booleans = openSource %t mintRisk %t, want both true",
+	if listItem.IsOpenSource || !listItem.HasMintRisk {
+		t.Fatalf("list booleans = openSource %t mintRisk %t, want false/true",
 			listItem.IsOpenSource, listItem.HasMintRisk)
 	}
 	if listItem.WethPairQuoteUsdtValue != "123" || !listItem.WethPairRemoveLiquidity {
@@ -477,25 +444,13 @@ func TestProjectListItemIncludesOnlyListFields(t *testing.T) {
 	}
 
 	detailView := projectToView(project, true)
-	if detailView.Meta.SourceCode == "" || detailView.Meta.SourceQualityReport == "" || detailView.Meta.SourceQualityReportFetchedAt == "" {
-		t.Fatalf("detail view missing source detail fields: %#v", detailView.Meta)
-	}
 	if detailView.Meta.FetchAt != project.Meta.FetchAt.UTC().Format(time.RFC3339Nano) {
 		t.Fatalf("detail fetch at = %q, want %q", detailView.Meta.FetchAt, project.Meta.FetchAt.UTC().Format(time.RFC3339Nano))
 	}
-	if detailView.Meta.SourceCodeFetchedAt == "" || detailView.Meta.CodeBinHashFetchedAt == "" || detailView.Meta.GenesisWalletsFetchedAt == "" {
+	if detailView.Meta.GenesisWalletsFetchedAt == "" {
 		t.Fatalf("detail view missing fetched-at fields: %#v", detailView.Meta)
 	}
 	if detailView.AveDetail.Token.LogoURL != project.AveDetail.Token.LogoURL || detailView.AveDetail.FetchedAt == "" {
 		t.Fatalf("detail view missing ave detail fields: %#v", detailView.AveDetail)
-	}
-	if !detailView.Meta.IsOpenSource {
-		t.Fatal("detail isOpenSource = false, want true")
-	}
-	if detailView.Meta.SourceCodeHash != project.Meta.SourceCodeHash.Hex() || detailView.Meta.CodeBinHash != project.Meta.CodeBinHash.Hex() {
-		t.Fatalf("detail hashes = %q/%q, want %q/%q", detailView.Meta.SourceCodeHash, detailView.Meta.CodeBinHash, project.Meta.SourceCodeHash.Hex(), project.Meta.CodeBinHash.Hex())
-	}
-	if detailView.Meta.SourceCodeOrigin != projectSourceOriginThirdPartyAPI || detailView.Meta.SourceQualityReportOrigin != projectSourceOriginReuse {
-		t.Fatalf("detail origins = %q/%q, want %q/%q", detailView.Meta.SourceCodeOrigin, detailView.Meta.SourceQualityReportOrigin, projectSourceOriginThirdPartyAPI, projectSourceOriginReuse)
 	}
 }

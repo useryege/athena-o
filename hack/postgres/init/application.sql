@@ -11,15 +11,6 @@ CREATE TABLE IF NOT EXISTS project (
   fetch_at TIMESTAMPTZ NOT NULL,
   tx_hash BYTEA NOT NULL,
   tx_index BIGINT NOT NULL,
-  source_code TEXT,
-  source_code_hash BYTEA,
-  source_code_fetched_at TIMESTAMPTZ,
-  source_code_origin TEXT,
-  code_bin_hash BYTEA,
-  code_bin_hash_fetched_at TIMESTAMPTZ,
-  source_quality_report TEXT,
-  source_quality_report_fetched_at TIMESTAMPTZ,
-  source_quality_report_origin TEXT,
   creator_result_can_mint_from_dead_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
   creator_result_can_mint_from_zero_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
   creator_result_can_mint_from_weth_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
@@ -38,9 +29,7 @@ CREATE TABLE IF NOT EXISTS project (
   CONSTRAINT project_creator_len CHECK (length(creator) = 20),
   CONSTRAINT project_weth_pair_len CHECK (length(weth_pair) = 20),
   CONSTRAINT project_usdt_pair_len CHECK (length(usdt_pair) = 20),
-  CONSTRAINT project_tx_hash_len CHECK (length(tx_hash) = 32),
-  CONSTRAINT project_source_code_hash_len CHECK (source_code_hash IS NULL OR length(source_code_hash) = 32),
-  CONSTRAINT project_code_bin_hash_len CHECK (code_bin_hash IS NULL OR length(code_bin_hash) = 32)
+  CONSTRAINT project_tx_hash_len CHECK (length(tx_hash) = 32)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS project_contract_idx
@@ -54,9 +43,6 @@ CREATE INDEX IF NOT EXISTS project_weth_pair_idx
 
 CREATE INDEX IF NOT EXISTS project_usdt_pair_idx
   ON project (usdt_pair);
-
-CREATE INDEX IF NOT EXISTS project_code_bin_hash_idx
-  ON project (code_bin_hash);
 
 CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (block_number, tx_index, id);
@@ -189,18 +175,6 @@ CREATE TABLE IF NOT EXISTS project_creator_historical_project (
 
 CREATE INDEX IF NOT EXISTS project_creator_historical_project_rank_idx
   ON project_creator_historical_project (project_contract, rank_index);
-
-CREATE TABLE IF NOT EXISTS bytecode_blacklist_contract (
-  contract BYTEA PRIMARY KEY,
-  code_hash BYTEA NOT NULL,
-  note TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT bytecode_blacklist_contract_len CHECK (length(contract) = 20),
-  CONSTRAINT bytecode_blacklist_contract_code_hash_len CHECK (length(code_hash) = 32)
-);
-
-CREATE INDEX IF NOT EXISTS bytecode_blacklist_contract_code_hash_idx
-  ON bytecode_blacklist_contract (code_hash);
 
 CREATE TABLE IF NOT EXISTS wallet_blacklist (
   wallet BYTEA PRIMARY KEY,

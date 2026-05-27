@@ -13,9 +13,81 @@ option go_package = "github.com/useryege/athena/pkg/apiclient/solidity";
 // GetSolidityStatusRequest queries the solidity service runtime status.
 message GetSolidityStatusRequest {}
 
+// GetContractSourceInfoRequest asks the solidity service to resolve contract bytecode/source facts.
+message GetContractSourceInfoRequest {
+  int64 chain_id = 1;
+  string contract = 2;
+}
+
+// ListBytecodeBlacklistEntriesRequest queries all bytecode blacklist entries.
+message ListBytecodeBlacklistEntriesRequest {}
+
+// ListBytecodeBlacklistEntriesResponse returns bytecode blacklist entries.
+message ListBytecodeBlacklistEntriesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeBlacklistEntry items = 1;
+}
+
+// AddBytecodeBlacklistEntryRequest adds a bytecode blacklist entry by code hash or source contract.
+message AddBytecodeBlacklistEntryRequest {
+  string code_hash = 1;
+  int64 source_chain_id = 2;
+  string source_contract = 3;
+  string note = 4;
+}
+
+// AddBytecodeBlacklistEntryResponse returns the stored bytecode blacklist entry.
+message AddBytecodeBlacklistEntryResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeBlacklistEntry item = 1;
+}
+
+// UpdateBytecodeBlacklistNoteRequest updates a bytecode blacklist note.
+message UpdateBytecodeBlacklistNoteRequest {
+  string code_hash = 1;
+  string note = 2;
+}
+
+// UpdateBytecodeBlacklistNoteResponse returns the updated bytecode blacklist entry.
+message UpdateBytecodeBlacklistNoteResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeBlacklistEntry item = 1;
+}
+
+// DeleteBytecodeBlacklistRequest deletes a bytecode blacklist entry.
+message DeleteBytecodeBlacklistRequest {
+  string code_hash = 1;
+}
+
+// DeleteBytecodeBlacklistResponse is returned after deleting a bytecode blacklist entry.
+message DeleteBytecodeBlacklistResponse {}
+
 service SolidityService {
   // GetSolidityStatus returns the solidity service runtime status.
   rpc GetSolidityStatus(GetSolidityStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.SolidityStatus) {
     option (google.api.http) = {get: "/api/v1/solidity/status"};
+  }
+  // GetContractSourceInfo resolves bytecode/source facts for a contract.
+  rpc GetContractSourceInfo(GetContractSourceInfoRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ContractSourceInfo) {
+    option (google.api.http) = {get: "/api/v1/solidity/contracts/{contract}/source"};
+  }
+  // ListBytecodeBlacklistEntries returns configured bytecode blacklist entries.
+  rpc ListBytecodeBlacklistEntries(ListBytecodeBlacklistEntriesRequest) returns (ListBytecodeBlacklistEntriesResponse) {
+    option (google.api.http) = {get: "/api/v1/solidity/bytecode/blacklist"};
+  }
+  // AddBytecodeBlacklistEntry adds a bytecode blacklist entry.
+  rpc AddBytecodeBlacklistEntry(AddBytecodeBlacklistEntryRequest) returns (AddBytecodeBlacklistEntryResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/solidity/bytecode/blacklist"
+      body: "*"
+    };
+  }
+  // UpdateBytecodeBlacklistNote updates a bytecode blacklist note.
+  rpc UpdateBytecodeBlacklistNote(UpdateBytecodeBlacklistNoteRequest) returns (UpdateBytecodeBlacklistNoteResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/solidity/bytecode/blacklist/{code_hash}/note"
+      body: "*"
+    };
+  }
+  // DeleteBytecodeBlacklist deletes a bytecode blacklist entry.
+  rpc DeleteBytecodeBlacklist(DeleteBytecodeBlacklistRequest) returns (DeleteBytecodeBlacklistResponse) {
+    option (google.api.http) = {delete: "/api/v1/solidity/bytecode/blacklist/{code_hash}"};
   }
 }

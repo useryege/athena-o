@@ -20,10 +20,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/avelogo"
 	"github.com/useryege/athena/internal/application/evm"
-	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
+	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	erc20contract "github.com/useryege/athena/pkg/abi/ERC20"
-	"github.com/useryege/athena/util/ethereumapi"
+	utilio "github.com/useryege/athena/util/io"
 )
 
 const (
@@ -69,18 +69,17 @@ type genesisWalletShareLog struct {
 }
 
 type projectStateReconcilerImpl struct {
-	projectCache          ProjectSnapshotCache
-	discoveryNodeClient   projectDiscoveryNodeClient
-	projectStore          appstore.ProjectStore
-	fetcher               evm.AthenaFetcher
-	simulator             ProjectSimulator
-	apiFetcher            ethereumapi.EthereumAPI
-	aveDetailFetcher      avelogo.Fetcher
-	aveChain              string
-	sourceQualityAnalyzer sourcequality.Analyzer
+	projectCache        ProjectSnapshotCache
+	discoveryNodeClient projectDiscoveryNodeClient
+	projectStore        appstore.ProjectStore
+	fetcher             evm.AthenaFetcher
+	simulator           ProjectSimulator
+	aveDetailFetcher    avelogo.Fetcher
+	aveChain            string
+	solidityClientSet   solidityapiclient.Clientset
+	chainID             int64
 
 	persistencePublisher PersistenceEventPublisher
-	codeAtFunc           func(ctx context.Context, contract common.Address) ([]byte, error)
 	policyEngine         ProjectPolicyEngine
 
 	jobSem chan struct{}
@@ -97,29 +96,27 @@ func NewProjectStateReconciler(
 	projectStore appstore.ProjectStore,
 	fetcher evm.AthenaFetcher,
 	simulator ProjectSimulator,
-	apiFetcher ethereumapi.EthereumAPI,
 	aveDetailFetcher avelogo.Fetcher,
 	aveChain string,
-	sourceQualityAnalyzer sourcequality.Analyzer,
+	solidityClientSet solidityapiclient.Clientset,
+	chainID int64,
 	persistencePublisher PersistenceEventPublisher,
-	codeAtFunc func(ctx context.Context, contract common.Address) ([]byte, error),
 	policyEngine ProjectPolicyEngine,
 ) ProjectStateReconciler {
 	return &projectStateReconcilerImpl{
-		projectCache:          projectCache,
-		discoveryNodeClient:   discoveryNodeClient,
-		projectStore:          projectStore,
-		fetcher:               fetcher,
-		simulator:             simulator,
-		apiFetcher:            apiFetcher,
-		aveDetailFetcher:      aveDetailFetcher,
-		aveChain:              strings.TrimSpace(aveChain),
-		sourceQualityAnalyzer: sourceQualityAnalyzer,
-		persistencePublisher:  persistencePublisher,
-		codeAtFunc:            codeAtFunc,
-		policyEngine:          policyEngine,
-		jobSem:                make(chan struct{}, reconcilerDefaultConcurrency),
-		scheduled:             map[common.Address]*scheduledProject{},
+		projectCache:         projectCache,
+		discoveryNodeClient:  discoveryNodeClient,
+		projectStore:         projectStore,
+		fetcher:              fetcher,
+		simulator:            simulator,
+		aveDetailFetcher:     aveDetailFetcher,
+		aveChain:             strings.TrimSpace(aveChain),
+		solidityClientSet:    solidityClientSet,
+		chainID:              chainID,
+		persistencePublisher: persistencePublisher,
+		policyEngine:         policyEngine,
+		jobSem:               make(chan struct{}, reconcilerDefaultConcurrency),
+		scheduled:            map[common.Address]*scheduledProject{},
 	}
 }
 
@@ -425,13 +422,7 @@ func (r *projectStateReconcilerImpl) refreshProject(ctx context.Context, contrac
 	if err := r.refreshProjectCreatorHistoricalProjects(ctx, contract); err != nil {
 		return err
 	}
-	if err := r.refreshProjectCodeBinHash(ctx, contract); err != nil {
-		return err
-	}
-	if err := r.refreshProjectSourceCode(ctx, contract); err != nil {
-		return err
-	}
-	if err := r.refreshProjectSourceQualityReport(ctx, contract); err != nil {
+	if err := r.refreshProjectSoliditySource(ctx, contract); err != nil {
 		return err
 	}
 	if r.policyEngine != nil {
@@ -641,208 +632,31 @@ func (r *projectStateReconcilerImpl) refreshProjectCreatorHistoricalProjects(ctx
 	return nil
 }
 
-func (r *projectStateReconcilerImpl) refreshProjectSourceCode(ctx context.Context, contract common.Address) error {
-	project, ok, err := r.projectCache.GetProject(ctx, contract)
+func (r *projectStateReconcilerImpl) refreshProjectSoliditySource(ctx context.Context, contract common.Address) error {
+	if r.solidityClientSet == nil || r.chainID <= 0 {
+		return nil
+	}
+	closer, client, err := r.solidityClientSet.NewSolidityServiceClient()
 	if err != nil {
-		return err
-	}
-	if !ok || project == nil || project.Meta.CodeBinHash == (common.Hash{}) || !project.Meta.SourceCodeFetchedAt.IsZero() {
 		return nil
 	}
-	if sourceMeta, found, err := r.findReusableProjectSourceCode(ctx, contract, project.Meta.CodeBinHash); err != nil {
-		return err
-	} else if found {
-		sourceCode := sourceMeta.SourceCode
-		sourceCodeHash := sourceMeta.SourceCodeHash
-		if sourceCodeHash == (common.Hash{}) {
-			sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
-		}
-		return r.applyProjectSourceCode(ctx, contract, project.Meta.CodeBinHash, sourceCode, sourceCodeHash, projectSourceOriginReuse)
-	}
-	if r.apiFetcher == nil {
-		return nil
-	}
-	sourceCode, _, fetchErr := r.fetchSourceCode(ctx, project)
-	if fetchErr != nil {
-		return nil
-	}
-	if len(strings.TrimSpace(sourceCode)) <= 100 {
-		return nil
-	}
-	sourceCodeHash := crypto.Keccak256Hash([]byte(sourceCode))
-	return r.applyProjectSourceCode(ctx, contract, project.Meta.CodeBinHash, sourceCode, sourceCodeHash, projectSourceOriginThirdPartyAPI)
-}
+	defer utilio.Close(closer)
 
-func (r *projectStateReconcilerImpl) applyProjectSourceCode(ctx context.Context, contract common.Address, codeBinHash common.Hash, sourceCode string, sourceCodeHash common.Hash, origin string) error {
-	if err := r.persistProjectSourceCode(ctx, contract, sourceCode, origin); err != nil {
-		return nil
-	}
-	if err := r.persistProjectEventLog(ctx, appstore.ProjectEventLog{
-		Contract:       contract,
-		EventType:      projectEventTypeOpenSource,
-		OccurredAt:     time.Now().UTC(),
-		Message:        "Contract source code opened",
-		Payload:        "{}",
-		IdempotencyKey: projectEventIdempotencyOpenSource,
-	}); err != nil {
-		return nil
-	}
-	fetchedAt := time.Now().UTC()
-	_, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil || current.Meta.CodeBinHash != codeBinHash || !current.Meta.SourceCodeFetchedAt.IsZero() {
-			return nil, false, nil
-		}
-		current.Meta.SourceCode = sourceCode
-		current.Meta.SourceCodeHash = sourceCodeHash
-		current.Meta.SourceCodeFetchedAt = fetchedAt
-		current.Meta.SourceCodeOrigin = origin
-		return current, true, nil
+	info, err := client.GetContractSourceInfo(ctx, &solidityapiclient.GetContractSourceInfoRequest{
+		ChainId:  r.chainID,
+		Contract: contract.Hex(),
 	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *projectStateReconcilerImpl) refreshProjectCodeBinHash(ctx context.Context, contract common.Address) error {
-	project, ok, err := r.projectCache.GetProject(ctx, contract)
-	if err != nil {
-		return err
-	}
-	if !ok || project == nil || !project.Meta.CodeBinHashFetchedAt.IsZero() {
+	if err != nil || info == nil {
 		return nil
 	}
-	code, err := r.fetchContractBytecode(ctx, contract)
-	if err != nil {
-		return nil
-	}
-	codeBinHash := common.Hash{}
-	if len(code) > 0 {
-		codeBinHash = crypto.Keccak256Hash(code)
-	}
-	if err := r.persistProjectCodeBinHash(ctx, contract, codeBinHash); err != nil {
-		return nil
-	}
-	fetchedAt := time.Now().UTC()
 	_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil || !current.Meta.CodeBinHashFetchedAt.IsZero() {
+		if !exists || current == nil || current.Meta.IsBytecodeBlacklisted == info.IsBytecodeBlacklisted {
 			return nil, false, nil
 		}
-		current.Meta.CodeBinHash = codeBinHash
-		current.Meta.CodeBinHashFetchedAt = fetchedAt
-		return current, true, nil
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *projectStateReconcilerImpl) refreshProjectSourceQualityReport(ctx context.Context, contract common.Address) error {
-	project, ok, err := r.projectCache.GetProject(ctx, contract)
-	if err != nil {
-		return err
-	}
-	if !ok || project == nil || project.Meta.SourceCode == "" || project.Meta.CodeBinHash == (common.Hash{}) || project.Meta.SourceQualityReport != "" || !project.Meta.SourceQualityReportFetchedAt.IsZero() {
-		return nil
-	}
-	if reportMeta, found, err := r.findReusableProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash); err != nil {
-		return err
-	} else if found {
-		return r.applyProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash, strings.TrimSpace(reportMeta.SourceQualityReport), projectSourceOriginReuse)
-	}
-	if r.sourceQualityAnalyzer == nil {
-		return nil
-	}
-	report, err := r.sourceQualityAnalyzer.AnalyzeContractSource(ctx, project.Meta.SourceCode)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"component": "project_state_reconciler",
-			"contract":  contract.Hex(),
-			"error":     err.Error(),
-		}).Warn("failed to analyze project source quality")
-		return nil
-	}
-	report = strings.TrimSpace(report)
-	return r.applyProjectSourceQualityReport(ctx, contract, project.Meta.CodeBinHash, report, projectSourceOriginThirdPartyAPI)
-}
-
-func (r *projectStateReconcilerImpl) applyProjectSourceQualityReport(ctx context.Context, contract common.Address, codeBinHash common.Hash, report string, origin string) error {
-	if err := r.persistProjectSourceQualityReport(ctx, contract, report, origin); err != nil {
-		log.WithFields(log.Fields{
-			"component": "project_state_reconciler",
-			"contract":  contract.Hex(),
-			"error":     err.Error(),
-		}).Warn("failed to persist project source quality report")
-		return nil
-	}
-	fetchedAt := time.Now().UTC()
-	_, err := r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-		if !exists || current == nil || current.Meta.SourceCode == "" || current.Meta.CodeBinHash != codeBinHash || current.Meta.SourceQualityReport != "" || !current.Meta.SourceQualityReportFetchedAt.IsZero() {
-			return nil, false, nil
-		}
-		current.Meta.SourceQualityReport = report
-		current.Meta.SourceQualityReportFetchedAt = fetchedAt
-		current.Meta.SourceQualityReportOrigin = origin
+		current.Meta.IsBytecodeBlacklisted = info.IsBytecodeBlacklisted
 		return current, true, nil
 	})
 	return err
-}
-
-func (r *projectStateReconcilerImpl) findReusableProjectSourceCode(ctx context.Context, contract common.Address, codeBinHash common.Hash) (ProjectMeta, bool, error) {
-	return r.findReusableProjectByCodeBinHash(ctx, contract, codeBinHash, func(meta ProjectMeta) bool {
-		return strings.TrimSpace(meta.SourceCode) != ""
-	})
-}
-
-func (r *projectStateReconcilerImpl) findReusableProjectSourceQualityReport(ctx context.Context, contract common.Address, codeBinHash common.Hash) (ProjectMeta, bool, error) {
-	return r.findReusableProjectByCodeBinHash(ctx, contract, codeBinHash, func(meta ProjectMeta) bool {
-		return strings.TrimSpace(meta.SourceQualityReport) != ""
-	})
-}
-
-func (r *projectStateReconcilerImpl) findReusableProjectByCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash, reusable func(ProjectMeta) bool) (ProjectMeta, bool, error) {
-	if codeBinHash == (common.Hash{}) {
-		return ProjectMeta{}, false, nil
-	}
-	if r.projectCache != nil {
-		projects, err := r.projectCache.ListProjects(ctx)
-		if err != nil {
-			return ProjectMeta{}, false, err
-		}
-		for _, project := range projects {
-			if project == nil || project.Meta.Contract == contract || project.Meta.CodeBinHash != codeBinHash {
-				continue
-			}
-			if reusable(project.Meta) {
-				return project.Meta, true, nil
-			}
-		}
-	}
-	if r.projectStore == nil {
-		return ProjectMeta{}, false, nil
-	}
-	metas, err := r.projectStore.ListProjectMetasByCodeBinHash(ctx, codeBinHash)
-	if err != nil {
-		return ProjectMeta{}, false, err
-	}
-	for _, meta := range metas {
-		if meta.Contract == contract {
-			continue
-		}
-		projectMeta := projectMetaFromStore(meta)
-		if reusable(projectMeta) {
-			return projectMeta, true, nil
-		}
-	}
-	return ProjectMeta{}, false, nil
-}
-
-func (r *projectStateReconcilerImpl) persistProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string, origin string) error {
-	if r.persistencePublisher == nil {
-		return nil
-	}
-	return r.persistencePublisher.PublishProjectSourceCodeUpdate(ctx, contract, sourceCode, origin)
 }
 
 func (r *projectStateReconcilerImpl) persistProjectMeta(ctx context.Context, meta ProjectMeta) error {
@@ -850,20 +664,6 @@ func (r *projectStateReconcilerImpl) persistProjectMeta(ctx context.Context, met
 		return nil
 	}
 	return r.persistencePublisher.PublishProjectMetaSave(ctx, projectMetaToStore(meta))
-}
-
-func (r *projectStateReconcilerImpl) persistProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {
-	if r.persistencePublisher == nil {
-		return nil
-	}
-	return r.persistencePublisher.PublishProjectCodeBinHashUpdate(ctx, contract, codeBinHash)
-}
-
-func (r *projectStateReconcilerImpl) persistProjectSourceQualityReport(ctx context.Context, contract common.Address, report string, origin string) error {
-	if r.persistencePublisher == nil {
-		return nil
-	}
-	return r.persistencePublisher.PublishProjectSourceQualityReportUpdate(ctx, contract, report, origin)
 }
 
 func (r *projectStateReconcilerImpl) persistProjectAveDetail(ctx context.Context, contract common.Address, detail *ProjectAveDetail) error {
@@ -878,31 +678,6 @@ func (r *projectStateReconcilerImpl) persistProjectCreatorResult(ctx context.Con
 		return nil
 	}
 	return r.persistencePublisher.PublishProjectCreatorResultUpdate(ctx, contract, result)
-}
-
-func (r *projectStateReconcilerImpl) persistProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {
-	if r.persistencePublisher == nil {
-		return nil
-	}
-	return r.persistencePublisher.PublishProjectEventLog(ctx, item)
-}
-
-func (r *projectStateReconcilerImpl) fetchSourceCode(ctx context.Context, project *Project) (string, string, error) {
-	response, err := r.apiFetcher.GetSourceCode(ctx, project.Meta.Contract.String())
-	if err != nil {
-		return "", "", err
-	}
-	if len(response.Result) == 0 {
-		return "", "", errors.New("etherscan getsourcecode returned empty result")
-	}
-	return response.Result[0].SourceCode, response.Result[0].ABI, nil
-}
-
-func (r *projectStateReconcilerImpl) fetchContractBytecode(ctx context.Context, contract common.Address) ([]byte, error) {
-	if r.codeAtFunc != nil {
-		return r.codeAtFunc(ctx, contract)
-	}
-	return nil, errors.New("codeAt function is not configured")
 }
 
 func (r *projectStateReconcilerImpl) fetchCreatorHistoricalProjects(ctx context.Context, project *Project) ([]common.Address, bool, error) {

@@ -19,8 +19,7 @@ import (
 )
 
 type ProjectPolicyFacts struct {
-	BytecodeBlacklist map[common.Hash]struct{}
-	WalletBlacklist   map[common.Address]struct{}
+	WalletBlacklist map[common.Address]struct{}
 }
 
 type projectPolicyFactsSnapshot struct {
@@ -37,18 +36,13 @@ type ProjectPolicyRule interface {
 type projectPolicyEngineImpl struct {
 	projectCache ProjectSnapshotCache
 
-	bytecodeBlacklist bytecodeBlacklistLister
-	walletBlacklist   walletBlacklistLister
+	walletBlacklist walletBlacklistLister
 
 	persistencePublisher PersistenceEventPublisher
 	rules                []ProjectPolicyRule
 
 	factsMu sync.RWMutex
 	facts   projectPolicyFactsSnapshot
-}
-
-type bytecodeBlacklistLister interface {
-	List(ctx context.Context) ([]appstore.BytecodeBlacklistContract, error)
 }
 
 type walletBlacklistLister interface {
@@ -61,13 +55,11 @@ type blacklistVersionReader interface {
 
 func NewProjectPolicyEngine(
 	projectCache ProjectSnapshotCache,
-	bytecodeBlacklist bytecodeBlacklistLister,
 	walletBlacklist walletBlacklistLister,
 	persistencePublisher PersistenceEventPublisher,
 ) ProjectPolicyEngine {
 	return &projectPolicyEngineImpl{
 		projectCache:         projectCache,
-		bytecodeBlacklist:    bytecodeBlacklist,
 		walletBlacklist:      walletBlacklist,
 		persistencePublisher: persistencePublisher,
 		rules: []ProjectPolicyRule{
@@ -115,16 +107,6 @@ func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicy
 	}
 
 	facts := ProjectPolicyFacts{}
-	if e.bytecodeBlacklist != nil {
-		records, err := e.bytecodeBlacklist.List(ctx)
-		if err != nil {
-			return facts, err
-		}
-		facts.BytecodeBlacklist = make(map[common.Hash]struct{}, len(records))
-		for _, item := range records {
-			facts.BytecodeBlacklist[item.CodeHash] = struct{}{}
-		}
-	}
 	if e.walletBlacklist != nil {
 		records, err := e.walletBlacklist.List(ctx)
 		if err != nil {
@@ -148,18 +130,14 @@ func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicy
 }
 
 func (e *projectPolicyEngineImpl) blacklistFactsVersion(ctx context.Context) (string, bool, error) {
-	bytecodeVersion, bytecodeOK, err := blacklistVersion(ctx, e.bytecodeBlacklist)
-	if err != nil {
-		return "", false, err
-	}
 	walletVersion, walletOK, err := blacklistVersion(ctx, e.walletBlacklist)
 	if err != nil {
 		return "", false, err
 	}
-	if !bytecodeOK || !walletOK {
+	if !walletOK {
 		return "", false, nil
 	}
-	return bytecodeVersion + "|" + walletVersion, true, nil
+	return walletVersion, true, nil
 }
 
 func blacklistVersion(ctx context.Context, value any) (string, bool, error) {
@@ -179,12 +157,6 @@ func blacklistVersion(ctx context.Context, value any) (string, bool, error) {
 
 func cloneProjectPolicyFacts(facts ProjectPolicyFacts) ProjectPolicyFacts {
 	cloned := ProjectPolicyFacts{}
-	if facts.BytecodeBlacklist != nil {
-		cloned.BytecodeBlacklist = make(map[common.Hash]struct{}, len(facts.BytecodeBlacklist))
-		for key := range facts.BytecodeBlacklist {
-			cloned.BytecodeBlacklist[key] = struct{}{}
-		}
-	}
 	if facts.WalletBlacklist != nil {
 		cloned.WalletBlacklist = make(map[common.Address]struct{}, len(facts.WalletBlacklist))
 		for key := range facts.WalletBlacklist {
@@ -300,14 +272,11 @@ type bytecodeBlacklistRule struct{}
 func (r bytecodeBlacklistRule) Name() string { return "bytecode_blacklist" }
 
 func (r bytecodeBlacklistRule) Evaluate(_ context.Context, project *Project, facts ProjectPolicyFacts) (bool, map[string]any, error) {
-	if project == nil || project.Meta.CodeBinHash == (common.Hash{}) || len(facts.BytecodeBlacklist) == 0 {
-		return false, nil, nil
-	}
-	if _, ok := facts.BytecodeBlacklist[project.Meta.CodeBinHash]; !ok {
+	if project == nil || !project.Meta.IsBytecodeBlacklisted {
 		return false, nil, nil
 	}
 	return true, map[string]any{
-		"code_bin_hash": strings.ToLower(project.Meta.CodeBinHash.Hex()),
+		"contract": strings.ToLower(project.Meta.Contract.Hex()),
 	}, nil
 }
 

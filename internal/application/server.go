@@ -7,9 +7,9 @@ import (
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/server/version"
+	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"github.com/useryege/athena/util/ave"
-	"github.com/useryege/athena/util/deepseek"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -22,15 +22,13 @@ type ApplicationServer struct {
 }
 
 type ApplicationServerOpts struct {
-	NodeClient          *ethclient.Client
-	AthenaContract      common.Address
-	EtherscanAPIBaseURL string
-	EtherscanAPIKey     string
-	DeepSeekConfig      deepseek.Config
-	AveConfig           ave.Config
-	Store               appstore.Store
-	LiquidityLocker     []common.Address
-	RedisClient         redisport.Client
+	NodeClient        *ethclient.Client
+	AthenaContract    common.Address
+	AveConfig         ave.Config
+	Store             appstore.Store
+	LiquidityLocker   []common.Address
+	RedisClient       redisport.Client
+	SolidityClientset solidityapiclient.Clientset
 
 	// Fetch from Athena contract
 	V2FactoryContract common.Address
@@ -48,13 +46,11 @@ func NewServer(opts ApplicationServerOpts) (*ApplicationServer, error) {
 		opts.WethDecimals,
 		opts.UsdtDecimals,
 		opts.AthenaContract,
-		opts.EtherscanAPIBaseURL,
-		opts.EtherscanAPIKey,
-		opts.DeepSeekConfig,
 		opts.AveConfig,
 		opts.Store,
 		opts.LiquidityLocker,
-		opts.RedisClient)
+		opts.RedisClient,
+		opts.SolidityClientset)
 	if err != nil {
 		return nil, err
 	}

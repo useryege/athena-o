@@ -20,15 +20,6 @@ type ProjectMeta struct {
 	Tx                                 *types.Transaction
 	TxHash                             common.Hash
 	TxIndex                            uint64
-	SourceCode                         string
-	SourceCodeHash                     common.Hash
-	SourceCodeFetchedAt                time.Time
-	SourceCodeOrigin                   string
-	CodeBinHash                        common.Hash
-	CodeBinHashFetchedAt               time.Time
-	SourceQualityReport                string
-	SourceQualityReportFetchedAt       time.Time
-	SourceQualityReportOrigin          string
 	CreatorResult                      SimulateResult
 	Report                             ProjectReport
 	GenesisWalletsFetchedAt            time.Time
@@ -199,10 +190,6 @@ type ProjectStore interface {
 	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
 	ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, error)
 	ListProjectMetasByPairAddresses(ctx context.Context, pairs []common.Address) ([]ProjectMeta, error)
-	ListProjectMetasByCodeBinHash(ctx context.Context, codeBinHash common.Hash) ([]ProjectMeta, error)
-	UpdateProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string, origin string) error
-	UpdateProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
-	UpdateProjectSourceQualityReport(ctx context.Context, contract common.Address, report string, origin string) error
 	UpsertProjectAveDetail(ctx context.Context, contract common.Address, detail ProjectAveDetail) error
 	UpdateProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error
 	UpdateProjectReport(ctx context.Context, contract common.Address, report ProjectReport) error

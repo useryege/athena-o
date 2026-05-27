@@ -30,6 +30,26 @@ func (f *fakeSolidityServiceClient) GetSolidityStatus(context.Context, *solidity
 	return f.statusResp, f.statusErr
 }
 
+func (f *fakeSolidityServiceClient) GetContractSourceInfo(context.Context, *solidityapiclient.GetContractSourceInfoRequest, ...grpc.CallOption) (*v1alpha1.ContractSourceInfo, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) ListBytecodeBlacklistEntries(context.Context, *solidityapiclient.ListBytecodeBlacklistEntriesRequest, ...grpc.CallOption) (*solidityapiclient.ListBytecodeBlacklistEntriesResponse, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) AddBytecodeBlacklistEntry(context.Context, *solidityapiclient.AddBytecodeBlacklistEntryRequest, ...grpc.CallOption) (*solidityapiclient.AddBytecodeBlacklistEntryResponse, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) UpdateBytecodeBlacklistNote(context.Context, *solidityapiclient.UpdateBytecodeBlacklistNoteRequest, ...grpc.CallOption) (*solidityapiclient.UpdateBytecodeBlacklistNoteResponse, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) DeleteBytecodeBlacklist(context.Context, *solidityapiclient.DeleteBytecodeBlacklistRequest, ...grpc.CallOption) (*solidityapiclient.DeleteBytecodeBlacklistResponse, error) {
+	return nil, nil
+}
+
 func TestGetSolidityStatusForwardsResponse(t *testing.T) {
 	resp, err := NewServer(&fakeSolidityClientset{client: &fakeSolidityServiceClient{
 		statusResp: &v1alpha1.SolidityStatus{Started: true, Status: "running"},

@@ -8,31 +8,7 @@ import (
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
-var _ appcache.BytecodeBlacklistWritePublisher = &bytecodeBlacklistEventPublisher{}
 var _ appcache.WalletBlacklistWritePublisher = &walletBlacklistEventPublisher{}
-
-type bytecodeBlacklistEventPublisher struct {
-	publisher PersistenceEventPublisher
-}
-
-func newBytecodeBlacklistEventPublisher(publisher PersistenceEventPublisher) appcache.BytecodeBlacklistWritePublisher {
-	if publisher == nil {
-		return nil
-	}
-	return &bytecodeBlacklistEventPublisher{publisher: publisher}
-}
-
-func (p *bytecodeBlacklistEventPublisher) PublishAdd(ctx context.Context, item appstore.BytecodeBlacklistContract) error {
-	return p.publisher.PublishBytecodeBlacklistAdd(ctx, item)
-}
-
-func (p *bytecodeBlacklistEventPublisher) PublishUpdateNote(ctx context.Context, contract common.Address, note string) error {
-	return p.publisher.PublishBytecodeBlacklistUpdateNote(ctx, contract, note)
-}
-
-func (p *bytecodeBlacklistEventPublisher) PublishDelete(ctx context.Context, contract common.Address) error {
-	return p.publisher.PublishBytecodeBlacklistDelete(ctx, contract)
-}
 
 type walletBlacklistEventPublisher struct {
 	publisher PersistenceEventPublisher

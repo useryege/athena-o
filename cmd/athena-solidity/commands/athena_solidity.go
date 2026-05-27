@@ -11,6 +11,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -21,10 +22,13 @@ import (
 	"github.com/useryege/athena/internal/solidity"
 	"github.com/useryege/athena/internal/solidity/apiclient"
 	"github.com/useryege/athena/internal/solidity/metrics"
+	"github.com/useryege/athena/internal/solidity/sourcequality"
 	soliditystore "github.com/useryege/athena/internal/solidity/store"
 	"github.com/useryege/athena/util/cli"
+	"github.com/useryege/athena/util/deepseek"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
+	"github.com/useryege/athena/util/ethereumapi"
 	"github.com/useryege/athena/util/healthz"
 	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/templates"
@@ -38,6 +42,13 @@ func NewCommand() *cobra.Command {
 		listenPort  int
 		metricsHost string
 		metricsPort int
+		nodewsurl   string
+
+		etherscanAPIBaseURL string
+		etherscanAPIKey     string
+		deepseekAPIKey      string
+		deepseekAPIBaseURL  string
+		deepseekModel       string
 
 		storeSrc func(context.Context) (*soliditystore.SQLStore, error)
 	)
@@ -65,6 +76,43 @@ func NewCommand() *cobra.Command {
 			errors.CheckError(err)
 			defer utilio.Close(store)
 
+			nodeClient, err := ethclient.Dial(nodewsurl)
+			if err != nil {
+				return fmt.Errorf("failed to connect to node websocket: %w", err)
+			}
+			defer nodeClient.Close()
+
+			chainID, err := nodeClient.ChainID(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to fetch node chain id: %w", err)
+			}
+
+			var apiFetcher ethereumapi.EthereumAPI
+			if etherscanAPIBaseURL != "" && etherscanAPIKey != "" {
+				apiFetcher = ethereumapi.NewEthereumAPI(etherscanAPIBaseURL, etherscanAPIKey, chainID.Int64())
+			}
+
+			var analyzer sourcequality.Analyzer
+			if deepseekAPIKey != "" {
+				deepseekConfig := deepseek.Config{
+					BaseURL: deepseekAPIBaseURL,
+					APIKey:  deepseekAPIKey,
+					Model:   deepseekModel,
+				}
+				deepseekClient, err := deepseek.NewClient(deepseekConfig)
+				if err != nil {
+					return fmt.Errorf("failed to configure DeepSeek source quality analyzer: %w", err)
+				}
+				if err := deepseekClient.Ping(ctx); err != nil {
+					return fmt.Errorf("failed to ping DeepSeek source quality analyzer: %w", err)
+				}
+				configWithDefaults := deepseekConfig.WithDefaults()
+				analyzer = sourcequality.NewAnalyzer(deepseekClient, sourcequality.Options{
+					Model:     configWithDefaults.Model,
+					MaxTokens: configWithDefaults.MaxTokens,
+				})
+			}
+
 			metricsServer := metrics.NewMetricsServer()
 			metricsMux := http.NewServeMux()
 			metricsMux.Handle("/", metricsServer.GetHandler())
@@ -72,7 +120,13 @@ func NewCommand() *cobra.Command {
 				errors.CheckError(http.ListenAndServe(fmt.Sprintf("%s:%d", metricsHost, metricsPort), metricsMux))
 			}()
 
-			server, err := solidity.NewServer(solidity.ServerOpts{Store: store})
+			server, err := solidity.NewServer(solidity.ServerOpts{
+				Store:                 store,
+				NodeClient:            nodeClient,
+				ChainID:               chainID.Int64(),
+				APIFetcher:            apiFetcher,
+				SourceQualityAnalyzer: analyzer,
+			})
 			if err != nil {
 				return err
 			}
@@ -141,6 +195,12 @@ func NewCommand() *cobra.Command {
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortSolidity, "Listen on given port for incoming connections")
 	command.Flags().StringVar(&metricsHost, "metrics-address", env.StringFromEnv("ATHENA_SOLIDITY_METRICS_LISTEN_ADDRESS", common.DefaultAddressSolidityMetrics), "Listen on given address for metrics and health checks")
 	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortSolidityMetrics, "Start metrics server on given port")
+	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_SOLIDITY_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
+	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_SOLIDITY_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
+	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_SOLIDITY_ETHERSCAN_API_KEY", ""), "Etherscan API key")
+	command.Flags().StringVar(&deepseekAPIKey, "deepseek-api-key", env.StringFromEnv("ATHENA_SOLIDITY_DEEPSEEK_API_KEY", ""), "DeepSeek API key")
+	command.Flags().StringVar(&deepseekAPIBaseURL, "deepseek-api-base-url", env.StringFromEnv("ATHENA_SOLIDITY_DEEPSEEK_BASE_URL", deepseek.DefaultBaseURL), "DeepSeek API base URL")
+	command.Flags().StringVar(&deepseekModel, "deepseek-model", env.StringFromEnv("ATHENA_SOLIDITY_DEEPSEEK_MODEL", deepseek.DefaultModel), "DeepSeek model for contract source quality analysis")
 
 	storeSrc = soliditystore.NewSQLStoreSource()
 

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
@@ -35,15 +34,9 @@ const (
 	PersistenceOpProjectEventLogAdd              = "project_event_log_add"
 	PersistenceOpProjectGenesisReplace           = "project_genesis_wallet_replace"
 	PersistenceOpProjectCreatorHistoricalReplace = "project_creator_historical_project_replace"
-	PersistenceOpProjectSourceCode               = "project_source_code_update"
-	PersistenceOpProjectCodeBinHash              = "project_code_bin_hash_update"
-	PersistenceOpProjectSourceQualityReport      = "project_source_quality_report_update"
 	PersistenceOpProjectAveDetail                = "project_ave_detail_upsert"
 	PersistenceOpProjectCreatorResult            = "project_creator_result_update"
 	PersistenceOpProjectReport                   = "project_report_update"
-	PersistenceOpBytecodeBlacklistAdd            = "bytecode_blacklist_add"
-	PersistenceOpBytecodeBlacklistNote           = "bytecode_blacklist_update_note"
-	PersistenceOpBytecodeBlacklistDel            = "bytecode_blacklist_delete"
 	PersistenceOpWalletBlacklistAdd              = "wallet_blacklist_add"
 	PersistenceOpWalletBlacklistNote             = "wallet_blacklist_update_note"
 	PersistenceOpWalletBlacklistDel              = "wallet_blacklist_delete"
@@ -67,15 +60,6 @@ type projectMetaSavePayload struct {
 	FetchAt                            string `json:"fetch_at"`
 	TxHash                             string `json:"tx_hash"`
 	TxIndex                            uint64 `json:"tx_index"`
-	SourceCode                         string `json:"source_code"`
-	SourceCodeHash                     string `json:"source_code_hash,omitempty"`
-	SourceCodeFetchedAt                string `json:"source_code_fetched_at,omitempty"`
-	SourceCodeOrigin                   string `json:"source_code_origin,omitempty"`
-	CodeBinHash                        string `json:"code_bin_hash,omitempty"`
-	CodeBinHashFetchedAt               string `json:"code_bin_hash_fetched_at,omitempty"`
-	SourceQualityReport                string `json:"source_quality_report,omitempty"`
-	SourceQualityReportFetchedAt       string `json:"source_quality_report_fetched_at,omitempty"`
-	SourceQualityReportOrigin          string `json:"source_quality_report_origin,omitempty"`
 	ReportIsPolicyEvaluated            bool   `json:"report_is_policy_evaluated,omitempty"`
 	ReportIsBlacklistedCreatorWallet   bool   `json:"report_is_blacklisted_creator_wallet,omitempty"`
 	ReportIsBlacklistedGenesisWallet   bool   `json:"report_is_blacklisted_genesis_wallet,omitempty"`
@@ -83,24 +67,6 @@ type projectMetaSavePayload struct {
 	ReportHasMintRisk                  bool   `json:"report_has_mint_risk,omitempty"`
 	GenesisWalletsFetchedAt            string `json:"genesis_wallets_fetched_at,omitempty"`
 	CreatorHistoricalProjectsFetchedAt string `json:"creator_historical_projects_fetched_at,omitempty"`
-}
-
-type projectSourceCodeUpdatePayload struct {
-	Contract       string `json:"contract"`
-	SourceCode     string `json:"source_code"`
-	SourceCodeHash string `json:"source_code_hash,omitempty"`
-	Origin         string `json:"origin,omitempty"`
-}
-
-type projectCodeBinHashUpdatePayload struct {
-	Contract    string `json:"contract"`
-	CodeBinHash string `json:"code_bin_hash"`
-}
-
-type projectSourceQualityReportUpdatePayload struct {
-	Contract string `json:"contract"`
-	Report   string `json:"report"`
-	Origin   string `json:"origin,omitempty"`
 }
 
 type projectAveDetailUpsertPayload struct {
@@ -161,21 +127,6 @@ type projectCreatorHistoricalProjectItemPayload struct {
 	RankIndex int32  `json:"rank_index"`
 }
 
-type bytecodeBlacklistAddPayload struct {
-	Contract string `json:"contract"`
-	CodeHash string `json:"code_hash"`
-	Note     string `json:"note,omitempty"`
-}
-
-type bytecodeBlacklistUpdateNotePayload struct {
-	Contract string `json:"contract"`
-	Note     string `json:"note,omitempty"`
-}
-
-type bytecodeBlacklistDeletePayload struct {
-	Contract string `json:"contract"`
-}
-
 type walletBlacklistAddPayload struct {
 	Wallet string `json:"wallet"`
 	Note   string `json:"note,omitempty"`
@@ -194,16 +145,10 @@ type PersistenceEventPublisher interface {
 	Publish(ctx context.Context, event PersistenceEvent) error
 	PublishProjectMetaSave(ctx context.Context, meta appstore.ProjectMeta) error
 	PublishProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error
-	PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string, origin string) error
-	PublishProjectCodeBinHashUpdate(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
-	PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string, origin string) error
 	PublishProjectAveDetailUpsert(ctx context.Context, contract common.Address, detail appstore.ProjectAveDetail) error
 	PublishProjectCreatorResultUpdate(ctx context.Context, contract common.Address, result SimulateResult) error
 	PublishProjectReportUpdate(ctx context.Context, contract common.Address, report ProjectReport) error
 	PublishProjectCreatorHistoricalProjectsReplace(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
-	PublishBytecodeBlacklistAdd(ctx context.Context, item appstore.BytecodeBlacklistContract) error
-	PublishBytecodeBlacklistUpdateNote(ctx context.Context, contract common.Address, note string) error
-	PublishBytecodeBlacklistDelete(ctx context.Context, contract common.Address) error
 	PublishWalletBlacklistAdd(ctx context.Context, item appstore.WalletBlacklistEntry) error
 	PublishWalletBlacklistUpdateNote(ctx context.Context, wallet common.Address, note string) error
 	PublishWalletBlacklistDelete(ctx context.Context, wallet common.Address) error
@@ -212,16 +157,10 @@ type PersistenceEventPublisher interface {
 type PersistenceEventWriter interface {
 	WriteProjectMeta(ctx context.Context, meta appstore.ProjectMeta) error
 	WriteProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error
-	WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string, origin string) error
-	WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error
-	WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string, origin string) error
 	WriteProjectAveDetail(ctx context.Context, contract common.Address, detail appstore.ProjectAveDetail) error
 	WriteProjectCreatorResult(ctx context.Context, contract common.Address, result appstore.SimulateResult) error
 	WriteProjectReport(ctx context.Context, contract common.Address, report appstore.ProjectReport) error
 	WriteProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
-	AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error
-	UpdateBytecodeBlacklistContractNote(ctx context.Context, contract common.Address, note string) error
-	DeleteBytecodeBlacklistContract(ctx context.Context, contract common.Address) error
 	AddWalletBlacklistEntry(ctx context.Context, item appstore.WalletBlacklistEntry) error
 	UpdateWalletBlacklistEntryNote(ctx context.Context, wallet common.Address, note string) error
 	DeleteWalletBlacklistEntry(ctx context.Context, wallet common.Address) error
@@ -301,15 +240,6 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 		FetchAt:                            timeToPayload(meta.FetchAt),
 		TxHash:                             meta.TxHash.Hex(),
 		TxIndex:                            meta.TxIndex,
-		SourceCode:                         meta.SourceCode,
-		SourceCodeHash:                     hashToPayload(meta.SourceCodeHash),
-		SourceCodeFetchedAt:                timeToPayload(meta.SourceCodeFetchedAt),
-		SourceCodeOrigin:                   meta.SourceCodeOrigin,
-		CodeBinHash:                        hashToPayload(meta.CodeBinHash),
-		CodeBinHashFetchedAt:               timeToPayload(meta.CodeBinHashFetchedAt),
-		SourceQualityReport:                meta.SourceQualityReport,
-		SourceQualityReportFetchedAt:       timeToPayload(meta.SourceQualityReportFetchedAt),
-		SourceQualityReportOrigin:          meta.SourceQualityReportOrigin,
 		ReportIsPolicyEvaluated:            meta.Report.IsPolicyEvaluated,
 		ReportIsBlacklistedCreatorWallet:   meta.Report.IsBlacklistedCreatorWallet,
 		ReportIsBlacklistedGenesisWallet:   meta.Report.IsBlacklistedGenesisWallet,
@@ -331,47 +261,6 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 	})
 }
 
-func (b *RedisPersistenceEventBus) PublishProjectSourceCodeUpdate(ctx context.Context, contract common.Address, sourceCode string, origin string) error {
-	sourceCodeHash := common.Hash{}
-	if sourceCode != "" {
-		sourceCodeHash = crypto.Keccak256Hash([]byte(sourceCode))
-	}
-	payload := projectSourceCodeUpdatePayload{Contract: contract.Hex(), SourceCode: sourceCode, SourceCodeHash: hashToPayload(sourceCodeHash), Origin: origin}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal project source code payload: %w", err)
-	}
-	return b.Publish(ctx, PersistenceEvent{
-		Version:    persistenceEventVersion,
-		Op:         PersistenceOpProjectSourceCode,
-		Contract:   contract.Hex(),
-		Payload:    data,
-		OccurredAt: time.Now().UTC(),
-	})
-}
-
-func (b *RedisPersistenceEventBus) PublishProjectCodeBinHashUpdate(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {
-	payload := projectCodeBinHashUpdatePayload{Contract: contract.Hex(), CodeBinHash: codeBinHash.Hex()}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal project code bin hash payload: %w", err)
-	}
-	return b.Publish(ctx, PersistenceEvent{
-		Version:    persistenceEventVersion,
-		Op:         PersistenceOpProjectCodeBinHash,
-		Contract:   contract.Hex(),
-		Payload:    data,
-		OccurredAt: time.Now().UTC(),
-	})
-}
-
-func hashToPayload(value common.Hash) string {
-	if value == (common.Hash{}) {
-		return ""
-	}
-	return value.Hex()
-}
-
 func timeToPayload(value time.Time) string {
 	if value.IsZero() {
 		return ""
@@ -388,21 +277,6 @@ func timeFromPayload(value string) (time.Time, error) {
 		return time.Time{}, err
 	}
 	return parsed.UTC(), nil
-}
-
-func (b *RedisPersistenceEventBus) PublishProjectSourceQualityReportUpdate(ctx context.Context, contract common.Address, report string, origin string) error {
-	payload := projectSourceQualityReportUpdatePayload{Contract: contract.Hex(), Report: report, Origin: origin}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal project source quality report payload: %w", err)
-	}
-	return b.Publish(ctx, PersistenceEvent{
-		Version:    persistenceEventVersion,
-		Op:         PersistenceOpProjectSourceQualityReport,
-		Contract:   contract.Hex(),
-		Payload:    data,
-		OccurredAt: time.Now().UTC(),
-	})
 }
 
 func (b *RedisPersistenceEventBus) PublishProjectAveDetailUpsert(ctx context.Context, contract common.Address, detail appstore.ProjectAveDetail) error {
@@ -514,60 +388,6 @@ func (b *RedisPersistenceEventBus) PublishProjectEventLog(ctx context.Context, i
 		Contract:   item.Contract.Hex(),
 		Payload:    data,
 		OccurredAt: occurredAt,
-	})
-}
-
-func (b *RedisPersistenceEventBus) PublishBytecodeBlacklistAdd(ctx context.Context, item appstore.BytecodeBlacklistContract) error {
-	payload := bytecodeBlacklistAddPayload{
-		Contract: item.Contract.Hex(),
-		CodeHash: item.CodeHash.Hex(),
-		Note:     item.Note,
-	}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal bytecode blacklist add payload: %w", err)
-	}
-	return b.Publish(ctx, PersistenceEvent{
-		Version:    persistenceEventVersion,
-		Op:         PersistenceOpBytecodeBlacklistAdd,
-		Contract:   item.Contract.Hex(),
-		Payload:    data,
-		OccurredAt: time.Now().UTC(),
-	})
-}
-
-func (b *RedisPersistenceEventBus) PublishBytecodeBlacklistUpdateNote(ctx context.Context, contract common.Address, note string) error {
-	payload := bytecodeBlacklistUpdateNotePayload{
-		Contract: contract.Hex(),
-		Note:     note,
-	}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal bytecode blacklist update note payload: %w", err)
-	}
-	return b.Publish(ctx, PersistenceEvent{
-		Version:    persistenceEventVersion,
-		Op:         PersistenceOpBytecodeBlacklistNote,
-		Contract:   contract.Hex(),
-		Payload:    data,
-		OccurredAt: time.Now().UTC(),
-	})
-}
-
-func (b *RedisPersistenceEventBus) PublishBytecodeBlacklistDelete(ctx context.Context, contract common.Address) error {
-	payload := bytecodeBlacklistDeletePayload{
-		Contract: contract.Hex(),
-	}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal bytecode blacklist delete payload: %w", err)
-	}
-	return b.Publish(ctx, PersistenceEvent{
-		Version:    persistenceEventVersion,
-		Op:         PersistenceOpBytecodeBlacklistDel,
-		Contract:   contract.Hex(),
-		Payload:    data,
-		OccurredAt: time.Now().UTC(),
 	})
 }
 
@@ -817,19 +637,14 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		creator := common.HexToAddress(payload.Creator)
 		txHash := common.HexToHash(payload.TxHash)
 		meta := appstore.ProjectMeta{
-			BlockTime:                 payload.BlockTime,
-			BlockNumber:               payload.BlockNumber,
-			Contract:                  contract,
-			Creator:                   creator,
-			WethPair:                  common.HexToAddress(payload.WethPair),
-			UsdtPair:                  common.HexToAddress(payload.UsdtPair),
-			TxHash:                    txHash,
-			TxIndex:                   payload.TxIndex,
-			SourceCode:                payload.SourceCode,
-			SourceCodeOrigin:          payload.SourceCodeOrigin,
-			CodeBinHash:               common.HexToHash(payload.CodeBinHash),
-			SourceQualityReport:       payload.SourceQualityReport,
-			SourceQualityReportOrigin: payload.SourceQualityReportOrigin,
+			BlockTime:   payload.BlockTime,
+			BlockNumber: payload.BlockNumber,
+			Contract:    contract,
+			Creator:     creator,
+			WethPair:    common.HexToAddress(payload.WethPair),
+			UsdtPair:    common.HexToAddress(payload.UsdtPair),
+			TxHash:      txHash,
+			TxIndex:     payload.TxIndex,
 			Report: appstore.ProjectReport{
 				IsPolicyEvaluated:          payload.ReportIsPolicyEvaluated,
 				IsBlacklistedCreatorWallet: payload.ReportIsBlacklistedCreatorWallet,
@@ -842,54 +657,13 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 		if meta.FetchAt, err = timeFromPayload(payload.FetchAt); err != nil {
 			return fmt.Errorf("parse fetch_at %q: %w", payload.FetchAt, err)
 		}
-		if meta.SourceCodeFetchedAt, err = timeFromPayload(payload.SourceCodeFetchedAt); err != nil {
-			return fmt.Errorf("parse source_code_fetched_at %q: %w", payload.SourceCodeFetchedAt, err)
-		}
-		if meta.CodeBinHashFetchedAt, err = timeFromPayload(payload.CodeBinHashFetchedAt); err != nil {
-			return fmt.Errorf("parse code_bin_hash_fetched_at %q: %w", payload.CodeBinHashFetchedAt, err)
-		}
-		if meta.SourceQualityReportFetchedAt, err = timeFromPayload(payload.SourceQualityReportFetchedAt); err != nil {
-			return fmt.Errorf("parse source_quality_report_fetched_at %q: %w", payload.SourceQualityReportFetchedAt, err)
-		}
 		if meta.GenesisWalletsFetchedAt, err = timeFromPayload(payload.GenesisWalletsFetchedAt); err != nil {
 			return fmt.Errorf("parse genesis_wallets_fetched_at %q: %w", payload.GenesisWalletsFetchedAt, err)
 		}
 		if meta.CreatorHistoricalProjectsFetchedAt, err = timeFromPayload(payload.CreatorHistoricalProjectsFetchedAt); err != nil {
 			return fmt.Errorf("parse creator_historical_projects_fetched_at %q: %w", payload.CreatorHistoricalProjectsFetchedAt, err)
 		}
-		if payload.SourceCodeHash != "" {
-			meta.SourceCodeHash = common.HexToHash(payload.SourceCodeHash)
-		} else if payload.SourceCode != "" {
-			meta.SourceCodeHash = crypto.Keccak256Hash([]byte(payload.SourceCode))
-		}
 		return writer.WriteProjectMeta(ctx, meta)
-	case PersistenceOpProjectSourceCode:
-		var payload projectSourceCodeUpdatePayload
-		if err := json.Unmarshal(event.Payload, &payload); err != nil {
-			return fmt.Errorf("unmarshal project source code payload: %w", err)
-		}
-		if !common.IsHexAddress(payload.Contract) {
-			return fmt.Errorf("invalid contract %q", payload.Contract)
-		}
-		return writer.WriteProjectSourceCode(ctx, common.HexToAddress(payload.Contract), payload.SourceCode, payload.Origin)
-	case PersistenceOpProjectCodeBinHash:
-		var payload projectCodeBinHashUpdatePayload
-		if err := json.Unmarshal(event.Payload, &payload); err != nil {
-			return fmt.Errorf("unmarshal project code bin hash payload: %w", err)
-		}
-		if !common.IsHexAddress(payload.Contract) {
-			return fmt.Errorf("invalid contract %q", payload.Contract)
-		}
-		return writer.WriteProjectCodeBinHash(ctx, common.HexToAddress(payload.Contract), common.HexToHash(payload.CodeBinHash))
-	case PersistenceOpProjectSourceQualityReport:
-		var payload projectSourceQualityReportUpdatePayload
-		if err := json.Unmarshal(event.Payload, &payload); err != nil {
-			return fmt.Errorf("unmarshal project source quality report payload: %w", err)
-		}
-		if !common.IsHexAddress(payload.Contract) {
-			return fmt.Errorf("invalid contract %q", payload.Contract)
-		}
-		return writer.WriteProjectSourceQualityReport(ctx, common.HexToAddress(payload.Contract), payload.Report, payload.Origin)
 	case PersistenceOpProjectAveDetail:
 		var payload projectAveDetailUpsertPayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -1018,49 +792,6 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			return errors.New("project genesis wallet store is not configured")
 		}
 		return gwWriter.WriteProjectGenesisWallets(ctx, common.HexToAddress(payload.Contract), items)
-	case PersistenceOpBytecodeBlacklistAdd:
-		var payload bytecodeBlacklistAddPayload
-		if err := json.Unmarshal(event.Payload, &payload); err != nil {
-			return fmt.Errorf("unmarshal bytecode blacklist add payload: %w", err)
-		}
-		if !common.IsHexAddress(payload.Contract) {
-			return fmt.Errorf("invalid contract %q", payload.Contract)
-		}
-		codeHash := strings.TrimSpace(payload.CodeHash)
-		if len(codeHash) != 66 || !strings.HasPrefix(codeHash, "0x") || len(common.FromHex(codeHash)) != 32 {
-			return fmt.Errorf("invalid code_hash %q", payload.CodeHash)
-		}
-		err := writer.AddBytecodeBlacklistContract(ctx, appstore.BytecodeBlacklistContract{
-			Contract: common.HexToAddress(payload.Contract),
-			CodeHash: common.HexToHash(codeHash),
-			Note:     payload.Note,
-		})
-		if errors.Is(err, appstore.ErrBytecodeBlacklistContractAlreadyExists) {
-			return nil
-		}
-		return err
-	case PersistenceOpBytecodeBlacklistNote:
-		var payload bytecodeBlacklistUpdateNotePayload
-		if err := json.Unmarshal(event.Payload, &payload); err != nil {
-			return fmt.Errorf("unmarshal bytecode blacklist update note payload: %w", err)
-		}
-		if !common.IsHexAddress(payload.Contract) {
-			return fmt.Errorf("invalid contract %q", payload.Contract)
-		}
-		return writer.UpdateBytecodeBlacklistContractNote(ctx, common.HexToAddress(payload.Contract), payload.Note)
-	case PersistenceOpBytecodeBlacklistDel:
-		var payload bytecodeBlacklistDeletePayload
-		if err := json.Unmarshal(event.Payload, &payload); err != nil {
-			return fmt.Errorf("unmarshal bytecode blacklist delete payload: %w", err)
-		}
-		if !common.IsHexAddress(payload.Contract) {
-			return fmt.Errorf("invalid contract %q", payload.Contract)
-		}
-		err := writer.DeleteBytecodeBlacklistContract(ctx, common.HexToAddress(payload.Contract))
-		if errors.Is(err, appstore.ErrBytecodeBlacklistContractNotFound) {
-			return nil
-		}
-		return err
 	case PersistenceOpWalletBlacklistAdd:
 		var payload walletBlacklistAddPayload
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -1141,18 +872,6 @@ func (w *storePersistenceWriter) WriteProjectEventLog(ctx context.Context, item 
 	return store.AddProjectEventLog(ctx, item)
 }
 
-func (w *storePersistenceWriter) WriteProjectSourceCode(ctx context.Context, contract common.Address, sourceCode string, origin string) error {
-	return w.store.UpdateProjectSourceCode(ctx, contract, sourceCode, origin)
-}
-
-func (w *storePersistenceWriter) WriteProjectCodeBinHash(ctx context.Context, contract common.Address, codeBinHash common.Hash) error {
-	return w.store.UpdateProjectCodeBinHash(ctx, contract, codeBinHash)
-}
-
-func (w *storePersistenceWriter) WriteProjectSourceQualityReport(ctx context.Context, contract common.Address, report string, origin string) error {
-	return w.store.UpdateProjectSourceQualityReport(ctx, contract, report, origin)
-}
-
 func (w *storePersistenceWriter) WriteProjectAveDetail(ctx context.Context, contract common.Address, detail appstore.ProjectAveDetail) error {
 	return w.store.UpsertProjectAveDetail(ctx, contract, detail)
 }
@@ -1171,30 +890,6 @@ func (w *storePersistenceWriter) WriteProjectCreatorHistoricalProjects(ctx conte
 		return errors.New("project creator historical project store is not configured")
 	}
 	return store.ReplaceProjectCreatorHistoricalProjects(ctx, contract, items)
-}
-
-func (w *storePersistenceWriter) AddBytecodeBlacklistContract(ctx context.Context, item appstore.BytecodeBlacklistContract) error {
-	store, ok := w.store.(appstore.BytecodeBlacklistContractStore)
-	if !ok || store == nil {
-		return errors.New("bytecode blacklist contract store is not configured")
-	}
-	return store.AddBytecodeBlacklistContract(ctx, item)
-}
-
-func (w *storePersistenceWriter) UpdateBytecodeBlacklistContractNote(ctx context.Context, contract common.Address, note string) error {
-	store, ok := w.store.(appstore.BytecodeBlacklistContractStore)
-	if !ok || store == nil {
-		return errors.New("bytecode blacklist contract store is not configured")
-	}
-	return store.UpdateBytecodeBlacklistContractNote(ctx, contract, note)
-}
-
-func (w *storePersistenceWriter) DeleteBytecodeBlacklistContract(ctx context.Context, contract common.Address) error {
-	store, ok := w.store.(appstore.BytecodeBlacklistContractStore)
-	if !ok || store == nil {
-		return errors.New("bytecode blacklist contract store is not configured")
-	}
-	return store.DeleteBytecodeBlacklistContract(ctx, contract)
 }
 
 func (w *storePersistenceWriter) AddWalletBlacklistEntry(ctx context.Context, item appstore.WalletBlacklistEntry) error {

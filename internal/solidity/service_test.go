@@ -11,7 +11,7 @@ import (
 )
 
 func TestSolidityStatusTransitions(t *testing.T) {
-	service := NewService(soliditystore.NewSQLStore(nil))
+	service := NewService(ServiceOpts{Store: soliditystore.NewSQLStore(nil)})
 
 	resp, err := service.GetSolidityStatus(context.Background(), &apiclient.GetSolidityStatusRequest{})
 	if err != nil {
@@ -45,7 +45,7 @@ func TestSolidityStatusTransitions(t *testing.T) {
 }
 
 func TestSolidityStartRequiresStore(t *testing.T) {
-	err := NewService(nil).Start()
+	err := NewService(ServiceOpts{}).Start()
 	if status.Code(err) != codes.FailedPrecondition {
 		t.Fatalf("Start error = %v, want FailedPrecondition", err)
 	}

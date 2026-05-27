@@ -11,7 +11,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
@@ -19,20 +18,13 @@ import (
 	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/redisport"
-	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
+	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ave"
-	"github.com/useryege/athena/util/deepseek"
-	"github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
-
-const (
-	binBlacklistScanInterval = time.Minute
-	sourceCodeScanPageSize   = 200
 )
 
 type Service struct {
@@ -46,17 +38,13 @@ type Service struct {
 	usdtDecimals      uint8
 	athenaContract    common.Address
 
-	etherscanAPIBaseURL string
-	etherscanAPIKey     string
-	aveConfig           ave.Config
-	liquidityLocker     []common.Address
+	aveConfig         ave.Config
+	liquidityLocker   []common.Address
+	solidityClientSet solidityapiclient.Clientset
 
-	pipeline              *ProjectPipeline
-	apiFetcher            ethereumapi.EthereumAPI
-	athenaFetcher         evm.AthenaFetcher
-	sourceQualityAnalyzer sourcequality.Analyzer
-	bytecodeBlacklist     appcache.BytecodeBlacklistModel
-	walletBlacklist       appcache.WalletBlacklistModel
+	pipeline        *ProjectPipeline
+	athenaFetcher   evm.AthenaFetcher
+	walletBlacklist appcache.WalletBlacklistModel
 
 	store                appstore.Store
 	projectCache         ProjectSnapshotCache
@@ -74,37 +62,12 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, etherscanAPIBaseURL string, etherscanAPIKey string, deepseekConfig deepseek.Config, aveConfig ave.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client) (*Service, error) {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, aveConfig ave.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client, solidityClientSet solidityapiclient.Clientset) (*Service, error) {
 	persistenceBus := NewRedisPersistenceEventBus(redisClient)
-	var sourceQualityAnalyzer sourcequality.Analyzer
-	if strings.TrimSpace(deepseekConfig.APIKey) != "" {
-		deepseekClient, err := deepseek.NewClient(deepseekConfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to configure DeepSeek source quality analyzer: %w", err)
-		}
-		if err := deepseekClient.Ping(context.Background()); err != nil {
-			return nil, fmt.Errorf("failed to ping DeepSeek source quality analyzer: %w", err)
-		}
-		log.Info("DeepSeek source quality analyzer configured successfully")
-		configWithDefaults := deepseekConfig.WithDefaults()
-		sourceQualityAnalyzer = sourcequality.NewAnalyzer(deepseekClient, sourcequality.Options{
-			Model:     configWithDefaults.Model,
-			MaxTokens: configWithDefaults.MaxTokens,
-		})
-	}
-	var bytecodeStore appstore.BytecodeBlacklistContractStore
-	if s, ok := store.(appstore.BytecodeBlacklistContractStore); ok {
-		bytecodeStore = s
-	}
 	var walletStore appstore.WalletBlacklistStore
 	if s, ok := store.(appstore.WalletBlacklistStore); ok {
 		walletStore = s
 	}
-	bytecodeBlacklist := appcache.NewBytecodeBlacklistModel(
-		bytecodeStore,
-		appcache.NewLayeredBytecodeBlacklistCache(appcache.NewLocalBytecodeBlacklistCache(), appcache.NewBytecodeBlacklistRedisCache(redisClient)),
-		newBytecodeBlacklistEventPublisher(persistenceBus),
-	)
 	walletBlacklist := appcache.NewWalletBlacklistModel(
 		walletStore,
 		appcache.NewLayeredWalletBlacklistCache(appcache.NewLocalWalletBlacklistCache(), appcache.NewWalletBlacklistRedisCache(redisClient)),
@@ -112,25 +75,22 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 	)
 
 	return &Service{
-		nodeClient:            nodeClient,
-		store:                 store,
-		projectCache:          NewProjectSnapshotCache(redisClient),
-		sourceQualityAnalyzer: sourceQualityAnalyzer,
-		bytecodeBlacklist:     bytecodeBlacklist,
-		walletBlacklist:       walletBlacklist,
-		persistencePublisher:  persistenceBus,
-		persistenceBus:        persistenceBus,
-		persistenceWriter:     NewStorePersistenceWriter(store),
-		v2FactoryContract:     v2FactoryContract,
-		wethContract:          wethContract,
-		usdtContract:          usdtContract,
-		wethDecimals:          wethDecimals,
-		usdtDecimals:          usdtDecimals,
-		athenaContract:        athenaContract,
-		etherscanAPIBaseURL:   etherscanAPIBaseURL,
-		etherscanAPIKey:       etherscanAPIKey,
-		aveConfig:             aveConfig,
-		liquidityLocker:       liquidityLocker,
+		nodeClient:           nodeClient,
+		store:                store,
+		projectCache:         NewProjectSnapshotCache(redisClient),
+		walletBlacklist:      walletBlacklist,
+		persistencePublisher: persistenceBus,
+		persistenceBus:       persistenceBus,
+		persistenceWriter:    NewStorePersistenceWriter(store),
+		v2FactoryContract:    v2FactoryContract,
+		wethContract:         wethContract,
+		usdtContract:         usdtContract,
+		wethDecimals:         wethDecimals,
+		usdtDecimals:         usdtDecimals,
+		athenaContract:       athenaContract,
+		aveConfig:            aveConfig,
+		liquidityLocker:      liquidityLocker,
+		solidityClientSet:    solidityClientSet,
 	}, nil
 }
 
@@ -150,7 +110,7 @@ func (s *Service) Start() error {
 	s.bootstrapStop = cancel
 	s.startStopMu.Unlock()
 
-	pipeline, apiFetcher, athenaFetcher, err := s.startWithContext(ctx)
+	pipeline, athenaFetcher, err := s.startWithContext(ctx)
 	if err != nil {
 		cancel()
 		s.startStopMu.Lock()
@@ -169,7 +129,6 @@ func (s *Service) Start() error {
 		return context.Canceled
 	}
 	s.pipeline = pipeline
-	s.apiFetcher = apiFetcher
 	s.athenaFetcher = athenaFetcher
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
@@ -181,7 +140,7 @@ func (s *Service) Start() error {
 	return nil
 }
 
-func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeline, apiFetcher ethereumapi.EthereumAPI, athenaFetcher evm.AthenaFetcher, err error) {
+func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeline, athenaFetcher evm.AthenaFetcher, err error) {
 	startedAt := time.Now()
 	startLogger := log.WithFields(log.Fields{
 		"component": "application_start",
@@ -204,33 +163,26 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 
 	athenaFetcher, err = evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	chainID, err := s.nodeClient.ChainID(ctx)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	apiFetcher = ethereumapi.NewEthereumAPI(s.etherscanAPIBaseURL, s.etherscanAPIKey, chainID.Int64())
 	aveDetailFetcher, aveChain, err := newAveDetailFetcherForChain(s.aveConfig, chainID.Int64())
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	if aveDetailFetcher != nil {
 		log.WithField("chain", aveChain).Info("Ave detail fetcher configured successfully")
 	}
 	projectSimulator := NewProjectSimulator(s.nodeClient)
 
-	if s.bytecodeBlacklist != nil {
-		if err := s.bytecodeBlacklist.Load(ctx); err != nil {
-			return nil, nil, nil, err
-		}
-	}
-
 	if s.walletBlacklist != nil {
 		if err := s.walletBlacklist.Load(ctx); err != nil {
-			return nil, nil, nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -240,7 +192,6 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 
 	policyEngine := NewProjectPolicyEngine(
 		s.projectCache,
-		s.bytecodeBlacklist,
 		s.walletBlacklist,
 		s.persistencePublisher,
 	)
@@ -250,26 +201,25 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		s.store,
 		athenaFetcher,
 		projectSimulator,
-		apiFetcher,
 		aveDetailFetcher,
 		aveChain,
-		s.sourceQualityAnalyzer,
+		s.solidityClientSet,
+		chainID.Int64(),
 		s.persistencePublisher,
-		s.fetchContractBytecode,
 		policyEngine,
 	)
 	discoveryIntake := NewDiscoveryIntake(stateReconciler)
 
 	discoveryIndexer, err := NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, s.store, discoveryIntake)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	pipeline = NewProjectPipeline(discoveryIndexer, stateReconciler)
 	if err := pipeline.Start(ctx); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	return pipeline, apiFetcher, athenaFetcher, nil
+	return pipeline, athenaFetcher, nil
 }
 
 func genesisWalletAddressesFromMetas(items []GenesisWalletMeta) []common.Address {
@@ -355,13 +305,6 @@ func aveChainNameForChainID(chainID int64) (string, bool) {
 	}
 }
 
-func (s *Service) AnalyzeContractSourceQuality(ctx context.Context, sourceCode string) (string, error) {
-	if s.sourceQualityAnalyzer == nil {
-		return "", status.Error(codes.FailedPrecondition, "DeepSeek analyzer is not configured")
-	}
-	return s.sourceQualityAnalyzer.AnalyzeContractSource(ctx, sourceCode)
-}
-
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
 
@@ -406,111 +349,7 @@ func (s *Service) Stop() error {
 
 func (s *Service) clearPipelineLocked() {
 	s.pipeline = nil
-	s.apiFetcher = nil
 	s.athenaFetcher = nil
-}
-
-func (s *Service) ListBytecodeBlacklistContracts(ctx context.Context, _ *applicationpkg.ListBytecodeBlacklistContractsRequest) (*applicationpkg.ListBytecodeBlacklistContractsResponse, error) {
-	if s.bytecodeBlacklist == nil {
-		return &applicationpkg.ListBytecodeBlacklistContractsResponse{}, nil
-	}
-
-	records, err := s.bytecodeBlacklist.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]*applicationpkg.BytecodeBlacklistContract, 0, len(records))
-	for _, record := range records {
-		items = append(items, bytecodeBlacklistContractToAPI(record))
-	}
-	return &applicationpkg.ListBytecodeBlacklistContractsResponse{Items: items}, nil
-}
-
-func (s *Service) AddBytecodeBlacklistContract(ctx context.Context, req *applicationpkg.AddBytecodeBlacklistContractRequest) (*applicationpkg.AddBytecodeBlacklistContractResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-	if s.bytecodeBlacklist == nil {
-		return &applicationpkg.AddBytecodeBlacklistContractResponse{}, status.Error(codes.FailedPrecondition, "bytecode blacklist contract store is not configured")
-	}
-
-	contract := common.HexToAddress(req.GetContract())
-	code, err := s.fetchContractBytecode(ctx, contract)
-	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, "fetch contract bytecode for %s: %v", contract.Hex(), err)
-	}
-	if len(code) == 0 {
-		return nil, status.Errorf(codes.FailedPrecondition, "contract %s has empty runtime bytecode", contract.Hex())
-	}
-
-	record := appstore.BytecodeBlacklistContract{
-		Contract:  contract,
-		CodeHash:  crypto.Keccak256Hash(code),
-		Note:      req.GetNote(),
-		CreatedAt: time.Now().UTC(),
-	}
-	if err := s.bytecodeBlacklist.Add(ctx, record); err != nil {
-		if errors.Is(err, appstore.ErrBytecodeBlacklistContractAlreadyExists) {
-			return nil, status.Errorf(codes.AlreadyExists, "bytecode blacklist contract %s already exists", contract.Hex())
-		}
-		return nil, err
-	}
-
-	items, err := s.bytecodeBlacklist.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	created, found := findBytecodeBlacklistContractInList(items, contract)
-	if !found {
-		return &applicationpkg.AddBytecodeBlacklistContractResponse{Item: bytecodeBlacklistContractToAPI(record)}, nil
-	}
-	return &applicationpkg.AddBytecodeBlacklistContractResponse{Item: bytecodeBlacklistContractToAPI(created)}, nil
-}
-
-func (s *Service) UpdateBytecodeBlacklistContractNote(ctx context.Context, req *applicationpkg.UpdateBytecodeBlacklistContractNoteRequest) (*applicationpkg.UpdateBytecodeBlacklistContractNoteResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-	if s.bytecodeBlacklist == nil {
-		return &applicationpkg.UpdateBytecodeBlacklistContractNoteResponse{}, status.Error(codes.FailedPrecondition, "bytecode blacklist contract store is not configured")
-	}
-
-	contract := common.HexToAddress(req.GetContract())
-	if err := s.bytecodeBlacklist.UpdateNote(ctx, contract, req.GetNote()); err != nil {
-		if errors.Is(err, appstore.ErrBytecodeBlacklistContractNotFound) {
-			return nil, status.Errorf(codes.NotFound, "bytecode blacklist contract %s not found", contract.Hex())
-		}
-		return nil, err
-	}
-
-	items, err := s.bytecodeBlacklist.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	updated, found := findBytecodeBlacklistContractInList(items, contract)
-	if !found {
-		return nil, status.Errorf(codes.NotFound, "bytecode blacklist contract %s not found", contract.Hex())
-	}
-	return &applicationpkg.UpdateBytecodeBlacklistContractNoteResponse{Item: bytecodeBlacklistContractToAPI(updated)}, nil
-}
-
-func (s *Service) DeleteBytecodeBlacklistContract(ctx context.Context, req *applicationpkg.DeleteBytecodeBlacklistContractRequest) (*applicationpkg.DeleteBytecodeBlacklistContractResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-	if s.bytecodeBlacklist == nil {
-		return &applicationpkg.DeleteBytecodeBlacklistContractResponse{}, status.Error(codes.FailedPrecondition, "bytecode blacklist contract store is not configured")
-	}
-
-	contract := common.HexToAddress(req.GetContract())
-	if err := s.bytecodeBlacklist.Delete(ctx, contract); err != nil {
-		if errors.Is(err, appstore.ErrBytecodeBlacklistContractNotFound) {
-			return nil, status.Errorf(codes.NotFound, "bytecode blacklist contract %s not found", contract.Hex())
-		}
-		return nil, err
-	}
-	return &applicationpkg.DeleteBytecodeBlacklistContractResponse{}, nil
 }
 
 func (s *Service) ListWalletBlacklistEntries(ctx context.Context, _ *applicationpkg.ListWalletBlacklistEntriesRequest) (*applicationpkg.ListWalletBlacklistEntriesResponse, error) {
@@ -615,15 +454,6 @@ func (s *Service) DeleteWalletBlacklistEntry(ctx context.Context, req *applicati
 	return &applicationpkg.DeleteWalletBlacklistEntryResponse{}, nil
 }
 
-func findBytecodeBlacklistContractInList(items []appstore.BytecodeBlacklistContract, contract common.Address) (appstore.BytecodeBlacklistContract, bool) {
-	for _, item := range items {
-		if item.Contract == contract {
-			return item, true
-		}
-	}
-	return appstore.BytecodeBlacklistContract{}, false
-}
-
 func findWalletBlacklistEntryInList(items []appstore.WalletBlacklistEntry, wallet common.Address) (appstore.WalletBlacklistEntry, bool) {
 	for _, item := range items {
 		if item.Wallet == wallet {
@@ -631,19 +461,6 @@ func findWalletBlacklistEntryInList(items []appstore.WalletBlacklistEntry, walle
 		}
 	}
 	return appstore.WalletBlacklistEntry{}, false
-}
-
-func bytecodeBlacklistContractToAPI(item appstore.BytecodeBlacklistContract) *applicationpkg.BytecodeBlacklistContract {
-	createdAt := ""
-	if !item.CreatedAt.IsZero() {
-		createdAt = item.CreatedAt.UTC().Format(time.RFC3339Nano)
-	}
-	return &applicationpkg.BytecodeBlacklistContract{
-		Contract:  item.Contract.Hex(),
-		CodeHash:  item.CodeHash.Hex(),
-		Note:      item.Note,
-		CreatedAt: createdAt,
-	}
 }
 
 func walletBlacklistEntryToAPI(item appstore.WalletBlacklistEntry) *applicationpkg.WalletBlacklistEntry {

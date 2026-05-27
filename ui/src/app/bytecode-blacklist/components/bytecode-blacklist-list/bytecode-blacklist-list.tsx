@@ -1,19 +1,20 @@
 import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {services} from '../../../shared/services';
-import {BytecodeBlacklistContract} from '../../../shared/services/athena-application-service';
+import {BytecodeBlacklistEntry} from '../../../shared/services/athena-solidity-service';
 
 require('./bytecode-blacklist-list.scss');
 
 export const BytecodeBlacklistList = () => {
-    const [items, setItems] = React.useState<BytecodeBlacklistContract[]>([]);
+    const [items, setItems] = React.useState<BytecodeBlacklistEntry[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
     const [submitting, setSubmitting] = React.useState(false);
     const [error, setError] = React.useState<Error | null>(null);
     const [newContract, setNewContract] = React.useState('');
+    const [newChainID, setNewChainID] = React.useState('');
     const [newNote, setNewNote] = React.useState('');
-    const [editingContract, setEditingContract] = React.useState('');
+    const [editingCodeHash, setEditingCodeHash] = React.useState('');
     const [editingNote, setEditingNote] = React.useState('');
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const isMountedRef = React.useRef(false);
@@ -34,7 +35,7 @@ export const BytecodeBlacklistList = () => {
         }
 
         try {
-            const req = services.athenaApplication.listBytecodeBlacklistContracts();
+            const req = services.athenaSolidity.listBytecodeBlacklistEntries();
             requestRef.current = req;
             const data = await req;
             if (isMountedRef.current) {
@@ -74,12 +75,14 @@ export const BytecodeBlacklistList = () => {
         if (!contract || submitting) {
             return;
         }
+        const chainID = newChainID.trim() ? Number(newChainID.trim()) : undefined;
 
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.addBytecodeBlacklistContract(contract, newNote);
+            await services.athenaSolidity.addBytecodeBlacklistEntry(contract, newNote, chainID);
             setNewContract('');
+            setNewChainID('');
             setNewNote('');
             await loadItems();
         } catch (err) {
@@ -93,15 +96,15 @@ export const BytecodeBlacklistList = () => {
         }
     };
 
-    const handleDelete = async (contract: string) => {
-        if (!contract || submitting) {
+    const handleDelete = async (codeHash: string) => {
+        if (!codeHash || submitting) {
             return;
         }
 
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.deleteBytecodeBlacklistContract(contract);
+            await services.athenaSolidity.deleteBytecodeBlacklist(codeHash);
             await loadItems();
         } catch (err) {
             if (isMountedRef.current) {
@@ -114,25 +117,25 @@ export const BytecodeBlacklistList = () => {
         }
     };
 
-    const startEdit = (item: BytecodeBlacklistContract) => {
-        setEditingContract(item.contract || '');
+    const startEdit = (item: BytecodeBlacklistEntry) => {
+        setEditingCodeHash(item.codeHash || '');
         setEditingNote(item.note || '');
     };
 
     const cancelEdit = () => {
-        setEditingContract('');
+        setEditingCodeHash('');
         setEditingNote('');
     };
 
     const handleSaveNote = async () => {
-        if (!editingContract || submitting) {
+        if (!editingCodeHash || submitting) {
             return;
         }
 
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.updateBytecodeBlacklistContractNote(editingContract, editingNote);
+            await services.athenaSolidity.updateBytecodeBlacklistNote(editingCodeHash, editingNote);
             cancelEdit();
             await loadItems();
         } catch (err) {
@@ -170,6 +173,14 @@ export const BytecodeBlacklistList = () => {
                                         disabled={submitting}
                                     />
                                     <input
+                                        type='number'
+                                        className='argo-field'
+                                        placeholder='Chain ID'
+                                        value={newChainID}
+                                        onChange={e => setNewChainID(e.target.value)}
+                                        disabled={submitting}
+                                    />
+                                    <input
                                         type='text'
                                         className='argo-field'
                                         placeholder='Optional note'
@@ -178,7 +189,7 @@ export const BytecodeBlacklistList = () => {
                                         disabled={submitting}
                                     />
                                     <button type='submit' className='argo-button argo-button--base' disabled={!newContract.trim() || submitting}>
-                                        {submitting ? 'Adding...' : 'Add Contract'}
+                                        {submitting ? 'Adding...' : 'Add Bytecode'}
                                     </button>
                                 </form>
                                 <div className='bytecode-blacklist-list__actions'>
@@ -191,8 +202,9 @@ export const BytecodeBlacklistList = () => {
                             <div className='argo-table-list bytecode-blacklist-list__table'>
                                 <div className='argo-table-list__head'>
                                     <div className='bytecode-blacklist-list__row'>
-                                        <div>Contract</div>
                                         <div>Code Hash</div>
+                                        <div>Source Contract</div>
+                                        <div>Chain ID</div>
                                         <div>Note</div>
                                         <div>Created At</div>
                                         <div className='actions'>Actions</div>
@@ -206,13 +218,14 @@ export const BytecodeBlacklistList = () => {
                                     </div>
                                 ) : (
                                     items.map((item, index) => {
-                                        const contract = item.contract || '';
-                                        const editing = editingContract === contract;
+                                        const codeHash = item.codeHash || '';
+                                        const editing = editingCodeHash === codeHash;
                                         return (
-                                            <div className='argo-table-list__row' key={contract || index}>
+                                            <div className='argo-table-list__row' key={codeHash || index}>
                                                 <div className='bytecode-blacklist-list__row'>
-                                                    <div className='mono'>{contract || '-'}</div>
-                                                    <div className='mono'>{item.codeHash || '-'}</div>
+                                                    <div className='mono'>{codeHash || '-'}</div>
+                                                    <div className='mono'>{item.sourceContract || '-'}</div>
+                                                    <div>{item.sourceChainID || '-'}</div>
                                                     <div>
                                                         {editing ? (
                                                             <input
@@ -242,15 +255,15 @@ export const BytecodeBlacklistList = () => {
                                                                 <button
                                                                     type='button'
                                                                     className='argo-button argo-button--base-o'
-                                                                    disabled={submitting || !contract}
+                                                                    disabled={submitting || !codeHash}
                                                                     onClick={() => startEdit(item)}>
                                                                     Edit Note
                                                                 </button>
                                                                 <button
                                                                     type='button'
                                                                     className='argo-button argo-button--base-o'
-                                                                    disabled={submitting || !contract}
-                                                                    onClick={() => contract && handleDelete(contract)}>
+                                                                    disabled={submitting || !codeHash}
+                                                                    onClick={() => codeHash && handleDelete(codeHash)}>
                                                                     Delete
                                                                 </button>
                                                             </React.Fragment>

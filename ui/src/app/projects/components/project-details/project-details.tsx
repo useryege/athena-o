@@ -5,6 +5,7 @@ import {RouteComponentProps} from 'react-router';
 import {Context} from '../../../shared/context';
 import {services} from '../../../shared/services';
 import {AveDetail, PairV2State, ProjectComment, ProjectEventLog, ProjectMeta, ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
+import {ContractSourceInfo} from '../../../shared/services/athena-solidity-service';
 import {formatUsdtValue} from '../pair-metrics-cell/pair-metrics-cell';
 import {GenesisWalletRankList} from './genesis-wallet-rank-list';
 
@@ -84,14 +85,13 @@ const formatTimelineDuration = (milliseconds: number) => {
     return `${sign}${parts.join(' ')}`;
 };
 
-const renderFetchTimeline = (meta?: ProjectMeta, aveDetail?: AveDetail) => {
+const renderFetchTimeline = (meta?: ProjectMeta, aveDetail?: AveDetail, sourceInfo?: ContractSourceInfo | null) => {
     const baseTime = parseTimelineTime(meta?.fetchAt);
     const items = [
         {label: 'Project Discovered', value: meta?.fetchAt},
-        {label: 'Source Code Fetched', value: meta?.sourceCodeFetchedAt},
-        {label: 'Code BIN Hash Fetched', value: meta?.codeBinHashFetchedAt},
+        {label: 'Source Code Fetched', value: sourceInfo?.sourceCodeFetchedAt},
         {label: 'Ave Detail Fetched', value: aveDetail?.fetchedAt},
-        {label: 'Source Quality Report Fetched', value: meta?.sourceQualityReportFetchedAt},
+        {label: 'Source Quality Report Fetched', value: sourceInfo?.sourceQualityReportFetchedAt},
         {label: 'Genesis Wallets Fetched', value: meta?.genesisWalletsFetchedAt},
         {label: 'Creator Historical Projects Fetched', value: meta?.creatorHistoricalProjectsFetchedAt}
     ].map((item, index) => ({...item, index, time: parseTimelineTime(item.value)}));
@@ -278,6 +278,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const ctx = React.useContext(Context);
     const contract = props.match.params.contract;
     const [project, setProject] = React.useState<ProjectView | null>(null);
+    const [sourceInfo, setSourceInfo] = React.useState<ContractSourceInfo | null>(null);
     const [eventLogs, setEventLogs] = React.useState<ProjectEventLog[]>([]);
     const [comments, setComments] = React.useState<ProjectComment[]>([]);
     const [commentPage, setCommentPage] = React.useState(1);
@@ -299,7 +300,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const eventRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const commentsRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const addCommentRequestRef = React.useRef<{abort?: () => void} | null>(null);
-    const blacklistRequestRef = React.useRef<{abort?: () => void} | null>(null);
+    const sourceRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const optionsRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
@@ -325,9 +326,9 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             addCommentRequestRef.current.abort();
             addCommentRequestRef.current = null;
         }
-        if (blacklistRequestRef.current?.abort) {
-            blacklistRequestRef.current.abort();
-            blacklistRequestRef.current = null;
+        if (sourceRequestRef.current?.abort) {
+            sourceRequestRef.current.abort();
+            sourceRequestRef.current = null;
         }
         if (optionsRequestRef.current?.abort) {
             optionsRequestRef.current.abort();
@@ -415,8 +416,8 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         [contract]
     );
 
-    const loadBlacklistStatus = React.useCallback(async () => {
-        if (blacklistRequestRef.current) {
+    const loadContractSourceInfo = React.useCallback(async () => {
+        if (sourceRequestRef.current) {
             return;
         }
 
@@ -425,13 +426,12 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         }
 
         try {
-            const req = services.athenaApplication.listBytecodeBlacklistContracts();
-            blacklistRequestRef.current = req;
-            const items = await req;
-            const normalizedContract = contract.trim().toLowerCase();
-            const exists = (items || []).some(item => (item.contract || '').trim().toLowerCase() === normalizedContract);
+            const req = services.athenaSolidity.getContractSourceInfo(contract);
+            sourceRequestRef.current = req;
+            const info = await req;
             if (isMountedRef.current) {
-                setIsBlacklisted(exists);
+                setSourceInfo(info);
+                setIsBlacklisted(!!info?.isBytecodeBlacklisted);
             }
         } catch (err) {
             if (isMountedRef.current) {
@@ -441,7 +441,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             if (isMountedRef.current) {
                 setIsBlacklistChecking(false);
             }
-            blacklistRequestRef.current = null;
+            sourceRequestRef.current = null;
         }
     }, [contract]);
 
@@ -469,6 +469,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         isMountedRef.current = true;
         setIsBlacklisted(false);
         setIsBlacklistChecking(true);
+        setSourceInfo(null);
         setCommentPage(1);
         setCommentTotal(0);
         setCommentInput('');
@@ -476,7 +477,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         loadProject();
         loadProjectEventLogs();
         loadProjectComments(1);
-        loadBlacklistStatus();
+        loadContractSourceInfo();
         loadProjectOptions();
         intervalRef.current = window.setInterval(() => {
             loadProject();
@@ -487,12 +488,12 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             isMountedRef.current = false;
             cleanupRequests();
         };
-    }, [cleanupRequests, loadBlacklistStatus, loadProject, loadProjectComments, loadProjectEventLogs, loadProjectOptions]);
+    }, [cleanupRequests, loadContractSourceInfo, loadProject, loadProjectComments, loadProjectEventLogs, loadProjectOptions]);
 
     const breadcrumbs = [{title: 'Projects', path: `/projects${props.location.search || ''}`}, {title: contract}];
-    const sourceCode = project?.meta?.sourceCode || '';
-    const isOpenSource = project?.meta?.isOpenSource ?? sourceCode.trim().length > 0;
-    const sourceQualityReport = project?.meta?.sourceQualityReport || '';
+    const sourceCode = sourceInfo?.sourceCode || '';
+    const isOpenSource = sourceInfo?.isOpenSource ?? sourceCode.trim().length > 0;
+    const sourceQualityReport = sourceInfo?.sourceQualityReport || '';
     const aveLogo = project?.aveDetail?.token?.logoUrl;
     const showLogo = !!aveLogo && !logoFailed;
 
@@ -537,9 +538,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
                     setAddingToBlacklist(true);
                     try {
-                        await services.athenaApplication.addBytecodeBlacklistContract(contract, note);
+                        await services.athenaSolidity.addBytecodeBlacklistEntry(contract, note);
                         if (isMountedRef.current) {
                             setIsBlacklisted(true);
+                            setSourceInfo(current => (current ? {...current, isBytecodeBlacklisted: true} : current));
                             setError(null);
                         }
                         close();
@@ -676,7 +678,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                             </div>
                         </div>
 
-                        {renderFetchTimeline(project.meta, project.aveDetail)}
+                        {renderFetchTimeline(project.meta, project.aveDetail, sourceInfo)}
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Genesis Wallets</div>
@@ -830,7 +832,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                 <div className='project-details__section-title'>Source Code</div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Source</span>
-                                    <span className='project-details__field-value'>{renderOrigin(project.meta?.sourceCodeOrigin)}</span>
+                                    <span className='project-details__field-value'>{renderOrigin(sourceInfo?.sourceCodeOrigin)}</span>
                                 </div>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Contract Source Code</span>
@@ -842,15 +844,15 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                         {isOpenSource && (
                             <div className='white-box project-details__box'>
                                 <div className='project-details__section-title'>Quality Report</div>
-                                {project.meta?.sourceQualityReportFetchedAt && (
+                                {sourceInfo?.sourceQualityReportFetchedAt && (
                                     <div className='project-details__field'>
                                         <span className='project-details__field-label'>Fetched At</span>
-                                        <span className='project-details__field-value'>{renderValue(project.meta.sourceQualityReportFetchedAt)}</span>
+                                        <span className='project-details__field-value'>{renderValue(sourceInfo.sourceQualityReportFetchedAt)}</span>
                                     </div>
                                 )}
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Source</span>
-                                    <span className='project-details__field-value'>{renderOrigin(project.meta?.sourceQualityReportOrigin)}</span>
+                                    <span className='project-details__field-value'>{renderOrigin(sourceInfo?.sourceQualityReportOrigin)}</span>
                                 </div>
                                 {sourceQualityReport.trim() ? (
                                     <div className='project-details__quality-report'>{renderQualityReportMarkdown(sourceQualityReport)}</div>

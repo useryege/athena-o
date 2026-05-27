@@ -90,52 +90,6 @@ message ListProjectCommentsResponse {
   int32 pageSize = 4;
 }
 
-// BytecodeBlacklistContract is a globally maintained bytecode-blacklist contract entry.
-message BytecodeBlacklistContract {
-  string contract = 1;
-  string code_hash = 2;
-  string note = 3;
-  string created_at = 4;
-}
-
-// ListBytecodeBlacklistContractsRequest queries all bytecode-blacklist contract entries.
-message ListBytecodeBlacklistContractsRequest {}
-
-// ListBytecodeBlacklistContractsResponse returns all bytecode-blacklist contract entries.
-message ListBytecodeBlacklistContractsResponse {
-  repeated BytecodeBlacklistContract items = 1;
-}
-
-// AddBytecodeBlacklistContractRequest adds a bytecode-blacklist contract entry.
-message AddBytecodeBlacklistContractRequest {
-  string contract = 1;
-  string note = 2;
-}
-
-// AddBytecodeBlacklistContractResponse returns the stored bytecode-blacklist contract entry.
-message AddBytecodeBlacklistContractResponse {
-  BytecodeBlacklistContract item = 1;
-}
-
-// UpdateBytecodeBlacklistContractNoteRequest updates the note of a bytecode-blacklist contract entry.
-message UpdateBytecodeBlacklistContractNoteRequest {
-  string contract = 1;
-  string note = 2;
-}
-
-// UpdateBytecodeBlacklistContractNoteResponse returns the updated bytecode-blacklist contract entry.
-message UpdateBytecodeBlacklistContractNoteResponse {
-  BytecodeBlacklistContract item = 1;
-}
-
-// DeleteBytecodeBlacklistContractRequest deletes a bytecode-blacklist contract entry.
-message DeleteBytecodeBlacklistContractRequest {
-  string contract = 1;
-}
-
-// DeleteBytecodeBlacklistContractResponse is returned after deleting a bytecode-blacklist contract entry.
-message DeleteBytecodeBlacklistContractResponse {}
-
 // WalletBlacklistEntry is a globally maintained wallet-blacklist entry.
 message WalletBlacklistEntry {
   string wallet = 1;
@@ -216,32 +170,6 @@ service ApplicationService {
   // ListProjectComments returns comments for a given contract.
   rpc ListProjectComments(ListProjectCommentsRequest) returns (ListProjectCommentsResponse) {
     option (google.api.http) = {get: "/api/v1/projects/{contract}/comments"};
-  }
-
-  // ListBytecodeBlacklistContracts returns all globally configured bytecode-blacklist contract entries.
-  rpc ListBytecodeBlacklistContracts(ListBytecodeBlacklistContractsRequest) returns (ListBytecodeBlacklistContractsResponse) {
-    option (google.api.http) = {get: "/api/v1/bytecode/blacklist-contracts"};
-  }
-
-  // AddBytecodeBlacklistContract adds a globally configured bytecode-blacklist contract entry.
-  rpc AddBytecodeBlacklistContract(AddBytecodeBlacklistContractRequest) returns (AddBytecodeBlacklistContractResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/bytecode/blacklist-contracts"
-      body: "*"
-    };
-  }
-
-  // UpdateBytecodeBlacklistContractNote updates the note of a globally configured bytecode-blacklist contract entry.
-  rpc UpdateBytecodeBlacklistContractNote(UpdateBytecodeBlacklistContractNoteRequest) returns (UpdateBytecodeBlacklistContractNoteResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/bytecode/blacklist-contracts/{contract}/note"
-      body: "*"
-    };
-  }
-
-  // DeleteBytecodeBlacklistContract deletes a globally configured bytecode-blacklist contract entry.
-  rpc DeleteBytecodeBlacklistContract(DeleteBytecodeBlacklistContractRequest) returns (DeleteBytecodeBlacklistContractResponse) {
-    option (google.api.http) = {delete: "/api/v1/bytecode/blacklist-contracts/{contract}"};
   }
 
   // ListWalletBlacklistEntries returns all globally configured wallet-blacklist entries.

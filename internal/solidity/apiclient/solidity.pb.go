@@ -69,29 +69,518 @@ func (m *GetSolidityStatusRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetSolidityStatusRequest proto.InternalMessageInfo
 
+// GetContractSourceInfoRequest asks the solidity service to resolve contract bytecode/source facts.
+type GetContractSourceInfoRequest struct {
+	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	Contract             string   `protobuf:"bytes,2,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetContractSourceInfoRequest) Reset()         { *m = GetContractSourceInfoRequest{} }
+func (m *GetContractSourceInfoRequest) String() string { return proto.CompactTextString(m) }
+func (*GetContractSourceInfoRequest) ProtoMessage()    {}
+func (*GetContractSourceInfoRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{1}
+}
+func (m *GetContractSourceInfoRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetContractSourceInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetContractSourceInfoRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetContractSourceInfoRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetContractSourceInfoRequest.Merge(m, src)
+}
+func (m *GetContractSourceInfoRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetContractSourceInfoRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetContractSourceInfoRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetContractSourceInfoRequest proto.InternalMessageInfo
+
+func (m *GetContractSourceInfoRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+func (m *GetContractSourceInfoRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+// ListBytecodeBlacklistEntriesRequest queries all bytecode blacklist entries.
+type ListBytecodeBlacklistEntriesRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListBytecodeBlacklistEntriesRequest) Reset()         { *m = ListBytecodeBlacklistEntriesRequest{} }
+func (m *ListBytecodeBlacklistEntriesRequest) String() string { return proto.CompactTextString(m) }
+func (*ListBytecodeBlacklistEntriesRequest) ProtoMessage()    {}
+func (*ListBytecodeBlacklistEntriesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{2}
+}
+func (m *ListBytecodeBlacklistEntriesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListBytecodeBlacklistEntriesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListBytecodeBlacklistEntriesRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListBytecodeBlacklistEntriesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListBytecodeBlacklistEntriesRequest.Merge(m, src)
+}
+func (m *ListBytecodeBlacklistEntriesRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListBytecodeBlacklistEntriesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListBytecodeBlacklistEntriesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListBytecodeBlacklistEntriesRequest proto.InternalMessageInfo
+
+// ListBytecodeBlacklistEntriesResponse returns bytecode blacklist entries.
+type ListBytecodeBlacklistEntriesResponse struct {
+	Items                []*v1alpha1.BytecodeBlacklistEntry `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                           `json:"-"`
+	XXX_unrecognized     []byte                             `json:"-"`
+	XXX_sizecache        int32                              `json:"-"`
+}
+
+func (m *ListBytecodeBlacklistEntriesResponse) Reset()         { *m = ListBytecodeBlacklistEntriesResponse{} }
+func (m *ListBytecodeBlacklistEntriesResponse) String() string { return proto.CompactTextString(m) }
+func (*ListBytecodeBlacklistEntriesResponse) ProtoMessage()    {}
+func (*ListBytecodeBlacklistEntriesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{3}
+}
+func (m *ListBytecodeBlacklistEntriesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListBytecodeBlacklistEntriesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListBytecodeBlacklistEntriesResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListBytecodeBlacklistEntriesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListBytecodeBlacklistEntriesResponse.Merge(m, src)
+}
+func (m *ListBytecodeBlacklistEntriesResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListBytecodeBlacklistEntriesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListBytecodeBlacklistEntriesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListBytecodeBlacklistEntriesResponse proto.InternalMessageInfo
+
+func (m *ListBytecodeBlacklistEntriesResponse) GetItems() []*v1alpha1.BytecodeBlacklistEntry {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+// AddBytecodeBlacklistEntryRequest adds a bytecode blacklist entry by code hash or source contract.
+type AddBytecodeBlacklistEntryRequest struct {
+	CodeHash             string   `protobuf:"bytes,1,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	SourceChainId        int64    `protobuf:"varint,2,opt,name=source_chain_id,json=sourceChainId,proto3" json:"source_chain_id,omitempty"`
+	SourceContract       string   `protobuf:"bytes,3,opt,name=source_contract,json=sourceContract,proto3" json:"source_contract,omitempty"`
+	Note                 string   `protobuf:"bytes,4,opt,name=note,proto3" json:"note,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AddBytecodeBlacklistEntryRequest) Reset()         { *m = AddBytecodeBlacklistEntryRequest{} }
+func (m *AddBytecodeBlacklistEntryRequest) String() string { return proto.CompactTextString(m) }
+func (*AddBytecodeBlacklistEntryRequest) ProtoMessage()    {}
+func (*AddBytecodeBlacklistEntryRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{4}
+}
+func (m *AddBytecodeBlacklistEntryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AddBytecodeBlacklistEntryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AddBytecodeBlacklistEntryRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AddBytecodeBlacklistEntryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddBytecodeBlacklistEntryRequest.Merge(m, src)
+}
+func (m *AddBytecodeBlacklistEntryRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *AddBytecodeBlacklistEntryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddBytecodeBlacklistEntryRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddBytecodeBlacklistEntryRequest proto.InternalMessageInfo
+
+func (m *AddBytecodeBlacklistEntryRequest) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+func (m *AddBytecodeBlacklistEntryRequest) GetSourceChainId() int64 {
+	if m != nil {
+		return m.SourceChainId
+	}
+	return 0
+}
+
+func (m *AddBytecodeBlacklistEntryRequest) GetSourceContract() string {
+	if m != nil {
+		return m.SourceContract
+	}
+	return ""
+}
+
+func (m *AddBytecodeBlacklistEntryRequest) GetNote() string {
+	if m != nil {
+		return m.Note
+	}
+	return ""
+}
+
+// AddBytecodeBlacklistEntryResponse returns the stored bytecode blacklist entry.
+type AddBytecodeBlacklistEntryResponse struct {
+	Item                 *v1alpha1.BytecodeBlacklistEntry `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
+	XXX_unrecognized     []byte                           `json:"-"`
+	XXX_sizecache        int32                            `json:"-"`
+}
+
+func (m *AddBytecodeBlacklistEntryResponse) Reset()         { *m = AddBytecodeBlacklistEntryResponse{} }
+func (m *AddBytecodeBlacklistEntryResponse) String() string { return proto.CompactTextString(m) }
+func (*AddBytecodeBlacklistEntryResponse) ProtoMessage()    {}
+func (*AddBytecodeBlacklistEntryResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{5}
+}
+func (m *AddBytecodeBlacklistEntryResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AddBytecodeBlacklistEntryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AddBytecodeBlacklistEntryResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AddBytecodeBlacklistEntryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddBytecodeBlacklistEntryResponse.Merge(m, src)
+}
+func (m *AddBytecodeBlacklistEntryResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *AddBytecodeBlacklistEntryResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddBytecodeBlacklistEntryResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddBytecodeBlacklistEntryResponse proto.InternalMessageInfo
+
+func (m *AddBytecodeBlacklistEntryResponse) GetItem() *v1alpha1.BytecodeBlacklistEntry {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+// UpdateBytecodeBlacklistNoteRequest updates a bytecode blacklist note.
+type UpdateBytecodeBlacklistNoteRequest struct {
+	CodeHash             string   `protobuf:"bytes,1,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	Note                 string   `protobuf:"bytes,2,opt,name=note,proto3" json:"note,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UpdateBytecodeBlacklistNoteRequest) Reset()         { *m = UpdateBytecodeBlacklistNoteRequest{} }
+func (m *UpdateBytecodeBlacklistNoteRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateBytecodeBlacklistNoteRequest) ProtoMessage()    {}
+func (*UpdateBytecodeBlacklistNoteRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{6}
+}
+func (m *UpdateBytecodeBlacklistNoteRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateBytecodeBlacklistNoteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateBytecodeBlacklistNoteRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateBytecodeBlacklistNoteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateBytecodeBlacklistNoteRequest.Merge(m, src)
+}
+func (m *UpdateBytecodeBlacklistNoteRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateBytecodeBlacklistNoteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateBytecodeBlacklistNoteRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateBytecodeBlacklistNoteRequest proto.InternalMessageInfo
+
+func (m *UpdateBytecodeBlacklistNoteRequest) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+func (m *UpdateBytecodeBlacklistNoteRequest) GetNote() string {
+	if m != nil {
+		return m.Note
+	}
+	return ""
+}
+
+// UpdateBytecodeBlacklistNoteResponse returns the updated bytecode blacklist entry.
+type UpdateBytecodeBlacklistNoteResponse struct {
+	Item                 *v1alpha1.BytecodeBlacklistEntry `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
+	XXX_unrecognized     []byte                           `json:"-"`
+	XXX_sizecache        int32                            `json:"-"`
+}
+
+func (m *UpdateBytecodeBlacklistNoteResponse) Reset()         { *m = UpdateBytecodeBlacklistNoteResponse{} }
+func (m *UpdateBytecodeBlacklistNoteResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateBytecodeBlacklistNoteResponse) ProtoMessage()    {}
+func (*UpdateBytecodeBlacklistNoteResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{7}
+}
+func (m *UpdateBytecodeBlacklistNoteResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateBytecodeBlacklistNoteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateBytecodeBlacklistNoteResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateBytecodeBlacklistNoteResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateBytecodeBlacklistNoteResponse.Merge(m, src)
+}
+func (m *UpdateBytecodeBlacklistNoteResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateBytecodeBlacklistNoteResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateBytecodeBlacklistNoteResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateBytecodeBlacklistNoteResponse proto.InternalMessageInfo
+
+func (m *UpdateBytecodeBlacklistNoteResponse) GetItem() *v1alpha1.BytecodeBlacklistEntry {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+// DeleteBytecodeBlacklistRequest deletes a bytecode blacklist entry.
+type DeleteBytecodeBlacklistRequest struct {
+	CodeHash             string   `protobuf:"bytes,1,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteBytecodeBlacklistRequest) Reset()         { *m = DeleteBytecodeBlacklistRequest{} }
+func (m *DeleteBytecodeBlacklistRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteBytecodeBlacklistRequest) ProtoMessage()    {}
+func (*DeleteBytecodeBlacklistRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{8}
+}
+func (m *DeleteBytecodeBlacklistRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteBytecodeBlacklistRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteBytecodeBlacklistRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteBytecodeBlacklistRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteBytecodeBlacklistRequest.Merge(m, src)
+}
+func (m *DeleteBytecodeBlacklistRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteBytecodeBlacklistRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteBytecodeBlacklistRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteBytecodeBlacklistRequest proto.InternalMessageInfo
+
+func (m *DeleteBytecodeBlacklistRequest) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+// DeleteBytecodeBlacklistResponse is returned after deleting a bytecode blacklist entry.
+type DeleteBytecodeBlacklistResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteBytecodeBlacklistResponse) Reset()         { *m = DeleteBytecodeBlacklistResponse{} }
+func (m *DeleteBytecodeBlacklistResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteBytecodeBlacklistResponse) ProtoMessage()    {}
+func (*DeleteBytecodeBlacklistResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{9}
+}
+func (m *DeleteBytecodeBlacklistResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteBytecodeBlacklistResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteBytecodeBlacklistResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteBytecodeBlacklistResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteBytecodeBlacklistResponse.Merge(m, src)
+}
+func (m *DeleteBytecodeBlacklistResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteBytecodeBlacklistResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteBytecodeBlacklistResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteBytecodeBlacklistResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*GetSolidityStatusRequest)(nil), "athena.internal.solidity.GetSolidityStatusRequest")
+	proto.RegisterType((*GetContractSourceInfoRequest)(nil), "athena.internal.solidity.GetContractSourceInfoRequest")
+	proto.RegisterType((*ListBytecodeBlacklistEntriesRequest)(nil), "athena.internal.solidity.ListBytecodeBlacklistEntriesRequest")
+	proto.RegisterType((*ListBytecodeBlacklistEntriesResponse)(nil), "athena.internal.solidity.ListBytecodeBlacklistEntriesResponse")
+	proto.RegisterType((*AddBytecodeBlacklistEntryRequest)(nil), "athena.internal.solidity.AddBytecodeBlacklistEntryRequest")
+	proto.RegisterType((*AddBytecodeBlacklistEntryResponse)(nil), "athena.internal.solidity.AddBytecodeBlacklistEntryResponse")
+	proto.RegisterType((*UpdateBytecodeBlacklistNoteRequest)(nil), "athena.internal.solidity.UpdateBytecodeBlacklistNoteRequest")
+	proto.RegisterType((*UpdateBytecodeBlacklistNoteResponse)(nil), "athena.internal.solidity.UpdateBytecodeBlacklistNoteResponse")
+	proto.RegisterType((*DeleteBytecodeBlacklistRequest)(nil), "athena.internal.solidity.DeleteBytecodeBlacklistRequest")
+	proto.RegisterType((*DeleteBytecodeBlacklistResponse)(nil), "athena.internal.solidity.DeleteBytecodeBlacklistResponse")
 }
 
 func init() { proto.RegisterFile("internal/solidity/solidity.proto", fileDescriptor_5a017c3c91d529b2) }
 
 var fileDescriptor_5a017c3c91d529b2 = []byte{
-	// 240 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x90, 0x41, 0x4a, 0x03, 0x31,
-	0x14, 0x86, 0xc9, 0xc6, 0xc5, 0x6c, 0xc4, 0x59, 0x95, 0x59, 0x0c, 0xe2, 0x01, 0x5e, 0x68, 0x05,
-	0x0f, 0x20, 0x82, 0x5d, 0xdb, 0x9d, 0xbb, 0xd7, 0xe9, 0x23, 0xf3, 0x68, 0x4c, 0x9e, 0xc9, 0x9b,
-	0x42, 0x8f, 0xe1, 0x21, 0xbc, 0x8b, 0x4b, 0x8f, 0x20, 0x73, 0x12, 0xd1, 0x9a, 0xaa, 0x94, 0x76,
-	0x17, 0xf8, 0xff, 0x7c, 0xc9, 0xf7, 0x57, 0x97, 0x1c, 0x94, 0x52, 0x40, 0x6f, 0x73, 0xf4, 0xbc,
-	0x62, 0xdd, 0xee, 0x0f, 0x20, 0x29, 0x6a, 0xac, 0x27, 0xa8, 0x3d, 0x05, 0x84, 0x52, 0x84, 0x92,
-	0x37, 0x73, 0xc7, 0xda, 0x0f, 0x4b, 0xe8, 0xe2, 0x93, 0x1d, 0x32, 0xa5, 0x2d, 0x39, 0xb2, 0xbb,
-	0xb6, 0x95, 0xb5, 0xb3, 0x28, 0x9c, 0x2d, 0x8a, 0x78, 0xee, 0x50, 0x39, 0x06, 0xbb, 0x99, 0xa2,
-	0x97, 0x1e, 0xa7, 0xd6, 0x51, 0xa0, 0x84, 0x4a, 0xab, 0xdd, 0x1b, 0x57, 0x4d, 0x35, 0xb9, 0x27,
-	0x5d, 0xfc, 0x80, 0x17, 0x8a, 0x3a, 0xe4, 0x07, 0x7a, 0x1e, 0x28, 0xeb, 0xec, 0xd5, 0x54, 0xe7,
-	0xfb, 0x84, 0xd2, 0x86, 0x3b, 0xaa, 0x5f, 0x4c, 0x75, 0x71, 0x70, 0xa1, 0x9e, 0xc1, 0xb1, 0xaf,
-	0xc2, 0x31, 0x7a, 0x33, 0x87, 0x5f, 0x09, 0x28, 0x12, 0x85, 0x23, 0x6b, 0x07, 0x5f, 0x12, 0xf0,
-	0x47, 0x02, 0x8a, 0x04, 0xfc, 0x07, 0xde, 0xde, 0xbd, 0x8d, 0xad, 0x79, 0x1f, 0x5b, 0xf3, 0x31,
-	0xb6, 0xe6, 0xf1, 0xe6, 0xc4, 0x36, 0x87, 0x93, 0xa3, 0x70, 0xe7, 0x99, 0x82, 0x2e, 0xcf, 0xbe,
-	0x07, 0xb9, 0xfe, 0x0c, 0x00, 0x00, 0xff, 0xff, 0x39, 0x51, 0x68, 0xe1, 0x98, 0x01, 0x00, 0x00,
+	// 612 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x96, 0xdd, 0x4a, 0xdc, 0x40,
+	0x14, 0xc7, 0x19, 0xb5, 0x55, 0x4f, 0x69, 0xa5, 0x03, 0xa5, 0x31, 0xca, 0x76, 0x8d, 0xfd, 0xf0,
+	0x6a, 0x82, 0x16, 0xa4, 0x5f, 0x16, 0xaa, 0x16, 0x15, 0xa4, 0x94, 0x15, 0x6f, 0x7a, 0x23, 0x63,
+	0x72, 0xdc, 0x0c, 0xc6, 0x99, 0x34, 0x33, 0x2b, 0xec, 0x23, 0x94, 0x82, 0x50, 0xe8, 0x55, 0xc1,
+	0xbb, 0x5e, 0xf5, 0x49, 0x7a, 0xd9, 0x47, 0x28, 0x3e, 0x49, 0xd9, 0x64, 0xb2, 0x4a, 0x77, 0x13,
+	0x97, 0x40, 0x7b, 0x97, 0x64, 0xce, 0xc7, 0xff, 0xfc, 0xd8, 0xff, 0x99, 0x85, 0xa6, 0x90, 0x06,
+	0x53, 0xc9, 0x63, 0x5f, 0xab, 0x58, 0x84, 0xc2, 0x74, 0xfb, 0x0f, 0x2c, 0x49, 0x95, 0x51, 0xd4,
+	0xe1, 0x26, 0x42, 0xc9, 0x59, 0x11, 0xc8, 0x8a, 0x73, 0x77, 0xbb, 0x2d, 0x4c, 0xd4, 0x39, 0x64,
+	0x81, 0x3a, 0xf1, 0x3b, 0x1a, 0xd3, 0x2e, 0xb6, 0xd1, 0xcf, 0xa3, 0xfd, 0xe4, 0xb8, 0xed, 0xf3,
+	0x44, 0x68, 0x9f, 0x27, 0x49, 0x2c, 0x02, 0x6e, 0x84, 0x92, 0xfe, 0xe9, 0x32, 0x8f, 0x93, 0x88,
+	0x2f, 0xfb, 0x6d, 0x94, 0x98, 0x72, 0x83, 0x61, 0xde, 0xc3, 0x73, 0xc1, 0xd9, 0x42, 0xb3, 0x67,
+	0x0b, 0xef, 0x19, 0x6e, 0x3a, 0xba, 0x85, 0x1f, 0x3b, 0xa8, 0x8d, 0xb7, 0x0f, 0xf3, 0x5b, 0x68,
+	0x36, 0x94, 0x34, 0x29, 0x0f, 0xcc, 0x9e, 0xea, 0xa4, 0x01, 0xee, 0xc8, 0x23, 0x65, 0xcf, 0xe9,
+	0x2c, 0x4c, 0x05, 0x11, 0x17, 0xf2, 0x40, 0x84, 0x0e, 0x69, 0x92, 0xa5, 0xf1, 0xd6, 0x64, 0xf6,
+	0xbe, 0x13, 0x52, 0x17, 0xa6, 0x02, 0x9b, 0xe7, 0x8c, 0x35, 0xc9, 0xd2, 0x74, 0xab, 0xff, 0xee,
+	0x3d, 0x82, 0xc5, 0x5d, 0xa1, 0xcd, 0x7a, 0xd7, 0x60, 0xa0, 0x42, 0x5c, 0x8f, 0x79, 0x70, 0x1c,
+	0x0b, 0x6d, 0xde, 0x4a, 0x93, 0x0a, 0xec, 0x77, 0x3f, 0x23, 0xf0, 0xb0, 0x3a, 0x4e, 0x27, 0x4a,
+	0x6a, 0xa4, 0x47, 0x70, 0x43, 0x18, 0x3c, 0xd1, 0x0e, 0x69, 0x8e, 0x2f, 0xdd, 0x5a, 0x79, 0xcf,
+	0x2e, 0xe1, 0xb0, 0x02, 0x0e, 0xb3, 0x28, 0x93, 0xe3, 0x36, 0xeb, 0xc1, 0x61, 0x57, 0xe0, 0xb0,
+	0x02, 0x0e, 0x1b, 0xda, 0xaa, 0xdb, 0xca, 0xcb, 0x7b, 0xdf, 0x09, 0x34, 0xdf, 0x84, 0x61, 0x49,
+	0x90, 0x65, 0x32, 0x07, 0xd3, 0xbd, 0xc3, 0x83, 0x88, 0xeb, 0x28, 0x83, 0x92, 0x4d, 0x1e, 0xe2,
+	0x36, 0xd7, 0x11, 0x7d, 0x0c, 0x33, 0x3a, 0xa3, 0x78, 0xd0, 0xe7, 0x36, 0x96, 0x71, 0xbb, 0x9d,
+	0x7f, 0xde, 0xb0, 0xf4, 0x9e, 0x5c, 0xc6, 0x15, 0x10, 0xc7, 0xb3, 0x52, 0x77, 0x6c, 0x9c, 0xfd,
+	0x4a, 0x29, 0x4c, 0x48, 0x65, 0xd0, 0x99, 0xc8, 0x4e, 0xb3, 0x67, 0xef, 0x13, 0x81, 0x85, 0x0a,
+	0x99, 0x16, 0x5a, 0x08, 0x13, 0xbd, 0xa9, 0x32, 0x89, 0xff, 0x82, 0x59, 0x56, 0xdd, 0xdb, 0x07,
+	0x6f, 0x3f, 0x09, 0xb9, 0xc1, 0x81, 0xa8, 0x77, 0xca, 0xe0, 0x48, 0xcc, 0x8a, 0x11, 0xc7, 0xae,
+	0x8c, 0xf8, 0x99, 0xc0, 0x62, 0x65, 0xdd, 0xff, 0x3a, 0xe4, 0x1a, 0x34, 0x36, 0x31, 0xc6, 0x21,
+	0x62, 0x46, 0x19, 0xd0, 0x5b, 0x80, 0x07, 0xa5, 0xe9, 0xf9, 0x1c, 0x2b, 0x3f, 0x26, 0x61, 0xa6,
+	0x6f, 0x51, 0x4c, 0x4f, 0x45, 0x80, 0xf4, 0x0b, 0x81, 0xbb, 0x03, 0xce, 0xa5, 0x2b, 0xac, 0x6c,
+	0x67, 0xb0, 0x32, 0x9b, 0xbb, 0xdb, 0xf5, 0xb9, 0xfc, 0xd5, 0xfd, 0x9c, 0xc0, 0xbd, 0xa1, 0x1b,
+	0x83, 0xae, 0x56, 0xea, 0x2a, 0x5d, 0x31, 0xee, 0x6e, 0x7d, 0x6d, 0x43, 0x54, 0x9c, 0x13, 0x98,
+	0xaf, 0x5a, 0x29, 0x74, 0xad, 0x5c, 0xe6, 0x08, 0x2b, 0xcb, 0x7d, 0x5d, 0x37, 0xdd, 0xfe, 0x5e,
+	0xbf, 0x12, 0x98, 0x2d, 0xb5, 0x2e, 0x7d, 0x51, 0x5e, 0xfd, 0xba, 0xb5, 0xe4, 0xbe, 0xac, 0x95,
+	0x6b, 0x65, 0x7d, 0x23, 0x30, 0x57, 0x61, 0x37, 0xfa, 0xaa, 0xbc, 0xf8, 0xf5, 0xee, 0x77, 0xd7,
+	0x6a, 0x66, 0x5b, 0x71, 0x67, 0x04, 0xee, 0x97, 0xf8, 0x87, 0x3e, 0x2b, 0x2f, 0x5d, 0xed, 0x58,
+	0xf7, 0x79, 0x8d, 0xcc, 0x5c, 0xd0, 0xfa, 0xe6, 0xcf, 0x8b, 0x06, 0xf9, 0x75, 0xd1, 0x20, 0xbf,
+	0x2f, 0x1a, 0xe4, 0xc3, 0x6a, 0xc5, 0x4d, 0x3d, 0xf8, 0x07, 0x80, 0x27, 0x22, 0x88, 0x05, 0x4a,
+	0x73, 0x78, 0x33, 0xbb, 0x9e, 0x9f, 0xfe, 0x09, 0x00, 0x00, 0xff, 0xff, 0xc3, 0x65, 0x1e, 0x78,
+	0x26, 0x08, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -108,6 +597,16 @@ const _ = grpc.SupportPackageIsVersion4
 type SolidityServiceClient interface {
 	// GetSolidityStatus returns the solidity service runtime status.
 	GetSolidityStatus(ctx context.Context, in *GetSolidityStatusRequest, opts ...grpc.CallOption) (*v1alpha1.SolidityStatus, error)
+	// GetContractSourceInfo resolves bytecode/source facts for a contract.
+	GetContractSourceInfo(ctx context.Context, in *GetContractSourceInfoRequest, opts ...grpc.CallOption) (*v1alpha1.ContractSourceInfo, error)
+	// ListBytecodeBlacklistEntries returns configured bytecode blacklist entries.
+	ListBytecodeBlacklistEntries(ctx context.Context, in *ListBytecodeBlacklistEntriesRequest, opts ...grpc.CallOption) (*ListBytecodeBlacklistEntriesResponse, error)
+	// AddBytecodeBlacklistEntry adds a bytecode blacklist entry.
+	AddBytecodeBlacklistEntry(ctx context.Context, in *AddBytecodeBlacklistEntryRequest, opts ...grpc.CallOption) (*AddBytecodeBlacklistEntryResponse, error)
+	// UpdateBytecodeBlacklistNote updates a bytecode blacklist note.
+	UpdateBytecodeBlacklistNote(ctx context.Context, in *UpdateBytecodeBlacklistNoteRequest, opts ...grpc.CallOption) (*UpdateBytecodeBlacklistNoteResponse, error)
+	// DeleteBytecodeBlacklist deletes a bytecode blacklist entry.
+	DeleteBytecodeBlacklist(ctx context.Context, in *DeleteBytecodeBlacklistRequest, opts ...grpc.CallOption) (*DeleteBytecodeBlacklistResponse, error)
 }
 
 type solidityServiceClient struct {
@@ -127,10 +626,65 @@ func (c *solidityServiceClient) GetSolidityStatus(ctx context.Context, in *GetSo
 	return out, nil
 }
 
+func (c *solidityServiceClient) GetContractSourceInfo(ctx context.Context, in *GetContractSourceInfoRequest, opts ...grpc.CallOption) (*v1alpha1.ContractSourceInfo, error) {
+	out := new(v1alpha1.ContractSourceInfo)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/GetContractSourceInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) ListBytecodeBlacklistEntries(ctx context.Context, in *ListBytecodeBlacklistEntriesRequest, opts ...grpc.CallOption) (*ListBytecodeBlacklistEntriesResponse, error) {
+	out := new(ListBytecodeBlacklistEntriesResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/ListBytecodeBlacklistEntries", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) AddBytecodeBlacklistEntry(ctx context.Context, in *AddBytecodeBlacklistEntryRequest, opts ...grpc.CallOption) (*AddBytecodeBlacklistEntryResponse, error) {
+	out := new(AddBytecodeBlacklistEntryResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/AddBytecodeBlacklistEntry", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) UpdateBytecodeBlacklistNote(ctx context.Context, in *UpdateBytecodeBlacklistNoteRequest, opts ...grpc.CallOption) (*UpdateBytecodeBlacklistNoteResponse, error) {
+	out := new(UpdateBytecodeBlacklistNoteResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/UpdateBytecodeBlacklistNote", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) DeleteBytecodeBlacklist(ctx context.Context, in *DeleteBytecodeBlacklistRequest, opts ...grpc.CallOption) (*DeleteBytecodeBlacklistResponse, error) {
+	out := new(DeleteBytecodeBlacklistResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/DeleteBytecodeBlacklist", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SolidityServiceServer is the server API for SolidityService service.
 type SolidityServiceServer interface {
 	// GetSolidityStatus returns the solidity service runtime status.
 	GetSolidityStatus(context.Context, *GetSolidityStatusRequest) (*v1alpha1.SolidityStatus, error)
+	// GetContractSourceInfo resolves bytecode/source facts for a contract.
+	GetContractSourceInfo(context.Context, *GetContractSourceInfoRequest) (*v1alpha1.ContractSourceInfo, error)
+	// ListBytecodeBlacklistEntries returns configured bytecode blacklist entries.
+	ListBytecodeBlacklistEntries(context.Context, *ListBytecodeBlacklistEntriesRequest) (*ListBytecodeBlacklistEntriesResponse, error)
+	// AddBytecodeBlacklistEntry adds a bytecode blacklist entry.
+	AddBytecodeBlacklistEntry(context.Context, *AddBytecodeBlacklistEntryRequest) (*AddBytecodeBlacklistEntryResponse, error)
+	// UpdateBytecodeBlacklistNote updates a bytecode blacklist note.
+	UpdateBytecodeBlacklistNote(context.Context, *UpdateBytecodeBlacklistNoteRequest) (*UpdateBytecodeBlacklistNoteResponse, error)
+	// DeleteBytecodeBlacklist deletes a bytecode blacklist entry.
+	DeleteBytecodeBlacklist(context.Context, *DeleteBytecodeBlacklistRequest) (*DeleteBytecodeBlacklistResponse, error)
 }
 
 // UnimplementedSolidityServiceServer can be embedded to have forward compatible implementations.
@@ -139,6 +693,21 @@ type UnimplementedSolidityServiceServer struct {
 
 func (*UnimplementedSolidityServiceServer) GetSolidityStatus(ctx context.Context, req *GetSolidityStatusRequest) (*v1alpha1.SolidityStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSolidityStatus not implemented")
+}
+func (*UnimplementedSolidityServiceServer) GetContractSourceInfo(ctx context.Context, req *GetContractSourceInfoRequest) (*v1alpha1.ContractSourceInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetContractSourceInfo not implemented")
+}
+func (*UnimplementedSolidityServiceServer) ListBytecodeBlacklistEntries(ctx context.Context, req *ListBytecodeBlacklistEntriesRequest) (*ListBytecodeBlacklistEntriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListBytecodeBlacklistEntries not implemented")
+}
+func (*UnimplementedSolidityServiceServer) AddBytecodeBlacklistEntry(ctx context.Context, req *AddBytecodeBlacklistEntryRequest) (*AddBytecodeBlacklistEntryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddBytecodeBlacklistEntry not implemented")
+}
+func (*UnimplementedSolidityServiceServer) UpdateBytecodeBlacklistNote(ctx context.Context, req *UpdateBytecodeBlacklistNoteRequest) (*UpdateBytecodeBlacklistNoteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBytecodeBlacklistNote not implemented")
+}
+func (*UnimplementedSolidityServiceServer) DeleteBytecodeBlacklist(ctx context.Context, req *DeleteBytecodeBlacklistRequest) (*DeleteBytecodeBlacklistResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteBytecodeBlacklist not implemented")
 }
 
 func RegisterSolidityServiceServer(s *grpc.Server, srv SolidityServiceServer) {
@@ -163,6 +732,96 @@ func _SolidityService_GetSolidityStatus_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SolidityService_GetContractSourceInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetContractSourceInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).GetContractSourceInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/GetContractSourceInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).GetContractSourceInfo(ctx, req.(*GetContractSourceInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_ListBytecodeBlacklistEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBytecodeBlacklistEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).ListBytecodeBlacklistEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/ListBytecodeBlacklistEntries",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).ListBytecodeBlacklistEntries(ctx, req.(*ListBytecodeBlacklistEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_AddBytecodeBlacklistEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddBytecodeBlacklistEntryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).AddBytecodeBlacklistEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/AddBytecodeBlacklistEntry",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).AddBytecodeBlacklistEntry(ctx, req.(*AddBytecodeBlacklistEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_UpdateBytecodeBlacklistNote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBytecodeBlacklistNoteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).UpdateBytecodeBlacklistNote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/UpdateBytecodeBlacklistNote",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).UpdateBytecodeBlacklistNote(ctx, req.(*UpdateBytecodeBlacklistNoteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_DeleteBytecodeBlacklist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteBytecodeBlacklistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).DeleteBytecodeBlacklist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/DeleteBytecodeBlacklist",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).DeleteBytecodeBlacklist(ctx, req.(*DeleteBytecodeBlacklistRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _SolidityService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "athena.internal.solidity.SolidityService",
 	HandlerType: (*SolidityServiceServer)(nil),
@@ -170,6 +829,26 @@ var _SolidityService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSolidityStatus",
 			Handler:    _SolidityService_GetSolidityStatus_Handler,
+		},
+		{
+			MethodName: "GetContractSourceInfo",
+			Handler:    _SolidityService_GetContractSourceInfo_Handler,
+		},
+		{
+			MethodName: "ListBytecodeBlacklistEntries",
+			Handler:    _SolidityService_ListBytecodeBlacklistEntries_Handler,
+		},
+		{
+			MethodName: "AddBytecodeBlacklistEntry",
+			Handler:    _SolidityService_AddBytecodeBlacklistEntry_Handler,
+		},
+		{
+			MethodName: "UpdateBytecodeBlacklistNote",
+			Handler:    _SolidityService_UpdateBytecodeBlacklistNote_Handler,
+		},
+		{
+			MethodName: "DeleteBytecodeBlacklist",
+			Handler:    _SolidityService_DeleteBytecodeBlacklist_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -203,6 +882,346 @@ func (m *GetSolidityStatusRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
+func (m *GetContractSourceInfoRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetContractSourceInfoRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetContractSourceInfoRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListBytecodeBlacklistEntriesRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListBytecodeBlacklistEntriesRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListBytecodeBlacklistEntriesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListBytecodeBlacklistEntriesResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListBytecodeBlacklistEntriesResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListBytecodeBlacklistEntriesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintSolidity(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AddBytecodeBlacklistEntryRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AddBytecodeBlacklistEntryRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AddBytecodeBlacklistEntryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Note) > 0 {
+		i -= len(m.Note)
+		copy(dAtA[i:], m.Note)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.Note)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.SourceContract) > 0 {
+		i -= len(m.SourceContract)
+		copy(dAtA[i:], m.SourceContract)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.SourceContract)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.SourceChainId != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.SourceChainId))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.CodeHash)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AddBytecodeBlacklistEntryResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AddBytecodeBlacklistEntryResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AddBytecodeBlacklistEntryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintSolidity(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateBytecodeBlacklistNoteRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateBytecodeBlacklistNoteRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateBytecodeBlacklistNoteRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Note) > 0 {
+		i -= len(m.Note)
+		copy(dAtA[i:], m.Note)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.Note)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.CodeHash)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateBytecodeBlacklistNoteResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateBytecodeBlacklistNoteResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateBytecodeBlacklistNoteResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintSolidity(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeleteBytecodeBlacklistRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteBytecodeBlacklistRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteBytecodeBlacklistRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.CodeHash)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeleteBytecodeBlacklistResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteBytecodeBlacklistResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteBytecodeBlacklistResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintSolidity(dAtA []byte, offset int, v uint64) int {
 	offset -= sovSolidity(v)
 	base := offset
@@ -215,6 +1234,162 @@ func encodeVarintSolidity(dAtA []byte, offset int, v uint64) int {
 	return base
 }
 func (m *GetSolidityStatusRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetContractSourceInfoRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovSolidity(uint64(m.ChainId))
+	}
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListBytecodeBlacklistEntriesRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListBytecodeBlacklistEntriesResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovSolidity(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AddBytecodeBlacklistEntryRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.SourceChainId != 0 {
+		n += 1 + sovSolidity(uint64(m.SourceChainId))
+	}
+	l = len(m.SourceContract)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	l = len(m.Note)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AddBytecodeBlacklistEntryResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateBytecodeBlacklistNoteRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	l = len(m.Note)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateBytecodeBlacklistNoteResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteBytecodeBlacklistRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteBytecodeBlacklistResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -259,6 +1434,833 @@ func (m *GetSolidityStatusRequest) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: GetSolidityStatusRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetContractSourceInfoRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetContractSourceInfoRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetContractSourceInfoRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListBytecodeBlacklistEntriesRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListBytecodeBlacklistEntriesRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListBytecodeBlacklistEntriesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListBytecodeBlacklistEntriesResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListBytecodeBlacklistEntriesResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListBytecodeBlacklistEntriesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.BytecodeBlacklistEntry{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AddBytecodeBlacklistEntryRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AddBytecodeBlacklistEntryRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AddBytecodeBlacklistEntryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceChainId", wireType)
+			}
+			m.SourceChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SourceChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceContract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceContract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Note", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Note = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AddBytecodeBlacklistEntryResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AddBytecodeBlacklistEntryResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AddBytecodeBlacklistEntryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.BytecodeBlacklistEntry{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateBytecodeBlacklistNoteRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateBytecodeBlacklistNoteRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateBytecodeBlacklistNoteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Note", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Note = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateBytecodeBlacklistNoteResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateBytecodeBlacklistNoteResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateBytecodeBlacklistNoteResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.BytecodeBlacklistEntry{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteBytecodeBlacklistRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteBytecodeBlacklistRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteBytecodeBlacklistRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteBytecodeBlacklistResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteBytecodeBlacklistResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteBytecodeBlacklistResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

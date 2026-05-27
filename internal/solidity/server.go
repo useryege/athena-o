@@ -1,10 +1,13 @@
 package solidity
 
 import (
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/useryege/athena/internal/server/version"
 	"github.com/useryege/athena/internal/solidity/apiclient"
+	"github.com/useryege/athena/internal/solidity/sourcequality"
 	soliditystore "github.com/useryege/athena/internal/solidity/store"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
+	"github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -17,7 +20,11 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Store *soliditystore.SQLStore
+	Store                 *soliditystore.SQLStore
+	NodeClient            *ethclient.Client
+	ChainID               int64
+	APIFetcher            ethereumapi.EthereumAPI
+	SourceQualityAnalyzer sourcequality.Analyzer
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -25,7 +32,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
 		ServerOpts:    opts,
-		service:       NewService(opts.Store),
+		service:       NewService(ServiceOpts{Store: opts.Store, NodeClient: opts.NodeClient, ChainID: opts.ChainID, APIFetcher: opts.APIFetcher, SourceQualityAnalyzer: opts.SourceQualityAnalyzer}),
 		healthService: healthService,
 	}, nil
 }
