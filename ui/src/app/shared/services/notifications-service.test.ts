@@ -1,11 +1,13 @@
 import {NotificationService} from './notification-service';
 
 const mockGet = jest.fn();
+const mockPost = jest.fn();
 
 jest.mock('./requests', () => ({
     __esModule: true,
     default: {
-        get: (...args: any[]) => mockGet(...args)
+        get: (...args: any[]) => mockGet(...args),
+        post: (...args: any[]) => mockPost(...args)
     }
 }));
 
@@ -13,13 +15,17 @@ const requestWithBody = (body: any) => {
     const request: any = {
         abort: jest.fn(),
         query: jest.fn(() => request),
+        send: jest.fn(() => request),
         then: (resolve: any) => Promise.resolve(resolve({body}))
     };
     return request;
 };
 
 describe('notifications service', () => {
-    beforeEach(() => mockGet.mockReset());
+    beforeEach(() => {
+        mockGet.mockReset();
+        mockPost.mockReset();
+    });
 
     it('sends list filters as query parameters', async () => {
         const request = requestWithBody({
@@ -85,5 +91,24 @@ describe('notifications service', () => {
         expect(mockGet).toHaveBeenCalledWith('/notifications/9');
         expect(item.id).toBe(9);
         expect(item.errorMessage).toBe('telegram unavailable');
+    });
+
+    it('sends a test notification request', async () => {
+        const request = requestWithBody({
+            notification_id: '11',
+            status: 'sent',
+            provider_message_id: '123'
+        });
+        mockPost.mockReturnValue(request);
+
+        const result = await new NotificationService().sendTestNotification();
+
+        expect(mockPost).toHaveBeenCalledWith('/notifications/test');
+        expect(request.send).toHaveBeenCalledWith({});
+        expect(result).toMatchObject({
+            notificationId: 11,
+            status: 'sent',
+            providerMessageId: '123'
+        });
     });
 });

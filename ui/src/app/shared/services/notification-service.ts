@@ -31,6 +31,13 @@ export interface ListNotificationsResult {
     pageSize: number;
 }
 
+export interface SendTestNotificationResult {
+    notificationId: number;
+    status: string;
+    providerMessageId: string;
+    errorMessage: string;
+}
+
 const readValue = (item: any, ...names: string[]) => {
     for (const name of names) {
         if (item?.[name] !== undefined && item?.[name] !== null) {
@@ -94,6 +101,21 @@ export class NotificationService {
     public getNotification(id: number | string): Promise<NotificationDelivery> & {abort?: () => void} {
         const req = requests.get(`/notifications/${encodeURIComponent(String(id))}`);
         const promise = req.then(res => normalizeDelivery((res.body || {}).item || res.body || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public sendTestNotification(): Promise<SendTestNotificationResult> & {abort?: () => void} {
+        const req = requests.post('/notifications/test').send({});
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                notificationId: readNumber(body, 'notificationId', 'notification_id'),
+                status: readString(body, 'status'),
+                providerMessageId: readString(body, 'providerMessageId', 'provider_message_id'),
+                errorMessage: readString(body, 'errorMessage', 'error_message')
+            };
+        }) as any;
         promise.abort = () => req.abort();
         return promise;
     }

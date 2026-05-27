@@ -26,6 +26,19 @@
             margin-right: 10px;
         }
     }
+
+    &__notice {
+        background-color: #e7f6ef;
+        border: 1px solid #65b891;
+        border-radius: 4px;
+        color: #1f7a4d;
+        margin: 20px;
+        padding: 15px;
+
+        i {
+            margin-right: 10px;
+        }
+    }
 }
 
 .notifications-page {
@@ -40,6 +53,7 @@
     }
 
     &__filter-actions,
+    &__summary-actions,
     &__summary,
     &__pager {
         align-items: center;

@@ -328,12 +328,126 @@ func (m *GetNotificationDeliveryResponse) GetItem() *v1alpha1.NotificationDelive
 	return nil
 }
 
+// SendTestNotificationRequest sends a fixed notification for manual connectivity testing.
+type SendTestNotificationRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SendTestNotificationRequest) Reset()         { *m = SendTestNotificationRequest{} }
+func (m *SendTestNotificationRequest) String() string { return proto.CompactTextString(m) }
+func (*SendTestNotificationRequest) ProtoMessage()    {}
+func (*SendTestNotificationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ea81c05babd59533, []int{5}
+}
+func (m *SendTestNotificationRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SendTestNotificationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SendTestNotificationRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SendTestNotificationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendTestNotificationRequest.Merge(m, src)
+}
+func (m *SendTestNotificationRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *SendTestNotificationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendTestNotificationRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SendTestNotificationRequest proto.InternalMessageInfo
+
+// SendTestNotificationResponse returns the fixed test notification delivery result.
+type SendTestNotificationResponse struct {
+	NotificationId       int64    `protobuf:"varint,1,opt,name=notification_id,json=notificationId,proto3" json:"notification_id,omitempty"`
+	Status               string   `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	ProviderMessageId    string   `protobuf:"bytes,3,opt,name=provider_message_id,json=providerMessageId,proto3" json:"provider_message_id,omitempty"`
+	ErrorMessage         string   `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SendTestNotificationResponse) Reset()         { *m = SendTestNotificationResponse{} }
+func (m *SendTestNotificationResponse) String() string { return proto.CompactTextString(m) }
+func (*SendTestNotificationResponse) ProtoMessage()    {}
+func (*SendTestNotificationResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ea81c05babd59533, []int{6}
+}
+func (m *SendTestNotificationResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SendTestNotificationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SendTestNotificationResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SendTestNotificationResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendTestNotificationResponse.Merge(m, src)
+}
+func (m *SendTestNotificationResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SendTestNotificationResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendTestNotificationResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SendTestNotificationResponse proto.InternalMessageInfo
+
+func (m *SendTestNotificationResponse) GetNotificationId() int64 {
+	if m != nil {
+		return m.NotificationId
+	}
+	return 0
+}
+
+func (m *SendTestNotificationResponse) GetStatus() string {
+	if m != nil {
+		return m.Status
+	}
+	return ""
+}
+
+func (m *SendTestNotificationResponse) GetProviderMessageId() string {
+	if m != nil {
+		return m.ProviderMessageId
+	}
+	return ""
+}
+
+func (m *SendTestNotificationResponse) GetErrorMessage() string {
+	if m != nil {
+		return m.ErrorMessage
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*GetNotificationStatusRequest)(nil), "notification.GetNotificationStatusRequest")
 	proto.RegisterType((*ListNotificationDeliveriesRequest)(nil), "notification.ListNotificationDeliveriesRequest")
 	proto.RegisterType((*ListNotificationDeliveriesResponse)(nil), "notification.ListNotificationDeliveriesResponse")
 	proto.RegisterType((*GetNotificationDeliveryRequest)(nil), "notification.GetNotificationDeliveryRequest")
 	proto.RegisterType((*GetNotificationDeliveryResponse)(nil), "notification.GetNotificationDeliveryResponse")
+	proto.RegisterType((*SendTestNotificationRequest)(nil), "notification.SendTestNotificationRequest")
+	proto.RegisterType((*SendTestNotificationResponse)(nil), "notification.SendTestNotificationResponse")
 }
 
 func init() {
@@ -341,42 +455,49 @@ func init() {
 }
 
 var fileDescriptor_ea81c05babd59533 = []byte{
-	// 559 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x94, 0xbd, 0x6e, 0x13, 0x41,
-	0x10, 0xc7, 0xb5, 0xfe, 0x08, 0xc9, 0x06, 0x51, 0x2c, 0x84, 0x9c, 0x2e, 0x8e, 0x31, 0x47, 0x63,
-	0x21, 0xd8, 0x8d, 0x8d, 0x78, 0x01, 0x88, 0x04, 0x48, 0x11, 0xc5, 0x85, 0x8a, 0x06, 0x6d, 0xec,
-	0xe1, 0xbc, 0xf2, 0x79, 0xf7, 0xd8, 0x5d, 0x1f, 0x72, 0x10, 0x0d, 0x2d, 0x74, 0x74, 0x14, 0x3c,
-	0x06, 0x05, 0x4f, 0x40, 0x89, 0x84, 0xe8, 0x91, 0xc5, 0x83, 0xa0, 0xdb, 0xf3, 0x19, 0x5f, 0x64,
-	0x3b, 0x29, 0x52, 0xd9, 0x73, 0xf3, 0xf5, 0xd7, 0x6f, 0x66, 0x16, 0x33, 0x21, 0x2d, 0x68, 0xc9,
-	0x63, 0x66, 0x40, 0xa7, 0xa0, 0x99, 0x54, 0x56, 0xbc, 0x16, 0x3d, 0x6e, 0x85, 0x92, 0x25, 0x83,
-	0x26, 0x5a, 0x59, 0x45, 0xae, 0x2e, 0x7e, 0xf3, 0x9f, 0x46, 0xc2, 0x0e, 0xc6, 0x27, 0xb4, 0xa7,
-	0x46, 0x6c, 0x6c, 0x40, 0x4f, 0x20, 0x02, 0xc6, 0xed, 0x00, 0x24, 0x67, 0xc9, 0x30, 0x62, 0x3c,
-	0x11, 0x86, 0xf1, 0x24, 0x89, 0x8b, 0x8a, 0x69, 0x87, 0xc7, 0xc9, 0x80, 0x77, 0x58, 0x04, 0x12,
-	0x34, 0xb7, 0xd0, 0xcf, 0xeb, 0xfa, 0x8d, 0x48, 0xa9, 0x28, 0x86, 0x2c, 0x83, 0x71, 0x29, 0x95,
-	0x75, 0xf1, 0x26, 0xf7, 0x06, 0x4d, 0xdc, 0x78, 0x02, 0xf6, 0xf9, 0x42, 0xeb, 0x63, 0xcb, 0xed,
-	0xd8, 0x84, 0xf0, 0x66, 0x0c, 0xc6, 0x06, 0xdf, 0x11, 0xbe, 0x7d, 0x24, 0x4c, 0x29, 0xe2, 0x10,
-	0x62, 0x91, 0x82, 0x16, 0x50, 0x44, 0x11, 0x82, 0x6b, 0x09, 0x8f, 0xc0, 0x43, 0x2d, 0xd4, 0xae,
-	0x87, 0xee, 0x3f, 0xd9, 0xc3, 0x5b, 0xd9, 0xef, 0x2b, 0x23, 0x4e, 0xc1, 0xab, 0x38, 0xc7, 0x66,
-	0xf6, 0xe1, 0x58, 0x9c, 0x02, 0xb9, 0x89, 0x37, 0x8c, 0xeb, 0xe3, 0x55, 0x5b, 0xa8, 0xbd, 0x15,
-	0xce, 0x2c, 0xe2, 0xe3, 0x4d, 0x03, 0x59, 0x6d, 0x3b, 0xf1, 0x6a, 0xce, 0x33, 0xb7, 0x5d, 0x8e,
-	0x1a, 0xeb, 0x1e, 0x78, 0xf5, 0x59, 0x8e, 0xb3, 0x88, 0x87, 0xaf, 0x0c, 0x61, 0xf2, 0x56, 0xe9,
-	0xbe, 0xb7, 0xe1, 0x1c, 0x85, 0x19, 0xfc, 0x46, 0x38, 0x58, 0x27, 0xde, 0x24, 0x4a, 0x1a, 0x20,
-	0x03, 0x5c, 0x17, 0x16, 0x46, 0xc6, 0x43, 0xad, 0x6a, 0x7b, 0xbb, 0x1b, 0xd2, 0xff, 0xec, 0x69,
-	0xc1, 0x9e, 0xe6, 0xec, 0x69, 0x32, 0x8c, 0x68, 0xc6, 0x9e, 0x2e, 0xb0, 0xa7, 0x05, 0x7b, 0xba,
-	0xa4, 0xd1, 0xe4, 0x99, 0x85, 0x51, 0x98, 0x37, 0x20, 0x37, 0x70, 0xdd, 0x2a, 0xcb, 0x63, 0xc7,
-	0xa3, 0x1a, 0xe6, 0xc6, 0x9c, 0x5e, 0x75, 0x15, 0xbd, 0x5a, 0x99, 0x5e, 0x70, 0x80, 0x9b, 0x67,
-	0x86, 0x56, 0x34, 0x2b, 0x06, 0x72, 0x0d, 0x57, 0x44, 0xdf, 0x8d, 0xa3, 0x1a, 0x56, 0x44, 0x3f,
-	0xf8, 0x88, 0xf0, 0xad, 0x95, 0x29, 0x73, 0x0c, 0xb5, 0x4c, 0xa5, 0xcb, 0xda, 0xee, 0xbe, 0xb8,
-	0x5c, 0x0a, 0x87, 0x60, 0xb9, 0x88, 0x43, 0xd7, 0xa1, 0xfb, 0xa9, 0x86, 0xaf, 0x97, 0x56, 0x0e,
-	0x74, 0x2a, 0x7a, 0x40, 0xbe, 0x21, 0xbc, 0xb3, 0x74, 0x1b, 0xc9, 0x5d, 0x5a, 0xba, 0x98, 0x75,
-	0x2b, 0xeb, 0x1f, 0x5d, 0x8e, 0xf2, 0xbc, 0x68, 0x70, 0xe7, 0xc3, 0xaf, 0xbf, 0x9f, 0x2b, 0xfb,
-	0x64, 0xcf, 0x1d, 0x50, 0xda, 0x29, 0xdf, 0xf1, 0x6c, 0x6d, 0xbf, 0x22, 0xec, 0xaf, 0x5e, 0x34,
-	0xc2, 0xca, 0xea, 0xcf, 0xbd, 0x27, 0xff, 0xe0, 0xe2, 0x09, 0xf9, 0xf0, 0x82, 0x7d, 0x27, 0x73,
-	0x97, 0xec, 0x2c, 0x93, 0x69, 0xc8, 0x17, 0x84, 0x77, 0x57, 0xcc, 0x9f, 0xdc, 0x5b, 0xcb, 0xf6,
-	0xcc, 0x66, 0xf9, 0xf7, 0x2f, 0x18, 0x3d, 0xd3, 0x15, 0x38, 0x5d, 0x0d, 0xe2, 0x2f, 0xd5, 0xc5,
-	0xde, 0x89, 0xfe, 0xfb, 0x47, 0x8f, 0x7f, 0x4c, 0x9b, 0xe8, 0xe7, 0xb4, 0x89, 0xfe, 0x4c, 0x9b,
-	0xe8, 0xe5, 0xc3, 0xf3, 0x5f, 0xbe, 0x5e, 0x2c, 0x40, 0xda, 0x52, 0xa9, 0x93, 0x0d, 0xf7, 0x9e,
-	0x3d, 0xf8, 0x17, 0x00, 0x00, 0xff, 0xff, 0xc1, 0x74, 0x9f, 0x0f, 0x78, 0x05, 0x00, 0x00,
+	// 666 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0x4d, 0x4f, 0xd4, 0x4e,
+	0x18, 0xcf, 0xec, 0x0b, 0x7f, 0x78, 0xe0, 0x8f, 0x71, 0x00, 0x69, 0xca, 0xb2, 0x62, 0x39, 0x88,
+	0x44, 0x5b, 0xc0, 0xf8, 0x05, 0x94, 0x44, 0x49, 0xd0, 0x43, 0xe1, 0xe4, 0x85, 0x0c, 0xdb, 0xc7,
+	0xee, 0x84, 0x6e, 0xa7, 0xce, 0xcc, 0xae, 0x59, 0x8c, 0x17, 0xaf, 0x9e, 0x8c, 0x37, 0x0f, 0xc6,
+	0x0f, 0x61, 0x3c, 0xf8, 0x09, 0x3c, 0x9a, 0x18, 0xef, 0x86, 0xf8, 0x41, 0x4c, 0xa7, 0xed, 0xba,
+	0x25, 0xbb, 0x0b, 0x07, 0x4e, 0xbb, 0xcf, 0xfb, 0xaf, 0xbf, 0xe7, 0x65, 0xc0, 0xe3, 0xb1, 0x46,
+	0x19, 0xb3, 0xc8, 0x53, 0x28, 0x7b, 0x28, 0xbd, 0x58, 0x68, 0xfe, 0x82, 0xb7, 0x98, 0xe6, 0x22,
+	0x2e, 0x09, 0x6e, 0x22, 0x85, 0x16, 0x74, 0x6e, 0x58, 0x67, 0x3f, 0x09, 0xb9, 0x6e, 0x77, 0x8f,
+	0xdd, 0x96, 0xe8, 0x78, 0x5d, 0x85, 0xb2, 0x8f, 0x21, 0x7a, 0x4c, 0xb7, 0x31, 0x66, 0x5e, 0x72,
+	0x12, 0x7a, 0x2c, 0xe1, 0xca, 0x63, 0x49, 0x12, 0x15, 0x19, 0x7b, 0xdb, 0x2c, 0x4a, 0xda, 0x6c,
+	0xdb, 0x0b, 0x31, 0x46, 0xc9, 0x34, 0x06, 0x59, 0x5e, 0xbb, 0x11, 0x0a, 0x11, 0x46, 0x98, 0x46,
+	0x78, 0x2c, 0x8e, 0x85, 0x36, 0xfe, 0x2a, 0xb3, 0x3a, 0x4d, 0x68, 0x3c, 0x46, 0xfd, 0x6c, 0xa8,
+	0xf4, 0x81, 0x66, 0xba, 0xab, 0x7c, 0x7c, 0xd9, 0x45, 0xa5, 0x9d, 0x6f, 0x04, 0x6e, 0xed, 0x73,
+	0x55, 0xf2, 0xd8, 0xc5, 0x88, 0xf7, 0x50, 0x72, 0x2c, 0xbc, 0x28, 0x85, 0x5a, 0xc2, 0x42, 0xb4,
+	0xc8, 0x1a, 0xd9, 0xa8, 0xfb, 0xe6, 0x3f, 0x5d, 0x81, 0x99, 0xf4, 0xf7, 0x48, 0xf1, 0x53, 0xb4,
+	0x2a, 0xc6, 0x30, 0x9d, 0x2a, 0x0e, 0xf8, 0x29, 0xd2, 0x1b, 0x30, 0xa5, 0x4c, 0x1d, 0xab, 0xba,
+	0x46, 0x36, 0x66, 0xfc, 0x5c, 0xa2, 0x36, 0x4c, 0x2b, 0x4c, 0x73, 0xeb, 0xbe, 0x55, 0x33, 0x96,
+	0x81, 0x6c, 0x62, 0x44, 0x57, 0xb6, 0xd0, 0xaa, 0xe7, 0x31, 0x46, 0xa2, 0x16, 0xfc, 0x77, 0x82,
+	0xfd, 0x57, 0x42, 0x06, 0xd6, 0x94, 0x31, 0x14, 0xa2, 0xf3, 0x8b, 0x80, 0x33, 0x09, 0xbc, 0x4a,
+	0x44, 0xac, 0x90, 0xb6, 0xa1, 0xce, 0x35, 0x76, 0x94, 0x45, 0xd6, 0xaa, 0x1b, 0xb3, 0x3b, 0xbe,
+	0xfb, 0x8f, 0x7b, 0xb7, 0xe0, 0xde, 0xcd, 0xb8, 0x77, 0x93, 0x93, 0xd0, 0x4d, 0xb9, 0x77, 0x87,
+	0xb8, 0x77, 0x0b, 0xee, 0xdd, 0x11, 0x85, 0xfa, 0x7b, 0x1a, 0x3b, 0x7e, 0x56, 0x80, 0x2e, 0x42,
+	0x5d, 0x0b, 0xcd, 0x22, 0xc3, 0x47, 0xd5, 0xcf, 0x84, 0x01, 0x7b, 0xd5, 0x71, 0xec, 0xd5, 0xca,
+	0xec, 0x39, 0x5b, 0xd0, 0x3c, 0xd7, 0xb4, 0xa2, 0x58, 0xd1, 0x90, 0x79, 0xa8, 0xf0, 0xc0, 0xb4,
+	0xa3, 0xea, 0x57, 0x78, 0xe0, 0xbc, 0x23, 0x70, 0x73, 0x6c, 0xc8, 0x80, 0x86, 0x5a, 0x8a, 0xd2,
+	0x44, 0xcd, 0xee, 0x1c, 0x5e, 0x2d, 0x0b, 0xbb, 0xa8, 0x19, 0x8f, 0x7c, 0x53, 0xc1, 0x59, 0x85,
+	0x95, 0x03, 0x8c, 0x83, 0x43, 0x2c, 0xb7, 0xa6, 0x98, 0xb9, 0x2f, 0x04, 0x1a, 0xa3, 0xed, 0x39,
+	0xd2, 0xdb, 0x70, 0x6d, 0x78, 0x59, 0x8e, 0x06, 0x9f, 0x3a, 0x3f, 0xac, 0xde, 0x0b, 0x86, 0xc6,
+	0xac, 0x52, 0x1a, 0x33, 0x17, 0x16, 0x12, 0x29, 0x7a, 0x3c, 0x40, 0x79, 0xd4, 0x41, 0xa5, 0x52,
+	0xa6, 0x79, 0x90, 0xcf, 0xe2, 0xf5, 0xc2, 0xf4, 0x34, 0xb3, 0xec, 0x05, 0x74, 0x1d, 0xfe, 0x47,
+	0x29, 0xc5, 0xc0, 0x39, 0x9f, 0xcd, 0x39, 0xa3, 0xcc, 0xdd, 0x76, 0x3e, 0xd7, 0x61, 0xa1, 0xb4,
+	0x48, 0x28, 0x7b, 0xbc, 0x85, 0xf4, 0x2b, 0x81, 0xa5, 0x91, 0x3b, 0x46, 0x37, 0xdd, 0xd2, 0x1d,
+	0x98, 0xb4, 0x88, 0xf6, 0xfe, 0xd5, 0xf4, 0x23, 0x4b, 0xea, 0xac, 0xbf, 0xfd, 0xf9, 0xe7, 0x43,
+	0x65, 0x95, 0xae, 0x98, 0xb3, 0xd0, 0xdb, 0x2e, 0x5f, 0xa7, 0x9c, 0xa5, 0x4f, 0x04, 0xec, 0xf1,
+	0xeb, 0x43, 0xbd, 0x32, 0xfa, 0x0b, 0xaf, 0x84, 0xbd, 0x75, 0xf9, 0x80, 0xac, 0xd1, 0xce, 0xaa,
+	0x81, 0xb9, 0x4c, 0x97, 0x46, 0xc1, 0x54, 0xf4, 0x23, 0x81, 0xe5, 0x31, 0x53, 0x4d, 0xef, 0x4e,
+	0xe4, 0xf6, 0xdc, 0xbe, 0xd8, 0xf7, 0x2e, 0xe9, 0x9d, 0xe3, 0x72, 0x0c, 0xae, 0x06, 0xb5, 0x47,
+	0xe2, 0xf2, 0x5e, 0xf3, 0xe0, 0x0d, 0x7d, 0x4f, 0x60, 0x71, 0xd4, 0x14, 0xd3, 0x3b, 0xe5, 0x5a,
+	0x13, 0x36, 0xc1, 0xde, 0xbc, 0x8c, 0x6b, 0x19, 0x93, 0x33, 0x06, 0x93, 0x46, 0xa5, 0x1f, 0x3e,
+	0xfa, 0x7e, 0xd6, 0x24, 0x3f, 0xce, 0x9a, 0xe4, 0xf7, 0x59, 0x93, 0x3c, 0x7f, 0x70, 0xf1, 0x1b,
+	0xd3, 0x8a, 0x38, 0xc6, 0xba, 0x94, 0xea, 0x78, 0xca, 0xbc, 0x1c, 0xf7, 0xff, 0x06, 0x00, 0x00,
+	0xff, 0xff, 0x3f, 0xf8, 0x9d, 0xe2, 0xe2, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -397,6 +518,8 @@ type NotificationServiceClient interface {
 	ListNotificationDeliveries(ctx context.Context, in *ListNotificationDeliveriesRequest, opts ...grpc.CallOption) (*ListNotificationDeliveriesResponse, error)
 	// GetNotificationDelivery returns one notification delivery record.
 	GetNotificationDelivery(ctx context.Context, in *GetNotificationDeliveryRequest, opts ...grpc.CallOption) (*GetNotificationDeliveryResponse, error)
+	// SendTestNotification sends a fixed test notification from the UI.
+	SendTestNotification(ctx context.Context, in *SendTestNotificationRequest, opts ...grpc.CallOption) (*SendTestNotificationResponse, error)
 }
 
 type notificationServiceClient struct {
@@ -434,6 +557,15 @@ func (c *notificationServiceClient) GetNotificationDelivery(ctx context.Context,
 	return out, nil
 }
 
+func (c *notificationServiceClient) SendTestNotification(ctx context.Context, in *SendTestNotificationRequest, opts ...grpc.CallOption) (*SendTestNotificationResponse, error) {
+	out := new(SendTestNotificationResponse)
+	err := c.cc.Invoke(ctx, "/notification.NotificationService/SendTestNotification", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NotificationServiceServer is the server API for NotificationService service.
 type NotificationServiceServer interface {
 	// GetNotificationStatus returns the notification service runtime status.
@@ -442,6 +574,8 @@ type NotificationServiceServer interface {
 	ListNotificationDeliveries(context.Context, *ListNotificationDeliveriesRequest) (*ListNotificationDeliveriesResponse, error)
 	// GetNotificationDelivery returns one notification delivery record.
 	GetNotificationDelivery(context.Context, *GetNotificationDeliveryRequest) (*GetNotificationDeliveryResponse, error)
+	// SendTestNotification sends a fixed test notification from the UI.
+	SendTestNotification(context.Context, *SendTestNotificationRequest) (*SendTestNotificationResponse, error)
 }
 
 // UnimplementedNotificationServiceServer can be embedded to have forward compatible implementations.
@@ -456,6 +590,9 @@ func (*UnimplementedNotificationServiceServer) ListNotificationDeliveries(ctx co
 }
 func (*UnimplementedNotificationServiceServer) GetNotificationDelivery(ctx context.Context, req *GetNotificationDeliveryRequest) (*GetNotificationDeliveryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNotificationDelivery not implemented")
+}
+func (*UnimplementedNotificationServiceServer) SendTestNotification(ctx context.Context, req *SendTestNotificationRequest) (*SendTestNotificationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendTestNotification not implemented")
 }
 
 func RegisterNotificationServiceServer(s *grpc.Server, srv NotificationServiceServer) {
@@ -516,6 +653,24 @@ func _NotificationService_GetNotificationDelivery_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NotificationService_SendTestNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendTestNotificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).SendTestNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/notification.NotificationService/SendTestNotification",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).SendTestNotification(ctx, req.(*SendTestNotificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _NotificationService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "notification.NotificationService",
 	HandlerType: (*NotificationServiceServer)(nil),
@@ -531,6 +686,10 @@ var _NotificationService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetNotificationDelivery",
 			Handler:    _NotificationService_GetNotificationDelivery_Handler,
+		},
+		{
+			MethodName: "SendTestNotification",
+			Handler:    _NotificationService_SendTestNotification_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -756,6 +915,86 @@ func (m *GetNotificationDeliveryResponse) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
+func (m *SendTestNotificationRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SendTestNotificationRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SendTestNotificationRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SendTestNotificationResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SendTestNotificationResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SendTestNotificationResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ErrorMessage) > 0 {
+		i -= len(m.ErrorMessage)
+		copy(dAtA[i:], m.ErrorMessage)
+		i = encodeVarintNotification(dAtA, i, uint64(len(m.ErrorMessage)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.ProviderMessageId) > 0 {
+		i -= len(m.ProviderMessageId)
+		copy(dAtA[i:], m.ProviderMessageId)
+		i = encodeVarintNotification(dAtA, i, uint64(len(m.ProviderMessageId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Status) > 0 {
+		i -= len(m.Status)
+		copy(dAtA[i:], m.Status)
+		i = encodeVarintNotification(dAtA, i, uint64(len(m.Status)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.NotificationId != 0 {
+		i = encodeVarintNotification(dAtA, i, uint64(m.NotificationId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintNotification(dAtA []byte, offset int, v uint64) int {
 	offset -= sovNotification(v)
 	base := offset
@@ -863,6 +1102,45 @@ func (m *GetNotificationDeliveryResponse) Size() (n int) {
 	_ = l
 	if m.Item != nil {
 		l = m.Item.Size()
+		n += 1 + l + sovNotification(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *SendTestNotificationRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *SendTestNotificationResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NotificationId != 0 {
+		n += 1 + sovNotification(uint64(m.NotificationId))
+	}
+	l = len(m.Status)
+	if l > 0 {
+		n += 1 + l + sovNotification(uint64(l))
+	}
+	l = len(m.ProviderMessageId)
+	if l > 0 {
+		n += 1 + l + sovNotification(uint64(l))
+	}
+	l = len(m.ErrorMessage)
+	if l > 0 {
 		n += 1 + l + sovNotification(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -1421,6 +1699,223 @@ func (m *GetNotificationDeliveryResponse) Unmarshal(dAtA []byte) error {
 			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNotification(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNotification
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SendTestNotificationRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNotification
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SendTestNotificationRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SendTestNotificationRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNotification(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNotification
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SendTestNotificationResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNotification
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SendTestNotificationResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SendTestNotificationResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NotificationId", wireType)
+			}
+			m.NotificationId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotification
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NotificationId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotification
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNotification
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotification
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Status = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProviderMessageId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotification
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNotification
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotification
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ProviderMessageId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ErrorMessage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotification
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNotification
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotification
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ErrorMessage = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

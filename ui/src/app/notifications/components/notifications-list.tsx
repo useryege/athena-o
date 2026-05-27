@@ -32,6 +32,8 @@ interface NotificationsListState {
     keyword: string;
     loading: boolean;
     refreshing: boolean;
+    sendingTest: boolean;
+    notice: string;
     error: Error | null;
 }
 
@@ -99,6 +101,8 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
             keyword: query.keyword,
             loading: true,
             refreshing: false,
+            sendingTest: false,
+            notice: '',
             error: null
         };
     }
@@ -133,6 +137,11 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
                     {this.state.error && (
                         <div className='notifications-page__error'>
                             <i className='fa fa-exclamation-triangle' /> Failed to load notifications: {this.state.error.message}
+                        </div>
+                    )}
+                    {this.state.notice && (
+                        <div className='notifications-page__notice'>
+                            <i className='fa fa-check-circle' /> {this.state.notice}
                         </div>
                     )}
 
@@ -184,9 +193,18 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
                                     <span>
                                         {rangeStart}-{rangeEnd} of {this.state.total}
                                     </span>
-                                    <button type='button' className='argo-button argo-button--base-o' disabled={this.state.refreshing} onClick={this.refresh}>
-                                        {this.state.refreshing ? 'Refreshing...' : 'Refresh'}
-                                    </button>
+                                    <div className='notifications-page__summary-actions'>
+                                        <button
+                                            type='button'
+                                            className='argo-button argo-button--base'
+                                            disabled={this.state.sendingTest || this.state.refreshing}
+                                            onClick={this.sendTestNotification}>
+                                            {this.state.sendingTest ? 'Sending...' : 'Send Test'}
+                                        </button>
+                                        <button type='button' className='argo-button argo-button--base-o' disabled={this.state.refreshing} onClick={this.refresh}>
+                                            {this.state.refreshing ? 'Refreshing...' : 'Refresh'}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className='argo-table-list argo-table-list--clickable notifications-page__table'>
@@ -261,7 +279,7 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
         );
     }
 
-    private load = async () => {
+    private load = async (preserveError = false) => {
         if (this.request?.abort) {
             this.request.abort();
         }
@@ -280,7 +298,7 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
         try {
             const data = await req;
             if (this.mounted && this.request === req) {
-                this.setState({items: data.items, total: data.total, page: data.page || this.state.page, error: null});
+                this.setState({items: data.items, total: data.total, page: data.page || this.state.page, error: preserveError ? this.state.error : null});
             }
         } catch (err) {
             if (this.mounted && this.request === req && !isAbortedError(err)) {
@@ -306,6 +324,30 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
     };
 
     private refresh = () => this.load();
+
+    private sendTestNotification = async () => {
+        if (this.state.sendingTest) {
+            return;
+        }
+        this.setState({sendingTest: true, notice: '', error: null});
+        try {
+            const result = await services.notification.sendTestNotification();
+            const status = result.status ? ` (${result.status})` : '';
+            this.setState({notice: `Test notification sent${status}.`});
+            if (this.props.location.search === buildSearch({...this.state, page: 1})) {
+                await this.load();
+                return;
+            }
+            this.gotoFilters(1);
+        } catch (err) {
+            this.setState({error: err as Error});
+            await this.load(true);
+        } finally {
+            if (this.mounted) {
+                this.setState({sendingTest: false});
+            }
+        }
+    };
 
     private gotoPage = (page: number) => this.gotoFilters(page);
 

@@ -2,6 +2,8 @@ package notification
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"testing"
 
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
@@ -19,13 +21,24 @@ func (f *fakeNotificationClientset) NewNotificationServiceClient() (utilio.Close
 	return utilio.NopCloser, f.client, nil
 }
 
-type fakeNotificationServiceClient struct{}
+type fakeNotificationServiceClient struct {
+	sendReq  *notificationapiclient.SendNotificationRequest
+	sendResp *notificationapiclient.SendNotificationResponse
+	sendErr  error
+}
 
 func (f *fakeNotificationServiceClient) GetNotificationStatus(context.Context, *notificationapiclient.GetNotificationStatusRequest, ...grpc.CallOption) (*v1alpha1.NotificationStatus, error) {
 	return &v1alpha1.NotificationStatus{Started: true, Status: "running"}, nil
 }
 
-func (f *fakeNotificationServiceClient) SendNotification(context.Context, *notificationapiclient.SendNotificationRequest, ...grpc.CallOption) (*notificationapiclient.SendNotificationResponse, error) {
+func (f *fakeNotificationServiceClient) SendNotification(_ context.Context, req *notificationapiclient.SendNotificationRequest, _ ...grpc.CallOption) (*notificationapiclient.SendNotificationResponse, error) {
+	f.sendReq = req
+	if f.sendErr != nil {
+		return nil, f.sendErr
+	}
+	if f.sendResp != nil {
+		return f.sendResp, nil
+	}
 	return &notificationapiclient.SendNotificationResponse{}, nil
 }
 
@@ -89,5 +102,45 @@ func TestGetNotificationDeliveryMapsResponse(t *testing.T) {
 	}
 	if resp.GetItem().ID != 7 || resp.GetItem().Status != "sent" {
 		t.Fatalf("item = %#v, want mapped detail", resp.GetItem())
+	}
+}
+
+func TestSendTestNotificationMapsFixedRequestAndResponse(t *testing.T) {
+	client := &fakeNotificationServiceClient{
+		sendResp: &notificationapiclient.SendNotificationResponse{
+			NotificationId:    11,
+			Status:            notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_SENT,
+			ProviderMessageId: "123",
+		},
+	}
+	resp, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{})
+	if err != nil {
+		t.Fatalf("SendTestNotification: %v", err)
+	}
+	if resp.NotificationId != 11 || resp.Status != "sent" || resp.ProviderMessageId != "123" {
+		t.Fatalf("response = %#v, want mapped sent response", resp)
+	}
+	if client.sendReq == nil {
+		t.Fatalf("send request was not captured")
+	}
+	if client.sendReq.Source != "ui" {
+		t.Fatalf("source = %q, want ui", client.sendReq.Source)
+	}
+	if client.sendReq.Severity != notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO {
+		t.Fatalf("severity = %s, want info", client.sendReq.Severity)
+	}
+	if client.sendReq.Title != "ATHENA test notification" {
+		t.Fatalf("title = %q, want fixed test title", client.sendReq.Title)
+	}
+	if !strings.HasPrefix(client.sendReq.Body, "Manual test notification sent from ATHENA UI at ") {
+		t.Fatalf("body = %q, want fixed test body prefix", client.sendReq.Body)
+	}
+}
+
+func TestSendTestNotificationReturnsClientError(t *testing.T) {
+	client := &fakeNotificationServiceClient{sendErr: errors.New("notification unavailable")}
+	_, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{})
+	if err == nil || err.Error() != "notification unavailable" {
+		t.Fatalf("error = %v, want internal client error", err)
 	}
 }
