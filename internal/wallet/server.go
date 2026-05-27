@@ -17,7 +17,8 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Store *walletstore.SQLStore
+	Store         *walletstore.SQLStore
+	EncryptionKey []byte
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -25,7 +26,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
 		ServerOpts:    opts,
-		service:       NewService(opts.Store),
+		service:       NewService(opts.Store, opts.EncryptionKey),
 		healthService: healthService,
 	}, nil
 }

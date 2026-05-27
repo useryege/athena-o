@@ -2,24 +2,44 @@ package wallet
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"sync"
 
 	"github.com/useryege/athena/internal/wallet/apiclient"
 	walletstore "github.com/useryege/athena/internal/wallet/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
+	utilcrypto "github.com/useryege/athena/util/crypto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type Service struct {
 	apiclient.UnimplementedWalletServiceServer
-	store       *walletstore.SQLStore
-	startStopMu sync.Mutex
-	started     bool
+	store         *walletstore.SQLStore
+	encryptionKey []byte
+	startStopMu   sync.Mutex
+	started       bool
 }
 
-func NewService(store *walletstore.SQLStore) *Service {
-	return &Service{store: store}
+const (
+	defaultWalletPageSize = 20
+	maxWalletPageSize     = 100
+)
+
+func NewService(store *walletstore.SQLStore, encryptionKey []byte) *Service {
+	return &Service{store: store, encryptionKey: encryptionKey}
+}
+
+func EncryptionKeyFromPassphrase(passphrase string) ([]byte, error) {
+	if passphrase == "" {
+		return nil, status.Error(codes.FailedPrecondition, "wallet encryption key is required")
+	}
+	key, err := utilcrypto.KeyFromPassphrase(passphrase)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to derive wallet encryption key: %v", err)
+	}
+	return key, nil
 }
 
 func (s *Service) Start() error {
@@ -30,6 +50,9 @@ func (s *Service) Start() error {
 	}
 	if s.store == nil {
 		return status.Error(codes.FailedPrecondition, "wallet store is required")
+	}
+	if len(s.encryptionKey) == 0 {
+		return status.Error(codes.FailedPrecondition, "wallet encryption key is required")
 	}
 	s.started = true
 	return nil
@@ -55,4 +78,203 @@ func (s *Service) GetWalletStatus(context.Context, *apiclient.GetWalletStatusReq
 		Started: started,
 		Status:  statusText,
 	}, nil
+}
+
+func (s *Service) ListWallets(ctx context.Context, req *apiclient.ListWalletsRequest) (*apiclient.ListWalletsResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
+	}
+	chain := ""
+	if req.GetChain() != "" {
+		var err error
+		chain, err = normalizeWalletChain(req.GetChain())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+	}
+	page := int(req.GetPage())
+	if page < 1 {
+		page = 1
+	}
+	pageSize := int(req.GetPageSize())
+	if pageSize < 1 {
+		pageSize = defaultWalletPageSize
+	}
+	if pageSize > maxWalletPageSize {
+		return nil, status.Errorf(codes.InvalidArgument, "page_size must be at most %d", maxWalletPageSize)
+	}
+
+	items, total, err := s.store.ListWallets(ctx, walletstore.ListWalletsOptions{
+		Chain:    chain,
+		Query:    req.GetQuery(),
+		Page:     page,
+		PageSize: pageSize,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to list wallets: %v", err)
+	}
+	return &apiclient.ListWalletsResponse{
+		Items:    items,
+		Total:    total,
+		Page:     int32(page),
+		PageSize: int32(pageSize),
+	}, nil
+}
+
+func (s *Service) GetWallet(ctx context.Context, req *apiclient.GetWalletRequest) (*apiclient.GetWalletResponse, error) {
+	if req.GetId() <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "id is required")
+	}
+	record, err := s.getWalletRecord(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	item, err := s.walletDetail(record, req.GetRevealSecrets())
+	if err != nil {
+		return nil, err
+	}
+	return &apiclient.GetWalletResponse{Item: item}, nil
+}
+
+func (s *Service) CreateWallet(ctx context.Context, req *apiclient.CreateWalletRequest) (*apiclient.CreateWalletResponse, error) {
+	chain, err := normalizeWalletChain(req.GetChain())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	material, err := createWalletKeyMaterial(chain)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create wallet key: %v", err)
+	}
+	record, err := s.storeWalletMaterial(ctx, material, req.GetAlias())
+	if err != nil {
+		return nil, err
+	}
+	return &apiclient.CreateWalletResponse{Item: record.ToDetail()}, nil
+}
+
+func (s *Service) ImportPrivateKey(ctx context.Context, req *apiclient.ImportPrivateKeyRequest) (*apiclient.ImportPrivateKeyResponse, error) {
+	chain, err := normalizeWalletChain(req.GetChain())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	material, err := privateKeyWalletKeyMaterial(chain, req.GetPrivateKey())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	record, err := s.storeWalletMaterial(ctx, material, req.GetAlias())
+	if err != nil {
+		return nil, err
+	}
+	return &apiclient.ImportPrivateKeyResponse{Item: record.ToDetail()}, nil
+}
+
+func (s *Service) ImportMnemonic(ctx context.Context, req *apiclient.ImportMnemonicRequest) (*apiclient.ImportMnemonicResponse, error) {
+	chain, err := normalizeWalletChain(req.GetChain())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	material, err := mnemonicWalletKeyMaterial(chain, req.GetMnemonic(), walletSourceMnemonic)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	record, err := s.storeWalletMaterial(ctx, material, req.GetAlias())
+	if err != nil {
+		return nil, err
+	}
+	return &apiclient.ImportMnemonicResponse{Item: record.ToDetail()}, nil
+}
+
+func (s *Service) UpdateWalletAlias(ctx context.Context, req *apiclient.UpdateWalletAliasRequest) (*apiclient.UpdateWalletAliasResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
+	}
+	if req.GetId() <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "id is required")
+	}
+	item, err := s.store.UpdateWalletAlias(ctx, req.GetId(), normalizeWalletAlias(req.GetAlias()))
+	if err != nil {
+		if errors.Is(err, walletstore.ErrWalletNotFound) {
+			return nil, status.Errorf(codes.NotFound, "wallet %d not found", req.GetId())
+		}
+		return nil, status.Errorf(codes.Internal, "failed to update wallet alias: %v", err)
+	}
+	return &apiclient.UpdateWalletAliasResponse{Item: item}, nil
+}
+
+func (s *Service) getWalletRecord(ctx context.Context, id int64) (*walletstore.WalletRecord, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
+	}
+	record, err := s.store.GetWallet(ctx, id)
+	if err != nil {
+		if errors.Is(err, walletstore.ErrWalletNotFound) {
+			return nil, status.Errorf(codes.NotFound, "wallet %d not found", id)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get wallet: %v", err)
+	}
+	return record, nil
+}
+
+func (s *Service) storeWalletMaterial(ctx context.Context, material walletKeyMaterial, alias string) (*walletstore.WalletRecord, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
+	}
+	if len(s.encryptionKey) == 0 {
+		return nil, status.Error(codes.FailedPrecondition, "wallet encryption key is required")
+	}
+	privateKeyCiphertext, err := utilcrypto.Encrypt([]byte(material.privateKey), s.encryptionKey)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to encrypt private key: %v", err)
+	}
+	var mnemonicCiphertext []byte
+	if material.mnemonic != "" {
+		mnemonicCiphertext, err = utilcrypto.Encrypt([]byte(material.mnemonic), s.encryptionKey)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to encrypt mnemonic: %v", err)
+		}
+	}
+	record, err := s.store.CreateWallet(ctx, walletstore.CreateWalletRecordRequest{
+		Chain:                material.chain,
+		Address:              material.address,
+		AddressKey:           material.addressKey,
+		Alias:                normalizeWalletAlias(alias),
+		PrivateKeyCiphertext: privateKeyCiphertext,
+		MnemonicCiphertext:   mnemonicCiphertext,
+		Source:               material.source,
+		DerivationPath:       material.derivationPath,
+	})
+	if err != nil {
+		if errors.Is(err, walletstore.ErrWalletAlreadyExists) {
+			return nil, status.Errorf(codes.AlreadyExists, "wallet %s already exists for %s", material.address, material.chain)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to store wallet: %v", err)
+	}
+	return record, nil
+}
+
+func (s *Service) walletDetail(record *walletstore.WalletRecord, revealSecrets bool) (*v1alpha1.WalletDetail, error) {
+	item := record.ToDetail()
+	if !revealSecrets {
+		return item, nil
+	}
+	if len(s.encryptionKey) == 0 {
+		return nil, status.Error(codes.FailedPrecondition, "wallet encryption key is required")
+	}
+	privateKey, err := utilcrypto.Decrypt(record.PrivateKeyCiphertext, s.encryptionKey)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to decrypt private key: %v", err)
+	}
+	item.PrivateKey = string(privateKey)
+	if len(record.MnemonicCiphertext) > 0 {
+		mnemonic, err := utilcrypto.Decrypt(record.MnemonicCiphertext, s.encryptionKey)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to decrypt mnemonic: %v", err)
+		}
+		item.Mnemonic = string(mnemonic)
+	}
+	return item, nil
+}
+
+func normalizeWalletAlias(alias string) string {
+	return strings.TrimSpace(alias)
 }

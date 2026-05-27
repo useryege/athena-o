@@ -11,7 +11,7 @@ import (
 )
 
 func TestWalletStatusTransitions(t *testing.T) {
-	service := NewService(walletstore.NewSQLStore(nil))
+	service := NewService(walletstore.NewSQLStore(nil), testWalletEncryptionKey(t))
 
 	resp, err := service.GetWalletStatus(context.Background(), &apiclient.GetWalletStatusRequest{})
 	if err != nil {
@@ -45,8 +45,24 @@ func TestWalletStatusTransitions(t *testing.T) {
 }
 
 func TestWalletStartRequiresStore(t *testing.T) {
-	err := NewService(nil).Start()
+	err := NewService(nil, testWalletEncryptionKey(t)).Start()
 	if status.Code(err) != codes.FailedPrecondition {
 		t.Fatalf("Start error = %v, want FailedPrecondition", err)
 	}
+}
+
+func TestWalletStartRequiresEncryptionKey(t *testing.T) {
+	err := NewService(walletstore.NewSQLStore(nil), nil).Start()
+	if status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("Start error = %v, want FailedPrecondition", err)
+	}
+}
+
+func testWalletEncryptionKey(t *testing.T) []byte {
+	t.Helper()
+	key, err := EncryptionKeyFromPassphrase("test-wallet-key")
+	if err != nil {
+		t.Fatalf("encryption key: %v", err)
+	}
+	return key
 }

@@ -101,6 +101,7 @@ services:
     environment:
       ATHENA_BINARY_NAME: athena-wallet
       ATHENA_WALLET_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_WALLET_ENCRYPTION_KEY: ${ATHENA_WALLET_ENCRYPTION_KEY:?ATHENA_WALLET_ENCRYPTION_KEY is required}
       ATHENA_WALLET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wallet sslmode=disable
     command: ["athena", "--port", "8088"]
     expose:

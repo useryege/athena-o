@@ -6,6 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/alicebob/miniredis/v2 v2.35.0
+	github.com/anyproto/go-slip10 v1.0.1
 	github.com/bombsimon/logrusr/v4 v4.1.0
 	github.com/casbin/casbin/v2 v2.135.0
 	github.com/casbin/govaluate v1.10.0
@@ -40,6 +41,8 @@ require (
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
+	github.com/tyler-smith/go-bip32 v1.0.0
+	github.com/tyler-smith/go-bip39 v1.1.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.68.0
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.38.0
@@ -66,6 +69,8 @@ require (
 
 require (
 	cyphar.com/go-pathrs v0.2.1 // indirect
+	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
+	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect

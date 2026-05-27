@@ -5,6 +5,7 @@ import {NotificationService} from './notification-service';
 import {UserService} from './user-service';
 import {VersionService} from './version-service';
 import {ViewPreferencesService} from './view-preferences-service';
+import {WalletService} from './wallet-service';
 import {WormService} from './worm-service';
 
 export interface Services {
@@ -14,6 +15,7 @@ export interface Services {
     viewPreferences: ViewPreferencesService;
     version: VersionService;
     accounts: AccountsService;
+    wallet: WalletService;
     worm: WormService;
     notification: NotificationService;
 }
@@ -25,6 +27,7 @@ export const services: Services = {
     viewPreferences: new ViewPreferencesService(),
     version: new VersionService(),
     accounts: new AccountsService(),
+    wallet: new WalletService(),
     worm: new WormService(),
     notification: new NotificationService()
 };

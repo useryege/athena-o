@@ -65,6 +65,11 @@ func NewCommand() *cobra.Command {
 			errors.CheckError(err)
 			defer utilio.Close(store)
 
+			encryptionKey, err := wallet.EncryptionKeyFromPassphrase(env.StringFromEnv("ATHENA_WALLET_ENCRYPTION_KEY", ""))
+			if err != nil {
+				return err
+			}
+
 			metricsServer := metrics.NewMetricsServer()
 			metricsMux := http.NewServeMux()
 			metricsMux.Handle("/", metricsServer.GetHandler())
@@ -72,7 +77,7 @@ func NewCommand() *cobra.Command {
 				errors.CheckError(http.ListenAndServe(fmt.Sprintf("%s:%d", metricsHost, metricsPort), metricsMux))
 			}()
 
-			server, err := wallet.NewServer(wallet.ServerOpts{Store: store})
+			server, err := wallet.NewServer(wallet.ServerOpts{Store: store, EncryptionKey: encryptionKey})
 			if err != nil {
 				return err
 			}

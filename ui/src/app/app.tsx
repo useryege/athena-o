@@ -12,6 +12,7 @@ import notifications from './notifications';
 import projects from './projects';
 import sourcecodeBlacklistContracts from './sourcecode-blacklist-contracts';
 import settings from './settings';
+import wallet from './wallet';
 import walletBlacklist from './wallet-blacklist';
 import worm from './worm';
 import {Layout, ThemeWrapper} from './shared/components/layout/layout';
@@ -37,6 +38,7 @@ const routes: Routes = {
     '/projects': {component: projects.component},
     '/sourcecode-blacklist-contracts': {component: sourcecodeBlacklistContracts.component},
     '/bytecode-blacklist': {component: bytecodeBlacklist.component},
+    '/wallet': {component: wallet.component},
     '/wallet-blacklist': {component: walletBlacklist.component},
     '/worm': {component: worm.component},
     '/notifications': {component: notifications.component},
@@ -78,10 +80,16 @@ const navItems: NavItem[] = [
                 iconClassName: 'fa fa-cube'
             },
             {
-                title: 'Wallet',
+                title: 'Wallets',
+                tooltip: 'Manage wallet private keys',
+                path: '/wallet',
+                iconClassName: 'fa fa-wallet'
+            },
+            {
+                title: 'Wallet Blacklist',
                 tooltip: 'Manage wallet blacklist addresses',
                 path: '/wallet-blacklist',
-                iconClassName: 'fa fa-wallet'
+                iconClassName: 'fa fa-ban'
             }
         ]
     },
