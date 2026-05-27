@@ -6,7 +6,6 @@ import {CertificatesService} from './cert-service';
 import {ClustersService} from './clusters-service';
 import {ExtensionsService} from './extensions-service';
 import {GnuPGPublicKeyService} from './gpgkey-service';
-import {NotificationService} from './notification-service';
 import {ProjectsService} from './projects-service';
 import {RepositoriesService} from './repo-service';
 import {RepoCredsService} from './repocreds-service';
@@ -29,7 +28,6 @@ export interface Services {
     accounts: AccountsService;
     gpgkeys: GnuPGPublicKeyService;
     extensions: ExtensionsService;
-    notification: NotificationService;
     worm: WormService;
 }
 
@@ -48,7 +46,6 @@ export const services: Services = {
     accounts: new AccountsService(),
     gpgkeys: new GnuPGPublicKeyService(),
     extensions: new ExtensionsService(),
-    notification: new NotificationService(),
     worm: new WormService()
 };
 

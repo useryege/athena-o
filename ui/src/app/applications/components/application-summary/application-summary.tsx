@@ -26,7 +26,6 @@ import {ComparisonStatusIcon, HealthStatusIcon, syncStatusMessage, urlPattern, f
 import {ApplicationRetryOptions} from '../application-retry-options/application-retry-options';
 import {ApplicationRetryView} from '../application-retry-view/application-retry-view';
 import {Link} from 'react-router-dom';
-import {EditNotificationSubscriptions, useEditNotificationSubscriptions} from './edit-notification-subscriptions';
 import {EditAnnotations} from './edit-annotations';
 
 import './application-summary.scss';
@@ -62,9 +61,6 @@ export const ApplicationSummary = (props: ApplicationSummaryProps) => {
     const [destFormat, setDestFormat] = React.useState(initialState);
     const [, setChangeSync] = React.useState(false);
 
-    const notificationSubscriptions = useEditNotificationSubscriptions(app.metadata.annotations || {});
-    const updateApp = notificationSubscriptions.withNotificationSubscriptions(props.updateApp);
-
     const hasMultipleSources = app.spec.sources && app.spec.sources.length > 0;
     const isHydrator = app.spec.sourceHydrator && true;
     const repoType = source.repoURL.startsWith('oci://') ? 'oci' : (source.hasOwnProperty('chart') && 'helm') || 'git';
@@ -95,12 +91,7 @@ export const ApplicationSummary = (props: ApplicationSummaryProps) => {
                         .join(' ')}
                 </Expandable>
             ),
-            edit: (formApi: FormApi) => <EditAnnotations formApi={formApi} app={app} />
-        },
-        {
-            title: 'NOTIFICATION SUBSCRIPTIONS',
-            view: false, // eventually the subscription input values will be merged in 'ANNOTATIONS', therefore 'ANNOATIONS' section is responsible to represent subscription values,
-            edit: () => <EditNotificationSubscriptions {...notificationSubscriptions} />
+            edit: (formApi: FormApi) => <EditAnnotations formApi={formApi} />
         },
         {
             title: 'CLUSTER',
@@ -390,7 +381,7 @@ export const ApplicationSummary = (props: ApplicationSummaryProps) => {
                 }
 
                 updatedApp.spec.syncPolicy.automated = {prune, selfHeal, enabled: enable};
-                await updateApp(updatedApp, {validate: false});
+                await props.updateApp(updatedApp, {validate: false});
             } catch (e) {
                 ctx.notifications.show({
                     content: <ErrorNotification title={`Unable to "${confirmationTitle.replace(/\?/g, '')}:`} e={e} />,
@@ -478,7 +469,7 @@ export const ApplicationSummary = (props: ApplicationSummaryProps) => {
     return (
         <div className='application-summary'>
             <EditablePanel
-                save={updateApp}
+                save={props.updateApp}
                 view={hasMultipleSources ? <>This is a multi-source app, see the Sources tab for repository URLs and source-related information.</> : null}
                 validate={input => ({
                     'spec.project': !input.spec.project && 'Project name is required',
@@ -488,7 +479,6 @@ export const ApplicationSummary = (props: ApplicationSummaryProps) => {
                 values={app}
                 title={app.metadata.name.toLocaleUpperCase()}
                 items={attributes}
-                onModeSwitch={() => notificationSubscriptions.onResetNotificationSubscriptions()}
             />
             <Consumer>
                 {ctx => (
@@ -583,13 +573,12 @@ export const ApplicationSummary = (props: ApplicationSummaryProps) => {
             </Consumer>
             <BadgePanel app={props.app.metadata.name} appNamespace={props.app.metadata.namespace} nsEnabled={useAuthSettingsCtx?.appsInAnyNamespaceEnabled} />
             <EditablePanel
-                save={updateApp}
+                save={props.updateApp}
                 values={app}
                 title='INFO'
                 items={infoItems}
                 onModeSwitch={() => {
                     setAdjustedCount(0);
-                    notificationSubscriptions.onResetNotificationSubscriptions();
                 }}
             />
         </div>
