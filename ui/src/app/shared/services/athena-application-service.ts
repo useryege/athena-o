@@ -294,25 +294,6 @@ export interface UpdateBytecodeBlacklistContractNoteResponse {
     item?: BytecodeBlacklistContract;
 }
 
-export interface SourcecodeBlacklistContract {
-    contract?: string;
-    sourceHash?: string;
-    note?: string;
-    createdAt?: string;
-}
-
-export interface ListSourcecodeBlacklistContractsResponse {
-    items?: SourcecodeBlacklistContract[];
-}
-
-export interface AddSourcecodeBlacklistContractResponse {
-    item?: SourcecodeBlacklistContract;
-}
-
-export interface UpdateSourcecodeBlacklistContractNoteResponse {
-    item?: SourcecodeBlacklistContract;
-}
-
 export interface WalletBlacklistEntry {
     wallet?: string;
     note?: string;
@@ -541,59 +522,6 @@ export class AthenaApplicationService {
         const promise = req.then(() => {
             cachedBytecodeBlacklistContracts = undefined;
         }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listSourcecodeBlacklistContracts(): Promise<SourcecodeBlacklistContract[]> & {abort?: () => void} {
-        const req = requests.get('/source-code/blacklist-contracts');
-        const promise = req.then(res => {
-            const body = (res.body as ListSourcecodeBlacklistContractsResponse) || {};
-            const items = body.items || [];
-            return items.map(item => ({
-                contract: item.contract,
-                sourceHash: item.sourceHash ?? (item as any).source_hash,
-                note: item.note,
-                createdAt: item.createdAt ?? (item as any).created_at
-            }));
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public addSourcecodeBlacklistContract(contract: string, note: string): Promise<SourcecodeBlacklistContract> & {abort?: () => void} {
-        const req = requests.post('/source-code/blacklist-contracts').send({contract, note});
-        const promise = req.then(res => {
-            const item = ((res.body as AddSourcecodeBlacklistContractResponse) || {}).item || {};
-            return {
-                contract: item.contract,
-                sourceHash: item.sourceHash ?? (item as any).source_hash,
-                note: item.note,
-                createdAt: item.createdAt ?? (item as any).created_at
-            } as SourcecodeBlacklistContract;
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public updateSourcecodeBlacklistContractNote(contract: string, note: string): Promise<SourcecodeBlacklistContract> & {abort?: () => void} {
-        const req = requests.post(`/source-code/blacklist-contracts/${encodeURIComponent(contract)}/note`).send({contract, note});
-        const promise = req.then(res => {
-            const item = ((res.body as UpdateSourcecodeBlacklistContractNoteResponse) || {}).item || {};
-            return {
-                contract: item.contract,
-                sourceHash: item.sourceHash ?? (item as any).source_hash,
-                note: item.note,
-                createdAt: item.createdAt ?? (item as any).created_at
-            } as SourcecodeBlacklistContract;
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public deleteSourcecodeBlacklistContract(contract: string): Promise<void> & {abort?: () => void} {
-        const req = requests.delete(`/source-code/blacklist-contracts/${encodeURIComponent(contract)}`);
-        const promise = req.then(() => {}) as any;
         promise.abort = () => req.abort();
         return promise;
     }

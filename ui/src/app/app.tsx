@@ -10,7 +10,6 @@ import help from './help';
 import login from './login';
 import notifications from './notifications';
 import projects from './projects';
-import sourcecodeBlacklistContracts from './sourcecode-blacklist-contracts';
 import settings from './settings';
 import wallet from './wallet';
 import walletBlacklist from './wallet-blacklist';
@@ -36,7 +35,6 @@ type Routes = {[path: string]: {component: React.ComponentType<RouteComponentPro
 const routes: Routes = {
     '/login': {component: login.component as any, noLayout: true},
     '/projects': {component: projects.component},
-    '/sourcecode-blacklist-contracts': {component: sourcecodeBlacklistContracts.component},
     '/bytecode-blacklist': {component: bytecodeBlacklist.component},
     '/wallet': {component: wallet.component},
     '/wallet-blacklist': {component: walletBlacklist.component},
@@ -66,12 +64,6 @@ const navItems: NavItem[] = [
                 tooltip: 'View Athena projects',
                 path: '/projects',
                 iconClassName: 'fa fa-cubes'
-            },
-            {
-                title: 'SourceCode',
-                tooltip: 'Manage sourcecode blacklist contracts',
-                path: '/sourcecode-blacklist-contracts',
-                iconClassName: 'fa fa-code'
             },
             {
                 title: 'ByteCode',

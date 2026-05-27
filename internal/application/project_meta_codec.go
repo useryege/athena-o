@@ -62,7 +62,6 @@ func projectReportToStore(report ProjectReport) appstore.ProjectReport {
 		IsBlacklistedCreatorWallet: report.IsBlacklistedCreatorWallet,
 		IsBlacklistedGenesisWallet: report.IsBlacklistedGenesisWallet,
 		IsBlacklistedBytecode:      report.IsBlacklistedBytecode,
-		IsBlacklistedSourceCode:    report.IsBlacklistedSourceCode,
 		HasMintRisk:                report.HasMintRisk,
 	}
 }
@@ -73,7 +72,6 @@ func projectReportFromStore(report appstore.ProjectReport) ProjectReport {
 		IsBlacklistedCreatorWallet: report.IsBlacklistedCreatorWallet,
 		IsBlacklistedGenesisWallet: report.IsBlacklistedGenesisWallet,
 		IsBlacklistedBytecode:      report.IsBlacklistedBytecode,
-		IsBlacklistedSourceCode:    report.IsBlacklistedSourceCode,
 		HasMintRisk:                report.HasMintRisk,
 	}
 }

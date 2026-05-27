@@ -93,18 +93,6 @@ func (w *persistenceEventWriterFake) DeleteBytecodeBlacklistContract(context.Con
 	return w.err
 }
 
-func (w *persistenceEventWriterFake) AddSourcecodeBlacklistContract(context.Context, appstore.SourcecodeBlacklistContract) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) UpdateSourcecodeBlacklistContractNote(context.Context, common.Address, string) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) DeleteSourcecodeBlacklistContract(context.Context, common.Address) error {
-	return w.err
-}
-
 func (w *persistenceEventWriterFake) AddWalletBlacklistEntry(context.Context, appstore.WalletBlacklistEntry) error {
 	return w.err
 }

@@ -22,7 +22,6 @@ type ProjectReport struct {
 	IsBlacklistedCreatorWallet bool
 	IsBlacklistedGenesisWallet bool
 	IsBlacklistedBytecode      bool
-	IsBlacklistedSourceCode    bool
 	HasMintRisk                bool
 }
 

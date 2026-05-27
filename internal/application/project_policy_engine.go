@@ -4,7 +4,6 @@ package application
 // - wallet_blacklist_creator: creator wallet matches the wallet blacklist.
 // - wallet_blacklist_genesis_wallet: a genesis wallet matches the wallet blacklist.
 // - bytecode_blacklist: runtime code hash matches the bytecode blacklist.
-// - sourcecode_blacklist_contract: source code hash matches the sourcecode blacklist.
 // - simulate_result_mint_risk: creator simulation result has mint risk.
 
 import (
@@ -16,14 +15,12 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
 type ProjectPolicyFacts struct {
-	BytecodeBlacklist   map[common.Hash]struct{}
-	SourcecodeBlacklist map[common.Hash]struct{}
-	WalletBlacklist     map[common.Address]struct{}
+	BytecodeBlacklist map[common.Hash]struct{}
+	WalletBlacklist   map[common.Address]struct{}
 }
 
 type projectPolicyFactsSnapshot struct {
@@ -40,9 +37,8 @@ type ProjectPolicyRule interface {
 type projectPolicyEngineImpl struct {
 	projectCache ProjectSnapshotCache
 
-	bytecodeBlacklist   bytecodeBlacklistLister
-	sourcecodeBlacklist sourcecodeBlacklistContractLister
-	walletBlacklist     walletBlacklistLister
+	bytecodeBlacklist bytecodeBlacklistLister
+	walletBlacklist   walletBlacklistLister
 
 	persistencePublisher PersistenceEventPublisher
 	rules                []ProjectPolicyRule
@@ -53,10 +49,6 @@ type projectPolicyEngineImpl struct {
 
 type bytecodeBlacklistLister interface {
 	List(ctx context.Context) ([]appstore.BytecodeBlacklistContract, error)
-}
-
-type sourcecodeBlacklistContractLister interface {
-	List(ctx context.Context) ([]appstore.SourcecodeBlacklistContract, error)
 }
 
 type walletBlacklistLister interface {
@@ -70,21 +62,18 @@ type blacklistVersionReader interface {
 func NewProjectPolicyEngine(
 	projectCache ProjectSnapshotCache,
 	bytecodeBlacklist bytecodeBlacklistLister,
-	sourcecodeBlacklist sourcecodeBlacklistContractLister,
 	walletBlacklist walletBlacklistLister,
 	persistencePublisher PersistenceEventPublisher,
 ) ProjectPolicyEngine {
 	return &projectPolicyEngineImpl{
 		projectCache:         projectCache,
 		bytecodeBlacklist:    bytecodeBlacklist,
-		sourcecodeBlacklist:  sourcecodeBlacklist,
 		walletBlacklist:      walletBlacklist,
 		persistencePublisher: persistencePublisher,
 		rules: []ProjectPolicyRule{
 			walletBlacklistCreatorRule{},
 			walletBlacklistGenesisWalletRule{},
 			bytecodeBlacklistRule{},
-			sourcecodeBlacklistContractRule{},
 			simulateMintRiskRule{},
 		},
 	}
@@ -136,16 +125,6 @@ func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicy
 			facts.BytecodeBlacklist[item.CodeHash] = struct{}{}
 		}
 	}
-	if e.sourcecodeBlacklist != nil {
-		records, err := e.sourcecodeBlacklist.List(ctx)
-		if err != nil {
-			return facts, err
-		}
-		facts.SourcecodeBlacklist = make(map[common.Hash]struct{}, len(records))
-		for _, item := range records {
-			facts.SourcecodeBlacklist[item.SourceHash] = struct{}{}
-		}
-	}
 	if e.walletBlacklist != nil {
 		records, err := e.walletBlacklist.List(ctx)
 		if err != nil {
@@ -173,18 +152,14 @@ func (e *projectPolicyEngineImpl) blacklistFactsVersion(ctx context.Context) (st
 	if err != nil {
 		return "", false, err
 	}
-	sourcecodeVersion, sourcecodeOK, err := blacklistVersion(ctx, e.sourcecodeBlacklist)
-	if err != nil {
-		return "", false, err
-	}
 	walletVersion, walletOK, err := blacklistVersion(ctx, e.walletBlacklist)
 	if err != nil {
 		return "", false, err
 	}
-	if !bytecodeOK || !sourcecodeOK || !walletOK {
+	if !bytecodeOK || !walletOK {
 		return "", false, nil
 	}
-	return bytecodeVersion + "|" + sourcecodeVersion + "|" + walletVersion, true, nil
+	return bytecodeVersion + "|" + walletVersion, true, nil
 }
 
 func blacklistVersion(ctx context.Context, value any) (string, bool, error) {
@@ -208,12 +183,6 @@ func cloneProjectPolicyFacts(facts ProjectPolicyFacts) ProjectPolicyFacts {
 		cloned.BytecodeBlacklist = make(map[common.Hash]struct{}, len(facts.BytecodeBlacklist))
 		for key := range facts.BytecodeBlacklist {
 			cloned.BytecodeBlacklist[key] = struct{}{}
-		}
-	}
-	if facts.SourcecodeBlacklist != nil {
-		cloned.SourcecodeBlacklist = make(map[common.Hash]struct{}, len(facts.SourcecodeBlacklist))
-		for key := range facts.SourcecodeBlacklist {
-			cloned.SourcecodeBlacklist[key] = struct{}{}
 		}
 	}
 	if facts.WalletBlacklist != nil {
@@ -302,8 +271,6 @@ func markProjectReportRuleMatch(report *ProjectReport, ruleName string) {
 		report.IsBlacklistedGenesisWallet = true
 	case bytecodeBlacklistRule{}.Name():
 		report.IsBlacklistedBytecode = true
-	case sourcecodeBlacklistContractRule{}.Name():
-		report.IsBlacklistedSourceCode = true
 	case simulateMintRiskRule{}.Name():
 		report.HasMintRisk = true
 	}
@@ -341,26 +308,6 @@ func (r bytecodeBlacklistRule) Evaluate(_ context.Context, project *Project, fac
 	}
 	return true, map[string]any{
 		"code_bin_hash": strings.ToLower(project.Meta.CodeBinHash.Hex()),
-	}, nil
-}
-
-type sourcecodeBlacklistContractRule struct{}
-
-func (r sourcecodeBlacklistContractRule) Name() string { return "sourcecode_blacklist_contract" }
-
-func (r sourcecodeBlacklistContractRule) Evaluate(_ context.Context, project *Project, facts ProjectPolicyFacts) (bool, map[string]any, error) {
-	if project == nil || project.Meta.SourceCode == "" || len(facts.SourcecodeBlacklist) == 0 {
-		return false, nil, nil
-	}
-	sourceHash := project.Meta.SourceCodeHash
-	if sourceHash == (common.Hash{}) {
-		sourceHash = crypto.Keccak256Hash([]byte(project.Meta.SourceCode))
-	}
-	if _, ok := facts.SourcecodeBlacklist[sourceHash]; !ok {
-		return false, nil, nil
-	}
-	return true, map[string]any{
-		"source_hash": strings.ToLower(sourceHash.Hex()),
 	}, nil
 }
 

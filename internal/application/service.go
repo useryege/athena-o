@@ -56,7 +56,6 @@ type Service struct {
 	athenaFetcher         evm.AthenaFetcher
 	sourceQualityAnalyzer sourcequality.Analyzer
 	bytecodeBlacklist     appcache.BytecodeBlacklistModel
-	sourcecodeBlacklist   appcache.SourcecodeBlacklistContractModel
 	walletBlacklist       appcache.WalletBlacklistModel
 
 	store                appstore.Store
@@ -97,10 +96,6 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 	if s, ok := store.(appstore.BytecodeBlacklistContractStore); ok {
 		bytecodeStore = s
 	}
-	var sourcecodeStore appstore.SourcecodeBlacklistContractStore
-	if s, ok := store.(appstore.SourcecodeBlacklistContractStore); ok {
-		sourcecodeStore = s
-	}
 	var walletStore appstore.WalletBlacklistStore
 	if s, ok := store.(appstore.WalletBlacklistStore); ok {
 		walletStore = s
@@ -109,11 +104,6 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		bytecodeStore,
 		appcache.NewLayeredBytecodeBlacklistCache(appcache.NewLocalBytecodeBlacklistCache(), appcache.NewBytecodeBlacklistRedisCache(redisClient)),
 		newBytecodeBlacklistEventPublisher(persistenceBus),
-	)
-	sourcecodeBlacklist := appcache.NewSourcecodeBlacklistContractModel(
-		sourcecodeStore,
-		appcache.NewLayeredSourcecodeBlacklistContractCache(appcache.NewLocalSourcecodeBlacklistContractCache(), appcache.NewSourcecodeBlacklistContractRedisCache(redisClient)),
-		newSourcecodeBlacklistContractEventPublisher(persistenceBus),
 	)
 	walletBlacklist := appcache.NewWalletBlacklistModel(
 		walletStore,
@@ -127,7 +117,6 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		projectCache:          NewProjectSnapshotCache(redisClient),
 		sourceQualityAnalyzer: sourceQualityAnalyzer,
 		bytecodeBlacklist:     bytecodeBlacklist,
-		sourcecodeBlacklist:   sourcecodeBlacklist,
 		walletBlacklist:       walletBlacklist,
 		persistencePublisher:  persistenceBus,
 		persistenceBus:        persistenceBus,
@@ -239,12 +228,6 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		}
 	}
 
-	if s.sourcecodeBlacklist != nil {
-		if err := s.sourcecodeBlacklist.Load(ctx); err != nil {
-			return nil, nil, nil, err
-		}
-	}
-
 	if s.walletBlacklist != nil {
 		if err := s.walletBlacklist.Load(ctx); err != nil {
 			return nil, nil, nil, err
@@ -258,7 +241,6 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 	policyEngine := NewProjectPolicyEngine(
 		s.projectCache,
 		s.bytecodeBlacklist,
-		s.sourcecodeBlacklist,
 		s.walletBlacklist,
 		s.persistencePublisher,
 	)
@@ -531,109 +513,6 @@ func (s *Service) DeleteBytecodeBlacklistContract(ctx context.Context, req *appl
 	return &applicationpkg.DeleteBytecodeBlacklistContractResponse{}, nil
 }
 
-func (s *Service) ListSourcecodeBlacklistContracts(ctx context.Context, _ *applicationpkg.ListSourcecodeBlacklistContractsRequest) (*applicationpkg.ListSourcecodeBlacklistContractsResponse, error) {
-	if s.sourcecodeBlacklist == nil {
-		return &applicationpkg.ListSourcecodeBlacklistContractsResponse{}, nil
-	}
-
-	records, err := s.sourcecodeBlacklist.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]*applicationpkg.SourcecodeBlacklistContract, 0, len(records))
-	for _, record := range records {
-		items = append(items, sourcecodeBlacklistContractToAPI(record))
-	}
-	return &applicationpkg.ListSourcecodeBlacklistContractsResponse{Items: items}, nil
-}
-
-func (s *Service) AddSourcecodeBlacklistContract(ctx context.Context, req *applicationpkg.AddSourcecodeBlacklistContractRequest) (*applicationpkg.AddSourcecodeBlacklistContractResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-	if s.sourcecodeBlacklist == nil {
-		return &applicationpkg.AddSourcecodeBlacklistContractResponse{}, status.Error(codes.FailedPrecondition, "sourcecode blacklist contract store is not configured")
-	}
-
-	contract := common.HexToAddress(req.GetContract())
-	sourceCode, err := s.sourceCodeForContract(ctx, contract)
-	if err != nil {
-		return nil, err
-	}
-	if sourceCode == "" {
-		return nil, status.Errorf(codes.FailedPrecondition, "contract %s has empty source code", contract.Hex())
-	}
-
-	record := appstore.SourcecodeBlacklistContract{
-		Contract:   contract,
-		SourceHash: crypto.Keccak256Hash([]byte(sourceCode)),
-		Note:       req.GetNote(),
-		CreatedAt:  time.Now().UTC(),
-	}
-	if err := s.sourcecodeBlacklist.Add(ctx, record); err != nil {
-		if errors.Is(err, appstore.ErrSourcecodeBlacklistContractAlreadyExists) {
-			return nil, status.Errorf(codes.AlreadyExists, "sourcecode blacklist contract or source hash already exists for %s", contract.Hex())
-		}
-		return nil, err
-	}
-
-	items, err := s.sourcecodeBlacklist.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	created, found := findSourcecodeBlacklistContractInList(items, contract)
-	if !found {
-		return &applicationpkg.AddSourcecodeBlacklistContractResponse{Item: sourcecodeBlacklistContractToAPI(record)}, nil
-	}
-	return &applicationpkg.AddSourcecodeBlacklistContractResponse{Item: sourcecodeBlacklistContractToAPI(created)}, nil
-}
-
-func (s *Service) UpdateSourcecodeBlacklistContractNote(ctx context.Context, req *applicationpkg.UpdateSourcecodeBlacklistContractNoteRequest) (*applicationpkg.UpdateSourcecodeBlacklistContractNoteResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-	if s.sourcecodeBlacklist == nil {
-		return &applicationpkg.UpdateSourcecodeBlacklistContractNoteResponse{}, status.Error(codes.FailedPrecondition, "sourcecode blacklist contract store is not configured")
-	}
-
-	contract := common.HexToAddress(req.GetContract())
-	if err := s.sourcecodeBlacklist.UpdateNote(ctx, contract, req.GetNote()); err != nil {
-		if errors.Is(err, appstore.ErrSourcecodeBlacklistContractNotFound) {
-			return nil, status.Errorf(codes.NotFound, "sourcecode blacklist contract %s not found", contract.Hex())
-		}
-		return nil, err
-	}
-
-	items, err := s.sourcecodeBlacklist.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	updated, found := findSourcecodeBlacklistContractInList(items, contract)
-	if !found {
-		return nil, status.Errorf(codes.NotFound, "sourcecode blacklist contract %s not found", contract.Hex())
-	}
-	return &applicationpkg.UpdateSourcecodeBlacklistContractNoteResponse{Item: sourcecodeBlacklistContractToAPI(updated)}, nil
-}
-
-func (s *Service) DeleteSourcecodeBlacklistContract(ctx context.Context, req *applicationpkg.DeleteSourcecodeBlacklistContractRequest) (*applicationpkg.DeleteSourcecodeBlacklistContractResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-	if s.sourcecodeBlacklist == nil {
-		return &applicationpkg.DeleteSourcecodeBlacklistContractResponse{}, status.Error(codes.FailedPrecondition, "sourcecode blacklist contract store is not configured")
-	}
-
-	contract := common.HexToAddress(req.GetContract())
-	if err := s.sourcecodeBlacklist.Delete(ctx, contract); err != nil {
-		if errors.Is(err, appstore.ErrSourcecodeBlacklistContractNotFound) {
-			return nil, status.Errorf(codes.NotFound, "sourcecode blacklist contract %s not found", contract.Hex())
-		}
-		return nil, err
-	}
-	return &applicationpkg.DeleteSourcecodeBlacklistContractResponse{}, nil
-}
-
 func (s *Service) ListWalletBlacklistEntries(ctx context.Context, _ *applicationpkg.ListWalletBlacklistEntriesRequest) (*applicationpkg.ListWalletBlacklistEntriesResponse, error) {
 	if s.walletBlacklist == nil {
 		return &applicationpkg.ListWalletBlacklistEntriesResponse{}, nil
@@ -745,38 +624,6 @@ func findBytecodeBlacklistContractInList(items []appstore.BytecodeBlacklistContr
 	return appstore.BytecodeBlacklistContract{}, false
 }
 
-func findSourcecodeBlacklistContractInList(items []appstore.SourcecodeBlacklistContract, contract common.Address) (appstore.SourcecodeBlacklistContract, bool) {
-	for _, item := range items {
-		if item.Contract == contract {
-			return item, true
-		}
-	}
-	return appstore.SourcecodeBlacklistContract{}, false
-}
-
-func (s *Service) sourceCodeForContract(ctx context.Context, contract common.Address) (string, error) {
-	if s.projectCache != nil {
-		project, ok, err := s.projectCache.GetProject(ctx, contract)
-		if err != nil {
-			return "", err
-		}
-		if ok && project != nil {
-			return project.Meta.SourceCode, nil
-		}
-	}
-	if s.store == nil {
-		return "", status.Errorf(codes.NotFound, "project %s not found", contract.Hex())
-	}
-	meta, err := s.store.GetProjectMetaByContract(ctx, contract)
-	if err != nil {
-		return "", err
-	}
-	if meta == nil {
-		return "", status.Errorf(codes.NotFound, "project %s not found", contract.Hex())
-	}
-	return meta.SourceCode, nil
-}
-
 func findWalletBlacklistEntryInList(items []appstore.WalletBlacklistEntry, wallet common.Address) (appstore.WalletBlacklistEntry, bool) {
 	for _, item := range items {
 		if item.Wallet == wallet {
@@ -796,19 +643,6 @@ func bytecodeBlacklistContractToAPI(item appstore.BytecodeBlacklistContract) *ap
 		CodeHash:  item.CodeHash.Hex(),
 		Note:      item.Note,
 		CreatedAt: createdAt,
-	}
-}
-
-func sourcecodeBlacklistContractToAPI(item appstore.SourcecodeBlacklistContract) *applicationpkg.SourcecodeBlacklistContract {
-	createdAt := ""
-	if !item.CreatedAt.IsZero() {
-		createdAt = item.CreatedAt.UTC().Format(time.RFC3339Nano)
-	}
-	return &applicationpkg.SourcecodeBlacklistContract{
-		Contract:   item.Contract.Hex(),
-		SourceHash: item.SourceHash.Hex(),
-		Note:       item.Note,
-		CreatedAt:  createdAt,
 	}
 }
 

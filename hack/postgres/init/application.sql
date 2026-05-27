@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS project (
   report_is_blacklisted_creator_wallet BOOLEAN NOT NULL DEFAULT false,
   report_is_blacklisted_genesis_wallet BOOLEAN NOT NULL DEFAULT false,
   report_is_blacklisted_bytecode BOOLEAN NOT NULL DEFAULT false,
-  report_is_blacklisted_source_code BOOLEAN NOT NULL DEFAULT false,
   report_has_mint_risk BOOLEAN NOT NULL DEFAULT false,
   genesis_wallets_fetched_at TIMESTAMPTZ,
   creator_historical_projects_fetched_at TIMESTAMPTZ,
@@ -202,19 +201,6 @@ CREATE TABLE IF NOT EXISTS bytecode_blacklist_contract (
 
 CREATE INDEX IF NOT EXISTS bytecode_blacklist_contract_code_hash_idx
   ON bytecode_blacklist_contract (code_hash);
-
-CREATE TABLE IF NOT EXISTS sourcecode_blacklist_contract (
-  contract BYTEA PRIMARY KEY,
-  source_hash BYTEA NOT NULL,
-  note TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT sourcecode_blacklist_contract_contract_len CHECK (length(contract) = 20),
-  CONSTRAINT sourcecode_blacklist_contract_source_hash_len CHECK (length(source_hash) = 32),
-  CONSTRAINT sourcecode_blacklist_contract_source_hash_unique UNIQUE (source_hash)
-);
-
-CREATE INDEX IF NOT EXISTS sourcecode_blacklist_contract_source_hash_idx
-  ON sourcecode_blacklist_contract (source_hash);
 
 CREATE TABLE IF NOT EXISTS wallet_blacklist (
   wallet BYTEA PRIMARY KEY,

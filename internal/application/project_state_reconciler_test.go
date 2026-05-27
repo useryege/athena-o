@@ -452,15 +452,6 @@ func (p *persistencePublisherFake) PublishBytecodeBlacklistUpdateNote(context.Co
 func (p *persistencePublisherFake) PublishBytecodeBlacklistDelete(context.Context, common.Address) error {
 	return nil
 }
-func (p *persistencePublisherFake) PublishSourcecodeBlacklistContractAdd(context.Context, appstore.SourcecodeBlacklistContract) error {
-	return nil
-}
-func (p *persistencePublisherFake) PublishSourcecodeBlacklistContractUpdateNote(context.Context, common.Address, string) error {
-	return nil
-}
-func (p *persistencePublisherFake) PublishSourcecodeBlacklistContractDelete(context.Context, common.Address) error {
-	return nil
-}
 func (p *persistencePublisherFake) PublishWalletBlacklistAdd(context.Context, appstore.WalletBlacklistEntry) error {
 	return nil
 }

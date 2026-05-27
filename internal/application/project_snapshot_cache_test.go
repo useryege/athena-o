@@ -225,7 +225,6 @@ func TestRedisProjectSnapshotCachePersistsProjectReport(t *testing.T) {
 		IsBlacklistedCreatorWallet: true,
 		IsBlacklistedGenesisWallet: true,
 		IsBlacklistedBytecode:      true,
-		IsBlacklistedSourceCode:    true,
 		HasMintRisk:                true,
 	}
 

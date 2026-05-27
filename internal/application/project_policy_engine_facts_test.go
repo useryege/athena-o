@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -22,23 +21,6 @@ func (f *bytecodeBlacklistVersionedFake) List(context.Context) ([]appstore.Bytec
 }
 
 func (f *bytecodeBlacklistVersionedFake) Version(context.Context) (string, error) {
-	f.versionCalls++
-	return f.version, nil
-}
-
-type sourcecodeBlacklistVersionedFake struct {
-	items        []appstore.SourcecodeBlacklistContract
-	version      string
-	listCalls    int
-	versionCalls int
-}
-
-func (f *sourcecodeBlacklistVersionedFake) List(context.Context) ([]appstore.SourcecodeBlacklistContract, error) {
-	f.listCalls++
-	return append([]appstore.SourcecodeBlacklistContract(nil), f.items...), nil
-}
-
-func (f *sourcecodeBlacklistVersionedFake) Version(context.Context) (string, error) {
 	f.versionCalls++
 	return f.version, nil
 }
@@ -66,20 +48,14 @@ func TestProjectPolicyEngineBuildFactsCachesByBlacklistVersion(t *testing.T) {
 		items:   []appstore.BytecodeBlacklistContract{{CodeHash: bytecodeHash}},
 		version: "bytecode-v1",
 	}
-	sourcecodeHash := common.HexToHash("0x2222222222222222222222222222222222222222222222222222222222222222")
-	sourcecode := &sourcecodeBlacklistVersionedFake{
-		items:   []appstore.SourcecodeBlacklistContract{{SourceHash: sourcecodeHash}},
-		version: "sourcecode-v1",
-	}
 	walletAddress := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	wallet := &walletBlacklistVersionedFake{
 		items:   []appstore.WalletBlacklistEntry{{Wallet: walletAddress}},
 		version: "wallet-v1",
 	}
 	engine := &projectPolicyEngineImpl{
-		bytecodeBlacklist:   bytecode,
-		sourcecodeBlacklist: sourcecode,
-		walletBlacklist:     wallet,
+		bytecodeBlacklist: bytecode,
+		walletBlacklist:   wallet,
 	}
 
 	facts, err := engine.buildFacts(context.Background())
@@ -89,9 +65,6 @@ func TestProjectPolicyEngineBuildFactsCachesByBlacklistVersion(t *testing.T) {
 	if _, ok := facts.BytecodeBlacklist[bytecodeHash]; !ok {
 		t.Fatal("bytecode blacklist fact missing")
 	}
-	if _, ok := facts.SourcecodeBlacklist[sourcecodeHash]; !ok {
-		t.Fatal("sourcecode blacklist fact missing")
-	}
 	if _, ok := facts.WalletBlacklist[walletAddress]; !ok {
 		t.Fatal("wallet blacklist fact missing")
 	}
@@ -99,16 +72,16 @@ func TestProjectPolicyEngineBuildFactsCachesByBlacklistVersion(t *testing.T) {
 	if _, err := engine.buildFacts(context.Background()); err != nil {
 		t.Fatalf("buildFacts second: %v", err)
 	}
-	if bytecode.listCalls != 1 || sourcecode.listCalls != 1 || wallet.listCalls != 1 {
-		t.Fatalf("list calls = bytecode:%d sourcecode:%d wallet:%d, want all 1", bytecode.listCalls, sourcecode.listCalls, wallet.listCalls)
+	if bytecode.listCalls != 1 || wallet.listCalls != 1 {
+		t.Fatalf("list calls = bytecode:%d wallet:%d, want all 1", bytecode.listCalls, wallet.listCalls)
 	}
 
 	wallet.version = "wallet-v2"
 	if _, err := engine.buildFacts(context.Background()); err != nil {
 		t.Fatalf("buildFacts after version change: %v", err)
 	}
-	if bytecode.listCalls != 2 || sourcecode.listCalls != 2 || wallet.listCalls != 2 {
-		t.Fatalf("list calls after version change = bytecode:%d sourcecode:%d wallet:%d, want all 2", bytecode.listCalls, sourcecode.listCalls, wallet.listCalls)
+	if bytecode.listCalls != 2 || wallet.listCalls != 2 {
+		t.Fatalf("list calls after version change = bytecode:%d wallet:%d, want all 2", bytecode.listCalls, wallet.listCalls)
 	}
 }
 
@@ -128,15 +101,11 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 	creator := common.HexToAddress("0x0000000000000000000000000000000000000202")
 	genesisWallet := common.HexToAddress("0x0000000000000000000000000000000000000203")
 	codeBinHash := common.HexToHash("0x2020202020202020202020202020202020202020202020202020202020202020")
-	sourceCode := "contract Source {}"
-	sourceHash := crypto.Keccak256Hash([]byte(sourceCode))
 	project := &Project{
 		Meta: ProjectMeta{
-			Contract:       contract,
-			Creator:        creator,
-			SourceCode:     sourceCode,
-			SourceCodeHash: sourceHash,
-			CodeBinHash:    codeBinHash,
+			Contract:    contract,
+			Creator:     creator,
+			CodeBinHash: codeBinHash,
 			GenesisWallets: []GenesisWalletMeta{{
 				Wallet: genesisWallet,
 			}},
@@ -154,7 +123,6 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 			walletBlacklistCreatorRule{},
 			walletBlacklistGenesisWalletRule{},
 			bytecodeBlacklistRule{},
-			sourcecodeBlacklistContractRule{},
 			simulateMintRiskRule{},
 		},
 	}
@@ -162,9 +130,6 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 	if _, err := engine.evaluateRulesForProject(context.Background(), project, ProjectPolicyFacts{
 		BytecodeBlacklist: map[common.Hash]struct{}{
 			codeBinHash: {},
-		},
-		SourcecodeBlacklist: map[common.Hash]struct{}{
-			sourceHash: {},
 		},
 		WalletBlacklist: map[common.Address]struct{}{
 			creator:       {},
@@ -179,7 +144,6 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 		!report.IsBlacklistedCreatorWallet ||
 		!report.IsBlacklistedGenesisWallet ||
 		!report.IsBlacklistedBytecode ||
-		!report.IsBlacklistedSourceCode ||
 		!report.HasMintRisk {
 		t.Fatalf("project report = %+v, want all policy fields true", report)
 	}
@@ -197,7 +161,6 @@ func TestProjectPolicyEngineEvaluateRulesRecomputesProjectReport(t *testing.T) {
 			IsBlacklistedCreatorWallet: true,
 			IsBlacklistedGenesisWallet: true,
 			IsBlacklistedBytecode:      true,
-			IsBlacklistedSourceCode:    true,
 			HasMintRisk:                true,
 		},
 	}
@@ -210,7 +173,6 @@ func TestProjectPolicyEngineEvaluateRulesRecomputesProjectReport(t *testing.T) {
 			walletBlacklistCreatorRule{},
 			walletBlacklistGenesisWalletRule{},
 			bytecodeBlacklistRule{},
-			sourcecodeBlacklistContractRule{},
 			simulateMintRiskRule{},
 		},
 	}
