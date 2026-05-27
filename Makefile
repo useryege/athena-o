@@ -193,6 +193,7 @@ IMAGE_NAMESPACE?=
 PROD_IMAGE?=athena:local
 PROD_COMPOSE_FILE?=docker-compose.prod.yml
 PROD_ENV_FILE?=./.env
+PROD_CLEAR_DATA?=false
 REMOTE_APP_DIR?=/root/athena
 REMOTE_USER?=root
 PROD_LOG_SERVICE?=
@@ -612,7 +613,7 @@ prod-logs-local:
 # use http://127.0.0.1:8080
 .PHONY: prod-deploy-remote
 prod-deploy-remote: 
-	PROD_IMAGE=$(PROD_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) bash ./hack/prod-remote-deploy.sh
+	PROD_IMAGE=$(PROD_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) PROD_CLEAR_DATA=$(PROD_CLEAR_DATA) REMOTE_APP_DIR=$(REMOTE_APP_DIR) bash ./hack/prod-remote-deploy.sh
 
 .PHONY: prod-start-remote
 prod-start-remote:

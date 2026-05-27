@@ -7,6 +7,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${PROD_ENV_FILE:-${REPO_ROOT}/.env}"
 COMPOSE_FILE="${PROD_COMPOSE_FILE:-${REPO_ROOT}/docker-compose.prod.yml}"
 IMAGE="${PROD_IMAGE:-athena:local}"
+CLEAR_DATA="${PROD_CLEAR_DATA:-false}"
 REMOTE_USER="${REMOTE_USER:-root}"
 REMOTE_APP_DIR="${REMOTE_APP_DIR:-/root/athena}"
 
@@ -56,6 +57,11 @@ scp -r "${REPO_ROOT}/hack/postgres/init" "${REMOTE}:${REMOTE_APP_DIR}/hack/postg
 
 echo "Streaming Docker image ${IMAGE} to ${REMOTE}..."
 docker save "${IMAGE}" | ssh "${REMOTE}" "docker load"
+
+if [[ "${CLEAR_DATA}" == "true" ]]; then
+  echo "PROD_CLEAR_DATA=true: stopping remote stack and removing compose volumes..."
+  ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && docker compose -f docker-compose.prod.yml --env-file .env down --volumes"
+fi
 
 echo "Starting Athena on ${REMOTE}..."
 ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && docker compose -f docker-compose.prod.yml --env-file .env up -d"
