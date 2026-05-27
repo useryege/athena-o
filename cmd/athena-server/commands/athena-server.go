@@ -17,6 +17,7 @@ import (
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
 	"github.com/useryege/athena/pkg/stats"
 	cacheutil "github.com/useryege/athena/util/cache"
@@ -61,6 +62,7 @@ func NewCommand() *cobra.Command {
 		dexServerStrictTLS        bool
 		applicationServerAddress  string
 		notificationServerAddress string
+		walletServerAddress       string
 		wormServerAddress         string
 		// hydratorEnabled        bool
 		// syncWithReplaceAllowed bool
@@ -137,6 +139,7 @@ func NewCommand() *cobra.Command {
 
 			applicationclientset := applicationapiclient.NewApplicationClientset(applicationServerAddress)
 			notificationclientset := notificationapiclient.NewNotificationClientset(notificationServerAddress)
+			walletclientset := walletapiclient.NewWalletClientset(walletServerAddress)
 			wormclientset := wormapiclient.NewWormClientset(wormServerAddress)
 			log.Infof("waiting for athena application grpc service at %s", applicationServerAddress)
 			errors.CheckError(applicationapiclient.WaitForApplicationService(ctx, applicationServerAddress))
@@ -144,6 +147,9 @@ func NewCommand() *cobra.Command {
 			log.Infof("waiting for athena notification grpc service at %s", notificationServerAddress)
 			errors.CheckError(notificationapiclient.WaitForNotificationService(ctx, notificationServerAddress))
 			log.Infof("athena notification grpc service is ready at %s", notificationServerAddress)
+			log.Infof("waiting for athena wallet grpc service at %s", walletServerAddress)
+			errors.CheckError(walletapiclient.WaitForWalletService(ctx, walletServerAddress))
+			log.Infof("athena wallet grpc service is ready at %s", walletServerAddress)
 			log.Infof("waiting for athena worm grpc service at %s", wormServerAddress)
 			errors.CheckError(wormapiclient.WaitForWormService(ctx, wormServerAddress))
 			log.Infof("athena worm grpc service is ready at %s", wormServerAddress)
@@ -169,6 +175,7 @@ func NewCommand() *cobra.Command {
 				DexTLSConfig:          dexTLSConfig,
 				ApplicationClientset:  applicationclientset,
 				NotificationClientset: notificationclientset,
+				WalletClientset:       walletclientset,
 				WormClientset:         wormclientset,
 				// HydratorEnabled:        hydratorEnabled,
 				// SyncWithReplaceAllowed: syncWithReplaceAllowed,
@@ -239,6 +246,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().BoolVar(&dexServerStrictTLS, "dex-server-strict-tls", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_STRICT_TLS", false), "Perform strict validation of TLS certificates when connecting to dex server")
 	command.Flags().StringVar(&applicationServerAddress, "application-server-address", env.StringFromEnv("ATHENA_APPLICATION_SERVER_ADDRESS", "localhost:8082"), "Athena application server address")
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_NOTIFICATION_SERVER_ADDRESS", "localhost:8086"), "Athena notification server address")
+	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_WALLET_SERVER_ADDRESS", "localhost:8088"), "Athena wallet server address")
 	command.Flags().StringVar(&wormServerAddress, "worm-server-address", env.StringFromEnv("ATHENA_WORM_SERVER_ADDRESS", "localhost:8084"), "Athena worm server address")
 	// command.Flags().BoolVar(&hydratorEnabled, "hydrator-enabled", env.ParseBoolFromEnv("ATHENA_SERVER_HYDRATOR_ENABLED", false), "Feature flag to enable Hydrator. Default (\"false\")")
 	// command.Flags().BoolVar(&syncWithReplaceAllowed, "sync-with-replace-allowed", env.ParseBoolFromEnv("ATHENA_SERVER_SYNC_WITH_REPLACE_ALLOWED", true), "Whether to allow users to select replace for syncs from UI/CLI")

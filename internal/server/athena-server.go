@@ -52,7 +52,9 @@ import (
 	"github.com/useryege/athena/internal/server/session"
 	"github.com/useryege/athena/internal/server/settings"
 	"github.com/useryege/athena/internal/server/version"
+	serverwallet "github.com/useryege/athena/internal/server/wallet"
 	serverworm "github.com/useryege/athena/internal/server/worm"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
 	"github.com/useryege/athena/pkg/apiclient"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
@@ -94,6 +96,7 @@ import (
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
+	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	wormpkg "github.com/useryege/athena/pkg/apiclient/worm"
 )
 
@@ -216,6 +219,7 @@ type AthenaServerOpts struct {
 	ContentSecurityPolicy string
 	ApplicationClientset  applicationapiclient.Clientset
 	NotificationClientset notificationapiclient.Clientset
+	WalletClientset       walletapiclient.Clientset
 	WormClientset         wormapiclient.Clientset
 	// ApplicationNamespaces []string
 	// EnableProxyExtension  bool
@@ -454,6 +458,7 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
 	applicationpkg.RegisterApplicationServiceServer(grpcS, server.serviceSet.ApplicationService)
 	notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
+	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
 	wormpkg.RegisterWormServiceServer(grpcS, server.serviceSet.WormService)
 
 	// Register reflection service on gRPC server.
@@ -472,6 +477,7 @@ type AthenaServiceSet struct {
 	VersionService      *version.Server
 	ApplicationService  *application.Server
 	NotificationService *servernotification.Server
+	WalletService       *serverwallet.Server
 	WormService         *serverworm.Server
 }
 
@@ -494,6 +500,8 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	applicationService := application.NewServer(server.ApplicationClientset)
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
+	// wallet service
+	walletService := serverwallet.NewServer(server.WalletClientset)
 	// worm service
 	wormService := serverworm.NewServer(server.WormClientset)
 
@@ -519,6 +527,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		VersionService:      versionService,
 		ApplicationService:  applicationService,
 		NotificationService: notificationService,
+		WalletService:       walletService,
 		WormService:         wormService,
 	}
 }
@@ -852,6 +861,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, versionpkg.RegisterVersionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, applicationpkg.RegisterApplicationServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, notificationpkg.RegisterNotificationServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, walletpkg.RegisterWalletServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormpkg.RegisterWormServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, settingspkg.RegisterSettingsServiceHandler, gwmux, conn)

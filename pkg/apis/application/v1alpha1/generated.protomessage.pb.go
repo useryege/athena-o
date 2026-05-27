@@ -37,6 +37,8 @@ func (*SimulateResult) ProtoMessage() {}
 
 func (*TokenState) ProtoMessage() {}
 
+func (*WalletStatus) ProtoMessage() {}
+
 func (*WormMarketConfig) ProtoMessage() {}
 
 func (*WormMarketDetail) ProtoMessage() {}

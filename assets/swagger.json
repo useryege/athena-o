@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-435-gfc6d8f8-dirty"
+    "version": "v1.0.0-437-g497a631-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1016,6 +1016,29 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationUpdateWalletBlacklistEntryNoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/wallet/status": {
+      "get": {
+        "tags": [
+          "WalletService"
+        ],
+        "summary": "GetWalletStatus returns the wallet service runtime status.",
+        "operationId": "WalletService_GetWalletStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1WalletStatus"
             }
           },
           "default": {
@@ -2714,6 +2737,17 @@
           "type": "string"
         },
         "totalSupply": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1WalletStatus": {
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
           "type": "string"
         }
       }

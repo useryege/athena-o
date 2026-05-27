@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+// Wallet Service
+//
+// Wallet Service API returns wallet-level workload status.
+package wallet;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/wallet";
+
+// GetWalletStatusRequest queries the wallet service runtime status.
+message GetWalletStatusRequest {}
+
+service WalletService {
+  // GetWalletStatus returns the wallet service runtime status.
+  rpc GetWalletStatus(GetWalletStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletStatus) {
+    option (google.api.http) = {get: "/api/v1/wallet/status"};
+  }
+}

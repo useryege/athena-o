@@ -90,6 +90,22 @@ services:
     expose:
       - "8086"
 
+  athena-wallet:
+    image: athena:local
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-wallet
+      ATHENA_WALLET_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_WALLET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wallet sslmode=disable
+    command: ["athena", "--port", "8088"]
+    expose:
+      - "8088"
+
   athena-server:
     image: athena:local
     restart: unless-stopped
@@ -100,6 +116,8 @@ services:
         condition: service_started
       athena-notification:
         condition: service_started
+      athena-wallet:
+        condition: service_started
       athena-worm:
         condition: service_started
     env_file:
@@ -108,6 +126,7 @@ services:
       ATHENA_BINARY_NAME: athena-server
       ATHENA_APPLICATION_SERVER_ADDRESS: athena-application:8082
       ATHENA_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
+      ATHENA_WALLET_SERVER_ADDRESS: athena-wallet:8088
       ATHENA_WORM_SERVER_ADDRESS: athena-worm:8084
       ATHENA_SERVER_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_SERVER_INSECURE: ${ATHENA_SERVER_INSECURE:-true}

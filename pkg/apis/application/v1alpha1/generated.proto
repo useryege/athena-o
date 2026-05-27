@@ -460,6 +460,12 @@ message TokenState {
   optional bool isValidERC20 = 5;
 }
 
+message WalletStatus {
+  optional bool started = 1;
+
+  optional string status = 2;
+}
+
 message WormMarketConfig {
   optional string kind = 1;
 
