@@ -80,18 +80,18 @@ const navItems: NavItem[] = [
                 iconClassName: 'fa fa-cube'
             },
             {
-                title: 'Wallets',
-                tooltip: 'Manage wallet private keys',
-                path: '/wallet',
-                iconClassName: 'fa fa-wallet'
-            },
-            {
                 title: 'Wallet Blacklist',
                 tooltip: 'Manage wallet blacklist addresses',
                 path: '/wallet-blacklist',
                 iconClassName: 'fa fa-ban'
             }
         ]
+    },
+    {
+        title: 'Wallets',
+        tooltip: 'Manage wallet private keys',
+        path: '/wallet',
+        iconClassName: 'fa fa-wallet'
     },
     {
         title: 'Worm',
