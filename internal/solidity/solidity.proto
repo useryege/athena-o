@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+// Solidity Service API exposes contract source management runtime status.
+package athena.internal.solidity;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+
+option go_package = "github.com/useryege/athena/internal/solidity/apiclient";
+
+// GetSolidityStatusRequest queries the solidity service runtime status.
+message GetSolidityStatusRequest {}
+
+service SolidityService {
+  // GetSolidityStatus returns the solidity service runtime status.
+  rpc GetSolidityStatus(GetSolidityStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.SolidityStatus);
+}

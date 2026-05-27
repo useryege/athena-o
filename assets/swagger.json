@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-438-gc2ea654-dirty"
+    "version": "v1.0.0-440-gebad83a-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -768,6 +768,29 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/clusterSettings"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/status": {
+      "get": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "GetSolidityStatus returns the solidity service runtime status.",
+        "operationId": "SolidityService_GetSolidityStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1SolidityStatus"
             }
           },
           "default": {
@@ -2940,6 +2963,17 @@
         },
         "canMintViaTransferToWethPair": {
           "type": "boolean"
+        }
+      }
+    },
+    "v1alpha1SolidityStatus": {
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
         }
       }
     },

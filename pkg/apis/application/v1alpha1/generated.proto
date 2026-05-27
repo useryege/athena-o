@@ -448,6 +448,12 @@ message SimulateResult {
   optional bool canMintViaTransferToUsdtPair = 7;
 }
 
+message SolidityStatus {
+  optional bool started = 1;
+
+  optional string status = 2;
+}
+
 message TokenState {
   optional string name = 1;
 

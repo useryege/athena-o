@@ -51,9 +51,11 @@ import (
 	"github.com/useryege/athena/internal/server/rbacpolicy"
 	"github.com/useryege/athena/internal/server/session"
 	"github.com/useryege/athena/internal/server/settings"
+	serversolidity "github.com/useryege/athena/internal/server/solidity"
 	"github.com/useryege/athena/internal/server/version"
 	serverwallet "github.com/useryege/athena/internal/server/wallet"
 	serverworm "github.com/useryege/athena/internal/server/worm"
+	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
 	"github.com/useryege/athena/pkg/apiclient"
@@ -95,6 +97,7 @@ import (
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
+	soliditypkg "github.com/useryege/athena/pkg/apiclient/solidity"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	wormpkg "github.com/useryege/athena/pkg/apiclient/worm"
@@ -219,6 +222,7 @@ type AthenaServerOpts struct {
 	ContentSecurityPolicy string
 	ApplicationClientset  applicationapiclient.Clientset
 	NotificationClientset notificationapiclient.Clientset
+	SolidityClientset     solidityapiclient.Clientset
 	WalletClientset       walletapiclient.Clientset
 	WormClientset         wormapiclient.Clientset
 	// ApplicationNamespaces []string
@@ -458,6 +462,7 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
 	applicationpkg.RegisterApplicationServiceServer(grpcS, server.serviceSet.ApplicationService)
 	notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
+	soliditypkg.RegisterSolidityServiceServer(grpcS, server.serviceSet.SolidityService)
 	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
 	wormpkg.RegisterWormServiceServer(grpcS, server.serviceSet.WormService)
 
@@ -477,6 +482,7 @@ type AthenaServiceSet struct {
 	VersionService      *version.Server
 	ApplicationService  *application.Server
 	NotificationService *servernotification.Server
+	SolidityService     *serversolidity.Server
 	WalletService       *serverwallet.Server
 	WormService         *serverworm.Server
 }
@@ -500,6 +506,8 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	applicationService := application.NewServer(server.ApplicationClientset)
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
+	// solidity service
+	solidityService := serversolidity.NewServer(server.SolidityClientset)
 	// wallet service
 	walletService := serverwallet.NewServer(server.WalletClientset)
 	// worm service
@@ -527,6 +535,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		VersionService:      versionService,
 		ApplicationService:  applicationService,
 		NotificationService: notificationService,
+		SolidityService:     solidityService,
 		WalletService:       walletService,
 		WormService:         wormService,
 	}
@@ -861,6 +870,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, versionpkg.RegisterVersionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, applicationpkg.RegisterApplicationServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, notificationpkg.RegisterNotificationServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, soliditypkg.RegisterSolidityServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, walletpkg.RegisterWalletServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormpkg.RegisterWormServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)

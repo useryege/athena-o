@@ -35,6 +35,8 @@ func (*ProjectView) ProtoMessage() {}
 
 func (*SimulateResult) ProtoMessage() {}
 
+func (*SolidityStatus) ProtoMessage() {}
+
 func (*TokenState) ProtoMessage() {}
 
 func (*WalletDetail) ProtoMessage() {}

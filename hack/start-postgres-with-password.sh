@@ -15,6 +15,7 @@ POSTGRES_DATA_DIR="${ATHENA_POSTGRES_DATA_DIR:-/tmp/athena-local/postgres}"
 POSTGRES_INIT_DIR="${ATHENA_POSTGRES_INIT_DIR:-$REPO_ROOT/hack/postgres/init}"
 APPLICATION_DB="application"
 WORM_DB="worm"
+SOLIDITY_DB="solidity"
 NOTIFICATION_DB="notification"
 
 perf_opts=(
@@ -39,6 +40,7 @@ run_postgres_init() {
     local databases_sql="$POSTGRES_INIT_DIR/00-databases.sql"
     local application_sql="$POSTGRES_INIT_DIR/application.sql"
     local worm_sql="$POSTGRES_INIT_DIR/worm.sql"
+    local solidity_sql="$POSTGRES_INIT_DIR/solidity.sql"
     local notification_sql="$POSTGRES_INIT_DIR/notification.sql"
 
     if [ -f "$databases_sql" ]; then
@@ -47,6 +49,7 @@ run_postgres_init() {
     fi
     ensure_database "$APPLICATION_DB"
     ensure_database "$WORM_DB"
+    ensure_database "$SOLIDITY_DB"
     ensure_database "$NOTIFICATION_DB"
     if [ -f "$application_sql" ]; then
         echo "Running PostgreSQL init script: $application_sql"
@@ -55,6 +58,10 @@ run_postgres_init() {
     if [ -f "$worm_sql" ]; then
         echo "Running PostgreSQL init script: $worm_sql"
         PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$WORM_DB" -v ON_ERROR_STOP=1 -f "$worm_sql"
+    fi
+    if [ -f "$solidity_sql" ]; then
+        echo "Running PostgreSQL init script: $solidity_sql"
+        PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$SOLIDITY_DB" -v ON_ERROR_STOP=1 -f "$solidity_sql"
     fi
     if [ -f "$notification_sql" ]; then
         echo "Running PostgreSQL init script: $notification_sql"
