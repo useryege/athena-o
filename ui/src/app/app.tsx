@@ -89,6 +89,12 @@ const navItems: NavItem[] = [
                 tooltip: 'Manage bytecode blacklist entries',
                 path: '/solidity/bytecode-blacklist',
                 iconClassName: 'fa fa-ban'
+            },
+            {
+                title: 'Source Quality Prompts',
+                tooltip: 'Manage source quality prompts',
+                path: '/solidity/source-quality/prompts',
+                iconClassName: 'fa fa-clipboard-check'
             }
         ]
     },

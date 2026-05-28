@@ -11,7 +11,7 @@ import (
 )
 
 type Analyzer interface {
-	AnalyzeContractSource(ctx context.Context, sourceCode string) (string, error)
+	AnalyzeContractSource(ctx context.Context, systemPrompt string, sourceCode string) (string, error)
 }
 
 type Options struct {
@@ -32,9 +32,13 @@ func NewAnalyzer(client deepseek.Client, options Options) Analyzer {
 	}
 }
 
-func (a *analyzerImpl) AnalyzeContractSource(ctx context.Context, sourceCode string) (string, error) {
+func (a *analyzerImpl) AnalyzeContractSource(ctx context.Context, systemPrompt string, sourceCode string) (string, error) {
 	if a == nil || a.client == nil {
 		return "", status.Error(codes.FailedPrecondition, "DeepSeek analyzer is not configured")
+	}
+	systemPrompt = strings.TrimSpace(systemPrompt)
+	if systemPrompt == "" {
+		return "", status.Error(codes.InvalidArgument, "system prompt is empty")
 	}
 	sourceCode = strings.TrimSpace(sourceCode)
 	if sourceCode == "" {
@@ -60,7 +64,7 @@ func buildUserPrompt(sourceCode string) string {
 	return "请分析下面的 Solidity 合同源码，并输出质检报告：\n\n```solidity\n" + sourceCode + "\n```"
 }
 
-const systemPrompt = `你是资深智能合约安全与质检工程师。请对用户提供的 Solidity 合同源码进行静态审阅，输出中文 Markdown 纯文本质检报告。
+const DefaultSystemPrompt = `你是资深智能合约安全与质检工程师。请对用户提供的 Solidity 合同源码进行静态审阅，输出中文 Markdown 纯文本质检报告。
 
 报告必须覆盖：
 1. 合约概览

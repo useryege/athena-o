@@ -160,3 +160,89 @@ func (s *Server) DeleteBytecodeBlacklist(ctx context.Context, req *soliditypkg.D
 	}
 	return &soliditypkg.DeleteBytecodeBlacklistResponse{}, nil
 }
+
+func (s *Server) ListSourceQualityPrompts(ctx context.Context, _ *soliditypkg.ListSourceQualityPromptsRequest) (*soliditypkg.ListSourceQualityPromptsResponse, error) {
+	closer, client, err := s.solidityClientSet.NewSolidityServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListSourceQualityPrompts(ctx, &solidityapiclient.ListSourceQualityPromptsRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &soliditypkg.ListSourceQualityPromptsResponse{Items: resp.GetItems()}, nil
+}
+
+func (s *Server) GetSourceQualityPrompt(ctx context.Context, req *soliditypkg.GetSourceQualityPromptRequest) (*v1alpha1.SourceQualityPrompt, error) {
+	closer, client, err := s.solidityClientSet.NewSolidityServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	return client.GetSourceQualityPrompt(ctx, &solidityapiclient.GetSourceQualityPromptRequest{Id: req.GetId()})
+}
+
+func (s *Server) CreateSourceQualityPrompt(ctx context.Context, req *soliditypkg.CreateSourceQualityPromptRequest) (*soliditypkg.CreateSourceQualityPromptResponse, error) {
+	closer, client, err := s.solidityClientSet.NewSolidityServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.CreateSourceQualityPrompt(ctx, &solidityapiclient.CreateSourceQualityPromptRequest{
+		Name:         req.GetName(),
+		SystemPrompt: req.GetSystemPrompt(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &soliditypkg.CreateSourceQualityPromptResponse{Item: resp.GetItem()}, nil
+}
+
+func (s *Server) UpdateSourceQualityPrompt(ctx context.Context, req *soliditypkg.UpdateSourceQualityPromptRequest) (*soliditypkg.UpdateSourceQualityPromptResponse, error) {
+	closer, client, err := s.solidityClientSet.NewSolidityServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.UpdateSourceQualityPrompt(ctx, &solidityapiclient.UpdateSourceQualityPromptRequest{
+		Id:           req.GetId(),
+		Name:         req.GetName(),
+		SystemPrompt: req.GetSystemPrompt(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &soliditypkg.UpdateSourceQualityPromptResponse{Item: resp.GetItem()}, nil
+}
+
+func (s *Server) ActivateSourceQualityPrompt(ctx context.Context, req *soliditypkg.ActivateSourceQualityPromptRequest) (*soliditypkg.ActivateSourceQualityPromptResponse, error) {
+	closer, client, err := s.solidityClientSet.NewSolidityServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ActivateSourceQualityPrompt(ctx, &solidityapiclient.ActivateSourceQualityPromptRequest{Id: req.GetId()})
+	if err != nil {
+		return nil, err
+	}
+	return &soliditypkg.ActivateSourceQualityPromptResponse{Item: resp.GetItem()}, nil
+}
+
+func (s *Server) DeleteSourceQualityPrompt(ctx context.Context, req *soliditypkg.DeleteSourceQualityPromptRequest) (*soliditypkg.DeleteSourceQualityPromptResponse, error) {
+	closer, client, err := s.solidityClientSet.NewSolidityServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	if _, err := client.DeleteSourceQualityPrompt(ctx, &solidityapiclient.DeleteSourceQualityPromptRequest{Id: req.GetId()}); err != nil {
+		return nil, err
+	}
+	return &soliditypkg.DeleteSourceQualityPromptResponse{}, nil
+}

@@ -183,3 +183,137 @@ func TestAddBytecodeBlacklistEntryDuplicateReturnsExists(t *testing.T) {
 		t.Fatalf("expectations were not met: %v", err)
 	}
 }
+
+func TestCreateSourceQualityPrompt(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	now := time.Now().UTC()
+	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO source_quality_prompt (name, system_prompt, is_active)")).
+		WithArgs("prompt one", "system prompt", false).
+		WillReturnRows(sourceQualityPromptRows().AddRow(int64(1), int64(2), "prompt one", "system prompt", false, now, now))
+
+	item, err := NewSQLStore(db).CreateSourceQualityPrompt(context.Background(), " prompt one ", " system prompt ")
+	if err != nil {
+		t.Fatalf("create source quality prompt: %v", err)
+	}
+	if item.ID != 1 || item.Version != 2 || item.IsActive {
+		t.Fatalf("item = %#v, want inactive prompt version 2", item)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
+func TestUpdateActiveSourceQualityPromptCreatesActiveNewVersion(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	now := time.Now().UTC()
+	mock.ExpectBegin()
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, version, name, system_prompt, is_active, created_at, updated_at")).
+		WithArgs(int64(1)).
+		WillReturnRows(sourceQualityPromptRows().AddRow(int64(1), int64(3), "old", "old prompt", true, now, now))
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE source_quality_prompt")).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO source_quality_prompt (name, system_prompt, is_active)")).
+		WithArgs("new", "new prompt", true).
+		WillReturnRows(sourceQualityPromptRows().AddRow(int64(2), int64(4), "new", "new prompt", true, now, now))
+	mock.ExpectCommit()
+
+	item, err := NewSQLStore(db).UpdateSourceQualityPrompt(context.Background(), 1, "new", "new prompt")
+	if err != nil {
+		t.Fatalf("update source quality prompt: %v", err)
+	}
+	if item.ID != 2 || item.Version != 4 || !item.IsActive {
+		t.Fatalf("item = %#v, want active new version", item)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
+func TestActivateSourceQualityPrompt(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	now := time.Now().UTC()
+	mock.ExpectBegin()
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, version, name, system_prompt, is_active, created_at, updated_at")).
+		WithArgs(int64(2)).
+		WillReturnRows(sourceQualityPromptRows().AddRow(int64(2), int64(4), "candidate", "prompt", false, now, now))
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE source_quality_prompt")).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectQuery(regexp.QuoteMeta("UPDATE source_quality_prompt")).
+		WithArgs(int64(2)).
+		WillReturnRows(sourceQualityPromptRows().AddRow(int64(2), int64(4), "candidate", "prompt", true, now, now))
+	mock.ExpectCommit()
+
+	item, err := NewSQLStore(db).ActivateSourceQualityPrompt(context.Background(), 2)
+	if err != nil {
+		t.Fatalf("activate source quality prompt: %v", err)
+	}
+	if !item.IsActive {
+		t.Fatalf("item = %#v, want active", item)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
+func TestDeleteInactiveSourceQualityPromptSoftDeletes(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	now := time.Now().UTC()
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, version, name, system_prompt, is_active, created_at, updated_at")).
+		WithArgs(int64(3)).
+		WillReturnRows(sourceQualityPromptRows().AddRow(int64(3), int64(5), "inactive", "prompt", false, now, now))
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE source_quality_prompt")).
+		WithArgs(int64(3)).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	if err := NewSQLStore(db).DeleteSourceQualityPrompt(context.Background(), 3); err != nil {
+		t.Fatalf("delete source quality prompt: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
+func TestDeleteActiveSourceQualityPromptRejects(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer db.Close()
+
+	now := time.Now().UTC()
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, version, name, system_prompt, is_active, created_at, updated_at")).
+		WithArgs(int64(1)).
+		WillReturnRows(sourceQualityPromptRows().AddRow(int64(1), int64(2), "active", "prompt", true, now, now))
+
+	err = NewSQLStore(db).DeleteSourceQualityPrompt(context.Background(), 1)
+	if !errors.Is(err, ErrSourceQualityPromptActiveDelete) {
+		t.Fatalf("err = %v, want %v", err, ErrSourceQualityPromptActiveDelete)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expectations were not met: %v", err)
+	}
+}
+
+func sourceQualityPromptRows() *sqlmock.Rows {
+	return sqlmock.NewRows([]string{"id", "version", "name", "system_prompt", "is_active", "created_at", "updated_at"})
+}

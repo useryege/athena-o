@@ -4,6 +4,7 @@ import {Redirect, Route, RouteComponentProps, Switch} from 'react-router';
 import {BytecodeBlacklistContainer} from '../../bytecode-blacklist/components/bytecode-blacklist-container';
 import {BytecodeDetail} from './bytecode-detail';
 import {BytecodeList} from './bytecode-list';
+import {SourceQualityPromptList} from './source-quality-prompt-list';
 
 require('./solidity.scss');
 
@@ -13,5 +14,6 @@ export const SolidityContainer = (props: RouteComponentProps<any>) => (
         <Route exact={true} path={`${props.match.path}/bytecodes`} component={BytecodeList} />
         <Route exact={true} path={`${props.match.path}/bytecodes/:codeHash`} component={BytecodeDetail} />
         <Route path={`${props.match.path}/bytecode-blacklist`} component={BytecodeBlacklistContainer} />
+        <Route exact={true} path={`${props.match.path}/source-quality/prompts`} component={SourceQualityPromptList} />
     </Switch>
 );

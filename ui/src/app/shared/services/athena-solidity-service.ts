@@ -11,8 +11,19 @@ export interface ContractSourceInfo {
     sourceQualityReport?: string;
     sourceQualityReportFetchedAt?: string;
     sourceQualityReportOrigin?: string;
+    sourceQualityPromptVersion?: number;
     isOpenSource?: boolean;
     isBytecodeBlacklisted?: boolean;
+}
+
+export interface SourceQualityPrompt {
+    id?: number;
+    version?: number;
+    name?: string;
+    systemPrompt?: string;
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface BytecodeBlacklistEntry {
@@ -42,6 +53,7 @@ export interface BytecodeDetail extends BytecodeListItem {
     sourceQualityReport?: string;
     sourceQualityReportFetchedAt?: string;
     sourceQualityReportOrigin?: string;
+    sourceQualityPromptVersion?: number;
 }
 
 export interface BytecodeDeployment {
@@ -68,6 +80,14 @@ interface AddBytecodeBlacklistEntryResponse {
 
 interface UpdateBytecodeBlacklistNoteResponse {
     item?: BytecodeBlacklistEntry;
+}
+
+interface ListSourceQualityPromptsResponse {
+    items?: SourceQualityPrompt[];
+}
+
+interface SourceQualityPromptResponse {
+    item?: SourceQualityPrompt;
 }
 
 let cachedBytecodeBlacklistEntries: BytecodeBlacklistEntry[] | undefined;
@@ -105,7 +125,20 @@ function normalizeBytecodeDetail(item: BytecodeDetail | any): BytecodeDetail {
         sourceCodeOrigin: item.sourceCodeOrigin ?? item.source_code_origin,
         sourceQualityReport: item.sourceQualityReport ?? item.source_quality_report,
         sourceQualityReportFetchedAt: item.sourceQualityReportFetchedAt ?? item.source_quality_report_fetched_at,
-        sourceQualityReportOrigin: item.sourceQualityReportOrigin ?? item.source_quality_report_origin
+        sourceQualityReportOrigin: item.sourceQualityReportOrigin ?? item.source_quality_report_origin,
+        sourceQualityPromptVersion: item.sourceQualityPromptVersion ?? item.source_quality_prompt_version
+    };
+}
+
+function normalizeSourceQualityPrompt(item: SourceQualityPrompt | any): SourceQualityPrompt {
+    return {
+        id: item.id,
+        version: item.version,
+        name: item.name,
+        systemPrompt: item.systemPrompt ?? item.system_prompt,
+        isActive: item.isActive ?? item.is_active,
+        createdAt: item.createdAt ?? item.created_at,
+        updatedAt: item.updatedAt ?? item.updated_at
     };
 }
 
@@ -137,6 +170,7 @@ export class AthenaSolidityService {
                 sourceQualityReport: item.sourceQualityReport ?? item.source_quality_report,
                 sourceQualityReportFetchedAt: item.sourceQualityReportFetchedAt ?? item.source_quality_report_fetched_at,
                 sourceQualityReportOrigin: item.sourceQualityReportOrigin ?? item.source_quality_report_origin,
+                sourceQualityPromptVersion: item.sourceQualityPromptVersion ?? item.source_quality_prompt_version,
                 isOpenSource: item.isOpenSource ?? item.is_open_source,
                 isBytecodeBlacklisted: item.isBytecodeBlacklisted ?? item.is_bytecode_blacklisted
             } as ContractSourceInfo;
@@ -262,6 +296,53 @@ export class AthenaSolidityService {
         const promise = req.then(() => {
             cachedBytecodeBlacklistEntries = undefined;
         }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listSourceQualityPrompts(): Promise<SourceQualityPrompt[]> & {abort?: () => void} {
+        const req = requests.get('/solidity/source-quality/prompts');
+        const promise = req.then(res => {
+            const body = (res.body as ListSourceQualityPromptsResponse) || {};
+            return (body.items || []).map(normalizeSourceQualityPrompt);
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public createSourceQualityPrompt(name: string, systemPrompt: string): Promise<SourceQualityPrompt> & {abort?: () => void} {
+        const req = requests.post('/solidity/source-quality/prompts').send({
+            name,
+            systemPrompt,
+            system_prompt: systemPrompt
+        });
+        const promise = req.then(res => normalizeSourceQualityPrompt(((res.body as SourceQualityPromptResponse) || {}).item || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public updateSourceQualityPrompt(id: number, name: string, systemPrompt: string): Promise<SourceQualityPrompt> & {abort?: () => void} {
+        const req = requests.post(`/solidity/source-quality/prompts/${encodeURIComponent(String(id))}`).send({
+            id,
+            name,
+            systemPrompt,
+            system_prompt: systemPrompt
+        });
+        const promise = req.then(res => normalizeSourceQualityPrompt(((res.body as SourceQualityPromptResponse) || {}).item || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public activateSourceQualityPrompt(id: number): Promise<SourceQualityPrompt> & {abort?: () => void} {
+        const req = requests.post(`/solidity/source-quality/prompts/${encodeURIComponent(String(id))}/activate`).send({id});
+        const promise = req.then(res => normalizeSourceQualityPrompt(((res.body as SourceQualityPromptResponse) || {}).item || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public deleteSourceQualityPrompt(id: number): Promise<void> & {abort?: () => void} {
+        const req = requests.delete(`/solidity/source-quality/prompts/${encodeURIComponent(String(id))}`);
+        const promise = req.then(() => undefined) as any;
         promise.abort = () => req.abort();
         return promise;
     }

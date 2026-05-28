@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-443-g6564889-dirty"
+    "version": "v1.0.0-444-g3920afd-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -932,6 +932,200 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v1alpha1ContractSourceInfo"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/source-quality/prompts": {
+      "get": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "ListSourceQualityPrompts returns configured source quality prompts.",
+        "operationId": "SolidityService_ListSourceQualityPrompts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityListSourceQualityPromptsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "CreateSourceQualityPrompt creates a source quality prompt.",
+        "operationId": "SolidityService_CreateSourceQualityPrompt",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/solidityCreateSourceQualityPromptRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityCreateSourceQualityPromptResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/source-quality/prompts/{id}": {
+      "get": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "GetSourceQualityPrompt returns one source quality prompt.",
+        "operationId": "SolidityService_GetSourceQualityPrompt",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "UpdateSourceQualityPrompt creates a new source quality prompt version.",
+        "operationId": "SolidityService_UpdateSourceQualityPrompt",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/solidityUpdateSourceQualityPromptRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityUpdateSourceQualityPromptResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "DeleteSourceQualityPrompt soft deletes a source quality prompt.",
+        "operationId": "SolidityService_DeleteSourceQualityPrompt",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityDeleteSourceQualityPromptResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/source-quality/prompts/{id}/activate": {
+      "post": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "ActivateSourceQualityPrompt marks a prompt as current.",
+        "operationId": "SolidityService_ActivateSourceQualityPrompt",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/solidityActivateSourceQualityPromptRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityActivateSourceQualityPromptResponse"
             }
           },
           "default": {
@@ -2123,6 +2317,25 @@
         }
       }
     },
+    "solidityActivateSourceQualityPromptRequest": {
+      "description": "ActivateSourceQualityPromptRequest marks a prompt as current.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "solidityActivateSourceQualityPromptResponse": {
+      "description": "ActivateSourceQualityPromptResponse returns the activated prompt.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
+        }
+      }
+    },
     "solidityAddBytecodeBlacklistEntryRequest": {
       "description": "AddBytecodeBlacklistEntryRequest adds a bytecode blacklist entry by code hash or source contract.",
       "type": "object",
@@ -2151,8 +2364,33 @@
         }
       }
     },
+    "solidityCreateSourceQualityPromptRequest": {
+      "description": "CreateSourceQualityPromptRequest creates a source quality prompt.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "system_prompt": {
+          "type": "string"
+        }
+      }
+    },
+    "solidityCreateSourceQualityPromptResponse": {
+      "description": "CreateSourceQualityPromptResponse returns the created prompt.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
+        }
+      }
+    },
     "solidityDeleteBytecodeBlacklistResponse": {
       "description": "DeleteBytecodeBlacklistResponse is returned after deleting a bytecode blacklist entry.",
+      "type": "object"
+    },
+    "solidityDeleteSourceQualityPromptResponse": {
+      "description": "DeleteSourceQualityPromptResponse is returned after deleting a prompt.",
       "type": "object"
     },
     "solidityListBytecodeBlacklistEntriesResponse": {
@@ -2215,6 +2453,18 @@
         }
       }
     },
+    "solidityListSourceQualityPromptsResponse": {
+      "description": "ListSourceQualityPromptsResponse returns source quality prompt records.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
+          }
+        }
+      }
+    },
     "solidityUpdateBytecodeBlacklistNoteRequest": {
       "description": "UpdateBytecodeBlacklistNoteRequest updates a bytecode blacklist note.",
       "type": "object",
@@ -2233,6 +2483,31 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1BytecodeBlacklistEntry"
+        }
+      }
+    },
+    "solidityUpdateSourceQualityPromptRequest": {
+      "description": "UpdateSourceQualityPromptRequest creates a new source quality prompt version.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "system_prompt": {
+          "type": "string"
+        }
+      }
+    },
+    "solidityUpdateSourceQualityPromptResponse": {
+      "description": "UpdateSourceQualityPromptResponse returns the new prompt version.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
         }
       }
     },
@@ -2642,6 +2917,10 @@
         "sourceCodeOrigin": {
           "type": "string"
         },
+        "sourceQualityPromptVersion": {
+          "type": "integer",
+          "format": "int64"
+        },
         "sourceQualityReport": {
           "type": "string"
         },
@@ -2714,6 +2993,10 @@
         },
         "sourceCodeOrigin": {
           "type": "string"
+        },
+        "sourceQualityPromptVersion": {
+          "type": "integer",
+          "format": "int64"
         },
         "sourceQualityReport": {
           "type": "string"
@@ -3106,6 +3389,34 @@
         },
         "status": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1SourceQualityPrompt": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "systemPrompt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

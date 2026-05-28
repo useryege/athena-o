@@ -62,6 +62,30 @@ func (f *fakeSolidityServiceClient) DeleteBytecodeBlacklist(context.Context, *so
 	return nil, nil
 }
 
+func (f *fakeSolidityServiceClient) ListSourceQualityPrompts(context.Context, *solidityapiclient.ListSourceQualityPromptsRequest, ...grpc.CallOption) (*solidityapiclient.ListSourceQualityPromptsResponse, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) GetSourceQualityPrompt(context.Context, *solidityapiclient.GetSourceQualityPromptRequest, ...grpc.CallOption) (*v1alpha1.SourceQualityPrompt, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) CreateSourceQualityPrompt(context.Context, *solidityapiclient.CreateSourceQualityPromptRequest, ...grpc.CallOption) (*solidityapiclient.CreateSourceQualityPromptResponse, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) UpdateSourceQualityPrompt(context.Context, *solidityapiclient.UpdateSourceQualityPromptRequest, ...grpc.CallOption) (*solidityapiclient.UpdateSourceQualityPromptResponse, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) ActivateSourceQualityPrompt(context.Context, *solidityapiclient.ActivateSourceQualityPromptRequest, ...grpc.CallOption) (*solidityapiclient.ActivateSourceQualityPromptResponse, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) DeleteSourceQualityPrompt(context.Context, *solidityapiclient.DeleteSourceQualityPromptRequest, ...grpc.CallOption) (*solidityapiclient.DeleteSourceQualityPromptResponse, error) {
+	return nil, nil
+}
+
 func TestGetSolidityStatusForwardsResponse(t *testing.T) {
 	resp, err := NewServer(&fakeSolidityClientset{client: &fakeSolidityServiceClient{
 		statusResp: &v1alpha1.SolidityStatus{Started: true, Status: "running"},

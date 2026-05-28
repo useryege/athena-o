@@ -47,6 +47,8 @@ func (*SimulateResult) ProtoMessage() {}
 
 func (*SolidityStatus) ProtoMessage() {}
 
+func (*SourceQualityPrompt) ProtoMessage() {}
+
 func (*TokenState) ProtoMessage() {}
 
 func (*WalletDetail) ProtoMessage() {}

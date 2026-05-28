@@ -27,6 +27,7 @@ type Bytecode struct {
 	SourceQualityReport          string
 	SourceQualityReportFetchedAt time.Time
 	SourceQualityReportOrigin    string
+	SourceQualityPromptVersion   int64
 	CreatedAt                    time.Time
 	UpdatedAt                    time.Time
 }
@@ -106,7 +107,7 @@ func (s *SQLStore) GetBytecode(ctx context.Context, codeHash common.Hash) (*Byte
 	row := s.db.QueryRowContext(ctx, `
 SELECT code_hash, runtime_bytecode, source_code, source_code_hash, source_code_fetched_at,
   source_code_origin, source_quality_report, source_quality_report_fetched_at,
-  source_quality_report_origin, created_at, updated_at
+  source_quality_report_origin, source_quality_prompt_version, created_at, updated_at
 FROM bytecode
 WHERE code_hash = $1
 `, codeHash.Bytes())
@@ -136,15 +137,16 @@ WHERE code_hash = $1
 	return nil
 }
 
-func (s *SQLStore) UpdateBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, report string, origin string) error {
+func (s *SQLStore) UpdateBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, report string, origin string, promptVersion int64) error {
 	_, err := s.db.ExecContext(ctx, `
 UPDATE bytecode
 SET source_quality_report = $2,
   source_quality_report_fetched_at = now(),
   source_quality_report_origin = $3,
+  source_quality_prompt_version = $4,
   updated_at = now()
 WHERE code_hash = $1
-`, codeHash.Bytes(), report, nullableTrimmedText(origin))
+`, codeHash.Bytes(), report, nullableTrimmedText(origin), promptVersion)
 	if err != nil {
 		return fmt.Errorf("update bytecode source quality report: %w", err)
 	}
@@ -210,7 +212,7 @@ WITH deployment_counts AS (
 )
 SELECT b.code_hash, b.runtime_bytecode, b.source_code, b.source_code_hash, b.source_code_fetched_at,
   b.source_code_origin, b.source_quality_report, b.source_quality_report_fetched_at,
-  b.source_quality_report_origin, b.created_at, b.updated_at,
+  b.source_quality_report_origin, b.source_quality_prompt_version, b.created_at, b.updated_at,
   length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
   COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
   bl.code_hash IS NOT NULL AS is_bytecode_blacklisted
@@ -376,7 +378,7 @@ func scanBytecode(scanner rowScanner) (Bytecode, error) {
 		sourceQualityReportFetchedAt sql.NullTime
 		sourceQualityReportOrigin    sql.NullString
 	)
-	if err := scanner.Scan(&codeHash, &item.RuntimeBytecode, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &sourceCodeOrigin, &sourceQualityReport, &sourceQualityReportFetchedAt, &sourceQualityReportOrigin, &item.CreatedAt, &item.UpdatedAt); err != nil {
+	if err := scanner.Scan(&codeHash, &item.RuntimeBytecode, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &sourceCodeOrigin, &sourceQualityReport, &sourceQualityReportFetchedAt, &sourceQualityReportOrigin, &item.SourceQualityPromptVersion, &item.CreatedAt, &item.UpdatedAt); err != nil {
 		return Bytecode{}, fmt.Errorf("scan bytecode: %w", err)
 	}
 	item.CodeHash = common.BytesToHash(codeHash)
@@ -428,7 +430,7 @@ func scanBytecodeWithExtra(scanner rowScanner, extra ...any) (Bytecode, error) {
 		sourceQualityReportFetchedAt sql.NullTime
 		sourceQualityReportOrigin    sql.NullString
 	)
-	dest := []any{&codeHash, &item.RuntimeBytecode, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &sourceCodeOrigin, &sourceQualityReport, &sourceQualityReportFetchedAt, &sourceQualityReportOrigin, &item.CreatedAt, &item.UpdatedAt}
+	dest := []any{&codeHash, &item.RuntimeBytecode, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &sourceCodeOrigin, &sourceQualityReport, &sourceQualityReportFetchedAt, &sourceQualityReportOrigin, &item.SourceQualityPromptVersion, &item.CreatedAt, &item.UpdatedAt}
 	dest = append(dest, extra...)
 	if err := scanner.Scan(dest...); err != nil {
 		return Bytecode{}, err

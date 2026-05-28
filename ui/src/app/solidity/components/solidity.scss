@@ -174,6 +174,97 @@
     }
 }
 
+.solidity-source-quality-prompts {
+    .argo-container {
+        width: min(96vw, 1720px);
+        max-width: 1720px;
+        margin: 0 auto;
+    }
+
+    &__error {
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ffb3b3;
+        background: #fff1f1;
+        color: #7a1616;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    &__box {
+        padding: 1rem;
+    }
+
+    &__form {
+        display: grid;
+        grid-template-columns: minmax(14rem, 18rem) minmax(20rem, 1fr) auto;
+        gap: 0.75rem;
+        align-items: stretch;
+        margin-bottom: 1rem;
+    }
+
+    &__form textarea {
+        min-height: 8rem;
+        resize: vertical;
+    }
+
+    &__form-actions,
+    .actions {
+        display: flex;
+        gap: 0.4rem;
+        align-items: flex-start;
+        justify-content: flex-end;
+        white-space: nowrap;
+    }
+
+    &__table {
+        width: 100%;
+    }
+
+    &__row {
+        display: grid;
+        grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 1.4fr) minmax(0, 3fr) 260px;
+        gap: 0.75rem;
+        align-items: center;
+        width: 100%;
+    }
+
+    &__row > div {
+        min-width: 0;
+    }
+
+    &__prompt {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 3.25rem;
+        height: 1.35rem;
+        padding: 0 0.45rem;
+        border: 1px solid #d7dee5;
+        border-radius: 4px;
+        background: #f6f8fa;
+        color: #52616b;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    &__badge--active {
+        border-color: #9ed4b2;
+        background: #edf8f1;
+        color: #1f7a3d;
+    }
+}
+
 @media screen and (max-width: 900px) {
     .solidity-bytecode {
         &__controls {
@@ -196,6 +287,25 @@
 
         &__row {
             grid-template-columns: minmax(0, 2.4fr) minmax(0, 0.9fr) minmax(0, 0.8fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 1.2fr);
+        }
+    }
+
+    .solidity-source-quality-prompts {
+        &__form {
+            grid-template-columns: 1fr;
+        }
+
+        &__form-actions {
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        &__table {
+            overflow-x: auto;
+        }
+
+        &__row {
+            min-width: 980px;
         }
     }
 }

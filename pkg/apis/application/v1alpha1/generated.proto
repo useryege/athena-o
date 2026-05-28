@@ -262,6 +262,8 @@ message BytecodeDetail {
   optional string sourceQualityReportFetchedAt = 14;
 
   optional string sourceQualityReportOrigin = 15;
+
+  optional int64 sourceQualityPromptVersion = 16;
 }
 
 message BytecodeListItem {
@@ -304,6 +306,8 @@ message ContractSourceInfo {
   optional bool isOpenSource = 11;
 
   optional bool isBytecodeBlacklisted = 12;
+
+  optional int64 sourceQualityPromptVersion = 13;
 }
 
 message GenesisWalletAssetState {
@@ -528,6 +532,22 @@ message SolidityStatus {
   optional bool started = 1;
 
   optional string status = 2;
+}
+
+message SourceQualityPrompt {
+  optional int64 id = 1;
+
+  optional int64 version = 2;
+
+  optional string name = 3;
+
+  optional string systemPrompt = 4;
+
+  optional bool isActive = 5;
+
+  optional string createdAt = 6;
+
+  optional string updatedAt = 7;
 }
 
 message TokenState {

@@ -185,6 +185,10 @@ export const BytecodeDetail = (props: RouteComponentProps<BytecodeDetailRoutePar
                                         <span className='solidity-bytecode__label'>Report Updated</span>
                                         <span>{renderTime(detail?.sourceQualityReportFetchedAt)}</span>
                                     </div>
+                                    <div>
+                                        <span className='solidity-bytecode__label'>Prompt Version</span>
+                                        <span>{renderValue(detail?.sourceQualityPromptVersion)}</span>
+                                    </div>
                                 </div>
                                 <pre className='solidity-bytecode__code'>{detail?.sourceQualityReport || '-'}</pre>
                             </div>
@@ -200,7 +204,11 @@ export const BytecodeDetail = (props: RouteComponentProps<BytecodeDetailRoutePar
                                     </button>
                                 </form>
                                 <div className='solidity-bytecode__pager'>
-                                    <button type='button' className='argo-button argo-button--base-o' disabled={page <= 1 || loadingDeployments} onClick={() => loadDeployments(page - 1)}>
+                                    <button
+                                        type='button'
+                                        className='argo-button argo-button--base-o'
+                                        disabled={page <= 1 || loadingDeployments}
+                                        onClick={() => loadDeployments(page - 1)}>
                                         Previous
                                     </button>
                                     <span>

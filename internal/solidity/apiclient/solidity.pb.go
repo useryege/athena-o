@@ -861,6 +861,542 @@ func (m *DeleteBytecodeBlacklistResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteBytecodeBlacklistResponse proto.InternalMessageInfo
 
+// ListSourceQualityPromptsRequest queries all active prompt records.
+type ListSourceQualityPromptsRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListSourceQualityPromptsRequest) Reset()         { *m = ListSourceQualityPromptsRequest{} }
+func (m *ListSourceQualityPromptsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListSourceQualityPromptsRequest) ProtoMessage()    {}
+func (*ListSourceQualityPromptsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{15}
+}
+func (m *ListSourceQualityPromptsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListSourceQualityPromptsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListSourceQualityPromptsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListSourceQualityPromptsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSourceQualityPromptsRequest.Merge(m, src)
+}
+func (m *ListSourceQualityPromptsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListSourceQualityPromptsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListSourceQualityPromptsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListSourceQualityPromptsRequest proto.InternalMessageInfo
+
+// ListSourceQualityPromptsResponse returns source quality prompt records.
+type ListSourceQualityPromptsResponse struct {
+	Items                []*v1alpha1.SourceQualityPrompt `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
+	XXX_unrecognized     []byte                          `json:"-"`
+	XXX_sizecache        int32                           `json:"-"`
+}
+
+func (m *ListSourceQualityPromptsResponse) Reset()         { *m = ListSourceQualityPromptsResponse{} }
+func (m *ListSourceQualityPromptsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListSourceQualityPromptsResponse) ProtoMessage()    {}
+func (*ListSourceQualityPromptsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{16}
+}
+func (m *ListSourceQualityPromptsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListSourceQualityPromptsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListSourceQualityPromptsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListSourceQualityPromptsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSourceQualityPromptsResponse.Merge(m, src)
+}
+func (m *ListSourceQualityPromptsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListSourceQualityPromptsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListSourceQualityPromptsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListSourceQualityPromptsResponse proto.InternalMessageInfo
+
+func (m *ListSourceQualityPromptsResponse) GetItems() []*v1alpha1.SourceQualityPrompt {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+// GetSourceQualityPromptRequest queries one source quality prompt.
+type GetSourceQualityPromptRequest struct {
+	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetSourceQualityPromptRequest) Reset()         { *m = GetSourceQualityPromptRequest{} }
+func (m *GetSourceQualityPromptRequest) String() string { return proto.CompactTextString(m) }
+func (*GetSourceQualityPromptRequest) ProtoMessage()    {}
+func (*GetSourceQualityPromptRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{17}
+}
+func (m *GetSourceQualityPromptRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetSourceQualityPromptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetSourceQualityPromptRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetSourceQualityPromptRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetSourceQualityPromptRequest.Merge(m, src)
+}
+func (m *GetSourceQualityPromptRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetSourceQualityPromptRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetSourceQualityPromptRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetSourceQualityPromptRequest proto.InternalMessageInfo
+
+func (m *GetSourceQualityPromptRequest) GetId() int64 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+// CreateSourceQualityPromptRequest creates a new source quality prompt version.
+type CreateSourceQualityPromptRequest struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	SystemPrompt         string   `protobuf:"bytes,2,opt,name=system_prompt,json=systemPrompt,proto3" json:"system_prompt,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CreateSourceQualityPromptRequest) Reset()         { *m = CreateSourceQualityPromptRequest{} }
+func (m *CreateSourceQualityPromptRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateSourceQualityPromptRequest) ProtoMessage()    {}
+func (*CreateSourceQualityPromptRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{18}
+}
+func (m *CreateSourceQualityPromptRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CreateSourceQualityPromptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CreateSourceQualityPromptRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CreateSourceQualityPromptRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateSourceQualityPromptRequest.Merge(m, src)
+}
+func (m *CreateSourceQualityPromptRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CreateSourceQualityPromptRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateSourceQualityPromptRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateSourceQualityPromptRequest proto.InternalMessageInfo
+
+func (m *CreateSourceQualityPromptRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *CreateSourceQualityPromptRequest) GetSystemPrompt() string {
+	if m != nil {
+		return m.SystemPrompt
+	}
+	return ""
+}
+
+// CreateSourceQualityPromptResponse returns the created prompt.
+type CreateSourceQualityPromptResponse struct {
+	Item                 *v1alpha1.SourceQualityPrompt `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *CreateSourceQualityPromptResponse) Reset()         { *m = CreateSourceQualityPromptResponse{} }
+func (m *CreateSourceQualityPromptResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateSourceQualityPromptResponse) ProtoMessage()    {}
+func (*CreateSourceQualityPromptResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{19}
+}
+func (m *CreateSourceQualityPromptResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CreateSourceQualityPromptResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CreateSourceQualityPromptResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CreateSourceQualityPromptResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateSourceQualityPromptResponse.Merge(m, src)
+}
+func (m *CreateSourceQualityPromptResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CreateSourceQualityPromptResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateSourceQualityPromptResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateSourceQualityPromptResponse proto.InternalMessageInfo
+
+func (m *CreateSourceQualityPromptResponse) GetItem() *v1alpha1.SourceQualityPrompt {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+// UpdateSourceQualityPromptRequest creates a new version from an existing prompt.
+type UpdateSourceQualityPromptRequest struct {
+	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	SystemPrompt         string   `protobuf:"bytes,3,opt,name=system_prompt,json=systemPrompt,proto3" json:"system_prompt,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UpdateSourceQualityPromptRequest) Reset()         { *m = UpdateSourceQualityPromptRequest{} }
+func (m *UpdateSourceQualityPromptRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateSourceQualityPromptRequest) ProtoMessage()    {}
+func (*UpdateSourceQualityPromptRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{20}
+}
+func (m *UpdateSourceQualityPromptRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateSourceQualityPromptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateSourceQualityPromptRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateSourceQualityPromptRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateSourceQualityPromptRequest.Merge(m, src)
+}
+func (m *UpdateSourceQualityPromptRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateSourceQualityPromptRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateSourceQualityPromptRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateSourceQualityPromptRequest proto.InternalMessageInfo
+
+func (m *UpdateSourceQualityPromptRequest) GetId() int64 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+func (m *UpdateSourceQualityPromptRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *UpdateSourceQualityPromptRequest) GetSystemPrompt() string {
+	if m != nil {
+		return m.SystemPrompt
+	}
+	return ""
+}
+
+// UpdateSourceQualityPromptResponse returns the new prompt version.
+type UpdateSourceQualityPromptResponse struct {
+	Item                 *v1alpha1.SourceQualityPrompt `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *UpdateSourceQualityPromptResponse) Reset()         { *m = UpdateSourceQualityPromptResponse{} }
+func (m *UpdateSourceQualityPromptResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateSourceQualityPromptResponse) ProtoMessage()    {}
+func (*UpdateSourceQualityPromptResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{21}
+}
+func (m *UpdateSourceQualityPromptResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateSourceQualityPromptResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateSourceQualityPromptResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateSourceQualityPromptResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateSourceQualityPromptResponse.Merge(m, src)
+}
+func (m *UpdateSourceQualityPromptResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateSourceQualityPromptResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateSourceQualityPromptResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateSourceQualityPromptResponse proto.InternalMessageInfo
+
+func (m *UpdateSourceQualityPromptResponse) GetItem() *v1alpha1.SourceQualityPrompt {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+// ActivateSourceQualityPromptRequest marks a prompt as the current prompt.
+type ActivateSourceQualityPromptRequest struct {
+	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ActivateSourceQualityPromptRequest) Reset()         { *m = ActivateSourceQualityPromptRequest{} }
+func (m *ActivateSourceQualityPromptRequest) String() string { return proto.CompactTextString(m) }
+func (*ActivateSourceQualityPromptRequest) ProtoMessage()    {}
+func (*ActivateSourceQualityPromptRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{22}
+}
+func (m *ActivateSourceQualityPromptRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ActivateSourceQualityPromptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ActivateSourceQualityPromptRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ActivateSourceQualityPromptRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ActivateSourceQualityPromptRequest.Merge(m, src)
+}
+func (m *ActivateSourceQualityPromptRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ActivateSourceQualityPromptRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ActivateSourceQualityPromptRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ActivateSourceQualityPromptRequest proto.InternalMessageInfo
+
+func (m *ActivateSourceQualityPromptRequest) GetId() int64 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+// ActivateSourceQualityPromptResponse returns the activated prompt.
+type ActivateSourceQualityPromptResponse struct {
+	Item                 *v1alpha1.SourceQualityPrompt `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *ActivateSourceQualityPromptResponse) Reset()         { *m = ActivateSourceQualityPromptResponse{} }
+func (m *ActivateSourceQualityPromptResponse) String() string { return proto.CompactTextString(m) }
+func (*ActivateSourceQualityPromptResponse) ProtoMessage()    {}
+func (*ActivateSourceQualityPromptResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{23}
+}
+func (m *ActivateSourceQualityPromptResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ActivateSourceQualityPromptResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ActivateSourceQualityPromptResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ActivateSourceQualityPromptResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ActivateSourceQualityPromptResponse.Merge(m, src)
+}
+func (m *ActivateSourceQualityPromptResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ActivateSourceQualityPromptResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ActivateSourceQualityPromptResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ActivateSourceQualityPromptResponse proto.InternalMessageInfo
+
+func (m *ActivateSourceQualityPromptResponse) GetItem() *v1alpha1.SourceQualityPrompt {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+// DeleteSourceQualityPromptRequest soft deletes a source quality prompt.
+type DeleteSourceQualityPromptRequest struct {
+	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteSourceQualityPromptRequest) Reset()         { *m = DeleteSourceQualityPromptRequest{} }
+func (m *DeleteSourceQualityPromptRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteSourceQualityPromptRequest) ProtoMessage()    {}
+func (*DeleteSourceQualityPromptRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{24}
+}
+func (m *DeleteSourceQualityPromptRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteSourceQualityPromptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteSourceQualityPromptRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteSourceQualityPromptRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteSourceQualityPromptRequest.Merge(m, src)
+}
+func (m *DeleteSourceQualityPromptRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteSourceQualityPromptRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteSourceQualityPromptRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteSourceQualityPromptRequest proto.InternalMessageInfo
+
+func (m *DeleteSourceQualityPromptRequest) GetId() int64 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+// DeleteSourceQualityPromptResponse is returned after deleting a prompt.
+type DeleteSourceQualityPromptResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteSourceQualityPromptResponse) Reset()         { *m = DeleteSourceQualityPromptResponse{} }
+func (m *DeleteSourceQualityPromptResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteSourceQualityPromptResponse) ProtoMessage()    {}
+func (*DeleteSourceQualityPromptResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5a017c3c91d529b2, []int{25}
+}
+func (m *DeleteSourceQualityPromptResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteSourceQualityPromptResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteSourceQualityPromptResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteSourceQualityPromptResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteSourceQualityPromptResponse.Merge(m, src)
+}
+func (m *DeleteSourceQualityPromptResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteSourceQualityPromptResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteSourceQualityPromptResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteSourceQualityPromptResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*GetSolidityStatusRequest)(nil), "athena.internal.solidity.GetSolidityStatusRequest")
 	proto.RegisterType((*GetContractSourceInfoRequest)(nil), "athena.internal.solidity.GetContractSourceInfoRequest")
@@ -877,64 +1413,91 @@ func init() {
 	proto.RegisterType((*UpdateBytecodeBlacklistNoteResponse)(nil), "athena.internal.solidity.UpdateBytecodeBlacklistNoteResponse")
 	proto.RegisterType((*DeleteBytecodeBlacklistRequest)(nil), "athena.internal.solidity.DeleteBytecodeBlacklistRequest")
 	proto.RegisterType((*DeleteBytecodeBlacklistResponse)(nil), "athena.internal.solidity.DeleteBytecodeBlacklistResponse")
+	proto.RegisterType((*ListSourceQualityPromptsRequest)(nil), "athena.internal.solidity.ListSourceQualityPromptsRequest")
+	proto.RegisterType((*ListSourceQualityPromptsResponse)(nil), "athena.internal.solidity.ListSourceQualityPromptsResponse")
+	proto.RegisterType((*GetSourceQualityPromptRequest)(nil), "athena.internal.solidity.GetSourceQualityPromptRequest")
+	proto.RegisterType((*CreateSourceQualityPromptRequest)(nil), "athena.internal.solidity.CreateSourceQualityPromptRequest")
+	proto.RegisterType((*CreateSourceQualityPromptResponse)(nil), "athena.internal.solidity.CreateSourceQualityPromptResponse")
+	proto.RegisterType((*UpdateSourceQualityPromptRequest)(nil), "athena.internal.solidity.UpdateSourceQualityPromptRequest")
+	proto.RegisterType((*UpdateSourceQualityPromptResponse)(nil), "athena.internal.solidity.UpdateSourceQualityPromptResponse")
+	proto.RegisterType((*ActivateSourceQualityPromptRequest)(nil), "athena.internal.solidity.ActivateSourceQualityPromptRequest")
+	proto.RegisterType((*ActivateSourceQualityPromptResponse)(nil), "athena.internal.solidity.ActivateSourceQualityPromptResponse")
+	proto.RegisterType((*DeleteSourceQualityPromptRequest)(nil), "athena.internal.solidity.DeleteSourceQualityPromptRequest")
+	proto.RegisterType((*DeleteSourceQualityPromptResponse)(nil), "athena.internal.solidity.DeleteSourceQualityPromptResponse")
 }
 
 func init() { proto.RegisterFile("internal/solidity/solidity.proto", fileDescriptor_5a017c3c91d529b2) }
 
 var fileDescriptor_5a017c3c91d529b2 = []byte{
-	// 820 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x57, 0x4b, 0x4f, 0xe3, 0x56,
-	0x14, 0xd6, 0x25, 0xa1, 0x85, 0x83, 0x28, 0xea, 0x15, 0xa8, 0xc1, 0xa0, 0x10, 0x4c, 0x1f, 0x2c,
-	0x2a, 0x5b, 0x50, 0x09, 0xf5, 0x45, 0xa5, 0x02, 0x15, 0x50, 0xa1, 0xaa, 0x4a, 0xc4, 0xa6, 0x9b,
-	0xf4, 0x62, 0x1f, 0x92, 0x2b, 0x1c, 0xdb, 0xb5, 0x6f, 0x90, 0xc2, 0xbe, 0x8b, 0xd1, 0x48, 0x48,
-	0x23, 0xcd, 0x6a, 0x24, 0x76, 0x33, 0x3f, 0x61, 0xf6, 0xb3, 0x9c, 0xc5, 0x2c, 0xe6, 0x27, 0x8c,
-	0xf8, 0x25, 0x23, 0xdb, 0xd7, 0xce, 0xf3, 0x9a, 0x28, 0x99, 0x99, 0x15, 0x7e, 0x9c, 0xc7, 0xf7,
-	0x7d, 0xf7, 0xe4, 0x7c, 0x18, 0x2a, 0xdc, 0x15, 0x18, 0xb8, 0xcc, 0x31, 0x43, 0xcf, 0xe1, 0x36,
-	0x17, 0x9d, 0xec, 0xc2, 0xf0, 0x03, 0x4f, 0x78, 0xb4, 0xc4, 0x44, 0x13, 0x5d, 0x66, 0xa4, 0x81,
-	0x46, 0xfa, 0x5e, 0x3b, 0x69, 0x70, 0xd1, 0x6c, 0x5f, 0x18, 0x96, 0xd7, 0x32, 0xdb, 0x21, 0x06,
-	0x1d, 0x6c, 0xa0, 0x99, 0x44, 0x9b, 0xfe, 0x55, 0xc3, 0x64, 0x3e, 0x0f, 0x4d, 0xe6, 0xfb, 0x0e,
-	0xb7, 0x98, 0xe0, 0x9e, 0x6b, 0x5e, 0xef, 0x30, 0xc7, 0x6f, 0xb2, 0x1d, 0xb3, 0x81, 0x2e, 0x06,
-	0x4c, 0xa0, 0x9d, 0xf4, 0xd0, 0x35, 0x28, 0x1d, 0xa3, 0xa8, 0xc9, 0xc2, 0x35, 0xc1, 0x44, 0x3b,
-	0xac, 0xe2, 0x7f, 0x6d, 0x0c, 0x85, 0x7e, 0x0e, 0xeb, 0xc7, 0x28, 0x0e, 0x3d, 0x57, 0x04, 0xcc,
-	0x12, 0x35, 0xaf, 0x1d, 0x58, 0x78, 0xea, 0x5e, 0x7a, 0xf2, 0x3d, 0x5d, 0x85, 0x39, 0xab, 0xc9,
-	0xb8, 0x5b, 0xe7, 0x76, 0x89, 0x54, 0xc8, 0x76, 0xa1, 0xfa, 0x79, 0x7c, 0x7f, 0x6a, 0x53, 0x0d,
-	0xe6, 0x2c, 0x99, 0x57, 0x9a, 0xa9, 0x90, 0xed, 0xf9, 0x6a, 0x76, 0xaf, 0xdb, 0xb0, 0x7c, 0xc6,
-	0x43, 0x71, 0xd0, 0x11, 0x68, 0x79, 0x36, 0xa6, 0xed, 0x28, 0x85, 0xa2, 0xcf, 0x1a, 0x28, 0x4b,
-	0xc5, 0xd7, 0x74, 0x0d, 0xe6, 0xa3, 0xbf, 0xf5, 0x90, 0xdf, 0x60, 0x5c, 0xa8, 0x50, 0x9d, 0x8b,
-	0x1e, 0xd4, 0xf8, 0x4d, 0xfc, 0x32, 0x2a, 0x50, 0x6f, 0xb2, 0xb0, 0x59, 0x2a, 0xa4, 0x5d, 0x6c,
-	0x3c, 0x61, 0x61, 0x53, 0x7f, 0x45, 0x60, 0x65, 0xa0, 0x4d, 0xe8, 0x7b, 0x6e, 0x88, 0xf4, 0x5f,
-	0x98, 0xe5, 0x02, 0x5b, 0x61, 0x89, 0x54, 0x0a, 0xdb, 0x0b, 0xbb, 0x7f, 0x1a, 0x5d, 0x31, 0x8d,
-	0x54, 0x4c, 0x43, 0x4a, 0xef, 0x5f, 0x35, 0x8c, 0x48, 0x4c, 0xa3, 0x47, 0x4c, 0x23, 0x15, 0xd3,
-	0x48, 0x6b, 0x47, 0x7d, 0x4e, 0x05, 0xb6, 0xaa, 0x49, 0x61, 0xba, 0x0c, 0xb3, 0xc2, 0x13, 0xcc,
-	0x91, 0x88, 0x93, 0x9b, 0x8c, 0x5f, 0x41, 0xc5, 0xaf, 0xd8, 0xcf, 0x4f, 0xdf, 0x01, 0x7a, 0x8c,
-	0x19, 0x81, 0x54, 0xa6, 0x3e, 0xd6, 0x64, 0x80, 0xf5, 0x0b, 0x02, 0xe5, 0x5e, 0xd6, 0x47, 0xe8,
-	0x3b, 0x5e, 0xa7, 0x85, 0xae, 0x08, 0xc7, 0xc9, 0xcf, 0x30, 0xce, 0xa8, 0x30, 0x16, 0x06, 0xce,
-	0xa0, 0x77, 0x06, 0x8a, 0xea, 0x19, 0x98, 0x1d, 0x98, 0x81, 0x37, 0x04, 0x36, 0x94, 0x38, 0xe5,
-	0x39, 0x5d, 0xf4, 0x9f, 0xd3, 0xd9, 0xf4, 0xe7, 0xd4, 0xed, 0xf2, 0x81, 0x4f, 0xea, 0x1b, 0xd8,
-	0xea, 0x65, 0x73, 0xe0, 0x30, 0xeb, 0xca, 0xe1, 0xa1, 0xf8, 0xc3, 0x15, 0x01, 0xcf, 0x26, 0x5c,
-	0xbf, 0x25, 0xf0, 0x75, 0x7e, 0x9c, 0xa4, 0x7e, 0xd9, 0x4f, 0xfd, 0xef, 0xe9, 0xa9, 0xf7, 0xb5,
-	0xea, 0x48, 0xfa, 0xfa, 0x73, 0x02, 0x95, 0xdf, 0x6d, 0x5b, 0x11, 0x34, 0xce, 0xc0, 0x7c, 0x0b,
-	0x4b, 0x61, 0xbc, 0x18, 0xea, 0xd9, 0x18, 0x24, 0x52, 0x2e, 0x26, 0x8f, 0x0f, 0xe5, 0x30, 0x7c,
-	0xd7, 0x8d, 0x4b, 0x67, 0x22, 0xf9, 0xc5, 0x7e, 0x21, 0xe3, 0xe4, 0xd3, 0x48, 0x7b, 0xd7, 0x13,
-	0x89, 0xc4, 0xf3, 0xd5, 0xf8, 0x5a, 0x7f, 0x44, 0x60, 0x33, 0x07, 0xa6, 0x14, 0xcd, 0x86, 0x62,
-	0xc4, 0x2a, 0x86, 0xf8, 0x31, 0x34, 0x8b, 0xab, 0xeb, 0xe7, 0xa0, 0x9f, 0xfb, 0x36, 0x13, 0x38,
-	0x14, 0xf5, 0x97, 0x27, 0x70, 0xdc, 0x1f, 0x59, 0x4c, 0x71, 0xa6, 0x87, 0xe2, 0x63, 0x02, 0x5b,
-	0xb9, 0x75, 0x3f, 0x29, 0xc9, 0x7d, 0x28, 0x1f, 0xa1, 0x83, 0x23, 0xc0, 0x8c, 0xb5, 0x85, 0x36,
-	0x61, 0x43, 0x99, 0x9e, 0xf0, 0xd8, 0x7d, 0x09, 0xb0, 0x94, 0xb9, 0x0e, 0x06, 0xd7, 0xdc, 0x42,
-	0xfa, 0x84, 0xc0, 0x97, 0x43, 0x66, 0x44, 0x77, 0x0d, 0x95, 0x0d, 0x1a, 0x2a, 0xe7, 0xd2, 0x4e,
-	0x26, 0xd7, 0x65, 0xa0, 0xfb, 0x1d, 0x81, 0x95, 0x91, 0x26, 0x48, 0xf7, 0x72, 0x71, 0x29, 0x5d,
-	0x53, 0x9b, 0x62, 0x8f, 0x8d, 0x40, 0xe1, 0xc3, 0x62, 0x9f, 0xcb, 0x51, 0x43, 0x0d, 0x6b, 0x94,
-	0xeb, 0x6a, 0xe6, 0xd8, 0xf1, 0x72, 0x02, 0xff, 0x27, 0xb0, 0xd0, 0x63, 0x4b, 0xf4, 0xfb, 0x5c,
-	0x1d, 0x06, 0xdc, 0x6b, 0x9a, 0x93, 0xe9, 0x6e, 0x71, 0xc1, 0xb8, 0x43, 0x6f, 0x09, 0x7c, 0xa5,
-	0xb0, 0x10, 0xfa, 0xe3, 0x78, 0xa4, 0x86, 0xdd, 0x51, 0xfb, 0x69, 0x82, 0x4c, 0x29, 0xcc, 0x1d,
-	0x81, 0xf5, 0xbc, 0xed, 0x4e, 0xf7, 0xc7, 0xab, 0xad, 0x70, 0x0f, 0xed, 0xb7, 0x49, 0xd3, 0x25,
-	0xbe, 0xa7, 0x04, 0x56, 0x95, 0x5b, 0x94, 0xfe, 0xac, 0xae, 0xfe, 0x90, 0x43, 0x68, 0xbf, 0x4c,
-	0x94, 0x2b, 0x61, 0x3d, 0x23, 0xb0, 0x96, 0xb3, 0xf9, 0xe8, 0xaf, 0xea, 0xe2, 0x0f, 0x2f, 0x62,
-	0x6d, 0x7f, 0xc2, 0x6c, 0x09, 0x2e, 0x1a, 0x32, 0xc5, 0x2a, 0xcb, 0x1b, 0xb2, 0xfc, 0xe5, 0x99,
-	0x37, 0x64, 0x0f, 0xec, 0xcd, 0x83, 0xa3, 0xd7, 0xf7, 0x65, 0xf2, 0xf6, 0xbe, 0x4c, 0xde, 0xdd,
-	0x97, 0xc9, 0x3f, 0x7b, 0x39, 0xdf, 0x01, 0xc3, 0x9f, 0x17, 0xcc, 0xe7, 0x96, 0xc3, 0xd1, 0x15,
-	0x17, 0x9f, 0xc5, 0xff, 0xfc, 0xff, 0xf0, 0x3e, 0x00, 0x00, 0xff, 0xff, 0xe7, 0x8c, 0x98, 0xb4,
-	0x84, 0x0c, 0x00, 0x00,
+	// 1078 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x58, 0x4d, 0x6f, 0xe3, 0x44,
+	0x18, 0xd6, 0x24, 0x2d, 0xb4, 0xef, 0xd2, 0x5d, 0xed, 0x68, 0x17, 0xb2, 0xde, 0x25, 0xeb, 0x3a,
+	0x7c, 0xf4, 0x80, 0x6c, 0xb5, 0xa0, 0x05, 0x16, 0x8a, 0xb4, 0x6d, 0x51, 0x5b, 0xb4, 0xa0, 0x25,
+	0x55, 0x2f, 0x70, 0x08, 0x53, 0x7b, 0x36, 0x19, 0xd5, 0xb1, 0x8d, 0x3d, 0xa9, 0x94, 0xbd, 0xf3,
+	0x25, 0xa4, 0x95, 0x90, 0x38, 0x21, 0xad, 0xc4, 0x01, 0xfe, 0x07, 0x47, 0x0e, 0x08, 0xf1, 0x13,
+	0x50, 0x7f, 0x09, 0xb2, 0x3d, 0x76, 0xe2, 0x24, 0x33, 0xf6, 0x26, 0xa5, 0xa7, 0x38, 0xf6, 0xfb,
+	0xf5, 0x3c, 0xf3, 0x8c, 0xe7, 0x91, 0x41, 0x67, 0x1e, 0xa7, 0xa1, 0x47, 0x5c, 0x2b, 0xf2, 0x5d,
+	0xe6, 0x30, 0x3e, 0xcc, 0x2f, 0xcc, 0x20, 0xf4, 0xb9, 0x8f, 0x1b, 0x84, 0xf7, 0xa8, 0x47, 0xcc,
+	0x2c, 0xd0, 0xcc, 0x9e, 0x6b, 0x07, 0x5d, 0xc6, 0x7b, 0x83, 0x13, 0xd3, 0xf6, 0xfb, 0xd6, 0x20,
+	0xa2, 0xe1, 0x90, 0x76, 0xa9, 0x95, 0x46, 0x5b, 0xc1, 0x69, 0xd7, 0x22, 0x01, 0x8b, 0x2c, 0x12,
+	0x04, 0x2e, 0xb3, 0x09, 0x67, 0xbe, 0x67, 0x9d, 0x6d, 0x12, 0x37, 0xe8, 0x91, 0x4d, 0xab, 0x4b,
+	0x3d, 0x1a, 0x12, 0x4e, 0x9d, 0xb4, 0x87, 0xa1, 0x41, 0x63, 0x9f, 0xf2, 0x23, 0x51, 0xf8, 0x88,
+	0x13, 0x3e, 0x88, 0xda, 0xf4, 0xeb, 0x01, 0x8d, 0xb8, 0x71, 0x0c, 0x77, 0xf6, 0x29, 0xdf, 0xf5,
+	0x3d, 0x1e, 0x12, 0x9b, 0x1f, 0xf9, 0x83, 0xd0, 0xa6, 0x87, 0xde, 0x63, 0x5f, 0x3c, 0xc7, 0xb7,
+	0x60, 0xc5, 0xee, 0x11, 0xe6, 0x75, 0x98, 0xd3, 0x40, 0x3a, 0xda, 0xa8, 0xb7, 0x5f, 0x4c, 0xfe,
+	0x1f, 0x3a, 0x58, 0x83, 0x15, 0x5b, 0xe4, 0x35, 0x6a, 0x3a, 0xda, 0x58, 0x6d, 0xe7, 0xff, 0x0d,
+	0x07, 0x6e, 0x3c, 0x64, 0x11, 0xdf, 0x19, 0x72, 0x6a, 0xfb, 0x0e, 0xcd, 0xda, 0x61, 0x0c, 0x4b,
+	0x01, 0xe9, 0x52, 0x51, 0x2a, 0xb9, 0xc6, 0xb7, 0x61, 0x35, 0xfe, 0xed, 0x44, 0xec, 0x09, 0x4d,
+	0x0a, 0xd5, 0xdb, 0x2b, 0xf1, 0x8d, 0x23, 0xf6, 0x24, 0x79, 0x18, 0x17, 0xe8, 0xf4, 0x48, 0xd4,
+	0x6b, 0xd4, 0xb3, 0x2e, 0x0e, 0x3d, 0x20, 0x51, 0xcf, 0xf8, 0x03, 0xc1, 0xcd, 0x89, 0x36, 0x51,
+	0xe0, 0x7b, 0x11, 0xc5, 0x5f, 0xc1, 0x32, 0xe3, 0xb4, 0x1f, 0x35, 0x90, 0x5e, 0xdf, 0xb8, 0xb2,
+	0xf5, 0x89, 0x39, 0x22, 0xd3, 0xcc, 0xc8, 0x34, 0x05, 0xf5, 0xc1, 0x69, 0xd7, 0x8c, 0xc9, 0x34,
+	0xc7, 0xc8, 0x34, 0x33, 0x32, 0xcd, 0xac, 0x76, 0xdc, 0xe7, 0x90, 0xd3, 0x7e, 0x3b, 0x2d, 0x8c,
+	0x6f, 0xc0, 0x32, 0xf7, 0x39, 0x71, 0xc5, 0xc4, 0xe9, 0x9f, 0x1c, 0x5f, 0x5d, 0x86, 0x6f, 0xa9,
+	0x88, 0xcf, 0xd8, 0x04, 0xbc, 0x4f, 0x73, 0x00, 0x19, 0x4d, 0x05, 0xd4, 0x68, 0x02, 0xf5, 0xef,
+	0x08, 0x9a, 0xe3, 0xa8, 0xf7, 0x68, 0xe0, 0xfa, 0xc3, 0x3e, 0xf5, 0x78, 0x54, 0x25, 0x3f, 0x9f,
+	0xb1, 0x26, 0x9b, 0xb1, 0x3e, 0xb1, 0x06, 0xe3, 0x1a, 0x58, 0x92, 0x6b, 0x60, 0x79, 0x42, 0x03,
+	0x7f, 0x21, 0xb8, 0x2b, 0x9d, 0x53, 0xac, 0xd3, 0x49, 0x71, 0x9d, 0x1e, 0x2e, 0xbe, 0x4e, 0xa3,
+	0x2e, 0x17, 0xbc, 0x52, 0xaf, 0x43, 0x6b, 0x1c, 0xcd, 0x8e, 0x4b, 0xec, 0x53, 0x97, 0x45, 0xfc,
+	0x63, 0x8f, 0x87, 0x2c, 0x57, 0xb8, 0xf1, 0x14, 0xc1, 0x6b, 0xea, 0x38, 0x01, 0xfd, 0x71, 0x11,
+	0xfa, 0xa3, 0xc5, 0xa1, 0x17, 0x5a, 0x0d, 0x05, 0x7c, 0xe3, 0x37, 0x04, 0xfa, 0x03, 0xc7, 0x91,
+	0x04, 0x55, 0x11, 0xcc, 0x1b, 0x70, 0x2d, 0x4a, 0x5e, 0x0c, 0x9d, 0x5c, 0x06, 0x29, 0x95, 0x6b,
+	0xe9, 0xed, 0x5d, 0x21, 0x86, 0x37, 0x47, 0x71, 0x99, 0x26, 0xd2, 0x1d, 0x7b, 0x55, 0xc4, 0x89,
+	0xbb, 0x31, 0xf7, 0x9e, 0xcf, 0x53, 0x8a, 0x57, 0xdb, 0xc9, 0xb5, 0xf1, 0x03, 0x82, 0x75, 0xc5,
+	0x98, 0x82, 0x34, 0x07, 0x96, 0x62, 0x54, 0xc9, 0x88, 0xff, 0x07, 0x67, 0x49, 0x75, 0xe3, 0x18,
+	0x8c, 0xe3, 0xc0, 0x21, 0x9c, 0x4e, 0x45, 0x7d, 0xe6, 0x73, 0x5a, 0x75, 0x93, 0x25, 0x10, 0x6b,
+	0x63, 0x10, 0x7f, 0x44, 0xd0, 0x52, 0xd6, 0xbd, 0x54, 0x90, 0xdb, 0xd0, 0xdc, 0xa3, 0x2e, 0x9d,
+	0x31, 0x4c, 0xa5, 0xb7, 0xd0, 0x3a, 0xdc, 0x95, 0xa6, 0xa7, 0x38, 0xe2, 0x90, 0x78, 0x27, 0xa4,
+	0x87, 0xca, 0xe7, 0x03, 0xe2, 0x32, 0x3e, 0x7c, 0x14, 0xfa, 0xfd, 0x20, 0x7f, 0x51, 0x19, 0xdf,
+	0x21, 0xd0, 0xe5, 0x31, 0x82, 0x0f, 0xbb, 0xb8, 0x53, 0x3e, 0x9d, 0x9f, 0x90, 0x19, 0x6d, 0xb2,
+	0x6d, 0x62, 0xc1, 0xab, 0xc9, 0x21, 0x39, 0x1d, 0x20, 0xd8, 0xb8, 0x0a, 0xb5, 0xfc, 0x0c, 0xac,
+	0x31, 0xc7, 0xf8, 0x12, 0xf4, 0xdd, 0x90, 0x12, 0x4e, 0x15, 0x39, 0xb1, 0x0a, 0x48, 0x9f, 0x0a,
+	0xf2, 0x92, 0x6b, 0xdc, 0x82, 0xb5, 0x68, 0x18, 0x71, 0xda, 0xef, 0x04, 0x49, 0xac, 0x90, 0xc8,
+	0x4b, 0xe9, 0xcd, 0x34, 0xdf, 0xf8, 0x16, 0xc1, 0xba, 0xa2, 0xba, 0x20, 0x86, 0x14, 0x84, 0x72,
+	0xc1, 0xbc, 0xa4, 0x2a, 0x39, 0x05, 0x3d, 0x95, 0x6c, 0x75, 0x66, 0x72, 0xd4, 0x35, 0x15, 0xea,
+	0xba, 0x04, 0xb5, 0xa2, 0xdb, 0xe5, 0xa1, 0x7e, 0x07, 0x8c, 0x07, 0x36, 0x67, 0x67, 0xcf, 0x85,
+	0xdb, 0xf8, 0x1e, 0x41, 0x4b, 0x99, 0x76, 0x79, 0x00, 0xb6, 0x40, 0x4f, 0x77, 0xe7, 0x73, 0x8c,
+	0xdf, 0x82, 0x75, 0x45, 0x4e, 0x3a, 0xfb, 0xd6, 0xdf, 0xd7, 0xe1, 0x5a, 0xee, 0x24, 0x69, 0x78,
+	0xc6, 0x6c, 0x8a, 0x7f, 0x42, 0x70, 0x7d, 0xca, 0x60, 0xe2, 0x2d, 0x53, 0x66, 0x6d, 0x4d, 0x99,
+	0x1b, 0xd5, 0x0e, 0x16, 0xe1, 0xa2, 0xd0, 0xfd, 0x19, 0x82, 0x9b, 0x33, 0x8d, 0x2d, 0xbe, 0xa7,
+	0x9c, 0x4b, 0xea, 0x84, 0xb5, 0x05, 0xbc, 0xc9, 0x8c, 0x29, 0x02, 0x58, 0x2b, 0x38, 0x57, 0x6c,
+	0xca, 0xc7, 0x9a, 0xe5, 0xa4, 0x35, 0xab, 0x72, 0xbc, 0x50, 0xdd, 0x37, 0x08, 0xae, 0x8c, 0x59,
+	0x4d, 0xfc, 0x96, 0x92, 0x87, 0x09, 0x47, 0xba, 0xc8, 0xca, 0x8c, 0x9c, 0x19, 0x27, 0xcc, 0xc5,
+	0x4f, 0x11, 0xbc, 0x22, 0xb1, 0x85, 0xf8, 0xbd, 0x6a, 0xa0, 0xa6, 0x1d, 0xaf, 0xf6, 0xfe, 0x1c,
+	0x99, 0x82, 0x98, 0x67, 0x08, 0xee, 0xa8, 0x1c, 0x1b, 0xde, 0xae, 0x56, 0x5b, 0xe2, 0x08, 0xb5,
+	0x8f, 0xe6, 0x4d, 0x17, 0xf3, 0xfd, 0x8c, 0xe0, 0x96, 0xd4, 0x19, 0xe1, 0xfb, 0xf2, 0xea, 0x65,
+	0xae, 0x4f, 0xfb, 0x60, 0xae, 0x5c, 0x31, 0xd6, 0x2f, 0x08, 0x6e, 0x2b, 0xdc, 0x0c, 0xfe, 0x50,
+	0x5e, 0xbc, 0xdc, 0x5c, 0x69, 0xdb, 0x73, 0x66, 0x8b, 0xe1, 0x62, 0x91, 0x49, 0xec, 0x89, 0x4a,
+	0x64, 0x6a, 0x43, 0xa4, 0x12, 0x59, 0x89, 0x17, 0x8a, 0xdf, 0x91, 0x0d, 0x99, 0xd1, 0xc1, 0x25,
+	0xe2, 0x55, 0x18, 0x28, 0xed, 0xfe, 0x3c, 0xa9, 0x62, 0xa6, 0x5f, 0x11, 0xbc, 0x3c, 0xdb, 0xf3,
+	0xe0, 0x77, 0x4b, 0x5e, 0xde, 0xb2, 0x43, 0x45, 0xbb, 0xd8, 0xd3, 0x2c, 0xd1, 0xbe, 0xd4, 0x07,
+	0xa9, 0xb4, 0x5f, 0x66, 0xcd, 0x54, 0xda, 0x2f, 0x37, 0x5e, 0xf1, 0x58, 0x52, 0xa3, 0xa2, 0x1a,
+	0xab, 0xcc, 0x4b, 0xa9, 0xc6, 0x2a, 0x77, 0x46, 0xf1, 0x96, 0x54, 0x18, 0x10, 0xd5, 0x96, 0x2c,
+	0xb7, 0x3b, 0xaa, 0x2d, 0x59, 0xc5, 0xf5, 0xc4, 0x9c, 0x49, 0xfd, 0x85, 0x8a, 0xb3, 0x32, 0x23,
+	0xa3, 0xe2, 0xac, 0xd4, 0xd0, 0xec, 0xec, 0xfd, 0x79, 0xde, 0x44, 0xff, 0x9c, 0x37, 0xd1, 0xbf,
+	0xe7, 0x4d, 0xf4, 0xc5, 0x3d, 0xc5, 0x47, 0xb7, 0xe9, 0x6f, 0x79, 0x24, 0x60, 0xb6, 0xcb, 0xa8,
+	0xc7, 0x4f, 0x5e, 0x48, 0xbe, 0xb4, 0xbd, 0xfd, 0x5f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xb1, 0xd0,
+	0x60, 0xa9, 0xf1, 0x13, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -967,6 +1530,18 @@ type SolidityServiceClient interface {
 	UpdateBytecodeBlacklistNote(ctx context.Context, in *UpdateBytecodeBlacklistNoteRequest, opts ...grpc.CallOption) (*UpdateBytecodeBlacklistNoteResponse, error)
 	// DeleteBytecodeBlacklist deletes a bytecode blacklist entry.
 	DeleteBytecodeBlacklist(ctx context.Context, in *DeleteBytecodeBlacklistRequest, opts ...grpc.CallOption) (*DeleteBytecodeBlacklistResponse, error)
+	// ListSourceQualityPrompts returns configured source quality prompts.
+	ListSourceQualityPrompts(ctx context.Context, in *ListSourceQualityPromptsRequest, opts ...grpc.CallOption) (*ListSourceQualityPromptsResponse, error)
+	// GetSourceQualityPrompt returns one source quality prompt.
+	GetSourceQualityPrompt(ctx context.Context, in *GetSourceQualityPromptRequest, opts ...grpc.CallOption) (*v1alpha1.SourceQualityPrompt, error)
+	// CreateSourceQualityPrompt creates a source quality prompt.
+	CreateSourceQualityPrompt(ctx context.Context, in *CreateSourceQualityPromptRequest, opts ...grpc.CallOption) (*CreateSourceQualityPromptResponse, error)
+	// UpdateSourceQualityPrompt creates a new prompt version.
+	UpdateSourceQualityPrompt(ctx context.Context, in *UpdateSourceQualityPromptRequest, opts ...grpc.CallOption) (*UpdateSourceQualityPromptResponse, error)
+	// ActivateSourceQualityPrompt marks a prompt as current.
+	ActivateSourceQualityPrompt(ctx context.Context, in *ActivateSourceQualityPromptRequest, opts ...grpc.CallOption) (*ActivateSourceQualityPromptResponse, error)
+	// DeleteSourceQualityPrompt soft deletes a source quality prompt.
+	DeleteSourceQualityPrompt(ctx context.Context, in *DeleteSourceQualityPromptRequest, opts ...grpc.CallOption) (*DeleteSourceQualityPromptResponse, error)
 }
 
 type solidityServiceClient struct {
@@ -1058,6 +1633,60 @@ func (c *solidityServiceClient) DeleteBytecodeBlacklist(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *solidityServiceClient) ListSourceQualityPrompts(ctx context.Context, in *ListSourceQualityPromptsRequest, opts ...grpc.CallOption) (*ListSourceQualityPromptsResponse, error) {
+	out := new(ListSourceQualityPromptsResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/ListSourceQualityPrompts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) GetSourceQualityPrompt(ctx context.Context, in *GetSourceQualityPromptRequest, opts ...grpc.CallOption) (*v1alpha1.SourceQualityPrompt, error) {
+	out := new(v1alpha1.SourceQualityPrompt)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/GetSourceQualityPrompt", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) CreateSourceQualityPrompt(ctx context.Context, in *CreateSourceQualityPromptRequest, opts ...grpc.CallOption) (*CreateSourceQualityPromptResponse, error) {
+	out := new(CreateSourceQualityPromptResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/CreateSourceQualityPrompt", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) UpdateSourceQualityPrompt(ctx context.Context, in *UpdateSourceQualityPromptRequest, opts ...grpc.CallOption) (*UpdateSourceQualityPromptResponse, error) {
+	out := new(UpdateSourceQualityPromptResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/UpdateSourceQualityPrompt", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) ActivateSourceQualityPrompt(ctx context.Context, in *ActivateSourceQualityPromptRequest, opts ...grpc.CallOption) (*ActivateSourceQualityPromptResponse, error) {
+	out := new(ActivateSourceQualityPromptResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/ActivateSourceQualityPrompt", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) DeleteSourceQualityPrompt(ctx context.Context, in *DeleteSourceQualityPromptRequest, opts ...grpc.CallOption) (*DeleteSourceQualityPromptResponse, error) {
+	out := new(DeleteSourceQualityPromptResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.solidity.SolidityService/DeleteSourceQualityPrompt", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SolidityServiceServer is the server API for SolidityService service.
 type SolidityServiceServer interface {
 	// GetSolidityStatus returns the solidity service runtime status.
@@ -1078,6 +1707,18 @@ type SolidityServiceServer interface {
 	UpdateBytecodeBlacklistNote(context.Context, *UpdateBytecodeBlacklistNoteRequest) (*UpdateBytecodeBlacklistNoteResponse, error)
 	// DeleteBytecodeBlacklist deletes a bytecode blacklist entry.
 	DeleteBytecodeBlacklist(context.Context, *DeleteBytecodeBlacklistRequest) (*DeleteBytecodeBlacklistResponse, error)
+	// ListSourceQualityPrompts returns configured source quality prompts.
+	ListSourceQualityPrompts(context.Context, *ListSourceQualityPromptsRequest) (*ListSourceQualityPromptsResponse, error)
+	// GetSourceQualityPrompt returns one source quality prompt.
+	GetSourceQualityPrompt(context.Context, *GetSourceQualityPromptRequest) (*v1alpha1.SourceQualityPrompt, error)
+	// CreateSourceQualityPrompt creates a source quality prompt.
+	CreateSourceQualityPrompt(context.Context, *CreateSourceQualityPromptRequest) (*CreateSourceQualityPromptResponse, error)
+	// UpdateSourceQualityPrompt creates a new prompt version.
+	UpdateSourceQualityPrompt(context.Context, *UpdateSourceQualityPromptRequest) (*UpdateSourceQualityPromptResponse, error)
+	// ActivateSourceQualityPrompt marks a prompt as current.
+	ActivateSourceQualityPrompt(context.Context, *ActivateSourceQualityPromptRequest) (*ActivateSourceQualityPromptResponse, error)
+	// DeleteSourceQualityPrompt soft deletes a source quality prompt.
+	DeleteSourceQualityPrompt(context.Context, *DeleteSourceQualityPromptRequest) (*DeleteSourceQualityPromptResponse, error)
 }
 
 // UnimplementedSolidityServiceServer can be embedded to have forward compatible implementations.
@@ -1110,6 +1751,24 @@ func (*UnimplementedSolidityServiceServer) UpdateBytecodeBlacklistNote(ctx conte
 }
 func (*UnimplementedSolidityServiceServer) DeleteBytecodeBlacklist(ctx context.Context, req *DeleteBytecodeBlacklistRequest) (*DeleteBytecodeBlacklistResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteBytecodeBlacklist not implemented")
+}
+func (*UnimplementedSolidityServiceServer) ListSourceQualityPrompts(ctx context.Context, req *ListSourceQualityPromptsRequest) (*ListSourceQualityPromptsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSourceQualityPrompts not implemented")
+}
+func (*UnimplementedSolidityServiceServer) GetSourceQualityPrompt(ctx context.Context, req *GetSourceQualityPromptRequest) (*v1alpha1.SourceQualityPrompt, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSourceQualityPrompt not implemented")
+}
+func (*UnimplementedSolidityServiceServer) CreateSourceQualityPrompt(ctx context.Context, req *CreateSourceQualityPromptRequest) (*CreateSourceQualityPromptResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateSourceQualityPrompt not implemented")
+}
+func (*UnimplementedSolidityServiceServer) UpdateSourceQualityPrompt(ctx context.Context, req *UpdateSourceQualityPromptRequest) (*UpdateSourceQualityPromptResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSourceQualityPrompt not implemented")
+}
+func (*UnimplementedSolidityServiceServer) ActivateSourceQualityPrompt(ctx context.Context, req *ActivateSourceQualityPromptRequest) (*ActivateSourceQualityPromptResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ActivateSourceQualityPrompt not implemented")
+}
+func (*UnimplementedSolidityServiceServer) DeleteSourceQualityPrompt(ctx context.Context, req *DeleteSourceQualityPromptRequest) (*DeleteSourceQualityPromptResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSourceQualityPrompt not implemented")
 }
 
 func RegisterSolidityServiceServer(s *grpc.Server, srv SolidityServiceServer) {
@@ -1278,6 +1937,114 @@ func _SolidityService_DeleteBytecodeBlacklist_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SolidityService_ListSourceQualityPrompts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSourceQualityPromptsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).ListSourceQualityPrompts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/ListSourceQualityPrompts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).ListSourceQualityPrompts(ctx, req.(*ListSourceQualityPromptsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_GetSourceQualityPrompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSourceQualityPromptRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).GetSourceQualityPrompt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/GetSourceQualityPrompt",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).GetSourceQualityPrompt(ctx, req.(*GetSourceQualityPromptRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_CreateSourceQualityPrompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSourceQualityPromptRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).CreateSourceQualityPrompt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/CreateSourceQualityPrompt",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).CreateSourceQualityPrompt(ctx, req.(*CreateSourceQualityPromptRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_UpdateSourceQualityPrompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSourceQualityPromptRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).UpdateSourceQualityPrompt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/UpdateSourceQualityPrompt",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).UpdateSourceQualityPrompt(ctx, req.(*UpdateSourceQualityPromptRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_ActivateSourceQualityPrompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ActivateSourceQualityPromptRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).ActivateSourceQualityPrompt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/ActivateSourceQualityPrompt",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).ActivateSourceQualityPrompt(ctx, req.(*ActivateSourceQualityPromptRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_DeleteSourceQualityPrompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSourceQualityPromptRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).DeleteSourceQualityPrompt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.solidity.SolidityService/DeleteSourceQualityPrompt",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).DeleteSourceQualityPrompt(ctx, req.(*DeleteSourceQualityPromptRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _SolidityService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "athena.internal.solidity.SolidityService",
 	HandlerType: (*SolidityServiceServer)(nil),
@@ -1317,6 +2084,30 @@ var _SolidityService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteBytecodeBlacklist",
 			Handler:    _SolidityService_DeleteBytecodeBlacklist_Handler,
+		},
+		{
+			MethodName: "ListSourceQualityPrompts",
+			Handler:    _SolidityService_ListSourceQualityPrompts_Handler,
+		},
+		{
+			MethodName: "GetSourceQualityPrompt",
+			Handler:    _SolidityService_GetSourceQualityPrompt_Handler,
+		},
+		{
+			MethodName: "CreateSourceQualityPrompt",
+			Handler:    _SolidityService_CreateSourceQualityPrompt_Handler,
+		},
+		{
+			MethodName: "UpdateSourceQualityPrompt",
+			Handler:    _SolidityService_UpdateSourceQualityPrompt_Handler,
+		},
+		{
+			MethodName: "ActivateSourceQualityPrompt",
+			Handler:    _SolidityService_ActivateSourceQualityPrompt_Handler,
+		},
+		{
+			MethodName: "DeleteSourceQualityPrompt",
+			Handler:    _SolidityService_DeleteSourceQualityPrompt_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1936,6 +2727,401 @@ func (m *DeleteBytecodeBlacklistResponse) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
+func (m *ListSourceQualityPromptsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListSourceQualityPromptsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListSourceQualityPromptsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListSourceQualityPromptsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListSourceQualityPromptsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListSourceQualityPromptsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintSolidity(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetSourceQualityPromptRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetSourceQualityPromptRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetSourceQualityPromptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Id != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.Id))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CreateSourceQualityPromptRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CreateSourceQualityPromptRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CreateSourceQualityPromptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.SystemPrompt) > 0 {
+		i -= len(m.SystemPrompt)
+		copy(dAtA[i:], m.SystemPrompt)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.SystemPrompt)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CreateSourceQualityPromptResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CreateSourceQualityPromptResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CreateSourceQualityPromptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintSolidity(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateSourceQualityPromptRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateSourceQualityPromptRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateSourceQualityPromptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.SystemPrompt) > 0 {
+		i -= len(m.SystemPrompt)
+		copy(dAtA[i:], m.SystemPrompt)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.SystemPrompt)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Id != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.Id))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateSourceQualityPromptResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateSourceQualityPromptResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateSourceQualityPromptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintSolidity(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ActivateSourceQualityPromptRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ActivateSourceQualityPromptRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ActivateSourceQualityPromptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Id != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.Id))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ActivateSourceQualityPromptResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ActivateSourceQualityPromptResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ActivateSourceQualityPromptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintSolidity(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeleteSourceQualityPromptRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteSourceQualityPromptRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteSourceQualityPromptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Id != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.Id))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeleteSourceQualityPromptResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteSourceQualityPromptResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteSourceQualityPromptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintSolidity(dAtA []byte, offset int, v uint64) int {
 	offset -= sovSolidity(v)
 	base := offset
@@ -2225,6 +3411,184 @@ func (m *DeleteBytecodeBlacklistRequest) Size() (n int) {
 }
 
 func (m *DeleteBytecodeBlacklistResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListSourceQualityPromptsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListSourceQualityPromptsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovSolidity(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetSourceQualityPromptRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Id != 0 {
+		n += 1 + sovSolidity(uint64(m.Id))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CreateSourceQualityPromptRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	l = len(m.SystemPrompt)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CreateSourceQualityPromptResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateSourceQualityPromptRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Id != 0 {
+		n += 1 + sovSolidity(uint64(m.Id))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	l = len(m.SystemPrompt)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateSourceQualityPromptResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ActivateSourceQualityPromptRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Id != 0 {
+		n += 1 + sovSolidity(uint64(m.Id))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ActivateSourceQualityPromptResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteSourceQualityPromptRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Id != 0 {
+		n += 1 + sovSolidity(uint64(m.Id))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteSourceQualityPromptResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3756,6 +5120,913 @@ func (m *DeleteBytecodeBlacklistResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: DeleteBytecodeBlacklistResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListSourceQualityPromptsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListSourceQualityPromptsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListSourceQualityPromptsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListSourceQualityPromptsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListSourceQualityPromptsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListSourceQualityPromptsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.SourceQualityPrompt{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetSourceQualityPromptRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetSourceQualityPromptRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetSourceQualityPromptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			m.Id = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Id |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CreateSourceQualityPromptRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CreateSourceQualityPromptRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CreateSourceQualityPromptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SystemPrompt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SystemPrompt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CreateSourceQualityPromptResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CreateSourceQualityPromptResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CreateSourceQualityPromptResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.SourceQualityPrompt{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateSourceQualityPromptRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateSourceQualityPromptRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateSourceQualityPromptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			m.Id = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Id |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SystemPrompt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SystemPrompt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateSourceQualityPromptResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateSourceQualityPromptResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateSourceQualityPromptResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.SourceQualityPrompt{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ActivateSourceQualityPromptRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ActivateSourceQualityPromptRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ActivateSourceQualityPromptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			m.Id = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Id |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ActivateSourceQualityPromptResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ActivateSourceQualityPromptResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ActivateSourceQualityPromptResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.SourceQualityPrompt{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteSourceQualityPromptRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteSourceQualityPromptRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteSourceQualityPromptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			m.Id = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Id |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteSourceQualityPromptResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteSourceQualityPromptResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteSourceQualityPromptResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

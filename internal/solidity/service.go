@@ -69,6 +69,9 @@ func (s *Service) Start() error {
 	if s.store == nil {
 		return status.Error(codes.FailedPrecondition, "solidity store is required")
 	}
+	if _, err := s.store.EnsureDefaultSourceQualityPrompt(context.Background(), "Default Solidity Source Quality Prompt", sourcequality.DefaultSystemPrompt); err != nil {
+		return err
+	}
 	s.started = true
 	return nil
 }
@@ -163,6 +166,14 @@ func (s *Service) GetBytecode(ctx context.Context, req *apiclient.GetBytecodeReq
 	}
 	if record == nil {
 		return nil, status.Errorf(codes.NotFound, "bytecode %s not found", codeHash.Hex())
+	}
+	if err := s.refreshBytecodeSourceQualityReport(ctx, codeHash, &record.Bytecode); err != nil {
+		return nil, err
+	}
+	if updated, err := s.store.GetBytecodeDetail(ctx, codeHash); err != nil {
+		return nil, err
+	} else if updated != nil {
+		record = updated
 	}
 	return bytecodeDetailRecordToAPI(*record), nil
 }
@@ -292,6 +303,109 @@ func (s *Service) DeleteBytecodeBlacklist(ctx context.Context, req *apiclient.De
 	return &apiclient.DeleteBytecodeBlacklistResponse{}, nil
 }
 
+func (s *Service) ListSourceQualityPrompts(ctx context.Context, _ *apiclient.ListSourceQualityPromptsRequest) (*apiclient.ListSourceQualityPromptsResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+	}
+	records, err := s.store.ListSourceQualityPrompts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]*v1alpha1.SourceQualityPrompt, 0, len(records))
+	for _, record := range records {
+		items = append(items, sourceQualityPromptToAPI(record))
+	}
+	return &apiclient.ListSourceQualityPromptsResponse{Items: items}, nil
+}
+
+func (s *Service) GetSourceQualityPrompt(ctx context.Context, req *apiclient.GetSourceQualityPromptRequest) (*v1alpha1.SourceQualityPrompt, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+	}
+	if req.GetId() <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "id must be positive")
+	}
+	record, err := s.store.GetSourceQualityPrompt(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if record == nil {
+		return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
+	}
+	return sourceQualityPromptToAPI(*record), nil
+}
+
+func (s *Service) CreateSourceQualityPrompt(ctx context.Context, req *apiclient.CreateSourceQualityPromptRequest) (*apiclient.CreateSourceQualityPromptResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+	}
+	if err := validateSourceQualityPromptInput(req.GetName(), req.GetSystemPrompt()); err != nil {
+		return nil, err
+	}
+	record, err := s.store.CreateSourceQualityPrompt(ctx, req.GetName(), req.GetSystemPrompt())
+	if err != nil {
+		return nil, err
+	}
+	return &apiclient.CreateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
+}
+
+func (s *Service) UpdateSourceQualityPrompt(ctx context.Context, req *apiclient.UpdateSourceQualityPromptRequest) (*apiclient.UpdateSourceQualityPromptResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+	}
+	if req.GetId() <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "id must be positive")
+	}
+	if err := validateSourceQualityPromptInput(req.GetName(), req.GetSystemPrompt()); err != nil {
+		return nil, err
+	}
+	record, err := s.store.UpdateSourceQualityPrompt(ctx, req.GetId(), req.GetName(), req.GetSystemPrompt())
+	if err != nil {
+		if errors.Is(err, soliditystore.ErrSourceQualityPromptNotFound) {
+			return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
+		}
+		return nil, err
+	}
+	return &apiclient.UpdateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
+}
+
+func (s *Service) ActivateSourceQualityPrompt(ctx context.Context, req *apiclient.ActivateSourceQualityPromptRequest) (*apiclient.ActivateSourceQualityPromptResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+	}
+	if req.GetId() <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "id must be positive")
+	}
+	record, err := s.store.ActivateSourceQualityPrompt(ctx, req.GetId())
+	if err != nil {
+		if errors.Is(err, soliditystore.ErrSourceQualityPromptNotFound) {
+			return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
+		}
+		return nil, err
+	}
+	return &apiclient.ActivateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
+}
+
+func (s *Service) DeleteSourceQualityPrompt(ctx context.Context, req *apiclient.DeleteSourceQualityPromptRequest) (*apiclient.DeleteSourceQualityPromptResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+	}
+	if req.GetId() <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "id must be positive")
+	}
+	if err := s.store.DeleteSourceQualityPrompt(ctx, req.GetId()); err != nil {
+		switch {
+		case errors.Is(err, soliditystore.ErrSourceQualityPromptNotFound):
+			return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
+		case errors.Is(err, soliditystore.ErrSourceQualityPromptActiveDelete):
+			return nil, status.Error(codes.FailedPrecondition, "active source quality prompt cannot be deleted")
+		default:
+			return nil, err
+		}
+	}
+	return &apiclient.DeleteSourceQualityPromptResponse{}, nil
+}
+
 func (s *Service) validateChainID(chainID int64) error {
 	if chainID <= 0 {
 		return status.Error(codes.InvalidArgument, "chain_id must be positive")
@@ -350,10 +464,21 @@ func (s *Service) enrichBytecodeSource(ctx context.Context, contract common.Addr
 			record.SourceCodeHash = sourceCodeHash
 		}
 	}
-	if strings.TrimSpace(record.SourceCode) == "" || strings.TrimSpace(record.SourceQualityReport) != "" || s.sourceQualityAnalyzer == nil {
+	return s.refreshBytecodeSourceQualityReport(ctx, codeHash, record)
+}
+
+func (s *Service) refreshBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, record *soliditystore.Bytecode) error {
+	if record == nil || strings.TrimSpace(record.SourceCode) == "" || s.sourceQualityAnalyzer == nil {
 		return nil
 	}
-	report, err := s.sourceQualityAnalyzer.AnalyzeContractSource(ctx, record.SourceCode)
+	prompt, err := s.currentSourceQualityPrompt(ctx)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(record.SourceQualityReport) != "" && record.SourceQualityPromptVersion >= prompt.Version {
+		return nil
+	}
+	report, err := s.sourceQualityAnalyzer.AnalyzeContractSource(ctx, prompt.SystemPrompt, record.SourceCode)
 	if err != nil {
 		return nil
 	}
@@ -361,7 +486,28 @@ func (s *Service) enrichBytecodeSource(ctx context.Context, contract common.Addr
 	if report == "" {
 		return nil
 	}
-	return s.store.UpdateBytecodeSourceQualityReport(ctx, codeHash, report, sourceOriginThirdPartyAPI)
+	if err := s.store.UpdateBytecodeSourceQualityReport(ctx, codeHash, report, sourceOriginThirdPartyAPI, prompt.Version); err != nil {
+		return err
+	}
+	record.SourceQualityReport = report
+	record.SourceQualityReportOrigin = sourceOriginThirdPartyAPI
+	record.SourceQualityPromptVersion = prompt.Version
+	record.SourceQualityReportFetchedAt = time.Now().UTC()
+	return nil
+}
+
+func (s *Service) currentSourceQualityPrompt(ctx context.Context) (*soliditystore.SourceQualityPrompt, error) {
+	prompt, err := s.store.GetActiveSourceQualityPrompt(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if prompt != nil {
+		return prompt, nil
+	}
+	return &soliditystore.SourceQualityPrompt{
+		Name:         "Default Solidity Source Quality Prompt",
+		SystemPrompt: sourcequality.DefaultSystemPrompt,
+	}, nil
 }
 
 func (s *Service) contractSourceInfo(ctx context.Context, chainID int64, contract common.Address, codeHash common.Hash) (*v1alpha1.ContractSourceInfo, error) {
@@ -473,6 +619,7 @@ func bytecodeToContractSourceInfo(chainID int64, contract common.Address, item s
 		SourceQualityReportOrigin:    item.SourceQualityReportOrigin,
 		IsOpenSource:                 strings.TrimSpace(item.SourceCode) != "",
 		IsBytecodeBlacklisted:        blacklisted,
+		SourceQualityPromptVersion:   item.SourceQualityPromptVersion,
 	}
 }
 
@@ -505,6 +652,7 @@ func bytecodeDetailRecordToAPI(item soliditystore.BytecodeDetailRecord) *v1alpha
 		SourceQualityReport:          item.SourceQualityReport,
 		SourceQualityReportFetchedAt: formatTime(item.SourceQualityReportFetchedAt),
 		SourceQualityReportOrigin:    item.SourceQualityReportOrigin,
+		SourceQualityPromptVersion:   item.SourceQualityPromptVersion,
 	}
 }
 
@@ -527,6 +675,18 @@ func bytecodeBlacklistEntryToAPI(item soliditystore.BytecodeBlacklistEntry) *v1a
 	}
 }
 
+func sourceQualityPromptToAPI(item soliditystore.SourceQualityPrompt) *v1alpha1.SourceQualityPrompt {
+	return &v1alpha1.SourceQualityPrompt{
+		ID:           item.ID,
+		Version:      item.Version,
+		Name:         item.Name,
+		SystemPrompt: item.SystemPrompt,
+		IsActive:     item.IsActive,
+		CreatedAt:    formatTime(item.CreatedAt),
+		UpdatedAt:    formatTime(item.UpdatedAt),
+	}
+}
+
 func hashHex(value common.Hash) string {
 	if value == (common.Hash{}) {
 		return ""
@@ -546,4 +706,14 @@ func formatTime(value time.Time) string {
 		return ""
 	}
 	return value.UTC().Format(time.RFC3339Nano)
+}
+
+func validateSourceQualityPromptInput(name, systemPrompt string) error {
+	if strings.TrimSpace(name) == "" {
+		return status.Error(codes.InvalidArgument, "name is required")
+	}
+	if strings.TrimSpace(systemPrompt) == "" {
+		return status.Error(codes.InvalidArgument, "system_prompt is required")
+	}
+	return nil
 }

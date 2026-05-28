@@ -18,6 +18,17 @@ type ContractSourceInfo struct {
 	SourceQualityReportOrigin    string `protobuf:"bytes,10,opt,name=sourceQualityReportOrigin" json:"sourceQualityReportOrigin"`
 	IsOpenSource                 bool   `protobuf:"varint,11,opt,name=isOpenSource" json:"isOpenSource"`
 	IsBytecodeBlacklisted        bool   `protobuf:"varint,12,opt,name=isBytecodeBlacklisted" json:"isBytecodeBlacklisted"`
+	SourceQualityPromptVersion   int64  `protobuf:"varint,13,opt,name=sourceQualityPromptVersion" json:"sourceQualityPromptVersion"`
+}
+
+type SourceQualityPrompt struct {
+	ID           int64  `protobuf:"varint,1,opt,name=id" json:"id"`
+	Version      int64  `protobuf:"varint,2,opt,name=version" json:"version"`
+	Name         string `protobuf:"bytes,3,opt,name=name" json:"name"`
+	SystemPrompt string `protobuf:"bytes,4,opt,name=systemPrompt" json:"systemPrompt"`
+	IsActive     bool   `protobuf:"varint,5,opt,name=isActive" json:"isActive"`
+	CreatedAt    string `protobuf:"bytes,6,opt,name=createdAt" json:"createdAt"`
+	UpdatedAt    string `protobuf:"bytes,7,opt,name=updatedAt" json:"updatedAt"`
 }
 
 type BytecodeBlacklistEntry struct {
@@ -54,6 +65,7 @@ type BytecodeDetail struct {
 	SourceQualityReport          string `protobuf:"bytes,13,opt,name=sourceQualityReport" json:"sourceQualityReport"`
 	SourceQualityReportFetchedAt string `protobuf:"bytes,14,opt,name=sourceQualityReportFetchedAt" json:"sourceQualityReportFetchedAt"`
 	SourceQualityReportOrigin    string `protobuf:"bytes,15,opt,name=sourceQualityReportOrigin" json:"sourceQualityReportOrigin"`
+	SourceQualityPromptVersion   int64  `protobuf:"varint,16,opt,name=sourceQualityPromptVersion" json:"sourceQualityPromptVersion"`
 }
 
 type BytecodeDeployment struct {

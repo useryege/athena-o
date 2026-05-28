@@ -96,6 +96,60 @@ message DeleteBytecodeBlacklistRequest {
 // DeleteBytecodeBlacklistResponse is returned after deleting a bytecode blacklist entry.
 message DeleteBytecodeBlacklistResponse {}
 
+// ListSourceQualityPromptsRequest queries source quality prompts.
+message ListSourceQualityPromptsRequest {}
+
+// ListSourceQualityPromptsResponse returns source quality prompt records.
+message ListSourceQualityPromptsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt items = 1;
+}
+
+// GetSourceQualityPromptRequest queries one source quality prompt.
+message GetSourceQualityPromptRequest {
+  int64 id = 1;
+}
+
+// CreateSourceQualityPromptRequest creates a source quality prompt.
+message CreateSourceQualityPromptRequest {
+  string name = 1;
+  string system_prompt = 2;
+}
+
+// CreateSourceQualityPromptResponse returns the created prompt.
+message CreateSourceQualityPromptResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
+}
+
+// UpdateSourceQualityPromptRequest creates a new source quality prompt version.
+message UpdateSourceQualityPromptRequest {
+  int64 id = 1;
+  string name = 2;
+  string system_prompt = 3;
+}
+
+// UpdateSourceQualityPromptResponse returns the new prompt version.
+message UpdateSourceQualityPromptResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
+}
+
+// ActivateSourceQualityPromptRequest marks a prompt as current.
+message ActivateSourceQualityPromptRequest {
+  int64 id = 1;
+}
+
+// ActivateSourceQualityPromptResponse returns the activated prompt.
+message ActivateSourceQualityPromptResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
+}
+
+// DeleteSourceQualityPromptRequest soft deletes a prompt.
+message DeleteSourceQualityPromptRequest {
+  int64 id = 1;
+}
+
+// DeleteSourceQualityPromptResponse is returned after deleting a prompt.
+message DeleteSourceQualityPromptResponse {}
+
 service SolidityService {
   // GetSolidityStatus returns the solidity service runtime status.
   rpc GetSolidityStatus(GetSolidityStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.SolidityStatus) {
@@ -138,5 +192,38 @@ service SolidityService {
   // DeleteBytecodeBlacklist deletes a bytecode blacklist entry.
   rpc DeleteBytecodeBlacklist(DeleteBytecodeBlacklistRequest) returns (DeleteBytecodeBlacklistResponse) {
     option (google.api.http) = {delete: "/api/v1/solidity/bytecode/blacklist/{code_hash}"};
+  }
+  // ListSourceQualityPrompts returns configured source quality prompts.
+  rpc ListSourceQualityPrompts(ListSourceQualityPromptsRequest) returns (ListSourceQualityPromptsResponse) {
+    option (google.api.http) = {get: "/api/v1/solidity/source-quality/prompts"};
+  }
+  // GetSourceQualityPrompt returns one source quality prompt.
+  rpc GetSourceQualityPrompt(GetSourceQualityPromptRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt) {
+    option (google.api.http) = {get: "/api/v1/solidity/source-quality/prompts/{id}"};
+  }
+  // CreateSourceQualityPrompt creates a source quality prompt.
+  rpc CreateSourceQualityPrompt(CreateSourceQualityPromptRequest) returns (CreateSourceQualityPromptResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/solidity/source-quality/prompts"
+      body: "*"
+    };
+  }
+  // UpdateSourceQualityPrompt creates a new source quality prompt version.
+  rpc UpdateSourceQualityPrompt(UpdateSourceQualityPromptRequest) returns (UpdateSourceQualityPromptResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/solidity/source-quality/prompts/{id}"
+      body: "*"
+    };
+  }
+  // ActivateSourceQualityPrompt marks a prompt as current.
+  rpc ActivateSourceQualityPrompt(ActivateSourceQualityPromptRequest) returns (ActivateSourceQualityPromptResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/solidity/source-quality/prompts/{id}/activate"
+      body: "*"
+    };
+  }
+  // DeleteSourceQualityPrompt soft deletes a source quality prompt.
+  rpc DeleteSourceQualityPrompt(DeleteSourceQualityPromptRequest) returns (DeleteSourceQualityPromptResponse) {
+    option (google.api.http) = {delete: "/api/v1/solidity/source-quality/prompts/{id}"};
   }
 }
