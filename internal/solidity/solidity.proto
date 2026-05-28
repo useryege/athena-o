@@ -16,6 +16,43 @@ message GetContractSourceInfoRequest {
   string contract = 2;
 }
 
+// ListBytecodesRequest queries stored bytecodes.
+message ListBytecodesRequest {
+  int64 page = 1;
+  int64 page_size = 2;
+  string code_hash = 3;
+}
+
+// ListBytecodesResponse returns stored bytecodes.
+message ListBytecodesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeListItem items = 1;
+  int64 total = 2;
+  int64 page = 3;
+  int64 page_size = 4;
+}
+
+// GetBytecodeRequest queries one stored bytecode.
+message GetBytecodeRequest {
+  string code_hash = 1;
+}
+
+// ListBytecodeDeploymentsRequest queries contracts using a bytecode.
+message ListBytecodeDeploymentsRequest {
+  string code_hash = 1;
+  int64 page = 2;
+  int64 page_size = 3;
+  int64 chain_id = 4;
+  string contract = 5;
+}
+
+// ListBytecodeDeploymentsResponse returns contracts using a bytecode.
+message ListBytecodeDeploymentsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeDeployment items = 1;
+  int64 total = 2;
+  int64 page = 3;
+  int64 page_size = 4;
+}
+
 // ListBytecodeBlacklistEntriesRequest queries all bytecode blacklist entries.
 message ListBytecodeBlacklistEntriesRequest {}
 
@@ -61,6 +98,12 @@ service SolidityService {
   rpc GetSolidityStatus(GetSolidityStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.SolidityStatus);
   // GetContractSourceInfo resolves bytecode/source facts for a contract.
   rpc GetContractSourceInfo(GetContractSourceInfoRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ContractSourceInfo);
+  // ListBytecodes returns stored bytecodes.
+  rpc ListBytecodes(ListBytecodesRequest) returns (ListBytecodesResponse);
+  // GetBytecode returns one stored bytecode.
+  rpc GetBytecode(GetBytecodeRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeDetail);
+  // ListBytecodeDeployments returns contracts using a bytecode.
+  rpc ListBytecodeDeployments(ListBytecodeDeploymentsRequest) returns (ListBytecodeDeploymentsResponse);
   // ListBytecodeBlacklistEntries returns configured bytecode blacklist entries.
   rpc ListBytecodeBlacklistEntries(ListBytecodeBlacklistEntriesRequest) returns (ListBytecodeBlacklistEntriesResponse);
   // AddBytecodeBlacklistEntry adds a bytecode blacklist entry.

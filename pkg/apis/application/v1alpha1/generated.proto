@@ -222,6 +222,64 @@ message BytecodeBlacklistEntry {
   optional string createdAt = 5;
 }
 
+message BytecodeDeployment {
+  optional int64 chainId = 1;
+
+  optional string contract = 2;
+
+  optional string firstSeenAt = 3;
+
+  optional string updatedAt = 4;
+}
+
+message BytecodeDetail {
+  optional string codeHash = 1;
+
+  optional int64 runtimeBytecodeSize = 2;
+
+  optional int64 deploymentCount = 3;
+
+  optional bool isOpenSource = 4;
+
+  optional bool isBytecodeBlacklisted = 5;
+
+  optional string createdAt = 6;
+
+  optional string updatedAt = 7;
+
+  optional string runtimeBytecode = 8;
+
+  optional string sourceCode = 9;
+
+  optional string sourceCodeHash = 10;
+
+  optional string sourceCodeFetchedAt = 11;
+
+  optional string sourceCodeOrigin = 12;
+
+  optional string sourceQualityReport = 13;
+
+  optional string sourceQualityReportFetchedAt = 14;
+
+  optional string sourceQualityReportOrigin = 15;
+}
+
+message BytecodeListItem {
+  optional string codeHash = 1;
+
+  optional int64 runtimeBytecodeSize = 2;
+
+  optional int64 deploymentCount = 3;
+
+  optional bool isOpenSource = 4;
+
+  optional bool isBytecodeBlacklisted = 5;
+
+  optional string createdAt = 6;
+
+  optional string updatedAt = 7;
+}
+
 message ContractSourceInfo {
   optional string contract = 1;
 

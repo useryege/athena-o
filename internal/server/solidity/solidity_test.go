@@ -34,6 +34,18 @@ func (f *fakeSolidityServiceClient) GetContractSourceInfo(context.Context, *soli
 	return nil, nil
 }
 
+func (f *fakeSolidityServiceClient) ListBytecodes(context.Context, *solidityapiclient.ListBytecodesRequest, ...grpc.CallOption) (*solidityapiclient.ListBytecodesResponse, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) GetBytecode(context.Context, *solidityapiclient.GetBytecodeRequest, ...grpc.CallOption) (*v1alpha1.BytecodeDetail, error) {
+	return nil, nil
+}
+
+func (f *fakeSolidityServiceClient) ListBytecodeDeployments(context.Context, *solidityapiclient.ListBytecodeDeploymentsRequest, ...grpc.CallOption) (*solidityapiclient.ListBytecodeDeploymentsResponse, error) {
+	return nil, nil
+}
+
 func (f *fakeSolidityServiceClient) ListBytecodeBlacklistEntries(context.Context, *solidityapiclient.ListBytecodeBlacklistEntriesRequest, ...grpc.CallOption) (*solidityapiclient.ListBytecodeBlacklistEntriesResponse, error) {
 	return nil, nil
 }

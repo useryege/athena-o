@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-442-g9d905c4-dirty"
+    "version": "v1.0.0-443-g6564889-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -768,6 +768,133 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/solidityUpdateBytecodeBlacklistNoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/bytecodes": {
+      "get": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "ListBytecodes returns stored bytecodes.",
+        "operationId": "SolidityService_ListBytecodes",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityListBytecodesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/bytecodes/{code_hash}": {
+      "get": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "GetBytecode returns one stored bytecode.",
+        "operationId": "SolidityService_GetBytecode",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1BytecodeDetail"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solidity/bytecodes/{code_hash}/deployments": {
+      "get": {
+        "tags": [
+          "SolidityService"
+        ],
+        "summary": "ListBytecodeDeployments returns contracts using a bytecode.",
+        "operationId": "SolidityService_ListBytecodeDeployments",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/solidityListBytecodeDeploymentsResponse"
             }
           },
           "default": {
@@ -2040,6 +2167,54 @@
         }
       }
     },
+    "solidityListBytecodeDeploymentsResponse": {
+      "description": "ListBytecodeDeploymentsResponse returns contracts using a bytecode.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1BytecodeDeployment"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "solidityListBytecodesResponse": {
+      "description": "ListBytecodesResponse returns stored bytecodes.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1BytecodeListItem"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "solidityUpdateBytecodeBlacklistNoteRequest": {
       "description": "UpdateBytecodeBlacklistNoteRequest updates a bytecode blacklist note.",
       "type": "object",
@@ -2407,6 +2582,104 @@
           "format": "int64"
         },
         "sourceContract": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1BytecodeDeployment": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "contract": {
+          "type": "string"
+        },
+        "firstSeenAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1BytecodeDetail": {
+      "type": "object",
+      "properties": {
+        "codeHash": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "deploymentCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "isBytecodeBlacklisted": {
+          "type": "boolean"
+        },
+        "isOpenSource": {
+          "type": "boolean"
+        },
+        "runtimeBytecode": {
+          "type": "string"
+        },
+        "runtimeBytecodeSize": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "sourceCode": {
+          "type": "string"
+        },
+        "sourceCodeFetchedAt": {
+          "type": "string"
+        },
+        "sourceCodeHash": {
+          "type": "string"
+        },
+        "sourceCodeOrigin": {
+          "type": "string"
+        },
+        "sourceQualityReport": {
+          "type": "string"
+        },
+        "sourceQualityReportFetchedAt": {
+          "type": "string"
+        },
+        "sourceQualityReportOrigin": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1BytecodeListItem": {
+      "type": "object",
+      "properties": {
+        "codeHash": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "deploymentCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "isBytecodeBlacklisted": {
+          "type": "boolean"
+        },
+        "isOpenSource": {
+          "type": "boolean"
+        },
+        "runtimeBytecodeSize": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "updatedAt": {
           "type": "string"
         }
       }

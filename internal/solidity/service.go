@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/useryege/athena/internal/solidity/apiclient"
@@ -22,6 +23,9 @@ import (
 
 const (
 	sourceOriginThirdPartyAPI = "third_party_api"
+	defaultPage               = int64(1)
+	defaultPageSize           = int64(20)
+	maxPageSize               = int64(100)
 )
 
 type Service struct {
@@ -111,6 +115,95 @@ func (s *Service) GetContractSourceInfo(ctx context.Context, req *apiclient.GetC
 		return nil, err
 	}
 	return s.contractSourceInfo(ctx, chainID, contract, codeHash)
+}
+
+func (s *Service) ListBytecodes(ctx context.Context, req *apiclient.ListBytecodesRequest) (*apiclient.ListBytecodesResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+	}
+	page, pageSize, offset, err := normalizePagination(req.GetPage(), req.GetPageSize())
+	if err != nil {
+		return nil, err
+	}
+	var codeHash *common.Hash
+	if strings.TrimSpace(req.GetCodeHash()) != "" {
+		parsed, err := parseHash(req.GetCodeHash())
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid code hash %q", req.GetCodeHash())
+		}
+		codeHash = &parsed
+	}
+	records, total, err := s.store.ListBytecodes(ctx, codeHash, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]*v1alpha1.BytecodeListItem, 0, len(records))
+	for _, record := range records {
+		items = append(items, bytecodeListRecordToAPI(record))
+	}
+	return &apiclient.ListBytecodesResponse{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+func (s *Service) GetBytecode(ctx context.Context, req *apiclient.GetBytecodeRequest) (*v1alpha1.BytecodeDetail, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+	}
+	codeHash, err := parseHash(req.GetCodeHash())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid code hash %q", req.GetCodeHash())
+	}
+	record, err := s.store.GetBytecodeDetail(ctx, codeHash)
+	if err != nil {
+		return nil, err
+	}
+	if record == nil {
+		return nil, status.Errorf(codes.NotFound, "bytecode %s not found", codeHash.Hex())
+	}
+	return bytecodeDetailRecordToAPI(*record), nil
+}
+
+func (s *Service) ListBytecodeDeployments(ctx context.Context, req *apiclient.ListBytecodeDeploymentsRequest) (*apiclient.ListBytecodeDeploymentsResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+	}
+	codeHash, err := parseHash(req.GetCodeHash())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid code hash %q", req.GetCodeHash())
+	}
+	page, pageSize, offset, err := normalizePagination(req.GetPage(), req.GetPageSize())
+	if err != nil {
+		return nil, err
+	}
+	var contract *common.Address
+	if strings.TrimSpace(req.GetContract()) != "" {
+		if !common.IsHexAddress(req.GetContract()) {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
+		}
+		parsedContract := common.HexToAddress(req.GetContract())
+		contract = &parsedContract
+	}
+	if req.GetChainId() < 0 {
+		return nil, status.Error(codes.InvalidArgument, "chain_id must be non-negative")
+	}
+	records, total, err := s.store.ListBytecodeDeployments(ctx, codeHash, req.GetChainId(), contract, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]*v1alpha1.BytecodeDeployment, 0, len(records))
+	for _, record := range records {
+		items = append(items, bytecodeDeploymentRecordToAPI(record))
+	}
+	return &apiclient.ListBytecodeDeploymentsResponse{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
 }
 
 func (s *Service) ListBytecodeBlacklistEntries(ctx context.Context, _ *apiclient.ListBytecodeBlacklistEntriesRequest) (*apiclient.ListBytecodeBlacklistEntriesResponse, error) {
@@ -347,6 +440,25 @@ func parseHash(value string) (common.Hash, error) {
 	return common.BytesToHash(raw), nil
 }
 
+func normalizePagination(page, pageSize int64) (int64, int64, int64, error) {
+	if page < 0 {
+		return 0, 0, 0, status.Error(codes.InvalidArgument, "page must be non-negative")
+	}
+	if pageSize < 0 {
+		return 0, 0, 0, status.Error(codes.InvalidArgument, "page_size must be non-negative")
+	}
+	if page == 0 {
+		page = defaultPage
+	}
+	if pageSize == 0 {
+		pageSize = defaultPageSize
+	}
+	if pageSize > maxPageSize {
+		pageSize = maxPageSize
+	}
+	return page, pageSize, (page - 1) * pageSize, nil
+}
+
 func bytecodeToContractSourceInfo(chainID int64, contract common.Address, item soliditystore.Bytecode, blacklisted bool) *v1alpha1.ContractSourceInfo {
 	return &v1alpha1.ContractSourceInfo{
 		Contract:                     contract.Hex(),
@@ -361,6 +473,47 @@ func bytecodeToContractSourceInfo(chainID int64, contract common.Address, item s
 		SourceQualityReportOrigin:    item.SourceQualityReportOrigin,
 		IsOpenSource:                 strings.TrimSpace(item.SourceCode) != "",
 		IsBytecodeBlacklisted:        blacklisted,
+	}
+}
+
+func bytecodeListRecordToAPI(item soliditystore.BytecodeListRecord) *v1alpha1.BytecodeListItem {
+	return &v1alpha1.BytecodeListItem{
+		CodeHash:              item.CodeHash.Hex(),
+		RuntimeBytecodeSize:   item.RuntimeBytecodeSize,
+		DeploymentCount:       item.DeploymentCount,
+		IsOpenSource:          item.IsOpenSource,
+		IsBytecodeBlacklisted: item.IsBytecodeBlacklisted,
+		CreatedAt:             formatTime(item.CreatedAt),
+		UpdatedAt:             formatTime(item.UpdatedAt),
+	}
+}
+
+func bytecodeDetailRecordToAPI(item soliditystore.BytecodeDetailRecord) *v1alpha1.BytecodeDetail {
+	return &v1alpha1.BytecodeDetail{
+		CodeHash:                     item.CodeHash.Hex(),
+		RuntimeBytecodeSize:          item.RuntimeBytecodeSize,
+		DeploymentCount:              item.DeploymentCount,
+		IsOpenSource:                 strings.TrimSpace(item.SourceCode) != "",
+		IsBytecodeBlacklisted:        item.IsBytecodeBlacklisted,
+		CreatedAt:                    formatTime(item.CreatedAt),
+		UpdatedAt:                    formatTime(item.UpdatedAt),
+		RuntimeBytecode:              hexutil.Encode(item.RuntimeBytecode),
+		SourceCode:                   item.SourceCode,
+		SourceCodeHash:               hashHex(item.SourceCodeHash),
+		SourceCodeFetchedAt:          formatTime(item.SourceCodeFetchedAt),
+		SourceCodeOrigin:             item.SourceCodeOrigin,
+		SourceQualityReport:          item.SourceQualityReport,
+		SourceQualityReportFetchedAt: formatTime(item.SourceQualityReportFetchedAt),
+		SourceQualityReportOrigin:    item.SourceQualityReportOrigin,
+	}
+}
+
+func bytecodeDeploymentRecordToAPI(item soliditystore.BytecodeDeploymentRecord) *v1alpha1.BytecodeDeployment {
+	return &v1alpha1.BytecodeDeployment{
+		ChainID:     item.ChainID,
+		Contract:    item.Contract.Hex(),
+		FirstSeenAt: formatTime(item.FirstSeenAt),
+		UpdatedAt:   formatTime(item.UpdatedAt),
 	}
 }
 

@@ -150,7 +150,7 @@ export const BytecodeBlacklistList = () => {
     };
 
     return (
-        <Page title='Bytecode Blacklist' toolbar={{breadcrumbs: [{title: 'Bytecode Blacklist'}]}}>
+        <Page title='Bytecode Blacklist' toolbar={{breadcrumbs: [{title: 'Solidity', path: '/solidity/bytecodes'}, {title: 'Bytecode Blacklist'}]}}>
             <div className='bytecode-blacklist-list'>
                 {error && (
                     <div className='bytecode-blacklist-list__error'>

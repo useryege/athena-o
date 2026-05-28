@@ -23,6 +23,41 @@ export interface BytecodeBlacklistEntry {
     createdAt?: string;
 }
 
+export interface BytecodeListItem {
+    codeHash?: string;
+    runtimeBytecodeSize?: number;
+    deploymentCount?: number;
+    isOpenSource?: boolean;
+    isBytecodeBlacklisted?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface BytecodeDetail extends BytecodeListItem {
+    runtimeBytecode?: string;
+    sourceCode?: string;
+    sourceCodeHash?: string;
+    sourceCodeFetchedAt?: string;
+    sourceCodeOrigin?: string;
+    sourceQualityReport?: string;
+    sourceQualityReportFetchedAt?: string;
+    sourceQualityReportOrigin?: string;
+}
+
+export interface BytecodeDeployment {
+    chainID?: number;
+    contract?: string;
+    firstSeenAt?: string;
+    updatedAt?: string;
+}
+
+export interface PagedResponse<T> {
+    items: T[];
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
 interface ListBytecodeBlacklistEntriesResponse {
     items?: BytecodeBlacklistEntry[];
 }
@@ -48,6 +83,41 @@ function normalizeEntry(item: BytecodeBlacklistEntry | any): BytecodeBlacklistEn
     };
 }
 
+function normalizeBytecode(item: BytecodeListItem | any): BytecodeListItem {
+    return {
+        codeHash: item.codeHash ?? item.code_hash,
+        runtimeBytecodeSize: item.runtimeBytecodeSize ?? item.runtime_bytecode_size,
+        deploymentCount: item.deploymentCount ?? item.deployment_count,
+        isOpenSource: item.isOpenSource ?? item.is_open_source,
+        isBytecodeBlacklisted: item.isBytecodeBlacklisted ?? item.is_bytecode_blacklisted,
+        createdAt: item.createdAt ?? item.created_at,
+        updatedAt: item.updatedAt ?? item.updated_at
+    };
+}
+
+function normalizeBytecodeDetail(item: BytecodeDetail | any): BytecodeDetail {
+    return {
+        ...normalizeBytecode(item),
+        runtimeBytecode: item.runtimeBytecode ?? item.runtime_bytecode,
+        sourceCode: item.sourceCode ?? item.source_code,
+        sourceCodeHash: item.sourceCodeHash ?? item.source_code_hash,
+        sourceCodeFetchedAt: item.sourceCodeFetchedAt ?? item.source_code_fetched_at,
+        sourceCodeOrigin: item.sourceCodeOrigin ?? item.source_code_origin,
+        sourceQualityReport: item.sourceQualityReport ?? item.source_quality_report,
+        sourceQualityReportFetchedAt: item.sourceQualityReportFetchedAt ?? item.source_quality_report_fetched_at,
+        sourceQualityReportOrigin: item.sourceQualityReportOrigin ?? item.source_quality_report_origin
+    };
+}
+
+function normalizeDeployment(item: BytecodeDeployment | any): BytecodeDeployment {
+    return {
+        chainID: item.chainID ?? item.chain_id,
+        contract: item.contract,
+        firstSeenAt: item.firstSeenAt ?? item.first_seen_at,
+        updatedAt: item.updatedAt ?? item.updated_at
+    };
+}
+
 export class AthenaSolidityService {
     public getContractSourceInfo(contract: string, chainID?: number): Promise<ContractSourceInfo> & {abort?: () => void} {
         const req = requests.get(`/solidity/contracts/${encodeURIComponent(contract)}/source`);
@@ -70,6 +140,55 @@ export class AthenaSolidityService {
                 isOpenSource: item.isOpenSource ?? item.is_open_source,
                 isBytecodeBlacklisted: item.isBytecodeBlacklisted ?? item.is_bytecode_blacklisted
             } as ContractSourceInfo;
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listBytecodes(options: {page?: number; pageSize?: number; codeHash?: string} = {}): Promise<PagedResponse<BytecodeListItem>> & {abort?: () => void} {
+        const req = requests.get('/solidity/bytecodes').query({
+            page: options.page,
+            page_size: options.pageSize,
+            code_hash: options.codeHash || undefined
+        });
+        const promise = req.then(res => {
+            const body = (res.body || {}) as any;
+            return {
+                items: (body.items || []).map(normalizeBytecode),
+                total: body.total || 0,
+                page: body.page || options.page || 1,
+                pageSize: body.pageSize ?? body.page_size ?? options.pageSize ?? 20
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getBytecode(codeHash: string): Promise<BytecodeDetail> & {abort?: () => void} {
+        const req = requests.get(`/solidity/bytecodes/${encodeURIComponent(codeHash)}`);
+        const promise = req.then(res => normalizeBytecodeDetail(res.body || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listBytecodeDeployments(
+        codeHash: string,
+        options: {page?: number; pageSize?: number; chainID?: number; contract?: string} = {}
+    ): Promise<PagedResponse<BytecodeDeployment>> & {abort?: () => void} {
+        const req = requests.get(`/solidity/bytecodes/${encodeURIComponent(codeHash)}/deployments`).query({
+            page: options.page,
+            page_size: options.pageSize,
+            chain_id: options.chainID,
+            contract: options.contract || undefined
+        });
+        const promise = req.then(res => {
+            const body = (res.body || {}) as any;
+            return {
+                items: (body.items || []).map(normalizeDeployment),
+                total: body.total || 0,
+                page: body.page || options.page || 1,
+                pageSize: body.pageSize ?? body.page_size ?? options.pageSize ?? 20
+            };
         }) as any;
         promise.abort = () => req.abort();
         return promise;

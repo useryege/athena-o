@@ -47,6 +47,29 @@ type BytecodeBlacklistEntry struct {
 	CreatedAt      time.Time
 }
 
+type BytecodeListRecord struct {
+	CodeHash              common.Hash
+	RuntimeBytecodeSize   int64
+	DeploymentCount       int64
+	IsOpenSource          bool
+	IsBytecodeBlacklisted bool
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+	Total                 int64
+}
+
+type BytecodeDetailRecord struct {
+	Bytecode
+	RuntimeBytecodeSize   int64
+	DeploymentCount       int64
+	IsBytecodeBlacklisted bool
+}
+
+type BytecodeDeploymentRecord struct {
+	ContractBytecodeDeployment
+	Total int64
+}
+
 type rowScanner interface {
 	Scan(dest ...any) error
 }
@@ -126,6 +149,117 @@ WHERE code_hash = $1
 		return fmt.Errorf("update bytecode source quality report: %w", err)
 	}
 	return nil
+}
+
+func (s *SQLStore) ListBytecodes(ctx context.Context, codeHash *common.Hash, limit, offset int64) ([]BytecodeListRecord, int64, error) {
+	rows, err := s.db.QueryContext(ctx, `
+WITH deployment_counts AS (
+  SELECT code_hash, COUNT(*)::bigint AS deployment_count
+  FROM contract_bytecode_deployment
+  GROUP BY code_hash
+),
+filtered AS (
+  SELECT b.code_hash,
+    length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
+    COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
+    COALESCE(btrim(b.source_code), '') <> '' AS is_open_source,
+    bl.code_hash IS NOT NULL AS is_bytecode_blacklisted,
+    b.created_at,
+    b.updated_at
+  FROM bytecode b
+  LEFT JOIN deployment_counts dc ON dc.code_hash = b.code_hash
+  LEFT JOIN bytecode_blacklist bl ON bl.code_hash = b.code_hash
+  WHERE ($1::bytea IS NULL OR b.code_hash = $1)
+)
+SELECT code_hash, runtime_bytecode_size, deployment_count, is_open_source,
+  is_bytecode_blacklisted, created_at, updated_at, COUNT(*) OVER()::bigint AS total
+FROM filtered
+ORDER BY updated_at DESC, code_hash
+LIMIT $2 OFFSET $3
+`, nullableHashPtrBytes(codeHash), limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list bytecodes: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]BytecodeListRecord, 0)
+	var total int64
+	for rows.Next() {
+		item, err := scanBytecodeListRecord(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		if total == 0 {
+			total = item.Total
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate bytecodes: %w", err)
+	}
+	return items, total, nil
+}
+
+func (s *SQLStore) GetBytecodeDetail(ctx context.Context, codeHash common.Hash) (*BytecodeDetailRecord, error) {
+	row := s.db.QueryRowContext(ctx, `
+WITH deployment_counts AS (
+  SELECT code_hash, COUNT(*)::bigint AS deployment_count
+  FROM contract_bytecode_deployment
+  WHERE code_hash = $1
+  GROUP BY code_hash
+)
+SELECT b.code_hash, b.runtime_bytecode, b.source_code, b.source_code_hash, b.source_code_fetched_at,
+  b.source_code_origin, b.source_quality_report, b.source_quality_report_fetched_at,
+  b.source_quality_report_origin, b.created_at, b.updated_at,
+  length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
+  COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
+  bl.code_hash IS NOT NULL AS is_bytecode_blacklisted
+FROM bytecode b
+LEFT JOIN deployment_counts dc ON dc.code_hash = b.code_hash
+LEFT JOIN bytecode_blacklist bl ON bl.code_hash = b.code_hash
+WHERE b.code_hash = $1
+`, codeHash.Bytes())
+	item, err := scanBytecodeDetailRecord(row)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (s *SQLStore) ListBytecodeDeployments(ctx context.Context, codeHash common.Hash, chainID int64, contract *common.Address, limit, offset int64) ([]BytecodeDeploymentRecord, int64, error) {
+	rows, err := s.db.QueryContext(ctx, `
+SELECT chain_id, contract, code_hash, first_seen_at, updated_at, COUNT(*) OVER()::bigint AS total
+FROM contract_bytecode_deployment
+WHERE code_hash = $1
+  AND ($2::bigint IS NULL OR chain_id = $2)
+  AND ($3::bytea IS NULL OR contract = $3)
+ORDER BY updated_at DESC, chain_id, contract
+LIMIT $4 OFFSET $5
+`, codeHash.Bytes(), nullableInt64(chainID), nullableAddressPtrBytes(contract), limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list bytecode deployments: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]BytecodeDeploymentRecord, 0)
+	var total int64
+	for rows.Next() {
+		item, err := scanBytecodeDeploymentRecord(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		if total == 0 {
+			total = item.Total
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate bytecode deployments: %w", err)
+	}
+	return items, total, nil
 }
 
 func (s *SQLStore) IsBytecodeBlacklisted(ctx context.Context, codeHash common.Hash) (bool, error) {
@@ -260,6 +394,74 @@ func scanBytecode(scanner rowScanner) (Bytecode, error) {
 	return item, nil
 }
 
+func scanBytecodeListRecord(scanner rowScanner) (BytecodeListRecord, error) {
+	var (
+		item     BytecodeListRecord
+		codeHash []byte
+	)
+	if err := scanner.Scan(&codeHash, &item.RuntimeBytecodeSize, &item.DeploymentCount, &item.IsOpenSource, &item.IsBytecodeBlacklisted, &item.CreatedAt, &item.UpdatedAt, &item.Total); err != nil {
+		return BytecodeListRecord{}, fmt.Errorf("scan bytecode list record: %w", err)
+	}
+	item.CodeHash = common.BytesToHash(codeHash)
+	return item, nil
+}
+
+func scanBytecodeDetailRecord(scanner rowScanner) (BytecodeDetailRecord, error) {
+	var item BytecodeDetailRecord
+	bytecode, err := scanBytecodeWithExtra(scanner, &item.RuntimeBytecodeSize, &item.DeploymentCount, &item.IsBytecodeBlacklisted)
+	if err != nil {
+		return BytecodeDetailRecord{}, fmt.Errorf("scan bytecode detail record: %w", err)
+	}
+	item.Bytecode = bytecode
+	return item, nil
+}
+
+func scanBytecodeWithExtra(scanner rowScanner, extra ...any) (Bytecode, error) {
+	var (
+		item                         Bytecode
+		codeHash                     []byte
+		sourceCode                   sql.NullString
+		sourceCodeHash               []byte
+		sourceCodeFetchedAt          sql.NullTime
+		sourceCodeOrigin             sql.NullString
+		sourceQualityReport          sql.NullString
+		sourceQualityReportFetchedAt sql.NullTime
+		sourceQualityReportOrigin    sql.NullString
+	)
+	dest := []any{&codeHash, &item.RuntimeBytecode, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &sourceCodeOrigin, &sourceQualityReport, &sourceQualityReportFetchedAt, &sourceQualityReportOrigin, &item.CreatedAt, &item.UpdatedAt}
+	dest = append(dest, extra...)
+	if err := scanner.Scan(dest...); err != nil {
+		return Bytecode{}, err
+	}
+	item.CodeHash = common.BytesToHash(codeHash)
+	item.SourceCode = sourceCode.String
+	item.SourceCodeHash = common.BytesToHash(sourceCodeHash)
+	if sourceCodeFetchedAt.Valid {
+		item.SourceCodeFetchedAt = sourceCodeFetchedAt.Time
+	}
+	item.SourceCodeOrigin = sourceCodeOrigin.String
+	item.SourceQualityReport = sourceQualityReport.String
+	if sourceQualityReportFetchedAt.Valid {
+		item.SourceQualityReportFetchedAt = sourceQualityReportFetchedAt.Time
+	}
+	item.SourceQualityReportOrigin = sourceQualityReportOrigin.String
+	return item, nil
+}
+
+func scanBytecodeDeploymentRecord(scanner rowScanner) (BytecodeDeploymentRecord, error) {
+	var (
+		item     BytecodeDeploymentRecord
+		contract []byte
+		codeHash []byte
+	)
+	if err := scanner.Scan(&item.ChainID, &contract, &codeHash, &item.FirstSeenAt, &item.UpdatedAt, &item.Total); err != nil {
+		return BytecodeDeploymentRecord{}, fmt.Errorf("scan bytecode deployment record: %w", err)
+	}
+	item.Contract = common.BytesToAddress(contract)
+	item.CodeHash = common.BytesToHash(codeHash)
+	return item, nil
+}
+
 func scanBytecodeBlacklistEntry(scanner rowScanner) (BytecodeBlacklistEntry, error) {
 	var (
 		item           BytecodeBlacklistEntry
@@ -295,8 +497,22 @@ func nullableHashBytes(value common.Hash) any {
 	return value.Bytes()
 }
 
+func nullableHashPtrBytes(value *common.Hash) any {
+	if value == nil {
+		return nil
+	}
+	return value.Bytes()
+}
+
 func nullableAddressBytes(value common.Address) any {
 	if value == (common.Address{}) {
+		return nil
+	}
+	return value.Bytes()
+}
+
+func nullableAddressPtrBytes(value *common.Address) any {
+	if value == nil {
 		return nil
 	}
 	return value.Bytes()

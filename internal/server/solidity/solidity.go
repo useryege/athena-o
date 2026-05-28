@@ -40,6 +40,64 @@ func (s *Server) GetContractSourceInfo(ctx context.Context, req *soliditypkg.Get
 	})
 }
 
+func (s *Server) ListBytecodes(ctx context.Context, req *soliditypkg.ListBytecodesRequest) (*soliditypkg.ListBytecodesResponse, error) {
+	closer, client, err := s.solidityClientSet.NewSolidityServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListBytecodes(ctx, &solidityapiclient.ListBytecodesRequest{
+		Page:     req.GetPage(),
+		PageSize: req.GetPageSize(),
+		CodeHash: req.GetCodeHash(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &soliditypkg.ListBytecodesResponse{
+		Items:    resp.GetItems(),
+		Total:    resp.GetTotal(),
+		Page:     resp.GetPage(),
+		PageSize: resp.GetPageSize(),
+	}, nil
+}
+
+func (s *Server) GetBytecode(ctx context.Context, req *soliditypkg.GetBytecodeRequest) (*v1alpha1.BytecodeDetail, error) {
+	closer, client, err := s.solidityClientSet.NewSolidityServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	return client.GetBytecode(ctx, &solidityapiclient.GetBytecodeRequest{CodeHash: req.GetCodeHash()})
+}
+
+func (s *Server) ListBytecodeDeployments(ctx context.Context, req *soliditypkg.ListBytecodeDeploymentsRequest) (*soliditypkg.ListBytecodeDeploymentsResponse, error) {
+	closer, client, err := s.solidityClientSet.NewSolidityServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListBytecodeDeployments(ctx, &solidityapiclient.ListBytecodeDeploymentsRequest{
+		CodeHash: req.GetCodeHash(),
+		Page:     req.GetPage(),
+		PageSize: req.GetPageSize(),
+		ChainId:  req.GetChainId(),
+		Contract: req.GetContract(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &soliditypkg.ListBytecodeDeploymentsResponse{
+		Items:    resp.GetItems(),
+		Total:    resp.GetTotal(),
+		Page:     resp.GetPage(),
+		PageSize: resp.GetPageSize(),
+	}, nil
+}
+
 func (s *Server) ListBytecodeBlacklistEntries(ctx context.Context, _ *soliditypkg.ListBytecodeBlacklistEntriesRequest) (*soliditypkg.ListBytecodeBlacklistEntriesResponse, error) {
 	closer, client, err := s.solidityClientSet.NewSolidityServiceClient()
 	if err != nil {

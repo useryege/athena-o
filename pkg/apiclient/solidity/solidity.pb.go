@@ -128,6 +128,342 @@ func (m *GetContractSourceInfoRequest) GetContract() string {
 	return ""
 }
 
+// ListBytecodesRequest queries stored bytecodes.
+type ListBytecodesRequest struct {
+	Page                 int64    `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int64    `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	CodeHash             string   `protobuf:"bytes,3,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListBytecodesRequest) Reset()         { *m = ListBytecodesRequest{} }
+func (m *ListBytecodesRequest) String() string { return proto.CompactTextString(m) }
+func (*ListBytecodesRequest) ProtoMessage()    {}
+func (*ListBytecodesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f09185d15850f5d, []int{2}
+}
+func (m *ListBytecodesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListBytecodesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListBytecodesRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListBytecodesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListBytecodesRequest.Merge(m, src)
+}
+func (m *ListBytecodesRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListBytecodesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListBytecodesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListBytecodesRequest proto.InternalMessageInfo
+
+func (m *ListBytecodesRequest) GetPage() int64 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListBytecodesRequest) GetPageSize() int64 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+func (m *ListBytecodesRequest) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+// ListBytecodesResponse returns stored bytecodes.
+type ListBytecodesResponse struct {
+	Items                []*v1alpha1.BytecodeListItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total                int64                        `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page                 int64                        `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int64                        `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *ListBytecodesResponse) Reset()         { *m = ListBytecodesResponse{} }
+func (m *ListBytecodesResponse) String() string { return proto.CompactTextString(m) }
+func (*ListBytecodesResponse) ProtoMessage()    {}
+func (*ListBytecodesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f09185d15850f5d, []int{3}
+}
+func (m *ListBytecodesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListBytecodesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListBytecodesResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListBytecodesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListBytecodesResponse.Merge(m, src)
+}
+func (m *ListBytecodesResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListBytecodesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListBytecodesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListBytecodesResponse proto.InternalMessageInfo
+
+func (m *ListBytecodesResponse) GetItems() []*v1alpha1.BytecodeListItem {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+func (m *ListBytecodesResponse) GetTotal() int64 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *ListBytecodesResponse) GetPage() int64 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListBytecodesResponse) GetPageSize() int64 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+// GetBytecodeRequest queries one stored bytecode.
+type GetBytecodeRequest struct {
+	CodeHash             string   `protobuf:"bytes,1,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetBytecodeRequest) Reset()         { *m = GetBytecodeRequest{} }
+func (m *GetBytecodeRequest) String() string { return proto.CompactTextString(m) }
+func (*GetBytecodeRequest) ProtoMessage()    {}
+func (*GetBytecodeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f09185d15850f5d, []int{4}
+}
+func (m *GetBytecodeRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetBytecodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetBytecodeRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetBytecodeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetBytecodeRequest.Merge(m, src)
+}
+func (m *GetBytecodeRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetBytecodeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetBytecodeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetBytecodeRequest proto.InternalMessageInfo
+
+func (m *GetBytecodeRequest) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+// ListBytecodeDeploymentsRequest queries contracts using a bytecode.
+type ListBytecodeDeploymentsRequest struct {
+	CodeHash             string   `protobuf:"bytes,1,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	Page                 int64    `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int64    `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	ChainId              int64    `protobuf:"varint,4,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	Contract             string   `protobuf:"bytes,5,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListBytecodeDeploymentsRequest) Reset()         { *m = ListBytecodeDeploymentsRequest{} }
+func (m *ListBytecodeDeploymentsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListBytecodeDeploymentsRequest) ProtoMessage()    {}
+func (*ListBytecodeDeploymentsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f09185d15850f5d, []int{5}
+}
+func (m *ListBytecodeDeploymentsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListBytecodeDeploymentsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListBytecodeDeploymentsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListBytecodeDeploymentsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListBytecodeDeploymentsRequest.Merge(m, src)
+}
+func (m *ListBytecodeDeploymentsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListBytecodeDeploymentsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListBytecodeDeploymentsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListBytecodeDeploymentsRequest proto.InternalMessageInfo
+
+func (m *ListBytecodeDeploymentsRequest) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+func (m *ListBytecodeDeploymentsRequest) GetPage() int64 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListBytecodeDeploymentsRequest) GetPageSize() int64 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+func (m *ListBytecodeDeploymentsRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+func (m *ListBytecodeDeploymentsRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+// ListBytecodeDeploymentsResponse returns contracts using a bytecode.
+type ListBytecodeDeploymentsResponse struct {
+	Items                []*v1alpha1.BytecodeDeployment `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total                int64                          `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page                 int64                          `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int64                          `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
+	XXX_unrecognized     []byte                         `json:"-"`
+	XXX_sizecache        int32                          `json:"-"`
+}
+
+func (m *ListBytecodeDeploymentsResponse) Reset()         { *m = ListBytecodeDeploymentsResponse{} }
+func (m *ListBytecodeDeploymentsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListBytecodeDeploymentsResponse) ProtoMessage()    {}
+func (*ListBytecodeDeploymentsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f09185d15850f5d, []int{6}
+}
+func (m *ListBytecodeDeploymentsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListBytecodeDeploymentsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListBytecodeDeploymentsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListBytecodeDeploymentsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListBytecodeDeploymentsResponse.Merge(m, src)
+}
+func (m *ListBytecodeDeploymentsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListBytecodeDeploymentsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListBytecodeDeploymentsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListBytecodeDeploymentsResponse proto.InternalMessageInfo
+
+func (m *ListBytecodeDeploymentsResponse) GetItems() []*v1alpha1.BytecodeDeployment {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+func (m *ListBytecodeDeploymentsResponse) GetTotal() int64 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *ListBytecodeDeploymentsResponse) GetPage() int64 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListBytecodeDeploymentsResponse) GetPageSize() int64 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
 // ListBytecodeBlacklistEntriesRequest queries all bytecode blacklist entries.
 type ListBytecodeBlacklistEntriesRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -139,7 +475,7 @@ func (m *ListBytecodeBlacklistEntriesRequest) Reset()         { *m = ListBytecod
 func (m *ListBytecodeBlacklistEntriesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodeBlacklistEntriesRequest) ProtoMessage()    {}
 func (*ListBytecodeBlacklistEntriesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f09185d15850f5d, []int{2}
+	return fileDescriptor_5f09185d15850f5d, []int{7}
 }
 func (m *ListBytecodeBlacklistEntriesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -180,7 +516,7 @@ func (m *ListBytecodeBlacklistEntriesResponse) Reset()         { *m = ListByteco
 func (m *ListBytecodeBlacklistEntriesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodeBlacklistEntriesResponse) ProtoMessage()    {}
 func (*ListBytecodeBlacklistEntriesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f09185d15850f5d, []int{3}
+	return fileDescriptor_5f09185d15850f5d, []int{8}
 }
 func (m *ListBytecodeBlacklistEntriesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -231,7 +567,7 @@ func (m *AddBytecodeBlacklistEntryRequest) Reset()         { *m = AddBytecodeBla
 func (m *AddBytecodeBlacklistEntryRequest) String() string { return proto.CompactTextString(m) }
 func (*AddBytecodeBlacklistEntryRequest) ProtoMessage()    {}
 func (*AddBytecodeBlacklistEntryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f09185d15850f5d, []int{4}
+	return fileDescriptor_5f09185d15850f5d, []int{9}
 }
 func (m *AddBytecodeBlacklistEntryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -300,7 +636,7 @@ func (m *AddBytecodeBlacklistEntryResponse) Reset()         { *m = AddBytecodeBl
 func (m *AddBytecodeBlacklistEntryResponse) String() string { return proto.CompactTextString(m) }
 func (*AddBytecodeBlacklistEntryResponse) ProtoMessage()    {}
 func (*AddBytecodeBlacklistEntryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f09185d15850f5d, []int{5}
+	return fileDescriptor_5f09185d15850f5d, []int{10}
 }
 func (m *AddBytecodeBlacklistEntryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -349,7 +685,7 @@ func (m *UpdateBytecodeBlacklistNoteRequest) Reset()         { *m = UpdateByteco
 func (m *UpdateBytecodeBlacklistNoteRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateBytecodeBlacklistNoteRequest) ProtoMessage()    {}
 func (*UpdateBytecodeBlacklistNoteRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f09185d15850f5d, []int{6}
+	return fileDescriptor_5f09185d15850f5d, []int{11}
 }
 func (m *UpdateBytecodeBlacklistNoteRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -404,7 +740,7 @@ func (m *UpdateBytecodeBlacklistNoteResponse) Reset()         { *m = UpdateBytec
 func (m *UpdateBytecodeBlacklistNoteResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateBytecodeBlacklistNoteResponse) ProtoMessage()    {}
 func (*UpdateBytecodeBlacklistNoteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f09185d15850f5d, []int{7}
+	return fileDescriptor_5f09185d15850f5d, []int{12}
 }
 func (m *UpdateBytecodeBlacklistNoteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -452,7 +788,7 @@ func (m *DeleteBytecodeBlacklistRequest) Reset()         { *m = DeleteBytecodeBl
 func (m *DeleteBytecodeBlacklistRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteBytecodeBlacklistRequest) ProtoMessage()    {}
 func (*DeleteBytecodeBlacklistRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f09185d15850f5d, []int{8}
+	return fileDescriptor_5f09185d15850f5d, []int{13}
 }
 func (m *DeleteBytecodeBlacklistRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -499,7 +835,7 @@ func (m *DeleteBytecodeBlacklistResponse) Reset()         { *m = DeleteBytecodeB
 func (m *DeleteBytecodeBlacklistResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteBytecodeBlacklistResponse) ProtoMessage()    {}
 func (*DeleteBytecodeBlacklistResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5f09185d15850f5d, []int{9}
+	return fileDescriptor_5f09185d15850f5d, []int{14}
 }
 func (m *DeleteBytecodeBlacklistResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -531,6 +867,11 @@ var xxx_messageInfo_DeleteBytecodeBlacklistResponse proto.InternalMessageInfo
 func init() {
 	proto.RegisterType((*GetSolidityStatusRequest)(nil), "solidity.GetSolidityStatusRequest")
 	proto.RegisterType((*GetContractSourceInfoRequest)(nil), "solidity.GetContractSourceInfoRequest")
+	proto.RegisterType((*ListBytecodesRequest)(nil), "solidity.ListBytecodesRequest")
+	proto.RegisterType((*ListBytecodesResponse)(nil), "solidity.ListBytecodesResponse")
+	proto.RegisterType((*GetBytecodeRequest)(nil), "solidity.GetBytecodeRequest")
+	proto.RegisterType((*ListBytecodeDeploymentsRequest)(nil), "solidity.ListBytecodeDeploymentsRequest")
+	proto.RegisterType((*ListBytecodeDeploymentsResponse)(nil), "solidity.ListBytecodeDeploymentsResponse")
 	proto.RegisterType((*ListBytecodeBlacklistEntriesRequest)(nil), "solidity.ListBytecodeBlacklistEntriesRequest")
 	proto.RegisterType((*ListBytecodeBlacklistEntriesResponse)(nil), "solidity.ListBytecodeBlacklistEntriesResponse")
 	proto.RegisterType((*AddBytecodeBlacklistEntryRequest)(nil), "solidity.AddBytecodeBlacklistEntryRequest")
@@ -546,53 +887,67 @@ func init() {
 }
 
 var fileDescriptor_5f09185d15850f5d = []byte{
-	// 724 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x96, 0x4f, 0x6b, 0x13, 0x4f,
-	0x18, 0xc7, 0x99, 0xb4, 0xbf, 0x9f, 0xe9, 0x88, 0x16, 0x07, 0xa4, 0xe9, 0xb6, 0xa4, 0xe9, 0xd6,
-	0xb6, 0xb1, 0x7f, 0x76, 0x48, 0x2d, 0x88, 0x82, 0x14, 0x5b, 0xa5, 0x2d, 0x14, 0x91, 0x94, 0x5e,
-	0xbc, 0x94, 0xc9, 0xee, 0xd3, 0x64, 0xe8, 0x76, 0x66, 0xdd, 0x99, 0x04, 0x82, 0xf4, 0xe2, 0x4d,
-	0x04, 0x2f, 0xbe, 0x03, 0x29, 0x08, 0xbe, 0x02, 0xc1, 0xa3, 0x17, 0x8f, 0x82, 0x6f, 0x40, 0x8a,
-	0x2f, 0x44, 0x32, 0xfb, 0x27, 0x2d, 0x69, 0xd2, 0xb5, 0xa0, 0xb7, 0x9d, 0x9d, 0xef, 0x3c, 0xf3,
-	0x79, 0xbe, 0xc9, 0xf3, 0x65, 0xf1, 0x3c, 0x17, 0x1a, 0x42, 0xc1, 0x7c, 0xaa, 0x20, 0x6c, 0x41,
-	0x48, 0x95, 0xf4, 0xb9, 0xc7, 0x75, 0x3b, 0x7d, 0x70, 0x82, 0x50, 0x6a, 0x49, 0xf2, 0xc9, 0xda,
-	0xda, 0xaa, 0x73, 0xdd, 0x68, 0xd6, 0x1c, 0x57, 0x1e, 0xd1, 0xa6, 0x82, 0xb0, 0x0d, 0x75, 0xa0,
-	0x4c, 0x37, 0x40, 0x30, 0x1a, 0x1c, 0xd6, 0x29, 0x0b, 0xb8, 0xa2, 0x2c, 0x08, 0x7c, 0xee, 0x32,
-	0xcd, 0xa5, 0xa0, 0xad, 0x0a, 0xf3, 0x83, 0x06, 0xab, 0xd0, 0x3a, 0x08, 0x08, 0x99, 0x06, 0x2f,
-	0xaa, 0x69, 0x4d, 0xd6, 0xa5, 0xac, 0xfb, 0xd0, 0x39, 0x41, 0x99, 0x10, 0x52, 0x1b, 0xbd, 0x8a,
-	0x76, 0x6d, 0x0b, 0x17, 0x36, 0x41, 0xef, 0xc6, 0xd7, 0xee, 0x6a, 0xa6, 0x9b, 0xaa, 0x0a, 0x2f,
-	0x9b, 0xa0, 0xb4, 0xbd, 0x87, 0x27, 0x37, 0x41, 0x6f, 0x48, 0xa1, 0x43, 0xe6, 0xea, 0x5d, 0xd9,
-	0x0c, 0x5d, 0xd8, 0x16, 0x07, 0x32, 0xde, 0x27, 0xe3, 0x38, 0xef, 0x36, 0x18, 0x17, 0xfb, 0xdc,
-	0x2b, 0xa0, 0x12, 0x2a, 0x0f, 0x55, 0xaf, 0x99, 0xf5, 0xb6, 0x47, 0x2c, 0x9c, 0x77, 0xe3, 0x73,
-	0x85, 0x5c, 0x09, 0x95, 0x47, 0xaa, 0xe9, 0xda, 0x9e, 0xc5, 0x33, 0x3b, 0x5c, 0xe9, 0xf5, 0xb6,
-	0x06, 0x57, 0x7a, 0xb0, 0xee, 0x33, 0xf7, 0xd0, 0xe7, 0x4a, 0x3f, 0x15, 0x3a, 0xe4, 0x90, 0xde,
-	0xfe, 0x0e, 0xe1, 0x3b, 0x83, 0x75, 0x2a, 0x90, 0x42, 0x01, 0x39, 0xc0, 0xff, 0x71, 0x0d, 0x47,
-	0xaa, 0x80, 0x4a, 0x43, 0xe5, 0xeb, 0x2b, 0xcf, 0x9d, 0xae, 0x75, 0x4e, 0x62, 0x9d, 0x13, 0x59,
-	0xe7, 0x04, 0x87, 0x75, 0xa7, 0x63, 0x9d, 0x73, 0xc6, 0x3a, 0x27, 0xb1, 0xce, 0xb9, 0xf0, 0xaa,
-	0x76, 0x35, 0x2a, 0x6f, 0x9f, 0x20, 0x5c, 0x7a, 0xec, 0x79, 0x7d, 0x44, 0xb1, 0x27, 0x13, 0x78,
-	0xa4, 0xb3, 0xb9, 0xdf, 0x60, 0xaa, 0x61, 0x4c, 0x31, 0x9d, 0x7b, 0xb0, 0xc5, 0x54, 0x83, 0xcc,
-	0xe1, 0x51, 0x65, 0x5c, 0xdc, 0x4f, 0x7d, 0xcb, 0x19, 0xdf, 0x6e, 0x44, 0xaf, 0x37, 0x62, 0xf7,
-	0xe6, 0xbb, 0xba, 0xc4, 0xc4, 0x21, 0x53, 0xea, 0x66, 0xac, 0x8b, 0xdf, 0x12, 0x82, 0x87, 0x85,
-	0xd4, 0x50, 0x18, 0x36, 0xbb, 0xe6, 0xd9, 0x7e, 0x83, 0xf0, 0xf4, 0x00, 0xcc, 0xd8, 0x34, 0x0f,
-	0x0f, 0x77, 0xba, 0x32, 0x88, 0x7f, 0xc3, 0x33, 0x53, 0xdd, 0xde, 0xc3, 0xf6, 0x5e, 0xe0, 0x31,
-	0x0d, 0x3d, 0xaa, 0x67, 0x52, 0x43, 0x26, 0xcf, 0x92, 0x16, 0x73, 0x67, 0x5a, 0x7c, 0x8b, 0xf0,
-	0xcc, 0xc0, 0xba, 0xff, 0xb4, 0xc9, 0x47, 0xb8, 0xf8, 0x04, 0x7c, 0xb8, 0x00, 0x26, 0x4b, 0x83,
-	0xf6, 0x34, 0x9e, 0xea, 0x7b, 0x3c, 0xea, 0x63, 0xe5, 0x73, 0x1e, 0x8f, 0xa6, 0x23, 0x0a, 0x61,
-	0x8b, 0xbb, 0x40, 0x3e, 0x20, 0x7c, 0xab, 0x67, 0x72, 0x89, 0xed, 0xa4, 0x89, 0xd2, 0x6f, 0xac,
-	0xad, 0xad, 0xab, 0xfb, 0x70, 0xbe, 0xa0, 0x3d, 0xf5, 0xfa, 0xc7, 0xaf, 0xf7, 0xb9, 0x71, 0x32,
-	0x66, 0xc2, 0xa5, 0x55, 0x39, 0x93, 0x6b, 0x11, 0xce, 0x57, 0x84, 0x6f, 0x5f, 0x18, 0x21, 0x64,
-	0xee, 0x1c, 0x68, 0xdf, 0x8c, 0xb1, 0x76, 0xae, 0x0e, 0xdb, 0x5b, 0xd4, 0x5e, 0x35, 0xc0, 0x0e,
-	0x59, 0xea, 0x01, 0x4e, 0x06, 0x4d, 0xd1, 0x57, 0xc9, 0xe3, 0x31, 0x8d, 0xa6, 0x8d, 0x7c, 0x42,
-	0x78, 0x72, 0x50, 0x12, 0x91, 0xe5, 0x6e, 0x33, 0x19, 0x92, 0xcd, 0x72, 0xb2, 0xca, 0xa3, 0x9f,
-	0xdf, 0x5e, 0x34, 0xd4, 0xb3, 0x64, 0xa6, 0x87, 0xba, 0x16, 0x1f, 0xa5, 0xb5, 0xe4, 0x2c, 0x39,
-	0x41, 0x78, 0xbc, 0xef, 0xf8, 0x93, 0x85, 0xee, 0xd5, 0x97, 0x45, 0x99, 0xb5, 0x98, 0x49, 0x1b,
-	0x33, 0x3a, 0x86, 0xb1, 0x6c, 0x67, 0x61, 0x7c, 0x88, 0x16, 0xc8, 0x17, 0x84, 0x27, 0x06, 0x8c,
-	0x30, 0x59, 0xea, 0x5e, 0x7e, 0x79, 0x82, 0x58, 0xcb, 0x19, 0xd5, 0x31, 0xec, 0x9a, 0x81, 0x7d,
-	0x60, 0xaf, 0x66, 0x80, 0xed, 0xfc, 0x1f, 0xe2, 0xd1, 0x3d, 0xa6, 0x9d, 0xf4, 0xe9, 0xd0, 0x7f,
-	0x44, 0x78, 0xac, 0xcf, 0xd0, 0x92, 0x72, 0x97, 0x65, 0x70, 0x2c, 0x58, 0x77, 0x33, 0x28, 0x63,
-	0xe2, 0xfb, 0x86, 0xb8, 0xb2, 0x40, 0xff, 0x90, 0x78, 0x7d, 0xed, 0xdb, 0x69, 0x11, 0x7d, 0x3f,
-	0x2d, 0xa2, 0x9f, 0xa7, 0x45, 0xf4, 0xa2, 0x72, 0xf9, 0x57, 0x85, 0xeb, 0x73, 0x10, 0x3a, 0xad,
-	0x5f, 0xfb, 0xdf, 0x7c, 0x27, 0xdc, 0xfb, 0x1d, 0x00, 0x00, 0xff, 0xff, 0xa9, 0x87, 0x49, 0x87,
-	0xc4, 0x08, 0x00, 0x00,
+	// 960 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x57, 0x41, 0x6f, 0xdc, 0x44,
+	0x14, 0xd6, 0x64, 0x13, 0x48, 0xa6, 0x94, 0x8a, 0x51, 0xab, 0x6c, 0xdc, 0xd5, 0x26, 0x9d, 0xd0,
+	0x74, 0x49, 0x5b, 0x5b, 0x1b, 0x22, 0x21, 0x2a, 0xa1, 0x8a, 0xb4, 0x28, 0x09, 0xaa, 0x10, 0xda,
+	0x28, 0x17, 0x2e, 0x61, 0xd6, 0x7e, 0xdd, 0x1d, 0xc5, 0xf1, 0x18, 0xcf, 0x6c, 0xa4, 0x2d, 0xea,
+	0x05, 0x4e, 0x08, 0x89, 0x0b, 0xff, 0x00, 0xb5, 0x42, 0xca, 0x5f, 0xe0, 0x82, 0xc4, 0x85, 0x03,
+	0x07, 0x24, 0xfe, 0x00, 0x8a, 0xf8, 0x21, 0xc8, 0xe3, 0xb1, 0xd7, 0xde, 0x5d, 0x6f, 0x0c, 0x81,
+	0x9e, 0xd6, 0xf6, 0xbc, 0x79, 0xef, 0xfb, 0xbe, 0x79, 0xf3, 0x3e, 0x2d, 0xbe, 0xc3, 0x03, 0x05,
+	0x51, 0xc0, 0x7c, 0x47, 0x42, 0x74, 0x0a, 0x91, 0x23, 0x85, 0xcf, 0x3d, 0xae, 0x86, 0xd9, 0x83,
+	0x1d, 0x46, 0x42, 0x09, 0xb2, 0x98, 0xbe, 0x5b, 0x7b, 0x3d, 0xae, 0xfa, 0x83, 0xae, 0xed, 0x8a,
+	0x13, 0x67, 0x20, 0x21, 0x1a, 0x42, 0x0f, 0x1c, 0xa6, 0xfa, 0x10, 0x30, 0x27, 0x3c, 0xee, 0x39,
+	0x2c, 0xe4, 0xd2, 0x61, 0x61, 0xe8, 0x73, 0x97, 0x29, 0x2e, 0x02, 0xe7, 0xb4, 0xcd, 0xfc, 0xb0,
+	0xcf, 0xda, 0x4e, 0x0f, 0x02, 0x88, 0x98, 0x02, 0x2f, 0xc9, 0x69, 0x35, 0x7a, 0x42, 0xf4, 0x7c,
+	0x88, 0x77, 0x38, 0x2c, 0x08, 0x84, 0xd2, 0xf1, 0x32, 0x59, 0xa5, 0x16, 0xae, 0xef, 0x82, 0x3a,
+	0x30, 0x65, 0x0f, 0x14, 0x53, 0x03, 0xd9, 0x81, 0x2f, 0x06, 0x20, 0x15, 0x3d, 0xc4, 0x8d, 0x5d,
+	0x50, 0x8f, 0x44, 0xa0, 0x22, 0xe6, 0xaa, 0x03, 0x31, 0x88, 0x5c, 0xd8, 0x0f, 0x9e, 0x0a, 0xb3,
+	0x4e, 0x56, 0xf0, 0xa2, 0xdb, 0x67, 0x3c, 0x38, 0xe2, 0x5e, 0x1d, 0xad, 0xa1, 0x56, 0xad, 0xf3,
+	0xba, 0x7e, 0xdf, 0xf7, 0x88, 0x85, 0x17, 0x5d, 0xb3, 0xaf, 0x3e, 0xb7, 0x86, 0x5a, 0x4b, 0x9d,
+	0xec, 0x9d, 0x7a, 0xf8, 0xfa, 0x13, 0x2e, 0xd5, 0xce, 0x50, 0x81, 0x2b, 0x3c, 0x48, 0xcb, 0x11,
+	0x82, 0xe7, 0x43, 0xd6, 0x03, 0x93, 0x4a, 0x3f, 0x93, 0x9b, 0x78, 0x29, 0xfe, 0x3d, 0x92, 0xfc,
+	0x19, 0xe8, 0x44, 0xb5, 0xce, 0x62, 0xfc, 0xe1, 0x80, 0x3f, 0xd3, 0x8b, 0x71, 0x82, 0xa3, 0x3e,
+	0x93, 0xfd, 0x7a, 0x2d, 0xad, 0xe2, 0xc1, 0x1e, 0x93, 0x7d, 0xfa, 0x33, 0xc2, 0x37, 0xc6, 0xca,
+	0xc8, 0x50, 0x04, 0x12, 0xc8, 0xe7, 0x78, 0x81, 0x2b, 0x38, 0x91, 0x75, 0xb4, 0x56, 0x6b, 0x5d,
+	0xd9, 0xfa, 0xd8, 0x1e, 0x49, 0x6d, 0xa7, 0x52, 0xdb, 0x89, 0xd4, 0x76, 0x78, 0xdc, 0xb3, 0x63,
+	0xa9, 0xed, 0x9c, 0xd4, 0x76, 0x2a, 0xb5, 0x9d, 0xe6, 0x8e, 0xeb, 0xec, 0x2b, 0x38, 0xe9, 0x24,
+	0x89, 0xc9, 0x75, 0xbc, 0xa0, 0x84, 0x62, 0xbe, 0x41, 0x9c, 0xbc, 0x64, 0xfc, 0x6a, 0x65, 0xfc,
+	0xe6, 0x8b, 0xfc, 0x68, 0x1b, 0x93, 0x5d, 0xc8, 0x08, 0xa4, 0x32, 0x15, 0x58, 0xa3, 0x31, 0xd6,
+	0x2f, 0x11, 0x6e, 0xe6, 0x59, 0x3f, 0x86, 0xd0, 0x17, 0xc3, 0x13, 0x08, 0x94, 0xac, 0xb2, 0x3f,
+	0xc3, 0x38, 0x57, 0x86, 0xb1, 0x36, 0x76, 0x06, 0xf9, 0x1e, 0x98, 0x2f, 0xef, 0x81, 0x85, 0xb1,
+	0x1e, 0xf8, 0x0d, 0xe1, 0xd5, 0x52, 0x9c, 0xe6, 0x9c, 0xba, 0xc5, 0x73, 0x7a, 0x72, 0xf9, 0x73,
+	0x1a, 0x55, 0xf9, 0x8f, 0x4f, 0xea, 0x36, 0x5e, 0xcf, 0xb3, 0xd9, 0xf1, 0x99, 0x7b, 0xec, 0x73,
+	0xa9, 0x3e, 0x0a, 0x54, 0xc4, 0xb3, 0x0e, 0xa7, 0xdf, 0x21, 0xfc, 0xf6, 0xec, 0x38, 0x43, 0xfd,
+	0x69, 0x91, 0xfa, 0xa7, 0x97, 0xa7, 0x5e, 0x28, 0x35, 0x34, 0xf4, 0xe9, 0x0b, 0x84, 0xd7, 0x3e,
+	0xf4, 0xbc, 0x92, 0xa0, 0x2a, 0x0d, 0xb3, 0x81, 0xaf, 0x49, 0x3d, 0x18, 0x8e, 0xb2, 0x36, 0x48,
+	0xa4, 0xbc, 0x9a, 0x7c, 0x7e, 0x64, 0x9a, 0xe1, 0xce, 0x28, 0x2e, 0xed, 0x89, 0xe4, 0xc6, 0xbe,
+	0x69, 0xe2, 0xcc, 0xd7, 0x58, 0xfb, 0x40, 0xa8, 0x44, 0xe2, 0xa5, 0x8e, 0x7e, 0xa6, 0xdf, 0x20,
+	0x7c, 0x6b, 0x06, 0x4c, 0x23, 0x9a, 0x87, 0xe7, 0x63, 0x56, 0x1a, 0xe2, 0xff, 0xa1, 0x99, 0xce,
+	0x4e, 0x0f, 0x31, 0x3d, 0x0c, 0x3d, 0xa6, 0x60, 0x22, 0xea, 0x13, 0xa1, 0xa0, 0xea, 0x25, 0xd3,
+	0x14, 0xe7, 0x72, 0x14, 0xbf, 0x45, 0x78, 0x7d, 0x66, 0xde, 0x57, 0x4a, 0xf2, 0x03, 0xdc, 0x7c,
+	0x0c, 0x3e, 0x4c, 0x01, 0x53, 0x69, 0x0a, 0xdd, 0xc2, 0xab, 0xa5, 0xdb, 0x13, 0x1e, 0x5b, 0x5f,
+	0xbf, 0x81, 0xaf, 0x65, 0xae, 0x03, 0xd1, 0x29, 0x77, 0x81, 0xfc, 0x80, 0xf0, 0x5b, 0x13, 0x66,
+	0x44, 0xa8, 0x9d, 0x99, 0x64, 0x99, 0x53, 0x59, 0x7b, 0xff, 0x5e, 0x87, 0x62, 0x42, 0xba, 0xfa,
+	0xd5, 0x1f, 0x7f, 0x7d, 0x3f, 0xb7, 0x42, 0x96, 0xb5, 0x5f, 0x9e, 0xb6, 0x73, 0x56, 0x9d, 0xc0,
+	0xf9, 0x05, 0xe1, 0x1b, 0x53, 0x5d, 0x91, 0x6c, 0x14, 0x80, 0x96, 0xda, 0xa6, 0x75, 0x89, 0x41,
+	0x36, 0x99, 0x94, 0x6e, 0x6b, 0xc0, 0x36, 0xb9, 0x37, 0x01, 0x38, 0xbd, 0x68, 0xd2, 0xf9, 0x32,
+	0x7d, 0x7c, 0xee, 0x24, 0xb7, 0x8d, 0x28, 0x7c, 0xb5, 0x60, 0x8e, 0xa4, 0x39, 0x02, 0x3f, 0xcd,
+	0x9c, 0xad, 0xd5, 0xd2, 0xf5, 0xe4, 0x40, 0x29, 0xd5, 0x38, 0x1a, 0xc4, 0x9a, 0xc0, 0xd1, 0xcd,
+	0x8a, 0xbc, 0x44, 0xf8, 0x4a, 0xce, 0xd1, 0x48, 0xa3, 0xa0, 0xd8, 0x98, 0xd1, 0x5d, 0xe6, 0x50,
+	0x47, 0x03, 0x5f, 0x31, 0xee, 0x53, 0x5b, 0x63, 0x6b, 0x91, 0x8d, 0x72, 0x6c, 0xb1, 0x46, 0xa6,
+	0x9d, 0x9f, 0x93, 0x33, 0x84, 0x97, 0x4b, 0xdc, 0x89, 0xb4, 0xa6, 0x0b, 0x31, 0x69, 0xb4, 0xd6,
+	0x3b, 0x15, 0x22, 0x8d, 0x78, 0x0f, 0x34, 0xc0, 0x6d, 0xb2, 0x55, 0x0d, 0xa0, 0xe3, 0xe5, 0x00,
+	0x9d, 0x21, 0xdc, 0x98, 0x65, 0x2a, 0xe4, 0xfe, 0x74, 0x1c, 0x25, 0x26, 0x65, 0xd9, 0x55, 0xc3,
+	0x0d, 0xf6, 0xbb, 0x1a, 0xfb, 0x6d, 0xb2, 0x5e, 0x8a, 0xdd, 0xe9, 0xa6, 0x7b, 0xc9, 0x0b, 0x84,
+	0x57, 0x4a, 0x27, 0x39, 0xd9, 0x1c, 0x95, 0xbe, 0xc8, 0x95, 0xac, 0xbb, 0x95, 0x62, 0x0d, 0x46,
+	0xd3, 0x00, 0xb4, 0x0a, 0xc6, 0x07, 0x68, 0x93, 0xfc, 0x84, 0xf0, 0xcd, 0x19, 0xd3, 0x98, 0xdc,
+	0x1b, 0x15, 0xbf, 0xd8, 0x0c, 0xac, 0xfb, 0x15, 0xa3, 0x0d, 0xd8, 0x87, 0x1a, 0xec, 0xfb, 0x74,
+	0xbb, 0x02, 0xd8, 0x42, 0x57, 0xc4, 0x46, 0x12, 0xa3, 0xff, 0x11, 0xe1, 0xe5, 0x92, 0xf9, 0x9b,
+	0x6f, 0xdf, 0xd9, 0x13, 0x3e, 0xdf, 0xbe, 0x17, 0x0c, 0x73, 0xfa, 0x9e, 0x46, 0xdc, 0xde, 0x74,
+	0xfe, 0x21, 0xe2, 0x9d, 0x87, 0xbf, 0x9e, 0x37, 0xd1, 0xef, 0xe7, 0x4d, 0xf4, 0xe7, 0x79, 0x13,
+	0x7d, 0xd6, 0xbe, 0xf8, 0x3f, 0x8f, 0xeb, 0x73, 0x08, 0x54, 0x96, 0xbf, 0xfb, 0x9a, 0xfe, 0x17,
+	0xf3, 0xee, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x03, 0x55, 0x09, 0xfd, 0x62, 0x0d, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -611,6 +966,12 @@ type SolidityServiceClient interface {
 	GetSolidityStatus(ctx context.Context, in *GetSolidityStatusRequest, opts ...grpc.CallOption) (*v1alpha1.SolidityStatus, error)
 	// GetContractSourceInfo resolves bytecode/source facts for a contract.
 	GetContractSourceInfo(ctx context.Context, in *GetContractSourceInfoRequest, opts ...grpc.CallOption) (*v1alpha1.ContractSourceInfo, error)
+	// ListBytecodes returns stored bytecodes.
+	ListBytecodes(ctx context.Context, in *ListBytecodesRequest, opts ...grpc.CallOption) (*ListBytecodesResponse, error)
+	// GetBytecode returns one stored bytecode.
+	GetBytecode(ctx context.Context, in *GetBytecodeRequest, opts ...grpc.CallOption) (*v1alpha1.BytecodeDetail, error)
+	// ListBytecodeDeployments returns contracts using a bytecode.
+	ListBytecodeDeployments(ctx context.Context, in *ListBytecodeDeploymentsRequest, opts ...grpc.CallOption) (*ListBytecodeDeploymentsResponse, error)
 	// ListBytecodeBlacklistEntries returns configured bytecode blacklist entries.
 	ListBytecodeBlacklistEntries(ctx context.Context, in *ListBytecodeBlacklistEntriesRequest, opts ...grpc.CallOption) (*ListBytecodeBlacklistEntriesResponse, error)
 	// AddBytecodeBlacklistEntry adds a bytecode blacklist entry.
@@ -641,6 +1002,33 @@ func (c *solidityServiceClient) GetSolidityStatus(ctx context.Context, in *GetSo
 func (c *solidityServiceClient) GetContractSourceInfo(ctx context.Context, in *GetContractSourceInfoRequest, opts ...grpc.CallOption) (*v1alpha1.ContractSourceInfo, error) {
 	out := new(v1alpha1.ContractSourceInfo)
 	err := c.cc.Invoke(ctx, "/solidity.SolidityService/GetContractSourceInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) ListBytecodes(ctx context.Context, in *ListBytecodesRequest, opts ...grpc.CallOption) (*ListBytecodesResponse, error) {
+	out := new(ListBytecodesResponse)
+	err := c.cc.Invoke(ctx, "/solidity.SolidityService/ListBytecodes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) GetBytecode(ctx context.Context, in *GetBytecodeRequest, opts ...grpc.CallOption) (*v1alpha1.BytecodeDetail, error) {
+	out := new(v1alpha1.BytecodeDetail)
+	err := c.cc.Invoke(ctx, "/solidity.SolidityService/GetBytecode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *solidityServiceClient) ListBytecodeDeployments(ctx context.Context, in *ListBytecodeDeploymentsRequest, opts ...grpc.CallOption) (*ListBytecodeDeploymentsResponse, error) {
+	out := new(ListBytecodeDeploymentsResponse)
+	err := c.cc.Invoke(ctx, "/solidity.SolidityService/ListBytecodeDeployments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -689,6 +1077,12 @@ type SolidityServiceServer interface {
 	GetSolidityStatus(context.Context, *GetSolidityStatusRequest) (*v1alpha1.SolidityStatus, error)
 	// GetContractSourceInfo resolves bytecode/source facts for a contract.
 	GetContractSourceInfo(context.Context, *GetContractSourceInfoRequest) (*v1alpha1.ContractSourceInfo, error)
+	// ListBytecodes returns stored bytecodes.
+	ListBytecodes(context.Context, *ListBytecodesRequest) (*ListBytecodesResponse, error)
+	// GetBytecode returns one stored bytecode.
+	GetBytecode(context.Context, *GetBytecodeRequest) (*v1alpha1.BytecodeDetail, error)
+	// ListBytecodeDeployments returns contracts using a bytecode.
+	ListBytecodeDeployments(context.Context, *ListBytecodeDeploymentsRequest) (*ListBytecodeDeploymentsResponse, error)
 	// ListBytecodeBlacklistEntries returns configured bytecode blacklist entries.
 	ListBytecodeBlacklistEntries(context.Context, *ListBytecodeBlacklistEntriesRequest) (*ListBytecodeBlacklistEntriesResponse, error)
 	// AddBytecodeBlacklistEntry adds a bytecode blacklist entry.
@@ -708,6 +1102,15 @@ func (*UnimplementedSolidityServiceServer) GetSolidityStatus(ctx context.Context
 }
 func (*UnimplementedSolidityServiceServer) GetContractSourceInfo(ctx context.Context, req *GetContractSourceInfoRequest) (*v1alpha1.ContractSourceInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetContractSourceInfo not implemented")
+}
+func (*UnimplementedSolidityServiceServer) ListBytecodes(ctx context.Context, req *ListBytecodesRequest) (*ListBytecodesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListBytecodes not implemented")
+}
+func (*UnimplementedSolidityServiceServer) GetBytecode(ctx context.Context, req *GetBytecodeRequest) (*v1alpha1.BytecodeDetail, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBytecode not implemented")
+}
+func (*UnimplementedSolidityServiceServer) ListBytecodeDeployments(ctx context.Context, req *ListBytecodeDeploymentsRequest) (*ListBytecodeDeploymentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListBytecodeDeployments not implemented")
 }
 func (*UnimplementedSolidityServiceServer) ListBytecodeBlacklistEntries(ctx context.Context, req *ListBytecodeBlacklistEntriesRequest) (*ListBytecodeBlacklistEntriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListBytecodeBlacklistEntries not implemented")
@@ -758,6 +1161,60 @@ func _SolidityService_GetContractSourceInfo_Handler(srv interface{}, ctx context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SolidityServiceServer).GetContractSourceInfo(ctx, req.(*GetContractSourceInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_ListBytecodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBytecodesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).ListBytecodes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/solidity.SolidityService/ListBytecodes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).ListBytecodes(ctx, req.(*ListBytecodesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_GetBytecode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBytecodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).GetBytecode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/solidity.SolidityService/GetBytecode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).GetBytecode(ctx, req.(*GetBytecodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SolidityService_ListBytecodeDeployments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBytecodeDeploymentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SolidityServiceServer).ListBytecodeDeployments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/solidity.SolidityService/ListBytecodeDeployments",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SolidityServiceServer).ListBytecodeDeployments(ctx, req.(*ListBytecodeDeploymentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -847,6 +1304,18 @@ var _SolidityService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _SolidityService_GetContractSourceInfo_Handler,
 		},
 		{
+			MethodName: "ListBytecodes",
+			Handler:    _SolidityService_ListBytecodes_Handler,
+		},
+		{
+			MethodName: "GetBytecode",
+			Handler:    _SolidityService_GetBytecode_Handler,
+		},
+		{
+			MethodName: "ListBytecodeDeployments",
+			Handler:    _SolidityService_ListBytecodeDeployments_Handler,
+		},
+		{
 			MethodName: "ListBytecodeBlacklistEntries",
 			Handler:    _SolidityService_ListBytecodeBlacklistEntries_Handler,
 		},
@@ -929,6 +1398,252 @@ func (m *GetContractSourceInfoRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 		i = encodeVarintSolidity(dAtA, i, uint64(m.ChainId))
 		i--
 		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListBytecodesRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListBytecodesRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListBytecodesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.CodeHash)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Page != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListBytecodesResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListBytecodesResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListBytecodesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Page != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Total != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintSolidity(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetBytecodeRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetBytecodeRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetBytecodeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.CodeHash)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListBytecodeDeploymentsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListBytecodeDeploymentsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListBytecodeDeploymentsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Page != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintSolidity(dAtA, i, uint64(len(m.CodeHash)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListBytecodeDeploymentsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListBytecodeDeploymentsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListBytecodeDeploymentsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Page != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Total != 0 {
+		i = encodeVarintSolidity(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintSolidity(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -1276,6 +1991,127 @@ func (m *GetContractSourceInfoRequest) Size() (n int) {
 	return n
 }
 
+func (m *ListBytecodesRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Page != 0 {
+		n += 1 + sovSolidity(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovSolidity(uint64(m.PageSize))
+	}
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListBytecodesResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovSolidity(uint64(l))
+		}
+	}
+	if m.Total != 0 {
+		n += 1 + sovSolidity(uint64(m.Total))
+	}
+	if m.Page != 0 {
+		n += 1 + sovSolidity(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovSolidity(uint64(m.PageSize))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetBytecodeRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListBytecodeDeploymentsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.Page != 0 {
+		n += 1 + sovSolidity(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovSolidity(uint64(m.PageSize))
+	}
+	if m.ChainId != 0 {
+		n += 1 + sovSolidity(uint64(m.ChainId))
+	}
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovSolidity(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListBytecodeDeploymentsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovSolidity(uint64(l))
+		}
+	}
+	if m.Total != 0 {
+		n += 1 + sovSolidity(uint64(m.Total))
+	}
+	if m.Page != 0 {
+		n += 1 + sovSolidity(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovSolidity(uint64(m.PageSize))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *ListBytecodeBlacklistEntriesRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1550,6 +2386,666 @@ func (m *GetContractSourceInfoRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.Contract = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListBytecodesRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListBytecodesRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListBytecodesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListBytecodesResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListBytecodesResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListBytecodesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.BytecodeListItem{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetBytecodeRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetBytecodeRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetBytecodeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListBytecodeDeploymentsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListBytecodeDeploymentsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListBytecodeDeploymentsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSolidity(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListBytecodeDeploymentsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSolidity
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListBytecodeDeploymentsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListBytecodeDeploymentsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSolidity
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.BytecodeDeployment{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSolidity
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSolidity(dAtA[iNdEx:])

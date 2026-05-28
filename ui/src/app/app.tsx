@@ -5,12 +5,12 @@ import * as React from 'react';
 import {Helmet} from 'react-helmet';
 import {Redirect, Route, RouteComponentProps, Router, Switch} from 'react-router';
 import {Subscription} from 'rxjs';
-import bytecodeBlacklist from './bytecode-blacklist';
 import help from './help';
 import login from './login';
 import notifications from './notifications';
 import projects from './projects';
 import settings from './settings';
+import solidity from './solidity';
 import wallet from './wallet';
 import walletBlacklist from './wallet-blacklist';
 import worm from './worm';
@@ -35,7 +35,7 @@ type Routes = {[path: string]: {component: React.ComponentType<RouteComponentPro
 const routes: Routes = {
     '/login': {component: login.component as any, noLayout: true},
     '/projects': {component: projects.component},
-    '/bytecode-blacklist': {component: bytecodeBlacklist.component},
+    '/solidity': {component: solidity.component},
     '/wallet': {component: wallet.component},
     '/wallet-blacklist': {component: walletBlacklist.component},
     '/worm': {component: worm.component},
@@ -66,15 +66,28 @@ const navItems: NavItem[] = [
                 iconClassName: 'fa fa-cubes'
             },
             {
-                title: 'ByteCode',
-                tooltip: 'Manage bytecode blacklist entries',
-                path: '/bytecode-blacklist',
-                iconClassName: 'fa fa-cube'
-            },
-            {
                 title: 'Wallet Blacklist',
                 tooltip: 'Manage wallet blacklist addresses',
                 path: '/wallet-blacklist',
+                iconClassName: 'fa fa-ban'
+            }
+        ]
+    },
+    {
+        title: 'Solidity',
+        tooltip: 'View Solidity bytecodes',
+        iconClassName: 'fa fa-code',
+        children: [
+            {
+                title: 'Bytecode',
+                tooltip: 'View bytecode deployments',
+                path: '/solidity/bytecodes',
+                iconClassName: 'fa fa-cube'
+            },
+            {
+                title: 'Bytecode Blacklist',
+                tooltip: 'Manage bytecode blacklist entries',
+                path: '/solidity/bytecode-blacklist',
                 iconClassName: 'fa fa-ban'
             }
         ]

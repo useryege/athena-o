@@ -15,6 +15,12 @@ func (*AveTokenDetail) ProtoMessage() {}
 
 func (*BytecodeBlacklistEntry) ProtoMessage() {}
 
+func (*BytecodeDeployment) ProtoMessage() {}
+
+func (*BytecodeDetail) ProtoMessage() {}
+
+func (*BytecodeListItem) ProtoMessage() {}
+
 func (*ContractSourceInfo) ProtoMessage() {}
 
 func (*GenesisWalletAssetState) ProtoMessage() {}

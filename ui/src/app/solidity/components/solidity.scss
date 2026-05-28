@@ -1,0 +1,217 @@
+.solidity-bytecode {
+    .argo-container {
+        width: min(96vw, 1720px);
+        max-width: 1720px;
+        margin: 0 auto;
+    }
+
+    &__error {
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ffb3b3;
+        background: #fff1f1;
+        color: #7a1616;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    &__box {
+        padding: 0.875rem 1rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    &__controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.875rem;
+        flex-wrap: wrap;
+    }
+
+    &__filter-form {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
+    &__filter-form .argo-field {
+        min-width: 18rem;
+        height: 2.25rem;
+    }
+
+    &__filter-form .argo-field:first-child:not(:only-child) {
+        min-width: 8rem;
+    }
+
+    &__pager {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        white-space: nowrap;
+        color: #44545f;
+        font-size: 0.875rem;
+    }
+
+    &__table {
+        width: 100%;
+    }
+
+    &__row,
+    &__deployment-row {
+        display: grid;
+        gap: 0.625rem;
+        align-items: center;
+        width: 100%;
+    }
+
+    &__row {
+        grid-template-columns: minmax(0, 4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr);
+    }
+
+    &__deployment-row {
+        grid-template-columns: minmax(0, 0.8fr) minmax(0, 3fr) minmax(0, 1.4fr) minmax(0, 1.4fr);
+    }
+
+    &__row > div,
+    &__deployment-row > div {
+        min-width: 0;
+    }
+
+    &__row-link {
+        color: inherit;
+        text-decoration: none;
+        min-height: 2.75rem;
+        padding: 0.15rem 0;
+        transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    &__row-link:hover {
+        color: #0d5aa7;
+        background: #f7fbff;
+    }
+
+    &__detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.875rem;
+        margin-bottom: 1rem;
+    }
+
+    &__detail-grid > div {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    &__label {
+        color: #6d7f8b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+
+    &__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 3.25rem;
+        width: fit-content;
+        height: 1.35rem;
+        padding: 0 0.45rem;
+        border: 1px solid #d7dee5;
+        border-radius: 4px;
+        background: #f6f8fa;
+        color: #52616b;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    &__badge--success {
+        border-color: #9ed4b2;
+        background: #edf8f1;
+        color: #1f7a3d;
+    }
+
+    &__badge--danger {
+        border-color: #f0aaa4;
+        background: #fff1ef;
+        color: #b42318;
+    }
+
+    &__section {
+        margin-top: 1rem;
+    }
+
+    &__section h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    &__code {
+        max-height: 28rem;
+        overflow: auto;
+        padding: 0.75rem;
+        margin: 0;
+        border: 1px solid #e6ebef;
+        border-radius: 4px;
+        background: #f8fafb;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .mono {
+        font-family: Menlo, Consolas, monospace;
+        font-size: 0.82rem;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .solidity-bytecode {
+        &__controls {
+            align-items: stretch;
+        }
+
+        &__filter-form,
+        &__pager {
+            width: 100%;
+        }
+
+        &__filter-form .argo-field {
+            flex: 1 1 14rem;
+            min-width: 0;
+        }
+
+        &__pager {
+            justify-content: flex-start;
+        }
+
+        &__row {
+            grid-template-columns: minmax(0, 2.4fr) minmax(0, 0.9fr) minmax(0, 0.8fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 1.2fr);
+        }
+    }
+}
+
+@media screen and (max-width: 680px) {
+    .solidity-bytecode {
+        &__table {
+            overflow-x: auto;
+        }
+
+        &__row {
+            min-width: 760px;
+        }
+
+        &__deployment-row {
+            min-width: 620px;
+        }
+    }
+}
