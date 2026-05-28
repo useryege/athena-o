@@ -3,6 +3,7 @@ package application
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/useryege/athena/internal/application/api"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
@@ -18,7 +19,7 @@ import (
 
 type ApplicationServer struct {
 	ApplicationServerOpts
-	service       *Service
+	service       *api.Service
 	healthService *health.Server
 }
 
@@ -41,7 +42,7 @@ type ApplicationServerOpts struct {
 }
 
 func NewServer(opts ApplicationServerOpts) (*ApplicationServer, error) {
-	service, err := NewService(opts.NodeClient,
+	service, err := api.NewService(opts.NodeClient,
 		opts.V2FactoryContract,
 		opts.WethContract,
 		opts.UsdtContract,
