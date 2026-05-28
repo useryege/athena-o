@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -20,12 +19,6 @@ import (
 
 type ProjectPolicyFacts struct {
 	WalletBlacklist map[common.Address]struct{}
-}
-
-type projectPolicyFactsSnapshot struct {
-	facts   ProjectPolicyFacts
-	version string
-	ready   bool
 }
 
 type ProjectPolicyRule interface {
@@ -40,17 +33,10 @@ type projectPolicyEngineImpl struct {
 
 	persistencePublisher PersistenceEventPublisher
 	rules                []ProjectPolicyRule
-
-	factsMu sync.RWMutex
-	facts   projectPolicyFactsSnapshot
 }
 
 type walletBlacklistLister interface {
-	List(ctx context.Context) ([]appstore.WalletBlacklistEntry, error)
-}
-
-type blacklistVersionReader interface {
-	Version(ctx context.Context) (string, error)
+	ListWalletBlacklist(ctx context.Context) ([]common.Address, error)
 }
 
 func NewProjectPolicyEngine(
@@ -92,78 +78,18 @@ func (e *projectPolicyEngineImpl) EvaluateProject(ctx context.Context, contract 
 }
 
 func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicyFacts, error) {
-	version, versioned, err := e.blacklistFactsVersion(ctx)
-	if err != nil {
-		return ProjectPolicyFacts{}, err
-	}
-	if versioned {
-		e.factsMu.RLock()
-		if e.facts.ready && e.facts.version == version {
-			facts := cloneProjectPolicyFacts(e.facts.facts)
-			e.factsMu.RUnlock()
-			return facts, nil
-		}
-		e.factsMu.RUnlock()
-	}
-
 	facts := ProjectPolicyFacts{}
 	if e.walletBlacklist != nil {
-		records, err := e.walletBlacklist.List(ctx)
+		wallets, err := e.walletBlacklist.ListWalletBlacklist(ctx)
 		if err != nil {
 			return facts, err
 		}
-		facts.WalletBlacklist = make(map[common.Address]struct{}, len(records))
-		for _, item := range records {
-			facts.WalletBlacklist[item.Wallet] = struct{}{}
+		facts.WalletBlacklist = make(map[common.Address]struct{}, len(wallets))
+		for _, wallet := range wallets {
+			facts.WalletBlacklist[wallet] = struct{}{}
 		}
-	}
-	if versioned {
-		e.factsMu.Lock()
-		e.facts = projectPolicyFactsSnapshot{
-			facts:   cloneProjectPolicyFacts(facts),
-			version: version,
-			ready:   true,
-		}
-		e.factsMu.Unlock()
 	}
 	return facts, nil
-}
-
-func (e *projectPolicyEngineImpl) blacklistFactsVersion(ctx context.Context) (string, bool, error) {
-	walletVersion, walletOK, err := blacklistVersion(ctx, e.walletBlacklist)
-	if err != nil {
-		return "", false, err
-	}
-	if !walletOK {
-		return "", false, nil
-	}
-	return walletVersion, true, nil
-}
-
-func blacklistVersion(ctx context.Context, value any) (string, bool, error) {
-	if value == nil {
-		return "", true, nil
-	}
-	reader, ok := value.(blacklistVersionReader)
-	if !ok {
-		return "", false, nil
-	}
-	version, err := reader.Version(ctx)
-	if err != nil {
-		return "", false, err
-	}
-	return version, true, nil
-}
-
-func cloneProjectPolicyFacts(facts ProjectPolicyFacts) ProjectPolicyFacts {
-	cloned := ProjectPolicyFacts{}
-	if facts.WalletBlacklist != nil {
-		cloned.WalletBlacklist = make(map[common.Address]struct{}, len(facts.WalletBlacklist))
-		for key := range facts.WalletBlacklist {
-			cloned.WalletBlacklist[key] = struct{}{}
-		}
-	}
-	return cloned
 }
 
 func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, project *Project, facts ProjectPolicyFacts) (ProjectReport, error) {

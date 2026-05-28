@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var (
@@ -23,14 +22,10 @@ type WalletBlacklistEntry struct {
 	CreatedAt time.Time
 }
 
-type WalletBlacklistStore interface {
-	ListWalletBlacklistEntries(ctx context.Context) ([]WalletBlacklistEntry, error)
-	AddWalletBlacklistEntry(ctx context.Context, item WalletBlacklistEntry) error
-	UpdateWalletBlacklistEntryNote(ctx context.Context, wallet common.Address, note string) error
-	DeleteWalletBlacklistEntry(ctx context.Context, wallet common.Address) error
-}
-
 func (s *SQLStore) ListWalletBlacklistEntries(ctx context.Context) ([]WalletBlacklistEntry, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("wallet postgres database is not configured")
+	}
 	rows, err := s.db.QueryContext(ctx, `
 SELECT wallet, note, created_at
 FROM wallet_blacklist
@@ -56,6 +51,9 @@ ORDER BY created_at DESC, wallet
 }
 
 func (s *SQLStore) AddWalletBlacklistEntry(ctx context.Context, item WalletBlacklistEntry) error {
+	if s.db == nil {
+		return fmt.Errorf("wallet postgres database is not configured")
+	}
 	_, err := s.db.ExecContext(ctx, `
 INSERT INTO wallet_blacklist (wallet, note)
 VALUES ($1, $2)
@@ -70,6 +68,9 @@ VALUES ($1, $2)
 }
 
 func (s *SQLStore) UpdateWalletBlacklistEntryNote(ctx context.Context, wallet common.Address, note string) error {
+	if s.db == nil {
+		return fmt.Errorf("wallet postgres database is not configured")
+	}
 	result, err := s.db.ExecContext(ctx, `
 UPDATE wallet_blacklist
 SET note = $2
@@ -89,6 +90,9 @@ WHERE wallet = $1
 }
 
 func (s *SQLStore) DeleteWalletBlacklistEntry(ctx context.Context, wallet common.Address) error {
+	if s.db == nil {
+		return fmt.Errorf("wallet postgres database is not configured")
+	}
 	result, err := s.db.ExecContext(ctx, `
 DELETE FROM wallet_blacklist
 WHERE wallet = $1
@@ -128,9 +132,4 @@ func nullableTrimmedText(value string) any {
 		return nil
 	}
 	return value
-}
-
-func isUniqueViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }

@@ -27,6 +27,10 @@ type fakeWalletServiceClient struct {
 	importPrivateKeyReq *walletapiclient.ImportPrivateKeyRequest
 	importMnemonicReq   *walletapiclient.ImportMnemonicRequest
 	updateAliasReq      *walletapiclient.UpdateWalletAliasRequest
+	listBlacklistReq    *walletapiclient.ListWalletBlacklistEntriesRequest
+	addBlacklistReq     *walletapiclient.AddWalletBlacklistEntryRequest
+	updateBlacklistReq  *walletapiclient.UpdateWalletBlacklistEntryNoteRequest
+	deleteBlacklistReq  *walletapiclient.DeleteWalletBlacklistEntryRequest
 }
 
 func (f *fakeWalletServiceClient) GetWalletStatus(_ context.Context, req *walletapiclient.GetWalletStatusRequest, _ ...grpc.CallOption) (*v1alpha1.WalletStatus, error) {
@@ -67,6 +71,28 @@ func (f *fakeWalletServiceClient) ImportMnemonic(_ context.Context, req *walleta
 func (f *fakeWalletServiceClient) UpdateWalletAlias(_ context.Context, req *walletapiclient.UpdateWalletAliasRequest, _ ...grpc.CallOption) (*walletapiclient.UpdateWalletAliasResponse, error) {
 	f.updateAliasReq = req
 	return &walletapiclient.UpdateWalletAliasResponse{Item: &v1alpha1.WalletItem{ID: req.GetId(), Alias: req.GetAlias()}}, nil
+}
+
+func (f *fakeWalletServiceClient) ListWalletBlacklistEntries(_ context.Context, req *walletapiclient.ListWalletBlacklistEntriesRequest, _ ...grpc.CallOption) (*walletapiclient.ListWalletBlacklistEntriesResponse, error) {
+	f.listBlacklistReq = req
+	return &walletapiclient.ListWalletBlacklistEntriesResponse{
+		Items: []*walletapiclient.WalletBlacklistEntry{{Wallet: "0xabc", Note: "seed"}},
+	}, nil
+}
+
+func (f *fakeWalletServiceClient) AddWalletBlacklistEntry(_ context.Context, req *walletapiclient.AddWalletBlacklistEntryRequest, _ ...grpc.CallOption) (*walletapiclient.AddWalletBlacklistEntryResponse, error) {
+	f.addBlacklistReq = req
+	return &walletapiclient.AddWalletBlacklistEntryResponse{Item: &walletapiclient.WalletBlacklistEntry{Wallet: req.GetWallet(), Note: req.GetNote()}}, nil
+}
+
+func (f *fakeWalletServiceClient) UpdateWalletBlacklistEntryNote(_ context.Context, req *walletapiclient.UpdateWalletBlacklistEntryNoteRequest, _ ...grpc.CallOption) (*walletapiclient.UpdateWalletBlacklistEntryNoteResponse, error) {
+	f.updateBlacklistReq = req
+	return &walletapiclient.UpdateWalletBlacklistEntryNoteResponse{Item: &walletapiclient.WalletBlacklistEntry{Wallet: req.GetWallet(), Note: req.GetNote()}}, nil
+}
+
+func (f *fakeWalletServiceClient) DeleteWalletBlacklistEntry(_ context.Context, req *walletapiclient.DeleteWalletBlacklistEntryRequest, _ ...grpc.CallOption) (*walletapiclient.DeleteWalletBlacklistEntryResponse, error) {
+	f.deleteBlacklistReq = req
+	return &walletapiclient.DeleteWalletBlacklistEntryResponse{}, nil
 }
 
 func TestGetWalletStatusForwardsRequest(t *testing.T) {
@@ -137,5 +163,37 @@ func TestWalletProxyForwardsBusinessRequests(t *testing.T) {
 	}
 	if client.updateAliasReq.GetId() != 9 || updateResp.GetItem().Alias != "updated" {
 		t.Fatalf("update alias request/response = %#v/%#v", client.updateAliasReq, updateResp)
+	}
+
+	listBlacklistResp, err := server.ListWalletBlacklistEntries(context.Background(), &walletpkg.ListWalletBlacklistEntriesRequest{})
+	if err != nil {
+		t.Fatalf("ListWalletBlacklistEntries: %v", err)
+	}
+	if client.listBlacklistReq == nil || len(listBlacklistResp.GetItems()) != 1 {
+		t.Fatalf("list blacklist request/response = %#v/%#v", client.listBlacklistReq, listBlacklistResp)
+	}
+
+	_, err = server.AddWalletBlacklistEntry(context.Background(), &walletpkg.AddWalletBlacklistEntryRequest{Wallet: "0xabc", Note: "seed"})
+	if err != nil {
+		t.Fatalf("AddWalletBlacklistEntry: %v", err)
+	}
+	if client.addBlacklistReq.GetWallet() != "0xabc" || client.addBlacklistReq.GetNote() != "seed" {
+		t.Fatalf("add blacklist request = %#v", client.addBlacklistReq)
+	}
+
+	_, err = server.UpdateWalletBlacklistEntryNote(context.Background(), &walletpkg.UpdateWalletBlacklistEntryNoteRequest{Wallet: "0xabc", Note: "updated"})
+	if err != nil {
+		t.Fatalf("UpdateWalletBlacklistEntryNote: %v", err)
+	}
+	if client.updateBlacklistReq.GetWallet() != "0xabc" || client.updateBlacklistReq.GetNote() != "updated" {
+		t.Fatalf("update blacklist request = %#v", client.updateBlacklistReq)
+	}
+
+	_, err = server.DeleteWalletBlacklistEntry(context.Background(), &walletpkg.DeleteWalletBlacklistEntryRequest{Wallet: "0xabc"})
+	if err != nil {
+		t.Fatalf("DeleteWalletBlacklistEntry: %v", err)
+	}
+	if client.deleteBlacklistReq.GetWallet() != "0xabc" {
+		t.Fatalf("delete blacklist request = %#v", client.deleteBlacklistReq)
 	}
 }

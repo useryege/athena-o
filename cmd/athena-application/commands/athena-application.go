@@ -30,6 +30,7 @@ import (
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/util/ave"
 	cacheutil "github.com/useryege/athena/util/cache"
@@ -51,6 +52,7 @@ func NewCommand() *cobra.Command {
 		nodewsurl             string
 		athenaContract        string
 		solidityServerAddress string
+		walletServerAddress   string
 		aveAPIKey             string
 		aveAPIBaseURL         string
 		liquidityLockers      []string
@@ -134,6 +136,9 @@ func NewCommand() *cobra.Command {
 			log.Infof("waiting for athena solidity grpc service at %s", solidityServerAddress)
 			errors.CheckError(solidityapiclient.WaitForSolidityService(ctx, solidityServerAddress))
 			log.Infof("athena solidity grpc service is ready at %s", solidityServerAddress)
+			log.Infof("waiting for athena wallet grpc service at %s", walletServerAddress)
+			errors.CheckError(walletapiclient.WaitForWalletService(ctx, walletServerAddress))
+			log.Infof("athena wallet grpc service is ready at %s", walletServerAddress)
 
 			liquidityLockerAddresses, err := parseLiquidityLockerAddresses(liquidityLockers)
 			if err != nil {
@@ -141,6 +146,7 @@ func NewCommand() *cobra.Command {
 			}
 
 			solidityClientset := solidityapiclient.NewSolidityClientset(solidityServerAddress)
+			walletClientset := walletapiclient.NewWalletClientset(walletServerAddress)
 			server, err := application.NewServer(application.ApplicationServerOpts{
 				NodeClient:     nodeClient,
 				AthenaContract: athenaContractAddress,
@@ -152,6 +158,7 @@ func NewCommand() *cobra.Command {
 				LiquidityLocker:   liquidityLockerAddresses,
 				RedisClient:       redisport.NewGoRedisAdapter(redisClient),
 				SolidityClientset: solidityClientset,
+				WalletClientset:   walletClientset,
 
 				// Fetch from Athena contract
 				V2FactoryContract: v2FactoryContractAddress,
@@ -232,7 +239,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortApplicationMetrics, "Start metrics server on given port")
 	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_APPLICATION_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
 	command.Flags().StringVar(&athenaContract, "athena-contract", env.StringFromEnv("ATHENA_APPLICATION_ATHENA_CONTRACT", ""), "ATHENA aggregation contract address")
-	command.Flags().StringVar(&solidityServerAddress, "solidity-server-address", env.StringFromEnv("ATHENA_APPLICATION_SOLIDITY_SERVER_ADDRESS", "athena-solidity:9997"), "Solidity service gRPC address")
+	command.Flags().StringVar(&solidityServerAddress, "solidity-server-address", env.StringFromEnv("ATHENA_APPLICATION_SOLIDITY_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortSolidity)), "Solidity service gRPC address")
+	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_APPLICATION_WALLET_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortWallet)), "Wallet service gRPC address")
 	command.Flags().StringVar(&aveAPIKey, "ave-api-key", env.StringFromEnv("ATHENA_APPLICATION_AVE_API_KEY", ""), "Ave API key for project logo fetching")
 	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL")
 	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")

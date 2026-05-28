@@ -176,13 +176,6 @@ CREATE TABLE IF NOT EXISTS project_creator_historical_project (
 CREATE INDEX IF NOT EXISTS project_creator_historical_project_rank_idx
   ON project_creator_historical_project (project_contract, rank_index);
 
-CREATE TABLE IF NOT EXISTS wallet_blacklist (
-  wallet BYTEA PRIMARY KEY,
-  note TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT wallet_blacklist_wallet_len CHECK (length(wallet) = 20)
-);
-
 CREATE TABLE IF NOT EXISTS project_event_log (
   id BIGSERIAL PRIMARY KEY,
   contract BYTEA NOT NULL,

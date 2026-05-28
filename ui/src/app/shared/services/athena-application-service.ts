@@ -263,24 +263,6 @@ export interface GetProjectOptionsResponse {
 let cachedProjectOptions: ProjectOptions | undefined;
 let projectOptionsRequest: (Promise<ProjectOptions | undefined> & {abort?: () => void}) | null = null;
 
-export interface WalletBlacklistEntry {
-    wallet?: string;
-    note?: string;
-    createdAt?: string;
-}
-
-export interface ListWalletBlacklistEntriesResponse {
-    items?: WalletBlacklistEntry[];
-}
-
-export interface AddWalletBlacklistEntryResponse {
-    item?: WalletBlacklistEntry;
-}
-
-export interface UpdateWalletBlacklistEntryNoteResponse {
-    item?: WalletBlacklistEntry;
-}
-
 export class AthenaApplicationService {
     public listProjects(page = 1, pageSize = 20): Promise<{items: ProjectListItem[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
         const req = requests.get('/projects').query({page, pageSize});
@@ -407,53 +389,4 @@ export class AthenaApplicationService {
         return promise;
     }
 
-    public listWalletBlacklistEntries(): Promise<WalletBlacklistEntry[]> & {abort?: () => void} {
-        const req = requests.get('/wallet-blacklist');
-        const promise = req.then(res => {
-            const body = (res.body as ListWalletBlacklistEntriesResponse) || {};
-            const items = body.items || [];
-            return items.map(item => ({
-                wallet: item.wallet,
-                note: item.note,
-                createdAt: item.createdAt
-            }));
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public addWalletBlacklistEntry(wallet: string, note: string): Promise<WalletBlacklistEntry> & {abort?: () => void} {
-        const req = requests.post('/wallet-blacklist').send({wallet, note});
-        const promise = req.then(res => {
-            const item = ((res.body as AddWalletBlacklistEntryResponse) || {}).item || {};
-            return {
-                wallet: item.wallet,
-                note: item.note,
-                createdAt: item.createdAt
-            } as WalletBlacklistEntry;
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public updateWalletBlacklistEntryNote(wallet: string, note: string): Promise<WalletBlacklistEntry> & {abort?: () => void} {
-        const req = requests.post(`/wallet-blacklist/${encodeURIComponent(wallet)}/note`).send({wallet, note});
-        const promise = req.then(res => {
-            const item = ((res.body as UpdateWalletBlacklistEntryNoteResponse) || {}).item || {};
-            return {
-                wallet: item.wallet,
-                note: item.note,
-                createdAt: item.createdAt
-            } as WalletBlacklistEntry;
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public deleteWalletBlacklistEntry(wallet: string): Promise<void> & {abort?: () => void} {
-        const req = requests.delete(`/wallet-blacklist/${encodeURIComponent(wallet)}`);
-        const promise = req.then(() => {}) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
 }

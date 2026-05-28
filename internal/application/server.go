@@ -8,6 +8,7 @@ import (
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/server/version"
 	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"github.com/useryege/athena/util/ave"
 	"google.golang.org/grpc"
@@ -29,6 +30,7 @@ type ApplicationServerOpts struct {
 	LiquidityLocker   []common.Address
 	RedisClient       redisport.Client
 	SolidityClientset solidityapiclient.Clientset
+	WalletClientset   walletapiclient.Clientset
 
 	// Fetch from Athena contract
 	V2FactoryContract common.Address
@@ -50,7 +52,8 @@ func NewServer(opts ApplicationServerOpts) (*ApplicationServer, error) {
 		opts.Store,
 		opts.LiquidityLocker,
 		opts.RedisClient,
-		opts.SolidityClientset)
+		opts.SolidityClientset,
+		opts.WalletClientset)
 	if err != nil {
 		return nil, err
 	}

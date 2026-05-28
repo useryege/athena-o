@@ -144,74 +144,6 @@ func (s *Server) ListProjectComments(ctx context.Context, req *applicationpkg.Li
 	}, nil
 }
 
-func (s *Server) ListWalletBlacklistEntries(ctx context.Context, _ *applicationpkg.ListWalletBlacklistEntriesRequest) (*applicationpkg.ListWalletBlacklistEntriesResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListWalletBlacklistEntries(ctx, &applicationapiclient.ListWalletBlacklistEntriesRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]*applicationpkg.WalletBlacklistEntry, 0, len(resp.Items))
-	for _, item := range resp.Items {
-		items = append(items, walletBlacklistEntryToAPI(item))
-	}
-	return &applicationpkg.ListWalletBlacklistEntriesResponse{Items: items}, nil
-}
-
-func (s *Server) AddWalletBlacklistEntry(ctx context.Context, req *applicationpkg.AddWalletBlacklistEntryRequest) (*applicationpkg.AddWalletBlacklistEntryResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.AddWalletBlacklistEntry(ctx, &applicationapiclient.AddWalletBlacklistEntryRequest{
-		Wallet: req.GetWallet(),
-		Note:   req.GetNote(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.AddWalletBlacklistEntryResponse{Item: walletBlacklistEntryToAPI(resp.Item)}, nil
-}
-
-func (s *Server) UpdateWalletBlacklistEntryNote(ctx context.Context, req *applicationpkg.UpdateWalletBlacklistEntryNoteRequest) (*applicationpkg.UpdateWalletBlacklistEntryNoteResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.UpdateWalletBlacklistEntryNote(ctx, &applicationapiclient.UpdateWalletBlacklistEntryNoteRequest{
-		Wallet: req.GetWallet(),
-		Note:   req.GetNote(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.UpdateWalletBlacklistEntryNoteResponse{Item: walletBlacklistEntryToAPI(resp.Item)}, nil
-}
-
-func (s *Server) DeleteWalletBlacklistEntry(ctx context.Context, req *applicationpkg.DeleteWalletBlacklistEntryRequest) (*applicationpkg.DeleteWalletBlacklistEntryResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	if _, err := client.DeleteWalletBlacklistEntry(ctx, &applicationapiclient.DeleteWalletBlacklistEntryRequest{
-		Wallet: req.GetWallet(),
-	}); err != nil {
-		return nil, err
-	}
-	return &applicationpkg.DeleteWalletBlacklistEntryResponse{}, nil
-}
-
 func (s *Server) GetProjectOptions(ctx context.Context, _ *applicationpkg.GetProjectOptionsRequest) (*applicationpkg.GetProjectOptionsResponse, error) {
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {
@@ -224,17 +156,6 @@ func (s *Server) GetProjectOptions(ctx context.Context, _ *applicationpkg.GetPro
 		return nil, err
 	}
 	return &applicationpkg.GetProjectOptionsResponse{Options: resp.Options}, nil
-}
-
-func walletBlacklistEntryToAPI(item *applicationapiclient.WalletBlacklistEntry) *applicationpkg.WalletBlacklistEntry {
-	if item == nil {
-		return nil
-	}
-	return &applicationpkg.WalletBlacklistEntry{
-		Wallet:    item.Wallet,
-		Note:      item.Note,
-		CreatedAt: item.CreatedAt,
-	}
 }
 
 func projectEventLogToAPI(item *applicationapiclient.ProjectEventLog) *applicationpkg.ProjectEventLog {

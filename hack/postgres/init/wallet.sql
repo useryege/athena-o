@@ -17,3 +17,10 @@ CREATE TABLE IF NOT EXISTS wallet_private_keys (
 
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_chain ON wallet_private_keys (chain);
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_created_at ON wallet_private_keys (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS wallet_blacklist (
+  wallet BYTEA PRIMARY KEY,
+  note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT wallet_blacklist_wallet_len CHECK (length(wallet) = 20)
+);

@@ -347,15 +347,6 @@ func (p *persistencePublisherFake) PublishProjectCreatorHistoricalProjectsReplac
 	p.creatorHistorical[contract] = append([]appstore.ProjectCreatorHistoricalProject(nil), items...)
 	return nil
 }
-func (p *persistencePublisherFake) PublishWalletBlacklistAdd(context.Context, appstore.WalletBlacklistEntry) error {
-	return nil
-}
-func (p *persistencePublisherFake) PublishWalletBlacklistUpdateNote(context.Context, common.Address, string) error {
-	return nil
-}
-func (p *persistencePublisherFake) PublishWalletBlacklistDelete(context.Context, common.Address) error {
-	return nil
-}
 
 func TestProjectStateReconcilerInitProjectCachesValidERC20WithoutGetProject(t *testing.T) {
 	ctx := context.Background()

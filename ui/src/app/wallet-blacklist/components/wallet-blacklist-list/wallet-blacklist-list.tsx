@@ -1,7 +1,7 @@
 import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {services} from '../../../shared/services';
-import {WalletBlacklistEntry} from '../../../shared/services/athena-application-service';
+import {WalletBlacklistEntry} from '../../../shared/services/wallet-service';
 
 require('./wallet-blacklist-list.scss');
 
@@ -34,7 +34,7 @@ export const WalletBlacklistList = () => {
         }
 
         try {
-            const req = services.athenaApplication.listWalletBlacklistEntries();
+            const req = services.wallet.listWalletBlacklistEntries();
             requestRef.current = req;
             const data = await req;
             if (isMountedRef.current) {
@@ -78,7 +78,7 @@ export const WalletBlacklistList = () => {
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.addWalletBlacklistEntry(wallet, newNote);
+            await services.wallet.addWalletBlacklistEntry(wallet, newNote);
             setNewWallet('');
             setNewNote('');
             await loadItems();
@@ -101,7 +101,7 @@ export const WalletBlacklistList = () => {
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.deleteWalletBlacklistEntry(wallet);
+            await services.wallet.deleteWalletBlacklistEntry(wallet);
             await loadItems();
         } catch (err) {
             if (isMountedRef.current) {
@@ -132,7 +132,7 @@ export const WalletBlacklistList = () => {
         setSubmitting(true);
         setError(null);
         try {
-            await services.athenaApplication.updateWalletBlacklistEntryNote(editingWallet, editingNote);
+            await services.wallet.updateWalletBlacklistEntryNote(editingWallet, editingNote);
             cancelEdit();
             await loadItems();
         } catch (err) {

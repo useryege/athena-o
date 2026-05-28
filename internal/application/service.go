@@ -15,11 +15,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	"github.com/useryege/athena/internal/application/avelogo"
-	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ave"
@@ -44,7 +44,7 @@ type Service struct {
 
 	pipeline        *ProjectPipeline
 	athenaFetcher   evm.AthenaFetcher
-	walletBlacklist appcache.WalletBlacklistModel
+	walletBlacklist walletBlacklistLister
 
 	store                appstore.Store
 	projectCache         ProjectSnapshotCache
@@ -62,23 +62,14 @@ type Service struct {
 	started         bool
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, aveConfig ave.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client, solidityClientSet solidityapiclient.Clientset) (*Service, error) {
+func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, aveConfig ave.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client, solidityClientSet solidityapiclient.Clientset, walletClientSet walletapiclient.Clientset) (*Service, error) {
 	persistenceBus := NewRedisPersistenceEventBus(redisClient)
-	var walletStore appstore.WalletBlacklistStore
-	if s, ok := store.(appstore.WalletBlacklistStore); ok {
-		walletStore = s
-	}
-	walletBlacklist := appcache.NewWalletBlacklistModel(
-		walletStore,
-		appcache.NewLayeredWalletBlacklistCache(appcache.NewLocalWalletBlacklistCache(), appcache.NewWalletBlacklistRedisCache(redisClient)),
-		newWalletBlacklistEventPublisher(persistenceBus),
-	)
 
 	return &Service{
 		nodeClient:           nodeClient,
 		store:                store,
 		projectCache:         NewProjectSnapshotCache(redisClient),
-		walletBlacklist:      walletBlacklist,
+		walletBlacklist:      newWalletBlacklistClientLister(walletClientSet),
 		persistencePublisher: persistenceBus,
 		persistenceBus:       persistenceBus,
 		persistenceWriter:    NewStorePersistenceWriter(store),
@@ -179,12 +170,6 @@ func (s *Service) startWithContext(ctx context.Context) (pipeline *ProjectPipeli
 		log.WithField("chain", aveChain).Info("Ave detail fetcher configured successfully")
 	}
 	projectSimulator := NewProjectSimulator(s.nodeClient)
-
-	if s.walletBlacklist != nil {
-		if err := s.walletBlacklist.Load(ctx); err != nil {
-			return nil, nil, err
-		}
-	}
 
 	if s.persistenceBus != nil && s.persistenceWriter != nil {
 		go s.runPersistenceEventLoop(ctx)
@@ -350,129 +335,6 @@ func (s *Service) Stop() error {
 func (s *Service) clearPipelineLocked() {
 	s.pipeline = nil
 	s.athenaFetcher = nil
-}
-
-func (s *Service) ListWalletBlacklistEntries(ctx context.Context, _ *applicationpkg.ListWalletBlacklistEntriesRequest) (*applicationpkg.ListWalletBlacklistEntriesResponse, error) {
-	if s.walletBlacklist == nil {
-		return &applicationpkg.ListWalletBlacklistEntriesResponse{}, nil
-	}
-
-	records, err := s.walletBlacklist.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]*applicationpkg.WalletBlacklistEntry, 0, len(records))
-	for _, record := range records {
-		items = append(items, walletBlacklistEntryToAPI(record))
-	}
-	return &applicationpkg.ListWalletBlacklistEntriesResponse{Items: items}, nil
-}
-
-func (s *Service) AddWalletBlacklistEntry(ctx context.Context, req *applicationpkg.AddWalletBlacklistEntryRequest) (*applicationpkg.AddWalletBlacklistEntryResponse, error) {
-	if !common.IsHexAddress(req.GetWallet()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid wallet %q", req.GetWallet())
-	}
-	if s.walletBlacklist == nil {
-		return &applicationpkg.AddWalletBlacklistEntryResponse{}, status.Error(codes.FailedPrecondition, "wallet blacklist entry store is not configured")
-	}
-
-	wallet := common.HexToAddress(req.GetWallet())
-	code, err := s.fetchContractBytecode(ctx, wallet)
-	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, "fetch bytecode for wallet %s: %v", wallet.Hex(), err)
-	}
-	if len(code) > 0 {
-		return nil, status.Errorf(codes.FailedPrecondition, "wallet %s is a contract address and cannot be added to wallet blacklist", wallet.Hex())
-	}
-
-	record := appstore.WalletBlacklistEntry{
-		Wallet:    wallet,
-		Note:      req.GetNote(),
-		CreatedAt: time.Now().UTC(),
-	}
-	if err := s.walletBlacklist.Add(ctx, record); err != nil {
-		if errors.Is(err, appstore.ErrWalletBlacklistEntryAlreadyExists) {
-			return nil, status.Errorf(codes.AlreadyExists, "wallet blacklist entry %s already exists", wallet.Hex())
-		}
-		return nil, err
-	}
-
-	items, err := s.walletBlacklist.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	created, found := findWalletBlacklistEntryInList(items, wallet)
-	if !found {
-		return &applicationpkg.AddWalletBlacklistEntryResponse{Item: walletBlacklistEntryToAPI(record)}, nil
-	}
-	return &applicationpkg.AddWalletBlacklistEntryResponse{Item: walletBlacklistEntryToAPI(created)}, nil
-}
-
-func (s *Service) UpdateWalletBlacklistEntryNote(ctx context.Context, req *applicationpkg.UpdateWalletBlacklistEntryNoteRequest) (*applicationpkg.UpdateWalletBlacklistEntryNoteResponse, error) {
-	if !common.IsHexAddress(req.GetWallet()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid wallet %q", req.GetWallet())
-	}
-	if s.walletBlacklist == nil {
-		return &applicationpkg.UpdateWalletBlacklistEntryNoteResponse{}, status.Error(codes.FailedPrecondition, "wallet blacklist entry store is not configured")
-	}
-
-	wallet := common.HexToAddress(req.GetWallet())
-	if err := s.walletBlacklist.UpdateNote(ctx, wallet, req.GetNote()); err != nil {
-		if errors.Is(err, appstore.ErrWalletBlacklistEntryNotFound) {
-			return nil, status.Errorf(codes.NotFound, "wallet blacklist entry %s not found", wallet.Hex())
-		}
-		return nil, err
-	}
-
-	items, err := s.walletBlacklist.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	updated, found := findWalletBlacklistEntryInList(items, wallet)
-	if !found {
-		return nil, status.Errorf(codes.NotFound, "wallet blacklist entry %s not found", wallet.Hex())
-	}
-	return &applicationpkg.UpdateWalletBlacklistEntryNoteResponse{Item: walletBlacklistEntryToAPI(updated)}, nil
-}
-
-func (s *Service) DeleteWalletBlacklistEntry(ctx context.Context, req *applicationpkg.DeleteWalletBlacklistEntryRequest) (*applicationpkg.DeleteWalletBlacklistEntryResponse, error) {
-	if !common.IsHexAddress(req.GetWallet()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid wallet %q", req.GetWallet())
-	}
-	if s.walletBlacklist == nil {
-		return &applicationpkg.DeleteWalletBlacklistEntryResponse{}, status.Error(codes.FailedPrecondition, "wallet blacklist entry store is not configured")
-	}
-
-	wallet := common.HexToAddress(req.GetWallet())
-	if err := s.walletBlacklist.Delete(ctx, wallet); err != nil {
-		if errors.Is(err, appstore.ErrWalletBlacklistEntryNotFound) {
-			return nil, status.Errorf(codes.NotFound, "wallet blacklist entry %s not found", wallet.Hex())
-		}
-		return nil, err
-	}
-	return &applicationpkg.DeleteWalletBlacklistEntryResponse{}, nil
-}
-
-func findWalletBlacklistEntryInList(items []appstore.WalletBlacklistEntry, wallet common.Address) (appstore.WalletBlacklistEntry, bool) {
-	for _, item := range items {
-		if item.Wallet == wallet {
-			return item, true
-		}
-	}
-	return appstore.WalletBlacklistEntry{}, false
-}
-
-func walletBlacklistEntryToAPI(item appstore.WalletBlacklistEntry) *applicationpkg.WalletBlacklistEntry {
-	createdAt := ""
-	if !item.CreatedAt.IsZero() {
-		createdAt = item.CreatedAt.UTC().Format(time.RFC3339Nano)
-	}
-	return &applicationpkg.WalletBlacklistEntry{
-		Wallet:    item.Wallet.Hex(),
-		Note:      item.Note,
-		CreatedAt: createdAt,
-	}
 }
 
 func projectEventLogToAPI(item appstore.ProjectEventLog) *applicationpkg.ProjectEventLog {

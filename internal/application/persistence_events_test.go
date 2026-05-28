@@ -59,18 +59,6 @@ func (w *persistenceEventWriterFake) WriteProjectCreatorHistoricalProjects(conte
 	return w.err
 }
 
-func (w *persistenceEventWriterFake) AddWalletBlacklistEntry(context.Context, appstore.WalletBlacklistEntry) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) UpdateWalletBlacklistEntryNote(context.Context, common.Address, string) error {
-	return w.err
-}
-
-func (w *persistenceEventWriterFake) DeleteWalletBlacklistEntry(context.Context, common.Address) error {
-	return w.err
-}
-
 func newPersistenceEventBusTest(t *testing.T) (*redis.Client, *RedisPersistenceEventBus) {
 	t.Helper()
 	mini := miniredis.RunT(t)

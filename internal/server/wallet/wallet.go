@@ -137,3 +137,79 @@ func (s *Server) UpdateWalletAlias(ctx context.Context, req *walletpkg.UpdateWal
 	}
 	return &walletpkg.UpdateWalletAliasResponse{Item: resp.GetItem()}, nil
 }
+
+func (s *Server) ListWalletBlacklistEntries(ctx context.Context, _ *walletpkg.ListWalletBlacklistEntriesRequest) (*walletpkg.ListWalletBlacklistEntriesResponse, error) {
+	closer, client, err := s.walletClientSet.NewWalletServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListWalletBlacklistEntries(ctx, &walletapiclient.ListWalletBlacklistEntriesRequest{})
+	if err != nil {
+		return nil, err
+	}
+	items := make([]*walletpkg.WalletBlacklistEntry, 0, len(resp.GetItems()))
+	for _, item := range resp.GetItems() {
+		items = append(items, walletBlacklistEntryToAPI(item))
+	}
+	return &walletpkg.ListWalletBlacklistEntriesResponse{Items: items}, nil
+}
+
+func (s *Server) AddWalletBlacklistEntry(ctx context.Context, req *walletpkg.AddWalletBlacklistEntryRequest) (*walletpkg.AddWalletBlacklistEntryResponse, error) {
+	closer, client, err := s.walletClientSet.NewWalletServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.AddWalletBlacklistEntry(ctx, &walletapiclient.AddWalletBlacklistEntryRequest{
+		Wallet: req.GetWallet(),
+		Note:   req.GetNote(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &walletpkg.AddWalletBlacklistEntryResponse{Item: walletBlacklistEntryToAPI(resp.GetItem())}, nil
+}
+
+func (s *Server) UpdateWalletBlacklistEntryNote(ctx context.Context, req *walletpkg.UpdateWalletBlacklistEntryNoteRequest) (*walletpkg.UpdateWalletBlacklistEntryNoteResponse, error) {
+	closer, client, err := s.walletClientSet.NewWalletServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.UpdateWalletBlacklistEntryNote(ctx, &walletapiclient.UpdateWalletBlacklistEntryNoteRequest{
+		Wallet: req.GetWallet(),
+		Note:   req.GetNote(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &walletpkg.UpdateWalletBlacklistEntryNoteResponse{Item: walletBlacklistEntryToAPI(resp.GetItem())}, nil
+}
+
+func (s *Server) DeleteWalletBlacklistEntry(ctx context.Context, req *walletpkg.DeleteWalletBlacklistEntryRequest) (*walletpkg.DeleteWalletBlacklistEntryResponse, error) {
+	closer, client, err := s.walletClientSet.NewWalletServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	if _, err := client.DeleteWalletBlacklistEntry(ctx, &walletapiclient.DeleteWalletBlacklistEntryRequest{Wallet: req.GetWallet()}); err != nil {
+		return nil, err
+	}
+	return &walletpkg.DeleteWalletBlacklistEntryResponse{}, nil
+}
+
+func walletBlacklistEntryToAPI(item *walletapiclient.WalletBlacklistEntry) *walletpkg.WalletBlacklistEntry {
+	if item == nil {
+		return nil
+	}
+	return &walletpkg.WalletBlacklistEntry{
+		Wallet:    item.Wallet,
+		Note:      item.Note,
+		CreatedAt: item.CreatedAt,
+	}
+}
