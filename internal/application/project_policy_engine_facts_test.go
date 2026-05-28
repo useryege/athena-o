@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -151,6 +152,17 @@ func (r recordingPolicyRule) Evaluate(_ context.Context, project *Project, _ Pro
 	return false, nil, nil
 }
 
+type matchingPolicyRule struct {
+	name     string
+	evidence map[string]any
+}
+
+func (r matchingPolicyRule) Name() string { return r.name }
+
+func (r matchingPolicyRule) Evaluate(context.Context, *Project, ProjectPolicyFacts) (bool, map[string]any, error) {
+	return true, r.evidence, nil
+}
+
 func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 	contract := common.HexToAddress("0x0000000000000000000000000000000000000201")
 	creator := common.HexToAddress("0x0000000000000000000000000000000000000202")
@@ -200,6 +212,64 @@ func TestProjectPolicyEngineEvaluateRulesUpdatesProjectReport(t *testing.T) {
 	}
 	if publisher.projectReports[contract] != report {
 		t.Fatalf("persisted project report = %+v, want %+v", publisher.projectReports[contract], report)
+	}
+}
+
+func TestProjectPolicyEngineEvaluateRulesPublishesPolicyMatchedEvent(t *testing.T) {
+	contract := common.HexToAddress("0x0000000000000000000000000000000000000204")
+	project := &Project{Meta: ProjectMeta{Contract: contract}}
+	cache := newPolicyReevaluationProjectCache(project)
+	publisher := &persistencePublisherFake{}
+	engine := &projectPolicyEngineImpl{
+		projectCache:         cache,
+		persistencePublisher: publisher,
+		rules: []ProjectPolicyRule{
+			matchingPolicyRule{
+				name: "custom_policy_rule",
+				evidence: map[string]any{
+					"reason": "matched",
+				},
+			},
+		},
+	}
+
+	if _, err := engine.evaluateRulesForProject(context.Background(), project, ProjectPolicyFacts{}); err != nil {
+		t.Fatalf("evaluateRulesForProject: %v", err)
+	}
+
+	if len(publisher.projectEventLogs) != 1 {
+		t.Fatalf("project event logs = %d, want 1", len(publisher.projectEventLogs))
+	}
+	item := publisher.projectEventLogs[0]
+	if item.Contract != contract {
+		t.Fatalf("event contract = %s, want %s", item.Contract.Hex(), contract.Hex())
+	}
+	if item.EventType != int16(projectEventTypePolicyMatchAudit) {
+		t.Fatalf("event type = %d, want %d", item.EventType, projectEventTypePolicyMatchAudit)
+	}
+	if item.IdempotencyKey != projectEventIdempotencyPolicyMatch("custom_policy_rule") {
+		t.Fatalf("idempotency key = %q, want %q", item.IdempotencyKey, projectEventIdempotencyPolicyMatch("custom_policy_rule"))
+	}
+	if !json.Valid([]byte(item.Payload)) {
+		t.Fatalf("payload is not valid JSON: %q", item.Payload)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(item.Payload), &payload); err != nil {
+		t.Fatalf("unmarshal payload: %v", err)
+	}
+	if payload["rule"] != "custom_policy_rule" {
+		t.Fatalf("payload rule = %v, want custom_policy_rule", payload["rule"])
+	}
+	if payload["source"] != "policy_engine" {
+		t.Fatalf("payload source = %v, want policy_engine", payload["source"])
+	}
+	evidence, ok := payload["evidence"].(map[string]any)
+	if !ok {
+		t.Fatalf("payload evidence = %T, want object", payload["evidence"])
+	}
+	if evidence["reason"] != "matched" {
+		t.Fatalf("payload evidence reason = %v, want matched", evidence["reason"])
 	}
 }
 

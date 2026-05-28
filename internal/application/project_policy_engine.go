@@ -8,13 +8,10 @@ package application
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	appstore "github.com/useryege/athena/internal/application/store"
 )
 
 type ProjectPolicyFacts struct {
@@ -178,19 +175,11 @@ func (e *projectPolicyEngineImpl) persistPolicyAuditEvent(ctx context.Context, c
 	if e.persistencePublisher == nil {
 		return nil
 	}
-	payload, _ := json.Marshal(map[string]any{
-		"rule":     ruleName,
-		"evidence": evidence,
-		"source":   "policy_engine",
-	})
-	return e.persistencePublisher.PublishProjectEventLog(ctx, appstore.ProjectEventLog{
-		Contract:       contract,
-		EventType:      projectEventTypePolicyMatchAudit,
-		OccurredAt:     now,
-		Message:        fmt.Sprintf("Policy rule %s matched project", ruleName),
-		Payload:        string(payload),
-		IdempotencyKey: projectEventIdempotencyPolicyMatch(ruleName),
-	})
+	event, err := newProjectPolicyMatchedEvent(contract, ruleName, evidence, now)
+	if err != nil {
+		return err
+	}
+	return e.persistencePublisher.PublishProjectEventLog(ctx, event)
 }
 
 type bytecodeBlacklistRule struct{}

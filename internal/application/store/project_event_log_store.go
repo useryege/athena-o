@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -22,6 +23,10 @@ func (s *SQLStore) AddProjectEventLog(ctx context.Context, item ProjectEventLog)
 	if occurredAt.IsZero() {
 		occurredAt = time.Now().UTC()
 	}
+	payload := defaultJSONPayload(item.Payload)
+	if !json.Valid([]byte(payload)) {
+		return fmt.Errorf("project event log payload is not valid JSON")
+	}
 
 	_, err := s.db.ExecContext(ctx, `
 INSERT INTO project_event_log (
@@ -33,7 +38,7 @@ INSERT INTO project_event_log (
   idempotency_key
 ) VALUES ($1, $2, $3, $4, $5::jsonb, $6)
 ON CONFLICT (contract, idempotency_key) DO NOTHING
-`, item.Contract.Bytes(), item.EventType, occurredAt, nullIfEmpty(item.Message), defaultJSONPayload(item.Payload), item.IdempotencyKey)
+`, item.Contract.Bytes(), item.EventType, occurredAt, nullIfEmpty(item.Message), payload, item.IdempotencyKey)
 	if err != nil {
 		return fmt.Errorf("add project event log: %w", err)
 	}
