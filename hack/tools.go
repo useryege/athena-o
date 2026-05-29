@@ -29,6 +29,10 @@ import (
 	// mockgen is used to generate mock files
 	_ "go.uber.org/mock/mockgen"
 
+	// sqlc and goose are used for PostgreSQL query and migration generation.
+	_ "github.com/pressly/goose/v3/cmd/goose"
+	_ "github.com/sqlc-dev/sqlc/cmd/sqlc"
+
 	// apiextensions-apiserver is vendored because the generated *.pb.go code imports it.
 	_ "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )

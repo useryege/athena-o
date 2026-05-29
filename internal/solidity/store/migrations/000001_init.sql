@@ -1,4 +1,5 @@
-\connect solidity
+
+-- +goose Up
 
 CREATE TABLE IF NOT EXISTS bytecode (
   code_hash BYTEA PRIMARY KEY,
@@ -66,3 +67,11 @@ CREATE TABLE IF NOT EXISTS source_quality_prompt (
 CREATE UNIQUE INDEX IF NOT EXISTS source_quality_prompt_active_idx
   ON source_quality_prompt (is_active)
   WHERE is_active AND deleted_at IS NULL;
+
+-- +goose Down
+
+DROP TABLE IF EXISTS source_quality_prompt;
+DROP SEQUENCE IF EXISTS source_quality_prompt_version_seq;
+DROP TABLE IF EXISTS bytecode_blacklist;
+DROP TABLE IF EXISTS contract_bytecode_deployment;
+DROP TABLE IF EXISTS bytecode;

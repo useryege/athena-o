@@ -3,27 +3,29 @@ package store
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"errors"
 	"fmt"
-	"net"
-	"net/url"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/postgres"
+	walletsqlc "github.com/useryege/athena/internal/wallet/store/sqlc"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
-	"github.com/useryege/athena/util/env"
 )
 
-const (
-	postgresPingAttempts = 5
-	postgresPingInterval = time.Second
-)
+//go:embed migrations/*.sql
+var migrations embed.FS
 
 type SQLStore struct {
-	db *sql.DB
+	pool    *pgxpool.Pool
+	queries *walletsqlc.Queries
+	legacy  *sql.DB
 }
 
 var (
@@ -63,106 +65,137 @@ type WalletRecord struct {
 	UpdatedAt            time.Time
 }
 
-func NewSQLStore(db *sql.DB) *SQLStore {
-	return &SQLStore{db: db}
+func NewSQLStore(db any) *SQLStore {
+	var queries *walletsqlc.Queries
+	switch value := db.(type) {
+	case *pgxpool.Pool:
+		if value != nil {
+			queries = walletsqlc.New(value)
+		}
+		return &SQLStore{pool: value, queries: queries}
+	case *sql.DB:
+		return &SQLStore{legacy: value}
+	case nil:
+		return &SQLStore{}
+	default:
+		panic(fmt.Sprintf("unsupported wallet postgres store db %T", db))
+	}
 }
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
-		log.Info("connecting to wallet postgres database")
-		db, err := sql.Open("pgx", postgresDSN())
+		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{
+			Module:       "wallet",
+			DSNEnv:       "ATHENA_WALLET_POSTGRES_DSN",
+			Database:     "wallet",
+			Migrations:   migrations,
+			MigrationDir: "migrations",
+		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to open wallet postgres database: %w", err)
+			return nil, err
 		}
-
-		var pingErr error
-		for attempt := 1; attempt <= postgresPingAttempts; attempt++ {
-			pingCtx, cancel := context.WithTimeout(ctx, postgresPingInterval)
-			pingErr = db.PingContext(pingCtx)
-			cancel()
-			if pingErr == nil {
-				log.Info("successfully connected to wallet postgres database")
-				return NewSQLStore(db), nil
-			}
-
-			log.Warnf("failed to ping wallet postgres database, attempt %d/%d: %v", attempt, postgresPingAttempts, pingErr)
-			if attempt < postgresPingAttempts {
-				select {
-				case <-ctx.Done():
-					_ = db.Close()
-					return nil, fmt.Errorf("wallet postgres database ping interrupted: %w", ctx.Err())
-				case <-time.After(postgresPingInterval):
-				}
-			}
-		}
-
-		_ = db.Close()
-		return nil, fmt.Errorf("failed to ping wallet postgres database after %d attempts: %w", postgresPingAttempts, pingErr)
+		log.Info("wallet postgres migrations are up to date")
+		return NewSQLStore(pool), nil
 	}
-}
-
-func postgresDSN() string {
-	if dsn := env.StringFromEnv("ATHENA_WALLET_POSTGRES_DSN", ""); dsn != "" {
-		return dsn
-	}
-	return defaultPostgresDSN()
-}
-
-func defaultPostgresDSN() string {
-	postgresUser := env.StringFromEnv("POSTGRES_USER", "athena")
-	postgresPassword := env.StringFromEnv("POSTGRES_PASSWORD", "")
-
-	postgresURL := url.URL{
-		Scheme: "postgres",
-		User:   url.User(postgresUser),
-		Host:   net.JoinHostPort("127.0.0.1", env.StringFromEnv("ATHENA_POSTGRES_PORT", "5432")),
-		Path:   "wallet",
-	}
-	if postgresPassword != "" {
-		postgresURL.User = url.UserPassword(postgresUser, postgresPassword)
-	}
-
-	query := postgresURL.Query()
-	query.Set("sslmode", "disable")
-	postgresURL.RawQuery = query.Encode()
-
-	return postgresURL.String()
 }
 
 func (s *SQLStore) Close() error {
-	if s.db == nil {
+	if s.pool == nil {
 		return nil
 	}
-	return s.db.Close()
+	s.pool.Close()
+	return nil
 }
 
 func (s *SQLStore) CreateWallet(ctx context.Context, req CreateWalletRecordRequest) (*WalletRecord, error) {
-	if s.db == nil {
-		return nil, fmt.Errorf("wallet postgres database is not configured")
-	}
-	row := s.db.QueryRowContext(ctx, `
+	if s.legacy != nil {
+		row := s.legacy.QueryRowContext(ctx, `
 INSERT INTO wallet_private_keys (chain, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING id, chain, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
-`, req.Chain, req.Address, req.AddressKey, req.Alias, req.PrivateKeyCiphertext, nullableBytes(req.MnemonicCiphertext), req.Source, req.DerivationPath)
-	item, err := scanWalletRecord(row)
+`, req.Chain, req.Address, req.AddressKey, req.Alias, req.PrivateKeyCiphertext, legacyNullableBytes(req.MnemonicCiphertext), req.Source, req.DerivationPath)
+		item, err := scanWalletRecord(row)
+		if err != nil {
+			if isUniqueViolation(err) {
+				return nil, ErrWalletAlreadyExists
+			}
+			return nil, fmt.Errorf("create wallet: %w", err)
+		}
+		return item, nil
+	}
+	if s.queries == nil {
+		return nil, fmt.Errorf("wallet postgres database is not configured")
+	}
+	row, err := s.queries.CreateWallet(ctx, walletsqlc.CreateWalletParams{
+		Chain:                req.Chain,
+		Address:              req.Address,
+		AddressKey:           req.AddressKey,
+		Alias:                req.Alias,
+		PrivateKeyCiphertext: req.PrivateKeyCiphertext,
+		MnemonicCiphertext:   nullableBytes(req.MnemonicCiphertext),
+		Source:               req.Source,
+		DerivationPath:       req.DerivationPath,
+	})
 	if err != nil {
 		if isUniqueViolation(err) {
 			return nil, ErrWalletAlreadyExists
 		}
 		return nil, fmt.Errorf("create wallet: %w", err)
 	}
-	return item, nil
+	return walletRecordFromSQLC(row), nil
 }
 
 func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]*v1alpha1.WalletItem, int64, error) {
-	if s.db == nil {
+	if s.legacy != nil {
+		where, args := walletFilterWhere(opts)
+		var total int64
+		countQuery := "SELECT COUNT(*) FROM wallet_private_keys" + where
+		if err := s.legacy.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
+			return nil, 0, fmt.Errorf("count wallets: %w", err)
+		}
+
+		page := opts.Page
+		if page < 1 {
+			page = 1
+		}
+		pageSize := opts.PageSize
+		if pageSize < 1 {
+			pageSize = 20
+		}
+		args = append(args, pageSize, (page-1)*pageSize)
+		query := `
+SELECT id, chain, address, alias, source, derivation_path, created_at, updated_at
+FROM wallet_private_keys` + where + `
+ORDER BY created_at DESC, id DESC
+LIMIT $` + fmt.Sprint(len(args)-1) + ` OFFSET $` + fmt.Sprint(len(args))
+		rows, err := s.legacy.QueryContext(ctx, query, args...)
+		if err != nil {
+			return nil, 0, fmt.Errorf("list wallets: %w", err)
+		}
+		defer rows.Close()
+
+		items := []*v1alpha1.WalletItem{}
+		for rows.Next() {
+			item, err := scanWalletItem(rows)
+			if err != nil {
+				return nil, 0, fmt.Errorf("scan wallet: %w", err)
+			}
+			items = append(items, item)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, 0, fmt.Errorf("iterate wallets: %w", err)
+		}
+		return items, total, nil
+	}
+	if s.queries == nil {
 		return nil, 0, fmt.Errorf("wallet postgres database is not configured")
 	}
-	where, args := walletFilterWhere(opts)
-	var total int64
-	countQuery := "SELECT COUNT(*) FROM wallet_private_keys" + where
-	if err := s.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
+	filters := walletFilterParams(opts)
+	total, err := s.queries.CountWallets(ctx, walletsqlc.CountWalletsParams{
+		Chain: filters.Chain,
+		Query: filters.Query,
+	})
+	if err != nil {
 		return nil, 0, fmt.Errorf("count wallets: %w", err)
 	}
 
@@ -174,69 +207,92 @@ func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]
 	if pageSize < 1 {
 		pageSize = 20
 	}
-	args = append(args, pageSize, (page-1)*pageSize)
-	query := `
-SELECT id, chain, address, alias, source, derivation_path, created_at, updated_at
-FROM wallet_private_keys` + where + `
-ORDER BY created_at DESC, id DESC
-LIMIT $` + fmt.Sprint(len(args)-1) + ` OFFSET $` + fmt.Sprint(len(args))
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.queries.ListWallets(ctx, walletsqlc.ListWalletsParams{
+		Limit:  int32(pageSize),
+		Offset: int32((page - 1) * pageSize),
+		Chain:  filters.Chain,
+		Query:  filters.Query,
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("list wallets: %w", err)
 	}
-	defer rows.Close()
 
 	items := []*v1alpha1.WalletItem{}
-	for rows.Next() {
-		item, err := scanWalletItem(rows)
-		if err != nil {
-			return nil, 0, fmt.Errorf("scan wallet: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, 0, fmt.Errorf("iterate wallets: %w", err)
+	for _, row := range rows {
+		items = append(items, walletItemFromListRow(row))
 	}
 	return items, total, nil
 }
 
 func (s *SQLStore) GetWallet(ctx context.Context, id int64) (*WalletRecord, error) {
-	if s.db == nil {
-		return nil, fmt.Errorf("wallet postgres database is not configured")
-	}
-	row := s.db.QueryRowContext(ctx, `
+	if s.legacy != nil {
+		row := s.legacy.QueryRowContext(ctx, `
 SELECT id, chain, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
 FROM wallet_private_keys
 WHERE id = $1
 `, id)
-	item, err := scanWalletRecord(row)
+		item, err := scanWalletRecord(row)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, ErrWalletNotFound
+			}
+			return nil, fmt.Errorf("get wallet: %w", err)
+		}
+		return item, nil
+	}
+	if s.queries == nil {
+		return nil, fmt.Errorf("wallet postgres database is not configured")
+	}
+	row, err := s.queries.GetWallet(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrWalletNotFound
 		}
 		return nil, fmt.Errorf("get wallet: %w", err)
 	}
-	return item, nil
+	return walletRecordFromSQLC(row), nil
 }
 
 func (s *SQLStore) UpdateWalletAlias(ctx context.Context, id int64, alias string) (*v1alpha1.WalletItem, error) {
-	if s.db == nil {
-		return nil, fmt.Errorf("wallet postgres database is not configured")
-	}
-	row := s.db.QueryRowContext(ctx, `
+	if s.legacy != nil {
+		row := s.legacy.QueryRowContext(ctx, `
 UPDATE wallet_private_keys
 SET alias = $2, updated_at = NOW()
 WHERE id = $1
 RETURNING id, chain, address, alias, source, derivation_path, created_at, updated_at
 `, id, alias)
-	item, err := scanWalletItem(row)
+		item, err := scanWalletItem(row)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, ErrWalletNotFound
+			}
+			return nil, fmt.Errorf("update wallet alias: %w", err)
+		}
+		return item, nil
+	}
+	if s.queries == nil {
+		return nil, fmt.Errorf("wallet postgres database is not configured")
+	}
+	row, err := s.queries.UpdateWalletAlias(ctx, walletsqlc.UpdateWalletAliasParams{ID: id, Alias: alias})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrWalletNotFound
 		}
 		return nil, fmt.Errorf("update wallet alias: %w", err)
 	}
-	return item, nil
+	return walletItemFromUpdateRow(row), nil
+}
+
+type walletFilters struct {
+	Chain pgtype.Text
+	Query pgtype.Text
+}
+
+func walletFilterParams(opts ListWalletsOptions) walletFilters {
+	return walletFilters{
+		Chain: nullableTrimmedText(opts.Chain),
+		Query: nullableKeyword(opts.Query),
+	}
 }
 
 type rowScanner interface {
@@ -305,6 +361,48 @@ func scanWalletItem(row rowScanner) (*v1alpha1.WalletItem, error) {
 	return &item, nil
 }
 
+func walletRecordFromSQLC(row walletsqlc.WalletPrivateKey) *WalletRecord {
+	return &WalletRecord{
+		ID:                   row.ID,
+		Chain:                row.Chain,
+		Address:              row.Address,
+		AddressKey:           row.AddressKey,
+		Alias:                row.Alias,
+		PrivateKeyCiphertext: row.PrivateKeyCiphertext,
+		MnemonicCiphertext:   row.MnemonicCiphertext,
+		Source:               row.Source,
+		DerivationPath:       row.DerivationPath,
+		CreatedAt:            row.CreatedAt.Time,
+		UpdatedAt:            row.UpdatedAt.Time,
+	}
+}
+
+func walletItemFromListRow(row walletsqlc.ListWalletsRow) *v1alpha1.WalletItem {
+	return &v1alpha1.WalletItem{
+		ID:             row.ID,
+		Chain:          row.Chain,
+		Address:        row.Address,
+		Alias:          row.Alias,
+		Source:         row.Source,
+		DerivationPath: row.DerivationPath,
+		CreatedAt:      formatTime(row.CreatedAt.Time),
+		UpdatedAt:      formatTime(row.UpdatedAt.Time),
+	}
+}
+
+func walletItemFromUpdateRow(row walletsqlc.UpdateWalletAliasRow) *v1alpha1.WalletItem {
+	return &v1alpha1.WalletItem{
+		ID:             row.ID,
+		Chain:          row.Chain,
+		Address:        row.Address,
+		Alias:          row.Alias,
+		Source:         row.Source,
+		DerivationPath: row.DerivationPath,
+		CreatedAt:      formatTime(row.CreatedAt.Time),
+		UpdatedAt:      formatTime(row.UpdatedAt.Time),
+	}
+}
+
 func (r *WalletRecord) ToDetail() *v1alpha1.WalletDetail {
 	if r == nil {
 		return nil
@@ -321,11 +419,26 @@ func (r *WalletRecord) ToDetail() *v1alpha1.WalletDetail {
 	}
 }
 
-func nullableBytes(value []byte) any {
+func nullableBytes(value []byte) []byte {
 	if len(value) == 0 {
 		return nil
 	}
 	return value
+}
+
+func legacyNullableBytes(value []byte) any {
+	if len(value) == 0 {
+		return nil
+	}
+	return value
+}
+
+func nullableKeyword(value string) pgtype.Text {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return pgtype.Text{}
+	}
+	return pgtype.Text{String: "%" + value + "%", Valid: true}
 }
 
 func formatTime(value time.Time) string {

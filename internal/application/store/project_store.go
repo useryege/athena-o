@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v5"
 )
 
 func (s *SQLStore) SaveProjectBase(ctx context.Context, base ProjectBase) error {
@@ -112,7 +113,7 @@ WHERE contract = $1
 `, contract.Bytes())
 	base, err := scanProjectBaseRow(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -210,7 +211,7 @@ WHERE p.contract = $1
 `, contract.Bytes())
 	meta, err := scanProjectMetaRow(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -276,7 +277,7 @@ WHERE project_contract = $1
 `, contract.Bytes())
 	item, err := scanProjectChainStateRow(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -389,7 +390,7 @@ WHERE project_contract = $1
 `, contract.Bytes())
 	item, err := scanProjectSimulationResultRow(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -442,7 +443,7 @@ WHERE project_contract = $1
 `, contract.Bytes())
 	item, err := scanProjectPolicyReportRow(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -510,7 +511,7 @@ WHERE project_contract = $1
 `, contract.Bytes())
 	item, err := scanProjectBytecodeFactRow(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -551,7 +552,7 @@ WHERE project_contract = $1 AND component = $2
 `, contract.Bytes(), component)
 	item, err := scanProjectComponentStateRow(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err

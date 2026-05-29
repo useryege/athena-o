@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/useryege/athena/internal/postgres"
 )
 
 var (
@@ -52,7 +55,7 @@ LIMIT 1
 `)
 	item, err := scanSourceQualityPrompt(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -94,7 +97,7 @@ WHERE id = $1 AND deleted_at IS NULL
 `, id)
 	item, err := scanSourceQualityPrompt(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -218,7 +221,7 @@ RETURNING id, version, name, system_prompt, is_active, created_at, updated_at
 	return &item, nil
 }
 
-func insertSourceQualityPromptTx(ctx context.Context, tx *sql.Tx, name, systemPrompt string, active bool) (*SourceQualityPrompt, error) {
+func insertSourceQualityPromptTx(ctx context.Context, tx postgres.TxLike, name, systemPrompt string, active bool) (*SourceQualityPrompt, error) {
 	row := tx.QueryRowContext(ctx, `
 INSERT INTO source_quality_prompt (name, system_prompt, is_active)
 VALUES ($1, $2, $3)
@@ -231,7 +234,7 @@ RETURNING id, version, name, system_prompt, is_active, created_at, updated_at
 	return &item, nil
 }
 
-func getSourceQualityPromptForUpdate(ctx context.Context, tx *sql.Tx, id int64) (*SourceQualityPrompt, error) {
+func getSourceQualityPromptForUpdate(ctx context.Context, tx postgres.TxLike, id int64) (*SourceQualityPrompt, error) {
 	row := tx.QueryRowContext(ctx, `
 SELECT id, version, name, system_prompt, is_active, created_at, updated_at
 FROM source_quality_prompt
@@ -240,7 +243,7 @@ FOR UPDATE
 `, id)
 	item, err := scanSourceQualityPrompt(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("get source quality prompt for update: %w", err)

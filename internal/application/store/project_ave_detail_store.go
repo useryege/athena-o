@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v5"
 )
 
 const projectAveTokenColumns = `
@@ -312,7 +313,7 @@ func scanProjectAveTokenDetail(scanner rowScanner) (common.Address, ProjectAveDe
 	var tokenPriceChange5M, tokenPriceChange1H, tokenPriceChange4H, tokenPriceChange24H, tokenTxVolumeUSD5M, tokenTxVolumeUSD1H, tokenTxVolumeUSD4H, tokenTxVolumeUSD24H sql.NullString
 	var tokenBuyVolumeU5M, tokenSellVolumeU5M, token, chain, name, symbol, appendix, logoURL, riskInfo, riskScore, lockPlatform, isMintable, mainPair sql.NullString
 	if err := scanner.Scan(&contract, &detail.Status, &msg, &detail.DataType, &detail.IsAudited, &detail.FetchedAt, &total, &launchPrice, &currentPriceETH, &currentPriceUSD, &priceChange1D, &priceChange24H, &priceChange1H, &lockAmount, &burnAmount, &otherAmount, &txAmount24H, &txVolumeU24H, &lockedPercent, &marketCap, &fdv, &tvl, &mainPairTVL, &tokenPriceChange5M, &tokenPriceChange1H, &tokenPriceChange4H, &tokenPriceChange24H, &tokenTxVolumeUSD5M, &tokenTxVolumeUSD1H, &tokenTxVolumeUSD4H, &tokenTxVolumeUSD24H, &tokenBuyVolumeU5M, &tokenSellVolumeU5M, &token, &chain, &t.Decimal, &name, &symbol, &t.Holders, &appendix, &t.RiskLevel, &logoURL, &riskInfo, &riskScore, &t.LaunchAt, &t.CreatedAt, &t.TxCount24H, &lockPlatform, &isMintable, &t.UpdatedAt, &mainPair, &t.HasMintMethod, &t.IsLPNotLocked, &t.HasNotRenounced, &t.HasNotAudited, &t.HasNotOpenSource, &t.IsInBlacklist, &t.IsHoneypot, &t.AveRiskLevel); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return common.Address{}, ProjectAveDetail{}, err
 		}
 		return common.Address{}, ProjectAveDetail{}, fmt.Errorf("scan project ave token detail: %w", err)

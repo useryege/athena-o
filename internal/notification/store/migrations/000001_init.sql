@@ -1,4 +1,5 @@
-\connect notification
+
+-- +goose Up
 
 CREATE TABLE IF NOT EXISTS notification_deliveries (
   id BIGSERIAL PRIMARY KEY,
@@ -19,3 +20,7 @@ CREATE INDEX IF NOT EXISTS idx_notification_deliveries_created_at ON notificatio
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_status ON notification_deliveries (status);
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_severity ON notification_deliveries (severity);
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_source ON notification_deliveries (source);
+
+-- +goose Down
+
+DROP TABLE IF EXISTS notification_deliveries;

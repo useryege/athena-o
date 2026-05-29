@@ -297,6 +297,10 @@ protogen-fast:
 abigen-local:
 	./hack/generate-abi.sh
 
+.PHONY: sqlc-local
+sqlc-local:
+	go run -mod=mod github.com/sqlc-dev/sqlc/cmd/sqlc generate
+
 .PHONY: clientgen
 clientgen:
 	export GO111MODULE=off
@@ -324,7 +328,7 @@ mod-vendor-local: mod-download-local
 
 # new codegen-local
 .PHONY: codegen-local
-codegen-local: mod-vendor-local mockgen gogen protogen clientgen clidocsgen manifests-local
+codegen-local: mod-vendor-local mockgen gogen protogen sqlc-local clientgen clidocsgen manifests-local
 	rm -rf vendor/
 
 .PHONY: test-tools-image

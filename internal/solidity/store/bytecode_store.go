@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -113,7 +114,7 @@ WHERE code_hash = $1
 `, codeHash.Bytes())
 	item, err := scanBytecode(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -223,7 +224,7 @@ WHERE b.code_hash = $1
 `, codeHash.Bytes())
 	item, err := scanBytecodeDetailRecord(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -358,7 +359,7 @@ WHERE code_hash = $1
 `, codeHash.Bytes())
 	item, err := scanBytecodeBlacklistEntry(row)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err

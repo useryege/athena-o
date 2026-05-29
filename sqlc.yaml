@@ -1,0 +1,42 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "internal/application/store/migrations"
+    queries: "internal/application/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/application/store/sqlc"
+        sql_package: "pgx/v5"
+  - engine: "postgresql"
+    schema: "internal/notification/store/migrations"
+    queries: "internal/notification/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/notification/store/sqlc"
+        sql_package: "pgx/v5"
+  - engine: "postgresql"
+    schema: "internal/wallet/store/migrations"
+    queries: "internal/wallet/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/wallet/store/sqlc"
+        sql_package: "pgx/v5"
+  - engine: "postgresql"
+    schema: "internal/solidity/store/migrations"
+    queries: "internal/solidity/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/solidity/store/sqlc"
+        sql_package: "pgx/v5"
+  - engine: "postgresql"
+    schema: "internal/worm/store/migrations"
+    queries: "internal/worm/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/worm/store/sqlc"
+        sql_package: "pgx/v5"

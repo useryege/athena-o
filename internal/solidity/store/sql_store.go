@@ -3,94 +3,62 @@ package store
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
-	"net"
-	"net/url"
-	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/util/env"
+	"github.com/useryege/athena/internal/postgres"
+	"github.com/useryege/athena/internal/solidity/store/sqlc"
 )
 
-const (
-	postgresPingAttempts = 5
-	postgresPingInterval = time.Second
-)
+//go:embed migrations/*.sql
+var migrations embed.FS
 
 type SQLStore struct {
-	db *sql.DB
+	pool    *pgxpool.Pool
+	db      postgres.Executor
+	queries *sqlc.Queries
 }
 
-func NewSQLStore(db *sql.DB) *SQLStore {
-	return &SQLStore{db: db}
+func NewSQLStore(db any) *SQLStore {
+	var queries *sqlc.Queries
+	switch value := db.(type) {
+	case *pgxpool.Pool:
+		if value != nil {
+			queries = sqlc.New(value)
+		}
+		return &SQLStore{pool: value, db: postgres.NewDB(value), queries: queries}
+	case *sql.DB:
+		return &SQLStore{db: postgres.NewSQLDB(value)}
+	case nil:
+		return &SQLStore{}
+	default:
+		panic(fmt.Sprintf("unsupported solidity postgres store db %T", db))
+	}
 }
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
-		log.Info("connecting to solidity postgres database")
-		db, err := sql.Open("pgx", postgresDSN())
+		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{
+			Module:       "solidity",
+			DSNEnv:       "ATHENA_SOLIDITY_POSTGRES_DSN",
+			Database:     "solidity",
+			Migrations:   migrations,
+			MigrationDir: "migrations",
+		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to open solidity postgres database: %w", err)
+			return nil, fmt.Errorf("connect solidity postgres: %w", err)
 		}
-
-		var pingErr error
-		for attempt := 1; attempt <= postgresPingAttempts; attempt++ {
-			pingCtx, cancel := context.WithTimeout(ctx, postgresPingInterval)
-			pingErr = db.PingContext(pingCtx)
-			cancel()
-			if pingErr == nil {
-				log.Info("successfully connected to solidity postgres database")
-				return NewSQLStore(db), nil
-			}
-
-			log.Warnf("failed to ping solidity postgres database, attempt %d/%d: %v", attempt, postgresPingAttempts, pingErr)
-			if attempt < postgresPingAttempts {
-				select {
-				case <-ctx.Done():
-					_ = db.Close()
-					return nil, fmt.Errorf("solidity postgres database ping interrupted: %w", ctx.Err())
-				case <-time.After(postgresPingInterval):
-				}
-			}
-		}
-
-		_ = db.Close()
-		return nil, fmt.Errorf("failed to ping solidity postgres database after %d attempts: %w", postgresPingAttempts, pingErr)
+		log.Info("solidity postgres migrations are up to date")
+		return NewSQLStore(pool), nil
 	}
-}
-
-func postgresDSN() string {
-	if dsn := env.StringFromEnv("ATHENA_SOLIDITY_POSTGRES_DSN", ""); dsn != "" {
-		return dsn
-	}
-	return defaultPostgresDSN()
-}
-
-func defaultPostgresDSN() string {
-	postgresUser := env.StringFromEnv("POSTGRES_USER", "athena")
-	postgresPassword := env.StringFromEnv("POSTGRES_PASSWORD", "")
-
-	postgresURL := url.URL{
-		Scheme: "postgres",
-		User:   url.User(postgresUser),
-		Host:   net.JoinHostPort("127.0.0.1", env.StringFromEnv("ATHENA_POSTGRES_PORT", "5432")),
-		Path:   "solidity",
-	}
-	if postgresPassword != "" {
-		postgresURL.User = url.UserPassword(postgresUser, postgresPassword)
-	}
-
-	query := postgresURL.Query()
-	query.Set("sslmode", "disable")
-	postgresURL.RawQuery = query.Encode()
-
-	return postgresURL.String()
 }
 
 func (s *SQLStore) Close() error {
-	if s.db == nil {
+	if s.pool == nil {
 		return nil
 	}
-	return s.db.Close()
+	s.pool.Close()
+	return nil
 }

@@ -1,4 +1,5 @@
-\connect application
+
+-- +goose Up
 
 CREATE TABLE IF NOT EXISTS project (
   id BIGSERIAL PRIMARY KEY,
@@ -295,3 +296,18 @@ CREATE TABLE IF NOT EXISTS project_comment (
 
 CREATE INDEX IF NOT EXISTS project_comment_project_timeline_idx
   ON project_comment (project_contract, created_at DESC, id DESC);
+
+-- +goose Down
+
+DROP TABLE IF EXISTS project_comment;
+DROP TABLE IF EXISTS project_genesis_wallet;
+DROP TABLE IF EXISTS project_event_log;
+DROP TABLE IF EXISTS project_creator_historical_project;
+DROP TABLE IF EXISTS project_ave_pair;
+DROP TABLE IF EXISTS project_ave_token_detail;
+DROP TABLE IF EXISTS project_component_state;
+DROP TABLE IF EXISTS project_bytecode_fact;
+DROP TABLE IF EXISTS project_policy_report;
+DROP TABLE IF EXISTS project_simulation_result;
+DROP TABLE IF EXISTS project_chain_state;
+DROP TABLE IF EXISTS project;
