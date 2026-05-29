@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/ethereum/go-ethereum/common"
+	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 )
 
 const (
@@ -26,62 +27,44 @@ func (s *SQLStore) AddProjectComment(ctx context.Context, item ProjectComment) (
 		return ProjectComment{}, fmt.Errorf("project comment content exceeds max length %d", MaxProjectCommentContentLength)
 	}
 
-	row := s.db.QueryRowContext(ctx, `
-INSERT INTO project_comment (
-  project_contract,
-  username,
-  content
-) VALUES ($1, $2, $3)
-RETURNING id, project_contract, username, content, created_at
-`, item.Contract.Bytes(), strings.TrimSpace(item.Username), strings.TrimSpace(item.Content))
-
-	created, err := scanProjectCommentRow(row)
+	if s.queries == nil {
+		return ProjectComment{}, fmt.Errorf("application postgres database is not configured")
+	}
+	row, err := s.queries.AddProjectComment(ctx, appsqlc.AddProjectCommentParams{
+		ProjectContract: item.Contract.Bytes(),
+		Username:        strings.TrimSpace(item.Username),
+		Content:         strings.TrimSpace(item.Content),
+	})
 	if err != nil {
 		return ProjectComment{}, fmt.Errorf("add project comment: %w", err)
 	}
-	return created, nil
+	return projectCommentFromSQLC(row), nil
 }
 
 func (s *SQLStore) ListProjectCommentsByContract(ctx context.Context, contract common.Address, page int32, pageSize int32) ([]ProjectComment, int64, int32, int32, error) {
 	page, pageSize = normalizeProjectCommentPage(page, pageSize)
 
-	var total int64
-	if err := s.db.QueryRowContext(ctx, `
-SELECT COUNT(*)
-FROM project_comment
-WHERE project_contract = $1
-`, contract.Bytes()).Scan(&total); err != nil {
+	if s.queries == nil {
+		return nil, 0, 0, 0, fmt.Errorf("application postgres database is not configured")
+	}
+	total, err := s.queries.CountProjectCommentsByContract(ctx, contract.Bytes())
+	if err != nil {
 		return nil, 0, 0, 0, fmt.Errorf("count project comments: %w", err)
 	}
 
 	offset := int64(page-1) * int64(pageSize)
-	rows, err := s.db.QueryContext(ctx, `
-SELECT
-  id,
-  project_contract,
-  username,
-  content,
-  created_at
-FROM project_comment
-WHERE project_contract = $1
-ORDER BY created_at DESC, id DESC
-LIMIT $2 OFFSET $3
-`, contract.Bytes(), pageSize, offset)
+	rows, err := s.queries.ListProjectCommentsByContract(ctx, appsqlc.ListProjectCommentsByContractParams{
+		ProjectContract: contract.Bytes(),
+		Limit:           pageSize,
+		Offset:          int32(offset),
+	})
 	if err != nil {
 		return nil, 0, 0, 0, fmt.Errorf("list project comments: %w", err)
 	}
-	defer rows.Close()
 
-	items := make([]ProjectComment, 0)
-	for rows.Next() {
-		item, err := scanProjectCommentRow(rows)
-		if err != nil {
-			return nil, 0, 0, 0, err
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, 0, 0, 0, fmt.Errorf("iterate project comments: %w", err)
+	items := make([]ProjectComment, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, projectCommentFromSQLC(row))
 	}
 	return items, total, page, pageSize, nil
 }
@@ -99,15 +82,12 @@ func normalizeProjectCommentPage(page int32, pageSize int32) (int32, int32) {
 	return page, pageSize
 }
 
-func scanProjectCommentRow(scanner rowScanner) (ProjectComment, error) {
-	var (
-		item     ProjectComment
-		contract []byte
-	)
-	if err := scanner.Scan(&item.ID, &contract, &item.Username, &item.Content, &item.CreatedAt); err != nil {
-		return ProjectComment{}, fmt.Errorf("scan project comment: %w", err)
+func projectCommentFromSQLC(row appsqlc.ProjectComment) ProjectComment {
+	return ProjectComment{
+		ID:        row.ID,
+		Contract:  common.BytesToAddress(row.ProjectContract),
+		Username:  row.Username,
+		Content:   row.Content,
+		CreatedAt: row.CreatedAt.Time.UTC(),
 	}
-	item.Contract = common.BytesToAddress(contract)
-	item.CreatedAt = item.CreatedAt.UTC()
-	return item, nil
 }

@@ -2,13 +2,14 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v5/pgtype"
+	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 )
 
 func (s *SQLStore) AddProjectEventLog(ctx context.Context, item ProjectEventLog) error {
@@ -28,80 +29,56 @@ func (s *SQLStore) AddProjectEventLog(ctx context.Context, item ProjectEventLog)
 		return fmt.Errorf("project event log payload is not valid JSON")
 	}
 
-	_, err := s.db.ExecContext(ctx, `
-INSERT INTO project_event_log (
-  contract,
-  event_type,
-  occurred_at,
-  message,
-  payload,
-  idempotency_key
-) VALUES ($1, $2, $3, $4, $5::jsonb, $6)
-ON CONFLICT (contract, idempotency_key) DO NOTHING
-`, item.Contract.Bytes(), item.EventType, occurredAt, nullIfEmpty(item.Message), payload, item.IdempotencyKey)
-	if err != nil {
+	if s.queries == nil {
+		return fmt.Errorf("application postgres database is not configured")
+	}
+	if err := s.queries.AddProjectEventLog(ctx, appsqlc.AddProjectEventLogParams{
+		Contract:       item.Contract.Bytes(),
+		EventType:      item.EventType,
+		OccurredAt:     pgtype.Timestamptz{Time: occurredAt, Valid: true},
+		Message:        nullablePgText(item.Message),
+		Column5:        []byte(payload),
+		IdempotencyKey: item.IdempotencyKey,
+	}); err != nil {
 		return fmt.Errorf("add project event log: %w", err)
 	}
 	return nil
 }
 
 func (s *SQLStore) ListProjectEventLogsByContract(ctx context.Context, contract common.Address) ([]ProjectEventLog, error) {
-	rows, err := s.db.QueryContext(ctx, `
-SELECT
-  id,
-  contract,
-  event_type,
-  occurred_at,
-  message,
-  payload,
-  idempotency_key,
-  created_at
-FROM project_event_log
-WHERE contract = $1
-ORDER BY occurred_at DESC, id DESC
-`, contract.Bytes())
+	if s.queries == nil {
+		return nil, fmt.Errorf("application postgres database is not configured")
+	}
+	rows, err := s.queries.ListProjectEventLogsByContract(ctx, contract.Bytes())
 	if err != nil {
 		return nil, fmt.Errorf("list project event logs: %w", err)
 	}
-	defer rows.Close()
 
-	items := make([]ProjectEventLog, 0)
-	for rows.Next() {
-		item, err := scanProjectEventLogRow(rows)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate project event logs: %w", err)
+	items := make([]ProjectEventLog, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, projectEventLogFromSQLC(row))
 	}
 	return items, nil
 }
 
-func scanProjectEventLogRow(scanner rowScanner) (ProjectEventLog, error) {
-	var (
-		item           ProjectEventLog
-		contract       []byte
-		message        sql.NullString
-		payload        []byte
-		idempotencyKey string
-	)
-	if err := scanner.Scan(&item.ID, &contract, &item.EventType, &item.OccurredAt, &message, &payload, &idempotencyKey, &item.CreatedAt); err != nil {
-		return ProjectEventLog{}, fmt.Errorf("scan project event log: %w", err)
+func nullablePgText(value string) pgtype.Text {
+	if strings.TrimSpace(value) == "" {
+		return pgtype.Text{}
 	}
-	item.Contract = common.BytesToAddress(contract)
-	item.Message = message.String
-	item.Payload = string(payload)
-	item.IdempotencyKey = idempotencyKey
-	return item, nil
+	return pgtype.Text{String: value, Valid: true}
 }
 
-func nullIfEmpty(value string) any {
-	if strings.TrimSpace(value) == "" {
-		return nil
+func projectEventLogFromSQLC(row appsqlc.ProjectEventLog) ProjectEventLog {
+	return ProjectEventLog{
+		ID:             row.ID,
+		Contract:       common.BytesToAddress(row.Contract),
+		EventType:      row.EventType,
+		OccurredAt:     row.OccurredAt.Time,
+		Message:        row.Message.String,
+		Payload:        string(row.Payload),
+		IdempotencyKey: row.IdempotencyKey,
+		CreatedAt:      row.CreatedAt.Time,
 	}
-	return value
 }
 
 func defaultJSONPayload(value string) string {

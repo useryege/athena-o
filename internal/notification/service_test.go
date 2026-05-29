@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/useryege/athena/internal/notification/apiclient"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
+	notificationsqlc "github.com/useryege/athena/internal/notification/store/sqlc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -29,6 +30,38 @@ func (f *fakeSender) Send(_ context.Context, text string) (string, error) {
 		return f.messageID, nil
 	}
 	return "1", nil
+}
+
+type fakeNotificationQuerier struct {
+	createDeliveryResult notificationsqlc.CreateDeliveryRow
+	markSentParams       notificationsqlc.MarkDeliverySentParams
+	markFailedParams     notificationsqlc.MarkDeliveryFailedParams
+}
+
+func (f *fakeNotificationQuerier) CountDeliveries(context.Context, notificationsqlc.CountDeliveriesParams) (int64, error) {
+	return 0, nil
+}
+
+func (f *fakeNotificationQuerier) CreateDelivery(context.Context, notificationsqlc.CreateDeliveryParams) (notificationsqlc.CreateDeliveryRow, error) {
+	return f.createDeliveryResult, nil
+}
+
+func (f *fakeNotificationQuerier) GetDelivery(context.Context, int64) (notificationsqlc.GetDeliveryRow, error) {
+	return notificationsqlc.GetDeliveryRow{}, nil
+}
+
+func (f *fakeNotificationQuerier) ListDeliveries(context.Context, notificationsqlc.ListDeliveriesParams) ([]notificationsqlc.ListDeliveriesRow, error) {
+	return nil, nil
+}
+
+func (f *fakeNotificationQuerier) MarkDeliveryFailed(_ context.Context, arg notificationsqlc.MarkDeliveryFailedParams) error {
+	f.markFailedParams = arg
+	return nil
+}
+
+func (f *fakeNotificationQuerier) MarkDeliverySent(_ context.Context, arg notificationsqlc.MarkDeliverySentParams) error {
+	f.markSentParams = arg
+	return nil
 }
 
 func TestNotificationStatusTransitions(t *testing.T) {
@@ -80,23 +113,23 @@ func TestNotificationStartRequiresSender(t *testing.T) {
 }
 
 func TestSendNotificationSuccessRecordsDelivery(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("sqlmock new: %v", err)
-	}
-	defer db.Close()
-
 	createdAt := time.Date(2026, time.May, 27, 12, 0, 0, 0, time.UTC)
-	mock.ExpectQuery("INSERT INTO notification_deliveries").
-		WithArgs("worm", "warning", "Scan finished", "Contract risk changed", "https://example.com", "telegram", "pending").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source", "severity", "title", "body", "link", "channel", "status", "created_at"}).
-			AddRow(int64(7), "worm", "warning", "Scan finished", "Contract risk changed", "https://example.com", "telegram", "pending", createdAt))
-	mock.ExpectExec("UPDATE notification_deliveries").
-		WithArgs(int64(7), "123").
-		WillReturnResult(sqlmock.NewResult(0, 1))
+	querier := &fakeNotificationQuerier{
+		createDeliveryResult: notificationsqlc.CreateDeliveryRow{
+			ID:        7,
+			Source:    "worm",
+			Severity:  "warning",
+			Title:     "Scan finished",
+			Body:      "Contract risk changed",
+			Link:      "https://example.com",
+			Channel:   "telegram",
+			Status:    "pending",
+			CreatedAt: pgtype.Timestamptz{Time: createdAt, Valid: true},
+		},
+	}
 
 	sender := &fakeSender{messageID: "123"}
-	resp, err := NewService(notificationstore.NewSQLStore(db), sender).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
+	resp, err := NewService(notificationstore.NewSQLStoreWithQuerier(querier), sender).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
 		Source:   "worm",
 		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
 		Title:    "Scan finished",
@@ -109,31 +142,31 @@ func TestSendNotificationSuccessRecordsDelivery(t *testing.T) {
 	if resp.NotificationId != 7 || resp.Status != apiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_SENT || resp.ProviderMessageId != "123" {
 		t.Fatalf("response = %#v, want sent delivery", resp)
 	}
+	if querier.markSentParams.ID != 7 || querier.markSentParams.ProviderMessageID.String != "123" {
+		t.Fatalf("mark sent params = %#v", querier.markSentParams)
+	}
 	if !strings.Contains(sender.text, "Severity: WARNING") || !strings.Contains(sender.text, "Contract risk changed") {
 		t.Fatalf("telegram text = %q, want rendered notification text", sender.text)
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("sql expectations: %v", err)
 	}
 }
 
 func TestSendNotificationFailureRecordsDelivery(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("sqlmock new: %v", err)
-	}
-	defer db.Close()
-
 	createdAt := time.Date(2026, time.May, 27, 12, 0, 0, 0, time.UTC)
-	mock.ExpectQuery("INSERT INTO notification_deliveries").
-		WithArgs("application", "error", "", "Deploy failed", "", "telegram", "pending").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source", "severity", "title", "body", "link", "channel", "status", "created_at"}).
-			AddRow(int64(9), "application", "error", "", "Deploy failed", "", "telegram", "pending", createdAt))
-	mock.ExpectExec("UPDATE notification_deliveries").
-		WithArgs(int64(9), "telegram unavailable").
-		WillReturnResult(sqlmock.NewResult(0, 1))
+	querier := &fakeNotificationQuerier{
+		createDeliveryResult: notificationsqlc.CreateDeliveryRow{
+			ID:        9,
+			Source:    "application",
+			Severity:  "error",
+			Title:     "",
+			Body:      "Deploy failed",
+			Link:      "",
+			Channel:   "telegram",
+			Status:    "pending",
+			CreatedAt: pgtype.Timestamptz{Time: createdAt, Valid: true},
+		},
+	}
 
-	resp, err := NewService(notificationstore.NewSQLStore(db), &fakeSender{err: errors.New("telegram unavailable")}).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
+	resp, err := NewService(notificationstore.NewSQLStoreWithQuerier(querier), &fakeSender{err: errors.New("telegram unavailable")}).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
 		Source:   "application",
 		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_ERROR,
 		Body:     "Deploy failed",
@@ -144,7 +177,7 @@ func TestSendNotificationFailureRecordsDelivery(t *testing.T) {
 	if resp == nil || resp.NotificationId != 9 || resp.Status != apiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_FAILED {
 		t.Fatalf("response = %#v, want failed delivery response", resp)
 	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("sql expectations: %v", err)
+	if querier.markFailedParams.ID != 9 || querier.markFailedParams.ErrorMessage.String != "telegram unavailable" {
+		t.Fatalf("mark failed params = %#v", querier.markFailedParams)
 	}
 }

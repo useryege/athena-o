@@ -2,14 +2,13 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"embed"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/postgres"
-	"github.com/useryege/athena/internal/solidity/store/sqlc"
+	soliditysqlc "github.com/useryege/athena/internal/solidity/store/sqlc"
 )
 
 //go:embed migrations/*.sql
@@ -17,25 +16,18 @@ var migrations embed.FS
 
 type SQLStore struct {
 	pool    *pgxpool.Pool
-	db      postgres.Executor
-	queries *sqlc.Queries
+	queries soliditysqlc.Querier
 }
 
-func NewSQLStore(db any) *SQLStore {
-	var queries *sqlc.Queries
-	switch value := db.(type) {
-	case *pgxpool.Pool:
-		if value != nil {
-			queries = sqlc.New(value)
-		}
-		return &SQLStore{pool: value, db: postgres.NewDB(value), queries: queries}
-	case *sql.DB:
-		return &SQLStore{db: postgres.NewSQLDB(value)}
-	case nil:
+func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
+	if pool == nil {
 		return &SQLStore{}
-	default:
-		panic(fmt.Sprintf("unsupported solidity postgres store db %T", db))
 	}
+	return &SQLStore{pool: pool, queries: soliditysqlc.New(pool)}
+}
+
+func NewSQLStoreWithQuerier(querier soliditysqlc.Querier) *SQLStore {
+	return &SQLStore{queries: querier}
 }
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {

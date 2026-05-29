@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -25,30 +24,6 @@ type WalletBlacklistEntry struct {
 }
 
 func (s *SQLStore) ListWalletBlacklistEntries(ctx context.Context) ([]WalletBlacklistEntry, error) {
-	if s.legacy != nil {
-		rows, err := s.legacy.QueryContext(ctx, `
-SELECT wallet, note, created_at
-FROM wallet_blacklist
-ORDER BY created_at DESC, wallet
-`)
-		if err != nil {
-			return nil, fmt.Errorf("list wallet blacklist entries: %w", err)
-		}
-		defer rows.Close()
-
-		items := make([]WalletBlacklistEntry, 0)
-		for rows.Next() {
-			item, err := scanWalletBlacklistEntryRow(rows)
-			if err != nil {
-				return nil, err
-			}
-			items = append(items, item)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("iterate wallet blacklist entries: %w", err)
-		}
-		return items, nil
-	}
 	if s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
@@ -65,19 +40,6 @@ ORDER BY created_at DESC, wallet
 }
 
 func (s *SQLStore) AddWalletBlacklistEntry(ctx context.Context, item WalletBlacklistEntry) error {
-	if s.legacy != nil {
-		_, err := s.legacy.ExecContext(ctx, `
-INSERT INTO wallet_blacklist (wallet, note)
-VALUES ($1, $2)
-`, item.Wallet.Bytes(), legacyNullableTrimmedText(item.Note))
-		if err != nil {
-			if isUniqueViolation(err) {
-				return ErrWalletBlacklistEntryAlreadyExists
-			}
-			return fmt.Errorf("add wallet blacklist entry: %w", err)
-		}
-		return nil
-	}
 	if s.queries == nil {
 		return fmt.Errorf("wallet postgres database is not configured")
 	}
@@ -92,24 +54,6 @@ VALUES ($1, $2)
 }
 
 func (s *SQLStore) UpdateWalletBlacklistEntryNote(ctx context.Context, wallet common.Address, note string) error {
-	if s.legacy != nil {
-		result, err := s.legacy.ExecContext(ctx, `
-UPDATE wallet_blacklist
-SET note = $2
-WHERE wallet = $1
-`, wallet.Bytes(), legacyNullableTrimmedText(note))
-		if err != nil {
-			return fmt.Errorf("update wallet blacklist entry note: %w", err)
-		}
-		affected, err := result.RowsAffected()
-		if err != nil {
-			return fmt.Errorf("rows affected for update wallet blacklist entry note: %w", err)
-		}
-		if affected == 0 {
-			return ErrWalletBlacklistEntryNotFound
-		}
-		return nil
-	}
 	if s.queries == nil {
 		return fmt.Errorf("wallet postgres database is not configured")
 	}
@@ -124,23 +68,6 @@ WHERE wallet = $1
 }
 
 func (s *SQLStore) DeleteWalletBlacklistEntry(ctx context.Context, wallet common.Address) error {
-	if s.legacy != nil {
-		result, err := s.legacy.ExecContext(ctx, `
-DELETE FROM wallet_blacklist
-WHERE wallet = $1
-`, wallet.Bytes())
-		if err != nil {
-			return fmt.Errorf("delete wallet blacklist entry: %w", err)
-		}
-		affected, err := result.RowsAffected()
-		if err != nil {
-			return fmt.Errorf("rows affected for delete wallet blacklist entry: %w", err)
-		}
-		if affected == 0 {
-			return ErrWalletBlacklistEntryNotFound
-		}
-		return nil
-	}
 	if s.queries == nil {
 		return fmt.Errorf("wallet postgres database is not configured")
 	}
@@ -162,34 +89,10 @@ func walletBlacklistEntryFromSQLC(row walletsqlc.WalletBlacklist) WalletBlacklis
 	}
 }
 
-func scanWalletBlacklistEntryRow(scanner rowScanner) (WalletBlacklistEntry, error) {
-	var (
-		wallet    []byte
-		note      sql.NullString
-		createdAt time.Time
-	)
-	if err := scanner.Scan(&wallet, &note, &createdAt); err != nil {
-		return WalletBlacklistEntry{}, fmt.Errorf("scan wallet blacklist entry: %w", err)
-	}
-	return WalletBlacklistEntry{
-		Wallet:    common.BytesToAddress(wallet),
-		Note:      note.String,
-		CreatedAt: createdAt,
-	}, nil
-}
-
 func nullableTrimmedText(value string) pgtype.Text {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return pgtype.Text{}
 	}
 	return pgtype.Text{String: value, Valid: true}
-}
-
-func legacyNullableTrimmedText(value string) any {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return nil
-	}
-	return value
 }

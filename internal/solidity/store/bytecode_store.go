@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -11,6 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
+	soliditysqlc "github.com/useryege/athena/internal/solidity/store/sqlc"
 )
 
 var (
@@ -72,18 +73,14 @@ type BytecodeDeploymentRecord struct {
 	Total int64
 }
 
-type rowScanner interface {
-	Scan(dest ...any) error
-}
-
 func (s *SQLStore) UpsertBytecode(ctx context.Context, codeHash common.Hash, runtimeBytecode []byte) error {
-	_, err := s.db.ExecContext(ctx, `
-INSERT INTO bytecode (code_hash, runtime_bytecode)
-VALUES ($1, $2)
-ON CONFLICT (code_hash) DO UPDATE
-SET runtime_bytecode = EXCLUDED.runtime_bytecode,
-  updated_at = now()
-`, codeHash.Bytes(), runtimeBytecode)
+	if s.queries == nil {
+		return fmt.Errorf("solidity postgres database is not configured")
+	}
+	err := s.queries.UpsertBytecode(ctx, soliditysqlc.UpsertBytecodeParams{
+		CodeHash:        codeHash.Bytes(),
+		RuntimeBytecode: runtimeBytecode,
+	})
 	if err != nil {
 		return fmt.Errorf("upsert bytecode: %w", err)
 	}
@@ -91,13 +88,14 @@ SET runtime_bytecode = EXCLUDED.runtime_bytecode,
 }
 
 func (s *SQLStore) UpsertContractBytecodeDeployment(ctx context.Context, item ContractBytecodeDeployment) error {
-	_, err := s.db.ExecContext(ctx, `
-INSERT INTO contract_bytecode_deployment (chain_id, contract, code_hash)
-VALUES ($1, $2, $3)
-ON CONFLICT (chain_id, contract) DO UPDATE
-SET code_hash = EXCLUDED.code_hash,
-  updated_at = now()
-`, item.ChainID, item.Contract.Bytes(), item.CodeHash.Bytes())
+	if s.queries == nil {
+		return fmt.Errorf("solidity postgres database is not configured")
+	}
+	err := s.queries.UpsertContractBytecodeDeployment(ctx, soliditysqlc.UpsertContractBytecodeDeploymentParams{
+		ChainID:  item.ChainID,
+		Contract: item.Contract.Bytes(),
+		CodeHash: item.CodeHash.Bytes(),
+	})
 	if err != nil {
 		return fmt.Errorf("upsert contract bytecode deployment: %w", err)
 	}
@@ -105,33 +103,30 @@ SET code_hash = EXCLUDED.code_hash,
 }
 
 func (s *SQLStore) GetBytecode(ctx context.Context, codeHash common.Hash) (*Bytecode, error) {
-	row := s.db.QueryRowContext(ctx, `
-SELECT code_hash, runtime_bytecode, source_code, source_code_hash, source_code_fetched_at,
-  source_code_origin, source_quality_report, source_quality_report_fetched_at,
-  source_quality_report_origin, source_quality_prompt_version, created_at, updated_at
-FROM bytecode
-WHERE code_hash = $1
-`, codeHash.Bytes())
-	item, err := scanBytecode(row)
+	if s.queries == nil {
+		return nil, fmt.Errorf("solidity postgres database is not configured")
+	}
+	row, err := s.queries.GetBytecode(ctx, codeHash.Bytes())
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
+	item := bytecodeFromSQLC(row)
 	return &item, nil
 }
 
 func (s *SQLStore) UpdateBytecodeSourceCode(ctx context.Context, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, origin string) error {
-	_, err := s.db.ExecContext(ctx, `
-UPDATE bytecode
-SET source_code = $2,
-  source_code_hash = $3,
-  source_code_fetched_at = now(),
-  source_code_origin = $4,
-  updated_at = now()
-WHERE code_hash = $1
-`, codeHash.Bytes(), sourceCode, nullableHashBytes(sourceCodeHash), nullableTrimmedText(origin))
+	if s.queries == nil {
+		return fmt.Errorf("solidity postgres database is not configured")
+	}
+	err := s.queries.UpdateBytecodeSourceCode(ctx, soliditysqlc.UpdateBytecodeSourceCodeParams{
+		CodeHash:         codeHash.Bytes(),
+		SourceCode:       textValue(sourceCode),
+		SourceCodeHash:   nullableHashBytes(sourceCodeHash),
+		SourceCodeOrigin: nullableTrimmedText(origin),
+	})
 	if err != nil {
 		return fmt.Errorf("update bytecode source code: %w", err)
 	}
@@ -139,15 +134,15 @@ WHERE code_hash = $1
 }
 
 func (s *SQLStore) UpdateBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, report string, origin string, promptVersion int64) error {
-	_, err := s.db.ExecContext(ctx, `
-UPDATE bytecode
-SET source_quality_report = $2,
-  source_quality_report_fetched_at = now(),
-  source_quality_report_origin = $3,
-  source_quality_prompt_version = $4,
-  updated_at = now()
-WHERE code_hash = $1
-`, codeHash.Bytes(), report, nullableTrimmedText(origin), promptVersion)
+	if s.queries == nil {
+		return fmt.Errorf("solidity postgres database is not configured")
+	}
+	err := s.queries.UpdateBytecodeSourceQualityReport(ctx, soliditysqlc.UpdateBytecodeSourceQualityReportParams{
+		CodeHash:                   codeHash.Bytes(),
+		SourceQualityReport:        textValue(report),
+		SourceQualityReportOrigin:  nullableTrimmedText(origin),
+		SourceQualityPromptVersion: promptVersion,
+	})
 	if err != nil {
 		return fmt.Errorf("update bytecode source quality report: %w", err)
 	}
@@ -155,156 +150,109 @@ WHERE code_hash = $1
 }
 
 func (s *SQLStore) ListBytecodes(ctx context.Context, codeHash *common.Hash, limit, offset int64) ([]BytecodeListRecord, int64, error) {
-	rows, err := s.db.QueryContext(ctx, `
-WITH deployment_counts AS (
-  SELECT code_hash, COUNT(*)::bigint AS deployment_count
-  FROM contract_bytecode_deployment
-  GROUP BY code_hash
-),
-filtered AS (
-  SELECT b.code_hash,
-    length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
-    COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
-    COALESCE(btrim(b.source_code), '') <> '' AS is_open_source,
-    bl.code_hash IS NOT NULL AS is_bytecode_blacklisted,
-    b.created_at,
-    b.updated_at
-  FROM bytecode b
-  LEFT JOIN deployment_counts dc ON dc.code_hash = b.code_hash
-  LEFT JOIN bytecode_blacklist bl ON bl.code_hash = b.code_hash
-  WHERE ($1::bytea IS NULL OR b.code_hash = $1)
-)
-SELECT code_hash, runtime_bytecode_size, deployment_count, is_open_source,
-  is_bytecode_blacklisted, created_at, updated_at, COUNT(*) OVER()::bigint AS total
-FROM filtered
-ORDER BY updated_at DESC, code_hash
-LIMIT $2 OFFSET $3
-`, nullableHashPtrBytes(codeHash), limit, offset)
+	if s.queries == nil {
+		return nil, 0, fmt.Errorf("solidity postgres database is not configured")
+	}
+	rows, err := s.queries.ListBytecodes(ctx, soliditysqlc.ListBytecodesParams{
+		CodeHash: nullableHashPtrBytes(codeHash),
+		Limit:    int32(limit),
+		Offset:   int32(offset),
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("list bytecodes: %w", err)
 	}
-	defer rows.Close()
 
-	items := make([]BytecodeListRecord, 0)
+	items := make([]BytecodeListRecord, 0, len(rows))
 	var total int64
-	for rows.Next() {
-		item, err := scanBytecodeListRecord(rows)
-		if err != nil {
-			return nil, 0, err
-		}
+	for _, row := range rows {
+		item := bytecodeListRecordFromSQLC(row)
 		if total == 0 {
 			total = item.Total
 		}
 		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, 0, fmt.Errorf("iterate bytecodes: %w", err)
 	}
 	return items, total, nil
 }
 
 func (s *SQLStore) GetBytecodeDetail(ctx context.Context, codeHash common.Hash) (*BytecodeDetailRecord, error) {
-	row := s.db.QueryRowContext(ctx, `
-WITH deployment_counts AS (
-  SELECT code_hash, COUNT(*)::bigint AS deployment_count
-  FROM contract_bytecode_deployment
-  WHERE code_hash = $1
-  GROUP BY code_hash
-)
-SELECT b.code_hash, b.runtime_bytecode, b.source_code, b.source_code_hash, b.source_code_fetched_at,
-  b.source_code_origin, b.source_quality_report, b.source_quality_report_fetched_at,
-  b.source_quality_report_origin, b.source_quality_prompt_version, b.created_at, b.updated_at,
-  length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
-  COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
-  bl.code_hash IS NOT NULL AS is_bytecode_blacklisted
-FROM bytecode b
-LEFT JOIN deployment_counts dc ON dc.code_hash = b.code_hash
-LEFT JOIN bytecode_blacklist bl ON bl.code_hash = b.code_hash
-WHERE b.code_hash = $1
-`, codeHash.Bytes())
-	item, err := scanBytecodeDetailRecord(row)
+	if s.queries == nil {
+		return nil, fmt.Errorf("solidity postgres database is not configured")
+	}
+	row, err := s.queries.GetBytecodeDetail(ctx, codeHash.Bytes())
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
+	item := bytecodeDetailRecordFromSQLC(row)
 	return &item, nil
 }
 
 func (s *SQLStore) ListBytecodeDeployments(ctx context.Context, codeHash common.Hash, chainID int64, contract *common.Address, limit, offset int64) ([]BytecodeDeploymentRecord, int64, error) {
-	rows, err := s.db.QueryContext(ctx, `
-SELECT chain_id, contract, code_hash, first_seen_at, updated_at, COUNT(*) OVER()::bigint AS total
-FROM contract_bytecode_deployment
-WHERE code_hash = $1
-  AND ($2::bigint IS NULL OR chain_id = $2)
-  AND ($3::bytea IS NULL OR contract = $3)
-ORDER BY updated_at DESC, chain_id, contract
-LIMIT $4 OFFSET $5
-`, codeHash.Bytes(), nullableInt64(chainID), nullableAddressPtrBytes(contract), limit, offset)
+	if s.queries == nil {
+		return nil, 0, fmt.Errorf("solidity postgres database is not configured")
+	}
+	rows, err := s.queries.ListBytecodeDeployments(ctx, soliditysqlc.ListBytecodeDeploymentsParams{
+		CodeHash: codeHash.Bytes(),
+		ChainID:  nullableInt64(chainID),
+		Contract: nullableAddressPtrBytes(contract),
+		Limit:    int32(limit),
+		Offset:   int32(offset),
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("list bytecode deployments: %w", err)
 	}
-	defer rows.Close()
 
-	items := make([]BytecodeDeploymentRecord, 0)
+	items := make([]BytecodeDeploymentRecord, 0, len(rows))
 	var total int64
-	for rows.Next() {
-		item, err := scanBytecodeDeploymentRecord(rows)
-		if err != nil {
-			return nil, 0, err
-		}
+	for _, row := range rows {
+		item := bytecodeDeploymentRecordFromSQLC(row)
 		if total == 0 {
 			total = item.Total
 		}
 		items = append(items, item)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, 0, fmt.Errorf("iterate bytecode deployments: %w", err)
-	}
 	return items, total, nil
 }
 
 func (s *SQLStore) IsBytecodeBlacklisted(ctx context.Context, codeHash common.Hash) (bool, error) {
-	var exists bool
-	if err := s.db.QueryRowContext(ctx, `
-SELECT EXISTS(SELECT 1 FROM bytecode_blacklist WHERE code_hash = $1)
-`, codeHash.Bytes()).Scan(&exists); err != nil {
+	if s.queries == nil {
+		return false, fmt.Errorf("solidity postgres database is not configured")
+	}
+	exists, err := s.queries.IsBytecodeBlacklisted(ctx, codeHash.Bytes())
+	if err != nil {
 		return false, fmt.Errorf("check bytecode blacklist: %w", err)
 	}
 	return exists, nil
 }
 
 func (s *SQLStore) ListBytecodeBlacklistEntries(ctx context.Context) ([]BytecodeBlacklistEntry, error) {
-	rows, err := s.db.QueryContext(ctx, `
-SELECT code_hash, note, source_chain_id, source_contract, created_at
-FROM bytecode_blacklist
-ORDER BY created_at DESC, code_hash
-`)
+	if s.queries == nil {
+		return nil, fmt.Errorf("solidity postgres database is not configured")
+	}
+	rows, err := s.queries.ListBytecodeBlacklistEntries(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list bytecode blacklist entries: %w", err)
 	}
-	defer rows.Close()
 
-	items := make([]BytecodeBlacklistEntry, 0)
-	for rows.Next() {
-		item, err := scanBytecodeBlacklistEntry(rows)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate bytecode blacklist entries: %w", err)
+	items := make([]BytecodeBlacklistEntry, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, bytecodeBlacklistEntryFromSQLC(row))
 	}
 	return items, nil
 }
 
 func (s *SQLStore) AddBytecodeBlacklistEntry(ctx context.Context, item BytecodeBlacklistEntry) error {
-	_, err := s.db.ExecContext(ctx, `
-INSERT INTO bytecode_blacklist (code_hash, note, source_chain_id, source_contract)
-VALUES ($1, $2, $3, $4)
-`, item.CodeHash.Bytes(), nullableTrimmedText(item.Note), nullableInt64(item.SourceChainID), nullableAddressBytes(item.SourceContract))
+	if s.queries == nil {
+		return fmt.Errorf("solidity postgres database is not configured")
+	}
+	err := s.queries.AddBytecodeBlacklistEntry(ctx, soliditysqlc.AddBytecodeBlacklistEntryParams{
+		CodeHash:       item.CodeHash.Bytes(),
+		Note:           nullableTrimmedText(item.Note),
+		SourceChainID:  nullableInt64(item.SourceChainID),
+		SourceContract: nullableAddressBytes(item.SourceContract),
+	})
 	if err != nil {
 		if isUniqueViolation(err) {
 			return ErrBytecodeBlacklistAlreadyExists
@@ -315,17 +263,15 @@ VALUES ($1, $2, $3, $4)
 }
 
 func (s *SQLStore) UpdateBytecodeBlacklistNote(ctx context.Context, codeHash common.Hash, note string) error {
-	result, err := s.db.ExecContext(ctx, `
-UPDATE bytecode_blacklist
-SET note = $2
-WHERE code_hash = $1
-`, codeHash.Bytes(), nullableTrimmedText(note))
+	if s.queries == nil {
+		return fmt.Errorf("solidity postgres database is not configured")
+	}
+	affected, err := s.queries.UpdateBytecodeBlacklistNote(ctx, soliditysqlc.UpdateBytecodeBlacklistNoteParams{
+		CodeHash: codeHash.Bytes(),
+		Note:     nullableTrimmedText(note),
+	})
 	if err != nil {
 		return fmt.Errorf("update bytecode blacklist note: %w", err)
-	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("rows affected for update bytecode blacklist note: %w", err)
 	}
 	if affected == 0 {
 		return ErrBytecodeBlacklistNotFound
@@ -334,16 +280,12 @@ WHERE code_hash = $1
 }
 
 func (s *SQLStore) DeleteBytecodeBlacklist(ctx context.Context, codeHash common.Hash) error {
-	result, err := s.db.ExecContext(ctx, `
-DELETE FROM bytecode_blacklist
-WHERE code_hash = $1
-`, codeHash.Bytes())
+	if s.queries == nil {
+		return fmt.Errorf("solidity postgres database is not configured")
+	}
+	affected, err := s.queries.DeleteBytecodeBlacklist(ctx, codeHash.Bytes())
 	if err != nil {
 		return fmt.Errorf("delete bytecode blacklist: %w", err)
-	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("rows affected for delete bytecode blacklist: %w", err)
 	}
 	if affected == 0 {
 		return ErrBytecodeBlacklistNotFound
@@ -352,180 +294,147 @@ WHERE code_hash = $1
 }
 
 func (s *SQLStore) GetBytecodeBlacklistEntry(ctx context.Context, codeHash common.Hash) (*BytecodeBlacklistEntry, error) {
-	row := s.db.QueryRowContext(ctx, `
-SELECT code_hash, note, source_chain_id, source_contract, created_at
-FROM bytecode_blacklist
-WHERE code_hash = $1
-`, codeHash.Bytes())
-	item, err := scanBytecodeBlacklistEntry(row)
+	if s.queries == nil {
+		return nil, fmt.Errorf("solidity postgres database is not configured")
+	}
+	row, err := s.queries.GetBytecodeBlacklistEntry(ctx, codeHash.Bytes())
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
+	item := bytecodeBlacklistEntryFromSQLC(row)
 	return &item, nil
 }
 
-func scanBytecode(scanner rowScanner) (Bytecode, error) {
-	var (
-		item                         Bytecode
-		codeHash                     []byte
-		sourceCode                   sql.NullString
-		sourceCodeHash               []byte
-		sourceCodeFetchedAt          sql.NullTime
-		sourceCodeOrigin             sql.NullString
-		sourceQualityReport          sql.NullString
-		sourceQualityReportFetchedAt sql.NullTime
-		sourceQualityReportOrigin    sql.NullString
-	)
-	if err := scanner.Scan(&codeHash, &item.RuntimeBytecode, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &sourceCodeOrigin, &sourceQualityReport, &sourceQualityReportFetchedAt, &sourceQualityReportOrigin, &item.SourceQualityPromptVersion, &item.CreatedAt, &item.UpdatedAt); err != nil {
-		return Bytecode{}, fmt.Errorf("scan bytecode: %w", err)
+func bytecodeFromSQLC(row soliditysqlc.Bytecode) Bytecode {
+	return Bytecode{
+		CodeHash:                     common.BytesToHash(row.CodeHash),
+		RuntimeBytecode:              row.RuntimeBytecode,
+		SourceCode:                   row.SourceCode.String,
+		SourceCodeHash:               common.BytesToHash(row.SourceCodeHash),
+		SourceCodeFetchedAt:          timestamptzTime(row.SourceCodeFetchedAt),
+		SourceCodeOrigin:             row.SourceCodeOrigin.String,
+		SourceQualityReport:          row.SourceQualityReport.String,
+		SourceQualityReportFetchedAt: timestamptzTime(row.SourceQualityReportFetchedAt),
+		SourceQualityReportOrigin:    row.SourceQualityReportOrigin.String,
+		SourceQualityPromptVersion:   row.SourceQualityPromptVersion,
+		CreatedAt:                    timestamptzTime(row.CreatedAt),
+		UpdatedAt:                    timestamptzTime(row.UpdatedAt),
 	}
-	item.CodeHash = common.BytesToHash(codeHash)
-	item.SourceCode = sourceCode.String
-	item.SourceCodeHash = common.BytesToHash(sourceCodeHash)
-	if sourceCodeFetchedAt.Valid {
-		item.SourceCodeFetchedAt = sourceCodeFetchedAt.Time
-	}
-	item.SourceCodeOrigin = sourceCodeOrigin.String
-	item.SourceQualityReport = sourceQualityReport.String
-	if sourceQualityReportFetchedAt.Valid {
-		item.SourceQualityReportFetchedAt = sourceQualityReportFetchedAt.Time
-	}
-	item.SourceQualityReportOrigin = sourceQualityReportOrigin.String
-	return item, nil
 }
 
-func scanBytecodeListRecord(scanner rowScanner) (BytecodeListRecord, error) {
-	var (
-		item     BytecodeListRecord
-		codeHash []byte
-	)
-	if err := scanner.Scan(&codeHash, &item.RuntimeBytecodeSize, &item.DeploymentCount, &item.IsOpenSource, &item.IsBytecodeBlacklisted, &item.CreatedAt, &item.UpdatedAt, &item.Total); err != nil {
-		return BytecodeListRecord{}, fmt.Errorf("scan bytecode list record: %w", err)
+func bytecodeListRecordFromSQLC(row soliditysqlc.ListBytecodesRow) BytecodeListRecord {
+	return BytecodeListRecord{
+		CodeHash:              common.BytesToHash(row.CodeHash),
+		RuntimeBytecodeSize:   row.RuntimeBytecodeSize,
+		DeploymentCount:       row.DeploymentCount,
+		IsOpenSource:          row.IsOpenSource,
+		IsBytecodeBlacklisted: row.IsBytecodeBlacklisted,
+		CreatedAt:             timestamptzTime(row.CreatedAt),
+		UpdatedAt:             timestamptzTime(row.UpdatedAt),
+		Total:                 row.Total,
 	}
-	item.CodeHash = common.BytesToHash(codeHash)
-	return item, nil
 }
 
-func scanBytecodeDetailRecord(scanner rowScanner) (BytecodeDetailRecord, error) {
-	var item BytecodeDetailRecord
-	bytecode, err := scanBytecodeWithExtra(scanner, &item.RuntimeBytecodeSize, &item.DeploymentCount, &item.IsBytecodeBlacklisted)
-	if err != nil {
-		return BytecodeDetailRecord{}, fmt.Errorf("scan bytecode detail record: %w", err)
+func bytecodeDetailRecordFromSQLC(row soliditysqlc.GetBytecodeDetailRow) BytecodeDetailRecord {
+	return BytecodeDetailRecord{
+		Bytecode: Bytecode{
+			CodeHash:                     common.BytesToHash(row.CodeHash),
+			RuntimeBytecode:              row.RuntimeBytecode,
+			SourceCode:                   row.SourceCode.String,
+			SourceCodeHash:               common.BytesToHash(row.SourceCodeHash),
+			SourceCodeFetchedAt:          timestamptzTime(row.SourceCodeFetchedAt),
+			SourceCodeOrigin:             row.SourceCodeOrigin.String,
+			SourceQualityReport:          row.SourceQualityReport.String,
+			SourceQualityReportFetchedAt: timestamptzTime(row.SourceQualityReportFetchedAt),
+			SourceQualityReportOrigin:    row.SourceQualityReportOrigin.String,
+			SourceQualityPromptVersion:   row.SourceQualityPromptVersion,
+			CreatedAt:                    timestamptzTime(row.CreatedAt),
+			UpdatedAt:                    timestamptzTime(row.UpdatedAt),
+		},
+		RuntimeBytecodeSize:   row.RuntimeBytecodeSize,
+		DeploymentCount:       row.DeploymentCount,
+		IsBytecodeBlacklisted: row.IsBytecodeBlacklisted,
 	}
-	item.Bytecode = bytecode
-	return item, nil
 }
 
-func scanBytecodeWithExtra(scanner rowScanner, extra ...any) (Bytecode, error) {
-	var (
-		item                         Bytecode
-		codeHash                     []byte
-		sourceCode                   sql.NullString
-		sourceCodeHash               []byte
-		sourceCodeFetchedAt          sql.NullTime
-		sourceCodeOrigin             sql.NullString
-		sourceQualityReport          sql.NullString
-		sourceQualityReportFetchedAt sql.NullTime
-		sourceQualityReportOrigin    sql.NullString
-	)
-	dest := []any{&codeHash, &item.RuntimeBytecode, &sourceCode, &sourceCodeHash, &sourceCodeFetchedAt, &sourceCodeOrigin, &sourceQualityReport, &sourceQualityReportFetchedAt, &sourceQualityReportOrigin, &item.SourceQualityPromptVersion, &item.CreatedAt, &item.UpdatedAt}
-	dest = append(dest, extra...)
-	if err := scanner.Scan(dest...); err != nil {
-		return Bytecode{}, err
+func bytecodeDeploymentRecordFromSQLC(row soliditysqlc.ListBytecodeDeploymentsRow) BytecodeDeploymentRecord {
+	return BytecodeDeploymentRecord{
+		ContractBytecodeDeployment: ContractBytecodeDeployment{
+			ChainID:     row.ChainID,
+			Contract:    common.BytesToAddress(row.Contract),
+			CodeHash:    common.BytesToHash(row.CodeHash),
+			FirstSeenAt: timestamptzTime(row.FirstSeenAt),
+			UpdatedAt:   timestamptzTime(row.UpdatedAt),
+		},
+		Total: row.Total,
 	}
-	item.CodeHash = common.BytesToHash(codeHash)
-	item.SourceCode = sourceCode.String
-	item.SourceCodeHash = common.BytesToHash(sourceCodeHash)
-	if sourceCodeFetchedAt.Valid {
-		item.SourceCodeFetchedAt = sourceCodeFetchedAt.Time
-	}
-	item.SourceCodeOrigin = sourceCodeOrigin.String
-	item.SourceQualityReport = sourceQualityReport.String
-	if sourceQualityReportFetchedAt.Valid {
-		item.SourceQualityReportFetchedAt = sourceQualityReportFetchedAt.Time
-	}
-	item.SourceQualityReportOrigin = sourceQualityReportOrigin.String
-	return item, nil
 }
 
-func scanBytecodeDeploymentRecord(scanner rowScanner) (BytecodeDeploymentRecord, error) {
-	var (
-		item     BytecodeDeploymentRecord
-		contract []byte
-		codeHash []byte
-	)
-	if err := scanner.Scan(&item.ChainID, &contract, &codeHash, &item.FirstSeenAt, &item.UpdatedAt, &item.Total); err != nil {
-		return BytecodeDeploymentRecord{}, fmt.Errorf("scan bytecode deployment record: %w", err)
+func bytecodeBlacklistEntryFromSQLC(row soliditysqlc.BytecodeBlacklist) BytecodeBlacklistEntry {
+	return BytecodeBlacklistEntry{
+		CodeHash:       common.BytesToHash(row.CodeHash),
+		Note:           row.Note.String,
+		SourceChainID:  row.SourceChainID.Int64,
+		SourceContract: common.BytesToAddress(row.SourceContract),
+		CreatedAt:      timestamptzTime(row.CreatedAt),
 	}
-	item.Contract = common.BytesToAddress(contract)
-	item.CodeHash = common.BytesToHash(codeHash)
-	return item, nil
 }
 
-func scanBytecodeBlacklistEntry(scanner rowScanner) (BytecodeBlacklistEntry, error) {
-	var (
-		item           BytecodeBlacklistEntry
-		codeHash       []byte
-		note           sql.NullString
-		sourceChainID  sql.NullInt64
-		sourceContract []byte
-	)
-	if err := scanner.Scan(&codeHash, &note, &sourceChainID, &sourceContract, &item.CreatedAt); err != nil {
-		return BytecodeBlacklistEntry{}, fmt.Errorf("scan bytecode blacklist entry: %w", err)
-	}
-	item.CodeHash = common.BytesToHash(codeHash)
-	item.Note = note.String
-	if sourceChainID.Valid {
-		item.SourceChainID = sourceChainID.Int64
-	}
-	item.SourceContract = common.BytesToAddress(sourceContract)
-	return item, nil
+func textValue(value string) pgtype.Text {
+	return pgtype.Text{String: value, Valid: true}
 }
 
-func nullableTrimmedText(value string) any {
+func nullableTrimmedText(value string) pgtype.Text {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
-		return nil
+		return pgtype.Text{}
 	}
-	return trimmed
+	return pgtype.Text{String: trimmed, Valid: true}
 }
 
-func nullableHashBytes(value common.Hash) any {
+func nullableHashBytes(value common.Hash) []byte {
 	if value == (common.Hash{}) {
 		return nil
 	}
 	return value.Bytes()
 }
 
-func nullableHashPtrBytes(value *common.Hash) any {
+func nullableHashPtrBytes(value *common.Hash) []byte {
 	if value == nil {
 		return nil
 	}
 	return value.Bytes()
 }
 
-func nullableAddressBytes(value common.Address) any {
+func nullableAddressBytes(value common.Address) []byte {
 	if value == (common.Address{}) {
 		return nil
 	}
 	return value.Bytes()
 }
 
-func nullableAddressPtrBytes(value *common.Address) any {
+func nullableAddressPtrBytes(value *common.Address) []byte {
 	if value == nil {
 		return nil
 	}
 	return value.Bytes()
 }
 
-func nullableInt64(value int64) any {
+func nullableInt64(value int64) pgtype.Int8 {
 	if value == 0 {
-		return nil
+		return pgtype.Int8{}
 	}
-	return value
+	return pgtype.Int8{Int64: value, Valid: true}
+}
+
+func timestamptzTime(value pgtype.Timestamptz) time.Time {
+	if !value.Valid {
+		return time.Time{}
+	}
+	return value.Time
 }
 
 func isUniqueViolation(err error) bool {

@@ -2,80 +2,156 @@ package store
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	notificationsqlc "github.com/useryege/athena/internal/notification/store/sqlc"
 )
 
-func TestListDeliveriesBuildsFiltersAndPagination(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("sqlmock new: %v", err)
+type fakeNotificationQuerier struct {
+	countDeliveriesErr error
+	createDeliveryErr  error
+	getDeliveryErr     error
+	markSentErr        error
+	markFailedErr      error
+
+	countDeliveriesParams notificationsqlc.CountDeliveriesParams
+	listDeliveriesParams  notificationsqlc.ListDeliveriesParams
+	createDeliveryParams  notificationsqlc.CreateDeliveryParams
+	markSentParams        notificationsqlc.MarkDeliverySentParams
+	markFailedParams      notificationsqlc.MarkDeliveryFailedParams
+
+	countDeliveriesResult int64
+	createDeliveryResult  notificationsqlc.CreateDeliveryRow
+	getDeliveryResult     notificationsqlc.GetDeliveryRow
+	listDeliveriesResult  []notificationsqlc.ListDeliveriesRow
+}
+
+func (f *fakeNotificationQuerier) CountDeliveries(_ context.Context, arg notificationsqlc.CountDeliveriesParams) (int64, error) {
+	f.countDeliveriesParams = arg
+	return f.countDeliveriesResult, f.countDeliveriesErr
+}
+
+func (f *fakeNotificationQuerier) CreateDelivery(_ context.Context, arg notificationsqlc.CreateDeliveryParams) (notificationsqlc.CreateDeliveryRow, error) {
+	f.createDeliveryParams = arg
+	return f.createDeliveryResult, f.createDeliveryErr
+}
+
+func (f *fakeNotificationQuerier) GetDelivery(context.Context, int64) (notificationsqlc.GetDeliveryRow, error) {
+	return f.getDeliveryResult, f.getDeliveryErr
+}
+
+func (f *fakeNotificationQuerier) ListDeliveries(_ context.Context, arg notificationsqlc.ListDeliveriesParams) ([]notificationsqlc.ListDeliveriesRow, error) {
+	f.listDeliveriesParams = arg
+	return f.listDeliveriesResult, nil
+}
+
+func (f *fakeNotificationQuerier) MarkDeliveryFailed(_ context.Context, arg notificationsqlc.MarkDeliveryFailedParams) error {
+	f.markFailedParams = arg
+	return f.markFailedErr
+}
+
+func (f *fakeNotificationQuerier) MarkDeliverySent(_ context.Context, arg notificationsqlc.MarkDeliverySentParams) error {
+	f.markSentParams = arg
+	return f.markSentErr
+}
+
+func TestCreateDeliveryUsesQuerier(t *testing.T) {
+	now := time.Date(2026, time.May, 30, 12, 0, 0, 0, time.UTC)
+	querier := &fakeNotificationQuerier{
+		createDeliveryResult: notificationsqlc.CreateDeliveryRow{
+			ID:        7,
+			Source:    "worm",
+			Severity:  "warning",
+			Title:     "Scan finished",
+			Body:      "Contract risk changed",
+			Link:      "https://example.com",
+			Channel:   "telegram",
+			Status:    "pending",
+			CreatedAt: pgtype.Timestamptz{Time: now, Valid: true},
+		},
 	}
-	defer db.Close()
 
-	createdAt := time.Date(2026, time.May, 27, 12, 0, 0, 0, time.UTC)
-	sentAt := time.Date(2026, time.May, 27, 12, 1, 0, 0, time.UTC)
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM notification_deliveries WHERE status = \$1 AND severity = \$2 AND source = \$3 AND \(title ILIKE \$4 OR body ILIKE \$4 OR error_message ILIKE \$4 OR provider_message_id ILIKE \$4\)`).
-		WithArgs("sent", "warning", "worm", "%scan%").
-		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(int64(1)))
-	mock.ExpectQuery(`(?s)SELECT id, source, severity, COALESCE\(title, ''\), body, COALESCE\(link, ''\), channel, status, provider_message_id, error_message, created_at, sent_at.*LIMIT \$5 OFFSET \$6`).
-		WithArgs("sent", "warning", "worm", "%scan%", 20, 20).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"id",
-			"source",
-			"severity",
-			"title",
-			"body",
-			"link",
-			"channel",
-			"status",
-			"provider_message_id",
-			"error_message",
-			"created_at",
-			"sent_at",
-		}).AddRow(int64(7), "worm", "warning", "scan", "body", "", "telegram", "sent", "123", nil, createdAt, sentAt))
-
-	items, total, err := NewSQLStore(db).ListDeliveries(context.Background(), ListDeliveriesOptions{
-		Page:     2,
-		PageSize: 20,
-		Status:   "sent",
-		Severity: "warning",
+	item, err := NewSQLStoreWithQuerier(querier).CreateDelivery(context.Background(), CreateDeliveryRequest{
 		Source:   "worm",
-		Keyword:  "scan",
+		Severity: "warning",
+		Title:    "Scan finished",
+		Body:     "Contract risk changed",
+		Link:     "https://example.com",
+		Channel:  "telegram",
+		Status:   "pending",
+	})
+	if err != nil {
+		t.Fatalf("CreateDelivery: %v", err)
+	}
+	if item.ID != 7 || item.Title != "Scan finished" {
+		t.Fatalf("item = %#v, want generated row mapping", item)
+	}
+	if querier.createDeliveryParams.Title.String != "Scan finished" || !querier.createDeliveryParams.Title.Valid {
+		t.Fatalf("create params = %#v, want pgtype text", querier.createDeliveryParams)
+	}
+}
+
+func TestListDeliveriesUsesQuerierFiltersAndPagination(t *testing.T) {
+	now := time.Date(2026, time.May, 30, 12, 0, 0, 0, time.UTC)
+	querier := &fakeNotificationQuerier{
+		countDeliveriesResult: 1,
+		listDeliveriesResult: []notificationsqlc.ListDeliveriesRow{{
+			ID:        9,
+			Source:    "application",
+			Severity:  "error",
+			Title:     "",
+			Body:      "Deploy failed",
+			Link:      "",
+			Channel:   "telegram",
+			Status:    "failed",
+			CreatedAt: pgtype.Timestamptz{Time: now, Valid: true},
+		}},
+	}
+
+	items, total, err := NewSQLStoreWithQuerier(querier).ListDeliveries(context.Background(), ListDeliveriesOptions{
+		Page:     2,
+		PageSize: 5,
+		Status:   " failed ",
+		Severity: " error ",
+		Source:   " application ",
+		Keyword:  " deploy ",
 	})
 	if err != nil {
 		t.Fatalf("ListDeliveries: %v", err)
 	}
-	if total != 1 || len(items) != 1 || items[0].ID != 7 || items[0].ProviderMessageID != "123" {
-		t.Fatalf("result = total %d items %#v, want one mapped delivery", total, items)
+	if total != 1 || len(items) != 1 || items[0].ID != 9 {
+		t.Fatalf("items/total = %#v/%d, want one mapped delivery", items, total)
 	}
-	if items[0].CreatedAt != createdAt.Format(time.RFC3339) || items[0].SentAt != sentAt.Format(time.RFC3339) {
-		t.Fatalf("timestamps = %q/%q, want RFC3339", items[0].CreatedAt, items[0].SentAt)
+	if querier.countDeliveriesParams.Status.String != "failed" || querier.countDeliveriesParams.Keyword.String != "%deploy%" {
+		t.Fatalf("count params = %#v, want normalized filters", querier.countDeliveriesParams)
 	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("sql expectations: %v", err)
+	if querier.listDeliveriesParams.Limit != 5 || querier.listDeliveriesParams.Offset != 5 {
+		t.Fatalf("list params = %#v, want page 2 offset", querier.listDeliveriesParams)
 	}
 }
 
-func TestGetDeliveryNotFound(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("sqlmock new: %v", err)
+func TestGetDeliveryAndStatusUpdatesUseQuerier(t *testing.T) {
+	querier := &fakeNotificationQuerier{getDeliveryErr: pgx.ErrNoRows}
+	if _, err := NewSQLStoreWithQuerier(querier).GetDelivery(context.Background(), 404); !errors.Is(err, pgx.ErrNoRows) {
+		t.Fatalf("GetDelivery error = %v, want pgx.ErrNoRows", err)
 	}
-	defer db.Close()
 
-	mock.ExpectQuery(`SELECT id, source, severity, COALESCE\(title, ''\), body, COALESCE\(link, ''\), channel, status, provider_message_id, error_message, created_at, sent_at`).
-		WithArgs(int64(404)).
-		WillReturnError(sql.ErrNoRows)
-
-	_, err = NewSQLStore(db).GetDelivery(context.Background(), 404)
-	if err != sql.ErrNoRows {
-		t.Fatalf("GetDelivery error = %v, want sql.ErrNoRows", err)
+	querier = &fakeNotificationQuerier{}
+	store := NewSQLStoreWithQuerier(querier)
+	if err := store.MarkDeliverySent(context.Background(), 7, "123"); err != nil {
+		t.Fatalf("MarkDeliverySent: %v", err)
 	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("sql expectations: %v", err)
+	if querier.markSentParams.ID != 7 || querier.markSentParams.ProviderMessageID.String != "123" {
+		t.Fatalf("sent params = %#v", querier.markSentParams)
+	}
+	if err := store.MarkDeliveryFailed(context.Background(), 7, "telegram unavailable"); err != nil {
+		t.Fatalf("MarkDeliveryFailed: %v", err)
+	}
+	if querier.markFailedParams.ID != 7 || querier.markFailedParams.ErrorMessage.String != "telegram unavailable" {
+		t.Fatalf("failed params = %#v", querier.markFailedParams)
 	}
 }

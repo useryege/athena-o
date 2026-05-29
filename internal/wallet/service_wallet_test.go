@@ -5,23 +5,67 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/useryege/athena/internal/wallet/apiclient"
 	walletstore "github.com/useryege/athena/internal/wallet/store"
+	walletsqlc "github.com/useryege/athena/internal/wallet/store/sqlc"
 	utilcrypto "github.com/useryege/athena/util/crypto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func TestGetWalletRevealsSecretsOnlyWhenRequested(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("sqlmock new: %v", err)
-	}
-	defer db.Close()
+type fakeWalletQuerier struct {
+	getWalletResult      walletsqlc.WalletPrivateKey
+	addBlacklistErr      error
+	updateRowsAffected   int64
+	deleteRowsAffected   int64
+	addBlacklistParams   walletsqlc.AddWalletBlacklistEntryParams
+	updateBlacklistParam walletsqlc.UpdateWalletBlacklistEntryNoteParams
+	deleteBlacklistParam []byte
+}
 
+func (f *fakeWalletQuerier) AddWalletBlacklistEntry(_ context.Context, arg walletsqlc.AddWalletBlacklistEntryParams) error {
+	f.addBlacklistParams = arg
+	return f.addBlacklistErr
+}
+
+func (f *fakeWalletQuerier) CountWallets(context.Context, walletsqlc.CountWalletsParams) (int64, error) {
+	return 0, nil
+}
+
+func (f *fakeWalletQuerier) CreateWallet(context.Context, walletsqlc.CreateWalletParams) (walletsqlc.WalletPrivateKey, error) {
+	return walletsqlc.WalletPrivateKey{}, nil
+}
+
+func (f *fakeWalletQuerier) DeleteWalletBlacklistEntry(_ context.Context, wallet []byte) (int64, error) {
+	f.deleteBlacklistParam = wallet
+	return f.deleteRowsAffected, nil
+}
+
+func (f *fakeWalletQuerier) GetWallet(context.Context, int64) (walletsqlc.WalletPrivateKey, error) {
+	return f.getWalletResult, nil
+}
+
+func (f *fakeWalletQuerier) ListWalletBlacklistEntries(context.Context) ([]walletsqlc.WalletBlacklist, error) {
+	return nil, nil
+}
+
+func (f *fakeWalletQuerier) ListWallets(context.Context, walletsqlc.ListWalletsParams) ([]walletsqlc.ListWalletsRow, error) {
+	return nil, nil
+}
+
+func (f *fakeWalletQuerier) UpdateWalletAlias(context.Context, walletsqlc.UpdateWalletAliasParams) (walletsqlc.UpdateWalletAliasRow, error) {
+	return walletsqlc.UpdateWalletAliasRow{}, nil
+}
+
+func (f *fakeWalletQuerier) UpdateWalletBlacklistEntryNote(_ context.Context, arg walletsqlc.UpdateWalletBlacklistEntryNoteParams) (int64, error) {
+	f.updateBlacklistParam = arg
+	return f.updateRowsAffected, nil
+}
+
+func TestGetWalletRevealsSecretsOnlyWhenRequested(t *testing.T) {
 	key := testWalletEncryptionKey(t)
 	privateKeyCiphertext, err := utilcrypto.Encrypt([]byte("0xabc"), key)
 	if err != nil {
@@ -32,23 +76,28 @@ func TestGetWalletRevealsSecretsOnlyWhenRequested(t *testing.T) {
 		t.Fatalf("encrypt mnemonic: %v", err)
 	}
 	createdAt := time.Now().UTC().Truncate(time.Second)
-	rows := sqlmock.NewRows([]string{
-		"id", "chain", "address", "address_key", "alias", "private_key_ciphertext", "mnemonic_ciphertext", "source", "derivation_path", "created_at", "updated_at",
-	}).AddRow(int64(1), "ETH", "0xabc", "0xabc", "main", privateKeyCiphertext, mnemonicCiphertext, "mnemonic", evmDerivationPath, createdAt, createdAt)
-	mock.ExpectQuery("SELECT id, chain, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at").
-		WithArgs(int64(1)).
-		WillReturnRows(rows)
+	store := walletstore.NewSQLStoreWithQuerier(&fakeWalletQuerier{
+		getWalletResult: walletsqlc.WalletPrivateKey{
+			ID:                   1,
+			Chain:                "ETH",
+			Address:              "0xabc",
+			AddressKey:           "0xabc",
+			Alias:                "main",
+			PrivateKeyCiphertext: privateKeyCiphertext,
+			MnemonicCiphertext:   mnemonicCiphertext,
+			Source:               "mnemonic",
+			DerivationPath:       evmDerivationPath,
+			CreatedAt:            pgtype.Timestamptz{Time: createdAt, Valid: true},
+			UpdatedAt:            pgtype.Timestamptz{Time: createdAt, Valid: true},
+		},
+	})
 
-	service := NewService(walletstore.NewSQLStore(db), key)
-	resp, err := service.GetWallet(context.Background(), &apiclient.GetWalletRequest{Id: 1, RevealSecrets: true})
+	resp, err := NewService(store, key).GetWallet(context.Background(), &apiclient.GetWalletRequest{Id: 1, RevealSecrets: true})
 	if err != nil {
 		t.Fatalf("get wallet: %v", err)
 	}
 	if resp.GetItem().PrivateKey != "0xabc" || resp.GetItem().Mnemonic != testMnemonic {
 		t.Fatalf("secrets = %q/%q", resp.GetItem().PrivateKey, resp.GetItem().Mnemonic)
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("expectations were not met: %v", err)
 	}
 }
 
@@ -58,36 +107,20 @@ func TestWalletBlacklistServiceValidationAndErrors(t *testing.T) {
 		t.Fatalf("invalid wallet error = %v, want InvalidArgument", err)
 	}
 
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("sqlmock new: %v", err)
-	}
-	defer db.Close()
-
-	service = NewService(walletstore.NewSQLStore(db), testWalletEncryptionKey(t))
 	wallet := common.HexToAddress("0x00000000000000000000000000000000000000a1")
-	mock.ExpectExec("INSERT INTO wallet_blacklist").
-		WithArgs(wallet.Bytes(), "seed").
-		WillReturnError(&pgconn.PgError{Code: "23505"})
+	querier := &fakeWalletQuerier{
+		addBlacklistErr:    &pgconn.PgError{Code: "23505"},
+		updateRowsAffected: 0,
+		deleteRowsAffected: 0,
+	}
+	service = NewService(walletstore.NewSQLStoreWithQuerier(querier), testWalletEncryptionKey(t))
 	if _, err := service.AddWalletBlacklistEntry(context.Background(), &apiclient.AddWalletBlacklistEntryRequest{Wallet: wallet.Hex(), Note: "seed"}); status.Code(err) != codes.AlreadyExists {
 		t.Fatalf("duplicate wallet error = %v, want AlreadyExists", err)
 	}
-
-	mock.ExpectExec("UPDATE wallet_blacklist").
-		WithArgs(wallet.Bytes(), nil).
-		WillReturnResult(sqlmock.NewResult(0, 0))
 	if _, err := service.UpdateWalletBlacklistEntryNote(context.Background(), &apiclient.UpdateWalletBlacklistEntryNoteRequest{Wallet: wallet.Hex()}); status.Code(err) != codes.NotFound {
 		t.Fatalf("update missing wallet error = %v, want NotFound", err)
 	}
-
-	mock.ExpectExec("DELETE FROM wallet_blacklist").
-		WithArgs(wallet.Bytes()).
-		WillReturnResult(sqlmock.NewResult(0, 0))
 	if _, err := service.DeleteWalletBlacklistEntry(context.Background(), &apiclient.DeleteWalletBlacklistEntryRequest{Wallet: wallet.Hex()}); status.Code(err) != codes.NotFound {
 		t.Fatalf("delete missing wallet error = %v, want NotFound", err)
-	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("expectations were not met: %v", err)
 	}
 }

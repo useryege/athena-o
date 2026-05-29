@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"embed"
 	"errors"
 	"fmt"
@@ -24,8 +23,7 @@ var migrations embed.FS
 
 type SQLStore struct {
 	pool    *pgxpool.Pool
-	queries *walletsqlc.Queries
-	legacy  *sql.DB
+	queries walletsqlc.Querier
 }
 
 var (
@@ -65,21 +63,15 @@ type WalletRecord struct {
 	UpdatedAt            time.Time
 }
 
-func NewSQLStore(db any) *SQLStore {
-	var queries *walletsqlc.Queries
-	switch value := db.(type) {
-	case *pgxpool.Pool:
-		if value != nil {
-			queries = walletsqlc.New(value)
-		}
-		return &SQLStore{pool: value, queries: queries}
-	case *sql.DB:
-		return &SQLStore{legacy: value}
-	case nil:
+func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
+	if pool == nil {
 		return &SQLStore{}
-	default:
-		panic(fmt.Sprintf("unsupported wallet postgres store db %T", db))
 	}
+	return &SQLStore{pool: pool, queries: walletsqlc.New(pool)}
+}
+
+func NewSQLStoreWithQuerier(querier walletsqlc.Querier) *SQLStore {
+	return &SQLStore{queries: querier}
 }
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
@@ -108,21 +100,6 @@ func (s *SQLStore) Close() error {
 }
 
 func (s *SQLStore) CreateWallet(ctx context.Context, req CreateWalletRecordRequest) (*WalletRecord, error) {
-	if s.legacy != nil {
-		row := s.legacy.QueryRowContext(ctx, `
-INSERT INTO wallet_private_keys (chain, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, chain, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
-`, req.Chain, req.Address, req.AddressKey, req.Alias, req.PrivateKeyCiphertext, legacyNullableBytes(req.MnemonicCiphertext), req.Source, req.DerivationPath)
-		item, err := scanWalletRecord(row)
-		if err != nil {
-			if isUniqueViolation(err) {
-				return nil, ErrWalletAlreadyExists
-			}
-			return nil, fmt.Errorf("create wallet: %w", err)
-		}
-		return item, nil
-	}
 	if s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
@@ -146,47 +123,6 @@ RETURNING id, chain, address, address_key, alias, private_key_ciphertext, mnemon
 }
 
 func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]*v1alpha1.WalletItem, int64, error) {
-	if s.legacy != nil {
-		where, args := walletFilterWhere(opts)
-		var total int64
-		countQuery := "SELECT COUNT(*) FROM wallet_private_keys" + where
-		if err := s.legacy.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
-			return nil, 0, fmt.Errorf("count wallets: %w", err)
-		}
-
-		page := opts.Page
-		if page < 1 {
-			page = 1
-		}
-		pageSize := opts.PageSize
-		if pageSize < 1 {
-			pageSize = 20
-		}
-		args = append(args, pageSize, (page-1)*pageSize)
-		query := `
-SELECT id, chain, address, alias, source, derivation_path, created_at, updated_at
-FROM wallet_private_keys` + where + `
-ORDER BY created_at DESC, id DESC
-LIMIT $` + fmt.Sprint(len(args)-1) + ` OFFSET $` + fmt.Sprint(len(args))
-		rows, err := s.legacy.QueryContext(ctx, query, args...)
-		if err != nil {
-			return nil, 0, fmt.Errorf("list wallets: %w", err)
-		}
-		defer rows.Close()
-
-		items := []*v1alpha1.WalletItem{}
-		for rows.Next() {
-			item, err := scanWalletItem(rows)
-			if err != nil {
-				return nil, 0, fmt.Errorf("scan wallet: %w", err)
-			}
-			items = append(items, item)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, 0, fmt.Errorf("iterate wallets: %w", err)
-		}
-		return items, total, nil
-	}
 	if s.queries == nil {
 		return nil, 0, fmt.Errorf("wallet postgres database is not configured")
 	}
@@ -225,21 +161,6 @@ LIMIT $` + fmt.Sprint(len(args)-1) + ` OFFSET $` + fmt.Sprint(len(args))
 }
 
 func (s *SQLStore) GetWallet(ctx context.Context, id int64) (*WalletRecord, error) {
-	if s.legacy != nil {
-		row := s.legacy.QueryRowContext(ctx, `
-SELECT id, chain, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
-FROM wallet_private_keys
-WHERE id = $1
-`, id)
-		item, err := scanWalletRecord(row)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, ErrWalletNotFound
-			}
-			return nil, fmt.Errorf("get wallet: %w", err)
-		}
-		return item, nil
-	}
 	if s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
@@ -254,22 +175,6 @@ WHERE id = $1
 }
 
 func (s *SQLStore) UpdateWalletAlias(ctx context.Context, id int64, alias string) (*v1alpha1.WalletItem, error) {
-	if s.legacy != nil {
-		row := s.legacy.QueryRowContext(ctx, `
-UPDATE wallet_private_keys
-SET alias = $2, updated_at = NOW()
-WHERE id = $1
-RETURNING id, chain, address, alias, source, derivation_path, created_at, updated_at
-`, id, alias)
-		item, err := scanWalletItem(row)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, ErrWalletNotFound
-			}
-			return nil, fmt.Errorf("update wallet alias: %w", err)
-		}
-		return item, nil
-	}
 	if s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
@@ -293,72 +198,6 @@ func walletFilterParams(opts ListWalletsOptions) walletFilters {
 		Chain: nullableTrimmedText(opts.Chain),
 		Query: nullableKeyword(opts.Query),
 	}
-}
-
-type rowScanner interface {
-	Scan(dest ...any) error
-}
-
-func walletFilterWhere(opts ListWalletsOptions) (string, []any) {
-	clauses := []string{}
-	args := []any{}
-	add := func(clause string, value any) {
-		args = append(args, value)
-		clauses = append(clauses, fmt.Sprintf(clause, len(args)))
-	}
-	if chain := strings.TrimSpace(opts.Chain); chain != "" {
-		add("chain = $%d", chain)
-	}
-	if query := strings.TrimSpace(opts.Query); query != "" {
-		args = append(args, "%"+query+"%")
-		placeholder := fmt.Sprintf("$%d", len(args))
-		clauses = append(clauses, "(address ILIKE "+placeholder+" OR alias ILIKE "+placeholder+")")
-	}
-	if len(clauses) == 0 {
-		return "", args
-	}
-	return " WHERE " + strings.Join(clauses, " AND "), args
-}
-
-func scanWalletRecord(row rowScanner) (*WalletRecord, error) {
-	var item WalletRecord
-	if err := row.Scan(
-		&item.ID,
-		&item.Chain,
-		&item.Address,
-		&item.AddressKey,
-		&item.Alias,
-		&item.PrivateKeyCiphertext,
-		&item.MnemonicCiphertext,
-		&item.Source,
-		&item.DerivationPath,
-		&item.CreatedAt,
-		&item.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
-func scanWalletItem(row rowScanner) (*v1alpha1.WalletItem, error) {
-	var item v1alpha1.WalletItem
-	var createdAt time.Time
-	var updatedAt time.Time
-	if err := row.Scan(
-		&item.ID,
-		&item.Chain,
-		&item.Address,
-		&item.Alias,
-		&item.Source,
-		&item.DerivationPath,
-		&createdAt,
-		&updatedAt,
-	); err != nil {
-		return nil, err
-	}
-	item.CreatedAt = formatTime(createdAt)
-	item.UpdatedAt = formatTime(updatedAt)
-	return &item, nil
 }
 
 func walletRecordFromSQLC(row walletsqlc.WalletPrivateKey) *WalletRecord {
@@ -420,13 +259,6 @@ func (r *WalletRecord) ToDetail() *v1alpha1.WalletDetail {
 }
 
 func nullableBytes(value []byte) []byte {
-	if len(value) == 0 {
-		return nil
-	}
-	return value
-}
-
-func legacyNullableBytes(value []byte) any {
 	if len(value) == 0 {
 		return nil
 	}

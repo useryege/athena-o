@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/application/store/sqlc"
+	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 	"github.com/useryege/athena/internal/postgres"
 )
 
@@ -18,15 +18,15 @@ var migrations embed.FS
 type SQLStore struct {
 	pool    *pgxpool.Pool
 	db      postgres.Executor
-	queries *sqlc.Queries
+	queries appsqlc.Querier
 }
 
 func NewSQLStore(db any) *SQLStore {
-	var queries *sqlc.Queries
+	var queries appsqlc.Querier
 	switch value := db.(type) {
 	case *pgxpool.Pool:
 		if value != nil {
-			queries = sqlc.New(value)
+			queries = appsqlc.New(value)
 		}
 		return &SQLStore{pool: value, db: postgres.NewDB(value), queries: queries}
 	case *sql.DB:
@@ -36,6 +36,10 @@ func NewSQLStore(db any) *SQLStore {
 	default:
 		panic(fmt.Sprintf("unsupported application postgres store db %T", db))
 	}
+}
+
+func NewSQLStoreWithQuerier(querier appsqlc.Querier) *SQLStore {
+	return &SQLStore{queries: querier}
 }
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {

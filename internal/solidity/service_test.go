@@ -2,15 +2,15 @@ package solidity
 
 import (
 	"context"
-	"database/sql"
-	"regexp"
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/useryege/athena/internal/solidity/apiclient"
 	soliditystore "github.com/useryege/athena/internal/solidity/store"
+	soliditysqlc "github.com/useryege/athena/internal/solidity/store/sqlc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -28,22 +28,105 @@ func (f *fakeSourceQualityAnalyzer) AnalyzeContractSource(_ context.Context, sys
 	return f.report, f.err
 }
 
-func TestSolidityStatusTransitions(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("sqlmock new: %v", err)
+type fakeSolidityQuerier struct {
+	activePromptErr      error
+	activePromptResult   soliditysqlc.GetActiveSourceQualityPromptRow
+	insertPromptResult   soliditysqlc.InsertSourceQualityPromptRow
+	detailRows           []soliditysqlc.GetBytecodeDetailRow
+	detailErr            error
+	updateReportParams   soliditysqlc.UpdateBytecodeSourceQualityReportParams
+	updateReportCallSeen bool
+}
+
+func (f *fakeSolidityQuerier) ActivateSourceQualityPrompt(context.Context, int64) (soliditysqlc.ActivateSourceQualityPromptRow, error) {
+	return soliditysqlc.ActivateSourceQualityPromptRow{}, nil
+}
+func (f *fakeSolidityQuerier) AddBytecodeBlacklistEntry(context.Context, soliditysqlc.AddBytecodeBlacklistEntryParams) error {
+	return nil
+}
+func (f *fakeSolidityQuerier) DeactivateActiveSourceQualityPrompts(context.Context) error { return nil }
+func (f *fakeSolidityQuerier) DeleteBytecodeBlacklist(context.Context, []byte) (int64, error) {
+	return 0, nil
+}
+func (f *fakeSolidityQuerier) DeleteSourceQualityPrompt(context.Context, int64) (int64, error) {
+	return 0, nil
+}
+func (f *fakeSolidityQuerier) GetActiveSourceQualityPrompt(context.Context) (soliditysqlc.GetActiveSourceQualityPromptRow, error) {
+	return f.activePromptResult, f.activePromptErr
+}
+func (f *fakeSolidityQuerier) GetBytecode(context.Context, []byte) (soliditysqlc.Bytecode, error) {
+	return soliditysqlc.Bytecode{}, nil
+}
+func (f *fakeSolidityQuerier) GetBytecodeBlacklistEntry(context.Context, []byte) (soliditysqlc.BytecodeBlacklist, error) {
+	return soliditysqlc.BytecodeBlacklist{}, nil
+}
+func (f *fakeSolidityQuerier) GetBytecodeDetail(context.Context, []byte) (soliditysqlc.GetBytecodeDetailRow, error) {
+	if f.detailErr != nil {
+		return soliditysqlc.GetBytecodeDetailRow{}, f.detailErr
 	}
-	defer db.Close()
+	if len(f.detailRows) == 0 {
+		return soliditysqlc.GetBytecodeDetailRow{}, pgx.ErrNoRows
+	}
+	row := f.detailRows[0]
+	f.detailRows = f.detailRows[1:]
+	return row, nil
+}
+func (f *fakeSolidityQuerier) GetSourceQualityPrompt(context.Context, int64) (soliditysqlc.GetSourceQualityPromptRow, error) {
+	return soliditysqlc.GetSourceQualityPromptRow{}, nil
+}
+func (f *fakeSolidityQuerier) GetSourceQualityPromptForUpdate(context.Context, int64) (soliditysqlc.GetSourceQualityPromptForUpdateRow, error) {
+	return soliditysqlc.GetSourceQualityPromptForUpdateRow{}, nil
+}
+func (f *fakeSolidityQuerier) InsertSourceQualityPrompt(context.Context, soliditysqlc.InsertSourceQualityPromptParams) (soliditysqlc.InsertSourceQualityPromptRow, error) {
+	return f.insertPromptResult, nil
+}
+func (f *fakeSolidityQuerier) IsBytecodeBlacklisted(context.Context, []byte) (bool, error) {
+	return false, nil
+}
+func (f *fakeSolidityQuerier) ListBytecodeBlacklistEntries(context.Context) ([]soliditysqlc.BytecodeBlacklist, error) {
+	return nil, nil
+}
+func (f *fakeSolidityQuerier) ListBytecodeDeployments(context.Context, soliditysqlc.ListBytecodeDeploymentsParams) ([]soliditysqlc.ListBytecodeDeploymentsRow, error) {
+	return nil, nil
+}
+func (f *fakeSolidityQuerier) ListBytecodes(context.Context, soliditysqlc.ListBytecodesParams) ([]soliditysqlc.ListBytecodesRow, error) {
+	return nil, nil
+}
+func (f *fakeSolidityQuerier) ListSourceQualityPrompts(context.Context) ([]soliditysqlc.ListSourceQualityPromptsRow, error) {
+	return nil, nil
+}
+func (f *fakeSolidityQuerier) UpdateBytecodeBlacklistNote(context.Context, soliditysqlc.UpdateBytecodeBlacklistNoteParams) (int64, error) {
+	return 0, nil
+}
+func (f *fakeSolidityQuerier) UpdateBytecodeSourceCode(context.Context, soliditysqlc.UpdateBytecodeSourceCodeParams) error {
+	return nil
+}
+func (f *fakeSolidityQuerier) UpdateBytecodeSourceQualityReport(_ context.Context, arg soliditysqlc.UpdateBytecodeSourceQualityReportParams) error {
+	f.updateReportParams = arg
+	f.updateReportCallSeen = true
+	return nil
+}
+func (f *fakeSolidityQuerier) UpsertBytecode(context.Context, soliditysqlc.UpsertBytecodeParams) error {
+	return nil
+}
+func (f *fakeSolidityQuerier) UpsertContractBytecodeDeployment(context.Context, soliditysqlc.UpsertContractBytecodeDeploymentParams) error {
+	return nil
+}
 
+func TestSolidityStatusTransitions(t *testing.T) {
 	now := time.Now().UTC()
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, version, name, system_prompt, is_active, created_at, updated_at")).
-		WillReturnError(sql.ErrNoRows)
-	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO source_quality_prompt (name, system_prompt, is_active)")).
-		WithArgs("Default Solidity Source Quality Prompt", sqlmock.AnyArg(), true).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "version", "name", "system_prompt", "is_active", "created_at", "updated_at"}).
-			AddRow(int64(1), int64(1), "Default Solidity Source Quality Prompt", "prompt", true, now, now))
-
-	service := NewService(ServiceOpts{Store: soliditystore.NewSQLStore(db)})
+	service := NewService(ServiceOpts{Store: soliditystore.NewSQLStoreWithQuerier(&fakeSolidityQuerier{
+		activePromptErr: pgx.ErrNoRows,
+		insertPromptResult: soliditysqlc.InsertSourceQualityPromptRow{
+			ID:           1,
+			Version:      1,
+			Name:         "Default Solidity Source Quality Prompt",
+			SystemPrompt: "prompt",
+			IsActive:     true,
+			CreatedAt:    pgtype.Timestamptz{Time: now, Valid: true},
+			UpdatedAt:    pgtype.Timestamptz{Time: now, Valid: true},
+		},
+	})})
 
 	resp, err := service.GetSolidityStatus(context.Background(), &apiclient.GetSolidityStatusRequest{})
 	if err != nil {
@@ -74,9 +157,6 @@ func TestSolidityStatusTransitions(t *testing.T) {
 	if resp.Started || resp.Status != "stopped" {
 		t.Fatalf("status after stop = %#v, want stopped", resp)
 	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("expectations were not met: %v", err)
-	}
 }
 
 func TestSolidityStartRequiresStore(t *testing.T) {
@@ -95,55 +175,36 @@ func TestListBytecodesRejectsInvalidPage(t *testing.T) {
 }
 
 func TestGetBytecodeReturnsNotFound(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("sqlmock new: %v", err)
-	}
-	defer db.Close()
-
 	codeHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
-	mock.ExpectQuery(regexp.QuoteMeta("WITH deployment_counts AS")).
-		WithArgs(codeHash.Bytes()).
-		WillReturnError(sql.ErrNoRows)
-
-	service := NewService(ServiceOpts{Store: soliditystore.NewSQLStore(db)})
-	_, err = service.GetBytecode(context.Background(), &apiclient.GetBytecodeRequest{CodeHash: codeHash.Hex()})
+	service := NewService(ServiceOpts{Store: soliditystore.NewSQLStoreWithQuerier(&fakeSolidityQuerier{detailErr: pgx.ErrNoRows})})
+	_, err := service.GetBytecode(context.Background(), &apiclient.GetBytecodeRequest{CodeHash: codeHash.Hex()})
 	if status.Code(err) != codes.NotFound {
 		t.Fatalf("GetBytecode error = %v, want NotFound", err)
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("expectations were not met: %v", err)
 	}
 }
 
 func TestGetBytecodeRefreshesStaleSourceQualityReport(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("sqlmock new: %v", err)
-	}
-	defer db.Close()
-
 	codeHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
 	createdAt := time.Now().Add(-time.Hour).UTC()
 	updatedAt := time.Now().UTC()
 	analyzer := &fakeSourceQualityAnalyzer{report: "fresh report"}
+	querier := &fakeSolidityQuerier{
+		activePromptResult: soliditysqlc.GetActiveSourceQualityPromptRow{
+			ID:           2,
+			Version:      2,
+			Name:         "prompt v2",
+			SystemPrompt: "system prompt v2",
+			IsActive:     true,
+			CreatedAt:    pgtype.Timestamptz{Time: createdAt, Valid: true},
+			UpdatedAt:    pgtype.Timestamptz{Time: updatedAt, Valid: true},
+		},
+		detailRows: []soliditysqlc.GetBytecodeDetailRow{
+			bytecodeDetailRow(codeHash, "old report", 1, createdAt, updatedAt),
+			bytecodeDetailRow(codeHash, "fresh report", 2, createdAt, updatedAt),
+		},
+	}
 
-	mock.ExpectQuery(regexp.QuoteMeta("WITH deployment_counts AS")).
-		WithArgs(codeHash.Bytes()).
-		WillReturnRows(bytecodeDetailRows().
-			AddRow(codeHash.Bytes(), []byte{0x60, 0x00}, "contract C {}", nil, updatedAt, "third_party_api", "old report", updatedAt, "third_party_api", int64(1), createdAt, updatedAt, int64(2), int64(1), false))
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, version, name, system_prompt, is_active, created_at, updated_at")).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "version", "name", "system_prompt", "is_active", "created_at", "updated_at"}).
-			AddRow(int64(2), int64(2), "prompt v2", "system prompt v2", true, createdAt, updatedAt))
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE bytecode")).
-		WithArgs(codeHash.Bytes(), "fresh report", sourceOriginThirdPartyAPI, int64(2)).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectQuery(regexp.QuoteMeta("WITH deployment_counts AS")).
-		WithArgs(codeHash.Bytes()).
-		WillReturnRows(bytecodeDetailRows().
-			AddRow(codeHash.Bytes(), []byte{0x60, 0x00}, "contract C {}", nil, updatedAt, "third_party_api", "fresh report", updatedAt, "third_party_api", int64(2), createdAt, updatedAt, int64(2), int64(1), false))
-
-	service := NewService(ServiceOpts{Store: soliditystore.NewSQLStore(db), SourceQualityAnalyzer: analyzer})
+	service := NewService(ServiceOpts{Store: soliditystore.NewSQLStoreWithQuerier(querier), SourceQualityAnalyzer: analyzer})
 	resp, err := service.GetBytecode(context.Background(), &apiclient.GetBytecodeRequest{CodeHash: codeHash.Hex()})
 	if err != nil {
 		t.Fatalf("GetBytecode: %v", err)
@@ -154,8 +215,8 @@ func TestGetBytecodeRefreshesStaleSourceQualityReport(t *testing.T) {
 	if analyzer.systemPrompt != "system prompt v2" || analyzer.sourceCode != "contract C {}" {
 		t.Fatalf("analyzer prompt/source = %q/%q, want active prompt and source", analyzer.systemPrompt, analyzer.sourceCode)
 	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("expectations were not met: %v", err)
+	if !querier.updateReportCallSeen || common.BytesToHash(querier.updateReportParams.CodeHash) != codeHash {
+		t.Fatalf("update report params = %#v, want refreshed code hash", querier.updateReportParams)
 	}
 }
 
@@ -170,22 +231,21 @@ func TestListBytecodeDeploymentsRejectsInvalidContract(t *testing.T) {
 	}
 }
 
-func bytecodeDetailRows() *sqlmock.Rows {
-	return sqlmock.NewRows([]string{
-		"code_hash",
-		"runtime_bytecode",
-		"source_code",
-		"source_code_hash",
-		"source_code_fetched_at",
-		"source_code_origin",
-		"source_quality_report",
-		"source_quality_report_fetched_at",
-		"source_quality_report_origin",
-		"source_quality_prompt_version",
-		"created_at",
-		"updated_at",
-		"runtime_bytecode_size",
-		"deployment_count",
-		"is_bytecode_blacklisted",
-	})
+func bytecodeDetailRow(codeHash common.Hash, report string, promptVersion int64, createdAt, updatedAt time.Time) soliditysqlc.GetBytecodeDetailRow {
+	return soliditysqlc.GetBytecodeDetailRow{
+		CodeHash:                     codeHash.Bytes(),
+		RuntimeBytecode:              []byte{0x60, 0x00},
+		SourceCode:                   pgtype.Text{String: "contract C {}", Valid: true},
+		SourceCodeFetchedAt:          pgtype.Timestamptz{Time: updatedAt, Valid: true},
+		SourceCodeOrigin:             pgtype.Text{String: "third_party_api", Valid: true},
+		SourceQualityReport:          pgtype.Text{String: report, Valid: true},
+		SourceQualityReportFetchedAt: pgtype.Timestamptz{Time: updatedAt, Valid: true},
+		SourceQualityReportOrigin:    pgtype.Text{String: "third_party_api", Valid: true},
+		SourceQualityPromptVersion:   promptVersion,
+		CreatedAt:                    pgtype.Timestamptz{Time: createdAt, Valid: true},
+		UpdatedAt:                    pgtype.Timestamptz{Time: updatedAt, Valid: true},
+		RuntimeBytecodeSize:          2,
+		DeploymentCount:              1,
+		IsBytecodeBlacklisted:        false,
+	}
 }

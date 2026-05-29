@@ -2,12 +2,12 @@ package notification
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"sync"
 	"unicode/utf8"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/useryege/athena/internal/notification/apiclient"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
@@ -182,7 +182,7 @@ func (s *Service) GetNotificationDelivery(ctx context.Context, req *apiclient.Ge
 	}
 	item, err := s.store.GetDelivery(ctx, req.GetId())
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "notification delivery %d not found", req.GetId())
 		}
 		return nil, status.Errorf(codes.Internal, "failed to get notification delivery: %v", err)
