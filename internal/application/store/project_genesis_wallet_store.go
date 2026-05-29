@@ -60,11 +60,21 @@ INSERT INTO project_genesis_wallet (
 	}
 
 	if _, err := tx.ExecContext(ctx, `
-UPDATE project
-SET genesis_wallets_fetched_at = now()
-WHERE contract = $1
+INSERT INTO project_component_state (
+  project_contract,
+  component,
+  status,
+  last_attempt_at,
+  last_success_at
+) VALUES ($1, 'genesis_wallet', 'success', now(), now())
+ON CONFLICT (project_contract, component) DO UPDATE
+SET status = EXCLUDED.status,
+  last_attempt_at = EXCLUDED.last_attempt_at,
+  last_success_at = EXCLUDED.last_success_at,
+  last_error = NULL,
+  updated_at = now()
 `, contract.Bytes()); err != nil {
-		return fmt.Errorf("update project genesis wallets fetched at: %w", err)
+		return fmt.Errorf("update project genesis wallet component state: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {

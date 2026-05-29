@@ -72,6 +72,97 @@ func (s *Server) GetProject(ctx context.Context, req *applicationpkg.GetProjectR
 	return &applicationpkg.GetProjectResponse{Item: resp.Item}, nil
 }
 
+func (s *Server) GetProjectBase(ctx context.Context, req *applicationpkg.GetProjectBaseRequest) (*applicationpkg.GetProjectBaseResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	resp, err := client.GetProjectBase(ctx, &applicationapiclient.GetProjectBaseRequest{Contract: req.GetContract()})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.GetProjectBaseResponse{Item: resp.Item}, nil
+}
+
+func (s *Server) GetProjectReport(ctx context.Context, req *applicationpkg.GetProjectReportRequest) (*applicationpkg.GetProjectReportResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	resp, err := client.GetProjectReport(ctx, &applicationapiclient.GetProjectReportRequest{Contract: req.GetContract()})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.GetProjectReportResponse{Item: resp.Item}, nil
+}
+
+func (s *Server) GetProjectChainState(ctx context.Context, req *applicationpkg.GetProjectChainStateRequest) (*applicationpkg.GetProjectChainStateResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	resp, err := client.GetProjectChainState(ctx, &applicationapiclient.GetProjectChainStateRequest{Contract: req.GetContract()})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.GetProjectChainStateResponse{Item: resp.Item}, nil
+}
+
+func (s *Server) GetProjectSimulation(ctx context.Context, req *applicationpkg.GetProjectSimulationRequest) (*applicationpkg.GetProjectSimulationResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	resp, err := client.GetProjectSimulation(ctx, &applicationapiclient.GetProjectSimulationRequest{Contract: req.GetContract()})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.GetProjectSimulationResponse{Item: resp.Item}, nil
+}
+
+func (s *Server) GetProjectAveDetail(ctx context.Context, req *applicationpkg.GetProjectAveDetailRequest) (*applicationpkg.GetProjectAveDetailResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	resp, err := client.GetProjectAveDetail(ctx, &applicationapiclient.GetProjectAveDetailRequest{Contract: req.GetContract()})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.GetProjectAveDetailResponse{Item: resp.Item}, nil
+}
+
+func (s *Server) ListProjectGenesisWallets(ctx context.Context, req *applicationpkg.ListProjectGenesisWalletsRequest) (*applicationpkg.ListProjectGenesisWalletsResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	resp, err := client.ListProjectGenesisWallets(ctx, &applicationapiclient.ListProjectGenesisWalletsRequest{Contract: req.GetContract()})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.ListProjectGenesisWalletsResponse{Items: resp.Items}, nil
+}
+
+func (s *Server) ListProjectCreatorHistoricalProjects(ctx context.Context, req *applicationpkg.ListProjectCreatorHistoricalProjectsRequest) (*applicationpkg.ListProjectCreatorHistoricalProjectsResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	resp, err := client.ListProjectCreatorHistoricalProjects(ctx, &applicationapiclient.ListProjectCreatorHistoricalProjectsRequest{Contract: req.GetContract()})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.ListProjectCreatorHistoricalProjectsResponse{Items: resp.Items}, nil
+}
+
 func (s *Server) ListProjectEventLogs(ctx context.Context, req *applicationpkg.ListProjectEventLogsRequest) (*applicationpkg.ListProjectEventLogsResponse, error) {
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {

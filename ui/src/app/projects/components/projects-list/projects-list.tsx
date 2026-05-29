@@ -2,7 +2,7 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 import {history} from '../../../app';
 import {services} from '../../../shared/services';
-import {ProjectListItem, ProjectOptions} from '../../../shared/services/athena-application-service';
+import {ProjectListItem} from '../../../shared/services/athena-application-service';
 import {ProjectListRow} from '../project-list-row/project-list-row';
 import {buildProjectsListSearch, parseProjectsListSearch} from './projects-list-query';
 
@@ -21,11 +21,6 @@ interface ProjectsListCacheEntry {
 const projectsListCache = new Map<string, ProjectsListCacheEntry>();
 
 const renderLastUpdatedAt = (value: Date | null) => (value ? value.toLocaleTimeString() : 'Never');
-const isAbortedError = (err: unknown) =>
-    String((err as any)?.message || '')
-        .toLowerCase()
-        .includes('abort');
-
 const getProjectRowKey = (project: ProjectListItem, index: number) => {
     if (project.contract) {
         return project.contract;
@@ -47,9 +42,7 @@ export const ProjectsList = () => {
     const [total, setTotal] = React.useState(initialCache?.total || 0);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(initialCache?.lastUpdatedAt || null);
     const [error, setError] = React.useState<Error | null>(null);
-    const [projectOptions, setProjectOptions] = React.useState<ProjectOptions | null>(null);
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
-    const optionsRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
     const currentPageRef = React.useRef(initialQueryState.page);
@@ -73,31 +66,7 @@ export const ProjectsList = () => {
             requestRef.current.abort();
             requestRef.current = null;
         }
-        if (optionsRequestRef.current?.abort) {
-            optionsRequestRef.current.abort();
-            optionsRequestRef.current = null;
-        }
     }, []);
-
-    const loadProjectOptions = React.useCallback(async () => {
-        if (projectOptions || optionsRequestRef.current) {
-            return;
-        }
-        try {
-            const req = services.athenaApplication.getProjectOptions();
-            optionsRequestRef.current = req;
-            const options = await req;
-            if (isMountedRef.current) {
-                setProjectOptions(options || null);
-            }
-        } catch (err) {
-            if (isMountedRef.current && !isAbortedError(err)) {
-                setError(err as Error);
-            }
-        } finally {
-            optionsRequestRef.current = null;
-        }
-    }, [projectOptions]);
 
     const loadProjects = React.useCallback(
         async (targetPage?: number, syncSearch = false) => {
@@ -149,13 +118,12 @@ export const ProjectsList = () => {
     React.useEffect(() => {
         isMountedRef.current = true;
         loadProjects(initialQueryState.page, true);
-        loadProjectOptions();
 
         return () => {
             isMountedRef.current = false;
             cleanupRequests();
         };
-    }, [cleanupRequests, initialQueryState.page, loadProjectOptions, loadProjects]);
+    }, [cleanupRequests, initialQueryState.page, loadProjects]);
 
     const handleStart = React.useCallback(() => {
         if (intervalRef.current !== undefined) {
@@ -222,16 +190,13 @@ export const ProjectsList = () => {
                                 <div className='argo-table-list__head'>
                                     <div className='projects-list__row'>
                                         <div>#</div>
-                                        <div>Name</div>
                                         <div>Contract</div>
-                                        <div>Mint Risk</div>
-                                        <div title='Is Open Source'>Open Src</div>
-                                        <div title='Ave honeypot, mint method, and mintable signals'>Ave Risk</div>
-                                        <div title='Ave token holder count'>Holders</div>
-                                        <div title='Ave token market capitalization'>Market Cap</div>
-                                        <div title='WETH Quote + Remove Liquidity'>WETH Pair</div>
-                                        <div title='USDT Quote + Remove Liquidity'>USDT Pair</div>
-                                        <div title='Creator total asset in USDT'>Creator Asset</div>
+                                        <div>Creator</div>
+                                        <div>Tx Hash</div>
+                                        <div>Block</div>
+                                        <div>Tx Index</div>
+                                        <div>Policy</div>
+                                        <div>Blacklist</div>
                                         <div title='Block Time'>Block Time</div>
                                     </div>
                                 </div>
@@ -247,7 +212,6 @@ export const ProjectsList = () => {
                                             key={getProjectRowKey(project, index)}
                                             project={project}
                                             index={(page - 1) * PAGE_SIZE + index}
-                                            usdtDecimals={projectOptions?.usdtDecimals}
                                             to={project.contract ? `/projects/${project.contract}${buildProjectsListSearch(currentPageRef.current)}` : undefined}
                                         />
                                     ))

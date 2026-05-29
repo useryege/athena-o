@@ -17,7 +17,7 @@ import (
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
-const initialProjectSyncLookback = 15 * 24 * time.Hour
+const initialProjectSyncLookback = 1 * 24 * time.Hour
 const defaultBlockHeaderQueueCapacity = 16
 
 var pancakeV2SwapTopicHash = common.HexToHash("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822")
@@ -32,11 +32,12 @@ type projectDiscoveryNodeClient interface {
 }
 
 type projectDiscoveryIndexerImpl struct {
-	nodeClient   projectDiscoveryNodeClient
-	projectCache ProjectSnapshotCache
-	projectStore appstore.ProjectStore
-	intake       DiscoveryIntake
-	wg           sync.WaitGroup
+	nodeClient     projectDiscoveryNodeClient
+	componentCache ProjectComponentCache
+	projectCache   ProjectSnapshotCache
+	projectStore   appstore.ProjectStore
+	intake         DiscoveryIntake
+	wg             sync.WaitGroup
 
 	chainID *big.Int
 }
@@ -47,7 +48,7 @@ type discoveryIntakeImpl struct {
 
 func NewProjectDiscoveryIndexer(
 	nodeClient *ethclient.Client,
-	projectCache ProjectSnapshotCache,
+	componentCache ProjectComponentCache,
 	projectStore appstore.ProjectStore,
 	intake DiscoveryIntake,
 ) (ProjectDiscoveryIndexer, error) {
@@ -57,11 +58,11 @@ func NewProjectDiscoveryIndexer(
 	}
 
 	return &projectDiscoveryIndexerImpl{
-		nodeClient:   nodeClient,
-		projectCache: projectCache,
-		projectStore: projectStore,
-		intake:       intake,
-		chainID:      chainID,
+		nodeClient:     nodeClient,
+		componentCache: componentCache,
+		projectStore:   projectStore,
+		intake:         intake,
+		chainID:        chainID,
 	}, nil
 }
 
@@ -387,16 +388,36 @@ func (w *projectDiscoveryIndexerImpl) scheduleProjectsBySwapPairs(ctx context.Co
 
 func (w *projectDiscoveryIndexerImpl) projectsByCachedSwapPairs(ctx context.Context, pairAddresses []common.Address) ([]*Project, map[common.Address]struct{}, error) {
 	matchedPairs := make(map[common.Address]struct{})
-	if w.projectCache == nil {
-		return nil, matchedPairs, nil
+	if w.componentCache == nil {
+		if w.projectCache == nil {
+			return nil, matchedPairs, nil
+		}
+		projects, err := w.projectCache.ListProjectsByPairAddresses(ctx, pairAddresses)
+		if err != nil {
+			return nil, nil, err
+		}
+		pairSet := addressSet(pairAddresses)
+		for _, project := range projects {
+			markProjectMatchedPairs(project, pairSet, matchedPairs)
+		}
+		return projects, matchedPairs, nil
 	}
-	projects, err := w.projectCache.ListProjectsByPairAddresses(ctx, pairAddresses)
+	states, err := w.componentCache.ListChainStatesByPairAddresses(ctx, pairAddresses)
 	if err != nil {
 		return nil, nil, err
 	}
 	pairSet := addressSet(pairAddresses)
-	for _, project := range projects {
+	projects := make([]*Project, 0, len(states))
+	for _, state := range states {
+		project, err := w.projectFromChainState(ctx, state)
+		if err != nil {
+			return nil, nil, err
+		}
+		if project == nil {
+			continue
+		}
 		markProjectMatchedPairs(project, pairSet, matchedPairs)
+		projects = append(projects, project)
 	}
 	return projects, matchedPairs, nil
 }
@@ -405,21 +426,86 @@ func (w *projectDiscoveryIndexerImpl) projectsByStoredSwapPairs(ctx context.Cont
 	if w.projectStore == nil {
 		return nil, nil
 	}
-	metas, err := w.projectStore.ListProjectMetasByPairAddresses(ctx, pairAddresses)
+	store, ok := w.projectStore.(appstore.ProjectChainStateStore)
+	if !ok || store == nil {
+		metas, err := w.projectStore.ListProjectMetasByPairAddresses(ctx, pairAddresses)
+		if err != nil {
+			return nil, err
+		}
+		projects := make([]*Project, 0, len(metas))
+		for _, meta := range metas {
+			project := &Project{Meta: projectMetaFromStore(meta)}
+			projects = append(projects, project)
+			if w.projectCache != nil {
+				if err := w.projectCache.SetProject(ctx, project); err != nil {
+					return nil, err
+				}
+			}
+		}
+		return projects, nil
+	}
+	states, err := store.ListProjectChainStatesByPairAddresses(ctx, pairAddresses)
 	if err != nil {
 		return nil, err
 	}
-	projects := make([]*Project, 0, len(metas))
-	for _, meta := range metas {
-		project := &Project{Meta: projectMetaFromStore(meta)}
+	projects := make([]*Project, 0, len(states))
+	for _, state := range states {
+		project, err := w.projectFromChainState(ctx, state)
+		if err != nil {
+			return nil, err
+		}
+		if project == nil {
+			continue
+		}
 		projects = append(projects, project)
-		if w.projectCache != nil {
-			if err := w.projectCache.SetProject(ctx, project); err != nil {
+		if w.componentCache != nil {
+			if err := w.componentCache.SetChainState(ctx, state); err != nil {
 				return nil, err
 			}
 		}
 	}
 	return projects, nil
+}
+
+func (w *projectDiscoveryIndexerImpl) projectFromChainState(ctx context.Context, state appstore.ProjectChainState) (*Project, error) {
+	if state.ProjectContract == (common.Address{}) {
+		return nil, nil
+	}
+	var base *appstore.ProjectBase
+	if w.componentCache != nil {
+		if cached, ok, err := w.componentCache.GetBase(ctx, state.ProjectContract); err != nil {
+			return nil, err
+		} else if ok {
+			base = cached
+		}
+	}
+	if base == nil {
+		if store, ok := w.projectStore.(appstore.ProjectBaseStore); ok && store != nil {
+			loaded, err := store.GetProjectBaseByContract(ctx, state.ProjectContract)
+			if err != nil {
+				return nil, err
+			}
+			base = loaded
+			if base != nil && w.componentCache != nil {
+				if err := w.componentCache.SetBase(ctx, *base); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+	if base == nil {
+		return &Project{Meta: ProjectMeta{Contract: state.ProjectContract, WethPair: state.WethPair, UsdtPair: state.UsdtPair}}, nil
+	}
+	return &Project{Meta: ProjectMeta{
+		BlockTime:   base.BlockTime,
+		BlockNumber: base.BlockNumber,
+		Contract:    base.Contract,
+		Creator:     base.Creator,
+		TxHash:      base.TxHash,
+		TxIndex:     base.TxIndex,
+		WethPair:    state.WethPair,
+		UsdtPair:    state.UsdtPair,
+	}}, nil
 }
 
 func discoveredCandidatesFromSwapProjects(blockNumber uint64, projects []*Project) []DiscoveredProjectCandidate {

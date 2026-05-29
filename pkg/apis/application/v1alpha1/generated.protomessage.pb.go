@@ -35,11 +35,17 @@ func (*NotificationStatus) ProtoMessage() {}
 
 func (*PairV2State) ProtoMessage() {}
 
+func (*ProjectBaseView) ProtoMessage() {}
+
+func (*ProjectChainState) ProtoMessage() {}
+
 func (*ProjectListItem) ProtoMessage() {}
 
 func (*ProjectMeta) ProtoMessage() {}
 
 func (*ProjectOption) ProtoMessage() {}
+
+func (*ProjectReport) ProtoMessage() {}
 
 func (*ProjectView) ProtoMessage() {}
 

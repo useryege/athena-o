@@ -213,6 +213,20 @@
         }
     }
 
+    &__section-error {
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        background-color: #fdf2f2;
+        color: #d9534f;
+        border: 1px solid #d9534f;
+        border-radius: 4px;
+        font-size: 13px;
+
+        i {
+            margin-right: 8px;
+        }
+    }
+
     &__badge {
         display: inline-block;
         padding: 2px 8px;

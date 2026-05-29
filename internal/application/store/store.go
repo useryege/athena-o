@@ -2,11 +2,13 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 type ProjectMeta struct {
@@ -24,6 +26,29 @@ type ProjectMeta struct {
 	Report                             ProjectReport
 	GenesisWalletsFetchedAt            time.Time
 	CreatorHistoricalProjectsFetchedAt time.Time
+}
+
+type ProjectBase struct {
+	BlockTime   uint64
+	BlockNumber uint64
+	Contract    common.Address
+	Creator     common.Address
+	Tx          *types.Transaction
+	TxHash      common.Hash
+	TxIndex     uint64
+	CreatedAt   time.Time
+}
+
+type ProjectChainState struct {
+	ProjectContract common.Address
+	ChainState      athenacontract.AthenaProject
+	RawChainState   json.RawMessage
+	WethPair        common.Address
+	UsdtPair        common.Address
+	TokenName       string
+	TokenSymbol     string
+	FetchedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type ProjectAveDetail struct {
@@ -136,12 +161,45 @@ type SimulateResult struct {
 	CanMintViaTransferToUsdtPair       bool
 }
 
+type ProjectSimulationResult struct {
+	ProjectContract common.Address
+	Result          SimulateResult
+	FetchedAt       time.Time
+	UpdatedAt       time.Time
+}
+
 type ProjectReport struct {
 	IsPolicyEvaluated          bool
 	IsBlacklistedCreatorWallet bool
 	IsBlacklistedGenesisWallet bool
 	IsBlacklistedBytecode      bool
 	HasMintRisk                bool
+}
+
+type ProjectPolicyReport struct {
+	ProjectContract common.Address
+	Report          ProjectReport
+	EvaluatedAt     time.Time
+	UpdatedAt       time.Time
+}
+
+type ProjectBytecodeFact struct {
+	ProjectContract       common.Address
+	CodeHash              common.Hash
+	IsBytecodeBlacklisted bool
+	FetchedAt             time.Time
+	UpdatedAt             time.Time
+}
+
+type ProjectComponentState struct {
+	ProjectContract common.Address
+	Component       string
+	Status          string
+	LastAttemptAt   time.Time
+	LastSuccessAt   time.Time
+	NextRunAt       time.Time
+	LastError       string
+	UpdatedAt       time.Time
 }
 
 type ProjectEventLog struct {
@@ -198,6 +256,43 @@ type ProjectStore interface {
 	GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error)
 }
 
+type ProjectBaseStore interface {
+	SaveProjectBase(ctx context.Context, base ProjectBase) error
+	GetProjectBaseByContract(ctx context.Context, contract common.Address) (*ProjectBase, error)
+	ListProjectBases(ctx context.Context) ([]ProjectBase, error)
+	ListProjectBasesPage(ctx context.Context, page int32, pageSize int32) ([]ProjectBase, int64, int32, int32, error)
+	ListProjectBasesByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectBase, error)
+	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
+}
+
+type ProjectChainStateStore interface {
+	UpsertProjectChainState(ctx context.Context, item ProjectChainState) error
+	GetProjectChainState(ctx context.Context, contract common.Address) (*ProjectChainState, error)
+	ListProjectChainStatesByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectChainState, error)
+	ListProjectChainStatesByPairAddresses(ctx context.Context, pairs []common.Address) ([]ProjectChainState, error)
+}
+
+type ProjectSimulationStore interface {
+	UpsertProjectSimulationResult(ctx context.Context, item ProjectSimulationResult) error
+	GetProjectSimulationResult(ctx context.Context, contract common.Address) (*ProjectSimulationResult, error)
+}
+
+type ProjectPolicyReportStore interface {
+	UpsertProjectPolicyReport(ctx context.Context, item ProjectPolicyReport) error
+	GetProjectPolicyReport(ctx context.Context, contract common.Address) (*ProjectPolicyReport, error)
+	ListProjectPolicyReportsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectPolicyReport, error)
+}
+
+type ProjectBytecodeFactStore interface {
+	UpsertProjectBytecodeFact(ctx context.Context, item ProjectBytecodeFact) error
+	GetProjectBytecodeFact(ctx context.Context, contract common.Address) (*ProjectBytecodeFact, error)
+}
+
+type ProjectComponentStateStore interface {
+	UpsertProjectComponentState(ctx context.Context, item ProjectComponentState) error
+	GetProjectComponentState(ctx context.Context, contract common.Address, component string) (*ProjectComponentState, error)
+}
+
 type ProjectAveDetailStore interface {
 	UpsertProjectAveDetail(ctx context.Context, contract common.Address, detail ProjectAveDetail) error
 	GetProjectAveDetail(ctx context.Context, contract common.Address) (*ProjectAveDetail, error)
@@ -229,4 +324,15 @@ type ProjectCreatorHistoricalProjectStore interface {
 
 type Store interface {
 	ProjectStore
+	ProjectBaseStore
+	ProjectChainStateStore
+	ProjectSimulationStore
+	ProjectPolicyReportStore
+	ProjectBytecodeFactStore
+	ProjectComponentStateStore
+	ProjectAveDetailStore
+	ProjectEventLogStore
+	ProjectCommentStore
+	ProjectGenesisWalletStore
+	ProjectCreatorHistoricalProjectStore
 }

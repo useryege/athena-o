@@ -6,29 +6,11 @@ CREATE TABLE IF NOT EXISTS project (
   block_time BIGINT NOT NULL,
   contract BYTEA NOT NULL,
   creator BYTEA NOT NULL,
-  weth_pair BYTEA NOT NULL,
-  usdt_pair BYTEA NOT NULL,
-  fetch_at TIMESTAMPTZ NOT NULL,
   tx_hash BYTEA NOT NULL,
   tx_index BIGINT NOT NULL,
-  creator_result_can_mint_from_dead_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
-  creator_result_can_mint_from_zero_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
-  creator_result_can_mint_from_weth_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
-  creator_result_can_mint_from_usdt_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
-  creator_result_can_mint_via_transfer_to_weth_pair BOOLEAN NOT NULL DEFAULT false,
-  creator_result_can_mint_via_transfer_to_usdt_pair BOOLEAN NOT NULL DEFAULT false,
-  report_is_policy_evaluated BOOLEAN NOT NULL DEFAULT false,
-  report_is_blacklisted_creator_wallet BOOLEAN NOT NULL DEFAULT false,
-  report_is_blacklisted_genesis_wallet BOOLEAN NOT NULL DEFAULT false,
-  report_is_blacklisted_bytecode BOOLEAN NOT NULL DEFAULT false,
-  report_has_mint_risk BOOLEAN NOT NULL DEFAULT false,
-  genesis_wallets_fetched_at TIMESTAMPTZ,
-  creator_historical_projects_fetched_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_contract_len CHECK (length(contract) = 20),
   CONSTRAINT project_creator_len CHECK (length(creator) = 20),
-  CONSTRAINT project_weth_pair_len CHECK (length(weth_pair) = 20),
-  CONSTRAINT project_usdt_pair_len CHECK (length(usdt_pair) = 20),
   CONSTRAINT project_tx_hash_len CHECK (length(tx_hash) = 32)
 );
 
@@ -38,17 +20,89 @@ CREATE UNIQUE INDEX IF NOT EXISTS project_contract_idx
 CREATE UNIQUE INDEX IF NOT EXISTS project_tx_hash_idx
   ON project (tx_hash);
 
-CREATE INDEX IF NOT EXISTS project_weth_pair_idx
-  ON project (weth_pair);
-
-CREATE INDEX IF NOT EXISTS project_usdt_pair_idx
-  ON project (usdt_pair);
-
 CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (block_number, tx_index, id);
 
 CREATE INDEX IF NOT EXISTS project_creator_order_idx
   ON project (creator, block_number, tx_index, id);
+
+CREATE TABLE IF NOT EXISTS project_chain_state (
+  project_contract BYTEA PRIMARY KEY,
+  chain_state JSONB NOT NULL DEFAULT '{}'::jsonb,
+  weth_pair BYTEA NOT NULL,
+  usdt_pair BYTEA NOT NULL,
+  token_name TEXT,
+  token_symbol TEXT,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_chain_state_project_contract_len CHECK (length(project_contract) = 20),
+  CONSTRAINT project_chain_state_weth_pair_len CHECK (length(weth_pair) = 20),
+  CONSTRAINT project_chain_state_usdt_pair_len CHECK (length(usdt_pair) = 20),
+  CONSTRAINT project_chain_state_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract)
+);
+
+CREATE INDEX IF NOT EXISTS project_chain_state_weth_pair_idx
+  ON project_chain_state (weth_pair);
+
+CREATE INDEX IF NOT EXISTS project_chain_state_usdt_pair_idx
+  ON project_chain_state (usdt_pair);
+
+CREATE TABLE IF NOT EXISTS project_simulation_result (
+  project_contract BYTEA PRIMARY KEY,
+  can_mint_from_dead_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
+  can_mint_from_zero_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
+  can_mint_from_weth_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
+  can_mint_from_usdt_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
+  can_mint_via_transfer_to_weth_pair BOOLEAN NOT NULL DEFAULT false,
+  can_mint_via_transfer_to_usdt_pair BOOLEAN NOT NULL DEFAULT false,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_simulation_result_project_contract_len CHECK (length(project_contract) = 20),
+  CONSTRAINT project_simulation_result_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract)
+);
+
+CREATE TABLE IF NOT EXISTS project_policy_report (
+  project_contract BYTEA PRIMARY KEY,
+  is_policy_evaluated BOOLEAN NOT NULL DEFAULT false,
+  is_blacklisted_creator_wallet BOOLEAN NOT NULL DEFAULT false,
+  is_blacklisted_genesis_wallet BOOLEAN NOT NULL DEFAULT false,
+  is_blacklisted_bytecode BOOLEAN NOT NULL DEFAULT false,
+  has_mint_risk BOOLEAN NOT NULL DEFAULT false,
+  evaluated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_policy_report_project_contract_len CHECK (length(project_contract) = 20),
+  CONSTRAINT project_policy_report_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract)
+);
+
+CREATE TABLE IF NOT EXISTS project_bytecode_fact (
+  project_contract BYTEA PRIMARY KEY,
+  code_hash BYTEA,
+  is_bytecode_blacklisted BOOLEAN NOT NULL DEFAULT false,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_bytecode_fact_project_contract_len CHECK (length(project_contract) = 20),
+  CONSTRAINT project_bytecode_fact_code_hash_len CHECK (code_hash IS NULL OR length(code_hash) = 32),
+  CONSTRAINT project_bytecode_fact_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract)
+);
+
+CREATE TABLE IF NOT EXISTS project_component_state (
+  project_contract BYTEA NOT NULL,
+  component TEXT NOT NULL,
+  status TEXT NOT NULL,
+  last_attempt_at TIMESTAMPTZ,
+  last_success_at TIMESTAMPTZ,
+  next_run_at TIMESTAMPTZ,
+  last_error TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_component_state_project_contract_len CHECK (length(project_contract) = 20),
+  CONSTRAINT project_component_state_component_not_empty CHECK (length(btrim(component)) > 0),
+  CONSTRAINT project_component_state_status_not_empty CHECK (length(btrim(status)) > 0),
+  CONSTRAINT project_component_state_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract),
+  CONSTRAINT project_component_state_uidx UNIQUE (project_contract, component)
+);
+
+CREATE INDEX IF NOT EXISTS project_component_state_next_run_idx
+  ON project_component_state (component, next_run_at);
 
 CREATE TABLE IF NOT EXISTS project_ave_token_detail (
   project_contract BYTEA PRIMARY KEY,

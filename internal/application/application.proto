@@ -31,6 +31,62 @@ message GetProjectResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView item = 1;
 }
 
+message GetProjectBaseRequest {
+  string contract = 1;
+}
+
+message GetProjectBaseResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectBaseView item = 1;
+}
+
+message GetProjectReportRequest {
+  string contract = 1;
+}
+
+message GetProjectReportResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectReport item = 1;
+}
+
+message GetProjectChainStateRequest {
+  string contract = 1;
+}
+
+message GetProjectChainStateResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectChainState item = 1;
+}
+
+message GetProjectSimulationRequest {
+  string contract = 1;
+}
+
+message GetProjectSimulationResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.SimulateResult item = 1;
+}
+
+message GetProjectAveDetailRequest {
+  string contract = 1;
+}
+
+message GetProjectAveDetailResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.AveDetail item = 1;
+}
+
+message ListProjectGenesisWalletsRequest {
+  string contract = 1;
+}
+
+message ListProjectGenesisWalletsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.GenesisWalletState items = 1;
+}
+
+message ListProjectCreatorHistoricalProjectsRequest {
+  string contract = 1;
+}
+
+message ListProjectCreatorHistoricalProjectsResponse {
+  repeated string items = 1;
+}
+
 // ProjectEventLog is a project event timeline entry.
 message ProjectEventLog {
   int64 id = 1;
@@ -101,6 +157,13 @@ service ApplicationService {
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
   // GetProject returns the project snapshot for a given contract.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+  rpc GetProjectBase(GetProjectBaseRequest) returns (GetProjectBaseResponse);
+  rpc GetProjectReport(GetProjectReportRequest) returns (GetProjectReportResponse);
+  rpc GetProjectChainState(GetProjectChainStateRequest) returns (GetProjectChainStateResponse);
+  rpc GetProjectSimulation(GetProjectSimulationRequest) returns (GetProjectSimulationResponse);
+  rpc GetProjectAveDetail(GetProjectAveDetailRequest) returns (GetProjectAveDetailResponse);
+  rpc ListProjectGenesisWallets(ListProjectGenesisWalletsRequest) returns (ListProjectGenesisWalletsResponse);
+  rpc ListProjectCreatorHistoricalProjects(ListProjectCreatorHistoricalProjectsRequest) returns (ListProjectCreatorHistoricalProjectsResponse);
   // ListProjectEventLogs returns event logs for a given contract.
   rpc ListProjectEventLogs(ListProjectEventLogsRequest) returns (ListProjectEventLogsResponse);
   // AddProjectComment creates a project comment.

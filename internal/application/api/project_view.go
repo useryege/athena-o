@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 
@@ -14,6 +15,133 @@ import (
 
 func projectToView(project *model.Project, includeGenesisWallets bool) *v1alpha1.ProjectView {
 	return projectToViewWithOptions(project, includeGenesisWallets, true)
+}
+
+func projectBaseToView(base appstore.ProjectBase) *v1alpha1.ProjectBaseView {
+	txHash := ""
+	if base.TxHash != (common.Hash{}) {
+		txHash = base.TxHash.Hex()
+	} else if base.Tx != nil {
+		txHash = base.Tx.Hash().Hex()
+	}
+	return &v1alpha1.ProjectBaseView{
+		BlockTime:   base.BlockTime,
+		BlockNumber: base.BlockNumber,
+		Contract:    base.Contract.Hex(),
+		Creator:     base.Creator.Hex(),
+		TxHash:      txHash,
+		TxIndex:     base.TxIndex,
+		CreatedAt:   formatOptionalTime(base.CreatedAt),
+	}
+}
+
+func projectReportToView(report *appstore.ProjectPolicyReport) *v1alpha1.ProjectReport {
+	if report == nil {
+		return &v1alpha1.ProjectReport{}
+	}
+	return &v1alpha1.ProjectReport{
+		IsPolicyEvaluated:          report.Report.IsPolicyEvaluated,
+		IsBlacklistedCreatorWallet: report.Report.IsBlacklistedCreatorWallet,
+		IsBlacklistedGenesisWallet: report.Report.IsBlacklistedGenesisWallet,
+		IsBlacklistedBytecode:      report.Report.IsBlacklistedBytecode,
+		HasMintRisk:                report.Report.HasMintRisk,
+		EvaluatedAt:                formatOptionalTime(report.EvaluatedAt),
+		UpdatedAt:                  formatOptionalTime(report.UpdatedAt),
+	}
+}
+
+func projectBaseAndReportToListItem(base appstore.ProjectBase, report *appstore.ProjectPolicyReport) *v1alpha1.ProjectListItem {
+	item := &v1alpha1.ProjectListItem{
+		Contract:    base.Contract.Hex(),
+		Creator:     base.Creator.Hex(),
+		BlockTime:   base.BlockTime,
+		BlockNumber: base.BlockNumber,
+		TxIndex:     base.TxIndex,
+	}
+	if base.TxHash != (common.Hash{}) {
+		item.TxHash = base.TxHash.Hex()
+	} else if base.Tx != nil {
+		item.TxHash = base.Tx.Hash().Hex()
+	}
+	if report != nil {
+		item.HasMintRisk = report.Report.HasMintRisk
+		item.IsPolicyEvaluated = report.Report.IsPolicyEvaluated
+		item.IsBlacklistedCreatorWallet = report.Report.IsBlacklistedCreatorWallet
+		item.IsBlacklistedGenesisWallet = report.Report.IsBlacklistedGenesisWallet
+		item.IsBlacklistedBytecode = report.Report.IsBlacklistedBytecode
+	}
+	return item
+}
+
+func projectChainStateToView(item appstore.ProjectChainState) *v1alpha1.ProjectChainState {
+	chainState := item.ChainState
+	return &v1alpha1.ProjectChainState{
+		Contract:  item.ProjectContract.Hex(),
+		FetchedAt: formatOptionalTime(item.FetchedAt),
+		Token: v1alpha1.TokenState{
+			Name:         chainState.Token.Name,
+			Symbol:       chainState.Token.Symbol,
+			Decimals:     uint32(chainState.Token.Decimals),
+			TotalSupply:  bigIntToString(chainState.Token.TotalSupply),
+			IsValidERC20: chainState.Token.IsValidERC20,
+		},
+		WethPair:                 pairToView(chainState.WethPair),
+		UsdtPair:                 pairToView(chainState.UsdtPair),
+		AssetState:               assetStateToView(chainState.AssetState),
+		GenesisWalletAssetStates: genesisWalletAssetStatesToView(chainState.GenesisWalletAssetStates),
+	}
+}
+
+func assetStateToView(state athenacontract.AthenaAssetState) v1alpha1.AssetState {
+	return v1alpha1.AssetState{
+		TokenBalance:  bigIntToString(state.TokenBalance),
+		WethBalance:   bigIntToString(state.WethBalance),
+		UsdtBalance:   bigIntToString(state.UsdtBalance),
+		NativeBalance: bigIntToString(state.NativeBalance),
+		UsdtValue:     bigIntToString(state.UsdtValue),
+	}
+}
+
+func genesisWalletAssetStatesToView(items []athenacontract.AthenaGenesisWalletAssetState) []v1alpha1.GenesisWalletAssetState {
+	if len(items) == 0 {
+		return nil
+	}
+	result := make([]v1alpha1.GenesisWalletAssetState, 0, len(items))
+	for _, item := range items {
+		result = append(result, v1alpha1.GenesisWalletAssetState{
+			Wallet:     addressToString(item.Wallet),
+			AssetState: assetStateToView(item.AssetState),
+		})
+	}
+	return result
+}
+
+func projectSimulationToView(item *appstore.ProjectSimulationResult) *v1alpha1.SimulateResult {
+	if item == nil {
+		return &v1alpha1.SimulateResult{}
+	}
+	result := item.Result
+	return &v1alpha1.SimulateResult{
+		CanMintFromDeadViaTransferFrom:     result.CanMintFromDeadViaTransferFrom,
+		CanMintFromZeroViaTransferFrom:     result.CanMintFromZeroViaTransferFrom,
+		CanMintFromWethPairViaTransferFrom: result.CanMintFromWethPairViaTransferFrom,
+		CanMintFromUsdtPairViaTransferFrom: result.CanMintFromUsdtPairViaTransferFrom,
+		CanMintViaTransferToWethPair:       result.CanMintViaTransferToWethPair,
+		CanMintViaTransferToUsdtPair:       result.CanMintViaTransferToUsdtPair,
+	}
+}
+
+func genesisWalletsToView(items []appstore.ProjectGenesisWallet) []*v1alpha1.GenesisWalletState {
+	result := make([]*v1alpha1.GenesisWalletState, 0, len(items))
+	for _, item := range items {
+		result = append(result, &v1alpha1.GenesisWalletState{
+			Wallet:    item.Wallet.Hex(),
+			NetAmount: bigIntToString(item.NetAmount),
+			RatioBps:  item.RatioBPS,
+			Rank:      item.RankIndex,
+		})
+	}
+	return result
 }
 
 func projectToListItem(project *model.Project) *v1alpha1.ProjectListItem {

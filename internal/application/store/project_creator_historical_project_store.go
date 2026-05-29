@@ -44,11 +44,21 @@ INSERT INTO project_creator_historical_project (
 	}
 
 	if _, err := tx.ExecContext(ctx, `
-UPDATE project
-SET creator_historical_projects_fetched_at = now()
-WHERE contract = $1
+INSERT INTO project_component_state (
+  project_contract,
+  component,
+  status,
+  last_attempt_at,
+  last_success_at
+) VALUES ($1, 'creator_history', 'success', now(), now())
+ON CONFLICT (project_contract, component) DO UPDATE
+SET status = EXCLUDED.status,
+  last_attempt_at = EXCLUDED.last_attempt_at,
+  last_success_at = EXCLUDED.last_success_at,
+  last_error = NULL,
+  updated_at = now()
 `, contract.Bytes()); err != nil {
-		return fmt.Errorf("update project creator historical projects fetched at: %w", err)
+		return fmt.Errorf("update project creator history component state: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {

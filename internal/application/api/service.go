@@ -53,8 +53,9 @@ type Service struct {
 	athenaFetcher   evm.AthenaFetcher
 	walletBlacklist walletBlacklistLister
 
-	store                appstore.Store
+	store                appstore.ProjectStore
 	projectCache         appcache.ProjectSnapshotCache
+	componentCache       appcache.ProjectComponentCache
 	persistencePublisher persistence.PersistenceEventPublisher
 	persistenceBus       *persistence.RedisPersistenceEventBus
 	persistenceWriter    persistence.PersistenceEventWriter
@@ -76,6 +77,7 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		nodeClient:           nodeClient,
 		store:                store,
 		projectCache:         appcache.NewProjectSnapshotCache(redisClient),
+		componentCache:       appcache.NewProjectComponentCache(redisClient),
 		walletBlacklist:      newWalletBlacklistClientLister(walletClientSet),
 		persistencePublisher: persistenceBus,
 		persistenceBus:       persistenceBus,
@@ -183,12 +185,13 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 	}
 
 	policyEngine := policy.NewProjectPolicyEngine(
-		s.projectCache,
+		s.componentCache,
+		s.store,
 		s.walletBlacklist,
 		s.persistencePublisher,
 	)
 	stateReconciler := reconcile.NewProjectStateReconciler(
-		s.projectCache,
+		s.componentCache,
 		s.nodeClient,
 		s.store,
 		athenaFetcher,
@@ -202,7 +205,7 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 	)
 	discoveryIntake := discovery.NewDiscoveryIntake(stateReconciler)
 
-	discoveryIndexer, err := discovery.NewProjectDiscoveryIndexer(s.nodeClient, s.projectCache, s.store, discoveryIntake)
+	discoveryIndexer, err := discovery.NewProjectDiscoveryIndexer(s.nodeClient, s.componentCache, s.store, discoveryIntake)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -562,13 +565,13 @@ func creatorHistoricalProjectContractsFromStore(items []appstore.ProjectCreatorH
 
 func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {
 	startedAt := time.Now()
-	var projects []*Project
+	var bases []appstore.ProjectBase
 	var total int64
 	var page int32
 	var pageSize int32
 	var err error
-	if s.projectCache != nil {
-		projects, total, page, pageSize, err = s.projectCache.ListProjectsPage(ctx, req.GetPage(), req.GetPageSize())
+	if s.componentCache != nil {
+		bases, total, page, pageSize, err = s.componentCache.ListBasePage(ctx, req.GetPage(), req.GetPageSize())
 	} else {
 		page, pageSize = normalizeCachePage(req.GetPage(), req.GetPageSize())
 	}
@@ -576,16 +579,40 @@ func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProj
 	if err != nil {
 		return nil, err
 	}
-	if shouldFallbackListProjectsToDB(total, page, pageSize, len(projects)) {
-		projects, total, page, pageSize, err = s.listProjectSnapshotsFromDBPage(ctx, req.GetPage(), req.GetPageSize())
+	if shouldFallbackListProjectsToDB(total, page, pageSize, len(bases)) {
+		store, ok := s.store.(appstore.ProjectBaseStore)
+		if !ok || store == nil {
+			projects, total, page, pageSize, err := s.listProjectSnapshotsFromDBPage(ctx, req.GetPage(), req.GetPageSize())
+			if err != nil {
+				return nil, err
+			}
+			items := make([]*v1alpha1.ProjectListItem, 0, len(projects))
+			for _, project := range projects {
+				items = append(items, projectToListItem(project))
+			}
+			return &applicationpkg.ListProjectsResponse{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
+		}
+		bases, total, page, pageSize, err = store.ListProjectBasesPage(ctx, req.GetPage(), req.GetPageSize())
 		if err != nil {
 			return nil, err
 		}
+		if s.componentCache != nil {
+			for _, base := range bases {
+				if err := s.componentCache.SetBase(ctx, base); err != nil {
+					return nil, err
+				}
+			}
+		}
 	}
 
-	items := make([]*v1alpha1.ProjectListItem, 0, len(projects))
-	for _, project := range projects {
-		items = append(items, projectToListItem(project))
+	reports, err := s.projectReportsByContracts(ctx, projectBaseContracts(bases))
+	if err != nil {
+		return nil, err
+	}
+	items := make([]*v1alpha1.ProjectListItem, 0, len(bases))
+	for _, base := range bases {
+		report := reports[base.Contract]
+		items = append(items, projectBaseAndReportToListItem(base, report))
 	}
 
 	return &applicationpkg.ListProjectsResponse{
@@ -615,6 +642,106 @@ func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProject
 	return &applicationpkg.GetProjectResponse{Item: projectToView(project, true)}, nil
 }
 
+func (s *Service) GetProjectBase(ctx context.Context, req *applicationpkg.GetProjectBaseRequest) (*applicationpkg.GetProjectBaseResponse, error) {
+	contract, err := parseProjectContract(req.GetContract())
+	if err != nil {
+		return nil, err
+	}
+	base, err := s.projectBase(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	if base == nil {
+		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
+	}
+	return &applicationpkg.GetProjectBaseResponse{Item: projectBaseToView(*base)}, nil
+}
+
+func (s *Service) GetProjectReport(ctx context.Context, req *applicationpkg.GetProjectReportRequest) (*applicationpkg.GetProjectReportResponse, error) {
+	contract, err := parseProjectContract(req.GetContract())
+	if err != nil {
+		return nil, err
+	}
+	report, err := s.projectReport(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.GetProjectReportResponse{Item: projectReportToView(report)}, nil
+}
+
+func (s *Service) GetProjectChainState(ctx context.Context, req *applicationpkg.GetProjectChainStateRequest) (*applicationpkg.GetProjectChainStateResponse, error) {
+	contract, err := parseProjectContract(req.GetContract())
+	if err != nil {
+		return nil, err
+	}
+	item, err := s.projectChainState(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	if item == nil {
+		return nil, status.Errorf(codes.NotFound, "project chain state %q not found", req.GetContract())
+	}
+	return &applicationpkg.GetProjectChainStateResponse{Item: projectChainStateToView(*item)}, nil
+}
+
+func (s *Service) GetProjectSimulation(ctx context.Context, req *applicationpkg.GetProjectSimulationRequest) (*applicationpkg.GetProjectSimulationResponse, error) {
+	contract, err := parseProjectContract(req.GetContract())
+	if err != nil {
+		return nil, err
+	}
+	item, err := s.projectSimulation(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.GetProjectSimulationResponse{Item: projectSimulationToView(item)}, nil
+}
+
+func (s *Service) GetProjectAveDetail(ctx context.Context, req *applicationpkg.GetProjectAveDetailRequest) (*applicationpkg.GetProjectAveDetailResponse, error) {
+	contract, err := parseProjectContract(req.GetContract())
+	if err != nil {
+		return nil, err
+	}
+	item, err := s.projectAveDetail(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	if item == nil {
+		return &applicationpkg.GetProjectAveDetailResponse{}, nil
+	}
+	view := projectAveDetailToView(projectAveDetailFromStore(*item), true)
+	return &applicationpkg.GetProjectAveDetailResponse{Item: &view}, nil
+}
+
+func (s *Service) ListProjectGenesisWallets(ctx context.Context, req *applicationpkg.ListProjectGenesisWalletsRequest) (*applicationpkg.ListProjectGenesisWalletsResponse, error) {
+	contract, err := parseProjectContract(req.GetContract())
+	if err != nil {
+		return nil, err
+	}
+	items, err := s.projectGenesisWallets(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.ListProjectGenesisWalletsResponse{Items: genesisWalletsToView(items)}, nil
+}
+
+func (s *Service) ListProjectCreatorHistoricalProjects(ctx context.Context, req *applicationpkg.ListProjectCreatorHistoricalProjectsRequest) (*applicationpkg.ListProjectCreatorHistoricalProjectsResponse, error) {
+	contract, err := parseProjectContract(req.GetContract())
+	if err != nil {
+		return nil, err
+	}
+	items, err := s.projectCreatorHistory(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, 0, len(items))
+	for _, item := range items {
+		if item.HistoricalProjectContract != (common.Address{}) {
+			result = append(result, item.HistoricalProjectContract.Hex())
+		}
+	}
+	return &applicationpkg.ListProjectCreatorHistoricalProjectsResponse{Items: result}, nil
+}
+
 func shouldFallbackListProjectsToDB(total int64, page int32, pageSize int32, projectCount int) bool {
 	if total == 0 {
 		return true
@@ -631,6 +758,216 @@ func shouldFallbackListProjectsToDB(total int64, page int32, pageSize int32, pro
 		expected = int64(pageSize)
 	}
 	return int64(projectCount) < expected
+}
+
+func parseProjectContract(value string) (common.Address, error) {
+	if !common.IsHexAddress(value) {
+		return common.Address{}, status.Errorf(codes.InvalidArgument, "invalid contract %q", value)
+	}
+	return common.HexToAddress(value), nil
+}
+
+func projectBaseContracts(items []appstore.ProjectBase) []common.Address {
+	contracts := make([]common.Address, 0, len(items))
+	for _, item := range items {
+		if item.Contract != (common.Address{}) {
+			contracts = append(contracts, item.Contract)
+		}
+	}
+	return contracts
+}
+
+func (s *Service) projectBase(ctx context.Context, contract common.Address) (*appstore.ProjectBase, error) {
+	if s.componentCache != nil {
+		if item, ok, err := s.componentCache.GetBase(ctx, contract); err != nil {
+			return nil, err
+		} else if ok && item != nil {
+			return item, nil
+		}
+	}
+	store, ok := s.store.(appstore.ProjectBaseStore)
+	if !ok || store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "project base store is not configured")
+	}
+	item, err := store.GetProjectBaseByContract(ctx, contract)
+	if err != nil || item == nil {
+		return item, err
+	}
+	if s.componentCache != nil {
+		if err := s.componentCache.SetBase(ctx, *item); err != nil {
+			return nil, err
+		}
+	}
+	return item, nil
+}
+
+func (s *Service) projectReportsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]*appstore.ProjectPolicyReport, error) {
+	result := make(map[common.Address]*appstore.ProjectPolicyReport, len(contracts))
+	missing := make([]common.Address, 0)
+	if s.componentCache != nil {
+		for _, contract := range contracts {
+			item, ok, err := s.componentCache.GetReport(ctx, contract)
+			if err != nil {
+				return nil, err
+			}
+			if ok && item != nil {
+				result[contract] = item
+				continue
+			}
+			missing = append(missing, contract)
+		}
+	} else {
+		missing = contracts
+	}
+	if len(missing) == 0 {
+		return result, nil
+	}
+	store, ok := s.store.(appstore.ProjectPolicyReportStore)
+	if !ok || store == nil {
+		return result, nil
+	}
+	items, err := store.ListProjectPolicyReportsByContracts(ctx, missing)
+	if err != nil {
+		return nil, err
+	}
+	for contract, item := range items {
+		itemCopy := item
+		result[contract] = &itemCopy
+		if s.componentCache != nil {
+			if err := s.componentCache.SetReport(ctx, item); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return result, nil
+}
+
+func (s *Service) projectReport(ctx context.Context, contract common.Address) (*appstore.ProjectPolicyReport, error) {
+	reports, err := s.projectReportsByContracts(ctx, []common.Address{contract})
+	if err != nil {
+		return nil, err
+	}
+	return reports[contract], nil
+}
+
+func (s *Service) projectChainState(ctx context.Context, contract common.Address) (*appstore.ProjectChainState, error) {
+	if s.componentCache != nil {
+		if item, ok, err := s.componentCache.GetChainState(ctx, contract); err != nil {
+			return nil, err
+		} else if ok && item != nil {
+			return item, nil
+		}
+	}
+	store, ok := s.store.(appstore.ProjectChainStateStore)
+	if !ok || store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "project chain state store is not configured")
+	}
+	item, err := store.GetProjectChainState(ctx, contract)
+	if err != nil || item == nil {
+		return item, err
+	}
+	if s.componentCache != nil {
+		if err := s.componentCache.SetChainState(ctx, *item); err != nil {
+			return nil, err
+		}
+	}
+	return item, nil
+}
+
+func (s *Service) projectSimulation(ctx context.Context, contract common.Address) (*appstore.ProjectSimulationResult, error) {
+	if s.componentCache != nil {
+		if item, ok, err := s.componentCache.GetSimulation(ctx, contract); err != nil {
+			return nil, err
+		} else if ok && item != nil {
+			return item, nil
+		}
+	}
+	store, ok := s.store.(appstore.ProjectSimulationStore)
+	if !ok || store == nil {
+		return nil, nil
+	}
+	item, err := store.GetProjectSimulationResult(ctx, contract)
+	if err != nil || item == nil {
+		return item, err
+	}
+	if s.componentCache != nil {
+		if err := s.componentCache.SetSimulation(ctx, *item); err != nil {
+			return nil, err
+		}
+	}
+	return item, nil
+}
+
+func (s *Service) projectAveDetail(ctx context.Context, contract common.Address) (*appstore.ProjectAveDetail, error) {
+	if s.componentCache != nil {
+		if item, ok, err := s.componentCache.GetAveDetail(ctx, contract); err != nil {
+			return nil, err
+		} else if ok && item != nil {
+			return item, nil
+		}
+	}
+	store, ok := s.store.(appstore.ProjectAveDetailStore)
+	if !ok || store == nil {
+		return nil, nil
+	}
+	item, err := store.GetProjectAveDetail(ctx, contract)
+	if err != nil || item == nil {
+		return item, err
+	}
+	if s.componentCache != nil {
+		if err := s.componentCache.SetAveDetail(ctx, contract, *item); err != nil {
+			return nil, err
+		}
+	}
+	return item, nil
+}
+
+func (s *Service) projectGenesisWallets(ctx context.Context, contract common.Address) ([]appstore.ProjectGenesisWallet, error) {
+	if s.componentCache != nil {
+		if items, ok, err := s.componentCache.GetGenesisWallets(ctx, contract); err != nil {
+			return nil, err
+		} else if ok {
+			return items, nil
+		}
+	}
+	store, ok := s.store.(appstore.ProjectGenesisWalletStore)
+	if !ok || store == nil {
+		return nil, nil
+	}
+	items, err := store.ListProjectGenesisWalletsByContract(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	if s.componentCache != nil {
+		if err := s.componentCache.SetGenesisWallets(ctx, contract, items); err != nil {
+			return nil, err
+		}
+	}
+	return items, nil
+}
+
+func (s *Service) projectCreatorHistory(ctx context.Context, contract common.Address) ([]appstore.ProjectCreatorHistoricalProject, error) {
+	if s.componentCache != nil {
+		if items, ok, err := s.componentCache.GetCreatorHistory(ctx, contract); err != nil {
+			return nil, err
+		} else if ok {
+			return items, nil
+		}
+	}
+	store, ok := s.store.(appstore.ProjectCreatorHistoricalProjectStore)
+	if !ok || store == nil {
+		return nil, nil
+	}
+	items, err := store.ListProjectCreatorHistoricalProjectsByContract(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	if s.componentCache != nil {
+		if err := s.componentCache.SetCreatorHistory(ctx, contract, items); err != nil {
+			return nil, err
+		}
+	}
+	return items, nil
 }
 
 func (s *Service) ListProjectEventLogs(ctx context.Context, req *applicationpkg.ListProjectEventLogsRequest) (*applicationpkg.ListProjectEventLogsResponse, error) {

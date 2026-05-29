@@ -12,3 +12,4 @@ type SimulateResult = model.SimulateResult
 type GenesisWalletMeta = model.GenesisWalletMeta
 type ProjectUpdater = appcache.ProjectUpdater
 type ProjectSnapshotCache = appcache.ProjectSnapshotCache
+type ProjectComponentCache = appcache.ProjectComponentCache

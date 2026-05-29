@@ -20,6 +20,7 @@ type ProjectAvePair = model.ProjectAvePair
 type DiscoveredProjectCandidate = model.DiscoveredProjectCandidate
 type ProjectDiscoverySource = model.ProjectDiscoverySource
 type ProjectSnapshotCache = appcache.ProjectSnapshotCache
+type ProjectComponentCache = appcache.ProjectComponentCache
 type ProjectUpdater = appcache.ProjectUpdater
 type ProjectSimulator = simulate.ProjectSimulator
 type PersistenceEventPublisher = persistence.PersistenceEventPublisher

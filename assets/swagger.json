@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-445-g5d8a250-dirty"
+    "version": "v1.0.0-448-ga4d49d9-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -444,6 +444,96 @@
         }
       }
     },
+    "/api/v1/projects/{contract}/ave-detail": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_GetProjectAveDetail",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetProjectAveDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{contract}/base": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_GetProjectBase",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetProjectBaseResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{contract}/chain-state": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_GetProjectChainState",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetProjectChainStateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{contract}/comments": {
       "get": {
         "tags": [
@@ -524,6 +614,36 @@
         }
       }
     },
+    "/api/v1/projects/{contract}/creator-history": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_ListProjectCreatorHistoricalProjects",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListProjectCreatorHistoricalProjectsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{contract}/events": {
       "get": {
         "tags": [
@@ -544,6 +664,96 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationListProjectEventLogsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{contract}/genesis-wallets": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_ListProjectGenesisWallets",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListProjectGenesisWalletsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{contract}/report": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_GetProjectReport",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetProjectReportResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{contract}/simulation": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_GetProjectSimulation",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationGetProjectSimulationResponse"
             }
           },
           "default": {
@@ -1778,6 +1988,30 @@
         }
       }
     },
+    "applicationGetProjectAveDetailResponse": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1AveDetail"
+        }
+      }
+    },
+    "applicationGetProjectBaseResponse": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1ProjectBaseView"
+        }
+      }
+    },
+    "applicationGetProjectChainStateResponse": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1ProjectChainState"
+        }
+      }
+    },
     "applicationGetProjectOptionsResponse": {
       "description": "GetProjectOptionsResponse returns the options.",
       "type": "object",
@@ -1787,12 +2021,28 @@
         }
       }
     },
+    "applicationGetProjectReportResponse": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1ProjectReport"
+        }
+      }
+    },
     "applicationGetProjectResponse": {
       "description": "GetProjectResponse returns the project snapshot for a given contract.",
       "type": "object",
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1ProjectView"
+        }
+      }
+    },
+    "applicationGetProjectSimulationResponse": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1SimulateResult"
         }
       }
     },
@@ -1820,6 +2070,17 @@
         }
       }
     },
+    "applicationListProjectCreatorHistoricalProjectsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "applicationListProjectEventLogsResponse": {
       "description": "ListProjectEventLogsResponse returns event logs for a contract.",
       "type": "object",
@@ -1828,6 +2089,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/applicationProjectEventLog"
+          }
+        }
+      }
+    },
+    "applicationListProjectGenesisWalletsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1GenesisWalletState"
           }
         }
       }
@@ -3112,6 +3384,64 @@
         }
       }
     },
+    "v1alpha1ProjectBaseView": {
+      "type": "object",
+      "properties": {
+        "blockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "blockTime": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "contract": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "creator": {
+          "type": "string"
+        },
+        "txHash": {
+          "type": "string"
+        },
+        "txIndex": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "v1alpha1ProjectChainState": {
+      "type": "object",
+      "properties": {
+        "assetState": {
+          "$ref": "#/definitions/v1alpha1AssetState"
+        },
+        "contract": {
+          "type": "string"
+        },
+        "fetchedAt": {
+          "type": "string"
+        },
+        "genesisWalletAssetStates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1GenesisWalletAssetState"
+          }
+        },
+        "token": {
+          "$ref": "#/definitions/v1alpha1TokenState"
+        },
+        "usdtPair": {
+          "$ref": "#/definitions/v1alpha1PairV2State"
+        },
+        "wethPair": {
+          "$ref": "#/definitions/v1alpha1PairV2State"
+        }
+      }
+    },
     "v1alpha1ProjectListItem": {
       "type": "object",
       "properties": {
@@ -3148,19 +3478,37 @@
         "contract": {
           "type": "string"
         },
+        "creator": {
+          "type": "string"
+        },
         "creatorAssetUsdtValue": {
           "type": "string"
         },
         "hasMintRisk": {
           "type": "boolean"
         },
+        "isBlacklistedBytecode": {
+          "type": "boolean"
+        },
+        "isBlacklistedCreatorWallet": {
+          "type": "boolean"
+        },
+        "isBlacklistedGenesisWallet": {
+          "type": "boolean"
+        },
         "isOpenSource": {
+          "type": "boolean"
+        },
+        "isPolicyEvaluated": {
           "type": "boolean"
         },
         "name": {
           "type": "string"
         },
         "symbol": {
+          "type": "string"
+        },
+        "txHash": {
           "type": "string"
         },
         "txIndex": {
@@ -3268,6 +3616,32 @@
         "wethDecimals": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "v1alpha1ProjectReport": {
+      "type": "object",
+      "properties": {
+        "evaluatedAt": {
+          "type": "string"
+        },
+        "hasMintRisk": {
+          "type": "boolean"
+        },
+        "isBlacklistedBytecode": {
+          "type": "boolean"
+        },
+        "isBlacklistedCreatorWallet": {
+          "type": "boolean"
+        },
+        "isBlacklistedGenesisWallet": {
+          "type": "boolean"
+        },
+        "isPolicyEvaluated": {
+          "type": "boolean"
+        },
+        "updatedAt": {
+          "type": "string"
         }
       }
     },

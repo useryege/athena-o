@@ -256,6 +256,672 @@ func (m *GetProjectResponse) GetItem() *v1alpha1.ProjectView {
 	return nil
 }
 
+type GetProjectBaseRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetProjectBaseRequest) Reset()         { *m = GetProjectBaseRequest{} }
+func (m *GetProjectBaseRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProjectBaseRequest) ProtoMessage()    {}
+func (*GetProjectBaseRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{4}
+}
+func (m *GetProjectBaseRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectBaseRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectBaseRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectBaseRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectBaseRequest.Merge(m, src)
+}
+func (m *GetProjectBaseRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectBaseRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectBaseRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectBaseRequest proto.InternalMessageInfo
+
+func (m *GetProjectBaseRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+type GetProjectBaseResponse struct {
+	Item                 *v1alpha1.ProjectBaseView `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
+}
+
+func (m *GetProjectBaseResponse) Reset()         { *m = GetProjectBaseResponse{} }
+func (m *GetProjectBaseResponse) String() string { return proto.CompactTextString(m) }
+func (*GetProjectBaseResponse) ProtoMessage()    {}
+func (*GetProjectBaseResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{5}
+}
+func (m *GetProjectBaseResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectBaseResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectBaseResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectBaseResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectBaseResponse.Merge(m, src)
+}
+func (m *GetProjectBaseResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectBaseResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectBaseResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectBaseResponse proto.InternalMessageInfo
+
+func (m *GetProjectBaseResponse) GetItem() *v1alpha1.ProjectBaseView {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+type GetProjectReportRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetProjectReportRequest) Reset()         { *m = GetProjectReportRequest{} }
+func (m *GetProjectReportRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProjectReportRequest) ProtoMessage()    {}
+func (*GetProjectReportRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{6}
+}
+func (m *GetProjectReportRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectReportRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectReportRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectReportRequest.Merge(m, src)
+}
+func (m *GetProjectReportRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectReportRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectReportRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectReportRequest proto.InternalMessageInfo
+
+func (m *GetProjectReportRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+type GetProjectReportResponse struct {
+	Item                 *v1alpha1.ProjectReport `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
+	XXX_unrecognized     []byte                  `json:"-"`
+	XXX_sizecache        int32                   `json:"-"`
+}
+
+func (m *GetProjectReportResponse) Reset()         { *m = GetProjectReportResponse{} }
+func (m *GetProjectReportResponse) String() string { return proto.CompactTextString(m) }
+func (*GetProjectReportResponse) ProtoMessage()    {}
+func (*GetProjectReportResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{7}
+}
+func (m *GetProjectReportResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectReportResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectReportResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectReportResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectReportResponse.Merge(m, src)
+}
+func (m *GetProjectReportResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectReportResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectReportResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectReportResponse proto.InternalMessageInfo
+
+func (m *GetProjectReportResponse) GetItem() *v1alpha1.ProjectReport {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+type GetProjectChainStateRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetProjectChainStateRequest) Reset()         { *m = GetProjectChainStateRequest{} }
+func (m *GetProjectChainStateRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProjectChainStateRequest) ProtoMessage()    {}
+func (*GetProjectChainStateRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{8}
+}
+func (m *GetProjectChainStateRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectChainStateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectChainStateRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectChainStateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectChainStateRequest.Merge(m, src)
+}
+func (m *GetProjectChainStateRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectChainStateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectChainStateRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectChainStateRequest proto.InternalMessageInfo
+
+func (m *GetProjectChainStateRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+type GetProjectChainStateResponse struct {
+	Item                 *v1alpha1.ProjectChainState `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *GetProjectChainStateResponse) Reset()         { *m = GetProjectChainStateResponse{} }
+func (m *GetProjectChainStateResponse) String() string { return proto.CompactTextString(m) }
+func (*GetProjectChainStateResponse) ProtoMessage()    {}
+func (*GetProjectChainStateResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{9}
+}
+func (m *GetProjectChainStateResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectChainStateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectChainStateResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectChainStateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectChainStateResponse.Merge(m, src)
+}
+func (m *GetProjectChainStateResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectChainStateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectChainStateResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectChainStateResponse proto.InternalMessageInfo
+
+func (m *GetProjectChainStateResponse) GetItem() *v1alpha1.ProjectChainState {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+type GetProjectSimulationRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetProjectSimulationRequest) Reset()         { *m = GetProjectSimulationRequest{} }
+func (m *GetProjectSimulationRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProjectSimulationRequest) ProtoMessage()    {}
+func (*GetProjectSimulationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{10}
+}
+func (m *GetProjectSimulationRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectSimulationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectSimulationRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectSimulationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectSimulationRequest.Merge(m, src)
+}
+func (m *GetProjectSimulationRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectSimulationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectSimulationRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectSimulationRequest proto.InternalMessageInfo
+
+func (m *GetProjectSimulationRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+type GetProjectSimulationResponse struct {
+	Item                 *v1alpha1.SimulateResult `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
+}
+
+func (m *GetProjectSimulationResponse) Reset()         { *m = GetProjectSimulationResponse{} }
+func (m *GetProjectSimulationResponse) String() string { return proto.CompactTextString(m) }
+func (*GetProjectSimulationResponse) ProtoMessage()    {}
+func (*GetProjectSimulationResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{11}
+}
+func (m *GetProjectSimulationResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectSimulationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectSimulationResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectSimulationResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectSimulationResponse.Merge(m, src)
+}
+func (m *GetProjectSimulationResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectSimulationResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectSimulationResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectSimulationResponse proto.InternalMessageInfo
+
+func (m *GetProjectSimulationResponse) GetItem() *v1alpha1.SimulateResult {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+type GetProjectAveDetailRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetProjectAveDetailRequest) Reset()         { *m = GetProjectAveDetailRequest{} }
+func (m *GetProjectAveDetailRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProjectAveDetailRequest) ProtoMessage()    {}
+func (*GetProjectAveDetailRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{12}
+}
+func (m *GetProjectAveDetailRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectAveDetailRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectAveDetailRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectAveDetailRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectAveDetailRequest.Merge(m, src)
+}
+func (m *GetProjectAveDetailRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectAveDetailRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectAveDetailRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectAveDetailRequest proto.InternalMessageInfo
+
+func (m *GetProjectAveDetailRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+type GetProjectAveDetailResponse struct {
+	Item                 *v1alpha1.AveDetail `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
+}
+
+func (m *GetProjectAveDetailResponse) Reset()         { *m = GetProjectAveDetailResponse{} }
+func (m *GetProjectAveDetailResponse) String() string { return proto.CompactTextString(m) }
+func (*GetProjectAveDetailResponse) ProtoMessage()    {}
+func (*GetProjectAveDetailResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{13}
+}
+func (m *GetProjectAveDetailResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectAveDetailResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectAveDetailResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectAveDetailResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectAveDetailResponse.Merge(m, src)
+}
+func (m *GetProjectAveDetailResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectAveDetailResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectAveDetailResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectAveDetailResponse proto.InternalMessageInfo
+
+func (m *GetProjectAveDetailResponse) GetItem() *v1alpha1.AveDetail {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+type ListProjectGenesisWalletsRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListProjectGenesisWalletsRequest) Reset()         { *m = ListProjectGenesisWalletsRequest{} }
+func (m *ListProjectGenesisWalletsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListProjectGenesisWalletsRequest) ProtoMessage()    {}
+func (*ListProjectGenesisWalletsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{14}
+}
+func (m *ListProjectGenesisWalletsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListProjectGenesisWalletsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListProjectGenesisWalletsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListProjectGenesisWalletsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListProjectGenesisWalletsRequest.Merge(m, src)
+}
+func (m *ListProjectGenesisWalletsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListProjectGenesisWalletsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListProjectGenesisWalletsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListProjectGenesisWalletsRequest proto.InternalMessageInfo
+
+func (m *ListProjectGenesisWalletsRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+type ListProjectGenesisWalletsResponse struct {
+	Items                []*v1alpha1.GenesisWalletState `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
+	XXX_unrecognized     []byte                         `json:"-"`
+	XXX_sizecache        int32                          `json:"-"`
+}
+
+func (m *ListProjectGenesisWalletsResponse) Reset()         { *m = ListProjectGenesisWalletsResponse{} }
+func (m *ListProjectGenesisWalletsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListProjectGenesisWalletsResponse) ProtoMessage()    {}
+func (*ListProjectGenesisWalletsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{15}
+}
+func (m *ListProjectGenesisWalletsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListProjectGenesisWalletsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListProjectGenesisWalletsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListProjectGenesisWalletsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListProjectGenesisWalletsResponse.Merge(m, src)
+}
+func (m *ListProjectGenesisWalletsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListProjectGenesisWalletsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListProjectGenesisWalletsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListProjectGenesisWalletsResponse proto.InternalMessageInfo
+
+func (m *ListProjectGenesisWalletsResponse) GetItems() []*v1alpha1.GenesisWalletState {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+type ListProjectCreatorHistoricalProjectsRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListProjectCreatorHistoricalProjectsRequest) Reset() {
+	*m = ListProjectCreatorHistoricalProjectsRequest{}
+}
+func (m *ListProjectCreatorHistoricalProjectsRequest) String() string {
+	return proto.CompactTextString(m)
+}
+func (*ListProjectCreatorHistoricalProjectsRequest) ProtoMessage() {}
+func (*ListProjectCreatorHistoricalProjectsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{16}
+}
+func (m *ListProjectCreatorHistoricalProjectsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListProjectCreatorHistoricalProjectsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListProjectCreatorHistoricalProjectsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListProjectCreatorHistoricalProjectsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListProjectCreatorHistoricalProjectsRequest.Merge(m, src)
+}
+func (m *ListProjectCreatorHistoricalProjectsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListProjectCreatorHistoricalProjectsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListProjectCreatorHistoricalProjectsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListProjectCreatorHistoricalProjectsRequest proto.InternalMessageInfo
+
+func (m *ListProjectCreatorHistoricalProjectsRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+type ListProjectCreatorHistoricalProjectsResponse struct {
+	Items                []string `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListProjectCreatorHistoricalProjectsResponse) Reset() {
+	*m = ListProjectCreatorHistoricalProjectsResponse{}
+}
+func (m *ListProjectCreatorHistoricalProjectsResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*ListProjectCreatorHistoricalProjectsResponse) ProtoMessage() {}
+func (*ListProjectCreatorHistoricalProjectsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{17}
+}
+func (m *ListProjectCreatorHistoricalProjectsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListProjectCreatorHistoricalProjectsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListProjectCreatorHistoricalProjectsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListProjectCreatorHistoricalProjectsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListProjectCreatorHistoricalProjectsResponse.Merge(m, src)
+}
+func (m *ListProjectCreatorHistoricalProjectsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListProjectCreatorHistoricalProjectsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListProjectCreatorHistoricalProjectsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListProjectCreatorHistoricalProjectsResponse proto.InternalMessageInfo
+
+func (m *ListProjectCreatorHistoricalProjectsResponse) GetItems() []string {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
 // ProjectEventLog is a project event timeline entry.
 type ProjectEventLog struct {
 	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -274,7 +940,7 @@ func (m *ProjectEventLog) Reset()         { *m = ProjectEventLog{} }
 func (m *ProjectEventLog) String() string { return proto.CompactTextString(m) }
 func (*ProjectEventLog) ProtoMessage()    {}
 func (*ProjectEventLog) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{4}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{18}
 }
 func (m *ProjectEventLog) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -364,7 +1030,7 @@ func (m *ListProjectEventLogsRequest) Reset()         { *m = ListProjectEventLog
 func (m *ListProjectEventLogsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListProjectEventLogsRequest) ProtoMessage()    {}
 func (*ListProjectEventLogsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{5}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{19}
 }
 func (m *ListProjectEventLogsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -412,7 +1078,7 @@ func (m *ListProjectEventLogsResponse) Reset()         { *m = ListProjectEventLo
 func (m *ListProjectEventLogsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListProjectEventLogsResponse) ProtoMessage()    {}
 func (*ListProjectEventLogsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{6}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{20}
 }
 func (m *ListProjectEventLogsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -464,7 +1130,7 @@ func (m *ProjectComment) Reset()         { *m = ProjectComment{} }
 func (m *ProjectComment) String() string { return proto.CompactTextString(m) }
 func (*ProjectComment) ProtoMessage()    {}
 func (*ProjectComment) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{7}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{21}
 }
 func (m *ProjectComment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -541,7 +1207,7 @@ func (m *AddProjectCommentRequest) Reset()         { *m = AddProjectCommentReque
 func (m *AddProjectCommentRequest) String() string { return proto.CompactTextString(m) }
 func (*AddProjectCommentRequest) ProtoMessage()    {}
 func (*AddProjectCommentRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{8}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{22}
 }
 func (m *AddProjectCommentRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -596,7 +1262,7 @@ func (m *AddProjectCommentResponse) Reset()         { *m = AddProjectCommentResp
 func (m *AddProjectCommentResponse) String() string { return proto.CompactTextString(m) }
 func (*AddProjectCommentResponse) ProtoMessage()    {}
 func (*AddProjectCommentResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{9}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{23}
 }
 func (m *AddProjectCommentResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -646,7 +1312,7 @@ func (m *ListProjectCommentsRequest) Reset()         { *m = ListProjectCommentsR
 func (m *ListProjectCommentsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListProjectCommentsRequest) ProtoMessage()    {}
 func (*ListProjectCommentsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{10}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{24}
 }
 func (m *ListProjectCommentsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -711,7 +1377,7 @@ func (m *ListProjectCommentsResponse) Reset()         { *m = ListProjectComments
 func (m *ListProjectCommentsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListProjectCommentsResponse) ProtoMessage()    {}
 func (*ListProjectCommentsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{11}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{25}
 }
 func (m *ListProjectCommentsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -779,7 +1445,7 @@ func (m *GetProjectOptionsRequest) Reset()         { *m = GetProjectOptionsReque
 func (m *GetProjectOptionsRequest) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsRequest) ProtoMessage()    {}
 func (*GetProjectOptionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{12}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{26}
 }
 func (m *GetProjectOptionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -820,7 +1486,7 @@ func (m *GetProjectOptionsResponse) Reset()         { *m = GetProjectOptionsResp
 func (m *GetProjectOptionsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsResponse) ProtoMessage()    {}
 func (*GetProjectOptionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{13}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{27}
 }
 func (m *GetProjectOptionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -861,6 +1527,20 @@ func init() {
 	proto.RegisterType((*ListProjectsResponse)(nil), "application.ListProjectsResponse")
 	proto.RegisterType((*GetProjectRequest)(nil), "application.GetProjectRequest")
 	proto.RegisterType((*GetProjectResponse)(nil), "application.GetProjectResponse")
+	proto.RegisterType((*GetProjectBaseRequest)(nil), "application.GetProjectBaseRequest")
+	proto.RegisterType((*GetProjectBaseResponse)(nil), "application.GetProjectBaseResponse")
+	proto.RegisterType((*GetProjectReportRequest)(nil), "application.GetProjectReportRequest")
+	proto.RegisterType((*GetProjectReportResponse)(nil), "application.GetProjectReportResponse")
+	proto.RegisterType((*GetProjectChainStateRequest)(nil), "application.GetProjectChainStateRequest")
+	proto.RegisterType((*GetProjectChainStateResponse)(nil), "application.GetProjectChainStateResponse")
+	proto.RegisterType((*GetProjectSimulationRequest)(nil), "application.GetProjectSimulationRequest")
+	proto.RegisterType((*GetProjectSimulationResponse)(nil), "application.GetProjectSimulationResponse")
+	proto.RegisterType((*GetProjectAveDetailRequest)(nil), "application.GetProjectAveDetailRequest")
+	proto.RegisterType((*GetProjectAveDetailResponse)(nil), "application.GetProjectAveDetailResponse")
+	proto.RegisterType((*ListProjectGenesisWalletsRequest)(nil), "application.ListProjectGenesisWalletsRequest")
+	proto.RegisterType((*ListProjectGenesisWalletsResponse)(nil), "application.ListProjectGenesisWalletsResponse")
+	proto.RegisterType((*ListProjectCreatorHistoricalProjectsRequest)(nil), "application.ListProjectCreatorHistoricalProjectsRequest")
+	proto.RegisterType((*ListProjectCreatorHistoricalProjectsResponse)(nil), "application.ListProjectCreatorHistoricalProjectsResponse")
 	proto.RegisterType((*ProjectEventLog)(nil), "application.ProjectEventLog")
 	proto.RegisterType((*ListProjectEventLogsRequest)(nil), "application.ListProjectEventLogsRequest")
 	proto.RegisterType((*ListProjectEventLogsResponse)(nil), "application.ListProjectEventLogsResponse")
@@ -878,61 +1558,86 @@ func init() {
 }
 
 var fileDescriptor_dbb8cd1a14781c7f = []byte{
-	// 852 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0x5f, 0x6f, 0xe3, 0x44,
-	0x10, 0x97, 0x93, 0xa6, 0x6d, 0x26, 0xe8, 0xe0, 0x96, 0x93, 0x70, 0xdd, 0x5e, 0x5a, 0xcc, 0x71,
-	0xe4, 0x2a, 0x6a, 0x2b, 0x81, 0x17, 0x78, 0x4b, 0x51, 0x55, 0x2a, 0x55, 0xa2, 0x72, 0x11, 0x12,
-	0xbc, 0x54, 0x5b, 0x67, 0xe4, 0x98, 0xc6, 0x5e, 0x63, 0x6f, 0x82, 0x02, 0x82, 0x07, 0xf8, 0x04,
-	0xa8, 0x52, 0xf9, 0x34, 0xbc, 0x22, 0x1e, 0x2b, 0xf1, 0x05, 0x50, 0xc5, 0x07, 0x41, 0x5e, 0xaf,
-	0x13, 0xaf, 0x1b, 0xa7, 0x41, 0xbd, 0xa7, 0x64, 0xfe, 0xec, 0xcc, 0x6f, 0x7e, 0x3b, 0x33, 0x5e,
-	0x38, 0xf0, 0x43, 0x8e, 0x71, 0x48, 0x47, 0x76, 0x82, 0xf1, 0x04, 0x63, 0x9b, 0x46, 0xd1, 0xc8,
-	0x77, 0x29, 0xf7, 0x59, 0x58, 0xfc, 0x6f, 0x45, 0x31, 0xe3, 0x8c, 0xb4, 0x0a, 0x2a, 0xe3, 0x73,
-	0xcf, 0xe7, 0xc3, 0xf1, 0xa5, 0xe5, 0xb2, 0xc0, 0x1e, 0x27, 0x18, 0x4f, 0xd1, 0x43, 0x9b, 0xf2,
-	0x21, 0x86, 0xd4, 0x8e, 0xae, 0x3c, 0x9b, 0x46, 0x7e, 0xa2, 0xc4, 0x9b, 0x74, 0xe9, 0x28, 0x1a,
-	0xd2, 0xae, 0xed, 0x61, 0x88, 0x31, 0xe5, 0x38, 0xc8, 0xc2, 0x1a, 0x3b, 0x1e, 0x63, 0xde, 0x08,
-	0xd3, 0x13, 0x36, 0x0d, 0x43, 0xc6, 0x85, 0x7f, 0x92, 0x59, 0xcd, 0x23, 0x78, 0xfb, 0xd4, 0x4f,
-	0xf8, 0x59, 0xcc, 0xbe, 0x45, 0x97, 0x27, 0x0e, 0x7e, 0x37, 0xc6, 0x84, 0x13, 0x02, 0x6b, 0x11,
-	0xf5, 0x50, 0xd7, 0xf6, 0xb4, 0x4e, 0xc3, 0x11, 0xff, 0x89, 0x01, 0x9b, 0xe9, 0xef, 0xb9, 0xff,
-	0x03, 0xea, 0x35, 0xa1, 0x9f, 0xc9, 0xe6, 0x1f, 0x1a, 0x3c, 0x53, 0xe3, 0x24, 0x11, 0x0b, 0x13,
-	0x24, 0x17, 0xd0, 0xf0, 0x39, 0x06, 0x89, 0xae, 0xed, 0xd5, 0x3b, 0xad, 0xde, 0x89, 0x35, 0xaf,
-	0xcb, 0xca, 0xeb, 0xb2, 0xb2, 0xba, 0xac, 0xe8, 0xca, 0xb3, 0xd2, 0xba, 0xac, 0x22, 0x37, 0x79,
-	0x5d, 0x96, 0x0c, 0x9d, 0x66, 0x39, 0xe1, 0x18, 0x38, 0x59, 0x5c, 0xf2, 0x0c, 0x1a, 0x9c, 0x71,
-	0x3a, 0x12, 0x90, 0xea, 0x4e, 0x26, 0xcc, 0xf0, 0xd7, 0x2b, 0xf0, 0xaf, 0x95, 0xf0, 0xdb, 0xf0,
-	0xf4, 0x18, 0x73, 0xf4, 0x39, 0x09, 0x06, 0x6c, 0xba, 0x2c, 0xe4, 0x31, 0x75, 0xb9, 0x20, 0xa2,
-	0xe9, 0xcc, 0x64, 0x93, 0x01, 0x29, 0x1e, 0x90, 0xd5, 0x7e, 0x0d, 0x6b, 0x29, 0x2a, 0xe1, 0xdd,
-	0xea, 0x1d, 0x3d, 0xba, 0xd8, 0xaf, 0x7c, 0xfc, 0xde, 0x11, 0x21, 0xcd, 0x5b, 0x0d, 0xde, 0x94,
-	0xda, 0xa3, 0x09, 0x86, 0xfc, 0x94, 0x79, 0xe4, 0x09, 0xd4, 0xfc, 0x81, 0x48, 0x56, 0x77, 0x6a,
-	0xfe, 0x40, 0x01, 0x5c, 0x53, 0x01, 0x93, 0xe7, 0x00, 0x98, 0x9e, 0xbb, 0xe0, 0xd3, 0x28, 0xe7,
-	0xa5, 0x29, 0x34, 0x5f, 0x4e, 0x23, 0x24, 0xbb, 0xd0, 0x62, 0xae, 0x3b, 0x8e, 0x63, 0x1c, 0x5c,
-	0x50, 0x2e, 0xf8, 0x69, 0x3a, 0x90, 0xab, 0xfa, 0x9c, 0xe8, 0xb0, 0x11, 0x60, 0x92, 0xa4, 0xa4,
-	0x36, 0x84, 0x31, 0x17, 0x53, 0x4b, 0x44, 0xa7, 0x23, 0x46, 0x07, 0xfa, 0x7a, 0x66, 0x91, 0x62,
-	0x9a, 0xd3, 0x8d, 0x31, 0xed, 0xc5, 0x34, 0xe6, 0x86, 0x30, 0x36, 0xa5, 0xa6, 0xcf, 0xcd, 0x4f,
-	0x60, 0xbb, 0xd0, 0x33, 0x79, 0x55, 0xc9, 0x2a, 0xf4, 0x3b, 0xb0, 0xb3, 0xf8, 0xa8, 0xbc, 0x88,
-	0x9e, 0xda, 0x76, 0x3b, 0x0a, 0xcb, 0xa5, 0x53, 0xb2, 0x93, 0xcc, 0xdf, 0x34, 0x78, 0x22, 0x4d,
-	0x9f, 0xb1, 0x20, 0xc0, 0x90, 0xff, 0x2f, 0x82, 0x0d, 0xd8, 0x4c, 0xef, 0x38, 0xa4, 0x41, 0x46,
-	0x6f, 0xd3, 0x99, 0xc9, 0x29, 0x45, 0xa9, 0x1f, 0x86, 0x39, 0xb3, 0xb9, 0x58, 0xa2, 0xa8, 0x51,
-	0xa6, 0xe8, 0x0c, 0xf4, 0xfe, 0x60, 0xa0, 0xa2, 0x5a, 0x81, 0x9f, 0x62, 0xc2, 0x9a, 0x92, 0xd0,
-	0x3c, 0x85, 0xad, 0x05, 0x11, 0x25, 0x6d, 0xb6, 0xd2, 0xbf, 0xdb, 0x8b, 0x58, 0xcb, 0x8f, 0x64,
-	0x5d, 0x39, 0x04, 0xa3, 0x70, 0x0f, 0xd2, 0xb6, 0xca, 0x0d, 0xce, 0x26, 0xb4, 0x56, 0x31, 0xa1,
-	0xf5, 0xd2, 0x84, 0xde, 0x68, 0x4a, 0xb7, 0xcc, 0x53, 0x49, 0xe8, 0x5d, 0xf5, 0xc6, 0x97, 0x62,
-	0x7f, 0xad, 0xab, 0xc3, 0x00, 0x7d, 0xbe, 0x09, 0xbe, 0x88, 0xc4, 0x72, 0x95, 0x04, 0x98, 0x3f,
-	0xc3, 0xd6, 0x02, 0x9b, 0x44, 0x4c, 0x61, 0x83, 0x65, 0x2a, 0xc9, 0xf7, 0xf1, 0xa3, 0xf7, 0x45,
-	0x96, 0xc2, 0xc9, 0xe3, 0xf6, 0xfe, 0x5c, 0x07, 0xd2, 0x9f, 0xfb, 0x9f, 0x63, 0x3c, 0xf1, 0x5d,
-	0x24, 0x01, 0xbc, 0x51, 0x5c, 0xd6, 0x64, 0x4f, 0x09, 0xba, 0xe0, 0x7b, 0x60, 0xbc, 0xbb, 0xc4,
-	0x23, 0x2b, 0xc7, 0xd4, 0x7f, 0xf9, 0xfb, 0xdf, 0xeb, 0x1a, 0x21, 0x6f, 0x89, 0x2f, 0xcd, 0xa4,
-	0x6b, 0x47, 0x79, 0xf8, 0x18, 0x60, 0xce, 0x02, 0x69, 0x2b, 0xa1, 0xee, 0x6d, 0x5d, 0x63, 0xb7,
-	0xd2, 0x2e, 0x13, 0xbd, 0x27, 0x12, 0x3d, 0x27, 0xdb, 0xe5, 0x44, 0xf6, 0x8f, 0x79, 0x77, 0xfd,
-	0x44, 0x7e, 0x57, 0x3f, 0x48, 0xb3, 0x0d, 0x41, 0x3a, 0x55, 0x95, 0x94, 0xf7, 0x8f, 0xf1, 0x6a,
-	0x05, 0x4f, 0x09, 0x69, 0x5f, 0x40, 0x7a, 0x41, 0xcc, 0x25, 0x90, 0x6c, 0xb1, 0x6c, 0x13, 0x72,
-	0xad, 0xc1, 0xd3, 0x7b, 0x13, 0x48, 0xde, 0x57, 0x92, 0x55, 0xcd, 0xbc, 0xf1, 0xf2, 0x21, 0x37,
-	0x09, 0xc8, 0x16, 0x80, 0x5e, 0x99, 0x2f, 0x96, 0x01, 0x72, 0xe5, 0x0c, 0x7d, 0xaa, 0xed, 0x93,
-	0x1b, 0x4d, 0x79, 0x08, 0xe4, 0xe3, 0x45, 0x3e, 0xa8, 0x22, 0xa1, 0x34, 0xeb, 0x46, 0xe7, 0x61,
-	0x47, 0x89, 0xed, 0x43, 0x81, 0xed, 0x25, 0x59, 0x09, 0x1b, 0xf9, 0x55, 0x2b, 0x7e, 0x9a, 0xe5,
-	0x0c, 0x95, 0xe8, 0xaa, 0x9a, 0xbf, 0x12, 0x5d, 0x95, 0xa3, 0x68, 0xee, 0x0a, 0x48, 0x5b, 0xe4,
-	0x9d, 0x12, 0xa4, 0x03, 0x39, 0x48, 0x87, 0x87, 0x7f, 0xdd, 0xb5, 0xb5, 0xdb, 0xbb, 0xb6, 0xf6,
-	0xcf, 0x5d, 0x5b, 0xfb, 0xe6, 0xe3, 0x87, 0x1f, 0x67, 0xee, 0xc8, 0xc7, 0x90, 0x17, 0x5f, 0x68,
-	0x97, 0xeb, 0xe2, 0xc5, 0xf5, 0xd1, 0x7f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x60, 0x6c, 0x36, 0x4d,
-	0x17, 0x0a, 0x00, 0x00,
+	// 1264 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x98, 0x4d, 0x4f, 0xdc, 0x46,
+	0x18, 0xc7, 0xe5, 0x25, 0x24, 0xd9, 0x87, 0x8a, 0x84, 0x09, 0x6d, 0x16, 0x43, 0x80, 0x38, 0x94,
+	0x6c, 0x5e, 0xd6, 0x16, 0xd0, 0x4a, 0x49, 0x0f, 0x95, 0x80, 0x20, 0x40, 0x45, 0x6a, 0x64, 0xaa,
+	0x46, 0x7d, 0x13, 0x1a, 0xbc, 0xa3, 0x5d, 0x37, 0x5e, 0xdb, 0xb5, 0x67, 0x17, 0xd1, 0x57, 0xa9,
+	0x3d, 0xf4, 0xd0, 0x53, 0x15, 0x29, 0xad, 0xd4, 0x7e, 0x87, 0x1e, 0x7b, 0xea, 0xbd, 0x47, 0xa4,
+	0x7e, 0x81, 0x0a, 0xf5, 0x83, 0x54, 0x1e, 0x8f, 0xd7, 0x33, 0xde, 0xb5, 0xd7, 0x40, 0x4e, 0xec,
+	0x78, 0x9e, 0x97, 0xdf, 0xf3, 0x78, 0x5e, 0xfe, 0x18, 0x1a, 0xb6, 0x4b, 0x49, 0xe0, 0x62, 0xc7,
+	0x08, 0x49, 0xd0, 0x23, 0x81, 0x81, 0x7d, 0xdf, 0xb1, 0x2d, 0x4c, 0x6d, 0xcf, 0x15, 0x7f, 0xeb,
+	0x7e, 0xe0, 0x51, 0x0f, 0x4d, 0x08, 0x8f, 0xd4, 0x9d, 0x96, 0x4d, 0xdb, 0xdd, 0x43, 0xdd, 0xf2,
+	0x3a, 0x46, 0x37, 0x24, 0xc1, 0x31, 0x69, 0x11, 0x03, 0xd3, 0x36, 0x71, 0xb1, 0xe1, 0x3f, 0x6f,
+	0x19, 0xd8, 0xb7, 0x43, 0x29, 0x5e, 0x6f, 0x05, 0x3b, 0x7e, 0x1b, 0xaf, 0x18, 0x2d, 0xe2, 0x92,
+	0x00, 0x53, 0xd2, 0x8c, 0xc3, 0xaa, 0x73, 0x2d, 0xcf, 0x6b, 0x39, 0x24, 0xf2, 0x30, 0xb0, 0xeb,
+	0x7a, 0x94, 0xd9, 0x87, 0xf1, 0xac, 0xb6, 0x05, 0x37, 0xf6, 0xec, 0x90, 0x3e, 0x0d, 0xbc, 0xcf,
+	0x89, 0x45, 0x43, 0x93, 0x7c, 0xd1, 0x25, 0x21, 0x45, 0x08, 0x2e, 0xf9, 0xb8, 0x45, 0x6a, 0xca,
+	0xa2, 0x52, 0x1f, 0x37, 0xd9, 0x6f, 0xa4, 0xc2, 0xd5, 0xe8, 0xef, 0xbe, 0xfd, 0x25, 0xa9, 0x55,
+	0xd8, 0xf3, 0xfe, 0x58, 0xfb, 0x4b, 0x81, 0x69, 0x39, 0x4e, 0xe8, 0x7b, 0x6e, 0x48, 0xd0, 0x01,
+	0x8c, 0xdb, 0x94, 0x74, 0xc2, 0x9a, 0xb2, 0x38, 0x56, 0x9f, 0x58, 0xdd, 0xd5, 0xd3, 0xba, 0xf4,
+	0xa4, 0x2e, 0x3d, 0xae, 0x4b, 0xf7, 0x9f, 0xb7, 0xf4, 0xa8, 0x2e, 0x5d, 0xec, 0x4d, 0x52, 0x97,
+	0xce, 0x43, 0x47, 0x59, 0x76, 0x29, 0xe9, 0x98, 0x71, 0x5c, 0x34, 0x0d, 0xe3, 0xd4, 0xa3, 0xd8,
+	0x61, 0x48, 0x63, 0x66, 0x3c, 0xe8, 0xf3, 0x8f, 0xe5, 0xf0, 0x5f, 0xca, 0xf0, 0x1b, 0x30, 0xb5,
+	0x4d, 0x12, 0xfa, 0xa4, 0x09, 0x2a, 0x5c, 0xb5, 0x3c, 0x97, 0x06, 0xd8, 0xa2, 0xac, 0x11, 0x55,
+	0xb3, 0x3f, 0xd6, 0x3c, 0x40, 0xa2, 0x03, 0xaf, 0xf6, 0x23, 0xb8, 0x14, 0x51, 0x31, 0xeb, 0x89,
+	0xd5, 0xad, 0x0b, 0x17, 0xfb, 0xa1, 0x4d, 0x8e, 0x4c, 0x16, 0x52, 0x5b, 0x83, 0xd7, 0xd3, 0x84,
+	0x1b, 0x38, 0x24, 0x65, 0x28, 0x8f, 0xe0, 0x8d, 0xac, 0x13, 0x27, 0xfd, 0x4c, 0x22, 0xbd, 0xf8,
+	0x6b, 0x89, 0x82, 0x0b, 0xb4, 0x6f, 0xc3, 0x4d, 0xb1, 0x3d, 0xbe, 0x17, 0xd0, 0x72, 0xbc, 0xb5,
+	0x41, 0x37, 0x4e, 0xfc, 0x89, 0x44, 0xbc, 0x7d, 0x61, 0x62, 0x1e, 0x3e, 0xe6, 0x7d, 0x0c, 0xb3,
+	0x69, 0xe2, 0xcd, 0x36, 0xb6, 0xdd, 0x7d, 0x8a, 0x69, 0xa9, 0x1e, 0x7f, 0x07, 0x73, 0xc3, 0x5d,
+	0xfb, 0x3b, 0x40, 0xe4, 0x7e, 0xef, 0xc2, 0xdc, 0x42, 0x8a, 0x21, 0xec, 0xfb, 0x76, 0xa7, 0xeb,
+	0x30, 0xc7, 0x32, 0xec, 0x5f, 0x8b, 0xec, 0xa2, 0x2b, 0x67, 0xff, 0x54, 0x62, 0xdf, 0x39, 0x3f,
+	0x3b, 0x8f, 0x1d, 0x75, 0xa5, 0xeb, 0x24, 0x4d, 0x7f, 0x04, 0x6a, 0x9a, 0x7d, 0xbd, 0x47, 0x9e,
+	0x10, 0x8a, 0x6d, 0xa7, 0x0c, 0x77, 0x4f, 0x2c, 0x59, 0xf0, 0xe4, 0xd8, 0xcf, 0x24, 0xec, 0xcd,
+	0xf3, 0x63, 0xa7, 0xa1, 0x63, 0xe2, 0x77, 0x61, 0x51, 0x38, 0xe5, 0xb6, 0x89, 0x4b, 0x42, 0x3b,
+	0x7c, 0x86, 0x1d, 0x87, 0xa4, 0x47, 0x67, 0x11, 0xf7, 0x8f, 0x0a, 0xdc, 0x2e, 0x08, 0xc0, 0xf1,
+	0x0f, 0xe5, 0x33, 0x73, 0xef, 0xfc, 0xfc, 0x52, 0x82, 0x78, 0xcd, 0xc4, 0xa1, 0xb5, 0x5d, 0x78,
+	0x20, 0x80, 0x6c, 0x06, 0x04, 0x53, 0x2f, 0xd8, 0xb1, 0x43, 0xea, 0x05, 0xb6, 0x85, 0x9d, 0xec,
+	0x7d, 0x50, 0x54, 0xd4, 0x13, 0x78, 0x58, 0x2e, 0x14, 0x2f, 0x6f, 0x5a, 0x2c, 0xaf, 0x9a, 0x00,
+	0x9d, 0x28, 0x70, 0x8d, 0x9b, 0x6e, 0xf5, 0x88, 0x4b, 0xf7, 0xbc, 0x16, 0x9a, 0x84, 0x8a, 0xdd,
+	0x64, 0xf9, 0xc6, 0xcc, 0x8a, 0xdd, 0x94, 0x28, 0x2a, 0x32, 0x05, 0xba, 0x05, 0x40, 0x22, 0xbf,
+	0x03, 0x7a, 0xec, 0x27, 0xe7, 0x7e, 0x95, 0x3d, 0xf9, 0xe0, 0xd8, 0x27, 0x68, 0x01, 0x26, 0x3c,
+	0xcb, 0xea, 0x06, 0x01, 0x69, 0x1e, 0x60, 0xca, 0xce, 0xff, 0xaa, 0x09, 0xc9, 0xa3, 0x75, 0x8a,
+	0x6a, 0x70, 0xa5, 0x43, 0xc2, 0x30, 0xba, 0x34, 0xc6, 0xd9, 0x64, 0x32, 0x8c, 0x66, 0x7c, 0x7c,
+	0xec, 0x78, 0xb8, 0x59, 0xbb, 0x1c, 0xcf, 0xf0, 0x61, 0x94, 0xd3, 0x8a, 0xca, 0x8d, 0x63, 0x5e,
+	0x61, 0x93, 0x55, 0xfe, 0x64, 0x9d, 0x46, 0x1b, 0x53, 0x68, 0x4c, 0x52, 0x55, 0xa9, 0x9e, 0x9a,
+	0x30, 0x37, 0xdc, 0x95, 0xf7, 0x70, 0x55, 0x5e, 0x22, 0x73, 0xd2, 0xeb, 0xcf, 0x78, 0x25, 0x1d,
+	0xfe, 0x59, 0x81, 0xc9, 0xe4, 0x25, 0x79, 0x9d, 0x0e, 0x71, 0xe9, 0x99, 0x1a, 0xac, 0xc2, 0xd5,
+	0x68, 0xf1, 0xb9, 0xb8, 0x13, 0xb7, 0xb7, 0x6a, 0xf6, 0xc7, 0x51, 0x8b, 0x22, 0x3b, 0xe2, 0x26,
+	0x9d, 0x4d, 0x86, 0x99, 0x16, 0x8d, 0x67, 0x5b, 0xf4, 0x14, 0x6a, 0xeb, 0xcd, 0xa6, 0x4c, 0x55,
+	0xa2, 0x3f, 0x62, 0xc2, 0x8a, 0x94, 0x50, 0xdb, 0x83, 0x99, 0x21, 0x11, 0x79, 0xdb, 0x0c, 0xe9,
+	0x60, 0x98, 0x1d, 0xd6, 0xb5, 0xc4, 0x25, 0xde, 0xf0, 0x6d, 0x50, 0xc5, 0xb5, 0x1d, 0xcf, 0x95,
+	0x79, 0x83, 0x7d, 0x05, 0x52, 0xc9, 0x51, 0x20, 0x63, 0x19, 0x05, 0xf2, 0x52, 0x91, 0x56, 0x4b,
+	0x9a, 0x8a, 0xa3, 0xaf, 0xc8, 0x6f, 0xbc, 0x90, 0xfd, 0x95, 0x4a, 0x23, 0x55, 0xbc, 0x93, 0xdf,
+	0xf7, 0x99, 0x78, 0xe4, 0x0d, 0xd0, 0xbe, 0x85, 0x99, 0x21, 0x73, 0x9c, 0x18, 0xc3, 0x15, 0x2f,
+	0x7e, 0xf4, 0xca, 0xee, 0xec, 0x38, 0x85, 0x99, 0xc4, 0x5d, 0xfd, 0xf3, 0x1a, 0xa0, 0xf5, 0xd4,
+	0x7e, 0x9f, 0x04, 0x3d, 0xdb, 0x22, 0xa8, 0x03, 0xaf, 0x89, 0x62, 0x14, 0x2d, 0x4a, 0x41, 0x87,
+	0xe8, 0x5d, 0xf5, 0x76, 0x81, 0x45, 0x5c, 0x8e, 0x56, 0xfb, 0xfe, 0x9f, 0xff, 0x5e, 0x54, 0x10,
+	0xba, 0xce, 0x94, 0x74, 0x6f, 0xc5, 0xf0, 0x93, 0xf0, 0x01, 0x40, 0xda, 0x05, 0x34, 0x2f, 0x85,
+	0x1a, 0x50, 0x95, 0xea, 0x42, 0xee, 0x3c, 0x4f, 0x74, 0x87, 0x25, 0xba, 0x85, 0x66, 0xb3, 0x89,
+	0x8c, 0xaf, 0x92, 0xd5, 0xf5, 0x0d, 0xfa, 0x41, 0x81, 0x49, 0x59, 0xda, 0x21, 0x2d, 0x27, 0xb0,
+	0x20, 0x16, 0xd5, 0x3b, 0x85, 0x36, 0x1c, 0xa0, 0xce, 0x00, 0x34, 0xb4, 0x58, 0x00, 0x60, 0x1c,
+	0x46, 0x29, 0x7f, 0x52, 0xe0, 0x7a, 0x56, 0xb0, 0xa1, 0xa5, 0xdc, 0x02, 0x05, 0x19, 0xa8, 0xbe,
+	0x39, 0xc2, 0x8a, 0xb3, 0xdc, 0x67, 0x2c, 0x4b, 0x48, 0x2b, 0x62, 0x09, 0xe2, 0xc4, 0xbf, 0x2b,
+	0x30, 0x3d, 0x4c, 0x8a, 0xa1, 0x7a, 0x4e, 0xae, 0x01, 0xa1, 0xa7, 0xde, 0x2b, 0x61, 0xc9, 0xc9,
+	0x0c, 0x46, 0x76, 0x0f, 0xdd, 0x2d, 0x22, 0xb3, 0x22, 0xbf, 0x46, 0xc8, 0x28, 0x7e, 0x93, 0xf0,
+	0x52, 0xb5, 0x95, 0x8b, 0x37, 0xa0, 0xe5, 0x72, 0xf1, 0x06, 0xa5, 0x9b, 0xa6, 0x33, 0xbc, 0x3a,
+	0x5a, 0x2e, 0xc2, 0x0b, 0x53, 0x88, 0x5f, 0x15, 0xb8, 0x31, 0x44, 0x53, 0xa1, 0xbb, 0x39, 0x29,
+	0xb3, 0x7a, 0x4d, 0xad, 0x8f, 0x36, 0x3c, 0x0b, 0x1a, 0xee, 0x91, 0x46, 0x33, 0x46, 0xf8, 0x43,
+	0x81, 0x99, 0x5c, 0xd5, 0x84, 0x1a, 0x79, 0x5b, 0x77, 0xa8, 0x3c, 0x53, 0xf5, 0xb2, 0xe6, 0x1c,
+	0x76, 0x8d, 0xc1, 0x36, 0xd0, 0x83, 0x22, 0xd8, 0x56, 0xec, 0xdb, 0x38, 0xe2, 0x4c, 0x27, 0x0a,
+	0x2c, 0x95, 0xd1, 0x44, 0xe8, 0x51, 0x1e, 0xcd, 0x28, 0x45, 0xa6, 0x3e, 0x3e, 0x87, 0xe7, 0x59,
+	0x4a, 0xb2, 0xe2, 0x30, 0x8d, 0x36, 0x8b, 0x73, 0x8c, 0x7e, 0x91, 0xff, 0xc3, 0xef, 0x4b, 0x92,
+	0xcc, 0xea, 0x2d, 0x10, 0x3c, 0x99, 0xd5, 0x5b, 0xa4, 0x6f, 0xca, 0x6d, 0x7b, 0xa6, 0xee, 0x42,
+	0xf4, 0x42, 0x81, 0xa9, 0x81, 0x2b, 0x1f, 0xc9, 0xe7, 0x4b, 0x9e, 0xc8, 0x50, 0x97, 0x47, 0x99,
+	0xc9, 0xbb, 0x5d, 0x5b, 0x2a, 0xec, 0x19, 0xbf, 0xb4, 0xdf, 0x51, 0xee, 0xa3, 0x97, 0x8a, 0xf4,
+	0x65, 0x25, 0xb9, 0xcf, 0x33, 0xfb, 0x29, 0x5f, 0x5c, 0xa8, 0xf5, 0xd1, 0x86, 0x9c, 0xed, 0x21,
+	0x63, 0x5b, 0x46, 0xa5, 0xd8, 0xa2, 0x9b, 0x63, 0x6a, 0xe0, 0xd2, 0x46, 0x79, 0xc7, 0xb1, 0x7c,
+	0xe1, 0x67, 0xda, 0x95, 0x7b, 0xf7, 0x6b, 0x0b, 0x0c, 0x69, 0x06, 0xdd, 0xcc, 0x20, 0x35, 0xf8,
+	0xcd, 0xbd, 0xb1, 0xf1, 0xf7, 0xe9, 0xbc, 0x72, 0x72, 0x3a, 0xaf, 0xfc, 0x7b, 0x3a, 0xaf, 0x7c,
+	0xfc, 0xd6, 0xe8, 0xaf, 0x5d, 0x96, 0x63, 0x13, 0x97, 0x8a, 0x9f, 0xbc, 0x0e, 0x2f, 0xb3, 0x4f,
+	0x58, 0x6b, 0xff, 0x07, 0x00, 0x00, 0xff, 0xff, 0x21, 0xcb, 0x25, 0x40, 0x68, 0x13, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -951,6 +1656,13 @@ type ApplicationServiceClient interface {
 	ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error)
 	// GetProject returns the project snapshot for a given contract.
 	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
+	GetProjectBase(ctx context.Context, in *GetProjectBaseRequest, opts ...grpc.CallOption) (*GetProjectBaseResponse, error)
+	GetProjectReport(ctx context.Context, in *GetProjectReportRequest, opts ...grpc.CallOption) (*GetProjectReportResponse, error)
+	GetProjectChainState(ctx context.Context, in *GetProjectChainStateRequest, opts ...grpc.CallOption) (*GetProjectChainStateResponse, error)
+	GetProjectSimulation(ctx context.Context, in *GetProjectSimulationRequest, opts ...grpc.CallOption) (*GetProjectSimulationResponse, error)
+	GetProjectAveDetail(ctx context.Context, in *GetProjectAveDetailRequest, opts ...grpc.CallOption) (*GetProjectAveDetailResponse, error)
+	ListProjectGenesisWallets(ctx context.Context, in *ListProjectGenesisWalletsRequest, opts ...grpc.CallOption) (*ListProjectGenesisWalletsResponse, error)
+	ListProjectCreatorHistoricalProjects(ctx context.Context, in *ListProjectCreatorHistoricalProjectsRequest, opts ...grpc.CallOption) (*ListProjectCreatorHistoricalProjectsResponse, error)
 	// ListProjectEventLogs returns event logs for a given contract.
 	ListProjectEventLogs(ctx context.Context, in *ListProjectEventLogsRequest, opts ...grpc.CallOption) (*ListProjectEventLogsResponse, error)
 	// AddProjectComment creates a project comment.
@@ -981,6 +1693,69 @@ func (c *applicationServiceClient) ListProjects(ctx context.Context, in *ListPro
 func (c *applicationServiceClient) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error) {
 	out := new(GetProjectResponse)
 	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProject", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) GetProjectBase(ctx context.Context, in *GetProjectBaseRequest, opts ...grpc.CallOption) (*GetProjectBaseResponse, error) {
+	out := new(GetProjectBaseResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProjectBase", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) GetProjectReport(ctx context.Context, in *GetProjectReportRequest, opts ...grpc.CallOption) (*GetProjectReportResponse, error) {
+	out := new(GetProjectReportResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProjectReport", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) GetProjectChainState(ctx context.Context, in *GetProjectChainStateRequest, opts ...grpc.CallOption) (*GetProjectChainStateResponse, error) {
+	out := new(GetProjectChainStateResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProjectChainState", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) GetProjectSimulation(ctx context.Context, in *GetProjectSimulationRequest, opts ...grpc.CallOption) (*GetProjectSimulationResponse, error) {
+	out := new(GetProjectSimulationResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProjectSimulation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) GetProjectAveDetail(ctx context.Context, in *GetProjectAveDetailRequest, opts ...grpc.CallOption) (*GetProjectAveDetailResponse, error) {
+	out := new(GetProjectAveDetailResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProjectAveDetail", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) ListProjectGenesisWallets(ctx context.Context, in *ListProjectGenesisWalletsRequest, opts ...grpc.CallOption) (*ListProjectGenesisWalletsResponse, error) {
+	out := new(ListProjectGenesisWalletsResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/ListProjectGenesisWallets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) ListProjectCreatorHistoricalProjects(ctx context.Context, in *ListProjectCreatorHistoricalProjectsRequest, opts ...grpc.CallOption) (*ListProjectCreatorHistoricalProjectsResponse, error) {
+	out := new(ListProjectCreatorHistoricalProjectsResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/ListProjectCreatorHistoricalProjects", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1029,6 +1804,13 @@ type ApplicationServiceServer interface {
 	ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error)
 	// GetProject returns the project snapshot for a given contract.
 	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
+	GetProjectBase(context.Context, *GetProjectBaseRequest) (*GetProjectBaseResponse, error)
+	GetProjectReport(context.Context, *GetProjectReportRequest) (*GetProjectReportResponse, error)
+	GetProjectChainState(context.Context, *GetProjectChainStateRequest) (*GetProjectChainStateResponse, error)
+	GetProjectSimulation(context.Context, *GetProjectSimulationRequest) (*GetProjectSimulationResponse, error)
+	GetProjectAveDetail(context.Context, *GetProjectAveDetailRequest) (*GetProjectAveDetailResponse, error)
+	ListProjectGenesisWallets(context.Context, *ListProjectGenesisWalletsRequest) (*ListProjectGenesisWalletsResponse, error)
+	ListProjectCreatorHistoricalProjects(context.Context, *ListProjectCreatorHistoricalProjectsRequest) (*ListProjectCreatorHistoricalProjectsResponse, error)
 	// ListProjectEventLogs returns event logs for a given contract.
 	ListProjectEventLogs(context.Context, *ListProjectEventLogsRequest) (*ListProjectEventLogsResponse, error)
 	// AddProjectComment creates a project comment.
@@ -1048,6 +1830,27 @@ func (*UnimplementedApplicationServiceServer) ListProjects(ctx context.Context, 
 }
 func (*UnimplementedApplicationServiceServer) GetProject(ctx context.Context, req *GetProjectRequest) (*GetProjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProject not implemented")
+}
+func (*UnimplementedApplicationServiceServer) GetProjectBase(ctx context.Context, req *GetProjectBaseRequest) (*GetProjectBaseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectBase not implemented")
+}
+func (*UnimplementedApplicationServiceServer) GetProjectReport(ctx context.Context, req *GetProjectReportRequest) (*GetProjectReportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectReport not implemented")
+}
+func (*UnimplementedApplicationServiceServer) GetProjectChainState(ctx context.Context, req *GetProjectChainStateRequest) (*GetProjectChainStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectChainState not implemented")
+}
+func (*UnimplementedApplicationServiceServer) GetProjectSimulation(ctx context.Context, req *GetProjectSimulationRequest) (*GetProjectSimulationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectSimulation not implemented")
+}
+func (*UnimplementedApplicationServiceServer) GetProjectAveDetail(ctx context.Context, req *GetProjectAveDetailRequest) (*GetProjectAveDetailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectAveDetail not implemented")
+}
+func (*UnimplementedApplicationServiceServer) ListProjectGenesisWallets(ctx context.Context, req *ListProjectGenesisWalletsRequest) (*ListProjectGenesisWalletsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProjectGenesisWallets not implemented")
+}
+func (*UnimplementedApplicationServiceServer) ListProjectCreatorHistoricalProjects(ctx context.Context, req *ListProjectCreatorHistoricalProjectsRequest) (*ListProjectCreatorHistoricalProjectsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProjectCreatorHistoricalProjects not implemented")
 }
 func (*UnimplementedApplicationServiceServer) ListProjectEventLogs(ctx context.Context, req *ListProjectEventLogsRequest) (*ListProjectEventLogsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProjectEventLogs not implemented")
@@ -1098,6 +1901,132 @@ func _ApplicationService_GetProject_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApplicationServiceServer).GetProject(ctx, req.(*GetProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_GetProjectBase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectBaseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).GetProjectBase(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/GetProjectBase",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).GetProjectBase(ctx, req.(*GetProjectBaseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_GetProjectReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).GetProjectReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/GetProjectReport",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).GetProjectReport(ctx, req.(*GetProjectReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_GetProjectChainState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectChainStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).GetProjectChainState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/GetProjectChainState",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).GetProjectChainState(ctx, req.(*GetProjectChainStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_GetProjectSimulation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectSimulationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).GetProjectSimulation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/GetProjectSimulation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).GetProjectSimulation(ctx, req.(*GetProjectSimulationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_GetProjectAveDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectAveDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).GetProjectAveDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/GetProjectAveDetail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).GetProjectAveDetail(ctx, req.(*GetProjectAveDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_ListProjectGenesisWallets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProjectGenesisWalletsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).ListProjectGenesisWallets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/ListProjectGenesisWallets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).ListProjectGenesisWallets(ctx, req.(*ListProjectGenesisWalletsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_ListProjectCreatorHistoricalProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProjectCreatorHistoricalProjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).ListProjectCreatorHistoricalProjects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/ListProjectCreatorHistoricalProjects",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).ListProjectCreatorHistoricalProjects(ctx, req.(*ListProjectCreatorHistoricalProjectsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1185,6 +2114,34 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProject",
 			Handler:    _ApplicationService_GetProject_Handler,
+		},
+		{
+			MethodName: "GetProjectBase",
+			Handler:    _ApplicationService_GetProjectBase_Handler,
+		},
+		{
+			MethodName: "GetProjectReport",
+			Handler:    _ApplicationService_GetProjectReport_Handler,
+		},
+		{
+			MethodName: "GetProjectChainState",
+			Handler:    _ApplicationService_GetProjectChainState_Handler,
+		},
+		{
+			MethodName: "GetProjectSimulation",
+			Handler:    _ApplicationService_GetProjectSimulation_Handler,
+		},
+		{
+			MethodName: "GetProjectAveDetail",
+			Handler:    _ApplicationService_GetProjectAveDetail_Handler,
+		},
+		{
+			MethodName: "ListProjectGenesisWallets",
+			Handler:    _ApplicationService_ListProjectGenesisWallets_Handler,
+		},
+		{
+			MethodName: "ListProjectCreatorHistoricalProjects",
+			Handler:    _ApplicationService_ListProjectCreatorHistoricalProjects_Handler,
 		},
 		{
 			MethodName: "ListProjectEventLogs",
@@ -1369,6 +2326,516 @@ func (m *GetProjectResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		}
 		i--
 		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectBaseRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectBaseRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectBaseRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectBaseResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectBaseResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectBaseResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectReportRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectReportRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectReportRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectReportResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectReportResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectReportResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectChainStateRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectChainStateRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectChainStateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectChainStateResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectChainStateResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectChainStateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectSimulationRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectSimulationRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectSimulationRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectSimulationResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectSimulationResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectSimulationResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectAveDetailRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectAveDetailRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectAveDetailRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectAveDetailResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectAveDetailResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectAveDetailResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListProjectGenesisWalletsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListProjectGenesisWalletsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListProjectGenesisWalletsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListProjectGenesisWalletsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListProjectGenesisWalletsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListProjectGenesisWalletsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintApplication(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListProjectCreatorHistoricalProjectsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListProjectCreatorHistoricalProjectsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListProjectCreatorHistoricalProjectsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListProjectCreatorHistoricalProjectsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListProjectCreatorHistoricalProjectsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListProjectCreatorHistoricalProjectsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Items[iNdEx])
+			copy(dAtA[i:], m.Items[iNdEx])
+			i = encodeVarintApplication(dAtA, i, uint64(len(m.Items[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -1907,6 +3374,234 @@ func (m *GetProjectResponse) Size() (n int) {
 	if m.Item != nil {
 		l = m.Item.Size()
 		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectBaseRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectBaseResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectReportRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectReportResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectChainStateRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectChainStateResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectSimulationRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectSimulationResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectAveDetailRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectAveDetailResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListProjectGenesisWalletsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListProjectGenesisWalletsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovApplication(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListProjectCreatorHistoricalProjectsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListProjectCreatorHistoricalProjectsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, s := range m.Items {
+			l = len(s)
+			n += 1 + l + sovApplication(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2514,6 +4209,1190 @@ func (m *GetProjectResponse) Unmarshal(dAtA []byte) error {
 			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectBaseRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectBaseRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectBaseRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectBaseResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectBaseResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectBaseResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.ProjectBaseView{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectReportRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectReportRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectReportRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectReportResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectReportResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectReportResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.ProjectReport{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectChainStateRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectChainStateRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectChainStateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectChainStateResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectChainStateResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectChainStateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.ProjectChainState{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectSimulationRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectSimulationRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectSimulationRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectSimulationResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectSimulationResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectSimulationResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.SimulateResult{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectAveDetailRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectAveDetailRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectAveDetailRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectAveDetailResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectAveDetailResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectAveDetailResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.AveDetail{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListProjectGenesisWalletsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListProjectGenesisWalletsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListProjectGenesisWalletsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListProjectGenesisWalletsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListProjectGenesisWalletsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListProjectGenesisWalletsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.GenesisWalletState{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListProjectCreatorHistoricalProjectsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListProjectCreatorHistoricalProjectsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListProjectCreatorHistoricalProjectsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListProjectCreatorHistoricalProjectsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListProjectCreatorHistoricalProjectsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListProjectCreatorHistoricalProjectsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

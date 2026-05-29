@@ -11,6 +11,7 @@ type ProjectMeta = model.ProjectMeta
 type DiscoveredProjectCandidate = model.DiscoveredProjectCandidate
 type ProjectDiscoverySource = model.ProjectDiscoverySource
 type ProjectSnapshotCache = appcache.ProjectSnapshotCache
+type ProjectComponentCache = appcache.ProjectComponentCache
 type DiscoveryIntake = pipeline.DiscoveryIntake
 type ProjectStateReconciler = pipeline.ProjectStateReconciler
 type ProjectDiscoveryIndexer = pipeline.ProjectDiscoveryIndexer

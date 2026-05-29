@@ -4,7 +4,19 @@ import {Text} from 'react-form';
 import {RouteComponentProps} from 'react-router';
 import {Context} from '../../../shared/context';
 import {services} from '../../../shared/services';
-import {AveDetail, PairV2State, ProjectComment, ProjectEventLog, ProjectMeta, ProjectOptions, ProjectView} from '../../../shared/services/athena-application-service';
+import {
+    AveDetail,
+    GenesisWalletState,
+    PairV2State,
+    ProjectBaseView,
+    ProjectChainState,
+    ProjectComment,
+    ProjectEventLog,
+    ProjectMeta,
+    ProjectOptions,
+    ProjectView,
+    SimulateResult
+} from '../../../shared/services/athena-application-service';
 import {ContractSourceInfo} from '../../../shared/services/athena-solidity-service';
 import {formatUsdtValue} from '../pair-metrics-cell/pair-metrics-cell';
 import {GenesisWalletRankList} from './genesis-wallet-rank-list';
@@ -272,7 +284,28 @@ interface RouteParams {
     contract: string;
 }
 
+type ProjectComponentKey = 'base' | 'chainState' | 'simulation' | 'aveDetail' | 'genesisWallets' | 'creatorHistory';
+type ComponentErrors = Partial<Record<ProjectComponentKey, Error>>;
+
 const projectInitial = (meta?: ProjectMeta) => (meta?.token?.symbol || meta?.token?.name || '?').trim().slice(0, 1).toUpperCase() || '?';
+
+const renderComponentError = (error?: Error) =>
+    error ? (
+        <div className='project-details__section-error'>
+            <i className='fa fa-exclamation-triangle' /> {error.message}
+        </div>
+    ) : null;
+
+const compactMetaPatch = (patch: Partial<ProjectMeta>) => {
+    const result: Partial<ProjectMeta> = {};
+    Object.keys(patch).forEach(key => {
+        const typedKey = key as keyof ProjectMeta;
+        if (patch[typedKey] !== undefined) {
+            (result as any)[typedKey] = patch[typedKey];
+        }
+    });
+    return result;
+};
 
 export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const ctx = React.useContext(Context);
@@ -294,6 +327,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
     const [projectOptions, setProjectOptions] = React.useState<ProjectOptions | null>(null);
     const [error, setError] = React.useState<Error | null>(null);
+    const [componentErrors, setComponentErrors] = React.useState<ComponentErrors>({});
     const [logoFailed, setLogoFailed] = React.useState(false);
 
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
@@ -336,31 +370,106 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         }
     }, []);
 
+    const mergeProjectMeta = React.useCallback((patch: Partial<ProjectMeta>) => {
+        setProject(current => ({
+            meta: {...(current?.meta || {}), ...compactMetaPatch(patch)},
+            aveDetail: current?.aveDetail
+        }));
+    }, []);
+
+    const mergeProjectAveDetail = React.useCallback((aveDetail?: AveDetail) => {
+        setProject(current => ({
+            meta: current?.meta || {},
+            aveDetail
+        }));
+    }, []);
+
     const loadProject = React.useCallback(async () => {
         if (requestRef.current) {
             return;
         }
 
-        try {
-            const req = services.athenaApplication.getProject(contract);
-            requestRef.current = req;
-            const data = await req;
-            if (isMountedRef.current) {
-                setProject(data);
-                setLastUpdatedAt(new Date());
-                setError(null);
-            }
-        } catch (err) {
-            if (isMountedRef.current) {
-                setError(err as Error);
-            }
-        } finally {
-            if (isMountedRef.current) {
-                setLoading(false);
-            }
-            requestRef.current = null;
+        if (isMountedRef.current) {
+            setComponentErrors({});
         }
-    }, [contract]);
+
+        const baseReq = services.athenaApplication.getProjectBase(contract);
+        const chainReq = services.athenaApplication.getProjectChainState(contract);
+        const simulationReq = services.athenaApplication.getProjectSimulation(contract);
+        const aveReq = services.athenaApplication.getProjectAveDetail(contract);
+        const genesisReq = services.athenaApplication.listProjectGenesisWallets(contract);
+        const historyReq = services.athenaApplication.listProjectCreatorHistoricalProjects(contract);
+        const requests = [baseReq, chainReq, simulationReq, aveReq, genesisReq, historyReq];
+        requestRef.current = {
+            abort: () => requests.forEach(req => req.abort?.())
+        };
+
+        let successCount = 0;
+        const markSuccess = () => {
+            successCount++;
+            if (isMountedRef.current) {
+                setLastUpdatedAt(new Date());
+            }
+        };
+        const markError = (key: ProjectComponentKey, err: unknown) => {
+            if (isMountedRef.current) {
+                setComponentErrors(current => ({...current, [key]: err as Error}));
+            }
+        };
+        const runPart = async <T,>(key: ProjectComponentKey, req: Promise<T>, apply: (value: T) => void) => {
+            try {
+                const value = await req;
+                if (isMountedRef.current) {
+                    apply(value);
+                    markSuccess();
+                }
+            } catch (err) {
+                markError(key, err);
+            }
+        };
+
+        await Promise.all([
+            runPart<ProjectBaseView | undefined>('base', baseReq, base => {
+                mergeProjectMeta({
+                    blockTime: base?.blockTime,
+                    blockNumber: base?.blockNumber,
+                    contract: base?.contract,
+                    creator: base?.creator,
+                    txHash: base?.txHash,
+                    txIndex: base?.txIndex,
+                    fetchAt: base?.createdAt
+                });
+            }),
+            runPart<ProjectChainState | undefined>('chainState', chainReq, chainState => {
+                mergeProjectMeta({
+                    fetchAt: chainState?.fetchedAt,
+                    token: chainState?.token,
+                    wethPair: chainState?.wethPair,
+                    usdtPair: chainState?.usdtPair,
+                    assetState: chainState?.assetState,
+                    genesisWalletAssetStates: chainState?.genesisWalletAssetStates
+                });
+            }),
+            runPart<SimulateResult | undefined>('simulation', simulationReq, simulation => {
+                mergeProjectMeta({creatorResult: simulation});
+            }),
+            runPart<AveDetail | undefined>('aveDetail', aveReq, aveDetail => {
+                mergeProjectAveDetail(aveDetail);
+            }),
+            runPart<GenesisWalletState[]>('genesisWallets', genesisReq, genesisWallets => {
+                mergeProjectMeta({genesisWallets});
+            }),
+            runPart<string[]>('creatorHistory', historyReq, creatorHistoricalProjects => {
+                mergeProjectMeta({creatorHistoricalProjects});
+            })
+        ]);
+
+        if (isMountedRef.current) {
+            setLoading(false);
+            setError(successCount === 0 ? new Error('All project detail sections failed to load') : null);
+        }
+        requestRef.current = null;
+    }, [contract, mergeProjectAveDetail, mergeProjectMeta]);
 
     const loadProjectEventLogs = React.useCallback(async () => {
         if (eventRequestRef.current) {
@@ -474,6 +583,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         setCommentTotal(0);
         setCommentInput('');
         setCommentsError(null);
+        setComponentErrors({});
         loadProject();
         loadProjectEventLogs();
         loadProjectComments(1);
@@ -637,6 +747,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Meta</div>
+                            {renderComponentError(componentErrors.base)}
                             <div className='project-details__identity'>
                                 <div className='project-details__logo' aria-hidden='true'>
                                     {showLogo ? <img src={aveLogo} alt='' onError={() => setLogoFailed(true)} /> : <span>{projectInitial(project.meta)}</span>}
@@ -670,6 +781,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                 <div className='project-details__field' style={{gridColumn: '1 / -1'}}>
                                     <span className='project-details__field-label'>Creator Historical Projects</span>
                                     <div className='project-details__field-value'>
+                                        {renderComponentError(componentErrors.creatorHistory)}
                                         {project.meta?.creatorHistoricalProjects && project.meta.creatorHistoricalProjects.length > 0
                                             ? project.meta.creatorHistoricalProjects.map((item, index) => <div key={`${item}-${index}`}>{item}</div>)
                                             : '-'}
@@ -679,9 +791,11 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                         </div>
 
                         {renderFetchTimeline(project.meta, project.aveDetail, sourceInfo)}
+                        {componentErrors.aveDetail && renderComponentError(componentErrors.aveDetail)}
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Genesis Wallets</div>
+                            {renderComponentError(componentErrors.genesisWallets)}
                             <GenesisWalletRankList
                                 genesisWallets={project.meta?.genesisWallets}
                                 genesisWalletAssetStates={project.meta?.genesisWalletAssetStates}
@@ -769,6 +883,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Token State</div>
+                            {renderComponentError(componentErrors.chainState)}
                             <div className='project-details__grid'>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Name</span>
@@ -803,6 +918,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Asset State</div>
+                            {renderComponentError(componentErrors.chainState)}
                             <div className='project-details__grid'>
                                 <div className='project-details__field'>
                                     <span className='project-details__field-label'>Token Balance</span>
@@ -865,65 +981,68 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                         {renderPairSection('WETH V2 Pool', project.meta?.wethPair)}
                         {renderPairSection('USDT V2 Pool', project.meta?.usdtPair)}
 
-                        {project.meta?.creatorResult && (
+                        {(project.meta?.creatorResult || componentErrors.simulation) && (
                             <div className='white-box project-details__box'>
                                 <div className='project-details__section-title'>Simulation</div>
-                                <div className='project-details__grid'>
-                                    <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Mint via Transfer to WETH Pair</span>
-                                        <span className='project-details__field-value'>
-                                            <span
-                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintViaTransferToWethPair ? 'negative' : 'positive'}`}>
-                                                {project.meta.creatorResult.canMintViaTransferToWethPair ? 'Yes' : 'No'}
+                                {renderComponentError(componentErrors.simulation)}
+                                {project.meta?.creatorResult && (
+                                    <div className='project-details__grid'>
+                                        <div className='project-details__field'>
+                                            <span className='project-details__field-label'>Mint via Transfer to WETH Pair</span>
+                                            <span className='project-details__field-value'>
+                                                <span
+                                                    className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintViaTransferToWethPair ? 'negative' : 'positive'}`}>
+                                                    {project.meta.creatorResult.canMintViaTransferToWethPair ? 'Yes' : 'No'}
+                                                </span>
                                             </span>
-                                        </span>
-                                    </div>
-                                    <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Mint via Transfer to USDT Pair</span>
-                                        <span className='project-details__field-value'>
-                                            <span
-                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintViaTransferToUsdtPair ? 'negative' : 'positive'}`}>
-                                                {project.meta.creatorResult.canMintViaTransferToUsdtPair ? 'Yes' : 'No'}
+                                        </div>
+                                        <div className='project-details__field'>
+                                            <span className='project-details__field-label'>Mint via Transfer to USDT Pair</span>
+                                            <span className='project-details__field-value'>
+                                                <span
+                                                    className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintViaTransferToUsdtPair ? 'negative' : 'positive'}`}>
+                                                    {project.meta.creatorResult.canMintViaTransferToUsdtPair ? 'Yes' : 'No'}
+                                                </span>
                                             </span>
-                                        </span>
-                                    </div>
-                                    <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Mint from Dead via transferFrom</span>
-                                        <span className='project-details__field-value'>
-                                            <span
-                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromDeadViaTransferFrom ? 'negative' : 'positive'}`}>
-                                                {project.meta.creatorResult.canMintFromDeadViaTransferFrom ? 'Yes' : 'No'}
+                                        </div>
+                                        <div className='project-details__field'>
+                                            <span className='project-details__field-label'>Mint from Dead via transferFrom</span>
+                                            <span className='project-details__field-value'>
+                                                <span
+                                                    className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromDeadViaTransferFrom ? 'negative' : 'positive'}`}>
+                                                    {project.meta.creatorResult.canMintFromDeadViaTransferFrom ? 'Yes' : 'No'}
+                                                </span>
                                             </span>
-                                        </span>
-                                    </div>
-                                    <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Mint from Zero via transferFrom</span>
-                                        <span className='project-details__field-value'>
-                                            <span
-                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromZeroViaTransferFrom ? 'negative' : 'positive'}`}>
-                                                {project.meta.creatorResult.canMintFromZeroViaTransferFrom ? 'Yes' : 'No'}
+                                        </div>
+                                        <div className='project-details__field'>
+                                            <span className='project-details__field-label'>Mint from Zero via transferFrom</span>
+                                            <span className='project-details__field-value'>
+                                                <span
+                                                    className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromZeroViaTransferFrom ? 'negative' : 'positive'}`}>
+                                                    {project.meta.creatorResult.canMintFromZeroViaTransferFrom ? 'Yes' : 'No'}
+                                                </span>
                                             </span>
-                                        </span>
-                                    </div>
-                                    <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Mint from WETH Pair via transferFrom</span>
-                                        <span className='project-details__field-value'>
-                                            <span
-                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromWethPairViaTransferFrom ? 'negative' : 'positive'}`}>
-                                                {project.meta.creatorResult.canMintFromWethPairViaTransferFrom ? 'Yes' : 'No'}
+                                        </div>
+                                        <div className='project-details__field'>
+                                            <span className='project-details__field-label'>Mint from WETH Pair via transferFrom</span>
+                                            <span className='project-details__field-value'>
+                                                <span
+                                                    className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromWethPairViaTransferFrom ? 'negative' : 'positive'}`}>
+                                                    {project.meta.creatorResult.canMintFromWethPairViaTransferFrom ? 'Yes' : 'No'}
+                                                </span>
                                             </span>
-                                        </span>
-                                    </div>
-                                    <div className='project-details__field'>
-                                        <span className='project-details__field-label'>Mint from USDT Pair via transferFrom</span>
-                                        <span className='project-details__field-value'>
-                                            <span
-                                                className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromUsdtPairViaTransferFrom ? 'negative' : 'positive'}`}>
-                                                {project.meta.creatorResult.canMintFromUsdtPairViaTransferFrom ? 'Yes' : 'No'}
+                                        </div>
+                                        <div className='project-details__field'>
+                                            <span className='project-details__field-label'>Mint from USDT Pair via transferFrom</span>
+                                            <span className='project-details__field-value'>
+                                                <span
+                                                    className={`project-details__badge project-details__badge--${project.meta.creatorResult.canMintFromUsdtPairViaTransferFrom ? 'negative' : 'positive'}`}>
+                                                    {project.meta.creatorResult.canMintFromUsdtPairViaTransferFrom ? 'Yes' : 'No'}
+                                                </span>
                                             </span>
-                                        </span>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         )}
                     </div>

@@ -9,8 +9,14 @@ export interface ProjectListItem {
     contract?: string;
     name?: string;
     symbol?: string;
+    creator?: string;
+    txHash?: string;
     hasMintRisk?: boolean;
     isOpenSource?: boolean;
+    isPolicyEvaluated?: boolean;
+    isBlacklistedCreatorWallet?: boolean;
+    isBlacklistedGenesisWallet?: boolean;
+    isBlacklistedBytecode?: boolean;
     wethPairQuoteUsdtValue?: string;
     wethPairRemoveLiquidity?: boolean;
     usdtPairQuoteUsdtValue?: string;
@@ -26,6 +32,36 @@ export interface ProjectListItem {
     aveIsMintable?: string;
     aveHolders?: number;
     aveMarketCap?: string;
+}
+
+export interface ProjectBaseView {
+    blockTime?: number;
+    blockNumber?: number;
+    contract?: string;
+    creator?: string;
+    txHash?: string;
+    txIndex?: number;
+    createdAt?: string;
+}
+
+export interface ProjectReport {
+    isPolicyEvaluated?: boolean;
+    isBlacklistedCreatorWallet?: boolean;
+    isBlacklistedGenesisWallet?: boolean;
+    isBlacklistedBytecode?: boolean;
+    hasMintRisk?: boolean;
+    evaluatedAt?: string;
+    updatedAt?: string;
+}
+
+export interface ProjectChainState {
+    contract?: string;
+    fetchedAt?: string;
+    token?: TokenState;
+    wethPair?: PairV2State;
+    usdtPair?: PairV2State;
+    assetState?: AssetState;
+    genesisWalletAssetStates?: GenesisWalletAssetState[];
 }
 
 export interface ProjectMeta {
@@ -215,6 +251,34 @@ export interface GetProjectResponse {
     item?: ProjectView;
 }
 
+export interface GetProjectBaseResponse {
+    item?: ProjectBaseView;
+}
+
+export interface GetProjectReportResponse {
+    item?: ProjectReport;
+}
+
+export interface GetProjectChainStateResponse {
+    item?: ProjectChainState;
+}
+
+export interface GetProjectSimulationResponse {
+    item?: SimulateResult;
+}
+
+export interface GetProjectAveDetailResponse {
+    item?: AveDetail;
+}
+
+export interface ListProjectGenesisWalletsResponse {
+    items?: GenesisWalletState[];
+}
+
+export interface ListProjectCreatorHistoricalProjectsResponse {
+    items?: string[];
+}
+
 export interface ProjectEventLog {
     id?: number;
     contract?: string;
@@ -280,8 +344,72 @@ export class AthenaApplicationService {
     }
 
     public getProject(contract: string): Promise<ProjectView> & {abort?: () => void} {
-        const req = requests.get(`/projects/${encodeURIComponent(contract)}`);
-        const promise = req.then(res => (res.body as GetProjectResponse).item) as any;
+        const baseReq = this.getProjectBase(contract);
+        const chainReq = this.getProjectChainState(contract);
+        const simulationReq = this.getProjectSimulation(contract);
+        const aveReq = this.getProjectAveDetail(contract);
+        const genesisReq = this.listProjectGenesisWallets(contract);
+        const historyReq = this.listProjectCreatorHistoricalProjects(contract);
+        const promise = Promise.all([baseReq, chainReq, simulationReq, aveReq, genesisReq, historyReq]).then(
+            ([base, chainState, simulation, aveDetail, genesisWallets, creatorHistoricalProjects]) =>
+                this.buildProjectView(base, chainState, simulation, aveDetail, genesisWallets, creatorHistoricalProjects)
+        ) as any;
+        promise.abort = () => {
+            baseReq.abort?.();
+            chainReq.abort?.();
+            simulationReq.abort?.();
+            aveReq.abort?.();
+            genesisReq.abort?.();
+            historyReq.abort?.();
+        };
+        return promise;
+    }
+
+    public getProjectBase(contract: string): Promise<ProjectBaseView | undefined> & {abort?: () => void} {
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}/base`);
+        const promise = req.then(res => ((res.body || {}) as GetProjectBaseResponse).item) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getProjectReport(contract: string): Promise<ProjectReport | undefined> & {abort?: () => void} {
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}/report`);
+        const promise = req.then(res => ((res.body || {}) as GetProjectReportResponse).item) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getProjectChainState(contract: string): Promise<ProjectChainState | undefined> & {abort?: () => void} {
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}/chain-state`);
+        const promise = req.then(res => ((res.body || {}) as GetProjectChainStateResponse).item) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getProjectSimulation(contract: string): Promise<SimulateResult | undefined> & {abort?: () => void} {
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}/simulation`);
+        const promise = req.then(res => ((res.body || {}) as GetProjectSimulationResponse).item) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getProjectAveDetail(contract: string): Promise<AveDetail | undefined> & {abort?: () => void} {
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}/ave-detail`);
+        const promise = req.then(res => ((res.body || {}) as GetProjectAveDetailResponse).item) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listProjectGenesisWallets(contract: string): Promise<GenesisWalletState[]> & {abort?: () => void} {
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}/genesis-wallets`);
+        const promise = req.then(res => ((res.body || {}) as ListProjectGenesisWalletsResponse).items || []) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listProjectCreatorHistoricalProjects(contract: string): Promise<string[]> & {abort?: () => void} {
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}/creator-history`);
+        const promise = req.then(res => ((res.body || {}) as ListProjectCreatorHistoricalProjectsResponse).items || []) as any;
         promise.abort = () => req.abort();
         return promise;
     }
@@ -389,4 +517,31 @@ export class AthenaApplicationService {
         return promise;
     }
 
+    private buildProjectView(
+        base?: ProjectBaseView,
+        chainState?: ProjectChainState,
+        simulation?: SimulateResult,
+        aveDetail?: AveDetail,
+        genesisWallets?: GenesisWalletState[],
+        creatorHistoricalProjects?: string[]
+    ): ProjectView {
+        const meta: ProjectMeta = {
+            blockTime: base?.blockTime,
+            blockNumber: base?.blockNumber,
+            contract: base?.contract,
+            creator: base?.creator,
+            txHash: base?.txHash,
+            txIndex: base?.txIndex,
+            fetchAt: chainState?.fetchedAt || base?.createdAt,
+            creatorResult: simulation,
+            genesisWallets,
+            creatorHistoricalProjects,
+            token: chainState?.token,
+            wethPair: chainState?.wethPair,
+            usdtPair: chainState?.usdtPair,
+            assetState: chainState?.assetState,
+            genesisWalletAssetStates: chainState?.genesisWalletAssetStates
+        };
+        return {meta, aveDetail};
+    }
 }

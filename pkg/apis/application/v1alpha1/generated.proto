@@ -416,6 +416,38 @@ message PairV2State {
   optional string feeAddressHoldLiquidityRatio = 15;
 }
 
+message ProjectBaseView {
+  optional uint64 blockTime = 1;
+
+  optional uint64 blockNumber = 2;
+
+  optional string contract = 3;
+
+  optional string creator = 4;
+
+  optional string txHash = 5;
+
+  optional uint64 txIndex = 6;
+
+  optional string createdAt = 7;
+}
+
+message ProjectChainState {
+  optional string contract = 1;
+
+  optional string fetchedAt = 2;
+
+  optional TokenState token = 3;
+
+  optional PairV2State wethPair = 4;
+
+  optional PairV2State usdtPair = 5;
+
+  optional AssetState assetState = 6;
+
+  repeated GenesisWalletAssetState genesisWalletAssetStates = 7;
+}
+
 message ProjectListItem {
   optional string contract = 1;
 
@@ -456,6 +488,18 @@ message ProjectListItem {
   optional int32 aveHolders = 21;
 
   optional string aveMarketCap = 22;
+
+  optional string creator = 23;
+
+  optional string txHash = 24;
+
+  optional bool isPolicyEvaluated = 25;
+
+  optional bool isBlacklistedCreatorWallet = 26;
+
+  optional bool isBlacklistedGenesisWallet = 27;
+
+  optional bool isBlacklistedBytecode = 28;
 }
 
 message ProjectMeta {
@@ -504,6 +548,22 @@ message ProjectOption {
   optional uint32 wethDecimals = 4;
 
   optional uint32 usdtDecimals = 5;
+}
+
+message ProjectReport {
+  optional bool isPolicyEvaluated = 1;
+
+  optional bool isBlacklistedCreatorWallet = 2;
+
+  optional bool isBlacklistedGenesisWallet = 3;
+
+  optional bool isBlacklistedBytecode = 4;
+
+  optional bool hasMintRisk = 5;
+
+  optional string evaluatedAt = 6;
+
+  optional string updatedAt = 7;
 }
 
 message ProjectView {

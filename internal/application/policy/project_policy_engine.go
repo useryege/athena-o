@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/persistence"
+	appstore "github.com/useryege/athena/internal/application/store"
 )
 
 type ProjectPolicyFacts struct {
@@ -26,7 +27,9 @@ type ProjectPolicyRule interface {
 }
 
 type projectPolicyEngineImpl struct {
-	projectCache appcache.ProjectSnapshotCache
+	componentCache appcache.ProjectComponentCache
+	projectCache   appcache.ProjectSnapshotCache
+	projectStore   appstore.ProjectStore
 
 	walletBlacklist walletBlacklistLister
 
@@ -39,20 +42,16 @@ type walletBlacklistLister interface {
 }
 
 func NewProjectPolicyEngine(
-	projectCache appcache.ProjectSnapshotCache,
+	componentCache appcache.ProjectComponentCache,
+	projectStore appstore.ProjectStore,
 	walletBlacklist walletBlacklistLister,
 	persistencePublisher persistence.PersistenceEventPublisher,
 ) Engine {
 	return &projectPolicyEngineImpl{
-		projectCache:         projectCache,
+		componentCache:       componentCache,
+		projectStore:         projectStore,
 		walletBlacklist:      walletBlacklist,
 		persistencePublisher: persistencePublisher,
-		rules: []ProjectPolicyRule{
-			walletBlacklistCreatorRule{},
-			walletBlacklistGenesisWalletRule{},
-			bytecodeBlacklistRule{},
-			simulateMintRiskRule{},
-		},
 	}
 }
 
@@ -66,14 +65,164 @@ func (e *projectPolicyEngineImpl) EvaluateProject(ctx context.Context, contract 
 		return ProjectReport{}, err
 	}
 
-	project, exists, err := e.projectCache.GetProject(ctx, contract)
-	if err != nil {
+	facts, projectFacts, err := e.projectFacts(ctx, contract, facts)
+	if err != nil || projectFacts == nil {
 		return ProjectReport{}, err
 	}
-	if !exists || project == nil {
-		return ProjectReport{}, nil
+	return e.evaluateFactsForProject(ctx, projectFacts, facts)
+}
+
+type projectPolicyProjectFacts struct {
+	Contract            common.Address
+	Creator             common.Address
+	GenesisWallets      []common.Address
+	SimulationResult    SimulateResult
+	BytecodeBlacklisted bool
+}
+
+func (e *projectPolicyEngineImpl) projectFacts(ctx context.Context, contract common.Address, facts ProjectPolicyFacts) (ProjectPolicyFacts, *projectPolicyProjectFacts, error) {
+	base, err := e.projectBase(ctx, contract)
+	if err != nil || base == nil {
+		return facts, nil, err
 	}
-	return e.evaluateRulesForProject(ctx, project, facts)
+	projectFacts := &projectPolicyProjectFacts{
+		Contract: contract,
+		Creator:  base.Creator,
+	}
+	if wallets, err := e.projectGenesisWallets(ctx, contract); err != nil {
+		return facts, nil, err
+	} else {
+		projectFacts.GenesisWallets = wallets
+	}
+	if simulation, err := e.projectSimulation(ctx, contract); err != nil {
+		return facts, nil, err
+	} else if simulation != nil {
+		projectFacts.SimulationResult = SimulateResult(simulation.Result)
+	}
+	if bytecodeFact, err := e.projectBytecodeFact(ctx, contract); err != nil {
+		return facts, nil, err
+	} else if bytecodeFact != nil {
+		projectFacts.BytecodeBlacklisted = bytecodeFact.IsBytecodeBlacklisted
+	}
+	return facts, projectFacts, nil
+}
+
+func (e *projectPolicyEngineImpl) projectBase(ctx context.Context, contract common.Address) (*appstore.ProjectBase, error) {
+	if e.componentCache != nil {
+		if base, ok, err := e.componentCache.GetBase(ctx, contract); err != nil {
+			return nil, err
+		} else if ok && base != nil {
+			return base, nil
+		}
+	}
+	store, ok := e.projectStore.(appstore.ProjectBaseStore)
+	if !ok || store == nil {
+		return nil, nil
+	}
+	base, err := store.GetProjectBaseByContract(ctx, contract)
+	if err != nil || base == nil {
+		return base, err
+	}
+	if e.componentCache != nil {
+		if err := e.componentCache.SetBase(ctx, *base); err != nil {
+			return nil, err
+		}
+	}
+	return base, nil
+}
+
+func (e *projectPolicyEngineImpl) projectGenesisWallets(ctx context.Context, contract common.Address) ([]common.Address, error) {
+	if e.componentCache != nil {
+		if items, ok, err := e.componentCache.GetGenesisWallets(ctx, contract); err != nil {
+			return nil, err
+		} else if ok {
+			return genesisWalletAddressesFromStore(items), nil
+		}
+	}
+	store, ok := e.projectStore.(appstore.ProjectGenesisWalletStore)
+	if !ok || store == nil {
+		return nil, nil
+	}
+	items, err := store.ListProjectGenesisWalletsByContract(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	if e.componentCache != nil {
+		if err := e.componentCache.SetGenesisWallets(ctx, contract, items); err != nil {
+			return nil, err
+		}
+	}
+	return genesisWalletAddressesFromStore(items), nil
+}
+
+func (e *projectPolicyEngineImpl) projectSimulation(ctx context.Context, contract common.Address) (*appstore.ProjectSimulationResult, error) {
+	if e.componentCache != nil {
+		if item, ok, err := e.componentCache.GetSimulation(ctx, contract); err != nil {
+			return nil, err
+		} else if ok && item != nil {
+			return item, nil
+		}
+	}
+	store, ok := e.projectStore.(appstore.ProjectSimulationStore)
+	if !ok || store == nil {
+		return nil, nil
+	}
+	item, err := store.GetProjectSimulationResult(ctx, contract)
+	if err != nil || item == nil {
+		return item, err
+	}
+	if e.componentCache != nil {
+		if err := e.componentCache.SetSimulation(ctx, *item); err != nil {
+			return nil, err
+		}
+	}
+	return item, nil
+}
+
+func (e *projectPolicyEngineImpl) projectBytecodeFact(ctx context.Context, contract common.Address) (*appstore.ProjectBytecodeFact, error) {
+	if e.componentCache != nil {
+		if item, ok, err := e.componentCache.GetBytecodeFact(ctx, contract); err != nil {
+			return nil, err
+		} else if ok && item != nil {
+			return item, nil
+		}
+	}
+	store, ok := e.projectStore.(appstore.ProjectBytecodeFactStore)
+	if !ok || store == nil {
+		return nil, nil
+	}
+	item, err := store.GetProjectBytecodeFact(ctx, contract)
+	if err != nil || item == nil {
+		return item, err
+	}
+	if e.componentCache != nil {
+		if err := e.componentCache.SetBytecodeFact(ctx, *item); err != nil {
+			return nil, err
+		}
+	}
+	return item, nil
+}
+
+func genesisWalletAddressesFromStore(items []appstore.ProjectGenesisWallet) []common.Address {
+	addresses := make([]common.Address, 0, len(items))
+	for _, item := range items {
+		if item.Wallet == (common.Address{}) {
+			continue
+		}
+		addresses = append(addresses, item.Wallet)
+	}
+	return addresses
+}
+
+func genesisWalletAddressesFromModel(items []GenesisWalletMeta) []common.Address {
+	addresses := make([]common.Address, 0, len(items))
+	for _, item := range items {
+		if item.Wallet == (common.Address{}) {
+			continue
+		}
+		addresses = append(addresses, item.Wallet)
+	}
+	return addresses
 }
 
 func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicyFacts, error) {
@@ -91,7 +240,7 @@ func (e *projectPolicyEngineImpl) buildFacts(ctx context.Context) (ProjectPolicy
 	return facts, nil
 }
 
-func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, project *Project, facts ProjectPolicyFacts) (ProjectReport, error) {
+func (e *projectPolicyEngineImpl) evaluateFactsForProject(ctx context.Context, project *projectPolicyProjectFacts, facts ProjectPolicyFacts) (ProjectReport, error) {
 	if project == nil {
 		return ProjectReport{}, nil
 	}
@@ -101,44 +250,97 @@ func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, p
 		ruleName string
 		evidence map[string]any
 	}
-	matches := make([]projectPolicyRuleMatch, 0, len(e.rules))
-	for _, rule := range e.rules {
-		if rule == nil {
-			continue
-		}
-		match, evidence, err := rule.Evaluate(ctx, project, facts)
-		if err != nil {
-			continue
-		}
-		if !match {
-			continue
-		}
-		markProjectReportRuleMatch(&report, rule.Name())
-		matches = append(matches, projectPolicyRuleMatch{
-			ruleName: rule.Name(),
-			evidence: evidence,
-		})
+	matches := make([]projectPolicyRuleMatch, 0, 4)
+	if _, ok := facts.WalletBlacklist[project.Creator]; ok {
+		report.IsBlacklistedCreatorWallet = true
+		matches = append(matches, projectPolicyRuleMatch{ruleName: "wallet_blacklist_creator", evidence: map[string]any{"creator_wallet": strings.ToLower(project.Creator.Hex())}})
 	}
-	if err := e.updateProjectReport(ctx, project.Meta.Contract, report); err != nil {
+	matchedGenesisWallets := make([]string, 0)
+	seenGenesisWallets := map[common.Address]struct{}{}
+	for _, wallet := range project.GenesisWallets {
+		if _, ok := facts.WalletBlacklist[wallet]; !ok {
+			continue
+		}
+		if _, ok := seenGenesisWallets[wallet]; ok {
+			continue
+		}
+		seenGenesisWallets[wallet] = struct{}{}
+		matchedGenesisWallets = append(matchedGenesisWallets, strings.ToLower(wallet.Hex()))
+	}
+	if len(matchedGenesisWallets) > 0 {
+		report.IsBlacklistedGenesisWallet = true
+		matches = append(matches, projectPolicyRuleMatch{ruleName: "wallet_blacklist_genesis_wallet", evidence: map[string]any{"blacklisted_genesis_wallets": matchedGenesisWallets}})
+	}
+	if project.BytecodeBlacklisted {
+		report.IsBlacklistedBytecode = true
+		matches = append(matches, projectPolicyRuleMatch{ruleName: "bytecode_blacklist", evidence: map[string]any{"contract": strings.ToLower(project.Contract.Hex())}})
+	}
+	if project.SimulationResult.HasMintRisk() {
+		report.HasMintRisk = true
+		matches = append(matches, projectPolicyRuleMatch{ruleName: "simulate_result_mint_risk", evidence: map[string]any{"mintable_paths": project.SimulationResult.MintablePaths()}})
+	}
+	if err := e.updateProjectReport(ctx, project.Contract, report); err != nil {
 		return ProjectReport{}, err
 	}
-	project.Report = report
 
 	for _, match := range matches {
 		now := time.Now().UTC()
-		if err := e.persistPolicyAuditEvent(ctx, project.Meta.Contract, match.ruleName, match.evidence, now); err != nil {
+		if err := e.persistPolicyAuditEvent(ctx, project.Contract, match.ruleName, match.evidence, now); err != nil {
 			continue
 		}
 	}
 	return report, nil
 }
 
+func (e *projectPolicyEngineImpl) evaluateRulesForProject(ctx context.Context, project *Project, facts ProjectPolicyFacts) (ProjectReport, error) {
+	if project == nil {
+		return ProjectReport{}, nil
+	}
+	if len(e.rules) > 0 {
+		report := ProjectReport{IsPolicyEvaluated: true}
+		type projectPolicyRuleMatch struct {
+			ruleName string
+			evidence map[string]any
+		}
+		matches := make([]projectPolicyRuleMatch, 0, len(e.rules))
+		for _, rule := range e.rules {
+			if rule == nil {
+				continue
+			}
+			match, evidence, err := rule.Evaluate(ctx, project, facts)
+			if err != nil || !match {
+				continue
+			}
+			markProjectReportRuleMatch(&report, rule.Name())
+			matches = append(matches, projectPolicyRuleMatch{ruleName: rule.Name(), evidence: evidence})
+		}
+		if err := e.updateProjectReport(ctx, project.Meta.Contract, report); err != nil {
+			return ProjectReport{}, err
+		}
+		for _, match := range matches {
+			if err := e.persistPolicyAuditEvent(ctx, project.Meta.Contract, match.ruleName, match.evidence, time.Now().UTC()); err != nil {
+				continue
+			}
+		}
+		return report, nil
+	}
+	projectFacts := &projectPolicyProjectFacts{
+		Contract:            project.Meta.Contract,
+		Creator:             project.Meta.Creator,
+		GenesisWallets:      genesisWalletAddressesFromModel(project.Meta.GenesisWallets),
+		SimulationResult:    project.Meta.CreatorResult,
+		BytecodeBlacklisted: project.Meta.IsBytecodeBlacklisted,
+	}
+	return e.evaluateFactsForProject(ctx, projectFacts, facts)
+}
+
 func (e *projectPolicyEngineImpl) updateProjectReport(ctx context.Context, contract common.Address, report ProjectReport) error {
 	if e == nil {
 		return nil
 	}
-	changed := e.projectCache == nil
-	if e.projectCache != nil {
+	item := appstore.ProjectPolicyReport{ProjectContract: contract, Report: appstore.ProjectReport(report), EvaluatedAt: time.Now().UTC()}
+	if e.componentCache == nil && e.projectCache != nil {
+		changed := false
 		_, err := e.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
 			if !exists || current == nil || current.Report == report {
 				return nil, false, nil
@@ -150,11 +352,22 @@ func (e *projectPolicyEngineImpl) updateProjectReport(ctx context.Context, contr
 		if err != nil {
 			return err
 		}
-	}
-	if !changed || e.persistencePublisher == nil {
+		if changed && e.persistencePublisher != nil {
+			return e.persistencePublisher.PublishProjectReportUpdate(ctx, contract, report)
+		}
 		return nil
 	}
-	return e.persistencePublisher.PublishProjectReportUpdate(ctx, contract, report)
+	if store, ok := e.projectStore.(appstore.ProjectPolicyReportStore); ok && store != nil {
+		if err := store.UpsertProjectPolicyReport(ctx, item); err != nil {
+			return err
+		}
+	}
+	if e.componentCache != nil {
+		if err := e.componentCache.SetReport(ctx, item); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func markProjectReportRuleMatch(report *ProjectReport, ruleName string) {

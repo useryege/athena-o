@@ -30,7 +30,7 @@ func TestReplaceProjectCreatorHistoricalProjects(t *testing.T) {
 	mock.ExpectExec("INSERT INTO project_creator_historical_project").
 		WithArgs(projectContract.Bytes(), historicalB.Bytes(), int32(1)).
 		WillReturnResult(sqlmock.NewResult(2, 1))
-	mock.ExpectExec("UPDATE project").
+	mock.ExpectExec("INSERT INTO project_component_state").
 		WithArgs(projectContract.Bytes()).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()

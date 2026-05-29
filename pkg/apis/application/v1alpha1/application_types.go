@@ -5,27 +5,63 @@ type ProjectView struct {
 	AveDetail AveDetail   `protobuf:"bytes,2,opt,name=aveDetail" json:"aveDetail"`
 }
 
+type ProjectBaseView struct {
+	BlockTime   uint64 `protobuf:"varint,1,opt,name=blockTime" json:"blockTime"`
+	BlockNumber uint64 `protobuf:"varint,2,opt,name=blockNumber" json:"blockNumber"`
+	Contract    string `protobuf:"bytes,3,opt,name=contract" json:"contract"`
+	Creator     string `protobuf:"bytes,4,opt,name=creator" json:"creator"`
+	TxHash      string `protobuf:"bytes,5,opt,name=txHash" json:"txHash"`
+	TxIndex     uint64 `protobuf:"varint,6,opt,name=txIndex" json:"txIndex"`
+	CreatedAt   string `protobuf:"bytes,7,opt,name=createdAt" json:"createdAt"`
+}
+
+type ProjectReport struct {
+	IsPolicyEvaluated          bool   `protobuf:"varint,1,opt,name=isPolicyEvaluated" json:"isPolicyEvaluated"`
+	IsBlacklistedCreatorWallet bool   `protobuf:"varint,2,opt,name=isBlacklistedCreatorWallet" json:"isBlacklistedCreatorWallet"`
+	IsBlacklistedGenesisWallet bool   `protobuf:"varint,3,opt,name=isBlacklistedGenesisWallet" json:"isBlacklistedGenesisWallet"`
+	IsBlacklistedBytecode      bool   `protobuf:"varint,4,opt,name=isBlacklistedBytecode" json:"isBlacklistedBytecode"`
+	HasMintRisk                bool   `protobuf:"varint,5,opt,name=hasMintRisk" json:"hasMintRisk"`
+	EvaluatedAt                string `protobuf:"bytes,6,opt,name=evaluatedAt" json:"evaluatedAt"`
+	UpdatedAt                  string `protobuf:"bytes,7,opt,name=updatedAt" json:"updatedAt"`
+}
+
+type ProjectChainState struct {
+	Contract                 string                    `protobuf:"bytes,1,opt,name=contract" json:"contract"`
+	FetchedAt                string                    `protobuf:"bytes,2,opt,name=fetchedAt" json:"fetchedAt"`
+	Token                    TokenState                `protobuf:"bytes,3,opt,name=token" json:"token"`
+	WethPair                 PairV2State               `protobuf:"bytes,4,opt,name=wethPair" json:"wethPair"`
+	UsdtPair                 PairV2State               `protobuf:"bytes,5,opt,name=usdtPair" json:"usdtPair"`
+	AssetState               AssetState                `protobuf:"bytes,6,opt,name=assetState" json:"assetState"`
+	GenesisWalletAssetStates []GenesisWalletAssetState `protobuf:"bytes,7,rep,name=genesisWalletAssetStates" json:"genesisWalletAssetStates"`
+}
+
 type ProjectListItem struct {
-	Contract                string `protobuf:"bytes,1,opt,name=contract" json:"contract"`
-	Name                    string `protobuf:"bytes,2,opt,name=name" json:"name"`
-	Symbol                  string `protobuf:"bytes,3,opt,name=symbol" json:"symbol"`
-	HasMintRisk             bool   `protobuf:"varint,6,opt,name=hasMintRisk" json:"hasMintRisk"`
-	IsOpenSource            bool   `protobuf:"varint,7,opt,name=isOpenSource" json:"isOpenSource"`
-	WethPairQuoteUsdtValue  string `protobuf:"bytes,8,opt,name=wethPairQuoteUsdtValue" json:"wethPairQuoteUsdtValue"`
-	WethPairRemoveLiquidity bool   `protobuf:"varint,9,opt,name=wethPairRemoveLiquidity" json:"wethPairRemoveLiquidity"`
-	UsdtPairQuoteUsdtValue  string `protobuf:"bytes,10,opt,name=usdtPairQuoteUsdtValue" json:"usdtPairQuoteUsdtValue"`
-	UsdtPairRemoveLiquidity bool   `protobuf:"varint,11,opt,name=usdtPairRemoveLiquidity" json:"usdtPairRemoveLiquidity"`
-	CreatorAssetUsdtValue   string `protobuf:"bytes,12,opt,name=creatorAssetUsdtValue" json:"creatorAssetUsdtValue"`
-	BlockTime               uint64 `protobuf:"varint,13,opt,name=blockTime" json:"blockTime"`
-	BlockNumber             uint64 `protobuf:"varint,14,opt,name=blockNumber" json:"blockNumber"`
-	TxIndex                 uint64 `protobuf:"varint,15,opt,name=txIndex" json:"txIndex"`
-	AveLogo                 string `protobuf:"bytes,16,opt,name=aveLogo" json:"aveLogo"`
-	AveDetailAvailable      bool   `protobuf:"varint,17,opt,name=aveDetailAvailable" json:"aveDetailAvailable"`
-	AveIsHoneypot           bool   `protobuf:"varint,18,opt,name=aveIsHoneypot" json:"aveIsHoneypot"`
-	AveHasMintMethod        bool   `protobuf:"varint,19,opt,name=aveHasMintMethod" json:"aveHasMintMethod"`
-	AveIsMintable           string `protobuf:"bytes,20,opt,name=aveIsMintable" json:"aveIsMintable"`
-	AveHolders              int32  `protobuf:"varint,21,opt,name=aveHolders" json:"aveHolders"`
-	AveMarketCap            string `protobuf:"bytes,22,opt,name=aveMarketCap" json:"aveMarketCap"`
+	Contract                   string `protobuf:"bytes,1,opt,name=contract" json:"contract"`
+	Name                       string `protobuf:"bytes,2,opt,name=name" json:"name"`
+	Symbol                     string `protobuf:"bytes,3,opt,name=symbol" json:"symbol"`
+	HasMintRisk                bool   `protobuf:"varint,6,opt,name=hasMintRisk" json:"hasMintRisk"`
+	IsOpenSource               bool   `protobuf:"varint,7,opt,name=isOpenSource" json:"isOpenSource"`
+	WethPairQuoteUsdtValue     string `protobuf:"bytes,8,opt,name=wethPairQuoteUsdtValue" json:"wethPairQuoteUsdtValue"`
+	WethPairRemoveLiquidity    bool   `protobuf:"varint,9,opt,name=wethPairRemoveLiquidity" json:"wethPairRemoveLiquidity"`
+	UsdtPairQuoteUsdtValue     string `protobuf:"bytes,10,opt,name=usdtPairQuoteUsdtValue" json:"usdtPairQuoteUsdtValue"`
+	UsdtPairRemoveLiquidity    bool   `protobuf:"varint,11,opt,name=usdtPairRemoveLiquidity" json:"usdtPairRemoveLiquidity"`
+	CreatorAssetUsdtValue      string `protobuf:"bytes,12,opt,name=creatorAssetUsdtValue" json:"creatorAssetUsdtValue"`
+	BlockTime                  uint64 `protobuf:"varint,13,opt,name=blockTime" json:"blockTime"`
+	BlockNumber                uint64 `protobuf:"varint,14,opt,name=blockNumber" json:"blockNumber"`
+	TxIndex                    uint64 `protobuf:"varint,15,opt,name=txIndex" json:"txIndex"`
+	AveLogo                    string `protobuf:"bytes,16,opt,name=aveLogo" json:"aveLogo"`
+	AveDetailAvailable         bool   `protobuf:"varint,17,opt,name=aveDetailAvailable" json:"aveDetailAvailable"`
+	AveIsHoneypot              bool   `protobuf:"varint,18,opt,name=aveIsHoneypot" json:"aveIsHoneypot"`
+	AveHasMintMethod           bool   `protobuf:"varint,19,opt,name=aveHasMintMethod" json:"aveHasMintMethod"`
+	AveIsMintable              string `protobuf:"bytes,20,opt,name=aveIsMintable" json:"aveIsMintable"`
+	AveHolders                 int32  `protobuf:"varint,21,opt,name=aveHolders" json:"aveHolders"`
+	AveMarketCap               string `protobuf:"bytes,22,opt,name=aveMarketCap" json:"aveMarketCap"`
+	Creator                    string `protobuf:"bytes,23,opt,name=creator" json:"creator"`
+	TxHash                     string `protobuf:"bytes,24,opt,name=txHash" json:"txHash"`
+	IsPolicyEvaluated          bool   `protobuf:"varint,25,opt,name=isPolicyEvaluated" json:"isPolicyEvaluated"`
+	IsBlacklistedCreatorWallet bool   `protobuf:"varint,26,opt,name=isBlacklistedCreatorWallet" json:"isBlacklistedCreatorWallet"`
+	IsBlacklistedGenesisWallet bool   `protobuf:"varint,27,opt,name=isBlacklistedGenesisWallet" json:"isBlacklistedGenesisWallet"`
+	IsBlacklistedBytecode      bool   `protobuf:"varint,28,opt,name=isBlacklistedBytecode" json:"isBlacklistedBytecode"`
 }
 
 type AveDetail struct {
