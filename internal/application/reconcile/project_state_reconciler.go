@@ -18,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/application/avelogo"
 	"github.com/useryege/athena/internal/application/evm"
 	appstore "github.com/useryege/athena/internal/application/store"
 	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
@@ -76,8 +75,6 @@ type projectStateReconcilerImpl struct {
 	projectStore        appstore.ProjectStore
 	fetcher             evm.AthenaFetcher
 	simulator           ProjectSimulator
-	aveDetailFetcher    avelogo.Fetcher
-	aveChain            string
 	solidityClientSet   solidityapiclient.Clientset
 	chainID             int64
 
@@ -98,8 +95,6 @@ func NewProjectStateReconciler(
 	projectStore appstore.ProjectStore,
 	fetcher evm.AthenaFetcher,
 	simulator ProjectSimulator,
-	aveDetailFetcher avelogo.Fetcher,
-	aveChain string,
 	solidityClientSet solidityapiclient.Clientset,
 	chainID int64,
 	persistencePublisher PersistenceEventPublisher,
@@ -111,8 +106,6 @@ func NewProjectStateReconciler(
 		projectStore:         projectStore,
 		fetcher:              fetcher,
 		simulator:            simulator,
-		aveDetailFetcher:     aveDetailFetcher,
-		aveChain:             strings.TrimSpace(aveChain),
 		solidityClientSet:    solidityClientSet,
 		chainID:              chainID,
 		persistencePublisher: persistencePublisher,
@@ -443,9 +436,6 @@ func (r *projectStateReconcilerImpl) refreshProject(ctx context.Context, contrac
 	if err := r.refreshProjectSimulation(ctx, contract); err != nil {
 		return err
 	}
-	if err := r.refreshProjectAveDetail(ctx, contract); err != nil {
-		return err
-	}
 	if err := r.refreshProjectSoliditySource(ctx, contract); err != nil {
 		return err
 	}
@@ -599,9 +589,6 @@ func (r *projectStateReconcilerImpl) refreshProjectLegacy(ctx context.Context, c
 		return err
 	}
 	if err := r.refreshProjectChainAndSimulation(ctx, project); err != nil {
-		return err
-	}
-	if err := r.refreshProjectAveDetail(ctx, contract); err != nil {
 		return err
 	}
 	if err := r.refreshProjectGenesisWallets(ctx, contract); err != nil {
@@ -794,50 +781,6 @@ func (r *projectStateReconcilerImpl) refreshProjectGenesisWallets(ctx context.Co
 	return r.markComponentSuccess(ctx, contract, "genesis_wallet", fetchedAt)
 }
 
-func (r *projectStateReconcilerImpl) refreshProjectAveDetail(ctx context.Context, contract common.Address) error {
-	if r.aveDetailFetcher == nil || strings.TrimSpace(r.aveChain) == "" {
-		return nil
-	}
-	if r.componentCache != nil {
-		if _, ok, err := r.componentCache.GetAveDetail(ctx, contract); err != nil || ok {
-			return err
-		}
-	} else if r.projectCache != nil {
-		project, ok, err := r.projectCache.GetProject(ctx, contract)
-		if err != nil || !ok || project == nil || project.AveDetail != nil {
-			return err
-		}
-	} else {
-		return nil
-	}
-	tokenID := strings.ToLower(contract.Hex()) + "-" + r.aveChain
-	response, err := r.aveDetailFetcher.FetchDetail(ctx, tokenID)
-	if err != nil {
-		return nil
-	}
-	detail := projectAveDetailFromAveResponse(response, time.Now().UTC())
-	if detail == nil {
-		return nil
-	}
-	if err := r.persistProjectAveDetail(ctx, contract, detail); err != nil {
-		return nil
-	}
-	if r.componentCache != nil {
-		return r.componentCache.SetAveDetail(ctx, contract, projectAveDetailToStore(detail))
-	}
-	if r.projectCache != nil {
-		_, err = r.projectCache.UpdateProject(ctx, contract, func(current *Project, exists bool) (*Project, bool, error) {
-			if !exists || current == nil || current.AveDetail != nil {
-				return nil, false, nil
-			}
-			current.AveDetail = detail
-			return current, true, nil
-		})
-		return err
-	}
-	return nil
-}
-
 func (r *projectStateReconcilerImpl) refreshProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address) error {
 	if r.componentCache == nil && r.projectCache != nil {
 		project, ok, err := r.projectCache.GetProject(ctx, contract)
@@ -996,16 +939,6 @@ func (r *projectStateReconcilerImpl) persistProjectChainState(ctx context.Contex
 		return store.UpsertProjectChainState(ctx, projectChainStateFromSnapshot(contract, snapshot, fetchedAt))
 	}
 	return nil
-}
-
-func (r *projectStateReconcilerImpl) persistProjectAveDetail(ctx context.Context, contract common.Address, detail *ProjectAveDetail) error {
-	if store, ok := r.projectStore.(appstore.ProjectAveDetailStore); ok && store != nil {
-		return store.UpsertProjectAveDetail(ctx, contract, projectAveDetailToStore(detail))
-	}
-	if r.persistencePublisher == nil {
-		return nil
-	}
-	return r.persistencePublisher.PublishProjectAveDetailUpsert(ctx, contract, projectAveDetailToStore(detail))
 }
 
 func (r *projectStateReconcilerImpl) persistProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error {

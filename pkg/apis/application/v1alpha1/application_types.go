@@ -74,6 +74,18 @@ type AveDetail struct {
 	Pairs     []AvePair      `protobuf:"bytes,7,rep,name=pairs" json:"pairs"`
 }
 
+type ProjectAveState struct {
+	Contract        string    `protobuf:"bytes,1,opt,name=contract" json:"contract"`
+	DetailAvailable bool      `protobuf:"varint,2,opt,name=detailAvailable" json:"detailAvailable"`
+	Detail          AveDetail `protobuf:"bytes,3,opt,name=detail" json:"detail"`
+	Status          string    `protobuf:"bytes,4,opt,name=status" json:"status"`
+	LastAttemptAt   string    `protobuf:"bytes,5,opt,name=lastAttemptAt" json:"lastAttemptAt"`
+	LastSuccessAt   string    `protobuf:"bytes,6,opt,name=lastSuccessAt" json:"lastSuccessAt"`
+	NextRunAt       string    `protobuf:"bytes,7,opt,name=nextRunAt" json:"nextRunAt"`
+	LastError       string    `protobuf:"bytes,8,opt,name=lastError" json:"lastError"`
+	Stale           bool      `protobuf:"varint,9,opt,name=stale" json:"stale"`
+}
+
 type AveTokenDetail struct {
 	Total               string `protobuf:"bytes,1,opt,name=total" json:"total"`
 	LaunchPrice         string `protobuf:"bytes,2,opt,name=launchPrice" json:"launchPrice"`

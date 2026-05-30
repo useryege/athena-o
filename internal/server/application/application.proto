@@ -66,12 +66,20 @@ message GetProjectSimulationResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.SimulateResult item = 1;
 }
 
-message GetProjectAveDetailRequest {
+message GetProjectAveStateRequest {
   string contract = 1;
 }
 
-message GetProjectAveDetailResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.AveDetail item = 1;
+message GetProjectAveStateResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectAveState item = 1;
+}
+
+message RefreshProjectAveDetailRequest {
+  string contract = 1;
+}
+
+message RefreshProjectAveDetailResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectAveState item = 1;
 }
 
 message ListProjectGenesisWalletsRequest {
@@ -181,8 +189,15 @@ service ApplicationService {
     option (google.api.http) = {get: "/api/v1/projects/{contract}/simulation"};
   }
 
-  rpc GetProjectAveDetail(GetProjectAveDetailRequest) returns (GetProjectAveDetailResponse) {
-    option (google.api.http) = {get: "/api/v1/projects/{contract}/ave-detail"};
+  rpc GetProjectAveState(GetProjectAveStateRequest) returns (GetProjectAveStateResponse) {
+    option (google.api.http) = {get: "/api/v1/projects/{contract}/ave"};
+  }
+
+  rpc RefreshProjectAveDetail(RefreshProjectAveDetailRequest) returns (RefreshProjectAveDetailResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/projects/{contract}/ave/refresh"
+      body: "*"
+    };
   }
 
   rpc ListProjectGenesisWallets(ListProjectGenesisWalletsRequest) returns (ListProjectGenesisWalletsResponse) {

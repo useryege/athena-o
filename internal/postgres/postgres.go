@@ -88,6 +88,28 @@ func Migrate(ctx context.Context, dsn string, migrations fs.FS, dir string) erro
 	}
 	defer db.Close()
 
+	var pingErr error
+	for attempt := 1; attempt <= pingAttempts; attempt++ {
+		pingCtx, cancel := context.WithTimeout(ctx, pingInterval)
+		pingErr = db.PingContext(pingCtx)
+		cancel()
+		if pingErr == nil {
+			break
+		}
+
+		log.Warnf("failed to ping postgres migration database, attempt %d/%d: %v", attempt, pingAttempts, pingErr)
+		if attempt < pingAttempts {
+			select {
+			case <-ctx.Done():
+				return fmt.Errorf("postgres migration database ping interrupted: %w", ctx.Err())
+			case <-time.After(pingInterval):
+			}
+		}
+	}
+	if pingErr != nil {
+		return fmt.Errorf("failed to ping postgres migration database after %d attempts: %w", pingAttempts, pingErr)
+	}
+
 	gooseMu.Lock()
 	defer gooseMu.Unlock()
 

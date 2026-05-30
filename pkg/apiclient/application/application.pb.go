@@ -632,25 +632,25 @@ func (m *GetProjectSimulationResponse) GetItem() *v1alpha1.SimulateResult {
 	return nil
 }
 
-type GetProjectAveDetailRequest struct {
+type GetProjectAveStateRequest struct {
 	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetProjectAveDetailRequest) Reset()         { *m = GetProjectAveDetailRequest{} }
-func (m *GetProjectAveDetailRequest) String() string { return proto.CompactTextString(m) }
-func (*GetProjectAveDetailRequest) ProtoMessage()    {}
-func (*GetProjectAveDetailRequest) Descriptor() ([]byte, []int) {
+func (m *GetProjectAveStateRequest) Reset()         { *m = GetProjectAveStateRequest{} }
+func (m *GetProjectAveStateRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProjectAveStateRequest) ProtoMessage()    {}
+func (*GetProjectAveStateRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{12}
 }
-func (m *GetProjectAveDetailRequest) XXX_Unmarshal(b []byte) error {
+func (m *GetProjectAveStateRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetProjectAveDetailRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetProjectAveStateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_GetProjectAveDetailRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_GetProjectAveStateRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -660,44 +660,44 @@ func (m *GetProjectAveDetailRequest) XXX_Marshal(b []byte, deterministic bool) (
 		return b[:n], nil
 	}
 }
-func (m *GetProjectAveDetailRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetProjectAveDetailRequest.Merge(m, src)
+func (m *GetProjectAveStateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectAveStateRequest.Merge(m, src)
 }
-func (m *GetProjectAveDetailRequest) XXX_Size() int {
+func (m *GetProjectAveStateRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *GetProjectAveDetailRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetProjectAveDetailRequest.DiscardUnknown(m)
+func (m *GetProjectAveStateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectAveStateRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetProjectAveDetailRequest proto.InternalMessageInfo
+var xxx_messageInfo_GetProjectAveStateRequest proto.InternalMessageInfo
 
-func (m *GetProjectAveDetailRequest) GetContract() string {
+func (m *GetProjectAveStateRequest) GetContract() string {
 	if m != nil {
 		return m.Contract
 	}
 	return ""
 }
 
-type GetProjectAveDetailResponse struct {
-	Item                 *v1alpha1.AveDetail `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
-	XXX_unrecognized     []byte              `json:"-"`
-	XXX_sizecache        int32               `json:"-"`
+type GetProjectAveStateResponse struct {
+	Item                 *v1alpha1.ProjectAveState `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
 }
 
-func (m *GetProjectAveDetailResponse) Reset()         { *m = GetProjectAveDetailResponse{} }
-func (m *GetProjectAveDetailResponse) String() string { return proto.CompactTextString(m) }
-func (*GetProjectAveDetailResponse) ProtoMessage()    {}
-func (*GetProjectAveDetailResponse) Descriptor() ([]byte, []int) {
+func (m *GetProjectAveStateResponse) Reset()         { *m = GetProjectAveStateResponse{} }
+func (m *GetProjectAveStateResponse) String() string { return proto.CompactTextString(m) }
+func (*GetProjectAveStateResponse) ProtoMessage()    {}
+func (*GetProjectAveStateResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dbb8cd1a14781c7f, []int{13}
 }
-func (m *GetProjectAveDetailResponse) XXX_Unmarshal(b []byte) error {
+func (m *GetProjectAveStateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetProjectAveDetailResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetProjectAveStateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_GetProjectAveDetailResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_GetProjectAveStateResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -707,19 +707,113 @@ func (m *GetProjectAveDetailResponse) XXX_Marshal(b []byte, deterministic bool) 
 		return b[:n], nil
 	}
 }
-func (m *GetProjectAveDetailResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetProjectAveDetailResponse.Merge(m, src)
+func (m *GetProjectAveStateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectAveStateResponse.Merge(m, src)
 }
-func (m *GetProjectAveDetailResponse) XXX_Size() int {
+func (m *GetProjectAveStateResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *GetProjectAveDetailResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetProjectAveDetailResponse.DiscardUnknown(m)
+func (m *GetProjectAveStateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectAveStateResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetProjectAveDetailResponse proto.InternalMessageInfo
+var xxx_messageInfo_GetProjectAveStateResponse proto.InternalMessageInfo
 
-func (m *GetProjectAveDetailResponse) GetItem() *v1alpha1.AveDetail {
+func (m *GetProjectAveStateResponse) GetItem() *v1alpha1.ProjectAveState {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+type RefreshProjectAveDetailRequest struct {
+	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RefreshProjectAveDetailRequest) Reset()         { *m = RefreshProjectAveDetailRequest{} }
+func (m *RefreshProjectAveDetailRequest) String() string { return proto.CompactTextString(m) }
+func (*RefreshProjectAveDetailRequest) ProtoMessage()    {}
+func (*RefreshProjectAveDetailRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{14}
+}
+func (m *RefreshProjectAveDetailRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RefreshProjectAveDetailRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RefreshProjectAveDetailRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RefreshProjectAveDetailRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefreshProjectAveDetailRequest.Merge(m, src)
+}
+func (m *RefreshProjectAveDetailRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *RefreshProjectAveDetailRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RefreshProjectAveDetailRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RefreshProjectAveDetailRequest proto.InternalMessageInfo
+
+func (m *RefreshProjectAveDetailRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+type RefreshProjectAveDetailResponse struct {
+	Item                 *v1alpha1.ProjectAveState `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
+}
+
+func (m *RefreshProjectAveDetailResponse) Reset()         { *m = RefreshProjectAveDetailResponse{} }
+func (m *RefreshProjectAveDetailResponse) String() string { return proto.CompactTextString(m) }
+func (*RefreshProjectAveDetailResponse) ProtoMessage()    {}
+func (*RefreshProjectAveDetailResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{15}
+}
+func (m *RefreshProjectAveDetailResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RefreshProjectAveDetailResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RefreshProjectAveDetailResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RefreshProjectAveDetailResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefreshProjectAveDetailResponse.Merge(m, src)
+}
+func (m *RefreshProjectAveDetailResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *RefreshProjectAveDetailResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RefreshProjectAveDetailResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RefreshProjectAveDetailResponse proto.InternalMessageInfo
+
+func (m *RefreshProjectAveDetailResponse) GetItem() *v1alpha1.ProjectAveState {
 	if m != nil {
 		return m.Item
 	}
@@ -737,7 +831,7 @@ func (m *ListProjectGenesisWalletsRequest) Reset()         { *m = ListProjectGen
 func (m *ListProjectGenesisWalletsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListProjectGenesisWalletsRequest) ProtoMessage()    {}
 func (*ListProjectGenesisWalletsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{14}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{16}
 }
 func (m *ListProjectGenesisWalletsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -784,7 +878,7 @@ func (m *ListProjectGenesisWalletsResponse) Reset()         { *m = ListProjectGe
 func (m *ListProjectGenesisWalletsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListProjectGenesisWalletsResponse) ProtoMessage()    {}
 func (*ListProjectGenesisWalletsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{15}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{17}
 }
 func (m *ListProjectGenesisWalletsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -835,7 +929,7 @@ func (m *ListProjectCreatorHistoricalProjectsRequest) String() string {
 }
 func (*ListProjectCreatorHistoricalProjectsRequest) ProtoMessage() {}
 func (*ListProjectCreatorHistoricalProjectsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{16}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{18}
 }
 func (m *ListProjectCreatorHistoricalProjectsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -886,7 +980,7 @@ func (m *ListProjectCreatorHistoricalProjectsResponse) String() string {
 }
 func (*ListProjectCreatorHistoricalProjectsResponse) ProtoMessage() {}
 func (*ListProjectCreatorHistoricalProjectsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{17}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{19}
 }
 func (m *ListProjectCreatorHistoricalProjectsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -940,7 +1034,7 @@ func (m *ProjectEventLog) Reset()         { *m = ProjectEventLog{} }
 func (m *ProjectEventLog) String() string { return proto.CompactTextString(m) }
 func (*ProjectEventLog) ProtoMessage()    {}
 func (*ProjectEventLog) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{18}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{20}
 }
 func (m *ProjectEventLog) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1030,7 +1124,7 @@ func (m *ListProjectEventLogsRequest) Reset()         { *m = ListProjectEventLog
 func (m *ListProjectEventLogsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListProjectEventLogsRequest) ProtoMessage()    {}
 func (*ListProjectEventLogsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{19}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{21}
 }
 func (m *ListProjectEventLogsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1078,7 +1172,7 @@ func (m *ListProjectEventLogsResponse) Reset()         { *m = ListProjectEventLo
 func (m *ListProjectEventLogsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListProjectEventLogsResponse) ProtoMessage()    {}
 func (*ListProjectEventLogsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{20}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{22}
 }
 func (m *ListProjectEventLogsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1130,7 +1224,7 @@ func (m *ProjectComment) Reset()         { *m = ProjectComment{} }
 func (m *ProjectComment) String() string { return proto.CompactTextString(m) }
 func (*ProjectComment) ProtoMessage()    {}
 func (*ProjectComment) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{21}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{23}
 }
 func (m *ProjectComment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1207,7 +1301,7 @@ func (m *AddProjectCommentRequest) Reset()         { *m = AddProjectCommentReque
 func (m *AddProjectCommentRequest) String() string { return proto.CompactTextString(m) }
 func (*AddProjectCommentRequest) ProtoMessage()    {}
 func (*AddProjectCommentRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{22}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{24}
 }
 func (m *AddProjectCommentRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1262,7 +1356,7 @@ func (m *AddProjectCommentResponse) Reset()         { *m = AddProjectCommentResp
 func (m *AddProjectCommentResponse) String() string { return proto.CompactTextString(m) }
 func (*AddProjectCommentResponse) ProtoMessage()    {}
 func (*AddProjectCommentResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{23}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{25}
 }
 func (m *AddProjectCommentResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1312,7 +1406,7 @@ func (m *ListProjectCommentsRequest) Reset()         { *m = ListProjectCommentsR
 func (m *ListProjectCommentsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListProjectCommentsRequest) ProtoMessage()    {}
 func (*ListProjectCommentsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{24}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{26}
 }
 func (m *ListProjectCommentsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1377,7 +1471,7 @@ func (m *ListProjectCommentsResponse) Reset()         { *m = ListProjectComments
 func (m *ListProjectCommentsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListProjectCommentsResponse) ProtoMessage()    {}
 func (*ListProjectCommentsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{25}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{27}
 }
 func (m *ListProjectCommentsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1445,7 +1539,7 @@ func (m *GetProjectOptionsRequest) Reset()         { *m = GetProjectOptionsReque
 func (m *GetProjectOptionsRequest) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsRequest) ProtoMessage()    {}
 func (*GetProjectOptionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{26}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{28}
 }
 func (m *GetProjectOptionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1486,7 +1580,7 @@ func (m *GetProjectOptionsResponse) Reset()         { *m = GetProjectOptionsResp
 func (m *GetProjectOptionsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsResponse) ProtoMessage()    {}
 func (*GetProjectOptionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{27}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{29}
 }
 func (m *GetProjectOptionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1535,8 +1629,10 @@ func init() {
 	proto.RegisterType((*GetProjectChainStateResponse)(nil), "application.GetProjectChainStateResponse")
 	proto.RegisterType((*GetProjectSimulationRequest)(nil), "application.GetProjectSimulationRequest")
 	proto.RegisterType((*GetProjectSimulationResponse)(nil), "application.GetProjectSimulationResponse")
-	proto.RegisterType((*GetProjectAveDetailRequest)(nil), "application.GetProjectAveDetailRequest")
-	proto.RegisterType((*GetProjectAveDetailResponse)(nil), "application.GetProjectAveDetailResponse")
+	proto.RegisterType((*GetProjectAveStateRequest)(nil), "application.GetProjectAveStateRequest")
+	proto.RegisterType((*GetProjectAveStateResponse)(nil), "application.GetProjectAveStateResponse")
+	proto.RegisterType((*RefreshProjectAveDetailRequest)(nil), "application.RefreshProjectAveDetailRequest")
+	proto.RegisterType((*RefreshProjectAveDetailResponse)(nil), "application.RefreshProjectAveDetailResponse")
 	proto.RegisterType((*ListProjectGenesisWalletsRequest)(nil), "application.ListProjectGenesisWalletsRequest")
 	proto.RegisterType((*ListProjectGenesisWalletsResponse)(nil), "application.ListProjectGenesisWalletsResponse")
 	proto.RegisterType((*ListProjectCreatorHistoricalProjectsRequest)(nil), "application.ListProjectCreatorHistoricalProjectsRequest")
@@ -1558,86 +1654,90 @@ func init() {
 }
 
 var fileDescriptor_dbb8cd1a14781c7f = []byte{
-	// 1264 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x98, 0x4d, 0x4f, 0xdc, 0x46,
-	0x18, 0xc7, 0xe5, 0x25, 0x24, 0xd9, 0x87, 0x8a, 0x84, 0x09, 0x6d, 0x16, 0x43, 0x80, 0x38, 0x94,
-	0x6c, 0x5e, 0xd6, 0x16, 0xd0, 0x4a, 0x49, 0x0f, 0x95, 0x80, 0x20, 0x40, 0x45, 0x6a, 0x64, 0xaa,
-	0x46, 0x7d, 0x13, 0x1a, 0xbc, 0xa3, 0x5d, 0x37, 0x5e, 0xdb, 0xb5, 0x67, 0x17, 0xd1, 0x57, 0xa9,
-	0x3d, 0xf4, 0xd0, 0x53, 0x15, 0x29, 0xad, 0xd4, 0x7e, 0x87, 0x1e, 0x7b, 0xea, 0xbd, 0x47, 0xa4,
-	0x7e, 0x81, 0x0a, 0xf5, 0x83, 0x54, 0x1e, 0x8f, 0xd7, 0x33, 0xde, 0xb5, 0xd7, 0x40, 0x4e, 0xec,
-	0x78, 0x9e, 0x97, 0xdf, 0xf3, 0x78, 0x5e, 0xfe, 0x18, 0x1a, 0xb6, 0x4b, 0x49, 0xe0, 0x62, 0xc7,
-	0x08, 0x49, 0xd0, 0x23, 0x81, 0x81, 0x7d, 0xdf, 0xb1, 0x2d, 0x4c, 0x6d, 0xcf, 0x15, 0x7f, 0xeb,
-	0x7e, 0xe0, 0x51, 0x0f, 0x4d, 0x08, 0x8f, 0xd4, 0x9d, 0x96, 0x4d, 0xdb, 0xdd, 0x43, 0xdd, 0xf2,
-	0x3a, 0x46, 0x37, 0x24, 0xc1, 0x31, 0x69, 0x11, 0x03, 0xd3, 0x36, 0x71, 0xb1, 0xe1, 0x3f, 0x6f,
-	0x19, 0xd8, 0xb7, 0x43, 0x29, 0x5e, 0x6f, 0x05, 0x3b, 0x7e, 0x1b, 0xaf, 0x18, 0x2d, 0xe2, 0x92,
-	0x00, 0x53, 0xd2, 0x8c, 0xc3, 0xaa, 0x73, 0x2d, 0xcf, 0x6b, 0x39, 0x24, 0xf2, 0x30, 0xb0, 0xeb,
-	0x7a, 0x94, 0xd9, 0x87, 0xf1, 0xac, 0xb6, 0x05, 0x37, 0xf6, 0xec, 0x90, 0x3e, 0x0d, 0xbc, 0xcf,
-	0x89, 0x45, 0x43, 0x93, 0x7c, 0xd1, 0x25, 0x21, 0x45, 0x08, 0x2e, 0xf9, 0xb8, 0x45, 0x6a, 0xca,
-	0xa2, 0x52, 0x1f, 0x37, 0xd9, 0x6f, 0xa4, 0xc2, 0xd5, 0xe8, 0xef, 0xbe, 0xfd, 0x25, 0xa9, 0x55,
-	0xd8, 0xf3, 0xfe, 0x58, 0xfb, 0x4b, 0x81, 0x69, 0x39, 0x4e, 0xe8, 0x7b, 0x6e, 0x48, 0xd0, 0x01,
-	0x8c, 0xdb, 0x94, 0x74, 0xc2, 0x9a, 0xb2, 0x38, 0x56, 0x9f, 0x58, 0xdd, 0xd5, 0xd3, 0xba, 0xf4,
-	0xa4, 0x2e, 0x3d, 0xae, 0x4b, 0xf7, 0x9f, 0xb7, 0xf4, 0xa8, 0x2e, 0x5d, 0xec, 0x4d, 0x52, 0x97,
-	0xce, 0x43, 0x47, 0x59, 0x76, 0x29, 0xe9, 0x98, 0x71, 0x5c, 0x34, 0x0d, 0xe3, 0xd4, 0xa3, 0xd8,
-	0x61, 0x48, 0x63, 0x66, 0x3c, 0xe8, 0xf3, 0x8f, 0xe5, 0xf0, 0x5f, 0xca, 0xf0, 0x1b, 0x30, 0xb5,
-	0x4d, 0x12, 0xfa, 0xa4, 0x09, 0x2a, 0x5c, 0xb5, 0x3c, 0x97, 0x06, 0xd8, 0xa2, 0xac, 0x11, 0x55,
-	0xb3, 0x3f, 0xd6, 0x3c, 0x40, 0xa2, 0x03, 0xaf, 0xf6, 0x23, 0xb8, 0x14, 0x51, 0x31, 0xeb, 0x89,
-	0xd5, 0xad, 0x0b, 0x17, 0xfb, 0xa1, 0x4d, 0x8e, 0x4c, 0x16, 0x52, 0x5b, 0x83, 0xd7, 0xd3, 0x84,
-	0x1b, 0x38, 0x24, 0x65, 0x28, 0x8f, 0xe0, 0x8d, 0xac, 0x13, 0x27, 0xfd, 0x4c, 0x22, 0xbd, 0xf8,
-	0x6b, 0x89, 0x82, 0x0b, 0xb4, 0x6f, 0xc3, 0x4d, 0xb1, 0x3d, 0xbe, 0x17, 0xd0, 0x72, 0xbc, 0xb5,
-	0x41, 0x37, 0x4e, 0xfc, 0x89, 0x44, 0xbc, 0x7d, 0x61, 0x62, 0x1e, 0x3e, 0xe6, 0x7d, 0x0c, 0xb3,
-	0x69, 0xe2, 0xcd, 0x36, 0xb6, 0xdd, 0x7d, 0x8a, 0x69, 0xa9, 0x1e, 0x7f, 0x07, 0x73, 0xc3, 0x5d,
-	0xfb, 0x3b, 0x40, 0xe4, 0x7e, 0xef, 0xc2, 0xdc, 0x42, 0x8a, 0x21, 0xec, 0xfb, 0x76, 0xa7, 0xeb,
-	0x30, 0xc7, 0x32, 0xec, 0x5f, 0x8b, 0xec, 0xa2, 0x2b, 0x67, 0xff, 0x54, 0x62, 0xdf, 0x39, 0x3f,
-	0x3b, 0x8f, 0x1d, 0x75, 0xa5, 0xeb, 0x24, 0x4d, 0x7f, 0x04, 0x6a, 0x9a, 0x7d, 0xbd, 0x47, 0x9e,
-	0x10, 0x8a, 0x6d, 0xa7, 0x0c, 0x77, 0x4f, 0x2c, 0x59, 0xf0, 0xe4, 0xd8, 0xcf, 0x24, 0xec, 0xcd,
-	0xf3, 0x63, 0xa7, 0xa1, 0x63, 0xe2, 0x77, 0x61, 0x51, 0x38, 0xe5, 0xb6, 0x89, 0x4b, 0x42, 0x3b,
-	0x7c, 0x86, 0x1d, 0x87, 0xa4, 0x47, 0x67, 0x11, 0xf7, 0x8f, 0x0a, 0xdc, 0x2e, 0x08, 0xc0, 0xf1,
-	0x0f, 0xe5, 0x33, 0x73, 0xef, 0xfc, 0xfc, 0x52, 0x82, 0x78, 0xcd, 0xc4, 0xa1, 0xb5, 0x5d, 0x78,
-	0x20, 0x80, 0x6c, 0x06, 0x04, 0x53, 0x2f, 0xd8, 0xb1, 0x43, 0xea, 0x05, 0xb6, 0x85, 0x9d, 0xec,
-	0x7d, 0x50, 0x54, 0xd4, 0x13, 0x78, 0x58, 0x2e, 0x14, 0x2f, 0x6f, 0x5a, 0x2c, 0xaf, 0x9a, 0x00,
-	0x9d, 0x28, 0x70, 0x8d, 0x9b, 0x6e, 0xf5, 0x88, 0x4b, 0xf7, 0xbc, 0x16, 0x9a, 0x84, 0x8a, 0xdd,
-	0x64, 0xf9, 0xc6, 0xcc, 0x8a, 0xdd, 0x94, 0x28, 0x2a, 0x32, 0x05, 0xba, 0x05, 0x40, 0x22, 0xbf,
-	0x03, 0x7a, 0xec, 0x27, 0xe7, 0x7e, 0x95, 0x3d, 0xf9, 0xe0, 0xd8, 0x27, 0x68, 0x01, 0x26, 0x3c,
-	0xcb, 0xea, 0x06, 0x01, 0x69, 0x1e, 0x60, 0xca, 0xce, 0xff, 0xaa, 0x09, 0xc9, 0xa3, 0x75, 0x8a,
-	0x6a, 0x70, 0xa5, 0x43, 0xc2, 0x30, 0xba, 0x34, 0xc6, 0xd9, 0x64, 0x32, 0x8c, 0x66, 0x7c, 0x7c,
-	0xec, 0x78, 0xb8, 0x59, 0xbb, 0x1c, 0xcf, 0xf0, 0x61, 0x94, 0xd3, 0x8a, 0xca, 0x8d, 0x63, 0x5e,
-	0x61, 0x93, 0x55, 0xfe, 0x64, 0x9d, 0x46, 0x1b, 0x53, 0x68, 0x4c, 0x52, 0x55, 0xa9, 0x9e, 0x9a,
-	0x30, 0x37, 0xdc, 0x95, 0xf7, 0x70, 0x55, 0x5e, 0x22, 0x73, 0xd2, 0xeb, 0xcf, 0x78, 0x25, 0x1d,
-	0xfe, 0x59, 0x81, 0xc9, 0xe4, 0x25, 0x79, 0x9d, 0x0e, 0x71, 0xe9, 0x99, 0x1a, 0xac, 0xc2, 0xd5,
-	0x68, 0xf1, 0xb9, 0xb8, 0x13, 0xb7, 0xb7, 0x6a, 0xf6, 0xc7, 0x51, 0x8b, 0x22, 0x3b, 0xe2, 0x26,
-	0x9d, 0x4d, 0x86, 0x99, 0x16, 0x8d, 0x67, 0x5b, 0xf4, 0x14, 0x6a, 0xeb, 0xcd, 0xa6, 0x4c, 0x55,
-	0xa2, 0x3f, 0x62, 0xc2, 0x8a, 0x94, 0x50, 0xdb, 0x83, 0x99, 0x21, 0x11, 0x79, 0xdb, 0x0c, 0xe9,
-	0x60, 0x98, 0x1d, 0xd6, 0xb5, 0xc4, 0x25, 0xde, 0xf0, 0x6d, 0x50, 0xc5, 0xb5, 0x1d, 0xcf, 0x95,
-	0x79, 0x83, 0x7d, 0x05, 0x52, 0xc9, 0x51, 0x20, 0x63, 0x19, 0x05, 0xf2, 0x52, 0x91, 0x56, 0x4b,
-	0x9a, 0x8a, 0xa3, 0xaf, 0xc8, 0x6f, 0xbc, 0x90, 0xfd, 0x95, 0x4a, 0x23, 0x55, 0xbc, 0x93, 0xdf,
-	0xf7, 0x99, 0x78, 0xe4, 0x0d, 0xd0, 0xbe, 0x85, 0x99, 0x21, 0x73, 0x9c, 0x18, 0xc3, 0x15, 0x2f,
-	0x7e, 0xf4, 0xca, 0xee, 0xec, 0x38, 0x85, 0x99, 0xc4, 0x5d, 0xfd, 0xf3, 0x1a, 0xa0, 0xf5, 0xd4,
-	0x7e, 0x9f, 0x04, 0x3d, 0xdb, 0x22, 0xa8, 0x03, 0xaf, 0x89, 0x62, 0x14, 0x2d, 0x4a, 0x41, 0x87,
-	0xe8, 0x5d, 0xf5, 0x76, 0x81, 0x45, 0x5c, 0x8e, 0x56, 0xfb, 0xfe, 0x9f, 0xff, 0x5e, 0x54, 0x10,
-	0xba, 0xce, 0x94, 0x74, 0x6f, 0xc5, 0xf0, 0x93, 0xf0, 0x01, 0x40, 0xda, 0x05, 0x34, 0x2f, 0x85,
-	0x1a, 0x50, 0x95, 0xea, 0x42, 0xee, 0x3c, 0x4f, 0x74, 0x87, 0x25, 0xba, 0x85, 0x66, 0xb3, 0x89,
-	0x8c, 0xaf, 0x92, 0xd5, 0xf5, 0x0d, 0xfa, 0x41, 0x81, 0x49, 0x59, 0xda, 0x21, 0x2d, 0x27, 0xb0,
-	0x20, 0x16, 0xd5, 0x3b, 0x85, 0x36, 0x1c, 0xa0, 0xce, 0x00, 0x34, 0xb4, 0x58, 0x00, 0x60, 0x1c,
-	0x46, 0x29, 0x7f, 0x52, 0xe0, 0x7a, 0x56, 0xb0, 0xa1, 0xa5, 0xdc, 0x02, 0x05, 0x19, 0xa8, 0xbe,
-	0x39, 0xc2, 0x8a, 0xb3, 0xdc, 0x67, 0x2c, 0x4b, 0x48, 0x2b, 0x62, 0x09, 0xe2, 0xc4, 0xbf, 0x2b,
-	0x30, 0x3d, 0x4c, 0x8a, 0xa1, 0x7a, 0x4e, 0xae, 0x01, 0xa1, 0xa7, 0xde, 0x2b, 0x61, 0xc9, 0xc9,
-	0x0c, 0x46, 0x76, 0x0f, 0xdd, 0x2d, 0x22, 0xb3, 0x22, 0xbf, 0x46, 0xc8, 0x28, 0x7e, 0x93, 0xf0,
-	0x52, 0xb5, 0x95, 0x8b, 0x37, 0xa0, 0xe5, 0x72, 0xf1, 0x06, 0xa5, 0x9b, 0xa6, 0x33, 0xbc, 0x3a,
-	0x5a, 0x2e, 0xc2, 0x0b, 0x53, 0x88, 0x5f, 0x15, 0xb8, 0x31, 0x44, 0x53, 0xa1, 0xbb, 0x39, 0x29,
-	0xb3, 0x7a, 0x4d, 0xad, 0x8f, 0x36, 0x3c, 0x0b, 0x1a, 0xee, 0x91, 0x46, 0x33, 0x46, 0xf8, 0x43,
-	0x81, 0x99, 0x5c, 0xd5, 0x84, 0x1a, 0x79, 0x5b, 0x77, 0xa8, 0x3c, 0x53, 0xf5, 0xb2, 0xe6, 0x1c,
-	0x76, 0x8d, 0xc1, 0x36, 0xd0, 0x83, 0x22, 0xd8, 0x56, 0xec, 0xdb, 0x38, 0xe2, 0x4c, 0x27, 0x0a,
-	0x2c, 0x95, 0xd1, 0x44, 0xe8, 0x51, 0x1e, 0xcd, 0x28, 0x45, 0xa6, 0x3e, 0x3e, 0x87, 0xe7, 0x59,
-	0x4a, 0xb2, 0xe2, 0x30, 0x8d, 0x36, 0x8b, 0x73, 0x8c, 0x7e, 0x91, 0xff, 0xc3, 0xef, 0x4b, 0x92,
-	0xcc, 0xea, 0x2d, 0x10, 0x3c, 0x99, 0xd5, 0x5b, 0xa4, 0x6f, 0xca, 0x6d, 0x7b, 0xa6, 0xee, 0x42,
-	0xf4, 0x42, 0x81, 0xa9, 0x81, 0x2b, 0x1f, 0xc9, 0xe7, 0x4b, 0x9e, 0xc8, 0x50, 0x97, 0x47, 0x99,
-	0xc9, 0xbb, 0x5d, 0x5b, 0x2a, 0xec, 0x19, 0xbf, 0xb4, 0xdf, 0x51, 0xee, 0xa3, 0x97, 0x8a, 0xf4,
-	0x65, 0x25, 0xb9, 0xcf, 0x33, 0xfb, 0x29, 0x5f, 0x5c, 0xa8, 0xf5, 0xd1, 0x86, 0x9c, 0xed, 0x21,
-	0x63, 0x5b, 0x46, 0xa5, 0xd8, 0xa2, 0x9b, 0x63, 0x6a, 0xe0, 0xd2, 0x46, 0x79, 0xc7, 0xb1, 0x7c,
-	0xe1, 0x67, 0xda, 0x95, 0x7b, 0xf7, 0x6b, 0x0b, 0x0c, 0x69, 0x06, 0xdd, 0xcc, 0x20, 0x35, 0xf8,
-	0xcd, 0xbd, 0xb1, 0xf1, 0xf7, 0xe9, 0xbc, 0x72, 0x72, 0x3a, 0xaf, 0xfc, 0x7b, 0x3a, 0xaf, 0x7c,
-	0xfc, 0xd6, 0xe8, 0xaf, 0x5d, 0x96, 0x63, 0x13, 0x97, 0x8a, 0x9f, 0xbc, 0x0e, 0x2f, 0xb3, 0x4f,
-	0x58, 0x6b, 0xff, 0x07, 0x00, 0x00, 0xff, 0xff, 0x21, 0xcb, 0x25, 0x40, 0x68, 0x13, 0x00, 0x00,
+	// 1323 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x98, 0x4d, 0x6f, 0xe3, 0x44,
+	0x18, 0xc7, 0xe5, 0x74, 0xbb, 0x6d, 0x9e, 0xa2, 0xd2, 0x0e, 0x85, 0xa6, 0x6e, 0xb7, 0x2f, 0xde,
+	0xd2, 0x66, 0xb7, 0x4d, 0xac, 0xb6, 0x20, 0x58, 0x84, 0x90, 0xda, 0xdd, 0xaa, 0xad, 0xa8, 0xc4,
+	0xca, 0x45, 0x20, 0xde, 0x54, 0x4d, 0x9d, 0x21, 0x31, 0xeb, 0xd8, 0xc6, 0x9e, 0xa4, 0x2a, 0xcb,
+	0x9b, 0xe0, 0xc0, 0x01, 0x09, 0x09, 0xad, 0xb4, 0x1c, 0xe0, 0x03, 0x70, 0xe3, 0x13, 0x70, 0xe7,
+	0x58, 0x89, 0x0b, 0x47, 0x54, 0xf1, 0x41, 0x90, 0xc7, 0xe3, 0x64, 0xc6, 0x89, 0x1d, 0x6f, 0xbb,
+	0x70, 0x6a, 0xc7, 0xf3, 0xbc, 0xfc, 0x9e, 0x67, 0xc6, 0x33, 0xff, 0x18, 0x2a, 0x96, 0x43, 0x89,
+	0xef, 0x60, 0x5b, 0x0f, 0x88, 0xdf, 0x26, 0xbe, 0x8e, 0x3d, 0xcf, 0xb6, 0x4c, 0x4c, 0x2d, 0xd7,
+	0x11, 0xff, 0xaf, 0x7a, 0xbe, 0x4b, 0x5d, 0x34, 0x26, 0x3c, 0x52, 0xf7, 0xeb, 0x16, 0x6d, 0xb4,
+	0x4e, 0xaa, 0xa6, 0xdb, 0xd4, 0x5b, 0x01, 0xf1, 0xcf, 0x48, 0x9d, 0xe8, 0x98, 0x36, 0x88, 0x83,
+	0x75, 0xef, 0x41, 0x5d, 0xc7, 0x9e, 0x15, 0x48, 0xf1, 0xda, 0x1b, 0xd8, 0xf6, 0x1a, 0x78, 0x43,
+	0xaf, 0x13, 0x87, 0xf8, 0x98, 0x92, 0x5a, 0x14, 0x56, 0x9d, 0xab, 0xbb, 0x6e, 0xdd, 0x26, 0xa1,
+	0x87, 0x8e, 0x1d, 0xc7, 0xa5, 0xcc, 0x3e, 0x88, 0x66, 0xb5, 0x5d, 0x78, 0xee, 0xd0, 0x0a, 0xe8,
+	0x7d, 0xdf, 0xfd, 0x84, 0x98, 0x34, 0x30, 0xc8, 0xa7, 0x2d, 0x12, 0x50, 0x84, 0xe0, 0x9a, 0x87,
+	0xeb, 0xa4, 0xa4, 0x2c, 0x2a, 0xe5, 0x61, 0x83, 0xfd, 0x8f, 0x54, 0x18, 0x0d, 0xff, 0x1e, 0x59,
+	0x9f, 0x91, 0x52, 0x81, 0x3d, 0xef, 0x8c, 0xb5, 0xdf, 0x15, 0x98, 0x92, 0xe3, 0x04, 0x9e, 0xeb,
+	0x04, 0x04, 0x1d, 0xc3, 0xb0, 0x45, 0x49, 0x33, 0x28, 0x29, 0x8b, 0x43, 0xe5, 0xb1, 0xcd, 0x83,
+	0x6a, 0xb7, 0xae, 0x6a, 0x5c, 0x57, 0x35, 0xaa, 0xab, 0xea, 0x3d, 0xa8, 0x57, 0xc3, 0xba, 0xaa,
+	0x62, 0x6f, 0xe2, 0xba, 0xaa, 0x3c, 0x74, 0x98, 0xe5, 0x80, 0x92, 0xa6, 0x11, 0xc5, 0x45, 0x53,
+	0x30, 0x4c, 0x5d, 0x8a, 0x6d, 0x86, 0x34, 0x64, 0x44, 0x83, 0x0e, 0xff, 0x50, 0x0a, 0xff, 0xb5,
+	0x04, 0xbf, 0x0e, 0x93, 0x7b, 0x24, 0xa6, 0x8f, 0x9b, 0xa0, 0xc2, 0xa8, 0xe9, 0x3a, 0xd4, 0xc7,
+	0x26, 0x65, 0x8d, 0x28, 0x1a, 0x9d, 0xb1, 0xe6, 0x02, 0x12, 0x1d, 0x78, 0xb5, 0xef, 0xc1, 0xb5,
+	0x90, 0x8a, 0x59, 0x8f, 0x6d, 0xee, 0x5e, 0xb9, 0xd8, 0x77, 0x2c, 0x72, 0x6a, 0xb0, 0x90, 0xda,
+	0x16, 0x3c, 0xdf, 0x4d, 0xb8, 0x83, 0x03, 0x92, 0x87, 0xf2, 0x14, 0x5e, 0x48, 0x3a, 0x71, 0xd2,
+	0x8f, 0x24, 0xd2, 0xab, 0x2f, 0x4b, 0x18, 0x5c, 0xa0, 0x7d, 0x19, 0xa6, 0xc5, 0xf6, 0x78, 0xae,
+	0x4f, 0xf3, 0xf1, 0x96, 0x7a, 0xdd, 0x38, 0xf1, 0x07, 0x12, 0xf1, 0xde, 0x95, 0x89, 0x79, 0xf8,
+	0x88, 0xf7, 0x0e, 0xcc, 0x76, 0x13, 0xdf, 0x6d, 0x60, 0xcb, 0x39, 0xa2, 0x98, 0xe6, 0xea, 0xf1,
+	0x57, 0x30, 0xd7, 0xdf, 0xb5, 0xf3, 0x06, 0x88, 0xdc, 0x6f, 0x5e, 0x99, 0x5b, 0x48, 0xd1, 0x87,
+	0xfd, 0xc8, 0x6a, 0xb6, 0x6c, 0xe6, 0x98, 0x87, 0xfd, 0x73, 0x91, 0x5d, 0x74, 0xe5, 0xec, 0x1f,
+	0x4a, 0xec, 0xfb, 0x97, 0x67, 0xe7, 0xb1, 0xc3, 0xae, 0xb4, 0xec, 0xb8, 0xe9, 0xaf, 0xc0, 0x4c,
+	0x37, 0xfb, 0x76, 0x9b, 0xe4, 0x6e, 0xf9, 0x43, 0x50, 0xfb, 0x39, 0xfe, 0x47, 0x5b, 0xbb, 0x93,
+	0x20, 0xa2, 0x7e, 0x1d, 0xe6, 0x0d, 0xf2, 0xb1, 0x4f, 0x82, 0x46, 0x77, 0xfe, 0x1e, 0xa1, 0xd8,
+	0xb2, 0xf3, 0xa0, 0x7f, 0xad, 0xc0, 0x42, 0xaa, 0xfb, 0xff, 0x53, 0xc0, 0x1b, 0xb0, 0x28, 0x1c,
+	0xd5, 0x7b, 0xc4, 0x21, 0x81, 0x15, 0xbc, 0x8b, 0x6d, 0x9b, 0x74, 0xcf, 0xff, 0xac, 0x12, 0xbe,
+	0x53, 0x60, 0x29, 0x23, 0x00, 0x2f, 0xe2, 0x44, 0x3e, 0xf8, 0x0f, 0x2f, 0x5f, 0x85, 0x94, 0x20,
+	0x2a, 0x24, 0x0a, 0xad, 0x1d, 0xc0, 0x9a, 0x00, 0x72, 0xd7, 0x27, 0x98, 0xba, 0xfe, 0xbe, 0x15,
+	0x50, 0xd7, 0xb7, 0x4c, 0x6c, 0x27, 0x2f, 0xb5, 0xac, 0xa2, 0xee, 0xc1, 0x7a, 0xbe, 0x50, 0xbc,
+	0xbc, 0x29, 0xb1, 0xbc, 0x62, 0x0c, 0x74, 0xae, 0xc0, 0xb3, 0xdc, 0x74, 0xb7, 0x4d, 0x1c, 0x7a,
+	0xe8, 0xd6, 0xd1, 0x38, 0x14, 0xac, 0x1a, 0xcb, 0x37, 0x64, 0x14, 0xac, 0x9a, 0x44, 0x51, 0x90,
+	0x29, 0xd0, 0x0d, 0x00, 0x12, 0xfa, 0x1d, 0xd3, 0x33, 0x2f, 0xbe, 0xbc, 0x8a, 0xec, 0xc9, 0xdb,
+	0x67, 0x1e, 0x41, 0x0b, 0x30, 0xe6, 0x9a, 0x66, 0xcb, 0xf7, 0x49, 0xed, 0x18, 0x53, 0x76, 0x89,
+	0x15, 0x0d, 0x88, 0x1f, 0x6d, 0x53, 0x54, 0x82, 0x91, 0x26, 0x09, 0x82, 0xf0, 0xe6, 0x1b, 0x66,
+	0x93, 0xf1, 0x30, 0x9c, 0xf1, 0xf0, 0x99, 0xed, 0xe2, 0x5a, 0xe9, 0x7a, 0x34, 0xc3, 0x87, 0x61,
+	0x4e, 0x33, 0x2c, 0x37, 0x8a, 0x39, 0xc2, 0x26, 0x8b, 0xfc, 0xc9, 0x36, 0x0d, 0x4f, 0x17, 0xa1,
+	0x31, 0x71, 0x55, 0xb9, 0x7a, 0x6a, 0xc0, 0x5c, 0x7f, 0x57, 0xde, 0xc3, 0x4d, 0x79, 0x8b, 0xcc,
+	0x49, 0xcb, 0x9f, 0xf0, 0x8a, 0x3b, 0xfc, 0xa3, 0x02, 0xe3, 0xf1, 0x22, 0xb9, 0xcd, 0x26, 0x71,
+	0xe8, 0x13, 0x35, 0x58, 0x85, 0xd1, 0x70, 0xf3, 0x39, 0xb8, 0x19, 0xb5, 0xb7, 0x68, 0x74, 0xc6,
+	0x61, 0x8b, 0x42, 0x3b, 0xe2, 0xc4, 0x9d, 0x8d, 0x87, 0x89, 0x16, 0x0d, 0x27, 0x5b, 0x74, 0x1f,
+	0x4a, 0xdb, 0xb5, 0x9a, 0x4c, 0x95, 0xa3, 0x3f, 0x62, 0xc2, 0x82, 0x94, 0x50, 0x3b, 0x84, 0x99,
+	0x3e, 0x11, 0x79, 0xdb, 0x74, 0xe9, 0x78, 0x98, 0xed, 0xd7, 0xb5, 0xd8, 0x25, 0x7a, 0xe1, 0x1b,
+	0xa0, 0x8a, 0x7b, 0x3b, 0x9a, 0xcb, 0xb3, 0x82, 0x1d, 0x19, 0x55, 0x48, 0x91, 0x51, 0x43, 0x09,
+	0x19, 0xf5, 0x58, 0x91, 0x76, 0x4b, 0x37, 0x15, 0x47, 0xdf, 0x90, 0x57, 0x3c, 0x93, 0xfd, 0xa9,
+	0xea, 0x3b, 0x55, 0x14, 0x16, 0x6f, 0x79, 0x4c, 0x01, 0xf3, 0x06, 0x68, 0x5f, 0x8a, 0xd7, 0x50,
+	0x67, 0x8e, 0x13, 0x63, 0x18, 0x71, 0xa3, 0x47, 0x4f, 0x4d, 0x78, 0x44, 0x29, 0x8c, 0x38, 0xee,
+	0xe6, 0x5f, 0x13, 0x80, 0xb6, 0xbb, 0xf6, 0x47, 0xc4, 0x6f, 0x5b, 0x26, 0x41, 0x4d, 0x78, 0x46,
+	0x54, 0xd4, 0x68, 0x51, 0x0a, 0xda, 0x47, 0xb4, 0xab, 0x4b, 0x19, 0x16, 0x51, 0x39, 0x5a, 0xe9,
+	0x9b, 0x3f, 0xff, 0x79, 0x54, 0x40, 0x68, 0x82, 0xfd, 0x1c, 0x68, 0x6f, 0xe8, 0x5e, 0x1c, 0xde,
+	0x07, 0xe8, 0x76, 0x01, 0xcd, 0x4b, 0xa1, 0x7a, 0xa4, 0xb1, 0xba, 0x90, 0x3a, 0xcf, 0x13, 0xdd,
+	0x64, 0x89, 0x6e, 0xa0, 0xd9, 0x64, 0x22, 0xfd, 0x61, 0xbc, 0xbb, 0xbe, 0x40, 0xdf, 0x2a, 0x30,
+	0x2e, 0xeb, 0x53, 0xa4, 0xa5, 0x04, 0x16, 0x14, 0xaf, 0x7a, 0x33, 0xd3, 0x86, 0x03, 0x94, 0x19,
+	0x80, 0x86, 0x16, 0x33, 0x00, 0xf4, 0x93, 0x30, 0xe5, 0xf7, 0x0a, 0x4c, 0x24, 0x55, 0x27, 0x5a,
+	0x4e, 0x2d, 0x50, 0xd0, 0xb2, 0xea, 0x8b, 0x03, 0xac, 0x38, 0xcb, 0x6d, 0xc6, 0xb2, 0x8c, 0xb4,
+	0x2c, 0x16, 0x3f, 0x4a, 0xfc, 0x8b, 0x02, 0x53, 0xfd, 0xf4, 0x24, 0x2a, 0xa7, 0xe4, 0xea, 0x51,
+	0xab, 0xea, 0xad, 0x1c, 0x96, 0x9c, 0x4c, 0x67, 0x64, 0xb7, 0xd0, 0x6a, 0x16, 0x99, 0x19, 0xfa,
+	0x55, 0x02, 0x46, 0xf1, 0xb3, 0x84, 0xd7, 0x95, 0x8c, 0xa9, 0x78, 0x3d, 0x82, 0x34, 0x15, 0xaf,
+	0x57, 0x7f, 0x6a, 0x55, 0x86, 0x57, 0x46, 0x2b, 0x59, 0x78, 0x41, 0x17, 0xe2, 0x07, 0x45, 0xfc,
+	0x59, 0x16, 0xeb, 0x1e, 0xb4, 0x92, 0x92, 0x31, 0xa1, 0x39, 0xd5, 0xd5, 0x81, 0x76, 0x9c, 0x6b,
+	0x95, 0x71, 0x2d, 0xa1, 0x85, 0x2c, 0x2e, 0xdc, 0x26, 0xe8, 0x57, 0x05, 0xa6, 0x53, 0xe4, 0x1e,
+	0x5a, 0x93, 0xb2, 0x65, 0x6b, 0x4a, 0x75, 0x3d, 0x9f, 0x31, 0xe7, 0xdb, 0x64, 0x7c, 0xeb, 0xda,
+	0xea, 0x00, 0x3e, 0xdd, 0x8f, 0x02, 0xbd, 0xa6, 0xdc, 0x46, 0xbf, 0x29, 0x30, 0x93, 0x2a, 0xeb,
+	0x50, 0x25, 0xed, 0x6c, 0xe9, 0xab, 0x1f, 0xd5, 0x6a, 0x5e, 0x73, 0x0e, 0xbc, 0xc5, 0x80, 0x2b,
+	0x68, 0x2d, 0x0b, 0xb8, 0x1e, 0xf9, 0x56, 0x4e, 0x39, 0xd3, 0xb9, 0x02, 0xcb, 0x79, 0x44, 0x1b,
+	0x7a, 0x35, 0x8d, 0x66, 0x90, 0x64, 0x54, 0xef, 0x5c, 0xc2, 0xf3, 0x49, 0x4a, 0x32, 0xa3, 0x30,
+	0x95, 0x06, 0x8b, 0x73, 0x86, 0x7e, 0x92, 0xbf, 0xa3, 0x74, 0x34, 0x53, 0xe2, 0xf5, 0xca, 0x50,
+	0x64, 0x89, 0xd7, 0x2b, 0x4b, 0x80, 0xe5, 0x3b, 0x97, 0x98, 0xfc, 0x0c, 0xd0, 0x23, 0x05, 0x26,
+	0x7b, 0x34, 0x09, 0x92, 0x0f, 0xc0, 0x34, 0x15, 0xa4, 0xae, 0x0c, 0x32, 0x93, 0x8f, 0x23, 0x6d,
+	0x39, 0xb3, 0x67, 0x5c, 0x55, 0x84, 0x9b, 0xf6, 0xb1, 0x22, 0x7d, 0xbf, 0x8a, 0x05, 0x07, 0x5a,
+	0x4d, 0x5d, 0x37, 0x59, 0xfd, 0xa8, 0xe5, 0xc1, 0x86, 0x9c, 0x6d, 0x9d, 0xb1, 0xad, 0xa0, 0x5c,
+	0x6c, 0xe1, 0xd5, 0x36, 0xd9, 0xa3, 0x2a, 0x50, 0xda, 0x7d, 0x21, 0x2b, 0x12, 0x75, 0x65, 0x90,
+	0x19, 0x47, 0x5a, 0x60, 0x48, 0x33, 0x68, 0x3a, 0x81, 0x54, 0xe1, 0xd2, 0x62, 0x67, 0xe7, 0x8f,
+	0x8b, 0x79, 0xe5, 0xfc, 0x62, 0x5e, 0xf9, 0xfb, 0x62, 0x5e, 0x79, 0xff, 0xa5, 0xc1, 0xdf, 0x14,
+	0x4d, 0xdb, 0x22, 0x0e, 0x15, 0x3f, 0x2c, 0x9e, 0x5c, 0x67, 0x1f, 0x0a, 0xb7, 0xfe, 0x0d, 0x00,
+	0x00, 0xff, 0xff, 0xdf, 0x23, 0x97, 0x97, 0xce, 0x14, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1660,7 +1760,8 @@ type ApplicationServiceClient interface {
 	GetProjectReport(ctx context.Context, in *GetProjectReportRequest, opts ...grpc.CallOption) (*GetProjectReportResponse, error)
 	GetProjectChainState(ctx context.Context, in *GetProjectChainStateRequest, opts ...grpc.CallOption) (*GetProjectChainStateResponse, error)
 	GetProjectSimulation(ctx context.Context, in *GetProjectSimulationRequest, opts ...grpc.CallOption) (*GetProjectSimulationResponse, error)
-	GetProjectAveDetail(ctx context.Context, in *GetProjectAveDetailRequest, opts ...grpc.CallOption) (*GetProjectAveDetailResponse, error)
+	GetProjectAveState(ctx context.Context, in *GetProjectAveStateRequest, opts ...grpc.CallOption) (*GetProjectAveStateResponse, error)
+	RefreshProjectAveDetail(ctx context.Context, in *RefreshProjectAveDetailRequest, opts ...grpc.CallOption) (*RefreshProjectAveDetailResponse, error)
 	ListProjectGenesisWallets(ctx context.Context, in *ListProjectGenesisWalletsRequest, opts ...grpc.CallOption) (*ListProjectGenesisWalletsResponse, error)
 	ListProjectCreatorHistoricalProjects(ctx context.Context, in *ListProjectCreatorHistoricalProjectsRequest, opts ...grpc.CallOption) (*ListProjectCreatorHistoricalProjectsResponse, error)
 	// ListProjectEventLogs returns event logs for a given contract.
@@ -1735,9 +1836,18 @@ func (c *applicationServiceClient) GetProjectSimulation(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *applicationServiceClient) GetProjectAveDetail(ctx context.Context, in *GetProjectAveDetailRequest, opts ...grpc.CallOption) (*GetProjectAveDetailResponse, error) {
-	out := new(GetProjectAveDetailResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProjectAveDetail", in, out, opts...)
+func (c *applicationServiceClient) GetProjectAveState(ctx context.Context, in *GetProjectAveStateRequest, opts ...grpc.CallOption) (*GetProjectAveStateResponse, error) {
+	out := new(GetProjectAveStateResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProjectAveState", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) RefreshProjectAveDetail(ctx context.Context, in *RefreshProjectAveDetailRequest, opts ...grpc.CallOption) (*RefreshProjectAveDetailResponse, error) {
+	out := new(RefreshProjectAveDetailResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/RefreshProjectAveDetail", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1808,7 +1918,8 @@ type ApplicationServiceServer interface {
 	GetProjectReport(context.Context, *GetProjectReportRequest) (*GetProjectReportResponse, error)
 	GetProjectChainState(context.Context, *GetProjectChainStateRequest) (*GetProjectChainStateResponse, error)
 	GetProjectSimulation(context.Context, *GetProjectSimulationRequest) (*GetProjectSimulationResponse, error)
-	GetProjectAveDetail(context.Context, *GetProjectAveDetailRequest) (*GetProjectAveDetailResponse, error)
+	GetProjectAveState(context.Context, *GetProjectAveStateRequest) (*GetProjectAveStateResponse, error)
+	RefreshProjectAveDetail(context.Context, *RefreshProjectAveDetailRequest) (*RefreshProjectAveDetailResponse, error)
 	ListProjectGenesisWallets(context.Context, *ListProjectGenesisWalletsRequest) (*ListProjectGenesisWalletsResponse, error)
 	ListProjectCreatorHistoricalProjects(context.Context, *ListProjectCreatorHistoricalProjectsRequest) (*ListProjectCreatorHistoricalProjectsResponse, error)
 	// ListProjectEventLogs returns event logs for a given contract.
@@ -1843,8 +1954,11 @@ func (*UnimplementedApplicationServiceServer) GetProjectChainState(ctx context.C
 func (*UnimplementedApplicationServiceServer) GetProjectSimulation(ctx context.Context, req *GetProjectSimulationRequest) (*GetProjectSimulationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProjectSimulation not implemented")
 }
-func (*UnimplementedApplicationServiceServer) GetProjectAveDetail(ctx context.Context, req *GetProjectAveDetailRequest) (*GetProjectAveDetailResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetProjectAveDetail not implemented")
+func (*UnimplementedApplicationServiceServer) GetProjectAveState(ctx context.Context, req *GetProjectAveStateRequest) (*GetProjectAveStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectAveState not implemented")
+}
+func (*UnimplementedApplicationServiceServer) RefreshProjectAveDetail(ctx context.Context, req *RefreshProjectAveDetailRequest) (*RefreshProjectAveDetailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefreshProjectAveDetail not implemented")
 }
 func (*UnimplementedApplicationServiceServer) ListProjectGenesisWallets(ctx context.Context, req *ListProjectGenesisWalletsRequest) (*ListProjectGenesisWalletsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProjectGenesisWallets not implemented")
@@ -1977,20 +2091,38 @@ func _ApplicationService_GetProjectSimulation_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_GetProjectAveDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetProjectAveDetailRequest)
+func _ApplicationService_GetProjectAveState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectAveStateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServiceServer).GetProjectAveDetail(ctx, in)
+		return srv.(ApplicationServiceServer).GetProjectAveState(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/application.ApplicationService/GetProjectAveDetail",
+		FullMethod: "/application.ApplicationService/GetProjectAveState",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).GetProjectAveDetail(ctx, req.(*GetProjectAveDetailRequest))
+		return srv.(ApplicationServiceServer).GetProjectAveState(ctx, req.(*GetProjectAveStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_RefreshProjectAveDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshProjectAveDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).RefreshProjectAveDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/RefreshProjectAveDetail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).RefreshProjectAveDetail(ctx, req.(*RefreshProjectAveDetailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2132,8 +2264,12 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ApplicationService_GetProjectSimulation_Handler,
 		},
 		{
-			MethodName: "GetProjectAveDetail",
-			Handler:    _ApplicationService_GetProjectAveDetail_Handler,
+			MethodName: "GetProjectAveState",
+			Handler:    _ApplicationService_GetProjectAveState_Handler,
+		},
+		{
+			MethodName: "RefreshProjectAveDetail",
+			Handler:    _ApplicationService_RefreshProjectAveDetail_Handler,
 		},
 		{
 			MethodName: "ListProjectGenesisWallets",
@@ -2622,7 +2758,7 @@ func (m *GetProjectSimulationResponse) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *GetProjectAveDetailRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetProjectAveStateRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2632,12 +2768,12 @@ func (m *GetProjectAveDetailRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetProjectAveDetailRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetProjectAveStateRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *GetProjectAveDetailRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *GetProjectAveStateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2656,7 +2792,7 @@ func (m *GetProjectAveDetailRequest) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *GetProjectAveDetailResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetProjectAveStateResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2666,12 +2802,85 @@ func (m *GetProjectAveDetailResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetProjectAveDetailResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetProjectAveStateResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *GetProjectAveDetailResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *GetProjectAveStateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Item != nil {
+		{
+			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RefreshProjectAveDetailRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RefreshProjectAveDetailRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RefreshProjectAveDetailRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RefreshProjectAveDetailResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RefreshProjectAveDetailResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RefreshProjectAveDetailResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -3509,7 +3718,7 @@ func (m *GetProjectSimulationResponse) Size() (n int) {
 	return n
 }
 
-func (m *GetProjectAveDetailRequest) Size() (n int) {
+func (m *GetProjectAveStateRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3525,7 +3734,39 @@ func (m *GetProjectAveDetailRequest) Size() (n int) {
 	return n
 }
 
-func (m *GetProjectAveDetailResponse) Size() (n int) {
+func (m *GetProjectAveStateResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Item != nil {
+		l = m.Item.Size()
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *RefreshProjectAveDetailRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *RefreshProjectAveDetailResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4912,7 +5153,7 @@ func (m *GetProjectSimulationResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetProjectAveDetailRequest) Unmarshal(dAtA []byte) error {
+func (m *GetProjectAveStateRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4935,10 +5176,10 @@ func (m *GetProjectAveDetailRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetProjectAveDetailRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetProjectAveStateRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetProjectAveDetailRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetProjectAveStateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4995,7 +5236,7 @@ func (m *GetProjectAveDetailRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetProjectAveDetailResponse) Unmarshal(dAtA []byte) error {
+func (m *GetProjectAveStateResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5018,10 +5259,10 @@ func (m *GetProjectAveDetailResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetProjectAveDetailResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetProjectAveStateResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetProjectAveDetailResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetProjectAveStateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5054,7 +5295,177 @@ func (m *GetProjectAveDetailResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Item == nil {
-				m.Item = &v1alpha1.AveDetail{}
+				m.Item = &v1alpha1.ProjectAveState{}
+			}
+			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RefreshProjectAveDetailRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RefreshProjectAveDetailRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RefreshProjectAveDetailRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RefreshProjectAveDetailResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RefreshProjectAveDetailResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RefreshProjectAveDetailResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Item == nil {
+				m.Item = &v1alpha1.ProjectAveState{}
 			}
 			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

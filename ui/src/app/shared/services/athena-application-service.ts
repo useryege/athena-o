@@ -94,6 +94,18 @@ export interface AveDetail {
     pairs?: AvePair[];
 }
 
+export interface ProjectAveState {
+    contract?: string;
+    detailAvailable?: boolean;
+    detail?: AveDetail;
+    status?: string;
+    lastAttemptAt?: string;
+    lastSuccessAt?: string;
+    nextRunAt?: string;
+    lastError?: string;
+    stale?: boolean;
+}
+
 export interface AveTokenDetail {
     total?: string;
     launchPrice?: string;
@@ -267,8 +279,12 @@ export interface GetProjectSimulationResponse {
     item?: SimulateResult;
 }
 
-export interface GetProjectAveDetailResponse {
-    item?: AveDetail;
+export interface GetProjectAveStateResponse {
+    item?: ProjectAveState;
+}
+
+export interface RefreshProjectAveDetailResponse {
+    item?: ProjectAveState;
 }
 
 export interface ListProjectGenesisWalletsResponse {
@@ -347,12 +363,12 @@ export class AthenaApplicationService {
         const baseReq = this.getProjectBase(contract);
         const chainReq = this.getProjectChainState(contract);
         const simulationReq = this.getProjectSimulation(contract);
-        const aveReq = this.getProjectAveDetail(contract);
+        const aveReq = this.getProjectAveState(contract);
         const genesisReq = this.listProjectGenesisWallets(contract);
         const historyReq = this.listProjectCreatorHistoricalProjects(contract);
         const promise = Promise.all([baseReq, chainReq, simulationReq, aveReq, genesisReq, historyReq]).then(
-            ([base, chainState, simulation, aveDetail, genesisWallets, creatorHistoricalProjects]) =>
-                this.buildProjectView(base, chainState, simulation, aveDetail, genesisWallets, creatorHistoricalProjects)
+            ([base, chainState, simulation, aveState, genesisWallets, creatorHistoricalProjects]) =>
+                this.buildProjectView(base, chainState, simulation, aveState, genesisWallets, creatorHistoricalProjects)
         ) as any;
         promise.abort = () => {
             baseReq.abort?.();
@@ -393,9 +409,16 @@ export class AthenaApplicationService {
         return promise;
     }
 
-    public getProjectAveDetail(contract: string): Promise<AveDetail | undefined> & {abort?: () => void} {
-        const req = requests.get(`/projects/${encodeURIComponent(contract)}/ave-detail`);
-        const promise = req.then(res => ((res.body || {}) as GetProjectAveDetailResponse).item) as any;
+    public getProjectAveState(contract: string): Promise<ProjectAveState | undefined> & {abort?: () => void} {
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}/ave`);
+        const promise = req.then(res => ((res.body || {}) as GetProjectAveStateResponse).item) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public refreshProjectAveDetail(contract: string): Promise<ProjectAveState | undefined> & {abort?: () => void} {
+        const req = requests.post(`/projects/${encodeURIComponent(contract)}/ave/refresh`).send({contract});
+        const promise = req.then(res => ((res.body || {}) as RefreshProjectAveDetailResponse).item) as any;
         promise.abort = () => req.abort();
         return promise;
     }
@@ -521,7 +544,7 @@ export class AthenaApplicationService {
         base?: ProjectBaseView,
         chainState?: ProjectChainState,
         simulation?: SimulateResult,
-        aveDetail?: AveDetail,
+        aveState?: ProjectAveState,
         genesisWallets?: GenesisWalletState[],
         creatorHistoricalProjects?: string[]
     ): ProjectView {
@@ -542,6 +565,6 @@ export class AthenaApplicationService {
             assetState: chainState?.assetState,
             genesisWalletAssetStates: chainState?.genesisWalletAssetStates
         };
-        return {meta, aveDetail};
+        return {meta, aveDetail: aveState?.detail};
     }
 }

@@ -202,6 +202,15 @@ type ProjectComponentState struct {
 	UpdatedAt       time.Time
 }
 
+const (
+	ProjectComponentAveDetail = "ave_detail"
+
+	ProjectComponentStatusPending = "pending"
+	ProjectComponentStatusRunning = "running"
+	ProjectComponentStatusSuccess = "success"
+	ProjectComponentStatusFailed  = "failed"
+)
+
 type ProjectEventLog struct {
 	ID             int64
 	Contract       common.Address
@@ -299,6 +308,15 @@ type ProjectAveDetailStore interface {
 	ListProjectAveDetailsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectAveDetail, error)
 }
 
+type ProjectAveRefreshStore interface {
+	ListProjectAveRefreshCandidates(ctx context.Context, staleBefore time.Time, now time.Time, limit int32) ([]common.Address, error)
+	ScheduleProjectAveRefresh(ctx context.Context, contract common.Address, nextRunAt time.Time) error
+	MarkProjectAveRefreshRunning(ctx context.Context, contract common.Address, at time.Time) error
+	MarkProjectAveRefreshSuccess(ctx context.Context, contract common.Address, successAt time.Time, nextRunAt time.Time) error
+	MarkProjectAveRefreshFailed(ctx context.Context, contract common.Address, attemptAt time.Time, nextRunAt time.Time, lastError string) error
+	GetProjectAveComponentState(ctx context.Context, contract common.Address) (*ProjectComponentState, error)
+}
+
 type ProjectEventLogStore interface {
 	AddProjectEventLog(ctx context.Context, item ProjectEventLog) error
 	ListProjectEventLogsByContract(ctx context.Context, contract common.Address) ([]ProjectEventLog, error)
@@ -331,6 +349,7 @@ type Store interface {
 	ProjectBytecodeFactStore
 	ProjectComponentStateStore
 	ProjectAveDetailStore
+	ProjectAveRefreshStore
 	ProjectEventLogStore
 	ProjectCommentStore
 	ProjectGenesisWalletStore

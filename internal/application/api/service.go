@@ -14,8 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
-	"github.com/useryege/athena/internal/application/avelogo"
 	appcache "github.com/useryege/athena/internal/application/cache"
+	avecomponent "github.com/useryege/athena/internal/application/components/ave"
 	"github.com/useryege/athena/internal/application/discovery"
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/persistence"
@@ -51,6 +51,7 @@ type Service struct {
 
 	pipeline        *pipeline.ProjectPipeline
 	athenaFetcher   evm.AthenaFetcher
+	aveComponent    *avecomponent.Component
 	walletBlacklist walletBlacklistLister
 
 	store                appstore.ProjectStore
@@ -110,7 +111,7 @@ func (s *Service) Start() error {
 	s.bootstrapStop = cancel
 	s.startStopMu.Unlock()
 
-	pipeline, athenaFetcher, err := s.startWithContext(ctx)
+	pipeline, athenaFetcher, aveComponent, err := s.startWithContext(ctx)
 	if err != nil {
 		cancel()
 		s.startStopMu.Lock()
@@ -125,11 +126,15 @@ func (s *Service) Start() error {
 	if !s.starting {
 		s.startStopMu.Unlock()
 		cancel()
+		if aveComponent != nil {
+			aveComponent.Stop()
+		}
 		_ = pipeline.Stop()
 		return context.Canceled
 	}
 	s.pipeline = pipeline
 	s.athenaFetcher = athenaFetcher
+	s.aveComponent = aveComponent
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
 	s.bootstrapStop = nil
@@ -140,7 +145,7 @@ func (s *Service) Start() error {
 	return nil
 }
 
-func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeline.ProjectPipeline, athenaFetcher evm.AthenaFetcher, err error) {
+func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeline.ProjectPipeline, athenaFetcher evm.AthenaFetcher, aveComponent *avecomponent.Component, err error) {
 	startedAt := time.Now()
 	startLogger := log.WithFields(log.Fields{
 		"component": "application_start",
@@ -163,20 +168,26 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 
 	athenaFetcher, err = evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	chainID, err := s.nodeClient.ChainID(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	aveDetailFetcher, aveChain, err := newAveDetailFetcherForChain(s.aveConfig, chainID.Int64())
+	aveStore, _ := s.store.(avecomponent.Store)
+	aveComponent, err = avecomponent.NewComponent(avecomponent.Options{
+		Config:  s.aveConfig,
+		ChainID: chainID.Int64(),
+		Store:   aveStore,
+		Cache:   s.componentCache,
+	})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	if aveDetailFetcher != nil {
-		log.WithField("chain", aveChain).Info("Ave detail fetcher configured successfully")
+	if aveComponent != nil {
+		log.Info("Ave component configured")
 	}
 	projectSimulator := simulate.NewProjectSimulator(s.nodeClient)
 
@@ -196,8 +207,6 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 		s.store,
 		athenaFetcher,
 		projectSimulator,
-		aveDetailFetcher,
-		aveChain,
 		s.solidityClientSet,
 		chainID.Int64(),
 		s.persistencePublisher,
@@ -207,14 +216,20 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 
 	discoveryIndexer, err := discovery.NewProjectDiscoveryIndexer(s.nodeClient, s.componentCache, s.store, discoveryIntake)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	projectPipeline = pipeline.NewProjectPipeline(discoveryIndexer, stateReconciler)
 	if err := projectPipeline.Start(ctx); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return projectPipeline, athenaFetcher, nil
+	if aveComponent != nil {
+		if err := aveComponent.Start(ctx); err != nil {
+			_ = projectPipeline.Stop()
+			return nil, nil, nil, err
+		}
+	}
+	return projectPipeline, athenaFetcher, aveComponent, nil
 }
 
 func genesisWalletAddressesFromMetas(items []GenesisWalletMeta) []common.Address {
@@ -265,41 +280,6 @@ func buildProjectQueries(projects []*Project) ([]athenacontract.AthenaProjectQue
 	return queries, contracts
 }
 
-func newAveDetailFetcherForChain(config ave.Config, chainID int64) (avelogo.Fetcher, string, error) {
-	if strings.TrimSpace(config.APIKey) == "" {
-		return nil, "", nil
-	}
-	aveChain, ok := aveChainNameForChainID(chainID)
-	if !ok {
-		log.WithField("chainID", chainID).Warn("Ave detail fetcher disabled for unsupported chain")
-		return nil, "", nil
-	}
-	client, err := ave.NewClient(config)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to configure Ave detail fetcher: %w", err)
-	}
-	return avelogo.NewFetcher(client), aveChain, nil
-}
-
-func aveChainNameForChainID(chainID int64) (string, bool) {
-	switch chainID {
-	case 1:
-		return "eth", true
-	case 56:
-		return "bsc", true
-	case 137:
-		return "polygon", true
-	case 42161:
-		return "arbitrum", true
-	case 10:
-		return "optimism", true
-	case 8453:
-		return "base", true
-	default:
-		return "", false
-	}
-}
-
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
 
@@ -321,6 +301,7 @@ func (s *Service) Stop() error {
 
 	stop := s.lifecycleStop
 	pipeline := s.pipeline
+	aveComponent := s.aveComponent
 
 	if stop != nil {
 		stop()
@@ -335,6 +316,9 @@ func (s *Service) Stop() error {
 	s.startStopMu.Unlock()
 
 	pipelineErr := error(nil)
+	if aveComponent != nil {
+		aveComponent.Stop()
+	}
 	if pipeline != nil {
 		pipelineErr = pipeline.Stop()
 	}
@@ -345,6 +329,7 @@ func (s *Service) Stop() error {
 func (s *Service) clearPipelineLocked() {
 	s.pipeline = nil
 	s.athenaFetcher = nil
+	s.aveComponent = nil
 }
 
 func projectEventLogToAPI(item appstore.ProjectEventLog) *applicationpkg.ProjectEventLog {
@@ -696,20 +681,43 @@ func (s *Service) GetProjectSimulation(ctx context.Context, req *applicationpkg.
 	return &applicationpkg.GetProjectSimulationResponse{Item: projectSimulationToView(item)}, nil
 }
 
-func (s *Service) GetProjectAveDetail(ctx context.Context, req *applicationpkg.GetProjectAveDetailRequest) (*applicationpkg.GetProjectAveDetailResponse, error) {
+func (s *Service) GetProjectAveState(ctx context.Context, req *applicationpkg.GetProjectAveStateRequest) (*applicationpkg.GetProjectAveStateResponse, error) {
 	contract, err := parseProjectContract(req.GetContract())
 	if err != nil {
 		return nil, err
 	}
-	item, err := s.projectAveDetail(ctx, contract)
+	if err := s.ensureProjectExists(ctx, contract, req.GetContract()); err != nil {
+		return nil, err
+	}
+	if s.aveComponent == nil {
+		return nil, status.Error(codes.FailedPrecondition, "Ave component is not configured")
+	}
+	state, err := s.aveComponent.State(ctx, contract)
 	if err != nil {
 		return nil, err
 	}
-	if item == nil {
-		return &applicationpkg.GetProjectAveDetailResponse{}, nil
+	return &applicationpkg.GetProjectAveStateResponse{Item: projectAveStateToView(state)}, nil
+}
+
+func (s *Service) RefreshProjectAveDetail(ctx context.Context, req *applicationpkg.RefreshProjectAveDetailRequest) (*applicationpkg.RefreshProjectAveDetailResponse, error) {
+	contract, err := parseProjectContract(req.GetContract())
+	if err != nil {
+		return nil, err
 	}
-	view := projectAveDetailToView(projectAveDetailFromStore(*item), true)
-	return &applicationpkg.GetProjectAveDetailResponse{Item: &view}, nil
+	if err := s.ensureProjectExists(ctx, contract, req.GetContract()); err != nil {
+		return nil, err
+	}
+	if s.aveComponent == nil {
+		return nil, status.Error(codes.FailedPrecondition, "Ave component is not configured")
+	}
+	if err := s.aveComponent.ScheduleRefresh(ctx, contract); err != nil {
+		return nil, err
+	}
+	state, err := s.aveComponent.State(ctx, contract)
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.RefreshProjectAveDetailResponse{Item: projectAveStateToView(state)}, nil
 }
 
 func (s *Service) ListProjectGenesisWallets(ctx context.Context, req *applicationpkg.ListProjectGenesisWalletsRequest) (*applicationpkg.ListProjectGenesisWalletsResponse, error) {

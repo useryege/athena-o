@@ -12,8 +12,14 @@ type Querier interface {
 	AddProjectComment(ctx context.Context, arg AddProjectCommentParams) (ProjectComment, error)
 	AddProjectEventLog(ctx context.Context, arg AddProjectEventLogParams) error
 	CountProjectCommentsByContract(ctx context.Context, projectContract []byte) (int64, error)
+	GetProjectAveComponentState(ctx context.Context, projectContract []byte) (ProjectComponentState, error)
+	ListProjectAveRefreshCandidates(ctx context.Context, arg ListProjectAveRefreshCandidatesParams) ([][]byte, error)
 	ListProjectCommentsByContract(ctx context.Context, arg ListProjectCommentsByContractParams) ([]ProjectComment, error)
 	ListProjectEventLogsByContract(ctx context.Context, contract []byte) ([]ProjectEventLog, error)
+	MarkProjectAveRefreshFailed(ctx context.Context, arg MarkProjectAveRefreshFailedParams) error
+	MarkProjectAveRefreshRunning(ctx context.Context, arg MarkProjectAveRefreshRunningParams) error
+	MarkProjectAveRefreshSuccess(ctx context.Context, arg MarkProjectAveRefreshSuccessParams) error
+	ScheduleProjectAveRefresh(ctx context.Context, arg ScheduleProjectAveRefreshParams) error
 }
 
 var _ Querier = (*Queries)(nil)

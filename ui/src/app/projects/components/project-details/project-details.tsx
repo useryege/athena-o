@@ -9,6 +9,7 @@ import {
     GenesisWalletState,
     PairV2State,
     ProjectBaseView,
+    ProjectAveState,
     ProjectChainState,
     ProjectComment,
     ProjectEventLog,
@@ -284,7 +285,7 @@ interface RouteParams {
     contract: string;
 }
 
-type ProjectComponentKey = 'base' | 'chainState' | 'simulation' | 'aveDetail' | 'genesisWallets' | 'creatorHistory';
+type ProjectComponentKey = 'base' | 'chainState' | 'simulation' | 'ave' | 'genesisWallets' | 'creatorHistory';
 type ComponentErrors = Partial<Record<ProjectComponentKey, Error>>;
 
 const projectInitial = (meta?: ProjectMeta) => (meta?.token?.symbol || meta?.token?.name || '?').trim().slice(0, 1).toUpperCase() || '?';
@@ -311,6 +312,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const ctx = React.useContext(Context);
     const contract = props.match.params.contract;
     const [project, setProject] = React.useState<ProjectView | null>(null);
+    const [aveState, setAveState] = React.useState<ProjectAveState | null>(null);
     const [sourceInfo, setSourceInfo] = React.useState<ContractSourceInfo | null>(null);
     const [eventLogs, setEventLogs] = React.useState<ProjectEventLog[]>([]);
     const [comments, setComments] = React.useState<ProjectComment[]>([]);
@@ -329,11 +331,13 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const [error, setError] = React.useState<Error | null>(null);
     const [componentErrors, setComponentErrors] = React.useState<ComponentErrors>({});
     const [logoFailed, setLogoFailed] = React.useState(false);
+    const [refreshingAve, setRefreshingAve] = React.useState(false);
 
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
     const eventRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const commentsRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const addCommentRequestRef = React.useRef<{abort?: () => void} | null>(null);
+    const aveRefreshRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const sourceRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const optionsRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const intervalRef = React.useRef<number | undefined>(undefined);
@@ -360,6 +364,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             addCommentRequestRef.current.abort();
             addCommentRequestRef.current = null;
         }
+        if (aveRefreshRequestRef.current?.abort) {
+            aveRefreshRequestRef.current.abort();
+            aveRefreshRequestRef.current = null;
+        }
         if (sourceRequestRef.current?.abort) {
             sourceRequestRef.current.abort();
             sourceRequestRef.current = null;
@@ -377,10 +385,11 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         }));
     }, []);
 
-    const mergeProjectAveDetail = React.useCallback((aveDetail?: AveDetail) => {
+    const mergeProjectAveState = React.useCallback((state?: ProjectAveState) => {
+        setAveState(state || null);
         setProject(current => ({
             meta: current?.meta || {},
-            aveDetail
+            aveDetail: state?.detail
         }));
     }, []);
 
@@ -396,7 +405,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         const baseReq = services.athenaApplication.getProjectBase(contract);
         const chainReq = services.athenaApplication.getProjectChainState(contract);
         const simulationReq = services.athenaApplication.getProjectSimulation(contract);
-        const aveReq = services.athenaApplication.getProjectAveDetail(contract);
+        const aveReq = services.athenaApplication.getProjectAveState(contract);
         const genesisReq = services.athenaApplication.listProjectGenesisWallets(contract);
         const historyReq = services.athenaApplication.listProjectCreatorHistoricalProjects(contract);
         const requests = [baseReq, chainReq, simulationReq, aveReq, genesisReq, historyReq];
@@ -453,8 +462,8 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             runPart<SimulateResult | undefined>('simulation', simulationReq, simulation => {
                 mergeProjectMeta({creatorResult: simulation});
             }),
-            runPart<AveDetail | undefined>('aveDetail', aveReq, aveDetail => {
-                mergeProjectAveDetail(aveDetail);
+            runPart<ProjectAveState | undefined>('ave', aveReq, state => {
+                mergeProjectAveState(state);
             }),
             runPart<GenesisWalletState[]>('genesisWallets', genesisReq, genesisWallets => {
                 mergeProjectMeta({genesisWallets});
@@ -469,7 +478,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             setError(successCount === 0 ? new Error('All project detail sections failed to load') : null);
         }
         requestRef.current = null;
-    }, [contract, mergeProjectAveDetail, mergeProjectMeta]);
+    }, [contract, mergeProjectAveState, mergeProjectMeta]);
 
     const loadProjectEventLogs = React.useCallback(async () => {
         if (eventRequestRef.current) {
@@ -579,6 +588,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         setIsBlacklisted(false);
         setIsBlacklistChecking(true);
         setSourceInfo(null);
+        setAveState(null);
         setCommentPage(1);
         setCommentTotal(0);
         setCommentInput('');
@@ -723,6 +733,40 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         [commentTotalPages, commentsLoading, loadProjectComments]
     );
 
+    const handleRefreshAve = React.useCallback(async () => {
+        if (refreshingAve) {
+            return;
+        }
+        setRefreshingAve(true);
+        try {
+            const req = services.athenaApplication.refreshProjectAveDetail(contract);
+            aveRefreshRequestRef.current = req;
+            const state = await req;
+            if (isMountedRef.current) {
+                mergeProjectAveState(state);
+                setComponentErrors(current => {
+                    const next = {...current};
+                    delete next.ave;
+                    return next;
+                });
+            }
+            ctx.notifications.show({content: 'Ave refresh scheduled', type: NotificationType.Success});
+        } catch (err) {
+            if (isMountedRef.current) {
+                setComponentErrors(current => ({...current, ave: err as Error}));
+            }
+            ctx.notifications.show({
+                content: <ErrorNotification title='Failed to refresh Ave detail' e={err} />,
+                type: NotificationType.Error
+            });
+        } finally {
+            aveRefreshRequestRef.current = null;
+            if (isMountedRef.current) {
+                setRefreshingAve(false);
+            }
+        }
+    }, [contract, ctx, mergeProjectAveState, refreshingAve]);
+
     return (
         <Page title='Project Details' toolbar={{breadcrumbs}}>
             <div className='project-details'>
@@ -791,7 +835,49 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                         </div>
 
                         {renderFetchTimeline(project.meta, project.aveDetail, sourceInfo)}
-                        {componentErrors.aveDetail && renderComponentError(componentErrors.aveDetail)}
+                        <div className='white-box project-details__box'>
+                            <div className='project-details__header'>
+                                <div className='project-details__section-title'>Ave</div>
+                                <div className='project-details__actions'>
+                                    <button type='button' className='argo-button argo-button--base-o' disabled={refreshingAve} onClick={handleRefreshAve}>
+                                        {refreshingAve ? 'Scheduling...' : 'Refresh Ave'}
+                                    </button>
+                                </div>
+                            </div>
+                            {renderComponentError(componentErrors.ave)}
+                            <div className='project-details__grid'>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Status</span>
+                                    <span className='project-details__field-value'>{renderValue(aveState?.status)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Detail Available</span>
+                                    <span className='project-details__field-value'>{renderValue(aveState?.detailAvailable)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Stale</span>
+                                    <span className='project-details__field-value'>{renderValue(aveState?.stale)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Last Attempt</span>
+                                    <span className='project-details__field-value'>{renderValue(aveState?.lastAttemptAt)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Last Success</span>
+                                    <span className='project-details__field-value'>{renderValue(aveState?.lastSuccessAt)}</span>
+                                </div>
+                                <div className='project-details__field'>
+                                    <span className='project-details__field-label'>Next Run</span>
+                                    <span className='project-details__field-value'>{renderValue(aveState?.nextRunAt)}</span>
+                                </div>
+                                {aveState?.lastError && (
+                                    <div className='project-details__field' style={{gridColumn: '1 / -1'}}>
+                                        <span className='project-details__field-label'>Last Error</span>
+                                        <span className='project-details__field-value'>{aveState.lastError}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         <div className='white-box project-details__box'>
                             <div className='project-details__section-title'>Genesis Wallets</div>

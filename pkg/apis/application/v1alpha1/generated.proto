@@ -416,6 +416,26 @@ message PairV2State {
   optional string feeAddressHoldLiquidityRatio = 15;
 }
 
+message ProjectAveState {
+  optional string contract = 1;
+
+  optional bool detailAvailable = 2;
+
+  optional AveDetail detail = 3;
+
+  optional string status = 4;
+
+  optional string lastAttemptAt = 5;
+
+  optional string lastSuccessAt = 6;
+
+  optional string nextRunAt = 7;
+
+  optional string lastError = 8;
+
+  optional bool stale = 9;
+}
+
 message ProjectBaseView {
   optional uint64 blockTime = 1;
 

@@ -63,12 +63,20 @@ message GetProjectSimulationResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.SimulateResult item = 1;
 }
 
-message GetProjectAveDetailRequest {
-  string contract = 1;
+message GetProjectAveStateRequest {
+	string contract = 1;
 }
 
-message GetProjectAveDetailResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.AveDetail item = 1;
+message GetProjectAveStateResponse {
+	github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectAveState item = 1;
+}
+
+message RefreshProjectAveDetailRequest {
+	string contract = 1;
+}
+
+message RefreshProjectAveDetailResponse {
+	github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectAveState item = 1;
 }
 
 message ListProjectGenesisWalletsRequest {
@@ -161,7 +169,8 @@ service ApplicationService {
   rpc GetProjectReport(GetProjectReportRequest) returns (GetProjectReportResponse);
   rpc GetProjectChainState(GetProjectChainStateRequest) returns (GetProjectChainStateResponse);
   rpc GetProjectSimulation(GetProjectSimulationRequest) returns (GetProjectSimulationResponse);
-  rpc GetProjectAveDetail(GetProjectAveDetailRequest) returns (GetProjectAveDetailResponse);
+  rpc GetProjectAveState(GetProjectAveStateRequest) returns (GetProjectAveStateResponse);
+  rpc RefreshProjectAveDetail(RefreshProjectAveDetailRequest) returns (RefreshProjectAveDetailResponse);
   rpc ListProjectGenesisWallets(ListProjectGenesisWalletsRequest) returns (ListProjectGenesisWalletsResponse);
   rpc ListProjectCreatorHistoricalProjects(ListProjectCreatorHistoricalProjectsRequest) returns (ListProjectCreatorHistoricalProjectsResponse);
   // ListProjectEventLogs returns event logs for a given contract.

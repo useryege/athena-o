@@ -124,17 +124,30 @@ func (s *Server) GetProjectSimulation(ctx context.Context, req *applicationpkg.G
 	return &applicationpkg.GetProjectSimulationResponse{Item: resp.Item}, nil
 }
 
-func (s *Server) GetProjectAveDetail(ctx context.Context, req *applicationpkg.GetProjectAveDetailRequest) (*applicationpkg.GetProjectAveDetailResponse, error) {
+func (s *Server) GetProjectAveState(ctx context.Context, req *applicationpkg.GetProjectAveStateRequest) (*applicationpkg.GetProjectAveStateResponse, error) {
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {
 		return nil, err
 	}
 	defer closer.Close()
-	resp, err := client.GetProjectAveDetail(ctx, &applicationapiclient.GetProjectAveDetailRequest{Contract: req.GetContract()})
+	resp, err := client.GetProjectAveState(ctx, &applicationapiclient.GetProjectAveStateRequest{Contract: req.GetContract()})
 	if err != nil {
 		return nil, err
 	}
-	return &applicationpkg.GetProjectAveDetailResponse{Item: resp.Item}, nil
+	return &applicationpkg.GetProjectAveStateResponse{Item: resp.Item}, nil
+}
+
+func (s *Server) RefreshProjectAveDetail(ctx context.Context, req *applicationpkg.RefreshProjectAveDetailRequest) (*applicationpkg.RefreshProjectAveDetailResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	resp, err := client.RefreshProjectAveDetail(ctx, &applicationapiclient.RefreshProjectAveDetailRequest{Contract: req.GetContract()})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.RefreshProjectAveDetailResponse{Item: resp.Item}, nil
 }
 
 func (s *Server) ListProjectGenesisWallets(ctx context.Context, req *applicationpkg.ListProjectGenesisWalletsRequest) (*applicationpkg.ListProjectGenesisWalletsResponse, error) {

@@ -1,28 +1,28 @@
-package avelogo
+package ave
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/useryege/athena/util/ave"
+	utilave "github.com/useryege/athena/util/ave"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type Fetcher interface {
-	FetchDetail(ctx context.Context, tokenID string) (*ave.TokenDetailResponse, error)
+	FetchDetail(ctx context.Context, tokenID string) (*utilave.TokenDetailResponse, error)
 }
 
 type fetcherImpl struct {
-	client ave.Client
+	client utilave.Client
 }
 
-func NewFetcher(client ave.Client) Fetcher {
+func NewFetcher(client utilave.Client) Fetcher {
 	return &fetcherImpl{client: client}
 }
 
-func (f *fetcherImpl) FetchDetail(ctx context.Context, tokenID string) (*ave.TokenDetailResponse, error) {
+func (f *fetcherImpl) FetchDetail(ctx context.Context, tokenID string) (*utilave.TokenDetailResponse, error) {
 	if f == nil || f.client == nil {
 		return nil, status.Error(codes.FailedPrecondition, "Ave detail fetcher is not configured")
 	}
@@ -36,4 +36,23 @@ func (f *fetcherImpl) FetchDetail(ctx context.Context, tokenID string) (*ave.Tok
 	}
 	response.Data.Token.LogoURL = strings.TrimSpace(response.Data.Token.LogoURL)
 	return response, nil
+}
+
+func ChainNameForChainID(chainID int64) (string, bool) {
+	switch chainID {
+	case 1:
+		return "eth", true
+	case 56:
+		return "bsc", true
+	case 137:
+		return "polygon", true
+	case 42161:
+		return "arbitrum", true
+	case 10:
+		return "optimism", true
+	case 8453:
+		return "base", true
+	default:
+		return "", false
+	}
 }

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-448-ga4d49d9-dirty"
+    "version": "v1.0.0-451-g37e08ad-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -444,12 +444,12 @@
         }
       }
     },
-    "/api/v1/projects/{contract}/ave-detail": {
+    "/api/v1/projects/{contract}/ave": {
       "get": {
         "tags": [
           "ApplicationService"
         ],
-        "operationId": "ApplicationService_GetProjectAveDetail",
+        "operationId": "ApplicationService_GetProjectAveState",
         "parameters": [
           {
             "type": "string",
@@ -462,7 +462,45 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/applicationGetProjectAveDetailResponse"
+              "$ref": "#/definitions/applicationGetProjectAveStateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{contract}/ave/refresh": {
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_RefreshProjectAveDetail",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationRefreshProjectAveDetailRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationRefreshProjectAveDetailResponse"
             }
           },
           "default": {
@@ -1988,11 +2026,11 @@
         }
       }
     },
-    "applicationGetProjectAveDetailResponse": {
+    "applicationGetProjectAveStateResponse": {
       "type": "object",
       "properties": {
         "item": {
-          "$ref": "#/definitions/v1alpha1AveDetail"
+          "$ref": "#/definitions/v1alpha1ProjectAveState"
         }
       }
     },
@@ -2176,6 +2214,22 @@
         },
         "payload": {
           "type": "string"
+        }
+      }
+    },
+    "applicationRefreshProjectAveDetailRequest": {
+      "type": "object",
+      "properties": {
+        "contract": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationRefreshProjectAveDetailResponse": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1ProjectAveState"
         }
       }
     },
@@ -3380,6 +3434,38 @@
           "type": "string"
         },
         "totalSupply": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1ProjectAveState": {
+      "type": "object",
+      "properties": {
+        "contract": {
+          "type": "string"
+        },
+        "detail": {
+          "$ref": "#/definitions/v1alpha1AveDetail"
+        },
+        "detailAvailable": {
+          "type": "boolean"
+        },
+        "lastAttemptAt": {
+          "type": "string"
+        },
+        "lastError": {
+          "type": "string"
+        },
+        "lastSuccessAt": {
+          "type": "string"
+        },
+        "nextRunAt": {
+          "type": "string"
+        },
+        "stale": {
+          "type": "boolean"
+        },
+        "status": {
           "type": "string"
         }
       }

@@ -35,6 +35,8 @@ func (*NotificationStatus) ProtoMessage() {}
 
 func (*PairV2State) ProtoMessage() {}
 
+func (*ProjectAveState) ProtoMessage() {}
+
 func (*ProjectBaseView) ProtoMessage() {}
 
 func (*ProjectChainState) ProtoMessage() {}
