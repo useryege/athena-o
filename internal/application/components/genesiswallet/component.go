@@ -1,4 +1,4 @@
-package components
+package genesiswallet
 
 import (
 	"bytes"
@@ -8,12 +8,14 @@ import (
 	"math"
 	"math/big"
 	"sort"
+	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	appcache "github.com/useryege/athena/internal/application/cache"
+	appcomponents "github.com/useryege/athena/internal/application/components"
 	appstore "github.com/useryege/athena/internal/application/store"
 	erc20contract "github.com/useryege/athena/pkg/abi/ERC20"
 )
@@ -34,74 +36,81 @@ type GenesisWalletShare struct {
 	RatioBPS int64
 }
 
-type GenesisWalletComponent struct {
+type Options struct {
+	Store      appstore.Store
+	Cache      appcache.ProjectComponentCache
+	NodeClient GenesisWalletNodeClient
+	Bus        appcomponents.EventBus
+}
+
+type Component struct {
 	store      appstore.Store
 	cache      appcache.ProjectComponentCache
 	nodeClient GenesisWalletNodeClient
-	bus        EventBus
-	consumer   *Consumer
+	bus        appcomponents.EventBus
+	consumer   *appcomponents.Consumer
 }
 
-func NewGenesisWalletComponent(store appstore.Store, cache appcache.ProjectComponentCache, nodeClient GenesisWalletNodeClient, bus EventBus) *GenesisWalletComponent {
-	if store == nil || nodeClient == nil {
+func NewComponent(opts Options) *Component {
+	if opts.Store == nil || opts.NodeClient == nil {
 		return nil
 	}
-	c := &GenesisWalletComponent{store: store, cache: cache, nodeClient: nodeClient, bus: bus}
-	c.consumer = NewConsumer(appstore.ProjectComponentGenesisWallet, bus, c.handleEvent)
+	c := &Component{store: opts.Store, cache: opts.Cache, nodeClient: opts.NodeClient, bus: opts.Bus}
+	c.consumer = appcomponents.NewConsumer(appstore.ProjectComponentGenesisWallet, opts.Bus, c.handleEvent)
 	return c
 }
 
-func (c *GenesisWalletComponent) Start(ctx context.Context) error {
+func (c *Component) Start(ctx context.Context) error {
 	if c == nil || c.consumer == nil {
 		return nil
 	}
 	return c.consumer.Start(ctx)
 }
 
-func (c *GenesisWalletComponent) Stop() error {
+func (c *Component) Stop() error {
 	if c == nil || c.consumer == nil {
 		return nil
 	}
 	return c.consumer.Stop()
 }
 
-func (c *GenesisWalletComponent) handleEvent(ctx context.Context, event Event) error {
-	if event.Type == EventComponentCompleted && event.Component != appstore.ProjectComponentChainState {
+func (c *Component) handleEvent(ctx context.Context, event appcomponents.Event) error {
+	if event.Type == appcomponents.EventComponentCompleted && event.Component != appstore.ProjectComponentChainState {
 		return nil
 	}
-	if event.Type != EventComponentCompleted && event.Type != EventProjectInitialized && event.Type != EventProjectRefresh {
+	if event.Type != appcomponents.EventComponentCompleted && event.Type != appcomponents.EventProjectInitialized && event.Type != appcomponents.EventProjectRefresh {
 		return nil
 	}
 	contract := event.ProjectContract()
 	if contract == (common.Address{}) {
 		return nil
 	}
-	if event.Type != EventProjectRefresh {
-		done, err := ComponentSucceeded(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet)
+	if event.Type != appcomponents.EventProjectRefresh {
+		done, err := appcomponents.ComponentSucceeded(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet)
 		if err != nil || done {
 			return nil
 		}
 	}
 	if err := c.refresh(ctx, contract); err != nil {
-		_ = MarkComponentFailed(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet, err, nowUTC())
+		_ = appcomponents.MarkComponentFailed(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet, err, nowUTC())
 		if c.bus != nil {
-			_ = c.bus.Publish(ctx, ComponentFailedEvent(contract, appstore.ProjectComponentGenesisWallet, err))
+			_ = c.bus.Publish(ctx, appcomponents.ComponentFailedEvent(contract, appstore.ProjectComponentGenesisWallet, err))
 		}
 		return nil
 	}
 	return nil
 }
 
-func (c *GenesisWalletComponent) refresh(ctx context.Context, contract common.Address) error {
-	base, err := LoadProjectBase(ctx, c.cache, c.store, contract)
+func (c *Component) refresh(ctx context.Context, contract common.Address) error {
+	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, contract)
 	if err != nil || base == nil {
 		return err
 	}
-	chainState, err := LoadProjectChainState(ctx, c.cache, c.store, contract)
+	chainState, err := appcomponents.LoadProjectChainState(ctx, c.cache, c.store, contract)
 	if err != nil || chainState == nil {
 		return err
 	}
-	if err := MarkComponentRunning(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet, nowUTC()); err != nil {
+	if err := appcomponents.MarkComponentRunning(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet, nowUTC()); err != nil {
 		return err
 	}
 	shares, err := c.fetchGenesisWallets(ctx, *base, chainState.ChainState.Token.TotalSupply)
@@ -118,16 +127,16 @@ func (c *GenesisWalletComponent) refresh(ctx context.Context, contract common.Ad
 		}
 	}
 	at := nowUTC()
-	if err := MarkComponentSuccess(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet, at); err != nil {
+	if err := appcomponents.MarkComponentSuccess(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet, at); err != nil {
 		return err
 	}
 	if c.bus != nil {
-		return c.bus.Publish(ctx, ComponentCompletedEvent(contract, appstore.ProjectComponentGenesisWallet))
+		return c.bus.Publish(ctx, appcomponents.ComponentCompletedEvent(contract, appstore.ProjectComponentGenesisWallet))
 	}
 	return nil
 }
 
-func (c *GenesisWalletComponent) fetchGenesisWallets(ctx context.Context, base appstore.ProjectBase, totalSupply *big.Int) ([]GenesisWalletShare, error) {
+func (c *Component) fetchGenesisWallets(ctx context.Context, base appstore.ProjectBase, totalSupply *big.Int) ([]GenesisWalletShare, error) {
 	logs, err := c.fetchGenesisWalletsFromReceipt(ctx, base)
 	if err == nil {
 		return extractGenesisWalletShares(logs, base.Contract, totalSupply), nil
@@ -142,7 +151,7 @@ func (c *GenesisWalletComponent) fetchGenesisWallets(ctx context.Context, base a
 	return extractGenesisWalletShares(fallbackLogs, base.Contract, totalSupply), nil
 }
 
-func (c *GenesisWalletComponent) fetchGenesisWalletsFromReceipt(ctx context.Context, base appstore.ProjectBase) ([]*types.Log, error) {
+func (c *Component) fetchGenesisWalletsFromReceipt(ctx context.Context, base appstore.ProjectBase) ([]*types.Log, error) {
 	txHash := projectTxHash(base)
 	if txHash == (common.Hash{}) {
 		return nil, errors.New("project tx hash is empty")
@@ -157,7 +166,7 @@ func (c *GenesisWalletComponent) fetchGenesisWalletsFromReceipt(ctx context.Cont
 	return receipt.Logs, nil
 }
 
-func (c *GenesisWalletComponent) fetchGenesisWalletsFromLogsFallback(ctx context.Context, base appstore.ProjectBase) ([]*types.Log, error) {
+func (c *Component) fetchGenesisWalletsFromLogsFallback(ctx context.Context, base appstore.ProjectBase) ([]*types.Log, error) {
 	txHash := projectTxHash(base)
 	if txHash == (common.Hash{}) {
 		return nil, errors.New("project tx hash is empty")
@@ -281,10 +290,14 @@ func genesisWalletsToStore(base appstore.ProjectBase, totalSupply *big.Int, shar
 			NetAmount:         new(big.Int).Set(share.Amount),
 			RatioBPS:          share.RatioBPS,
 			RankIndex:         int32(i),
-			TotalSupply:       BigIntOrZero(totalSupply),
+			TotalSupply:       appcomponents.BigIntOrZero(totalSupply),
 			SourceTxHash:      txHash,
 			SourceBlockNumber: base.BlockNumber,
 		})
 	}
 	return result
+}
+
+func nowUTC() time.Time {
+	return time.Now().UTC()
 }

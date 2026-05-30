@@ -14,7 +14,13 @@ import (
 	appcache "github.com/useryege/athena/internal/application/cache"
 	appcomponents "github.com/useryege/athena/internal/application/components"
 	avecomponent "github.com/useryege/athena/internal/application/components/ave"
+	bytecodecomponent "github.com/useryege/athena/internal/application/components/bytecode"
+	chainstatecomponent "github.com/useryege/athena/internal/application/components/chainstate"
+	creatorhistorycomponent "github.com/useryege/athena/internal/application/components/creatorhistory"
+	genesiswalletcomponent "github.com/useryege/athena/internal/application/components/genesiswallet"
+	initializercomponent "github.com/useryege/athena/internal/application/components/initializer"
 	reportcomponent "github.com/useryege/athena/internal/application/components/report"
+	simulationcomponent "github.com/useryege/athena/internal/application/components/simulation"
 	"github.com/useryege/athena/internal/application/discovery"
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/model"
@@ -201,12 +207,42 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 	projectSimulator := simulate.NewProjectSimulator(s.nodeClient)
 	componentStore, _ := s.store.(appstore.Store)
 
-	initializer := appcomponents.NewInitializer(componentStore, s.componentCache, s.componentEventBus)
-	chainStateComponent := appcomponents.NewChainStateComponent(componentStore, s.componentCache, athenaFetcher, s.componentEventBus)
-	simulationComponent := appcomponents.NewSimulationComponent(componentStore, s.componentCache, athenaFetcher, projectSimulator, s.componentEventBus)
-	genesisWalletComponent := appcomponents.NewGenesisWalletComponent(componentStore, s.componentCache, s.nodeClient, s.componentEventBus)
-	creatorHistoryComponent := appcomponents.NewCreatorHistoryComponent(componentStore, s.componentCache, s.componentEventBus)
-	bytecodeComponent := appcomponents.NewBytecodeComponent(componentStore, s.componentCache, s.solidityClientSet, chainID.Int64(), s.componentEventBus)
+	initializer := initializercomponent.NewComponent(initializercomponent.Options{
+		Store: componentStore,
+		Cache: s.componentCache,
+		Bus:   s.componentEventBus,
+	})
+	chainStateComponent := chainstatecomponent.NewComponent(chainstatecomponent.Options{
+		Store:   componentStore,
+		Cache:   s.componentCache,
+		Fetcher: athenaFetcher,
+		Bus:     s.componentEventBus,
+	})
+	simulationComponent := simulationcomponent.NewComponent(simulationcomponent.Options{
+		Store:     componentStore,
+		Cache:     s.componentCache,
+		Fetcher:   athenaFetcher,
+		Simulator: projectSimulator,
+		Bus:       s.componentEventBus,
+	})
+	genesisWalletComponent := genesiswalletcomponent.NewComponent(genesiswalletcomponent.Options{
+		Store:      componentStore,
+		Cache:      s.componentCache,
+		NodeClient: s.nodeClient,
+		Bus:        s.componentEventBus,
+	})
+	creatorHistoryComponent := creatorhistorycomponent.NewComponent(creatorhistorycomponent.Options{
+		Store: componentStore,
+		Cache: s.componentCache,
+		Bus:   s.componentEventBus,
+	})
+	bytecodeComponent := bytecodecomponent.NewComponent(bytecodecomponent.Options{
+		Store:   componentStore,
+		Cache:   s.componentCache,
+		Clients: s.solidityClientSet,
+		ChainID: chainID.Int64(),
+		Bus:     s.componentEventBus,
+	})
 	requiredReportComponents := []string{
 		appstore.ProjectComponentInitializer,
 		appstore.ProjectComponentChainState,
