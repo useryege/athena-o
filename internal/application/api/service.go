@@ -27,7 +27,6 @@ import (
 	"github.com/useryege/athena/internal/application/persistence"
 	"github.com/useryege/athena/internal/application/pipeline"
 	"github.com/useryege/athena/internal/application/redisport"
-	"github.com/useryege/athena/internal/application/simulate"
 	appstore "github.com/useryege/athena/internal/application/store"
 	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
@@ -204,7 +203,6 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 	if aveComponent != nil {
 		log.Info("Ave component configured")
 	}
-	projectSimulator := simulate.NewProjectSimulator(s.nodeClient)
 	componentStore, _ := s.store.(appstore.Store)
 
 	initializer := initializercomponent.NewComponent(initializercomponent.Options{
@@ -219,11 +217,11 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 		Bus:     s.componentEventBus,
 	})
 	simulationComponent := simulationcomponent.NewComponent(simulationcomponent.Options{
-		Store:     componentStore,
-		Cache:     s.componentCache,
-		Fetcher:   athenaFetcher,
-		Simulator: projectSimulator,
-		Bus:       s.componentEventBus,
+		Store:      componentStore,
+		Cache:      s.componentCache,
+		Fetcher:    athenaFetcher,
+		NodeClient: s.nodeClient.Client(),
+		Bus:        s.componentEventBus,
 	})
 	genesisWalletComponent := genesiswalletcomponent.NewComponent(genesiswalletcomponent.Options{
 		Store:      componentStore,

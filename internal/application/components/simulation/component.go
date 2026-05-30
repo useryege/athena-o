@@ -5,35 +5,45 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/rpc"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	appcomponents "github.com/useryege/athena/internal/application/components"
 	"github.com/useryege/athena/internal/application/evm"
-	appsimulate "github.com/useryege/athena/internal/application/simulate"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
+type SimulationNodeClient interface {
+	BatchCallContext(ctx context.Context, b []rpc.BatchElem) error
+}
+
 type Options struct {
-	Store     appstore.Store
-	Cache     appcache.ProjectComponentCache
-	Fetcher   evm.AthenaFetcher
-	Simulator appsimulate.ProjectSimulator
-	Bus       appcomponents.EventBus
+	Store      appstore.Store
+	Cache      appcache.ProjectComponentCache
+	Fetcher    evm.AthenaFetcher
+	NodeClient SimulationNodeClient
+	Bus        appcomponents.EventBus
 }
 
 type Component struct {
-	store     appstore.Store
-	cache     appcache.ProjectComponentCache
-	fetcher   evm.AthenaFetcher
-	simulator appsimulate.ProjectSimulator
-	bus       appcomponents.EventBus
-	consumer  *appcomponents.Consumer
+	store      appstore.Store
+	cache      appcache.ProjectComponentCache
+	fetcher    evm.AthenaFetcher
+	nodeClient SimulationNodeClient
+	bus        appcomponents.EventBus
+	consumer   *appcomponents.Consumer
 }
 
 func NewComponent(opts Options) *Component {
-	if opts.Store == nil || opts.Fetcher == nil || opts.Simulator == nil {
+	if opts.Store == nil || opts.Fetcher == nil || opts.NodeClient == nil {
 		return nil
 	}
-	c := &Component{store: opts.Store, cache: opts.Cache, fetcher: opts.Fetcher, simulator: opts.Simulator, bus: opts.Bus}
+	c := &Component{
+		store:      opts.Store,
+		cache:      opts.Cache,
+		fetcher:    opts.Fetcher,
+		nodeClient: opts.NodeClient,
+		bus:        opts.Bus,
+	}
 	c.consumer = appcomponents.NewConsumer(appstore.ProjectComponentSimulation, opts.Bus, c.handleEvent)
 	return c
 }
@@ -92,9 +102,16 @@ func (c *Component) refresh(ctx context.Context, contract common.Address) error 
 	wethPair := chainState.WethPair
 	usdtPair := chainState.UsdtPair
 	if wethPair == (common.Address{}) || usdtPair == (common.Address{}) {
+		at := nowUTC()
+		if err := appcomponents.MarkComponentSuccess(ctx, c.store, contract, appstore.ProjectComponentSimulation, at); err != nil {
+			return err
+		}
+		if c.bus != nil {
+			return c.bus.Publish(ctx, appcomponents.ComponentCompletedEvent(contract, appstore.ProjectComponentSimulation))
+		}
 		return nil
 	}
-	result, err := c.simulator.SimulatePrimary(ctx, base.Creator, contract, wethPair, usdtPair, simulationState)
+	result, err := c.simulatePrimary(ctx, base.Creator, contract, wethPair, usdtPair, simulationState)
 	if err != nil {
 		return err
 	}
