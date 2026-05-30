@@ -606,14 +606,14 @@ func (s *Service) projectFromComponentCache(ctx context.Context, contract common
 		return nil, false, err
 	}
 	if simulationOK && simulation != nil {
-		project.Meta.CreatorResult = simulateResultFromStore(simulation.Result)
+		project.Meta.CreatorResult = simulation.Result
 	}
 	report, reportOK, err := s.componentCache.GetReport(ctx, contract)
 	if err != nil {
 		return nil, false, err
 	}
 	if reportOK && report != nil {
-		project.Report = projectReportFromStore(report.Report)
+		project.Report = report.Report
 	}
 	aveDetail, aveOK, err := s.componentCache.GetAveDetail(ctx, contract)
 	if err != nil {
@@ -683,7 +683,7 @@ func (s *Service) loadProjectInitialFromDB(ctx context.Context, contract common.
 		}
 		simulation = item
 		if simulation != nil {
-			project.Meta.CreatorResult = simulateResultFromStore(simulation.Result)
+			project.Meta.CreatorResult = simulation.Result
 		}
 	}
 
@@ -695,7 +695,7 @@ func (s *Service) loadProjectInitialFromDB(ctx context.Context, contract common.
 		}
 		report = item
 		if report != nil {
-			project.Report = projectReportFromStore(report.Report)
+			project.Report = report.Report
 		}
 	}
 

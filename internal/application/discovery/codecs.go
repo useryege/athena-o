@@ -6,19 +6,7 @@ import (
 )
 
 func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
-	return ProjectMeta{
-		BlockTime:                          meta.BlockTime,
-		BlockNumber:                        meta.BlockNumber,
-		Contract:                           meta.Contract,
-		Creator:                            meta.Creator,
-		WethPair:                           meta.WethPair,
-		UsdtPair:                           meta.UsdtPair,
-		FetchAt:                            meta.FetchAt,
-		TxHash:                             meta.TxHash,
-		TxIndex:                            meta.TxIndex,
-		GenesisWalletsFetchedAt:            meta.GenesisWalletsFetchedAt,
-		CreatorHistoricalProjectsFetchedAt: meta.CreatorHistoricalProjectsFetchedAt,
-	}
+	return meta
 }
 
 func uniqueProjectPairAddresses(items []common.Address) []common.Address {

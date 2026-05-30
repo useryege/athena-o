@@ -28,18 +28,11 @@ SELECT
   COALESCE(sr.can_mint_from_usdt_pair_via_transfer_from, false) AS can_mint_from_usdt_pair_via_transfer_from,
   COALESCE(sr.can_mint_via_transfer_to_weth_pair, false) AS can_mint_via_transfer_to_weth_pair,
   COALESCE(sr.can_mint_via_transfer_to_usdt_pair, false) AS can_mint_via_transfer_to_usdt_pair,
-  COALESCE(pr.is_report_evaluated, false) AS is_report_evaluated,
-  COALESCE(pr.is_report_complete, false) AS is_report_complete,
-  COALESCE(pr.is_blacklisted_creator_wallet, false) AS is_blacklisted_creator_wallet,
-  COALESCE(pr.is_blacklisted_genesis_wallet, false) AS is_blacklisted_genesis_wallet,
-  COALESCE(pr.is_blacklisted_bytecode, false) AS is_blacklisted_bytecode,
-  COALESCE(pr.has_mint_risk, false) AS has_mint_risk,
   gw.last_success_at AS genesis_wallets_fetched_at,
   ch.last_success_at AS creator_historical_projects_fetched_at
 FROM project p
 LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
 LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_report pr ON pr.project_contract = p.contract
 LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
 LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
 WHERE p.contract = $1
@@ -61,12 +54,6 @@ type GetProjectMetaByContractRow struct {
 	CanMintFromUsdtPairViaTransferFrom bool
 	CanMintViaTransferToWethPair       bool
 	CanMintViaTransferToUsdtPair       bool
-	IsReportEvaluated                  bool
-	IsReportComplete                   bool
-	IsBlacklistedCreatorWallet         bool
-	IsBlacklistedGenesisWallet         bool
-	IsBlacklistedBytecode              bool
-	HasMintRisk                        bool
 	GenesisWalletsFetchedAt            pgtype.Timestamptz
 	CreatorHistoricalProjectsFetchedAt pgtype.Timestamptz
 }
@@ -90,12 +77,6 @@ func (q *Queries) GetProjectMetaByContract(ctx context.Context, contract []byte)
 		&i.CanMintFromUsdtPairViaTransferFrom,
 		&i.CanMintViaTransferToWethPair,
 		&i.CanMintViaTransferToUsdtPair,
-		&i.IsReportEvaluated,
-		&i.IsReportComplete,
-		&i.IsBlacklistedCreatorWallet,
-		&i.IsBlacklistedGenesisWallet,
-		&i.IsBlacklistedBytecode,
-		&i.HasMintRisk,
 		&i.GenesisWalletsFetchedAt,
 		&i.CreatorHistoricalProjectsFetchedAt,
 	)
@@ -119,18 +100,11 @@ SELECT
   COALESCE(sr.can_mint_from_usdt_pair_via_transfer_from, false) AS can_mint_from_usdt_pair_via_transfer_from,
   COALESCE(sr.can_mint_via_transfer_to_weth_pair, false) AS can_mint_via_transfer_to_weth_pair,
   COALESCE(sr.can_mint_via_transfer_to_usdt_pair, false) AS can_mint_via_transfer_to_usdt_pair,
-  COALESCE(pr.is_report_evaluated, false) AS is_report_evaluated,
-  COALESCE(pr.is_report_complete, false) AS is_report_complete,
-  COALESCE(pr.is_blacklisted_creator_wallet, false) AS is_blacklisted_creator_wallet,
-  COALESCE(pr.is_blacklisted_genesis_wallet, false) AS is_blacklisted_genesis_wallet,
-  COALESCE(pr.is_blacklisted_bytecode, false) AS is_blacklisted_bytecode,
-  COALESCE(pr.has_mint_risk, false) AS has_mint_risk,
   gw.last_success_at AS genesis_wallets_fetched_at,
   ch.last_success_at AS creator_historical_projects_fetched_at
 FROM project p
 LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
 LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_report pr ON pr.project_contract = p.contract
 LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
 LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
 ORDER BY p.block_number, p.tx_index, p.id
@@ -152,12 +126,6 @@ type ListProjectMetasRow struct {
 	CanMintFromUsdtPairViaTransferFrom bool
 	CanMintViaTransferToWethPair       bool
 	CanMintViaTransferToUsdtPair       bool
-	IsReportEvaluated                  bool
-	IsReportComplete                   bool
-	IsBlacklistedCreatorWallet         bool
-	IsBlacklistedGenesisWallet         bool
-	IsBlacklistedBytecode              bool
-	HasMintRisk                        bool
 	GenesisWalletsFetchedAt            pgtype.Timestamptz
 	CreatorHistoricalProjectsFetchedAt pgtype.Timestamptz
 }
@@ -187,12 +155,6 @@ func (q *Queries) ListProjectMetas(ctx context.Context) ([]ListProjectMetasRow, 
 			&i.CanMintFromUsdtPairViaTransferFrom,
 			&i.CanMintViaTransferToWethPair,
 			&i.CanMintViaTransferToUsdtPair,
-			&i.IsReportEvaluated,
-			&i.IsReportComplete,
-			&i.IsBlacklistedCreatorWallet,
-			&i.IsBlacklistedGenesisWallet,
-			&i.IsBlacklistedBytecode,
-			&i.HasMintRisk,
 			&i.GenesisWalletsFetchedAt,
 			&i.CreatorHistoricalProjectsFetchedAt,
 		); err != nil {
@@ -223,18 +185,11 @@ SELECT
   COALESCE(sr.can_mint_from_usdt_pair_via_transfer_from, false) AS can_mint_from_usdt_pair_via_transfer_from,
   COALESCE(sr.can_mint_via_transfer_to_weth_pair, false) AS can_mint_via_transfer_to_weth_pair,
   COALESCE(sr.can_mint_via_transfer_to_usdt_pair, false) AS can_mint_via_transfer_to_usdt_pair,
-  COALESCE(pr.is_report_evaluated, false) AS is_report_evaluated,
-  COALESCE(pr.is_report_complete, false) AS is_report_complete,
-  COALESCE(pr.is_blacklisted_creator_wallet, false) AS is_blacklisted_creator_wallet,
-  COALESCE(pr.is_blacklisted_genesis_wallet, false) AS is_blacklisted_genesis_wallet,
-  COALESCE(pr.is_blacklisted_bytecode, false) AS is_blacklisted_bytecode,
-  COALESCE(pr.has_mint_risk, false) AS has_mint_risk,
   gw.last_success_at AS genesis_wallets_fetched_at,
   ch.last_success_at AS creator_historical_projects_fetched_at
 FROM project p
 LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
 LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_report pr ON pr.project_contract = p.contract
 LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
 LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
 WHERE p.creator = $1
@@ -257,12 +212,6 @@ type ListProjectMetasByCreatorRow struct {
 	CanMintFromUsdtPairViaTransferFrom bool
 	CanMintViaTransferToWethPair       bool
 	CanMintViaTransferToUsdtPair       bool
-	IsReportEvaluated                  bool
-	IsReportComplete                   bool
-	IsBlacklistedCreatorWallet         bool
-	IsBlacklistedGenesisWallet         bool
-	IsBlacklistedBytecode              bool
-	HasMintRisk                        bool
 	GenesisWalletsFetchedAt            pgtype.Timestamptz
 	CreatorHistoricalProjectsFetchedAt pgtype.Timestamptz
 }
@@ -292,12 +241,6 @@ func (q *Queries) ListProjectMetasByCreator(ctx context.Context, creator []byte)
 			&i.CanMintFromUsdtPairViaTransferFrom,
 			&i.CanMintViaTransferToWethPair,
 			&i.CanMintViaTransferToUsdtPair,
-			&i.IsReportEvaluated,
-			&i.IsReportComplete,
-			&i.IsBlacklistedCreatorWallet,
-			&i.IsBlacklistedGenesisWallet,
-			&i.IsBlacklistedBytecode,
-			&i.HasMintRisk,
 			&i.GenesisWalletsFetchedAt,
 			&i.CreatorHistoricalProjectsFetchedAt,
 		); err != nil {
@@ -328,18 +271,11 @@ SELECT
   COALESCE(sr.can_mint_from_usdt_pair_via_transfer_from, false) AS can_mint_from_usdt_pair_via_transfer_from,
   COALESCE(sr.can_mint_via_transfer_to_weth_pair, false) AS can_mint_via_transfer_to_weth_pair,
   COALESCE(sr.can_mint_via_transfer_to_usdt_pair, false) AS can_mint_via_transfer_to_usdt_pair,
-  COALESCE(pr.is_report_evaluated, false) AS is_report_evaluated,
-  COALESCE(pr.is_report_complete, false) AS is_report_complete,
-  COALESCE(pr.is_blacklisted_creator_wallet, false) AS is_blacklisted_creator_wallet,
-  COALESCE(pr.is_blacklisted_genesis_wallet, false) AS is_blacklisted_genesis_wallet,
-  COALESCE(pr.is_blacklisted_bytecode, false) AS is_blacklisted_bytecode,
-  COALESCE(pr.has_mint_risk, false) AS has_mint_risk,
   gw.last_success_at AS genesis_wallets_fetched_at,
   ch.last_success_at AS creator_historical_projects_fetched_at
 FROM project p
 LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
 LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_report pr ON pr.project_contract = p.contract
 LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
 LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
 WHERE p.creator = $1
@@ -369,12 +305,6 @@ type ListProjectMetasByCreatorBeforeRow struct {
 	CanMintFromUsdtPairViaTransferFrom bool
 	CanMintViaTransferToWethPair       bool
 	CanMintViaTransferToUsdtPair       bool
-	IsReportEvaluated                  bool
-	IsReportComplete                   bool
-	IsBlacklistedCreatorWallet         bool
-	IsBlacklistedGenesisWallet         bool
-	IsBlacklistedBytecode              bool
-	HasMintRisk                        bool
 	GenesisWalletsFetchedAt            pgtype.Timestamptz
 	CreatorHistoricalProjectsFetchedAt pgtype.Timestamptz
 }
@@ -404,12 +334,6 @@ func (q *Queries) ListProjectMetasByCreatorBefore(ctx context.Context, arg ListP
 			&i.CanMintFromUsdtPairViaTransferFrom,
 			&i.CanMintViaTransferToWethPair,
 			&i.CanMintViaTransferToUsdtPair,
-			&i.IsReportEvaluated,
-			&i.IsReportComplete,
-			&i.IsBlacklistedCreatorWallet,
-			&i.IsBlacklistedGenesisWallet,
-			&i.IsBlacklistedBytecode,
-			&i.HasMintRisk,
 			&i.GenesisWalletsFetchedAt,
 			&i.CreatorHistoricalProjectsFetchedAt,
 		); err != nil {
@@ -440,18 +364,11 @@ SELECT
   COALESCE(sr.can_mint_from_usdt_pair_via_transfer_from, false) AS can_mint_from_usdt_pair_via_transfer_from,
   COALESCE(sr.can_mint_via_transfer_to_weth_pair, false) AS can_mint_via_transfer_to_weth_pair,
   COALESCE(sr.can_mint_via_transfer_to_usdt_pair, false) AS can_mint_via_transfer_to_usdt_pair,
-  COALESCE(pr.is_report_evaluated, false) AS is_report_evaluated,
-  COALESCE(pr.is_report_complete, false) AS is_report_complete,
-  COALESCE(pr.is_blacklisted_creator_wallet, false) AS is_blacklisted_creator_wallet,
-  COALESCE(pr.is_blacklisted_genesis_wallet, false) AS is_blacklisted_genesis_wallet,
-  COALESCE(pr.is_blacklisted_bytecode, false) AS is_blacklisted_bytecode,
-  COALESCE(pr.has_mint_risk, false) AS has_mint_risk,
   gw.last_success_at AS genesis_wallets_fetched_at,
   ch.last_success_at AS creator_historical_projects_fetched_at
 FROM project p
 LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
 LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_report pr ON pr.project_contract = p.contract
 LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
 LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
 WHERE cs.weth_pair = ANY($1::bytea[]) OR cs.usdt_pair = ANY($1::bytea[])
@@ -474,12 +391,6 @@ type ListProjectMetasByPairAddressesRow struct {
 	CanMintFromUsdtPairViaTransferFrom bool
 	CanMintViaTransferToWethPair       bool
 	CanMintViaTransferToUsdtPair       bool
-	IsReportEvaluated                  bool
-	IsReportComplete                   bool
-	IsBlacklistedCreatorWallet         bool
-	IsBlacklistedGenesisWallet         bool
-	IsBlacklistedBytecode              bool
-	HasMintRisk                        bool
 	GenesisWalletsFetchedAt            pgtype.Timestamptz
 	CreatorHistoricalProjectsFetchedAt pgtype.Timestamptz
 }
@@ -509,12 +420,6 @@ func (q *Queries) ListProjectMetasByPairAddresses(ctx context.Context, dollar_1 
 			&i.CanMintFromUsdtPairViaTransferFrom,
 			&i.CanMintViaTransferToWethPair,
 			&i.CanMintViaTransferToUsdtPair,
-			&i.IsReportEvaluated,
-			&i.IsReportComplete,
-			&i.IsBlacklistedCreatorWallet,
-			&i.IsBlacklistedGenesisWallet,
-			&i.IsBlacklistedBytecode,
-			&i.HasMintRisk,
 			&i.GenesisWalletsFetchedAt,
 			&i.CreatorHistoricalProjectsFetchedAt,
 		); err != nil {

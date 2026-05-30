@@ -44,13 +44,16 @@ func (s *SQLStore) SaveProjectBase(ctx context.Context, base ProjectBase) error 
 }
 
 func (s *SQLStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error {
+	txHash := meta.TxHash
+	if txHash == (common.Hash{}) && meta.GenesisTx != nil {
+		txHash = meta.GenesisTx.Hash()
+	}
 	return s.SaveProjectBase(ctx, ProjectBase{
 		BlockTime:   meta.BlockTime,
 		BlockNumber: meta.BlockNumber,
 		Contract:    meta.Contract,
 		Creator:     meta.Creator,
-		Tx:          meta.Tx,
-		TxHash:      meta.TxHash,
+		TxHash:      txHash,
 		TxIndex:     meta.TxIndex,
 	})
 }
@@ -198,12 +201,6 @@ func (s *SQLStore) ListProjectMetas(ctx context.Context) ([]ProjectMeta, error) 
 			row.CanMintFromUsdtPairViaTransferFrom,
 			row.CanMintViaTransferToWethPair,
 			row.CanMintViaTransferToUsdtPair,
-			row.IsReportEvaluated,
-			row.IsReportComplete,
-			row.IsBlacklistedCreatorWallet,
-			row.IsBlacklistedGenesisWallet,
-			row.IsBlacklistedBytecode,
-			row.HasMintRisk,
 			row.GenesisWalletsFetchedAt,
 			row.CreatorHistoricalProjectsFetchedAt,
 		)
@@ -250,12 +247,6 @@ func (s *SQLStore) ListProjectMetasByPairAddresses(ctx context.Context, pairs []
 			row.CanMintFromUsdtPairViaTransferFrom,
 			row.CanMintViaTransferToWethPair,
 			row.CanMintViaTransferToUsdtPair,
-			row.IsReportEvaluated,
-			row.IsReportComplete,
-			row.IsBlacklistedCreatorWallet,
-			row.IsBlacklistedGenesisWallet,
-			row.IsBlacklistedBytecode,
-			row.HasMintRisk,
 			row.GenesisWalletsFetchedAt,
 			row.CreatorHistoricalProjectsFetchedAt,
 		)
@@ -294,12 +285,6 @@ func (s *SQLStore) ListProjectMetasByCreator(ctx context.Context, creator common
 			row.CanMintFromUsdtPairViaTransferFrom,
 			row.CanMintViaTransferToWethPair,
 			row.CanMintViaTransferToUsdtPair,
-			row.IsReportEvaluated,
-			row.IsReportComplete,
-			row.IsBlacklistedCreatorWallet,
-			row.IsBlacklistedGenesisWallet,
-			row.IsBlacklistedBytecode,
-			row.HasMintRisk,
 			row.GenesisWalletsFetchedAt,
 			row.CreatorHistoricalProjectsFetchedAt,
 		)
@@ -345,12 +330,6 @@ func (s *SQLStore) ListProjectMetasByCreatorBefore(ctx context.Context, creator 
 			row.CanMintFromUsdtPairViaTransferFrom,
 			row.CanMintViaTransferToWethPair,
 			row.CanMintViaTransferToUsdtPair,
-			row.IsReportEvaluated,
-			row.IsReportComplete,
-			row.IsBlacklistedCreatorWallet,
-			row.IsBlacklistedGenesisWallet,
-			row.IsBlacklistedBytecode,
-			row.HasMintRisk,
 			row.GenesisWalletsFetchedAt,
 			row.CreatorHistoricalProjectsFetchedAt,
 		)
@@ -390,12 +369,6 @@ func (s *SQLStore) GetProjectMetaByContract(ctx context.Context, contract common
 		row.CanMintFromUsdtPairViaTransferFrom,
 		row.CanMintViaTransferToWethPair,
 		row.CanMintViaTransferToUsdtPair,
-		row.IsReportEvaluated,
-		row.IsReportComplete,
-		row.IsBlacklistedCreatorWallet,
-		row.IsBlacklistedGenesisWallet,
-		row.IsBlacklistedBytecode,
-		row.HasMintRisk,
 		row.GenesisWalletsFetchedAt,
 		row.CreatorHistoricalProjectsFetchedAt,
 	)
@@ -760,12 +733,6 @@ func projectMetaFromFields(
 	canMintFromUsdtPairViaTransferFrom bool,
 	canMintViaTransferToWethPair bool,
 	canMintViaTransferToUsdtPair bool,
-	isReportEvaluated bool,
-	isReportComplete bool,
-	isBlacklistedCreatorWallet bool,
-	isBlacklistedGenesisWallet bool,
-	isBlacklistedBytecode bool,
-	hasMintRisk bool,
 	genesisWalletsFetchedAt pgtype.Timestamptz,
 	creatorHistoricalProjectsFetchedAt pgtype.Timestamptz,
 ) (ProjectMeta, error) {
@@ -788,14 +755,6 @@ func projectMetaFromFields(
 			CanMintFromUsdtPairViaTransferFrom: canMintFromUsdtPairViaTransferFrom,
 			CanMintViaTransferToWethPair:       canMintViaTransferToWethPair,
 			CanMintViaTransferToUsdtPair:       canMintViaTransferToUsdtPair,
-		},
-		Report: ProjectReport{
-			IsReportEvaluated:          isReportEvaluated,
-			IsReportComplete:           isReportComplete,
-			IsBlacklistedCreatorWallet: isBlacklistedCreatorWallet,
-			IsBlacklistedGenesisWallet: isBlacklistedGenesisWallet,
-			IsBlacklistedBytecode:      isBlacklistedBytecode,
-			HasMintRisk:                hasMintRisk,
 		},
 	}
 	if fetchAt.Valid {

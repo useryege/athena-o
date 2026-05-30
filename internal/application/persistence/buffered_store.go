@@ -78,13 +78,16 @@ func (s *RedisBufferedStore) SQLStore() appstore.Store {
 }
 
 func (s *RedisBufferedStore) SaveProjectMeta(ctx context.Context, meta appstore.ProjectMeta) error {
+	txHash := meta.TxHash
+	if txHash == (common.Hash{}) && meta.GenesisTx != nil {
+		txHash = meta.GenesisTx.Hash()
+	}
 	return s.SaveProjectBase(ctx, appstore.ProjectBase{
 		BlockTime:   meta.BlockTime,
 		BlockNumber: meta.BlockNumber,
 		Contract:    meta.Contract,
 		Creator:     meta.Creator,
-		Tx:          meta.Tx,
-		TxHash:      meta.TxHash,
+		TxHash:      txHash,
 		TxIndex:     meta.TxIndex,
 	})
 }
@@ -897,11 +900,6 @@ func (s *RedisBufferedStore) metaFromBase(ctx context.Context, base appstore.Pro
 	} else if item != nil {
 		meta.CreatorResult = item.Result
 	}
-	if item, err := s.GetProjectReportState(ctx, base.Contract); err != nil {
-		return meta, err
-	} else if item != nil {
-		meta.Report = item.Report
-	}
 	if item, err := s.GetProjectComponentState(ctx, base.Contract, appstore.ProjectComponentGenesisWallet); err != nil {
 		return meta, err
 	} else if item != nil {
@@ -926,7 +924,6 @@ func (s *RedisBufferedStore) backfillMeta(ctx context.Context, item appstore.Pro
 		_ = s.cache.SetChainState(ctx, appstore.ProjectChainState{ProjectContract: item.Contract, WethPair: item.WethPair, UsdtPair: item.UsdtPair, FetchedAt: item.FetchAt})
 	}
 	_ = s.cache.SetSimulation(ctx, appstore.ProjectSimulationResult{ProjectContract: item.Contract, Result: item.CreatorResult})
-	_ = s.cache.SetReport(ctx, appstore.ProjectReportState{ProjectContract: item.Contract, Report: item.Report})
 	return nil
 }
 
