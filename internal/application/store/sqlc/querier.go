@@ -11,15 +11,55 @@ import (
 type Querier interface {
 	AddProjectComment(ctx context.Context, arg AddProjectCommentParams) (ProjectComment, error)
 	AddProjectEventLog(ctx context.Context, arg AddProjectEventLogParams) error
+	CountProjectBases(ctx context.Context) (int64, error)
 	CountProjectCommentsByContract(ctx context.Context, projectContract []byte) (int64, error)
+	DeleteProjectAvePairsByContract(ctx context.Context, projectContract []byte) error
+	DeleteProjectCreatorHistoricalProjectsByContract(ctx context.Context, projectContract []byte) error
+	DeleteProjectGenesisWalletsByContract(ctx context.Context, projectContract []byte) error
+	GetMaxProjectBlockNumber(ctx context.Context) (GetMaxProjectBlockNumberRow, error)
 	GetProjectAveComponentState(ctx context.Context, projectContract []byte) (ProjectComponentState, error)
+	GetProjectBaseByContract(ctx context.Context, contract []byte) (GetProjectBaseByContractRow, error)
+	GetProjectBytecodeFact(ctx context.Context, projectContract []byte) (ProjectBytecodeFact, error)
+	GetProjectChainState(ctx context.Context, projectContract []byte) (ProjectChainState, error)
+	GetProjectComponentState(ctx context.Context, arg GetProjectComponentStateParams) (ProjectComponentState, error)
+	GetProjectMetaByContract(ctx context.Context, contract []byte) (GetProjectMetaByContractRow, error)
+	GetProjectReportState(ctx context.Context, projectContract []byte) (ProjectReport, error)
+	GetProjectSimulationResult(ctx context.Context, projectContract []byte) (ProjectSimulationResult, error)
+	InsertProjectAvePair(ctx context.Context, arg InsertProjectAvePairParams) error
+	InsertProjectBase(ctx context.Context, arg InsertProjectBaseParams) error
+	InsertProjectCreatorHistoricalProject(ctx context.Context, arg InsertProjectCreatorHistoricalProjectParams) error
+	InsertProjectGenesisWallet(ctx context.Context, arg InsertProjectGenesisWalletParams) error
+	ListProjectAvePairsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ListProjectAvePairsByContractsRow, error)
 	ListProjectAveRefreshCandidates(ctx context.Context, arg ListProjectAveRefreshCandidatesParams) ([][]byte, error)
+	ListProjectAveTokenDetailsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectAveTokenDetail, error)
+	ListProjectBases(ctx context.Context) ([]ListProjectBasesRow, error)
+	ListProjectBasesByCreatorBefore(ctx context.Context, arg ListProjectBasesByCreatorBeforeParams) ([]ListProjectBasesByCreatorBeforeRow, error)
+	ListProjectBasesPage(ctx context.Context, arg ListProjectBasesPageParams) ([]ListProjectBasesPageRow, error)
+	ListProjectChainStatesByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectChainState, error)
+	ListProjectChainStatesByPairAddresses(ctx context.Context, dollar_1 [][]byte) ([]ProjectChainState, error)
 	ListProjectCommentsByContract(ctx context.Context, arg ListProjectCommentsByContractParams) ([]ProjectComment, error)
+	ListProjectCreatorHistoricalProjectsByContract(ctx context.Context, projectContract []byte) ([]ProjectCreatorHistoricalProject, error)
+	ListProjectCreatorHistoricalProjectsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectCreatorHistoricalProject, error)
 	ListProjectEventLogsByContract(ctx context.Context, contract []byte) ([]ProjectEventLog, error)
+	ListProjectGenesisWalletsByContract(ctx context.Context, projectContract []byte) ([]ListProjectGenesisWalletsByContractRow, error)
+	ListProjectGenesisWalletsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ListProjectGenesisWalletsByContractsRow, error)
+	ListProjectGenesisWalletsByWallet(ctx context.Context, wallet []byte) ([]ListProjectGenesisWalletsByWalletRow, error)
+	ListProjectMetas(ctx context.Context) ([]ListProjectMetasRow, error)
+	ListProjectMetasByCreator(ctx context.Context, creator []byte) ([]ListProjectMetasByCreatorRow, error)
+	ListProjectMetasByCreatorBefore(ctx context.Context, arg ListProjectMetasByCreatorBeforeParams) ([]ListProjectMetasByCreatorBeforeRow, error)
+	ListProjectMetasByPairAddresses(ctx context.Context, dollar_1 [][]byte) ([]ListProjectMetasByPairAddressesRow, error)
+	ListProjectReportStatesByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectReport, error)
 	MarkProjectAveRefreshFailed(ctx context.Context, arg MarkProjectAveRefreshFailedParams) error
 	MarkProjectAveRefreshRunning(ctx context.Context, arg MarkProjectAveRefreshRunningParams) error
 	MarkProjectAveRefreshSuccess(ctx context.Context, arg MarkProjectAveRefreshSuccessParams) error
+	MarkProjectComponentSuccessNow(ctx context.Context, arg MarkProjectComponentSuccessNowParams) error
 	ScheduleProjectAveRefresh(ctx context.Context, arg ScheduleProjectAveRefreshParams) error
+	UpsertProjectAveTokenDetail(ctx context.Context, arg UpsertProjectAveTokenDetailParams) error
+	UpsertProjectBytecodeFact(ctx context.Context, arg UpsertProjectBytecodeFactParams) error
+	UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) error
+	UpsertProjectComponentState(ctx context.Context, arg UpsertProjectComponentStateParams) error
+	UpsertProjectReportState(ctx context.Context, arg UpsertProjectReportStateParams) error
+	UpsertProjectSimulationResult(ctx context.Context, arg UpsertProjectSimulationResultParams) error
 }
 
 var _ Querier = (*Queries)(nil)

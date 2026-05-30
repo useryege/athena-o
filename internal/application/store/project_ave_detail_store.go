@@ -2,209 +2,45 @@ package store
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 )
-
-const projectAveTokenColumns = `
-  status,
-  msg,
-  data_type,
-  is_audited,
-  fetched_at,
-  total,
-  launch_price,
-  current_price_eth,
-  current_price_usd,
-  price_change_1d,
-  price_change_24h,
-  price_change_1h,
-  lock_amount,
-  burn_amount,
-  other_amount,
-  tx_amount_24h,
-  tx_volume_u_24h,
-  locked_percent,
-  market_cap,
-  fdv,
-  tvl,
-  main_pair_tvl,
-  token_price_change_5m,
-  token_price_change_1h,
-  token_price_change_4h,
-  token_price_change_24h,
-  token_tx_volume_usd_5m,
-  token_tx_volume_usd_1h,
-  token_tx_volume_usd_4h,
-  token_tx_volume_usd_24h,
-  token_buy_volume_u_5m,
-  token_sell_volume_u_5m,
-  token,
-  chain,
-  decimal,
-  name,
-  symbol,
-  holders,
-  appendix,
-  risk_level,
-  logo_url,
-  risk_info,
-  risk_score,
-  launch_at,
-  created_at,
-  tx_count_24h,
-  lock_platform,
-  is_mintable,
-  updated_at,
-  main_pair,
-  has_mint_method,
-  is_lp_not_locked,
-  has_not_renounced,
-  has_not_audited,
-  has_not_open_source,
-  is_in_blacklist,
-  is_honeypot,
-  ave_risk_level`
-
-const projectAvePairColumns = `
-  reserve0,
-  reserve1,
-  token0_price_eth,
-  token0_price_usd,
-  token1_price_eth,
-  token1_price_usd,
-  price_change,
-  price_change_24h,
-  price_change_1h,
-  volume_u,
-  low_u,
-  high_u,
-  fee,
-  total_supply,
-  tx_amount,
-  pair,
-  chain,
-  amm,
-  token0_address,
-  token0_symbol,
-  token0_decimal,
-  token1_address,
-  token1_symbol,
-  token1_decimal,
-  target_token,
-  price_change_1d,
-  created_at,
-  tx_count,
-  updated_at,
-  market_cap,
-  fdv,
-  is_fake`
 
 func (s *SQLStore) UpsertProjectAveDetail(ctx context.Context, contract common.Address, detail ProjectAveDetail) error {
 	if detail.FetchedAt.IsZero() {
 		detail.FetchedAt = time.Now().UTC()
 	}
+	if s.pool == nil {
+		return fmt.Errorf("application postgres database is not configured")
+	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin project ave detail tx: %w", err)
 	}
 	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
+		_ = tx.Rollback(ctx)
 	}()
 
-	tokenArgs := append([]any{contract.Bytes()}, projectAveTokenArgs(detail)...)
-	if _, err = tx.ExecContext(ctx, `
-INSERT INTO project_ave_token_detail (
-  project_contract,`+projectAveTokenColumns+`
-) VALUES (`+placeholders(59)+`)
-ON CONFLICT (project_contract) DO UPDATE SET
-  status = EXCLUDED.status,
-  msg = EXCLUDED.msg,
-  data_type = EXCLUDED.data_type,
-  is_audited = EXCLUDED.is_audited,
-  fetched_at = EXCLUDED.fetched_at,
-  total = EXCLUDED.total,
-  launch_price = EXCLUDED.launch_price,
-  current_price_eth = EXCLUDED.current_price_eth,
-  current_price_usd = EXCLUDED.current_price_usd,
-  price_change_1d = EXCLUDED.price_change_1d,
-  price_change_24h = EXCLUDED.price_change_24h,
-  price_change_1h = EXCLUDED.price_change_1h,
-  lock_amount = EXCLUDED.lock_amount,
-  burn_amount = EXCLUDED.burn_amount,
-  other_amount = EXCLUDED.other_amount,
-  tx_amount_24h = EXCLUDED.tx_amount_24h,
-  tx_volume_u_24h = EXCLUDED.tx_volume_u_24h,
-  locked_percent = EXCLUDED.locked_percent,
-  market_cap = EXCLUDED.market_cap,
-  fdv = EXCLUDED.fdv,
-  tvl = EXCLUDED.tvl,
-  main_pair_tvl = EXCLUDED.main_pair_tvl,
-  token_price_change_5m = EXCLUDED.token_price_change_5m,
-  token_price_change_1h = EXCLUDED.token_price_change_1h,
-  token_price_change_4h = EXCLUDED.token_price_change_4h,
-  token_price_change_24h = EXCLUDED.token_price_change_24h,
-  token_tx_volume_usd_5m = EXCLUDED.token_tx_volume_usd_5m,
-  token_tx_volume_usd_1h = EXCLUDED.token_tx_volume_usd_1h,
-  token_tx_volume_usd_4h = EXCLUDED.token_tx_volume_usd_4h,
-  token_tx_volume_usd_24h = EXCLUDED.token_tx_volume_usd_24h,
-  token_buy_volume_u_5m = EXCLUDED.token_buy_volume_u_5m,
-  token_sell_volume_u_5m = EXCLUDED.token_sell_volume_u_5m,
-  token = EXCLUDED.token,
-  chain = EXCLUDED.chain,
-  decimal = EXCLUDED.decimal,
-  name = EXCLUDED.name,
-  symbol = EXCLUDED.symbol,
-  holders = EXCLUDED.holders,
-  appendix = EXCLUDED.appendix,
-  risk_level = EXCLUDED.risk_level,
-  logo_url = EXCLUDED.logo_url,
-  risk_info = EXCLUDED.risk_info,
-  risk_score = EXCLUDED.risk_score,
-  launch_at = EXCLUDED.launch_at,
-  created_at = EXCLUDED.created_at,
-  tx_count_24h = EXCLUDED.tx_count_24h,
-  lock_platform = EXCLUDED.lock_platform,
-  is_mintable = EXCLUDED.is_mintable,
-  updated_at = EXCLUDED.updated_at,
-  main_pair = EXCLUDED.main_pair,
-  has_mint_method = EXCLUDED.has_mint_method,
-  is_lp_not_locked = EXCLUDED.is_lp_not_locked,
-  has_not_renounced = EXCLUDED.has_not_renounced,
-  has_not_audited = EXCLUDED.has_not_audited,
-  has_not_open_source = EXCLUDED.has_not_open_source,
-  is_in_blacklist = EXCLUDED.is_in_blacklist,
-  is_honeypot = EXCLUDED.is_honeypot,
-  ave_risk_level = EXCLUDED.ave_risk_level
-`, tokenArgs...); err != nil {
+	queries := appsqlc.New(tx)
+	if err := queries.UpsertProjectAveTokenDetail(ctx, projectAveTokenUpsertParams(contract, detail)); err != nil {
 		return fmt.Errorf("upsert project ave token detail: %w", err)
 	}
 
-	if _, err = tx.ExecContext(ctx, `DELETE FROM project_ave_pair WHERE project_contract = $1`, contract.Bytes()); err != nil {
+	if err := queries.DeleteProjectAvePairsByContract(ctx, contract.Bytes()); err != nil {
 		return fmt.Errorf("replace project ave pairs: %w", err)
 	}
 	for i, pair := range detail.Pairs {
-		args := append([]any{contract.Bytes(), i}, projectAvePairArgs(pair)...)
-		if _, err = tx.ExecContext(ctx, `
-INSERT INTO project_ave_pair (
-  project_contract,
-  rank_index,`+projectAvePairColumns+`
-) VALUES (`+placeholders(34)+`)
-`, args...); err != nil {
+		if err := queries.InsertProjectAvePair(ctx, projectAvePairInsertParams(contract, int32(i), pair)); err != nil {
 			return fmt.Errorf("insert project ave pair %d: %w", i, err)
 		}
 	}
 
-	if err = tx.Commit(); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit project ave detail tx: %w", err)
 	}
 	return nil
@@ -228,180 +64,239 @@ func (s *SQLStore) ListProjectAveDetailsByContracts(ctx context.Context, contrac
 	if len(unique) == 0 {
 		return result, nil
 	}
-
-	placeholdersList := make([]string, 0, len(unique))
-	args := make([]any, 0, len(unique))
-	for i, contract := range unique {
-		placeholdersList = append(placeholdersList, fmt.Sprintf("$%d", i+1))
-		args = append(args, contract.Bytes())
+	queries, err := s.querier()
+	if err != nil {
+		return nil, err
 	}
-	inClause := strings.Join(placeholdersList, ", ")
-	rows, err := s.db.QueryContext(ctx, fmt.Sprintf(`
-SELECT project_contract,`+projectAveTokenColumns+`
-FROM project_ave_token_detail
-WHERE project_contract IN (%s)
-`, inClause), args...)
+
+	tokenRows, err := queries.ListProjectAveTokenDetailsByContracts(ctx, addressesToBytes(unique))
 	if err != nil {
 		return nil, fmt.Errorf("list project ave token details: %w", err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		contract, detail, err := scanProjectAveTokenDetail(rows)
-		if err != nil {
-			return nil, err
-		}
+	for _, row := range tokenRows {
+		contract, detail := projectAveTokenDetailFromSQLC(row)
 		result[contract] = detail
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate project ave token details: %w", err)
 	}
 	if len(result) == 0 {
 		return result, nil
 	}
 
-	rows, err = s.db.QueryContext(ctx, fmt.Sprintf(`
-SELECT project_contract, rank_index,`+projectAvePairColumns+`
-FROM project_ave_pair
-WHERE project_contract IN (%s)
-ORDER BY project_contract, rank_index
-`, inClause), args...)
+	pairRows, err := queries.ListProjectAvePairsByContracts(ctx, addressesToBytes(unique))
 	if err != nil {
 		return nil, fmt.Errorf("list project ave pairs: %w", err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		contract, pair, err := scanProjectAvePair(rows)
-		if err != nil {
-			return nil, err
-		}
+	for _, row := range pairRows {
+		contract, pair := projectAvePairFromSQLC(row)
 		detail := result[contract]
 		detail.Pairs = append(detail.Pairs, pair)
 		result[contract] = detail
 	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate project ave pairs: %w", err)
-	}
 	return result, nil
 }
 
-func projectAveTokenArgs(detail ProjectAveDetail) []any {
+func projectAveTokenUpsertParams(contract common.Address, detail ProjectAveDetail) appsqlc.UpsertProjectAveTokenDetailParams {
 	t := detail.Token
-	return []any{
-		detail.Status, nullableText(detail.Msg), detail.DataType, detail.IsAudited, detail.FetchedAt.UTC(),
-		nullableText(t.Total), nullableText(t.LaunchPrice), nullableText(t.CurrentPriceETH), nullableText(t.CurrentPriceUSD), nullableText(t.PriceChange1D), nullableText(t.PriceChange24H), nullableText(t.PriceChange1H),
-		nullableText(t.LockAmount), nullableText(t.BurnAmount), nullableText(t.OtherAmount), nullableText(t.TxAmount24H), nullableText(t.TxVolumeU24H), nullableText(t.LockedPercent), nullableText(t.MarketCap), nullableText(t.FDV), nullableText(t.TVL), nullableText(t.MainPairTVL),
-		nullableText(t.TokenPriceChange5M), nullableText(t.TokenPriceChange1H), nullableText(t.TokenPriceChange4H), nullableText(t.TokenPriceChange24H), nullableText(t.TokenTxVolumeUSD5M), nullableText(t.TokenTxVolumeUSD1H), nullableText(t.TokenTxVolumeUSD4H), nullableText(t.TokenTxVolumeUSD24H),
-		nullableText(t.TokenBuyVolumeU5M), nullableText(t.TokenSellVolumeU5M), nullableText(t.Token), nullableText(t.Chain), t.Decimal, nullableText(t.Name), nullableText(t.Symbol), t.Holders, nullableText(t.Appendix), t.RiskLevel, nullableText(t.LogoURL),
-		nullableText(t.RiskInfo), nullableText(t.RiskScore), t.LaunchAt, t.CreatedAt, t.TxCount24H, nullableText(t.LockPlatform), nullableText(t.IsMintable), t.UpdatedAt, nullableText(t.MainPair), t.HasMintMethod, t.IsLPNotLocked, t.HasNotRenounced, t.HasNotAudited, t.HasNotOpenSource, t.IsInBlacklist, t.IsHoneypot, t.AveRiskLevel,
+	return appsqlc.UpsertProjectAveTokenDetailParams{
+		ProjectContract:     contract.Bytes(),
+		Status:              int32(detail.Status),
+		DataType:            int32(detail.DataType),
+		IsAudited:           detail.IsAudited,
+		FetchedAt:           pgtype.Timestamptz{Time: detail.FetchedAt.UTC(), Valid: true},
+		Decimal:             int32(t.Decimal),
+		Holders:             int32(t.Holders),
+		RiskLevel:           int32(t.RiskLevel),
+		LaunchAt:            t.LaunchAt,
+		CreatedAt:           t.CreatedAt,
+		TxCount24h:          int32(t.TxCount24H),
+		UpdatedAt:           t.UpdatedAt,
+		HasMintMethod:       t.HasMintMethod,
+		IsLpNotLocked:       t.IsLPNotLocked,
+		HasNotRenounced:     t.HasNotRenounced,
+		HasNotAudited:       t.HasNotAudited,
+		HasNotOpenSource:    t.HasNotOpenSource,
+		IsInBlacklist:       t.IsInBlacklist,
+		IsHoneypot:          t.IsHoneypot,
+		AveRiskLevel:        int32(t.AveRiskLevel),
+		Msg:                 optionalPgText(detail.Msg),
+		Total:               optionalPgText(t.Total),
+		LaunchPrice:         optionalPgText(t.LaunchPrice),
+		CurrentPriceEth:     optionalPgText(t.CurrentPriceETH),
+		CurrentPriceUsd:     optionalPgText(t.CurrentPriceUSD),
+		PriceChange1d:       optionalPgText(t.PriceChange1D),
+		PriceChange24h:      optionalPgText(t.PriceChange24H),
+		PriceChange1h:       optionalPgText(t.PriceChange1H),
+		LockAmount:          optionalPgText(t.LockAmount),
+		BurnAmount:          optionalPgText(t.BurnAmount),
+		OtherAmount:         optionalPgText(t.OtherAmount),
+		TxAmount24h:         optionalPgText(t.TxAmount24H),
+		TxVolumeU24h:        optionalPgText(t.TxVolumeU24H),
+		LockedPercent:       optionalPgText(t.LockedPercent),
+		MarketCap:           optionalPgText(t.MarketCap),
+		Fdv:                 optionalPgText(t.FDV),
+		Tvl:                 optionalPgText(t.TVL),
+		MainPairTvl:         optionalPgText(t.MainPairTVL),
+		TokenPriceChange5m:  optionalPgText(t.TokenPriceChange5M),
+		TokenPriceChange1h:  optionalPgText(t.TokenPriceChange1H),
+		TokenPriceChange4h:  optionalPgText(t.TokenPriceChange4H),
+		TokenPriceChange24h: optionalPgText(t.TokenPriceChange24H),
+		TokenTxVolumeUsd5m:  optionalPgText(t.TokenTxVolumeUSD5M),
+		TokenTxVolumeUsd1h:  optionalPgText(t.TokenTxVolumeUSD1H),
+		TokenTxVolumeUsd4h:  optionalPgText(t.TokenTxVolumeUSD4H),
+		TokenTxVolumeUsd24h: optionalPgText(t.TokenTxVolumeUSD24H),
+		TokenBuyVolumeU5m:   optionalPgText(t.TokenBuyVolumeU5M),
+		TokenSellVolumeU5m:  optionalPgText(t.TokenSellVolumeU5M),
+		Token:               optionalPgText(t.Token),
+		Chain:               optionalPgText(t.Chain),
+		Name:                optionalPgText(t.Name),
+		Symbol:              optionalPgText(t.Symbol),
+		Appendix:            optionalPgText(t.Appendix),
+		LogoUrl:             optionalPgText(t.LogoURL),
+		RiskInfo:            optionalPgText(t.RiskInfo),
+		RiskScore:           optionalPgText(t.RiskScore),
+		LockPlatform:        optionalPgText(t.LockPlatform),
+		IsMintable:          optionalPgText(t.IsMintable),
+		MainPair:            optionalPgText(t.MainPair),
 	}
 }
 
-func projectAvePairArgs(p ProjectAvePair) []any {
-	return []any{
-		nullableText(p.Reserve0), nullableText(p.Reserve1), nullableText(p.Token0PriceETH), nullableText(p.Token0PriceUSD), nullableText(p.Token1PriceETH), nullableText(p.Token1PriceUSD), nullableText(p.PriceChange), nullableText(p.PriceChange24H), nullableText(p.PriceChange1H),
-		nullableText(p.VolumeU), nullableText(p.LowU), nullableText(p.HighU), nullableText(p.Fee), nullableText(p.TotalSupply), nullableText(p.TxAmount), nullableText(p.Pair), nullableText(p.Chain), nullableText(p.AMM), nullableText(p.Token0Address), nullableText(p.Token0Symbol), p.Token0Decimal,
-		nullableText(p.Token1Address), nullableText(p.Token1Symbol), p.Token1Decimal, nullableText(p.TargetToken), nullableText(p.PriceChange1D), p.CreatedAt, p.TxCount, p.UpdatedAt, nullableText(p.MarketCap), nullableText(p.FDV), p.IsFake,
+func projectAvePairInsertParams(contract common.Address, rankIndex int32, pair ProjectAvePair) appsqlc.InsertProjectAvePairParams {
+	return appsqlc.InsertProjectAvePairParams{
+		ProjectContract: contract.Bytes(),
+		RankIndex:       rankIndex,
+		Token0Decimal:   int32(pair.Token0Decimal),
+		Token1Decimal:   int32(pair.Token1Decimal),
+		CreatedAt:       pair.CreatedAt,
+		TxCount:         int32(pair.TxCount),
+		UpdatedAt:       pair.UpdatedAt,
+		IsFake:          pair.IsFake,
+		Reserve0:        optionalPgText(pair.Reserve0),
+		Reserve1:        optionalPgText(pair.Reserve1),
+		Token0PriceEth:  optionalPgText(pair.Token0PriceETH),
+		Token0PriceUsd:  optionalPgText(pair.Token0PriceUSD),
+		Token1PriceEth:  optionalPgText(pair.Token1PriceETH),
+		Token1PriceUsd:  optionalPgText(pair.Token1PriceUSD),
+		PriceChange:     optionalPgText(pair.PriceChange),
+		PriceChange24h:  optionalPgText(pair.PriceChange24H),
+		PriceChange1h:   optionalPgText(pair.PriceChange1H),
+		VolumeU:         optionalPgText(pair.VolumeU),
+		LowU:            optionalPgText(pair.LowU),
+		HighU:           optionalPgText(pair.HighU),
+		Fee:             optionalPgText(pair.Fee),
+		TotalSupply:     optionalPgText(pair.TotalSupply),
+		TxAmount:        optionalPgText(pair.TxAmount),
+		Pair:            optionalPgText(pair.Pair),
+		Chain:           optionalPgText(pair.Chain),
+		Amm:             optionalPgText(pair.AMM),
+		Token0Address:   optionalPgText(pair.Token0Address),
+		Token0Symbol:    optionalPgText(pair.Token0Symbol),
+		Token1Address:   optionalPgText(pair.Token1Address),
+		Token1Symbol:    optionalPgText(pair.Token1Symbol),
+		TargetToken:     optionalPgText(pair.TargetToken),
+		PriceChange1d:   optionalPgText(pair.PriceChange1D),
+		MarketCap:       optionalPgText(pair.MarketCap),
+		Fdv:             optionalPgText(pair.FDV),
 	}
 }
 
-func scanProjectAveTokenDetail(scanner rowScanner) (common.Address, ProjectAveDetail, error) {
-	var contract []byte
-	var detail ProjectAveDetail
-	t := &detail.Token
-	var msg, total, launchPrice, currentPriceETH, currentPriceUSD, priceChange1D, priceChange24H, priceChange1H sql.NullString
-	var lockAmount, burnAmount, otherAmount, txAmount24H, txVolumeU24H, lockedPercent, marketCap, fdv, tvl, mainPairTVL sql.NullString
-	var tokenPriceChange5M, tokenPriceChange1H, tokenPriceChange4H, tokenPriceChange24H, tokenTxVolumeUSD5M, tokenTxVolumeUSD1H, tokenTxVolumeUSD4H, tokenTxVolumeUSD24H sql.NullString
-	var tokenBuyVolumeU5M, tokenSellVolumeU5M, token, chain, name, symbol, appendix, logoURL, riskInfo, riskScore, lockPlatform, isMintable, mainPair sql.NullString
-	if err := scanner.Scan(&contract, &detail.Status, &msg, &detail.DataType, &detail.IsAudited, &detail.FetchedAt, &total, &launchPrice, &currentPriceETH, &currentPriceUSD, &priceChange1D, &priceChange24H, &priceChange1H, &lockAmount, &burnAmount, &otherAmount, &txAmount24H, &txVolumeU24H, &lockedPercent, &marketCap, &fdv, &tvl, &mainPairTVL, &tokenPriceChange5M, &tokenPriceChange1H, &tokenPriceChange4H, &tokenPriceChange24H, &tokenTxVolumeUSD5M, &tokenTxVolumeUSD1H, &tokenTxVolumeUSD4H, &tokenTxVolumeUSD24H, &tokenBuyVolumeU5M, &tokenSellVolumeU5M, &token, &chain, &t.Decimal, &name, &symbol, &t.Holders, &appendix, &t.RiskLevel, &logoURL, &riskInfo, &riskScore, &t.LaunchAt, &t.CreatedAt, &t.TxCount24H, &lockPlatform, &isMintable, &t.UpdatedAt, &mainPair, &t.HasMintMethod, &t.IsLPNotLocked, &t.HasNotRenounced, &t.HasNotAudited, &t.HasNotOpenSource, &t.IsInBlacklist, &t.IsHoneypot, &t.AveRiskLevel); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return common.Address{}, ProjectAveDetail{}, err
-		}
-		return common.Address{}, ProjectAveDetail{}, fmt.Errorf("scan project ave token detail: %w", err)
+func projectAveTokenDetailFromSQLC(row appsqlc.ProjectAveTokenDetail) (common.Address, ProjectAveDetail) {
+	detail := ProjectAveDetail{
+		Status:    int(row.Status),
+		Msg:       row.Msg.String,
+		DataType:  int(row.DataType),
+		IsAudited: row.IsAudited,
+		FetchedAt: row.FetchedAt.Time,
+		Token: ProjectAveTokenDetail{
+			Total:               row.Total.String,
+			LaunchPrice:         row.LaunchPrice.String,
+			CurrentPriceETH:     row.CurrentPriceEth.String,
+			CurrentPriceUSD:     row.CurrentPriceUsd.String,
+			PriceChange1D:       row.PriceChange1d.String,
+			PriceChange24H:      row.PriceChange24h.String,
+			PriceChange1H:       row.PriceChange1h.String,
+			LockAmount:          row.LockAmount.String,
+			BurnAmount:          row.BurnAmount.String,
+			OtherAmount:         row.OtherAmount.String,
+			TxAmount24H:         row.TxAmount24h.String,
+			TxVolumeU24H:        row.TxVolumeU24h.String,
+			LockedPercent:       row.LockedPercent.String,
+			MarketCap:           row.MarketCap.String,
+			FDV:                 row.Fdv.String,
+			TVL:                 row.Tvl.String,
+			MainPairTVL:         row.MainPairTvl.String,
+			TokenPriceChange5M:  row.TokenPriceChange5m.String,
+			TokenPriceChange1H:  row.TokenPriceChange1h.String,
+			TokenPriceChange4H:  row.TokenPriceChange4h.String,
+			TokenPriceChange24H: row.TokenPriceChange24h.String,
+			TokenTxVolumeUSD5M:  row.TokenTxVolumeUsd5m.String,
+			TokenTxVolumeUSD1H:  row.TokenTxVolumeUsd1h.String,
+			TokenTxVolumeUSD4H:  row.TokenTxVolumeUsd4h.String,
+			TokenTxVolumeUSD24H: row.TokenTxVolumeUsd24h.String,
+			TokenBuyVolumeU5M:   row.TokenBuyVolumeU5m.String,
+			TokenSellVolumeU5M:  row.TokenSellVolumeU5m.String,
+			Token:               row.Token.String,
+			Chain:               row.Chain.String,
+			Decimal:             int(row.Decimal),
+			Name:                row.Name.String,
+			Symbol:              row.Symbol.String,
+			Holders:             int(row.Holders),
+			Appendix:            row.Appendix.String,
+			RiskLevel:           int(row.RiskLevel),
+			LogoURL:             row.LogoUrl.String,
+			RiskInfo:            row.RiskInfo.String,
+			RiskScore:           row.RiskScore.String,
+			LaunchAt:            row.LaunchAt,
+			CreatedAt:           row.CreatedAt,
+			TxCount24H:          int(row.TxCount24h),
+			LockPlatform:        row.LockPlatform.String,
+			IsMintable:          row.IsMintable.String,
+			UpdatedAt:           row.UpdatedAt,
+			MainPair:            row.MainPair.String,
+			HasMintMethod:       row.HasMintMethod,
+			IsLPNotLocked:       row.IsLpNotLocked,
+			HasNotRenounced:     row.HasNotRenounced,
+			HasNotAudited:       row.HasNotAudited,
+			HasNotOpenSource:    row.HasNotOpenSource,
+			IsInBlacklist:       row.IsInBlacklist,
+			IsHoneypot:          row.IsHoneypot,
+			AveRiskLevel:        int(row.AveRiskLevel),
+		},
 	}
-	t.Total = total.String
-	t.LaunchPrice = launchPrice.String
-	t.CurrentPriceETH = currentPriceETH.String
-	t.CurrentPriceUSD = currentPriceUSD.String
-	t.PriceChange1D = priceChange1D.String
-	t.PriceChange24H = priceChange24H.String
-	t.PriceChange1H = priceChange1H.String
-	t.LockAmount = lockAmount.String
-	t.BurnAmount = burnAmount.String
-	t.OtherAmount = otherAmount.String
-	t.TxAmount24H = txAmount24H.String
-	t.TxVolumeU24H = txVolumeU24H.String
-	t.LockedPercent = lockedPercent.String
-	t.MarketCap = marketCap.String
-	t.FDV = fdv.String
-	t.TVL = tvl.String
-	t.MainPairTVL = mainPairTVL.String
-	t.TokenPriceChange5M = tokenPriceChange5M.String
-	t.TokenPriceChange1H = tokenPriceChange1H.String
-	t.TokenPriceChange4H = tokenPriceChange4H.String
-	t.TokenPriceChange24H = tokenPriceChange24H.String
-	t.TokenTxVolumeUSD5M = tokenTxVolumeUSD5M.String
-	t.TokenTxVolumeUSD1H = tokenTxVolumeUSD1H.String
-	t.TokenTxVolumeUSD4H = tokenTxVolumeUSD4H.String
-	t.TokenTxVolumeUSD24H = tokenTxVolumeUSD24H.String
-	t.TokenBuyVolumeU5M = tokenBuyVolumeU5M.String
-	t.TokenSellVolumeU5M = tokenSellVolumeU5M.String
-	t.Token = token.String
-	t.Chain = chain.String
-	t.Name = name.String
-	t.Symbol = symbol.String
-	t.Appendix = appendix.String
-	t.LogoURL = logoURL.String
-	t.RiskInfo = riskInfo.String
-	t.RiskScore = riskScore.String
-	t.LockPlatform = lockPlatform.String
-	t.IsMintable = isMintable.String
-	t.MainPair = mainPair.String
-	detail.Token = *t
-	return common.BytesToAddress(contract), detail, nil
+	return common.BytesToAddress(row.ProjectContract), detail
 }
 
-func scanProjectAvePair(scanner rowScanner) (common.Address, ProjectAvePair, error) {
-	var contract []byte
-	var rankIndex int
-	var pair ProjectAvePair
-	var reserve0, reserve1, token0PriceETH, token0PriceUSD, token1PriceETH, token1PriceUSD, priceChange, priceChange24H, priceChange1H sql.NullString
-	var volumeU, lowU, highU, fee, totalSupply, txAmount, pairAddress, chain, amm, token0Address, token0Symbol, token1Address, token1Symbol, targetToken, priceChange1D, marketCap, fdv sql.NullString
-	if err := scanner.Scan(&contract, &rankIndex, &reserve0, &reserve1, &token0PriceETH, &token0PriceUSD, &token1PriceETH, &token1PriceUSD, &priceChange, &priceChange24H, &priceChange1H, &volumeU, &lowU, &highU, &fee, &totalSupply, &txAmount, &pairAddress, &chain, &amm, &token0Address, &token0Symbol, &pair.Token0Decimal, &token1Address, &token1Symbol, &pair.Token1Decimal, &targetToken, &priceChange1D, &pair.CreatedAt, &pair.TxCount, &pair.UpdatedAt, &marketCap, &fdv, &pair.IsFake); err != nil {
-		return common.Address{}, ProjectAvePair{}, fmt.Errorf("scan project ave pair: %w", err)
+func projectAvePairFromSQLC(row appsqlc.ListProjectAvePairsByContractsRow) (common.Address, ProjectAvePair) {
+	return common.BytesToAddress(row.ProjectContract), ProjectAvePair{
+		Reserve0:       row.Reserve0.String,
+		Reserve1:       row.Reserve1.String,
+		Token0PriceETH: row.Token0PriceEth.String,
+		Token0PriceUSD: row.Token0PriceUsd.String,
+		Token1PriceETH: row.Token1PriceEth.String,
+		Token1PriceUSD: row.Token1PriceUsd.String,
+		PriceChange:    row.PriceChange.String,
+		PriceChange24H: row.PriceChange24h.String,
+		PriceChange1H:  row.PriceChange1h.String,
+		VolumeU:        row.VolumeU.String,
+		LowU:           row.LowU.String,
+		HighU:          row.HighU.String,
+		Fee:            row.Fee.String,
+		TotalSupply:    row.TotalSupply.String,
+		TxAmount:       row.TxAmount.String,
+		Pair:           row.Pair.String,
+		Chain:          row.Chain.String,
+		AMM:            row.Amm.String,
+		Token0Address:  row.Token0Address.String,
+		Token0Symbol:   row.Token0Symbol.String,
+		Token0Decimal:  int(row.Token0Decimal),
+		Token1Address:  row.Token1Address.String,
+		Token1Symbol:   row.Token1Symbol.String,
+		Token1Decimal:  int(row.Token1Decimal),
+		TargetToken:    row.TargetToken.String,
+		PriceChange1D:  row.PriceChange1d.String,
+		CreatedAt:      row.CreatedAt,
+		TxCount:        int(row.TxCount),
+		UpdatedAt:      row.UpdatedAt,
+		MarketCap:      row.MarketCap.String,
+		FDV:            row.Fdv.String,
+		IsFake:         row.IsFake,
 	}
-	pair.Reserve0 = reserve0.String
-	pair.Reserve1 = reserve1.String
-	pair.Token0PriceETH = token0PriceETH.String
-	pair.Token0PriceUSD = token0PriceUSD.String
-	pair.Token1PriceETH = token1PriceETH.String
-	pair.Token1PriceUSD = token1PriceUSD.String
-	pair.PriceChange = priceChange.String
-	pair.PriceChange24H = priceChange24H.String
-	pair.PriceChange1H = priceChange1H.String
-	pair.VolumeU = volumeU.String
-	pair.LowU = lowU.String
-	pair.HighU = highU.String
-	pair.Fee = fee.String
-	pair.TotalSupply = totalSupply.String
-	pair.TxAmount = txAmount.String
-	pair.Pair = pairAddress.String
-	pair.Chain = chain.String
-	pair.AMM = amm.String
-	pair.Token0Address = token0Address.String
-	pair.Token0Symbol = token0Symbol.String
-	pair.Token1Address = token1Address.String
-	pair.Token1Symbol = token1Symbol.String
-	pair.TargetToken = targetToken.String
-	pair.PriceChange1D = priceChange1D.String
-	pair.MarketCap = marketCap.String
-	pair.FDV = fdv.String
-	return common.BytesToAddress(contract), pair, nil
-}
-
-func placeholders(count int) string {
-	items := make([]string, 0, count)
-	for i := 1; i <= count; i++ {
-		items = append(items, fmt.Sprintf("$%d", i))
-	}
-	return strings.Join(items, ", ")
 }

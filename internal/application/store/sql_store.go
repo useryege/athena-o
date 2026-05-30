@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"embed"
 	"fmt"
 
@@ -17,20 +16,16 @@ var migrations embed.FS
 
 type SQLStore struct {
 	pool    *pgxpool.Pool
-	db      postgres.Executor
 	queries appsqlc.Querier
 }
 
 func NewSQLStore(db any) *SQLStore {
-	var queries appsqlc.Querier
 	switch value := db.(type) {
 	case *pgxpool.Pool:
-		if value != nil {
-			queries = appsqlc.New(value)
+		if value == nil {
+			return &SQLStore{}
 		}
-		return &SQLStore{pool: value, db: postgres.NewDB(value), queries: queries}
-	case *sql.DB:
-		return &SQLStore{db: postgres.NewSQLDB(value)}
+		return &SQLStore{pool: value, queries: appsqlc.New(value)}
 	case nil:
 		return &SQLStore{}
 	default:
@@ -65,4 +60,11 @@ func (s *SQLStore) Close() error {
 	}
 	s.pool.Close()
 	return nil
+}
+
+func (s *SQLStore) querier() (appsqlc.Querier, error) {
+	if s.queries == nil {
+		return nil, fmt.Errorf("application postgres database is not configured")
+	}
+	return s.queries, nil
 }
