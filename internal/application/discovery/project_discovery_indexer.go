@@ -34,7 +34,6 @@ type projectDiscoveryNodeClient interface {
 type projectDiscoveryIndexerImpl struct {
 	nodeClient     projectDiscoveryNodeClient
 	componentCache ProjectComponentCache
-	projectCache   ProjectSnapshotCache
 	projectStore   appstore.ProjectStore
 	intake         DiscoveryIntake
 	wg             sync.WaitGroup
@@ -389,18 +388,7 @@ func (w *projectDiscoveryIndexerImpl) scheduleProjectsBySwapPairs(ctx context.Co
 func (w *projectDiscoveryIndexerImpl) projectsByCachedSwapPairs(ctx context.Context, pairAddresses []common.Address) ([]*Project, map[common.Address]struct{}, error) {
 	matchedPairs := make(map[common.Address]struct{})
 	if w.componentCache == nil {
-		if w.projectCache == nil {
-			return nil, matchedPairs, nil
-		}
-		projects, err := w.projectCache.ListProjectsByPairAddresses(ctx, pairAddresses)
-		if err != nil {
-			return nil, nil, err
-		}
-		pairSet := addressSet(pairAddresses)
-		for _, project := range projects {
-			markProjectMatchedPairs(project, pairSet, matchedPairs)
-		}
-		return projects, matchedPairs, nil
+		return nil, matchedPairs, nil
 	}
 	states, err := w.componentCache.ListChainStatesByPairAddresses(ctx, pairAddresses)
 	if err != nil {
@@ -434,13 +422,7 @@ func (w *projectDiscoveryIndexerImpl) projectsByStoredSwapPairs(ctx context.Cont
 		}
 		projects := make([]*Project, 0, len(metas))
 		for _, meta := range metas {
-			project := &Project{Meta: projectMetaFromStore(meta)}
-			projects = append(projects, project)
-			if w.projectCache != nil {
-				if err := w.projectCache.SetProject(ctx, project); err != nil {
-					return nil, err
-				}
-			}
+			projects = append(projects, &Project{Meta: projectMetaFromStore(meta)})
 		}
 		return projects, nil
 	}

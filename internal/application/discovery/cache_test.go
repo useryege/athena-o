@@ -9,10 +9,10 @@ import (
 	"github.com/useryege/athena/internal/application/redisport"
 )
 
-func newProjectSnapshotCacheTest(t *testing.T) ProjectSnapshotCache {
+func newProjectComponentCacheTest(t *testing.T) ProjectComponentCache {
 	t.Helper()
 	mini := miniredis.RunT(t)
 	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
 	t.Cleanup(func() { _ = client.Close() })
-	return appcache.NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
+	return appcache.NewProjectComponentCache(redisport.NewGoRedisAdapter(client))
 }

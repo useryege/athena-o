@@ -384,15 +384,14 @@ func TestProjectDiscoveryIndexerScanBlockReturnsPairSwapTaskError(t *testing.T) 
 
 func TestProjectDiscoveryIndexerSchedulesCachedProjectBySwapPair(t *testing.T) {
 	ctx := context.Background()
-	cache := newProjectSnapshotCacheTest(t)
+	cache := newProjectComponentCacheTest(t)
 	pair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
-	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
-		BlockNumber: 77,
-		Contract:    contract,
-		WethPair:    pair,
-	}}); err != nil {
-		t.Fatalf("set project: %v", err)
+	if err := cache.SetChainState(ctx, appstore.ProjectChainState{
+		ProjectContract: contract,
+		WethPair:        pair,
+	}); err != nil {
+		t.Fatalf("set chain state: %v", err)
 	}
 	node := &swapLogDiscoveryNodeClientFake{
 		block: types.NewBlockWithHeader(&types.Header{Number: big.NewInt(123)}),
@@ -401,10 +400,10 @@ func TestProjectDiscoveryIndexerSchedulesCachedProjectBySwapPair(t *testing.T) {
 	store := &discoveryProjectStoreFake{}
 	intakeFake := &discoveryIntakeFake{}
 	indexer := &projectDiscoveryIndexerImpl{
-		nodeClient:   node,
-		projectCache: cache,
-		projectStore: store,
-		intake:       &discoveryIntakeImpl{intake: intakeFake},
+		nodeClient:     node,
+		componentCache: cache,
+		projectStore:   store,
+		intake:         &discoveryIntakeImpl{intake: intakeFake},
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -421,9 +420,9 @@ func TestProjectDiscoveryIndexerSchedulesCachedProjectBySwapPair(t *testing.T) {
 	}
 }
 
-func TestProjectDiscoveryIndexerSchedulesStoredProjectBySwapPairAndSeedsCache(t *testing.T) {
+func TestProjectDiscoveryIndexerSchedulesStoredProjectBySwapPair(t *testing.T) {
 	ctx := context.Background()
-	cache := newProjectSnapshotCacheTest(t)
+	cache := newProjectComponentCacheTest(t)
 	pair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
 	node := &swapLogDiscoveryNodeClientFake{
@@ -437,10 +436,10 @@ func TestProjectDiscoveryIndexerSchedulesStoredProjectBySwapPairAndSeedsCache(t 
 	}}}
 	intakeFake := &discoveryIntakeFake{}
 	indexer := &projectDiscoveryIndexerImpl{
-		nodeClient:   node,
-		projectCache: cache,
-		projectStore: store,
-		intake:       &discoveryIntakeImpl{intake: intakeFake},
+		nodeClient:     node,
+		componentCache: cache,
+		projectStore:   store,
+		intake:         &discoveryIntakeImpl{intake: intakeFake},
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -455,18 +454,11 @@ func TestProjectDiscoveryIndexerSchedulesStoredProjectBySwapPairAndSeedsCache(t 
 	if got := intakeFake.scheduled[0]; got.Contract != contract || got.Source != ProjectDiscoverySourcePairSwap {
 		t.Fatalf("scheduled candidate = %+v, want contract %s source %s", got, contract.Hex(), ProjectDiscoverySourcePairSwap)
 	}
-	cached, exists, err := cache.GetProject(ctx, contract)
-	if err != nil {
-		t.Fatalf("get cached project: %v", err)
-	}
-	if !exists || cached == nil || cached.Meta.WethPair != pair {
-		t.Fatalf("cached project = %+v exists %t, want weth pair %s", cached, exists, pair.Hex())
-	}
 }
 
 func TestProjectDiscoveryIndexerSkipsSwapPairsWithoutProjectMatch(t *testing.T) {
 	ctx := context.Background()
-	cache := newProjectSnapshotCacheTest(t)
+	cache := newProjectComponentCacheTest(t)
 	pair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	node := &swapLogDiscoveryNodeClientFake{
 		block: types.NewBlockWithHeader(&types.Header{Number: big.NewInt(123)}),
@@ -475,10 +467,10 @@ func TestProjectDiscoveryIndexerSkipsSwapPairsWithoutProjectMatch(t *testing.T) 
 	store := &discoveryProjectStoreFake{}
 	intakeFake := &discoveryIntakeFake{}
 	indexer := &projectDiscoveryIndexerImpl{
-		nodeClient:   node,
-		projectCache: cache,
-		projectStore: store,
-		intake:       &discoveryIntakeImpl{intake: intakeFake},
+		nodeClient:     node,
+		componentCache: cache,
+		projectStore:   store,
+		intake:         &discoveryIntakeImpl{intake: intakeFake},
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -494,16 +486,16 @@ func TestProjectDiscoveryIndexerSkipsSwapPairsWithoutProjectMatch(t *testing.T) 
 
 func TestProjectDiscoveryIndexerDeduplicatesSwapPairProjectSchedules(t *testing.T) {
 	ctx := context.Background()
-	cache := newProjectSnapshotCacheTest(t)
+	cache := newProjectComponentCacheTest(t)
 	wethPair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000a2")
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
-	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
-		Contract: contract,
-		WethPair: wethPair,
-		UsdtPair: usdtPair,
-	}}); err != nil {
-		t.Fatalf("set project: %v", err)
+	if err := cache.SetChainState(ctx, appstore.ProjectChainState{
+		ProjectContract: contract,
+		WethPair:        wethPair,
+		UsdtPair:        usdtPair,
+	}); err != nil {
+		t.Fatalf("set chain state: %v", err)
 	}
 	node := &swapLogDiscoveryNodeClientFake{
 		block: types.NewBlockWithHeader(&types.Header{Number: big.NewInt(123)}),
@@ -515,10 +507,10 @@ func TestProjectDiscoveryIndexerDeduplicatesSwapPairProjectSchedules(t *testing.
 	}
 	intakeFake := &discoveryIntakeFake{}
 	indexer := &projectDiscoveryIndexerImpl{
-		nodeClient:   node,
-		projectCache: cache,
-		projectStore: &discoveryProjectStoreFake{},
-		intake:       &discoveryIntakeImpl{intake: intakeFake},
+		nodeClient:     node,
+		componentCache: cache,
+		projectStore:   &discoveryProjectStoreFake{},
+		intake:         &discoveryIntakeImpl{intake: intakeFake},
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
