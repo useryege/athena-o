@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -20,6 +19,7 @@ import (
 	reportcomponent "github.com/useryege/athena/internal/application/components/report"
 	"github.com/useryege/athena/internal/application/discovery"
 	"github.com/useryege/athena/internal/application/evm"
+	"github.com/useryege/athena/internal/application/model"
 	"github.com/useryege/athena/internal/application/persistence"
 	"github.com/useryege/athena/internal/application/pipeline"
 	"github.com/useryege/athena/internal/application/redisport"
@@ -27,11 +27,15 @@ import (
 	appstore "github.com/useryege/athena/internal/application/store"
 	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
-	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ave"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	projectRefreshThrottleInterval = 30 * time.Second
+	projectRefreshPublishTimeout   = 5 * time.Second
 )
 
 type Service struct {
@@ -54,11 +58,15 @@ type Service struct {
 	aveComponent    *avecomponent.Component
 	walletBlacklist walletBlacklistLister
 
+	dbStore           appstore.Store
 	store             appstore.ProjectStore
-	projectCache      appcache.ProjectSnapshotCache
 	componentCache    appcache.ProjectComponentCache
 	componentEventBus appcomponents.EventBus
 	persistenceFlush  *persistence.Flusher
+
+	projectRefreshMu      sync.Mutex
+	projectRefreshLastRun map[common.Address]time.Time
+	projectRefreshWindow  time.Duration
 
 	delayedFetchSem chan struct{}
 	codeAtFunc      func(ctx context.Context, contract common.Address) ([]byte, error)
@@ -76,22 +84,24 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		return nil, err
 	}
 	return &Service{
-		nodeClient:        nodeClient,
-		store:             bufferedStore,
-		projectCache:      appcache.NewProjectSnapshotCache(redisClient),
-		componentCache:    appcache.NewProjectComponentCache(redisClient),
-		componentEventBus: appcomponents.NewRedisEventBus(redisClient),
-		persistenceFlush:  persistence.NewFlusher(bufferedStore, time.Minute),
-		walletBlacklist:   newWalletBlacklistClientLister(walletClientSet),
-		v2FactoryContract: v2FactoryContract,
-		wethContract:      wethContract,
-		usdtContract:      usdtContract,
-		wethDecimals:      wethDecimals,
-		usdtDecimals:      usdtDecimals,
-		athenaContract:    athenaContract,
-		aveConfig:         aveConfig,
-		liquidityLocker:   liquidityLocker,
-		solidityClientSet: solidityClientSet,
+		nodeClient:            nodeClient,
+		dbStore:               store,
+		store:                 bufferedStore,
+		componentCache:        appcache.NewProjectComponentCache(redisClient),
+		componentEventBus:     appcomponents.NewRedisEventBus(redisClient),
+		persistenceFlush:      persistence.NewFlusher(bufferedStore, time.Minute),
+		walletBlacklist:       newWalletBlacklistClientLister(walletClientSet),
+		v2FactoryContract:     v2FactoryContract,
+		wethContract:          wethContract,
+		usdtContract:          usdtContract,
+		wethDecimals:          wethDecimals,
+		usdtDecimals:          usdtDecimals,
+		athenaContract:        athenaContract,
+		aveConfig:             aveConfig,
+		liquidityLocker:       liquidityLocker,
+		solidityClientSet:     solidityClientSet,
+		projectRefreshLastRun: map[common.Address]time.Time{},
+		projectRefreshWindow:  projectRefreshThrottleInterval,
 	}, nil
 }
 
@@ -249,34 +259,6 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 	return projectPipeline, athenaFetcher, aveComponent, nil
 }
 
-func genesisWalletAddressesFromMetas(items []GenesisWalletMeta) []common.Address {
-	if len(items) == 0 {
-		return nil
-	}
-	addresses := make([]common.Address, 0, len(items))
-	for _, item := range items {
-		addresses = append(addresses, item.Wallet)
-	}
-	return addresses
-}
-
-func buildProjectQueries(projects []*Project) ([]athenacontract.AthenaProjectQuery, []common.Address) {
-	queries := make([]athenacontract.AthenaProjectQuery, 0, len(projects))
-	contracts := make([]common.Address, 0, len(projects))
-	for _, project := range projects {
-		if project == nil {
-			continue
-		}
-		queries = append(queries, athenacontract.AthenaProjectQuery{
-			TokenContract:  project.Meta.Contract,
-			MsgCaller:      project.Meta.Creator,
-			GenesisWallets: genesisWalletAddressesFromMetas(project.Meta.GenesisWallets),
-		})
-		contracts = append(contracts, project.Meta.Contract)
-	}
-	return queries, contracts
-}
-
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
 
@@ -369,148 +351,6 @@ func (s *Service) fetchContractBytecode(ctx context.Context, contract common.Add
 	return s.nodeClient.CodeAt(ctx, contract, nil)
 }
 
-func (s *Service) getProjectSnapshot(ctx context.Context, contract common.Address) (*Project, bool, error) {
-	if s.projectCache != nil {
-		project, ok, err := s.projectCache.GetProject(ctx, contract)
-		if err != nil {
-			return nil, false, err
-		}
-		if ok {
-			return project, true, nil
-		}
-	}
-	project, ok, err := s.loadProjectSnapshotFromDB(ctx, contract)
-	if err != nil || !ok {
-		return project, ok, err
-	}
-	if s.projectCache != nil {
-		if err := s.projectCache.SetProject(ctx, project); err != nil {
-			return nil, false, err
-		}
-	}
-	return project, true, nil
-}
-
-func (s *Service) loadProjectSnapshotFromDB(ctx context.Context, contract common.Address) (*Project, bool, error) {
-	if s.store == nil {
-		return nil, false, nil
-	}
-	meta, err := s.store.GetProjectMetaByContract(ctx, contract)
-	if err != nil {
-		return nil, false, err
-	}
-	if meta == nil {
-		return nil, false, nil
-	}
-	projects, err := s.hydrateProjectSnapshotsFromMetas(ctx, []appstore.ProjectMeta{*meta})
-	if err != nil {
-		return nil, false, err
-	}
-	if len(projects) == 0 {
-		return nil, false, nil
-	}
-	return projects[0], true, nil
-}
-
-func (s *Service) listProjectSnapshotsFromDBPage(ctx context.Context, page int32, pageSize int32) ([]*Project, int64, int32, int32, error) {
-	page, pageSize = normalizeCachePage(page, pageSize)
-	if s.store == nil {
-		return nil, 0, page, pageSize, nil
-	}
-	metas, err := s.store.ListProjectMetas(ctx)
-	if err != nil {
-		return nil, 0, page, pageSize, err
-	}
-	total := int64(len(metas))
-	start := int64(page-1) * int64(pageSize)
-	if start >= total {
-		return nil, total, page, pageSize, nil
-	}
-	stop := start + int64(pageSize)
-	if stop > total {
-		stop = total
-	}
-	projects, err := s.hydrateProjectSnapshotsFromMetas(ctx, metas[start:stop])
-	if err != nil {
-		return nil, 0, page, pageSize, err
-	}
-	for _, project := range projects {
-		if s.projectCache == nil || project == nil {
-			continue
-		}
-		if err := s.projectCache.SetProject(ctx, project); err != nil {
-			return nil, 0, page, pageSize, err
-		}
-	}
-	return projects, total, page, pageSize, nil
-}
-
-func (s *Service) hydrateProjectSnapshotsFromMetas(ctx context.Context, metas []appstore.ProjectMeta) ([]*Project, error) {
-	if len(metas) == 0 {
-		return nil, nil
-	}
-	if s.athenaFetcher == nil {
-		return nil, status.Error(codes.FailedPrecondition, "athena fetcher is not configured")
-	}
-
-	projects := make([]*Project, 0, len(metas))
-	contracts := make([]common.Address, 0, len(metas))
-	for _, meta := range metas {
-		project := &Project{
-			Meta:   projectMetaFromStore(meta),
-			Report: projectReportFromStore(meta.Report),
-		}
-		projects = append(projects, project)
-		contracts = append(contracts, project.Meta.Contract)
-	}
-
-	if store, ok := s.store.(appstore.ProjectGenesisWalletStore); ok && store != nil {
-		byContract, err := store.ListProjectGenesisWalletsByContracts(ctx, contracts)
-		if err != nil {
-			return nil, err
-		}
-		for _, project := range projects {
-			project.Meta.GenesisWallets = genesisWalletMetasFromStore(byContract[project.Meta.Contract])
-		}
-	}
-	if store, ok := s.store.(appstore.ProjectCreatorHistoricalProjectStore); ok && store != nil {
-		byContract, err := store.ListProjectCreatorHistoricalProjectsByContracts(ctx, contracts)
-		if err != nil {
-			return nil, err
-		}
-		for _, project := range projects {
-			project.Meta.CreatorHistoricalProjects = creatorHistoricalProjectContractsFromStore(byContract[project.Meta.Contract])
-		}
-	}
-	if store, ok := s.store.(appstore.ProjectAveDetailStore); ok && store != nil {
-		byContract, err := store.ListProjectAveDetailsByContracts(ctx, contracts)
-		if err != nil {
-			return nil, err
-		}
-		for _, project := range projects {
-			if detail, ok := byContract[project.Meta.Contract]; ok {
-				project.AveDetail = projectAveDetailFromStore(detail)
-			}
-		}
-	}
-
-	queries, orderedContracts := buildProjectQueries(projects)
-	snapshots, err := s.athenaFetcher.FetchProjects(ctx, queries)
-	if err != nil {
-		return nil, err
-	}
-	if len(snapshots) != len(projects) {
-		return nil, fmt.Errorf("athena list returned %d projects for %d db projects", len(snapshots), len(projects))
-	}
-	for i, snapshot := range snapshots {
-		if snapshot.TokenContract != (common.Address{}) && snapshot.TokenContract != orderedContracts[i] {
-			return nil, fmt.Errorf("athena list result token contract = %s, want %s", snapshot.TokenContract, orderedContracts[i])
-		}
-		projects[i].Meta.ChainState = snapshot
-	}
-	return projects, nil
-}
-
 func genesisWalletMetasFromStore(items []appstore.ProjectGenesisWallet) []GenesisWalletMeta {
 	if len(items) == 0 {
 		return nil
@@ -547,55 +387,35 @@ func creatorHistoricalProjectContractsFromStore(items []appstore.ProjectCreatorH
 
 func (s *Service) ListProjects(ctx context.Context, req *applicationpkg.ListProjectsRequest) (*applicationpkg.ListProjectsResponse, error) {
 	startedAt := time.Now()
-	var bases []appstore.ProjectBase
-	var total int64
-	var page int32
-	var pageSize int32
-	var err error
-	if s.componentCache != nil {
-		bases, total, page, pageSize, err = s.componentCache.ListBasePage(ctx, req.GetPage(), req.GetPageSize())
-	} else {
-		page, pageSize = normalizeCachePage(req.GetPage(), req.GetPageSize())
+	baseStore, ok := s.dbStore.(appstore.ProjectBaseStore)
+	if !ok || baseStore == nil {
+		return nil, status.Error(codes.FailedPrecondition, "project base db store is not configured")
 	}
+	reportStore, _ := s.dbStore.(appstore.ProjectReportStore)
+
+	bases, total, page, pageSize, err := baseStore.ListProjectBasesPage(ctx, req.GetPage(), req.GetPageSize())
 	projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
 	if err != nil {
 		return nil, err
 	}
-	if shouldFallbackListProjectsToDB(total, page, pageSize, len(bases)) {
-		store, ok := s.store.(appstore.ProjectBaseStore)
-		if !ok || store == nil {
-			projects, total, page, pageSize, err := s.listProjectSnapshotsFromDBPage(ctx, req.GetPage(), req.GetPageSize())
-			if err != nil {
-				return nil, err
-			}
-			items := make([]*v1alpha1.ProjectListItem, 0, len(projects))
-			for _, project := range projects {
-				items = append(items, projectToListItem(project))
-			}
-			return &applicationpkg.ListProjectsResponse{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
-		}
-		bases, total, page, pageSize, err = store.ListProjectBasesPage(ctx, req.GetPage(), req.GetPageSize())
+
+	reports := map[common.Address]appstore.ProjectReportState{}
+	if reportStore != nil {
+		reports, err = reportStore.ListProjectReportStatesByContracts(ctx, projectBaseContracts(bases))
 		if err != nil {
 			return nil, err
 		}
-		if s.componentCache != nil {
-			for _, base := range bases {
-				if err := s.componentCache.SetBase(ctx, base); err != nil {
-					return nil, err
-				}
-			}
-		}
-	}
-
-	reports, err := s.projectReportsByContracts(ctx, projectBaseContracts(bases))
-	if err != nil {
-		return nil, err
 	}
 	items := make([]*v1alpha1.ProjectListItem, 0, len(bases))
 	for _, base := range bases {
-		report := reports[base.Contract]
-		items = append(items, projectBaseAndReportToListItem(base, report))
+		var reportPtr *appstore.ProjectReportState
+		if report, ok := reports[base.Contract]; ok {
+			item := report
+			reportPtr = &item
+		}
+		items = append(items, projectBaseAndReportToListItem(base, reportPtr))
 	}
+	s.publishProjectRefreshEventsAsync(projectBaseContracts(bases), model.ProjectDiscoverySourceFollowHeads)
 
 	return &applicationpkg.ListProjectsResponse{
 		Items:    items,
@@ -612,13 +432,20 @@ func (s *Service) GetProject(ctx context.Context, req *applicationpkg.GetProject
 	contract := common.HexToAddress(req.GetContract())
 
 	startedAt := time.Now()
-	project, ok, err := s.getProjectSnapshot(ctx, contract)
+	project, ok, err := s.projectFromComponentCache(ctx, contract)
+	cacheMiss := !ok
+	if err == nil && !ok {
+		project, ok, err = s.loadProjectInitialFromDB(ctx, contract)
+	}
 	projectSnapshotLatency.Observe(float64(time.Since(startedAt).Milliseconds()))
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "project %q not found", req.GetContract())
+	}
+	if cacheMiss {
+		s.publishProjectRefreshEventsAsync([]common.Address{contract}, model.ProjectDiscoverySourceFollowHeads)
 	}
 
 	return &applicationpkg.GetProjectResponse{Item: projectToView(project, true)}, nil
@@ -747,29 +574,317 @@ func (s *Service) ListProjectCreatorHistoricalProjects(ctx context.Context, req 
 	return &applicationpkg.ListProjectCreatorHistoricalProjectsResponse{Items: result}, nil
 }
 
-func shouldFallbackListProjectsToDB(total int64, page int32, pageSize int32, projectCount int) bool {
-	if total == 0 {
-		return true
-	}
-	if page < 1 || pageSize <= 0 {
-		page, pageSize = normalizeCachePage(page, pageSize)
-	}
-	start := int64(page-1) * int64(pageSize)
-	if start >= total {
-		return false
-	}
-	expected := total - start
-	if expected > int64(pageSize) {
-		expected = int64(pageSize)
-	}
-	return int64(projectCount) < expected
-}
-
 func parseProjectContract(value string) (common.Address, error) {
 	if !common.IsHexAddress(value) {
 		return common.Address{}, status.Errorf(codes.InvalidArgument, "invalid contract %q", value)
 	}
 	return common.HexToAddress(value), nil
+}
+
+func (s *Service) projectFromComponentCache(ctx context.Context, contract common.Address) (*Project, bool, error) {
+	if s.componentCache == nil {
+		return nil, false, nil
+	}
+	base, ok, err := s.componentCache.GetBase(ctx, contract)
+	if err != nil {
+		return nil, false, err
+	}
+	if !ok || base == nil {
+		return nil, false, nil
+	}
+	project := projectFromBase(*base)
+
+	chainState, chainOK, err := s.componentCache.GetChainState(ctx, contract)
+	if err != nil {
+		return nil, false, err
+	}
+	if chainOK && chainState != nil {
+		applyProjectChainState(project, chainState)
+	}
+	simulation, simulationOK, err := s.componentCache.GetSimulation(ctx, contract)
+	if err != nil {
+		return nil, false, err
+	}
+	if simulationOK && simulation != nil {
+		project.Meta.CreatorResult = simulateResultFromStore(simulation.Result)
+	}
+	report, reportOK, err := s.componentCache.GetReport(ctx, contract)
+	if err != nil {
+		return nil, false, err
+	}
+	if reportOK && report != nil {
+		project.Report = projectReportFromStore(report.Report)
+	}
+	aveDetail, aveOK, err := s.componentCache.GetAveDetail(ctx, contract)
+	if err != nil {
+		return nil, false, err
+	}
+	if aveOK && aveDetail != nil {
+		project.AveDetail = projectAveDetailFromStore(*aveDetail)
+	}
+	genesisWallets, genesisOK, err := s.componentCache.GetGenesisWallets(ctx, contract)
+	if err != nil {
+		return nil, false, err
+	}
+	if genesisOK {
+		project.Meta.GenesisWallets = genesisWalletMetasFromStore(genesisWallets)
+	}
+	creatorHistory, creatorOK, err := s.componentCache.GetCreatorHistory(ctx, contract)
+	if err != nil {
+		return nil, false, err
+	}
+	if creatorOK {
+		project.Meta.CreatorHistoricalProjects = creatorHistoricalProjectContractsFromStore(creatorHistory)
+	}
+	if state, ok, err := s.componentCache.GetComponentState(ctx, contract, appstore.ProjectComponentGenesisWallet); err != nil {
+		return nil, false, err
+	} else if ok && state != nil {
+		project.Meta.GenesisWalletsFetchedAt = state.LastSuccessAt
+	}
+	if state, ok, err := s.componentCache.GetComponentState(ctx, contract, appstore.ProjectComponentCreatorHistory); err != nil {
+		return nil, false, err
+	} else if ok && state != nil {
+		project.Meta.CreatorHistoricalProjectsFetchedAt = state.LastSuccessAt
+	}
+	return project, true, nil
+}
+
+func (s *Service) loadProjectInitialFromDB(ctx context.Context, contract common.Address) (*Project, bool, error) {
+	baseStore, ok := s.dbStore.(appstore.ProjectBaseStore)
+	if !ok || baseStore == nil {
+		return nil, false, status.Error(codes.FailedPrecondition, "project base db store is not configured")
+	}
+	base, err := baseStore.GetProjectBaseByContract(ctx, contract)
+	if err != nil {
+		return nil, false, err
+	}
+	if base == nil {
+		return nil, false, nil
+	}
+	project := projectFromBase(*base)
+
+	var chainState *appstore.ProjectChainState
+	if store, ok := s.dbStore.(appstore.ProjectChainStateStore); ok && store != nil {
+		item, err := store.GetProjectChainState(ctx, contract)
+		if err != nil {
+			return nil, false, err
+		}
+		chainState = item
+		if chainState != nil {
+			applyProjectChainState(project, chainState)
+		}
+	}
+
+	var simulation *appstore.ProjectSimulationResult
+	if store, ok := s.dbStore.(appstore.ProjectSimulationStore); ok && store != nil {
+		item, err := store.GetProjectSimulationResult(ctx, contract)
+		if err != nil {
+			return nil, false, err
+		}
+		simulation = item
+		if simulation != nil {
+			project.Meta.CreatorResult = simulateResultFromStore(simulation.Result)
+		}
+	}
+
+	var report *appstore.ProjectReportState
+	if store, ok := s.dbStore.(appstore.ProjectReportStore); ok && store != nil {
+		item, err := store.GetProjectReportState(ctx, contract)
+		if err != nil {
+			return nil, false, err
+		}
+		report = item
+		if report != nil {
+			project.Report = projectReportFromStore(report.Report)
+		}
+	}
+
+	var aveDetail *appstore.ProjectAveDetail
+	if store, ok := s.dbStore.(appstore.ProjectAveDetailStore); ok && store != nil {
+		item, err := store.GetProjectAveDetail(ctx, contract)
+		if err != nil {
+			return nil, false, err
+		}
+		aveDetail = item
+		if aveDetail != nil {
+			project.AveDetail = projectAveDetailFromStore(*aveDetail)
+		}
+	}
+
+	var genesisWallets []appstore.ProjectGenesisWallet
+	if store, ok := s.dbStore.(appstore.ProjectGenesisWalletStore); ok && store != nil {
+		items, err := store.ListProjectGenesisWalletsByContract(ctx, contract)
+		if err != nil {
+			return nil, false, err
+		}
+		genesisWallets = items
+		project.Meta.GenesisWallets = genesisWalletMetasFromStore(items)
+	}
+	var creatorHistory []appstore.ProjectCreatorHistoricalProject
+	if store, ok := s.dbStore.(appstore.ProjectCreatorHistoricalProjectStore); ok && store != nil {
+		items, err := store.ListProjectCreatorHistoricalProjectsByContract(ctx, contract)
+		if err != nil {
+			return nil, false, err
+		}
+		creatorHistory = items
+		project.Meta.CreatorHistoricalProjects = creatorHistoricalProjectContractsFromStore(items)
+	}
+
+	var genesisState *appstore.ProjectComponentState
+	var creatorState *appstore.ProjectComponentState
+	if stateStore, ok := s.dbStore.(appstore.ProjectComponentStateStore); ok && stateStore != nil {
+		state, err := stateStore.GetProjectComponentState(ctx, contract, appstore.ProjectComponentGenesisWallet)
+		if err != nil {
+			return nil, false, err
+		}
+		genesisState = state
+		if genesisState != nil {
+			project.Meta.GenesisWalletsFetchedAt = genesisState.LastSuccessAt
+		}
+		state, err = stateStore.GetProjectComponentState(ctx, contract, appstore.ProjectComponentCreatorHistory)
+		if err != nil {
+			return nil, false, err
+		}
+		creatorState = state
+		if creatorState != nil {
+			project.Meta.CreatorHistoricalProjectsFetchedAt = creatorState.LastSuccessAt
+		}
+	}
+
+	if s.componentCache != nil {
+		if err := s.componentCache.SetBase(ctx, *base); err != nil {
+			return nil, false, err
+		}
+		if chainState != nil {
+			if err := s.componentCache.SetChainState(ctx, *chainState); err != nil {
+				return nil, false, err
+			}
+		}
+		if simulation != nil {
+			if err := s.componentCache.SetSimulation(ctx, *simulation); err != nil {
+				return nil, false, err
+			}
+		}
+		if report != nil {
+			if err := s.componentCache.SetReport(ctx, *report); err != nil {
+				return nil, false, err
+			}
+		}
+		if aveDetail != nil {
+			if err := s.componentCache.SetAveDetail(ctx, contract, *aveDetail); err != nil {
+				return nil, false, err
+			}
+		}
+		if genesisWallets != nil {
+			if err := s.componentCache.SetGenesisWallets(ctx, contract, genesisWallets); err != nil {
+				return nil, false, err
+			}
+		}
+		if creatorHistory != nil {
+			if err := s.componentCache.SetCreatorHistory(ctx, contract, creatorHistory); err != nil {
+				return nil, false, err
+			}
+		}
+		if genesisState != nil {
+			if err := s.componentCache.SetComponentState(ctx, *genesisState); err != nil {
+				return nil, false, err
+			}
+		}
+		if creatorState != nil {
+			if err := s.componentCache.SetComponentState(ctx, *creatorState); err != nil {
+				return nil, false, err
+			}
+		}
+	}
+	return project, true, nil
+}
+
+func projectFromBase(base appstore.ProjectBase) *Project {
+	return &Project{
+		Meta: ProjectMeta{
+			BlockTime:   base.BlockTime,
+			BlockNumber: base.BlockNumber,
+			Contract:    base.Contract,
+			Creator:     base.Creator,
+			FetchAt:     base.CreatedAt,
+			TxHash:      base.TxHash,
+			TxIndex:     base.TxIndex,
+		},
+	}
+}
+
+func applyProjectChainState(project *Project, item *appstore.ProjectChainState) {
+	if project == nil || item == nil {
+		return
+	}
+	project.Meta.FetchAt = item.FetchedAt
+	project.Meta.ChainState = item.ChainState
+	project.Meta.WethPair = item.WethPair
+	project.Meta.UsdtPair = item.UsdtPair
+}
+
+func (s *Service) publishProjectRefreshEventsAsync(contracts []common.Address, source model.ProjectDiscoverySource) {
+	if s == nil || s.componentEventBus == nil {
+		return
+	}
+	candidates := s.nextProjectRefreshContracts(uniqueNonZeroContracts(contracts))
+	if len(candidates) == 0 {
+		return
+	}
+	go func(items []common.Address, refreshSource model.ProjectDiscoverySource) {
+		ctx, cancel := context.WithTimeout(context.Background(), projectRefreshPublishTimeout)
+		defer cancel()
+		for _, contract := range items {
+			if err := s.componentEventBus.Publish(ctx, appcomponents.ProjectRefreshEvent(contract, refreshSource)); err != nil {
+				log.WithFields(log.Fields{
+					"contract": contract.Hex(),
+					"source":   refreshSource,
+				}).WithError(err).Warn("failed to publish project refresh event")
+			}
+		}
+	}(candidates, source)
+}
+
+func (s *Service) nextProjectRefreshContracts(contracts []common.Address) []common.Address {
+	if len(contracts) == 0 {
+		return nil
+	}
+	window := s.projectRefreshWindow
+	if window <= 0 {
+		window = projectRefreshThrottleInterval
+	}
+	now := time.Now().UTC()
+	s.projectRefreshMu.Lock()
+	defer s.projectRefreshMu.Unlock()
+	if s.projectRefreshLastRun == nil {
+		s.projectRefreshLastRun = map[common.Address]time.Time{}
+	}
+	items := make([]common.Address, 0, len(contracts))
+	for _, contract := range contracts {
+		last := s.projectRefreshLastRun[contract]
+		if !last.IsZero() && now.Sub(last) < window {
+			continue
+		}
+		s.projectRefreshLastRun[contract] = now
+		items = append(items, contract)
+	}
+	return items
+}
+
+func uniqueNonZeroContracts(contracts []common.Address) []common.Address {
+	seen := make(map[common.Address]struct{}, len(contracts))
+	items := make([]common.Address, 0, len(contracts))
+	for _, contract := range contracts {
+		if contract == (common.Address{}) {
+			continue
+		}
+		if _, ok := seen[contract]; ok {
+			continue
+		}
+		seen[contract] = struct{}{}
+		items = append(items, contract)
+	}
+	return items
 }
 
 func projectBaseContracts(items []appstore.ProjectBase) []common.Address {

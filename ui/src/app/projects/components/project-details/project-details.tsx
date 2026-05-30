@@ -6,17 +6,13 @@ import {Context} from '../../../shared/context';
 import {services} from '../../../shared/services';
 import {
     AveDetail,
-    GenesisWalletState,
     PairV2State,
-    ProjectBaseView,
     ProjectAveState,
-    ProjectChainState,
     ProjectComment,
     ProjectEventLog,
     ProjectMeta,
     ProjectOptions,
-    ProjectView,
-    SimulateResult
+    ProjectView
 } from '../../../shared/services/athena-application-service';
 import {ContractSourceInfo} from '../../../shared/services/athena-solidity-service';
 import {formatUsdtValue} from '../pair-metrics-cell/pair-metrics-cell';
@@ -24,7 +20,8 @@ import {GenesisWalletRankList} from './genesis-wallet-rank-list';
 
 require('./project-details.scss');
 
-const AUTO_REFRESH_INTERVAL_MS = 3000;
+const PROJECT_AUTO_REFRESH_INTERVAL_MS = 1000;
+const EVENT_LOG_AUTO_REFRESH_INTERVAL_MS = 3000;
 const COMMENT_PAGE_SIZE = 5;
 
 const renderValue = (value: string | number | boolean | undefined) => {
@@ -297,17 +294,6 @@ const renderComponentError = (error?: Error) =>
         </div>
     ) : null;
 
-const compactMetaPatch = (patch: Partial<ProjectMeta>) => {
-    const result: Partial<ProjectMeta> = {};
-    Object.keys(patch).forEach(key => {
-        const typedKey = key as keyof ProjectMeta;
-        if (patch[typedKey] !== undefined) {
-            (result as any)[typedKey] = patch[typedKey];
-        }
-    });
-    return result;
-};
-
 export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const ctx = React.useContext(Context);
     const contract = props.match.params.contract;
@@ -340,13 +326,18 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const aveRefreshRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const sourceRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const optionsRequestRef = React.useRef<{abort?: () => void} | null>(null);
-    const intervalRef = React.useRef<number | undefined>(undefined);
+    const projectIntervalRef = React.useRef<number | undefined>(undefined);
+    const eventIntervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
 
     const cleanupRequests = React.useCallback(() => {
-        if (intervalRef.current !== undefined) {
-            window.clearInterval(intervalRef.current);
-            intervalRef.current = undefined;
+        if (projectIntervalRef.current !== undefined) {
+            window.clearInterval(projectIntervalRef.current);
+            projectIntervalRef.current = undefined;
+        }
+        if (eventIntervalRef.current !== undefined) {
+            window.clearInterval(eventIntervalRef.current);
+            eventIntervalRef.current = undefined;
         }
         if (requestRef.current?.abort) {
             requestRef.current.abort();
@@ -378,13 +369,6 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         }
     }, []);
 
-    const mergeProjectMeta = React.useCallback((patch: Partial<ProjectMeta>) => {
-        setProject(current => ({
-            meta: {...(current?.meta || {}), ...compactMetaPatch(patch)},
-            aveDetail: current?.aveDetail
-        }));
-    }, []);
-
     const mergeProjectAveState = React.useCallback((state?: ProjectAveState) => {
         setAveState(state || null);
         setProject(current => ({
@@ -402,13 +386,9 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             setComponentErrors({});
         }
 
-        const baseReq = services.athenaApplication.getProjectBase(contract);
-        const chainReq = services.athenaApplication.getProjectChainState(contract);
-        const simulationReq = services.athenaApplication.getProjectSimulation(contract);
+        const projectReq = services.athenaApplication.getProject(contract);
         const aveReq = services.athenaApplication.getProjectAveState(contract);
-        const genesisReq = services.athenaApplication.listProjectGenesisWallets(contract);
-        const historyReq = services.athenaApplication.listProjectCreatorHistoricalProjects(contract);
-        const requests = [baseReq, chainReq, simulationReq, aveReq, genesisReq, historyReq];
+        const requests = [projectReq, aveReq];
         requestRef.current = {
             abort: () => requests.forEach(req => req.abort?.())
         };
@@ -422,7 +402,19 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         };
         const markError = (key: ProjectComponentKey, err: unknown) => {
             if (isMountedRef.current) {
-                setComponentErrors(current => ({...current, [key]: err as Error}));
+                const nextError = err as Error;
+                if (key === 'base') {
+                    setComponentErrors(current => ({
+                        ...current,
+                        base: nextError,
+                        chainState: nextError,
+                        simulation: nextError,
+                        genesisWallets: nextError,
+                        creatorHistory: nextError
+                    }));
+                    return;
+                }
+                setComponentErrors(current => ({...current, [key]: nextError}));
             }
         };
         const runPart = async <T,>(key: ProjectComponentKey, req: Promise<T>, apply: (value: T) => void) => {
@@ -438,38 +430,20 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         };
 
         await Promise.all([
-            runPart<ProjectBaseView | undefined>('base', baseReq, base => {
-                mergeProjectMeta({
-                    blockTime: base?.blockTime,
-                    blockNumber: base?.blockNumber,
-                    contract: base?.contract,
-                    creator: base?.creator,
-                    txHash: base?.txHash,
-                    txIndex: base?.txIndex,
-                    fetchAt: base?.createdAt
+            runPart<ProjectView>('base', projectReq, item => {
+                setProject(item || {meta: {}});
+                setComponentErrors(current => {
+                    const next = {...current};
+                    delete next.base;
+                    delete next.chainState;
+                    delete next.simulation;
+                    delete next.genesisWallets;
+                    delete next.creatorHistory;
+                    return next;
                 });
-            }),
-            runPart<ProjectChainState | undefined>('chainState', chainReq, chainState => {
-                mergeProjectMeta({
-                    fetchAt: chainState?.fetchedAt,
-                    token: chainState?.token,
-                    wethPair: chainState?.wethPair,
-                    usdtPair: chainState?.usdtPair,
-                    assetState: chainState?.assetState,
-                    genesisWalletAssetStates: chainState?.genesisWalletAssetStates
-                });
-            }),
-            runPart<SimulateResult | undefined>('simulation', simulationReq, simulation => {
-                mergeProjectMeta({creatorResult: simulation});
             }),
             runPart<ProjectAveState | undefined>('ave', aveReq, state => {
                 mergeProjectAveState(state);
-            }),
-            runPart<GenesisWalletState[]>('genesisWallets', genesisReq, genesisWallets => {
-                mergeProjectMeta({genesisWallets});
-            }),
-            runPart<string[]>('creatorHistory', historyReq, creatorHistoricalProjects => {
-                mergeProjectMeta({creatorHistoricalProjects});
             })
         ]);
 
@@ -478,7 +452,7 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             setError(successCount === 0 ? new Error('All project detail sections failed to load') : null);
         }
         requestRef.current = null;
-    }, [contract, mergeProjectAveState, mergeProjectMeta]);
+    }, [contract, mergeProjectAveState]);
 
     const loadProjectEventLogs = React.useCallback(async () => {
         if (eventRequestRef.current) {
@@ -599,10 +573,12 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         loadProjectComments(1);
         loadContractSourceInfo();
         loadProjectOptions();
-        intervalRef.current = window.setInterval(() => {
+        projectIntervalRef.current = window.setInterval(() => {
             loadProject();
+        }, PROJECT_AUTO_REFRESH_INTERVAL_MS);
+        eventIntervalRef.current = window.setInterval(() => {
             loadProjectEventLogs();
-        }, AUTO_REFRESH_INTERVAL_MS);
+        }, EVENT_LOG_AUTO_REFRESH_INTERVAL_MS);
 
         return () => {
             isMountedRef.current = false;

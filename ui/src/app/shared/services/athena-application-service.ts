@@ -362,24 +362,9 @@ export class AthenaApplicationService {
     }
 
     public getProject(contract: string): Promise<ProjectView> & {abort?: () => void} {
-        const baseReq = this.getProjectBase(contract);
-        const chainReq = this.getProjectChainState(contract);
-        const simulationReq = this.getProjectSimulation(contract);
-        const aveReq = this.getProjectAveState(contract);
-        const genesisReq = this.listProjectGenesisWallets(contract);
-        const historyReq = this.listProjectCreatorHistoricalProjects(contract);
-        const promise = Promise.all([baseReq, chainReq, simulationReq, aveReq, genesisReq, historyReq]).then(
-            ([base, chainState, simulation, aveState, genesisWallets, creatorHistoricalProjects]) =>
-                this.buildProjectView(base, chainState, simulation, aveState, genesisWallets, creatorHistoricalProjects)
-        ) as any;
-        promise.abort = () => {
-            baseReq.abort?.();
-            chainReq.abort?.();
-            simulationReq.abort?.();
-            aveReq.abort?.();
-            genesisReq.abort?.();
-            historyReq.abort?.();
-        };
+        const req = requests.get(`/projects/${encodeURIComponent(contract)}`);
+        const promise = req.then(res => ((res.body || {}) as GetProjectResponse).item || ({} as ProjectView)) as any;
+        promise.abort = () => req.abort();
         return promise;
     }
 
@@ -540,33 +525,5 @@ export class AthenaApplicationService {
         promise.abort = () => {};
         projectOptionsRequest = promise;
         return promise;
-    }
-
-    private buildProjectView(
-        base?: ProjectBaseView,
-        chainState?: ProjectChainState,
-        simulation?: SimulateResult,
-        aveState?: ProjectAveState,
-        genesisWallets?: GenesisWalletState[],
-        creatorHistoricalProjects?: string[]
-    ): ProjectView {
-        const meta: ProjectMeta = {
-            blockTime: base?.blockTime,
-            blockNumber: base?.blockNumber,
-            contract: base?.contract,
-            creator: base?.creator,
-            txHash: base?.txHash,
-            txIndex: base?.txIndex,
-            fetchAt: chainState?.fetchedAt || base?.createdAt,
-            creatorResult: simulation,
-            genesisWallets,
-            creatorHistoricalProjects,
-            token: chainState?.token,
-            wethPair: chainState?.wethPair,
-            usdtPair: chainState?.usdtPair,
-            assetState: chainState?.assetState,
-            genesisWalletAssetStates: chainState?.genesisWalletAssetStates
-        };
-        return {meta, aveDetail: aveState?.detail};
     }
 }

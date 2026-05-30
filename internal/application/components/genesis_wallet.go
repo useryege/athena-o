@@ -69,16 +69,18 @@ func (c *GenesisWalletComponent) handleEvent(ctx context.Context, event Event) e
 	if event.Type == EventComponentCompleted && event.Component != appstore.ProjectComponentChainState {
 		return nil
 	}
-	if event.Type != EventComponentCompleted && event.Type != EventProjectInitialized {
+	if event.Type != EventComponentCompleted && event.Type != EventProjectInitialized && event.Type != EventProjectRefresh {
 		return nil
 	}
 	contract := event.ProjectContract()
 	if contract == (common.Address{}) {
 		return nil
 	}
-	done, err := ComponentSucceeded(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet)
-	if err != nil || done {
-		return nil
+	if event.Type != EventProjectRefresh {
+		done, err := ComponentSucceeded(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet)
+		if err != nil || done {
+			return nil
+		}
 	}
 	if err := c.refresh(ctx, contract); err != nil {
 		_ = MarkComponentFailed(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet, err, nowUTC())

@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	"errors"
 	"math/big"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,6 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redis/go-redis/v9"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
+	appcache "github.com/useryege/athena/internal/application/cache"
+	appcomponents "github.com/useryege/athena/internal/application/components"
+	"github.com/useryege/athena/internal/application/model"
 	"github.com/useryege/athena/internal/application/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
@@ -18,131 +21,316 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestServiceGetProjectUsesCachedSnapshot(t *testing.T) {
+func TestServiceListProjectsUsesSQLAndSchedulesRefreshForCurrentPage(t *testing.T) {
 	ctx := context.Background()
-	mini := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
-	t.Cleanup(func() { _ = client.Close() })
-	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
+	cache := newComponentCacheForTest(t)
+	bus := newProjectRefreshEventBusFake()
+
+	cacheOnlyContract := common.BigToAddress(big.NewInt(100))
+	if err := cache.SetBase(ctx, appstore.ProjectBase{Contract: cacheOnlyContract, BlockNumber: 999}); err != nil {
+		t.Fatalf("seed cache base: %v", err)
+	}
+
+	first := common.BigToAddress(big.NewInt(101))
+	second := common.BigToAddress(big.NewInt(102))
+	store := &projectQueryStoreFake{
+		bases: []appstore.ProjectBase{
+			{BlockNumber: 1, BlockTime: 100, Contract: first, Creator: common.BigToAddress(big.NewInt(1)), TxIndex: 0},
+			{BlockNumber: 2, BlockTime: 200, Contract: second, Creator: common.BigToAddress(big.NewInt(2)), TxIndex: 0},
+		},
+		reports: map[common.Address]appstore.ProjectReportState{
+			second: {ProjectContract: second, Report: appstore.ProjectReport{IsReportEvaluated: true, HasMintRisk: true}},
+		},
+	}
+	service := &Service{
+		dbStore:               store,
+		componentCache:        cache,
+		componentEventBus:     bus,
+		projectRefreshLastRun: map[common.Address]time.Time{},
+		projectRefreshWindow:  30 * time.Second,
+	}
+
+	resp, err := service.ListProjects(ctx, &applicationpkg.ListProjectsRequest{Page: 2, PageSize: 1})
+	if err != nil {
+		t.Fatalf("list projects: %v", err)
+	}
+	if store.listBasePageCalls != 1 {
+		t.Fatalf("list base page calls = %d, want 1", store.listBasePageCalls)
+	}
+	if got := len(resp.GetItems()); got != 1 {
+		t.Fatalf("items len = %d, want 1", got)
+	}
+	if got := resp.GetItems()[0].Contract; got != second.Hex() {
+		t.Fatalf("item contract = %s, want %s", got, second.Hex())
+	}
+	if resp.GetItems()[0].HasMintRisk != true {
+		t.Fatalf("has mint risk = %t, want true", resp.GetItems()[0].HasMintRisk)
+	}
+
+	events := bus.waitForCount(t, 1, time.Second)
+	if len(events) != 1 {
+		t.Fatalf("events len = %d, want 1", len(events))
+	}
+	if got := events[0].ProjectContract(); got != second {
+		t.Fatalf("refresh contract = %s, want %s", got.Hex(), second.Hex())
+	}
+}
+
+func TestServiceListProjectsRefreshThrottle(t *testing.T) {
+	ctx := context.Background()
+	cache := newComponentCacheForTest(t)
+	bus := newProjectRefreshEventBusFake()
+	contract := common.BigToAddress(big.NewInt(111))
+	store := &projectQueryStoreFake{
+		bases: []appstore.ProjectBase{{BlockNumber: 1, Contract: contract, Creator: common.BigToAddress(big.NewInt(2))}},
+	}
+	service := &Service{
+		dbStore:               store,
+		componentCache:        cache,
+		componentEventBus:     bus,
+		projectRefreshLastRun: map[common.Address]time.Time{},
+		projectRefreshWindow:  30 * time.Second,
+	}
+
+	if _, err := service.ListProjects(ctx, &applicationpkg.ListProjectsRequest{Page: 1, PageSize: 20}); err != nil {
+		t.Fatalf("list first: %v", err)
+	}
+	if _, err := service.ListProjects(ctx, &applicationpkg.ListProjectsRequest{Page: 1, PageSize: 20}); err != nil {
+		t.Fatalf("list second: %v", err)
+	}
+	_ = bus.waitForCount(t, 1, time.Second)
+	time.Sleep(80 * time.Millisecond)
+	if got := bus.count(); got != 1 {
+		t.Fatalf("refresh event count = %d, want 1", got)
+	}
+}
+
+func TestServiceGetProjectUsesComponentCache(t *testing.T) {
+	ctx := context.Background()
+	cache := newComponentCacheForTest(t)
+	bus := newProjectRefreshEventBusFake()
 	contract := common.BigToAddress(big.NewInt(201))
-	if err := cache.SetProject(ctx, &Project{Meta: ProjectMeta{
-		Contract: contract,
-		ChainState: athenacontract.AthenaProject{Token: athenacontract.AthenaToken{
-			Name:         "Cached",
-			Symbol:       "CCH",
-			IsValidERC20: true,
-		}},
-	}}); err != nil {
-		t.Fatalf("set cache: %v", err)
+	base := appstore.ProjectBase{
+		BlockNumber: 88,
+		BlockTime:   999,
+		Contract:    contract,
+		Creator:     common.BigToAddress(big.NewInt(5)),
+		TxHash:      common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+		TxIndex:     3,
+		CreatedAt:   time.Date(2026, 5, 30, 10, 0, 0, 0, time.UTC),
 	}
-	store := &projectSnapshotFallbackStore{getErr: errors.New("store should not be called")}
-	fetcher := &projectSnapshotFetcherFake{err: errors.New("fetcher should not be called")}
-	service := &Service{projectCache: cache, store: store, athenaFetcher: fetcher}
-
-	resp, err := service.GetProject(ctx, &applicationpkg.GetProjectRequest{Contract: contract.Hex()})
-	if err != nil {
-		t.Fatalf("get project: %v", err)
+	if err := cache.SetBase(ctx, base); err != nil {
+		t.Fatalf("set base: %v", err)
 	}
-	if resp.GetItem().Meta.Token.Name != "Cached" {
-		t.Fatalf("token name = %q, want Cached", resp.GetItem().Meta.Token.Name)
-	}
-	if store.getCalls != 0 {
-		t.Fatalf("store get calls = %d, want 0", store.getCalls)
-	}
-	if fetcher.fetchProjectsCalls != 0 {
-		t.Fatalf("fetcher calls = %d, want 0", fetcher.fetchProjectsCalls)
-	}
-}
-
-func TestServiceGetProjectFallbackLoadsDBFetchesChainAndRecaches(t *testing.T) {
-	ctx := context.Background()
-	mini := miniredis.RunT(t)
-	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
-	t.Cleanup(func() { _ = client.Close() })
-	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
-	contract := common.BigToAddress(big.NewInt(202))
-	creator := common.BigToAddress(big.NewInt(303))
-	wallet := common.BigToAddress(big.NewInt(404))
-	previous := common.BigToAddress(big.NewInt(505))
-	fetchedAt := time.Date(2026, 5, 23, 1, 2, 3, 0, time.UTC)
-	store := &projectSnapshotFallbackStore{
-		metas: []appstore.ProjectMeta{{
-			BlockNumber: 123,
-			BlockTime:   456,
-			Contract:    contract,
-			Creator:     creator,
-			TxHash:      common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
-			TxIndex:     7,
-			Report: appstore.ProjectReport{
-				IsReportEvaluated:          true,
-				IsBlacklistedCreatorWallet: true,
-				HasMintRisk:                true,
+	if err := cache.SetChainState(ctx, appstore.ProjectChainState{
+		ProjectContract: contract,
+		FetchedAt:       time.Date(2026, 5, 30, 10, 1, 0, 0, time.UTC),
+		WethPair:        common.BigToAddress(big.NewInt(9)),
+		UsdtPair:        common.BigToAddress(big.NewInt(10)),
+		ChainState: athenacontract.AthenaProject{
+			Token: athenacontract.AthenaToken{
+				Name:         "Cached",
+				Symbol:       "CCH",
+				IsValidERC20: true,
 			},
-			GenesisWalletsFetchedAt:            fetchedAt,
-			CreatorHistoricalProjectsFetchedAt: fetchedAt,
-		}},
-		genesisWallets: map[common.Address][]appstore.ProjectGenesisWallet{
-			contract: {{
-				ProjectContract: contract,
-				Wallet:          wallet,
-				NetAmount:       big.NewInt(1000),
-				RatioBPS:        2500,
-				RankIndex:       1,
-			}},
 		},
-		creatorHistoricalProjects: map[common.Address][]appstore.ProjectCreatorHistoricalProject{
-			contract: {{
-				ProjectContract:           contract,
-				HistoricalProjectContract: previous,
-				RankIndex:                 0,
-			}},
-		},
+	}); err != nil {
+		t.Fatalf("set chain state: %v", err)
 	}
-	fetcher := &projectSnapshotFetcherFake{projects: []athenacontract.AthenaProject{{
-		TokenContract: contract,
-		Token: athenacontract.AthenaToken{
-			Name:         "Fetched",
-			Symbol:       "FTD",
-			IsValidERC20: true,
+	if err := cache.SetSimulation(ctx, appstore.ProjectSimulationResult{
+		ProjectContract: contract,
+		Result:          appstore.SimulateResult{CanMintFromZeroViaTransferFrom: true},
+	}); err != nil {
+		t.Fatalf("set simulation: %v", err)
+	}
+	if err := cache.SetReport(ctx, appstore.ProjectReportState{
+		ProjectContract: contract,
+		Report:          appstore.ProjectReport{IsReportEvaluated: true, HasMintRisk: true},
+	}); err != nil {
+		t.Fatalf("set report: %v", err)
+	}
+	if err := cache.SetGenesisWallets(ctx, contract, []appstore.ProjectGenesisWallet{{
+		ProjectContract: contract,
+		Wallet:          common.BigToAddress(big.NewInt(33)),
+		NetAmount:       big.NewInt(100),
+		RatioBPS:        100,
+		RankIndex:       0,
+	}}); err != nil {
+		t.Fatalf("set genesis wallets: %v", err)
+	}
+	if err := cache.SetCreatorHistory(ctx, contract, []appstore.ProjectCreatorHistoricalProject{{
+		ProjectContract:           contract,
+		HistoricalProjectContract: common.BigToAddress(big.NewInt(44)),
+		RankIndex:                 0,
+	}}); err != nil {
+		t.Fatalf("set creator history: %v", err)
+	}
+	if err := cache.SetAveDetail(ctx, contract, appstore.ProjectAveDetail{
+		Status:    1,
+		FetchedAt: time.Date(2026, 5, 30, 10, 2, 0, 0, time.UTC),
+		Token: appstore.ProjectAveTokenDetail{
+			Symbol: "AVE",
 		},
-	}}}
-	service := &Service{projectCache: cache, store: store, athenaFetcher: fetcher}
+	}); err != nil {
+		t.Fatalf("set ave detail: %v", err)
+	}
+	if err := cache.SetComponentState(ctx, appstore.ProjectComponentState{
+		ProjectContract: contract,
+		Component:       appstore.ProjectComponentGenesisWallet,
+		Status:          appstore.ProjectComponentStatusSuccess,
+		LastSuccessAt:   time.Date(2026, 5, 30, 10, 3, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatalf("set genesis state: %v", err)
+	}
+	if err := cache.SetComponentState(ctx, appstore.ProjectComponentState{
+		ProjectContract: contract,
+		Component:       appstore.ProjectComponentCreatorHistory,
+		Status:          appstore.ProjectComponentStatusSuccess,
+		LastSuccessAt:   time.Date(2026, 5, 30, 10, 4, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatalf("set creator state: %v", err)
+	}
+
+	store := &projectQueryStoreFake{}
+	service := &Service{
+		dbStore:               store,
+		componentCache:        cache,
+		componentEventBus:     bus,
+		projectRefreshLastRun: map[common.Address]time.Time{},
+		projectRefreshWindow:  30 * time.Second,
+	}
 
 	resp, err := service.GetProject(ctx, &applicationpkg.GetProjectRequest{Contract: contract.Hex()})
 	if err != nil {
 		t.Fatalf("get project: %v", err)
 	}
-	if resp.GetItem().Meta.Token.Name != "Fetched" {
-		t.Fatalf("token name = %q, want Fetched", resp.GetItem().Meta.Token.Name)
+	if got := resp.GetItem().Meta.Token.Name; got != "Cached" {
+		t.Fatalf("token name = %q, want Cached", got)
 	}
-	if len(resp.GetItem().Meta.GenesisWallets) != 1 || resp.GetItem().Meta.GenesisWallets[0].Wallet != wallet.Hex() {
-		t.Fatalf("genesis wallets = %+v, want %s", resp.GetItem().Meta.GenesisWallets, wallet.Hex())
+	if got := len(resp.GetItem().Meta.GenesisWallets); got != 1 {
+		t.Fatalf("genesis wallets len = %d, want 1", got)
 	}
-	if len(resp.GetItem().Meta.CreatorHistoricalProjects) != 1 || resp.GetItem().Meta.CreatorHistoricalProjects[0] != previous.Hex() {
-		t.Fatalf("creator historical projects = %v, want %s", resp.GetItem().Meta.CreatorHistoricalProjects, previous.Hex())
+	if got := len(resp.GetItem().Meta.CreatorHistoricalProjects); got != 1 {
+		t.Fatalf("creator history len = %d, want 1", got)
 	}
-
-	cached, ok, err := cache.GetProject(ctx, contract)
-	if err != nil {
-		t.Fatalf("get recached project: %v", err)
+	if store.getBaseCalls != 0 {
+		t.Fatalf("db get base calls = %d, want 0", store.getBaseCalls)
 	}
-	if !ok || cached.Meta.ChainState.Token.Name != "Fetched" {
-		t.Fatalf("cached project = %+v ok %t, want fetched token", cached, ok)
-	}
-	wantReport := ProjectReport{
-		IsReportEvaluated:          true,
-		IsBlacklistedCreatorWallet: true,
-		HasMintRisk:                true,
-	}
-	if cached.Report != wantReport {
-		t.Fatalf("cached report = %+v, want %+v", cached.Report, wantReport)
+	time.Sleep(50 * time.Millisecond)
+	if got := bus.count(); got != 0 {
+		t.Fatalf("refresh event count = %d, want 0", got)
 	}
 }
 
-func TestServiceGetProjectFallbackNotFound(t *testing.T) {
+func TestServiceGetProjectCacheMissLoadsDBBackfillsCacheAndRefreshes(t *testing.T) {
 	ctx := context.Background()
-	service := &Service{store: &projectSnapshotFallbackStore{}}
-	contract := common.BigToAddress(big.NewInt(203))
+	cache := newComponentCacheForTest(t)
+	bus := newProjectRefreshEventBusFake()
+	contract := common.BigToAddress(big.NewInt(301))
+	wallet := common.BigToAddress(big.NewInt(302))
+	previous := common.BigToAddress(big.NewInt(303))
+	store := &projectQueryStoreFake{
+		baseByContract: map[common.Address]appstore.ProjectBase{
+			contract: {
+				BlockNumber: 123,
+				BlockTime:   888,
+				Contract:    contract,
+				Creator:     common.BigToAddress(big.NewInt(9)),
+				TxHash:      common.HexToHash("0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
+				TxIndex:     7,
+				CreatedAt:   time.Date(2026, 5, 30, 11, 0, 0, 0, time.UTC),
+			},
+		},
+		chainStates: map[common.Address]appstore.ProjectChainState{
+			contract: {
+				ProjectContract: contract,
+				FetchedAt:       time.Date(2026, 5, 30, 11, 1, 0, 0, time.UTC),
+				ChainState: athenacontract.AthenaProject{
+					Token: athenacontract.AthenaToken{
+						Name:         "FromDB",
+						Symbol:       "FDB",
+						IsValidERC20: true,
+					},
+				},
+			},
+		},
+		simulations: map[common.Address]appstore.ProjectSimulationResult{
+			contract: {ProjectContract: contract, Result: appstore.SimulateResult{CanMintFromZeroViaTransferFrom: true}},
+		},
+		reportsByContract: map[common.Address]*appstore.ProjectReportState{
+			contract: {ProjectContract: contract, Report: appstore.ProjectReport{IsReportEvaluated: true, HasMintRisk: true}},
+		},
+		aveDetails: map[common.Address]appstore.ProjectAveDetail{
+			contract: {Status: 1, Token: appstore.ProjectAveTokenDetail{Symbol: "AVE"}},
+		},
+		genesisWallets: map[common.Address][]appstore.ProjectGenesisWallet{
+			contract: {{ProjectContract: contract, Wallet: wallet, NetAmount: big.NewInt(200), RatioBPS: 50}},
+		},
+		creatorHistory: map[common.Address][]appstore.ProjectCreatorHistoricalProject{
+			contract: {{ProjectContract: contract, HistoricalProjectContract: previous}},
+		},
+		componentStates: map[string]appstore.ProjectComponentState{
+			componentStateKey(contract, appstore.ProjectComponentGenesisWallet): {
+				ProjectContract: contract,
+				Component:       appstore.ProjectComponentGenesisWallet,
+				Status:          appstore.ProjectComponentStatusSuccess,
+				LastSuccessAt:   time.Date(2026, 5, 30, 11, 2, 0, 0, time.UTC),
+			},
+			componentStateKey(contract, appstore.ProjectComponentCreatorHistory): {
+				ProjectContract: contract,
+				Component:       appstore.ProjectComponentCreatorHistory,
+				Status:          appstore.ProjectComponentStatusSuccess,
+				LastSuccessAt:   time.Date(2026, 5, 30, 11, 3, 0, 0, time.UTC),
+			},
+		},
+	}
+	service := &Service{
+		dbStore:               store,
+		componentCache:        cache,
+		componentEventBus:     bus,
+		projectRefreshLastRun: map[common.Address]time.Time{},
+		projectRefreshWindow:  30 * time.Second,
+	}
+
+	resp, err := service.GetProject(ctx, &applicationpkg.GetProjectRequest{Contract: contract.Hex()})
+	if err != nil {
+		t.Fatalf("get project: %v", err)
+	}
+	if got := resp.GetItem().Meta.Token.Name; got != "FromDB" {
+		t.Fatalf("token name = %q, want FromDB", got)
+	}
+	if got := resp.GetItem().Meta.CreatorHistoricalProjects; len(got) != 1 || got[0] != previous.Hex() {
+		t.Fatalf("creator history = %v, want %s", got, previous.Hex())
+	}
+	if got := resp.GetItem().Meta.GenesisWallets; len(got) != 1 || got[0].Wallet != wallet.Hex() {
+		t.Fatalf("genesis wallets = %+v, want %s", got, wallet.Hex())
+	}
+
+	base, ok, err := cache.GetBase(ctx, contract)
+	if err != nil {
+		t.Fatalf("cache get base: %v", err)
+	}
+	if !ok || base == nil {
+		t.Fatal("expected base backfilled into component cache")
+	}
+	events := bus.waitForCount(t, 1, time.Second)
+	if len(events) != 1 {
+		t.Fatalf("events len = %d, want 1", len(events))
+	}
+	if got := events[0].Source; got != model.ProjectDiscoverySourceFollowHeads {
+		t.Fatalf("refresh source = %s, want %s", got, model.ProjectDiscoverySourceFollowHeads)
+	}
+}
+
+func TestServiceGetProjectCacheMissNotFound(t *testing.T) {
+	ctx := context.Background()
+	service := &Service{
+		dbStore:               &projectQueryStoreFake{},
+		componentCache:        nil,
+		projectRefreshLastRun: map[common.Address]time.Time{},
+		projectRefreshWindow:  30 * time.Second,
+	}
+	contract := common.BigToAddress(big.NewInt(401))
 
 	_, err := service.GetProject(ctx, &applicationpkg.GetProjectRequest{Contract: contract.Hex()})
 	if status.Code(err) != codes.NotFound {
@@ -150,232 +338,191 @@ func TestServiceGetProjectFallbackNotFound(t *testing.T) {
 	}
 }
 
-func TestServiceGetProjectFallbackPropagatesFetcherError(t *testing.T) {
-	ctx := context.Background()
-	contract := common.BigToAddress(big.NewInt(204))
-	wantErr := errors.New("fetch failed")
-	service := &Service{
-		store: &projectSnapshotFallbackStore{metas: []appstore.ProjectMeta{{
-			Contract: contract,
-			Creator:  common.BigToAddress(big.NewInt(1)),
-		}}},
-		athenaFetcher: &projectSnapshotFetcherFake{err: wantErr},
-	}
+type projectQueryStoreFake struct {
+	appstore.Store
 
-	_, err := service.GetProject(ctx, &applicationpkg.GetProjectRequest{Contract: contract.Hex()})
-	if !errors.Is(err, wantErr) {
-		t.Fatalf("err = %v, want %v", err, wantErr)
+	bases             []appstore.ProjectBase
+	baseByContract    map[common.Address]appstore.ProjectBase
+	reports           map[common.Address]appstore.ProjectReportState
+	reportsByContract map[common.Address]*appstore.ProjectReportState
+	chainStates       map[common.Address]appstore.ProjectChainState
+	simulations       map[common.Address]appstore.ProjectSimulationResult
+	aveDetails        map[common.Address]appstore.ProjectAveDetail
+	genesisWallets    map[common.Address][]appstore.ProjectGenesisWallet
+	creatorHistory    map[common.Address][]appstore.ProjectCreatorHistoricalProject
+	componentStates   map[string]appstore.ProjectComponentState
+
+	listBasePageCalls int
+	getBaseCalls      int
+}
+
+func (s *projectQueryStoreFake) ListProjectBasesPage(_ context.Context, page int32, pageSize int32) ([]appstore.ProjectBase, int64, int32, int32, error) {
+	s.listBasePageCalls++
+	page, pageSize = normalizeCachePage(page, pageSize)
+	items := append([]appstore.ProjectBase(nil), s.bases...)
+	total := int64(len(items))
+	start := int64(page-1) * int64(pageSize)
+	if start >= total {
+		return nil, total, page, pageSize, nil
+	}
+	stop := start + int64(pageSize)
+	if stop > total {
+		stop = total
+	}
+	return items[start:stop], total, page, pageSize, nil
+}
+
+func (s *projectQueryStoreFake) GetProjectBaseByContract(_ context.Context, contract common.Address) (*appstore.ProjectBase, error) {
+	s.getBaseCalls++
+	if item, ok := s.baseByContract[contract]; ok {
+		base := item
+		return &base, nil
+	}
+	for _, item := range s.bases {
+		if item.Contract == contract {
+			base := item
+			return &base, nil
+		}
+	}
+	return nil, nil
+}
+
+func (s *projectQueryStoreFake) ListProjectReportStatesByContracts(_ context.Context, contracts []common.Address) (map[common.Address]appstore.ProjectReportState, error) {
+	result := map[common.Address]appstore.ProjectReportState{}
+	for _, contract := range contracts {
+		if item, ok := s.reports[contract]; ok {
+			result[contract] = item
+			continue
+		}
+		if item, ok := s.reportsByContract[contract]; ok && item != nil {
+			result[contract] = *item
+		}
+	}
+	return result, nil
+}
+
+func (s *projectQueryStoreFake) GetProjectReportState(_ context.Context, contract common.Address) (*appstore.ProjectReportState, error) {
+	if item, ok := s.reportsByContract[contract]; ok {
+		if item == nil {
+			return nil, nil
+		}
+		copy := *item
+		return &copy, nil
+	}
+	if item, ok := s.reports[contract]; ok {
+		copy := item
+		return &copy, nil
+	}
+	return nil, nil
+}
+
+func (s *projectQueryStoreFake) GetProjectChainState(_ context.Context, contract common.Address) (*appstore.ProjectChainState, error) {
+	item, ok := s.chainStates[contract]
+	if !ok {
+		return nil, nil
+	}
+	copy := item
+	return &copy, nil
+}
+
+func (s *projectQueryStoreFake) GetProjectSimulationResult(_ context.Context, contract common.Address) (*appstore.ProjectSimulationResult, error) {
+	item, ok := s.simulations[contract]
+	if !ok {
+		return nil, nil
+	}
+	copy := item
+	return &copy, nil
+}
+
+func (s *projectQueryStoreFake) GetProjectAveDetail(_ context.Context, contract common.Address) (*appstore.ProjectAveDetail, error) {
+	item, ok := s.aveDetails[contract]
+	if !ok {
+		return nil, nil
+	}
+	copy := item
+	return &copy, nil
+}
+
+func (s *projectQueryStoreFake) ListProjectGenesisWalletsByContract(_ context.Context, contract common.Address) ([]appstore.ProjectGenesisWallet, error) {
+	items := s.genesisWallets[contract]
+	return append([]appstore.ProjectGenesisWallet(nil), items...), nil
+}
+
+func (s *projectQueryStoreFake) ListProjectCreatorHistoricalProjectsByContract(_ context.Context, contract common.Address) ([]appstore.ProjectCreatorHistoricalProject, error) {
+	items := s.creatorHistory[contract]
+	return append([]appstore.ProjectCreatorHistoricalProject(nil), items...), nil
+}
+
+func (s *projectQueryStoreFake) GetProjectComponentState(_ context.Context, contract common.Address, component string) (*appstore.ProjectComponentState, error) {
+	item, ok := s.componentStates[componentStateKey(contract, component)]
+	if !ok {
+		return nil, nil
+	}
+	copy := item
+	return &copy, nil
+}
+
+type projectRefreshEventBusFake struct {
+	mu     sync.Mutex
+	events []appcomponents.Event
+	ch     chan struct{}
+}
+
+func newProjectRefreshEventBusFake() *projectRefreshEventBusFake {
+	return &projectRefreshEventBusFake{ch: make(chan struct{}, 32)}
+}
+
+func (b *projectRefreshEventBusFake) Publish(_ context.Context, event appcomponents.Event) error {
+	b.mu.Lock()
+	b.events = append(b.events, event)
+	b.mu.Unlock()
+	select {
+	case b.ch <- struct{}{}:
+	default:
+	}
+	return nil
+}
+
+func (b *projectRefreshEventBusFake) Subscribe(context.Context, string, string, appcomponents.Handler) error {
+	return nil
+}
+
+func (b *projectRefreshEventBusFake) count() int {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return len(b.events)
+}
+
+func (b *projectRefreshEventBusFake) waitForCount(t *testing.T, expected int, timeout time.Duration) []appcomponents.Event {
+	t.Helper()
+	deadline := time.NewTimer(timeout)
+	defer deadline.Stop()
+	for {
+		b.mu.Lock()
+		count := len(b.events)
+		if count >= expected {
+			events := append([]appcomponents.Event(nil), b.events...)
+			b.mu.Unlock()
+			return events
+		}
+		b.mu.Unlock()
+
+		select {
+		case <-b.ch:
+		case <-deadline.C:
+			t.Fatalf("timed out waiting for %d events, got %d", expected, count)
+		}
 	}
 }
 
-func TestServiceListProjectsFallbackLoadsDBPageAndRecaches(t *testing.T) {
-	ctx := context.Background()
+func newComponentCacheForTest(t *testing.T) appcache.ProjectComponentCache {
+	t.Helper()
 	mini := miniredis.RunT(t)
 	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
 	t.Cleanup(func() { _ = client.Close() })
-	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
-	first := common.BigToAddress(big.NewInt(205))
-	second := common.BigToAddress(big.NewInt(206))
-	store := &projectSnapshotFallbackStore{metas: []appstore.ProjectMeta{
-		{BlockNumber: 1, Contract: first, Creator: common.BigToAddress(big.NewInt(1))},
-		{BlockNumber: 2, Contract: second, Creator: common.BigToAddress(big.NewInt(2))},
-	}}
-	fetcher := &projectSnapshotFetcherFake{projects: []athenacontract.AthenaProject{{
-		TokenContract: second,
-		Token: athenacontract.AthenaToken{
-			Name:         "Second",
-			Symbol:       "SND",
-			IsValidERC20: true,
-		},
-	}}}
-	service := &Service{projectCache: cache, store: store, athenaFetcher: fetcher}
-
-	resp, err := service.ListProjects(ctx, &applicationpkg.ListProjectsRequest{Page: 2, PageSize: 1})
-	if err != nil {
-		t.Fatalf("list projects: %v", err)
-	}
-	if resp.GetTotal() != 2 || resp.GetPage() != 2 || resp.GetPageSize() != 1 {
-		t.Fatalf("pagination = total %d page %d pageSize %d, want 2/2/1", resp.GetTotal(), resp.GetPage(), resp.GetPageSize())
-	}
-	if len(resp.GetItems()) != 1 || resp.GetItems()[0].Contract != second.String() || resp.GetItems()[0].Name != "Second" {
-		t.Fatalf("items = %+v, want second project", resp.GetItems())
-	}
-	if _, ok, err := cache.GetProject(ctx, second); err != nil || !ok {
-		t.Fatalf("recached second ok=%t err=%v, want ok", ok, err)
-	}
+	return appcache.NewProjectComponentCache(redisport.NewGoRedisAdapter(client))
 }
 
-type projectSnapshotFetcherFake struct {
-	projects           []athenacontract.AthenaProject
-	err                error
-	fetchProjectsCalls int
-}
-
-func (f *projectSnapshotFetcherFake) FetchProject(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaProject, error) {
-	if f.err != nil {
-		return athenacontract.AthenaProject{}, f.err
-	}
-	if len(f.projects) == 0 {
-		return athenacontract.AthenaProject{}, nil
-	}
-	return f.projects[0], nil
-}
-
-func (f *projectSnapshotFetcherFake) FetchProjects(_ context.Context, queries []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProject, error) {
-	f.fetchProjectsCalls++
-	if f.err != nil {
-		return nil, f.err
-	}
-	if len(f.projects) > 0 {
-		return append([]athenacontract.AthenaProject(nil), f.projects...), nil
-	}
-	projects := make([]athenacontract.AthenaProject, 0, len(queries))
-	for _, query := range queries {
-		projects = append(projects, athenacontract.AthenaProject{
-			TokenContract: query.TokenContract,
-			Token: athenacontract.AthenaToken{
-				IsValidERC20: true,
-			},
-		})
-	}
-	return projects, nil
-}
-
-func (f *projectSnapshotFetcherFake) FetchProjectsWithSimulationState(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaProjectWithSimulationState, error) {
-	return nil, f.err
-}
-
-func (f *projectSnapshotFetcherFake) FetchSimulationState(context.Context, athenacontract.AthenaProjectQuery) (athenacontract.AthenaSimulationState, error) {
-	return athenacontract.AthenaSimulationState{}, f.err
-}
-
-func (f *projectSnapshotFetcherFake) FetchSimulationStates(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaSimulationState, error) {
-	return nil, f.err
-}
-
-type projectSnapshotFallbackStore struct {
-	metas                     []appstore.ProjectMeta
-	genesisWallets            map[common.Address][]appstore.ProjectGenesisWallet
-	creatorHistoricalProjects map[common.Address][]appstore.ProjectCreatorHistoricalProject
-	getErr                    error
-	listErr                   error
-	getCalls                  int
-}
-
-func (s *projectSnapshotFallbackStore) SaveProjectMeta(context.Context, appstore.ProjectMeta) error {
-	return nil
-}
-
-func (s *projectSnapshotFallbackStore) GetMaxProjectBlockNumber(context.Context) (uint64, bool, error) {
-	if len(s.metas) == 0 {
-		return 0, false, nil
-	}
-	maxBlock := s.metas[0].BlockNumber
-	for _, meta := range s.metas[1:] {
-		if meta.BlockNumber > maxBlock {
-			maxBlock = meta.BlockNumber
-		}
-	}
-	return maxBlock, true, nil
-}
-
-func (s *projectSnapshotFallbackStore) ListProjectMetas(context.Context) ([]appstore.ProjectMeta, error) {
-	if s.listErr != nil {
-		return nil, s.listErr
-	}
-	return append([]appstore.ProjectMeta(nil), s.metas...), nil
-}
-
-func (s *projectSnapshotFallbackStore) ListAllProjectMetas(ctx context.Context) ([]appstore.ProjectMeta, error) {
-	return s.ListProjectMetas(ctx)
-}
-
-func (s *projectSnapshotFallbackStore) ListProjectMetasByPairAddresses(context.Context, []common.Address) ([]appstore.ProjectMeta, error) {
-	return nil, nil
-}
-
-func (s *projectSnapshotFallbackStore) ListProjectMetasByCodeBinHash(context.Context, common.Hash) ([]appstore.ProjectMeta, error) {
-	return nil, nil
-}
-
-func (s *projectSnapshotFallbackStore) UpdateProjectSourceCode(context.Context, common.Address, string, string) error {
-	return nil
-}
-
-func (s *projectSnapshotFallbackStore) UpdateProjectCodeBinHash(context.Context, common.Address, common.Hash) error {
-	return nil
-}
-
-func (s *projectSnapshotFallbackStore) UpdateProjectSourceQualityReport(context.Context, common.Address, string, string) error {
-	return nil
-}
-
-func (s *projectSnapshotFallbackStore) UpsertProjectAveDetail(context.Context, common.Address, appstore.ProjectAveDetail) error {
-	return nil
-}
-
-func (s *projectSnapshotFallbackStore) UpdateProjectCreatorResult(context.Context, common.Address, appstore.SimulateResult) error {
-	return nil
-}
-
-func (s *projectSnapshotFallbackStore) UpdateProjectReport(context.Context, common.Address, appstore.ProjectReport) error {
-	return nil
-}
-
-func (s *projectSnapshotFallbackStore) ListProjectMetasByCreator(context.Context, common.Address) ([]appstore.ProjectMeta, error) {
-	return nil, nil
-}
-
-func (s *projectSnapshotFallbackStore) ListProjectMetasByCreatorBefore(context.Context, common.Address, uint64, uint64) ([]appstore.ProjectMeta, error) {
-	return nil, nil
-}
-
-func (s *projectSnapshotFallbackStore) GetProjectMetaByContract(_ context.Context, contract common.Address) (*appstore.ProjectMeta, error) {
-	s.getCalls++
-	if s.getErr != nil {
-		return nil, s.getErr
-	}
-	for _, meta := range s.metas {
-		if meta.Contract == contract {
-			metaCopy := meta
-			return &metaCopy, nil
-		}
-	}
-	return nil, nil
-}
-
-func (s *projectSnapshotFallbackStore) ReplaceProjectGenesisWallets(context.Context, common.Address, []appstore.ProjectGenesisWallet) error {
-	return nil
-}
-
-func (s *projectSnapshotFallbackStore) ListProjectGenesisWalletsByContract(_ context.Context, contract common.Address) ([]appstore.ProjectGenesisWallet, error) {
-	return append([]appstore.ProjectGenesisWallet(nil), s.genesisWallets[contract]...), nil
-}
-
-func (s *projectSnapshotFallbackStore) ListProjectGenesisWalletsByContracts(_ context.Context, contracts []common.Address) (map[common.Address][]appstore.ProjectGenesisWallet, error) {
-	result := make(map[common.Address][]appstore.ProjectGenesisWallet)
-	for _, contract := range contracts {
-		result[contract] = append([]appstore.ProjectGenesisWallet(nil), s.genesisWallets[contract]...)
-	}
-	return result, nil
-}
-
-func (s *projectSnapshotFallbackStore) ListProjectGenesisWalletsByWallet(context.Context, common.Address) ([]appstore.ProjectGenesisWallet, error) {
-	return nil, nil
-}
-
-func (s *projectSnapshotFallbackStore) ReplaceProjectCreatorHistoricalProjects(context.Context, common.Address, []appstore.ProjectCreatorHistoricalProject) error {
-	return nil
-}
-
-func (s *projectSnapshotFallbackStore) ListProjectCreatorHistoricalProjectsByContract(_ context.Context, contract common.Address) ([]appstore.ProjectCreatorHistoricalProject, error) {
-	return append([]appstore.ProjectCreatorHistoricalProject(nil), s.creatorHistoricalProjects[contract]...), nil
-}
-
-func (s *projectSnapshotFallbackStore) ListProjectCreatorHistoricalProjectsByContracts(_ context.Context, contracts []common.Address) (map[common.Address][]appstore.ProjectCreatorHistoricalProject, error) {
-	result := make(map[common.Address][]appstore.ProjectCreatorHistoricalProject)
-	for _, contract := range contracts {
-		result[contract] = append([]appstore.ProjectCreatorHistoricalProject(nil), s.creatorHistoricalProjects[contract]...)
-	}
-	return result, nil
+func componentStateKey(contract common.Address, component string) string {
+	return contract.Hex() + "|" + component
 }
