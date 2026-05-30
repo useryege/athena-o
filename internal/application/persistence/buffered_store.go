@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -15,14 +14,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/redisport"
+	"github.com/useryege/athena/internal/application/redisrepo"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
 var _ appstore.Store = (*RedisBufferedStore)(nil)
 
 const (
-	bufferedKeyPrefix = "application:persistence:"
-
 	bufferedBaseKind           = "base"
 	bufferedChainStateKind     = "chain_state"
 	bufferedSimulationKind     = "simulation"
@@ -36,6 +34,8 @@ const (
 
 	bufferedScanCount = int64(256)
 )
+
+var bufferedKeyspace = redisrepo.NewKeyspace("application")
 
 var bufferedFlushOrder = []string{
 	bufferedBaseKind,
@@ -796,29 +796,11 @@ func (s *RedisBufferedStore) getBaseFromRedis(ctx context.Context, contract comm
 }
 
 func (s *RedisBufferedStore) setJSON(ctx context.Context, key string, value any) error {
-	data, err := json.Marshal(value)
-	if err != nil {
-		return err
-	}
-	return s.client.Set(ctx, key, string(data), 0)
+	return redisrepo.SetJSON(ctx, s.client, key, value, 0)
 }
 
 func getJSON[T any](ctx context.Context, client redisport.KVReaderWriter, key string) (T, bool, error) {
-	var item T
-	raw, err := client.Get(ctx, key)
-	if err != nil {
-		if errors.Is(err, redisport.ErrNotFound) {
-			return item, false, nil
-		}
-		return item, false, err
-	}
-	if strings.TrimSpace(raw) == "" {
-		return item, false, nil
-	}
-	if err := json.Unmarshal([]byte(raw), &item); err != nil {
-		return item, false, err
-	}
-	return item, true, nil
+	return redisrepo.GetJSON[T](ctx, client, key)
 }
 
 func (s *RedisBufferedStore) markDirty(ctx context.Context, kind string, member string) error {
@@ -952,31 +934,31 @@ func projectBaseFromMeta(meta appstore.ProjectMeta) appstore.ProjectBase {
 }
 
 func bufferedItemKey(kind string, member string) string {
-	return bufferedKeyPrefix + kind + ":" + member
+	return bufferedKeyspace.BufferItem(kind, member)
 }
 
 func bufferedDirtyKey(kind string) string {
-	return bufferedKeyPrefix + "dirty:" + kind
+	return bufferedKeyspace.BufferDirty(kind)
 }
 
 func bufferedBaseIndexKey() string {
-	return bufferedKeyPrefix + "index:base"
+	return bufferedKeyspace.BufferIndexBase()
 }
 
 func bufferedCreatorIndexKey(creator common.Address) string {
-	return bufferedKeyPrefix + "index:creator:" + creator.Hex()
+	return bufferedKeyspace.BufferIndexCreator(creator)
 }
 
 func bufferedChainPairIndexKey(pair common.Address) string {
-	return bufferedKeyPrefix + "index:chain_pair:" + pair.Hex()
+	return bufferedKeyspace.BufferIndexPair(pair)
 }
 
 func bufferedComponentNextRunKey(component string) string {
-	return bufferedKeyPrefix + "index:component_next_run:" + component
+	return bufferedKeyspace.BufferIndexComponentNextRun(component)
 }
 
 func bufferedEventLogIndexKey(contract common.Address) string {
-	return bufferedKeyPrefix + "index:event_log:" + contract.Hex()
+	return bufferedKeyspace.BufferIndexEventLog(contract)
 }
 
 func componentStateMember(contract common.Address, component string) string {

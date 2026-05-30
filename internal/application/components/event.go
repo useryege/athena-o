@@ -13,14 +13,16 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/model"
 	"github.com/useryege/athena/internal/application/redisport"
+	"github.com/useryege/athena/internal/application/redisrepo"
 )
 
 const (
-	eventStreamKey    = "application:component:stream"
 	eventReadCount    = int64(64)
 	eventReadBlock    = 2 * time.Second
 	eventPendingPause = 200 * time.Millisecond
 )
+
+var componentEventKeyspace = redisrepo.NewKeyspace("application")
 
 type EventType string
 
@@ -67,7 +69,7 @@ func NewRedisEventBus(client redisport.StreamClient) *RedisEventBus {
 	if client == nil {
 		return nil
 	}
-	return &RedisEventBus{client: client, stream: eventStreamKey}
+	return &RedisEventBus{client: client, stream: componentEventKeyspace.ProjectComponentStream()}
 }
 
 func NewProjectCandidate(item model.DiscoveredProjectCandidate) ProjectCandidate {
