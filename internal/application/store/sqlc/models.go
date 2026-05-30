@@ -139,14 +139,6 @@ type ProjectChainState struct {
 	UpdatedAt       pgtype.Timestamptz
 }
 
-type ProjectComment struct {
-	ID              int64
-	ProjectContract []byte
-	Username        string
-	Content         string
-	CreatedAt       pgtype.Timestamptz
-}
-
 type ProjectComponentState struct {
 	ProjectContract []byte
 	Component       string

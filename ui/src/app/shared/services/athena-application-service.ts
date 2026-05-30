@@ -311,25 +311,6 @@ export interface ListProjectEventLogsResponse {
     items?: ProjectEventLog[];
 }
 
-export interface ProjectComment {
-    id?: number;
-    contract?: string;
-    username?: string;
-    content?: string;
-    createdAt?: string;
-}
-
-export interface AddProjectCommentResponse {
-    item?: ProjectComment;
-}
-
-export interface ListProjectCommentsResponse {
-    items?: ProjectComment[];
-    total?: number;
-    page?: number;
-    pageSize?: number;
-}
-
 export interface ProjectOptions {
     factoryContract?: string;
     wethContract?: string;
@@ -438,47 +419,6 @@ export class AthenaApplicationService {
                 payload: item.payload,
                 createdAt: item.createdAt ?? (item as any).created_at
             }));
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public addProjectComment(contract: string, content: string): Promise<ProjectComment | undefined> & {abort?: () => void} {
-        const req = requests.post(`/projects/${encodeURIComponent(contract)}/comments`).send({contract, content});
-        const promise = req.then(res => {
-            const item = ((res.body || {}) as AddProjectCommentResponse).item;
-            if (!item) {
-                return undefined;
-            }
-            return {
-                id: item.id,
-                contract: item.contract,
-                username: item.username,
-                content: item.content,
-                createdAt: item.createdAt ?? (item as any).created_at
-            } as ProjectComment;
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listProjectComments(contract: string, page = 1, pageSize = 5): Promise<{items: ProjectComment[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
-        const req = requests.get(`/projects/${encodeURIComponent(contract)}/comments`).query({page, pageSize});
-        const promise = req.then(res => {
-            const body = (res.body || {}) as ListProjectCommentsResponse;
-            const items = (body.items || []).map(item => ({
-                id: item.id,
-                contract: item.contract,
-                username: item.username,
-                content: item.content,
-                createdAt: item.createdAt ?? (item as any).created_at
-            }));
-            return {
-                items,
-                total: body.total || 0,
-                page: body.page || page,
-                pageSize: body.pageSize || pageSize
-            };
         }) as any;
         promise.abort = () => req.abort();
         return promise;

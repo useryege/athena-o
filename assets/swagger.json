@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-452-gfe4b5f2-dirty"
+    "version": "v1.0.0-459-g4079724-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -561,86 +561,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/applicationGetProjectChainStateResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/projects/{contract}/comments": {
-      "get": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "ListProjectComments returns comments for a given contract.",
-        "operationId": "ApplicationService_ListProjectComments",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "contract",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "pageSize",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationListProjectCommentsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "summary": "AddProjectComment creates a project comment.",
-        "operationId": "ApplicationService_AddProjectComment",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "contract",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/applicationAddProjectCommentRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/applicationAddProjectCommentResponse"
             }
           },
           "default": {
@@ -2005,27 +1925,6 @@
     "accountUpdatePasswordResponse": {
       "type": "object"
     },
-    "applicationAddProjectCommentRequest": {
-      "description": "AddProjectCommentRequest creates a project comment.",
-      "type": "object",
-      "properties": {
-        "content": {
-          "type": "string"
-        },
-        "contract": {
-          "type": "string"
-        }
-      }
-    },
-    "applicationAddProjectCommentResponse": {
-      "description": "AddProjectCommentResponse returns the created project comment.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/applicationProjectComment"
-        }
-      }
-    },
     "applicationGetProjectAveStateResponse": {
       "type": "object",
       "properties": {
@@ -2084,30 +1983,6 @@
         }
       }
     },
-    "applicationListProjectCommentsResponse": {
-      "description": "ListProjectCommentsResponse returns comments for a contract.",
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/applicationProjectComment"
-          }
-        },
-        "page": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "pageSize": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
     "applicationListProjectCreatorHistoricalProjectsResponse": {
       "type": "object",
       "properties": {
@@ -2163,28 +2038,6 @@
         "total": {
           "type": "integer",
           "format": "int64"
-        }
-      }
-    },
-    "applicationProjectComment": {
-      "description": "ProjectComment is a project comment timeline entry.",
-      "type": "object",
-      "properties": {
-        "content": {
-          "type": "string"
-        },
-        "contract": {
-          "type": "string"
-        },
-        "created_at": {
-          "type": "string"
-        },
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "username": {
-          "type": "string"
         }
       }
     },

@@ -672,14 +672,6 @@ func (s *RedisBufferedStore) ListProjectEventLogsByContract(ctx context.Context,
 	return items, nil
 }
 
-func (s *RedisBufferedStore) AddProjectComment(ctx context.Context, item appstore.ProjectComment) (appstore.ProjectComment, error) {
-	return s.db.AddProjectComment(ctx, item)
-}
-
-func (s *RedisBufferedStore) ListProjectCommentsByContract(ctx context.Context, contract common.Address, page int32, pageSize int32) ([]appstore.ProjectComment, int64, int32, int32, error) {
-	return s.db.ListProjectCommentsByContract(ctx, contract, page, pageSize)
-}
-
 func (s *RedisBufferedStore) ReplaceProjectGenesisWallets(ctx context.Context, contract common.Address, items []appstore.ProjectGenesisWallet) error {
 	if err := s.writeContractItem(ctx, bufferedGenesisKind, contract, items); err != nil {
 		return err

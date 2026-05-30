@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"math/big"
-	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -328,16 +326,6 @@ func projectEventLogToAPI(item appstore.ProjectEventLog) *applicationpkg.Project
 		Message:    item.Message,
 		Payload:    item.Payload,
 		CreatedAt:  createdAt,
-	}
-}
-
-func projectCommentToAPI(item appstore.ProjectComment) *applicationpkg.ProjectComment {
-	return &applicationpkg.ProjectComment{
-		Id:        item.ID,
-		Contract:  item.Contract.Hex(),
-		Username:  item.Username,
-		Content:   item.Content,
-		CreatedAt: item.CreatedAt.UTC().Format(time.RFC3339Nano),
 	}
 }
 
@@ -1109,78 +1097,6 @@ func (s *Service) ListProjectEventLogs(ctx context.Context, req *applicationpkg.
 		result = append(result, projectEventLogToAPI(item))
 	}
 	return &applicationpkg.ListProjectEventLogsResponse{Items: result}, nil
-}
-
-func (s *Service) AddProjectComment(ctx context.Context, req *applicationpkg.AddProjectCommentRequest) (*applicationpkg.AddProjectCommentResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-
-	username := strings.TrimSpace(req.GetUsername())
-	if username == "" {
-		return nil, status.Error(codes.InvalidArgument, "comment username is empty")
-	}
-
-	content := strings.TrimSpace(req.GetContent())
-	if content == "" {
-		return nil, status.Error(codes.InvalidArgument, "comment content is empty")
-	}
-	if utf8.RuneCountInString(content) > appstore.MaxProjectCommentContentLength {
-		return nil, status.Errorf(codes.InvalidArgument, "comment content exceeds max length %d", appstore.MaxProjectCommentContentLength)
-	}
-
-	store, ok := s.store.(appstore.ProjectCommentStore)
-	if !ok || store == nil {
-		return &applicationpkg.AddProjectCommentResponse{}, status.Error(codes.FailedPrecondition, "project comment store is not configured")
-	}
-
-	contract := common.HexToAddress(req.GetContract())
-	if err := s.ensureProjectExists(ctx, contract, req.GetContract()); err != nil {
-		return nil, err
-	}
-
-	created, err := store.AddProjectComment(ctx, appstore.ProjectComment{
-		Contract: contract,
-		Username: username,
-		Content:  content,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.AddProjectCommentResponse{Item: projectCommentToAPI(created)}, nil
-}
-
-func (s *Service) ListProjectComments(ctx context.Context, req *applicationpkg.ListProjectCommentsRequest) (*applicationpkg.ListProjectCommentsResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-
-	store, ok := s.store.(appstore.ProjectCommentStore)
-	if !ok || store == nil {
-		return &applicationpkg.ListProjectCommentsResponse{}, status.Error(codes.FailedPrecondition, "project comment store is not configured")
-	}
-
-	contract := common.HexToAddress(req.GetContract())
-	if err := s.ensureProjectExists(ctx, contract, req.GetContract()); err != nil {
-		return nil, err
-	}
-
-	items, total, page, pageSize, err := store.ListProjectCommentsByContract(ctx, contract, req.GetPage(), req.GetPageSize())
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*applicationpkg.ProjectComment, 0, len(items))
-	for _, item := range items {
-		result = append(result, projectCommentToAPI(item))
-	}
-
-	return &applicationpkg.ListProjectCommentsResponse{
-		Items:    result,
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-	}, nil
 }
 
 func (s *Service) ensureProjectExists(ctx context.Context, contract common.Address, rawContract string) error {

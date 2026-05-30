@@ -102,14 +102,6 @@ type ProjectEventLog struct {
 	CreatedAt      time.Time
 }
 
-type ProjectComment struct {
-	ID        int64
-	Contract  common.Address
-	Username  string
-	Content   string
-	CreatedAt time.Time
-}
-
 type ProjectGenesisWallet struct {
 	ID                int64
 	ProjectContract   common.Address
@@ -202,11 +194,6 @@ type ProjectEventLogStore interface {
 	ListProjectEventLogsByContract(ctx context.Context, contract common.Address) ([]ProjectEventLog, error)
 }
 
-type ProjectCommentStore interface {
-	AddProjectComment(ctx context.Context, item ProjectComment) (ProjectComment, error)
-	ListProjectCommentsByContract(ctx context.Context, contract common.Address, page int32, pageSize int32) ([]ProjectComment, int64, int32, int32, error)
-}
-
 type ProjectGenesisWalletStore interface {
 	ReplaceProjectGenesisWallets(ctx context.Context, contract common.Address, items []ProjectGenesisWallet) error
 	ListProjectGenesisWalletsByContract(ctx context.Context, contract common.Address) ([]ProjectGenesisWallet, error)
@@ -231,7 +218,6 @@ type Store interface {
 	ProjectAveDetailStore
 	ProjectAveRefreshStore
 	ProjectEventLogStore
-	ProjectCommentStore
 	ProjectGenesisWalletStore
 	ProjectCreatorHistoricalProjectStore
 }
