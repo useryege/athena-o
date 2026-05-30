@@ -29,13 +29,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	golang_proto "github.com/golang/protobuf/proto" //nolint:staticcheck
 	"github.com/gorilla/handlers"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
@@ -46,7 +44,6 @@ import (
 	"github.com/useryege/athena/internal/server/application"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/internal/server/logout"
-	"github.com/useryege/athena/internal/server/metrics"
 	servernotification "github.com/useryege/athena/internal/server/notification"
 	"github.com/useryege/athena/internal/server/rbacpolicy"
 	"github.com/useryege/athena/internal/server/session"
@@ -63,7 +60,6 @@ import (
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
 	"github.com/useryege/athena/ui"
 	"github.com/useryege/athena/util/assets"
-	cacheutil "github.com/useryege/athena/util/cache"
 	dexutil "github.com/useryege/athena/util/dex"
 	"github.com/useryege/athena/util/env"
 	errorsutil "github.com/useryege/athena/util/errors"
@@ -134,7 +130,6 @@ var (
 	// limits number of concurrent login requests to prevent password brute forcing. If set to 0 then no limit is enforced.
 	maxConcurrentLoginRequestsCount = 50
 	replicasCount                   = 1
-	enableGRPCTimeHistogram         = true
 )
 
 func init() {
@@ -144,19 +139,6 @@ func init() {
 	if replicasCount > 0 {
 		maxConcurrentLoginRequestsCount = maxConcurrentLoginRequestsCount / replicasCount
 	}
-	// enableGRPCTimeHistogram = env.ParseBoolFromEnv(common.EnvEnableGRPCTimeHistogramEnv, false)
-}
-
-// HTTPMetricsRegistry exposes operations to update http metrics in the Athena
-// API server.
-type HTTPMetricsRegistry interface {
-	// IncExtensionRequestCounter will increase the request counter for the given
-	// extension with the given status.
-	IncExtensionRequestCounter(extension string, status int)
-	// ObserveExtensionRequestDuration will register the request roundtrip duration
-	// between Athena API Server and the extension backend service for the given
-	// extension.
-	ObserveExtensionRequestDuration(extension string, duration time.Duration)
 }
 
 // AthenaServer is the API server for Athena
@@ -204,8 +186,6 @@ type AthenaServerOpts struct {
 	StaticAssetsDir string
 	ListenPort      int
 	ListenHost      string
-	MetricsPort     int
-	MetricsHost     string
 	DexServerAddr   string
 	DexTLSConfig    *dexutil.DexTLSConfig
 	BaseHRef        string
@@ -317,20 +297,13 @@ func startListener(host string, port int) (net.Listener, error) {
 }
 
 func (server *AthenaServer) Listen() (*Listeners, error) {
-	log.Debugf("Listen started (host=%s, listenPort=%d, metricsPort=%d, useTLS=%t)", server.ListenHost, server.ListenPort, server.MetricsPort, server.useTLS())
+	log.Debugf("Listen started (host=%s, listenPort=%d, useTLS=%t)", server.ListenHost, server.ListenPort, server.useTLS())
 	mainLn, err := startListener(server.ListenHost, server.ListenPort)
 	if err != nil {
 		log.Debugf("Failed to start main listener on %s:%d: %v", server.ListenHost, server.ListenPort, err)
 		return nil, err
 	}
 	log.Debugf("Started main listener on %s:%d", server.ListenHost, server.ListenPort)
-	metricsLn, err := startListener(server.ListenHost, server.MetricsPort)
-	if err != nil {
-		log.Debugf("Failed to start metrics listener on %s:%d: %v", server.ListenHost, server.MetricsPort, err)
-		utilio.Close(mainLn)
-		return nil, err
-	}
-	log.Debugf("Started metrics listener on %s:%d", server.ListenHost, server.MetricsPort)
 	var dOpts []grpc.DialOption
 	userAgent := fmt.Sprintf("%s/%s", common.AthenaUserAgentName, common.GetVersion().Version)
 	log.Debugf("Configuring gRPC gateway dial options (maxRecvMsgSize=%d, userAgent=%s)", apiclient.MaxGRPCMessageSize, userAgent)
@@ -363,11 +336,10 @@ func (server *AthenaServer) Listen() (*Listeners, error) {
 	if err != nil {
 		log.Debugf("Failed to create gRPC gateway client connection to %s: %v", gatewayAddr, err)
 		utilio.Close(mainLn)
-		utilio.Close(metricsLn)
 		return nil, err
 	}
 	log.Debug("Listen completed successfully")
-	return &Listeners{Main: mainLn, Metrics: metricsLn, GatewayConn: conn}, nil
+	return &Listeners{Main: mainLn, GatewayConn: conn}, nil
 }
 
 // Init starts informers used by the API server
@@ -379,15 +351,7 @@ func (server *AthenaServer) Init(ctx context.Context) {
 	// go server.secretInformer.Run(ctx.Done())
 }
 
-func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registry) *grpc.Server {
-	// register the prometheus metrics to the gRPC server
-	var serverMetricsOptions []grpc_prometheus.ServerMetricsOption
-	if enableGRPCTimeHistogram {
-		serverMetricsOptions = append(serverMetricsOptions, grpc_prometheus.WithServerHandlingTimeHistogram())
-	}
-	serverMetrics := grpc_prometheus.NewServerMetrics(serverMetricsOptions...)
-	prometheusRegistry.MustRegister(serverMetrics)
-
+func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	sOpts := []grpc.ServerOption{
 		// Set the both send and receive the bytes limit to be 100MB
 		// The proper way to achieve high performance is to have pagination
@@ -427,7 +391,6 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 	// This is because TLS handshaking occurs in cmux handling
 	sOpts = append(sOpts, grpc.ChainStreamInterceptor(
 		logging.StreamServerInterceptor(grpc_util.InterceptorLogger(server.log)),
-		serverMetrics.StreamServerInterceptor(),
 		grpc_auth.StreamServerInterceptor(server.Authenticate),
 		// grpc_util.UserAgentStreamServerInterceptor(common.AthenaUserAgentName, clientConstraint),
 		// grpc_util.PayloadStreamServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
@@ -440,7 +403,6 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 	sOpts = append(sOpts, grpc.ChainUnaryInterceptor(
 		// bug21955WorkaroundInterceptor,
 		logging.UnaryServerInterceptor(grpc_util.InterceptorLogger(server.log)),
-		serverMetrics.UnaryServerInterceptor(),
 		grpc_auth.UnaryServerInterceptor(server.Authenticate),
 		// grpc_util.UserAgentUnaryServerInterceptor(common.AthenaUserAgentName, clientConstraint),
 		// grpc_util.PayloadUnaryServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
@@ -468,7 +430,6 @@ func (server *AthenaServer) newGRPCServer(prometheusRegistry *prometheus.Registr
 
 	// Register reflection service on gRPC server.
 	reflection.Register(grpcS)
-	serverMetrics.InitializeMetrics(grpcS)
 	// errorsutil.CheckError(server.serviceSet.ProjectService.NormalizeProjs())
 
 	return grpcS
@@ -808,7 +769,7 @@ func (server *AthenaServer) newStaticAssetsHandler() func(http.ResponseWriter, *
 
 // newHTTPServer returns the HTTP server to serve HTTP/HTTPS requests. This is implemented
 // using grpc-gateway as a proxy to the gRPC server.
-func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWebHandler http.Handler, conn *grpc.ClientConn, _ HTTPMetricsRegistry) *http.Server {
+func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWebHandler http.Handler, conn *grpc.ClientConn) *http.Server {
 	endpoint := fmt.Sprintf("localhost:%d", port)
 	mux := http.NewServeMux()
 	httpS := http.Server{
@@ -930,7 +891,6 @@ func withRootPath(handler http.Handler, a *AthenaServer) http.Handler {
 
 type Listeners struct {
 	Main        net.Listener
-	Metrics     net.Listener
 	GatewayConn *grpc.ClientConn
 }
 
@@ -940,12 +900,6 @@ func (l *Listeners) Close() error {
 			return err
 		}
 		l.Main = nil
-	}
-	if l.Metrics != nil {
-		if err := l.Metrics.Close(); err != nil {
-			return err
-		}
-		l.Metrics = nil
 	}
 	if l.GatewayConn != nil {
 		if err := l.GatewayConn.Close(); err != nil {
@@ -980,36 +934,24 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 		}
 	}()
 
-	metricsServ := metrics.NewMetricsServer(server.MetricsHost, server.MetricsPort)
-	if server.RedisClient != nil {
-		cacheutil.CollectMetrics(server.RedisClient, metricsServ, server.userStateStorage.GetLockObject())
-	}
-
-	// Don't init storage until after CollectMetrics. CollectMetrics adds hooks to the Redis client, and Init
-	// reads those hooks. If this is called first, there may be a data race.
 	server.userStateStorage.Init(ctx)
 
 	// Prepare all services for the athena server
 	svcSet := newAthenaServiceSet(server)
 
-	// register the metrics to the session manager
-	if server.sessionMgr != nil {
-		server.sessionMgr.CollectMetrics(metricsServ)
-	}
-
 	// set the service set to the server
 	server.serviceSet = svcSet
 	// create a new gRPC server
-	grpcS := server.newGRPCServer(metricsServ.PrometheusRegistry)
+	grpcS := server.newGRPCServer()
 	// wrap the gRPC server l(grpc server => http handler)
 	grpcWebS := grpcweb.WrapServer(grpcS)
 	var httpS *http.Server
 	var httpsS *http.Server
 	if server.useTLS() {
-		httpS = newRedirectServer(server.ListenPort, server.RootPath)                                       // http request => redirect to https
-		httpsS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn, metricsServ) // implement the https server
+		httpS = newRedirectServer(server.ListenPort, server.RootPath)                          // http request => redirect to https
+		httpsS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn) // implement the https server
 	} else {
-		httpS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn, metricsServ) // implement the http server
+		httpS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn) // implement the http server
 	}
 	if server.RootPath != "" {
 		httpS.Handler = withRootPath(httpS.Handler, server)
@@ -1072,7 +1014,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 	}
 	// go server.rbacPolicyLoader(ctx)
 	go func() { server.checkServeErr("tcpm", tcpm.Serve()) }()
-	go func() { server.checkServeErr("metrics", metricsServ.Serve(listeners.Metrics)) }()
 	// if !cache.WaitForCacheSync(ctx.Done(), server.projInformer.HasSynced, server.appInformer.HasSynced) {
 	// 	log.Fatal("Timed out waiting for project cache to sync")
 	// }
@@ -1111,16 +1052,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 		go func() {
 			defer wg.Done()
 			grpcS.GracefulStop()
-		}()
-
-		// Shutdown metrics server
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err := metricsServ.Shutdown(shutdownCtx)
-			if err != nil {
-				log.Errorf("Error shutting down metrics server: %s", err)
-			}
 		}()
 
 		if server.useTLS() {

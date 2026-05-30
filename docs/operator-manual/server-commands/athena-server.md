@@ -44,8 +44,6 @@ athena-server [flags]
       --logformat string                              Set the logging format. One of: json|text (default "json")
       --login-attempts-expiration duration            Cache expiration for failed login attempts. DEPRECATED: this flag is unused and will be removed in a future version. (default 24h0m0s)
       --loglevel string                               Set the logging level. One of: debug|info|warn|error (default "info")
-      --metrics-address string                        Listen for metrics on given address (default "0.0.0.0")
-      --metrics-port int                              Start metrics on given port (default 8081)
       --oidc-cache-expiration duration                Cache expiration for OIDC state (default 3m0s)
       --otlp-address string                           OpenTelemetry collector address to send traces to
       --otlp-attrs strings                            List of OpenTelemetry collector extra attrs when send traces, each attribute is separated by a colon(e.g. key:value)
@@ -73,4 +71,3 @@ athena-server [flags]
 ### SEE ALSO
 
 * [athena-server version](athena-server_version.md)	 - Print version information
-

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -17,19 +16,15 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/health/grpc_health_v1"
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/worm"
-	"github.com/useryege/athena/internal/worm/apiclient"
-	"github.com/useryege/athena/internal/worm/metrics"
 	wormstore "github.com/useryege/athena/internal/worm/store"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
-	"github.com/useryege/athena/util/healthz"
 	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/templates"
 	utilworm "github.com/useryege/athena/util/worm"
@@ -41,8 +36,6 @@ func NewCommand() *cobra.Command {
 	var (
 		listenHost             string
 		listenPort             int
-		metricsHost            string
-		metricsPort            int
 		wormAPIBaseURL         string
 		redisClient            *redis.Client
 		upstreamLimitPerMinute int
@@ -91,13 +84,6 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 
-			metricsServer := metrics.NewMetricsServer()
-			metricsMux := http.NewServeMux()
-			metricsMux.Handle("/", metricsServer.GetHandler())
-			go func() {
-				errors.CheckError(http.ListenAndServe(fmt.Sprintf("%s:%d", metricsHost, metricsPort), metricsMux))
-			}()
-
 			server, err := worm.NewServer(worm.ServerOpts{
 				Store:          store,
 				WormClient:     wormClient,
@@ -123,25 +109,6 @@ func NewCommand() *cobra.Command {
 			lc := &net.ListenConfig{}
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
 			errors.CheckError(err)
-
-			healthz.ServeHealthCheck(metricsMux, func(r *http.Request) error {
-				if val, ok := r.URL.Query()["full"]; ok && len(val) > 0 && val[0] == "true" {
-					conn, err := apiclient.NewConnection(fmt.Sprintf("localhost:%d", listenPort))
-					if err != nil {
-						return err
-					}
-					defer utilio.Close(conn)
-					client := grpc_health_v1.NewHealthClient(conn)
-					res, err := client.Check(r.Context(), &grpc_health_v1.HealthCheckRequest{})
-					if err != nil {
-						return err
-					}
-					if res.Status != grpc_health_v1.HealthCheckResponse_SERVING {
-						return fmt.Errorf("grpc health check status is '%v'", res.Status)
-					}
-				}
-				return nil
-			})
 
 			if err := server.Start(); err != nil {
 				return err
@@ -181,8 +148,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv("ATHENA_WORM_LOGLEVEL", "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_WORM_LISTEN_ADDRESS", common.DefaultAddressWorm), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortWorm, "Listen on given port for incoming connections")
-	command.Flags().StringVar(&metricsHost, "metrics-address", env.StringFromEnv("ATHENA_WORM_METRICS_LISTEN_ADDRESS", common.DefaultAddressWormMetrics), "Listen on given address for metrics and health checks")
-	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortWormMetrics, "Start metrics server on given port")
 	command.Flags().StringVar(&wormAPIBaseURL, "worm-api-base-url", env.StringFromEnv("ATHENA_WORM_API_BASE_URL", utilworm.DefaultBaseURL), "Worm API base URL")
 	command.Flags().IntVar(&upstreamLimitPerMinute, "worm-upstream-limit-per-minute", env.ParseNumFromEnv("ATHENA_WORM_UPSTREAM_LIMIT_PER_MINUTE", 1000, 1, math.MaxInt32), "Maximum Worm upstream API request budget per minute")
 	command.Flags().DurationVar(&listDefaultFreshTTL, "worm-list-default-fresh-ttl", env.ParseDurationFromEnv("ATHENA_WORM_LIST_DEFAULT_FRESH_TTL", 5*time.Second, time.Second, math.MaxInt64), "Fresh TTL for the default Worm markets list cache")

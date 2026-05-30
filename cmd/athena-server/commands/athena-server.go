@@ -50,8 +50,6 @@ func NewCommand() *cobra.Command {
 		enableGZip                bool
 		listenHost                string
 		listenPort                int
-		metricsHost               string
-		metricsPort               int
 		otlpAddress               string
 		otlpInsecure              bool
 		otlpHeaders               map[string]string
@@ -165,8 +163,6 @@ func NewCommand() *cobra.Command {
 				ContentTypes:          contentTypesList,
 				ListenPort:            listenPort,
 				ListenHost:            listenHost,
-				MetricsPort:           metricsPort,
-				MetricsHost:           metricsHost,
 				StaticAssetsDir:       staticAssetsDir,
 				BaseHRef:              baseHRef,
 				RootPath:              rootPath,
@@ -240,8 +236,6 @@ func NewCommand() *cobra.Command {
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_SERVER_LISTEN_ADDRESS", common.DefaultAddressAPIServer), "Listen on given address")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortAthenaAPIServer, "Listen on given port")
-	command.Flags().StringVar(&metricsHost, env.StringFromEnv("ATHENA_SERVER_METRICS_LISTEN_ADDRESS", "metrics-address"), common.DefaultAddressAPIServerMetrics, "Listen for metrics on given address")
-	command.Flags().IntVar(&metricsPort, "metrics-port", common.DefaultPortAthenaAPIServerMetrics, "Start metrics on given port")
 	command.Flags().StringVar(&otlpAddress, "otlp-address", env.StringFromEnv("ATHENA_SERVER_OTLP_ADDRESS", ""), "OpenTelemetry collector address to send traces to")
 	command.Flags().BoolVar(&otlpInsecure, "otlp-insecure", env.ParseBoolFromEnv("ATHENA_SERVER_OTLP_INSECURE", true), "OpenTelemetry collector insecure mode")
 	command.Flags().StringToStringVar(&otlpHeaders, "otlp-headers", env.ParseStringToStringFromEnv("ATHENA_SERVER_OTLP_HEADERS", map[string]string{}, ","), "List of OpenTelemetry collector extra headers sent with traces, headers are comma-separated key-value pairs(e.g. key1=value1,key2=value2)")

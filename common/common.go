@@ -55,40 +55,28 @@ const (
 // Default listener ports for Athena components
 const (
 	// Athena API Server
-	DefaultPortAthenaAPIServer        = 8080
-	DefaultPortAthenaAPIServerMetrics = 8081
+	DefaultPortAthenaAPIServer = 8080
 	// Athena Application
-	DefaultPortApplication        = 8082
-	DefaultPortApplicationMetrics = 8083
+	DefaultPortApplication = 8082
 	// Athena Worm
-	DefaultPortWorm        = 8084
-	DefaultPortWormMetrics = 8085
+	DefaultPortWorm = 8084
 	// Athena Notification
-	DefaultPortNotification        = 8086
-	DefaultPortNotificationMetrics = 8087
+	DefaultPortNotification = 8086
 	// Athena Wallet
-	DefaultPortWallet        = 8088
-	DefaultPortWalletMetrics = 8089
+	DefaultPortWallet = 8088
 	// Athena Solidity
-	DefaultPortSolidity        = 8090
-	DefaultPortSolidityMetrics = 8091
+	DefaultPortSolidity = 8090
 )
 
 // DefaultAddressAPIServer for Athena components
 const (
-	DefaultAddressAdminDashboard      = "localhost"
-	DefaultAddressAPIServer           = "0.0.0.0"
-	DefaultAddressAPIServerMetrics    = "0.0.0.0"
-	DefaultAddressApplication         = "0.0.0.0"
-	DefaultAddressApplicationMetrics  = "0.0.0.0"
-	DefaultAddressWorm                = "0.0.0.0"
-	DefaultAddressWormMetrics         = "0.0.0.0"
-	DefaultAddressNotification        = "0.0.0.0"
-	DefaultAddressNotificationMetrics = "0.0.0.0"
-	DefaultAddressWallet              = "0.0.0.0"
-	DefaultAddressWalletMetrics       = "0.0.0.0"
-	DefaultAddressSolidity            = "0.0.0.0"
-	DefaultAddressSolidityMetrics     = "0.0.0.0"
+	DefaultAddressAdminDashboard = "localhost"
+	DefaultAddressAPIServer      = "0.0.0.0"
+	DefaultAddressApplication    = "0.0.0.0"
+	DefaultAddressWorm           = "0.0.0.0"
+	DefaultAddressNotification   = "0.0.0.0"
+	DefaultAddressWallet         = "0.0.0.0"
+	DefaultAddressSolidity       = "0.0.0.0"
 )
 
 // Default paths on the pod's file system
@@ -291,8 +279,6 @@ const (
 	EnvControllerShardingAlgorithm = "ATHENA_CONTROLLER_SHARDING_ALGORITHM"
 	// EnvEnableDynamicClusterDistribution enables dynamic sharding (ALPHA)
 	EnvEnableDynamicClusterDistribution = "ATHENA_ENABLE_DYNAMIC_CLUSTER_DISTRIBUTION"
-	// EnvEnableGRPCTimeHistogramEnv enables gRPC metrics collection
-	EnvEnableGRPCTimeHistogramEnv = "ATHENA_ENABLE_GRPC_TIME_HISTOGRAM"
 	// EnvGithubAppCredsExpirationDuration controls the caching of Github app credentials. This value is in minutes (default: 60)
 	EnvGithubAppCredsExpirationDuration = "ATHENA_GITHUB_APP_CREDS_EXPIRATION_DURATION"
 	// EnvHelmIndexCacheDuration controls how the helm repository index file is cached for (default: 0)
