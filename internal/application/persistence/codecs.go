@@ -4,7 +4,8 @@ import appstore "github.com/useryege/athena/internal/application/store"
 
 func projectReportToStore(report ProjectReport) appstore.ProjectReport {
 	return appstore.ProjectReport{
-		IsPolicyEvaluated:          report.IsPolicyEvaluated,
+		IsReportEvaluated:          report.IsReportEvaluated,
+		IsReportComplete:           report.IsReportComplete,
 		IsBlacklistedCreatorWallet: report.IsBlacklistedCreatorWallet,
 		IsBlacklistedGenesisWallet: report.IsBlacklistedGenesisWallet,
 		IsBlacklistedBytecode:      report.IsBlacklistedBytecode,

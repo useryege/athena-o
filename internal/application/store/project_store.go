@@ -398,50 +398,52 @@ WHERE project_contract = $1
 	return &item, nil
 }
 
-func (s *SQLStore) UpsertProjectPolicyReport(ctx context.Context, item ProjectPolicyReport) error {
+func (s *SQLStore) UpsertProjectReportState(ctx context.Context, item ProjectReportState) error {
 	evaluatedAt := item.EvaluatedAt
 	if evaluatedAt.IsZero() {
 		evaluatedAt = time.Now().UTC()
 	}
 	r := item.Report
 	_, err := s.db.ExecContext(ctx, `
-INSERT INTO project_policy_report (
+INSERT INTO project_report (
   project_contract,
-  is_policy_evaluated,
+  is_report_evaluated,
+  is_report_complete,
   is_blacklisted_creator_wallet,
   is_blacklisted_genesis_wallet,
   is_blacklisted_bytecode,
   has_mint_risk,
   evaluated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (project_contract) DO UPDATE
-SET is_policy_evaluated = EXCLUDED.is_policy_evaluated,
+SET is_report_evaluated = EXCLUDED.is_report_evaluated,
+  is_report_complete = EXCLUDED.is_report_complete,
   is_blacklisted_creator_wallet = EXCLUDED.is_blacklisted_creator_wallet,
   is_blacklisted_genesis_wallet = EXCLUDED.is_blacklisted_genesis_wallet,
   is_blacklisted_bytecode = EXCLUDED.is_blacklisted_bytecode,
   has_mint_risk = EXCLUDED.has_mint_risk,
   evaluated_at = EXCLUDED.evaluated_at,
   updated_at = now()
-`, item.ProjectContract.Bytes(), r.IsPolicyEvaluated, r.IsBlacklistedCreatorWallet, r.IsBlacklistedGenesisWallet, r.IsBlacklistedBytecode, r.HasMintRisk, evaluatedAt.UTC())
+`, item.ProjectContract.Bytes(), r.IsReportEvaluated, r.IsReportComplete, r.IsBlacklistedCreatorWallet, r.IsBlacklistedGenesisWallet, r.IsBlacklistedBytecode, r.HasMintRisk, evaluatedAt.UTC())
 	if err != nil {
-		return fmt.Errorf("upsert project policy report: %w", err)
+		return fmt.Errorf("upsert project report: %w", err)
 	}
 	return nil
 }
 
 func (s *SQLStore) UpdateProjectReport(ctx context.Context, contract common.Address, report ProjectReport) error {
-	return s.UpsertProjectPolicyReport(ctx, ProjectPolicyReport{ProjectContract: contract, Report: report})
+	return s.UpsertProjectReportState(ctx, ProjectReportState{ProjectContract: contract, Report: report})
 }
 
-func (s *SQLStore) GetProjectPolicyReport(ctx context.Context, contract common.Address) (*ProjectPolicyReport, error) {
+func (s *SQLStore) GetProjectReportState(ctx context.Context, contract common.Address) (*ProjectReportState, error) {
 	row := s.db.QueryRowContext(ctx, `
-SELECT project_contract, is_policy_evaluated, is_blacklisted_creator_wallet,
+SELECT project_contract, is_report_evaluated, is_report_complete, is_blacklisted_creator_wallet,
   is_blacklisted_genesis_wallet, is_blacklisted_bytecode, has_mint_risk,
   evaluated_at, updated_at
-FROM project_policy_report
+FROM project_report
 WHERE project_contract = $1
 `, contract.Bytes())
-	item, err := scanProjectPolicyReportRow(row)
+	item, err := scanProjectReportStateRow(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -451,26 +453,26 @@ WHERE project_contract = $1
 	return &item, nil
 }
 
-func (s *SQLStore) ListProjectPolicyReportsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectPolicyReport, error) {
+func (s *SQLStore) ListProjectReportStatesByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectReportState, error) {
 	unique := uniqueNonZeroAddresses(contracts)
-	result := make(map[common.Address]ProjectPolicyReport, len(unique))
+	result := make(map[common.Address]ProjectReportState, len(unique))
 	if len(unique) == 0 {
 		return result, nil
 	}
 	clause, args := addressInClause(unique)
 	rows, err := s.db.QueryContext(ctx, fmt.Sprintf(`
-SELECT project_contract, is_policy_evaluated, is_blacklisted_creator_wallet,
+SELECT project_contract, is_report_evaluated, is_report_complete, is_blacklisted_creator_wallet,
   is_blacklisted_genesis_wallet, is_blacklisted_bytecode, has_mint_risk,
   evaluated_at, updated_at
-FROM project_policy_report
+FROM project_report
 WHERE project_contract IN (%s)
 `, clause), args...)
 	if err != nil {
-		return nil, fmt.Errorf("list project policy reports by contracts: %w", err)
+		return nil, fmt.Errorf("list project reports by contracts: %w", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		item, err := scanProjectPolicyReportRow(rows)
+		item, err := scanProjectReportStateRow(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -577,7 +579,8 @@ SELECT
   COALESCE(sr.can_mint_from_usdt_pair_via_transfer_from, false),
   COALESCE(sr.can_mint_via_transfer_to_weth_pair, false),
   COALESCE(sr.can_mint_via_transfer_to_usdt_pair, false),
-  COALESCE(pr.is_policy_evaluated, false),
+  COALESCE(pr.is_report_evaluated, false),
+  COALESCE(pr.is_report_complete, false),
   COALESCE(pr.is_blacklisted_creator_wallet, false),
   COALESCE(pr.is_blacklisted_genesis_wallet, false),
   COALESCE(pr.is_blacklisted_bytecode, false),
@@ -587,7 +590,7 @@ SELECT
 FROM project p
 LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
 LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_policy_report pr ON pr.project_contract = p.contract
+LEFT JOIN project_report pr ON pr.project_contract = p.contract
 LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
 LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
 `
@@ -658,7 +661,7 @@ func scanProjectMetaRow(scanner rowScanner) (ProjectMeta, error) {
 	var fetchAt time.Time
 	var genesisWalletsFetchedAt, creatorHistoricalProjectsFetchedAt sql.NullTime
 
-	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &wethPair, &usdtPair, &fetchAt, &txHash, &txIndex, &meta.CreatorResult.CanMintFromDeadViaTransferFrom, &meta.CreatorResult.CanMintFromZeroViaTransferFrom, &meta.CreatorResult.CanMintFromWethPairViaTransferFrom, &meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, &meta.CreatorResult.CanMintViaTransferToWethPair, &meta.CreatorResult.CanMintViaTransferToUsdtPair, &meta.Report.IsPolicyEvaluated, &meta.Report.IsBlacklistedCreatorWallet, &meta.Report.IsBlacklistedGenesisWallet, &meta.Report.IsBlacklistedBytecode, &meta.Report.HasMintRisk, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
+	if err := scanner.Scan(&blockNumber, &blockTime, &contract, &creator, &wethPair, &usdtPair, &fetchAt, &txHash, &txIndex, &meta.CreatorResult.CanMintFromDeadViaTransferFrom, &meta.CreatorResult.CanMintFromZeroViaTransferFrom, &meta.CreatorResult.CanMintFromWethPairViaTransferFrom, &meta.CreatorResult.CanMintFromUsdtPairViaTransferFrom, &meta.CreatorResult.CanMintViaTransferToWethPair, &meta.CreatorResult.CanMintViaTransferToUsdtPair, &meta.Report.IsReportEvaluated, &meta.Report.IsReportComplete, &meta.Report.IsBlacklistedCreatorWallet, &meta.Report.IsBlacklistedGenesisWallet, &meta.Report.IsBlacklistedBytecode, &meta.Report.HasMintRisk, &genesisWalletsFetchedAt, &creatorHistoricalProjectsFetchedAt); err != nil {
 		return ProjectMeta{}, fmt.Errorf("scan project meta: %w", err)
 	}
 	if blockNumber < 0 || blockTime < 0 || txIndex < 0 {
@@ -710,11 +713,11 @@ func scanProjectSimulationResultRow(scanner rowScanner) (ProjectSimulationResult
 	return item, nil
 }
 
-func scanProjectPolicyReportRow(scanner rowScanner) (ProjectPolicyReport, error) {
-	var item ProjectPolicyReport
+func scanProjectReportStateRow(scanner rowScanner) (ProjectReportState, error) {
+	var item ProjectReportState
 	var contract []byte
-	if err := scanner.Scan(&contract, &item.Report.IsPolicyEvaluated, &item.Report.IsBlacklistedCreatorWallet, &item.Report.IsBlacklistedGenesisWallet, &item.Report.IsBlacklistedBytecode, &item.Report.HasMintRisk, &item.EvaluatedAt, &item.UpdatedAt); err != nil {
-		return ProjectPolicyReport{}, fmt.Errorf("scan project policy report: %w", err)
+	if err := scanner.Scan(&contract, &item.Report.IsReportEvaluated, &item.Report.IsReportComplete, &item.Report.IsBlacklistedCreatorWallet, &item.Report.IsBlacklistedGenesisWallet, &item.Report.IsBlacklistedBytecode, &item.Report.HasMintRisk, &item.EvaluatedAt, &item.UpdatedAt); err != nil {
+		return ProjectReportState{}, fmt.Errorf("scan project report: %w", err)
 	}
 	item.ProjectContract = common.BytesToAddress(contract)
 	return item, nil

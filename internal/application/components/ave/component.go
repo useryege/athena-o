@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
+	appcomponents "github.com/useryege/athena/internal/application/components"
 	appstore "github.com/useryege/athena/internal/application/store"
 	utilave "github.com/useryege/athena/util/ave"
 	"google.golang.org/grpc/codes"
@@ -38,6 +39,7 @@ type Options struct {
 	ChainID           int64
 	Store             Store
 	Cache             Cache
+	EventBus          appcomponents.EventBus
 	Fetcher           Fetcher
 	Chain             string
 	DetailTTL         time.Duration
@@ -58,6 +60,8 @@ type State struct {
 type Component struct {
 	store             Store
 	cache             Cache
+	eventBus          appcomponents.EventBus
+	consumer          *appcomponents.Consumer
 	fetcher           Fetcher
 	chain             string
 	detailTTL         time.Duration
@@ -97,9 +101,10 @@ func NewComponent(opts Options) (*Component, error) {
 			opts.Chain = chain
 		}
 	}
-	return &Component{
+	component := &Component{
 		store:             opts.Store,
 		cache:             opts.Cache,
+		eventBus:          opts.EventBus,
 		fetcher:           opts.Fetcher,
 		chain:             strings.TrimSpace(opts.Chain),
 		detailTTL:         opts.DetailTTL,
@@ -107,7 +112,9 @@ func NewComponent(opts Options) (*Component, error) {
 		failureRetryDelay: opts.FailureRetryDelay,
 		batchSize:         opts.BatchSize,
 		now:               opts.Now,
-	}, nil
+	}
+	component.consumer = appcomponents.NewConsumer(appstore.ProjectComponentAveDetail, opts.EventBus, component.handleEvent)
+	return component, nil
 }
 
 func (o Options) withDefaults() Options {
@@ -133,6 +140,9 @@ func (c *Component) Start(ctx context.Context) error {
 	if c == nil || c.store == nil || c.fetcher == nil || strings.TrimSpace(c.chain) == "" {
 		return nil
 	}
+	if c.consumer != nil {
+		return c.consumer.Start(ctx)
+	}
 	c.startStopMu.Lock()
 	defer c.startStopMu.Unlock()
 	if c.started {
@@ -149,6 +159,9 @@ func (c *Component) Start(ctx context.Context) error {
 func (c *Component) Stop() {
 	if c == nil {
 		return
+	}
+	if c.consumer != nil {
+		_ = c.consumer.Stop()
 	}
 	c.startStopMu.Lock()
 	cancel := c.cancel
@@ -260,7 +273,32 @@ func (c *Component) refreshOne(ctx context.Context, contract common.Address) err
 			return err
 		}
 	}
-	return c.store.MarkProjectAveRefreshSuccess(ctx, contract, detail.FetchedAt, detail.FetchedAt.Add(c.detailTTL))
+	if err := c.store.MarkProjectAveRefreshSuccess(ctx, contract, detail.FetchedAt, detail.FetchedAt.Add(c.detailTTL)); err != nil {
+		return err
+	}
+	if c.eventBus != nil {
+		if err := c.eventBus.Publish(ctx, appcomponents.ComponentCompletedEvent(contract, appstore.ProjectComponentAveDetail)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Component) handleEvent(ctx context.Context, event appcomponents.Event) error {
+	if event.Type != appcomponents.EventProjectInitialized && event.Type != appcomponents.EventProjectRefresh {
+		return nil
+	}
+	contract := event.ProjectContract()
+	if contract == (common.Address{}) {
+		return nil
+	}
+	if err := c.refreshOne(ctx, contract); err != nil {
+		if c.eventBus != nil {
+			_ = c.eventBus.Publish(ctx, appcomponents.ComponentFailedEvent(contract, appstore.ProjectComponentAveDetail, err))
+		}
+		return nil
+	}
+	return nil
 }
 
 func (c *Component) detail(ctx context.Context, contract common.Address) (*appstore.ProjectAveDetail, error) {

@@ -331,7 +331,7 @@ func TestProjectDiscoveryIndexerScanBlockRunsProjectCreationAndSwapTasks(t *test
 	}
 	indexer := &projectDiscoveryIndexerImpl{
 		nodeClient: node,
-		intake:     &discoveryIntakeImpl{reconciler: &intakeReconcilerFake{}},
+		intake:     &discoveryIntakeImpl{intake: &discoveryIntakeFake{}},
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -399,12 +399,12 @@ func TestProjectDiscoveryIndexerSchedulesCachedProjectBySwapPair(t *testing.T) {
 		logs:  []types.Log{{Address: pair}},
 	}
 	store := &discoveryProjectStoreFake{}
-	reconciler := &intakeReconcilerFake{}
+	intakeFake := &discoveryIntakeFake{}
 	indexer := &projectDiscoveryIndexerImpl{
 		nodeClient:   node,
 		projectCache: cache,
 		projectStore: store,
-		intake:       &discoveryIntakeImpl{reconciler: reconciler},
+		intake:       &discoveryIntakeImpl{intake: intakeFake},
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -413,10 +413,10 @@ func TestProjectDiscoveryIndexerSchedulesCachedProjectBySwapPair(t *testing.T) {
 	if store.pairCalls != 0 {
 		t.Fatalf("store pair calls = %d, want 0", store.pairCalls)
 	}
-	if reconciler.scheduleCalls != 1 || len(reconciler.scheduled) != 1 {
-		t.Fatalf("scheduled = calls %d items %d, want 1/1", reconciler.scheduleCalls, len(reconciler.scheduled))
+	if intakeFake.scheduleCalls != 1 || len(intakeFake.scheduled) != 1 {
+		t.Fatalf("scheduled = calls %d items %d, want 1/1", intakeFake.scheduleCalls, len(intakeFake.scheduled))
 	}
-	if got := reconciler.scheduled[0]; got.Contract != contract || got.Source != ProjectDiscoverySourcePairSwap {
+	if got := intakeFake.scheduled[0]; got.Contract != contract || got.Source != ProjectDiscoverySourcePairSwap {
 		t.Fatalf("scheduled candidate = %+v, want contract %s source %s", got, contract.Hex(), ProjectDiscoverySourcePairSwap)
 	}
 }
@@ -435,12 +435,12 @@ func TestProjectDiscoveryIndexerSchedulesStoredProjectBySwapPairAndSeedsCache(t 
 		Contract:    contract,
 		WethPair:    pair,
 	}}}
-	reconciler := &intakeReconcilerFake{}
+	intakeFake := &discoveryIntakeFake{}
 	indexer := &projectDiscoveryIndexerImpl{
 		nodeClient:   node,
 		projectCache: cache,
 		projectStore: store,
-		intake:       &discoveryIntakeImpl{reconciler: reconciler},
+		intake:       &discoveryIntakeImpl{intake: intakeFake},
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -449,10 +449,10 @@ func TestProjectDiscoveryIndexerSchedulesStoredProjectBySwapPairAndSeedsCache(t 
 	if store.pairCalls != 1 || len(store.gotPairs) != 1 || store.gotPairs[0] != pair {
 		t.Fatalf("store pair query = calls %d pairs %v, want one call with %s", store.pairCalls, store.gotPairs, pair.Hex())
 	}
-	if reconciler.scheduleCalls != 1 || len(reconciler.scheduled) != 1 {
-		t.Fatalf("scheduled = calls %d items %d, want 1/1", reconciler.scheduleCalls, len(reconciler.scheduled))
+	if intakeFake.scheduleCalls != 1 || len(intakeFake.scheduled) != 1 {
+		t.Fatalf("scheduled = calls %d items %d, want 1/1", intakeFake.scheduleCalls, len(intakeFake.scheduled))
 	}
-	if got := reconciler.scheduled[0]; got.Contract != contract || got.Source != ProjectDiscoverySourcePairSwap {
+	if got := intakeFake.scheduled[0]; got.Contract != contract || got.Source != ProjectDiscoverySourcePairSwap {
 		t.Fatalf("scheduled candidate = %+v, want contract %s source %s", got, contract.Hex(), ProjectDiscoverySourcePairSwap)
 	}
 	cached, exists, err := cache.GetProject(ctx, contract)
@@ -473,12 +473,12 @@ func TestProjectDiscoveryIndexerSkipsSwapPairsWithoutProjectMatch(t *testing.T) 
 		logs:  []types.Log{{Address: pair}},
 	}
 	store := &discoveryProjectStoreFake{}
-	reconciler := &intakeReconcilerFake{}
+	intakeFake := &discoveryIntakeFake{}
 	indexer := &projectDiscoveryIndexerImpl{
 		nodeClient:   node,
 		projectCache: cache,
 		projectStore: store,
-		intake:       &discoveryIntakeImpl{reconciler: reconciler},
+		intake:       &discoveryIntakeImpl{intake: intakeFake},
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -487,8 +487,8 @@ func TestProjectDiscoveryIndexerSkipsSwapPairsWithoutProjectMatch(t *testing.T) 
 	if store.pairCalls != 1 {
 		t.Fatalf("store pair calls = %d, want 1", store.pairCalls)
 	}
-	if reconciler.scheduleCalls != 0 {
-		t.Fatalf("schedule calls = %d, want 0", reconciler.scheduleCalls)
+	if intakeFake.scheduleCalls != 0 {
+		t.Fatalf("schedule calls = %d, want 0", intakeFake.scheduleCalls)
 	}
 }
 
@@ -513,51 +513,51 @@ func TestProjectDiscoveryIndexerDeduplicatesSwapPairProjectSchedules(t *testing.
 			{Address: usdtPair},
 		},
 	}
-	reconciler := &intakeReconcilerFake{}
+	intakeFake := &discoveryIntakeFake{}
 	indexer := &projectDiscoveryIndexerImpl{
 		nodeClient:   node,
 		projectCache: cache,
 		projectStore: &discoveryProjectStoreFake{},
-		intake:       &discoveryIntakeImpl{reconciler: reconciler},
+		intake:       &discoveryIntakeImpl{intake: intakeFake},
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
 		t.Fatalf("scan block: %v", err)
 	}
-	if reconciler.scheduleCalls != 1 || len(reconciler.scheduled) != 1 {
-		t.Fatalf("scheduled = calls %d items %d, want 1/1", reconciler.scheduleCalls, len(reconciler.scheduled))
+	if intakeFake.scheduleCalls != 1 || len(intakeFake.scheduled) != 1 {
+		t.Fatalf("scheduled = calls %d items %d, want 1/1", intakeFake.scheduleCalls, len(intakeFake.scheduled))
 	}
-	if reconciler.scheduled[0].Contract != contract {
-		t.Fatalf("scheduled contract = %s, want %s", reconciler.scheduled[0].Contract.Hex(), contract.Hex())
+	if intakeFake.scheduled[0].Contract != contract {
+		t.Fatalf("scheduled contract = %s, want %s", intakeFake.scheduled[0].Contract.Hex(), contract.Hex())
 	}
 }
 
-type intakeReconcilerFake struct {
+type discoveryIntakeFake struct {
 	calls         int
 	scheduleCalls int
 	items         []DiscoveredProjectCandidate
 	scheduled     []DiscoveredProjectCandidate
 }
 
-func (r *intakeReconcilerFake) Start(context.Context) error { return nil }
-func (r *intakeReconcilerFake) Stop() error                 { return nil }
+func (r *discoveryIntakeFake) Start(context.Context) error { return nil }
+func (r *discoveryIntakeFake) Stop() error                 { return nil }
 
-func (r *intakeReconcilerFake) InitProject(_ context.Context, items []DiscoveredProjectCandidate) error {
+func (r *discoveryIntakeFake) IntakeCandidates(_ context.Context, items []DiscoveredProjectCandidate) error {
 	r.calls++
 	r.items = append([]DiscoveredProjectCandidate(nil), items...)
 	return nil
 }
 
-func (r *intakeReconcilerFake) ScheduleProjects(_ context.Context, items []DiscoveredProjectCandidate) error {
+func (r *discoveryIntakeFake) ScheduleProjects(_ context.Context, items []DiscoveredProjectCandidate) error {
 	r.scheduleCalls++
 	r.scheduled = append([]DiscoveredProjectCandidate(nil), items...)
 	return nil
 }
 
-func TestDiscoveryIntakeCandidatesPassesBatchToInitProject(t *testing.T) {
+func TestDiscoveryIntakeCandidatesPassesBatchToIntakeCandidates(t *testing.T) {
 	ctx := context.Background()
-	reconciler := &intakeReconcilerFake{}
-	intake := &discoveryIntakeImpl{reconciler: reconciler}
+	intakeFake := &discoveryIntakeFake{}
+	intake := &discoveryIntakeImpl{intake: intakeFake}
 	items := []DiscoveredProjectCandidate{
 		{Contract: common.HexToAddress("0x00000000000000000000000000000000000000a1")},
 		{Contract: common.HexToAddress("0x00000000000000000000000000000000000000a2")},
@@ -566,10 +566,10 @@ func TestDiscoveryIntakeCandidatesPassesBatchToInitProject(t *testing.T) {
 	if err := intake.IntakeCandidates(ctx, items); err != nil {
 		t.Fatalf("intake candidates: %v", err)
 	}
-	if reconciler.calls != 1 {
-		t.Fatalf("init project calls = %d, want 1", reconciler.calls)
+	if intakeFake.calls != 1 {
+		t.Fatalf("intake candidates calls = %d, want 1", intakeFake.calls)
 	}
-	if len(reconciler.items) != len(items) {
-		t.Fatalf("init project item count = %d, want %d", len(reconciler.items), len(items))
+	if len(intakeFake.items) != len(items) {
+		t.Fatalf("intake candidates item count = %d, want %d", len(intakeFake.items), len(items))
 	}
 }

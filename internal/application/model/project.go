@@ -16,7 +16,8 @@ type Project struct {
 }
 
 type ProjectReport struct {
-	IsPolicyEvaluated          bool
+	IsReportEvaluated          bool
+	IsReportComplete           bool
 	IsBlacklistedCreatorWallet bool
 	IsBlacklistedGenesisWallet bool
 	IsBlacklistedBytecode      bool

@@ -57,7 +57,8 @@ type projectMetaSavePayload struct {
 	FetchAt                            string `json:"fetch_at"`
 	TxHash                             string `json:"tx_hash"`
 	TxIndex                            uint64 `json:"tx_index"`
-	ReportIsPolicyEvaluated            bool   `json:"report_is_policy_evaluated,omitempty"`
+	ReportIsReportEvaluated            bool   `json:"report_is_report_evaluated,omitempty"`
+	ReportIsReportComplete             bool   `json:"report_is_report_complete,omitempty"`
 	ReportIsBlacklistedCreatorWallet   bool   `json:"report_is_blacklisted_creator_wallet,omitempty"`
 	ReportIsBlacklistedGenesisWallet   bool   `json:"report_is_blacklisted_genesis_wallet,omitempty"`
 	ReportIsBlacklistedBytecode        bool   `json:"report_is_blacklisted_bytecode,omitempty"`
@@ -83,7 +84,8 @@ type projectCreatorResultUpdatePayload struct {
 
 type projectReportUpdatePayload struct {
 	Contract                   string `json:"contract"`
-	IsPolicyEvaluated          bool   `json:"is_policy_evaluated"`
+	IsReportEvaluated          bool   `json:"is_report_evaluated"`
+	IsReportComplete           bool   `json:"is_report_complete"`
 	IsBlacklistedCreatorWallet bool   `json:"is_blacklisted_creator_wallet"`
 	IsBlacklistedGenesisWallet bool   `json:"is_blacklisted_genesis_wallet"`
 	IsBlacklistedBytecode      bool   `json:"is_blacklisted_bytecode"`
@@ -217,7 +219,8 @@ func (b *RedisPersistenceEventBus) PublishProjectMetaSave(ctx context.Context, m
 		FetchAt:                            timeToPayload(meta.FetchAt),
 		TxHash:                             meta.TxHash.Hex(),
 		TxIndex:                            meta.TxIndex,
-		ReportIsPolicyEvaluated:            meta.Report.IsPolicyEvaluated,
+		ReportIsReportEvaluated:            meta.Report.IsReportEvaluated,
+		ReportIsReportComplete:             meta.Report.IsReportComplete,
 		ReportIsBlacklistedCreatorWallet:   meta.Report.IsBlacklistedCreatorWallet,
 		ReportIsBlacklistedGenesisWallet:   meta.Report.IsBlacklistedGenesisWallet,
 		ReportIsBlacklistedBytecode:        meta.Report.IsBlacklistedBytecode,
@@ -297,7 +300,8 @@ func (b *RedisPersistenceEventBus) PublishProjectCreatorResultUpdate(ctx context
 func (b *RedisPersistenceEventBus) PublishProjectReportUpdate(ctx context.Context, contract common.Address, report ProjectReport) error {
 	payload := projectReportUpdatePayload{
 		Contract:                   contract.Hex(),
-		IsPolicyEvaluated:          report.IsPolicyEvaluated,
+		IsReportEvaluated:          report.IsReportEvaluated,
+		IsReportComplete:           report.IsReportComplete,
 		IsBlacklistedCreatorWallet: report.IsBlacklistedCreatorWallet,
 		IsBlacklistedGenesisWallet: report.IsBlacklistedGenesisWallet,
 		IsBlacklistedBytecode:      report.IsBlacklistedBytecode,
@@ -570,7 +574,8 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			TxHash:      txHash,
 			TxIndex:     payload.TxIndex,
 			Report: appstore.ProjectReport{
-				IsPolicyEvaluated:          payload.ReportIsPolicyEvaluated,
+				IsReportEvaluated:          payload.ReportIsReportEvaluated,
+				IsReportComplete:           payload.ReportIsReportComplete,
 				IsBlacklistedCreatorWallet: payload.ReportIsBlacklistedCreatorWallet,
 				IsBlacklistedGenesisWallet: payload.ReportIsBlacklistedGenesisWallet,
 				IsBlacklistedBytecode:      payload.ReportIsBlacklistedBytecode,
@@ -622,7 +627,8 @@ func (b *RedisPersistenceEventBus) applyEvent(ctx context.Context, writer Persis
 			return fmt.Errorf("invalid contract %q", payload.Contract)
 		}
 		return writer.WriteProjectReport(ctx, common.HexToAddress(payload.Contract), appstore.ProjectReport{
-			IsPolicyEvaluated:          payload.IsPolicyEvaluated,
+			IsReportEvaluated:          payload.IsReportEvaluated,
+			IsReportComplete:           payload.IsReportComplete,
 			IsBlacklistedCreatorWallet: payload.IsBlacklistedCreatorWallet,
 			IsBlacklistedGenesisWallet: payload.IsBlacklistedGenesisWallet,
 			IsBlacklistedBytecode:      payload.IsBlacklistedBytecode,

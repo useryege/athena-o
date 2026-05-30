@@ -513,13 +513,15 @@ message ProjectListItem {
 
   optional string txHash = 24;
 
-  optional bool isPolicyEvaluated = 25;
+  optional bool isReportEvaluated = 25;
 
   optional bool isBlacklistedCreatorWallet = 26;
 
   optional bool isBlacklistedGenesisWallet = 27;
 
   optional bool isBlacklistedBytecode = 28;
+
+  optional bool isReportComplete = 29;
 }
 
 message ProjectMeta {
@@ -571,7 +573,9 @@ message ProjectOption {
 }
 
 message ProjectReport {
-  optional bool isPolicyEvaluated = 1;
+  optional bool isReportEvaluated = 1;
+
+  optional bool isReportComplete = 8;
 
   optional bool isBlacklistedCreatorWallet = 2;
 

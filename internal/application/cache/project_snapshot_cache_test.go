@@ -219,7 +219,7 @@ func TestRedisProjectSnapshotCachePersistsProjectReport(t *testing.T) {
 	cache := NewProjectSnapshotCache(redisport.NewGoRedisAdapter(client))
 	contract := common.BigToAddress(big.NewInt(100))
 	want := ProjectReport{
-		IsPolicyEvaluated:          true,
+		IsReportEvaluated:          true,
 		IsBlacklistedCreatorWallet: true,
 		IsBlacklistedGenesisWallet: true,
 		IsBlacklistedBytecode:      true,

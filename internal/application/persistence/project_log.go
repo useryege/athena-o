@@ -14,7 +14,7 @@ type ProjectEventType int16
 const (
 	projectEventTypeCreated          ProjectEventType = 1
 	projectEventTypeOpenSource       ProjectEventType = 2
-	projectEventTypePolicyMatchAudit ProjectEventType = 5
+	projectEventTypeReportMatchAudit ProjectEventType = 5
 )
 
 const (
@@ -22,31 +22,31 @@ const (
 	projectEventIdempotencyOpenSource = "project_source_code_opened"
 )
 
-func projectEventIdempotencyPolicyMatch(rule string) string {
-	return "project_policy_matched:" + rule
+func projectEventIdempotencyReportMatch(rule string) string {
+	return "project_report_matched:" + rule
 }
 
-type projectPolicyMatchedEventPayload struct {
+type projectReportMatchedEventPayload struct {
 	Rule     string         `json:"rule"`
 	Evidence map[string]any `json:"evidence"`
 	Source   string         `json:"source"`
 }
 
-func NewProjectPolicyMatchedEvent(contract common.Address, ruleName string, evidence map[string]any, occurredAt time.Time) (appstore.ProjectEventLog, error) {
-	payload, err := json.Marshal(projectPolicyMatchedEventPayload{
+func NewProjectReportMatchedEvent(contract common.Address, ruleName string, evidence map[string]any, occurredAt time.Time) (appstore.ProjectEventLog, error) {
+	payload, err := json.Marshal(projectReportMatchedEventPayload{
 		Rule:     ruleName,
 		Evidence: evidence,
-		Source:   "policy_engine",
+		Source:   "report_component",
 	})
 	if err != nil {
-		return appstore.ProjectEventLog{}, fmt.Errorf("marshal project policy matched event payload: %w", err)
+		return appstore.ProjectEventLog{}, fmt.Errorf("marshal project report matched event payload: %w", err)
 	}
 	return appstore.ProjectEventLog{
 		Contract:       contract,
-		EventType:      int16(projectEventTypePolicyMatchAudit),
+		EventType:      int16(projectEventTypeReportMatchAudit),
 		OccurredAt:     occurredAt,
-		Message:        fmt.Sprintf("Policy rule %s matched project", ruleName),
+		Message:        fmt.Sprintf("Report rule %s matched project", ruleName),
 		Payload:        string(payload),
-		IdempotencyKey: projectEventIdempotencyPolicyMatch(ruleName),
+		IdempotencyKey: projectEventIdempotencyReportMatch(ruleName),
 	}, nil
 }

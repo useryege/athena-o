@@ -1736,6 +1736,16 @@ func (m *ProjectListItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	i--
+	if m.IsReportComplete {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xe8
+	i--
 	if m.IsBlacklistedBytecode {
 		dAtA[i] = 1
 	} else {
@@ -1766,7 +1776,7 @@ func (m *ProjectListItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0xd0
 	i--
-	if m.IsPolicyEvaluated {
+	if m.IsReportEvaluated {
 		dAtA[i] = 1
 	} else {
 		dAtA[i] = 0
@@ -2148,6 +2158,14 @@ func (m *ProjectReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i--
+	if m.IsReportComplete {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x40
 	i -= len(m.UpdatedAt)
 	copy(dAtA[i:], m.UpdatedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UpdatedAt)))
@@ -2191,7 +2209,7 @@ func (m *ProjectReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0x10
 	i--
-	if m.IsPolicyEvaluated {
+	if m.IsReportEvaluated {
 		dAtA[i] = 1
 	} else {
 		dAtA[i] = 0
@@ -3561,6 +3579,7 @@ func (m *ProjectListItem) Size() (n int) {
 	n += 3
 	n += 3
 	n += 3
+	n += 3
 	return n
 }
 
@@ -3648,6 +3667,7 @@ func (m *ProjectReport) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.UpdatedAt)
 	n += 1 + l + sovGenerated(uint64(l))
+	n += 2
 	return n
 }
 
@@ -4331,10 +4351,11 @@ func (this *ProjectListItem) String() string {
 		`AveMarketCap:` + fmt.Sprintf("%v", this.AveMarketCap) + `,`,
 		`Creator:` + fmt.Sprintf("%v", this.Creator) + `,`,
 		`TxHash:` + fmt.Sprintf("%v", this.TxHash) + `,`,
-		`IsPolicyEvaluated:` + fmt.Sprintf("%v", this.IsPolicyEvaluated) + `,`,
+		`IsReportEvaluated:` + fmt.Sprintf("%v", this.IsReportEvaluated) + `,`,
 		`IsBlacklistedCreatorWallet:` + fmt.Sprintf("%v", this.IsBlacklistedCreatorWallet) + `,`,
 		`IsBlacklistedGenesisWallet:` + fmt.Sprintf("%v", this.IsBlacklistedGenesisWallet) + `,`,
 		`IsBlacklistedBytecode:` + fmt.Sprintf("%v", this.IsBlacklistedBytecode) + `,`,
+		`IsReportComplete:` + fmt.Sprintf("%v", this.IsReportComplete) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -4394,13 +4415,14 @@ func (this *ProjectReport) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&ProjectReport{`,
-		`IsPolicyEvaluated:` + fmt.Sprintf("%v", this.IsPolicyEvaluated) + `,`,
+		`IsReportEvaluated:` + fmt.Sprintf("%v", this.IsReportEvaluated) + `,`,
 		`IsBlacklistedCreatorWallet:` + fmt.Sprintf("%v", this.IsBlacklistedCreatorWallet) + `,`,
 		`IsBlacklistedGenesisWallet:` + fmt.Sprintf("%v", this.IsBlacklistedGenesisWallet) + `,`,
 		`IsBlacklistedBytecode:` + fmt.Sprintf("%v", this.IsBlacklistedBytecode) + `,`,
 		`HasMintRisk:` + fmt.Sprintf("%v", this.HasMintRisk) + `,`,
 		`EvaluatedAt:` + fmt.Sprintf("%v", this.EvaluatedAt) + `,`,
 		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
+		`IsReportComplete:` + fmt.Sprintf("%v", this.IsReportComplete) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -12250,7 +12272,7 @@ func (m *ProjectListItem) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 25:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsPolicyEvaluated", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IsReportEvaluated", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -12267,7 +12289,7 @@ func (m *ProjectListItem) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-			m.IsPolicyEvaluated = bool(v != 0)
+			m.IsReportEvaluated = bool(v != 0)
 		case 26:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field IsBlacklistedCreatorWallet", wireType)
@@ -12328,6 +12350,26 @@ func (m *ProjectListItem) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.IsBlacklistedBytecode = bool(v != 0)
+		case 29:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsReportComplete", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsReportComplete = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -13128,7 +13170,7 @@ func (m *ProjectReport) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsPolicyEvaluated", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IsReportEvaluated", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -13145,7 +13187,7 @@ func (m *ProjectReport) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-			m.IsPolicyEvaluated = bool(v != 0)
+			m.IsReportEvaluated = bool(v != 0)
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field IsBlacklistedCreatorWallet", wireType)
@@ -13290,6 +13332,26 @@ func (m *ProjectReport) Unmarshal(dAtA []byte) error {
 			}
 			m.UpdatedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsReportComplete", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsReportComplete = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

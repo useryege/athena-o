@@ -13,7 +13,8 @@ export interface ProjectListItem {
     txHash?: string;
     hasMintRisk?: boolean;
     isOpenSource?: boolean;
-    isPolicyEvaluated?: boolean;
+    isReportEvaluated?: boolean;
+    isReportComplete?: boolean;
     isBlacklistedCreatorWallet?: boolean;
     isBlacklistedGenesisWallet?: boolean;
     isBlacklistedBytecode?: boolean;
@@ -45,7 +46,8 @@ export interface ProjectBaseView {
 }
 
 export interface ProjectReport {
-    isPolicyEvaluated?: boolean;
+    isReportEvaluated?: boolean;
+    isReportComplete?: boolean;
     isBlacklistedCreatorWallet?: boolean;
     isBlacklistedGenesisWallet?: boolean;
     isBlacklistedBytecode?: boolean;

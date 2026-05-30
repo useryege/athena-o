@@ -43,7 +43,7 @@ type projectDiscoveryIndexerImpl struct {
 }
 
 type discoveryIntakeImpl struct {
-	reconciler ProjectStateReconciler
+	intake DiscoveryIntake
 }
 
 func NewProjectDiscoveryIndexer(
@@ -67,10 +67,10 @@ func NewProjectDiscoveryIndexer(
 }
 
 func NewDiscoveryIntake(
-	reconciler ProjectStateReconciler,
+	intake DiscoveryIntake,
 ) DiscoveryIntake {
 	return &discoveryIntakeImpl{
-		reconciler: reconciler,
+		intake: intake,
 	}
 }
 
@@ -594,18 +594,18 @@ func (d *discoveryIntakeImpl) IntakeCandidates(ctx context.Context, items []Disc
 	if len(items) == 0 {
 		return nil
 	}
-	if d == nil || d.reconciler == nil {
+	if d == nil || d.intake == nil {
 		return nil
 	}
-	return d.reconciler.InitProject(ctx, items)
+	return d.intake.IntakeCandidates(ctx, items)
 }
 
 func (d *discoveryIntakeImpl) ScheduleProjects(ctx context.Context, items []DiscoveredProjectCandidate) error {
 	if len(items) == 0 {
 		return nil
 	}
-	if d == nil || d.reconciler == nil {
+	if d == nil || d.intake == nil {
 		return nil
 	}
-	return d.reconciler.ScheduleProjects(ctx, items)
+	return d.intake.ScheduleProjects(ctx, items)
 }

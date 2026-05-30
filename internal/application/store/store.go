@@ -169,14 +169,15 @@ type ProjectSimulationResult struct {
 }
 
 type ProjectReport struct {
-	IsPolicyEvaluated          bool
+	IsReportEvaluated          bool
+	IsReportComplete           bool
 	IsBlacklistedCreatorWallet bool
 	IsBlacklistedGenesisWallet bool
 	IsBlacklistedBytecode      bool
 	HasMintRisk                bool
 }
 
-type ProjectPolicyReport struct {
+type ProjectReportState struct {
 	ProjectContract common.Address
 	Report          ProjectReport
 	EvaluatedAt     time.Time
@@ -203,7 +204,14 @@ type ProjectComponentState struct {
 }
 
 const (
-	ProjectComponentAveDetail = "ave_detail"
+	ProjectComponentInitializer    = "initializer"
+	ProjectComponentChainState     = "chain_state"
+	ProjectComponentSimulation     = "simulation"
+	ProjectComponentGenesisWallet  = "genesis_wallet"
+	ProjectComponentCreatorHistory = "creator_history"
+	ProjectComponentBytecodeFact   = "bytecode_fact"
+	ProjectComponentAveDetail      = "ave_detail"
+	ProjectComponentReport         = "report"
 
 	ProjectComponentStatusPending = "pending"
 	ProjectComponentStatusRunning = "running"
@@ -286,10 +294,10 @@ type ProjectSimulationStore interface {
 	GetProjectSimulationResult(ctx context.Context, contract common.Address) (*ProjectSimulationResult, error)
 }
 
-type ProjectPolicyReportStore interface {
-	UpsertProjectPolicyReport(ctx context.Context, item ProjectPolicyReport) error
-	GetProjectPolicyReport(ctx context.Context, contract common.Address) (*ProjectPolicyReport, error)
-	ListProjectPolicyReportsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectPolicyReport, error)
+type ProjectReportStore interface {
+	UpsertProjectReportState(ctx context.Context, item ProjectReportState) error
+	GetProjectReportState(ctx context.Context, contract common.Address) (*ProjectReportState, error)
+	ListProjectReportStatesByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectReportState, error)
 }
 
 type ProjectBytecodeFactStore interface {
@@ -345,7 +353,7 @@ type Store interface {
 	ProjectBaseStore
 	ProjectChainStateStore
 	ProjectSimulationStore
-	ProjectPolicyReportStore
+	ProjectReportStore
 	ProjectBytecodeFactStore
 	ProjectComponentStateStore
 	ProjectAveDetailStore

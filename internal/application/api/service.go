@@ -15,13 +15,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	appcache "github.com/useryege/athena/internal/application/cache"
+	appcomponents "github.com/useryege/athena/internal/application/components"
 	avecomponent "github.com/useryege/athena/internal/application/components/ave"
+	reportcomponent "github.com/useryege/athena/internal/application/components/report"
 	"github.com/useryege/athena/internal/application/discovery"
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/persistence"
 	"github.com/useryege/athena/internal/application/pipeline"
-	"github.com/useryege/athena/internal/application/policy"
-	"github.com/useryege/athena/internal/application/reconcile"
 	"github.com/useryege/athena/internal/application/redisport"
 	"github.com/useryege/athena/internal/application/simulate"
 	appstore "github.com/useryege/athena/internal/application/store"
@@ -60,6 +60,7 @@ type Service struct {
 	persistencePublisher persistence.PersistenceEventPublisher
 	persistenceBus       *persistence.RedisPersistenceEventBus
 	persistenceWriter    persistence.PersistenceEventWriter
+	componentEventBus    appcomponents.EventBus
 
 	delayedFetchSem chan struct{}
 	codeAtFunc      func(ctx context.Context, contract common.Address) ([]byte, error)
@@ -79,6 +80,7 @@ func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, 
 		store:                store,
 		projectCache:         appcache.NewProjectSnapshotCache(redisClient),
 		componentCache:       appcache.NewProjectComponentCache(redisClient),
+		componentEventBus:    appcomponents.NewRedisEventBus(redisClient),
 		walletBlacklist:      newWalletBlacklistClientLister(walletClientSet),
 		persistencePublisher: persistenceBus,
 		persistenceBus:       persistenceBus,
@@ -178,10 +180,11 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 
 	aveStore, _ := s.store.(avecomponent.Store)
 	aveComponent, err = avecomponent.NewComponent(avecomponent.Options{
-		Config:  s.aveConfig,
-		ChainID: chainID.Int64(),
-		Store:   aveStore,
-		Cache:   s.componentCache,
+		Config:   s.aveConfig,
+		ChainID:  chainID.Int64(),
+		Store:    aveStore,
+		Cache:    s.componentCache,
+		EventBus: s.componentEventBus,
 	})
 	if err != nil {
 		return nil, nil, nil, err
@@ -190,36 +193,55 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 		log.Info("Ave component configured")
 	}
 	projectSimulator := simulate.NewProjectSimulator(s.nodeClient)
+	componentStore, _ := s.store.(appstore.Store)
 
 	if s.persistenceBus != nil && s.persistenceWriter != nil {
 		go s.runPersistenceEventLoop(ctx)
 	}
 
-	policyEngine := policy.NewProjectPolicyEngine(
-		s.componentCache,
-		s.store,
-		s.walletBlacklist,
-		s.persistencePublisher,
-	)
-	stateReconciler := reconcile.NewProjectStateReconciler(
-		s.componentCache,
-		s.nodeClient,
-		s.store,
-		athenaFetcher,
-		projectSimulator,
-		s.solidityClientSet,
-		chainID.Int64(),
-		s.persistencePublisher,
-		policyEngine,
-	)
-	discoveryIntake := discovery.NewDiscoveryIntake(stateReconciler)
+	initializer := appcomponents.NewInitializer(componentStore, s.componentCache, s.componentEventBus)
+	chainStateComponent := appcomponents.NewChainStateComponent(componentStore, s.componentCache, athenaFetcher, s.componentEventBus)
+	simulationComponent := appcomponents.NewSimulationComponent(componentStore, s.componentCache, athenaFetcher, projectSimulator, s.componentEventBus)
+	genesisWalletComponent := appcomponents.NewGenesisWalletComponent(componentStore, s.componentCache, s.nodeClient, s.componentEventBus)
+	creatorHistoryComponent := appcomponents.NewCreatorHistoryComponent(componentStore, s.componentCache, s.componentEventBus)
+	bytecodeComponent := appcomponents.NewBytecodeComponent(componentStore, s.componentCache, s.solidityClientSet, chainID.Int64(), s.componentEventBus)
+	requiredReportComponents := []string{
+		appstore.ProjectComponentInitializer,
+		appstore.ProjectComponentChainState,
+		appstore.ProjectComponentSimulation,
+		appstore.ProjectComponentGenesisWallet,
+		appstore.ProjectComponentCreatorHistory,
+	}
+	if bytecodeComponent != nil {
+		requiredReportComponents = append(requiredReportComponents, appstore.ProjectComponentBytecodeFact)
+	}
+	if aveComponent != nil {
+		requiredReportComponents = append(requiredReportComponents, appstore.ProjectComponentAveDetail)
+	}
+	reportComponent := reportcomponent.NewComponent(reportcomponent.Options{
+		Store:              componentStore,
+		Cache:              s.componentCache,
+		Bus:                s.componentEventBus,
+		WalletBlacklist:    s.walletBlacklist,
+		RequiredComponents: requiredReportComponents,
+	})
+	discoveryIntake := discovery.NewDiscoveryIntake(initializer)
 
 	discoveryIndexer, err := discovery.NewProjectDiscoveryIndexer(s.nodeClient, s.componentCache, s.store, discoveryIntake)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	projectPipeline = pipeline.NewProjectPipeline(discoveryIndexer, stateReconciler)
+	projectPipeline = pipeline.NewProjectPipeline(
+		initializer,
+		chainStateComponent,
+		simulationComponent,
+		genesisWalletComponent,
+		creatorHistoryComponent,
+		bytecodeComponent,
+		reportComponent,
+		discoveryIndexer,
+	)
 	if err := projectPipeline.Start(ctx); err != nil {
 		return nil, nil, nil, err
 	}
@@ -809,8 +831,8 @@ func (s *Service) projectBase(ctx context.Context, contract common.Address) (*ap
 	return item, nil
 }
 
-func (s *Service) projectReportsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]*appstore.ProjectPolicyReport, error) {
-	result := make(map[common.Address]*appstore.ProjectPolicyReport, len(contracts))
+func (s *Service) projectReportsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]*appstore.ProjectReportState, error) {
+	result := make(map[common.Address]*appstore.ProjectReportState, len(contracts))
 	missing := make([]common.Address, 0)
 	if s.componentCache != nil {
 		for _, contract := range contracts {
@@ -830,11 +852,11 @@ func (s *Service) projectReportsByContracts(ctx context.Context, contracts []com
 	if len(missing) == 0 {
 		return result, nil
 	}
-	store, ok := s.store.(appstore.ProjectPolicyReportStore)
+	store, ok := s.store.(appstore.ProjectReportStore)
 	if !ok || store == nil {
 		return result, nil
 	}
-	items, err := store.ListProjectPolicyReportsByContracts(ctx, missing)
+	items, err := store.ListProjectReportStatesByContracts(ctx, missing)
 	if err != nil {
 		return nil, err
 	}
@@ -850,7 +872,7 @@ func (s *Service) projectReportsByContracts(ctx context.Context, contracts []com
 	return result, nil
 }
 
-func (s *Service) projectReport(ctx context.Context, contract common.Address) (*appstore.ProjectPolicyReport, error) {
+func (s *Service) projectReport(ctx context.Context, contract common.Address) (*appstore.ProjectReportState, error) {
 	reports, err := s.projectReportsByContracts(ctx, []common.Address{contract})
 	if err != nil {
 		return nil, err

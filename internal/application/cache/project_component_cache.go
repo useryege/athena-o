@@ -39,8 +39,8 @@ type ProjectComponentCache interface {
 	SetSimulation(ctx context.Context, item appstore.ProjectSimulationResult) error
 	GetSimulation(ctx context.Context, contract common.Address) (*appstore.ProjectSimulationResult, bool, error)
 
-	SetReport(ctx context.Context, item appstore.ProjectPolicyReport) error
-	GetReport(ctx context.Context, contract common.Address) (*appstore.ProjectPolicyReport, bool, error)
+	SetReport(ctx context.Context, item appstore.ProjectReportState) error
+	GetReport(ctx context.Context, contract common.Address) (*appstore.ProjectReportState, bool, error)
 
 	SetBytecodeFact(ctx context.Context, item appstore.ProjectBytecodeFact) error
 	GetBytecodeFact(ctx context.Context, contract common.Address) (*appstore.ProjectBytecodeFact, bool, error)
@@ -192,12 +192,12 @@ func (c *RedisProjectComponentCache) GetSimulation(ctx context.Context, contract
 	return &item, ok, err
 }
 
-func (c *RedisProjectComponentCache) SetReport(ctx context.Context, item appstore.ProjectPolicyReport) error {
+func (c *RedisProjectComponentCache) SetReport(ctx context.Context, item appstore.ProjectReportState) error {
 	return c.setJSON(ctx, projectReportKey(item.ProjectContract), item)
 }
 
-func (c *RedisProjectComponentCache) GetReport(ctx context.Context, contract common.Address) (*appstore.ProjectPolicyReport, bool, error) {
-	var item appstore.ProjectPolicyReport
+func (c *RedisProjectComponentCache) GetReport(ctx context.Context, contract common.Address) (*appstore.ProjectReportState, bool, error) {
+	var item appstore.ProjectReportState
 	ok, err := c.getJSON(ctx, projectReportKey(contract), &item)
 	return &item, ok, err
 }

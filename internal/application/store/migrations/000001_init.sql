@@ -62,17 +62,18 @@ CREATE TABLE IF NOT EXISTS project_simulation_result (
   CONSTRAINT project_simulation_result_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract)
 );
 
-CREATE TABLE IF NOT EXISTS project_policy_report (
+CREATE TABLE IF NOT EXISTS project_report (
   project_contract BYTEA PRIMARY KEY,
-  is_policy_evaluated BOOLEAN NOT NULL DEFAULT false,
+  is_report_evaluated BOOLEAN NOT NULL DEFAULT false,
+  is_report_complete BOOLEAN NOT NULL DEFAULT false,
   is_blacklisted_creator_wallet BOOLEAN NOT NULL DEFAULT false,
   is_blacklisted_genesis_wallet BOOLEAN NOT NULL DEFAULT false,
   is_blacklisted_bytecode BOOLEAN NOT NULL DEFAULT false,
   has_mint_risk BOOLEAN NOT NULL DEFAULT false,
   evaluated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_policy_report_project_contract_len CHECK (length(project_contract) = 20),
-  CONSTRAINT project_policy_report_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract)
+  CONSTRAINT project_report_project_contract_len CHECK (length(project_contract) = 20),
+  CONSTRAINT project_report_project_fk FOREIGN KEY (project_contract) REFERENCES project(contract)
 );
 
 CREATE TABLE IF NOT EXISTS project_bytecode_fact (
@@ -307,7 +308,7 @@ DROP TABLE IF EXISTS project_ave_pair;
 DROP TABLE IF EXISTS project_ave_token_detail;
 DROP TABLE IF EXISTS project_component_state;
 DROP TABLE IF EXISTS project_bytecode_fact;
-DROP TABLE IF EXISTS project_policy_report;
+DROP TABLE IF EXISTS project_report;
 DROP TABLE IF EXISTS project_simulation_result;
 DROP TABLE IF EXISTS project_chain_state;
 DROP TABLE IF EXISTS project;

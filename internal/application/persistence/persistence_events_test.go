@@ -91,7 +91,7 @@ func TestRedisPersistenceEventBusConsumesAndAcks(t *testing.T) {
 	ctx := context.Background()
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 
-	if err := bus.PublishProjectReportUpdate(ctx, contract, ProjectReport{IsPolicyEvaluated: true}); err != nil {
+	if err := bus.PublishProjectReportUpdate(ctx, contract, ProjectReport{IsReportEvaluated: true}); err != nil {
 		t.Fatalf("publish project report: %v", err)
 	}
 	writer := &persistenceEventWriterFake{}
@@ -102,8 +102,8 @@ func TestRedisPersistenceEventBusConsumesAndAcks(t *testing.T) {
 	if processed != 1 {
 		t.Fatalf("processed = %d, want 1", processed)
 	}
-	if !writer.projectReport.IsPolicyEvaluated {
-		t.Fatalf("project report = %+v, want policy evaluated", writer.projectReport)
+	if !writer.projectReport.IsReportEvaluated {
+		t.Fatalf("project report = %+v, want report evaluated", writer.projectReport)
 	}
 	pending, err := client.XPending(ctx, persistenceStreamKey, persistenceGroupName).Result()
 	if err != nil {
@@ -218,7 +218,7 @@ func TestRedisPersistenceEventBusAppliesProjectReport(t *testing.T) {
 	ctx := context.Background()
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 	want := ProjectReport{
-		IsPolicyEvaluated:          true,
+		IsReportEvaluated:          true,
 		IsBlacklistedCreatorWallet: true,
 		IsBlacklistedBytecode:      true,
 		HasMintRisk:                true,
@@ -258,7 +258,7 @@ func TestRedisPersistenceEventBusDeadLettersPoisonMessages(t *testing.T) {
 		},
 		{
 			name:   "writer failure",
-			values: map[string]any{"event": `{"version":1,"op":"project_report_update","contract":"0x1000000000000000000000000000000000000001","payload":{"contract":"0x1000000000000000000000000000000000000001","is_policy_evaluated":true},"occurred_at":"2026-05-22T00:00:00Z"}`},
+			values: map[string]any{"event": `{"version":1,"op":"project_report_update","contract":"0x1000000000000000000000000000000000000001","payload":{"contract":"0x1000000000000000000000000000000000000001","is_report_evaluated":true},"occurred_at":"2026-05-22T00:00:00Z"}`},
 			writer: &persistenceEventWriterFake{err: errors.New("store unavailable")},
 		},
 	}

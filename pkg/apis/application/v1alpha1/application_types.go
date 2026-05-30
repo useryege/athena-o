@@ -16,7 +16,8 @@ type ProjectBaseView struct {
 }
 
 type ProjectReport struct {
-	IsPolicyEvaluated          bool   `protobuf:"varint,1,opt,name=isPolicyEvaluated" json:"isPolicyEvaluated"`
+	IsReportEvaluated          bool   `protobuf:"varint,1,opt,name=isReportEvaluated" json:"isReportEvaluated"`
+	IsReportComplete           bool   `protobuf:"varint,8,opt,name=isReportComplete" json:"isReportComplete"`
 	IsBlacklistedCreatorWallet bool   `protobuf:"varint,2,opt,name=isBlacklistedCreatorWallet" json:"isBlacklistedCreatorWallet"`
 	IsBlacklistedGenesisWallet bool   `protobuf:"varint,3,opt,name=isBlacklistedGenesisWallet" json:"isBlacklistedGenesisWallet"`
 	IsBlacklistedBytecode      bool   `protobuf:"varint,4,opt,name=isBlacklistedBytecode" json:"isBlacklistedBytecode"`
@@ -58,10 +59,11 @@ type ProjectListItem struct {
 	AveMarketCap               string `protobuf:"bytes,22,opt,name=aveMarketCap" json:"aveMarketCap"`
 	Creator                    string `protobuf:"bytes,23,opt,name=creator" json:"creator"`
 	TxHash                     string `protobuf:"bytes,24,opt,name=txHash" json:"txHash"`
-	IsPolicyEvaluated          bool   `protobuf:"varint,25,opt,name=isPolicyEvaluated" json:"isPolicyEvaluated"`
+	IsReportEvaluated          bool   `protobuf:"varint,25,opt,name=isReportEvaluated" json:"isReportEvaluated"`
 	IsBlacklistedCreatorWallet bool   `protobuf:"varint,26,opt,name=isBlacklistedCreatorWallet" json:"isBlacklistedCreatorWallet"`
 	IsBlacklistedGenesisWallet bool   `protobuf:"varint,27,opt,name=isBlacklistedGenesisWallet" json:"isBlacklistedGenesisWallet"`
 	IsBlacklistedBytecode      bool   `protobuf:"varint,28,opt,name=isBlacklistedBytecode" json:"isBlacklistedBytecode"`
+	IsReportComplete           bool   `protobuf:"varint,29,opt,name=isReportComplete" json:"isReportComplete"`
 }
 
 type AveDetail struct {

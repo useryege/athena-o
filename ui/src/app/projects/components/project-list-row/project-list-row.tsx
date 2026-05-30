@@ -41,7 +41,7 @@ const formatBlockTime = (blockTime: number | undefined): {date: string; time: st
     return {date: `${year}-${month}-${day}`, time: `${hour}:${minute}:${second}`};
 };
 
-const PolicyBadge = ({label, value, negativeWhenTrue = true}: {label: string; value?: boolean; negativeWhenTrue?: boolean}) => {
+const ReportBadge = ({label, value, negativeWhenTrue = true}: {label: string; value?: boolean; negativeWhenTrue?: boolean}) => {
     const known = value !== undefined;
     const isNegative = known && (negativeWhenTrue ? !!value : !value);
     const modifier = known ? (isNegative ? 'negative' : 'positive') : 'neutral';
@@ -101,14 +101,15 @@ export const ProjectListRow = ({project, index, to}: {project: ProjectListItem; 
             </div>
             <div className='projects-list__cell'>{renderValue(project.blockNumber)}</div>
             <div className='projects-list__cell'>{renderValue(project.txIndex)}</div>
-            <div className='projects-list__cell projects-list__cell--policy'>
-                <PolicyBadge label='Evaluated' value={project.isPolicyEvaluated} negativeWhenTrue={false} />
-                <PolicyBadge label='Mint Risk' value={project.hasMintRisk} />
+            <div className='projects-list__cell projects-list__cell--report'>
+                <ReportBadge label='Evaluated' value={project.isReportEvaluated} negativeWhenTrue={false} />
+                <ReportBadge label='Complete' value={project.isReportComplete} negativeWhenTrue={false} />
+                <ReportBadge label='Mint Risk' value={project.hasMintRisk} />
             </div>
-            <div className='projects-list__cell projects-list__cell--policy'>
-                <PolicyBadge label='Creator' value={project.isBlacklistedCreatorWallet} />
-                <PolicyBadge label='Genesis' value={project.isBlacklistedGenesisWallet} />
-                <PolicyBadge label='Bytecode' value={project.isBlacklistedBytecode} />
+            <div className='projects-list__cell projects-list__cell--report'>
+                <ReportBadge label='Creator' value={project.isBlacklistedCreatorWallet} />
+                <ReportBadge label='Genesis' value={project.isBlacklistedGenesisWallet} />
+                <ReportBadge label='Bytecode' value={project.isBlacklistedBytecode} />
             </div>
             <div className='projects-list__cell projects-list__cell--block-time'>
                 {blockTime ? (

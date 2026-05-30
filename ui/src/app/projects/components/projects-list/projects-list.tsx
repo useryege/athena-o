@@ -195,7 +195,7 @@ export const ProjectsList = () => {
                                         <div>Tx Hash</div>
                                         <div>Block</div>
                                         <div>Tx Index</div>
-                                        <div>Policy</div>
+                                        <div>Report</div>
                                         <div>Blacklist</div>
                                         <div title='Block Time'>Block Time</div>
                                     </div>

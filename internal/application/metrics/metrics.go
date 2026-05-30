@@ -12,8 +12,7 @@ type Server struct {
 	handler  http.Handler
 	registry *prometheus.Registry
 
-	// projectCount       *prometheus.GaugeVec
-	// reconcileDurationSeconds *prometheus.HistogramVec
+	// projectCount *prometheus.GaugeVec
 }
 
 // NewMetricsServer creates a metrics server skeleton.
@@ -47,25 +46,11 @@ func (s *Server) registerBusinessMetrics() {
 	// 	[]string{"chain_id"},
 	// )
 
-	// s.reconcileDurationSeconds = prometheus.NewHistogramVec(
-	// 	prometheus.HistogramOpts{
-	// 		Name:    "athena_project_controller_reconcile_duration_seconds",
-	// 		Help:    "Duration for one reconcile cycle in project controller hot path.",
-	// 		Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2},
-	// 	},
-	// 	[]string{"chain_id"},
-	// )
-
 	// s.registry.MustRegister(
 	// 	s.projectCount,
-	// 	s.reconcileDurationSeconds,
 	// )
 }
 
 // func (s *Server) SetActiveProjectCount(chainID string, count uint64) {
 // 	s.projectCount.WithLabelValues(chainID).Set(float64(count))
-// }
-
-// func (s *Server) ObserveReconcileDuration(chainID string, d time.Duration) {
-// 	s.reconcileDurationSeconds.WithLabelValues(chainID).Observe(d.Seconds())
 // }

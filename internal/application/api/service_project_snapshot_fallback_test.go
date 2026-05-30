@@ -74,7 +74,7 @@ func TestServiceGetProjectFallbackLoadsDBFetchesChainAndRecaches(t *testing.T) {
 			TxHash:      common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
 			TxIndex:     7,
 			Report: appstore.ProjectReport{
-				IsPolicyEvaluated:          true,
+				IsReportEvaluated:          true,
 				IsBlacklistedCreatorWallet: true,
 				HasMintRisk:                true,
 			},
@@ -130,7 +130,7 @@ func TestServiceGetProjectFallbackLoadsDBFetchesChainAndRecaches(t *testing.T) {
 		t.Fatalf("cached project = %+v ok %t, want fetched token", cached, ok)
 	}
 	wantReport := ProjectReport{
-		IsPolicyEvaluated:          true,
+		IsReportEvaluated:          true,
 		IsBlacklistedCreatorWallet: true,
 		HasMintRisk:                true,
 	}

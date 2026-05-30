@@ -40,7 +40,8 @@ func projectMetaFromStore(meta appstore.ProjectMeta) ProjectMeta {
 
 func projectReportToStore(report ProjectReport) appstore.ProjectReport {
 	return appstore.ProjectReport{
-		IsPolicyEvaluated:          report.IsPolicyEvaluated,
+		IsReportEvaluated:          report.IsReportEvaluated,
+		IsReportComplete:           report.IsReportComplete,
 		IsBlacklistedCreatorWallet: report.IsBlacklistedCreatorWallet,
 		IsBlacklistedGenesisWallet: report.IsBlacklistedGenesisWallet,
 		IsBlacklistedBytecode:      report.IsBlacklistedBytecode,
@@ -50,7 +51,8 @@ func projectReportToStore(report ProjectReport) appstore.ProjectReport {
 
 func projectReportFromStore(report appstore.ProjectReport) ProjectReport {
 	return ProjectReport{
-		IsPolicyEvaluated:          report.IsPolicyEvaluated,
+		IsReportEvaluated:          report.IsReportEvaluated,
+		IsReportComplete:           report.IsReportComplete,
 		IsBlacklistedCreatorWallet: report.IsBlacklistedCreatorWallet,
 		IsBlacklistedGenesisWallet: report.IsBlacklistedGenesisWallet,
 		IsBlacklistedBytecode:      report.IsBlacklistedBytecode,

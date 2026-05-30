@@ -190,9 +190,10 @@ type ProjectGenesisWallet struct {
 	CreatedAt         pgtype.Timestamptz
 }
 
-type ProjectPolicyReport struct {
+type ProjectReport struct {
 	ProjectContract            []byte
-	IsPolicyEvaluated          bool
+	IsReportEvaluated          bool
+	IsReportComplete           bool
 	IsBlacklistedCreatorWallet bool
 	IsBlacklistedGenesisWallet bool
 	IsBlacklistedBytecode      bool

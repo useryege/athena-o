@@ -6,33 +6,29 @@ import (
 )
 
 type ProjectPipeline struct {
-	discoveryIndexer ProjectDiscoveryIndexer
-	stateReconciler  ProjectStateReconciler
+	lifecycles []Lifecycle
 }
 
-func NewProjectPipeline(discoveryIndexer ProjectDiscoveryIndexer, stateReconciler ProjectStateReconciler) *ProjectPipeline {
-	return &ProjectPipeline{
-		discoveryIndexer: discoveryIndexer,
-		stateReconciler:  stateReconciler,
-	}
+func NewProjectPipeline(lifecycles ...Lifecycle) *ProjectPipeline {
+	return &ProjectPipeline{lifecycles: lifecycles}
 }
 
 func (p *ProjectPipeline) Start(ctx context.Context) error {
 	if p == nil {
 		return nil
 	}
-	if p.discoveryIndexer != nil {
-		if err := p.discoveryIndexer.Start(ctx); err != nil {
-			return err
+	started := make([]Lifecycle, 0, len(p.lifecycles))
+	for _, lifecycle := range p.lifecycles {
+		if lifecycle == nil {
+			continue
 		}
-	}
-	if p.stateReconciler != nil {
-		if err := p.stateReconciler.Start(ctx); err != nil {
-			if p.discoveryIndexer != nil {
-				_ = p.discoveryIndexer.Stop()
+		if err := lifecycle.Start(ctx); err != nil {
+			for i := len(started) - 1; i >= 0; i-- {
+				_ = started[i].Stop()
 			}
 			return err
 		}
+		started = append(started, lifecycle)
 	}
 	return nil
 }
@@ -41,13 +37,12 @@ func (p *ProjectPipeline) Stop() error {
 	if p == nil {
 		return nil
 	}
-	var reconcilerErr error
-	if p.stateReconciler != nil {
-		reconcilerErr = p.stateReconciler.Stop()
+	errs := make([]error, 0, len(p.lifecycles))
+	for i := len(p.lifecycles) - 1; i >= 0; i-- {
+		if p.lifecycles[i] == nil {
+			continue
+		}
+		errs = append(errs, p.lifecycles[i].Stop())
 	}
-	var discoveryErr error
-	if p.discoveryIndexer != nil {
-		discoveryErr = p.discoveryIndexer.Stop()
-	}
-	return errors.Join(discoveryErr, reconcilerErr)
+	return errors.Join(errs...)
 }

@@ -35,12 +35,13 @@ func projectBaseToView(base appstore.ProjectBase) *v1alpha1.ProjectBaseView {
 	}
 }
 
-func projectReportToView(report *appstore.ProjectPolicyReport) *v1alpha1.ProjectReport {
+func projectReportToView(report *appstore.ProjectReportState) *v1alpha1.ProjectReport {
 	if report == nil {
 		return &v1alpha1.ProjectReport{}
 	}
 	return &v1alpha1.ProjectReport{
-		IsPolicyEvaluated:          report.Report.IsPolicyEvaluated,
+		IsReportEvaluated:          report.Report.IsReportEvaluated,
+		IsReportComplete:           report.Report.IsReportComplete,
 		IsBlacklistedCreatorWallet: report.Report.IsBlacklistedCreatorWallet,
 		IsBlacklistedGenesisWallet: report.Report.IsBlacklistedGenesisWallet,
 		IsBlacklistedBytecode:      report.Report.IsBlacklistedBytecode,
@@ -50,7 +51,7 @@ func projectReportToView(report *appstore.ProjectPolicyReport) *v1alpha1.Project
 	}
 }
 
-func projectBaseAndReportToListItem(base appstore.ProjectBase, report *appstore.ProjectPolicyReport) *v1alpha1.ProjectListItem {
+func projectBaseAndReportToListItem(base appstore.ProjectBase, report *appstore.ProjectReportState) *v1alpha1.ProjectListItem {
 	item := &v1alpha1.ProjectListItem{
 		Contract:    base.Contract.Hex(),
 		Creator:     base.Creator.Hex(),
@@ -65,7 +66,8 @@ func projectBaseAndReportToListItem(base appstore.ProjectBase, report *appstore.
 	}
 	if report != nil {
 		item.HasMintRisk = report.Report.HasMintRisk
-		item.IsPolicyEvaluated = report.Report.IsPolicyEvaluated
+		item.IsReportEvaluated = report.Report.IsReportEvaluated
+		item.IsReportComplete = report.Report.IsReportComplete
 		item.IsBlacklistedCreatorWallet = report.Report.IsBlacklistedCreatorWallet
 		item.IsBlacklistedGenesisWallet = report.Report.IsBlacklistedGenesisWallet
 		item.IsBlacklistedBytecode = report.Report.IsBlacklistedBytecode

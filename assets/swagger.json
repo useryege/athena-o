@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-451-g37e08ad-dirty"
+    "version": "v1.0.0-452-gfe4b5f2-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3585,7 +3585,10 @@
         "isOpenSource": {
           "type": "boolean"
         },
-        "isPolicyEvaluated": {
+        "isReportComplete": {
+          "type": "boolean"
+        },
+        "isReportEvaluated": {
           "type": "boolean"
         },
         "name": {
@@ -3723,7 +3726,10 @@
         "isBlacklistedGenesisWallet": {
           "type": "boolean"
         },
-        "isPolicyEvaluated": {
+        "isReportComplete": {
+          "type": "boolean"
+        },
+        "isReportEvaluated": {
           "type": "boolean"
         },
         "updatedAt": {

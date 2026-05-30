@@ -3,7 +3,6 @@ module github.com/useryege/athena
 go 1.25.5
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/anyproto/go-slip10 v1.0.1
