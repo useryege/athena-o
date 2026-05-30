@@ -24,6 +24,7 @@ func TestRedisProjectComponentCacheListBasePage(t *testing.T) {
 		if err := cache.SetBase(ctx, appstore.ProjectBase{
 			BlockNumber: uint64(i),
 			Contract:    common.BigToAddress(big.NewInt(int64(i))),
+			Creator:     common.BigToAddress(big.NewInt(99)),
 			TxIndex:     uint64(i),
 		}); err != nil {
 			t.Fatalf("set base %d: %v", i, err)
@@ -46,6 +47,21 @@ func TestRedisProjectComponentCacheListBasePage(t *testing.T) {
 
 	assertRedisTTLNear(t, client, projectBaseKey(common.BigToAddress(big.NewInt(1))), projectComponentCacheTTL)
 	assertRedisTTLNear(t, client, projectComponentIndexAll, projectComponentCacheTTL)
+
+	maxBlock, ok, err := cache.GetMaxBaseBlockNumber(ctx)
+	if err != nil {
+		t.Fatalf("max block: %v", err)
+	}
+	if !ok || maxBlock != 3 {
+		t.Fatalf("max block = %d ok %t, want 3 true", maxBlock, ok)
+	}
+	creatorItems, err := cache.ListBasesByCreatorBefore(ctx, common.BigToAddress(big.NewInt(99)), 3, 3)
+	if err != nil {
+		t.Fatalf("list bases by creator before: %v", err)
+	}
+	if len(creatorItems) != 2 {
+		t.Fatalf("creator items len = %d, want 2", len(creatorItems))
+	}
 }
 
 func TestRedisProjectComponentCacheListChainStatesByPairAddresses(t *testing.T) {
@@ -85,4 +101,37 @@ func TestRedisProjectComponentCacheListChainStatesByPairAddresses(t *testing.T) 
 	}
 
 	assertRedisTTLNear(t, client, projectChainPairKey(pair), projectComponentCacheTTL)
+}
+
+func TestRedisProjectComponentCacheComponentStateNextRun(t *testing.T) {
+	ctx := context.Background()
+	mini := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	cache := NewProjectComponentCache(redisport.NewGoRedisAdapter(client))
+	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
+	nextRun := time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC)
+
+	if err := cache.SetComponentState(ctx, appstore.ProjectComponentState{
+		ProjectContract: contract,
+		Component:       appstore.ProjectComponentAveDetail,
+		Status:          appstore.ProjectComponentStatusPending,
+		NextRunAt:       nextRun,
+	}); err != nil {
+		t.Fatalf("set component state: %v", err)
+	}
+	item, ok, err := cache.GetComponentState(ctx, contract, appstore.ProjectComponentAveDetail)
+	if err != nil {
+		t.Fatalf("get component state: %v", err)
+	}
+	if !ok || item.Status != appstore.ProjectComponentStatusPending {
+		t.Fatalf("component state = %+v ok %t, want pending", item, ok)
+	}
+	items, err := cache.ListComponentStatesByNextRun(ctx, appstore.ProjectComponentAveDetail, nextRun.Add(time.Second), 10)
+	if err != nil {
+		t.Fatalf("list component states by next run: %v", err)
+	}
+	if len(items) != 1 || items[0].ProjectContract != contract {
+		t.Fatalf("items = %+v, want contract %s", items, contract.Hex())
+	}
 }

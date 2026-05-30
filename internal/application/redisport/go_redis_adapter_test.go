@@ -88,6 +88,13 @@ func TestGoRedisAdapterPipeline(t *testing.T) {
 	if len(zItems) != 1 || zItems[0] != "two" {
 		t.Fatalf("unexpected zset state: %#v", zItems)
 	}
+	byScore, err := adapter.ZRangeByScore(ctx, "z", "0", "2", 0, 10)
+	if err != nil {
+		t.Fatalf("zrange by score failed: %v", err)
+	}
+	if len(byScore) != 1 || byScore[0] != "two" {
+		t.Fatalf("unexpected zrange by score result: %#v", byScore)
+	}
 }
 
 func TestGoRedisAdapterStreamRoundTrip(t *testing.T) {

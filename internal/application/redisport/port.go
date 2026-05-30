@@ -48,6 +48,7 @@ type HashReader interface {
 
 type SortedSetReader interface {
 	ZRange(ctx context.Context, key string, start, stop int64) ([]string, error)
+	ZRangeByScore(ctx context.Context, key string, min, max string, offset, count int64) ([]string, error)
 	ZRevRange(ctx context.Context, key string, start, stop int64) ([]string, error)
 	ZCard(ctx context.Context, key string) (int64, error)
 }

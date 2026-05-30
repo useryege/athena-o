@@ -3,7 +3,9 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -22,15 +24,20 @@ const (
 	projectAveKeyPrefix          = "project:ave:"
 	projectGenesisKeyPrefix      = "project:genesis_wallets:"
 	projectCreatorHistoryPrefix  = "project:creator_history:"
+	projectComponentStatePrefix  = "project:component_state:"
 
 	projectComponentIndexAll        = "project:index:all"
+	projectComponentCreatorPrefix   = "project:index:creator:"
 	projectComponentChainPairPrefix = "project:chain_pair:"
+	projectComponentNextRunPrefix   = "project:component_next_run:"
 )
 
 type ProjectComponentCache interface {
 	SetBase(ctx context.Context, item appstore.ProjectBase) error
 	GetBase(ctx context.Context, contract common.Address) (*appstore.ProjectBase, bool, error)
 	ListBasePage(ctx context.Context, page int32, pageSize int32) ([]appstore.ProjectBase, int64, int32, int32, error)
+	ListBasesByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectBase, error)
+	GetMaxBaseBlockNumber(ctx context.Context) (uint64, bool, error)
 
 	SetChainState(ctx context.Context, item appstore.ProjectChainState) error
 	GetChainState(ctx context.Context, contract common.Address) (*appstore.ProjectChainState, bool, error)
@@ -51,6 +58,10 @@ type ProjectComponentCache interface {
 	GetGenesisWallets(ctx context.Context, contract common.Address) ([]appstore.ProjectGenesisWallet, bool, error)
 	SetCreatorHistory(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
 	GetCreatorHistory(ctx context.Context, contract common.Address) ([]appstore.ProjectCreatorHistoricalProject, bool, error)
+
+	SetComponentState(ctx context.Context, item appstore.ProjectComponentState) error
+	GetComponentState(ctx context.Context, contract common.Address, component string) (*appstore.ProjectComponentState, bool, error)
+	ListComponentStatesByNextRun(ctx context.Context, component string, now time.Time, limit int32) ([]appstore.ProjectComponentState, error)
 }
 
 type RedisProjectComponentCache struct {
@@ -82,7 +93,9 @@ func (c *RedisProjectComponentCache) SetBase(ctx context.Context, item appstore.
 	pipe := c.client.TxPipeline()
 	pipe.Set(ctx, key, string(data), projectComponentCacheTTL)
 	pipe.ZAdd(ctx, projectComponentIndexAll, redisport.ZMember{Score: projectBaseScore(item), Member: item.Contract.Hex()})
+	pipe.ZAdd(ctx, projectComponentCreatorKey(item.Creator), redisport.ZMember{Score: projectBaseScore(item), Member: item.Contract.Hex()})
 	pipe.Expire(ctx, projectComponentIndexAll, projectComponentCacheTTL)
+	pipe.Expire(ctx, projectComponentCreatorKey(item.Creator), projectComponentCacheTTL)
 	return pipe.Exec(ctx)
 }
 
@@ -121,6 +134,49 @@ func (c *RedisProjectComponentCache) ListBasePage(ctx context.Context, page int3
 		}
 	}
 	return items, total, page, pageSize, nil
+}
+
+func (c *RedisProjectComponentCache) ListBasesByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectBase, error) {
+	if c == nil || c.client == nil {
+		return nil, nil
+	}
+	max := fmt.Sprintf("(%f", projectBaseOrderScore(blockNumber, txIndex))
+	members, err := c.client.ZRangeByScore(ctx, projectComponentCreatorKey(creator), "-inf", max, 0, 0)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]appstore.ProjectBase, 0, len(members))
+	for _, member := range members {
+		if !common.IsHexAddress(member) {
+			continue
+		}
+		item, ok, err := c.GetBase(ctx, common.HexToAddress(member))
+		if err != nil {
+			return nil, err
+		}
+		if ok && item != nil {
+			items = append(items, *item)
+		}
+	}
+	return items, nil
+}
+
+func (c *RedisProjectComponentCache) GetMaxBaseBlockNumber(ctx context.Context) (uint64, bool, error) {
+	if c == nil || c.client == nil {
+		return 0, false, nil
+	}
+	members, err := c.client.ZRevRange(ctx, projectComponentIndexAll, 0, 0)
+	if err != nil {
+		return 0, false, err
+	}
+	if len(members) == 0 || !common.IsHexAddress(members[0]) {
+		return 0, false, nil
+	}
+	item, ok, err := c.GetBase(ctx, common.HexToAddress(members[0]))
+	if err != nil || !ok || item == nil {
+		return 0, false, err
+	}
+	return item.BlockNumber, true, nil
 }
 
 func (c *RedisProjectComponentCache) SetChainState(ctx context.Context, item appstore.ProjectChainState) error {
@@ -242,6 +298,55 @@ func (c *RedisProjectComponentCache) GetCreatorHistory(ctx context.Context, cont
 	return items, ok, err
 }
 
+func (c *RedisProjectComponentCache) SetComponentState(ctx context.Context, item appstore.ProjectComponentState) error {
+	if c == nil || c.client == nil {
+		return nil
+	}
+	data, err := json.Marshal(item)
+	if err != nil {
+		return err
+	}
+	pipe := c.client.TxPipeline()
+	pipe.Set(ctx, projectComponentStateKey(item.ProjectContract, item.Component), string(data), projectComponentCacheTTL)
+	if !item.NextRunAt.IsZero() {
+		pipe.ZAdd(ctx, projectComponentNextRunKey(item.Component), redisport.ZMember{Score: float64(item.NextRunAt.Unix()), Member: item.ProjectContract.Hex()})
+	} else {
+		pipe.ZRem(ctx, projectComponentNextRunKey(item.Component), item.ProjectContract.Hex())
+	}
+	pipe.Expire(ctx, projectComponentNextRunKey(item.Component), projectComponentCacheTTL)
+	return pipe.Exec(ctx)
+}
+
+func (c *RedisProjectComponentCache) GetComponentState(ctx context.Context, contract common.Address, component string) (*appstore.ProjectComponentState, bool, error) {
+	var item appstore.ProjectComponentState
+	ok, err := c.getJSON(ctx, projectComponentStateKey(contract, component), &item)
+	return &item, ok, err
+}
+
+func (c *RedisProjectComponentCache) ListComponentStatesByNextRun(ctx context.Context, component string, now time.Time, limit int32) ([]appstore.ProjectComponentState, error) {
+	if c == nil || c.client == nil || limit <= 0 {
+		return nil, nil
+	}
+	members, err := c.client.ZRangeByScore(ctx, projectComponentNextRunKey(component), "-inf", strconv.FormatInt(now.Unix(), 10), 0, int64(limit))
+	if err != nil {
+		return nil, err
+	}
+	items := make([]appstore.ProjectComponentState, 0, len(members))
+	for _, member := range members {
+		if !common.IsHexAddress(member) {
+			continue
+		}
+		item, ok, err := c.GetComponentState(ctx, common.HexToAddress(member), component)
+		if err != nil {
+			return nil, err
+		}
+		if ok && item != nil {
+			items = append(items, *item)
+		}
+	}
+	return items, nil
+}
+
 func (c *RedisProjectComponentCache) setJSON(ctx context.Context, key string, value any) error {
 	if c == nil || c.client == nil {
 		return nil
@@ -309,8 +414,24 @@ func projectChainPairKey(pair common.Address) string {
 	return projectComponentChainPairPrefix + pair.Hex()
 }
 
+func projectComponentCreatorKey(creator common.Address) string {
+	return projectComponentCreatorPrefix + creator.Hex()
+}
+
+func projectComponentStateKey(contract common.Address, component string) string {
+	return projectComponentStatePrefix + contract.Hex() + ":" + component
+}
+
+func projectComponentNextRunKey(component string) string {
+	return projectComponentNextRunPrefix + component
+}
+
 func projectBaseScore(item appstore.ProjectBase) float64 {
-	return float64(item.BlockNumber)*1_000_000 + float64(item.TxIndex)
+	return projectBaseOrderScore(item.BlockNumber, item.TxIndex)
+}
+
+func projectBaseOrderScore(blockNumber uint64, txIndex uint64) float64 {
+	return float64(blockNumber)*1_000_000 + float64(txIndex)
 }
 
 func uniqueCacheAddresses(items []common.Address) []common.Address {

@@ -54,13 +54,11 @@ type Service struct {
 	aveComponent    *avecomponent.Component
 	walletBlacklist walletBlacklistLister
 
-	store                appstore.ProjectStore
-	projectCache         appcache.ProjectSnapshotCache
-	componentCache       appcache.ProjectComponentCache
-	persistencePublisher persistence.PersistenceEventPublisher
-	persistenceBus       *persistence.RedisPersistenceEventBus
-	persistenceWriter    persistence.PersistenceEventWriter
-	componentEventBus    appcomponents.EventBus
+	store             appstore.ProjectStore
+	projectCache      appcache.ProjectSnapshotCache
+	componentCache    appcache.ProjectComponentCache
+	componentEventBus appcomponents.EventBus
+	persistenceFlush  *persistence.Flusher
 
 	delayedFetchSem chan struct{}
 	codeAtFunc      func(ctx context.Context, contract common.Address) ([]byte, error)
@@ -73,27 +71,27 @@ type Service struct {
 }
 
 func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, aveConfig ave.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client, solidityClientSet solidityapiclient.Clientset, walletClientSet walletapiclient.Clientset) (*Service, error) {
-	persistenceBus := persistence.NewRedisPersistenceEventBus(redisClient)
-
+	bufferedStore, err := persistence.NewRedisBufferedStore(store, redisClient)
+	if err != nil {
+		return nil, err
+	}
 	return &Service{
-		nodeClient:           nodeClient,
-		store:                store,
-		projectCache:         appcache.NewProjectSnapshotCache(redisClient),
-		componentCache:       appcache.NewProjectComponentCache(redisClient),
-		componentEventBus:    appcomponents.NewRedisEventBus(redisClient),
-		walletBlacklist:      newWalletBlacklistClientLister(walletClientSet),
-		persistencePublisher: persistenceBus,
-		persistenceBus:       persistenceBus,
-		persistenceWriter:    persistence.NewStorePersistenceWriter(store),
-		v2FactoryContract:    v2FactoryContract,
-		wethContract:         wethContract,
-		usdtContract:         usdtContract,
-		wethDecimals:         wethDecimals,
-		usdtDecimals:         usdtDecimals,
-		athenaContract:       athenaContract,
-		aveConfig:            aveConfig,
-		liquidityLocker:      liquidityLocker,
-		solidityClientSet:    solidityClientSet,
+		nodeClient:        nodeClient,
+		store:             bufferedStore,
+		projectCache:      appcache.NewProjectSnapshotCache(redisClient),
+		componentCache:    appcache.NewProjectComponentCache(redisClient),
+		componentEventBus: appcomponents.NewRedisEventBus(redisClient),
+		persistenceFlush:  persistence.NewFlusher(bufferedStore, time.Minute),
+		walletBlacklist:   newWalletBlacklistClientLister(walletClientSet),
+		v2FactoryContract: v2FactoryContract,
+		wethContract:      wethContract,
+		usdtContract:      usdtContract,
+		wethDecimals:      wethDecimals,
+		usdtDecimals:      usdtDecimals,
+		athenaContract:    athenaContract,
+		aveConfig:         aveConfig,
+		liquidityLocker:   liquidityLocker,
+		solidityClientSet: solidityClientSet,
 	}, nil
 }
 
@@ -195,10 +193,6 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 	projectSimulator := simulate.NewProjectSimulator(s.nodeClient)
 	componentStore, _ := s.store.(appstore.Store)
 
-	if s.persistenceBus != nil && s.persistenceWriter != nil {
-		go s.runPersistenceEventLoop(ctx)
-	}
-
 	initializer := appcomponents.NewInitializer(componentStore, s.componentCache, s.componentEventBus)
 	chainStateComponent := appcomponents.NewChainStateComponent(componentStore, s.componentCache, athenaFetcher, s.componentEventBus)
 	simulationComponent := appcomponents.NewSimulationComponent(componentStore, s.componentCache, athenaFetcher, projectSimulator, s.componentEventBus)
@@ -233,6 +227,7 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 	}
 
 	projectPipeline = pipeline.NewProjectPipeline(
+		s.persistenceFlush,
 		initializer,
 		chainStateComponent,
 		simulationComponent,
@@ -263,26 +258,6 @@ func genesisWalletAddressesFromMetas(items []GenesisWalletMeta) []common.Address
 		addresses = append(addresses, item.Wallet)
 	}
 	return addresses
-}
-
-func (s *Service) runPersistenceEventLoop(ctx context.Context) {
-	for {
-		if err := ctx.Err(); err != nil {
-			return
-		}
-		if s.persistenceBus == nil || s.persistenceWriter == nil {
-			return
-		}
-		err := s.persistenceBus.Start(ctx, s.persistenceWriter)
-		if err == nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			return
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(time.Second):
-		}
-	}
 }
 
 func buildProjectQueries(projects []*Project) ([]athenacontract.AthenaProjectQuery, []common.Address) {

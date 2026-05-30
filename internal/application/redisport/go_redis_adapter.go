@@ -56,6 +56,19 @@ func (a *GoRedisAdapter) ZRange(ctx context.Context, key string, start, stop int
 	return items, nil
 }
 
+func (a *GoRedisAdapter) ZRangeByScore(ctx context.Context, key string, min, max string, offset, count int64) ([]string, error) {
+	items, err := a.client.ZRangeByScore(ctx, key, &redis.ZRangeBy{
+		Min:    min,
+		Max:    max,
+		Offset: offset,
+		Count:  count,
+	}).Result()
+	if err != nil {
+		return nil, normalizeErr(err)
+	}
+	return items, nil
+}
+
 func (a *GoRedisAdapter) ZRevRange(ctx context.Context, key string, start, stop int64) ([]string, error) {
 	items, err := a.client.ZRevRange(ctx, key, start, stop).Result()
 	if err != nil {
