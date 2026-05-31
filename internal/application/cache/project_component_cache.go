@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/useryege/athena/util/redisport"
 	"github.com/useryege/athena/internal/application/redisrepo"
 	appstore "github.com/useryege/athena/internal/application/store"
+	"github.com/useryege/athena/util/redisport"
 )
 
 const (
