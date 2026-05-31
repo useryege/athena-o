@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+// Polymarket Service
+//
+// Polymarket Service API returns polymarket-level workload status.
+package polymarket;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/polymarket";
+
+// GetPolymarketStatusRequest queries the polymarket service runtime status.
+message GetPolymarketStatusRequest {}
+
+service PolymarketService {
+  // GetPolymarketStatus returns the polymarket service runtime status.
+  rpc GetPolymarketStatus(GetPolymarketStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketStatus) {
+    option (google.api.http) = {get: "/api/v1/polymarket/status"};
+  }
+}

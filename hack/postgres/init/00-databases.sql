@@ -12,3 +12,6 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notification')\gexec
 
 SELECT 'CREATE DATABASE wallet'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'wallet')\gexec
+
+SELECT 'CREATE DATABASE polymarket'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket')\gexec

@@ -66,6 +66,8 @@ const (
 	DefaultPortWallet = 8088
 	// Athena Solidity
 	DefaultPortSolidity = 8090
+	// Athena Polymarket
+	DefaultPortPolymarket = 8092
 )
 
 // DefaultAddressAPIServer for Athena components
@@ -77,6 +79,7 @@ const (
 	DefaultAddressNotification   = "0.0.0.0"
 	DefaultAddressWallet         = "0.0.0.0"
 	DefaultAddressSolidity       = "0.0.0.0"
+	DefaultAddressPolymarket     = "0.0.0.0"
 )
 
 // Default paths on the pod's file system

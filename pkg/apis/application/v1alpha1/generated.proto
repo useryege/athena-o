@@ -416,6 +416,12 @@ message PairV2State {
   optional string feeAddressHoldLiquidityRatio = 15;
 }
 
+message PolymarketStatus {
+  optional bool started = 1;
+
+  optional string status = 2;
+}
+
 message ProjectAveState {
   optional string contract = 1;
 

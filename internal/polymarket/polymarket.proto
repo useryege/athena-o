@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+// Polymarket Service API exposes polymarket service runtime status.
+package athena.internal.polymarket;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+
+option go_package = "github.com/useryege/athena/internal/polymarket/apiclient";
+
+// GetPolymarketStatusRequest queries the polymarket service runtime status.
+message GetPolymarketStatusRequest {}
+
+service PolymarketService {
+  // GetPolymarketStatus returns the polymarket service runtime status.
+  rpc GetPolymarketStatus(GetPolymarketStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketStatus);
+}

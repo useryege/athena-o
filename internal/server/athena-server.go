@@ -40,11 +40,13 @@ import (
 	"github.com/useryege/athena/common"
 	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
+	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/internal/server/account"
 	"github.com/useryege/athena/internal/server/application"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/internal/server/logout"
 	servernotification "github.com/useryege/athena/internal/server/notification"
+	serverpolymarket "github.com/useryege/athena/internal/server/polymarket"
 	"github.com/useryege/athena/internal/server/rbacpolicy"
 	"github.com/useryege/athena/internal/server/session"
 	"github.com/useryege/athena/internal/server/settings"
@@ -93,6 +95,7 @@ import (
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
+	polymarketpkg "github.com/useryege/athena/pkg/apiclient/polymarket"
 	soliditypkg "github.com/useryege/athena/pkg/apiclient/solidity"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
@@ -205,6 +208,7 @@ type AthenaServerOpts struct {
 	SolidityClientset     solidityapiclient.Clientset
 	WalletClientset       walletapiclient.Clientset
 	WormClientset         wormapiclient.Clientset
+	PolymarketClientset   polymarketapiclient.Clientset
 	// ApplicationNamespaces []string
 	// EnableProxyExtension  bool
 	// WebhookParallelism     int
@@ -427,6 +431,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	soliditypkg.RegisterSolidityServiceServer(grpcS, server.serviceSet.SolidityService)
 	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
 	wormpkg.RegisterWormServiceServer(grpcS, server.serviceSet.WormService)
+	polymarketpkg.RegisterPolymarketServiceServer(grpcS, server.serviceSet.PolymarketService)
 
 	// Register reflection service on gRPC server.
 	reflection.Register(grpcS)
@@ -446,6 +451,7 @@ type AthenaServiceSet struct {
 	SolidityService     *serversolidity.Server
 	WalletService       *serverwallet.Server
 	WormService         *serverworm.Server
+	PolymarketService   *serverpolymarket.Server
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
@@ -473,6 +479,8 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	walletService := serverwallet.NewServer(server.WalletClientset)
 	// worm service
 	wormService := serverworm.NewServer(server.WormClientset)
+	// polymarket service
+	polymarketService := serverpolymarket.NewServer(server.PolymarketClientset)
 
 	// certificateService := certificate.NewServer(a.db, a.enf)
 	// gpgkeyService := gpgkey.NewServer(a.db, a.enf)
@@ -499,6 +507,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		SolidityService:     solidityService,
 		WalletService:       walletService,
 		WormService:         wormService,
+		PolymarketService:   polymarketService,
 	}
 }
 
@@ -834,6 +843,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, soliditypkg.RegisterSolidityServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, walletpkg.RegisterWalletServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormpkg.RegisterWormServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, polymarketpkg.RegisterPolymarketServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, settingspkg.RegisterSettingsServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, projectpkg.RegisterProjectServiceHandler, gwmux, conn)

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-468-gf7b23b0-dirty"
+    "version": "v1.0.0-471-g9fddedb-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -342,6 +342,29 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/notificationGetNotificationDeliveryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/status": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "summary": "GetPolymarketStatus returns the polymarket service runtime status.",
+        "operationId": "PolymarketService_GetPolymarketStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1PolymarketStatus"
             }
           },
           "default": {
@@ -3215,6 +3238,17 @@
           "type": "string"
         },
         "totalSupply": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketStatus": {
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
           "type": "string"
         }
       }
