@@ -2,8 +2,6 @@ package persistence
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
@@ -30,7 +28,6 @@ const (
 	bufferedGenesisKind        = "genesis_wallets"
 	bufferedCreatorHistoryKind = "creator_history"
 	bufferedComponentStateKind = "component_state"
-	bufferedEventLogKind       = "event_log"
 
 	bufferedScanCount = int64(256)
 )
@@ -47,7 +44,6 @@ var bufferedFlushOrder = []string{
 	bufferedGenesisKind,
 	bufferedCreatorHistoryKind,
 	bufferedComponentStateKind,
-	bufferedEventLogKind,
 }
 
 type RedisBufferedStore struct {
@@ -625,53 +621,6 @@ func (s *RedisBufferedStore) GetProjectAveComponentState(ctx context.Context, co
 	return s.GetProjectComponentState(ctx, contract, appstore.ProjectComponentAveDetail)
 }
 
-func (s *RedisBufferedStore) AddProjectEventLog(ctx context.Context, item appstore.ProjectEventLog) error {
-	if item.OccurredAt.IsZero() {
-		item.OccurredAt = time.Now().UTC()
-	}
-	member := eventLogMember(item.Contract, item.IdempotencyKey)
-	if err := s.setJSON(ctx, bufferedItemKey(bufferedEventLogKind, member), item); err != nil {
-		return err
-	}
-	pipe := s.client.TxPipeline()
-	pipe.ZAdd(ctx, bufferedEventLogIndexKey(item.Contract), redisport.ZMember{Score: float64(item.OccurredAt.Unix()), Member: member})
-	pipe.ZAdd(ctx, bufferedDirtyKey(bufferedEventLogKind), redisport.ZMember{Score: dirtyScore(), Member: member})
-	return pipe.Exec(ctx)
-}
-
-func (s *RedisBufferedStore) ListProjectEventLogsByContract(ctx context.Context, contract common.Address) ([]appstore.ProjectEventLog, error) {
-	dbItems, err := s.db.ListProjectEventLogsByContract(ctx, contract)
-	if err != nil {
-		return nil, err
-	}
-	byKey := make(map[string]appstore.ProjectEventLog, len(dbItems))
-	for _, item := range dbItems {
-		byKey[item.IdempotencyKey] = item
-	}
-	members, err := s.client.ZRange(ctx, bufferedEventLogIndexKey(contract), 0, -1)
-	if err != nil {
-		return nil, err
-	}
-	for _, member := range members {
-		if item, ok, err := getJSON[appstore.ProjectEventLog](ctx, s.client, bufferedItemKey(bufferedEventLogKind, member)); err != nil {
-			return nil, err
-		} else if ok {
-			byKey[item.IdempotencyKey] = item
-		}
-	}
-	items := make([]appstore.ProjectEventLog, 0, len(byKey))
-	for _, item := range byKey {
-		items = append(items, item)
-	}
-	sort.Slice(items, func(i, j int) bool {
-		if items[i].OccurredAt.Equal(items[j].OccurredAt) {
-			return items[i].ID > items[j].ID
-		}
-		return items[i].OccurredAt.After(items[j].OccurredAt)
-	})
-	return items, nil
-}
-
 func (s *RedisBufferedStore) ReplaceProjectGenesisWallets(ctx context.Context, contract common.Address, items []appstore.ProjectGenesisWallet) error {
 	if err := s.writeContractItem(ctx, bufferedGenesisKind, contract, items); err != nil {
 		return err
@@ -957,10 +906,6 @@ func bufferedComponentNextRunKey(component string) string {
 	return bufferedKeyspace.BufferIndexComponentNextRun(component)
 }
 
-func bufferedEventLogIndexKey(contract common.Address) string {
-	return bufferedKeyspace.BufferIndexEventLog(contract)
-}
-
 func componentStateMember(contract common.Address, component string) string {
 	return contract.Hex() + "|" + component
 }
@@ -971,11 +916,6 @@ func splitComponentStateMember(member string) (common.Address, string, bool) {
 		return common.Address{}, "", false
 	}
 	return common.HexToAddress(parts[0]), parts[1], true
-}
-
-func eventLogMember(contract common.Address, idempotencyKey string) string {
-	sum := sha256.Sum256([]byte(contract.Hex() + "|" + idempotencyKey))
-	return hex.EncodeToString(sum[:])
 }
 
 func projectBaseScore(item appstore.ProjectBase) float64 {

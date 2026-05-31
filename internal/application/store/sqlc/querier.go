@@ -9,7 +9,6 @@ import (
 )
 
 type Querier interface {
-	AddProjectEventLog(ctx context.Context, arg AddProjectEventLogParams) error
 	CountProjectBases(ctx context.Context) (int64, error)
 	DeleteProjectAvePairsByContract(ctx context.Context, projectContract []byte) error
 	DeleteProjectCreatorHistoricalProjectsByContract(ctx context.Context, projectContract []byte) error
@@ -37,7 +36,6 @@ type Querier interface {
 	ListProjectChainStatesByPairAddresses(ctx context.Context, dollar_1 [][]byte) ([]ProjectChainState, error)
 	ListProjectCreatorHistoricalProjectsByContract(ctx context.Context, projectContract []byte) ([]ProjectCreatorHistoricalProject, error)
 	ListProjectCreatorHistoricalProjectsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectCreatorHistoricalProject, error)
-	ListProjectEventLogsByContract(ctx context.Context, contract []byte) ([]ProjectEventLog, error)
 	ListProjectGenesisWalletsByContract(ctx context.Context, projectContract []byte) ([]ListProjectGenesisWalletsByContractRow, error)
 	ListProjectGenesisWalletsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ListProjectGenesisWalletsByContractsRow, error)
 	ListProjectGenesisWalletsByWallet(ctx context.Context, wallet []byte) ([]ListProjectGenesisWalletsByWalletRow, error)

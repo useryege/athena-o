@@ -1013,198 +1013,6 @@ func (m *ListProjectCreatorHistoricalProjectsResponse) GetItems() []string {
 	return nil
 }
 
-// ProjectEventLog is a project event timeline entry.
-type ProjectEventLog struct {
-	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Contract             string   `protobuf:"bytes,2,opt,name=contract,proto3" json:"contract,omitempty"`
-	EventType            int32    `protobuf:"varint,3,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
-	OccurredAt           string   `protobuf:"bytes,4,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
-	Message              string   `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
-	Payload              string   `protobuf:"bytes,6,opt,name=payload,proto3" json:"payload,omitempty"`
-	CreatedAt            string   `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *ProjectEventLog) Reset()         { *m = ProjectEventLog{} }
-func (m *ProjectEventLog) String() string { return proto.CompactTextString(m) }
-func (*ProjectEventLog) ProtoMessage()    {}
-func (*ProjectEventLog) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{20}
-}
-func (m *ProjectEventLog) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ProjectEventLog) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ProjectEventLog.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ProjectEventLog) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProjectEventLog.Merge(m, src)
-}
-func (m *ProjectEventLog) XXX_Size() int {
-	return m.Size()
-}
-func (m *ProjectEventLog) XXX_DiscardUnknown() {
-	xxx_messageInfo_ProjectEventLog.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ProjectEventLog proto.InternalMessageInfo
-
-func (m *ProjectEventLog) GetId() int64 {
-	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
-func (m *ProjectEventLog) GetContract() string {
-	if m != nil {
-		return m.Contract
-	}
-	return ""
-}
-
-func (m *ProjectEventLog) GetEventType() int32 {
-	if m != nil {
-		return m.EventType
-	}
-	return 0
-}
-
-func (m *ProjectEventLog) GetOccurredAt() string {
-	if m != nil {
-		return m.OccurredAt
-	}
-	return ""
-}
-
-func (m *ProjectEventLog) GetMessage() string {
-	if m != nil {
-		return m.Message
-	}
-	return ""
-}
-
-func (m *ProjectEventLog) GetPayload() string {
-	if m != nil {
-		return m.Payload
-	}
-	return ""
-}
-
-func (m *ProjectEventLog) GetCreatedAt() string {
-	if m != nil {
-		return m.CreatedAt
-	}
-	return ""
-}
-
-// ListProjectEventLogsRequest queries event logs by contract.
-type ListProjectEventLogsRequest struct {
-	Contract             string   `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *ListProjectEventLogsRequest) Reset()         { *m = ListProjectEventLogsRequest{} }
-func (m *ListProjectEventLogsRequest) String() string { return proto.CompactTextString(m) }
-func (*ListProjectEventLogsRequest) ProtoMessage()    {}
-func (*ListProjectEventLogsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{21}
-}
-func (m *ListProjectEventLogsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ListProjectEventLogsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ListProjectEventLogsRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ListProjectEventLogsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListProjectEventLogsRequest.Merge(m, src)
-}
-func (m *ListProjectEventLogsRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *ListProjectEventLogsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListProjectEventLogsRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ListProjectEventLogsRequest proto.InternalMessageInfo
-
-func (m *ListProjectEventLogsRequest) GetContract() string {
-	if m != nil {
-		return m.Contract
-	}
-	return ""
-}
-
-// ListProjectEventLogsResponse returns event logs for a contract.
-type ListProjectEventLogsResponse struct {
-	Items                []*ProjectEventLog `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
-}
-
-func (m *ListProjectEventLogsResponse) Reset()         { *m = ListProjectEventLogsResponse{} }
-func (m *ListProjectEventLogsResponse) String() string { return proto.CompactTextString(m) }
-func (*ListProjectEventLogsResponse) ProtoMessage()    {}
-func (*ListProjectEventLogsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{22}
-}
-func (m *ListProjectEventLogsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ListProjectEventLogsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ListProjectEventLogsResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ListProjectEventLogsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListProjectEventLogsResponse.Merge(m, src)
-}
-func (m *ListProjectEventLogsResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *ListProjectEventLogsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListProjectEventLogsResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ListProjectEventLogsResponse proto.InternalMessageInfo
-
-func (m *ListProjectEventLogsResponse) GetItems() []*ProjectEventLog {
-	if m != nil {
-		return m.Items
-	}
-	return nil
-}
-
 // GetProjectOptionsRequest don't need any parameters.
 type GetProjectOptionsRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -1216,7 +1024,7 @@ func (m *GetProjectOptionsRequest) Reset()         { *m = GetProjectOptionsReque
 func (m *GetProjectOptionsRequest) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsRequest) ProtoMessage()    {}
 func (*GetProjectOptionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{23}
+	return fileDescriptor_8ec0c1410c6c3952, []int{20}
 }
 func (m *GetProjectOptionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1257,7 +1065,7 @@ func (m *GetProjectOptionsResponse) Reset()         { *m = GetProjectOptionsResp
 func (m *GetProjectOptionsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsResponse) ProtoMessage()    {}
 func (*GetProjectOptionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8ec0c1410c6c3952, []int{24}
+	return fileDescriptor_8ec0c1410c6c3952, []int{21}
 }
 func (m *GetProjectOptionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1314,9 +1122,6 @@ func init() {
 	proto.RegisterType((*ListProjectGenesisWalletsResponse)(nil), "athena.internal.application.ListProjectGenesisWalletsResponse")
 	proto.RegisterType((*ListProjectCreatorHistoricalProjectsRequest)(nil), "athena.internal.application.ListProjectCreatorHistoricalProjectsRequest")
 	proto.RegisterType((*ListProjectCreatorHistoricalProjectsResponse)(nil), "athena.internal.application.ListProjectCreatorHistoricalProjectsResponse")
-	proto.RegisterType((*ProjectEventLog)(nil), "athena.internal.application.ProjectEventLog")
-	proto.RegisterType((*ListProjectEventLogsRequest)(nil), "athena.internal.application.ListProjectEventLogsRequest")
-	proto.RegisterType((*ListProjectEventLogsResponse)(nil), "athena.internal.application.ListProjectEventLogsResponse")
 	proto.RegisterType((*GetProjectOptionsRequest)(nil), "athena.internal.application.GetProjectOptionsRequest")
 	proto.RegisterType((*GetProjectOptionsResponse)(nil), "athena.internal.application.GetProjectOptionsResponse")
 }
@@ -1326,70 +1131,60 @@ func init() {
 }
 
 var fileDescriptor_8ec0c1410c6c3952 = []byte{
-	// 994 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x98, 0xdd, 0x6e, 0xdc, 0x44,
-	0x14, 0xc7, 0xe5, 0x7c, 0x34, 0xdd, 0x13, 0x28, 0x30, 0x04, 0xba, 0x75, 0x4b, 0x1a, 0x56, 0x08,
-	0x55, 0xa2, 0xb2, 0x49, 0x42, 0x5b, 0x22, 0x4a, 0xa5, 0xa4, 0x8d, 0x92, 0x88, 0x48, 0x20, 0x07,
-	0x81, 0xf8, 0x52, 0x34, 0xf1, 0x1e, 0x76, 0x87, 0x7a, 0x3d, 0xc6, 0x33, 0x9b, 0x6a, 0x01, 0x51,
-	0x84, 0x84, 0xb8, 0xe0, 0x96, 0x2b, 0x24, 0x9e, 0x04, 0x71, 0xcf, 0x65, 0x1f, 0x01, 0xe5, 0x49,
-	0x90, 0xed, 0xf1, 0x7a, 0xbc, 0xf1, 0x3a, 0xb3, 0x9b, 0xd2, 0xab, 0xac, 0x3d, 0x73, 0xfe, 0xe7,
-	0x77, 0x4e, 0xd6, 0xf3, 0x3f, 0x6b, 0x78, 0x93, 0x85, 0x12, 0xe3, 0x90, 0x06, 0x2e, 0x8d, 0xa2,
-	0x80, 0xf9, 0x54, 0x32, 0x1e, 0xea, 0x9f, 0x9d, 0x28, 0xe6, 0x92, 0x93, 0xab, 0x54, 0x76, 0x31,
-	0xa4, 0x4e, 0xbe, 0xdd, 0xd1, 0xb6, 0xd8, 0xbb, 0x1d, 0x26, 0xbb, 0xfd, 0x23, 0xc7, 0xe7, 0x3d,
-	0xb7, 0x2f, 0x30, 0x1e, 0x60, 0x07, 0xdd, 0x2c, 0xc0, 0x8d, 0x1e, 0x76, 0x5c, 0x1a, 0x31, 0x51,
-	0xd2, 0x3f, 0x5e, 0xa5, 0x41, 0xd4, 0xa5, 0xab, 0x6e, 0x07, 0x43, 0x8c, 0xa9, 0xc4, 0x76, 0x96,
-	0xa6, 0xb5, 0x0d, 0x2f, 0xef, 0x33, 0x21, 0x3f, 0x8a, 0xf9, 0x37, 0xe8, 0x4b, 0xe1, 0xe1, 0xb7,
-	0x7d, 0x14, 0x92, 0x10, 0x98, 0x8b, 0x68, 0x07, 0x9b, 0xd6, 0x8a, 0x75, 0x63, 0xde, 0x4b, 0x3f,
-	0x13, 0x1b, 0x2e, 0x26, 0x7f, 0x0f, 0xd8, 0x77, 0xd8, 0x9c, 0x49, 0xef, 0x0f, 0xaf, 0x5b, 0x7f,
-	0x5b, 0xb0, 0x54, 0xd6, 0x11, 0x11, 0x0f, 0x05, 0x92, 0x43, 0x98, 0x67, 0x12, 0x7b, 0xa2, 0x69,
-	0xad, 0xcc, 0xde, 0x58, 0x5c, 0xdb, 0x73, 0x0a, 0x72, 0x27, 0x27, 0x77, 0x54, 0xa9, 0xd1, 0xc3,
-	0x8e, 0x93, 0x90, 0xeb, 0xa5, 0x3a, 0x39, 0xb9, 0xa3, 0xa4, 0x93, 0x2c, 0x7b, 0x12, 0x7b, 0x5e,
-	0xa6, 0x4b, 0x96, 0x60, 0x5e, 0x72, 0x49, 0x83, 0x14, 0x69, 0xd6, 0xcb, 0x2e, 0x86, 0xfc, 0xb3,
-	0x63, 0xf8, 0xe7, 0x46, 0xf8, 0x5d, 0x78, 0x69, 0x07, 0x73, 0xfa, 0xbc, 0x09, 0x36, 0x5c, 0xf4,
-	0x79, 0x28, 0x63, 0xea, 0xcb, 0xb4, 0x11, 0x0d, 0x6f, 0x78, 0xdd, 0xe2, 0x40, 0xf4, 0x00, 0x55,
-	0xed, 0x67, 0x30, 0x97, 0x50, 0xa5, 0xbb, 0x17, 0xd7, 0xb6, 0xcf, 0x5d, 0xec, 0x27, 0x0c, 0x1f,
-	0x79, 0xa9, 0x64, 0x6b, 0x1d, 0x5e, 0x29, 0x12, 0x6e, 0x51, 0x81, 0x26, 0x94, 0x8f, 0xe0, 0xd5,
-	0xd1, 0x20, 0x45, 0xfa, 0x55, 0x89, 0xf4, 0xfc, 0xff, 0x96, 0x44, 0x5c, 0xa3, 0xbd, 0x05, 0x97,
-	0xf5, 0xf6, 0x44, 0x3c, 0x96, 0x66, 0xbc, 0xcd, 0xd3, 0x61, 0x8a, 0xf8, 0x8b, 0x12, 0xf1, 0xce,
-	0xb9, 0x89, 0x95, 0x7c, 0xc6, 0xbb, 0x01, 0x57, 0x8b, 0xc4, 0xf7, 0xbb, 0x94, 0x85, 0x07, 0x92,
-	0x4a, 0xa3, 0x1e, 0x3f, 0x86, 0x6b, 0xd5, 0xa1, 0xc3, 0x27, 0x40, 0xe7, 0xfe, 0xe0, 0xdc, 0xdc,
-	0x5a, 0x8a, 0x0a, 0xf6, 0x03, 0xd6, 0xeb, 0x07, 0x69, 0xa0, 0x09, 0xfb, 0x0f, 0x3a, 0xbb, 0x1e,
-	0xaa, 0xd8, 0xbf, 0x2c, 0xb1, 0xef, 0x4e, 0xcf, 0xae, 0xb4, 0x93, 0xae, 0xf4, 0x83, 0xbc, 0xe9,
-	0x77, 0xe0, 0x4a, 0x91, 0x7d, 0xf3, 0x18, 0x8d, 0x5b, 0xfe, 0x3d, 0xd8, 0x55, 0x81, 0xff, 0xd3,
-	0x57, 0x7b, 0x98, 0x20, 0xa3, 0xbe, 0x0b, 0xcb, 0x1e, 0x7e, 0x1d, 0xa3, 0xe8, 0x16, 0xeb, 0x0f,
-	0x50, 0x52, 0x16, 0x98, 0xa0, 0xff, 0x64, 0xc1, 0xf5, 0xb1, 0xe1, 0xcf, 0xa6, 0x80, 0x7b, 0xb0,
-	0xa2, 0x1d, 0xd5, 0x3b, 0x18, 0xa2, 0x60, 0xe2, 0x53, 0x1a, 0x04, 0x58, 0x9c, 0xff, 0x75, 0x25,
-	0xfc, 0x6a, 0xc1, 0xeb, 0x35, 0x02, 0xaa, 0x88, 0xa3, 0xf2, 0xc1, 0xbf, 0x3f, 0x7d, 0x15, 0xa5,
-	0x04, 0x59, 0x21, 0x99, 0x74, 0x6b, 0x0f, 0xde, 0xd2, 0x40, 0xee, 0xc7, 0x48, 0x25, 0x8f, 0x77,
-	0x99, 0x90, 0x3c, 0x66, 0x3e, 0x0d, 0x46, 0x4d, 0xad, 0xae, 0xa8, 0x07, 0x70, 0xd3, 0x4c, 0x4a,
-	0x95, 0xb7, 0xa4, 0x97, 0xd7, 0xc8, 0x81, 0x9e, 0x58, 0xf0, 0x82, 0xda, 0xba, 0x7d, 0x8c, 0xa1,
-	0xdc, 0xe7, 0x1d, 0x72, 0x09, 0x66, 0x58, 0x3b, 0xcd, 0x37, 0xeb, 0xcd, 0xb0, 0x76, 0x89, 0x62,
-	0xa6, 0x4c, 0x41, 0x5e, 0x03, 0xc0, 0x24, 0xee, 0x50, 0x0e, 0xa2, 0xdc, 0xbc, 0x1a, 0xe9, 0x9d,
-	0x8f, 0x07, 0x11, 0x92, 0xeb, 0xb0, 0xc8, 0x7d, 0xbf, 0x1f, 0xc7, 0xd8, 0x3e, 0xa4, 0x32, 0x35,
-	0xb1, 0x86, 0x07, 0xf9, 0xad, 0x4d, 0x49, 0x9a, 0xb0, 0xd0, 0x43, 0x21, 0x12, 0xe7, 0x9b, 0x4f,
-	0x17, 0xf3, 0xcb, 0x64, 0x25, 0xa2, 0x83, 0x80, 0xd3, 0x76, 0xf3, 0x42, 0xb6, 0xa2, 0x2e, 0x93,
-	0x9c, 0x7e, 0x52, 0x6e, 0xa6, 0xb9, 0x90, 0x2e, 0x36, 0xd4, 0x9d, 0x4d, 0x99, 0x9c, 0x2e, 0x5a,
-	0x63, 0xf2, 0xaa, 0x8c, 0x7a, 0x7a, 0x04, 0xd7, 0xaa, 0x43, 0x55, 0x0f, 0xb7, 0xca, 0x5f, 0x91,
-	0x9b, 0x4e, 0xcd, 0xc8, 0xe3, 0x8c, 0xa8, 0xe4, 0x1d, 0xb7, 0x75, 0xc7, 0xf8, 0x30, 0x4a, 0xb6,
-	0xe6, 0x6c, 0xad, 0x1f, 0xf5, 0xf3, 0x65, 0xb8, 0xa6, 0x92, 0x53, 0x58, 0xe0, 0xd9, 0xad, 0xa7,
-	0xe6, 0x28, 0x59, 0x0a, 0x2f, 0xd7, 0x5d, 0xfb, 0xf3, 0x79, 0x20, 0x9b, 0xc5, 0xfe, 0x03, 0x8c,
-	0x8f, 0x99, 0x8f, 0x44, 0xc0, 0x73, 0xfa, 0xa8, 0x44, 0xde, 0xae, 0xad, 0xbb, 0x62, 0x3a, 0xb3,
-	0x57, 0x27, 0x88, 0x50, 0xe5, 0xf6, 0x00, 0x8a, 0x5e, 0x10, 0xa7, 0x56, 0xe0, 0xd4, 0x24, 0x64,
-	0xbb, 0xc6, 0xfb, 0x55, 0xba, 0x01, 0x5c, 0x2a, 0x0f, 0x1e, 0x64, 0xcd, 0x50, 0x42, 0x1b, 0x6d,
-	0xec, 0xf5, 0x89, 0x62, 0x54, 0xea, 0xc7, 0xf0, 0xe2, 0xe8, 0x0c, 0x41, 0xde, 0x31, 0xe6, 0xd7,
-	0x26, 0x15, 0xfb, 0xd6, 0x84, 0x51, 0x0a, 0xe0, 0x37, 0x0b, 0x96, 0xaa, 0x26, 0x02, 0xf2, 0xae,
-	0xa1, 0xde, 0xa9, 0xf9, 0xc3, 0xde, 0x98, 0x22, 0xb2, 0x92, 0xa6, 0xf0, 0x78, 0x63, 0x9a, 0x53,
-	0x13, 0x85, 0x31, 0x4d, 0xc5, 0x40, 0xf1, 0x8b, 0xa5, 0xcf, 0xcd, 0xb9, 0x31, 0x91, 0xdb, 0x86,
-	0x8a, 0x23, 0x43, 0x82, 0x7d, 0x67, 0xe2, 0x38, 0xc5, 0xf1, 0xbb, 0x05, 0x97, 0xc7, 0xd8, 0x30,
-	0x79, 0xaf, 0x56, 0xb4, 0xde, 0xfb, 0xed, 0xbb, 0xd3, 0x05, 0x2b, 0xac, 0x3f, 0x2c, 0xb8, 0x32,
-	0xd6, 0x5a, 0xc9, 0xfb, 0xa6, 0x8f, 0x7d, 0xa5, 0xa7, 0xdb, 0xf7, 0xa6, 0x0d, 0x57, 0x70, 0x7f,
-	0x59, 0xf0, 0x86, 0x89, 0x47, 0x92, 0x5d, 0xd3, 0x44, 0x67, 0x39, 0xb6, 0xbd, 0xf7, 0x14, 0x94,
-	0xb4, 0xe7, 0xa0, 0xca, 0x8d, 0xce, 0x78, 0x0e, 0x6a, 0xbc, 0xef, 0x8c, 0xe7, 0xa0, 0xd6, 0xfa,
-	0x7e, 0xb6, 0xf4, 0x1f, 0x9c, 0xca, 0x9b, 0x88, 0xe9, 0x81, 0x53, 0xf6, 0x39, 0xfb, 0xf6, 0xa4,
-	0x61, 0x19, 0xc4, 0xd6, 0xce, 0x3f, 0x27, 0xcb, 0xd6, 0x93, 0x93, 0x65, 0xeb, 0xdf, 0x93, 0x65,
-	0xeb, 0xf3, 0x8d, 0x9a, 0x77, 0x0a, 0x63, 0xde, 0x59, 0x30, 0x3f, 0x60, 0x18, 0xca, 0xa3, 0x0b,
-	0xe9, 0xbb, 0x84, 0xf5, 0xff, 0x02, 0x00, 0x00, 0xff, 0xff, 0x1f, 0xc8, 0x04, 0xef, 0xdc, 0x10,
-	0x00, 0x00,
+	// 846 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x97, 0x5f, 0x6f, 0xd3, 0x56,
+	0x18, 0xc6, 0xe5, 0xb5, 0xdd, 0xda, 0xb7, 0xd5, 0xb4, 0x9d, 0x65, 0x6b, 0xea, 0x4e, 0x59, 0x17,
+	0x4d, 0x53, 0xa5, 0x4d, 0xf6, 0x9a, 0xae, 0x2d, 0x15, 0xa5, 0x52, 0xff, 0x29, 0x89, 0xa8, 0x04,
+	0x72, 0x24, 0x10, 0xff, 0x84, 0x4e, 0xcd, 0x21, 0x39, 0xd4, 0xb1, 0x8d, 0x7d, 0xd2, 0xaa, 0x80,
+	0x28, 0x42, 0x42, 0x5c, 0x70, 0xc1, 0x0d, 0x57, 0x7c, 0x15, 0xc4, 0x3d, 0x97, 0x7c, 0x04, 0xd4,
+	0x4f, 0x82, 0x62, 0x1f, 0xc7, 0xc7, 0x89, 0x63, 0x4e, 0x92, 0xc2, 0x55, 0xe3, 0xe4, 0x3c, 0xcf,
+	0xfb, 0x7b, 0x4f, 0xed, 0xf7, 0xf1, 0x81, 0xbf, 0xa9, 0xcd, 0x88, 0x67, 0x63, 0x4b, 0xc7, 0xae,
+	0x6b, 0x51, 0x13, 0x33, 0xea, 0xd8, 0xe2, 0x67, 0xcd, 0xf5, 0x1c, 0xe6, 0xa0, 0x79, 0xcc, 0x1a,
+	0xc4, 0xc6, 0x5a, 0xb4, 0x5c, 0x13, 0x96, 0xa8, 0x95, 0x3a, 0x65, 0x8d, 0xd6, 0x81, 0x66, 0x3a,
+	0x4d, 0xbd, 0xe5, 0x13, 0xef, 0x84, 0xd4, 0x89, 0x1e, 0x0a, 0x74, 0xf7, 0xb0, 0xae, 0x63, 0x97,
+	0xfa, 0x09, 0xff, 0xa3, 0x25, 0x6c, 0xb9, 0x0d, 0xbc, 0xa4, 0xd7, 0x89, 0x4d, 0x3c, 0xcc, 0xc8,
+	0xbd, 0xb0, 0x4c, 0x71, 0x0f, 0x7e, 0xd9, 0xa7, 0x3e, 0xbb, 0xea, 0x39, 0x0f, 0x88, 0xc9, 0x7c,
+	0x83, 0x3c, 0x6c, 0x11, 0x9f, 0x21, 0x04, 0xe3, 0x2e, 0xae, 0x93, 0xbc, 0xb2, 0xa0, 0x2c, 0x4e,
+	0x18, 0xc1, 0x67, 0xa4, 0xc2, 0x64, 0xfb, 0x6f, 0x8d, 0x3e, 0x22, 0xf9, 0xef, 0x82, 0xef, 0x3b,
+	0xd7, 0xc5, 0xf7, 0x0a, 0xe4, 0x92, 0x3e, 0xbe, 0xeb, 0xd8, 0x3e, 0x41, 0x77, 0x61, 0x82, 0x32,
+	0xd2, 0xf4, 0xf3, 0xca, 0xc2, 0xd8, 0xe2, 0x74, 0xa9, 0xaa, 0xc5, 0xe4, 0x5a, 0x44, 0xae, 0xf1,
+	0x56, 0xdd, 0xc3, 0xba, 0xd6, 0x26, 0x17, 0x5b, 0xd5, 0x22, 0x72, 0x8d, 0x5b, 0xb7, 0xab, 0x54,
+	0x19, 0x69, 0x1a, 0xa1, 0x2f, 0xca, 0xc1, 0x04, 0x73, 0x18, 0xb6, 0x02, 0xa4, 0x31, 0x23, 0xbc,
+	0xe8, 0xf0, 0x8f, 0xf5, 0xe1, 0x1f, 0xef, 0xe2, 0xd7, 0xe1, 0xe7, 0x32, 0x89, 0xe8, 0xa3, 0x4d,
+	0x50, 0x61, 0xd2, 0x74, 0x6c, 0xe6, 0x61, 0x93, 0x05, 0x1b, 0x31, 0x65, 0x74, 0xae, 0x8b, 0x0e,
+	0x20, 0x51, 0xc0, 0xbb, 0xbd, 0x01, 0xe3, 0x6d, 0xaa, 0x60, 0xf5, 0x74, 0x69, 0x6f, 0xe4, 0x66,
+	0xaf, 0x51, 0x72, 0x6c, 0x04, 0x96, 0xc5, 0x65, 0xf8, 0x35, 0x2e, 0xb8, 0x8d, 0x7d, 0x22, 0x43,
+	0x79, 0x0c, 0xbf, 0x75, 0x8b, 0x38, 0xe9, 0x9d, 0x04, 0xe9, 0xe8, 0xff, 0x96, 0xb6, 0xb9, 0x40,
+	0xbb, 0x02, 0xb3, 0xe2, 0xf6, 0xb8, 0x8e, 0xc7, 0xe4, 0x78, 0xf3, 0xbd, 0x32, 0x4e, 0x7c, 0x2b,
+	0x41, 0x5c, 0x1e, 0x99, 0x98, 0xdb, 0x87, 0xbc, 0xeb, 0x30, 0x1f, 0x17, 0xde, 0x69, 0x60, 0x6a,
+	0xd7, 0x18, 0x66, 0x52, 0x7b, 0x7c, 0x0a, 0xbf, 0xa7, 0x4b, 0x3b, 0x4f, 0x80, 0xc8, 0x7d, 0x79,
+	0x64, 0x6e, 0xa1, 0x44, 0x0a, 0x7b, 0x8d, 0x36, 0x5b, 0x56, 0x20, 0x94, 0x61, 0x7f, 0x22, 0xb2,
+	0x8b, 0x52, 0xce, 0x7e, 0x3b, 0xc1, 0x5e, 0x19, 0x9e, 0x9d, 0x7b, 0xb7, 0x77, 0xa5, 0x65, 0x45,
+	0x9b, 0xbe, 0x06, 0x73, 0x71, 0xf5, 0xad, 0x23, 0x22, 0xbd, 0xe5, 0x8f, 0x41, 0x4d, 0x13, 0x7e,
+	0xa5, 0x5b, 0xbb, 0x53, 0x20, 0xa4, 0xde, 0x80, 0x82, 0x41, 0xee, 0x7b, 0xc4, 0x6f, 0xc4, 0xbf,
+	0xef, 0x12, 0x86, 0xa9, 0x25, 0x83, 0xfe, 0x4c, 0x81, 0x3f, 0xfa, 0xca, 0xbf, 0x4d, 0x03, 0x9b,
+	0xb0, 0x20, 0x8c, 0xea, 0x32, 0xb1, 0x89, 0x4f, 0xfd, 0xeb, 0xd8, 0xb2, 0x48, 0x3c, 0xff, 0xb3,
+	0x5a, 0x78, 0xa9, 0xc0, 0x9f, 0x19, 0x06, 0xbc, 0x89, 0x83, 0xe4, 0xe0, 0xdf, 0x1f, 0xbe, 0x8b,
+	0x44, 0x81, 0xb0, 0x91, 0xd0, 0xba, 0x58, 0x85, 0x7f, 0x04, 0x90, 0x1d, 0x8f, 0x60, 0xe6, 0x78,
+	0x15, 0xea, 0x33, 0xc7, 0xa3, 0x26, 0xb6, 0xba, 0x43, 0x2d, 0xab, 0xa9, 0x5d, 0xf8, 0x57, 0xce,
+	0x8a, 0xb7, 0x97, 0x13, 0xdb, 0x9b, 0x8a, 0x80, 0x54, 0x71, 0x7e, 0x5d, 0x71, 0xdb, 0x7d, 0x44,
+	0xd5, 0x8b, 0x4f, 0xc5, 0xbb, 0xbd, 0xf3, 0x1b, 0xb7, 0xc3, 0xf0, 0x83, 0x13, 0x7e, 0x75, 0x6e,
+	0xf3, 0x2d, 0x2c, 0x61, 0x44, 0xbe, 0xa5, 0xd7, 0x33, 0x80, 0xb6, 0xe2, 0xf5, 0x35, 0xe2, 0x1d,
+	0x51, 0x93, 0x20, 0x1f, 0x66, 0xc4, 0xe0, 0x46, 0xff, 0x69, 0x19, 0x2f, 0x1e, 0x5a, 0xca, 0xbb,
+	0x82, 0xba, 0x34, 0x80, 0x82, 0xb7, 0xdb, 0x04, 0x88, 0xf7, 0x02, 0x69, 0x99, 0x06, 0x3d, 0xb9,
+	0xac, 0xea, 0xd2, 0xeb, 0x79, 0xb9, 0x13, 0xf8, 0x31, 0x19, 0x83, 0xa8, 0x24, 0x69, 0x21, 0x04,
+	0xad, 0xba, 0x3c, 0x90, 0x86, 0x97, 0x3e, 0x85, 0x9f, 0xba, 0x13, 0x0d, 0xfd, 0x2f, 0xcd, 0x2f,
+	0xe4, 0xa6, 0xba, 0x32, 0xa0, 0x8a, 0x03, 0xbc, 0x52, 0x20, 0x97, 0x96, 0x4f, 0xe8, 0x82, 0xa4,
+	0x5f, 0x4f, 0x1a, 0xaa, 0xeb, 0x43, 0x28, 0x53, 0x69, 0xe2, 0xc4, 0x91, 0xa6, 0xe9, 0xc9, 0x37,
+	0x69, 0x9a, 0x94, 0x78, 0x7b, 0xa1, 0x88, 0x6f, 0x71, 0xd1, 0x98, 0x44, 0xab, 0x92, 0x8e, 0x5d,
+	0x91, 0xa5, 0xae, 0x0d, 0xac, 0xe3, 0x1c, 0x6f, 0x14, 0x98, 0xed, 0x13, 0x0a, 0xe8, 0x62, 0xa6,
+	0x69, 0x76, 0x12, 0xa9, 0x1b, 0xc3, 0x89, 0x39, 0xd6, 0x5b, 0x05, 0xe6, 0xfa, 0x0e, 0x7a, 0x74,
+	0x49, 0xf6, 0xb1, 0x4f, 0x4d, 0x18, 0x75, 0x73, 0x58, 0x39, 0x87, 0x7b, 0xa7, 0xc0, 0x5f, 0x32,
+	0x13, 0x1b, 0x55, 0x64, 0x0b, 0x7d, 0x29, 0x3f, 0xd4, 0xea, 0x39, 0x38, 0x71, 0xfa, 0xe7, 0x8a,
+	0x78, 0xe0, 0xe0, 0x69, 0x80, 0x64, 0x1f, 0xf1, 0x64, 0xb2, 0xa8, 0xab, 0x83, 0xca, 0x42, 0x88,
+	0xed, 0xf2, 0x87, 0xb3, 0x82, 0xf2, 0xf1, 0xac, 0xa0, 0x7c, 0x3a, 0x2b, 0x28, 0x37, 0xd7, 0x33,
+	0xce, 0x94, 0x7d, 0xce, 0xac, 0xd4, 0xb4, 0x28, 0xb1, 0xd9, 0xc1, 0xf7, 0xc1, 0x59, 0x72, 0xf9,
+	0x73, 0x00, 0x00, 0x00, 0xff, 0xff, 0x63, 0xcf, 0xe7, 0x3c, 0xdc, 0x0e, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1416,8 +1211,6 @@ type ApplicationServiceClient interface {
 	RefreshProjectAveDetail(ctx context.Context, in *RefreshProjectAveDetailRequest, opts ...grpc.CallOption) (*RefreshProjectAveDetailResponse, error)
 	ListProjectGenesisWallets(ctx context.Context, in *ListProjectGenesisWalletsRequest, opts ...grpc.CallOption) (*ListProjectGenesisWalletsResponse, error)
 	ListProjectCreatorHistoricalProjects(ctx context.Context, in *ListProjectCreatorHistoricalProjectsRequest, opts ...grpc.CallOption) (*ListProjectCreatorHistoricalProjectsResponse, error)
-	// ListProjectEventLogs returns event logs for a given contract.
-	ListProjectEventLogs(ctx context.Context, in *ListProjectEventLogsRequest, opts ...grpc.CallOption) (*ListProjectEventLogsResponse, error)
 	// GetProjectOptions returns the options.
 	GetProjectOptions(ctx context.Context, in *GetProjectOptionsRequest, opts ...grpc.CallOption) (*GetProjectOptionsResponse, error)
 }
@@ -1520,15 +1313,6 @@ func (c *applicationServiceClient) ListProjectCreatorHistoricalProjects(ctx cont
 	return out, nil
 }
 
-func (c *applicationServiceClient) ListProjectEventLogs(ctx context.Context, in *ListProjectEventLogsRequest, opts ...grpc.CallOption) (*ListProjectEventLogsResponse, error) {
-	out := new(ListProjectEventLogsResponse)
-	err := c.cc.Invoke(ctx, "/athena.internal.application.ApplicationService/ListProjectEventLogs", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *applicationServiceClient) GetProjectOptions(ctx context.Context, in *GetProjectOptionsRequest, opts ...grpc.CallOption) (*GetProjectOptionsResponse, error) {
 	out := new(GetProjectOptionsResponse)
 	err := c.cc.Invoke(ctx, "/athena.internal.application.ApplicationService/GetProjectOptions", in, out, opts...)
@@ -1552,8 +1336,6 @@ type ApplicationServiceServer interface {
 	RefreshProjectAveDetail(context.Context, *RefreshProjectAveDetailRequest) (*RefreshProjectAveDetailResponse, error)
 	ListProjectGenesisWallets(context.Context, *ListProjectGenesisWalletsRequest) (*ListProjectGenesisWalletsResponse, error)
 	ListProjectCreatorHistoricalProjects(context.Context, *ListProjectCreatorHistoricalProjectsRequest) (*ListProjectCreatorHistoricalProjectsResponse, error)
-	// ListProjectEventLogs returns event logs for a given contract.
-	ListProjectEventLogs(context.Context, *ListProjectEventLogsRequest) (*ListProjectEventLogsResponse, error)
 	// GetProjectOptions returns the options.
 	GetProjectOptions(context.Context, *GetProjectOptionsRequest) (*GetProjectOptionsResponse, error)
 }
@@ -1591,9 +1373,6 @@ func (*UnimplementedApplicationServiceServer) ListProjectGenesisWallets(ctx cont
 }
 func (*UnimplementedApplicationServiceServer) ListProjectCreatorHistoricalProjects(ctx context.Context, req *ListProjectCreatorHistoricalProjectsRequest) (*ListProjectCreatorHistoricalProjectsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProjectCreatorHistoricalProjects not implemented")
-}
-func (*UnimplementedApplicationServiceServer) ListProjectEventLogs(ctx context.Context, req *ListProjectEventLogsRequest) (*ListProjectEventLogsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListProjectEventLogs not implemented")
 }
 func (*UnimplementedApplicationServiceServer) GetProjectOptions(ctx context.Context, req *GetProjectOptionsRequest) (*GetProjectOptionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProjectOptions not implemented")
@@ -1783,24 +1562,6 @@ func _ApplicationService_ListProjectCreatorHistoricalProjects_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_ListProjectEventLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListProjectEventLogsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).ListProjectEventLogs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/athena.internal.application.ApplicationService/ListProjectEventLogs",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).ListProjectEventLogs(ctx, req.(*ListProjectEventLogsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApplicationService_GetProjectOptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetProjectOptionsRequest)
 	if err := dec(in); err != nil {
@@ -1862,10 +1623,6 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListProjectCreatorHistoricalProjects",
 			Handler:    _ApplicationService_ListProjectCreatorHistoricalProjects_Handler,
-		},
-		{
-			MethodName: "ListProjectEventLogs",
-			Handler:    _ApplicationService_ListProjectEventLogs_Handler,
 		},
 		{
 			MethodName: "GetProjectOptions",
@@ -2625,153 +2382,6 @@ func (m *ListProjectCreatorHistoricalProjectsResponse) MarshalToSizedBuffer(dAtA
 	return len(dAtA) - i, nil
 }
 
-func (m *ProjectEventLog) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ProjectEventLog) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ProjectEventLog) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.CreatedAt) > 0 {
-		i -= len(m.CreatedAt)
-		copy(dAtA[i:], m.CreatedAt)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.CreatedAt)))
-		i--
-		dAtA[i] = 0x3a
-	}
-	if len(m.Payload) > 0 {
-		i -= len(m.Payload)
-		copy(dAtA[i:], m.Payload)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.Payload)))
-		i--
-		dAtA[i] = 0x32
-	}
-	if len(m.Message) > 0 {
-		i -= len(m.Message)
-		copy(dAtA[i:], m.Message)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.Message)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.OccurredAt) > 0 {
-		i -= len(m.OccurredAt)
-		copy(dAtA[i:], m.OccurredAt)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.OccurredAt)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if m.EventType != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.EventType))
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.Contract) > 0 {
-		i -= len(m.Contract)
-		copy(dAtA[i:], m.Contract)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if m.Id != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.Id))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ListProjectEventLogsRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ListProjectEventLogsRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ListProjectEventLogsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Contract) > 0 {
-		i -= len(m.Contract)
-		copy(dAtA[i:], m.Contract)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ListProjectEventLogsResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ListProjectEventLogsResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ListProjectEventLogsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Items) > 0 {
-		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintApplication(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *GetProjectOptionsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -3177,78 +2787,6 @@ func (m *ListProjectCreatorHistoricalProjectsResponse) Size() (n int) {
 	if len(m.Items) > 0 {
 		for _, s := range m.Items {
 			l = len(s)
-			n += 1 + l + sovApplication(uint64(l))
-		}
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *ProjectEventLog) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Id != 0 {
-		n += 1 + sovApplication(uint64(m.Id))
-	}
-	l = len(m.Contract)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	if m.EventType != 0 {
-		n += 1 + sovApplication(uint64(m.EventType))
-	}
-	l = len(m.OccurredAt)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	l = len(m.Message)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	l = len(m.Payload)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	l = len(m.CreatedAt)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *ListProjectEventLogsRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Contract)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *ListProjectEventLogsResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Items) > 0 {
-		for _, e := range m.Items {
-			l = e.Size()
 			n += 1 + l + sovApplication(uint64(l))
 		}
 	}
@@ -5024,423 +4562,6 @@ func (m *ListProjectCreatorHistoricalProjectsResponse) Unmarshal(dAtA []byte) er
 				return io.ErrUnexpectedEOF
 			}
 			m.Items = append(m.Items, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ProjectEventLog) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ProjectEventLog: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ProjectEventLog: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
-			}
-			m.Id = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Id |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Contract = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EventType", wireType)
-			}
-			m.EventType = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.EventType |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OccurredAt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.OccurredAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Message = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Payload = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.CreatedAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ListProjectEventLogsRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ListProjectEventLogsRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListProjectEventLogsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Contract = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ListProjectEventLogsResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ListProjectEventLogsResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListProjectEventLogsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Items = append(m.Items, &ProjectEventLog{})
-			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -9,7 +9,6 @@ import (
 	appcache "github.com/useryege/athena/internal/application/cache"
 	appcomponents "github.com/useryege/athena/internal/application/components"
 	"github.com/useryege/athena/internal/application/model"
-	"github.com/useryege/athena/internal/application/persistence"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -154,13 +153,6 @@ func (c *Component) Evaluate(ctx context.Context, contract common.Address) error
 		if err := c.cache.SetReport(ctx, state); err != nil {
 			return err
 		}
-	}
-	for _, item := range matches {
-		event, err := persistence.NewProjectReportMatchedEvent(contract, item.rule, item.evidence, now)
-		if err != nil {
-			continue
-		}
-		_ = c.store.AddProjectEventLog(ctx, event)
 	}
 	if err := appcomponents.MarkComponentSuccess(ctx, c.store, contract, appstore.ProjectComponentReport, now); err != nil {
 		return err

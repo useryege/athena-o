@@ -297,20 +297,6 @@ export interface ListProjectCreatorHistoricalProjectsResponse {
     items?: string[];
 }
 
-export interface ProjectEventLog {
-    id?: number;
-    contract?: string;
-    eventType?: number;
-    occurredAt?: string;
-    message?: string;
-    payload?: string;
-    createdAt?: string;
-}
-
-export interface ListProjectEventLogsResponse {
-    items?: ProjectEventLog[];
-}
-
 export interface ProjectOptions {
     factoryContract?: string;
     wethContract?: string;
@@ -401,25 +387,6 @@ export class AthenaApplicationService {
     public listProjectCreatorHistoricalProjects(contract: string): Promise<string[]> & {abort?: () => void} {
         const req = requests.get(`/projects/${encodeURIComponent(contract)}/creator-history`);
         const promise = req.then(res => ((res.body || {}) as ListProjectCreatorHistoricalProjectsResponse).items || []) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listProjectEventLogs(contract: string): Promise<ProjectEventLog[]> & {abort?: () => void} {
-        const req = requests.get(`/projects/${encodeURIComponent(contract)}/events`);
-        const promise = req.then(res => {
-            const body = (res.body || {}) as ListProjectEventLogsResponse;
-            const items = body.items || [];
-            return items.map(item => ({
-                id: item.id,
-                contract: item.contract,
-                eventType: item.eventType ?? (item as any).event_type,
-                occurredAt: item.occurredAt ?? (item as any).occurred_at,
-                message: item.message,
-                payload: item.payload,
-                createdAt: item.createdAt ?? (item as any).created_at
-            }));
-        }) as any;
         promise.abort = () => req.abort();
         return promise;
     }

@@ -26,12 +26,12 @@ import (
 	"github.com/useryege/athena/internal/application/model"
 	"github.com/useryege/athena/internal/application/persistence"
 	"github.com/useryege/athena/internal/application/pipeline"
-	"github.com/useryege/athena/util/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ave"
+	"github.com/useryege/athena/util/redisport"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -341,26 +341,6 @@ func (s *Service) clearPipelineLocked() {
 	s.pipeline = nil
 	s.athenaFetcher = nil
 	s.aveComponent = nil
-}
-
-func projectEventLogToAPI(item appstore.ProjectEventLog) *applicationpkg.ProjectEventLog {
-	occurredAt := ""
-	if !item.OccurredAt.IsZero() {
-		occurredAt = item.OccurredAt.UTC().Format(time.RFC3339Nano)
-	}
-	createdAt := ""
-	if !item.CreatedAt.IsZero() {
-		createdAt = item.CreatedAt.UTC().Format(time.RFC3339Nano)
-	}
-	return &applicationpkg.ProjectEventLog{
-		Id:         item.ID,
-		Contract:   item.Contract.Hex(),
-		EventType:  int32(item.EventType),
-		OccurredAt: occurredAt,
-		Message:    item.Message,
-		Payload:    item.Payload,
-		CreatedAt:  createdAt,
-	}
 }
 
 func (s *Service) fetchContractBytecode(ctx context.Context, contract common.Address) ([]byte, error) {
@@ -1110,27 +1090,6 @@ func (s *Service) projectCreatorHistory(ctx context.Context, contract common.Add
 		}
 	}
 	return items, nil
-}
-
-func (s *Service) ListProjectEventLogs(ctx context.Context, req *applicationpkg.ListProjectEventLogsRequest) (*applicationpkg.ListProjectEventLogsResponse, error) {
-	if !common.IsHexAddress(req.GetContract()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid contract %q", req.GetContract())
-	}
-	store, ok := s.store.(appstore.ProjectEventLogStore)
-	if !ok || store == nil {
-		return &applicationpkg.ListProjectEventLogsResponse{}, status.Error(codes.FailedPrecondition, "project event log store is not configured")
-	}
-
-	items, err := store.ListProjectEventLogsByContract(ctx, common.HexToAddress(req.GetContract()))
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*applicationpkg.ProjectEventLog, 0, len(items))
-	for _, item := range items {
-		result = append(result, projectEventLogToAPI(item))
-	}
-	return &applicationpkg.ListProjectEventLogsResponse{Items: result}, nil
 }
 
 func (s *Service) ensureProjectExists(ctx context.Context, contract common.Address, rawContract string) error {

@@ -178,18 +178,6 @@ func (f *Flusher) flushMember(ctx context.Context, kind string, member string) e
 			return err
 		}
 		return f.store.db.UpsertProjectComponentState(ctx, item)
-	case bufferedEventLogKind:
-		item, ok, err := getJSON[appstore.ProjectEventLog](ctx, f.store.client, bufferedItemKey(kind, member))
-		if err != nil || !ok {
-			return err
-		}
-		if err := f.store.db.AddProjectEventLog(ctx, item); err != nil {
-			return err
-		}
-		pipe := f.store.client.TxPipeline()
-		pipe.Del(ctx, bufferedItemKey(kind, member))
-		pipe.ZRem(ctx, bufferedEventLogIndexKey(item.Contract), member)
-		return pipe.Exec(ctx)
 	default:
 		return fmt.Errorf("unsupported dirty kind %q", kind)
 	}

@@ -91,17 +91,6 @@ const (
 	ProjectComponentStatusFailed  = "failed"
 )
 
-type ProjectEventLog struct {
-	ID             int64
-	Contract       common.Address
-	EventType      int16
-	OccurredAt     time.Time
-	Message        string
-	Payload        string
-	IdempotencyKey string
-	CreatedAt      time.Time
-}
-
 type ProjectGenesisWallet struct {
 	ID                int64
 	ProjectContract   common.Address
@@ -189,11 +178,6 @@ type ProjectAveRefreshStore interface {
 	GetProjectAveComponentState(ctx context.Context, contract common.Address) (*ProjectComponentState, error)
 }
 
-type ProjectEventLogStore interface {
-	AddProjectEventLog(ctx context.Context, item ProjectEventLog) error
-	ListProjectEventLogsByContract(ctx context.Context, contract common.Address) ([]ProjectEventLog, error)
-}
-
 type ProjectGenesisWalletStore interface {
 	ReplaceProjectGenesisWallets(ctx context.Context, contract common.Address, items []ProjectGenesisWallet) error
 	ListProjectGenesisWalletsByContract(ctx context.Context, contract common.Address) ([]ProjectGenesisWallet, error)
@@ -217,7 +201,6 @@ type Store interface {
 	ProjectComponentStateStore
 	ProjectAveDetailStore
 	ProjectAveRefreshStore
-	ProjectEventLogStore
 	ProjectGenesisWalletStore
 	ProjectCreatorHistoricalProjectStore
 }

@@ -57,10 +57,6 @@ func (k Keyspace) ProjectComponentState(contract common.Address, component strin
 	return k.join("project", contract.Hex(), "component_state", component)
 }
 
-func (k Keyspace) ProjectEventLogItem(contract common.Address, member string) string {
-	return k.join("project", contract.Hex(), "event_log", member)
-}
-
 func (k Keyspace) ProjectIndexBase() string {
 	return k.join("index", "project", "base")
 }
@@ -103,10 +99,6 @@ func (k Keyspace) BufferIndexPair(pair common.Address) string {
 
 func (k Keyspace) BufferIndexComponentNextRun(component string) string {
 	return k.join("index", "buffer", "component_next_run", component)
-}
-
-func (k Keyspace) BufferIndexEventLog(contract common.Address) string {
-	return k.join("index", "buffer", "event_log", contract.Hex())
 }
 
 func (k Keyspace) join(parts ...string) string {

@@ -158,17 +158,6 @@ type ProjectCreatorHistoricalProject struct {
 	CreatedAt                 pgtype.Timestamptz
 }
 
-type ProjectEventLog struct {
-	ID             int64
-	Contract       []byte
-	EventType      int16
-	OccurredAt     pgtype.Timestamptz
-	Message        pgtype.Text
-	Payload        []byte
-	IdempotencyKey string
-	CreatedAt      pgtype.Timestamptz
-}
-
 type ProjectGenesisWallet struct {
 	ID                int64
 	ProjectContract   []byte

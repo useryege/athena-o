@@ -232,30 +232,6 @@ CREATE TABLE IF NOT EXISTS project_creator_historical_project (
 CREATE INDEX IF NOT EXISTS project_creator_historical_project_rank_idx
   ON project_creator_historical_project (project_contract, rank_index);
 
-CREATE TABLE IF NOT EXISTS project_event_log (
-  id BIGSERIAL PRIMARY KEY,
-  contract BYTEA NOT NULL,
-  event_type SMALLINT NOT NULL,
-  occurred_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  message TEXT,
-  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
-  idempotency_key TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_event_log_contract_len CHECK (length(contract) = 20),
-  CONSTRAINT project_event_log_event_type_positive CHECK (event_type > 0),
-  CONSTRAINT project_event_log_idempotency_key_not_empty CHECK (length(btrim(idempotency_key)) > 0),
-  CONSTRAINT project_event_log_project_fk FOREIGN KEY (contract) REFERENCES project(contract)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS project_event_log_contract_idempotency_key_uidx
-  ON project_event_log (contract, idempotency_key);
-
-CREATE INDEX IF NOT EXISTS project_event_log_contract_timeline_idx
-  ON project_event_log (contract, occurred_at DESC, id DESC);
-
-CREATE INDEX IF NOT EXISTS project_event_log_event_type_time_idx
-  ON project_event_log (event_type, occurred_at DESC, id DESC);
-
 CREATE TABLE IF NOT EXISTS project_genesis_wallet (
   id BIGSERIAL PRIMARY KEY,
   project_contract BYTEA NOT NULL,
@@ -285,7 +261,6 @@ CREATE INDEX IF NOT EXISTS project_genesis_wallet_wallet_ratio_idx
 -- +goose Down
 
 DROP TABLE IF EXISTS project_genesis_wallet;
-DROP TABLE IF EXISTS project_event_log;
 DROP TABLE IF EXISTS project_creator_historical_project;
 DROP TABLE IF EXISTS project_ave_pair;
 DROP TABLE IF EXISTS project_ave_token_detail;

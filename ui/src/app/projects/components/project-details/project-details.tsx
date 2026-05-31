@@ -8,7 +8,6 @@ import {
     AveDetail,
     PairV2State,
     ProjectAveState,
-    ProjectEventLog,
     ProjectMeta,
     ProjectOptions,
     ProjectView
@@ -20,7 +19,6 @@ import {GenesisWalletRankList} from './genesis-wallet-rank-list';
 require('./project-details.scss');
 
 const PROJECT_AUTO_REFRESH_INTERVAL_MS = 1000;
-const EVENT_LOG_AUTO_REFRESH_INTERVAL_MS = 3000;
 
 const renderValue = (value: string | number | boolean | undefined) => {
     if (value === undefined || value === '') {
@@ -44,17 +42,6 @@ const renderOrigin = (value?: string) => {
             return '复用';
         default:
             return '-';
-    }
-};
-
-const renderEventType = (eventType?: number) => {
-    switch (eventType) {
-        case 1:
-            return 'Project Created';
-        case 2:
-            return 'Contract Source Opened';
-        default:
-            return `Unknown(${eventType ?? 0})`;
     }
 };
 
@@ -298,7 +285,6 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const [project, setProject] = React.useState<ProjectView | null>(null);
     const [aveState, setAveState] = React.useState<ProjectAveState | null>(null);
     const [sourceInfo, setSourceInfo] = React.useState<ContractSourceInfo | null>(null);
-    const [eventLogs, setEventLogs] = React.useState<ProjectEventLog[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [isBlacklistChecking, setIsBlacklistChecking] = React.useState(true);
     const [isBlacklisted, setIsBlacklisted] = React.useState(false);
@@ -311,12 +297,10 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
     const [refreshingAve, setRefreshingAve] = React.useState(false);
 
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
-    const eventRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const aveRefreshRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const sourceRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const optionsRequestRef = React.useRef<{abort?: () => void} | null>(null);
     const projectIntervalRef = React.useRef<number | undefined>(undefined);
-    const eventIntervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
 
     const cleanupRequests = React.useCallback(() => {
@@ -324,17 +308,9 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
             window.clearInterval(projectIntervalRef.current);
             projectIntervalRef.current = undefined;
         }
-        if (eventIntervalRef.current !== undefined) {
-            window.clearInterval(eventIntervalRef.current);
-            eventIntervalRef.current = undefined;
-        }
         if (requestRef.current?.abort) {
             requestRef.current.abort();
             requestRef.current = null;
-        }
-        if (eventRequestRef.current?.abort) {
-            eventRequestRef.current.abort();
-            eventRequestRef.current = null;
         }
         if (aveRefreshRequestRef.current?.abort) {
             aveRefreshRequestRef.current.abort();
@@ -435,27 +411,6 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         requestRef.current = null;
     }, [contract, mergeProjectAveState]);
 
-    const loadProjectEventLogs = React.useCallback(async () => {
-        if (eventRequestRef.current) {
-            return;
-        }
-
-        try {
-            const req = services.athenaApplication.listProjectEventLogs(contract);
-            eventRequestRef.current = req;
-            const items = await req;
-            if (isMountedRef.current) {
-                setEventLogs(items || []);
-            }
-        } catch (err) {
-            if (isMountedRef.current) {
-                setError(err as Error);
-            }
-        } finally {
-            eventRequestRef.current = null;
-        }
-    }, [contract]);
-
     const loadContractSourceInfo = React.useCallback(async () => {
         if (sourceRequestRef.current) {
             return;
@@ -513,21 +468,17 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
         setAveState(null);
         setComponentErrors({});
         loadProject();
-        loadProjectEventLogs();
         loadContractSourceInfo();
         loadProjectOptions();
         projectIntervalRef.current = window.setInterval(() => {
             loadProject();
         }, PROJECT_AUTO_REFRESH_INTERVAL_MS);
-        eventIntervalRef.current = window.setInterval(() => {
-            loadProjectEventLogs();
-        }, EVENT_LOG_AUTO_REFRESH_INTERVAL_MS);
 
         return () => {
             isMountedRef.current = false;
             cleanupRequests();
         };
-    }, [cleanupRequests, loadContractSourceInfo, loadProject, loadProjectEventLogs, loadProjectOptions]);
+    }, [cleanupRequests, loadContractSourceInfo, loadProject, loadProjectOptions]);
 
     const breadcrumbs = [{title: 'Projects', path: `/projects${props.location.search || ''}`}, {title: contract}];
     const sourceCode = sourceInfo?.sourceCode || '';
@@ -760,24 +711,6 @@ export const ProjectDetails = (props: RouteComponentProps<RouteParams>) => {
                                 genesisWalletAssetStates={project.meta?.genesisWalletAssetStates}
                                 usdtDecimals={projectOptions?.usdtDecimals}
                             />
-                        </div>
-
-                        <div className='white-box project-details__box'>
-                            <div className='project-details__section-title'>Event Log</div>
-                            {eventLogs.length === 0 ? (
-                                <div className='project-details__field-value'>No events available</div>
-                            ) : (
-                                <div className='project-details__grid'>
-                                    {eventLogs.map(item => (
-                                        <div key={`${item.id || 0}-${item.occurredAt || ''}`} className='project-details__field' style={{gridColumn: '1 / -1'}}>
-                                            <span className='project-details__field-label'>
-                                                {renderEventType(item.eventType)} • {renderValue(item.occurredAt)}
-                                            </span>
-                                            <span className='project-details__field-value'>{renderValue(item.message)}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                         </div>
 
                         <div className='white-box project-details__box'>

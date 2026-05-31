@@ -95,27 +95,6 @@ message ListProjectCreatorHistoricalProjectsResponse {
   repeated string items = 1;
 }
 
-// ProjectEventLog is a project event timeline entry.
-message ProjectEventLog {
-  int64 id = 1;
-  string contract = 2;
-  int32 event_type = 3;
-  string occurred_at = 4;
-  string message = 5;
-  string payload = 6;
-  string created_at = 7;
-}
-
-// ListProjectEventLogsRequest queries event logs by contract.
-message ListProjectEventLogsRequest {
-  string contract = 1;
-}
-
-// ListProjectEventLogsResponse returns event logs for a contract.
-message ListProjectEventLogsResponse {
-  repeated ProjectEventLog items = 1;
-}
-
 // GetProjectOptionsRequest don't need any parameters.
 message GetProjectOptionsRequest {}
 
@@ -137,8 +116,6 @@ service ApplicationService {
   rpc RefreshProjectAveDetail(RefreshProjectAveDetailRequest) returns (RefreshProjectAveDetailResponse);
   rpc ListProjectGenesisWallets(ListProjectGenesisWalletsRequest) returns (ListProjectGenesisWalletsResponse);
   rpc ListProjectCreatorHistoricalProjects(ListProjectCreatorHistoricalProjectsRequest) returns (ListProjectCreatorHistoricalProjectsResponse);
-  // ListProjectEventLogs returns event logs for a given contract.
-  rpc ListProjectEventLogs(ListProjectEventLogsRequest) returns (ListProjectEventLogsResponse);
   // GetProjectOptions returns the options.
   rpc GetProjectOptions(GetProjectOptionsRequest) returns (GetProjectOptionsResponse);
 }

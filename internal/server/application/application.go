@@ -173,27 +173,6 @@ func (s *Server) ListProjectCreatorHistoricalProjects(ctx context.Context, req *
 	return &applicationpkg.ListProjectCreatorHistoricalProjectsResponse{Items: resp.Items}, nil
 }
 
-func (s *Server) ListProjectEventLogs(ctx context.Context, req *applicationpkg.ListProjectEventLogsRequest) (*applicationpkg.ListProjectEventLogsResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListProjectEventLogs(ctx, &applicationapiclient.ListProjectEventLogsRequest{
-		Contract: req.GetContract(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]*applicationpkg.ProjectEventLog, 0, len(resp.Items))
-	for _, item := range resp.Items {
-		items = append(items, projectEventLogToAPI(item))
-	}
-	return &applicationpkg.ListProjectEventLogsResponse{Items: items}, nil
-}
-
 func (s *Server) GetProjectOptions(ctx context.Context, _ *applicationpkg.GetProjectOptionsRequest) (*applicationpkg.GetProjectOptionsResponse, error) {
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {
@@ -206,19 +185,4 @@ func (s *Server) GetProjectOptions(ctx context.Context, _ *applicationpkg.GetPro
 		return nil, err
 	}
 	return &applicationpkg.GetProjectOptionsResponse{Options: resp.Options}, nil
-}
-
-func projectEventLogToAPI(item *applicationapiclient.ProjectEventLog) *applicationpkg.ProjectEventLog {
-	if item == nil {
-		return nil
-	}
-	return &applicationpkg.ProjectEventLog{
-		Id:         item.Id,
-		Contract:   item.Contract,
-		EventType:  item.EventType,
-		OccurredAt: item.OccurredAt,
-		Message:    item.Message,
-		Payload:    item.Payload,
-		CreatedAt:  item.CreatedAt,
-	}
 }
