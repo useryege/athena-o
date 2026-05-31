@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/useryege/athena/internal/application/redisport"
+	"github.com/useryege/athena/util/redisport"
 )
 
 type KVClient interface {

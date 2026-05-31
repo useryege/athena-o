@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/application/model"
-	"github.com/useryege/athena/internal/application/redisport"
+	"github.com/useryege/athena/util/redisport"
 	"github.com/useryege/athena/internal/application/redisrepo"
 )
 

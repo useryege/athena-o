@@ -5,7 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/useryege/athena/internal/application/api"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
-	"github.com/useryege/athena/internal/application/redisport"
+	"github.com/useryege/athena/util/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/server/version"
 	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"

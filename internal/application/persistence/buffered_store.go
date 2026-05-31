@@ -13,7 +13,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	appcache "github.com/useryege/athena/internal/application/cache"
-	"github.com/useryege/athena/internal/application/redisport"
+	"github.com/useryege/athena/util/redisport"
 	"github.com/useryege/athena/internal/application/redisrepo"
 	appstore "github.com/useryege/athena/internal/application/store"
 )

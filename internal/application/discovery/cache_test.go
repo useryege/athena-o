@@ -6,7 +6,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
 	appcache "github.com/useryege/athena/internal/application/cache"
-	"github.com/useryege/athena/internal/application/redisport"
+	"github.com/useryege/athena/util/redisport"
 )
 
 func newProjectComponentCacheTest(t *testing.T) ProjectComponentCache {
