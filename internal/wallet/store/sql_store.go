@@ -13,9 +13,9 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/postgres"
 	walletsqlc "github.com/useryege/athena/internal/wallet/store/sqlc"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
+	"github.com/useryege/athena/util/db/postgres"
 )
 
 //go:embed migrations/*.sql

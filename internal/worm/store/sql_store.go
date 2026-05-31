@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/postgres"
 	"github.com/useryege/athena/internal/worm/store/sqlc"
+	"github.com/useryege/athena/util/db/postgres"
 )
 
 //go:embed migrations/*.sql
