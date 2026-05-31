@@ -11,9 +11,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
+	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/internal/application/model"
 	"github.com/useryege/athena/util/redisport"
-	"github.com/useryege/athena/internal/application/redisrepo"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 	eventPendingPause = 200 * time.Millisecond
 )
 
-var componentEventKeyspace = redisrepo.NewKeyspace("application")
+var componentEventKeyspace = appcache.NewKeyspace("application")
 
 type EventType string
 

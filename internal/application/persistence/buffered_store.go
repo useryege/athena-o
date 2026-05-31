@@ -14,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	"github.com/useryege/athena/util/redisport"
-	"github.com/useryege/athena/internal/application/redisrepo"
+
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -35,7 +35,7 @@ const (
 	bufferedScanCount = int64(256)
 )
 
-var bufferedKeyspace = redisrepo.NewKeyspace("application")
+var bufferedKeyspace = appcache.NewKeyspace("application")
 
 var bufferedFlushOrder = []string{
 	bufferedBaseKind,
@@ -796,11 +796,11 @@ func (s *RedisBufferedStore) getBaseFromRedis(ctx context.Context, contract comm
 }
 
 func (s *RedisBufferedStore) setJSON(ctx context.Context, key string, value any) error {
-	return redisrepo.SetJSON(ctx, s.client, key, value, 0)
+	return appcache.SetJSON(ctx, s.client, key, value, 0)
 }
 
 func getJSON[T any](ctx context.Context, client redisport.KVReaderWriter, key string) (T, bool, error) {
-	return redisrepo.GetJSON[T](ctx, client, key)
+	return appcache.GetJSON[T](ctx, client, key)
 }
 
 func (s *RedisBufferedStore) markDirty(ctx context.Context, kind string, member string) error {

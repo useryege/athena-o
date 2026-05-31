@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/useryege/athena/internal/application/redisrepo"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/util/redisport"
 )
@@ -52,10 +51,8 @@ type ProjectComponentCache interface {
 
 type RedisProjectComponentCache struct {
 	client projectComponentRedisClient
-	keys   redisrepo.Keyspace
+	keys   Keyspace
 }
-
-var _ redisrepo.ProjectCacheRepository = (*RedisProjectComponentCache)(nil)
 
 type projectComponentRedisClient interface {
 	redisport.KVReaderWriter
@@ -69,7 +66,7 @@ func NewProjectComponentCache(client projectComponentRedisClient) ProjectCompone
 	}
 	return &RedisProjectComponentCache{
 		client: client,
-		keys:   redisrepo.NewKeyspace("application"),
+		keys:   NewKeyspace("application"),
 	}
 }
 
@@ -343,14 +340,14 @@ func (c *RedisProjectComponentCache) setJSON(ctx context.Context, key string, va
 	if c == nil || c.client == nil {
 		return nil
 	}
-	return redisrepo.SetJSON(ctx, c.client, key, value, projectComponentCacheTTL)
+	return SetJSON(ctx, c.client, key, value, projectComponentCacheTTL)
 }
 
 func (c *RedisProjectComponentCache) getJSON(ctx context.Context, key string, target any) (bool, error) {
 	if c == nil || c.client == nil {
 		return false, nil
 	}
-	return redisrepo.GetJSONInto(ctx, c.client, key, target)
+	return GetJSONInto(ctx, c.client, key, target)
 }
 
 func projectBaseScore(item appstore.ProjectBase) float64 {
