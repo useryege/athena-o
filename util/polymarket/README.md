@@ -10,9 +10,16 @@
   - `Core`, `Misc`, `Builders`
 - `CLOBClient` (`https://clob.polymarket.com`)
   - Market Data (read-only)
+  - Markets (read-only): market-by-token, clob-market-info, prices-history, batch-prices-history, simplified/sampling pages
   - Also includes CLOB data endpoints: `GET /midpoint` and `GET /time`
   - Note: due to current CLOB drift, `GetMidpointPrices` / `GetMarketPrices` / `GetLastTradePrices`
     are implemented via POST body endpoints under the hood.
+- `CLOBMarketWSClient` (`wss://ws-subscriptions-clob.polymarket.com/ws/market`)
+  - Real-time market stream (read-only): book, price_change, last_trade_price, tick_size_change, best_bid_ask, new_market, market_resolved
+- `SportsWSClient` (`wss://sports-api.polymarket.com/ws`)
+  - Real-time sports result stream (read-only)
+
+This stage intentionally does not include `/ws/user`, `trade/*`, or write paths under `relayer/*`.
 
 ## Constructors
 
@@ -20,6 +27,8 @@
 gammaClient, err := polymarket.NewGammaClient(polymarket.GammaConfig{})
 dataClient, err := polymarket.NewDataClient(polymarket.DataConfig{})
 clobClient, err := polymarket.NewCLOBClient(polymarket.CLOBConfig{})
+clobMarketWSClient, err := polymarket.NewCLOBMarketWSClient(polymarket.CLOBMarketWSConfig{})
+sportsWSClient, err := polymarket.NewSportsWSClient(polymarket.SportsWSConfig{})
 ```
 
 Gamma naming was hard-switched: `Client/Config/NewClient` were replaced with `GammaClient/GammaConfig/NewGammaClient`.
@@ -47,6 +56,12 @@ Gates:
 - `POLYMARKET_DATA_INTEGRATION_LOG_RESPONSE=1`
 - `POLYMARKET_CLOB_MARKET_DATA_INTEGRATION=1`
 - `POLYMARKET_CLOB_MARKET_DATA_INTEGRATION_LOG_RESPONSE=1`
+- `POLYMARKET_CLOB_MARKETS_INTEGRATION=1`
+- `POLYMARKET_CLOB_MARKETS_INTEGRATION_LOG_RESPONSE=1`
+- `POLYMARKET_CLOB_MARKET_WSS_INTEGRATION=1`
+- `POLYMARKET_CLOB_MARKET_WSS_INTEGRATION_LOG_RESPONSE=1`
+- `POLYMARKET_SPORTS_WSS_INTEGRATION=1`
+- `POLYMARKET_SPORTS_WSS_INTEGRATION_LOG_RESPONSE=1`
 
 ### Gamma only
 
@@ -111,6 +126,57 @@ go test -v ./util/polymarket -run '^TestIntegrationCLOBMarketData$'
 
 `TestIntegrationCLOBMarketData` includes `GetMidpointPrice` and `GetServerTime`.
 
+### CLOB Markets only
+
+Basic mode:
+
+```bash
+POLYMARKET_CLOB_MARKETS_INTEGRATION=1 \
+go test -v ./util/polymarket -run '^TestIntegrationCLOBMarkets$'
+```
+
+Log mode:
+
+```bash
+POLYMARKET_CLOB_MARKETS_INTEGRATION=1 \
+POLYMARKET_CLOB_MARKETS_INTEGRATION_LOG_RESPONSE=1 \
+go test -v ./util/polymarket -run '^TestIntegrationCLOBMarkets$'
+```
+
+### CLOB Market WSS only
+
+Basic mode:
+
+```bash
+POLYMARKET_CLOB_MARKET_WSS_INTEGRATION=1 \
+go test -v ./util/polymarket -run '^TestIntegrationCLOBMarketWSS$'
+```
+
+Log mode:
+
+```bash
+POLYMARKET_CLOB_MARKET_WSS_INTEGRATION=1 \
+POLYMARKET_CLOB_MARKET_WSS_INTEGRATION_LOG_RESPONSE=1 \
+go test -v ./util/polymarket -run '^TestIntegrationCLOBMarketWSS$'
+```
+
+### Sports WSS only
+
+Basic mode:
+
+```bash
+POLYMARKET_SPORTS_WSS_INTEGRATION=1 \
+go test -v ./util/polymarket -run '^TestIntegrationSportsWSS$'
+```
+
+Log mode:
+
+```bash
+POLYMARKET_SPORTS_WSS_INTEGRATION=1 \
+POLYMARKET_SPORTS_WSS_INTEGRATION_LOG_RESPONSE=1 \
+go test -v ./util/polymarket -run '^TestIntegrationSportsWSS$'
+```
+
 ### All modules together
 
 ```bash
@@ -125,7 +191,13 @@ POLYMARKET_DATA_INTEGRATION=1 \
 POLYMARKET_DATA_INTEGRATION_LOG_RESPONSE=1 \
 POLYMARKET_CLOB_MARKET_DATA_INTEGRATION=1 \
 POLYMARKET_CLOB_MARKET_DATA_INTEGRATION_LOG_RESPONSE=1 \
-go test -v ./util/polymarket -run '^(TestIntegrationGamma|TestIntegrationData|TestIntegrationCLOBMarketData)$'
+POLYMARKET_CLOB_MARKETS_INTEGRATION=1 \
+POLYMARKET_CLOB_MARKETS_INTEGRATION_LOG_RESPONSE=1 \
+POLYMARKET_CLOB_MARKET_WSS_INTEGRATION=1 \
+POLYMARKET_CLOB_MARKET_WSS_INTEGRATION_LOG_RESPONSE=1 \
+POLYMARKET_SPORTS_WSS_INTEGRATION=1 \
+POLYMARKET_SPORTS_WSS_INTEGRATION_LOG_RESPONSE=1 \
+go test -v ./util/polymarket -run '^(TestIntegrationGamma|TestIntegrationData|TestIntegrationCLOBMarketData|TestIntegrationCLOBMarkets|TestIntegrationCLOBMarketWSS|TestIntegrationSportsWSS)$'
 ```
 
 Integration tests are read-only and skipped by default.

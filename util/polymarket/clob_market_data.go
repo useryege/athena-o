@@ -20,6 +20,15 @@ type CLOBClient interface {
 	GetOrderBook(ctx context.Context, tokenID string) (*OrderBookSummary, error)
 	GetOrderBooks(ctx context.Context, requests []CLOBBookRequest) ([]OrderBookSummary, error)
 
+	// CLOB markets (read-only)
+	GetMarketByToken(ctx context.Context, tokenID string) (*CLOBMarketByTokenResponse, error)
+	GetCLOBMarketInfo(ctx context.Context, conditionID string) (*CLOBMarketInfo, error)
+	GetPricesHistory(ctx context.Context, options GetCLOBPricesHistoryOptions) (*CLOBPricesHistoryResponse, error)
+	GetBatchPricesHistory(ctx context.Context, request CLOBBatchPricesHistoryRequest) (*CLOBBatchPricesHistoryResponse, error)
+	ListSimplifiedMarkets(ctx context.Context, nextCursor string) (*CLOBMarketsPage, error)
+	ListSamplingMarkets(ctx context.Context, nextCursor string) (*CLOBMarketsPage, error)
+	ListSamplingSimplifiedMarkets(ctx context.Context, nextCursor string) (*CLOBMarketsPage, error)
+
 	GetMidpointPrice(ctx context.Context, tokenID string) (*CLOBMidpointPriceResponse, error)
 	GetMidpointPrices(ctx context.Context, tokenIDs []string) (map[string]string, error)
 	GetMidpointPricesByBody(ctx context.Context, requests []CLOBBookRequest) (map[string]string, error)
