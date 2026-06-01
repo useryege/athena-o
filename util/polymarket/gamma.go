@@ -1,0 +1,778 @@
+package polymarket
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+)
+
+const (
+	DefaultGammaBaseURL = "https://gamma-api.polymarket.com"
+	DefaultTimeout      = 30 * time.Second
+
+	errorBodyLimit = 16 * 1024
+)
+
+// Client is a typed Polymarket Gamma API client.
+type Client interface {
+	// Markets
+	ListMarkets(ctx context.Context, options ListMarketsOptions) ([]Market, error)
+	GetMarketByID(ctx context.Context, id int64, options GetMarketOptions) (*Market, error)
+	GetMarketBySlug(ctx context.Context, slug string, options GetMarketOptions) (*Market, error)
+	GetMarketTagsByID(ctx context.Context, id int64) ([]Tag, error)
+
+	// Events
+	ListEvents(ctx context.Context, options ListEventsOptions) ([]Event, error)
+	GetEventByID(ctx context.Context, id int64, options GetEventOptions) (*Event, error)
+	GetEventBySlug(ctx context.Context, slug string, options GetEventOptions) (*Event, error)
+	GetEventTags(ctx context.Context, id int64) ([]Tag, error)
+
+	// Tags
+	ListTags(ctx context.Context, options ListTagsOptions) ([]Tag, error)
+	GetTagByID(ctx context.Context, id string, options GetTagOptions) (*Tag, error)
+	GetTagBySlug(ctx context.Context, slug string, options GetTagOptions) (*Tag, error)
+	GetRelatedTagsByTagID(ctx context.Context, id string, options RelatedTagsOptions) ([]RelatedTagRelationship, error)
+	GetRelatedTagsByTagSlug(ctx context.Context, slug string, options RelatedTagsOptions) ([]RelatedTagRelationship, error)
+	GetTagsRelatedToTagID(ctx context.Context, id string, options RelatedTagsOptions) ([]Tag, error)
+	GetTagsRelatedToTagSlug(ctx context.Context, slug string, options RelatedTagsOptions) ([]Tag, error)
+
+	// Search
+	PublicSearch(ctx context.Context, options PublicSearchOptions) (*PublicSearchResponse, error)
+
+	// Sports
+	GetSportsMetadata(ctx context.Context) ([]SportsMetadata, error)
+	GetSportsMarketTypes(ctx context.Context) (*SportsMarketTypesResponse, error)
+	ListTeams(ctx context.Context, options ListTeamsOptions) ([]Team, error)
+}
+
+type Config struct {
+	GammaBaseURL string
+	Timeout      time.Duration
+}
+
+func (c Config) WithDefaults() Config {
+	return c.withDefaults()
+}
+
+func (c Config) withDefaults() Config {
+	c.GammaBaseURL = strings.TrimSpace(c.GammaBaseURL)
+	if c.GammaBaseURL == "" {
+		c.GammaBaseURL = DefaultGammaBaseURL
+	}
+	if c.Timeout <= 0 {
+		c.Timeout = DefaultTimeout
+	}
+	return c
+}
+
+type clientImpl struct {
+	config Config
+	http   *http.Client
+}
+
+var _ Client = (*clientImpl)(nil)
+
+func NewClient(config Config) (Client, error) {
+	config = config.withDefaults()
+	if _, err := url.ParseRequestURI(config.GammaBaseURL); err != nil {
+		return nil, fmt.Errorf("invalid polymarket gamma base url: %w", err)
+	}
+	return &clientImpl{
+		config: config,
+		http:   &http.Client{Timeout: config.Timeout},
+	}, nil
+}
+
+type APIError struct {
+	StatusCode int    `json:"-"`
+	Type       string `json:"type,omitempty"`
+	Message    string `json:"error,omitempty"`
+	RawBody    string `json:"-"`
+}
+
+func (e *APIError) Error() string {
+	if e == nil {
+		return ""
+	}
+	if e.Type != "" && e.Message != "" {
+		return fmt.Sprintf("polymarket gamma request failed (%d): %s: %s", e.StatusCode, e.Type, e.Message)
+	}
+	if e.Message != "" {
+		return fmt.Sprintf("polymarket gamma request failed (%d): %s", e.StatusCode, e.Message)
+	}
+	if e.RawBody != "" {
+		return fmt.Sprintf("polymarket gamma request failed (%d): %s", e.StatusCode, e.RawBody)
+	}
+	return fmt.Sprintf("polymarket gamma request failed with status %d", e.StatusCode)
+}
+
+// Query option structs.
+
+type ListOptions struct {
+	Limit     *int
+	Offset    *int
+	Order     string
+	Ascending *bool
+}
+
+type ListMarketsOptions struct {
+	ListOptions
+	ID                  []int64
+	Slug                []string
+	ClobTokenIDs        []string
+	ConditionIDs        []string
+	MarketMakerAddress  []string
+	LiquidityNumMin     *float64
+	LiquidityNumMax     *float64
+	VolumeNumMin        *float64
+	VolumeNumMax        *float64
+	StartDateMin        *time.Time
+	StartDateMax        *time.Time
+	EndDateMin          *time.Time
+	EndDateMax          *time.Time
+	TagID               *int64
+	RelatedTags         *bool
+	CYOM                *bool
+	UMAResolutionStatus string
+	GameID              string
+	SportsMarketTypes   []string
+	RewardsMinSize      *float64
+	QuestionIDs         []string
+	IncludeTag          *bool
+	Closed              *bool
+}
+
+type GetMarketOptions struct {
+	IncludeTag *bool
+}
+
+type ListEventsOptions struct {
+	ListOptions
+	ID              []int64
+	TagID           *int64
+	ExcludeTagID    []int64
+	Slug            []string
+	TagSlug         string
+	RelatedTags     *bool
+	Active          *bool
+	Archived        *bool
+	Featured        *bool
+	CYOM            *bool
+	IncludeChat     *bool
+	IncludeTemplate *bool
+	Recurrence      string
+	Closed          *bool
+	LiquidityMin    *float64
+	LiquidityMax    *float64
+	VolumeMin       *float64
+	VolumeMax       *float64
+	StartDateMin    *time.Time
+	StartDateMax    *time.Time
+	EndDateMin      *time.Time
+	EndDateMax      *time.Time
+}
+
+type GetEventOptions struct {
+	IncludeChat     *bool
+	IncludeTemplate *bool
+}
+
+type ListTagsOptions struct {
+	ListOptions
+	IncludeTemplate *bool
+	IsCarousel      *bool
+}
+
+type GetTagOptions struct {
+	IncludeTemplate *bool
+}
+
+type RelatedTagsOptions struct {
+	OmitEmpty string
+	Status    string
+}
+
+type PublicSearchOptions struct {
+	Q                 string
+	Cache             *bool
+	EventsStatus      string
+	LimitPerType      *int
+	Page              *int
+	EventsTag         []string
+	KeepClosedMarkets *int
+	Sort              string
+	Ascending         *bool
+	SearchTags        *bool
+	SearchProfiles    *bool
+	Recurrence        string
+	ExcludeTagID      []int64
+	Optimized         *bool
+}
+
+type ListTeamsOptions struct {
+	ListOptions
+	League       []string
+	Name         []string
+	Abbreviation []string
+}
+
+// API models.
+
+type Market struct {
+	ID                    string          `json:"id"`
+	Question              *string         `json:"question,omitempty"`
+	ConditionID           *string         `json:"conditionId,omitempty"`
+	Slug                  *string         `json:"slug,omitempty"`
+	ResolutionSource      *string         `json:"resolutionSource,omitempty"`
+	EndDate               *time.Time      `json:"endDate,omitempty"`
+	StartDate             *time.Time      `json:"startDate,omitempty"`
+	Image                 *string         `json:"image,omitempty"`
+	Icon                  *string         `json:"icon,omitempty"`
+	Description           *string         `json:"description,omitempty"`
+	Outcomes              *string         `json:"outcomes,omitempty"`
+	OutcomePrices         *string         `json:"outcomePrices,omitempty"`
+	Volume                *string         `json:"volume,omitempty"`
+	Active                *bool           `json:"active,omitempty"`
+	Closed                *bool           `json:"closed,omitempty"`
+	MarketMakerAddress    *string         `json:"marketMakerAddress,omitempty"`
+	CreatedAt             *time.Time      `json:"createdAt,omitempty"`
+	UpdatedAt             *time.Time      `json:"updatedAt,omitempty"`
+	Archived              *bool           `json:"archived,omitempty"`
+	Restricted            *bool           `json:"restricted,omitempty"`
+	QuestionID            *string         `json:"questionID,omitempty"`
+	EnableOrderBook       *bool           `json:"enableOrderBook,omitempty"`
+	OrderPriceMinTickSize *float64        `json:"orderPriceMinTickSize,omitempty"`
+	OrderMinSize          *float64        `json:"orderMinSize,omitempty"`
+	VolumeNum             *float64        `json:"volumeNum,omitempty"`
+	LiquidityNum          *float64        `json:"liquidityNum,omitempty"`
+	EndDateIso            *string         `json:"endDateIso,omitempty"`
+	StartDateIso          *string         `json:"startDateIso,omitempty"`
+	Volume24hr            *float64        `json:"volume24hr,omitempty"`
+	Volume1wk             *float64        `json:"volume1wk,omitempty"`
+	Volume1mo             *float64        `json:"volume1mo,omitempty"`
+	Volume1yr             *float64        `json:"volume1yr,omitempty"`
+	ClobTokenIDs          *string         `json:"clobTokenIds,omitempty"`
+	NegRisk               *bool           `json:"negRisk,omitempty"`
+	Spread                *float64        `json:"spread,omitempty"`
+	LastTradePrice        *float64        `json:"lastTradePrice,omitempty"`
+	BestBid               *float64        `json:"bestBid,omitempty"`
+	BestAsk               *float64        `json:"bestAsk,omitempty"`
+	Events                []Event         `json:"events,omitempty"`
+	Tags                  []Tag           `json:"tags,omitempty"`
+	Raw                   json.RawMessage `json:"-"`
+}
+
+type Event struct {
+	ID               string          `json:"id"`
+	Ticker           *string         `json:"ticker,omitempty"`
+	Slug             *string         `json:"slug,omitempty"`
+	Title            *string         `json:"title,omitempty"`
+	Description      *string         `json:"description,omitempty"`
+	ResolutionSource *string         `json:"resolutionSource,omitempty"`
+	StartDate        *time.Time      `json:"startDate,omitempty"`
+	CreationDate     *time.Time      `json:"creationDate,omitempty"`
+	EndDate          *time.Time      `json:"endDate,omitempty"`
+	Image            *string         `json:"image,omitempty"`
+	Icon             *string         `json:"icon,omitempty"`
+	Active           *bool           `json:"active,omitempty"`
+	Closed           *bool           `json:"closed,omitempty"`
+	Archived         *bool           `json:"archived,omitempty"`
+	Featured         *bool           `json:"featured,omitempty"`
+	Restricted       *bool           `json:"restricted,omitempty"`
+	Liquidity        *float64        `json:"liquidity,omitempty"`
+	Volume           *float64        `json:"volume,omitempty"`
+	OpenInterest     *float64        `json:"openInterest,omitempty"`
+	Category         *string         `json:"category,omitempty"`
+	CreatedAt        *time.Time      `json:"createdAt,omitempty"`
+	UpdatedAt        *time.Time      `json:"updatedAt,omitempty"`
+	CommentCount     *int64          `json:"commentCount,omitempty"`
+	Markets          []Market        `json:"markets,omitempty"`
+	Tags             []Tag           `json:"tags,omitempty"`
+	Raw              json.RawMessage `json:"-"`
+}
+
+type Tag struct {
+	ID                  string     `json:"id"`
+	Label               *string    `json:"label,omitempty"`
+	Slug                *string    `json:"slug,omitempty"`
+	ForceShow           *bool      `json:"forceShow,omitempty"`
+	ForceHide           *bool      `json:"forceHide,omitempty"`
+	PublishedAt         *string    `json:"publishedAt,omitempty"`
+	CreatedAt           *time.Time `json:"createdAt,omitempty"`
+	UpdatedAt           *time.Time `json:"updatedAt,omitempty"`
+	RequiresTranslation *bool      `json:"requiresTranslation,omitempty"`
+	ActiveEventsCount   *int64     `json:"activeEventsCount,omitempty"`
+	IsCarousel          *bool      `json:"isCarousel,omitempty"`
+}
+
+type RelatedTagRelationship struct {
+	ID         string     `json:"id"`
+	TagID      *string    `json:"tagID,omitempty"`
+	RelatedID  *string    `json:"relatedTagID,omitempty"`
+	CreatedAt  *time.Time `json:"createdAt,omitempty"`
+	UpdatedAt  *time.Time `json:"updatedAt,omitempty"`
+	Tag        *Tag       `json:"tag,omitempty"`
+	RelatedTag *Tag       `json:"relatedTag,omitempty"`
+}
+
+type PublicSearchResponse struct {
+	Events     []Event           `json:"events,omitempty"`
+	Tags       []Tag             `json:"tags,omitempty"`
+	Pagination *SearchPagination `json:"pagination,omitempty"`
+}
+
+type SearchPagination struct {
+	HasMore      *bool `json:"hasMore,omitempty"`
+	TotalResults *int  `json:"totalResults,omitempty"`
+}
+
+type SportsMetadata struct {
+	ID         *int64     `json:"id,omitempty"`
+	Sport      *string    `json:"sport,omitempty"`
+	Image      *string    `json:"image,omitempty"`
+	Resolution *string    `json:"resolution,omitempty"`
+	Ordering   *string    `json:"ordering,omitempty"`
+	Tags       *string    `json:"tags,omitempty"`
+	Series     *string    `json:"series,omitempty"`
+	CreatedAt  *time.Time `json:"createdAt,omitempty"`
+}
+
+type SportsMarketTypesResponse struct {
+	Schema      *string  `json:"$schema,omitempty"`
+	MarketTypes []string `json:"marketTypes,omitempty"`
+}
+
+type Team struct {
+	ID           *int64     `json:"id,omitempty"`
+	Name         *string    `json:"name,omitempty"`
+	League       *string    `json:"league,omitempty"`
+	Record       *string    `json:"record,omitempty"`
+	Logo         *string    `json:"logo,omitempty"`
+	Abbreviation *string    `json:"abbreviation,omitempty"`
+	Alias        *string    `json:"alias,omitempty"`
+	ProviderID   *int64     `json:"providerId,omitempty"`
+	Color        *string    `json:"color,omitempty"`
+	CreatedAt    *time.Time `json:"createdAt,omitempty"`
+	UpdatedAt    *time.Time `json:"updatedAt,omitempty"`
+}
+
+func (c *clientImpl) ListMarkets(ctx context.Context, options ListMarketsOptions) ([]Market, error) {
+	query := options.values()
+	var out []Market
+	if err := c.do(ctx, http.MethodGet, "/markets", query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) GetMarketByID(ctx context.Context, id int64, options GetMarketOptions) (*Market, error) {
+	query := options.values()
+	var out Market
+	if err := c.do(ctx, http.MethodGet, "/markets/"+pathEscapeInt(id), query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *clientImpl) GetMarketBySlug(ctx context.Context, slug string, options GetMarketOptions) (*Market, error) {
+	query := options.values()
+	var out Market
+	if err := c.do(ctx, http.MethodGet, "/markets/slug/"+url.PathEscape(strings.TrimSpace(slug)), query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *clientImpl) GetMarketTagsByID(ctx context.Context, id int64) ([]Tag, error) {
+	var out []Tag
+	if err := c.do(ctx, http.MethodGet, "/markets/"+pathEscapeInt(id)+"/tags", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) ListEvents(ctx context.Context, options ListEventsOptions) ([]Event, error) {
+	query := options.values()
+	var out []Event
+	if err := c.do(ctx, http.MethodGet, "/events", query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) GetEventByID(ctx context.Context, id int64, options GetEventOptions) (*Event, error) {
+	query := options.values()
+	var out Event
+	if err := c.do(ctx, http.MethodGet, "/events/"+pathEscapeInt(id), query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *clientImpl) GetEventBySlug(ctx context.Context, slug string, options GetEventOptions) (*Event, error) {
+	query := options.values()
+	var out Event
+	if err := c.do(ctx, http.MethodGet, "/events/slug/"+url.PathEscape(strings.TrimSpace(slug)), query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *clientImpl) GetEventTags(ctx context.Context, id int64) ([]Tag, error) {
+	var out []Tag
+	if err := c.do(ctx, http.MethodGet, "/events/"+pathEscapeInt(id)+"/tags", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) ListTags(ctx context.Context, options ListTagsOptions) ([]Tag, error) {
+	query := options.values()
+	var out []Tag
+	if err := c.do(ctx, http.MethodGet, "/tags", query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) GetTagByID(ctx context.Context, id string, options GetTagOptions) (*Tag, error) {
+	query := options.values()
+	var out Tag
+	if err := c.do(ctx, http.MethodGet, "/tags/"+url.PathEscape(strings.TrimSpace(id)), query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *clientImpl) GetTagBySlug(ctx context.Context, slug string, options GetTagOptions) (*Tag, error) {
+	query := options.values()
+	var out Tag
+	if err := c.do(ctx, http.MethodGet, "/tags/slug/"+url.PathEscape(strings.TrimSpace(slug)), query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *clientImpl) GetRelatedTagsByTagID(ctx context.Context, id string, options RelatedTagsOptions) ([]RelatedTagRelationship, error) {
+	query := options.values()
+	var out []RelatedTagRelationship
+	if err := c.do(ctx, http.MethodGet, "/tags/"+url.PathEscape(strings.TrimSpace(id))+"/related-tags", query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) GetRelatedTagsByTagSlug(ctx context.Context, slug string, options RelatedTagsOptions) ([]RelatedTagRelationship, error) {
+	query := options.values()
+	var out []RelatedTagRelationship
+	if err := c.do(ctx, http.MethodGet, "/tags/slug/"+url.PathEscape(strings.TrimSpace(slug))+"/related-tags", query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) GetTagsRelatedToTagID(ctx context.Context, id string, options RelatedTagsOptions) ([]Tag, error) {
+	query := options.values()
+	var out []Tag
+	if err := c.do(ctx, http.MethodGet, "/tags/"+url.PathEscape(strings.TrimSpace(id))+"/related-tags/tags", query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) GetTagsRelatedToTagSlug(ctx context.Context, slug string, options RelatedTagsOptions) ([]Tag, error) {
+	query := options.values()
+	var out []Tag
+	if err := c.do(ctx, http.MethodGet, "/tags/slug/"+url.PathEscape(strings.TrimSpace(slug))+"/related-tags/tags", query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) PublicSearch(ctx context.Context, options PublicSearchOptions) (*PublicSearchResponse, error) {
+	query := options.values()
+	var out PublicSearchResponse
+	if err := c.do(ctx, http.MethodGet, "/public-search", query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *clientImpl) GetSportsMetadata(ctx context.Context) ([]SportsMetadata, error) {
+	var out []SportsMetadata
+	if err := c.do(ctx, http.MethodGet, "/sports", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) GetSportsMarketTypes(ctx context.Context) (*SportsMarketTypesResponse, error) {
+	var out SportsMarketTypesResponse
+	if err := c.do(ctx, http.MethodGet, "/sports/market-types", nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *clientImpl) ListTeams(ctx context.Context, options ListTeamsOptions) ([]Team, error) {
+	query := options.values()
+	var out []Team
+	if err := c.do(ctx, http.MethodGet, "/teams", query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientImpl) do(ctx context.Context, method, path string, query url.Values, out any) error {
+	endpoint, err := c.buildURL(path, query)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, endpoint.String(), http.NoBody)
+	if err != nil {
+		return fmt.Errorf("failed to create polymarket gamma request: %w", err)
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send polymarket gamma request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return decodeHTTPError(resp)
+	}
+
+	if out == nil {
+		_, _ = io.Copy(io.Discard, resp.Body)
+		return nil
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
+		return fmt.Errorf("failed to decode polymarket gamma response: %w", err)
+	}
+	return nil
+}
+
+func (c *clientImpl) buildURL(path string, query url.Values) (*url.URL, error) {
+	endpoint, err := url.Parse(strings.TrimRight(c.config.GammaBaseURL, "/") + path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse polymarket gamma request url: %w", err)
+	}
+	if len(query) > 0 {
+		endpoint.RawQuery = query.Encode()
+	}
+	return endpoint, nil
+}
+
+func decodeHTTPError(resp *http.Response) error {
+	body, err := io.ReadAll(io.LimitReader(resp.Body, errorBodyLimit))
+	if err != nil {
+		return fmt.Errorf("polymarket gamma request failed with status %s and unreadable body: %w", resp.Status, err)
+	}
+
+	var apiErr APIError
+	if err := json.Unmarshal(body, &apiErr); err == nil {
+		apiErr.StatusCode = resp.StatusCode
+		apiErr.RawBody = strings.TrimSpace(string(body))
+		if apiErr.Type != "" || apiErr.Message != "" {
+			return &apiErr
+		}
+	}
+
+	trimmed := strings.TrimSpace(string(body))
+	if trimmed == "" {
+		trimmed = resp.Status
+	}
+	return &APIError{
+		StatusCode: resp.StatusCode,
+		Message:    trimmed,
+		RawBody:    trimmed,
+	}
+}
+
+func (o ListOptions) values() url.Values {
+	q := make(url.Values)
+	setIntPtr(q, "limit", o.Limit)
+	setIntPtr(q, "offset", o.Offset)
+	setString(q, "order", o.Order)
+	setBoolPtr(q, "ascending", o.Ascending)
+	return q
+}
+
+func (o ListMarketsOptions) values() url.Values {
+	q := o.ListOptions.values()
+	addInt64Slice(q, "id", o.ID)
+	addStringSlice(q, "slug", o.Slug)
+	addStringSlice(q, "clob_token_ids", o.ClobTokenIDs)
+	addStringSlice(q, "condition_ids", o.ConditionIDs)
+	addStringSlice(q, "market_maker_address", o.MarketMakerAddress)
+	setFloat64Ptr(q, "liquidity_num_min", o.LiquidityNumMin)
+	setFloat64Ptr(q, "liquidity_num_max", o.LiquidityNumMax)
+	setFloat64Ptr(q, "volume_num_min", o.VolumeNumMin)
+	setFloat64Ptr(q, "volume_num_max", o.VolumeNumMax)
+	setTimePtr(q, "start_date_min", o.StartDateMin)
+	setTimePtr(q, "start_date_max", o.StartDateMax)
+	setTimePtr(q, "end_date_min", o.EndDateMin)
+	setTimePtr(q, "end_date_max", o.EndDateMax)
+	setInt64Ptr(q, "tag_id", o.TagID)
+	setBoolPtr(q, "related_tags", o.RelatedTags)
+	setBoolPtr(q, "cyom", o.CYOM)
+	setString(q, "uma_resolution_status", o.UMAResolutionStatus)
+	setString(q, "game_id", o.GameID)
+	addStringSlice(q, "sports_market_types", o.SportsMarketTypes)
+	setFloat64Ptr(q, "rewards_min_size", o.RewardsMinSize)
+	addStringSlice(q, "question_ids", o.QuestionIDs)
+	setBoolPtr(q, "include_tag", o.IncludeTag)
+	setBoolPtr(q, "closed", o.Closed)
+	return q
+}
+
+func (o GetMarketOptions) values() url.Values {
+	q := make(url.Values)
+	setBoolPtr(q, "include_tag", o.IncludeTag)
+	return q
+}
+
+func (o ListEventsOptions) values() url.Values {
+	q := o.ListOptions.values()
+	addInt64Slice(q, "id", o.ID)
+	setInt64Ptr(q, "tag_id", o.TagID)
+	addInt64Slice(q, "exclude_tag_id", o.ExcludeTagID)
+	addStringSlice(q, "slug", o.Slug)
+	setString(q, "tag_slug", o.TagSlug)
+	setBoolPtr(q, "related_tags", o.RelatedTags)
+	setBoolPtr(q, "active", o.Active)
+	setBoolPtr(q, "archived", o.Archived)
+	setBoolPtr(q, "featured", o.Featured)
+	setBoolPtr(q, "cyom", o.CYOM)
+	setBoolPtr(q, "include_chat", o.IncludeChat)
+	setBoolPtr(q, "include_template", o.IncludeTemplate)
+	setString(q, "recurrence", o.Recurrence)
+	setBoolPtr(q, "closed", o.Closed)
+	setFloat64Ptr(q, "liquidity_min", o.LiquidityMin)
+	setFloat64Ptr(q, "liquidity_max", o.LiquidityMax)
+	setFloat64Ptr(q, "volume_min", o.VolumeMin)
+	setFloat64Ptr(q, "volume_max", o.VolumeMax)
+	setTimePtr(q, "start_date_min", o.StartDateMin)
+	setTimePtr(q, "start_date_max", o.StartDateMax)
+	setTimePtr(q, "end_date_min", o.EndDateMin)
+	setTimePtr(q, "end_date_max", o.EndDateMax)
+	return q
+}
+
+func (o GetEventOptions) values() url.Values {
+	q := make(url.Values)
+	setBoolPtr(q, "include_chat", o.IncludeChat)
+	setBoolPtr(q, "include_template", o.IncludeTemplate)
+	return q
+}
+
+func (o ListTagsOptions) values() url.Values {
+	q := o.ListOptions.values()
+	setBoolPtr(q, "include_template", o.IncludeTemplate)
+	setBoolPtr(q, "is_carousel", o.IsCarousel)
+	return q
+}
+
+func (o GetTagOptions) values() url.Values {
+	q := make(url.Values)
+	setBoolPtr(q, "include_template", o.IncludeTemplate)
+	return q
+}
+
+func (o RelatedTagsOptions) values() url.Values {
+	q := make(url.Values)
+	setString(q, "omit_empty", o.OmitEmpty)
+	setString(q, "status", o.Status)
+	return q
+}
+
+func (o PublicSearchOptions) values() url.Values {
+	q := make(url.Values)
+	setString(q, "q", o.Q)
+	setBoolPtr(q, "cache", o.Cache)
+	setString(q, "events_status", o.EventsStatus)
+	setIntPtr(q, "limit_per_type", o.LimitPerType)
+	setIntPtr(q, "page", o.Page)
+	addStringSlice(q, "events_tag", o.EventsTag)
+	setIntPtr(q, "keep_closed_markets", o.KeepClosedMarkets)
+	setString(q, "sort", o.Sort)
+	setBoolPtr(q, "ascending", o.Ascending)
+	setBoolPtr(q, "search_tags", o.SearchTags)
+	setBoolPtr(q, "search_profiles", o.SearchProfiles)
+	setString(q, "recurrence", o.Recurrence)
+	addInt64Slice(q, "exclude_tag_id", o.ExcludeTagID)
+	setBoolPtr(q, "optimized", o.Optimized)
+	return q
+}
+
+func (o ListTeamsOptions) values() url.Values {
+	q := o.ListOptions.values()
+	addStringSlice(q, "league", o.League)
+	addStringSlice(q, "name", o.Name)
+	addStringSlice(q, "abbreviation", o.Abbreviation)
+	return q
+}
+
+func pathEscapeInt(v int64) string {
+	return url.PathEscape(strconv.FormatInt(v, 10))
+}
+
+func setString(query url.Values, key, value string) {
+	if strings.TrimSpace(value) != "" {
+		query.Set(key, strings.TrimSpace(value))
+	}
+}
+
+func setBoolPtr(query url.Values, key string, value *bool) {
+	if value != nil {
+		query.Set(key, strconv.FormatBool(*value))
+	}
+}
+
+func setIntPtr(query url.Values, key string, value *int) {
+	if value != nil {
+		query.Set(key, strconv.Itoa(*value))
+	}
+}
+
+func setInt64Ptr(query url.Values, key string, value *int64) {
+	if value != nil {
+		query.Set(key, strconv.FormatInt(*value, 10))
+	}
+}
+
+func setFloat64Ptr(query url.Values, key string, value *float64) {
+	if value != nil {
+		query.Set(key, strconv.FormatFloat(*value, 'f', -1, 64))
+	}
+}
+
+func setTimePtr(query url.Values, key string, value *time.Time) {
+	if value != nil {
+		query.Set(key, value.UTC().Format(time.RFC3339))
+	}
+}
+
+func addStringSlice(query url.Values, key string, values []string) {
+	for _, v := range values {
+		trimmed := strings.TrimSpace(v)
+		if trimmed != "" {
+			query.Add(key, trimmed)
+		}
+	}
+}
+
+func addInt64Slice(query url.Values, key string, values []int64) {
+	for _, v := range values {
+		query.Add(key, strconv.FormatInt(v, 10))
+	}
+}
