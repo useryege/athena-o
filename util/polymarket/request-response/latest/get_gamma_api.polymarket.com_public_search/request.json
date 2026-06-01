@@ -1,0 +1,13 @@
+{
+  "method": "GET",
+  "url": "https://gamma-api.polymarket.com/public-search?q=btc",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "query": {
+    "q": [
+      "btc"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:46.817255991Z"
+}

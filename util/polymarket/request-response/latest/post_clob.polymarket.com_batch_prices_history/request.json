@@ -1,0 +1,14 @@
+{
+  "method": "POST",
+  "url": "https://clob.polymarket.com/batch-prices-history",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "body": {
+    "interval": "1d",
+    "markets": [
+      "98022490269692409998126496127597032490334070080325855126491859374983463996227"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:50.244035389Z"
+}

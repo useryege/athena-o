@@ -1,0 +1,55 @@
+{
+  "status_code": 200,
+  "headers": {
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Cf-Ray": [
+      "a05107982b9be2ef-HKG"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Date": [
+      "Mon, 01 Jun 2026 20:39:49 GMT"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "Set-Cookie": [
+      "__cf_bm=2R_4BULqaFwDaqHk9SWMq9Rsl0dp5PnkLpsmdQTdLm8-1780346387.2222385-1.0.1.1-H.qU2QKbaIL6jnjuKy3jJsuxOcpruN1tTsI9cfXqj7rYUD3dt9ca0o0_uZN.apBC0JY.sCGyqNXx8DD0bBJWeElOX1c8hZq9XwgYcxsD_GgmUPlEk7R6eRiiL7QX3Pkv; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:49 GMT"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7776000; includeSubDomains"
+    ],
+    "Vary": [
+      "Origin"
+    ]
+  },
+  "body": {
+    "estCheckoutTimeMs": 28000,
+    "estFeeBreakdown": {
+      "appFeeLabel": "Swap fee",
+      "appFeePercent": 0,
+      "appFeeUsd": 0,
+      "fillCostPercent": 0,
+      "fillCostUsd": 0,
+      "gasUsd": 0.000839,
+      "maxSlippage": 0.5,
+      "minReceived": 0.978474,
+      "swapImpact": 0.13721645841545335,
+      "swapImpactUsd": 0.0013717543069438711,
+      "totalImpact": 1.1346392571378843,
+      "totalImpactUsd": 0.011343
+    },
+    "estInputUsd": 0.999701,
+    "estOutputUsd": 0.988358,
+    "estToTokenBaseUnit": "988689",
+    "quoteId": "0x31f06c37bad4ac7f2e7e418f33e251cb6c282e2f4c68c022e6725aa6b3998e2a"
+  },
+  "latency_ms": 2740,
+  "ended_at": "2026-06-01T20:39:50.243508334Z"
+}

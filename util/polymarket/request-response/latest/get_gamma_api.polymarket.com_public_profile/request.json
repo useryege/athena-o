@@ -1,0 +1,13 @@
+{
+  "method": "GET",
+  "url": "https://gamma-api.polymarket.com/public-profile?address=0x0000000000000000000000000000000000000000",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "query": {
+    "address": [
+      "0x0000000000000000000000000000000000000000"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:46.568163838Z"
+}

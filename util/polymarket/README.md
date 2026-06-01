@@ -221,3 +221,30 @@ Optional env vars:
 - `POLYMARKET_GAMMA_BASE_URL`: override Gamma base URL.
 
 The validator discovers market/event/tag/comment/series samples from live API responses, then performs strict JSON decoding (`DisallowUnknownFields`) against local Go models for the full Gamma coverage (including community + keyset endpoints).
+
+## Snapshot public read request/response
+
+Collect live request/response snapshots for all public read HTTP endpoints discovered from:
+`util/polymarket/polymarket-docs/api-reference/**/*.md`
+
+Output directory is rebuilt each run:
+`util/polymarket/request-response/latest`
+
+Dry-run (parse/classify only):
+
+```bash
+go run ./tools/cmd-polymarket-public-read-snapshot --dry-run
+```
+
+Live run:
+
+```bash
+go run ./tools/cmd-polymarket-public-read-snapshot
+```
+
+Makefile shortcuts:
+
+```bash
+make -C util/polymarket snapshot-public-read-dry
+make -C util/polymarket snapshot-public-read
+```

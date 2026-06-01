@@ -1,0 +1,5 @@
+{
+  "endpoint_key": "get_clob.polymarket.com_rewards_markets_condition_id",
+  "doc_source": "util/polymarket/polymarket-docs/api-reference/rewards/get-raw-rewards-for-a-specific-market.md",
+  "result": "pass"
+}

@@ -1,0 +1,13 @@
+{
+  "method": "GET",
+  "url": "https://gamma-api.polymarket.com/comments/user_address/0x0000000000000000000000000000000000000000?limit=1",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "query": {
+    "limit": [
+      "1"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:46.213945982Z"
+}

@@ -1,0 +1,8 @@
+{
+  "method": "GET",
+  "url": "https://gamma-api.polymarket.com/tags/101867",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "started_at": "2026-06-01T20:39:47.279959135Z"
+}

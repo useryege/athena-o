@@ -1,0 +1,5 @@
+{
+  "endpoint_key": "post_clob.polymarket.com_spreads",
+  "doc_source": "util/polymarket/polymarket-docs/api-reference/market-data/get-spreads.md",
+  "result": "pass"
+}

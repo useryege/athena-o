@@ -1,0 +1,8 @@
+{
+  "method": "GET",
+  "url": "https://gamma-api.polymarket.com/events/slug/nba-will-the-mavericks-beat-the-grizzlies-by-more-than-5pt5-points-in-their-december-4-matchup",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "started_at": "2026-06-01T20:39:46.375112348Z"
+}

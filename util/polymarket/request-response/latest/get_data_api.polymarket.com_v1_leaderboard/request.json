@@ -1,0 +1,16 @@
+{
+  "method": "GET",
+  "url": "https://data-api.polymarket.com/v1/leaderboard?limit=1\u0026user=0x0000000000000000000000000000000000000000",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "query": {
+    "limit": [
+      "1"
+    ],
+    "user": [
+      "0x0000000000000000000000000000000000000000"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:45.424083949Z"
+}

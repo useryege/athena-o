@@ -1,0 +1,5 @@
+{
+  "endpoint_key": "get_data_api.polymarket.com_v1_builders_volume",
+  "doc_source": "util/polymarket/polymarket-docs/api-reference/builders/get-daily-builder-volume-time-series.md",
+  "result": "pass"
+}

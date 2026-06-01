@@ -1,0 +1,5 @@
+{
+  "endpoint_key": "get_clob.polymarket.com_fee_rate_token_id",
+  "doc_source": "util/polymarket/polymarket-docs/api-reference/market-data/get-fee-rate-by-path-parameter.md",
+  "result": "pass"
+}

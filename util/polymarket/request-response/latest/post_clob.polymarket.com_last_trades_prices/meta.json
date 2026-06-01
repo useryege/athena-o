@@ -1,0 +1,5 @@
+{
+  "endpoint_key": "post_clob.polymarket.com_last_trades_prices",
+  "doc_source": "util/polymarket/polymarket-docs/api-reference/market-data/get-last-trade-prices-request-body.md",
+  "result": "pass"
+}

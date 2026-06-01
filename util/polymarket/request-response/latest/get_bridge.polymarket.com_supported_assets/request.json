@@ -1,0 +1,8 @@
+{
+  "method": "GET",
+  "url": "https://bridge.polymarket.com/supported-assets",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "started_at": "2026-06-01T20:39:38.041896614Z"
+}

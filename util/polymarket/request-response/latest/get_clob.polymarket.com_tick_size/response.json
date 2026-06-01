@@ -1,0 +1,40 @@
+{
+  "status_code": 200,
+  "headers": {
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Cf-Ray": [
+      "a051077a7a02210b-HKG"
+    ],
+    "Content-Length": [
+      "27"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Date": [
+      "Mon, 01 Jun 2026 20:39:42 GMT"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "Set-Cookie": [
+      "__cf_bm=Y8mmmLnkbetoIValNglFqEix.W8rltS5FIAeuMWZJrw-1780346382.4732358-1.0.1.1-KhcBBeA3KbtYNbzjW81kkOD0e4YSuk9Gj3I6bEPPB0engrbaGInzv6jav0daEcBsLGtshDwvtMHJsgwGlHveO_AUZ1YuStZeU0waovGcLtCd6d2McTabPJixfqi36n5P; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:42 GMT"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7776000; includeSubDomains"
+    ],
+    "Vary": [
+      "Origin"
+    ]
+  },
+  "body": {
+    "minimum_tick_size": 0.01
+  },
+  "latency_ms": 260,
+  "ended_at": "2026-06-01T20:39:42.877479525Z"
+}

@@ -1,0 +1,6 @@
+{
+  "endpoint_key": "get_clob.polymarket.com_rebates_current",
+  "doc_source": "util/polymarket/polymarket-docs/api-reference/rebates/get-current-rebated-fees-for-a-maker.md",
+  "result": "fail",
+  "error": "http 400"
+}

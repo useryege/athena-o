@@ -1,0 +1,8 @@
+{
+  "method": "GET",
+  "url": "https://bridge.polymarket.com/status/0x0000000000000000000000000000000000000000",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "started_at": "2026-06-01T20:39:37.868771211Z"
+}

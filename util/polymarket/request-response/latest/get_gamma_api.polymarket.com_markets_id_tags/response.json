@@ -1,0 +1,47 @@
+{
+  "status_code": 404,
+  "headers": {
+    "Age": [
+      "31"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Cache-Control": [
+      "public, max-age=1800"
+    ],
+    "Cf-Cache-Status": [
+      "HIT"
+    ],
+    "Cf-Ray": [
+      "a0510791dc80d76d-HKG"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Date": [
+      "Mon, 01 Jun 2026 20:39:46 GMT"
+    ],
+    "Expires": [
+      "Mon, 01 Jun 2026 21:09:46 GMT"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "Set-Cookie": [
+      "__cf_bm=T3khxC_UqTNdaF0OKCaVtSeOhOxFYrYHOGPfP7wXXvo-1780346386.2191756-1.0.1.1-YmjeqmCVK2ug5AFRdgSC46V177EtmDENZBkxFWd3MZXF1ugK.Lnux8yXy01x4FgrdB0frYpkcd5l4.FQHDrnNj08HVgzpyV7g3eY9SF_6f2Eu0KKzwCWF4FsjHAtsMZS; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:46 GMT"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7776000; includeSubDomains"
+    ],
+    "Vary": [
+      "Origin, accept-encoding"
+    ]
+  },
+  "body": {
+    "error": "id not found",
+    "type": "not found error"
+  },
+  "latency_ms": 31,
+  "ended_at": "2026-06-01T20:39:46.504277285Z"
+}

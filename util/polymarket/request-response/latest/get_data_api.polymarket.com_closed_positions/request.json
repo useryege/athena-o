@@ -1,0 +1,19 @@
+{
+  "method": "GET",
+  "url": "https://data-api.polymarket.com/closed-positions?limit=1\u0026market=0x1fad72fae204143ff1c3035e99e7c0f65ea8d5cd9bd1070987bd1a3316f772be\u0026user=0x0000000000000000000000000000000000000000",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "query": {
+    "limit": [
+      "1"
+    ],
+    "market": [
+      "0x1fad72fae204143ff1c3035e99e7c0f65ea8d5cd9bd1070987bd1a3316f772be"
+    ],
+    "user": [
+      "0x0000000000000000000000000000000000000000"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:43.958870973Z"
+}

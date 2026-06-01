@@ -1,0 +1,26 @@
+{
+  "started_at": "2026-06-01T20:39:37.328435778Z",
+  "ended_at": "2026-06-01T20:39:51.729958671Z",
+  "total_candidates": 96,
+  "included": 73,
+  "excluded": {
+    "auth_required": 4,
+    "no_openapi_header": 8,
+    "parse_error": 2,
+    "post_not_read_semantic": 2,
+    "relayer_excluded": 7,
+    "trade_excluded": 10
+  },
+  "passed": 66,
+  "failed": 7,
+  "failures": [
+    "get_bridge.polymarket.com_status_address: http 500",
+    "get_clob.polymarket.com_last_trades_prices: http 400",
+    "get_clob.polymarket.com_midpoints: http 400",
+    "get_clob.polymarket.com_prices: http 400",
+    "get_clob.polymarket.com_rebates_current: http 400",
+    "get_gamma_api.polymarket.com_comments_id: missing sample: path param id: sample comment id missing",
+    "get_gamma_api.polymarket.com_markets_id_tags: http 404"
+  ],
+  "duration_ms": 14401
+}

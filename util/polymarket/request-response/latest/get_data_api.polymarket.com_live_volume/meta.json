@@ -1,0 +1,5 @@
+{
+  "endpoint_key": "get_data_api.polymarket.com_live_volume",
+  "doc_source": "util/polymarket/polymarket-docs/api-reference/misc/get-live-volume-for-an-event.md",
+  "result": "pass"
+}

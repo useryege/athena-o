@@ -1,0 +1,8 @@
+{
+  "method": "GET",
+  "url": "https://gamma-api.polymarket.com/sports/market-types",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "started_at": "2026-06-01T20:39:47.216381218Z"
+}

@@ -1,0 +1,16 @@
+{
+  "method": "GET",
+  "url": "https://gamma-api.polymarket.com/teams?league=nfl\u0026limit=1",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "query": {
+    "league": [
+      "nfl"
+    ],
+    "limit": [
+      "1"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:47.471471481Z"
+}

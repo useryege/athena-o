@@ -1,0 +1,16 @@
+{
+  "method": "GET",
+  "url": "https://clob.polymarket.com/rewards/markets/multi?q=btc\u0026tag_slug=product-marekt-fit",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "query": {
+    "q": [
+      "btc"
+    ],
+    "tag_slug": [
+      "product-marekt-fit"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:41.615075521Z"
+}

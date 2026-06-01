@@ -1,0 +1,55 @@
+{
+  "status_code": 200,
+  "headers": {
+    "Age": [
+      "1665"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Cache-Control": [
+      "public, max-age=1800"
+    ],
+    "Cf-Cache-Status": [
+      "HIT"
+    ],
+    "Cf-Ray": [
+      "a0510796cc5ed76d-HKG"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Date": [
+      "Mon, 01 Jun 2026 20:39:47 GMT"
+    ],
+    "Expires": [
+      "Mon, 01 Jun 2026 21:09:47 GMT"
+    ],
+    "Last-Modified": [
+      "Mon, 01 Jun 2026 20:39:16 GMT"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "Set-Cookie": [
+      "__cf_bm=CkbjgqJIqyzaekthzAhNPuzw_8evkDFRWVBYy4pRbyc-1780346387.0054622-1.0.1.1-pQE1N__Jr4HQcSnIqZcudsYqHLd_HUaWzSlsb5RNJ.UVGufLHkauQpynrOC7v45x8l2nc1gjteN4wO.p2duSx.yz_N_RE_FLxBkuXuEsjoDCiJQaCCuor27NJTXg9e6t; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:47 GMT"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7776000; includeSubDomains"
+    ],
+    "Vary": [
+      "Origin, accept-encoding"
+    ]
+  },
+  "body": {
+    "$schema": "https://gamma-api.polymarket.com/schemas/Tag.json",
+    "createdAt": "2025-02-18T16:58:25.464578Z",
+    "id": "101867",
+    "label": "product marekt fit",
+    "requiresTranslation": false,
+    "slug": "product-marekt-fit",
+    "updatedAt": "2026-04-17T17:23:11.67487Z"
+  },
+  "latency_ms": 33,
+  "ended_at": "2026-06-01T20:39:47.313488706Z"
+}

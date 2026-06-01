@@ -1,0 +1,5 @@
+{
+  "endpoint_key": "post_bridge.polymarket.com_quote",
+  "doc_source": "util/polymarket/polymarket-docs/api-reference/bridge/get-a-quote.md",
+  "result": "pass"
+}

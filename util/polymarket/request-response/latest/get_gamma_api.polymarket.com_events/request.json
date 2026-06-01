@@ -1,0 +1,25 @@
+{
+  "method": "GET",
+  "url": "https://gamma-api.polymarket.com/events?id=2890\u0026limit=1\u0026slug=nba-will-the-mavericks-beat-the-grizzlies-by-more-than-5pt5-points-in-their-december-4-matchup\u0026tag_id=101867\u0026tag_slug=product-marekt-fit",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "query": {
+    "id": [
+      "2890"
+    ],
+    "limit": [
+      "1"
+    ],
+    "slug": [
+      "nba-will-the-mavericks-beat-the-grizzlies-by-more-than-5pt5-points-in-their-december-4-matchup"
+    ],
+    "tag_id": [
+      "101867"
+    ],
+    "tag_slug": [
+      "product-marekt-fit"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:46.245658734Z"
+}

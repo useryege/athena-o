@@ -1,0 +1,16 @@
+{
+  "method": "GET",
+  "url": "https://clob.polymarket.com/rebates/current?date=2026-06-01\u0026maker_address=0x0000000000000000000000000000000000000000",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "query": {
+    "date": [
+      "2026-06-01"
+    ],
+    "maker_address": [
+      "0x0000000000000000000000000000000000000000"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:40.456091607Z"
+}

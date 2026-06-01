@@ -1,0 +1,2350 @@
+{
+  "status_code": 200,
+  "headers": {
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Cf-Ray": [
+      "a051075b7c32e2ef-HKG"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Date": [
+      "Mon, 01 Jun 2026 20:39:37 GMT"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "Set-Cookie": [
+      "__cf_bm=v41AX0kqoXj9po5V_d4xmBfUOPYXIKW33AQBo9o4vDw-1780346377.512982-1.0.1.1-2Pf2AlWDB5EqFcrCQO5vU8UGnSU8FLWGvKVkf5pas7AtmwNR03OKtVFH3b.Jjzxx4n3QRa6G.g1B41R8o0JDCVbyJ947fRJqblTcFbi3AstaErbPlhyUha2fZllPimTa; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:37 GMT"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7776000; includeSubDomains"
+    ],
+    "Vary": [
+      "Accept-Encoding",
+      "Origin"
+    ]
+  },
+  "body": {
+    "note": "These are the currently supported chains and assets for deposits and withdrawals.",
+    "supportedAssets": [
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x0000000000085d4780B73119b644AE5ecd22b376",
+          "decimals": 18,
+          "name": "TrueUSD",
+          "symbol": "TUSD"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x00e2B6D170740c15bF9Fb01D0B6e77C0d4510E32",
+          "decimals": 18,
+          "name": "DOG",
+          "symbol": "DOG"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x0D8775F648430679A709E98d2b0Cb6250d2887EF",
+          "decimals": 18,
+          "name": "Basic Attention Token",
+          "symbol": "BAT"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x111111111117dC0aa78b770fA6A738034120C302",
+          "decimals": 18,
+          "name": "1INCH",
+          "symbol": "1INCH"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x163f8C2467924be0ae7B5347228CABF260318753",
+          "decimals": 18,
+          "name": "Worldcoin",
+          "symbol": "WLD"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
+          "decimals": 6,
+          "name": "Euro Coin",
+          "symbol": "EUROC"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+          "decimals": 18,
+          "name": "Uniswap",
+          "symbol": "UNI"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+          "decimals": 8,
+          "name": "Wrapped BTC",
+          "symbol": "WBTC"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a",
+          "decimals": 6,
+          "name": "aEthUSDT",
+          "symbol": "aEthUSDT"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x3073f7aAA4DB83f95e9FFf17424F71D4751a3073",
+          "decimals": 8,
+          "name": "MOVE",
+          "symbol": "MOVE"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x3845badAde8e6dFF049820680d1F14bD3903a5d0",
+          "decimals": 18,
+          "name": "SAND",
+          "symbol": "SAND"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x39fBBABf11738317a448031930706cd3e612e1B9",
+          "decimals": 6,
+          "name": "Wrapped XRP",
+          "symbol": "WXRP"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6",
+          "decimals": 18,
+          "name": "Polygon Ecosystem Token",
+          "symbol": "POL"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x45804880De22913dAFE09f4980848ECE6EcbAf78",
+          "decimals": 18,
+          "name": "Paxos Gold",
+          "symbol": "PAXG"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x4DC26fC5854e7648a064a4ABD590bBE71724C277",
+          "decimals": 18,
+          "name": "Animecoin",
+          "symbol": "ANIME"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x4Fabb145d64652a948d72533023f6E7A623C7C53",
+          "decimals": 18,
+          "name": "BUSD",
+          "symbol": "BUSD"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x4a220E6096B25EADb88358cb44068A3248254675",
+          "decimals": 18,
+          "name": "Quant",
+          "symbol": "QNT"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+          "decimals": 18,
+          "name": "USDe",
+          "symbol": "USDe"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x4d224452801ACEd8B2F0aebE155379bb5D594381",
+          "decimals": 18,
+          "name": "ApeCoin",
+          "symbol": "APE"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+          "decimals": 18,
+          "name": "ChainLink Token",
+          "symbol": "LINK"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x5283D291DBCF85356A21bA090E6db59121208b44",
+          "decimals": 18,
+          "name": "Blur",
+          "symbol": "BLUR"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x56072C95FAA701256059aa122697B133aDEd9279",
+          "decimals": 18,
+          "name": "SKY Governance Token",
+          "symbol": "SKY"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x57e114B691Db790C35207b2e685D4A43181e6061",
+          "decimals": 18,
+          "name": "Ethena",
+          "symbol": "ENA"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1",
+          "decimals": 9,
+          "name": "TON",
+          "symbol": "TONCOIN"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
+          "decimals": 18,
+          "name": "Lido DAO Token",
+          "symbol": "LDO"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
+          "decimals": 18,
+          "name": "PEPE",
+          "symbol": "PEPE"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "decimals": 18,
+          "name": "Dai Stablecoin",
+          "symbol": "DAI"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x6De037ef9aD2725EB40118Bb1702EBb27e4Aeb24",
+          "decimals": 18,
+          "name": "Render Token",
+          "symbol": "RNDR"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8",
+          "decimals": 6,
+          "name": "PayPal USD",
+          "symbol": "PYUSD"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x6e6F6d696e61decd6605bD4a57836c5DB6923340",
+          "decimals": 18,
+          "name": "NOM",
+          "symbol": "NOM"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x73E0C0d45E048D25Fc26Fa3159b0aA04BfA4Db98",
+          "decimals": 8,
+          "name": "Kraken Wrapped Bitcoin",
+          "symbol": "kBTC"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x7420B4b9a0110cdC71fB720908340C03F9Bc03EC",
+          "decimals": 18,
+          "name": "JASMY",
+          "symbol": "JASMY"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x767FE9EDC9E0dF98E07454847909b5E959D7ca0E",
+          "decimals": 18,
+          "name": "ILV",
+          "symbol": "ILV"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0",
+          "decimals": 18,
+          "name": "Matic Token",
+          "symbol": "MATIC"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+          "decimals": 18,
+          "name": "Aave Token",
+          "symbol": "AAVE"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x808507121B80c02388fAd14726482e061B8da827",
+          "decimals": 18,
+          "name": "Pendle",
+          "symbol": "PENDLE"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x8E870D67F660D95d5be530380D0eC0bd388289E1",
+          "decimals": 18,
+          "name": "Pax Dollar",
+          "symbol": "USDP"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d",
+          "decimals": 18,
+          "name": "USD1",
+          "symbol": "USD1"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x8f8221aFbB33998d8584A2B05749bA73c37a938a",
+          "decimals": 18,
+          "name": "REQ",
+          "symbol": "REQ"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x90D2af7d622ca3141efA4d8f1F24d86E5974Cc8F",
+          "decimals": 18,
+          "name": "eUSDe",
+          "symbol": "eUSDe"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE",
+          "decimals": 18,
+          "name": "SHIB",
+          "symbol": "SHIB"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541",
+          "decimals": 8,
+          "name": "BBTC",
+          "symbol": "BBTC"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
+          "decimals": 18,
+          "name": "sUSDe",
+          "symbol": "sUSDe"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x9F52c8ecbEe10e00D9faaAc5Ee9Ba0fF6550F511",
+          "decimals": 18,
+          "name": "Sipher Token",
+          "symbol": "SIPHER"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
+          "decimals": 18,
+          "name": "Maker",
+          "symbol": "MKR"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b",
+          "decimals": 8,
+          "name": "CRO",
+          "symbol": "CRO"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "decimals": 6,
+          "name": "USDC",
+          "symbol": "USDC"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xA12CC123ba206d4031D1c7f6223D1C2Ec249f4f3",
+          "decimals": 18,
+          "name": "ZAMA",
+          "symbol": "ZAMA"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xA35923162C49cF95e6BF26623385eb431ad920D3",
+          "decimals": 18,
+          "name": "TURBO",
+          "symbol": "TURBO"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xB50721BCf8d664c30412Cfbc6cf7a15145234ad1",
+          "decimals": 18,
+          "name": "Arbitrum",
+          "symbol": "ARB"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
+          "decimals": 18,
+          "name": "BNB",
+          "symbol": "BNB"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xBc65ad17c5C0a2A4D159fa5a503f4992c7B545FE",
+          "decimals": 18,
+          "name": "sUSDC",
+          "symbol": "sUSDC"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F",
+          "decimals": 18,
+          "name": "Synthetix Network Token",
+          "symbol": "SNX"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+          "decimals": 18,
+          "name": "Wrapped Ether",
+          "symbol": "WETH"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72",
+          "decimals": 18,
+          "name": "Ethereum Name Service",
+          "symbol": "ENS"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xD31a59c85aE9D8edEFeC411D448f90841571b89c",
+          "decimals": 9,
+          "name": "SOL (Wormhole)",
+          "symbol": "SOL"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xD533a949740bb3306d119CC777fa900bA034cd52",
+          "decimals": 18,
+          "name": "CRV",
+          "symbol": "CRV"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB",
+          "decimals": 18,
+          "name": "CoW Protocol",
+          "symbol": "COW"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+          "decimals": 8,
+          "name": "SPX6900",
+          "symbol": "SPX"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xE92344b4eDF545F3209094B192E46600A19E7C2D",
+          "decimals": 18,
+          "name": "zkml",
+          "symbol": "ZKML"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xEe7527841A932d2912224E20a405e1a1FF747084",
+          "decimals": 7,
+          "name": "SHX",
+          "symbol": "SHX"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 18,
+          "name": "Ether",
+          "symbol": "ETH"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF",
+          "decimals": 18,
+          "name": "Immutable X",
+          "symbol": "IMX"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xa0246c9032bC3A600820415aE600c6388619A14D",
+          "decimals": 18,
+          "name": "OFARM",
+          "symbol": "FARM"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xa2E3356610840701BDf5611a53974510Ae27E2e1",
+          "decimals": 18,
+          "name": "wBETH",
+          "symbol": "wBETH"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xacA92E438df0B2401fF60dA7E4337B687a2435DA",
+          "decimals": 6,
+          "name": "MUSD",
+          "symbol": "mUSD"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
+          "decimals": 18,
+          "name": "Lido Staked Ether",
+          "symbol": "stETH"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85",
+          "decimals": 18,
+          "name": "Fetch.ai",
+          "symbol": "FET"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xc5f0f7b66764F6ec8C8Dff7BA683102295E16409",
+          "decimals": 18,
+          "name": "FDUSD",
+          "symbol": "FDUSD"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xc944E90C64B2c07662A292be6244BDf05Cda44a7",
+          "decimals": 18,
+          "name": "Graph Token",
+          "symbol": "GRT"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+          "decimals": 8,
+          "name": "Coinbase Wrapped BTC",
+          "symbol": "cbBTC"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "decimals": 6,
+          "name": "Tether USD",
+          "symbol": "USDT"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+          "decimals": 18,
+          "name": "USDS Stablecoin",
+          "symbol": "USDS"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30",
+          "decimals": 18,
+          "name": "Injective Token",
+          "symbol": "INJ"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xe2f2a5C287993345a840Db3B0845fbC70f5935a5",
+          "decimals": 18,
+          "name": "mStable USD",
+          "symbol": "mUSD"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xe343167631d89B6Ffc58B88d6b7fB0228795491D",
+          "decimals": 6,
+          "name": "Global Dollar",
+          "symbol": "USDG"
+        }
+      },
+      {
+        "chainId": "1",
+        "chainName": "Ethereum",
+        "minCheckoutUsd": 5,
+        "token": {
+          "address": "0xfAbA6f8e4a5E8Ab82F62fe7C39859FA577269BE3",
+          "decimals": 18,
+          "name": "Ondo",
+          "symbol": "ONDO"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x01bFF41798a0BcF287b996046Ca68b395DbC1071",
+          "decimals": 6,
+          "name": "USD₮0",
+          "symbol": "USD₮0"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+          "decimals": 6,
+          "name": "USD Coin",
+          "symbol": "USDC"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6",
+          "decimals": 18,
+          "name": "Chainlink",
+          "symbol": "LINK"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x4200000000000000000000000000000000000006",
+          "decimals": 18,
+          "name": "Wrapped Ether",
+          "symbol": "WETH"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x4200000000000000000000000000000000000042",
+          "decimals": 18,
+          "name": "Optimism",
+          "symbol": "OP"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34",
+          "decimals": 18,
+          "name": "USDe",
+          "symbol": "USDe"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x76FB31fb4af56892A25e32cFC43De717950c9278",
+          "decimals": 18,
+          "name": "Aave",
+          "symbol": "AAVE"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+          "decimals": 6,
+          "name": "USD Coin (USDC.e)",
+          "symbol": "USDC.e"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
+          "decimals": 6,
+          "name": "Tether USD",
+          "symbol": "USDT"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+          "decimals": 18,
+          "name": "Dai Stablecoin",
+          "symbol": "DAI"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 18,
+          "name": "Ether",
+          "symbol": "ETH"
+        }
+      },
+      {
+        "chainId": "10",
+        "chainName": "Optimism",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xdC6fF44d5d932Cbd77B52E5612Ba0529DC6226F1",
+          "decimals": 18,
+          "name": "Worldcoin",
+          "symbol": "WLD"
+        }
+      },
+      {
+        "chainId": "1151111081099710",
+        "chainName": "Solana",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 9,
+          "name": "Solana SOL",
+          "symbol": "SOL"
+        }
+      },
+      {
+        "chainId": "1151111081099710",
+        "chainName": "Solana",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "11111111111111111111111111111111",
+          "decimals": 9,
+          "name": "SOL",
+          "symbol": "SOL"
+        }
+      },
+      {
+        "chainId": "1151111081099710",
+        "chainName": "Solana",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+          "decimals": 6,
+          "name": "OFFICIAL TRUMP",
+          "symbol": "TRUMP"
+        }
+      },
+      {
+        "chainId": "1151111081099710",
+        "chainName": "Solana",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH",
+          "decimals": 6,
+          "name": "CASH",
+          "symbol": "CASH"
+        }
+      },
+      {
+        "chainId": "1151111081099710",
+        "chainName": "Solana",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "DEkqHyPN7GMRJ5cArtQFAWefqbZb33Hyf6s5iCwjEonT",
+          "decimals": 9,
+          "name": "USDe",
+          "symbol": "USDe"
+        }
+      },
+      {
+        "chainId": "1151111081099710",
+        "chainName": "Solana",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "decimals": 6,
+          "name": "USD Coin",
+          "symbol": "USDC"
+        }
+      },
+      {
+        "chainId": "1151111081099710",
+        "chainName": "Solana",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "decimals": 6,
+          "name": "USDT",
+          "symbol": "USDT"
+        }
+      },
+      {
+        "chainId": "1151111081099710",
+        "chainName": "Solana",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "JuprjznTrTSp2UFa3ZBUFgwdAmtZCq4MQCwysN55USD",
+          "decimals": 6,
+          "name": "JupUSD",
+          "symbol": "JupUSD"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x0000000000000000000000000000000000001010",
+          "decimals": 18,
+          "name": "POL",
+          "symbol": "MATIC"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x11CD37bb86F65419713f30673A480EA33c826872",
+          "decimals": 18,
+          "name": "WETH (Wormhole)",
+          "symbol": "WETH"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x172370d5Cd63279eFa6d502DAB29171933a610AF",
+          "decimals": 18,
+          "name": "CRV",
+          "symbol": "CRV"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+          "decimals": 8,
+          "name": "(PoS) Wrapped BTC",
+          "symbol": "WBTC"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+          "decimals": 6,
+          "name": "USD Coin (PoS) (USDC.e)",
+          "symbol": "USDC.e"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "decimals": 6,
+          "name": "USDC",
+          "symbol": "USDC"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x4318CB63A2b8edf2De971E2F17F77097e499459D",
+          "decimals": 6,
+          "name": "Bridged USD Coin (Wormhole Ethereum)",
+          "symbol": "USDCET"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x750e4C4984a9e0f12978eA6742Bc1c5D248f40ed",
+          "decimals": 6,
+          "name": "axlUSDC",
+          "symbol": "axlUSDC"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+          "decimals": 18,
+          "name": "Wrapped Ether",
+          "symbol": "WETH"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+          "decimals": 18,
+          "name": "(PoS) Dai Stablecoin",
+          "symbol": "DAI"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x9417669fBF23357D2774e9D421307bd5eA1006d2",
+          "decimals": 6,
+          "name": "Wormhole Bridged USDT",
+          "symbol": "USDT"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xBbba073C31bF03b8ACf7c28EF0738DeCF3695683",
+          "decimals": 18,
+          "name": "SAND",
+          "symbol": "SAND"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+          "decimals": 6,
+          "name": "Polymarket USD",
+          "symbol": "pUSD"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 18,
+          "name": "Polygon",
+          "symbol": "POL"
+        }
+      },
+      {
+        "chainId": "137",
+        "chainName": "Polygon",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+          "decimals": 6,
+          "name": "USDT0",
+          "symbol": "USDT0"
+        }
+      },
+      {
+        "chainId": "143",
+        "chainName": "Monad",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a",
+          "decimals": 6,
+          "name": "AUSD",
+          "symbol": "AUSD"
+        }
+      },
+      {
+        "chainId": "143",
+        "chainName": "Monad",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A",
+          "decimals": 18,
+          "name": "Wrapped MON",
+          "symbol": "WMON"
+        }
+      },
+      {
+        "chainId": "143",
+        "chainName": "Monad",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+          "decimals": 6,
+          "name": "USDC",
+          "symbol": "USDC"
+        }
+      },
+      {
+        "chainId": "143",
+        "chainName": "Monad",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 18,
+          "name": "Monad",
+          "symbol": "MON"
+        }
+      },
+      {
+        "chainId": "143",
+        "chainName": "Monad",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xe7cd86e13AC4309349F30B3435a9d337750fC82D",
+          "decimals": 6,
+          "name": "USDT0",
+          "symbol": "USDT0"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978",
+          "decimals": 18,
+          "name": "Curve DAO",
+          "symbol": "CRV"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x25d887Ce7a35172C62FeBFD67a1856F20FaEbB00",
+          "decimals": 18,
+          "name": "PEPE",
+          "symbol": "PEPE"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x289ba1701C2F088cf0faf8B3705246331cB8A839",
+          "decimals": 18,
+          "name": "Livepeer",
+          "symbol": "LPT"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x2c5d06f591D0d8cd43Ac232c2B654475a142c7DA",
+          "decimals": 2,
+          "name": "Fiat24 EUR",
+          "symbol": "EUR24"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+          "decimals": 8,
+          "name": "Wrapped BTC",
+          "symbol": "WBTC"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x37a645648dF29205C6261289983FB04ECD70b4B3",
+          "decimals": 18,
+          "name": "Animecoin",
+          "symbol": "ANIME"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34",
+          "decimals": 18,
+          "name": "USDe",
+          "symbol": "USDe"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+          "decimals": 18,
+          "name": "Wrapped Ether",
+          "symbol": "WETH"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+          "decimals": 18,
+          "name": "Arbitrum",
+          "symbol": "ARB"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+          "decimals": 18,
+          "name": "Dai Stablecoin",
+          "symbol": "DAI"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 18,
+          "name": "Ether",
+          "symbol": "ETH"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xFA5Ed56A203466CbBC2430a43c66b9D8723528E7",
+          "decimals": 18,
+          "name": "agEUR",
+          "symbol": "agEUR"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+          "decimals": 6,
+          "name": "USD Coin (Arb1) (USDC.e)",
+          "symbol": "USDC.e"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+          "decimals": 6,
+          "name": "USDT",
+          "symbol": "USDT"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "decimals": 6,
+          "name": "USDC",
+          "symbol": "USDC"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+          "decimals": 8,
+          "name": "Coinbase Wrapped BTC",
+          "symbol": "cbBTC"
+        }
+      },
+      {
+        "chainId": "42161",
+        "chainName": "Arbitrum",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
+          "decimals": 18,
+          "name": "Chainlink",
+          "symbol": "LINK"
+        }
+      },
+      {
+        "chainId": "5064014",
+        "chainName": "Ethereal",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xB6fC4B1BFF391e5F6b4a3D2C7Bda1FeE3524692D",
+          "decimals": 18,
+          "name": "Wrapped USDe",
+          "symbol": "WUSDe"
+        }
+      },
+      {
+        "chainId": "5064014",
+        "chainName": "Ethereal",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 18,
+          "name": "USDe",
+          "symbol": "USDe"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x000Ae314E2A2172a039B26378814C252734f556A",
+          "decimals": 18,
+          "name": "ASTER",
+          "symbol": "ASTER"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x031b41e504677879370e9DBcF937283A8691Fa7f",
+          "decimals": 18,
+          "name": "Fetch.ai",
+          "symbol": "FET"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+          "decimals": 8,
+          "name": "Wrapped BTC",
+          "symbol": "WBTC"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82",
+          "decimals": 18,
+          "name": "CAKE",
+          "symbol": "Cake"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3",
+          "decimals": 18,
+          "name": "Dai Token",
+          "symbol": "DAI"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x1D2F0da169ceB9fC7B3144628dB156f3F6c60dBE",
+          "decimals": 18,
+          "name": "XRP",
+          "symbol": "XRP"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+          "decimals": 18,
+          "name": "Ethereum Token",
+          "symbol": "ETH"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x2859e4544C4bB03966803b044A93563Bd2D0DD4D",
+          "decimals": 18,
+          "name": "SHIB",
+          "symbol": "SHIB"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x3EE2200Efb3400fAbB9AacF31297cBdD1d435D47",
+          "decimals": 18,
+          "name": "Cardano Token",
+          "symbol": "ADA"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x4338665CBB7B2485A8855A139b75D5e34AB0DB94",
+          "decimals": 18,
+          "name": "LTC",
+          "symbol": "LTC"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x55d398326f99059fF775485246999027B3197955",
+          "decimals": 18,
+          "name": "Tether USD",
+          "symbol": "USDT"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x570A5D26f7765Ecb712C0924E4De545B89fD43dF",
+          "decimals": 18,
+          "name": "SOL",
+          "symbol": "SOL"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34",
+          "decimals": 18,
+          "name": "USDe",
+          "symbol": "USDe"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x672147dD47674757C457eB155BAA382cc10705Dd",
+          "decimals": 6,
+          "name": "USD Coin (PoS)",
+          "symbol": "USDC"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x7083609fCE4d1d8Dc0C979AAb8c869Ea2C873402",
+          "decimals": 18,
+          "name": "DOT",
+          "symbol": "DOT"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
+          "decimals": 18,
+          "name": "BTCB Token",
+          "symbol": "BTCB"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x76A797A59Ba2C17726896976B7B3747BfD1d220f",
+          "decimals": 9,
+          "name": "TON",
+          "symbol": "TON"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+          "decimals": 18,
+          "name": "USD Coin",
+          "symbol": "USDC"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d",
+          "decimals": 18,
+          "name": "USD1",
+          "symbol": "USD1"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x8fF795a6F4D97E7887C79beA79aba5cc76444aDf",
+          "decimals": 18,
+          "name": "BCH",
+          "symbol": "BCH"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x9123400446a56176Eb1B6BE9ee5CF703e409F492",
+          "decimals": 18,
+          "name": "TRADOOR",
+          "symbol": "TRADOOR"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xB0b84D294e0C75A6abe60171b70edEb2EFd14A1B",
+          "decimals": 18,
+          "name": "slisBNB",
+          "symbol": "SnBNB"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xBf5140A22578168FD562DCcF235E5D43A02ce9B1",
+          "decimals": 18,
+          "name": "Uniswap",
+          "symbol": "UNI"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xCE7de646e7208a4Ef112cb6ed5038FA6cC6b12e3",
+          "decimals": 6,
+          "name": "TRX",
+          "symbol": "TRX"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 18,
+          "name": "Binance Coin",
+          "symbol": "BNB"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xF8A0BF9cF54Bb92F17374d9e9A321E6a111a51bD",
+          "decimals": 18,
+          "name": "Chainlink",
+          "symbol": "LINK"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xa2E3356610840701BDf5611a53974510Ae27E2e1",
+          "decimals": 18,
+          "name": "wBETH",
+          "symbol": "wBETH"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xbA2aE424d960c26247Dd6c32edC70B295c744C43",
+          "decimals": 8,
+          "name": "DOGE",
+          "symbol": "DOGE"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+          "decimals": 18,
+          "name": "Wrapped BNB",
+          "symbol": "WBNB"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xc5f0f7b66764F6ec8C8Dff7BA683102295E16409",
+          "decimals": 18,
+          "name": "FDUSD",
+          "symbol": "FDUSD"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xcE24439F2D9C6a2289F741120FE202248B666666",
+          "decimals": 18,
+          "name": "United Stables",
+          "symbol": "U"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xd89B7dD376E671c124352267516BEF1C2cc231a3",
+          "decimals": 18,
+          "name": "ZKP",
+          "symbol": "ZKP"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xd944f1D1e9d5f9Bb90b62f9D45e447D989580782",
+          "decimals": 6,
+          "name": "IOTA",
+          "symbol": "IOTA"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
+          "decimals": 18,
+          "name": "BUSD Token",
+          "symbol": "BUSD"
+        }
+      },
+      {
+        "chainId": "56",
+        "chainName": "BNB Smart Chain",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xfb6115445Bff7b52FeB98650C87f44907E58f802",
+          "decimals": 18,
+          "name": "Aave",
+          "symbol": "AAVE"
+        }
+      },
+      {
+        "chainId": "728126428",
+        "chainName": "Tron",
+        "minCheckoutUsd": 7,
+        "token": {
+          "address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "decimals": 6,
+          "name": "Tether USD",
+          "symbol": "USDT"
+        }
+      },
+      {
+        "chainId": "8253038",
+        "chainName": "Bitcoin",
+        "minCheckoutUsd": 7,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 8,
+          "name": "Bitcoin",
+          "symbol": "BTC"
+        }
+      },
+      {
+        "chainId": "8253038",
+        "chainName": "Bitcoin",
+        "minCheckoutUsd": 7,
+        "token": {
+          "address": "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqmql8k8",
+          "decimals": 8,
+          "name": "Bitcoin",
+          "symbol": "BTC"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b",
+          "decimals": 18,
+          "name": "Virtuals Protocol",
+          "symbol": "VIRTUAL"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x11dC28D01984079b7efE7763b533e6ed9E3722B9",
+          "decimals": 18,
+          "name": "synd",
+          "symbol": "SYND"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x2615a94df961278DcbC41Fb0a54fEc5f10a693aE",
+          "decimals": 18,
+          "name": "XRP (Universal)",
+          "symbol": "uXRP"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x2DC1cDa9186a4993bD36dE60D08787c0C382BEAD",
+          "decimals": 18,
+          "name": "MAG",
+          "symbol": "MAG"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82",
+          "decimals": 9,
+          "name": "Solana",
+          "symbol": "SOL"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x4200000000000000000000000000000000000006",
+          "decimals": 18,
+          "name": "Wrapped Ether",
+          "symbol": "WETH"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "decimals": 6,
+          "name": "aBasUSDC",
+          "symbol": "aBasUSDC"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+          "decimals": 18,
+          "name": "Dai Stablecoin",
+          "symbol": "DAI"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x532f27101965dd16442E59d40670FaF5eBB142E4",
+          "decimals": 18,
+          "name": "BRETT",
+          "symbol": "BRETT"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34",
+          "decimals": 18,
+          "name": "USDe",
+          "symbol": "USDe"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42",
+          "decimals": 6,
+          "name": "EURC",
+          "symbol": "EURC"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x63706e401c06ac8513145b7687A14804d17f814b",
+          "decimals": 18,
+          "name": "Aave",
+          "symbol": "AAVE"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x820C137fa70C8691f0e44Dc420a5e53c168921Dc",
+          "decimals": 18,
+          "name": "USDS Stablecoin",
+          "symbol": "USDS"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "decimals": 6,
+          "name": "USDC",
+          "symbol": "USDC"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x940181a94A35A4569E4529A3CDfB74e38FD98631",
+          "decimals": 18,
+          "name": "Aerodrome",
+          "symbol": "AERO"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xAC1Bd2486aAf3B5C0fc3Fd868558b082a531B2B4",
+          "decimals": 18,
+          "name": "Toshi",
+          "symbol": "TOSHI"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xC9d23ED2ADB0f551369946BD377f8644cE1ca5c4",
+          "decimals": 18,
+          "name": "HYPER",
+          "symbol": "HYPER"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 18,
+          "name": "Ether",
+          "symbol": "ETH"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xFb31f85A8367210B2e4Ed2360D2dA9Dc2D2Ccc95",
+          "decimals": 18,
+          "name": "EDEL",
+          "symbol": "EDEL"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xcb585250f852C6c6bf90434AB21A00f02833a4af",
+          "decimals": 6,
+          "name": "Coinbase Wrapped XRP",
+          "symbol": "cbXRP"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xcbADA732173e39521CDBE8bf59a6Dc85A9fc7b8c",
+          "decimals": 6,
+          "name": "Coinbase Wrapped ADA",
+          "symbol": "cbADA"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+          "decimals": 8,
+          "name": "Coinbase Wrapped BTC",
+          "symbol": "cbBTC"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA",
+          "decimals": 6,
+          "name": "USD Base Coin",
+          "symbol": "USDbC"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xecAc9C5F704e954931349Da37F60E39f515c11c1",
+          "decimals": 8,
+          "name": "LBTC",
+          "symbol": "LBTC"
+        }
+      },
+      {
+        "chainId": "8453",
+        "chainName": "Base",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+          "decimals": 6,
+          "name": "Tether USD",
+          "symbol": "USDT"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x5555555555555555555555555555555555555555",
+          "decimals": 18,
+          "name": "Wrapped HYPE",
+          "symbol": "WHYPE"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34",
+          "decimals": 18,
+          "name": "USDeOFT",
+          "symbol": "USDe"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x96C6cBB6251Ee1c257b2162ca0f39AA5Fa44B1FB",
+          "decimals": 18,
+          "name": "Hyperbeat Ultra HYPE",
+          "symbol": "hbHYPE"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0x9FDBdA0A5e284c32744D2f17Ee5c74B284993463",
+          "decimals": 8,
+          "name": "Unit Bitcoin",
+          "symbol": "UBTC"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb",
+          "decimals": 6,
+          "name": "USD₮0",
+          "symbol": "USD₮0"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xBe6727B535545C67d5cAa73dEa54865B92CF7907",
+          "decimals": 18,
+          "name": "Unit Ethereum",
+          "symbol": "UETH"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "decimals": 18,
+          "name": "HYPE",
+          "symbol": "HYPE"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
+          "decimals": 6,
+          "name": "USDC",
+          "symbol": "USDC"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xf4D9235269a96aaDaFc9aDAe454a0618eBE37949",
+          "decimals": 6,
+          "name": "XAUt0",
+          "symbol": "XAUt0"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xfD739d4e423301CE9385c1fb8850539D657C296D",
+          "decimals": 18,
+          "name": "Kinetiq Staked HYPE",
+          "symbol": "kHYPE"
+        }
+      },
+      {
+        "chainId": "999",
+        "chainName": "HyperEVM",
+        "minCheckoutUsd": 2,
+        "token": {
+          "address": "0xfFaa4a3D97fE9107Cef8a3F48c069F577Ff76cC1",
+          "decimals": 18,
+          "name": "Staked HYPE",
+          "symbol": "stHYPE"
+        }
+      }
+    ]
+  },
+  "latency_ms": 238,
+  "ended_at": "2026-06-01T20:39:37.751595963Z"
+}

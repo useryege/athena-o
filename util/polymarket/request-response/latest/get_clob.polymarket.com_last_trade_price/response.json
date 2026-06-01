@@ -1,0 +1,41 @@
+{
+  "status_code": 200,
+  "headers": {
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Cf-Ray": [
+      "a0510760b987210b-HKG"
+    ],
+    "Content-Length": [
+      "31"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Date": [
+      "Mon, 01 Jun 2026 20:39:38 GMT"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "Set-Cookie": [
+      "__cf_bm=.SEMwCl_dlXEo1j1ONUwCsi1caKnbRi8oNqRxudIG4M-1780346378.3605938-1.0.1.1-BYxfFmu5vUm0K7yFKjTF3MSa_TILHZwwYa8o7_K6p.SJP_T5LzB1KajUplXq4YY3o52z8caW.FPoW.il99z4m5NWQMQio8g8_z8d3V0maRsI9iwQloSOrG12UMsA7Aza; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:38 GMT"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7776000; includeSubDomains"
+    ],
+    "Vary": [
+      "Origin"
+    ]
+  },
+  "body": {
+    "price": "0.52",
+    "side": "SELL"
+  },
+  "latency_ms": 245,
+  "ended_at": "2026-06-01T20:39:38.63052935Z"
+}

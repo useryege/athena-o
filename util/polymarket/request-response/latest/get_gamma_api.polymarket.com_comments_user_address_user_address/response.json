@@ -1,0 +1,53 @@
+{
+  "status_code": 200,
+  "headers": {
+    "Accept-Ranges": [
+      "bytes"
+    ],
+    "Age": [
+      "32"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Cache-Control": [
+      "public, max-age=90"
+    ],
+    "Cf-Cache-Status": [
+      "HIT"
+    ],
+    "Cf-Ray": [
+      "a05107904a48d76d-HKG"
+    ],
+    "Content-Length": [
+      "3"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Date": [
+      "Mon, 01 Jun 2026 20:39:45 GMT"
+    ],
+    "Expires": [
+      "Mon, 01 Jun 2026 20:41:15 GMT"
+    ],
+    "Last-Modified": [
+      "Mon, 01 Jun 2026 20:39:13 GMT"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "Set-Cookie": [
+      "__cf_bm=DG2FtL2QTtgwCLZB4_3.wAOIESuVLImDnHnHfj.QYvA-1780346385.9687555-1.0.1.1-6E5RzILzSnrW2JR6uSOfyD9C95QZ.W80a5K5PGUeMJTubfbmR8eGbJJtpIiHFyLzbxVRecfKNlvFy5b_JmvrPS8pauglYDMyzNpPIIgKnF2I5j_dg9zL_Bp1n2rkox3l; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:45 GMT"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7776000; includeSubDomains"
+    ],
+    "Vary": [
+      "Origin, accept-encoding"
+    ]
+  },
+  "body": [],
+  "latency_ms": 31,
+  "ended_at": "2026-06-01T20:39:46.245450449Z"
+}

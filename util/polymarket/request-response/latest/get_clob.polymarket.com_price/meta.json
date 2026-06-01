@@ -1,0 +1,5 @@
+{
+  "endpoint_key": "get_clob.polymarket.com_price",
+  "doc_source": "util/polymarket/polymarket-docs/api-reference/market-data/get-market-price.md",
+  "result": "pass"
+}

@@ -1,0 +1,19 @@
+{
+  "method": "GET",
+  "url": "https://gamma-api.polymarket.com/comments?limit=1\u0026parent_entity_id=2890\u0026parent_entity_type=Event",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "query": {
+    "limit": [
+      "1"
+    ],
+    "parent_entity_id": [
+      "2890"
+    ],
+    "parent_entity_type": [
+      "Event"
+    ]
+  },
+  "started_at": "2026-06-01T20:39:46.180765205Z"
+}
