@@ -8,6 +8,7 @@ import {Subscription} from 'rxjs';
 import help from './help';
 import login from './login';
 import notifications from './notifications';
+import polymarket from './polymarket';
 import projects from './projects';
 import settings from './settings';
 import solidity from './solidity';
@@ -39,6 +40,7 @@ const routes: Routes = {
     '/wallet': {component: wallet.component},
     '/wallet-blacklist': {component: walletBlacklist.component},
     '/worm': {component: worm.component},
+    '/polymarket': {component: polymarket.component},
     '/notifications': {component: notifications.component},
     '/settings': {component: settings.component},
     '/user-info': {component: userInfo.component},
@@ -109,6 +111,12 @@ const navItems: NavItem[] = [
         tooltip: 'View Athena worm module',
         path: '/worm',
         iconClassName: 'fa fa-bug'
+    },
+    {
+        title: 'Polymarket',
+        tooltip: 'View Polymarket Sports live markets',
+        path: '/polymarket',
+        iconClassName: 'fa fa-trophy'
     },
     {
         title: 'Notifications',

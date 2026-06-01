@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-471-g9fddedb-dirty"
+    "version": "v1.0.0-490-g8ebdf3d-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -342,6 +342,37 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/notificationGetNotificationDeliveryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/sports/live/markets": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "summary": "ListPolymarketSportsLiveMarkets returns sports live market rows.",
+        "operationId": "PolymarketService_ListPolymarketSportsLiveMarkets",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketListPolymarketSportsLiveMarketsResponse"
             }
           },
           "default": {
@@ -2296,6 +2327,25 @@
         }
       }
     },
+    "polymarketListPolymarketSportsLiveMarketsResponse": {
+      "description": "ListPolymarketSportsLiveMarketsResponse returns sports live market rows.",
+      "type": "object",
+      "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveMarketItem"
+          }
+        },
+        "stale": {
+          "type": "boolean"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -3239,6 +3289,46 @@
         },
         "totalSupply": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketSportsLiveMarketItem": {
+      "type": "object",
+      "properties": {
+        "conditionId": {
+          "type": "string"
+        },
+        "elapsed": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "lastUpdate": {
+          "type": "string"
+        },
+        "liquidityNum": {
+          "type": "number",
+          "format": "double"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "period": {
+          "type": "string"
+        },
+        "score": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "volumeNum": {
+          "type": "number",
+          "format": "double"
         }
       }
     },

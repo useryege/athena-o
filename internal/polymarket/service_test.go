@@ -3,6 +3,7 @@ package polymarket
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/useryege/athena/internal/polymarket/apiclient"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
@@ -11,7 +12,12 @@ import (
 )
 
 func TestPolymarketStatusTransitions(t *testing.T) {
-	service := NewService(polymarketstore.NewSQLStore(nil))
+	service := NewService(
+		polymarketstore.NewSQLStore(nil),
+		WithGammaClient(&fakeGammaClient{}),
+		WithSportsWSClient(&fakeSportsWSClient{}),
+		WithSportsLiveSyncInterval(time.Hour),
+	)
 
 	resp, err := service.GetPolymarketStatus(context.Background(), &apiclient.GetPolymarketStatusRequest{})
 	if err != nil {
@@ -45,7 +51,11 @@ func TestPolymarketStatusTransitions(t *testing.T) {
 }
 
 func TestPolymarketStartRequiresStore(t *testing.T) {
-	err := NewService(nil).Start()
+	err := NewService(
+		nil,
+		WithGammaClient(&fakeGammaClient{}),
+		WithSportsWSClient(&fakeSportsWSClient{}),
+	).Start()
 	if status.Code(err) != codes.FailedPrecondition {
 		t.Fatalf("Start error = %v, want FailedPrecondition", err)
 	}

@@ -13,9 +13,26 @@ option go_package = "github.com/useryege/athena/pkg/apiclient/polymarket";
 // GetPolymarketStatusRequest queries the polymarket service runtime status.
 message GetPolymarketStatusRequest {}
 
+// ListPolymarketSportsLiveMarketsRequest queries the sports live market list.
+message ListPolymarketSportsLiveMarketsRequest {
+  int32 limit = 1;
+}
+
+// ListPolymarketSportsLiveMarketsResponse returns sports live market rows.
+message ListPolymarketSportsLiveMarketsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsLiveMarketItem items = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
+}
+
 service PolymarketService {
   // GetPolymarketStatus returns the polymarket service runtime status.
   rpc GetPolymarketStatus(GetPolymarketStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketStatus) {
     option (google.api.http) = {get: "/api/v1/polymarket/status"};
+  }
+
+  // ListPolymarketSportsLiveMarkets returns sports live market rows.
+  rpc ListPolymarketSportsLiveMarkets(ListPolymarketSportsLiveMarketsRequest) returns (ListPolymarketSportsLiveMarketsResponse) {
+    option (google.api.http) = {get: "/api/v1/polymarket/sports/live/markets"};
   }
 }

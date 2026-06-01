@@ -416,6 +416,30 @@ message PairV2State {
   optional string feeAddressHoldLiquidityRatio = 15;
 }
 
+message PolymarketSportsLiveMarketItem {
+  optional string conditionId = 1;
+
+  optional string marketSlug = 2;
+
+  optional string eventSlug = 3;
+
+  optional string title = 4;
+
+  optional string image = 5;
+
+  optional string score = 6;
+
+  optional string period = 7;
+
+  optional string elapsed = 8;
+
+  optional string lastUpdate = 9;
+
+  optional double liquidityNum = 10;
+
+  optional double volumeNum = 11;
+}
+
 message PolymarketStatus {
   optional bool started = 1;
 

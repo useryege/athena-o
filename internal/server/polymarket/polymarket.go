@@ -26,3 +26,24 @@ func (s *Server) GetPolymarketStatus(ctx context.Context, _ *polymarketpkg.GetPo
 
 	return client.GetPolymarketStatus(ctx, &polymarketapiclient.GetPolymarketStatusRequest{})
 }
+
+func (s *Server) ListPolymarketSportsLiveMarkets(ctx context.Context, req *polymarketpkg.ListPolymarketSportsLiveMarketsRequest) (*polymarketpkg.ListPolymarketSportsLiveMarketsResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListPolymarketSportsLiveMarkets(ctx, &polymarketapiclient.ListPolymarketSportsLiveMarketsRequest{
+		Limit: req.GetLimit(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &polymarketpkg.ListPolymarketSportsLiveMarketsResponse{
+		Items:     resp.GetItems(),
+		FetchedAt: resp.GetFetchedAt(),
+		Stale:     resp.GetStale(),
+	}, nil
+}

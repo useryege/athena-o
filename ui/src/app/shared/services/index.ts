@@ -3,6 +3,7 @@ import {AthenaApplicationService} from './athena-application-service';
 import {AthenaSolidityService} from './athena-solidity-service';
 import {AuthService} from './auth-service';
 import {NotificationService} from './notification-service';
+import {PolymarketService} from './polymarket-service';
 import {UserService} from './user-service';
 import {VersionService} from './version-service';
 import {ViewPreferencesService} from './view-preferences-service';
@@ -19,6 +20,7 @@ export interface Services {
     accounts: AccountsService;
     wallet: WalletService;
     worm: WormService;
+    polymarket: PolymarketService;
     notification: NotificationService;
 }
 
@@ -32,6 +34,7 @@ export const services: Services = {
     accounts: new AccountsService(),
     wallet: new WalletService(),
     worm: new WormService(),
+    polymarket: new PolymarketService(),
     notification: new NotificationService()
 };
 
