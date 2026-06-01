@@ -210,18 +210,6 @@ go test -v ./util/polymarket -run '^(TestIntegrationGamma|TestIntegrationData|Te
 
 Integration tests are read-only and skipped by default.
 
-## Run drift validator CLI
-
-```bash
-go run ./tools/cmd-polymarket-gamma-validate
-```
-
-Optional env vars:
-
-- `POLYMARKET_GAMMA_BASE_URL`: override Gamma base URL.
-
-The validator discovers market/event/tag/comment/series samples from live API responses, then performs strict JSON decoding (`DisallowUnknownFields`) against local Go models for the full Gamma coverage (including community + keyset endpoints).
-
 ## Snapshot public read request/response
 
 Collect live request/response snapshots for all public read HTTP endpoints discovered from:
