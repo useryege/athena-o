@@ -5,7 +5,7 @@ sync-docs:
 	./sync-docs.sh
 
 snapshot-public-read:
-	go run ./tools/cmd-polymarket-public-read-snapshot
+	go run ./util/polymarket/cmd-polymarket-public-read-snapshot
 
 snapshot-public-read-dry:
-	go run ./tools/cmd-polymarket-public-read-snapshot --dry-run
+	go run ./util/polymarket/cmd-polymarket-public-read-snapshot --dry-run

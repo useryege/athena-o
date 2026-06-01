@@ -233,13 +233,13 @@ Output directory is rebuilt each run:
 Dry-run (parse/classify only):
 
 ```bash
-go run ./tools/cmd-polymarket-public-read-snapshot --dry-run
+go run ./util/polymarket/cmd-polymarket-public-read-snapshot --dry-run
 ```
 
 Live run:
 
 ```bash
-go run ./tools/cmd-polymarket-public-read-snapshot
+go run ./util/polymarket/cmd-polymarket-public-read-snapshot
 ```
 
 Makefile shortcuts:
