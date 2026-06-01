@@ -10,6 +10,7 @@
   - `Core`, `Misc`, `Builders`
 - `CLOBClient` (`https://clob.polymarket.com`)
   - Market Data (read-only)
+  - Also includes CLOB data endpoints: `GET /midpoint` and `GET /time`
   - Note: due to current CLOB drift, `GetMidpointPrices` / `GetMarketPrices` / `GetLastTradePrices`
     are implemented via POST body endpoints under the hood.
 
@@ -107,6 +108,8 @@ POLYMARKET_CLOB_MARKET_DATA_INTEGRATION=1 \
 POLYMARKET_CLOB_MARKET_DATA_INTEGRATION_LOG_RESPONSE=1 \
 go test -v ./util/polymarket -run '^TestIntegrationCLOBMarketData$'
 ```
+
+`TestIntegrationCLOBMarketData` includes `GetMidpointPrice` and `GetServerTime`.
 
 ### All modules together
 

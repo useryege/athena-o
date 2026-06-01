@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -19,6 +20,7 @@ type CLOBClient interface {
 	GetOrderBook(ctx context.Context, tokenID string) (*OrderBookSummary, error)
 	GetOrderBooks(ctx context.Context, requests []CLOBBookRequest) ([]OrderBookSummary, error)
 
+	GetMidpointPrice(ctx context.Context, tokenID string) (*CLOBMidpointPriceResponse, error)
 	GetMidpointPrices(ctx context.Context, tokenIDs []string) (map[string]string, error)
 	GetMidpointPricesByBody(ctx context.Context, requests []CLOBBookRequest) (map[string]string, error)
 
@@ -38,6 +40,8 @@ type CLOBClient interface {
 
 	GetFeeRate(ctx context.Context, tokenID string) (*CLOBFeeRate, error)
 	GetFeeRateByTokenID(ctx context.Context, tokenID string) (*CLOBFeeRate, error)
+
+	GetServerTime(ctx context.Context) (*CLOBServerTimeResponse, error)
 }
 
 type CLOBConfig struct {
@@ -105,6 +109,29 @@ type CLOBPriceResponse struct {
 	Price string `json:"price"`
 }
 
+type CLOBMidpointPriceResponse struct {
+	MidPrice string `json:"mid_price"`
+}
+
+func (r *CLOBMidpointPriceResponse) UnmarshalJSON(data []byte) error {
+	var raw struct {
+		Mid      *string `json:"mid"`
+		MidPrice *string `json:"mid_price"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	switch {
+	case raw.Mid != nil:
+		r.MidPrice = *raw.Mid
+	case raw.MidPrice != nil:
+		r.MidPrice = *raw.MidPrice
+	default:
+		r.MidPrice = ""
+	}
+	return nil
+}
+
 type CLOBLastTradePrice struct {
 	TokenID string `json:"token_id,omitempty"`
 	Price   string `json:"price"`
@@ -123,6 +150,64 @@ type CLOBFeeRate struct {
 	BaseFee int64 `json:"base_fee"`
 }
 
+type CLOBServerTimeResponse struct {
+	Unix int64 `json:"unix"`
+}
+
+func (r *CLOBServerTimeResponse) UnmarshalJSON(data []byte) error {
+	trimmed := strings.TrimSpace(string(data))
+	if trimmed == "" || trimmed == "null" {
+		r.Unix = 0
+		return nil
+	}
+
+	if trimmed[0] == '{' {
+		var raw struct {
+			Unix *int64  `json:"unix"`
+			Time *int64  `json:"time"`
+			TS   *int64  `json:"ts"`
+			S    *string `json:"serverTime"`
+		}
+		if err := json.Unmarshal(data, &raw); err != nil {
+			return err
+		}
+		switch {
+		case raw.Unix != nil:
+			r.Unix = *raw.Unix
+		case raw.Time != nil:
+			r.Unix = *raw.Time
+		case raw.TS != nil:
+			r.Unix = *raw.TS
+		case raw.S != nil:
+			v, err := strconv.ParseInt(strings.TrimSpace(*raw.S), 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid serverTime value %q: %w", *raw.S, err)
+			}
+			r.Unix = v
+		default:
+			r.Unix = 0
+		}
+		return nil
+	}
+
+	var unixInt int64
+	if err := json.Unmarshal(data, &unixInt); err == nil {
+		r.Unix = unixInt
+		return nil
+	}
+
+	var unixString string
+	if err := json.Unmarshal(data, &unixString); err != nil {
+		return err
+	}
+	parsed, err := strconv.ParseInt(strings.TrimSpace(unixString), 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid server time string %q: %w", unixString, err)
+	}
+	r.Unix = parsed
+	return nil
+}
+
 func (c *clobClientImpl) GetOrderBook(ctx context.Context, tokenID string) (*OrderBookSummary, error) {
 	q := make(url.Values)
 	setString(q, "token_id", tokenID)
@@ -139,6 +224,16 @@ func (c *clobClientImpl) GetOrderBooks(ctx context.Context, requests []CLOBBookR
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *clobClientImpl) GetMidpointPrice(ctx context.Context, tokenID string) (*CLOBMidpointPriceResponse, error) {
+	q := make(url.Values)
+	setString(q, "token_id", tokenID)
+	var out CLOBMidpointPriceResponse
+	if err := c.doJSON(ctx, http.MethodGet, "/midpoint", q, nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *clobClientImpl) GetMidpointPrices(ctx context.Context, tokenIDs []string) (map[string]string, error) {
@@ -275,6 +370,14 @@ func (c *clobClientImpl) GetFeeRate(ctx context.Context, tokenID string) (*CLOBF
 func (c *clobClientImpl) GetFeeRateByTokenID(ctx context.Context, tokenID string) (*CLOBFeeRate, error) {
 	var out CLOBFeeRate
 	if err := c.doJSON(ctx, http.MethodGet, "/fee-rate/"+url.PathEscape(strings.TrimSpace(tokenID)), nil, nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *clobClientImpl) GetServerTime(ctx context.Context) (*CLOBServerTimeResponse, error) {
+	var out CLOBServerTimeResponse
+	if err := c.doJSON(ctx, http.MethodGet, "/time", nil, nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

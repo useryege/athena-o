@@ -59,6 +59,20 @@ func TestIntegrationCLOBMarketData(t *testing.T) {
 		logCLOBIntegrationResponse(t, "GetOrderBooks", got)
 	})
 
+	t.Run("GetMidpointPrice", func(t *testing.T) {
+		got, err := client.GetMidpointPrice(ctx, samples.tokenID)
+		if shouldSkipCLOBIntegrationError(t, err, "GetMidpointPrice") {
+			return
+		}
+		if err != nil {
+			t.Fatalf("GetMidpointPrice: %v", err)
+		}
+		if strings.TrimSpace(got.MidPrice) == "" {
+			t.Fatalf("GetMidpointPrice returned empty mid price")
+		}
+		logCLOBIntegrationResponse(t, "GetMidpointPrice", got)
+	})
+
 	t.Run("GetMidpointPrices", func(t *testing.T) {
 		got, err := client.GetMidpointPrices(ctx, []string{samples.tokenID})
 		if shouldSkipCLOBIntegrationError(t, err, "GetMidpointPrices") {
@@ -211,6 +225,20 @@ func TestIntegrationCLOBMarketData(t *testing.T) {
 			t.Fatalf("GetFeeRateByTokenID: %v", err)
 		}
 		logCLOBIntegrationResponse(t, "GetFeeRateByTokenID", got)
+	})
+
+	t.Run("GetServerTime", func(t *testing.T) {
+		got, err := client.GetServerTime(ctx)
+		if shouldSkipCLOBIntegrationError(t, err, "GetServerTime") {
+			return
+		}
+		if err != nil {
+			t.Fatalf("GetServerTime: %v", err)
+		}
+		if got.Unix <= 0 {
+			t.Fatalf("GetServerTime returned non-positive unix time: %d", got.Unix)
+		}
+		logCLOBIntegrationResponse(t, "GetServerTime", got)
 	})
 }
 

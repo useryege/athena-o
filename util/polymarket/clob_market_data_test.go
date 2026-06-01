@@ -165,3 +165,79 @@ func TestGetMarketPriceStringDecode(t *testing.T) {
 		t.Fatalf("price = %q, want %q", got.Price, "0.53")
 	}
 }
+
+func TestGetMidpointPriceQueryAndDecode(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want string
+	}{
+		{name: "mid field", body: `{"mid":"0.45"}`, want: "0.45"},
+		{name: "mid_price field", body: `{"mid_price":"0.46"}`, want: "0.46"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotMethod string
+			var gotPath string
+			var gotTokenID string
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotMethod = r.Method
+				gotPath = r.URL.Path
+				gotTokenID = r.URL.Query().Get("token_id")
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(tt.body))
+			}))
+			defer ts.Close()
+
+			client, err := NewCLOBClient(CLOBConfig{CLOBBaseURL: ts.URL, Timeout: 5 * time.Second})
+			if err != nil {
+				t.Fatalf("NewCLOBClient: %v", err)
+			}
+
+			got, err := client.GetMidpointPrice(context.Background(), "0xabc")
+			if err != nil {
+				t.Fatalf("GetMidpointPrice: %v", err)
+			}
+			if gotMethod != http.MethodGet {
+				t.Fatalf("method = %s, want GET", gotMethod)
+			}
+			if gotPath != "/midpoint" {
+				t.Fatalf("path = %q, want /midpoint", gotPath)
+			}
+			if gotTokenID != "0xabc" {
+				t.Fatalf("token_id = %q, want 0xabc", gotTokenID)
+			}
+			if got.MidPrice != tt.want {
+				t.Fatalf("mid price = %q, want %q", got.MidPrice, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetServerTimeNumericDecode(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/time" {
+			t.Fatalf("path = %s, want /time", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`1234567890`))
+	}))
+	defer ts.Close()
+
+	client, err := NewCLOBClient(CLOBConfig{CLOBBaseURL: ts.URL, Timeout: 5 * time.Second})
+	if err != nil {
+		t.Fatalf("NewCLOBClient: %v", err)
+	}
+
+	got, err := client.GetServerTime(context.Background())
+	if err != nil {
+		t.Fatalf("GetServerTime: %v", err)
+	}
+	if got.Unix != 1234567890 {
+		t.Fatalf("unix = %d, want 1234567890", got.Unix)
+	}
+}
