@@ -1,26 +1,27 @@
-# Polymarket Gamma Client
+# Polymarket Clients
 
-`util/polymarket` contains a typed Go client for Polymarket Gamma API endpoints used by ATHENA.
+`util/polymarket` contains typed Go clients for Polymarket APIs used by ATHENA.
 
-## Current MVP Modules
+## Current Modules
 
-Kept modules:
+- `GammaClient` (`https://gamma-api.polymarket.com`)
+  - `Markets`, `Events`, `Tags`, `Search`, `Sports`
+- `DataClient` (`https://data-api.polymarket.com`)
+  - `Core`, `Misc`, `Builders`
+- `CLOBClient` (`https://clob.polymarket.com`)
+  - Market Data (read-only)
+  - Note: due to current CLOB drift, `GetMidpointPrices` / `GetMarketPrices` / `GetLastTradePrices`
+    are implemented via POST body endpoints under the hood.
 
-- `Markets`
-- `Events`
-- `Tags`
-- `Search`
-- `Sports`
+## Constructors
 
-Removed in MVP pruning (can be re-added later if needed):
+```go
+gammaClient, err := polymarket.NewGammaClient(polymarket.GammaConfig{})
+dataClient, err := polymarket.NewDataClient(polymarket.DataConfig{})
+clobClient, err := polymarket.NewCLOBClient(polymarket.CLOBConfig{})
+```
 
-- `Comments`
-- `Series`
-- `Profiles`
-
-Also not included in MVP:
-
-- Keyset list endpoints (`/markets/keyset`, `/events/keyset`)
+Gamma naming was hard-switched: `Client/Config/NewClient` were replaced with `GammaClient/GammaConfig/NewGammaClient`.
 
 ## Run unit tests
 
@@ -30,34 +31,25 @@ go test ./util/polymarket
 
 ## Run optional public integration tests
 
-Main gate:
+Recommended workflow: run a single module first for debugging, then run all modules together.
 
-```bash
-POLYMARKET_GAMMA_INTEGRATION=1
-```
+Gates:
 
-Group gates:
-
+- `POLYMARKET_GAMMA_INTEGRATION=1`
 - `POLYMARKET_GAMMA_INTEGRATION_MARKETS=1`
 - `POLYMARKET_GAMMA_INTEGRATION_EVENTS=1`
 - `POLYMARKET_GAMMA_INTEGRATION_TAGS=1`
 - `POLYMARKET_GAMMA_INTEGRATION_SEARCH=1`
 - `POLYMARKET_GAMMA_INTEGRATION_SPORTS=1`
+- `POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1`
+- `POLYMARKET_DATA_INTEGRATION=1`
+- `POLYMARKET_DATA_INTEGRATION_LOG_RESPONSE=1`
+- `POLYMARKET_CLOB_MARKET_DATA_INTEGRATION=1`
+- `POLYMARKET_CLOB_MARKET_DATA_INTEGRATION_LOG_RESPONSE=1`
 
-Optional log gate:
+### Gamma only
 
-- `POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1` (print full JSON responses for human verification)
-
-Example (run markets + tags only):
-
-```bash
-POLYMARKET_GAMMA_INTEGRATION=1 \
-POLYMARKET_GAMMA_INTEGRATION_MARKETS=1 \
-POLYMARKET_GAMMA_INTEGRATION_TAGS=1 \
-go test -v ./util/polymarket -run '^TestIntegrationGamma$'
-```
-
-Example (run all MVP integration tests in one command):
+Basic mode:
 
 ```bash
 POLYMARKET_GAMMA_INTEGRATION=1 \
@@ -69,7 +61,7 @@ POLYMARKET_GAMMA_INTEGRATION_SPORTS=1 \
 go test -v ./util/polymarket -run '^TestIntegrationGamma$'
 ```
 
-Example (run all MVP integration tests and print full responses):
+Log mode:
 
 ```bash
 POLYMARKET_GAMMA_INTEGRATION=1 \
@@ -80,6 +72,57 @@ POLYMARKET_GAMMA_INTEGRATION_SEARCH=1 \
 POLYMARKET_GAMMA_INTEGRATION_SPORTS=1 \
 POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
 go test -v ./util/polymarket -run '^TestIntegrationGamma$'
+```
+
+### Data only
+
+Basic mode:
+
+```bash
+POLYMARKET_DATA_INTEGRATION=1 \
+go test -v ./util/polymarket -run '^TestIntegrationData$'
+```
+
+Log mode:
+
+```bash
+POLYMARKET_DATA_INTEGRATION=1 \
+POLYMARKET_DATA_INTEGRATION_LOG_RESPONSE=1 \
+go test -v ./util/polymarket -run '^TestIntegrationData$'
+```
+
+### CLOB Market Data only
+
+Basic mode:
+
+```bash
+POLYMARKET_CLOB_MARKET_DATA_INTEGRATION=1 \
+go test -v ./util/polymarket -run '^TestIntegrationCLOBMarketData$'
+```
+
+Log mode:
+
+```bash
+POLYMARKET_CLOB_MARKET_DATA_INTEGRATION=1 \
+POLYMARKET_CLOB_MARKET_DATA_INTEGRATION_LOG_RESPONSE=1 \
+go test -v ./util/polymarket -run '^TestIntegrationCLOBMarketData$'
+```
+
+### All modules together
+
+```bash
+POLYMARKET_GAMMA_INTEGRATION=1 \
+POLYMARKET_GAMMA_INTEGRATION_MARKETS=1 \
+POLYMARKET_GAMMA_INTEGRATION_EVENTS=1 \
+POLYMARKET_GAMMA_INTEGRATION_TAGS=1 \
+POLYMARKET_GAMMA_INTEGRATION_SEARCH=1 \
+POLYMARKET_GAMMA_INTEGRATION_SPORTS=1 \
+POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
+POLYMARKET_DATA_INTEGRATION=1 \
+POLYMARKET_DATA_INTEGRATION_LOG_RESPONSE=1 \
+POLYMARKET_CLOB_MARKET_DATA_INTEGRATION=1 \
+POLYMARKET_CLOB_MARKET_DATA_INTEGRATION_LOG_RESPONSE=1 \
+go test -v ./util/polymarket -run '^(TestIntegrationGamma|TestIntegrationData|TestIntegrationCLOBMarketData)$'
 ```
 
 Integration tests are read-only and skipped by default.

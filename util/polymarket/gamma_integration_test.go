@@ -33,7 +33,7 @@ type integrationSamples struct {
 func TestIntegrationGamma(t *testing.T) {
 	requireMainGate(t)
 
-	client, err := NewClient(Config{})
+	client, err := NewGammaClient(GammaConfig{})
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
@@ -324,7 +324,7 @@ func requireGroupGate(t *testing.T, envKey string) {
 	}
 }
 
-func discoverIntegrationSamples(t *testing.T, ctx context.Context, client Client) integrationSamples {
+func discoverIntegrationSamples(t *testing.T, ctx context.Context, client GammaClient) integrationSamples {
 	t.Helper()
 
 	limit := 1

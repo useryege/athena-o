@@ -35,8 +35,8 @@ func main() {
 	defer cancel()
 
 	baseURL := strings.TrimSpace(os.Getenv("POLYMARKET_GAMMA_BASE_URL"))
-	cfg := polymarket.Config{GammaBaseURL: baseURL, Timeout: 20 * time.Second}
-	client, err := polymarket.NewClient(cfg)
+	cfg := polymarket.GammaConfig{GammaBaseURL: baseURL, Timeout: 20 * time.Second}
+	client, err := polymarket.NewGammaClient(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "create client: %v\n", err)
 		os.Exit(1)
@@ -98,7 +98,7 @@ func main() {
 	fmt.Println("\nvalidation finished with no failures")
 }
 
-func discover(ctx context.Context, client polymarket.Client) (*discovery, error) {
+func discover(ctx context.Context, client polymarket.GammaClient) (*discovery, error) {
 	limit1 := 1
 
 	markets, err := client.ListMarkets(ctx, polymarket.ListMarketsOptions{

@@ -12,13 +12,13 @@ import (
 )
 
 func TestNewClientDefaults(t *testing.T) {
-	c, err := NewClient(Config{})
+	c, err := NewGammaClient(GammaConfig{})
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
-	impl, ok := c.(*clientImpl)
+	impl, ok := c.(*gammaClientImpl)
 	if !ok {
-		t.Fatalf("client type = %T, want *clientImpl", c)
+		t.Fatalf("client type = %T, want *gammaClientImpl", c)
 	}
 	if impl.config.GammaBaseURL != DefaultGammaBaseURL {
 		t.Fatalf("GammaBaseURL = %q, want %q", impl.config.GammaBaseURL, DefaultGammaBaseURL)
@@ -29,7 +29,7 @@ func TestNewClientDefaults(t *testing.T) {
 }
 
 func TestNewClientInvalidBaseURL(t *testing.T) {
-	_, err := NewClient(Config{GammaBaseURL: "://bad"})
+	_, err := NewGammaClient(GammaConfig{GammaBaseURL: "://bad"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -47,7 +47,7 @@ func TestListTeamsQueryEncoding(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client, err := NewClient(Config{GammaBaseURL: ts.URL, Timeout: 5 * time.Second})
+	client, err := NewGammaClient(GammaConfig{GammaBaseURL: ts.URL, Timeout: 5 * time.Second})
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestPathEscaping(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client, err := NewClient(Config{GammaBaseURL: ts.URL})
+	client, err := NewGammaClient(GammaConfig{GammaBaseURL: ts.URL})
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestDecodeHTTPErrorJSON(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client, err := NewClient(Config{GammaBaseURL: ts.URL})
+	client, err := NewGammaClient(GammaConfig{GammaBaseURL: ts.URL})
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
@@ -133,7 +133,7 @@ func TestDecodeHTTPErrorPlainText(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client, err := NewClient(Config{GammaBaseURL: ts.URL})
+	client, err := NewGammaClient(GammaConfig{GammaBaseURL: ts.URL})
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestContextCancel(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client, err := NewClient(Config{GammaBaseURL: ts.URL, Timeout: 5 * time.Second})
+	client, err := NewGammaClient(GammaConfig{GammaBaseURL: ts.URL, Timeout: 5 * time.Second})
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}

@@ -19,8 +19,8 @@ const (
 	errorBodyLimit = 16 * 1024
 )
 
-// Client is a typed Polymarket Gamma API client.
-type Client interface {
+// GammaClient is a typed Polymarket Gamma API client.
+type GammaClient interface {
 	// Markets
 	ListMarkets(ctx context.Context, options ListMarketsOptions) ([]Market, error)
 	GetMarketByID(ctx context.Context, id int64, options GetMarketOptions) (*Market, error)
@@ -51,16 +51,16 @@ type Client interface {
 	ListTeams(ctx context.Context, options ListTeamsOptions) ([]Team, error)
 }
 
-type Config struct {
+type GammaConfig struct {
 	GammaBaseURL string
 	Timeout      time.Duration
 }
 
-func (c Config) WithDefaults() Config {
+func (c GammaConfig) WithDefaults() GammaConfig {
 	return c.withDefaults()
 }
 
-func (c Config) withDefaults() Config {
+func (c GammaConfig) withDefaults() GammaConfig {
 	c.GammaBaseURL = strings.TrimSpace(c.GammaBaseURL)
 	if c.GammaBaseURL == "" {
 		c.GammaBaseURL = DefaultGammaBaseURL
@@ -71,19 +71,19 @@ func (c Config) withDefaults() Config {
 	return c
 }
 
-type clientImpl struct {
-	config Config
+type gammaClientImpl struct {
+	config GammaConfig
 	http   *http.Client
 }
 
-var _ Client = (*clientImpl)(nil)
+var _ GammaClient = (*gammaClientImpl)(nil)
 
-func NewClient(config Config) (Client, error) {
+func NewGammaClient(config GammaConfig) (GammaClient, error) {
 	config = config.withDefaults()
 	if _, err := url.ParseRequestURI(config.GammaBaseURL); err != nil {
 		return nil, fmt.Errorf("invalid polymarket gamma base url: %w", err)
 	}
-	return &clientImpl{
+	return &gammaClientImpl{
 		config: config,
 		http:   &http.Client{Timeout: config.Timeout},
 	}, nil
@@ -362,7 +362,7 @@ type Team struct {
 	UpdatedAt    *time.Time `json:"updatedAt,omitempty"`
 }
 
-func (c *clientImpl) ListMarkets(ctx context.Context, options ListMarketsOptions) ([]Market, error) {
+func (c *gammaClientImpl) ListMarkets(ctx context.Context, options ListMarketsOptions) ([]Market, error) {
 	query := options.values()
 	var out []Market
 	if err := c.do(ctx, http.MethodGet, "/markets", query, &out); err != nil {
@@ -371,7 +371,7 @@ func (c *clientImpl) ListMarkets(ctx context.Context, options ListMarketsOptions
 	return out, nil
 }
 
-func (c *clientImpl) GetMarketByID(ctx context.Context, id int64, options GetMarketOptions) (*Market, error) {
+func (c *gammaClientImpl) GetMarketByID(ctx context.Context, id int64, options GetMarketOptions) (*Market, error) {
 	query := options.values()
 	var out Market
 	if err := c.do(ctx, http.MethodGet, "/markets/"+pathEscapeInt(id), query, &out); err != nil {
@@ -380,7 +380,7 @@ func (c *clientImpl) GetMarketByID(ctx context.Context, id int64, options GetMar
 	return &out, nil
 }
 
-func (c *clientImpl) GetMarketBySlug(ctx context.Context, slug string, options GetMarketOptions) (*Market, error) {
+func (c *gammaClientImpl) GetMarketBySlug(ctx context.Context, slug string, options GetMarketOptions) (*Market, error) {
 	query := options.values()
 	var out Market
 	if err := c.do(ctx, http.MethodGet, "/markets/slug/"+url.PathEscape(strings.TrimSpace(slug)), query, &out); err != nil {
@@ -389,7 +389,7 @@ func (c *clientImpl) GetMarketBySlug(ctx context.Context, slug string, options G
 	return &out, nil
 }
 
-func (c *clientImpl) GetMarketTagsByID(ctx context.Context, id int64) ([]Tag, error) {
+func (c *gammaClientImpl) GetMarketTagsByID(ctx context.Context, id int64) ([]Tag, error) {
 	var out []Tag
 	if err := c.do(ctx, http.MethodGet, "/markets/"+pathEscapeInt(id)+"/tags", nil, &out); err != nil {
 		return nil, err
@@ -397,7 +397,7 @@ func (c *clientImpl) GetMarketTagsByID(ctx context.Context, id int64) ([]Tag, er
 	return out, nil
 }
 
-func (c *clientImpl) ListEvents(ctx context.Context, options ListEventsOptions) ([]Event, error) {
+func (c *gammaClientImpl) ListEvents(ctx context.Context, options ListEventsOptions) ([]Event, error) {
 	query := options.values()
 	var out []Event
 	if err := c.do(ctx, http.MethodGet, "/events", query, &out); err != nil {
@@ -406,7 +406,7 @@ func (c *clientImpl) ListEvents(ctx context.Context, options ListEventsOptions) 
 	return out, nil
 }
 
-func (c *clientImpl) GetEventByID(ctx context.Context, id int64, options GetEventOptions) (*Event, error) {
+func (c *gammaClientImpl) GetEventByID(ctx context.Context, id int64, options GetEventOptions) (*Event, error) {
 	query := options.values()
 	var out Event
 	if err := c.do(ctx, http.MethodGet, "/events/"+pathEscapeInt(id), query, &out); err != nil {
@@ -415,7 +415,7 @@ func (c *clientImpl) GetEventByID(ctx context.Context, id int64, options GetEven
 	return &out, nil
 }
 
-func (c *clientImpl) GetEventBySlug(ctx context.Context, slug string, options GetEventOptions) (*Event, error) {
+func (c *gammaClientImpl) GetEventBySlug(ctx context.Context, slug string, options GetEventOptions) (*Event, error) {
 	query := options.values()
 	var out Event
 	if err := c.do(ctx, http.MethodGet, "/events/slug/"+url.PathEscape(strings.TrimSpace(slug)), query, &out); err != nil {
@@ -424,7 +424,7 @@ func (c *clientImpl) GetEventBySlug(ctx context.Context, slug string, options Ge
 	return &out, nil
 }
 
-func (c *clientImpl) GetEventTags(ctx context.Context, id int64) ([]Tag, error) {
+func (c *gammaClientImpl) GetEventTags(ctx context.Context, id int64) ([]Tag, error) {
 	var out []Tag
 	if err := c.do(ctx, http.MethodGet, "/events/"+pathEscapeInt(id)+"/tags", nil, &out); err != nil {
 		return nil, err
@@ -432,7 +432,7 @@ func (c *clientImpl) GetEventTags(ctx context.Context, id int64) ([]Tag, error) 
 	return out, nil
 }
 
-func (c *clientImpl) ListTags(ctx context.Context, options ListTagsOptions) ([]Tag, error) {
+func (c *gammaClientImpl) ListTags(ctx context.Context, options ListTagsOptions) ([]Tag, error) {
 	query := options.values()
 	var out []Tag
 	if err := c.do(ctx, http.MethodGet, "/tags", query, &out); err != nil {
@@ -441,7 +441,7 @@ func (c *clientImpl) ListTags(ctx context.Context, options ListTagsOptions) ([]T
 	return out, nil
 }
 
-func (c *clientImpl) GetTagByID(ctx context.Context, id string, options GetTagOptions) (*Tag, error) {
+func (c *gammaClientImpl) GetTagByID(ctx context.Context, id string, options GetTagOptions) (*Tag, error) {
 	query := options.values()
 	var out Tag
 	if err := c.do(ctx, http.MethodGet, "/tags/"+url.PathEscape(strings.TrimSpace(id)), query, &out); err != nil {
@@ -450,7 +450,7 @@ func (c *clientImpl) GetTagByID(ctx context.Context, id string, options GetTagOp
 	return &out, nil
 }
 
-func (c *clientImpl) GetTagBySlug(ctx context.Context, slug string, options GetTagOptions) (*Tag, error) {
+func (c *gammaClientImpl) GetTagBySlug(ctx context.Context, slug string, options GetTagOptions) (*Tag, error) {
 	query := options.values()
 	var out Tag
 	if err := c.do(ctx, http.MethodGet, "/tags/slug/"+url.PathEscape(strings.TrimSpace(slug)), query, &out); err != nil {
@@ -459,7 +459,7 @@ func (c *clientImpl) GetTagBySlug(ctx context.Context, slug string, options GetT
 	return &out, nil
 }
 
-func (c *clientImpl) GetRelatedTagsByTagID(ctx context.Context, id string, options RelatedTagsOptions) ([]RelatedTagRelationship, error) {
+func (c *gammaClientImpl) GetRelatedTagsByTagID(ctx context.Context, id string, options RelatedTagsOptions) ([]RelatedTagRelationship, error) {
 	query := options.values()
 	var out []RelatedTagRelationship
 	if err := c.do(ctx, http.MethodGet, "/tags/"+url.PathEscape(strings.TrimSpace(id))+"/related-tags", query, &out); err != nil {
@@ -468,7 +468,7 @@ func (c *clientImpl) GetRelatedTagsByTagID(ctx context.Context, id string, optio
 	return out, nil
 }
 
-func (c *clientImpl) GetRelatedTagsByTagSlug(ctx context.Context, slug string, options RelatedTagsOptions) ([]RelatedTagRelationship, error) {
+func (c *gammaClientImpl) GetRelatedTagsByTagSlug(ctx context.Context, slug string, options RelatedTagsOptions) ([]RelatedTagRelationship, error) {
 	query := options.values()
 	var out []RelatedTagRelationship
 	if err := c.do(ctx, http.MethodGet, "/tags/slug/"+url.PathEscape(strings.TrimSpace(slug))+"/related-tags", query, &out); err != nil {
@@ -477,7 +477,7 @@ func (c *clientImpl) GetRelatedTagsByTagSlug(ctx context.Context, slug string, o
 	return out, nil
 }
 
-func (c *clientImpl) GetTagsRelatedToTagID(ctx context.Context, id string, options RelatedTagsOptions) ([]Tag, error) {
+func (c *gammaClientImpl) GetTagsRelatedToTagID(ctx context.Context, id string, options RelatedTagsOptions) ([]Tag, error) {
 	query := options.values()
 	var out []Tag
 	if err := c.do(ctx, http.MethodGet, "/tags/"+url.PathEscape(strings.TrimSpace(id))+"/related-tags/tags", query, &out); err != nil {
@@ -486,7 +486,7 @@ func (c *clientImpl) GetTagsRelatedToTagID(ctx context.Context, id string, optio
 	return out, nil
 }
 
-func (c *clientImpl) GetTagsRelatedToTagSlug(ctx context.Context, slug string, options RelatedTagsOptions) ([]Tag, error) {
+func (c *gammaClientImpl) GetTagsRelatedToTagSlug(ctx context.Context, slug string, options RelatedTagsOptions) ([]Tag, error) {
 	query := options.values()
 	var out []Tag
 	if err := c.do(ctx, http.MethodGet, "/tags/slug/"+url.PathEscape(strings.TrimSpace(slug))+"/related-tags/tags", query, &out); err != nil {
@@ -495,7 +495,7 @@ func (c *clientImpl) GetTagsRelatedToTagSlug(ctx context.Context, slug string, o
 	return out, nil
 }
 
-func (c *clientImpl) PublicSearch(ctx context.Context, options PublicSearchOptions) (*PublicSearchResponse, error) {
+func (c *gammaClientImpl) PublicSearch(ctx context.Context, options PublicSearchOptions) (*PublicSearchResponse, error) {
 	query := options.values()
 	var out PublicSearchResponse
 	if err := c.do(ctx, http.MethodGet, "/public-search", query, &out); err != nil {
@@ -504,7 +504,7 @@ func (c *clientImpl) PublicSearch(ctx context.Context, options PublicSearchOptio
 	return &out, nil
 }
 
-func (c *clientImpl) GetSportsMetadata(ctx context.Context) ([]SportsMetadata, error) {
+func (c *gammaClientImpl) GetSportsMetadata(ctx context.Context) ([]SportsMetadata, error) {
 	var out []SportsMetadata
 	if err := c.do(ctx, http.MethodGet, "/sports", nil, &out); err != nil {
 		return nil, err
@@ -512,7 +512,7 @@ func (c *clientImpl) GetSportsMetadata(ctx context.Context) ([]SportsMetadata, e
 	return out, nil
 }
 
-func (c *clientImpl) GetSportsMarketTypes(ctx context.Context) (*SportsMarketTypesResponse, error) {
+func (c *gammaClientImpl) GetSportsMarketTypes(ctx context.Context) (*SportsMarketTypesResponse, error) {
 	var out SportsMarketTypesResponse
 	if err := c.do(ctx, http.MethodGet, "/sports/market-types", nil, &out); err != nil {
 		return nil, err
@@ -520,7 +520,7 @@ func (c *clientImpl) GetSportsMarketTypes(ctx context.Context) (*SportsMarketTyp
 	return &out, nil
 }
 
-func (c *clientImpl) ListTeams(ctx context.Context, options ListTeamsOptions) ([]Team, error) {
+func (c *gammaClientImpl) ListTeams(ctx context.Context, options ListTeamsOptions) ([]Team, error) {
 	query := options.values()
 	var out []Team
 	if err := c.do(ctx, http.MethodGet, "/teams", query, &out); err != nil {
@@ -529,7 +529,7 @@ func (c *clientImpl) ListTeams(ctx context.Context, options ListTeamsOptions) ([
 	return out, nil
 }
 
-func (c *clientImpl) do(ctx context.Context, method, path string, query url.Values, out any) error {
+func (c *gammaClientImpl) do(ctx context.Context, method, path string, query url.Values, out any) error {
 	endpoint, err := c.buildURL(path, query)
 	if err != nil {
 		return err
@@ -561,7 +561,7 @@ func (c *clientImpl) do(ctx context.Context, method, path string, query url.Valu
 	return nil
 }
 
-func (c *clientImpl) buildURL(path string, query url.Values) (*url.URL, error) {
+func (c *gammaClientImpl) buildURL(path string, query url.Values) (*url.URL, error) {
 	endpoint, err := url.Parse(strings.TrimRight(c.config.GammaBaseURL, "/") + path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse polymarket gamma request url: %w", err)
