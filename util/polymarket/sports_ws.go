@@ -116,6 +116,15 @@ func (c *sportsWSClientImpl) runOnce(ctx context.Context, handler SportsWSHandle
 	if err != nil {
 		return fmt.Errorf("failed to connect polymarket sports ws: %w", err)
 	}
+	done := make(chan struct{})
+	go func() {
+		select {
+		case <-ctx.Done():
+			_ = conn.Close()
+		case <-done:
+		}
+	}()
+	defer close(done)
 	defer conn.Close()
 
 	conn.SetReadLimit(c.config.ReadLimit)
@@ -135,6 +144,9 @@ func (c *sportsWSClientImpl) runOnce(ctx context.Context, handler SportsWSHandle
 
 		msgType, payload, err := conn.ReadMessage()
 		if err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
 			return fmt.Errorf("failed reading polymarket sports ws: %w", err)
 		}
 		if msgType != websocket.TextMessage && msgType != websocket.BinaryMessage {

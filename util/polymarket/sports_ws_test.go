@@ -140,3 +140,72 @@ func TestSportsWSPingPongAndUpdate(t *testing.T) {
 		t.Fatal("Run did not exit")
 	}
 }
+
+func TestSportsWSCancelOnPingFrameExitsPromptly(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	heartbeatSeen := make(chan struct{}, 1)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			t.Errorf("upgrade: %v", err)
+			return
+		}
+		defer conn.Close()
+
+		if err := conn.WriteControl(websocket.PingMessage, []byte("probe"), time.Now().Add(time.Second)); err != nil {
+			t.Errorf("write ping frame: %v", err)
+			return
+		}
+
+		conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+		for {
+			if _, _, err := conn.ReadMessage(); err != nil {
+				return
+			}
+		}
+	}))
+	defer ts.Close()
+
+	client, err := NewSportsWSClient(SportsWSConfig{
+		WSURL:            toWSURL(ts.URL),
+		ReconnectInitial: 10 * time.Millisecond,
+		ReconnectMax:     20 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatalf("NewSportsWSClient: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- client.Run(ctx, SportsWSHandler{
+			OnHeartbeat: func(msg string) {
+				if msg != "PING_FRAME" {
+					return
+				}
+				select {
+				case heartbeatSeen <- struct{}{}:
+				default:
+				}
+				cancel()
+			},
+		})
+	}()
+
+	select {
+	case <-heartbeatSeen:
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for ping frame heartbeat")
+	}
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Run did not exit after cancel on ping frame")
+	}
+}

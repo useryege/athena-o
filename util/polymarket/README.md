@@ -162,6 +162,8 @@ go test -v ./util/polymarket -run '^TestIntegrationCLOBMarketWSS$'
 
 ### Sports WSS only
 
+`TestIntegrationSportsWSS` waits for the first incoming update/heartbeat, then collects and logs Sports WSS traffic for 30 seconds.
+
 Basic mode:
 
 ```bash
