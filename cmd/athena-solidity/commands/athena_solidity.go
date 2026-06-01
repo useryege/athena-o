@@ -10,7 +10,6 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -25,6 +24,7 @@ import (
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/ethereumapi"
+	"github.com/useryege/athena/util/ethws"
 	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/templates"
 )
@@ -33,9 +33,10 @@ const cliName = "athena-solidity"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost string
-		listenPort int
-		nodewsurl  string
+		listenHost     string
+		listenPort     int
+		nodewsurl      string
+		nodeWSUseProxy bool
 
 		etherscanAPIBaseURL string
 		etherscanAPIKey     string
@@ -69,7 +70,7 @@ func NewCommand() *cobra.Command {
 			errors.CheckError(err)
 			defer utilio.Close(store)
 
-			nodeClient, err := ethclient.Dial(nodewsurl)
+			nodeClient, err := ethws.DialContext(ctx, nodewsurl, nodeWSUseProxy)
 			if err != nil {
 				return fmt.Errorf("failed to connect to node websocket: %w", err)
 			}
@@ -161,6 +162,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_SOLIDITY_LISTEN_ADDRESS", common.DefaultAddressSolidity), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortSolidity, "Listen on given port for incoming connections")
 	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_SOLIDITY_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
+	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_SOLIDITY_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
 	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_SOLIDITY_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
 	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_SOLIDITY_ETHERSCAN_API_KEY", ""), "Etherscan API key")
 	command.Flags().StringVar(&deepseekAPIKey, "deepseek-api-key", env.StringFromEnv("ATHENA_SOLIDITY_DEEPSEEK_API_KEY", ""), "DeepSeek API key")

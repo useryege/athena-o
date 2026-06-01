@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -23,7 +22,6 @@ import (
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/application"
-	"github.com/useryege/athena/util/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
@@ -33,7 +31,9 @@ import (
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
+	"github.com/useryege/athena/util/ethws"
 	utilio "github.com/useryege/athena/util/io"
+	"github.com/useryege/athena/util/redisport"
 )
 
 const cliName = "athena-application"
@@ -43,6 +43,7 @@ func NewCommand() *cobra.Command {
 		listenHost            string
 		listenPort            int
 		nodewsurl             string
+		nodeWSUseProxy        bool
 		athenaContract        string
 		solidityServerAddress string
 		walletServerAddress   string
@@ -84,10 +85,18 @@ func NewCommand() *cobra.Command {
 			}
 
 			// create a new node client
-			nodeClient, err := ethclient.Dial(nodewsurl)
+			nodeClient, err := ethws.DialContext(ctx, nodewsurl, nodeWSUseProxy)
 			if err != nil {
 				log.Fatalf("failed to connect to node websocket: %v", err)
 			}
+			defer nodeClient.Close()
+
+			// chain id
+			chainID, err := nodeClient.ChainID(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to fetch node chain id: %w", err)
+			}
+			log.Infof("node chain id: %d", chainID.Int64())
 
 			athenaContractAddress, err := parseRequiredAddress("ATHENA contract address", athenaContract, "--athena-contract", "ATHENA_APPLICATION_ATHENA_CONTRACT")
 			if err != nil {
@@ -203,6 +212,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_APPLICATION_LISTEN_ADDRESS", common.DefaultAddressApplication), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortApplication, "Listen on given port for incoming connections")
 	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_APPLICATION_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
+	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_APPLICATION_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
 	command.Flags().StringVar(&athenaContract, "athena-contract", env.StringFromEnv("ATHENA_APPLICATION_ATHENA_CONTRACT", ""), "ATHENA aggregation contract address")
 	command.Flags().StringVar(&solidityServerAddress, "solidity-server-address", env.StringFromEnv("ATHENA_APPLICATION_SOLIDITY_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortSolidity)), "Solidity service gRPC address")
 	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_APPLICATION_WALLET_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortWallet)), "Wallet service gRPC address")
