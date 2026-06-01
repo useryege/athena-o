@@ -26,6 +26,7 @@ import (
 const (
 	defaultDocsRoot = "util/polymarket/polymarket-docs/api-reference"
 	defaultOutput   = "util/polymarket/request-response/latest"
+	defaultSnapshotUserAddress = "0xB9FB10570ee6DA98dd56607d5B117f38E7886E68"
 )
 
 var (
@@ -595,7 +596,10 @@ func discoverSamples(ctx context.Context) (discovery, error) {
 		return discovery{}, fmt.Errorf("new gamma client: %w", err)
 	}
 	one := 1
-	out := discovery{TodayUTCDate: time.Now().UTC().Format("2006-01-02")}
+	out := discovery{
+		TodayUTCDate: time.Now().UTC().Format("2006-01-02"),
+		UserAddress:  defaultSnapshotUserAddress,
+	}
 
 	markets, err := client.ListMarkets(ctx, polymarket.ListMarketsOptions{ListOptions: polymarket.ListOptions{Limit: &one}})
 	if err != nil {
@@ -655,9 +659,6 @@ func discoverSamples(ctx context.Context) (discovery, error) {
 	})
 	if err == nil && len(comments) > 0 {
 		out.CommentID = strings.TrimSpace(comments[0].ID)
-		if comments[0].UserAddress != nil {
-			out.UserAddress = strings.TrimSpace(*comments[0].UserAddress)
-		}
 	}
 
 	seriesRows, err := client.ListSeries(ctx, polymarket.ListSeriesOptions{ListOptions: polymarket.ListOptions{Limit: &one}})
@@ -665,9 +666,6 @@ func discoverSamples(ctx context.Context) (discovery, error) {
 		out.SeriesID, _ = strconv.ParseInt(strings.TrimSpace(seriesRows[0].ID), 10, 64)
 	}
 
-	if out.UserAddress == "" {
-		out.UserAddress = "0x0000000000000000000000000000000000000000"
-	}
 	if out.TokenID == "" || out.ConditionID == "" {
 		return out, errors.New("discover token/condition sample missing")
 	}

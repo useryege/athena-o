@@ -8,7 +8,7 @@
       "DYNAMIC"
     ],
     "Cf-Ray": [
-      "a0510758b89fe2ef-HKG"
+      "a05190396d92b852-HKG"
     ],
     "Content-Length": [
       "42"
@@ -17,13 +17,13 @@
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:37 GMT"
+      "Mon, 01 Jun 2026 22:13:04 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=BPzXsZAWUM9U5EWeyqXAobjYDkmeIRUZwXKxbisZCEg-1780346377.0775564-1.0.1.1-0hqFSUe7qXKtx34FzdykqT6aIs5dBz27g3igTUNWSj1BlNi02Wt2sjbXvSVeFaw0Cb1Gfb2IOpKVQ74bEzScHSUMInqBJ5tz60ozEKZakKyBa.c15kIadd2pKyRcculL; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:37 GMT"
+      "__cf_bm=UOcppO1p7jvU4QgrnhWEb9_nr6yWrr7gWYey_WfF1Zc-1780351983.583551-1.0.1.1-dfhgyskdfTuo1dvLGkLVvwCDu9hnCtS6tLSEF.o2cDaJaZbB3cWNrlu2JCw8lGs8r.w0wIGUGjvHOUg8eo6QaJqUvoU52pe09HyXN00S5ck9_siT6JlpeArNAo.9bQP6; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:04 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -35,6 +35,6 @@
   "body": {
     "error": "cannot get transaction status"
   },
-  "latency_ms": 511,
-  "ended_at": "2026-06-01T20:39:38.04139951Z"
+  "latency_ms": 1036,
+  "ended_at": "2026-06-01T22:13:04.998528186Z"
 }

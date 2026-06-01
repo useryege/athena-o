@@ -2,7 +2,7 @@
   "status_code": 200,
   "headers": {
     "Age": [
-      "204"
+      "268"
     ],
     "Alt-Svc": [
       "h3=\":443\"; ma=86400"
@@ -14,25 +14,25 @@
       "HIT"
     ],
     "Cf-Ray": [
-      "a05107924d38d76d-HKG"
+      "a05190cbeb3408e5-HKG"
     ],
     "Content-Type": [
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:46 GMT"
+      "Mon, 01 Jun 2026 22:13:27 GMT"
     ],
     "Expires": [
-      "Mon, 01 Jun 2026 20:44:46 GMT"
+      "Mon, 01 Jun 2026 22:18:27 GMT"
     ],
     "Last-Modified": [
-      "Mon, 01 Jun 2026 20:36:33 GMT"
+      "Mon, 01 Jun 2026 22:08:58 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=JIPrYHQ2Npb2LCUxKI7GWZY0wrFADeXZsfzf0J_VDlU-1780346386.28211-1.0.1.1-zBiv0eHzB74BpJ9ugW3BT8vwsl...H34jARB7oGZzYThfXcUDLq2EVd5AOlm97pehEcWIIQKbB4jyOczxyrHrs_JMvtPepBqCBsnrXRSH0PteNMziwDTd5yT5i0TATdR; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:46 GMT"
+      "__cf_bm=eMOROClZGLLk8qfQFxU4JvjgOqC0Bs2RM_SDZx6HfHc-1780352007.020694-1.0.1.1-e6Yj.Y23WgwO8pdTBmdvwtbK2JTq5yU80oujsf77QmrIhkKv1UhTQ0rpEa4mx2Jia_ALT4eEr5IE02G.6V1gGNsujC3ypMVl.PzgyFN5GsH_m_R7X92ibzVm03EnOo11; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:27 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -49,12 +49,12 @@
     "approved": true,
     "archived": false,
     "automaticallyActive": true,
-    "bestAsk": 0.53,
-    "bestBid": 0.52,
+    "bestAsk": 0.52,
+    "bestBid": 0.51,
     "clearBookOnStart": true,
     "clobTokenIds": "[\"98022490269692409998126496127597032490334070080325855126491859374983463996227\", \"53831553061883006530739877284105938919721408776239639687877978808906551086026\"]",
     "closed": false,
-    "competitive": 0.9993753903810119,
+    "competitive": 0.9997750506136119,
     "conditionId": "0x1fad72fae204143ff1c3035e99e7c0f65ea8d5cd9bd1070987bd1a3316f772be",
     "createdAt": "2025-05-02T15:04:43.762151Z",
     "customLiveness": 0,
@@ -71,7 +71,7 @@
         "archived": false,
         "automaticallyActive": true,
         "closed": false,
-        "commentCount": 880,
+        "commentCount": 881,
         "competitive": 0.9999750006249843,
         "createdAt": "2025-05-02T14:55:28.249386Z",
         "creationDate": "2025-05-02T15:48:25.262669Z",
@@ -83,21 +83,21 @@
         "enableOrderBook": true,
         "endDate": "2026-07-31T12:00:00Z",
         "eventMetadata": {
-          "context_description": "Grand Theft Auto VI’s confirmed November 19, 2026 release date creates a roughly five-and-a-half-month window that traders are using to assess which major cultural or geopolitical milestones could occur first. Rockstar’s repeated delays and Take-Two’s firm commitment during recent earnings calls have locked in the timeline, while summer marketing—including an expected third trailer and pre-order launch—will intensify visibility without shifting the ship date. This extended runway favors high-profile events such as album drops, major tech releases, or international developments that could resolve before the game arrives on PlayStation 5 and Xbox Series X/S, shaping the market’s emphasis on timing and verifiable announcements over speculation.",
+          "context_description": "Rockstar Games' multiple delays have pushed GTA VI's console launch to November 19, 2026, creating an unusually long window for competing developments across entertainment, tech, and geopolitics. The extended timeline stems from the studio's emphasis on polish after shifting from a 2025 target through spring 2026, with the next major status update likely tied to Take-Two's May earnings call. Traders are weighing high-profile possibilities such as a Russia-Ukraine ceasefire, Drake's \"Iceman\" album, or GPT-6 release, all of which could resolve well before the game's Vice City launch. Ongoing GTA Online content drops and potential Trailer 3 marketing keep the franchise in the cultural conversation, while industry focus remains on how Rockstar's campaign trajectory and any late-cycle announcements might influence momentum.",
           "context_requires_regen": false,
-          "context_updated_at": "2026-06-01T20:30:47.606Z"
+          "context_updated_at": "2026-06-01T22:00:49.280Z"
         },
         "featured": false,
         "gmpChartMode": "default",
         "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/what-will-happen-before-gta-vi-7hpNkEzQEqUE.jpg",
         "id": "23784",
         "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/what-will-happen-before-gta-vi-7hpNkEzQEqUE.jpg",
-        "liquidity": 843431.82714,
-        "liquidityClob": 843431.82714,
+        "liquidity": 835757.51382,
+        "liquidityClob": 835757.51382,
         "negRisk": false,
         "negRiskAugmented": false,
         "new": false,
-        "openInterest": 786291.6631359999,
+        "openInterest": 785913.053287,
         "pendingDeployment": false,
         "requiresTranslation": false,
         "resolutionSource": "",
@@ -109,12 +109,12 @@
         "startDate": "2025-05-02T15:48:25.262673Z",
         "ticker": "what-will-happen-before-gta-vi",
         "title": "What will happen before GTA VI?",
-        "updatedAt": "2026-06-01T20:30:47.981691Z",
-        "volume": 22531653.614094336,
-        "volume1mo": 913516.1537660052,
-        "volume1wk": 126449.47867100006,
-        "volume1yr": 19289836.65277375,
-        "volume24hr": 22848.81396800001
+        "updatedAt": "2026-06-01T22:07:09.840934Z",
+        "volume": 22532378.652361337,
+        "volume1mo": 912214.0150180053,
+        "volume1wk": 126044.99299400006,
+        "volume1yr": 19290512.361040752,
+        "volume24hr": 17205.22619000001
       }
     ],
     "featured": false,
@@ -134,10 +134,10 @@
     "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/what-will-happen-before-gta-vi-7hpNkEzQEqUE.jpg",
     "id": "540817",
     "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/what-will-happen-before-gta-vi-7hpNkEzQEqUE.jpg",
-    "lastTradePrice": 0.53,
-    "liquidity": "22611.6412",
-    "liquidityClob": 22611.6412,
-    "liquidityNum": 22611.6412,
+    "lastTradePrice": 0.51,
+    "liquidity": "20611.0682",
+    "liquidityClob": 20611.0682,
+    "liquidityNum": 20611.0682,
     "makerBaseFee": 1000,
     "manualActivation": false,
     "marketMakerAddress": "",
@@ -145,13 +145,13 @@
     "negRiskOther": false,
     "negRiskRequestID": "",
     "new": false,
-    "oneHourPriceChange": 0.02,
-    "oneMonthPriceChange": 0.005,
-    "oneWeekPriceChange": -0.01,
-    "oneYearPriceChange": -0.19,
+    "oneDayPriceChange": -0.005,
+    "oneMonthPriceChange": -0.005,
+    "oneWeekPriceChange": -0.09,
+    "oneYearPriceChange": -0.2,
     "orderMinSize": 5,
     "orderPriceMinTickSize": 0.01,
-    "outcomePrices": "[\"0.525\", \"0.475\"]",
+    "outcomePrices": "[\"0.515\", \"0.485\"]",
     "outcomes": "[\"Yes\", \"No\"]",
     "pagerDutyNotificationEnabled": false,
     "pendingDeployment": false,
@@ -177,19 +177,19 @@
     "umaBond": "500",
     "umaResolutionStatuses": "[]",
     "umaReward": "5",
-    "updatedAt": "2026-06-01T20:34:48.556717Z",
-    "volume": "791016.1018090035",
-    "volume1mo": 85516.82379799994,
-    "volume1moClob": 85516.82379799994,
-    "volume1wk": 32980.06892600002,
-    "volume1wkClob": 32980.06892600002,
-    "volume1yr": 603213.9593390023,
-    "volume1yrClob": 603213.9593390023,
-    "volume24hr": 6806.579507000011,
-    "volume24hrClob": 6806.579507000011,
-    "volumeClob": 791016.1018090035,
-    "volumeNum": 791016.1018090035
+    "updatedAt": "2026-06-01T22:04:58.387363Z",
+    "volume": "791041.1018090035",
+    "volume1mo": 85539.74379799994,
+    "volume1moClob": 85539.74379799994,
+    "volume1wk": 32601.00514800003,
+    "volume1wkClob": 32601.00514800003,
+    "volume1yr": 603238.9593390023,
+    "volume1yrClob": 603238.9593390023,
+    "volume24hr": 6728.3395070000115,
+    "volume24hrClob": 6728.3395070000115,
+    "volumeClob": 791041.1018090035,
+    "volumeNum": 791041.1018090035
   },
-  "latency_ms": 31,
-  "ended_at": "2026-06-01T20:39:46.567836137Z"
+  "latency_ms": 147,
+  "ended_at": "2026-06-01T22:13:27.589684854Z"
 }

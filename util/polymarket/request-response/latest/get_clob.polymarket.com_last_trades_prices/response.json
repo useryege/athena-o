@@ -8,7 +8,7 @@
       "DYNAMIC"
     ],
     "Cf-Ray": [
-      "a05107623a0c210b-HKG"
+      "a051904d1add2907-HKG"
     ],
     "Content-Length": [
       "28"
@@ -17,13 +17,13 @@
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:38 GMT"
+      "Mon, 01 Jun 2026 22:13:06 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=1glOnOOqP_KUsUoLfpRnN.8CuYWh0h6UZGMZVHAwheM-1780346378.600057-1.0.1.1-njBYTwv2A.e2KtQ0Yg2nC5zt0mA2h46KPSA3wORRRjkoRhdUqIIT3AmrmFkk7Y6LNdLjsGpvKSI7Q.Ch7wohe9xWO5fC832g9C1aaVArSBGmpehQcMIy2bM_PMxyfKIV; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:38 GMT"
+      "__cf_bm=ALBxH9tecpxFW9lCfWwpsiH..6aHEQN2LEwi4sTjT.g-1780351986.73134-1.0.1.1-UW0PECZmmORfHLnXSG1181QWfM4mr5ioXmyB5WLig9tZbCtyYJCm9KusSTPDwbNz5eZoIvTT.R1B88KtB1tDeXKsVyuJaug52lcYw7AtvRzhZOSq8lgG6BjJDic14iFq; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:06 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -35,6 +35,6 @@
   "body": {
     "error": "Invalid payload"
   },
-  "latency_ms": 246,
-  "ended_at": "2026-06-01T20:39:38.877917089Z"
+  "latency_ms": 363,
+  "ended_at": "2026-06-01T22:13:07.87995778Z"
 }

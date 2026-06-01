@@ -1,12 +1,6 @@
 {
   "status_code": 200,
   "headers": {
-    "Accept-Ranges": [
-      "bytes"
-    ],
-    "Age": [
-      "32"
-    ],
     "Alt-Svc": [
       "h3=\":443\"; ma=86400"
     ],
@@ -14,31 +8,28 @@
       "public, max-age=1800"
     ],
     "Cf-Cache-Status": [
-      "HIT"
+      "MISS"
     ],
     "Cf-Ray": [
-      "a051078b8bea4296-HKG"
-    ],
-    "Content-Length": [
-      "2"
+      "a05190a99a8709e0-HKG"
     ],
     "Content-Type": [
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:45 GMT"
+      "Mon, 01 Jun 2026 22:13:21 GMT"
     ],
     "Expires": [
-      "Mon, 01 Jun 2026 21:09:45 GMT"
+      "Mon, 01 Jun 2026 22:43:21 GMT"
     ],
     "Last-Modified": [
-      "Mon, 01 Jun 2026 20:39:12 GMT"
+      "Mon, 01 Jun 2026 22:13:21 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=E1VNpX8gXv82exzog.TS816WG47PCBc.GNDZ7kEZFks-1780346385.2027984-1.0.1.1-3BgK3swLhRLPEhMR3eVbyVYl9JkR9ywURAl3jWzpMvxd.SSBU3XKItiCGIJyHCi0CUCUhqSgaqqtU2IVTjfAYgINNIOEp26svNbiZDwMFhGmZyXhDfVV0_Euo_V6RKWl; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:45 GMT"
+      "__cf_bm=ltiGlodJawaXHvJIYpr.gDWIgg0miykXj1HywLra1FQ-1780352001.5393991-1.0.1.1-6ysMl9_yqm0h1rZ_qW5UdtgteLk0YNjuzooX3TWNsFGRbvc7zYuHOtc8jTGTYpyEUXIK2BHG5qpSH5RmbaF.cMMG6LCskbnihygFSWcgx9ZOVloCKGPd_s62ecu54VtI; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:21 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -47,7 +38,18 @@
       "Origin, accept-encoding"
     ]
   },
-  "body": [],
-  "latency_ms": 33,
-  "ended_at": "2026-06-01T20:39:45.457791738Z"
+  "body": [
+    {
+      "pnl": -0.17848888600000024,
+      "profileImage": "",
+      "proxyWallet": "0xb9fb10570ee6da98dd56607d5b117f38e7886e68",
+      "rank": "964801",
+      "userName": "sorrygirl",
+      "verifiedBadge": false,
+      "vol": 0,
+      "xUsername": ""
+    }
+  ],
+  "latency_ms": 441,
+  "ended_at": "2026-06-01T22:13:22.169994594Z"
 }

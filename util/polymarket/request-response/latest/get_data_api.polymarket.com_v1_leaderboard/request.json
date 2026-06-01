@@ -1,6 +1,6 @@
 {
   "method": "GET",
-  "url": "https://data-api.polymarket.com/v1/leaderboard?limit=1\u0026user=0x0000000000000000000000000000000000000000",
+  "url": "https://data-api.polymarket.com/v1/leaderboard?limit=1\u0026user=0xB9FB10570ee6DA98dd56607d5B117f38E7886E68",
   "headers": {
     "Accept": "application/json"
   },
@@ -9,8 +9,8 @@
       "1"
     ],
     "user": [
-      "0x0000000000000000000000000000000000000000"
+      "0xB9FB10570ee6DA98dd56607d5B117f38E7886E68"
     ]
   },
-  "started_at": "2026-06-01T20:39:45.424083949Z"
+  "started_at": "2026-06-01T22:13:21.728662927Z"
 }

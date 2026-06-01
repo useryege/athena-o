@@ -218,6 +218,10 @@ Collect live request/response snapshots for all public read HTTP endpoints disco
 Output directory is rebuilt each run:
 `util/polymarket/request-response/latest`
 
+Current snapshot tool uses a fixed user sample address for all user-like query fields
+(`user`, `user_address`, `maker_address`, `address`, `recipientAddress`):
+`0xB9FB10570ee6DA98dd56607d5B117f38E7886E68`
+
 Dry-run (parse/classify only):
 
 ```bash

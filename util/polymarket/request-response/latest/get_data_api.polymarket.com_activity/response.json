@@ -1,9 +1,6 @@
 {
   "status_code": 200,
   "headers": {
-    "Accept-Ranges": [
-      "bytes"
-    ],
     "Alt-Svc": [
       "h3=\":443\"; ma=86400"
     ],
@@ -11,31 +8,28 @@
       "public, max-age=15"
     ],
     "Cf-Cache-Status": [
-      "EXPIRED"
+      "MISS"
     ],
     "Cf-Ray": [
-      "a051077f5f674296-HKG"
-    ],
-    "Content-Length": [
-      "2"
+      "a051907c395e09e0-HKG"
     ],
     "Content-Type": [
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:43 GMT"
+      "Mon, 01 Jun 2026 22:13:14 GMT"
     ],
     "Expires": [
-      "Mon, 01 Jun 2026 20:39:58 GMT"
+      "Mon, 01 Jun 2026 22:13:29 GMT"
     ],
     "Last-Modified": [
-      "Mon, 01 Jun 2026 20:39:43 GMT"
+      "Mon, 01 Jun 2026 22:13:14 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=j3HS9JlZGKr5hy3n8bI0iUAzMEJhmD6l35cwRbhYww8-1780346383.25394-1.0.1.1-KJnK1P5KRs3cODcmu.F1FVrqZiJnJcidcoWe9W5cp2OlgqD3tVWAlUD9A3SMzxEv7.Zd1iWRN6uk3sWJ_jPN5mRX1bPZcio8nhfhE.UVsl2dtubgcH0YeKj7OdEbjoVl; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:43 GMT"
+      "__cf_bm=4kfqTwM0jj2ycRT0K1kRf2kl.UNZB31ttKhCAP7B938-1780351994.2770078-1.0.1.1-Y70SXy4FAdmJ1.TRl5as1fKiFew0IuPEQCCRiAmfzIeIkFUuIjBVm1haPPzNzB9DCUXda.hdn_Ma41jnouJSUFTxs1gC7tYtaDF_SMlJTMH0ejdxbaRUYItFcca.Wcmb; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:14 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -44,7 +38,31 @@
       "Origin, accept-encoding"
     ]
   },
-  "body": [],
-  "latency_ms": 590,
-  "ended_at": "2026-06-01T20:39:43.958516746Z"
+  "body": [
+    {
+      "asset": "101881991046648004600006951072556195736778617904900045738563947935423969083026",
+      "bio": "",
+      "conditionId": "0xaf54fcb83c41d9c3f147e9eb175715e30222fb282c6f14c3a7454245148bdc0f",
+      "eventSlug": "us-x-cuba-diplomatic-meeting-by-763",
+      "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/us-x-cuba-diplomatic-meeting-by-Ipo7RGdT6e5j.jpg",
+      "name": "sorrygirl",
+      "outcome": "No",
+      "outcomeIndex": 1,
+      "price": 0.04482070665172957,
+      "profileImage": "",
+      "profileImageOptimized": "",
+      "proxyWallet": "0xb9fb10570ee6da98dd56607d5b117f38e7886e68",
+      "pseudonym": "Grand-Barracks-Visit",
+      "side": "BUY",
+      "size": 89.244443,
+      "slug": "us-x-cuba-diplomatic-meeting-by-may-31-265",
+      "timestamp": 1780196850,
+      "title": "US x Cuba diplomatic meeting by May 31?",
+      "transactionHash": "0xe2764c98f35ec1a5d29ac5a095ce89bc1473e949483c930157b2f3848af0669a",
+      "type": "TRADE",
+      "usdcSize": 3.999999
+    }
+  ],
+  "latency_ms": 993,
+  "ended_at": "2026-06-01T22:13:16.092986579Z"
 }

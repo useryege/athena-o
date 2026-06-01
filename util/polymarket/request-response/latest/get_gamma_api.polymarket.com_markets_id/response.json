@@ -2,7 +2,7 @@
   "status_code": 200,
   "headers": {
     "Age": [
-      "33"
+      "248"
     ],
     "Alt-Svc": [
       "h3=\":443\"; ma=86400"
@@ -14,25 +14,25 @@
       "HIT"
     ],
     "Cf-Ray": [
-      "a0510791ac35d76d-HKG"
+      "a05190c61a8c08e5-HKG"
     ],
     "Content-Type": [
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:46 GMT"
+      "Mon, 01 Jun 2026 22:13:26 GMT"
     ],
     "Expires": [
-      "Mon, 01 Jun 2026 20:44:46 GMT"
+      "Mon, 01 Jun 2026 22:18:26 GMT"
     ],
     "Last-Modified": [
-      "Mon, 01 Jun 2026 20:39:14 GMT"
+      "Mon, 01 Jun 2026 22:09:21 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=XWk4Wh0tz9.88bC3Bnc_pqHb.o59wHrIY.aSiKNFXoA-1780346386.188364-1.0.1.1-_YgRs3RYwz1Ye6tKUIEnVOMMh8q0g4eHw7lOr50SMi7GUWrDumVTe9TXcbBZbke_Pc8tcJy4n2Dq2U8arjqgSkb1Do8RjpHOqBusEKQRjWi4TqRLFEdVzDgp9pGytbsV; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:46 GMT"
+      "__cf_bm=ziMvbKJ1nVsFQZxtUMmjVrbJY3XMr.KcXmD_pk4Pzho-1780352006.09704-1.0.1.1-WVxBlSw98mhwivekr9jFVDqqG.I15BghhmAEo8ZIs16BKMSRu2NZrn98NDQKAEE2jOzZzftlRuTr53GF_thXHjcagVvcoqUFe193SgY667ziYDnljlC7jNw6T7QdeUY7; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:26 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -49,12 +49,12 @@
     "approved": true,
     "archived": false,
     "automaticallyActive": true,
-    "bestAsk": 0.53,
-    "bestBid": 0.52,
+    "bestAsk": 0.52,
+    "bestBid": 0.51,
     "clearBookOnStart": true,
     "clobTokenIds": "[\"98022490269692409998126496127597032490334070080325855126491859374983463996227\", \"53831553061883006530739877284105938919721408776239639687877978808906551086026\"]",
     "closed": false,
-    "competitive": 0.9993753903810119,
+    "competitive": 0.9997750506136119,
     "conditionId": "0x1fad72fae204143ff1c3035e99e7c0f65ea8d5cd9bd1070987bd1a3316f772be",
     "createdAt": "2025-05-02T15:04:43.762151Z",
     "customLiveness": 0,
@@ -82,10 +82,10 @@
     "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/what-will-happen-before-gta-vi-7hpNkEzQEqUE.jpg",
     "id": "540817",
     "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/what-will-happen-before-gta-vi-7hpNkEzQEqUE.jpg",
-    "lastTradePrice": 0.53,
-    "liquidity": "22611.6412",
-    "liquidityClob": 22611.6412,
-    "liquidityNum": 22611.6412,
+    "lastTradePrice": 0.51,
+    "liquidity": "20611.0682",
+    "liquidityClob": 20611.0682,
+    "liquidityNum": 20611.0682,
     "makerBaseFee": 1000,
     "manualActivation": false,
     "marketMakerAddress": "",
@@ -93,13 +93,13 @@
     "negRiskOther": false,
     "negRiskRequestID": "",
     "new": false,
-    "oneHourPriceChange": 0.02,
-    "oneMonthPriceChange": 0.005,
-    "oneWeekPriceChange": -0.01,
-    "oneYearPriceChange": -0.19,
+    "oneDayPriceChange": -0.005,
+    "oneMonthPriceChange": -0.005,
+    "oneWeekPriceChange": -0.09,
+    "oneYearPriceChange": -0.2,
     "orderMinSize": 5,
     "orderPriceMinTickSize": 0.01,
-    "outcomePrices": "[\"0.525\", \"0.475\"]",
+    "outcomePrices": "[\"0.515\", \"0.485\"]",
     "outcomes": "[\"Yes\", \"No\"]",
     "pagerDutyNotificationEnabled": false,
     "pendingDeployment": false,
@@ -125,19 +125,19 @@
     "umaBond": "500",
     "umaResolutionStatuses": "[]",
     "umaReward": "5",
-    "updatedAt": "2026-06-01T20:34:48.556717Z",
-    "volume": "791016.1018090035",
-    "volume1mo": 85516.82379799994,
-    "volume1moClob": 85516.82379799994,
-    "volume1wk": 32980.06892600002,
-    "volume1wkClob": 32980.06892600002,
-    "volume1yr": 603213.9593390023,
-    "volume1yrClob": 603213.9593390023,
-    "volume24hr": 6806.579507000011,
-    "volume24hrClob": 6806.579507000011,
-    "volumeClob": 791016.1018090035,
-    "volumeNum": 791016.1018090035
+    "updatedAt": "2026-06-01T22:04:58.387363Z",
+    "volume": "791041.1018090035",
+    "volume1mo": 85539.74379799994,
+    "volume1moClob": 85539.74379799994,
+    "volume1wk": 32601.00514800003,
+    "volume1wkClob": 32601.00514800003,
+    "volume1yr": 603238.9593390023,
+    "volume1yrClob": 603238.9593390023,
+    "volume24hr": 6728.3395070000115,
+    "volume24hrClob": 6728.3395070000115,
+    "volumeClob": 791041.1018090035,
+    "volumeNum": 791041.1018090035
   },
-  "latency_ms": 32,
-  "ended_at": "2026-06-01T20:39:46.471939812Z"
+  "latency_ms": 146,
+  "ended_at": "2026-06-01T22:13:26.62539578Z"
 }

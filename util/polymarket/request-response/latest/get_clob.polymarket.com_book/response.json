@@ -8,19 +8,19 @@
       "DYNAMIC"
     ],
     "Cf-Ray": [
-      "a051075d3885210b-HKG"
+      "a05190431db52907-HKG"
     ],
     "Content-Type": [
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:38 GMT"
+      "Mon, 01 Jun 2026 22:13:05 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=5lUN3bXNm0.9wGM_1NsPe3YZIJLojco9FMwXkqgf6pE-1780346377.800185-1.0.1.1-Wi.wVkPdvAjERYi03XjPOccu1SSd553WSpYNqWuZMdRlKCTcjuZ9jzGdCJ1mOR96Mk1.E0A2c5kyYkf4FbbaEOWoRkHTCQgYAydUsSdyDuhaaGIA1DX4wCqu5jqoZzBX; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:38 GMT"
+      "__cf_bm=8ZFh98g7WFSM5g5VVH1W.EDLc3Au.U5si77s3cY1DE4-1780351985.1351562-1.0.1.1-i2aWyJ4eTX_fZcXJ3rICo8KuPePaHeaaec.8358l8tZ9Gw7zEeb4SOwCl.3wb9me3O.RBFBkcodNeGI5nNvaqfuhUojwlCky25IEJY6Iyk00J1tdxAXZaVu0wjvaqk9k; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:05 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -34,19 +34,19 @@
     "asks": [
       {
         "price": "0.99",
-        "size": "51185.26"
+        "size": "52589.99"
       },
       {
         "price": "0.98",
-        "size": "3572.26"
+        "size": "8242.75"
       },
       {
         "price": "0.97",
-        "size": "4805"
+        "size": "14.2"
       },
       {
         "price": "0.96",
-        "size": "11.01"
+        "size": "5"
       },
       {
         "price": "0.95",
@@ -58,15 +58,15 @@
       },
       {
         "price": "0.93",
-        "size": "10813.2"
+        "size": "6523.92"
       },
       {
         "price": "0.92",
-        "size": "2325.28"
+        "size": "2850"
       },
       {
         "price": "0.9",
-        "size": "2026.97"
+        "size": "2076.74"
       },
       {
         "price": "0.89",
@@ -78,43 +78,43 @@
       },
       {
         "price": "0.86",
-        "size": "4118.4"
+        "size": "4153.96"
       },
       {
         "price": "0.85",
-        "size": "2452.36"
+        "size": "805"
       },
       {
         "price": "0.84",
-        "size": "706"
+        "size": "787"
       },
       {
         "price": "0.81",
-        "size": "1916.82"
+        "size": "2443.01"
       },
       {
         "price": "0.8",
-        "size": "771.72"
+        "size": "5"
       },
       {
         "price": "0.78",
-        "size": "1328.69"
-      },
-      {
-        "price": "0.77",
-        "size": "921.08"
+        "size": "1530"
       },
       {
         "price": "0.76",
-        "size": "263.15"
+        "size": "152.8"
       },
       {
         "price": "0.75",
-        "size": "552.69"
+        "size": "5"
       },
       {
         "price": "0.71",
-        "size": "5"
+        "size": "821.1"
+      },
+      {
+        "price": "0.7",
+        "size": "156"
       },
       {
         "price": "0.69",
@@ -122,7 +122,7 @@
       },
       {
         "price": "0.68",
-        "size": "224.76"
+        "size": "200"
       },
       {
         "price": "0.67",
@@ -133,28 +133,32 @@
         "size": "199.98"
       },
       {
-        "price": "0.64",
+        "price": "0.63",
         "size": "445.14"
       },
       {
         "price": "0.62",
-        "size": "202.47"
+        "size": "143.18"
+      },
+      {
+        "price": "0.61",
+        "size": "30"
       },
       {
         "price": "0.6",
-        "size": "661.72"
+        "size": "495.06"
       },
       {
         "price": "0.59",
-        "size": "273.67"
+        "size": "75.65"
       },
       {
         "price": "0.58",
-        "size": "81.25"
+        "size": "110.25"
       },
       {
         "price": "0.57",
-        "size": "237"
+        "size": "102.5"
       },
       {
         "price": "0.56",
@@ -162,7 +166,7 @@
       },
       {
         "price": "0.55",
-        "size": "115.98"
+        "size": "343.6"
       },
       {
         "price": "0.54",
@@ -170,42 +174,38 @@
       },
       {
         "price": "0.53",
-        "size": "157.42"
+        "size": "107.42"
       },
       {
         "price": "0.52",
-        "size": "15"
+        "size": "467.36"
       }
     ],
     "asset_id": "98022490269692409998126496127597032490334070080325855126491859374983463996227",
     "bids": [
       {
         "price": "0.01",
-        "size": "42775.38"
+        "size": "126443.22"
       },
       {
         "price": "0.02",
-        "size": "15025.19"
-      },
-      {
-        "price": "0.03",
-        "size": "30000"
+        "size": "43635.33"
       },
       {
         "price": "0.04",
-        "size": "5.75"
+        "size": "8.38"
       },
       {
         "price": "0.06",
-        "size": "4424.77"
+        "size": "4840.1"
       },
       {
         "price": "0.07",
-        "size": "1028.57"
+        "size": "4828.57"
       },
       {
         "price": "0.08",
-        "size": "3631.33"
+        "size": "6617.83"
       },
       {
         "price": "0.09",
@@ -213,7 +213,7 @@
       },
       {
         "price": "0.1",
-        "size": "2205"
+        "size": "4254.2"
       },
       {
         "price": "0.11",
@@ -221,23 +221,23 @@
       },
       {
         "price": "0.12",
-        "size": "7583"
+        "size": "250"
       },
       {
         "price": "0.13",
-        "size": "72.2"
+        "size": "625"
       },
       {
         "price": "0.14",
         "size": "628.56"
       },
       {
-        "price": "0.15",
-        "size": "1325"
+        "price": "0.16",
+        "size": "1657.66"
       },
       {
-        "price": "0.16",
-        "size": "950"
+        "price": "0.17",
+        "size": "1000"
       },
       {
         "price": "0.18",
@@ -245,51 +245,47 @@
       },
       {
         "price": "0.19",
-        "size": "1897.61"
+        "size": "4116.86"
       },
       {
         "price": "0.2",
-        "size": "8"
+        "size": "300"
       },
       {
         "price": "0.22",
-        "size": "6168.47"
+        "size": "6153.74"
+      },
+      {
+        "price": "0.23",
+        "size": "2375"
       },
       {
         "price": "0.25",
-        "size": "400"
+        "size": "650"
       },
       {
         "price": "0.26",
-        "size": "6.31"
-      },
-      {
-        "price": "0.28",
-        "size": "3271.44"
+        "size": "1930.31"
       },
       {
         "price": "0.29",
-        "size": "1494.65"
+        "size": "86.2"
       },
       {
         "price": "0.3",
-        "size": "1428.57"
+        "size": "445.14"
       },
       {
         "price": "0.31",
-        "size": "2400.9"
-      },
-      {
-        "price": "0.32",
-        "size": "1724"
+        "size": "107.17"
       },
       {
         "price": "0.33",
-        "size": "5"
+        "size": "1419"
       },
       {
         "price": "0.35",
-        "size": "2080.46"
+        "size": "2666.35"
       },
       {
         "price": "0.36",
@@ -297,15 +293,15 @@
       },
       {
         "price": "0.38",
-        "size": "445.14"
+        "size": "616"
+      },
+      {
+        "price": "0.39",
+        "size": "300"
       },
       {
         "price": "0.4",
-        "size": "616.54"
-      },
-      {
-        "price": "0.41",
-        "size": "296"
+        "size": "11.54"
       },
       {
         "price": "0.43",
@@ -321,7 +317,7 @@
       },
       {
         "price": "0.46",
-        "size": "139.56"
+        "size": "133.56"
       },
       {
         "price": "0.47",
@@ -341,17 +337,17 @@
       },
       {
         "price": "0.51",
-        "size": "49.61"
+        "size": "111.61"
       }
     ],
-    "hash": "552ed08e789abe3d29b9cc4ef80251cfbc981504",
-    "last_trade_price": "0.520",
+    "hash": "9a129d359dcfdfe331b969db909a39b58c6a0800",
+    "last_trade_price": "0.510",
     "market": "0x1fad72fae204143ff1c3035e99e7c0f65ea8d5cd9bd1070987bd1a3316f772be",
     "min_order_size": "5",
     "neg_risk": false,
     "tick_size": "0.01",
-    "timestamp": "1780346375442"
+    "timestamp": "1780351983469"
   },
-  "latency_ms": 303,
-  "ended_at": "2026-06-01T20:39:38.056428926Z"
+  "latency_ms": 630,
+  "ended_at": "2026-06-01T22:13:06.195184203Z"
 }

@@ -8,28 +8,28 @@
       "public, max-age=120"
     ],
     "Cf-Cache-Status": [
-      "HIT"
+      "EXPIRED"
     ],
     "Cf-Ray": [
-      "a05107927d96d76d-HKG"
+      "a05190cccc9708e5-HKG"
     ],
     "Content-Type": [
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:46 GMT"
+      "Mon, 01 Jun 2026 22:13:27 GMT"
     ],
     "Expires": [
-      "Mon, 01 Jun 2026 20:41:46 GMT"
+      "Mon, 01 Jun 2026 22:15:27 GMT"
     ],
     "Last-Modified": [
-      "Mon, 01 Jun 2026 20:39:46 GMT"
+      "Mon, 01 Jun 2026 22:13:27 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=DZ_Qa5Dz8VJrfeNTec1vJ9uRh9JecMJFTVuoVRVQaQ0-1780346386.313153-1.0.1.1-W8ZzfdDyRgg7EIwIyvlu00GrFHSimCbU9dsJSPV.mHixdMSNPuDrRtiM7bESoGRBhRwr_TtgCCtNQhG4mrDhLKYu6FhsLLO04uNHAKCsMZoHgA1hIR5McDVt6NYuH3Qf; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:46 GMT"
+      "__cf_bm=D_1oObDZz.q7jc6WShBr1p.Bi.9_GEZaWCz2PK5M61Q-1780352007.1628587-1.0.1.1-54z8Rjp7OgEq43MURf8dNMzMzxiS9SPeO1GDvnW54PFz832jmid1aPFmigfvGazRIEEyYPW8aSPT9enmjsXvs1dZXvmqjjW0xBxLmMgRLlSZyfFCloQm5D6m5fHShQIN; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:27 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -39,21 +39,21 @@
     ]
   },
   "body": {
-    "createdAt": "2026-03-27T00:18:03.788884Z",
+    "createdAt": "2026-05-25T18:50:37.289764Z",
     "displayUsernamePublic": true,
-    "name": "0x0000000000000000000000000000000000000000-1774570683676",
-    "proxyWallet": "0x0000000000000000000000000000000000000000",
-    "pseudonym": "Whirlwind-Catalogue",
+    "name": "sorrygirl",
+    "proxyWallet": "0xb9fb10570ee6da98dd56607d5b117f38e7886e68",
+    "pseudonym": "Grand-Barracks-Visit",
     "users": [
       {
         "communityMod": false,
         "creator": false,
-        "id": "6984738",
+        "id": "8303896",
         "mod": false
       }
     ],
     "verifiedBadge": false
   },
-  "latency_ms": 248,
-  "ended_at": "2026-06-01T20:39:46.816899531Z"
+  "latency_ms": 441,
+  "ended_at": "2026-06-01T22:13:28.031444647Z"
 }

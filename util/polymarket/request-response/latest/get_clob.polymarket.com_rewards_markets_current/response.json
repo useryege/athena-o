@@ -8,19 +8,19 @@
       "DYNAMIC"
     ],
     "Cf-Ray": [
-      "a05107703ea4210b-HKG"
+      "a05190606c042907-HKG"
     ],
     "Content-Type": [
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:41 GMT"
+      "Mon, 01 Jun 2026 22:13:10 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=2iKEKXNLEZY5doTZfq5IpHtKjeonijKL7p.7kmA7geE-1780346380.8312385-1.0.1.1-LG6vXsy5uCTpzjW3yS0TncM9.D2ynq2fO.hQh9LZWv6y5U4qQfgvD83G0g0dVcjljtrkYZqdKJPwviqItkBE79smtVLXfV6RcVDJIUxJdA5YM0p72qJo7ecB.SKe4hbL; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:41 GMT"
+      "__cf_bm=iGtvFh8EFxKLOC7ok.rNt_uSmAegLhDW4riVdPgMeFY-1780351989.8287277-1.0.1.1-myBktNUqIv6thqN.p10lhtEAxLdm7AE_V7rXvz_fkL6YYRsnjkg6rG6e_RIL56GQFBUJ_1xbAFKW.m2iIYMWfRMqwi6es9nIYhh2sgn2jG0Sy_ThLCawYFi5w7Zv._XK; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:10 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -123,23 +123,6 @@
         "total_daily_rate": 10.5994
       },
       {
-        "condition_id": "0x002b7247945ce07071b8bc03cacf9b7a95ad060b10124901db7d044a7b5480d8",
-        "native_daily_rate": 18,
-        "rewards_config": [
-          {
-            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
-            "end_date": "2500-12-31",
-            "id": 0,
-            "rate_per_day": 18,
-            "start_date": "2026-06-01",
-            "total_rewards": 0
-          }
-        ],
-        "rewards_max_spread": 4.5,
-        "rewards_min_size": 20,
-        "total_daily_rate": 18
-      },
-      {
         "condition_id": "0x003dba8fca7e567af4273584d6a15046e2384ee8e9f3376e320e94ac492e1922",
         "native_daily_rate": 2,
         "rewards_config": [
@@ -192,20 +175,20 @@
       },
       {
         "condition_id": "0x0051765995a9dc54a7d94c0e15c681a7137e4c3dbb37bcb01990e28ab9b63383",
-        "native_daily_rate": 1,
+        "native_daily_rate": 10,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 1,
+            "rate_per_day": 10,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 100,
-        "total_daily_rate": 1
+        "total_daily_rate": 10
       },
       {
         "condition_id": "0x005a7b286f2b785a3a1f0e1fe0e88b93ce26f2e3297e83fd95ceff82a9170c78",
@@ -226,20 +209,20 @@
       },
       {
         "condition_id": "0x0069c83b5e194c609aedc5ec139a7a0f9bcd14a601b7e6d92936233b7acef424",
-        "native_daily_rate": 31,
+        "native_daily_rate": 33,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 31,
+            "rate_per_day": 33,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 31
+        "total_daily_rate": 33
       },
       {
         "condition_id": "0x0078d4162ef6aa7afe41df7cd973d031d34113029c8adea2321d7da0b7801bcb",
@@ -257,23 +240,6 @@
         "rewards_max_spread": 5.5,
         "rewards_min_size": 20,
         "total_daily_rate": 1
-      },
-      {
-        "condition_id": "0x007a1cd58cbfd5f3d0f253e973d5bdc15ebc82c86a87d65cb4b254e5c749bb04",
-        "native_daily_rate": 8,
-        "rewards_config": [
-          {
-            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
-            "end_date": "2500-12-31",
-            "id": 0,
-            "rate_per_day": 8,
-            "start_date": "2026-05-31",
-            "total_rewards": 0
-          }
-        ],
-        "rewards_max_spread": 2.5,
-        "rewards_min_size": 500,
-        "total_daily_rate": 8
       },
       {
         "condition_id": "0x007aa0430cbc24e2a8b39a59dfa5f2d321053d667bf01aa2801c9ba48ea80326",
@@ -396,20 +362,20 @@
       },
       {
         "condition_id": "0x00aadd4d10a9688294629bc0871541eb89881f387f1c73a14715a5b6bc1dbde8",
-        "native_daily_rate": 131,
+        "native_daily_rate": 130,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 131,
+            "rate_per_day": 130,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 20,
-        "total_daily_rate": 131
+        "total_daily_rate": 130
       },
       {
         "condition_id": "0x00af1cddb0f7753c42ced11860adf55aaacdd17cbf1eb5ec645a2cd986f5f521",
@@ -507,20 +473,20 @@
       },
       {
         "condition_id": "0x00d18ec0beaa68d117851dd637f41dea311f676e7b13bd91a478a2137eb727ad",
-        "native_daily_rate": 19,
+        "native_daily_rate": 16,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 19,
+            "rate_per_day": 16,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 19
+        "total_daily_rate": 16
       },
       {
         "condition_id": "0x00d78c0cb6596a2ae1ab1123857018912da1d8c0da4b8520a15d6480a54928f9",
@@ -550,20 +516,20 @@
       },
       {
         "condition_id": "0x00df1e7e9a8ae44e1470e257be8ceb4bfca96f05c2c41c00df9f19950fbbfe58",
-        "native_daily_rate": 3,
+        "native_daily_rate": 2,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 3,
+            "rate_per_day": 2,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 3
+        "total_daily_rate": 2
       },
       {
         "condition_id": "0x00fa0d48c63e0336e5c37024efff156988cbc377544a40aa4e9dd75c73010152",
@@ -584,13 +550,13 @@
       },
       {
         "condition_id": "0x010310d01ac755ec48d651cbdc7c09c944a26beb1343b022a8abcdf515eb4b43",
-        "native_daily_rate": 26,
+        "native_daily_rate": 25,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 26,
+            "rate_per_day": 25,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
@@ -599,7 +565,7 @@
         "rewards_min_size": 20,
         "sponsored_daily_rate": 1.99872,
         "sponsors_count": 1,
-        "total_daily_rate": 27.99872
+        "total_daily_rate": 26.99872
       },
       {
         "condition_id": "0x0106a89304287f05915e56d413b04b2ff30620142d63b7ea7ab06affb60a1b47",
@@ -722,20 +688,20 @@
       },
       {
         "condition_id": "0x0143df30987c29f7018ce17c4611489589ee415bd181cba9d09de1f488e936d3",
-        "native_daily_rate": 8,
+        "native_daily_rate": 6,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 8,
+            "rate_per_day": 6,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 8
+        "total_daily_rate": 6
       },
       {
         "condition_id": "0x014a261af105a8c58c443b61300ce3bf9c20511f3d3448d6e38e8e1de0e24406",
@@ -1046,6 +1012,23 @@
         "total_daily_rate": 3
       },
       {
+        "condition_id": "0x020550dc293adb9a1179123d38dbf4510fb71e9a5bf96ac0cfe5fa2e0dfdc4d2",
+        "native_daily_rate": 39,
+        "rewards_config": [
+          {
+            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+            "end_date": "2500-12-31",
+            "id": 0,
+            "rate_per_day": 39,
+            "start_date": "2026-06-01",
+            "total_rewards": 0
+          }
+        ],
+        "rewards_max_spread": 4.5,
+        "rewards_min_size": 50,
+        "total_daily_rate": 39
+      },
+      {
         "condition_id": "0x021b17fd946cc1d095024e1abd73cbef585a9e6ab669388f5d0e2d8d43020990",
         "native_daily_rate": 1,
         "rewards_config": [
@@ -1252,21 +1235,38 @@
         "total_daily_rate": 2
       },
       {
-        "condition_id": "0x02ac633415759060ebbfcc5c33e907abc99cdea664aa8c3f83e5294b014b3572",
-        "native_daily_rate": 2,
+        "condition_id": "0x02988186a009f9aaea2c19306f8ff1727b6d16c0dd6f745a9d8f5dc705bd4f93",
+        "native_daily_rate": 40,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 2,
+            "rate_per_day": 40,
+            "start_date": "2026-06-01",
+            "total_rewards": 0
+          }
+        ],
+        "rewards_max_spread": 5.5,
+        "rewards_min_size": 20,
+        "total_daily_rate": 40
+      },
+      {
+        "condition_id": "0x02ac633415759060ebbfcc5c33e907abc99cdea664aa8c3f83e5294b014b3572",
+        "native_daily_rate": 3,
+        "rewards_config": [
+          {
+            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+            "end_date": "2500-12-31",
+            "id": 0,
+            "rate_per_day": 3,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 2
+        "total_daily_rate": 3
       },
       {
         "condition_id": "0x02b008d560ad849bfcc1d13e41b42f408d9065e4876255a44e30e09e79553c42",
@@ -1457,20 +1457,20 @@
       },
       {
         "condition_id": "0x0323752f3387b345bb52e473f750f31975cfff5e30ee9e6655239e6e483028bd",
-        "native_daily_rate": 2,
+        "native_daily_rate": 1,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 2,
+            "rate_per_day": 1,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 2
+        "total_daily_rate": 1
       },
       {
         "condition_id": "0x032641e55eca053d2332a5eb7a3c33c18cbcb846128de6d3283732cb79f1bea4",
@@ -1488,6 +1488,23 @@
         "rewards_max_spread": 4.5,
         "rewards_min_size": 100,
         "total_daily_rate": 23
+      },
+      {
+        "condition_id": "0x0327db40ee3841fb5b00b0b2a7fcca62a0a75e9ff8535d7a131c791ee065aa5b",
+        "native_daily_rate": 40,
+        "rewards_config": [
+          {
+            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+            "end_date": "2500-12-31",
+            "id": 0,
+            "rate_per_day": 40,
+            "start_date": "2026-06-01",
+            "total_rewards": 0
+          }
+        ],
+        "rewards_max_spread": 5.5,
+        "rewards_min_size": 20,
+        "total_daily_rate": 40
       },
       {
         "condition_id": "0x0328e4adfa5004bb3d91f59fe1c8ad40504224915eb3c4a8bde9a42406a0512f",
@@ -1559,20 +1576,20 @@
       },
       {
         "condition_id": "0x0334944161441f15844cf07a61ae8d6a2753384aba6c1ceb62e1c6c4038f00ea",
-        "native_daily_rate": 3,
+        "native_daily_rate": 34,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 3,
+            "rate_per_day": 34,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 3
+        "total_daily_rate": 34
       },
       {
         "condition_id": "0x034341c948e36836242f23998e50ce3c64d931da00b5eaa264baaa8c15f51690",
@@ -1933,20 +1950,20 @@
       },
       {
         "condition_id": "0x04a38371e90489b72020d3b91ca4fb6b29f853bbb6220c5b4060dd36480250c3",
-        "native_daily_rate": 49,
+        "native_daily_rate": 48,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 49,
+            "rate_per_day": 48,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 49
+        "total_daily_rate": 48
       },
       {
         "condition_id": "0x04a4267965c6e60f8b8d3bcc06e90e329707ad13d8b6007e42ed67acde8ebab7",
@@ -2037,20 +2054,20 @@
       },
       {
         "condition_id": "0x04e6c15f41c52efc6b9c003f96f23437b6ad5f0ca93407d467b49383cd20d2b9",
-        "native_daily_rate": 24,
+        "native_daily_rate": 25,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 24,
+            "rate_per_day": 25,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 100,
-        "total_daily_rate": 24
+        "total_daily_rate": 25
       },
       {
         "condition_id": "0x04f0b7ffa9ac319b7ad307182641f96ebb97c3db87158aaff04dadf4126912b0",
@@ -2226,20 +2243,20 @@
       },
       {
         "condition_id": "0x0546b4947b10f24497377cd68de2125f7cf9caa66d19c59381b9fd6081387c48",
-        "native_daily_rate": 3,
+        "native_daily_rate": 1,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 3,
+            "rate_per_day": 1,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 3
+        "total_daily_rate": 1
       },
       {
         "condition_id": "0x054725b2a7971376f7924a7021221b12acc50fe78d97817824fe411704d5b5a2",
@@ -2261,6 +2278,23 @@
         "total_daily_rate": 19.99936
       },
       {
+        "condition_id": "0x0549eb8269570dea333fe47ffff241827d93a22caed18f64f9a1eb4c3239c7f8",
+        "native_daily_rate": 100,
+        "rewards_config": [
+          {
+            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+            "end_date": "2500-12-31",
+            "id": 0,
+            "rate_per_day": 100,
+            "start_date": "2026-06-01",
+            "total_rewards": 0
+          }
+        ],
+        "rewards_max_spread": 4.5,
+        "rewards_min_size": 200,
+        "total_daily_rate": 100
+      },
+      {
         "condition_id": "0x0552200445ecb1d63dfc354bb383842b7138360378664203a0d0552391895f8c",
         "native_daily_rate": 2,
         "rewards_config": [
@@ -2279,20 +2313,20 @@
       },
       {
         "condition_id": "0x055cc0b799dc76b15f4d8d831d21baec8db9bf7e4d908b36d29ba4c35eb549ea",
-        "native_daily_rate": 3,
+        "native_daily_rate": 2,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 3,
+            "rate_per_day": 2,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 3
+        "total_daily_rate": 2
       },
       {
         "condition_id": "0x0560dd5d8474a8a6de4bcac20608da176fad75cced4d1ef1cc0d9f498ddf5e95",
@@ -2525,6 +2559,23 @@
         "total_daily_rate": 2
       },
       {
+        "condition_id": "0x06494025f7c430a9f261a122b75fcd4465686bfe0a0a30bb137f09c8521b08bf",
+        "native_daily_rate": 67,
+        "rewards_config": [
+          {
+            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+            "end_date": "2500-12-31",
+            "id": 0,
+            "rate_per_day": 67,
+            "start_date": "2026-06-01",
+            "total_rewards": 0
+          }
+        ],
+        "rewards_max_spread": 5.5,
+        "rewards_min_size": 100,
+        "total_daily_rate": 67
+      },
+      {
         "condition_id": "0x06530a081f7f7e1725fc4ce73509fe4779e69e9df65c3437218bbb9a21c0cc35",
         "native_daily_rate": 2,
         "rewards_config": [
@@ -2543,20 +2594,20 @@
       },
       {
         "condition_id": "0x06554550405e2cb829d745fdc57ac76ca144f570815be9b26871c9b4036d7338",
-        "native_daily_rate": 1,
+        "native_daily_rate": 12,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 1,
+            "rate_per_day": 12,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 1
+        "total_daily_rate": 12
       },
       {
         "condition_id": "0x06565a26c00a4986c5b8a2ef13bcd59c8ce0d298a002b7c2a880210c95f81014",
@@ -2781,20 +2832,20 @@
       },
       {
         "condition_id": "0x07056cfbb245d6d1524bb62cbd35cec62e66fd9c0dc330f5b58290e233713cdc",
-        "native_daily_rate": 1,
+        "native_daily_rate": 2,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 1,
+            "rate_per_day": 2,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 1
+        "total_daily_rate": 2
       },
       {
         "condition_id": "0x0714dc5c20ec9714b05d1e85e365fcb99b34a0b5261f01c3a8333c568e02abce",
@@ -2900,20 +2951,20 @@
       },
       {
         "condition_id": "0x07a0e910ce0e71075731e4a89c298b682f964284806f279bb1faa918ef00e3de",
-        "native_daily_rate": 36,
+        "native_daily_rate": 8,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 36,
+            "rate_per_day": 8,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 36
+        "total_daily_rate": 8
       },
       {
         "condition_id": "0x07a568963b98fefae35c73f3f7004f0c598ffb81b3cc55d268c586c0e0a82732",
@@ -3137,23 +3188,6 @@
         "total_daily_rate": 0.001
       },
       {
-        "condition_id": "0x0827d89543a4a645fbf6f6566acc41b403e2643dcd65ddc56bef7590b5ae1191",
-        "native_daily_rate": 29,
-        "rewards_config": [
-          {
-            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
-            "end_date": "2500-12-31",
-            "id": 0,
-            "rate_per_day": 29,
-            "start_date": "2026-06-01",
-            "total_rewards": 0
-          }
-        ],
-        "rewards_max_spread": 4.5,
-        "rewards_min_size": 50,
-        "total_daily_rate": 29
-      },
-      {
         "condition_id": "0x08314247ca5dbad3d2e0b7c49eafe4876425b214c1103db65054a39aad773035",
         "native_daily_rate": 1,
         "rewards_config": [
@@ -3237,6 +3271,23 @@
         "rewards_max_spread": 3.5,
         "rewards_min_size": 20,
         "total_daily_rate": 3
+      },
+      {
+        "condition_id": "0x087713ab2905e789c42c3fafdf747512f8d7883b7fab1ac554b703310c09d869",
+        "native_daily_rate": 100,
+        "rewards_config": [
+          {
+            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+            "end_date": "2500-12-31",
+            "id": 0,
+            "rate_per_day": 100,
+            "start_date": "2026-06-01",
+            "total_rewards": 0
+          }
+        ],
+        "rewards_max_spread": 4.5,
+        "rewards_min_size": 200,
+        "total_daily_rate": 100
       },
       {
         "condition_id": "0x087d55571a3847d92cab41c9aa6e05d6111dcbf2b95559627d3cf88fc53d22fe",
@@ -3410,20 +3461,20 @@
       },
       {
         "condition_id": "0x08e5b7dac802303bc7125d8b9e8365f537b09749270262ac6116532656a2bce1",
-        "native_daily_rate": 48,
+        "native_daily_rate": 60,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 48,
+            "rate_per_day": 60,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 48
+        "total_daily_rate": 60
       },
       {
         "condition_id": "0x08e8708b96cc4d1bdc59dfb445d89b2a861e6e4156cfa569b804319a2536d8e7",
@@ -3478,20 +3529,20 @@
       },
       {
         "condition_id": "0x08f8093ea89bb040fb939d4f93367a07fdb097031150ca3da1a75b86dc2e788f",
-        "native_daily_rate": 9,
+        "native_daily_rate": 7,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 9,
+            "rate_per_day": 7,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 9
+        "total_daily_rate": 7
       },
       {
         "condition_id": "0x08fa906366719c767deaca0a3df7090d924c30dfe815bf2ab003ec9645468f34",
@@ -3580,20 +3631,20 @@
       },
       {
         "condition_id": "0x0938f71f2b11cf2100995a150c0907aa72997745ab0257db7c2ac79dee73c525",
-        "native_daily_rate": 28,
+        "native_daily_rate": 2,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 28,
+            "rate_per_day": 2,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
-        "rewards_min_size": 20,
-        "total_daily_rate": 28
+        "rewards_min_size": 50,
+        "total_daily_rate": 2
       },
       {
         "condition_id": "0x095ae8b94c669719356222cf8fa8530d18bbb3270d12f7f57a954d0c3203d41c",
@@ -4017,23 +4068,6 @@
         "total_daily_rate": 5
       },
       {
-        "condition_id": "0x0a6169cb0dbc469afcad917d7ee1e40cc035ef3db44bd29ebd00c10bb3aa0642",
-        "native_daily_rate": 30,
-        "rewards_config": [
-          {
-            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
-            "end_date": "2500-12-31",
-            "id": 0,
-            "rate_per_day": 30,
-            "start_date": "2026-05-31",
-            "total_rewards": 0
-          }
-        ],
-        "rewards_max_spread": 2.5,
-        "rewards_min_size": 1000,
-        "total_daily_rate": 30
-      },
-      {
         "condition_id": "0x0a632e4dc9cce43da54a282cb46784ee9a13b0e0825c831f4d122531143e8ace",
         "native_daily_rate": 30,
         "rewards_config": [
@@ -4100,23 +4134,6 @@
         "rewards_max_spread": 3.5,
         "rewards_min_size": 20,
         "total_daily_rate": 0.001
-      },
-      {
-        "condition_id": "0x0a9125eee84216d1398a0a932738deb163c3a72755d5131102ccc26384cb4578",
-        "native_daily_rate": 100,
-        "rewards_config": [
-          {
-            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
-            "end_date": "2500-12-31",
-            "id": 0,
-            "rate_per_day": 100,
-            "start_date": "2026-06-01",
-            "total_rewards": 0
-          }
-        ],
-        "rewards_max_spread": 4.5,
-        "rewards_min_size": 50,
-        "total_daily_rate": 100
       },
       {
         "condition_id": "0x0a928df82793092b84c15618d609ba5a3192f6ef7b2ddf5a7184770db32eda12",
@@ -4204,38 +4221,21 @@
         "total_daily_rate": 5
       },
       {
-        "condition_id": "0x0aba0a57338f62f7ee4844a780038e8bace6374befccd2e1d42acaf02ef8eafe",
-        "native_daily_rate": 100,
-        "rewards_config": [
-          {
-            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
-            "end_date": "2500-12-31",
-            "id": 0,
-            "rate_per_day": 100,
-            "start_date": "2026-06-01",
-            "total_rewards": 0
-          }
-        ],
-        "rewards_max_spread": 4.5,
-        "rewards_min_size": 50,
-        "total_daily_rate": 100
-      },
-      {
         "condition_id": "0x0afbf424d07891c4fca6bde380923f4d7d3ce06b8cbea9345174953b857546ba",
-        "native_daily_rate": 3,
+        "native_daily_rate": 16,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 3,
+            "rate_per_day": 16,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 3
+        "total_daily_rate": 16
       },
       {
         "condition_id": "0x0b11ff96fd6656e9742840ea6a901065f08c0a8b9840d4539ced3a1f83f83587",
@@ -4513,20 +4513,20 @@
       },
       {
         "condition_id": "0x0b9a0b1037b5900ca2f7ad14508a339994b4365900d9555f46cb4631b482be5d",
-        "native_daily_rate": 25,
+        "native_daily_rate": 27,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 25,
+            "rate_per_day": 27,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 25
+        "total_daily_rate": 27
       },
       {
         "condition_id": "0x0bb1b93d62a15087252b42e86b95f82f27232a590f2281da99e2e4cd623c2576",
@@ -4857,13 +4857,13 @@
       },
       {
         "condition_id": "0x0c8c8e15e571932f9d39888f4a037b8a726363afa6308e27a7a68728b01b5f0c",
-        "native_daily_rate": 100,
+        "native_daily_rate": 140,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 100,
+            "rate_per_day": 140,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
@@ -4872,7 +4872,7 @@
         "rewards_min_size": 50,
         "sponsored_daily_rate": 4.99968,
         "sponsors_count": 1,
-        "total_daily_rate": 104.99968
+        "total_daily_rate": 144.99968
       },
       {
         "condition_id": "0x0c9ada12c527451fbdd43c0397a8a006b8aaf2a01567ae069d37220b51937595",
@@ -4972,20 +4972,20 @@
       },
       {
         "condition_id": "0x0d03656e2a8161736c1165ad844c40d636e240804c220fc7d63565cfbe79422e",
-        "native_daily_rate": 18,
+        "native_daily_rate": 13,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 18,
+            "rate_per_day": 13,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 100,
-        "total_daily_rate": 18
+        "total_daily_rate": 13
       },
       {
         "condition_id": "0x0d044235c54346051447cd2cf089fb9733ddba9ddb5788a7cb6d9da1caac91d3",
@@ -5040,20 +5040,20 @@
       },
       {
         "condition_id": "0x0d1ad6b1ade37c9ce2a481cc90d0d6281c30b369e20a026373b9372a11c6d7ea",
-        "native_daily_rate": 88,
+        "native_daily_rate": 91,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 88,
+            "rate_per_day": 91,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 20,
-        "total_daily_rate": 88
+        "total_daily_rate": 91
       },
       {
         "condition_id": "0x0d28984b01986db6824df82fbcebbf3cba7f830923fc28fe8658598e93d10a0f",
@@ -5261,37 +5261,37 @@
       },
       {
         "condition_id": "0x0db45be87d0607276b9131ebc26b63bbec99ef27636c90088df1d9a117e07852",
-        "native_daily_rate": 8,
+        "native_daily_rate": 7,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 8,
+            "rate_per_day": 7,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 8
+        "total_daily_rate": 7
       },
       {
         "condition_id": "0x0db58cbb0498c6ab893e7a5c67b8446a18546c8486c5b8d0a1131485e253a1c3",
-        "native_daily_rate": 13,
+        "native_daily_rate": 4,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 13,
+            "rate_per_day": 4,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 13
+        "total_daily_rate": 4
       },
       {
         "condition_id": "0x0df7e873042bebb09fbe24562069f28670c6b9366cab653fe15e030173cbc18c",
@@ -5445,6 +5445,23 @@
         "rewards_max_spread": 5.5,
         "rewards_min_size": 40,
         "total_daily_rate": 2
+      },
+      {
+        "condition_id": "0x0e2e5c0146c730a2e4ef8031c9128b4efef451a9f4832f42b46997926f9e1303",
+        "native_daily_rate": 165,
+        "rewards_config": [
+          {
+            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+            "end_date": "2500-12-31",
+            "id": 0,
+            "rate_per_day": 165,
+            "start_date": "2026-06-01",
+            "total_rewards": 0
+          }
+        ],
+        "rewards_max_spread": 4.5,
+        "rewards_min_size": 50,
+        "total_daily_rate": 165
       },
       {
         "condition_id": "0x0e447f6d7435af8eb5ab4ff629d5b71c936062c9528de3dbaf1e0ff57cfdf8c5",
@@ -5754,20 +5771,20 @@
       },
       {
         "condition_id": "0x0f0b9082b8971e5a4a52f18e540b77d5c272b30b8f4315d048ee0f8e600cfd9e",
-        "native_daily_rate": 37,
+        "native_daily_rate": 27,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 37,
+            "rate_per_day": 27,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 37
+        "total_daily_rate": 27
       },
       {
         "condition_id": "0x0f0cb205ef2ce23411b5102e6823f983c93cdfc39ea356566964f45699082edd",
@@ -5856,20 +5873,20 @@
       },
       {
         "condition_id": "0x0f3062f421a43ab9af2f3dc9c3eef48e2aab38a4c9858aca7651947642c4c964",
-        "native_daily_rate": 16,
+        "native_daily_rate": 19,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 16,
+            "rate_per_day": 19,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 100,
-        "total_daily_rate": 16
+        "total_daily_rate": 19
       },
       {
         "condition_id": "0x0f3ae5d23882fb840762fd35de11fc31b0fbdc9e41e8666cdfae9d627f93f517",
@@ -6028,20 +6045,20 @@
       },
       {
         "condition_id": "0x0f8c268fb61be4ef5532f76931602c193cf76dcfed14f09fd9aa2a0c3ccdd6c4",
-        "native_daily_rate": 1,
+        "native_daily_rate": 2,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 1,
+            "rate_per_day": 2,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 1
+        "total_daily_rate": 2
       },
       {
         "condition_id": "0x0f9a08b2e00463d30dfe0d41ca7a553e42061359475c33145c1e359af97740dc",
@@ -6243,20 +6260,20 @@
       },
       {
         "condition_id": "0x0fefdfa9f2e25f771b27cf6bdf04297d16f164a7ae5f5d5c58139699313ffd54",
-        "native_daily_rate": 47,
+        "native_daily_rate": 43,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 47,
+            "rate_per_day": 43,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 47
+        "total_daily_rate": 43
       },
       {
         "condition_id": "0x0ff76aa8f6cc2365ca8d38dd7ef9f93b04623048d85b832dc6f218351a1f5691",
@@ -6379,20 +6396,20 @@
       },
       {
         "condition_id": "0x102bece4c08b72309106064e0504220ffd81e4b2d973a839205fc9ec3eafabc9",
-        "native_daily_rate": 2,
+        "native_daily_rate": 1,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 2,
+            "rate_per_day": 1,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 2
+        "total_daily_rate": 1
       },
       {
         "condition_id": "0x1031e3a52b03da4c2a9476e35018ef0c64eaf601043e7bfef4f5fe17fb6e4c84",
@@ -6524,20 +6541,20 @@
       },
       {
         "condition_id": "0x10a20956b691ec23cc56b1a23c9854fbb41bae159636491274989758d74d80a6",
-        "native_daily_rate": 11,
+        "native_daily_rate": 8,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 11,
+            "rate_per_day": 8,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 11
+        "total_daily_rate": 8
       },
       {
         "condition_id": "0x10b9365e844f79d30c2d9908d25a0517007120cc087407d9ca91597a26d086d7",
@@ -6720,20 +6737,20 @@
       },
       {
         "condition_id": "0x11093c02d2e671a4de89d752fb1834bb1f2f27701c2f24005d0eebd331bf5f9c",
-        "native_daily_rate": 8,
+        "native_daily_rate": 6,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 8,
+            "rate_per_day": 6,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 8
+        "total_daily_rate": 6
       },
       {
         "condition_id": "0x1134c5d8f01d4fa507a8c6f13cd624f8eb31bcc42c07a01a34110a40fef78c64",
@@ -6916,20 +6933,20 @@
       },
       {
         "condition_id": "0x119b6b3b744ac3239c7a71100165d254234eaecea401abde5a3d303bef21d19e",
-        "native_daily_rate": 11,
+        "native_daily_rate": 200,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 11,
+            "rate_per_day": 200,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 100,
-        "total_daily_rate": 11
+        "total_daily_rate": 200
       },
       {
         "condition_id": "0x119db6dda44f109bcdc2ec5e1d9cb8c21fa1a7e66489f59b1190fdfb25c0d515",
@@ -7194,20 +7211,20 @@
       },
       {
         "condition_id": "0x1257d11c6caa7d7c0b1343454fd72750241a1c0bc2e21062bf0677abf1397272",
-        "native_daily_rate": 4,
+        "native_daily_rate": 3,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 4,
+            "rate_per_day": 3,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 4
+        "total_daily_rate": 3
       },
       {
         "condition_id": "0x125d64e41a8b3225d81e84ec1fbeb58b1d8091fa9d54a9f500e01a00586baf9a",
@@ -7466,13 +7483,13 @@
       },
       {
         "condition_id": "0x12d0a116a05ae3c5464fc5c9e72ff7756a8dc7c70b07397728d3cda7970565cf",
-        "native_daily_rate": 20,
+        "native_daily_rate": 17,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 20,
+            "rate_per_day": 17,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
@@ -7481,7 +7498,7 @@
         "rewards_min_size": 50,
         "sponsored_daily_rate": 19.99872,
         "sponsors_count": 1,
-        "total_daily_rate": 39.99872
+        "total_daily_rate": 36.99872
       },
       {
         "condition_id": "0x12df229a62606175655181a6e8cbef0f037ac41612b61d67b0658dcf8633f397",
@@ -7655,20 +7672,20 @@
       },
       {
         "condition_id": "0x1363972ea578b21b2332ae9d51b96c4cde32a8f4babc8a45a4dac5d5a56407a8",
-        "native_daily_rate": 4,
+        "native_daily_rate": 3,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 4,
+            "rate_per_day": 3,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 20,
-        "total_daily_rate": 4
+        "total_daily_rate": 3
       },
       {
         "condition_id": "0x136a2773866c2d841b00652b7d99b026409c9a55db769c525ed450e04c653f23",
@@ -7706,20 +7723,20 @@
       },
       {
         "condition_id": "0x139d0850e2d7b59914905e07c2ce2932efd1ca920aa1e27189c1e7c4ee5f0a8b",
-        "native_daily_rate": 4,
+        "native_daily_rate": 75,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 4,
+            "rate_per_day": 75,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 4
+        "total_daily_rate": 75
       },
       {
         "condition_id": "0x13a7b9a420b02ca4d7ff032150abc8411e477c44107aceb52c0e67320643f4a3",
@@ -7740,20 +7757,20 @@
       },
       {
         "condition_id": "0x13ad2ed903635fc3208d587dd2fd3e8653994d080637805fceb8a321ddc81a12",
-        "native_daily_rate": 10,
+        "native_daily_rate": 9,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 10,
+            "rate_per_day": 9,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 10
+        "total_daily_rate": 9
       },
       {
         "condition_id": "0x13b9606ad402c20bab0badf41eba042a2784bfdfbf5bfa95572f80da13b499dc",
@@ -7895,20 +7912,20 @@
       },
       {
         "condition_id": "0x13ff6420d6142a4140625dfaaaba9152827a8daaf97936c1b41d778ca4c1ce0e",
-        "native_daily_rate": 24,
+        "native_daily_rate": 19,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 24,
+            "rate_per_day": 19,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 24
+        "total_daily_rate": 19
       },
       {
         "condition_id": "0x140eb203cfebb00d88630f849849315352dfacc59af0bc1a0636721f60c38a0f",
@@ -8048,20 +8065,20 @@
       },
       {
         "condition_id": "0x1451b6ce9cd7850aa32cdaea7ca05c3d4d7f79f9b720e82cdf0407394606cacb",
-        "native_daily_rate": 3,
+        "native_daily_rate": 64,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 3,
-            "start_date": "2026-05-25",
+            "rate_per_day": 64,
+            "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
-        "rewards_min_size": 50,
-        "total_daily_rate": 3
+        "rewards_min_size": 20,
+        "total_daily_rate": 64
       },
       {
         "condition_id": "0x1454f7aabd1736d276e3a16c9d3840d5a0f31b15162e92602825db3f27c89f9c",
@@ -8152,20 +8169,20 @@
       },
       {
         "condition_id": "0x1492eb279319faff99353092b8453da6ac214b8a331947afb3a794d96ce0a721",
-        "native_daily_rate": 53,
+        "native_daily_rate": 44,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 53,
+            "rate_per_day": 44,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 53
+        "total_daily_rate": 44
       },
       {
         "condition_id": "0x14933f8d6071a74b7f0547bdb3bc19eb7080b1064c39bd60f6202be03669c8e0",
@@ -8220,20 +8237,20 @@
       },
       {
         "condition_id": "0x14c9c306820ff3214648a4e594cd1d0ec5d9c67fa26558c1c5f464838b86c9fb",
-        "native_daily_rate": 14,
+        "native_daily_rate": 16,
         "rewards_config": [
           {
             "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
             "end_date": "2500-12-31",
             "id": 0,
-            "rate_per_day": 14,
+            "rate_per_day": 16,
             "start_date": "2026-06-01",
             "total_rewards": 0
           }
         ],
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
-        "total_daily_rate": 14
+        "total_daily_rate": 16
       },
       {
         "condition_id": "0x14ca9a8df45eb80cd2d1da63b56d552768f27965c01d284305f0f1670d383aa9",
@@ -8489,30 +8506,11 @@
         "rewards_max_spread": 4.5,
         "rewards_min_size": 50,
         "total_daily_rate": 1
-      },
-      {
-        "condition_id": "0x153c55026360343f385039ef74e61e5ac8a637c05e71fdaaebe99a3b1b8c5e98",
-        "native_daily_rate": 5,
-        "rewards_config": [
-          {
-            "asset_address": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
-            "end_date": "2500-12-31",
-            "id": 0,
-            "rate_per_day": 5,
-            "start_date": "2026-05-28",
-            "total_rewards": 0
-          }
-        ],
-        "rewards_max_spread": 4.5,
-        "rewards_min_size": 50,
-        "sponsored_daily_rate": 19.99872,
-        "sponsors_count": 1,
-        "total_daily_rate": 24.99872
       }
     ],
     "limit": 500,
     "next_cursor": "NTAw"
   },
-  "latency_ms": 684,
-  "ended_at": "2026-06-01T20:39:41.61160022Z"
+  "latency_ms": 819,
+  "ended_at": "2026-06-01T22:13:11.565389435Z"
 }

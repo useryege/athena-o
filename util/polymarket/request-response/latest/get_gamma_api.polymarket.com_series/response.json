@@ -2,7 +2,7 @@
   "status_code": 200,
   "headers": {
     "Age": [
-      "199"
+      "144"
     ],
     "Alt-Svc": [
       "h3=\":443\"; ma=86400"
@@ -14,25 +14,25 @@
       "HIT"
     ],
     "Cf-Ray": [
-      "a05107943875d76d-HKG"
+      "a05190d19b0108e5-HKG"
     ],
     "Content-Type": [
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:46 GMT"
+      "Mon, 01 Jun 2026 22:13:27 GMT"
     ],
     "Expires": [
-      "Mon, 01 Jun 2026 20:44:46 GMT"
+      "Mon, 01 Jun 2026 22:18:27 GMT"
     ],
     "Last-Modified": [
-      "Mon, 01 Jun 2026 20:37:57 GMT"
+      "Mon, 01 Jun 2026 22:13:03 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=nJzM_GfvcTsZNmLROfeW7GnRvZDWh9lw.emzq3BP2V8-1780346386.5907724-1.0.1.1-aYh9Anb8SaIVPpd3y3roSA0sTFSRKJf7Sg0gaznY1OWTUH8En19OTRYMnPDMp8U9IcZj0ukyvoihymzqdfNIaN46FPf4JNKKmQUJ1s2O9OiZyf.OnKXWgtfwNPpAfuOP; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:46 GMT"
+      "__cf_bm=.8IHSUKrfbwzNpYLZQZWB7gn2lICSuIMShI41nLehVY-1780352007.9405148-1.0.1.1-DYmDVuqn1Rh5ydiZmlO_F6jBCW1UKEDEIm.MGUU777BC7jXs_ZDoH6CMF.wolSuYrFJQ6MZ0THfur4DoMVebnuHfPfPcGjyzwj.X2qY0ziSitGYQj7kbAajhkJCVyvvL; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:27 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -1197,11 +1197,11 @@
       "startDate": "2023-07-01T19:00:00Z",
       "ticker": "nfl",
       "title": "NFL",
-      "updatedAt": "2026-06-01T20:27:43.689818Z",
+      "updatedAt": "2026-06-01T22:07:52.320667Z",
       "updatedBy": "15",
       "volume24hr": 7943.585086
     }
   ],
-  "latency_ms": 35,
-  "ended_at": "2026-06-01T20:39:46.889939684Z"
+  "latency_ms": 147,
+  "ended_at": "2026-06-01T22:13:28.549714174Z"
 }

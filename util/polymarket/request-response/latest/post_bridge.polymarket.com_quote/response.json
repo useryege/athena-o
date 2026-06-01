@@ -8,19 +8,19 @@
       "DYNAMIC"
     ],
     "Cf-Ray": [
-      "a05107982b9be2ef-HKG"
+      "a05190e6db37b852-HKG"
     ],
     "Content-Type": [
       "application/json"
     ],
     "Date": [
-      "Mon, 01 Jun 2026 20:39:49 GMT"
+      "Mon, 01 Jun 2026 22:13:32 GMT"
     ],
     "Server": [
       "cloudflare"
     ],
     "Set-Cookie": [
-      "__cf_bm=2R_4BULqaFwDaqHk9SWMq9Rsl0dp5PnkLpsmdQTdLm8-1780346387.2222385-1.0.1.1-H.qU2QKbaIL6jnjuKy3jJsuxOcpruN1tTsI9cfXqj7rYUD3dt9ca0o0_uZN.apBC0JY.sCGyqNXx8DD0bBJWeElOX1c8hZq9XwgYcxsD_GgmUPlEk7R6eRiiL7QX3Pkv; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 21:09:49 GMT"
+      "__cf_bm=ZuT2FRH5vNQnjTrp2Kyty6KCGtWDQ1j.a6K903.oIAE-1780352011.3314385-1.0.1.1-rjdrdCpFxXQc5PzkpSZEpyqKKVpthTqXM84Rh6bCy3y9g4PBV.SciMfmXKznl.8fclXOp70U.pKgxFvHCyadfF.3vubMlTwt25S3nD43rluU8WHwWXMytifcLrp285Y0; HttpOnly; SameSite=None; Secure; Path=/; Domain=polymarket.com; Expires=Mon, 01 Jun 2026 22:43:32 GMT"
     ],
     "Strict-Transport-Security": [
       "max-age=7776000; includeSubDomains"
@@ -30,26 +30,26 @@
     ]
   },
   "body": {
-    "estCheckoutTimeMs": 28000,
+    "estCheckoutTimeMs": 27000,
     "estFeeBreakdown": {
       "appFeeLabel": "Swap fee",
       "appFeePercent": 0,
       "appFeeUsd": 0,
       "fillCostPercent": 0,
       "fillCostUsd": 0,
-      "gasUsd": 0.000839,
+      "gasUsd": 0.000917,
       "maxSlippage": 0.5,
-      "minReceived": 0.978474,
-      "swapImpact": 0.13721645841545335,
-      "swapImpactUsd": 0.0013717543069438711,
-      "totalImpact": 1.1346392571378843,
-      "totalImpactUsd": 0.011343
+      "minReceived": 0.977337,
+      "swapImpact": 0.10175636568294846,
+      "swapImpactUsd": 0.0010173082483516205,
+      "totalImpact": 1.2543148330230889,
+      "totalImpactUsd": 0.01254
     },
-    "estInputUsd": 0.999701,
-    "estOutputUsd": 0.988358,
-    "estToTokenBaseUnit": "988689",
-    "quoteId": "0x31f06c37bad4ac7f2e7e418f33e251cb6c282e2f4c68c022e6725aa6b3998e2a"
+    "estInputUsd": 0.999749,
+    "estOutputUsd": 0.987209,
+    "estToTokenBaseUnit": "987679",
+    "quoteId": "0x1809301bafe90821aceedc4afbd5cdddd5dcfc7ed4c01fe23018638b00074f80"
   },
-  "latency_ms": 2740,
-  "ended_at": "2026-06-01T20:39:50.243508334Z"
+  "latency_ms": 1388,
+  "ended_at": "2026-06-01T22:13:33.334782168Z"
 }
