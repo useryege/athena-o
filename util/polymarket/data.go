@@ -22,11 +22,11 @@ type DataClient interface {
 	ListClosedPositions(ctx context.Context, options ListClosedPositionsOptions) ([]DataPosition, error)
 	ListMarketPositions(ctx context.Context, options ListMarketPositionsOptions) ([]DataMarketPosition, error)
 	ListTopHolders(ctx context.Context, options ListTopHoldersOptions) ([]DataHolder, error)
-	GetTotalValueForUser(ctx context.Context, user string, options GetTotalValueOptions) (any, error)
+	GetTotalValueForUser(ctx context.Context, user string, options GetTotalValueOptions) ([]DataUserValue, error)
 	ListTraderLeaderboard(ctx context.Context, options ListTraderLeaderboardOptions) ([]DataLeaderboardEntry, error)
 
-	GetOpenInterest(ctx context.Context, options GetOpenInterestOptions) (any, error)
-	GetLiveVolumeByEventID(ctx context.Context, id int64) (any, error)
+	GetOpenInterest(ctx context.Context, options GetOpenInterestOptions) ([]DataOpenInterest, error)
+	GetLiveVolumeByEventID(ctx context.Context, id int64) ([]DataLiveVolume, error)
 	GetTotalMarketsTraded(ctx context.Context, user string) (DataObject, error)
 	DownloadAccountingSnapshot(ctx context.Context, user string) ([]byte, error)
 
@@ -185,6 +185,26 @@ type BuilderLeaderboardEntry map[string]any
 
 type BuilderDailyVolumeEntry map[string]any
 
+type DataUserValue struct {
+	User  string  `json:"user"`
+	Value float64 `json:"value"`
+}
+
+type DataOpenInterest struct {
+	Market string  `json:"market"`
+	Value  float64 `json:"value"`
+}
+
+type DataMarketVolume struct {
+	Market string  `json:"market"`
+	Value  float64 `json:"value"`
+}
+
+type DataLiveVolume struct {
+	Total   float64            `json:"total"`
+	Markets []DataMarketVolume `json:"markets"`
+}
+
 func (c *dataClientImpl) ListUserActivity(ctx context.Context, options ListUserActivityOptions) ([]DataActivity, error) {
 	var out []DataActivity
 	if err := c.doJSON(ctx, http.MethodGet, "/activity", options.values(), nil, &out); err != nil {
@@ -233,10 +253,10 @@ func (c *dataClientImpl) ListTopHolders(ctx context.Context, options ListTopHold
 	return out, nil
 }
 
-func (c *dataClientImpl) GetTotalValueForUser(ctx context.Context, user string, options GetTotalValueOptions) (any, error) {
+func (c *dataClientImpl) GetTotalValueForUser(ctx context.Context, user string, options GetTotalValueOptions) ([]DataUserValue, error) {
 	q := options.values()
 	setString(q, "user", user)
-	var out any
+	var out []DataUserValue
 	if err := c.doJSON(ctx, http.MethodGet, "/value", q, nil, &out); err != nil {
 		return nil, err
 	}
@@ -251,18 +271,18 @@ func (c *dataClientImpl) ListTraderLeaderboard(ctx context.Context, options List
 	return out, nil
 }
 
-func (c *dataClientImpl) GetOpenInterest(ctx context.Context, options GetOpenInterestOptions) (any, error) {
-	var out any
+func (c *dataClientImpl) GetOpenInterest(ctx context.Context, options GetOpenInterestOptions) ([]DataOpenInterest, error) {
+	var out []DataOpenInterest
 	if err := c.doJSON(ctx, http.MethodGet, "/oi", options.values(), nil, &out); err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *dataClientImpl) GetLiveVolumeByEventID(ctx context.Context, id int64) (any, error) {
+func (c *dataClientImpl) GetLiveVolumeByEventID(ctx context.Context, id int64) ([]DataLiveVolume, error) {
 	q := make(url.Values)
 	q.Set("id", strconv.FormatInt(id, 10))
-	var out any
+	var out []DataLiveVolume
 	if err := c.doJSON(ctx, http.MethodGet, "/live-volume", q, nil, &out); err != nil {
 		return nil, err
 	}
