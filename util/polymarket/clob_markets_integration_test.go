@@ -12,6 +12,8 @@ import (
 const (
 	clobMarketsIntegrationMainGate = "POLYMARKET_CLOB_MARKETS_INTEGRATION"
 	clobMarketsIntegrationLogGate  = "POLYMARKET_CLOB_MARKETS_INTEGRATION_LOG_RESPONSE"
+
+	clobMarketsRebatesFallbackMaker = "0xFeA4cB3dD4ca7CefD3368653B7D6FF9BcDFca604"
 )
 
 type clobMarketsIntegrationSamples struct {
@@ -116,6 +118,22 @@ func TestIntegrationCLOBMarkets(t *testing.T) {
 			t.Fatalf("ListSamplingSimplifiedMarkets: %v", err)
 		}
 		logCLOBMarketsIntegrationResponse(t, "ListSamplingSimplifiedMarkets", got)
+	})
+
+	t.Run("Rebates/GetCurrentRebatedFees", func(t *testing.T) {
+		maker := clobMarketsRebatesFallbackMaker
+		date := time.Now().UTC().Format("2006-01-02")
+		got, err := client.GetCurrentRebatedFees(ctx, GetCurrentRebatedFeesOptions{
+			Date:         date,
+			MakerAddress: maker,
+		})
+		if shouldSkipCLOBMarketsIntegrationError(t, err, "GetCurrentRebatedFees") {
+			return
+		}
+		if err != nil {
+			t.Fatalf("GetCurrentRebatedFees: %v", err)
+		}
+		logCLOBMarketsIntegrationResponse(t, "Rebates/GetCurrentRebatedFees", got)
 	})
 }
 

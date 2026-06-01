@@ -183,3 +183,84 @@ func TestContextCancel(t *testing.T) {
 		t.Fatalf("error = %v", err)
 	}
 }
+
+func TestGammaCommunityEndpointsQueryAndPath(t *testing.T) {
+	type call struct {
+		Path  string
+		Query string
+	}
+	calls := make([]call, 0, 6)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, call{Path: r.URL.Path, Query: r.URL.RawQuery})
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/comments":
+			_, _ = w.Write([]byte(`[{"id":"c1"}]`))
+		case "/comments/12":
+			_, _ = w.Write([]byte(`[{"id":"c1"}]`))
+		case "/comments/user_address/0xabc":
+			_, _ = w.Write([]byte(`[{"id":"c1"}]`))
+		case "/public-profile":
+			_, _ = w.Write([]byte(`{"name":"demo"}`))
+		case "/series":
+			_, _ = w.Write([]byte(`[{"id":"1"}]`))
+		case "/series/1":
+			_, _ = w.Write([]byte(`{"id":"1"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	client, err := NewGammaClient(GammaConfig{GammaBaseURL: ts.URL, Timeout: 5 * time.Second})
+	if err != nil {
+		t.Fatalf("NewGammaClient: %v", err)
+	}
+
+	limit := 1
+	parentID := int64(10)
+	getPositions := true
+	_, _ = client.ListComments(context.Background(), ListCommentsOptions{
+		ListOptions:      ListOptions{Limit: &limit},
+		ParentEntityType: "Event",
+		ParentEntityID:   &parentID,
+		GetPositions:     &getPositions,
+	})
+	_, _ = client.GetCommentByID(context.Background(), "12", GetCommentOptions{GetPositions: &getPositions})
+	_, _ = client.GetCommentsByUserAddress(context.Background(), "0xabc", ListOptions{Limit: &limit})
+	_, _ = client.GetPublicProfile(context.Background(), "0xabc")
+	_, _ = client.ListSeries(context.Background(), ListSeriesOptions{
+		ListOptions:   ListOptions{Limit: &limit},
+		Slug:          []string{"slug1"},
+		CategoriesIDs: []int64{1, 2},
+		ExcludeEvents: &getPositions,
+	})
+	_, _ = client.GetSeriesByID(context.Background(), 1, GetSeriesOptions{IncludeChat: &getPositions})
+
+	if len(calls) != 6 {
+		t.Fatalf("calls = %d, want 6", len(calls))
+	}
+	for _, expected := range []string{"limit=1", "parent_entity_type=Event", "parent_entity_id=10", "get_positions=true"} {
+		if !strings.Contains(calls[0].Query, expected) {
+			t.Fatalf("comments query %q missing %q", calls[0].Query, expected)
+		}
+	}
+	if calls[1].Path != "/comments/12" || !strings.Contains(calls[1].Query, "get_positions=true") {
+		t.Fatalf("GetCommentByID call = %+v", calls[1])
+	}
+	if calls[2].Path != "/comments/user_address/0xabc" || !strings.Contains(calls[2].Query, "limit=1") {
+		t.Fatalf("GetCommentsByUserAddress call = %+v", calls[2])
+	}
+	if calls[3].Path != "/public-profile" || !strings.Contains(calls[3].Query, "address=0xabc") {
+		t.Fatalf("GetPublicProfile call = %+v", calls[3])
+	}
+	for _, expected := range []string{"limit=1", "slug=slug1", "categories_ids=1", "categories_ids=2", "exclude_events=true"} {
+		if !strings.Contains(calls[4].Query, expected) {
+			t.Fatalf("ListSeries query %q missing %q", calls[4].Query, expected)
+		}
+	}
+	if calls[5].Path != "/series/1" || !strings.Contains(calls[5].Query, "include_chat=true") {
+		t.Fatalf("GetSeriesByID call = %+v", calls[5])
+	}
+}

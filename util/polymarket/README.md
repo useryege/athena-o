@@ -5,12 +5,13 @@
 ## Current Modules
 
 - `GammaClient` (`https://gamma-api.polymarket.com`)
-  - `Markets`, `Events`, `Tags`, `Search`, `Sports`
+  - `Markets`, `Events`, `Tags`, `Comments`, `Profiles`, `Series`, `Search`, `Sports`
 - `DataClient` (`https://data-api.polymarket.com`)
   - `Core`, `Misc`, `Builders`
 - `CLOBClient` (`https://clob.polymarket.com`)
   - Market Data (read-only)
   - Markets (read-only): market-by-token, clob-market-info, prices-history, batch-prices-history, simplified/sampling pages
+  - Rebates (read-only): `GET /rebates/current`
   - Also includes CLOB data endpoints: `GET /midpoint` and `GET /time`
   - Note: due to current CLOB drift, `GetMidpointPrices` / `GetMarketPrices` / `GetLastTradePrices`
     are implemented via POST body endpoints under the hood.
@@ -49,6 +50,7 @@ Gates:
 - `POLYMARKET_GAMMA_INTEGRATION_MARKETS=1`
 - `POLYMARKET_GAMMA_INTEGRATION_EVENTS=1`
 - `POLYMARKET_GAMMA_INTEGRATION_TAGS=1`
+- `POLYMARKET_GAMMA_INTEGRATION_COMMUNITY=1`
 - `POLYMARKET_GAMMA_INTEGRATION_SEARCH=1`
 - `POLYMARKET_GAMMA_INTEGRATION_SPORTS=1`
 - `POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1`
@@ -72,6 +74,7 @@ POLYMARKET_GAMMA_INTEGRATION=1 \
 POLYMARKET_GAMMA_INTEGRATION_MARKETS=1 \
 POLYMARKET_GAMMA_INTEGRATION_EVENTS=1 \
 POLYMARKET_GAMMA_INTEGRATION_TAGS=1 \
+POLYMARKET_GAMMA_INTEGRATION_COMMUNITY=1 \
 POLYMARKET_GAMMA_INTEGRATION_SEARCH=1 \
 POLYMARKET_GAMMA_INTEGRATION_SPORTS=1 \
 go test -v ./util/polymarket -run '^TestIntegrationGamma$'
@@ -84,6 +87,7 @@ POLYMARKET_GAMMA_INTEGRATION=1 \
 POLYMARKET_GAMMA_INTEGRATION_MARKETS=1 \
 POLYMARKET_GAMMA_INTEGRATION_EVENTS=1 \
 POLYMARKET_GAMMA_INTEGRATION_TAGS=1 \
+POLYMARKET_GAMMA_INTEGRATION_COMMUNITY=1 \
 POLYMARKET_GAMMA_INTEGRATION_SEARCH=1 \
 POLYMARKET_GAMMA_INTEGRATION_SPORTS=1 \
 POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
@@ -186,6 +190,7 @@ POLYMARKET_GAMMA_INTEGRATION=1 \
 POLYMARKET_GAMMA_INTEGRATION_MARKETS=1 \
 POLYMARKET_GAMMA_INTEGRATION_EVENTS=1 \
 POLYMARKET_GAMMA_INTEGRATION_TAGS=1 \
+POLYMARKET_GAMMA_INTEGRATION_COMMUNITY=1 \
 POLYMARKET_GAMMA_INTEGRATION_SEARCH=1 \
 POLYMARKET_GAMMA_INTEGRATION_SPORTS=1 \
 POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \

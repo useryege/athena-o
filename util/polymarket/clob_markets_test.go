@@ -2,6 +2,7 @@ package polymarket
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,7 @@ func TestCLOBMarketsPathAndQuery(t *testing.T) {
 		Body  string
 	}
 
-	calls := make([]call, 0, 7)
+	calls := make([]call, 0, 8)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		calls = append(calls, call{Path: r.URL.Path, Query: r.URL.RawQuery, Body: string(body)})
@@ -37,6 +38,8 @@ func TestCLOBMarketsPathAndQuery(t *testing.T) {
 			_, _ = w.Write([]byte(`{"limit":2,"next_cursor":"def","count":1,"data":[{"condition_id":"c1"}]}`))
 		case "/sampling-simplified-markets":
 			_, _ = w.Write([]byte(`{"limit":2,"next_cursor":"ghi","count":1,"data":[{"condition_id":"c1"}]}`))
+		case "/rebates/current":
+			_, _ = w.Write([]byte(`[{"date":"2026-02-27","condition_id":"c1","asset_address":"a1","maker_address":"m1","rebated_fees_usdc":"1.23"}]`))
 		default:
 			http.NotFound(w, r)
 		}
@@ -62,9 +65,12 @@ func TestCLOBMarketsPathAndQuery(t *testing.T) {
 	_, _ = client.ListSimplifiedMarkets(context.Background(), "abc")
 	_, _ = client.ListSamplingMarkets(context.Background(), "def")
 	_, _ = client.ListSamplingSimplifiedMarkets(context.Background(), "ghi")
+	_, _ = client.GetCurrentRebatedFees(context.Background(), GetCurrentRebatedFeesOptions{
+		Date: "2026-02-27", MakerAddress: "0xabc",
+	})
 
-	if len(calls) != 7 {
-		t.Fatalf("calls = %d, want 7", len(calls))
+	if len(calls) != 8 {
+		t.Fatalf("calls = %d, want 8", len(calls))
 	}
 
 	if calls[0].Path != "/markets-by-token/t/1" {
@@ -96,6 +102,14 @@ func TestCLOBMarketsPathAndQuery(t *testing.T) {
 	if calls[6].Query != "next_cursor=ghi" {
 		t.Fatalf("ListSamplingSimplifiedMarkets query = %q", calls[6].Query)
 	}
+	if calls[7].Path != "/rebates/current" {
+		t.Fatalf("GetCurrentRebatedFees path = %q", calls[7].Path)
+	}
+	for _, expected := range []string{"date=2026-02-27", "maker_address=0xabc"} {
+		if !strings.Contains(calls[7].Query, expected) {
+			t.Fatalf("GetCurrentRebatedFees query %q missing %q", calls[7].Query, expected)
+		}
+	}
 }
 
 func TestCLOBMarketsDecode(t *testing.T) {
@@ -112,6 +126,8 @@ func TestCLOBMarketsDecode(t *testing.T) {
 			_, _ = w.Write([]byte(`{"history":{"m":[{"t":11,"p":0.55}]}}`))
 		case "/simplified-markets":
 			_, _ = w.Write([]byte(`{"limit":1,"next_cursor":"n","count":1,"data":[{"condition_id":"c"}]}`))
+		case "/rebates/current":
+			_, _ = w.Write([]byte(`[{"date":"2026-02-27","condition_id":"cond","asset_address":"asset","maker_address":"maker","rebated_fees_usdc":"0.12"}]`))
 		default:
 			http.NotFound(w, r)
 		}
@@ -161,5 +177,45 @@ func TestCLOBMarketsDecode(t *testing.T) {
 	}
 	if page.NextCursor != "n" || len(page.Items) != 1 {
 		t.Fatalf("page = %#v", page)
+	}
+
+	rebates, err := client.GetCurrentRebatedFees(context.Background(), GetCurrentRebatedFeesOptions{
+		Date: "2026-02-27", MakerAddress: "maker",
+	})
+	if err != nil {
+		t.Fatalf("GetCurrentRebatedFees: %v", err)
+	}
+	if len(rebates) != 1 || rebates[0].RebatedFeesUSDC != "0.12" {
+		t.Fatalf("rebates = %#v", rebates)
+	}
+}
+
+func TestGetCurrentRebatedFeesErrorDecode(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"Invalid maker_address"}`))
+	}))
+	defer ts.Close()
+
+	client, err := NewCLOBClient(CLOBConfig{CLOBBaseURL: ts.URL, Timeout: 5 * time.Second})
+	if err != nil {
+		t.Fatalf("NewCLOBClient: %v", err)
+	}
+
+	_, err = client.GetCurrentRebatedFees(context.Background(), GetCurrentRebatedFeesOptions{
+		Date: "2026-02-27", MakerAddress: "",
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", apiErr.StatusCode, http.StatusBadRequest)
+	}
+	if !strings.Contains(apiErr.Message, "Invalid maker_address") {
+		t.Fatalf("message = %q", apiErr.Message)
 	}
 }

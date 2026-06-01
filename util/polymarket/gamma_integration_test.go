@@ -14,20 +14,24 @@ const (
 	integrationMainGate = "POLYMARKET_GAMMA_INTEGRATION"
 	integrationLogGate  = "POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE"
 
-	integrationMarketsGate = "POLYMARKET_GAMMA_INTEGRATION_MARKETS"
-	integrationEventsGate  = "POLYMARKET_GAMMA_INTEGRATION_EVENTS"
-	integrationTagsGate    = "POLYMARKET_GAMMA_INTEGRATION_TAGS"
-	integrationSearchGate  = "POLYMARKET_GAMMA_INTEGRATION_SEARCH"
-	integrationSportsGate  = "POLYMARKET_GAMMA_INTEGRATION_SPORTS"
+	integrationMarketsGate   = "POLYMARKET_GAMMA_INTEGRATION_MARKETS"
+	integrationEventsGate    = "POLYMARKET_GAMMA_INTEGRATION_EVENTS"
+	integrationTagsGate      = "POLYMARKET_GAMMA_INTEGRATION_TAGS"
+	integrationSearchGate    = "POLYMARKET_GAMMA_INTEGRATION_SEARCH"
+	integrationSportsGate    = "POLYMARKET_GAMMA_INTEGRATION_SPORTS"
+	integrationCommunityGate = "POLYMARKET_GAMMA_INTEGRATION_COMMUNITY"
 )
 
 type integrationSamples struct {
-	marketID   int64
-	marketSlug string
-	eventID    int64
-	eventSlug  string
-	tagID      string
-	tagSlug    string
+	marketID    int64
+	marketSlug  string
+	eventID     int64
+	eventSlug   string
+	tagID       string
+	tagSlug     string
+	commentID   string
+	userAddress string
+	seriesID    int64
 }
 
 func TestIntegrationGamma(t *testing.T) {
@@ -259,6 +263,96 @@ func TestIntegrationGamma(t *testing.T) {
 		logIntegrationResponse(t, "Tags/GetTagsRelatedToTagSlug", got)
 	})
 
+	t.Run("Comments/ListComments", func(t *testing.T) {
+		requireGroupGate(t, integrationCommunityGate)
+		samples := getSamples(t)
+		limit := 1
+		parentID := samples.eventID
+		got, err := client.ListComments(ctx, ListCommentsOptions{
+			ListOptions:      ListOptions{Limit: &limit},
+			ParentEntityType: "Event",
+			ParentEntityID:   &parentID,
+		})
+		if err != nil {
+			t.Fatalf("ListComments: %v", err)
+		}
+		if len(got) == 0 {
+			t.Log("ListComments returned empty data (allowed)")
+		}
+		logIntegrationResponse(t, "Comments/ListComments", got)
+	})
+
+	t.Run("Comments/GetCommentByID", func(t *testing.T) {
+		requireGroupGate(t, integrationCommunityGate)
+		samples := getSamples(t)
+		if strings.TrimSpace(samples.commentID) == "" {
+			t.Skip("no discovered comment id sample")
+		}
+		got, err := client.GetCommentByID(ctx, samples.commentID, GetCommentOptions{})
+		if err != nil {
+			t.Fatalf("GetCommentByID: %v", err)
+		}
+		logIntegrationResponse(t, "Comments/GetCommentByID", got)
+	})
+
+	t.Run("Comments/GetCommentsByUserAddress", func(t *testing.T) {
+		requireGroupGate(t, integrationCommunityGate)
+		samples := getSamples(t)
+		if strings.TrimSpace(samples.userAddress) == "" {
+			t.Skip("no discovered comment user address sample")
+		}
+		limit := 1
+		got, err := client.GetCommentsByUserAddress(ctx, samples.userAddress, ListOptions{Limit: &limit})
+		if err != nil {
+			t.Fatalf("GetCommentsByUserAddress: %v", err)
+		}
+		logIntegrationResponse(t, "Comments/GetCommentsByUserAddress", got)
+	})
+
+	t.Run("Profiles/GetPublicProfile", func(t *testing.T) {
+		requireGroupGate(t, integrationCommunityGate)
+		samples := getSamples(t)
+		if strings.TrimSpace(samples.userAddress) == "" {
+			t.Skip("no discovered profile address sample")
+		}
+		got, err := client.GetPublicProfile(ctx, samples.userAddress)
+		if err != nil {
+			t.Fatalf("GetPublicProfile: %v", err)
+		}
+		logIntegrationResponse(t, "Profiles/GetPublicProfile", got)
+	})
+
+	t.Run("Series/ListSeries", func(t *testing.T) {
+		requireGroupGate(t, integrationCommunityGate)
+		limit := 1
+		got, err := client.ListSeries(ctx, ListSeriesOptions{
+			ListOptions: ListOptions{Limit: &limit},
+		})
+		if err != nil {
+			t.Fatalf("ListSeries: %v", err)
+		}
+		if len(got) == 0 {
+			t.Log("ListSeries returned empty data (allowed)")
+		}
+		logIntegrationResponse(t, "Series/ListSeries", got)
+	})
+
+	t.Run("Series/GetSeriesByID", func(t *testing.T) {
+		requireGroupGate(t, integrationCommunityGate)
+		samples := getSamples(t)
+		if samples.seriesID == 0 {
+			t.Skip("no discovered series id sample")
+		}
+		got, err := client.GetSeriesByID(ctx, samples.seriesID, GetSeriesOptions{})
+		if err != nil {
+			t.Fatalf("GetSeriesByID: %v", err)
+		}
+		if got.ID == "" {
+			t.Fatal("GetSeriesByID returned empty id")
+		}
+		logIntegrationResponse(t, "Series/GetSeriesByID", got)
+	})
+
 	t.Run("Search/PublicSearch", func(t *testing.T) {
 		requireGroupGate(t, integrationSearchGate)
 		limit := 1
@@ -378,13 +472,41 @@ func discoverIntegrationSamples(t *testing.T, ctx context.Context, client GammaC
 		tagID:      tags[0].ID,
 		tagSlug:    *tags[0].Slug,
 	}
+
+	commentsLimit := 1
+	parentEntityID := samples.eventID
+	comments, err := client.ListComments(ctx, ListCommentsOptions{
+		ListOptions:      ListOptions{Limit: &commentsLimit},
+		ParentEntityType: "Event",
+		ParentEntityID:   &parentEntityID,
+	})
+	if err == nil && len(comments) > 0 {
+		samples.commentID = strings.TrimSpace(comments[0].ID)
+		if comments[0].UserAddress != nil {
+			samples.userAddress = strings.TrimSpace(*comments[0].UserAddress)
+		}
+	}
+
+	seriesLimit := 1
+	seriesRows, err := client.ListSeries(ctx, ListSeriesOptions{
+		ListOptions: ListOptions{Limit: &seriesLimit},
+	})
+	if err == nil && len(seriesRows) > 0 {
+		if parsedSeriesID, parseErr := strconv.ParseInt(strings.TrimSpace(seriesRows[0].ID), 10, 64); parseErr == nil {
+			samples.seriesID = parsedSeriesID
+		}
+	}
+
 	logIntegrationResponse(t, "Discovery/Samples", map[string]any{
-		"market_id":   samples.marketID,
-		"market_slug": samples.marketSlug,
-		"event_id":    samples.eventID,
-		"event_slug":  samples.eventSlug,
-		"tag_id":      samples.tagID,
-		"tag_slug":    samples.tagSlug,
+		"market_id":    samples.marketID,
+		"market_slug":  samples.marketSlug,
+		"event_id":     samples.eventID,
+		"event_slug":   samples.eventSlug,
+		"tag_id":       samples.tagID,
+		"tag_slug":     samples.tagSlug,
+		"comment_id":   samples.commentID,
+		"user_address": samples.userAddress,
+		"series_id":    samples.seriesID,
 	})
 	return samples
 }

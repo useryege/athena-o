@@ -42,6 +42,18 @@ type GammaClient interface {
 	GetTagsRelatedToTagID(ctx context.Context, id string, options RelatedTagsOptions) ([]Tag, error)
 	GetTagsRelatedToTagSlug(ctx context.Context, slug string, options RelatedTagsOptions) ([]Tag, error)
 
+	// Comments
+	ListComments(ctx context.Context, options ListCommentsOptions) ([]Comment, error)
+	GetCommentByID(ctx context.Context, id string, options GetCommentOptions) ([]Comment, error)
+	GetCommentsByUserAddress(ctx context.Context, userAddress string, options ListOptions) ([]Comment, error)
+
+	// Series
+	ListSeries(ctx context.Context, options ListSeriesOptions) ([]Series, error)
+	GetSeriesByID(ctx context.Context, id int64, options GetSeriesOptions) (*Series, error)
+
+	// Profiles
+	GetPublicProfile(ctx context.Context, address string) (*PublicProfile, error)
+
 	// Search
 	PublicSearch(ctx context.Context, options PublicSearchOptions) (*PublicSearchResponse, error)
 
@@ -196,6 +208,33 @@ type GetTagOptions struct {
 type RelatedTagsOptions struct {
 	OmitEmpty string
 	Status    string
+}
+
+type ListCommentsOptions struct {
+	ListOptions
+	ParentEntityType string
+	ParentEntityID   *int64
+	GetPositions     *bool
+	HoldersOnly      *bool
+}
+
+type GetCommentOptions struct {
+	GetPositions *bool
+}
+
+type ListSeriesOptions struct {
+	ListOptions
+	Slug             []string
+	CategoriesIDs    []int64
+	CategoriesLabels []string
+	Closed           *bool
+	IncludeChat      *bool
+	Recurrence       string
+	ExcludeEvents    *bool
+}
+
+type GetSeriesOptions struct {
+	IncludeChat *bool
 }
 
 type PublicSearchOptions struct {
@@ -362,6 +401,62 @@ type Team struct {
 	UpdatedAt    *time.Time `json:"updatedAt,omitempty"`
 }
 
+type Comment struct {
+	ID               string            `json:"id"`
+	Body             *string           `json:"body,omitempty"`
+	ParentEntityType *string           `json:"parentEntityType,omitempty"`
+	ParentEntityID   *int64            `json:"parentEntityID,omitempty"`
+	ParentCommentID  *string           `json:"parentCommentID,omitempty"`
+	UserAddress      *string           `json:"userAddress,omitempty"`
+	ReplyAddress     *string           `json:"replyAddress,omitempty"`
+	CreatedAt        *time.Time        `json:"createdAt,omitempty"`
+	UpdatedAt        *time.Time        `json:"updatedAt,omitempty"`
+	Profile          json.RawMessage   `json:"profile,omitempty"`
+	Reactions        []json.RawMessage `json:"reactions,omitempty"`
+	ReportCount      *int64            `json:"reportCount,omitempty"`
+	ReactionCount    *int64            `json:"reactionCount,omitempty"`
+}
+
+type PublicProfile struct {
+	CreatedAt             *time.Time        `json:"createdAt,omitempty"`
+	ProxyWallet           *string           `json:"proxyWallet,omitempty"`
+	ProfileImage          *string           `json:"profileImage,omitempty"`
+	DisplayUsernamePublic *bool             `json:"displayUsernamePublic,omitempty"`
+	Bio                   *string           `json:"bio,omitempty"`
+	Pseudonym             *string           `json:"pseudonym,omitempty"`
+	Name                  *string           `json:"name,omitempty"`
+	Users                 []json.RawMessage `json:"users,omitempty"`
+	XUsername             *string           `json:"xUsername,omitempty"`
+	VerifiedBadge         *bool             `json:"verifiedBadge,omitempty"`
+}
+
+type Series struct {
+	ID           string            `json:"id"`
+	Ticker       *string           `json:"ticker,omitempty"`
+	Slug         *string           `json:"slug,omitempty"`
+	Title        *string           `json:"title,omitempty"`
+	Subtitle     *string           `json:"subtitle,omitempty"`
+	SeriesType   *string           `json:"seriesType,omitempty"`
+	Recurrence   *string           `json:"recurrence,omitempty"`
+	Description  *string           `json:"description,omitempty"`
+	Image        *string           `json:"image,omitempty"`
+	Icon         *string           `json:"icon,omitempty"`
+	Layout       *string           `json:"layout,omitempty"`
+	Active       *bool             `json:"active,omitempty"`
+	Closed       *bool             `json:"closed,omitempty"`
+	Archived     *bool             `json:"archived,omitempty"`
+	Featured     *bool             `json:"featured,omitempty"`
+	CreatedAt    *time.Time        `json:"createdAt,omitempty"`
+	UpdatedAt    *time.Time        `json:"updatedAt,omitempty"`
+	CommentCount *int64            `json:"commentCount,omitempty"`
+	Events       []json.RawMessage `json:"events,omitempty"`
+	Collections  []json.RawMessage `json:"collections,omitempty"`
+	Categories   []json.RawMessage `json:"categories,omitempty"`
+	Tags         []json.RawMessage `json:"tags,omitempty"`
+	Chats        []json.RawMessage `json:"chats,omitempty"`
+	Raw          json.RawMessage   `json:"-"`
+}
+
 func (c *gammaClientImpl) ListMarkets(ctx context.Context, options ListMarketsOptions) ([]Market, error) {
 	query := options.values()
 	var out []Market
@@ -493,6 +588,61 @@ func (c *gammaClientImpl) GetTagsRelatedToTagSlug(ctx context.Context, slug stri
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *gammaClientImpl) ListComments(ctx context.Context, options ListCommentsOptions) ([]Comment, error) {
+	query := options.values()
+	var out []Comment
+	if err := c.do(ctx, http.MethodGet, "/comments", query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gammaClientImpl) GetCommentByID(ctx context.Context, id string, options GetCommentOptions) ([]Comment, error) {
+	query := options.values()
+	var out []Comment
+	if err := c.do(ctx, http.MethodGet, "/comments/"+url.PathEscape(strings.TrimSpace(id)), query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gammaClientImpl) GetCommentsByUserAddress(ctx context.Context, userAddress string, options ListOptions) ([]Comment, error) {
+	query := options.values()
+	var out []Comment
+	if err := c.do(ctx, http.MethodGet, "/comments/user_address/"+url.PathEscape(strings.TrimSpace(userAddress)), query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gammaClientImpl) ListSeries(ctx context.Context, options ListSeriesOptions) ([]Series, error) {
+	query := options.values()
+	var out []Series
+	if err := c.do(ctx, http.MethodGet, "/series", query, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gammaClientImpl) GetSeriesByID(ctx context.Context, id int64, options GetSeriesOptions) (*Series, error) {
+	query := options.values()
+	var out Series
+	if err := c.do(ctx, http.MethodGet, "/series/"+pathEscapeInt(id), query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *gammaClientImpl) GetPublicProfile(ctx context.Context, address string) (*PublicProfile, error) {
+	query := make(url.Values)
+	setString(query, "address", address)
+	var out PublicProfile
+	if err := c.do(ctx, http.MethodGet, "/public-profile", query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *gammaClientImpl) PublicSearch(ctx context.Context, options PublicSearchOptions) (*PublicSearchResponse, error) {
@@ -692,6 +842,39 @@ func (o RelatedTagsOptions) values() url.Values {
 	q := make(url.Values)
 	setString(q, "omit_empty", o.OmitEmpty)
 	setString(q, "status", o.Status)
+	return q
+}
+
+func (o ListCommentsOptions) values() url.Values {
+	q := o.ListOptions.values()
+	setString(q, "parent_entity_type", o.ParentEntityType)
+	setInt64Ptr(q, "parent_entity_id", o.ParentEntityID)
+	setBoolPtr(q, "get_positions", o.GetPositions)
+	setBoolPtr(q, "holders_only", o.HoldersOnly)
+	return q
+}
+
+func (o GetCommentOptions) values() url.Values {
+	q := make(url.Values)
+	setBoolPtr(q, "get_positions", o.GetPositions)
+	return q
+}
+
+func (o ListSeriesOptions) values() url.Values {
+	q := o.ListOptions.values()
+	addStringSlice(q, "slug", o.Slug)
+	addInt64Slice(q, "categories_ids", o.CategoriesIDs)
+	addStringSlice(q, "categories_labels", o.CategoriesLabels)
+	setBoolPtr(q, "closed", o.Closed)
+	setBoolPtr(q, "include_chat", o.IncludeChat)
+	setString(q, "recurrence", o.Recurrence)
+	setBoolPtr(q, "exclude_events", o.ExcludeEvents)
+	return q
+}
+
+func (o GetSeriesOptions) values() url.Values {
+	q := make(url.Values)
+	setBoolPtr(q, "include_chat", o.IncludeChat)
 	return q
 }
 

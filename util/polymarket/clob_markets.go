@@ -76,6 +76,19 @@ type CLOBMarketsPage struct {
 	Items      []json.RawMessage `json:"data"`
 }
 
+type GetCurrentRebatedFeesOptions struct {
+	Date         string
+	MakerAddress string
+}
+
+type CLOBRebatedFee struct {
+	Date            string `json:"date"`
+	ConditionID     string `json:"condition_id"`
+	AssetAddress    string `json:"asset_address"`
+	MakerAddress    string `json:"maker_address"`
+	RebatedFeesUSDC string `json:"rebated_fees_usdc"`
+}
+
 func (c *clobClientImpl) GetMarketByToken(ctx context.Context, tokenID string) (*CLOBMarketByTokenResponse, error) {
 	var out CLOBMarketByTokenResponse
 	if err := c.doJSON(ctx, http.MethodGet, "/markets-by-token/"+url.PathEscape(strings.TrimSpace(tokenID)), nil, nil, &out); err != nil {
@@ -137,6 +150,17 @@ func (c *clobClientImpl) ListSamplingSimplifiedMarkets(ctx context.Context, next
 		return nil, err
 	}
 	return &out, nil
+}
+
+func (c *clobClientImpl) GetCurrentRebatedFees(ctx context.Context, options GetCurrentRebatedFeesOptions) ([]CLOBRebatedFee, error) {
+	q := make(url.Values)
+	setString(q, "date", options.Date)
+	setString(q, "maker_address", options.MakerAddress)
+	var out []CLOBRebatedFee
+	if err := c.doJSON(ctx, http.MethodGet, "/rebates/current", q, nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func cursorQuery(nextCursor string) url.Values {

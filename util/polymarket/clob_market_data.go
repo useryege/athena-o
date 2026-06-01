@@ -28,6 +28,7 @@ type CLOBClient interface {
 	ListSimplifiedMarkets(ctx context.Context, nextCursor string) (*CLOBMarketsPage, error)
 	ListSamplingMarkets(ctx context.Context, nextCursor string) (*CLOBMarketsPage, error)
 	ListSamplingSimplifiedMarkets(ctx context.Context, nextCursor string) (*CLOBMarketsPage, error)
+	GetCurrentRebatedFees(ctx context.Context, options GetCurrentRebatedFeesOptions) ([]CLOBRebatedFee, error)
 
 	GetMidpointPrice(ctx context.Context, tokenID string) (*CLOBMidpointPriceResponse, error)
 	GetMidpointPrices(ctx context.Context, tokenIDs []string) (map[string]string, error)
