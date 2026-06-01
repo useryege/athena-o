@@ -18,7 +18,18 @@ func TestIntegrationSportsWSS(t *testing.T) {
 		t.Skip("set POLYMARKET_SPORTS_WSS_INTEGRATION=1 to run")
 	}
 
-	client, err := NewSportsWSClient(SportsWSConfig{})
+	config := (SportsWSConfig{}).WithDefaults()
+	dialer, dialerInfo, err := newIntegrationWSDialer(config.HandshakeTimeout)
+	if err != nil {
+		t.Fatalf("newIntegrationWSDialer: %v", err)
+	}
+	config.dial = dialer.DialContext
+
+	if os.Getenv(sportsWSIntegrationLogGate) == "1" {
+		t.Logf("SportsWSS integration proxy: %s", dialerInfo.Description)
+	}
+
+	client, err := NewSportsWSClient(config)
 	if err != nil {
 		t.Fatalf("NewSportsWSClient: %v", err)
 	}

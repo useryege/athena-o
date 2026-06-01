@@ -27,7 +27,18 @@ func TestIntegrationCLOBMarketWSS(t *testing.T) {
 		t.Skip("no token sample discovered")
 	}
 
-	client, err := NewCLOBMarketWSClient(CLOBMarketWSConfig{})
+	config := (CLOBMarketWSConfig{}).WithDefaults()
+	dialer, dialerInfo, err := newIntegrationWSDialer(config.HandshakeTimeout)
+	if err != nil {
+		t.Fatalf("newIntegrationWSDialer: %v", err)
+	}
+	config.dial = dialer.DialContext
+
+	if os.Getenv(clobMarketWSIntegrationLogGate) == "1" {
+		t.Logf("CLOBMarketWS integration proxy: %s", dialerInfo.Description)
+	}
+
+	client, err := NewCLOBMarketWSClient(config)
 	if err != nil {
 		t.Fatalf("NewCLOBMarketWSClient: %v", err)
 	}
