@@ -20,6 +20,7 @@ type SportsWSClient interface {
 
 type SportsWSConfig struct {
 	WSURL            string
+	UseProxy         bool
 	HandshakeTimeout time.Duration
 	ReconnectInitial time.Duration
 	ReconnectMax     time.Duration
@@ -52,7 +53,7 @@ func (c SportsWSConfig) withDefaults() SportsWSConfig {
 		c.ReadLimit = 4 * 1024 * 1024
 	}
 	if c.dial == nil {
-		dialer := websocket.Dialer{HandshakeTimeout: c.HandshakeTimeout}
+		dialer := newWSDialer(c.HandshakeTimeout, c.UseProxy)
 		c.dial = dialer.DialContext
 	}
 	return c

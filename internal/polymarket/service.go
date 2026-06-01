@@ -45,6 +45,12 @@ func WithSportsWSClient(client sportsLiveWSClient) ServiceOption {
 	}
 }
 
+func WithWSUseProxy(useProxy bool) ServiceOption {
+	return func(s *Service) {
+		s.wsUseProxy = useProxy
+	}
+}
+
 func WithSportsLiveSyncInterval(interval time.Duration) ServiceOption {
 	return func(s *Service) {
 		if interval > 0 {
@@ -66,6 +72,7 @@ type Service struct {
 	store           *polymarketstore.SQLStore
 	gammaClient     sportsLiveGammaClient
 	sportsWSClient  sportsLiveWSClient
+	wsUseProxy      bool
 	syncInterval    time.Duration
 	eventPageLimit  int
 	nowFn           func() time.Time
@@ -85,6 +92,7 @@ type Service struct {
 func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service {
 	s := &Service{
 		store:          store,
+		wsUseProxy:     true,
 		syncInterval:   defaultSportsLiveSyncInterval,
 		eventPageLimit: defaultSportsLiveEventPageLimit,
 		nowFn:          time.Now,
@@ -115,7 +123,9 @@ func (s *Service) Start() error {
 		s.gammaClient = client
 	}
 	if s.sportsWSClient == nil {
-		client, err := utilpolymarket.NewSportsWSClient(utilpolymarket.SportsWSConfig{})
+		client, err := utilpolymarket.NewSportsWSClient(utilpolymarket.SportsWSConfig{
+			UseProxy: s.wsUseProxy,
+		})
 		if err != nil {
 			s.startStopMu.Unlock()
 			return status.Errorf(codes.FailedPrecondition, "failed to create polymarket sports ws client: %v", err)

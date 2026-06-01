@@ -31,6 +31,7 @@ func NewCommand() *cobra.Command {
 	var (
 		listenHost string
 		listenPort int
+		wsUseProxy bool
 
 		storeSrc func(context.Context) (*polymarketstore.SQLStore, error)
 	)
@@ -58,7 +59,10 @@ func NewCommand() *cobra.Command {
 			errors.CheckError(err)
 			defer utilio.Close(store)
 
-			server, err := polymarket.NewServer(polymarket.ServerOpts{Store: store})
+			server, err := polymarket.NewServer(polymarket.ServerOpts{
+				Store:      store,
+				WSUseProxy: wsUseProxy,
+			})
 			if err != nil {
 				return err
 			}
@@ -106,6 +110,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv("ATHENA_POLYMARKET_LOGLEVEL", "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_POLYMARKET_LISTEN_ADDRESS", common.DefaultAddressPolymarket), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortPolymarket, "Listen on given port for incoming connections")
+	command.Flags().BoolVar(&wsUseProxy, "ws-use-proxy", env.ParseBoolFromEnv("ATHENA_POLYMARKET_WS_USE_PROXY", true), "Whether to use proxy environment variables for Polymarket WebSocket connections")
 
 	storeSrc = polymarketstore.NewSQLStoreSource()
 
