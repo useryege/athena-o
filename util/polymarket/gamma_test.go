@@ -98,6 +98,128 @@ func TestPathEscaping(t *testing.T) {
 	}
 }
 
+func TestGammaKeysetEndpointsQueryAndDecode(t *testing.T) {
+	type call struct {
+		Path  string
+		Query string
+	}
+	calls := make([]call, 0, 2)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, call{Path: r.URL.Path, Query: r.URL.RawQuery})
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/markets/keyset":
+			_, _ = w.Write([]byte(`{"markets":[{"id":"1"}],"next_cursor":"mk1"}`))
+		case "/events/keyset":
+			_, _ = w.Write([]byte(`{"events":[{"id":"2"}],"next_cursor":"ev1"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	client, err := NewGammaClient(GammaConfig{GammaBaseURL: ts.URL, Timeout: 5 * time.Second})
+	if err != nil {
+		t.Fatalf("NewGammaClient: %v", err)
+	}
+
+	limit := 2
+	ascending := false
+	includeTag := true
+	closed := false
+	relatedTags := true
+	markets, err := client.ListMarketsKeyset(context.Background(), ListMarketsKeysetOptions{
+		Limit:       &limit,
+		Order:       "volume_num",
+		Ascending:   &ascending,
+		AfterCursor: "cursor-1",
+		ID:          []int64{11, 22},
+		Slug:        []string{"slug-a"},
+		TagID:       []int64{3, 4},
+		RelatedTags: &relatedTags,
+		Closed:      &closed,
+		IncludeTag:  &includeTag,
+	})
+	if err != nil {
+		t.Fatalf("ListMarketsKeyset: %v", err)
+	}
+	if markets.NextCursor == nil || *markets.NextCursor != "mk1" {
+		t.Fatalf("markets next_cursor = %v, want mk1", markets.NextCursor)
+	}
+	if len(markets.Markets) != 1 || markets.Markets[0].ID != "1" {
+		t.Fatalf("markets payload = %+v", markets.Markets)
+	}
+
+	featured := true
+	includeChildren := true
+	events, err := client.ListEventsKeyset(context.Background(), ListEventsKeysetOptions{
+		Limit:           &limit,
+		Order:           "volume",
+		Ascending:       &ascending,
+		AfterCursor:     "cursor-2",
+		ID:              []int64{33},
+		TagID:           []int64{7},
+		ExcludeTagID:    []int64{8},
+		Featured:        &featured,
+		IncludeChildren: &includeChildren,
+		TitleSearch:     "btc",
+	})
+	if err != nil {
+		t.Fatalf("ListEventsKeyset: %v", err)
+	}
+	if events.NextCursor == nil || *events.NextCursor != "ev1" {
+		t.Fatalf("events next_cursor = %v, want ev1", events.NextCursor)
+	}
+	if len(events.Events) != 1 || events.Events[0].ID != "2" {
+		t.Fatalf("events payload = %+v", events.Events)
+	}
+
+	if len(calls) != 2 {
+		t.Fatalf("calls = %d, want 2", len(calls))
+	}
+	if calls[0].Path != "/markets/keyset" {
+		t.Fatalf("markets path = %q, want /markets/keyset", calls[0].Path)
+	}
+	for _, expected := range []string{
+		"limit=2",
+		"order=volume_num",
+		"ascending=false",
+		"after_cursor=cursor-1",
+		"id=11",
+		"id=22",
+		"slug=slug-a",
+		"tag_id=3",
+		"tag_id=4",
+		"related_tags=true",
+		"closed=false",
+		"include_tag=true",
+	} {
+		if !strings.Contains(calls[0].Query, expected) {
+			t.Fatalf("markets keyset query %q missing %q", calls[0].Query, expected)
+		}
+	}
+	if calls[1].Path != "/events/keyset" {
+		t.Fatalf("events path = %q, want /events/keyset", calls[1].Path)
+	}
+	for _, expected := range []string{
+		"limit=2",
+		"order=volume",
+		"ascending=false",
+		"after_cursor=cursor-2",
+		"id=33",
+		"tag_id=7",
+		"exclude_tag_id=8",
+		"featured=true",
+		"include_children=true",
+		"title_search=btc",
+	} {
+		if !strings.Contains(calls[1].Query, expected) {
+			t.Fatalf("events keyset query %q missing %q", calls[1].Query, expected)
+		}
+	}
+}
+
 func TestDecodeHTTPErrorJSON(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)

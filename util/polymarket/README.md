@@ -6,6 +6,7 @@
 
 - `GammaClient` (`https://gamma-api.polymarket.com`)
   - `Markets`, `Events`, `Tags`, `Comments`, `Profiles`, `Series`, `Search`, `Sports`
+  - Includes keyset pagination endpoints: `GET /markets/keyset`, `GET /events/keyset`
 - `DataClient` (`https://data-api.polymarket.com`)
   - `Core`, `Misc`, `Builders`
 - `CLOBClient` (`https://clob.polymarket.com`)
@@ -219,4 +220,4 @@ Optional env vars:
 
 - `POLYMARKET_GAMMA_BASE_URL`: override Gamma base URL.
 
-The validator discovers market/event/tag samples from live API responses, then performs strict JSON decoding (`DisallowUnknownFields`) against local Go models for the currently supported modules.
+The validator discovers market/event/tag/comment/series samples from live API responses, then performs strict JSON decoding (`DisallowUnknownFields`) against local Go models for the full Gamma coverage (including community + keyset endpoints).

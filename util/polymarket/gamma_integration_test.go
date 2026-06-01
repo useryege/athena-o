@@ -71,6 +71,19 @@ func TestIntegrationGamma(t *testing.T) {
 		logIntegrationResponse(t, "Markets/ListMarkets", got)
 	})
 
+	t.Run("Markets/ListMarketsKeyset", func(t *testing.T) {
+		requireGroupGate(t, integrationMarketsGate)
+		limit := 1
+		got, err := client.ListMarketsKeyset(ctx, ListMarketsKeysetOptions{Limit: &limit})
+		if err != nil {
+			t.Fatalf("ListMarketsKeyset: %v", err)
+		}
+		if len(got.Markets) == 0 {
+			t.Log("ListMarketsKeyset returned empty data (allowed)")
+		}
+		logIntegrationResponse(t, "Markets/ListMarketsKeyset", got)
+	})
+
 	t.Run("Markets/GetMarketByID", func(t *testing.T) {
 		requireGroupGate(t, integrationMarketsGate)
 		samples := getSamples(t)
@@ -129,6 +142,19 @@ func TestIntegrationGamma(t *testing.T) {
 			t.Fatal("ListEvents returned no rows")
 		}
 		logIntegrationResponse(t, "Events/ListEvents", got)
+	})
+
+	t.Run("Events/ListEventsKeyset", func(t *testing.T) {
+		requireGroupGate(t, integrationEventsGate)
+		limit := 1
+		got, err := client.ListEventsKeyset(ctx, ListEventsKeysetOptions{Limit: &limit})
+		if err != nil {
+			t.Fatalf("ListEventsKeyset: %v", err)
+		}
+		if len(got.Events) == 0 {
+			t.Log("ListEventsKeyset returned empty data (allowed)")
+		}
+		logIntegrationResponse(t, "Events/ListEventsKeyset", got)
 	})
 
 	t.Run("Events/GetEventByID", func(t *testing.T) {

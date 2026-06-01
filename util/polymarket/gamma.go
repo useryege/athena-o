@@ -23,12 +23,14 @@ const (
 type GammaClient interface {
 	// Markets
 	ListMarkets(ctx context.Context, options ListMarketsOptions) ([]Market, error)
+	ListMarketsKeyset(ctx context.Context, options ListMarketsKeysetOptions) (*MarketKeysetResponse, error)
 	GetMarketByID(ctx context.Context, id int64, options GetMarketOptions) (*Market, error)
 	GetMarketBySlug(ctx context.Context, slug string, options GetMarketOptions) (*Market, error)
 	GetMarketTagsByID(ctx context.Context, id int64) ([]Tag, error)
 
 	// Events
 	ListEvents(ctx context.Context, options ListEventsOptions) ([]Event, error)
+	ListEventsKeyset(ctx context.Context, options ListEventsKeysetOptions) (*EventKeysetResponse, error)
 	GetEventByID(ctx context.Context, id int64, options GetEventOptions) (*Event, error)
 	GetEventBySlug(ctx context.Context, slug string, options GetEventOptions) (*Event, error)
 	GetEventTags(ctx context.Context, id int64) ([]Tag, error)
@@ -160,6 +162,39 @@ type ListMarketsOptions struct {
 	Closed              *bool
 }
 
+type ListMarketsKeysetOptions struct {
+	Limit               *int
+	Order               string
+	Ascending           *bool
+	AfterCursor         string
+	ID                  []int64
+	Slug                []string
+	Closed              *bool
+	Decimalized         *bool
+	ClobTokenIDs        []string
+	ConditionIDs        []string
+	QuestionIDs         []string
+	MarketMakerAddress  []string
+	LiquidityNumMin     *float64
+	LiquidityNumMax     *float64
+	VolumeNumMin        *float64
+	VolumeNumMax        *float64
+	StartDateMin        *time.Time
+	StartDateMax        *time.Time
+	EndDateMin          *time.Time
+	EndDateMax          *time.Time
+	TagID               []int64
+	RelatedTags         *bool
+	TagMatch            string
+	CYOM                *bool
+	RFQEnabled          *bool
+	UMAResolutionStatus string
+	GameID              string
+	SportsMarketTypes   []string
+	IncludeTag          *bool
+	Locale              string
+}
+
 type GetMarketOptions struct {
 	IncludeTag *bool
 }
@@ -188,6 +223,49 @@ type ListEventsOptions struct {
 	StartDateMax    *time.Time
 	EndDateMin      *time.Time
 	EndDateMax      *time.Time
+}
+
+type ListEventsKeysetOptions struct {
+	Limit            *int
+	Order            string
+	Ascending        *bool
+	AfterCursor      string
+	ID               []int64
+	Slug             []string
+	Closed           *bool
+	Live             *bool
+	Featured         *bool
+	CYOM             *bool
+	TitleSearch      string
+	LiquidityMin     *float64
+	LiquidityMax     *float64
+	VolumeMin        *float64
+	VolumeMax        *float64
+	StartDateMin     *time.Time
+	StartDateMax     *time.Time
+	EndDateMin       *time.Time
+	EndDateMax       *time.Time
+	StartTimeMin     *time.Time
+	StartTimeMax     *time.Time
+	TagID            []int64
+	TagSlug          string
+	ExcludeTagID     []int64
+	RelatedTags      *bool
+	TagMatch         string
+	SeriesID         []int64
+	GameID           []int64
+	EventDate        *time.Time
+	EventWeek        *int
+	FeaturedOrder    *bool
+	Recurrence       string
+	CreatedBy        []string
+	ParentEventID    *int64
+	IncludeChildren  *bool
+	PartnerSlug      string
+	IncludeChat      *bool
+	IncludeTemplate  *bool
+	IncludeBestLines *bool
+	Locale           string
 }
 
 type GetEventOptions struct {
@@ -336,6 +414,16 @@ type Event struct {
 	Raw              json.RawMessage `json:"-"`
 }
 
+type MarketKeysetResponse struct {
+	Markets    []Market `json:"markets"`
+	NextCursor *string  `json:"next_cursor,omitempty"`
+}
+
+type EventKeysetResponse struct {
+	Events     []Event `json:"events"`
+	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
 type Tag struct {
 	ID                  string     `json:"id"`
 	Label               *string    `json:"label,omitempty"`
@@ -466,6 +554,15 @@ func (c *gammaClientImpl) ListMarkets(ctx context.Context, options ListMarketsOp
 	return out, nil
 }
 
+func (c *gammaClientImpl) ListMarketsKeyset(ctx context.Context, options ListMarketsKeysetOptions) (*MarketKeysetResponse, error) {
+	query := options.values()
+	var out MarketKeysetResponse
+	if err := c.do(ctx, http.MethodGet, "/markets/keyset", query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *gammaClientImpl) GetMarketByID(ctx context.Context, id int64, options GetMarketOptions) (*Market, error) {
 	query := options.values()
 	var out Market
@@ -499,6 +596,15 @@ func (c *gammaClientImpl) ListEvents(ctx context.Context, options ListEventsOpti
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *gammaClientImpl) ListEventsKeyset(ctx context.Context, options ListEventsKeysetOptions) (*EventKeysetResponse, error) {
+	query := options.values()
+	var out EventKeysetResponse
+	if err := c.do(ctx, http.MethodGet, "/events/keyset", query, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *gammaClientImpl) GetEventByID(ctx context.Context, id int64, options GetEventOptions) (*Event, error) {
@@ -785,6 +891,41 @@ func (o ListMarketsOptions) values() url.Values {
 	return q
 }
 
+func (o ListMarketsKeysetOptions) values() url.Values {
+	q := make(url.Values)
+	setIntPtr(q, "limit", o.Limit)
+	setString(q, "order", o.Order)
+	setBoolPtr(q, "ascending", o.Ascending)
+	setString(q, "after_cursor", o.AfterCursor)
+	addInt64Slice(q, "id", o.ID)
+	addStringSlice(q, "slug", o.Slug)
+	setBoolPtr(q, "closed", o.Closed)
+	setBoolPtr(q, "decimalized", o.Decimalized)
+	addStringSlice(q, "clob_token_ids", o.ClobTokenIDs)
+	addStringSlice(q, "condition_ids", o.ConditionIDs)
+	addStringSlice(q, "question_ids", o.QuestionIDs)
+	addStringSlice(q, "market_maker_address", o.MarketMakerAddress)
+	setFloat64Ptr(q, "liquidity_num_min", o.LiquidityNumMin)
+	setFloat64Ptr(q, "liquidity_num_max", o.LiquidityNumMax)
+	setFloat64Ptr(q, "volume_num_min", o.VolumeNumMin)
+	setFloat64Ptr(q, "volume_num_max", o.VolumeNumMax)
+	setTimePtr(q, "start_date_min", o.StartDateMin)
+	setTimePtr(q, "start_date_max", o.StartDateMax)
+	setTimePtr(q, "end_date_min", o.EndDateMin)
+	setTimePtr(q, "end_date_max", o.EndDateMax)
+	addInt64Slice(q, "tag_id", o.TagID)
+	setBoolPtr(q, "related_tags", o.RelatedTags)
+	setString(q, "tag_match", o.TagMatch)
+	setBoolPtr(q, "cyom", o.CYOM)
+	setBoolPtr(q, "rfq_enabled", o.RFQEnabled)
+	setString(q, "uma_resolution_status", o.UMAResolutionStatus)
+	setString(q, "game_id", o.GameID)
+	addStringSlice(q, "sports_market_types", o.SportsMarketTypes)
+	setBoolPtr(q, "include_tag", o.IncludeTag)
+	setString(q, "locale", o.Locale)
+	return q
+}
+
 func (o GetMarketOptions) values() url.Values {
 	q := make(url.Values)
 	setBoolPtr(q, "include_tag", o.IncludeTag)
@@ -815,6 +956,51 @@ func (o ListEventsOptions) values() url.Values {
 	setTimePtr(q, "start_date_max", o.StartDateMax)
 	setTimePtr(q, "end_date_min", o.EndDateMin)
 	setTimePtr(q, "end_date_max", o.EndDateMax)
+	return q
+}
+
+func (o ListEventsKeysetOptions) values() url.Values {
+	q := make(url.Values)
+	setIntPtr(q, "limit", o.Limit)
+	setString(q, "order", o.Order)
+	setBoolPtr(q, "ascending", o.Ascending)
+	setString(q, "after_cursor", o.AfterCursor)
+	addInt64Slice(q, "id", o.ID)
+	addStringSlice(q, "slug", o.Slug)
+	setBoolPtr(q, "closed", o.Closed)
+	setBoolPtr(q, "live", o.Live)
+	setBoolPtr(q, "featured", o.Featured)
+	setBoolPtr(q, "cyom", o.CYOM)
+	setString(q, "title_search", o.TitleSearch)
+	setFloat64Ptr(q, "liquidity_min", o.LiquidityMin)
+	setFloat64Ptr(q, "liquidity_max", o.LiquidityMax)
+	setFloat64Ptr(q, "volume_min", o.VolumeMin)
+	setFloat64Ptr(q, "volume_max", o.VolumeMax)
+	setTimePtr(q, "start_date_min", o.StartDateMin)
+	setTimePtr(q, "start_date_max", o.StartDateMax)
+	setTimePtr(q, "end_date_min", o.EndDateMin)
+	setTimePtr(q, "end_date_max", o.EndDateMax)
+	setTimePtr(q, "start_time_min", o.StartTimeMin)
+	setTimePtr(q, "start_time_max", o.StartTimeMax)
+	addInt64Slice(q, "tag_id", o.TagID)
+	setString(q, "tag_slug", o.TagSlug)
+	addInt64Slice(q, "exclude_tag_id", o.ExcludeTagID)
+	setBoolPtr(q, "related_tags", o.RelatedTags)
+	setString(q, "tag_match", o.TagMatch)
+	addInt64Slice(q, "series_id", o.SeriesID)
+	addInt64Slice(q, "game_id", o.GameID)
+	setTimePtr(q, "event_date", o.EventDate)
+	setIntPtr(q, "event_week", o.EventWeek)
+	setBoolPtr(q, "featured_order", o.FeaturedOrder)
+	setString(q, "recurrence", o.Recurrence)
+	addStringSlice(q, "created_by", o.CreatedBy)
+	setInt64Ptr(q, "parent_event_id", o.ParentEventID)
+	setBoolPtr(q, "include_children", o.IncludeChildren)
+	setString(q, "partner_slug", o.PartnerSlug)
+	setBoolPtr(q, "include_chat", o.IncludeChat)
+	setBoolPtr(q, "include_template", o.IncludeTemplate)
+	setBoolPtr(q, "include_best_lines", o.IncludeBestLines)
+	setString(q, "locale", o.Locale)
 	return q
 }
 

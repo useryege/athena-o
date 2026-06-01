@@ -28,6 +28,9 @@ type discovery struct {
 	eventSlug  string
 	tagID      string
 	tagSlug    string
+	commentID  string
+	address    string
+	seriesID   int64
 }
 
 func main() {
@@ -58,11 +61,13 @@ func main() {
 	}
 
 	appendCheck("markets.list", buildURL(resolvedBase, "/markets", url.Values{"limit": {"1"}}), &[]polymarket.Market{})
+	appendCheck("markets.keyset", buildURL(resolvedBase, "/markets/keyset", url.Values{"limit": {"1"}}), &polymarket.MarketKeysetResponse{})
 	appendCheck("markets.getByID", buildURL(resolvedBase, "/markets/"+strconv.FormatInt(d.marketID, 10), nil), &polymarket.Market{})
 	appendCheck("markets.getBySlug", buildURL(resolvedBase, "/markets/slug/"+url.PathEscape(d.marketSlug), nil), &polymarket.Market{})
 	appendCheck("markets.getTags", buildURL(resolvedBase, "/markets/"+strconv.FormatInt(d.marketID, 10)+"/tags", nil), &[]polymarket.Tag{})
 
 	appendCheck("events.list", buildURL(resolvedBase, "/events", url.Values{"limit": {"1"}}), &[]polymarket.Event{})
+	appendCheck("events.keyset", buildURL(resolvedBase, "/events/keyset", url.Values{"limit": {"1"}}), &polymarket.EventKeysetResponse{})
 	appendCheck("events.getByID", buildURL(resolvedBase, "/events/"+strconv.FormatInt(d.eventID, 10), nil), &polymarket.Event{})
 	appendCheck("events.getBySlug", buildURL(resolvedBase, "/events/slug/"+url.PathEscape(d.eventSlug), nil), &polymarket.Event{})
 	appendCheck("events.getTags", buildURL(resolvedBase, "/events/"+strconv.FormatInt(d.eventID, 10)+"/tags", nil), &[]polymarket.Tag{})
@@ -74,6 +79,27 @@ func main() {
 	appendCheck("tags.relatedBySlug", buildURL(resolvedBase, "/tags/slug/"+url.PathEscape(d.tagSlug)+"/related-tags", nil), &[]polymarket.RelatedTagRelationship{})
 	appendCheck("tags.relatedTagsByID", buildURL(resolvedBase, "/tags/"+url.PathEscape(d.tagID)+"/related-tags/tags", nil), &[]polymarket.Tag{})
 	appendCheck("tags.relatedTagsBySlug", buildURL(resolvedBase, "/tags/slug/"+url.PathEscape(d.tagSlug)+"/related-tags/tags", nil), &[]polymarket.Tag{})
+
+	appendCheck(
+		"comments.list",
+		buildURL(
+			resolvedBase,
+			"/comments",
+			url.Values{
+				"limit":              {"1"},
+				"parent_entity_type": {"Event"},
+				"parent_entity_id":   {strconv.FormatInt(d.eventID, 10)},
+			},
+		),
+		&[]polymarket.Comment{},
+	)
+	appendCheck("comments.getByID", buildURL(resolvedBase, "/comments/"+url.PathEscape(d.commentID), nil), &[]polymarket.Comment{})
+	appendCheck("comments.byUserAddress", buildURL(resolvedBase, "/comments/user_address/"+url.PathEscape(d.address), url.Values{"limit": {"1"}}), &[]polymarket.Comment{})
+
+	appendCheck("series.list", buildURL(resolvedBase, "/series", url.Values{"limit": {"1"}}), &[]polymarket.Series{})
+	appendCheck("series.getByID", buildURL(resolvedBase, "/series/"+strconv.FormatInt(d.seriesID, 10), nil), &polymarket.Series{})
+
+	appendCheck("profiles.public", buildURL(resolvedBase, "/public-profile", url.Values{"address": {d.address}}), &polymarket.PublicProfile{})
 
 	appendCheck("search.public", buildURL(resolvedBase, "/public-search", url.Values{"q": {"btc"}, "limit_per_type": {"1"}}), &polymarket.PublicSearchResponse{})
 
@@ -148,6 +174,40 @@ func discover(ctx context.Context, client polymarket.GammaClient) (*discovery, e
 		return nil, fmt.Errorf("discover tags: missing id or slug")
 	}
 
+	comments, err := client.ListComments(ctx, polymarket.ListCommentsOptions{
+		ListOptions:      polymarket.ListOptions{Limit: &limit1},
+		ParentEntityType: "Event",
+		ParentEntityID:   &eventID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("discover comments: %w", err)
+	}
+	if len(comments) == 0 {
+		return nil, fmt.Errorf("discover comments: empty result")
+	}
+	commentID := strings.TrimSpace(comments[0].ID)
+	if commentID == "" {
+		return nil, fmt.Errorf("discover comments: missing id")
+	}
+	if comments[0].UserAddress == nil || strings.TrimSpace(*comments[0].UserAddress) == "" {
+		return nil, fmt.Errorf("discover comments: missing user_address")
+	}
+	address := strings.TrimSpace(*comments[0].UserAddress)
+
+	seriesRows, err := client.ListSeries(ctx, polymarket.ListSeriesOptions{
+		ListOptions: polymarket.ListOptions{Limit: &limit1},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("discover series: %w", err)
+	}
+	if len(seriesRows) == 0 {
+		return nil, fmt.Errorf("discover series: empty result")
+	}
+	seriesID, err := strconv.ParseInt(strings.TrimSpace(seriesRows[0].ID), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("discover series id parse: %w", err)
+	}
+
 	return &discovery{
 		marketID:   marketID,
 		marketSlug: *markets[0].Slug,
@@ -155,6 +215,9 @@ func discover(ctx context.Context, client polymarket.GammaClient) (*discovery, e
 		eventSlug:  *events[0].Slug,
 		tagID:      tags[0].ID,
 		tagSlug:    *tags[0].Slug,
+		commentID:  commentID,
+		address:    address,
+		seriesID:   seriesID,
 	}, nil
 }
 
