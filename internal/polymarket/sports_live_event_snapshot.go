@@ -3,6 +3,7 @@ package polymarket
 import (
 	"context"
 	"encoding/json"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ func (s *Service) refreshSportsLiveEventSnapshot(ctx context.Context) error {
 			s.cacheMu.Unlock()
 			return nil, fetchErr
 		}
+		sortSportsLiveEvents(events)
 		s.cacheMu.Lock()
 		s.snapshotEvents = events
 		s.eventFetched = s.nowUnix()
@@ -222,4 +224,41 @@ func cloneSportsLiveEventItem(in *v1alpha1.PolymarketSportsLiveEventItem) *v1alp
 		out.Markets = append(out.Markets, &group)
 	}
 	return &out
+}
+
+func sortSportsLiveEvents(events []*v1alpha1.PolymarketSportsLiveEventItem) {
+	sort.SliceStable(events, func(i, j int) bool {
+		leftVolume := sportsLiveEventTotalVolume(events[i])
+		rightVolume := sportsLiveEventTotalVolume(events[j])
+		if leftVolume != rightVolume {
+			return leftVolume > rightVolume
+		}
+
+		leftUpdate := parseRFC3339Unix(strings.TrimSpace(events[i].LastUpdate))
+		rightUpdate := parseRFC3339Unix(strings.TrimSpace(events[j].LastUpdate))
+		if leftUpdate != rightUpdate {
+			return leftUpdate > rightUpdate
+		}
+
+		return strings.TrimSpace(events[i].EventSlug) < strings.TrimSpace(events[j].EventSlug)
+	})
+}
+
+func sportsLiveEventTotalVolume(event *v1alpha1.PolymarketSportsLiveEventItem) float64 {
+	if event == nil {
+		return 0
+	}
+	total := 0.0
+	for i := range event.Markets {
+		if event.Markets[i] == nil {
+			continue
+		}
+		for j := range event.Markets[i].Markets {
+			if event.Markets[i].Markets[j] == nil {
+				continue
+			}
+			total += event.Markets[i].Markets[j].VolumeNum
+		}
+	}
+	return total
 }

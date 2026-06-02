@@ -116,6 +116,84 @@ func TestSportsLiveEventSnapshotRefreshAndMapping(t *testing.T) {
 	}
 }
 
+func TestSportsLiveEventSnapshotSortsByVolumeThenLastUpdateThenSlug(t *testing.T) {
+	now := time.Date(2026, 6, 2, 12, 0, 0, 0, time.UTC)
+	marketType := "moneyline"
+	groupTitle := "Moneyline"
+
+	makeLiveEvent := func(slug string, updatedAt time.Time, volume *float64) utilpolymarket.Event {
+		return utilpolymarket.Event{
+			Slug:      strPtr(slug),
+			Title:     strPtr("Event " + slug),
+			Live:      boolPtr(true),
+			Ended:     boolPtr(false),
+			UpdatedAt: timePtr(updatedAt),
+			Markets: []utilpolymarket.Market{
+				{
+					ConditionID:      strPtr("cond-" + slug),
+					Slug:             strPtr("market-" + slug),
+					Question:         strPtr("Who wins?"),
+					SportsMarketType: &marketType,
+					GroupItemTitle:   &groupTitle,
+					VolumeNum:        volume,
+				},
+			},
+		}
+	}
+
+	vol40 := 40.0
+	vol10 := 10.0
+	updatedLatest := now
+	updatedMid := now.Add(-1 * time.Minute)
+	updatedOld := now.Add(-2 * time.Minute)
+
+	gamma := &fakeGammaClient{responses: []*utilpolymarket.EventKeysetResponse{
+		{
+			Events: []utilpolymarket.Event{
+				makeLiveEvent("event-b", updatedOld, &vol40),
+				makeLiveEvent("event-c", updatedMid, &vol40),
+				makeLiveEvent("event-a", updatedMid, &vol40),
+				makeLiveEvent("event-d", updatedLatest, &vol10),
+				makeLiveEvent("event-e", updatedLatest, nil),
+			},
+		},
+		{Events: []utilpolymarket.Event{}},
+	}}
+
+	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(gamma), WithSportsWSClient(&fakeSportsWSClient{}))
+	svc.started = true
+	svc.nowFn = func() time.Time { return now }
+	if err := svc.refreshSportsLiveEventSnapshot(context.Background()); err != nil {
+		t.Fatalf("refreshSportsLiveEventSnapshot: %v", err)
+	}
+
+	resp := svc.currentSportsLiveEventResponse(10)
+	if resp == nil {
+		t.Fatal("response is nil")
+	}
+	got := make([]string, 0, len(resp.GetEvents()))
+	for i := range resp.GetEvents() {
+		got = append(got, resp.GetEvents()[i].EventSlug)
+	}
+	want := []string{"event-a", "event-c", "event-b", "event-d", "event-e"}
+	if len(got) != len(want) {
+		t.Fatalf("event count = %d, want %d (got=%v)", len(got), len(want), got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("order mismatch at %d: got=%v want=%v", i, got, want)
+		}
+	}
+
+	topTwo := svc.currentSportsLiveEventResponse(2)
+	if topTwo == nil {
+		t.Fatal("topTwo response is nil")
+	}
+	if len(topTwo.GetEvents()) != 2 || topTwo.GetEvents()[0].EventSlug != "event-a" || topTwo.GetEvents()[1].EventSlug != "event-c" {
+		t.Fatalf("top two = %#v, want [event-a event-c]", topTwo.GetEvents())
+	}
+}
+
 func TestSportsLiveEventSnapshotStaleFallbackOnRefreshError(t *testing.T) {
 	liveSlug := "live-event-1"
 	marketType := "moneyline"
