@@ -13,6 +13,8 @@ import (
 	utilpolymarket "github.com/useryege/athena/util/polymarket"
 )
 
+const sportsLiveMoneylineMarketType = "moneyline"
+
 func (s *Service) refreshSportsLiveEventSnapshot(ctx context.Context) error {
 	_, err, _ := s.syncGroup.Do("sports-live-event-snapshot", func() (any, error) {
 		events, fetchErr := s.fetchSportsLiveEvents(ctx)
@@ -43,6 +45,9 @@ func (s *Service) fetchSportsLiveEvents(ctx context.Context) ([]*v1alpha1.Polyma
 	snapshot, err := utilpolymarket.BuildSportsLiveSnapshot(ctx, s.gammaClient, utilpolymarket.SportsLiveSnapshotOptions{
 		LiveLimit: maxSportsLiveSnapshotLimit,
 		SoonLimit: 1,
+		MarketTypes: []string{
+			sportsLiveMoneylineMarketType,
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -87,6 +92,9 @@ func (s *Service) fetchSportsLiveEvents(ctx context.Context) ([]*v1alpha1.Polyma
 func mapSportsLiveMarketGroups(groups []utilpolymarket.SportsMarketGroup) []*v1alpha1.PolymarketSportsLiveMarketGroupItem {
 	out := make([]*v1alpha1.PolymarketSportsLiveMarketGroupItem, 0, len(groups))
 	for i := range groups {
+		if strings.TrimSpace(strings.ToLower(groups[i].Type)) != sportsLiveMoneylineMarketType {
+			continue
+		}
 		options := make([]*v1alpha1.PolymarketSportsLiveMarketOptionItem, 0, len(groups[i].Markets))
 		for j := range groups[i].Markets {
 			market := groups[i].Markets[j]

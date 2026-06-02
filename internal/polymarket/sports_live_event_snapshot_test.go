@@ -18,7 +18,9 @@ func TestSportsLiveEventSnapshotRefreshAndMapping(t *testing.T) {
 	liveSlug := "live-event-1"
 	soonSlug := "soon-event-1"
 	marketType := "moneyline"
+	spreadType := "spread"
 	groupTitle := "Moneyline"
+	spreadTitle := "Spread -1.5"
 	outcomesJSON := "[\"Team A\",\"Team B\"]"
 	pricesJSON := "[0.62,0.38]"
 	invalidJSON := "oops"
@@ -61,6 +63,28 @@ func TestSportsLiveEventSnapshotRefreshAndMapping(t *testing.T) {
 							GroupItemTitle:   &groupTitle,
 							Outcomes:         &invalidJSON,
 							OutcomePrices:    &invalidJSON,
+						},
+						{
+							ConditionID:      strPtr("cond-spread"),
+							Slug:             strPtr("market-spread"),
+							Question:         strPtr("Spread"),
+							SportsMarketType: &spreadType,
+							GroupItemTitle:   &spreadTitle,
+							VolumeNum:        floatPtr(9999),
+						},
+					},
+				},
+				{
+					Slug:  strPtr("spread-only-event"),
+					Live:  boolPtr(true),
+					Ended: boolPtr(false),
+					Markets: []utilpolymarket.Market{
+						{
+							ConditionID:      strPtr("cond-spread-only"),
+							Slug:             strPtr("market-spread-only"),
+							Question:         strPtr("Spread only"),
+							SportsMarketType: &spreadType,
+							GroupItemTitle:   &spreadTitle,
 						},
 					},
 				},
@@ -108,6 +132,9 @@ func TestSportsLiveEventSnapshotRefreshAndMapping(t *testing.T) {
 	if len(event.Markets) != 1 || len(event.Markets[0].Markets) != 2 {
 		t.Fatalf("market groups mapping mismatch: %#v", event.Markets)
 	}
+	if event.Markets[0].Type != sportsLiveMoneylineMarketType {
+		t.Fatalf("market group type = %q, want %q", event.Markets[0].Type, sportsLiveMoneylineMarketType)
+	}
 	if len(event.Markets[0].Markets[0].Outcomes) != 2 || len(event.Markets[0].Markets[0].OutcomePrices) != 2 {
 		t.Fatalf("market json arrays not parsed: %#v", event.Markets[0].Markets[0])
 	}
@@ -119,6 +146,7 @@ func TestSportsLiveEventSnapshotRefreshAndMapping(t *testing.T) {
 func TestSportsLiveEventSnapshotSortsByVolumeThenLastUpdateThenSlug(t *testing.T) {
 	now := time.Date(2026, 6, 2, 12, 0, 0, 0, time.UTC)
 	marketType := "moneyline"
+	spreadType := "spread"
 	groupTitle := "Moneyline"
 
 	makeLiveEvent := func(slug string, updatedAt time.Time, volume *float64) utilpolymarket.Event {
@@ -136,6 +164,13 @@ func TestSportsLiveEventSnapshotSortsByVolumeThenLastUpdateThenSlug(t *testing.T
 					SportsMarketType: &marketType,
 					GroupItemTitle:   &groupTitle,
 					VolumeNum:        volume,
+				},
+				{
+					ConditionID:      strPtr("spread-cond-" + slug),
+					Slug:             strPtr("spread-market-" + slug),
+					Question:         strPtr("Spread"),
+					SportsMarketType: &spreadType,
+					VolumeNum:        floatPtr(99999),
 				},
 			},
 		}

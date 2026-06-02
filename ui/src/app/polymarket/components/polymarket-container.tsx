@@ -9,6 +9,7 @@ require('./polymarket-container.scss');
 const POLL_INTERVAL_MS = 2000;
 const DEFAULT_LIMIT = 30;
 const POLYMARKET_SPORTS_LIVE_URL = 'https://polymarket.com/sports/live';
+const MONEYLINE_MARKET_TYPE = 'moneyline';
 
 const isAbortedError = (err: unknown) =>
     String((err as any)?.message || '')
@@ -78,8 +79,8 @@ const openExternal = (url: string) => {
     }
 };
 
-const sumEventVolume = (event: PolymarketSportsLiveEventItem) =>
-    (event.markets || []).reduce((total, group) => total + (group.markets || []).reduce((groupTotal, market) => groupTotal + (market.volumeNum || 0), 0), 0);
+const getMoneylineGroup = (event: PolymarketSportsLiveEventItem) => (event.markets || []).find(group => String(group.type || '').toLowerCase() === MONEYLINE_MARKET_TYPE);
+const sumMoneylineVolume = (event: PolymarketSportsLiveEventItem) => (getMoneylineGroup(event)?.markets || []).reduce((total, market) => total + (market.volumeNum || 0), 0);
 
 const EventLogo = ({event}: {event: PolymarketSportsLiveEventItem}) => {
     const [failed, setFailed] = React.useState(false);
@@ -212,66 +213,69 @@ export const PolymarketContainer = () => {
 
                             <div className='polymarket-live__list'>
                                 {events.length === 0 ? (
-                                    <div className='polymarket-live__empty'>No Sports Live events found</div>
+                                    <div className='polymarket-live__empty'>No Sports Live moneyline markets found</div>
                                 ) : (
-                                    events.map(event => (
-                                        <article key={event.eventSlug} className='polymarket-live__card'>
-                                            <div className='polymarket-live__card-header'>
-                                                <div className='polymarket-live__headline'>
-                                                    <span className='polymarket-live__live-dot' />
-                                                    <span className='polymarket-live__live-text'>{event.period || 'LIVE'}</span>
-                                                    <span className='polymarket-live__score'>{event.score || '-'}</span>
+                                    events.map(event => {
+                                        const moneylineGroup = getMoneylineGroup(event);
+                                        return (
+                                            <article key={event.eventSlug} className='polymarket-live__card'>
+                                                <div className='polymarket-live__card-header'>
+                                                    <div className='polymarket-live__headline'>
+                                                        <span className='polymarket-live__live-dot' />
+                                                        <span className='polymarket-live__live-text'>{event.period || 'LIVE'}</span>
+                                                        <span className='polymarket-live__score'>{event.score || '-'}</span>
+                                                    </div>
+                                                    <div className='polymarket-live__header-meta'>
+                                                        <span>Vol {formatNumber(sumMoneylineVolume(event))}</span>
+                                                        <span>Updated {formatLastUpdate(event.lastUpdate)}</span>
+                                                    </div>
                                                 </div>
-                                                <div className='polymarket-live__header-meta'>
-                                                    <span>Vol {formatNumber(sumEventVolume(event))}</span>
-                                                    <span>Updated {formatLastUpdate(event.lastUpdate)}</span>
-                                                </div>
-                                            </div>
 
-                                            <div className='polymarket-live__event-main'>
-                                                <EventLogo event={event} />
-                                                <div className='polymarket-live__event-body'>
-                                                    <button type='button' className='polymarket-live__event-link' onClick={() => openExternal(eventURL(event.eventSlug))}>
-                                                        {event.title || event.eventSlug || '-'}
-                                                    </button>
-                                                    <div className='polymarket-live__event-subtitle'>{event.gameStatus || event.elapsed || '-'}</div>
+                                                <div className='polymarket-live__event-main'>
+                                                    <EventLogo event={event} />
+                                                    <div className='polymarket-live__event-body'>
+                                                        <button type='button' className='polymarket-live__event-link' onClick={() => openExternal(eventURL(event.eventSlug))}>
+                                                            {event.title || event.eventSlug || '-'}
+                                                        </button>
+                                                        <div className='polymarket-live__event-subtitle'>{event.gameStatus || event.elapsed || '-'}</div>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div className='polymarket-live__groups'>
-                                                {(event.markets || []).map(group => (
-                                                    <section key={`${event.eventSlug}-${group.type}-${group.title}`} className='polymarket-live__group'>
-                                                        <div className='polymarket-live__group-title'>{group.title || group.type || 'Market'}</div>
-                                                        <div className='polymarket-live__outcomes'>
-                                                            {(group.markets || []).map(market => {
-                                                                const outcomes = market.outcomes || [];
-                                                                const prices = market.outcomePrices || [];
-                                                                if (outcomes.length > 0) {
-                                                                    return outcomes.map((outcome, idx) => (
+                                                <div className='polymarket-live__groups'>
+                                                    {moneylineGroup && (
+                                                        <section className='polymarket-live__group'>
+                                                            <div className='polymarket-live__group-title'>Moneyline</div>
+                                                            <div className='polymarket-live__outcomes'>
+                                                                {(moneylineGroup.markets || []).map(market => {
+                                                                    const outcomes = market.outcomes || [];
+                                                                    const prices = market.outcomePrices || [];
+                                                                    if (outcomes.length > 0) {
+                                                                        return outcomes.map((outcome, idx) => (
+                                                                            <MarketOutcomeButton
+                                                                                key={`${market.marketSlug}-${outcome}-${idx}`}
+                                                                                market={market}
+                                                                                outcome={outcome}
+                                                                                price={prices[idx]}
+                                                                                onClick={() => openExternal(marketURL(market.marketSlug))}
+                                                                            />
+                                                                        ));
+                                                                    }
+                                                                    return (
                                                                         <MarketOutcomeButton
-                                                                            key={`${market.marketSlug}-${outcome}-${idx}`}
+                                                                            key={market.marketSlug || market.conditionId}
                                                                             market={market}
-                                                                            outcome={outcome}
-                                                                            price={prices[idx]}
+                                                                            outcome={market.question || market.marketSlug || '-'}
                                                                             onClick={() => openExternal(marketURL(market.marketSlug))}
                                                                         />
-                                                                    ));
-                                                                }
-                                                                return (
-                                                                    <MarketOutcomeButton
-                                                                        key={market.marketSlug || market.conditionId}
-                                                                        market={market}
-                                                                        outcome={market.question || market.marketSlug || '-'}
-                                                                        onClick={() => openExternal(marketURL(market.marketSlug))}
-                                                                    />
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </section>
-                                                ))}
-                                            </div>
-                                        </article>
-                                    ))
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </section>
+                                                    )}
+                                                </div>
+                                            </article>
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
