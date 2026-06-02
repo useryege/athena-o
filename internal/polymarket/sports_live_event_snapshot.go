@@ -15,6 +15,12 @@ import (
 
 const sportsLiveMoneylineMarketType = "moneyline"
 
+type sportsLiveTeamRaw struct {
+	Name     *string `json:"name,omitempty"`
+	Logo     *string `json:"logo,omitempty"`
+	Ordering *string `json:"ordering,omitempty"`
+}
+
 func (s *Service) refreshSportsLiveEventSnapshot(ctx context.Context) error {
 	_, err, _ := s.syncGroup.Do("sports-live-event-snapshot", func() (any, error) {
 		events, fetchErr := s.fetchSportsLiveEvents(ctx)
@@ -83,10 +89,36 @@ func (s *Service) fetchSportsLiveEvents(ctx context.Context) ([]*v1alpha1.Polyma
 			GameStatus: strings.TrimSpace(stringValue(event.GameStatus)),
 			StartTime:  formatTimeRFC3339(event.StartTime),
 			Markets:    groups,
+			Teams:      mapSportsLiveTeams(event.Teams),
 		})
 	}
 
 	return items, nil
+}
+
+func mapSportsLiveTeams(rawTeams []json.RawMessage) []*v1alpha1.PolymarketSportsLiveTeamItem {
+	out := make([]*v1alpha1.PolymarketSportsLiveTeamItem, 0, len(rawTeams))
+	for i := range rawTeams {
+		if len(rawTeams[i]) == 0 {
+			continue
+		}
+		var team sportsLiveTeamRaw
+		if err := json.Unmarshal(rawTeams[i], &team); err != nil {
+			continue
+		}
+		name := strings.TrimSpace(stringValue(team.Name))
+		logo := strings.TrimSpace(stringValue(team.Logo))
+		ordering := strings.TrimSpace(stringValue(team.Ordering))
+		if name == "" && logo == "" && ordering == "" {
+			continue
+		}
+		out = append(out, &v1alpha1.PolymarketSportsLiveTeamItem{
+			Name:     name,
+			Logo:     logo,
+			Ordering: ordering,
+		})
+	}
+	return out
 }
 
 func mapSportsLiveMarketGroups(groups []utilpolymarket.SportsMarketGroup) []*v1alpha1.PolymarketSportsLiveMarketGroupItem {
@@ -213,6 +245,14 @@ func cloneSportsLiveEventItem(in *v1alpha1.PolymarketSportsLiveEventItem) *v1alp
 		return nil
 	}
 	out := *in
+	out.Teams = make([]*v1alpha1.PolymarketSportsLiveTeamItem, 0, len(in.Teams))
+	for i := range in.Teams {
+		if in.Teams[i] == nil {
+			continue
+		}
+		team := *in.Teams[i]
+		out.Teams = append(out.Teams, &team)
+	}
 	out.Markets = make([]*v1alpha1.PolymarketSportsLiveMarketGroupItem, 0, len(in.Markets))
 	for i := range in.Markets {
 		if in.Markets[i] == nil {

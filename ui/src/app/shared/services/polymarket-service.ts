@@ -39,6 +39,12 @@ export interface PolymarketSportsLiveMarketGroupItem {
     markets: PolymarketSportsLiveMarketOptionItem[];
 }
 
+export interface PolymarketSportsLiveTeamItem {
+    name: string;
+    logo?: string;
+    ordering?: string;
+}
+
 export interface PolymarketSportsLiveEventItem {
     eventSlug: string;
     title: string;
@@ -52,6 +58,7 @@ export interface PolymarketSportsLiveEventItem {
     gameStatus?: string;
     startTime?: string;
     markets: PolymarketSportsLiveMarketGroupItem[];
+    teams: PolymarketSportsLiveTeamItem[];
 }
 
 export interface GetPolymarketSportsLiveSnapshotResult {
@@ -119,8 +126,15 @@ const normalizeMarketGroup = (item: any): PolymarketSportsLiveMarketGroupItem =>
     };
 };
 
+const normalizeTeam = (item: any): PolymarketSportsLiveTeamItem => ({
+    name: readString(item, 'name'),
+    logo: readString(item, 'logo'),
+    ordering: readString(item, 'ordering')
+});
+
 const normalizeEvent = (item: any): PolymarketSportsLiveEventItem => {
     const markets = readValue(item, 'markets');
+    const teams = readValue(item, 'teams');
     return {
         eventSlug: readString(item, 'eventSlug', 'event_slug'),
         title: readString(item, 'title'),
@@ -133,7 +147,8 @@ const normalizeEvent = (item: any): PolymarketSportsLiveEventItem => {
         ended: readBoolean(item, 'ended'),
         gameStatus: readString(item, 'gameStatus', 'game_status'),
         startTime: readString(item, 'startTime', 'start_time'),
-        markets: Array.isArray(markets) ? markets.map(normalizeMarketGroup) : []
+        markets: Array.isArray(markets) ? markets.map(normalizeMarketGroup) : [],
+        teams: Array.isArray(teams) ? teams.map(normalizeTeam) : []
     };
 };
 

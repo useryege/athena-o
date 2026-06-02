@@ -2,6 +2,7 @@ package polymarket
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -39,6 +40,10 @@ func TestSportsLiveEventSnapshotRefreshAndMapping(t *testing.T) {
 					GameStatus: strPtr("In Progress"),
 					StartTime:  timePtr(now.Add(-20 * time.Minute)),
 					UpdatedAt:  timePtr(now),
+					Teams: []json.RawMessage{
+						rawJSON(`{"name":"Team A","logo":"https://flags.example/a.png","ordering":"home"}`),
+						rawJSON(`{"name":"Team B","logo":"https://flags.example/b.png","ordering":"away"}`),
+					},
 					Markets: []utilpolymarket.Market{
 						{
 							ConditionID:      strPtr("cond-1"),
@@ -140,6 +145,9 @@ func TestSportsLiveEventSnapshotRefreshAndMapping(t *testing.T) {
 	}
 	if len(event.Markets[0].Markets[1].Outcomes) != 0 || len(event.Markets[0].Markets[1].OutcomePrices) != 0 {
 		t.Fatalf("invalid market json should fallback to empty arrays: %#v", event.Markets[0].Markets[1])
+	}
+	if len(event.Teams) != 2 || event.Teams[0].Name != "Team A" || event.Teams[0].Logo != "https://flags.example/a.png" || event.Teams[0].Ordering != "home" {
+		t.Fatalf("teams mapping mismatch: %#v", event.Teams)
 	}
 }
 
@@ -293,4 +301,8 @@ func TestGetSportsLiveSnapshotLimitValidation(t *testing.T) {
 
 func timePtr(value time.Time) *time.Time {
 	return &value
+}
+
+func rawJSON(value string) json.RawMessage {
+	return json.RawMessage(value)
 }

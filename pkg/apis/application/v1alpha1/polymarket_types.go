@@ -38,6 +38,12 @@ type PolymarketSportsLiveMarketGroupItem struct {
 	Markets []*PolymarketSportsLiveMarketOptionItem `protobuf:"bytes,3,rep,name=markets" json:"markets"`
 }
 
+type PolymarketSportsLiveTeamItem struct {
+	Name     string `protobuf:"bytes,1,opt,name=name" json:"name"`
+	Logo     string `protobuf:"bytes,2,opt,name=logo" json:"logo"`
+	Ordering string `protobuf:"bytes,3,opt,name=ordering" json:"ordering"`
+}
+
 type PolymarketSportsLiveEventItem struct {
 	EventSlug  string                                 `protobuf:"bytes,1,opt,name=eventSlug" json:"eventSlug"`
 	Title      string                                 `protobuf:"bytes,2,opt,name=title" json:"title"`
@@ -51,4 +57,5 @@ type PolymarketSportsLiveEventItem struct {
 	GameStatus string                                 `protobuf:"bytes,10,opt,name=gameStatus" json:"gameStatus"`
 	StartTime  string                                 `protobuf:"bytes,11,opt,name=startTime" json:"startTime"`
 	Markets    []*PolymarketSportsLiveMarketGroupItem `protobuf:"bytes,12,rep,name=markets" json:"markets"`
+	Teams      []*PolymarketSportsLiveTeamItem        `protobuf:"bytes,13,rep,name=teams" json:"teams"`
 }

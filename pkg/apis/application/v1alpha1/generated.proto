@@ -440,6 +440,8 @@ message PolymarketSportsLiveEventItem {
   optional string startTime = 11;
 
   repeated PolymarketSportsLiveMarketGroupItem markets = 12;
+
+  repeated PolymarketSportsLiveTeamItem teams = 13;
 }
 
 message PolymarketSportsLiveMarketGroupItem {
@@ -494,6 +496,14 @@ message PolymarketSportsLiveMarketOptionItem {
   optional double volumeNum = 9;
 
   optional double liquidityNum = 10;
+}
+
+message PolymarketSportsLiveTeamItem {
+  optional string name = 1;
+
+  optional string logo = 2;
+
+  optional string ordering = 3;
 }
 
 message PolymarketStatus {

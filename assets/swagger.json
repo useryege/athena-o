@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-494-g9d9f07f-dirty"
+    "version": "v1.0.0-499-g34283c3-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3381,6 +3381,12 @@
         "startTime": {
           "type": "string"
         },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveTeamItem"
+          }
+        },
         "title": {
           "type": "string"
         }
@@ -3486,6 +3492,20 @@
         "volumeNum": {
           "type": "number",
           "format": "double"
+        }
+      }
+    },
+    "v1alpha1PolymarketSportsLiveTeamItem": {
+      "type": "object",
+      "properties": {
+        "logo": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "ordering": {
+          "type": "string"
         }
       }
     },

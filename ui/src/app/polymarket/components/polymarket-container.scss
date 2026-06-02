@@ -157,13 +157,13 @@
 
     &__outcomes {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        grid-template-columns: 1fr;
         gap: 8px;
     }
 
     &__outcome {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr) auto;
         align-items: center;
         gap: 8px;
         border: 1px solid #d7deea;
@@ -175,6 +175,24 @@
         &:hover {
             border-color: #93c5fd;
             background: #eff6ff;
+        }
+    }
+
+    &__outcome-flag {
+        width: 24px;
+        height: 18px;
+        border-radius: 3px;
+        background: #eef2f7;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
     }
 
@@ -241,7 +259,7 @@
         }
 
         &__outcomes {
-            grid-template-columns: repeat(2, minmax(120px, 1fr));
+            grid-template-columns: 1fr;
         }
     }
 }

@@ -2,7 +2,7 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 
 import {services} from '../../shared/services';
-import {PolymarketSportsLiveEventItem, PolymarketSportsLiveMarketOptionItem} from '../../shared/services/polymarket-service';
+import {PolymarketSportsLiveEventItem, PolymarketSportsLiveMarketOptionItem, PolymarketSportsLiveTeamItem} from '../../shared/services/polymarket-service';
 
 require('./polymarket-container.scss');
 
@@ -81,6 +81,16 @@ const openExternal = (url: string) => {
 
 const getMoneylineGroup = (event: PolymarketSportsLiveEventItem) => (event.markets || []).find(group => String(group.type || '').toLowerCase() === MONEYLINE_MARKET_TYPE);
 const sumMoneylineVolume = (event: PolymarketSportsLiveEventItem) => (getMoneylineGroup(event)?.markets || []).reduce((total, market) => total + (market.volumeNum || 0), 0);
+const normalizeMatchName = (value?: string) =>
+    String(value || '')
+        .trim()
+        .toLowerCase();
+const findOutcomeTeam = (event: PolymarketSportsLiveEventItem, outcome: string, index: number) => {
+    const teams = event.teams || [];
+    const normalizedOutcome = normalizeMatchName(outcome);
+    const exactMatch = teams.find(team => normalizeMatchName(team.name) === normalizedOutcome);
+    return exactMatch || teams[index];
+};
 
 const EventLogo = ({event}: {event: PolymarketSportsLiveEventItem}) => {
     const [failed, setFailed] = React.useState(false);
@@ -90,8 +100,29 @@ const EventLogo = ({event}: {event: PolymarketSportsLiveEventItem}) => {
     return <span className='polymarket-live__logo'>{event.image && !failed ? <img src={event.image} alt='' onError={() => setFailed(true)} /> : <span>P</span>}</span>;
 };
 
-const MarketOutcomeButton = ({market, outcome, price, onClick}: {market: PolymarketSportsLiveMarketOptionItem; outcome: string; price?: string; onClick: () => void}) => (
+const OutcomeFlag = ({team}: {team?: PolymarketSportsLiveTeamItem}) => {
+    const [failed, setFailed] = React.useState(false);
+
+    React.useEffect(() => setFailed(false), [team?.logo]);
+
+    return <span className='polymarket-live__outcome-flag'>{team?.logo && !failed && <img src={team.logo} alt='' onError={() => setFailed(true)} />}</span>;
+};
+
+const MarketOutcomeButton = ({
+    market,
+    outcome,
+    price,
+    team,
+    onClick
+}: {
+    market: PolymarketSportsLiveMarketOptionItem;
+    outcome: string;
+    price?: string;
+    team?: PolymarketSportsLiveTeamItem;
+    onClick: () => void;
+}) => (
     <button type='button' className='polymarket-live__outcome' onClick={onClick} title={market.question || market.marketSlug || ''}>
+        <OutcomeFlag team={team} />
         <span className='polymarket-live__outcome-label'>{outcome || market.question || market.marketSlug || '-'}</span>
         <span className='polymarket-live__outcome-price'>{formatPrice(price)}</span>
     </button>
@@ -255,6 +286,7 @@ export const PolymarketContainer = () => {
                                                                                 market={market}
                                                                                 outcome={outcome}
                                                                                 price={prices[idx]}
+                                                                                team={findOutcomeTeam(event, outcome, idx)}
                                                                                 onClick={() => openExternal(marketURL(market.marketSlug))}
                                                                             />
                                                                         ));
@@ -264,6 +296,7 @@ export const PolymarketContainer = () => {
                                                                             key={market.marketSlug || market.conditionId}
                                                                             market={market}
                                                                             outcome={market.question || market.marketSlug || '-'}
+                                                                            team={findOutcomeTeam(event, market.question || market.marketSlug || '-', 0)}
                                                                             onClick={() => openExternal(marketURL(market.marketSlug))}
                                                                         />
                                                                     );
