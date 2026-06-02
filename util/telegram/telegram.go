@@ -157,7 +157,7 @@ func (c *clientImpl) GetMe(ctx context.Context) (*BotIdentity, error) {
 }
 
 func (c *clientImpl) GetMyName(ctx context.Context) (string, error) {
-	name, err := c.bot.GetMyName(ctx, &tgbot.GetMyNameParams{})
+	name, err := c.bot.GetMyName(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to get telegram bot name: %w", err)
 	}
@@ -172,7 +172,7 @@ func (c *clientImpl) SetMyName(ctx context.Context, name string) error {
 }
 
 func (c *clientImpl) GetMyDescription(ctx context.Context) (string, error) {
-	description, err := c.bot.GetMyDescription(ctx, &tgbot.GetMyDescriptionParams{})
+	description, err := c.bot.GetMyDescription(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to get telegram bot description: %w", err)
 	}
@@ -187,7 +187,7 @@ func (c *clientImpl) SetMyDescription(ctx context.Context, description string) e
 }
 
 func (c *clientImpl) GetMyShortDescription(ctx context.Context) (string, error) {
-	description, err := c.bot.GetMyShortDescription(ctx, &tgbot.GetMyShortDescriptionParams{})
+	description, err := c.bot.GetMyShortDescription(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to get telegram bot short description: %w", err)
 	}

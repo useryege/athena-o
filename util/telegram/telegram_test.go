@@ -156,18 +156,21 @@ func TestEnsureBotProfileUpdatesDriftAndUploadsPhoto(t *testing.T) {
 		case "/bottoken/getMe":
 			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":42,"is_bot":true,"first_name":"Old","username":"athena_bot"}}`))
 		case "/bottoken/getMyName":
+			requireEmptyRequestBody(t, r)
 			_, _ = w.Write([]byte(`{"ok":true,"result":{"name":"Old name"}}`))
 		case "/bottoken/setMyName":
 			parseMultipartForm(t, r)
 			gotName = r.FormValue("name")
 			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
 		case "/bottoken/getMyDescription":
+			requireEmptyRequestBody(t, r)
 			_, _ = w.Write([]byte(`{"ok":true,"result":{"description":"Old description"}}`))
 		case "/bottoken/setMyDescription":
 			parseMultipartForm(t, r)
 			gotDescription = r.FormValue("description")
 			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
 		case "/bottoken/getMyShortDescription":
+			requireEmptyRequestBody(t, r)
 			_, _ = w.Write([]byte(`{"ok":true,"result":{"short_description":"Old short"}}`))
 		case "/bottoken/setMyShortDescription":
 			parseMultipartForm(t, r)
@@ -255,13 +258,16 @@ func TestEnsureBotProfileSkipsMatchingTextAndAlwaysUploadsPhoto(t *testing.T) {
 		case "/bottoken/getMe":
 			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":42,"is_bot":true,"first_name":"ATHENA","username":"athena_bot"}}`))
 		case "/bottoken/getMyName":
+			requireEmptyRequestBody(t, r)
 			_, _ = w.Write([]byte(`{"ok":true,"result":{"name":"ATHENA"}}`))
 		case "/bottoken/setMyName":
 			setNameCalls++
 			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
 		case "/bottoken/getMyDescription":
+			requireEmptyRequestBody(t, r)
 			_, _ = w.Write([]byte(`{"ok":true,"result":{"description":"ATHENA notification bot for operational alerts and system updates."}}`))
 		case "/bottoken/getMyShortDescription":
+			requireEmptyRequestBody(t, r)
 			_, _ = w.Write([]byte(`{"ok":true,"result":{"short_description":"ATHENA operational alerts"}}`))
 		case "/bottoken/setMyProfilePhoto":
 			setPhotoCalls++
@@ -357,5 +363,16 @@ func parseMultipartForm(t *testing.T, r *http.Request) {
 	t.Helper()
 	if err := r.ParseMultipartForm(1024 * 1024); err != nil {
 		t.Fatalf("ParseMultipartForm: %v", err)
+	}
+}
+
+func requireEmptyRequestBody(t *testing.T, r *http.Request) {
+	t.Helper()
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		t.Fatalf("ReadAll request body: %v", err)
+	}
+	if len(body) != 0 {
+		t.Fatalf("%s request body length = %d, want 0; body prefix = %q", r.URL.Path, len(body), string(body[:min(len(body), 80)]))
 	}
 }
