@@ -344,6 +344,8 @@ type ListTeamsOptions struct {
 type Market struct {
 	ID                    string          `json:"id"`
 	Question              *string         `json:"question,omitempty"`
+	SportsMarketType      *string         `json:"sportsMarketType,omitempty"`
+	GroupItemTitle        *string         `json:"groupItemTitle,omitempty"`
 	ConditionID           *string         `json:"conditionId,omitempty"`
 	Slug                  *string         `json:"slug,omitempty"`
 	ResolutionSource      *string         `json:"resolutionSource,omitempty"`
@@ -386,32 +388,44 @@ type Market struct {
 }
 
 type Event struct {
-	ID               string          `json:"id"`
-	Ticker           *string         `json:"ticker,omitempty"`
-	Slug             *string         `json:"slug,omitempty"`
-	Title            *string         `json:"title,omitempty"`
-	Description      *string         `json:"description,omitempty"`
-	ResolutionSource *string         `json:"resolutionSource,omitempty"`
-	StartDate        *time.Time      `json:"startDate,omitempty"`
-	CreationDate     *time.Time      `json:"creationDate,omitempty"`
-	EndDate          *time.Time      `json:"endDate,omitempty"`
-	Image            *string         `json:"image,omitempty"`
-	Icon             *string         `json:"icon,omitempty"`
-	Active           *bool           `json:"active,omitempty"`
-	Closed           *bool           `json:"closed,omitempty"`
-	Archived         *bool           `json:"archived,omitempty"`
-	Featured         *bool           `json:"featured,omitempty"`
-	Restricted       *bool           `json:"restricted,omitempty"`
-	Liquidity        *float64        `json:"liquidity,omitempty"`
-	Volume           *float64        `json:"volume,omitempty"`
-	OpenInterest     *float64        `json:"openInterest,omitempty"`
-	Category         *string         `json:"category,omitempty"`
-	CreatedAt        *time.Time      `json:"createdAt,omitempty"`
-	UpdatedAt        *time.Time      `json:"updatedAt,omitempty"`
-	CommentCount     *int64          `json:"commentCount,omitempty"`
-	Markets          []Market        `json:"markets,omitempty"`
-	Tags             []Tag           `json:"tags,omitempty"`
-	Raw              json.RawMessage `json:"-"`
+	ID                string            `json:"id"`
+	Ticker            *string           `json:"ticker,omitempty"`
+	Slug              *string           `json:"slug,omitempty"`
+	Title             *string           `json:"title,omitempty"`
+	Description       *string           `json:"description,omitempty"`
+	ResolutionSource  *string           `json:"resolutionSource,omitempty"`
+	StartDate         *time.Time        `json:"startDate,omitempty"`
+	CreationDate      *time.Time        `json:"creationDate,omitempty"`
+	EndDate           *time.Time        `json:"endDate,omitempty"`
+	Image             *string           `json:"image,omitempty"`
+	Icon              *string           `json:"icon,omitempty"`
+	Active            *bool             `json:"active,omitempty"`
+	Closed            *bool             `json:"closed,omitempty"`
+	Archived          *bool             `json:"archived,omitempty"`
+	Featured          *bool             `json:"featured,omitempty"`
+	Restricted        *bool             `json:"restricted,omitempty"`
+	Liquidity         *float64          `json:"liquidity,omitempty"`
+	Volume            *float64          `json:"volume,omitempty"`
+	OpenInterest      *float64          `json:"openInterest,omitempty"`
+	Category          *string           `json:"category,omitempty"`
+	Live              *bool             `json:"live,omitempty"`
+	Ended             *bool             `json:"ended,omitempty"`
+	Score             *string           `json:"score,omitempty"`
+	Period            *string           `json:"period,omitempty"`
+	Elapsed           *string           `json:"elapsed,omitempty"`
+	FinishedTimestamp *string           `json:"finishedTimestamp,omitempty"`
+	GameID            *int64            `json:"gameId,omitempty"`
+	EventDate         *string           `json:"eventDate,omitempty"`
+	StartTime         *time.Time        `json:"startTime,omitempty"`
+	GameStatus        *string           `json:"gameStatus,omitempty"`
+	Sport             json.RawMessage   `json:"sport,omitempty"`
+	Teams             []json.RawMessage `json:"teams,omitempty"`
+	CreatedAt         *time.Time        `json:"createdAt,omitempty"`
+	UpdatedAt         *time.Time        `json:"updatedAt,omitempty"`
+	CommentCount      *int64            `json:"commentCount,omitempty"`
+	Markets           []Market          `json:"markets,omitempty"`
+	Tags              []Tag             `json:"tags,omitempty"`
+	Raw               json.RawMessage   `json:"-"`
 }
 
 type MarketKeysetResponse struct {

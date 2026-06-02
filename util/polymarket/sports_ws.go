@@ -81,15 +81,20 @@ type SportsWSHandler struct {
 }
 
 type SportsWSUpdate struct {
-	Slug              string  `json:"slug"`
-	Live              *bool   `json:"live,omitempty"`
-	Ended             *bool   `json:"ended,omitempty"`
-	Score             *string `json:"score,omitempty"`
-	Period            *string `json:"period,omitempty"`
-	Elapsed           *string `json:"elapsed,omitempty"`
-	LastUpdate        *string `json:"last_update,omitempty"`
-	FinishedTimestamp *string `json:"finished_timestamp,omitempty"`
-	Turn              *string `json:"turn,omitempty"`
+	GameID             *int64  `json:"gameId,omitempty"`
+	LeagueAbbreviation *string `json:"leagueAbbreviation,omitempty"`
+	HomeTeam           *string `json:"homeTeam,omitempty"`
+	AwayTeam           *string `json:"awayTeam,omitempty"`
+	Status             *string `json:"status,omitempty"`
+	Slug               string  `json:"slug"`
+	Live               *bool   `json:"live,omitempty"`
+	Ended              *bool   `json:"ended,omitempty"`
+	Score              *string `json:"score,omitempty"`
+	Period             *string `json:"period,omitempty"`
+	Elapsed            *string `json:"elapsed,omitempty"`
+	LastUpdate         *string `json:"last_update,omitempty"`
+	FinishedTimestamp  *string `json:"finished_timestamp,omitempty"`
+	Turn               *string `json:"turn,omitempty"`
 }
 
 func (c *sportsWSClientImpl) Run(ctx context.Context, handler SportsWSHandler) error {

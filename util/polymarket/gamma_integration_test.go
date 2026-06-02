@@ -157,6 +157,41 @@ func TestIntegrationGamma(t *testing.T) {
 		logIntegrationResponse(t, "Events/ListEventsKeyset", got)
 	})
 
+	t.Run("Events/ListEventsKeysetSportsLiveFields", func(t *testing.T) {
+		requireGroupGate(t, integrationEventsGate)
+		limit := 20
+		live := true
+		closed := false
+		got, err := client.ListEventsKeyset(ctx, ListEventsKeysetOptions{
+			Limit:   &limit,
+			Live:    &live,
+			Closed:  &closed,
+			TagSlug: "sports",
+		})
+		if err != nil {
+			t.Fatalf("ListEventsKeyset sports live fields: %v", err)
+		}
+		if len(got.Events) == 0 {
+			t.Skip("ListEventsKeyset sports live returned no rows")
+		}
+		hasSlug := false
+		for i := range got.Events {
+			if got.Events[i].Slug != nil && strings.TrimSpace(*got.Events[i].Slug) != "" {
+				hasSlug = true
+			}
+			// Verify these fields decode without type errors.
+			_ = got.Events[i].Live
+			_ = got.Events[i].Ended
+			_ = got.Events[i].Score
+			_ = got.Events[i].Period
+			_ = got.Events[i].Elapsed
+		}
+		if !hasSlug {
+			t.Fatal("ListEventsKeyset sports live fields returned no slug values")
+		}
+		logIntegrationResponse(t, "Events/ListEventsKeysetSportsLiveFields", got)
+	})
+
 	t.Run("Events/GetEventByID", func(t *testing.T) {
 		requireGroupGate(t, integrationEventsGate)
 		samples := getSamples(t)
@@ -427,6 +462,38 @@ func TestIntegrationGamma(t *testing.T) {
 			t.Fatal("ListTeams returned no rows")
 		}
 		logIntegrationResponse(t, "Sports/ListTeams", got)
+	})
+
+	t.Run("Sports/BuildSportsLiveSnapshot", func(t *testing.T) {
+		requireGroupGate(t, integrationSportsGate)
+		got, err := BuildSportsLiveSnapshot(ctx, client, SportsLiveSnapshotOptions{})
+		if err != nil {
+			t.Fatalf("BuildSportsLiveSnapshot: %v", err)
+		}
+		if len(got.Live) == 0 && len(got.Soon) == 0 {
+			t.Fatal("BuildSportsLiveSnapshot returned empty live and soon snapshots")
+		}
+		for i := range got.Live {
+			if strings.TrimSpace(got.Live[i].Slug) == "" {
+				t.Fatalf("live[%d] has empty slug", i)
+			}
+			if len(got.Live[i].Markets) == 0 {
+				t.Fatalf("live[%d] has empty market groups", i)
+			}
+		}
+		if len(got.Soon) > 0 {
+			soonMin := got.FetchedAt.Add(-5 * time.Minute)
+			soonMax := got.FetchedAt.Add(defaultSportsLiveSnapshotSoonWindow + 5*time.Minute)
+			for i := range got.Soon {
+				if got.Soon[i].StartTime == nil {
+					t.Fatalf("soon[%d] has nil startTime", i)
+				}
+				if got.Soon[i].StartTime.Before(soonMin) || got.Soon[i].StartTime.After(soonMax) {
+					t.Fatalf("soon[%d] startTime=%s out of window [%s, %s]", i, got.Soon[i].StartTime, soonMin, soonMax)
+				}
+			}
+		}
+		logIntegrationResponse(t, "Sports/BuildSportsLiveSnapshot", got)
 	})
 }
 

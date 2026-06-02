@@ -62,10 +62,15 @@ func TestSportsWSPingPongAndUpdate(t *testing.T) {
 		}
 
 		_ = conn.WriteJSON(map[string]any{
-			"slug":        "abc-def",
-			"live":        true,
-			"score":       "1-0",
-			"last_update": "2026-01-01T00:00:00Z",
+			"slug":               "abc-def",
+			"gameId":             19439,
+			"leagueAbbreviation": "nfl",
+			"homeTeam":           "LAC",
+			"awayTeam":           "BUF",
+			"status":             "InProgress",
+			"live":               true,
+			"score":              "1-0",
+			"last_update":        "2026-01-01T00:00:00Z",
 		})
 		_ = conn.WriteMessage(websocket.TextMessage, []byte(`{"foo":"bar"}`))
 		<-time.After(200 * time.Millisecond)
@@ -119,6 +124,18 @@ func TestSportsWSPingPongAndUpdate(t *testing.T) {
 	case update := <-updateSeen:
 		if update.Slug != "abc-def" {
 			t.Fatalf("slug = %q", update.Slug)
+		}
+		if update.GameID == nil || *update.GameID != 19439 {
+			t.Fatalf("gameId = %v, want 19439", update.GameID)
+		}
+		if update.LeagueAbbreviation == nil || *update.LeagueAbbreviation != "nfl" {
+			t.Fatalf("leagueAbbreviation = %v, want nfl", update.LeagueAbbreviation)
+		}
+		if update.HomeTeam == nil || *update.HomeTeam != "LAC" || update.AwayTeam == nil || *update.AwayTeam != "BUF" {
+			t.Fatalf("teams = (%v, %v), want (LAC, BUF)", update.HomeTeam, update.AwayTeam)
+		}
+		if update.Status == nil || *update.Status != "InProgress" {
+			t.Fatalf("status = %v, want InProgress", update.Status)
 		}
 	case <-ctx.Done():
 		t.Fatal("timed out waiting for update")

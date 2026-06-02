@@ -110,9 +110,9 @@ func TestGammaKeysetEndpointsQueryAndDecode(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/markets/keyset":
-			_, _ = w.Write([]byte(`{"markets":[{"id":"1"}],"next_cursor":"mk1"}`))
+			_, _ = w.Write([]byte(`{"markets":[{"id":"1","sportsMarketType":"moneyline","groupItemTitle":"Main"}],"next_cursor":"mk1"}`))
 		case "/events/keyset":
-			_, _ = w.Write([]byte(`{"events":[{"id":"2"}],"next_cursor":"ev1"}`))
+			_, _ = w.Write([]byte(`{"events":[{"id":"2","slug":"nfl-lac-buf-2025-01-26","live":true,"ended":false,"score":"3-16","period":"Q4","elapsed":"5:18","finishedTimestamp":"2025-01-26T23:00:00Z","gameId":19439,"eventDate":"2025-01-26","startTime":"2025-01-26T20:30:00Z","gameStatus":"InProgress","sport":{"id":1,"sport":"nfl"},"teams":[{"id":1,"abbreviation":"LAC"},{"id":2,"abbreviation":"BUF"}]}],"next_cursor":"ev1"}`))
 		default:
 			http.NotFound(w, r)
 		}
@@ -150,6 +150,12 @@ func TestGammaKeysetEndpointsQueryAndDecode(t *testing.T) {
 	if len(markets.Markets) != 1 || markets.Markets[0].ID != "1" {
 		t.Fatalf("markets payload = %+v", markets.Markets)
 	}
+	if markets.Markets[0].SportsMarketType == nil || *markets.Markets[0].SportsMarketType != "moneyline" {
+		t.Fatalf("sportsMarketType = %v, want moneyline", markets.Markets[0].SportsMarketType)
+	}
+	if markets.Markets[0].GroupItemTitle == nil || *markets.Markets[0].GroupItemTitle != "Main" {
+		t.Fatalf("groupItemTitle = %v, want Main", markets.Markets[0].GroupItemTitle)
+	}
 
 	featured := true
 	includeChildren := true
@@ -173,6 +179,31 @@ func TestGammaKeysetEndpointsQueryAndDecode(t *testing.T) {
 	}
 	if len(events.Events) != 1 || events.Events[0].ID != "2" {
 		t.Fatalf("events payload = %+v", events.Events)
+	}
+	event := events.Events[0]
+	if event.Live == nil || !*event.Live || event.Ended == nil || *event.Ended {
+		t.Fatalf("event live/ended decode = (%v,%v), want (true,false)", event.Live, event.Ended)
+	}
+	if event.Score == nil || *event.Score != "3-16" || event.Period == nil || *event.Period != "Q4" || event.Elapsed == nil || *event.Elapsed != "5:18" {
+		t.Fatalf("event score fields decode = (%v,%v,%v)", event.Score, event.Period, event.Elapsed)
+	}
+	if event.GameID == nil || *event.GameID != 19439 {
+		t.Fatalf("event gameId = %v, want 19439", event.GameID)
+	}
+	if event.EventDate == nil || *event.EventDate != "2025-01-26" {
+		t.Fatalf("event eventDate = %v, want 2025-01-26", event.EventDate)
+	}
+	if event.StartTime == nil || event.StartTime.UTC().Format(time.RFC3339) != "2025-01-26T20:30:00Z" {
+		t.Fatalf("event startTime = %v, want 2025-01-26T20:30:00Z", event.StartTime)
+	}
+	if event.GameStatus == nil || *event.GameStatus != "InProgress" {
+		t.Fatalf("event gameStatus = %v, want InProgress", event.GameStatus)
+	}
+	if len(event.Sport) == 0 {
+		t.Fatal("event sport raw payload is empty")
+	}
+	if len(event.Teams) != 2 {
+		t.Fatalf("event teams len = %d, want 2", len(event.Teams))
 	}
 
 	if len(calls) != 2 {

@@ -95,6 +95,39 @@ POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
 go test -v ./util/polymarket -run '^TestIntegrationGamma$'
 ```
 
+### Gamma Sports Live subtests (console logs)
+
+Use `go test -v` with `POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1` to print integration logs in real time to the terminal.
+
+Run both Sports Live subtests together:
+
+```bash
+POLYMARKET_GAMMA_INTEGRATION=1 \
+POLYMARKET_GAMMA_INTEGRATION_EVENTS=1 \
+POLYMARKET_GAMMA_INTEGRATION_SPORTS=1 \
+POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
+go test -v ./util/polymarket \
+  -run 'TestIntegrationGamma/(Events/ListEventsKeysetSportsLiveFields|Sports/BuildSportsLiveSnapshot)$'
+```
+
+Run each subtest individually (optional):
+
+```bash
+POLYMARKET_GAMMA_INTEGRATION=1 \
+POLYMARKET_GAMMA_INTEGRATION_EVENTS=1 \
+POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
+go test -v ./util/polymarket \
+  -run 'TestIntegrationGamma/Events/ListEventsKeysetSportsLiveFields$'
+```
+
+```bash
+POLYMARKET_GAMMA_INTEGRATION=1 \
+POLYMARKET_GAMMA_INTEGRATION_SPORTS=1 \
+POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
+go test -v ./util/polymarket \
+  -run 'TestIntegrationGamma/Sports/BuildSportsLiveSnapshot$'
+```
+
 ### Data only
 
 Basic mode:
