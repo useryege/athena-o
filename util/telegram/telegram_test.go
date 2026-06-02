@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -347,6 +348,209 @@ func TestEnsureBotProfileValidatesConfig(t *testing.T) {
 	}
 }
 
+func TestEnsureChatProfileUpdatesDriftAndUploadsPhoto(t *testing.T) {
+	var calls []string
+	var gotTitle string
+	var gotDescription string
+	var gotPhotoData string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/bottoken/getMe":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":42,"is_bot":true,"first_name":"ATHENA","username":"athena_bot"}}`))
+		case "/bottoken/getChat":
+			parseMultipartForm(t, r)
+			if r.FormValue("chat_id") != "chat-1" {
+				t.Fatalf("getChat chat_id = %q, want chat-1", r.FormValue("chat_id"))
+			}
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":-1001,"type":"supergroup","title":"Old title","description":"Old description","is_forum":true}}`))
+		case "/bottoken/getChatMember":
+			parseMultipartForm(t, r)
+			if r.FormValue("chat_id") != "chat-1" || r.FormValue("user_id") != "42" {
+				t.Fatalf("getChatMember form = %#v", r.Form)
+			}
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"status":"administrator","user":{"id":42,"is_bot":true,"first_name":"ATHENA"},"can_change_info":true,"can_manage_topics":true}}`))
+		case "/bottoken/setChatTitle":
+			parseMultipartForm(t, r)
+			gotTitle = r.FormValue("title")
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		case "/bottoken/setChatDescription":
+			parseMultipartForm(t, r)
+			gotDescription = r.FormValue("description")
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		case "/bottoken/setChatPhoto":
+			parseMultipartForm(t, r)
+			file, _, err := r.FormFile("photo")
+			if err != nil {
+				t.Fatalf("FormFile photo: %v", err)
+			}
+			defer file.Close()
+			data, err := io.ReadAll(file)
+			if err != nil {
+				t.Fatalf("ReadAll photo: %v", err)
+			}
+			gotPhotoData = string(data)
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{BotToken: "token", ChatID: "chat-1", BaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	result, err := client.EnsureChatProfile(context.Background(), defaultTestChatProfileConfig())
+	if err != nil {
+		t.Fatalf("EnsureChatProfile: %v", err)
+	}
+	if result.ChatID != -1001 || result.ChatType != "supergroup" || !result.IsForum {
+		t.Fatalf("sync result chat identity = %#v", result)
+	}
+	if !result.TitleUpdated || !result.DescriptionUpdated || !result.PhotoUpdated {
+		t.Fatalf("sync result = %#v, want all updates", result)
+	}
+	if gotTitle != "ATHENA Notifications" {
+		t.Fatalf("title = %q", gotTitle)
+	}
+	if gotDescription != "ATHENA notification group for operational alerts and system updates." {
+		t.Fatalf("description = %q", gotDescription)
+	}
+	if gotPhotoData != "chat-photo-bytes" {
+		t.Fatalf("photo data = %q", gotPhotoData)
+	}
+	wantCalls := []string{
+		"/bottoken/getMe",
+		"/bottoken/getChat",
+		"/bottoken/getChatMember",
+		"/bottoken/setChatTitle",
+		"/bottoken/setChatDescription",
+		"/bottoken/setChatPhoto",
+	}
+	if strings.Join(calls, ",") != strings.Join(wantCalls, ",") {
+		t.Fatalf("calls = %v, want %v", calls, wantCalls)
+	}
+}
+
+func TestEnsureChatProfileSkipsMatchingTextAndAlwaysUploadsPhoto(t *testing.T) {
+	var setTitleCalls int
+	var setDescriptionCalls int
+	var setPhotoCalls int
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/bottoken/getMe":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":42,"is_bot":true,"first_name":"ATHENA","username":"athena_bot"}}`))
+		case "/bottoken/getChat":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":-1001,"type":"supergroup","title":"ATHENA Notifications","description":"ATHENA notification group for operational alerts and system updates.","is_forum":false}}`))
+		case "/bottoken/getChatMember":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"status":"administrator","user":{"id":42,"is_bot":true,"first_name":"ATHENA"},"can_change_info":true}}`))
+		case "/bottoken/setChatTitle":
+			setTitleCalls++
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		case "/bottoken/setChatDescription":
+			setDescriptionCalls++
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		case "/bottoken/setChatPhoto":
+			setPhotoCalls++
+			parseMultipartForm(t, r)
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{BotToken: "token", ChatID: "chat-1", BaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	result, err := client.EnsureChatProfile(context.Background(), defaultTestChatProfileConfig())
+	if err != nil {
+		t.Fatalf("EnsureChatProfile: %v", err)
+	}
+	if result.TitleUpdated || result.DescriptionUpdated || !result.PhotoUpdated {
+		t.Fatalf("sync result = %#v, want only photo update", result)
+	}
+	if setTitleCalls != 0 || setDescriptionCalls != 0 || setPhotoCalls != 1 {
+		t.Fatalf("set calls title=%d description=%d photo=%d", setTitleCalls, setDescriptionCalls, setPhotoCalls)
+	}
+}
+
+func TestEnsureChatProfileRequiresMembershipAndRights(t *testing.T) {
+	tests := []struct {
+		name         string
+		chatIsForum  bool
+		memberResult string
+		want         string
+	}{
+		{name: "member only", memberResult: `{"status":"member","user":{"id":42,"is_bot":true,"first_name":"ATHENA"}}`, want: "not an administrator"},
+		{name: "left", memberResult: `{"status":"left","user":{"id":42,"is_bot":true,"first_name":"ATHENA"}}`, want: "not in chat"},
+		{name: "kicked", memberResult: `{"status":"kicked","user":{"id":42,"is_bot":true,"first_name":"ATHENA"}}`, want: "not in chat"},
+		{name: "administrator without change info", memberResult: `{"status":"administrator","user":{"id":42,"is_bot":true,"first_name":"ATHENA"},"can_change_info":false,"can_manage_topics":true}`, want: "can_change_info"},
+		{name: "forum administrator without manage topics", chatIsForum: true, memberResult: `{"status":"administrator","user":{"id":42,"is_bot":true,"first_name":"ATHENA"},"can_change_info":true,"can_manage_topics":false}`, want: "can_manage_topics"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				switch r.URL.Path {
+				case "/bottoken/getMe":
+					_, _ = w.Write([]byte(`{"ok":true,"result":{"id":42,"is_bot":true,"first_name":"ATHENA","username":"athena_bot"}}`))
+				case "/bottoken/getChat":
+					_, _ = w.Write([]byte(fmt.Sprintf(`{"ok":true,"result":{"id":-1001,"type":"supergroup","title":"Old title","description":"Old description","is_forum":%t}}`, tt.chatIsForum)))
+				case "/bottoken/getChatMember":
+					_, _ = w.Write([]byte(`{"ok":true,"result":` + tt.memberResult + `}`))
+				default:
+					t.Fatalf("unexpected path %s", r.URL.Path)
+				}
+			}))
+			defer server.Close()
+
+			client, err := NewClient(Config{BotToken: "token", ChatID: "chat-1", BaseURL: server.URL})
+			if err != nil {
+				t.Fatalf("NewClient: %v", err)
+			}
+			_, err = client.EnsureChatProfile(context.Background(), defaultTestChatProfileConfig())
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("error = %v, want contains %q", err, tt.want)
+			}
+		})
+	}
+}
+
+func TestEnsureChatProfileValidatesConfig(t *testing.T) {
+	client, err := NewClient(Config{BotToken: "token", ChatID: "chat-1"})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	tests := []struct {
+		name   string
+		config ChatProfileConfig
+		want   string
+	}{
+		{name: "missing title", config: ChatProfileConfig{Photo: SetChatPhotoRequest{Filename: "avatar.jpg", Data: []byte("x")}}, want: "title is required"},
+		{name: "long title", config: ChatProfileConfig{Title: strings.Repeat("a", 129), Photo: SetChatPhotoRequest{Filename: "avatar.jpg", Data: []byte("x")}}, want: "title must be at most 128"},
+		{name: "long description", config: ChatProfileConfig{Title: "ATHENA", Description: strings.Repeat("a", 256), Photo: SetChatPhotoRequest{Filename: "avatar.jpg", Data: []byte("x")}}, want: "description must be at most 255"},
+		{name: "missing photo", config: ChatProfileConfig{Title: "ATHENA", Photo: SetChatPhotoRequest{Filename: "avatar.jpg"}}, want: "photo data is required"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := client.EnsureChatProfile(context.Background(), tt.config)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("error = %v, want contains %q", err, tt.want)
+			}
+		})
+	}
+}
+
 func defaultTestBotProfileConfig() BotProfileConfig {
 	return BotProfileConfig{
 		Name:             "ATHENA",
@@ -355,6 +559,17 @@ func defaultTestBotProfileConfig() BotProfileConfig {
 		ProfilePhoto: SetMyProfilePhotoRequest{
 			Filename: "telegram-bot-avatar.jpg",
 			Data:     []byte("photo-bytes"),
+		},
+	}
+}
+
+func defaultTestChatProfileConfig() ChatProfileConfig {
+	return ChatProfileConfig{
+		Title:       "ATHENA Notifications",
+		Description: "ATHENA notification group for operational alerts and system updates.",
+		Photo: SetChatPhotoRequest{
+			Filename: "telegram-group-avatar.jpg",
+			Data:     []byte("chat-photo-bytes"),
 		},
 	}
 }

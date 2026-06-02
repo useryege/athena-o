@@ -35,6 +35,9 @@ const (
 	defaultTelegramBotProfileShortDescription = "ATHENA operational alerts"
 	defaultTelegramBotProfileDescription      = "ATHENA notification bot for operational alerts and system updates."
 	defaultTelegramBotProfilePhotoPath        = "telegram-bot-avatar.jpg"
+	defaultTelegramChatProfileTitle           = "ATHENA Notifications"
+	defaultTelegramChatProfileDescription     = "ATHENA notification group for operational alerts and system updates."
+	defaultTelegramChatProfilePhotoPath       = "telegram-group-avatar.jpg"
 )
 
 func NewCommand() *cobra.Command {
@@ -82,11 +85,15 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			chatProfileConfig, err := defaultTelegramChatProfileConfig()
+			if err != nil {
+				return err
+			}
 
 			server, err := notification.NewServer(notification.ServerOpts{
 				Store:         store,
 				Sender:        notification.NewTelegramSender(telegramClient),
-				ProfileSyncer: notification.NewTelegramProfileSyncer(telegramClient, profileConfig),
+				ProfileSyncer: notification.NewTelegramProfileSyncer(telegramClient, profileConfig, chatProfileConfig),
 			})
 			if err != nil {
 				return err
@@ -153,6 +160,21 @@ func defaultTelegramBotProfileConfig() (utiltelegram.BotProfileConfig, error) {
 		Description:      env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_DESCRIPTION", defaultTelegramBotProfileDescription),
 		ProfilePhoto: utiltelegram.SetMyProfilePhotoRequest{
 			Filename: defaultTelegramBotProfilePhotoPath,
+			Data:     photo,
+		},
+	}, nil
+}
+
+func defaultTelegramChatProfileConfig() (utiltelegram.ChatProfileConfig, error) {
+	photo, err := assets.Embedded.ReadFile(defaultTelegramChatProfilePhotoPath)
+	if err != nil {
+		return utiltelegram.ChatProfileConfig{}, fmt.Errorf("failed to read default telegram chat avatar: %w", err)
+	}
+	return utiltelegram.ChatProfileConfig{
+		Title:       env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_TITLE", defaultTelegramChatProfileTitle),
+		Description: env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_DESCRIPTION", defaultTelegramChatProfileDescription),
+		Photo: utiltelegram.SetChatPhotoRequest{
+			Filename: defaultTelegramChatProfilePhotoPath,
 			Data:     photo,
 		},
 	}, nil
