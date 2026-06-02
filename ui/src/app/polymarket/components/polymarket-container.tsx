@@ -223,7 +223,6 @@ export const PolymarketContainer = () => {
                                                     <div className='polymarket-live__headline'>
                                                         <span className='polymarket-live__live-dot' />
                                                         <span className='polymarket-live__live-text'>{event.period || 'LIVE'}</span>
-                                                        <span className='polymarket-live__score'>{event.score || '-'}</span>
                                                     </div>
                                                     <div className='polymarket-live__header-meta'>
                                                         <span>Vol {formatNumber(sumMoneylineVolume(event))}</span>
@@ -239,12 +238,12 @@ export const PolymarketContainer = () => {
                                                         </button>
                                                         <div className='polymarket-live__event-subtitle'>{event.gameStatus || event.elapsed || '-'}</div>
                                                     </div>
+                                                    <div className='polymarket-live__score'>{event.score || '-'}</div>
                                                 </div>
 
                                                 <div className='polymarket-live__groups'>
                                                     {moneylineGroup && (
                                                         <section className='polymarket-live__group'>
-                                                            <div className='polymarket-live__group-title'>Moneyline</div>
                                                             <div className='polymarket-live__outcomes'>
                                                                 {(moneylineGroup.markets || []).map(market => {
                                                                     const outcomes = market.outcomes || [];

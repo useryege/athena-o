@@ -31,7 +31,7 @@
 
     &__card {
         border: 1px solid #d5dae5;
-        border-radius: 12px;
+        border-radius: 8px;
         background: var(--card-bg);
         overflow: hidden;
     }
@@ -69,8 +69,12 @@
 
     &__score {
         color: var(--text-main);
-        font-size: 14px;
-        font-weight: 700;
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.12;
+        text-align: right;
+        max-width: 240px;
+        overflow-wrap: anywhere;
     }
 
     &__header-meta {
@@ -83,8 +87,8 @@
 
     &__event-main {
         display: grid;
-        grid-template-columns: 40px 1fr;
-        gap: 10px;
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        gap: 12px;
         align-items: center;
         padding: 12px;
     }
@@ -146,18 +150,9 @@
 
     &__group {
         border: 1px solid #edf1f7;
-        border-radius: 10px;
+        border-radius: 8px;
         padding: 10px;
         background: #fcfdff;
-    }
-
-    &__group-title {
-        color: #344054;
-        font-size: 12px;
-        font-weight: 700;
-        margin-bottom: 8px;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
     }
 
     &__outcomes {
@@ -231,6 +226,18 @@
             gap: 10px;
             flex-wrap: wrap;
             white-space: normal;
+        }
+
+        &__event-main {
+            grid-template-columns: 40px minmax(0, 1fr);
+            align-items: start;
+        }
+
+        &__score {
+            grid-column: 1 / -1;
+            text-align: left;
+            max-width: none;
+            font-size: 20px;
         }
 
         &__outcomes {
