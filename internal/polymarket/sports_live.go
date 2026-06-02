@@ -38,6 +38,9 @@ func (s *Service) runFullSyncLoop(ctx context.Context) {
 	if err := s.refreshSportsLiveSnapshot(ctx); err != nil {
 		log.WithError(err).Warn("initial polymarket sports live sync failed")
 	}
+	if err := s.refreshSportsLiveEventSnapshot(ctx); err != nil {
+		log.WithError(err).Warn("initial polymarket sports live event sync failed")
+	}
 	ticker := time.NewTicker(s.syncInterval)
 	defer ticker.Stop()
 	for {
@@ -47,6 +50,9 @@ func (s *Service) runFullSyncLoop(ctx context.Context) {
 		case <-ticker.C:
 			if err := s.refreshSportsLiveSnapshot(ctx); err != nil {
 				log.WithError(err).Warn("periodic polymarket sports live sync failed")
+			}
+			if err := s.refreshSportsLiveEventSnapshot(ctx); err != nil {
+				log.WithError(err).Warn("periodic polymarket sports live event sync failed")
 			}
 		}
 	}

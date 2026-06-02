@@ -20,9 +20,11 @@ func (f *fakePolymarketClientset) NewPolymarketServiceClient() (utilio.Closer, p
 }
 
 type fakePolymarketServiceClient struct {
-	statusResp    *v1alpha1.PolymarketStatus
-	liveListResp  *polymarketapiclient.ListPolymarketSportsLiveMarketsResponse
-	lastListLimit int32
+	statusResp        *v1alpha1.PolymarketStatus
+	liveListResp      *polymarketapiclient.ListPolymarketSportsLiveMarketsResponse
+	liveSnapshotResp  *polymarketapiclient.GetPolymarketSportsLiveSnapshotResponse
+	lastListLimit     int32
+	lastSnapshotLimit int32
 }
 
 func (f *fakePolymarketServiceClient) GetPolymarketStatus(context.Context, *polymarketapiclient.GetPolymarketStatusRequest, ...grpc.CallOption) (*v1alpha1.PolymarketStatus, error) {
@@ -38,6 +40,14 @@ func (f *fakePolymarketServiceClient) ListPolymarketSportsLiveMarkets(_ context.
 		return f.liveListResp, nil
 	}
 	return &polymarketapiclient.ListPolymarketSportsLiveMarketsResponse{}, nil
+}
+
+func (f *fakePolymarketServiceClient) GetPolymarketSportsLiveSnapshot(_ context.Context, req *polymarketapiclient.GetPolymarketSportsLiveSnapshotRequest, _ ...grpc.CallOption) (*polymarketapiclient.GetPolymarketSportsLiveSnapshotResponse, error) {
+	f.lastSnapshotLimit = req.GetLimit()
+	if f.liveSnapshotResp != nil {
+		return f.liveSnapshotResp, nil
+	}
+	return &polymarketapiclient.GetPolymarketSportsLiveSnapshotResponse{}, nil
 }
 
 func TestGetPolymarketStatusForwardsResponse(t *testing.T) {
@@ -79,5 +89,42 @@ func TestListPolymarketSportsLiveMarketsForwardsResponse(t *testing.T) {
 	}
 	if len(resp.GetItems()) != 1 || resp.GetItems()[0].ConditionID != "cond-1" || !resp.GetStale() || resp.GetFetchedAt() != 1717000000 {
 		t.Fatalf("response = %#v, want forwarded sports live list", resp)
+	}
+}
+
+func TestGetPolymarketSportsLiveSnapshotForwardsResponse(t *testing.T) {
+	client := &fakePolymarketServiceClient{
+		liveSnapshotResp: &polymarketapiclient.GetPolymarketSportsLiveSnapshotResponse{
+			Events: []*v1alpha1.PolymarketSportsLiveEventItem{
+				{
+					EventSlug: "event-1",
+					Title:     "Event 1",
+					Markets: []*v1alpha1.PolymarketSportsLiveMarketGroupItem{
+						{
+							Type:  "moneyline",
+							Title: "Moneyline",
+							Markets: []*v1alpha1.PolymarketSportsLiveMarketOptionItem{
+								{MarketSlug: "market-1", Outcomes: []string{"YES"}, OutcomePrices: []string{"0.52"}},
+							},
+						},
+					},
+				},
+			},
+			FetchedAt: 1717000000,
+			Stale:     false,
+		},
+	}
+
+	resp, err := NewServer(&fakePolymarketClientset{client: client}).GetPolymarketSportsLiveSnapshot(context.Background(), &polymarketpkg.GetPolymarketSportsLiveSnapshotRequest{
+		Limit: 15,
+	})
+	if err != nil {
+		t.Fatalf("GetPolymarketSportsLiveSnapshot: %v", err)
+	}
+	if client.lastSnapshotLimit != 15 {
+		t.Fatalf("forwarded limit = %d, want 15", client.lastSnapshotLimit)
+	}
+	if len(resp.GetEvents()) != 1 || resp.GetEvents()[0].EventSlug != "event-1" || resp.GetFetchedAt() != 1717000000 || resp.GetStale() {
+		t.Fatalf("response = %#v, want forwarded sports live snapshot", resp)
 	}
 }

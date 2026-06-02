@@ -18,3 +18,37 @@ type PolymarketSportsLiveMarketItem struct {
 	LiquidityNum float64 `protobuf:"fixed64,10,opt,name=liquidityNum" json:"liquidityNum"`
 	VolumeNum    float64 `protobuf:"fixed64,11,opt,name=volumeNum" json:"volumeNum"`
 }
+
+type PolymarketSportsLiveMarketOptionItem struct {
+	ConditionID    string   `protobuf:"bytes,1,opt,name=conditionId" json:"conditionId"`
+	MarketSlug     string   `protobuf:"bytes,2,opt,name=marketSlug" json:"marketSlug"`
+	Question       string   `protobuf:"bytes,3,opt,name=question" json:"question"`
+	Outcomes       []string `protobuf:"bytes,4,rep,name=outcomes" json:"outcomes"`
+	OutcomePrices  []string `protobuf:"bytes,5,rep,name=outcomePrices" json:"outcomePrices"`
+	BestBid        float64  `protobuf:"fixed64,6,opt,name=bestBid" json:"bestBid"`
+	BestAsk        float64  `protobuf:"fixed64,7,opt,name=bestAsk" json:"bestAsk"`
+	LastTradePrice float64  `protobuf:"fixed64,8,opt,name=lastTradePrice" json:"lastTradePrice"`
+	VolumeNum      float64  `protobuf:"fixed64,9,opt,name=volumeNum" json:"volumeNum"`
+	LiquidityNum   float64  `protobuf:"fixed64,10,opt,name=liquidityNum" json:"liquidityNum"`
+}
+
+type PolymarketSportsLiveMarketGroupItem struct {
+	Type    string                                  `protobuf:"bytes,1,opt,name=type" json:"type"`
+	Title   string                                  `protobuf:"bytes,2,opt,name=title" json:"title"`
+	Markets []*PolymarketSportsLiveMarketOptionItem `protobuf:"bytes,3,rep,name=markets" json:"markets"`
+}
+
+type PolymarketSportsLiveEventItem struct {
+	EventSlug  string                                 `protobuf:"bytes,1,opt,name=eventSlug" json:"eventSlug"`
+	Title      string                                 `protobuf:"bytes,2,opt,name=title" json:"title"`
+	Image      string                                 `protobuf:"bytes,3,opt,name=image" json:"image"`
+	Score      string                                 `protobuf:"bytes,4,opt,name=score" json:"score"`
+	Period     string                                 `protobuf:"bytes,5,opt,name=period" json:"period"`
+	Elapsed    string                                 `protobuf:"bytes,6,opt,name=elapsed" json:"elapsed"`
+	LastUpdate string                                 `protobuf:"bytes,7,opt,name=lastUpdate" json:"lastUpdate"`
+	Live       bool                                   `protobuf:"varint,8,opt,name=live" json:"live"`
+	Ended      bool                                   `protobuf:"varint,9,opt,name=ended" json:"ended"`
+	GameStatus string                                 `protobuf:"bytes,10,opt,name=gameStatus" json:"gameStatus"`
+	StartTime  string                                 `protobuf:"bytes,11,opt,name=startTime" json:"startTime"`
+	Markets    []*PolymarketSportsLiveMarketGroupItem `protobuf:"bytes,12,rep,name=markets" json:"markets"`
+}

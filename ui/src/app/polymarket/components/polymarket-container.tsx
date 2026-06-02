@@ -2,12 +2,13 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 
 import {services} from '../../shared/services';
-import {PolymarketSportsLiveMarketItem} from '../../shared/services/polymarket-service';
+import {PolymarketSportsLiveEventItem, PolymarketSportsLiveMarketOptionItem} from '../../shared/services/polymarket-service';
 
 require('./polymarket-container.scss');
 
 const POLL_INTERVAL_MS = 2000;
-const DEFAULT_LIMIT = 200;
+const DEFAULT_LIMIT = 30;
+const POLYMARKET_SPORTS_LIVE_URL = 'https://polymarket.com/sports/live';
 
 const isAbortedError = (err: unknown) =>
     String((err as any)?.message || '')
@@ -39,16 +40,64 @@ const formatNumber = (value?: number) => {
     return value.toLocaleString(undefined, {maximumFractionDigits: 2});
 };
 
-const MarketLogo = ({market}: {market: PolymarketSportsLiveMarketItem}) => {
-    const [failed, setFailed] = React.useState(false);
-
-    React.useEffect(() => setFailed(false), [market.image]);
-
-    return <span className='polymarket-live__logo'>{market.image && !failed ? <img src={market.image} alt='' onError={() => setFailed(true)} /> : <span>P</span>}</span>;
+const formatPrice = (value?: string) => {
+    if (!value) {
+        return '-';
+    }
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+        return value;
+    }
+    return numeric.toFixed(2);
 };
 
+const eventURL = (eventSlug?: string) => {
+    const slug = String(eventSlug || '').trim();
+    if (!slug) {
+        return POLYMARKET_SPORTS_LIVE_URL;
+    }
+    return `https://polymarket.com/event/${slug}`;
+};
+
+const marketURL = (marketSlug?: string) => {
+    const slug = String(marketSlug || '').trim();
+    if (!slug) {
+        return POLYMARKET_SPORTS_LIVE_URL;
+    }
+    return `https://polymarket.com/event/${slug}`;
+};
+
+const openExternal = (url: string) => {
+    try {
+        const opened = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!opened) {
+            window.open(POLYMARKET_SPORTS_LIVE_URL, '_blank', 'noopener,noreferrer');
+        }
+    } catch {
+        window.open(POLYMARKET_SPORTS_LIVE_URL, '_blank', 'noopener,noreferrer');
+    }
+};
+
+const sumEventVolume = (event: PolymarketSportsLiveEventItem) =>
+    (event.markets || []).reduce((total, group) => total + (group.markets || []).reduce((groupTotal, market) => groupTotal + (market.volumeNum || 0), 0), 0);
+
+const EventLogo = ({event}: {event: PolymarketSportsLiveEventItem}) => {
+    const [failed, setFailed] = React.useState(false);
+
+    React.useEffect(() => setFailed(false), [event.image]);
+
+    return <span className='polymarket-live__logo'>{event.image && !failed ? <img src={event.image} alt='' onError={() => setFailed(true)} /> : <span>P</span>}</span>;
+};
+
+const MarketOutcomeButton = ({market, outcome, price, onClick}: {market: PolymarketSportsLiveMarketOptionItem; outcome: string; price?: string; onClick: () => void}) => (
+    <button type='button' className='polymarket-live__outcome' onClick={onClick} title={market.question || market.marketSlug || ''}>
+        <span className='polymarket-live__outcome-label'>{outcome || market.question || market.marketSlug || '-'}</span>
+        <span className='polymarket-live__outcome-price'>{formatPrice(price)}</span>
+    </button>
+);
+
 export const PolymarketContainer = () => {
-    const [markets, setMarkets] = React.useState<PolymarketSportsLiveMarketItem[]>([]);
+    const [events, setEvents] = React.useState<PolymarketSportsLiveEventItem[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
     const [error, setError] = React.useState<Error | null>(null);
@@ -57,7 +106,7 @@ export const PolymarketContainer = () => {
     const mountedRef = React.useRef(false);
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
 
-    const loadMarkets = React.useCallback(async () => {
+    const loadSnapshot = React.useCallback(async () => {
         if (requestRef.current?.abort) {
             requestRef.current.abort();
         }
@@ -65,12 +114,12 @@ export const PolymarketContainer = () => {
             setRefreshing(true);
         }
 
-        const req = services.polymarket.listSportsLiveMarkets(DEFAULT_LIMIT);
+        const req = services.polymarket.getSportsLiveSnapshot(DEFAULT_LIMIT);
         requestRef.current = req;
         try {
             const data = await req;
             if (mountedRef.current && requestRef.current === req) {
-                setMarkets(data.items || []);
+                setEvents(data.events || []);
                 setFetchedAt(data.fetchedAt);
                 setStale(Boolean(data.stale));
                 setError(null);
@@ -92,7 +141,7 @@ export const PolymarketContainer = () => {
 
     React.useEffect(() => {
         mountedRef.current = true;
-        loadMarkets();
+        loadSnapshot();
 
         return () => {
             mountedRef.current = false;
@@ -100,7 +149,7 @@ export const PolymarketContainer = () => {
                 requestRef.current.abort();
             }
         };
-    }, [loadMarkets]);
+    }, [loadSnapshot]);
 
     React.useEffect(() => {
         let interval: number | undefined;
@@ -118,7 +167,7 @@ export const PolymarketContainer = () => {
         const startPolling = () => {
             stopPolling();
             if (!document.hidden) {
-                interval = window.setInterval(() => loadMarkets(), POLL_INTERVAL_MS);
+                interval = window.setInterval(() => loadSnapshot(), POLL_INTERVAL_MS);
             }
         };
         const onVisibilityChange = () => {
@@ -127,7 +176,7 @@ export const PolymarketContainer = () => {
                 abortCurrentRequest();
                 return;
             }
-            loadMarkets();
+            loadSnapshot();
             startPolling();
         };
 
@@ -138,74 +187,90 @@ export const PolymarketContainer = () => {
             stopPolling();
             abortCurrentRequest();
         };
-    }, [loadMarkets]);
+    }, [loadSnapshot]);
 
     return (
         <Page title='Polymarket' toolbar={{breadcrumbs: [{title: 'Polymarket'}]}}>
             <div className='polymarket-live'>
                 {error && (
                     <div className='polymarket-live__error'>
-                        <i className='fa fa-exclamation-triangle' /> Failed to load Polymarket Sports live markets: {error.message}
+                        <i className='fa fa-exclamation-triangle' /> Failed to load Polymarket Sports live snapshot: {error.message}
                     </div>
                 )}
 
-                {loading && markets.length === 0 ? (
-                    <MockupList height={50} marginTop={30} />
+                {loading && events.length === 0 ? (
+                    <MockupList height={130} marginTop={30} />
                 ) : (
                     <div className='argo-container'>
                         <div className='white-box polymarket-live__box'>
                             <div className='polymarket-live__status'>
-                                <span>Rows: {markets.length}</span>
+                                <span>Events: {events.length}</span>
                                 <span>Fetched At: {formatFetchedAt(fetchedAt)}</span>
                                 <span>Refresh: {refreshing ? 'Updating' : 'Idle'}</span>
                                 <span>Snapshot: {stale ? 'Stale' : 'Fresh'}</span>
                             </div>
 
                             <div className='polymarket-live__list'>
-                                {markets.length === 0 ? (
-                                    <div className='polymarket-live__empty'>No Sports Live markets found</div>
+                                {events.length === 0 ? (
+                                    <div className='polymarket-live__empty'>No Sports Live events found</div>
                                 ) : (
-                                    markets.map(market => (
-                                        <div key={market.conditionId || market.marketSlug} className='polymarket-live__item'>
-                                            <MarketLogo market={market} />
-                                            <div className='polymarket-live__main'>
-                                                <div className='polymarket-live__title' title={market.title}>
-                                                    {market.title || '-'}
+                                    events.map(event => (
+                                        <article key={event.eventSlug} className='polymarket-live__card'>
+                                            <div className='polymarket-live__card-header'>
+                                                <div className='polymarket-live__headline'>
+                                                    <span className='polymarket-live__live-dot' />
+                                                    <span className='polymarket-live__live-text'>{event.period || 'LIVE'}</span>
+                                                    <span className='polymarket-live__score'>{event.score || '-'}</span>
                                                 </div>
-                                                <div className='polymarket-live__slug' title={market.marketSlug}>
-                                                    {market.marketSlug || '-'}
-                                                </div>
-                                                <div className='polymarket-live__slug' title={market.eventSlug}>
-                                                    event: {market.eventSlug || '-'}
-                                                </div>
-                                            </div>
-                                            <div className='polymarket-live__meta'>
-                                                <div className='polymarket-live__metric'>
-                                                    <span>Score</span>
-                                                    <strong>{market.score || '-'}</strong>
-                                                </div>
-                                                <div className='polymarket-live__metric'>
-                                                    <span>Period</span>
-                                                    <strong>{market.period || '-'}</strong>
-                                                </div>
-                                                <div className='polymarket-live__metric'>
-                                                    <span>Elapsed</span>
-                                                    <strong>{market.elapsed || '-'}</strong>
-                                                </div>
-                                                <div className='polymarket-live__metric'>
-                                                    <span>Last Update</span>
-                                                    <strong>{formatLastUpdate(market.lastUpdate)}</strong>
-                                                </div>
-                                                <div className='polymarket-live__metric'>
-                                                    <span>Liquidity</span>
-                                                    <strong>{formatNumber(market.liquidityNum)}</strong>
-                                                </div>
-                                                <div className='polymarket-live__metric'>
-                                                    <span>Volume</span>
-                                                    <strong>{formatNumber(market.volumeNum)}</strong>
+                                                <div className='polymarket-live__header-meta'>
+                                                    <span>Vol {formatNumber(sumEventVolume(event))}</span>
+                                                    <span>Updated {formatLastUpdate(event.lastUpdate)}</span>
                                                 </div>
                                             </div>
-                                        </div>
+
+                                            <div className='polymarket-live__event-main'>
+                                                <EventLogo event={event} />
+                                                <div className='polymarket-live__event-body'>
+                                                    <button type='button' className='polymarket-live__event-link' onClick={() => openExternal(eventURL(event.eventSlug))}>
+                                                        {event.title || event.eventSlug || '-'}
+                                                    </button>
+                                                    <div className='polymarket-live__event-subtitle'>{event.gameStatus || event.elapsed || '-'}</div>
+                                                </div>
+                                            </div>
+
+                                            <div className='polymarket-live__groups'>
+                                                {(event.markets || []).map(group => (
+                                                    <section key={`${event.eventSlug}-${group.type}-${group.title}`} className='polymarket-live__group'>
+                                                        <div className='polymarket-live__group-title'>{group.title || group.type || 'Market'}</div>
+                                                        <div className='polymarket-live__outcomes'>
+                                                            {(group.markets || []).map(market => {
+                                                                const outcomes = market.outcomes || [];
+                                                                const prices = market.outcomePrices || [];
+                                                                if (outcomes.length > 0) {
+                                                                    return outcomes.map((outcome, idx) => (
+                                                                        <MarketOutcomeButton
+                                                                            key={`${market.marketSlug}-${outcome}-${idx}`}
+                                                                            market={market}
+                                                                            outcome={outcome}
+                                                                            price={prices[idx]}
+                                                                            onClick={() => openExternal(marketURL(market.marketSlug))}
+                                                                        />
+                                                                    ));
+                                                                }
+                                                                return (
+                                                                    <MarketOutcomeButton
+                                                                        key={market.marketSlug || market.conditionId}
+                                                                        market={market}
+                                                                        outcome={market.question || market.marketSlug || '-'}
+                                                                        onClick={() => openExternal(marketURL(market.marketSlug))}
+                                                                    />
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </section>
+                                                ))}
+                                            </div>
+                                        </article>
                                     ))
                                 )}
                             </div>

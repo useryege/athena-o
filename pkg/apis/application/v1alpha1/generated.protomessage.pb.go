@@ -35,7 +35,13 @@ func (*NotificationStatus) ProtoMessage() {}
 
 func (*PairV2State) ProtoMessage() {}
 
+func (*PolymarketSportsLiveEventItem) ProtoMessage() {}
+
+func (*PolymarketSportsLiveMarketGroupItem) ProtoMessage() {}
+
 func (*PolymarketSportsLiveMarketItem) ProtoMessage() {}
+
+func (*PolymarketSportsLiveMarketOptionItem) ProtoMessage() {}
 
 func (*PolymarketStatus) ProtoMessage() {}
 

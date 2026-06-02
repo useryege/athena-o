@@ -22,10 +22,25 @@ message ListPolymarketSportsLiveMarketsResponse {
   bool stale = 3;
 }
 
+// GetPolymarketSportsLiveSnapshotRequest queries sports live event cards.
+message GetPolymarketSportsLiveSnapshotRequest {
+  int32 limit = 1;
+}
+
+// GetPolymarketSportsLiveSnapshotResponse returns sports live event cards.
+message GetPolymarketSportsLiveSnapshotResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsLiveEventItem events = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
+}
+
 service PolymarketService {
   // GetPolymarketStatus returns the polymarket service runtime status.
   rpc GetPolymarketStatus(GetPolymarketStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketStatus);
 
   // ListPolymarketSportsLiveMarkets returns sports live market rows.
   rpc ListPolymarketSportsLiveMarkets(ListPolymarketSportsLiveMarketsRequest) returns (ListPolymarketSportsLiveMarketsResponse);
+
+  // GetPolymarketSportsLiveSnapshot returns sports live event cards.
+  rpc GetPolymarketSportsLiveSnapshot(GetPolymarketSportsLiveSnapshotRequest) returns (GetPolymarketSportsLiveSnapshotResponse);
 }

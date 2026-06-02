@@ -416,6 +416,40 @@ message PairV2State {
   optional string feeAddressHoldLiquidityRatio = 15;
 }
 
+message PolymarketSportsLiveEventItem {
+  optional string eventSlug = 1;
+
+  optional string title = 2;
+
+  optional string image = 3;
+
+  optional string score = 4;
+
+  optional string period = 5;
+
+  optional string elapsed = 6;
+
+  optional string lastUpdate = 7;
+
+  optional bool live = 8;
+
+  optional bool ended = 9;
+
+  optional string gameStatus = 10;
+
+  optional string startTime = 11;
+
+  repeated PolymarketSportsLiveMarketGroupItem markets = 12;
+}
+
+message PolymarketSportsLiveMarketGroupItem {
+  optional string type = 1;
+
+  optional string title = 2;
+
+  repeated PolymarketSportsLiveMarketOptionItem markets = 3;
+}
+
 message PolymarketSportsLiveMarketItem {
   optional string conditionId = 1;
 
@@ -438,6 +472,28 @@ message PolymarketSportsLiveMarketItem {
   optional double liquidityNum = 10;
 
   optional double volumeNum = 11;
+}
+
+message PolymarketSportsLiveMarketOptionItem {
+  optional string conditionId = 1;
+
+  optional string marketSlug = 2;
+
+  optional string question = 3;
+
+  repeated string outcomes = 4;
+
+  repeated string outcomePrices = 5;
+
+  optional double bestBid = 6;
+
+  optional double bestAsk = 7;
+
+  optional double lastTradePrice = 8;
+
+  optional double volumeNum = 9;
+
+  optional double liquidityNum = 10;
 }
 
 message PolymarketStatus {

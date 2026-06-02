@@ -18,6 +18,8 @@ import (
 const (
 	defaultSportsLiveListLimit       = 200
 	maxSportsLiveListLimit           = 1000
+	defaultSportsLiveSnapshotLimit   = 30
+	maxSportsLiveSnapshotLimit       = 100
 	defaultSportsLiveSyncInterval    = 10 * time.Second
 	defaultSportsLiveEventPageLimit  = 500
 	defaultSportsLiveInitialSyncWait = 15 * time.Second
@@ -83,9 +85,12 @@ type Service struct {
 	cacheMu         sync.RWMutex
 	baseMarkets     []sportsLiveMarket
 	snapshotItems   []*v1alpha1.PolymarketSportsLiveMarketItem
+	snapshotEvents  []*v1alpha1.PolymarketSportsLiveEventItem
 	sportsWSState   map[string]sportsLiveWSState
 	snapshotFetched int64
 	snapshotStale   bool
+	eventFetched    int64
+	eventStale      bool
 	syncGroup       singleflight.Group
 }
 
@@ -205,6 +210,38 @@ func (s *Service) ListPolymarketSportsLiveMarkets(ctx context.Context, req *apic
 	return resp, nil
 }
 
+func (s *Service) GetPolymarketSportsLiveSnapshot(ctx context.Context, req *apiclient.GetPolymarketSportsLiveSnapshotRequest) (*apiclient.GetPolymarketSportsLiveSnapshotResponse, error) {
+	s.startStopMu.Lock()
+	started := s.started
+	s.startStopMu.Unlock()
+	if !started {
+		return nil, status.Error(codes.FailedPrecondition, "polymarket service is not running")
+	}
+
+	limit := defaultSportsLiveSnapshotLimit
+	if req != nil && req.GetLimit() > 0 {
+		limit = int(req.GetLimit())
+	}
+	if limit < 1 || limit > maxSportsLiveSnapshotLimit {
+		return nil, status.Errorf(codes.InvalidArgument, "limit must be between 1 and %d", maxSportsLiveSnapshotLimit)
+	}
+
+	if !s.hasEventSnapshot() {
+		syncCtx, cancel := context.WithTimeout(ctx, defaultSportsLiveInitialSyncWait)
+		err := s.refreshSportsLiveEventSnapshot(syncCtx)
+		cancel()
+		if err != nil {
+			return nil, status.Errorf(codes.Unavailable, "sports live snapshot is unavailable: %v", err)
+		}
+	}
+
+	resp := s.currentSportsLiveEventResponse(limit)
+	if resp == nil {
+		return nil, status.Error(codes.Unavailable, "sports live snapshot is unavailable")
+	}
+	return resp, nil
+}
+
 func (s *Service) nowUnix() int64 {
 	if s.nowFn == nil {
 		return time.Now().Unix()
@@ -218,4 +255,8 @@ func ptrBool(value bool) *bool {
 
 func errNoSportsLiveSnapshot() error {
 	return fmt.Errorf("sports live snapshot not initialized")
+}
+
+func errNoSportsLiveEventSnapshot() error {
+	return fmt.Errorf("sports live event snapshot not initialized")
 }
