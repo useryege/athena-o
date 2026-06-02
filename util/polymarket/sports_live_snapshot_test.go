@@ -158,10 +158,10 @@ func TestBuildSportsLiveSnapshotOptionsAndFiltering(t *testing.T) {
 	if len(callOpts) != 2 {
 		t.Fatalf("call count = %d, want 2", len(callOpts))
 	}
-	if callOpts[0].Limit == nil || *callOpts[0].Limit != 1 || callOpts[0].Live == nil || !*callOpts[0].Live || callOpts[0].Closed == nil || *callOpts[0].Closed || callOpts[0].TagSlug != "sports" {
+	if callOpts[0].Limit == nil || *callOpts[0].Limit != 1 || callOpts[0].Live == nil || !*callOpts[0].Live || callOpts[0].Closed == nil || *callOpts[0].Closed || callOpts[0].TagSlug != "sports" || !hasOnlyEsportsExcludeTag(callOpts[0].ExcludeTagID) {
 		t.Fatalf("live query options = %#v", callOpts[0])
 	}
-	if callOpts[1].Limit == nil || *callOpts[1].Limit != 1 || callOpts[1].Closed == nil || *callOpts[1].Closed || callOpts[1].TagSlug != "sports" {
+	if callOpts[1].Limit == nil || *callOpts[1].Limit != 1 || callOpts[1].Closed == nil || *callOpts[1].Closed || callOpts[1].TagSlug != "sports" || !hasOnlyEsportsExcludeTag(callOpts[1].ExcludeTagID) {
 		t.Fatalf("soon query options = %#v", callOpts[1])
 	}
 	if callOpts[1].StartTimeMin == nil || !callOpts[1].StartTimeMin.Equal(now) {
@@ -230,4 +230,8 @@ func TestBuildSportsLiveSnapshotHandlesSparseData(t *testing.T) {
 
 func strPtr(value string) *string {
 	return &value
+}
+
+func hasOnlyEsportsExcludeTag(values []int64) bool {
+	return len(values) == 1 && values[0] == PolymarketEsportsTagID
 }

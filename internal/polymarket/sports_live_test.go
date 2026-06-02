@@ -96,7 +96,7 @@ func TestSportsLiveRefreshAndWSMerge(t *testing.T) {
 	if gamma.calls != 2 {
 		t.Fatalf("gamma calls = %d, want 2", gamma.calls)
 	}
-	if gamma.opts[0].TagSlug != "sports" || gamma.opts[0].Live == nil || !*gamma.opts[0].Live || gamma.opts[0].Closed == nil || *gamma.opts[0].Closed {
+	if gamma.opts[0].TagSlug != "sports" || gamma.opts[0].Live == nil || !*gamma.opts[0].Live || gamma.opts[0].Closed == nil || *gamma.opts[0].Closed || !hasOnlyEsportsExcludeTag(gamma.opts[0].ExcludeTagID) {
 		t.Fatalf("unexpected options[0] = %#v", gamma.opts[0])
 	}
 	if gamma.opts[1].AfterCursor != cursor {
@@ -189,5 +189,9 @@ func TestListSportsLiveLimitValidation(t *testing.T) {
 func strPtr(value string) *string     { return &value }
 func floatPtr(value float64) *float64 { return &value }
 func boolPtr(value bool) *bool        { return &value }
+
+func hasOnlyEsportsExcludeTag(values []int64) bool {
+	return len(values) == 1 && values[0] == utilpolymarket.PolymarketEsportsTagID
+}
 
 var _ = time.Second

@@ -114,10 +114,11 @@ func (s *Service) fetchSportsLiveMarkets(ctx context.Context) ([]sportsLiveMarke
 	closed := false
 	for {
 		opts := utilpolymarket.ListEventsKeysetOptions{
-			Limit:   &limit,
-			Live:    ptrBool(live),
-			Closed:  ptrBool(closed),
-			TagSlug: "sports",
+			Limit:        &limit,
+			Live:         ptrBool(live),
+			Closed:       ptrBool(closed),
+			TagSlug:      "sports",
+			ExcludeTagID: []int64{utilpolymarket.PolymarketEsportsTagID},
 		}
 		if cursor != "" {
 			opts.AfterCursor = cursor

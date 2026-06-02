@@ -13,6 +13,9 @@ const (
 	defaultSportsLiveSnapshotLimit      = 200
 	maxSportsLiveSnapshotLimit          = 500
 	defaultSportsLiveSnapshotSoonWindow = 24 * time.Hour
+
+	// PolymarketEsportsTagID is the Gamma tag ID for Esports.
+	PolymarketEsportsTagID int64 = 64
 )
 
 type SportsLiveSnapshotGammaClient interface {
@@ -67,9 +70,10 @@ func buildSportsLiveSnapshotWithNow(ctx context.Context, gammaClient SportsLiveS
 	}
 
 	liveEvents, err := listEventsKeysetPaged(ctx, gammaClient, ListEventsKeysetOptions{
-		Live:    boolPtr(true),
-		Closed:  boolPtr(false),
-		TagSlug: "sports",
+		Live:         boolPtr(true),
+		Closed:       boolPtr(false),
+		TagSlug:      "sports",
+		ExcludeTagID: []int64{PolymarketEsportsTagID},
 	}, options.LiveLimit)
 	if err != nil {
 		return nil, fmt.Errorf("list sports live events: %w", err)
@@ -80,6 +84,7 @@ func buildSportsLiveSnapshotWithNow(ctx context.Context, gammaClient SportsLiveS
 	soonEvents, err := listEventsKeysetPaged(ctx, gammaClient, ListEventsKeysetOptions{
 		Closed:       boolPtr(false),
 		TagSlug:      "sports",
+		ExcludeTagID: []int64{PolymarketEsportsTagID},
 		StartTimeMin: &start,
 		StartTimeMax: &end,
 	}, options.SoonLimit)
