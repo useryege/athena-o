@@ -258,6 +258,7 @@ export const PolymarketContainer = () => {
                                                     <div className='polymarket-live__header-meta'>
                                                         <span>Vol {formatNumber(sumMoneylineVolume(event))}</span>
                                                         <span>Updated {formatLastUpdate(event.lastUpdate)}</span>
+                                                        <span>Fetched {formatFetchedAt(fetchedAt)}</span>
                                                     </div>
                                                 </div>
 
