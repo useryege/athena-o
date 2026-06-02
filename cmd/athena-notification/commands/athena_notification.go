@@ -7,6 +7,8 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -89,10 +91,18 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			topicThreads, err := telegramTopicThreadsFromEnv()
+			if err != nil {
+				return err
+			}
+			sender, err := notification.NewTelegramSender(telegramClient, topicThreads)
+			if err != nil {
+				return err
+			}
 
 			server, err := notification.NewServer(notification.ServerOpts{
 				Store:         store,
-				Sender:        notification.NewTelegramSender(telegramClient),
+				Sender:        sender,
 				ProfileSyncer: notification.NewTelegramProfileSyncer(telegramClient, profileConfig, chatProfileConfig),
 			})
 			if err != nil {
@@ -178,4 +188,31 @@ func defaultTelegramChatProfileConfig() (utiltelegram.ChatProfileConfig, error) 
 			Data:     photo,
 		},
 	}, nil
+}
+
+func telegramTopicThreadsFromEnv() (map[string]int, error) {
+	tokenThreadID, err := requiredPositiveIntEnv("ATHENA_NOTIFICATION_TELEGRAM_TOKEN_MESSAGE_THREAD_ID")
+	if err != nil {
+		return nil, err
+	}
+	polyThreadID, err := requiredPositiveIntEnv("ATHENA_NOTIFICATION_TELEGRAM_POLY_MESSAGE_THREAD_ID")
+	if err != nil {
+		return nil, err
+	}
+	return map[string]int{
+		notification.NotificationTopicToken: tokenThreadID,
+		notification.NotificationTopicPoly:  polyThreadID,
+	}, nil
+}
+
+func requiredPositiveIntEnv(name string) (int, error) {
+	raw, ok := os.LookupEnv(name)
+	if !ok || strings.TrimSpace(raw) == "" {
+		return 0, fmt.Errorf("%s is required", name)
+	}
+	value, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil || value <= 0 {
+		return 0, fmt.Errorf("%s must be a positive integer", name)
+	}
+	return value, nil
 }

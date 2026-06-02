@@ -34,6 +34,7 @@ describe('notifications service', () => {
                     id: 7,
                     source: 'worm',
                     severity: 'warning',
+                    topic: 'token',
                     title: 'scan',
                     body: 'body',
                     channel: 'telegram',
@@ -53,6 +54,7 @@ describe('notifications service', () => {
             pageSize: 20,
             status: 'sent',
             severity: 'warning',
+            topic: 'token',
             source: 'worm',
             keyword: 'scan'
         });
@@ -63,6 +65,7 @@ describe('notifications service', () => {
             page_size: 20,
             status: 'sent',
             severity: 'warning',
+            topic: 'token',
             source: 'worm',
             keyword: 'scan'
         });
@@ -70,7 +73,7 @@ describe('notifications service', () => {
             total: 1,
             page: 2,
             pageSize: 20,
-            items: [{id: 7, providerMessageId: '123', createdAt: '2026-05-27T12:00:00Z'}]
+            items: [{id: 7, topic: 'token', providerMessageId: '123', createdAt: '2026-05-27T12:00:00Z'}]
         });
     });
 
@@ -93,7 +96,7 @@ describe('notifications service', () => {
         expect(item.errorMessage).toBe('telegram unavailable');
     });
 
-    it('sends a test notification request', async () => {
+    it('sends a topic test notification request', async () => {
         const request = requestWithBody({
             notification_id: '11',
             status: 'sent',
@@ -101,9 +104,9 @@ describe('notifications service', () => {
         });
         mockPost.mockReturnValue(request);
 
-        const result = await new NotificationService().sendTestNotification();
+        const result = await new NotificationService().sendTestNotification('poly');
 
-        expect(mockPost).toHaveBeenCalledWith('/notifications/test');
+        expect(mockPost).toHaveBeenCalledWith('/notifications/test/poly');
         expect(request.send).toHaveBeenCalledWith({});
         expect(result).toMatchObject({
             notificationId: 11,

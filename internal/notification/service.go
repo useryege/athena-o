@@ -36,10 +36,18 @@ const (
 	notificationSeverityError    = "error"
 	notificationSeverityCritical = "critical"
 
+	notificationTopicToken = "token"
+	notificationTopicPoly  = "poly"
+
 	maxNotificationSourceLength = 64
 	maxTelegramTextLength       = 4096
 	defaultNotificationPageSize = 20
 	maxNotificationPageSize     = 100
+)
+
+const (
+	NotificationTopicToken = notificationTopicToken
+	NotificationTopicPoly  = notificationTopicPoly
 )
 
 type ProfileSyncer interface {
@@ -118,12 +126,13 @@ func (s *Service) SendNotification(ctx context.Context, req *apiclient.SendNotif
 		Link:     params.link,
 		Channel:  notificationChannelTelegram,
 		Status:   notificationStatusPending,
+		Topic:    params.topic,
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create notification delivery: %v", err)
 	}
 
-	providerMessageID, sendErr := s.sender.Send(ctx, text)
+	providerMessageID, sendErr := s.sender.Send(ctx, SendRequest{Topic: params.topic, Text: text})
 	if sendErr != nil {
 		_ = s.store.MarkDeliveryFailed(ctx, delivery.ID, sendErr.Error())
 		return &apiclient.SendNotificationResponse{
@@ -171,6 +180,7 @@ func (s *Service) ListNotificationDeliveries(ctx context.Context, req *apiclient
 		Status:   statusFilter,
 		Severity: severityFilter,
 		Source:   strings.TrimSpace(req.GetSource()),
+		Topic:    normalizeTopicFilter(req.GetTopic()),
 		Keyword:  strings.TrimSpace(req.GetKeyword()),
 	})
 	if err != nil {
@@ -207,6 +217,7 @@ type sendNotificationParams struct {
 	title    string
 	body     string
 	link     string
+	topic    string
 }
 
 func normalizeSendNotificationRequest(req *apiclient.SendNotificationRequest) (sendNotificationParams, error) {
@@ -228,12 +239,17 @@ func normalizeSendNotificationRequest(req *apiclient.SendNotificationRequest) (s
 	if err != nil {
 		return sendNotificationParams{}, err
 	}
+	topic, err := topicFromEnum(req.GetTopic())
+	if err != nil {
+		return sendNotificationParams{}, err
+	}
 	return sendNotificationParams{
 		source:   source,
 		severity: severity,
 		title:    strings.TrimSpace(req.GetTitle()),
 		body:     body,
 		link:     strings.TrimSpace(req.GetLink()),
+		topic:    topic,
 	}, nil
 }
 
@@ -249,6 +265,29 @@ func severityFromEnum(value apiclient.NotificationSeverity) (string, error) {
 		return notificationSeverityCritical, nil
 	default:
 		return "", status.Error(codes.InvalidArgument, "severity is invalid")
+	}
+}
+
+func topicFromEnum(value apiclient.NotificationTopic) (string, error) {
+	switch value {
+	case apiclient.NotificationTopic_NOTIFICATION_TOPIC_TOKEN:
+		return notificationTopicToken, nil
+	case apiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY:
+		return notificationTopicPoly, nil
+	case apiclient.NotificationTopic_NOTIFICATION_TOPIC_UNSPECIFIED:
+		return "", status.Error(codes.InvalidArgument, "topic is required")
+	default:
+		return "", status.Error(codes.InvalidArgument, "topic is invalid")
+	}
+}
+
+func normalizeTopicFilter(value string) string {
+	value = strings.TrimSpace(strings.ToLower(value))
+	switch value {
+	case notificationTopicToken, notificationTopicPoly:
+		return value
+	default:
+		return ""
 	}
 }
 

@@ -27,6 +27,13 @@ enum NotificationDeliveryStatus {
   NOTIFICATION_DELIVERY_STATUS_FAILED = 3;
 }
 
+// NotificationTopic selects the Telegram forum topic for a notification.
+enum NotificationTopic {
+  NOTIFICATION_TOPIC_UNSPECIFIED = 0;
+  NOTIFICATION_TOPIC_TOKEN = 1;
+  NOTIFICATION_TOPIC_POLY = 2;
+}
+
 // SendNotificationRequest sends one notification through the configured channel.
 message SendNotificationRequest {
   string source = 1;
@@ -34,6 +41,7 @@ message SendNotificationRequest {
   string title = 3;
   string body = 4;
   string link = 5;
+  NotificationTopic topic = 6;
 }
 
 // SendNotificationResponse returns the delivery result for a sent notification.
@@ -52,6 +60,7 @@ message ListNotificationDeliveriesRequest {
   string severity = 4;
   string source = 5;
   string keyword = 6;
+  string topic = 7;
 }
 
 // ListNotificationDeliveriesResponse returns persisted notification deliveries.

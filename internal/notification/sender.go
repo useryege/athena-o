@@ -9,24 +9,50 @@ import (
 )
 
 type Sender interface {
-	Send(ctx context.Context, text string) (string, error)
+	Send(ctx context.Context, request SendRequest) (string, error)
+}
+
+type SendRequest struct {
+	Topic string
+	Text  string
 }
 
 type TelegramSender struct {
-	client utiltelegram.Client
+	client       utiltelegram.Client
+	topicThreads map[string]int
 }
 
-func NewTelegramSender(client utiltelegram.Client) *TelegramSender {
-	return &TelegramSender{client: client}
+func NewTelegramSender(client utiltelegram.Client, topicThreads map[string]int) (*TelegramSender, error) {
+	if err := validateTopicThreads(topicThreads); err != nil {
+		return nil, err
+	}
+	threads := make(map[string]int, len(topicThreads))
+	for topic, threadID := range topicThreads {
+		threads[topic] = threadID
+	}
+	return &TelegramSender{client: client, topicThreads: threads}, nil
 }
 
-func (s *TelegramSender) Send(ctx context.Context, text string) (string, error) {
+func (s *TelegramSender) Send(ctx context.Context, request SendRequest) (string, error) {
 	if s.client == nil {
 		return "", fmt.Errorf("telegram client is required")
 	}
-	resp, err := s.client.SendMessage(ctx, utiltelegram.SendMessageRequest{Text: text})
+	threadID, ok := s.topicThreads[request.Topic]
+	if !ok || threadID <= 0 {
+		return "", fmt.Errorf("telegram message thread id is not configured for topic %s", request.Topic)
+	}
+	resp, err := s.client.SendMessage(ctx, utiltelegram.SendMessageRequest{Text: request.Text, MessageThreadID: threadID})
 	if err != nil {
 		return "", err
 	}
 	return strconv.Itoa(resp.MessageID), nil
+}
+
+func validateTopicThreads(topicThreads map[string]int) error {
+	for _, topic := range []string{notificationTopicToken, notificationTopicPoly} {
+		if topicThreads[topic] <= 0 {
+			return fmt.Errorf("telegram message thread id is required for topic %s", topic)
+		}
+	}
+	return nil
 }

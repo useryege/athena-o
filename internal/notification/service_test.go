@@ -18,11 +18,13 @@ import (
 type fakeSender struct {
 	messageID string
 	err       error
+	topic     string
 	text      string
 }
 
-func (f *fakeSender) Send(_ context.Context, text string) (string, error) {
-	f.text = text
+func (f *fakeSender) Send(_ context.Context, request SendRequest) (string, error) {
+	f.topic = request.Topic
+	f.text = request.Text
 	if f.err != nil {
 		return "", f.err
 	}
@@ -44,6 +46,7 @@ func (f *fakeProfileSyncer) SyncProfile(context.Context) error {
 
 type fakeNotificationQuerier struct {
 	createDeliveryResult notificationsqlc.CreateDeliveryRow
+	createDeliveryParams notificationsqlc.CreateDeliveryParams
 	markSentParams       notificationsqlc.MarkDeliverySentParams
 	markFailedParams     notificationsqlc.MarkDeliveryFailedParams
 }
@@ -52,7 +55,8 @@ func (f *fakeNotificationQuerier) CountDeliveries(context.Context, notifications
 	return 0, nil
 }
 
-func (f *fakeNotificationQuerier) CreateDelivery(context.Context, notificationsqlc.CreateDeliveryParams) (notificationsqlc.CreateDeliveryRow, error) {
+func (f *fakeNotificationQuerier) CreateDelivery(_ context.Context, arg notificationsqlc.CreateDeliveryParams) (notificationsqlc.CreateDeliveryRow, error) {
+	f.createDeliveryParams = arg
 	return f.createDeliveryResult, nil
 }
 
@@ -176,6 +180,7 @@ func TestSendNotificationSuccessRecordsDelivery(t *testing.T) {
 			Link:      "https://example.com",
 			Channel:   "telegram",
 			Status:    "pending",
+			Topic:     "token",
 			CreatedAt: pgtype.Timestamptz{Time: createdAt, Valid: true},
 		},
 	}
@@ -187,6 +192,7 @@ func TestSendNotificationSuccessRecordsDelivery(t *testing.T) {
 		Title:    "Scan finished",
 		Body:     "Contract risk changed",
 		Link:     "https://example.com",
+		Topic:    apiclient.NotificationTopic_NOTIFICATION_TOPIC_TOKEN,
 	})
 	if err != nil {
 		t.Fatalf("SendNotification: %v", err)
@@ -197,8 +203,63 @@ func TestSendNotificationSuccessRecordsDelivery(t *testing.T) {
 	if querier.markSentParams.ID != 7 || querier.markSentParams.ProviderMessageID.String != "123" {
 		t.Fatalf("mark sent params = %#v", querier.markSentParams)
 	}
+	if querier.createDeliveryParams.Topic != "token" || sender.topic != "token" {
+		t.Fatalf("topic create/send = %q/%q, want token", querier.createDeliveryParams.Topic, sender.topic)
+	}
 	if !strings.Contains(sender.text, "Severity: WARNING") || !strings.Contains(sender.text, "Contract risk changed") {
 		t.Fatalf("telegram text = %q, want rendered notification text", sender.text)
+	}
+}
+
+func TestSendNotificationPolyTopic(t *testing.T) {
+	querier := &fakeNotificationQuerier{
+		createDeliveryResult: notificationsqlc.CreateDeliveryRow{
+			ID:        8,
+			Source:    "polymarket",
+			Severity:  "info",
+			Body:      "Market updated",
+			Channel:   "telegram",
+			Status:    "pending",
+			Topic:     "poly",
+			CreatedAt: pgtype.Timestamptz{Time: time.Now(), Valid: true},
+		},
+	}
+	sender := &fakeSender{}
+
+	_, err := NewService(notificationstore.NewSQLStoreWithQuerier(querier), sender, &fakeProfileSyncer{}).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
+		Source:   "polymarket",
+		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
+		Body:     "Market updated",
+		Topic:    apiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY,
+	})
+	if err != nil {
+		t.Fatalf("SendNotification: %v", err)
+	}
+	if querier.createDeliveryParams.Topic != "poly" || sender.topic != "poly" {
+		t.Fatalf("topic create/send = %q/%q, want poly", querier.createDeliveryParams.Topic, sender.topic)
+	}
+}
+
+func TestSendNotificationRequiresTopic(t *testing.T) {
+	_, err := NewService(notificationstore.NewSQLStoreWithQuerier(&fakeNotificationQuerier{}), &fakeSender{}, &fakeProfileSyncer{}).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
+		Source:   "worm",
+		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
+		Body:     "Contract risk changed",
+	})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("SendNotification error = %v, want InvalidArgument", err)
+	}
+}
+
+func TestSendNotificationRejectsUnknownTopic(t *testing.T) {
+	_, err := NewService(notificationstore.NewSQLStoreWithQuerier(&fakeNotificationQuerier{}), &fakeSender{}, &fakeProfileSyncer{}).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
+		Source:   "worm",
+		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
+		Body:     "Contract risk changed",
+		Topic:    apiclient.NotificationTopic(99),
+	})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("SendNotification error = %v, want InvalidArgument", err)
 	}
 }
 
@@ -214,6 +275,7 @@ func TestSendNotificationFailureRecordsDelivery(t *testing.T) {
 			Link:      "",
 			Channel:   "telegram",
 			Status:    "pending",
+			Topic:     "poly",
 			CreatedAt: pgtype.Timestamptz{Time: createdAt, Valid: true},
 		},
 	}
@@ -222,6 +284,7 @@ func TestSendNotificationFailureRecordsDelivery(t *testing.T) {
 		Source:   "application",
 		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_ERROR,
 		Body:     "Deploy failed",
+		Topic:    apiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY,
 	})
 	if status.Code(err) != codes.Unavailable {
 		t.Fatalf("SendNotification error = %v, want Unavailable", err)

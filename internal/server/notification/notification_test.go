@@ -11,6 +11,8 @@ import (
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilio "github.com/useryege/athena/util/io"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type fakeNotificationClientset struct {
@@ -49,6 +51,7 @@ func (f *fakeNotificationServiceClient) ListNotificationDeliveries(_ context.Con
 				ID:       7,
 				Source:   req.GetSource(),
 				Severity: req.GetSeverity(),
+				Topic:    req.GetTopic(),
 				Status:   req.GetStatus(),
 				Title:    req.GetKeyword(),
 			},
@@ -81,6 +84,7 @@ func TestListNotificationDeliveriesMapsRequestAndResponse(t *testing.T) {
 		PageSize: 20,
 		Status:   "sent",
 		Severity: "warning",
+		Topic:    "poly",
 		Source:   "worm",
 		Keyword:  "scan",
 	})
@@ -90,7 +94,7 @@ func TestListNotificationDeliveriesMapsRequestAndResponse(t *testing.T) {
 	if resp.Total != 1 || resp.Page != 2 || resp.PageSize != 20 {
 		t.Fatalf("pagination = %#v, want total/page/pageSize mapped", resp)
 	}
-	if len(resp.Items) != 1 || resp.Items[0].Source != "worm" || resp.Items[0].Title != "scan" {
+	if len(resp.Items) != 1 || resp.Items[0].Source != "worm" || resp.Items[0].Topic != "poly" || resp.Items[0].Title != "scan" {
 		t.Fatalf("items = %#v, want mapped filters in fake response", resp.Items)
 	}
 }
@@ -113,7 +117,7 @@ func TestSendTestNotificationMapsFixedRequestAndResponse(t *testing.T) {
 			ProviderMessageId: "123",
 		},
 	}
-	resp, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{})
+	resp, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{Topic: "token"})
 	if err != nil {
 		t.Fatalf("SendTestNotification: %v", err)
 	}
@@ -129,17 +133,45 @@ func TestSendTestNotificationMapsFixedRequestAndResponse(t *testing.T) {
 	if client.sendReq.Severity != notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO {
 		t.Fatalf("severity = %s, want info", client.sendReq.Severity)
 	}
-	if client.sendReq.Title != "ATHENA test notification" {
+	if client.sendReq.Topic != notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_TOKEN {
+		t.Fatalf("topic = %s, want token", client.sendReq.Topic)
+	}
+	if client.sendReq.Title != "ATHENA TOKEN test notification" {
 		t.Fatalf("title = %q, want fixed test title", client.sendReq.Title)
 	}
-	if !strings.HasPrefix(client.sendReq.Body, "Manual test notification sent from ATHENA UI at ") {
+	if !strings.HasPrefix(client.sendReq.Body, "Manual TOKEN test notification sent from ATHENA UI at ") {
 		t.Fatalf("body = %q, want fixed test body prefix", client.sendReq.Body)
+	}
+}
+
+func TestSendTestNotificationMapsPolyTopic(t *testing.T) {
+	client := &fakeNotificationServiceClient{}
+	_, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{Topic: "poly"})
+	if err != nil {
+		t.Fatalf("SendTestNotification: %v", err)
+	}
+	if client.sendReq == nil || client.sendReq.Topic != notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY {
+		t.Fatalf("send request = %#v, want poly topic", client.sendReq)
+	}
+	if client.sendReq.Title != "ATHENA POLY test notification" {
+		t.Fatalf("title = %q, want POLY title", client.sendReq.Title)
+	}
+}
+
+func TestSendTestNotificationRejectsInvalidTopic(t *testing.T) {
+	client := &fakeNotificationServiceClient{}
+	_, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{Topic: "bad"})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("error = %v, want InvalidArgument", err)
+	}
+	if client.sendReq != nil {
+		t.Fatalf("send request = %#v, want no internal send", client.sendReq)
 	}
 }
 
 func TestSendTestNotificationReturnsClientError(t *testing.T) {
 	client := &fakeNotificationServiceClient{sendErr: errors.New("notification unavailable")}
-	_, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{})
+	_, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{Topic: "token"})
 	if err == nil || err.Error() != "notification unavailable" {
 		t.Fatalf("error = %v, want internal client error", err)
 	}

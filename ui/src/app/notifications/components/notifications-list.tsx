@@ -22,17 +22,24 @@ const SEVERITY_OPTIONS = [
     {label: 'Critical', value: 'critical'}
 ];
 
+const TOPIC_OPTIONS = [
+    {label: 'All Topics', value: ''},
+    {label: 'TOKEN', value: 'token'},
+    {label: 'POLY', value: 'poly'}
+];
+
 interface NotificationsListState {
     items: NotificationDelivery[];
     total: number;
     page: number;
     status: string;
     severity: string;
+    topic: string;
     source: string;
     keyword: string;
     loading: boolean;
     refreshing: boolean;
-    sendingTest: boolean;
+    sendingTestTopic: '' | 'token' | 'poly';
     notice: string;
     error: Error | null;
 }
@@ -48,12 +55,13 @@ const parseQuery = (search: string) => {
         page: Math.max(Number(params.get('page') || 1) || 1, 1),
         status: params.get('status') || '',
         severity: params.get('severity') || '',
+        topic: params.get('topic') || '',
         source: params.get('source') || '',
         keyword: params.get('keyword') || ''
     };
 };
 
-const buildSearch = (filters: {page: number; status: string; severity: string; source: string; keyword: string}) => {
+const buildSearch = (filters: {page: number; status: string; severity: string; topic: string; source: string; keyword: string}) => {
     const params = new URLSearchParams();
     if (filters.page > 1) {
         params.set('page', String(filters.page));
@@ -63,6 +71,9 @@ const buildSearch = (filters: {page: number; status: string; severity: string; s
     }
     if (filters.severity) {
         params.set('severity', filters.severity);
+    }
+    if (filters.topic) {
+        params.set('topic', filters.topic);
     }
     if (filters.source.trim()) {
         params.set('source', filters.source.trim());
@@ -97,11 +108,12 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
             page: query.page,
             status: query.status,
             severity: query.severity,
+            topic: query.topic,
             source: query.source,
             keyword: query.keyword,
             loading: true,
             refreshing: false,
-            sendingTest: false,
+            sendingTestTopic: '',
             notice: '',
             error: null
         };
@@ -165,6 +177,13 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
                                             </option>
                                         ))}
                                     </select>
+                                    <select className='argo-field' value={this.state.topic} onChange={event => this.setState({topic: event.target.value})}>
+                                        {TOPIC_OPTIONS.map(item => (
+                                            <option key={item.value || 'all'} value={item.value}>
+                                                {item.label}
+                                            </option>
+                                        ))}
+                                    </select>
                                     <input
                                         className='argo-field'
                                         type='text'
@@ -197,9 +216,16 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
                                         <button
                                             type='button'
                                             className='argo-button argo-button--base'
-                                            disabled={this.state.sendingTest || this.state.refreshing}
-                                            onClick={this.sendTestNotification}>
-                                            {this.state.sendingTest ? 'Sending...' : 'Send Test'}
+                                            disabled={!!this.state.sendingTestTopic || this.state.refreshing}
+                                            onClick={() => this.sendTestNotification('token')}>
+                                            {this.state.sendingTestTopic === 'token' ? 'Sending TOKEN...' : 'Send TOKEN Test'}
+                                        </button>
+                                        <button
+                                            type='button'
+                                            className='argo-button argo-button--base'
+                                            disabled={!!this.state.sendingTestTopic || this.state.refreshing}
+                                            onClick={() => this.sendTestNotification('poly')}>
+                                            {this.state.sendingTestTopic === 'poly' ? 'Sending POLY...' : 'Send POLY Test'}
                                         </button>
                                         <button type='button' className='argo-button argo-button--base-o' disabled={this.state.refreshing} onClick={this.refresh}>
                                             {this.state.refreshing ? 'Refreshing...' : 'Refresh'}
@@ -213,6 +239,7 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
                                             <div>Title</div>
                                             <div>Status</div>
                                             <div>Severity</div>
+                                            <div>Topic</div>
                                             <div>Source</div>
                                             <div>Created At</div>
                                         </div>
@@ -244,6 +271,7 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
                                                             {item.severity || '-'}
                                                         </span>
                                                     </div>
+                                                    <div className='notifications-page__topic'>{(item.topic || '-').toUpperCase()}</div>
                                                     <div className='notifications-page__source'>{item.source || '-'}</div>
                                                     <div>{formatDate(item.createdAt)}</div>
                                                 </div>
@@ -291,6 +319,7 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
             pageSize: PAGE_SIZE,
             status: this.state.status,
             severity: this.state.severity,
+            topic: this.state.topic,
             source: this.state.source,
             keyword: this.state.keyword
         });
@@ -325,15 +354,15 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
 
     private refresh = () => this.load();
 
-    private sendTestNotification = async () => {
-        if (this.state.sendingTest) {
+    private sendTestNotification = async (topic: 'token' | 'poly') => {
+        if (this.state.sendingTestTopic) {
             return;
         }
-        this.setState({sendingTest: true, notice: '', error: null});
+        this.setState({sendingTestTopic: topic, notice: '', error: null});
         try {
-            const result = await services.notification.sendTestNotification();
+            const result = await services.notification.sendTestNotification(topic);
             const status = result.status ? ` (${result.status})` : '';
-            this.setState({notice: `Test notification sent${status}.`});
+            this.setState({notice: `${topic.toUpperCase()} test notification sent${status}.`});
             if (this.props.location.search === buildSearch({...this.state, page: 1})) {
                 await this.load();
                 return;
@@ -344,7 +373,7 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
             await this.load(true);
         } finally {
             if (this.mounted) {
-                this.setState({sendingTest: false});
+                this.setState({sendingTestTopic: ''});
             }
         }
     };
@@ -356,6 +385,7 @@ export class NotificationsList extends React.Component<RouteComponentProps<any>,
             page,
             status: this.state.status,
             severity: this.state.severity,
+            topic: this.state.topic,
             source: this.state.source,
             keyword: this.state.keyword
         });

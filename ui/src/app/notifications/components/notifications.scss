@@ -47,7 +47,7 @@
         border-bottom: 1px solid #edf0f2;
         display: grid;
         gap: 10px;
-        grid-template-columns: 170px 170px minmax(140px, 1fr) minmax(180px, 1.4fr) auto;
+        grid-template-columns: 150px 150px 130px minmax(140px, 1fr) minmax(180px, 1.4fr) auto;
         margin-bottom: 16px;
         padding-bottom: 14px;
     }
@@ -80,7 +80,7 @@
         align-items: center;
         display: grid;
         gap: 12px;
-        grid-template-columns: minmax(260px, 1.4fr) minmax(90px, 0.5fr) minmax(100px, 0.5fr) minmax(120px, 0.7fr) minmax(180px, 0.8fr);
+        grid-template-columns: minmax(240px, 1.4fr) minmax(90px, 0.45fr) minmax(100px, 0.5fr) minmax(90px, 0.4fr) minmax(120px, 0.65fr) minmax(180px, 0.8fr);
         min-width: 0;
         width: 100%;
 
@@ -99,6 +99,10 @@
 
     &__source {
         font-family: monospace;
+    }
+
+    &__topic {
+        font-weight: 600;
     }
 
     &__badge,

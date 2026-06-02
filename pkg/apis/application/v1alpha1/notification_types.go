@@ -18,6 +18,7 @@ type NotificationDeliveryItem struct {
 	ErrorMessage      string `protobuf:"bytes,10,opt,name=error_message,json=errorMessage" json:"errorMessage"`
 	CreatedAt         string `protobuf:"bytes,11,opt,name=created_at,json=createdAt" json:"createdAt"`
 	SentAt            string `protobuf:"bytes,12,opt,name=sent_at,json=sentAt" json:"sentAt"`
+	Topic             string `protobuf:"bytes,13,opt,name=topic" json:"topic"`
 }
 
 type NotificationDeliveryDetail struct {
@@ -33,4 +34,5 @@ type NotificationDeliveryDetail struct {
 	ErrorMessage      string `protobuf:"bytes,10,opt,name=error_message,json=errorMessage" json:"errorMessage"`
 	CreatedAt         string `protobuf:"bytes,11,opt,name=created_at,json=createdAt" json:"createdAt"`
 	SentAt            string `protobuf:"bytes,12,opt,name=sent_at,json=sentAt" json:"sentAt"`
+	Topic             string `protobuf:"bytes,13,opt,name=topic" json:"topic"`
 }

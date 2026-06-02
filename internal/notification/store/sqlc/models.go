@@ -21,4 +21,5 @@ type NotificationDelivery struct {
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
 	SentAt            pgtype.Timestamptz
+	Topic             string
 }

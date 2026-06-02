@@ -65,7 +65,7 @@ describe('notifications list test sender', () => {
         );
     });
 
-    it('sends a test notification and refreshes the list', async () => {
+    it('sends TOKEN and POLY test notifications and refreshes the list', async () => {
         sendTestNotification.mockReturnValue(
             promiseWithAbort(
                 Promise.resolve({
@@ -85,14 +85,25 @@ describe('notifications list test sender', () => {
         await flush();
 
         act(() => {
-            findButton(renderer, 'Send Test').props.onClick();
+            findButton(renderer, 'Send TOKEN Test').props.onClick();
         });
         await flush();
         await flush();
 
-        expect(sendTestNotification).toHaveBeenCalledTimes(1);
+        expect(sendTestNotification).toHaveBeenCalledWith('token');
         expect(listNotifications).toHaveBeenCalledTimes(2);
-        expect(nodeText(renderer!.root)).toContain('Test notification sent (sent).');
+        expect(nodeText(renderer!.root)).toContain('TOKEN test notification sent (sent).');
+
+        act(() => {
+            findButton(renderer, 'Send POLY Test').props.onClick();
+        });
+        await flush();
+        await flush();
+
+        expect(sendTestNotification).toHaveBeenCalledWith('poly');
+        expect(sendTestNotification).toHaveBeenCalledTimes(2);
+        expect(listNotifications).toHaveBeenCalledTimes(3);
+        expect(nodeText(renderer!.root)).toContain('POLY test notification sent (sent).');
     });
 
     it('shows send errors and refreshes the list', async () => {
@@ -106,11 +117,12 @@ describe('notifications list test sender', () => {
         await flush();
 
         act(() => {
-            findButton(renderer, 'Send Test').props.onClick();
+            findButton(renderer, 'Send TOKEN Test').props.onClick();
         });
         await flush();
         await flush();
 
+        expect(sendTestNotification).toHaveBeenCalledWith('token');
         expect(sendTestNotification).toHaveBeenCalledTimes(1);
         expect(listNotifications).toHaveBeenCalledTimes(2);
         expect(nodeText(renderer!.root)).toContain('telegram unavailable');

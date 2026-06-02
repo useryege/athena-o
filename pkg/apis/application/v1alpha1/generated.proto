@@ -350,6 +350,8 @@ message NotificationDeliveryDetail {
   optional string created_at = 11;
 
   optional string sent_at = 12;
+
+  optional string topic = 13;
 }
 
 message NotificationDeliveryItem {
@@ -376,6 +378,8 @@ message NotificationDeliveryItem {
   optional string created_at = 11;
 
   optional string sent_at = 12;
+
+  optional string topic = 13;
 }
 
 message NotificationStatus {

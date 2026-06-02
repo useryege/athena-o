@@ -101,6 +101,7 @@ export class NotificationDetails extends React.Component<RouteComponentProps<Not
                                                 }
                                             />
                                             <DetailRow label='Channel' value={item.channel} />
+                                            <DetailRow label='Topic' value={(item.topic || '-').toUpperCase()} />
                                             <DetailRow label='Status' value={item.status} />
                                             <DetailRow label='Telegram Message ID' value={item.providerMessageId} monospace={true} />
                                             <DetailRow label='Created At' value={formatDate(item.createdAt)} />

@@ -71,6 +71,7 @@ func TestCreateDeliveryUsesQuerier(t *testing.T) {
 			Link:      "https://example.com",
 			Channel:   "telegram",
 			Status:    "pending",
+			Topic:     "token",
 			CreatedAt: pgtype.Timestamptz{Time: now, Valid: true},
 		},
 	}
@@ -83,14 +84,15 @@ func TestCreateDeliveryUsesQuerier(t *testing.T) {
 		Link:     "https://example.com",
 		Channel:  "telegram",
 		Status:   "pending",
+		Topic:    "token",
 	})
 	if err != nil {
 		t.Fatalf("CreateDelivery: %v", err)
 	}
-	if item.ID != 7 || item.Title != "Scan finished" {
+	if item.ID != 7 || item.Title != "Scan finished" || item.Topic != "token" {
 		t.Fatalf("item = %#v, want generated row mapping", item)
 	}
-	if querier.createDeliveryParams.Title.String != "Scan finished" || !querier.createDeliveryParams.Title.Valid {
+	if querier.createDeliveryParams.Title.String != "Scan finished" || !querier.createDeliveryParams.Title.Valid || querier.createDeliveryParams.Topic != "token" {
 		t.Fatalf("create params = %#v, want pgtype text", querier.createDeliveryParams)
 	}
 }
@@ -108,6 +110,7 @@ func TestListDeliveriesUsesQuerierFiltersAndPagination(t *testing.T) {
 			Link:      "",
 			Channel:   "telegram",
 			Status:    "failed",
+			Topic:     "poly",
 			CreatedAt: pgtype.Timestamptz{Time: now, Valid: true},
 		}},
 	}
@@ -117,16 +120,17 @@ func TestListDeliveriesUsesQuerierFiltersAndPagination(t *testing.T) {
 		PageSize: 5,
 		Status:   " failed ",
 		Severity: " error ",
+		Topic:    " poly ",
 		Source:   " application ",
 		Keyword:  " deploy ",
 	})
 	if err != nil {
 		t.Fatalf("ListDeliveries: %v", err)
 	}
-	if total != 1 || len(items) != 1 || items[0].ID != 9 {
+	if total != 1 || len(items) != 1 || items[0].ID != 9 || items[0].Topic != "poly" {
 		t.Fatalf("items/total = %#v/%d, want one mapped delivery", items, total)
 	}
-	if querier.countDeliveriesParams.Status.String != "failed" || querier.countDeliveriesParams.Keyword.String != "%deploy%" {
+	if querier.countDeliveriesParams.Status.String != "failed" || querier.countDeliveriesParams.Topic.String != "poly" || querier.countDeliveriesParams.Keyword.String != "%deploy%" {
 		t.Fatalf("count params = %#v, want normalized filters", querier.countDeliveriesParams)
 	}
 	if querier.listDeliveriesParams.Limit != 5 || querier.listDeliveriesParams.Offset != 5 {

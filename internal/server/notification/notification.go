@@ -2,16 +2,18 @@ package notification
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
 	testNotificationSource = "ui"
-	testNotificationTitle  = "ATHENA test notification"
 )
 
 type Server struct {
@@ -47,6 +49,7 @@ func (s *Server) ListNotificationDeliveries(ctx context.Context, req *notificati
 		Severity: req.GetSeverity(),
 		Source:   req.GetSource(),
 		Keyword:  req.GetKeyword(),
+		Topic:    req.GetTopic(),
 	})
 	if err != nil {
 		return nil, err
@@ -73,7 +76,12 @@ func (s *Server) GetNotificationDelivery(ctx context.Context, req *notificationp
 	return &notificationpkg.GetNotificationDeliveryResponse{Item: resp.GetItem()}, nil
 }
 
-func (s *Server) SendTestNotification(ctx context.Context, _ *notificationpkg.SendTestNotificationRequest) (*notificationpkg.SendTestNotificationResponse, error) {
+func (s *Server) SendTestNotification(ctx context.Context, req *notificationpkg.SendTestNotificationRequest) (*notificationpkg.SendTestNotificationResponse, error) {
+	topic, topicLabel, err := internalNotificationTopic(req.GetTopic())
+	if err != nil {
+		return nil, err
+	}
+
 	closer, client, err := s.notificationClientSet.NewNotificationServiceClient()
 	if err != nil {
 		return nil, err
@@ -83,8 +91,9 @@ func (s *Server) SendTestNotification(ctx context.Context, _ *notificationpkg.Se
 	resp, err := client.SendNotification(ctx, &notificationapiclient.SendNotificationRequest{
 		Source:   testNotificationSource,
 		Severity: notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
-		Title:    testNotificationTitle,
-		Body:     "Manual test notification sent from ATHENA UI at " + time.Now().UTC().Format(time.RFC3339),
+		Title:    "ATHENA " + topicLabel + " test notification",
+		Body:     "Manual " + topicLabel + " test notification sent from ATHENA UI at " + time.Now().UTC().Format(time.RFC3339),
+		Topic:    topic,
 	})
 	if err != nil {
 		return nil, err
@@ -95,6 +104,17 @@ func (s *Server) SendTestNotification(ctx context.Context, _ *notificationpkg.Se
 		ProviderMessageId: resp.GetProviderMessageId(),
 		ErrorMessage:      resp.GetErrorMessage(),
 	}, nil
+}
+
+func internalNotificationTopic(value string) (notificationapiclient.NotificationTopic, string, error) {
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "token":
+		return notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_TOKEN, "TOKEN", nil
+	case "poly":
+		return notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY, "POLY", nil
+	default:
+		return notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_UNSPECIFIED, "", status.Error(codes.InvalidArgument, "topic must be token or poly")
+	}
 }
 
 func deliveryStatusString(status notificationapiclient.NotificationDeliveryStatus) string {

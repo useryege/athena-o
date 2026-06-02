@@ -43,6 +43,7 @@ func TestSendMessage(t *testing.T) {
 	var gotPath string
 	var gotChatID string
 	var gotText string
+	var gotMessageThreadID string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		if r.Method != http.MethodPost {
@@ -53,6 +54,7 @@ func TestSendMessage(t *testing.T) {
 		}
 		gotChatID = r.FormValue("chat_id")
 		gotText = r.FormValue("text")
+		gotMessageThreadID = r.FormValue("message_thread_id")
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"ok":true,"result":{"message_id":123,"date":1,"chat":{"id":1,"type":"private"}}}`))
 	}))
@@ -62,7 +64,7 @@ func TestSendMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
-	resp, err := client.SendMessage(context.Background(), SendMessageRequest{Text: " hello "})
+	resp, err := client.SendMessage(context.Background(), SendMessageRequest{Text: " hello ", MessageThreadID: 222})
 	if err != nil {
 		t.Fatalf("SendMessage: %v", err)
 	}
@@ -77,6 +79,9 @@ func TestSendMessage(t *testing.T) {
 	}
 	if gotText != "hello" {
 		t.Fatalf("text = %q, want hello", gotText)
+	}
+	if gotMessageThreadID != "222" {
+		t.Fatalf("message_thread_id = %q, want 222", gotMessageThreadID)
 	}
 }
 

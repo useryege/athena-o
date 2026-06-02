@@ -47,7 +47,8 @@ type Config struct {
 }
 
 type SendMessageRequest struct {
-	Text string
+	Text            string
+	MessageThreadID int
 }
 
 type SendMessageResponse struct {
@@ -174,8 +175,9 @@ func (c *clientImpl) SendMessage(ctx context.Context, request SendMessageRequest
 	}
 
 	message, err := c.bot.SendMessage(ctx, &tgbot.SendMessageParams{
-		ChatID: c.config.ChatID,
-		Text:   text,
+		ChatID:          c.config.ChatID,
+		Text:            text,
+		MessageThreadID: request.MessageThreadID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to send telegram message: %w", err)

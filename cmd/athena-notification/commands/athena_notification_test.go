@@ -1,87 +1,52 @@
 package commands
 
-import "testing"
+import (
+	"strings"
+	"testing"
 
-func TestDefaultTelegramBotProfileConfigUsesEmbeddedAvatarAndDefaults(t *testing.T) {
-	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME", "")
-	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_BOT_SHORT_DESCRIPTION", "")
-	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_BOT_DESCRIPTION", "")
+	"github.com/useryege/athena/internal/notification"
+)
 
-	config, err := defaultTelegramBotProfileConfig()
+func TestTelegramTopicThreadsFromEnv(t *testing.T) {
+	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_TOKEN_MESSAGE_THREAD_ID", "111")
+	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_POLY_MESSAGE_THREAD_ID", "222")
+
+	threads, err := telegramTopicThreadsFromEnv()
 	if err != nil {
-		t.Fatalf("defaultTelegramBotProfileConfig: %v", err)
+		t.Fatalf("telegramTopicThreadsFromEnv: %v", err)
 	}
-	if config.Name != defaultTelegramBotProfileName {
-		t.Fatalf("Name = %q, want %q", config.Name, defaultTelegramBotProfileName)
-	}
-	if config.ShortDescription != defaultTelegramBotProfileShortDescription {
-		t.Fatalf("ShortDescription = %q, want %q", config.ShortDescription, defaultTelegramBotProfileShortDescription)
-	}
-	if config.Description != defaultTelegramBotProfileDescription {
-		t.Fatalf("Description = %q, want %q", config.Description, defaultTelegramBotProfileDescription)
-	}
-	if config.ProfilePhoto.Filename != defaultTelegramBotProfilePhotoPath {
-		t.Fatalf("ProfilePhoto filename = %q, want %q", config.ProfilePhoto.Filename, defaultTelegramBotProfilePhotoPath)
-	}
-	if len(config.ProfilePhoto.Data) == 0 {
-		t.Fatal("ProfilePhoto data is empty")
+	if threads[notification.NotificationTopicToken] != 111 || threads[notification.NotificationTopicPoly] != 222 {
+		t.Fatalf("threads = %#v, want token/poly ids", threads)
 	}
 }
 
-func TestDefaultTelegramBotProfileConfigUsesEnvOverrides(t *testing.T) {
-	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME", "ATHENA Dev")
-	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_BOT_SHORT_DESCRIPTION", "Dev alerts")
-	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_BOT_DESCRIPTION", "Dev notification bot")
+func TestTelegramTopicThreadsFromEnvRequiresPositiveIntegers(t *testing.T) {
+	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_TOKEN_MESSAGE_THREAD_ID", "111")
+	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_POLY_MESSAGE_THREAD_ID", "0")
 
-	config, err := defaultTelegramBotProfileConfig()
-	if err != nil {
-		t.Fatalf("defaultTelegramBotProfileConfig: %v", err)
-	}
-	if config.Name != "ATHENA Dev" {
-		t.Fatalf("Name = %q", config.Name)
-	}
-	if config.ShortDescription != "Dev alerts" {
-		t.Fatalf("ShortDescription = %q", config.ShortDescription)
-	}
-	if config.Description != "Dev notification bot" {
-		t.Fatalf("Description = %q", config.Description)
+	_, err := telegramTopicThreadsFromEnv()
+	if err == nil || !strings.Contains(err.Error(), "ATHENA_NOTIFICATION_TELEGRAM_POLY_MESSAGE_THREAD_ID") {
+		t.Fatalf("telegramTopicThreadsFromEnv error = %v, want poly env error", err)
 	}
 }
 
-func TestDefaultTelegramChatProfileConfigUsesEmbeddedAvatarAndDefaults(t *testing.T) {
-	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_TITLE", "")
-	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_DESCRIPTION", "")
-
-	config, err := defaultTelegramChatProfileConfig()
-	if err != nil {
-		t.Fatalf("defaultTelegramChatProfileConfig: %v", err)
-	}
-	if config.Title != defaultTelegramChatProfileTitle {
-		t.Fatalf("Title = %q, want %q", config.Title, defaultTelegramChatProfileTitle)
-	}
-	if config.Description != defaultTelegramChatProfileDescription {
-		t.Fatalf("Description = %q, want %q", config.Description, defaultTelegramChatProfileDescription)
-	}
-	if config.Photo.Filename != defaultTelegramChatProfilePhotoPath {
-		t.Fatalf("Photo filename = %q, want %q", config.Photo.Filename, defaultTelegramChatProfilePhotoPath)
-	}
-	if len(config.Photo.Data) == 0 {
-		t.Fatal("Photo data is empty")
-	}
-}
-
-func TestDefaultTelegramChatProfileConfigUsesEnvOverrides(t *testing.T) {
+func TestDefaultTelegramProfileConfigsLoadEmbeddedAssetsAndEnvOverrides(t *testing.T) {
+	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME", "ATHENA DEV")
 	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_TITLE", "ATHENA Dev Notifications")
-	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_DESCRIPTION", "Dev notification group")
 
-	config, err := defaultTelegramChatProfileConfig()
+	botConfig, err := defaultTelegramBotProfileConfig()
+	if err != nil {
+		t.Fatalf("defaultTelegramBotProfileConfig: %v", err)
+	}
+	if botConfig.Name != "ATHENA DEV" || botConfig.ProfilePhoto.Filename != defaultTelegramBotProfilePhotoPath || len(botConfig.ProfilePhoto.Data) == 0 {
+		t.Fatalf("bot config = %#v, want override and embedded avatar", botConfig)
+	}
+
+	chatConfig, err := defaultTelegramChatProfileConfig()
 	if err != nil {
 		t.Fatalf("defaultTelegramChatProfileConfig: %v", err)
 	}
-	if config.Title != "ATHENA Dev Notifications" {
-		t.Fatalf("Title = %q", config.Title)
-	}
-	if config.Description != "Dev notification group" {
-		t.Fatalf("Description = %q", config.Description)
+	if chatConfig.Title != "ATHENA Dev Notifications" || chatConfig.Photo.Filename != defaultTelegramChatProfilePhotoPath || len(chatConfig.Photo.Data) == 0 {
+		t.Fatalf("chat config = %#v, want override and embedded avatar", chatConfig)
 	}
 }

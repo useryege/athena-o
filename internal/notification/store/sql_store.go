@@ -33,6 +33,7 @@ type CreateDeliveryRequest struct {
 	Link     string
 	Channel  string
 	Status   string
+	Topic    string
 }
 
 type ListDeliveriesOptions struct {
@@ -41,6 +42,7 @@ type ListDeliveriesOptions struct {
 	Status   string
 	Severity string
 	Source   string
+	Topic    string
 	Keyword  string
 }
 
@@ -92,13 +94,14 @@ func (s *SQLStore) CreateDelivery(ctx context.Context, req CreateDeliveryRequest
 		Link:     textValue(req.Link),
 		Channel:  req.Channel,
 		Status:   req.Status,
+		Topic:    req.Topic,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create notification delivery: %w", err)
 	}
 	item := deliveryDetailFromRow(deliveryRow{
 		ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-		Status: row.Status, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+		Status: row.Status, Topic: row.Topic, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
 	})
 	return item, nil
 }
@@ -132,6 +135,7 @@ func (s *SQLStore) ListDeliveries(ctx context.Context, opts ListDeliveriesOption
 		Status:   params.Status,
 		Severity: params.Severity,
 		Source:   params.Source,
+		Topic:    params.Topic,
 		Keyword:  params.Keyword,
 	})
 	if err != nil {
@@ -152,6 +156,7 @@ func (s *SQLStore) ListDeliveries(ctx context.Context, opts ListDeliveriesOption
 		Status:   params.Status,
 		Severity: params.Severity,
 		Source:   params.Source,
+		Topic:    params.Topic,
 		Keyword:  params.Keyword,
 	})
 	if err != nil {
@@ -162,7 +167,7 @@ func (s *SQLStore) ListDeliveries(ctx context.Context, opts ListDeliveriesOption
 	for _, row := range rows {
 		items = append(items, deliveryItemFromRow(deliveryRow{
 			ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-			Status: row.Status, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+			Status: row.Status, Topic: row.Topic, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
 		}))
 	}
 	return items, total, nil
@@ -181,7 +186,7 @@ func (s *SQLStore) GetDelivery(ctx context.Context, id int64) (*v1alpha1.Notific
 	}
 	return deliveryDetailFromRow(deliveryRow{
 		ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-		Status: row.Status, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+		Status: row.Status, Topic: row.Topic, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
 	}), nil
 }
 
@@ -189,6 +194,7 @@ type deliveryFilter struct {
 	Status   pgtype.Text
 	Severity pgtype.Text
 	Source   pgtype.Text
+	Topic    pgtype.Text
 	Keyword  pgtype.Text
 }
 
@@ -197,6 +203,7 @@ func deliveryFilterParams(opts ListDeliveriesOptions) deliveryFilter {
 		Status:   nullableText(strings.TrimSpace(opts.Status)),
 		Severity: nullableText(strings.TrimSpace(opts.Severity)),
 		Source:   nullableText(strings.TrimSpace(opts.Source)),
+		Topic:    nullableText(strings.TrimSpace(opts.Topic)),
 		Keyword:  nullableKeyword(opts.Keyword),
 	}
 }
@@ -210,6 +217,7 @@ type deliveryRow struct {
 	Link              string
 	Channel           string
 	Status            string
+	Topic             string
 	ProviderMessageID pgtype.Text
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
@@ -226,6 +234,7 @@ func deliveryItemFromRow(row deliveryRow) *v1alpha1.NotificationDeliveryItem {
 		Link:              row.Link,
 		Channel:           row.Channel,
 		Status:            row.Status,
+		Topic:             row.Topic,
 		ProviderMessageID: row.ProviderMessageID.String,
 		ErrorMessage:      row.ErrorMessage.String,
 		CreatedAt:         formatTime(row.CreatedAt.Time),
@@ -247,6 +256,7 @@ func deliveryDetailFromRow(row deliveryRow) *v1alpha1.NotificationDeliveryDetail
 		Link:              item.Link,
 		Channel:           item.Channel,
 		Status:            item.Status,
+		Topic:             item.Topic,
 		ProviderMessageID: item.ProviderMessageID,
 		ErrorMessage:      item.ErrorMessage,
 		CreatedAt:         item.CreatedAt,
