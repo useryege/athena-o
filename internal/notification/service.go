@@ -17,10 +17,11 @@ import (
 
 type Service struct {
 	apiclient.UnimplementedNotificationServiceServer
-	store       *notificationstore.SQLStore
-	sender      Sender
-	startStopMu sync.Mutex
-	started     bool
+	store         *notificationstore.SQLStore
+	sender        Sender
+	profileSyncer ProfileSyncer
+	startStopMu   sync.Mutex
+	started       bool
 }
 
 const (
@@ -41,11 +42,15 @@ const (
 	maxNotificationPageSize     = 100
 )
 
-func NewService(store *notificationstore.SQLStore, sender Sender) *Service {
-	return &Service{store: store, sender: sender}
+type ProfileSyncer interface {
+	SyncProfile(ctx context.Context) error
 }
 
-func (s *Service) Start() error {
+func NewService(store *notificationstore.SQLStore, sender Sender, profileSyncer ProfileSyncer) *Service {
+	return &Service{store: store, sender: sender, profileSyncer: profileSyncer}
+}
+
+func (s *Service) Start(ctx context.Context) error {
 	s.startStopMu.Lock()
 	defer s.startStopMu.Unlock()
 	if s.started {
@@ -56,6 +61,12 @@ func (s *Service) Start() error {
 	}
 	if s.sender == nil {
 		return status.Error(codes.FailedPrecondition, "notification sender is required")
+	}
+	if s.profileSyncer == nil {
+		return status.Error(codes.FailedPrecondition, "notification profile syncer is required")
+	}
+	if err := s.profileSyncer.SyncProfile(ctx); err != nil {
+		return status.Errorf(codes.Unavailable, "failed to sync notification telegram bot profile: %v", err)
 	}
 	s.started = true
 	return nil

@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
+	"github.com/useryege/athena/assets"
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/notification"
@@ -28,6 +29,13 @@ import (
 )
 
 const cliName = "athena-notification"
+
+const (
+	defaultTelegramBotProfileName             = "ATHENA"
+	defaultTelegramBotProfileShortDescription = "ATHENA operational alerts"
+	defaultTelegramBotProfileDescription      = "ATHENA notification bot for operational alerts and system updates."
+	defaultTelegramBotProfilePhotoPath        = "telegram-bot-avatar.jpg"
+)
 
 func NewCommand() *cobra.Command {
 	var (
@@ -70,7 +78,16 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 
-			server, err := notification.NewServer(notification.ServerOpts{Store: store, Sender: notification.NewTelegramSender(telegramClient)})
+			profileConfig, err := defaultTelegramBotProfileConfig()
+			if err != nil {
+				return err
+			}
+
+			server, err := notification.NewServer(notification.ServerOpts{
+				Store:         store,
+				Sender:        notification.NewTelegramSender(telegramClient),
+				ProfileSyncer: notification.NewTelegramProfileSyncer(telegramClient, profileConfig),
+			})
 			if err != nil {
 				return err
 			}
@@ -80,7 +97,7 @@ func NewCommand() *cobra.Command {
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
 			errors.CheckError(err)
 
-			if err := server.Start(); err != nil {
+			if err := server.Start(ctx); err != nil {
 				return err
 			}
 
@@ -123,4 +140,20 @@ func NewCommand() *cobra.Command {
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
+}
+
+func defaultTelegramBotProfileConfig() (utiltelegram.BotProfileConfig, error) {
+	photo, err := assets.Embedded.ReadFile(defaultTelegramBotProfilePhotoPath)
+	if err != nil {
+		return utiltelegram.BotProfileConfig{}, fmt.Errorf("failed to read default telegram bot avatar: %w", err)
+	}
+	return utiltelegram.BotProfileConfig{
+		Name:             env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME", defaultTelegramBotProfileName),
+		ShortDescription: env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_SHORT_DESCRIPTION", defaultTelegramBotProfileShortDescription),
+		Description:      env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_DESCRIPTION", defaultTelegramBotProfileDescription),
+		ProfilePhoto: utiltelegram.SetMyProfilePhotoRequest{
+			Filename: defaultTelegramBotProfilePhotoPath,
+			Data:     photo,
+		},
+	}, nil
 }

@@ -32,6 +32,16 @@ func (f *fakeSender) Send(_ context.Context, text string) (string, error) {
 	return "1", nil
 }
 
+type fakeProfileSyncer struct {
+	calls int
+	err   error
+}
+
+func (f *fakeProfileSyncer) SyncProfile(context.Context) error {
+	f.calls++
+	return f.err
+}
+
 type fakeNotificationQuerier struct {
 	createDeliveryResult notificationsqlc.CreateDeliveryRow
 	markSentParams       notificationsqlc.MarkDeliverySentParams
@@ -65,7 +75,8 @@ func (f *fakeNotificationQuerier) MarkDeliverySent(_ context.Context, arg notifi
 }
 
 func TestNotificationStatusTransitions(t *testing.T) {
-	service := NewService(notificationstore.NewSQLStore(nil), &fakeSender{})
+	profileSyncer := &fakeProfileSyncer{}
+	service := NewService(notificationstore.NewSQLStore(nil), &fakeSender{}, profileSyncer)
 
 	resp, err := service.GetNotificationStatus(context.Background(), &apiclient.GetNotificationStatusRequest{})
 	if err != nil {
@@ -75,8 +86,11 @@ func TestNotificationStatusTransitions(t *testing.T) {
 		t.Fatalf("status before start = %#v, want stopped", resp)
 	}
 
-	if err := service.Start(); err != nil {
+	if err := service.Start(context.Background()); err != nil {
 		t.Fatalf("Start: %v", err)
+	}
+	if profileSyncer.calls != 1 {
+		t.Fatalf("profile sync calls = %d, want 1", profileSyncer.calls)
 	}
 	resp, err = service.GetNotificationStatus(context.Background(), &apiclient.GetNotificationStatusRequest{})
 	if err != nil {
@@ -99,16 +113,54 @@ func TestNotificationStatusTransitions(t *testing.T) {
 }
 
 func TestNotificationStartRequiresStore(t *testing.T) {
-	err := NewService(nil, &fakeSender{}).Start()
+	err := NewService(nil, &fakeSender{}, &fakeProfileSyncer{}).Start(context.Background())
 	if status.Code(err) != codes.FailedPrecondition {
 		t.Fatalf("Start error = %v, want FailedPrecondition", err)
 	}
 }
 
 func TestNotificationStartRequiresSender(t *testing.T) {
-	err := NewService(notificationstore.NewSQLStore(nil), nil).Start()
+	err := NewService(notificationstore.NewSQLStore(nil), nil, &fakeProfileSyncer{}).Start(context.Background())
 	if status.Code(err) != codes.FailedPrecondition {
 		t.Fatalf("Start error = %v, want FailedPrecondition", err)
+	}
+}
+
+func TestNotificationStartRequiresProfileSyncer(t *testing.T) {
+	err := NewService(notificationstore.NewSQLStore(nil), &fakeSender{}, nil).Start(context.Background())
+	if status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("Start error = %v, want FailedPrecondition", err)
+	}
+}
+
+func TestNotificationStartProfileSyncFailureLeavesStopped(t *testing.T) {
+	service := NewService(notificationstore.NewSQLStore(nil), &fakeSender{}, &fakeProfileSyncer{err: errors.New("telegram profile unavailable")})
+
+	err := service.Start(context.Background())
+	if status.Code(err) != codes.Unavailable {
+		t.Fatalf("Start error = %v, want Unavailable", err)
+	}
+	resp, statusErr := service.GetNotificationStatus(context.Background(), &apiclient.GetNotificationStatusRequest{})
+	if statusErr != nil {
+		t.Fatalf("GetNotificationStatus: %v", statusErr)
+	}
+	if resp.Started || resp.Status != "stopped" {
+		t.Fatalf("status after failed start = %#v, want stopped", resp)
+	}
+}
+
+func TestNotificationStartIsIdempotentAfterProfileSync(t *testing.T) {
+	profileSyncer := &fakeProfileSyncer{}
+	service := NewService(notificationstore.NewSQLStore(nil), &fakeSender{}, profileSyncer)
+
+	if err := service.Start(context.Background()); err != nil {
+		t.Fatalf("first Start: %v", err)
+	}
+	if err := service.Start(context.Background()); err != nil {
+		t.Fatalf("second Start: %v", err)
+	}
+	if profileSyncer.calls != 1 {
+		t.Fatalf("profile sync calls = %d, want 1", profileSyncer.calls)
 	}
 }
 
@@ -129,7 +181,7 @@ func TestSendNotificationSuccessRecordsDelivery(t *testing.T) {
 	}
 
 	sender := &fakeSender{messageID: "123"}
-	resp, err := NewService(notificationstore.NewSQLStoreWithQuerier(querier), sender).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
+	resp, err := NewService(notificationstore.NewSQLStoreWithQuerier(querier), sender, &fakeProfileSyncer{}).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
 		Source:   "worm",
 		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
 		Title:    "Scan finished",
@@ -166,7 +218,7 @@ func TestSendNotificationFailureRecordsDelivery(t *testing.T) {
 		},
 	}
 
-	resp, err := NewService(notificationstore.NewSQLStoreWithQuerier(querier), &fakeSender{err: errors.New("telegram unavailable")}).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
+	resp, err := NewService(notificationstore.NewSQLStoreWithQuerier(querier), &fakeSender{err: errors.New("telegram unavailable")}, &fakeProfileSyncer{}).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
 		Source:   "application",
 		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_ERROR,
 		Body:     "Deploy failed",

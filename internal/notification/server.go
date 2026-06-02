@@ -1,6 +1,8 @@
 package notification
 
 import (
+	"context"
+
 	"github.com/useryege/athena/internal/notification/apiclient"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
 	"github.com/useryege/athena/internal/server/version"
@@ -17,8 +19,9 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Store  *notificationstore.SQLStore
-	Sender Sender
+	Store         *notificationstore.SQLStore
+	Sender        Sender
+	ProfileSyncer ProfileSyncer
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -26,7 +29,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
 		ServerOpts:    opts,
-		service:       NewService(opts.Store, opts.Sender),
+		service:       NewService(opts.Store, opts.Sender, opts.ProfileSyncer),
 		healthService: healthService,
 	}, nil
 }
@@ -42,8 +45,8 @@ func (s *Server) CreateGRPC() *grpc.Server {
 	return server
 }
 
-func (s *Server) Start() error {
-	if err := s.service.Start(); err != nil {
+func (s *Server) Start(ctx context.Context) error {
+	if err := s.service.Start(ctx); err != nil {
 		return err
 	}
 	s.setHealthStatus(grpc_health_v1.HealthCheckResponse_SERVING)
