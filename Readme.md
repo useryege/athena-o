@@ -39,6 +39,26 @@
 | --- | --- | --- |
 | `make print-env-vars` | 打印 Makefile 中常用环境变量和路径。 | `make print-env-vars` |
 | `make install-tools-local` | 安装本地开发、测试、代码生成需要的工具。 | `make install-tools-local` |
+| `make password-hash` | 将明文密码转换为 bcrypt hash，用于配置 `.env` 中的 `ATHENA_ACCOUNT_*_PASSWORD_HASH`。 | `make password-hash` |
+
+生成本地账号密码 hash：
+
+```bash
+# 交互式输入（推荐，密码不回显）
+make password-hash
+
+# 非交互（密码会出现在 shell history，仅适合临时使用）
+make password-hash PASSWORD='Yudian#2026!'
+
+# 也可直接运行
+go run tools/password-hash/main.go -password 'Yudian#2026!'
+```
+
+输出为一行 bcrypt hash（例如 `$2a$10$...`）。写入 `.env` 时请用**单引号**包裹 hash，避免 `$` 被 shell 展开导致登录失败：
+
+```bash
+ATHENA_ACCOUNT_LINGJIE_PASSWORD_HASH='$2a$10$...'
+```
 
 ## 代码生成
 

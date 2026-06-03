@@ -310,6 +310,14 @@ clientgen:
 clidocsgen:
 	go run tools/cmd-docs/main.go
 
+.PHONY: password-hash
+password-hash:
+ifeq ($(PASSWORD),)
+	go run tools/password-hash/main.go
+else
+	go run tools/password-hash/main.go -password '$(PASSWORD)'
+endif
+
 .PHONY: manifests-local
 manifests-local:
 	./hack/update-manifests.sh
