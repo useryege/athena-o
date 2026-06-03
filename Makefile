@@ -502,7 +502,6 @@ run-application-remote:
 prod-build-local:
 	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -t $(PROD_IMAGE) .
 
-
 # use http://127.0.0.1:8080 
 .PHONY: prod-start-local	
 prod-start-local:
