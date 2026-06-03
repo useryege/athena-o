@@ -2,31 +2,21 @@ package polymarket
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
-	"errors"
-	"math"
-	"strconv"
 	"strings"
-	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
-	utilpolymarket "github.com/useryege/athena/util/polymarket"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 const (
-	realtimeSubscriptionBatchSize       = 250
-	realtimeSubscriptionRefreshInterval = 5 * time.Second
-	realtimeWindowRetention             = 16 * time.Minute
-	realtimeConnectedStaleAfter         = 45 * time.Second
-	realtimeWindow1m                    = time.Minute
-	realtimeWindow5m                    = 5 * time.Minute
-	realtimeWindow15m                   = 15 * time.Minute
+	realtimeWindowRetention     = 16 * time.Minute
+	realtimeConnectedStaleAfter = 120 * time.Second
+	realtimeWindow1m            = time.Minute
+	realtimeWindow5m            = 5 * time.Minute
+	realtimeWindow15m           = 15 * time.Minute
 )
 
 type realtimeTokenState struct {
@@ -37,129 +27,12 @@ type realtimeTokenState struct {
 	bestAsk        float64
 	spread         float64
 	lastTradePrice float64
-	lastTradeSize  float64
-	lastTradeSide  string
 	lastEventAt    int64
 }
 
 type realtimeSample struct {
 	at    int64
 	price float64
-}
-
-type realtimeSubscriptionSnapshot struct {
-	markets        []*v1alpha1.PolymarketHotMarketItem
-	tokenIDs       []string
-	hash           string
-	candidateCount int32
-}
-
-func (s *Service) runCLOBMarketWSLoop(ctx context.Context) {
-	defer s.runWG.Done()
-
-	var currentCancel context.CancelFunc
-	var currentWG sync.WaitGroup
-	currentHash := ""
-	stopCurrent := func() {
-		if currentCancel != nil {
-			currentCancel()
-			currentWG.Wait()
-			currentCancel = nil
-		}
-		s.cacheMu.Lock()
-		s.realtimeConnected = false
-		s.cacheMu.Unlock()
-	}
-	defer stopCurrent()
-
-	refreshTicker := time.NewTicker(realtimeSubscriptionRefreshInterval)
-	defer refreshTicker.Stop()
-	sampleTicker := time.NewTicker(s.realtimeSampleInterval)
-	defer sampleTicker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-sampleTicker.C:
-			s.sampleRealtime(s.now())
-		case <-refreshTicker.C:
-			snapshot := s.currentRealtimeSubscriptionSnapshot()
-			if len(snapshot.tokenIDs) == 0 {
-				if currentHash != "" {
-					stopCurrent()
-					currentHash = ""
-				}
-				continue
-			}
-			if snapshot.hash == currentHash {
-				s.markRealtimeDisconnectedIfIdle(s.now())
-				continue
-			}
-			stopCurrent()
-			currentHash = snapshot.hash
-			s.startRealtimeSubscriptions(ctx, snapshot.tokenIDs, &currentWG, &currentCancel)
-			s.cacheMu.Lock()
-			s.realtimeSubscribedHash = snapshot.hash
-			s.realtimeSubscribedMarkets = int32(len(snapshot.markets))
-			s.realtimeSubscribedTokens = int32(len(snapshot.tokenIDs))
-			s.realtimeStale = false
-			s.cacheMu.Unlock()
-		}
-	}
-}
-
-func (s *Service) startRealtimeSubscriptions(parent context.Context, tokenIDs []string, currentWG *sync.WaitGroup, currentCancel *context.CancelFunc) {
-	ctx, cancel := context.WithCancel(parent)
-	*currentCancel = cancel
-	for _, batch := range chunkStrings(tokenIDs, realtimeSubscriptionBatchSize) {
-		assetIDs := append([]string(nil), batch...)
-		currentWG.Add(1)
-		go func() {
-			defer currentWG.Done()
-			err := s.clobMarketWSClient.Run(ctx, utilpolymarket.CLOBMarketWSSubscription{
-				AssetIDs:             assetIDs,
-				InitialDump:          ptrBool(true),
-				CustomFeatureEnabled: ptrBool(true),
-			}, s.realtimeWSHandler())
-			if err != nil && ctx.Err() == nil {
-				log.WithError(err).Warn("polymarket clob market ws subscription stopped")
-				s.markRealtimeStale()
-			}
-		}()
-	}
-}
-
-func (s *Service) realtimeWSHandler() utilpolymarket.CLOBMarketWSHandler {
-	return utilpolymarket.CLOBMarketWSHandler{
-		OnBook: func(event utilpolymarket.CLOBMarketBookEvent) {
-			s.applyRealtimeBook(event)
-		},
-		OnPriceChange: func(event utilpolymarket.CLOBMarketPriceChangeEvent) {
-			s.applyRealtimePriceChange(event)
-		},
-		OnLastTrade: func(event utilpolymarket.CLOBMarketLastTradePriceEvent) {
-			s.applyRealtimeLastTrade(event)
-		},
-		OnBestBidAsk: func(event utilpolymarket.CLOBMarketBestBidAskEvent) {
-			s.applyRealtimeBestBidAsk(event)
-		},
-		OnHeartbeat: func(string) {
-			s.markRealtimeConnected(s.nowUnix())
-		},
-		OnError: func(err error) {
-			if err == nil {
-				return
-			}
-			var decodeErr *utilpolymarket.CLOBMarketWSDecodeError
-			if errors.As(err, &decodeErr) {
-				log.WithError(err).Debug("polymarket clob market ws event decode error")
-				return
-			}
-			log.WithError(err).Debug("polymarket clob market ws event error")
-			s.markRealtimeStale()
-		},
-	}
 }
 
 func (s *Service) ListPolymarketRealtimeMarkets(ctx context.Context, req *apiclient.ListPolymarketRealtimeMarketsRequest) (*apiclient.ListPolymarketRealtimeMarketsResponse, error) {
@@ -192,44 +65,6 @@ func (s *Service) ListPolymarketRealtimeMarkets(ctx context.Context, req *apicli
 		return nil, status.Error(codes.Unavailable, "polymarket realtime markets are unavailable")
 	}
 	return resp, nil
-}
-
-func (s *Service) currentRealtimeSubscriptionSnapshot() realtimeSubscriptionSnapshot {
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-	markets := realtimeTopHotMarketsLocked(s.hotMarketItems)
-	s.ensureRealtimeStatesForMarketsLocked(markets)
-
-	seen := make(map[string]struct{}, len(markets)*2)
-	tokenIDs := make([]string, 0, len(markets)*2)
-	for _, market := range markets {
-		for _, token := range market.Tokens {
-			if token == nil {
-				continue
-			}
-			tokenID := strings.TrimSpace(token.TokenID)
-			if tokenID == "" {
-				continue
-			}
-			if _, exists := seen[tokenID]; exists {
-				continue
-			}
-			seen[tokenID] = struct{}{}
-			tokenIDs = append(tokenIDs, tokenID)
-		}
-	}
-	for tokenID := range s.realtimeStates {
-		if _, exists := seen[tokenID]; !exists {
-			delete(s.realtimeStates, tokenID)
-			delete(s.realtimeSamples, tokenID)
-		}
-	}
-	return realtimeSubscriptionSnapshot{
-		markets:        markets,
-		tokenIDs:       tokenIDs,
-		hash:           hashStrings(tokenIDs),
-		candidateCount: s.hotMarketCandidateCount,
-	}
 }
 
 func (s *Service) currentRealtimeMarketResponse(limit int) *apiclient.ListPolymarketRealtimeMarketsResponse {
@@ -308,13 +143,13 @@ func (s *Service) realtimeTokenItemLocked(token *v1alpha1.PolymarketHotMarketTok
 	}
 	if state != nil {
 		item.Outcome = firstNonEmpty(state.outcome, outcome)
-		item.Price = firstPositive(state.price, price)
+		if state.price > 0 {
+			item.Price = state.price
+		}
 		item.BestBid = state.bestBid
 		item.BestAsk = state.bestAsk
 		item.Spread = state.spread
 		item.LastTradePrice = state.lastTradePrice
-		item.LastTradeSize = state.lastTradeSize
-		item.LastTradeSide = state.lastTradeSide
 		item.LastEventAt = state.lastEventAt
 		item.Windows = []*v1alpha1.PolymarketRealtimeWindowItem{
 			s.realtimeWindowItemLocked(token.TokenID, nowUnix, realtimeWindow1m, item.Price),
@@ -366,6 +201,9 @@ func (s *Service) realtimeWindowItemLocked(tokenID string, nowUnix int64, window
 
 func (s *Service) ensureRealtimeStatesForMarketsLocked(markets []*v1alpha1.PolymarketHotMarketItem) {
 	for _, market := range markets {
+		if market == nil {
+			continue
+		}
 		for _, token := range market.Tokens {
 			if token == nil {
 				continue
@@ -374,153 +212,111 @@ func (s *Service) ensureRealtimeStatesForMarketsLocked(markets []*v1alpha1.Polym
 			if tokenID == "" {
 				continue
 			}
-			state := s.realtimeStates[tokenID]
-			if state == nil {
-				state = &realtimeTokenState{tokenID: tokenID}
-				s.realtimeStates[tokenID] = state
-			}
+			state := s.ensureRealtimeStateLocked(tokenID)
 			state.outcome = strings.TrimSpace(token.Outcome)
-			if state.price <= 0 && token.Price > 0 {
+			if token.Price > 0 && token.Price <= 1 {
 				state.price = token.Price
 			}
+			state.bestBid = market.BestBid
+			state.bestAsk = market.BestAsk
+			state.spread = market.Spread
+			state.lastTradePrice = market.LastTradePrice
 		}
 	}
 }
 
-func (s *Service) sampleRealtime(now time.Time) {
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-	s.sampleRealtimeLocked(now)
-}
-
-func (s *Service) sampleRealtimeLocked(now time.Time) {
-	nowUnix := now.Unix()
-	cutoff := now.Add(-realtimeWindowRetention).Unix()
-	for tokenID, state := range s.realtimeStates {
-		if state == nil || state.price <= 0 {
+func (s *Service) sampleHotMarketCandidatesLocked(candidates []hotMarketCandidate, nowUnix int64) {
+	cutoff := nowUnix - int64(realtimeWindowRetention.Seconds())
+	for i := range candidates {
+		market := candidates[i].item
+		if market == nil {
 			continue
 		}
-		samples := s.realtimeSamples[tokenID]
-		if len(samples) > 0 && samples[len(samples)-1].at == nowUnix {
-			samples[len(samples)-1].price = state.price
-		} else {
-			samples = append(samples, realtimeSample{at: nowUnix, price: state.price})
+		for _, token := range market.Tokens {
+			if token == nil {
+				continue
+			}
+			tokenID := strings.TrimSpace(token.TokenID)
+			if tokenID == "" || token.Price <= 0 || token.Price > 1 {
+				continue
+			}
+			state := s.ensureRealtimeStateLocked(tokenID)
+			state.outcome = strings.TrimSpace(token.Outcome)
+			state.price = token.Price
+			state.bestBid = market.BestBid
+			state.bestAsk = market.BestAsk
+			state.spread = market.Spread
+			state.lastTradePrice = market.LastTradePrice
+			state.lastEventAt = nowUnix
+			s.realtimeSamples[tokenID] = appendOrReplaceRealtimeSample(s.realtimeSamples[tokenID], realtimeSample{at: nowUnix, price: token.Price})
 		}
-		first := 0
-		for first < len(samples) && samples[first].at < cutoff {
-			first++
-		}
-		if first > 0 {
-			samples = append(samples[:0], samples[first:]...)
-		}
-		s.realtimeSamples[tokenID] = samples
 	}
-	if len(s.realtimeStates) > 0 {
-		s.realtimeFetched = nowUnix
+
+	for tokenID, samples := range s.realtimeSamples {
+		s.realtimeSamples[tokenID] = pruneRealtimeSamples(samples, cutoff)
 	}
+	s.cleanupRealtimeStatesForMarketsLocked(s.hotMarketItems)
+	s.realtimeFetched = nowUnix
+	s.realtimeStale = false
+	s.realtimeConnected = len(candidates) > 0
+	if len(candidates) > 0 {
+		s.realtimeLastEventAt = nowUnix
+	}
+	s.realtimeSubscribedMarkets = int32(len(s.hotMarketItems))
+	s.realtimeSubscribedTokens = int32(countHotMarketTokens(s.hotMarketItems))
 }
 
-func (s *Service) applyRealtimeBook(event utilpolymarket.CLOBMarketBookEvent) {
-	tokenID := strings.TrimSpace(event.AssetID)
-	if tokenID == "" {
-		return
-	}
-	bestBid := bestBidFromOrders(event.Bids)
-	bestAsk := bestAskFromOrders(event.Asks)
-	eventAt := s.marketEventUnix(event.Timestamp)
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-	state := s.ensureRealtimeStateLocked(tokenID)
-	if bestBid > 0 {
-		state.bestBid = bestBid
-	}
-	if bestAsk > 0 {
-		state.bestAsk = bestAsk
-	}
-	state.spread = spreadFromBidAsk(state.bestBid, state.bestAsk)
-	if state.price <= 0 {
-		state.price = midpointFromBidAsk(state.bestBid, state.bestAsk)
-	}
-	s.markRealtimeEventLocked(eventAt)
-}
-
-func (s *Service) applyRealtimePriceChange(event utilpolymarket.CLOBMarketPriceChangeEvent) {
-	eventAt := s.marketEventUnix(event.Timestamp)
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-	for _, change := range event.PriceChanges {
-		tokenID := strings.TrimSpace(change.AssetID)
-		if tokenID == "" {
+func (s *Service) cleanupRealtimeStatesForMarketsLocked(markets []*v1alpha1.PolymarketHotMarketItem) {
+	seen := make(map[string]struct{}, countHotMarketTokens(markets))
+	for _, market := range markets {
+		if market == nil {
 			continue
 		}
-		state := s.ensureRealtimeStateLocked(tokenID)
-		if price := parseFloatOrZero(change.Price); price > 0 {
-			state.price = price
-		}
-		if change.BestBid != nil {
-			if bestBid := parseFloatOrZero(*change.BestBid); bestBid > 0 {
-				state.bestBid = bestBid
+		for _, token := range market.Tokens {
+			if token == nil {
+				continue
+			}
+			tokenID := strings.TrimSpace(token.TokenID)
+			if tokenID != "" {
+				seen[tokenID] = struct{}{}
 			}
 		}
-		if change.BestAsk != nil {
-			if bestAsk := parseFloatOrZero(*change.BestAsk); bestAsk > 0 {
-				state.bestAsk = bestAsk
-			}
-		}
-		state.spread = spreadFromBidAsk(state.bestBid, state.bestAsk)
-		state.lastEventAt = eventAt
 	}
-	s.markRealtimeEventLocked(eventAt)
-}
-
-func (s *Service) applyRealtimeLastTrade(event utilpolymarket.CLOBMarketLastTradePriceEvent) {
-	tokenID := strings.TrimSpace(event.AssetID)
-	if tokenID == "" {
-		return
-	}
-	eventAt := s.marketEventUnix(event.Timestamp)
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-	state := s.ensureRealtimeStateLocked(tokenID)
-	if price := parseFloatOrZero(event.Price); price > 0 {
-		state.lastTradePrice = price
-		if state.price <= 0 {
-			state.price = price
+	for tokenID := range s.realtimeStates {
+		if _, exists := seen[tokenID]; !exists {
+			delete(s.realtimeStates, tokenID)
+			delete(s.realtimeSamples, tokenID)
 		}
 	}
-	if size := parseFloatOrZero(event.Size); size > 0 {
-		state.lastTradeSize = size
-	}
-	state.lastTradeSide = strings.TrimSpace(event.Side)
-	state.lastEventAt = eventAt
-	s.markRealtimeEventLocked(eventAt)
 }
 
-func (s *Service) applyRealtimeBestBidAsk(event utilpolymarket.CLOBMarketBestBidAskEvent) {
-	tokenID := strings.TrimSpace(event.AssetID)
-	if tokenID == "" {
-		return
+func appendOrReplaceRealtimeSample(samples []realtimeSample, sample realtimeSample) []realtimeSample {
+	if sample.at <= 0 || sample.price <= 0 || sample.price > 1 {
+		return samples
 	}
-	eventAt := s.marketEventUnix(event.Timestamp)
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-	state := s.ensureRealtimeStateLocked(tokenID)
-	if bestBid := parseFloatOrZero(event.BestBid); bestBid > 0 {
-		state.bestBid = bestBid
+	insert := 0
+	for insert < len(samples) && samples[insert].at < sample.at {
+		insert++
 	}
-	if bestAsk := parseFloatOrZero(event.BestAsk); bestAsk > 0 {
-		state.bestAsk = bestAsk
+	if insert < len(samples) && samples[insert].at == sample.at {
+		samples[insert] = sample
+		return samples
 	}
-	if spread := parseFloatOrZero(event.Spread); spread > 0 {
-		state.spread = spread
-	} else {
-		state.spread = spreadFromBidAsk(state.bestBid, state.bestAsk)
+	samples = append(samples, realtimeSample{})
+	copy(samples[insert+1:], samples[insert:])
+	samples[insert] = sample
+	return samples
+}
+
+func pruneRealtimeSamples(samples []realtimeSample, cutoff int64) []realtimeSample {
+	first := 0
+	for first < len(samples) && samples[first].at < cutoff {
+		first++
 	}
-	if state.price <= 0 {
-		state.price = midpointFromBidAsk(state.bestBid, state.bestAsk)
+	if first > 0 {
+		samples = append(samples[:0], samples[first:]...)
 	}
-	state.lastEventAt = eventAt
-	s.markRealtimeEventLocked(eventAt)
+	return samples
 }
 
 func (s *Service) ensureRealtimeStateLocked(tokenID string) *realtimeTokenState {
@@ -532,22 +328,6 @@ func (s *Service) ensureRealtimeStateLocked(tokenID string) *realtimeTokenState 
 	return state
 }
 
-func (s *Service) markRealtimeEventLocked(eventAt int64) {
-	if eventAt <= 0 {
-		eventAt = s.nowUnix()
-	}
-	s.realtimeConnected = true
-	s.realtimeStale = false
-	s.realtimeLastEventAt = eventAt
-	s.realtimeFetched = eventAt
-}
-
-func (s *Service) markRealtimeConnected(eventAt int64) {
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-	s.markRealtimeEventLocked(eventAt)
-}
-
 func (s *Service) markRealtimeStale() {
 	s.cacheMu.Lock()
 	defer s.cacheMu.Unlock()
@@ -555,31 +335,6 @@ func (s *Service) markRealtimeStale() {
 		s.realtimeStale = true
 	}
 	s.realtimeConnected = false
-}
-
-func (s *Service) markRealtimeDisconnectedIfIdle(now time.Time) {
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-	if s.realtimeLastEventAt > 0 && now.Unix()-s.realtimeLastEventAt > int64(realtimeConnectedStaleAfter.Seconds()) {
-		s.realtimeConnected = false
-	}
-}
-
-func (s *Service) marketEventUnix(raw string) int64 {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return s.nowUnix()
-	}
-	if parsed, err := strconv.ParseInt(raw, 10, 64); err == nil {
-		if parsed > 1_000_000_000_000 {
-			return parsed / 1000
-		}
-		return parsed
-	}
-	if parsed, err := time.Parse(time.RFC3339Nano, raw); err == nil {
-		return parsed.Unix()
-	}
-	return s.nowUnix()
 }
 
 func (s *Service) now() time.Time {
@@ -599,78 +354,6 @@ func realtimeTopHotMarketsLocked(items []*v1alpha1.PolymarketHotMarketItem) []*v
 		out = append(out, cloneHotMarketItem(items[i]))
 	}
 	return out
-}
-
-func chunkStrings(values []string, size int) [][]string {
-	if size <= 0 || len(values) == 0 {
-		return nil
-	}
-	chunks := make([][]string, 0, (len(values)+size-1)/size)
-	for start := 0; start < len(values); start += size {
-		end := start + size
-		if end > len(values) {
-			end = len(values)
-		}
-		chunks = append(chunks, values[start:end])
-	}
-	return chunks
-}
-
-func hashStrings(values []string) string {
-	h := sha1.New()
-	for _, value := range values {
-		h.Write([]byte(value))
-		h.Write([]byte{0})
-	}
-	return hex.EncodeToString(h.Sum(nil))
-}
-
-func bestBidFromOrders(orders []utilpolymarket.CLOBOrderSummary) float64 {
-	best := 0.0
-	for _, order := range orders {
-		price := parseFloatOrZero(order.Price)
-		if price > best {
-			best = price
-		}
-	}
-	return best
-}
-
-func bestAskFromOrders(orders []utilpolymarket.CLOBOrderSummary) float64 {
-	best := math.MaxFloat64
-	for _, order := range orders {
-		price := parseFloatOrZero(order.Price)
-		if price > 0 && price < best {
-			best = price
-		}
-	}
-	if best == math.MaxFloat64 {
-		return 0
-	}
-	return best
-}
-
-func spreadFromBidAsk(bestBid, bestAsk float64) float64 {
-	if bestBid <= 0 || bestAsk <= 0 || bestAsk < bestBid {
-		return 0
-	}
-	return bestAsk - bestBid
-}
-
-func midpointFromBidAsk(bestBid, bestAsk float64) float64 {
-	if bestBid <= 0 || bestAsk <= 0 || bestAsk < bestBid {
-		return 0
-	}
-	return (bestBid + bestAsk) / 2
-}
-
-func firstPositive(values ...float64) float64 {
-	for _, value := range values {
-		if value > 0 {
-			return value
-		}
-	}
-	return 0
 }
 
 func realtimeWindowLabel(window time.Duration) string {

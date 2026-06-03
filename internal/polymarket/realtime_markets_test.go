@@ -16,45 +16,39 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type fakeCLOBMarketWSClient struct {
-	runFn func(context.Context, utilpolymarket.CLOBMarketWSSubscription, utilpolymarket.CLOBMarketWSHandler) error
-}
-
-func (f *fakeCLOBMarketWSClient) Run(ctx context.Context, sub utilpolymarket.CLOBMarketWSSubscription, handler utilpolymarket.CLOBMarketWSHandler) error {
-	if f.runFn != nil {
-		return f.runFn(ctx, sub, handler)
-	}
-	<-ctx.Done()
-	return nil
-}
-
-func TestRealtimeSubscriptionSnapshotUsesTop500AndDedupesTokens(t *testing.T) {
-	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}), WithCLOBMarketWSClient(&fakeCLOBMarketWSClient{}))
+func TestRealtimeHotMarketRefreshSamplesGammaPrices(t *testing.T) {
+	now := time.Date(2026, 6, 3, 12, 0, 0, 0, time.UTC)
+	gamma := &fakeGammaClient{marketResponses: []*utilpolymarket.MarketKeysetResponse{{
+		Markets: []utilpolymarket.Market{validHotMarket("cond-1", 100, 50)},
+	}}}
+	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(gamma), WithSportsWSClient(&fakeSportsWSClient{}))
 	svc.started = true
-	for i := 0; i < hotMarketTargetLimit+5; i++ {
-		item, ok := mapHotMarket(validHotMarket(fmt.Sprintf("cond-%03d", i), float64(1000-i), float64(500-i)))
-		if !ok {
-			t.Fatalf("valid hot market %d was rejected", i)
-		}
-		if i == 1 {
-			item.Tokens[0].TokenID = "token-cond-000-yes"
-		}
-		svc.hotMarketItems = append(svc.hotMarketItems, item)
+	svc.nowFn = func() time.Time { return now }
+
+	if err := svc.refreshHotMarkets(context.Background()); err != nil {
+		t.Fatalf("refreshHotMarkets: %v", err)
 	}
 
-	snapshot := svc.currentRealtimeSubscriptionSnapshot()
-	if len(snapshot.markets) != hotMarketTargetLimit {
-		t.Fatalf("markets = %d, want %d", len(snapshot.markets), hotMarketTargetLimit)
+	tokenID := svc.hotMarketItems[0].Tokens[0].TokenID
+	state := svc.realtimeStates[tokenID]
+	samples := svc.realtimeSamples[tokenID]
+	if state == nil || state.price != 0.6 || state.lastEventAt != now.Unix() {
+		t.Fatalf("state = %#v, want sampled Gamma token price", state)
 	}
-	if len(snapshot.tokenIDs) != hotMarketTargetLimit*2-1 {
-		t.Fatalf("token ids = %d, want deduped %d", len(snapshot.tokenIDs), hotMarketTargetLimit*2-1)
+	if len(samples) != 1 || samples[0].at != now.Unix() || samples[0].price != 0.6 {
+		t.Fatalf("samples = %#v, want one Gamma snapshot sample", samples)
 	}
-	if snapshot.hash == "" {
-		t.Fatal("hash is empty")
+	resp := svc.currentRealtimeMarketResponse(10)
+	if resp == nil || !resp.GetConnected() || resp.GetFetchedAt() != now.Unix() || resp.GetLastEventAt() != now.Unix() {
+		t.Fatalf("metadata = %#v, want connected snapshot metadata", resp)
+	}
+	token := resp.GetItems()[0].Tokens[0]
+	if token.Price != 0.6 || token.BestBid != 0.59 || token.BestAsk != 0.61 || token.Spread != 0.02 || token.LastTradePrice != 0.6 {
+		t.Fatalf("token = %#v, want Gamma fields", token)
 	}
 }
 
-func TestRealtimeEventsAndWindowChanges(t *testing.T) {
+func TestRealtimeWindowChangesFromGammaSamples(t *testing.T) {
 	now := time.Date(2026, 6, 3, 12, 0, 0, 0, time.UTC)
 	item, ok := mapHotMarket(validHotMarket("cond-1", 100, 50))
 	if !ok {
@@ -62,38 +56,21 @@ func TestRealtimeEventsAndWindowChanges(t *testing.T) {
 	}
 	item.EventSlug = "event-cond-1"
 	tokenID := item.Tokens[0].TokenID
-	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}), WithCLOBMarketWSClient(&fakeCLOBMarketWSClient{}))
+	item.Tokens[0].Price = 0.60
+	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}))
 	svc.started = true
 	svc.nowFn = func() time.Time { return now }
 	svc.hotMarketItems = []*v1alpha1.PolymarketHotMarketItem{item}
 	svc.hotMarketFetched = now.Unix()
-
-	svc.applyRealtimeBook(utilpolymarket.CLOBMarketBookEvent{
-		AssetID:   tokenID,
-		Bids:      []utilpolymarket.CLOBOrderSummary{{Price: "0.52"}, {Price: "0.51"}},
-		Asks:      []utilpolymarket.CLOBOrderSummary{{Price: "0.55"}, {Price: "0.56"}},
-		Timestamp: now.Format(time.RFC3339),
-	})
-	svc.applyRealtimePriceChange(utilpolymarket.CLOBMarketPriceChangeEvent{
-		Timestamp: now.Add(10 * time.Second).Format(time.RFC3339),
-		PriceChanges: []utilpolymarket.CLOBMarketPriceChange{{
-			AssetID: tokenID,
-			Price:   "0.57",
-			BestBid: strPtr("0.56"),
-			BestAsk: strPtr("0.58"),
-		}},
-	})
-	svc.applyRealtimeLastTrade(utilpolymarket.CLOBMarketLastTradePriceEvent{
-		AssetID:   tokenID,
-		Price:     "0.59",
-		Size:      "10",
-		Side:      "BUY",
-		Timestamp: now.Add(20 * time.Second).Format(time.RFC3339),
-	})
-
-	svc.cacheMu.Lock()
-	svc.realtimeSamples[tokenID] = []realtimeSample{{at: now.Add(-time.Minute).Unix(), price: 0.52}}
-	svc.cacheMu.Unlock()
+	svc.realtimeFetched = now.Unix()
+	svc.realtimeConnected = true
+	svc.realtimeLastEventAt = now.Unix()
+	svc.realtimeStates[tokenID] = &realtimeTokenState{tokenID: tokenID, outcome: "Yes", price: 0.60, lastEventAt: now.Unix()}
+	svc.realtimeSamples[tokenID] = []realtimeSample{
+		{at: now.Add(-15 * time.Minute).Unix(), price: 0.30},
+		{at: now.Add(-5 * time.Minute).Unix(), price: 0.40},
+		{at: now.Add(-time.Minute).Unix(), price: 0.50},
+	}
 
 	resp := svc.currentRealtimeMarketResponse(1)
 	if resp == nil || len(resp.GetItems()) != 1 || len(resp.GetItems()[0].Tokens) == 0 {
@@ -102,35 +79,89 @@ func TestRealtimeEventsAndWindowChanges(t *testing.T) {
 	if resp.GetItems()[0].EventSlug != "event-cond-1" {
 		t.Fatalf("event slug = %q, want inherited event slug", resp.GetItems()[0].EventSlug)
 	}
-	token := resp.GetItems()[0].Tokens[0]
-	if token.Price != 0.57 || token.BestBid != 0.56 || token.BestAsk != 0.58 || math.Abs(token.Spread-0.02) > 0.000001 || token.LastTradePrice != 0.59 || token.LastTradeSize != 10 || token.LastTradeSide != "BUY" {
-		t.Fatalf("token state = %#v, want ws fields applied", token)
+	windows := resp.GetItems()[0].Tokens[0].Windows
+	if len(windows) != 3 {
+		t.Fatalf("windows = %#v, want 3", windows)
 	}
-	if len(token.Windows) != 3 || token.Windows[0].Warmup || fmt.Sprintf("%.1f", token.Windows[0].PriceChangePp) != "5.0" {
-		t.Fatalf("1m window = %#v, want +5.0pp and not warmup", token.Windows)
+	if windows[0].Warmup || math.Abs(windows[0].PriceChangePp-10) > 0.000001 {
+		t.Fatalf("1m window = %#v, want +10pp", windows[0])
 	}
-	if !token.Windows[1].Warmup || !token.Windows[2].Warmup {
-		t.Fatalf("longer windows should be warmup: %#v", token.Windows)
+	if windows[1].Warmup || math.Abs(windows[1].PriceChangePp-20) > 0.000001 {
+		t.Fatalf("5m window = %#v, want +20pp", windows[1])
 	}
-	if !resp.GetConnected() || resp.GetLastEventAt() != now.Add(20*time.Second).Unix() {
-		t.Fatalf("connection metadata connected=%v last=%d", resp.GetConnected(), resp.GetLastEventAt())
+	if windows[2].Warmup || math.Abs(windows[2].PriceChangePp-30) > 0.000001 {
+		t.Fatalf("15m window = %#v, want +30pp", windows[2])
 	}
 }
 
-func TestRealtimeSamplingPrunesAndWarmup(t *testing.T) {
+func TestRealtimeWindowWarmupForInsufficientSamples(t *testing.T) {
 	now := time.Date(2026, 6, 3, 12, 0, 0, 0, time.UTC)
-	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}), WithCLOBMarketWSClient(&fakeCLOBMarketWSClient{}))
-	svc.realtimeStates["token-1"] = &realtimeTokenState{tokenID: "token-1", price: 0.6}
-	svc.realtimeSamples["token-1"] = []realtimeSample{{at: now.Add(-20 * time.Minute).Unix(), price: 0.4}}
-
-	svc.sampleRealtime(now)
-	samples := svc.realtimeSamples["token-1"]
-	if len(samples) != 1 || samples[0].price != 0.6 || samples[0].at != now.Unix() {
-		t.Fatalf("samples = %#v, want old sample pruned and current sample kept", samples)
+	item, ok := mapHotMarket(validHotMarket("cond-1", 100, 50))
+	if !ok {
+		t.Fatal("valid hot market rejected")
 	}
-	window := svc.realtimeWindowItemLocked("token-1", now.Unix(), realtimeWindow1m, 0.6)
-	if !window.Warmup {
-		t.Fatalf("window warmup = false, want true for insufficient samples")
+	tokenID := item.Tokens[0].TokenID
+	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}))
+	svc.nowFn = func() time.Time { return now }
+	svc.hotMarketItems = []*v1alpha1.PolymarketHotMarketItem{item}
+	svc.hotMarketFetched = now.Unix()
+	svc.realtimeStates[tokenID] = &realtimeTokenState{tokenID: tokenID, price: 0.6, lastEventAt: now.Unix()}
+	svc.realtimeSamples[tokenID] = []realtimeSample{{at: now.Unix(), price: 0.6}}
+
+	resp := svc.currentRealtimeMarketResponse(1)
+	windows := resp.GetItems()[0].Tokens[0].Windows
+	if len(windows) != 3 || !windows[0].Warmup || !windows[1].Warmup || !windows[2].Warmup {
+		t.Fatalf("windows = %#v, want all warmup", windows)
+	}
+}
+
+func TestRealtimeRefreshErrorDoesNotSampleAndMarksStale(t *testing.T) {
+	now := time.Date(2026, 6, 3, 12, 0, 0, 0, time.UTC)
+	gamma := &fakeGammaClient{marketResponses: []*utilpolymarket.MarketKeysetResponse{{
+		Markets: []utilpolymarket.Market{validHotMarket("cond-1", 100, 50)},
+	}}}
+	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(gamma), WithSportsWSClient(&fakeSportsWSClient{}))
+	svc.started = true
+	svc.nowFn = func() time.Time { return now }
+	if err := svc.refreshHotMarkets(context.Background()); err != nil {
+		t.Fatalf("initial refreshHotMarkets: %v", err)
+	}
+	tokenID := svc.hotMarketItems[0].Tokens[0].TokenID
+	if len(svc.realtimeSamples[tokenID]) != 1 {
+		t.Fatalf("initial samples = %#v, want one sample", svc.realtimeSamples[tokenID])
+	}
+
+	gamma.marketErr = errors.New("boom")
+	svc.nowFn = func() time.Time { return now.Add(time.Minute) }
+	if err := svc.refreshHotMarkets(context.Background()); err == nil {
+		t.Fatal("expected refresh error")
+	}
+	if len(svc.realtimeSamples[tokenID]) != 1 {
+		t.Fatalf("samples = %#v, want no new sample on refresh failure", svc.realtimeSamples[tokenID])
+	}
+	resp := svc.currentRealtimeMarketResponse(1)
+	if resp == nil || !resp.GetStale() || resp.GetConnected() {
+		t.Fatalf("response = %#v, want stale disconnected snapshot", resp)
+	}
+}
+
+func TestRealtimeMissingHysteresisMarketIsNotResampled(t *testing.T) {
+	now := time.Date(2026, 6, 3, 12, 0, 0, 0, time.UTC)
+	oldItem, _ := mapHotMarket(validHotMarket("cond-old", 100, 50))
+	newItem, _ := mapHotMarket(validHotMarket("cond-new", 200, 50))
+	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}))
+	svc.hotMarketItems = []*v1alpha1.PolymarketHotMarketItem{oldItem}
+	svc.sampleHotMarketCandidatesLocked([]hotMarketCandidate{{item: oldItem, rank: 0}}, now.Unix())
+
+	oldToken := oldItem.Tokens[0].TokenID
+	svc.applyHotMarketCandidatesLocked([]hotMarketCandidate{{item: newItem, rank: 0}})
+	svc.sampleHotMarketCandidatesLocked([]hotMarketCandidate{{item: newItem, rank: 0}}, now.Add(time.Minute).Unix())
+
+	if !hasHotMarketID(svc.hotMarketItems, "cond-old") {
+		t.Fatal("cond-old should be retained by hysteresis")
+	}
+	if len(svc.realtimeSamples[oldToken]) != 1 || svc.realtimeStates[oldToken].lastEventAt != now.Unix() {
+		t.Fatalf("old samples=%#v state=%#v, want retained market not resampled", svc.realtimeSamples[oldToken], svc.realtimeStates[oldToken])
 	}
 }
 
@@ -139,7 +170,7 @@ func TestRealtimeStaleFallbackAndLimitValidation(t *testing.T) {
 	if !ok {
 		t.Fatal("valid hot market rejected")
 	}
-	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}), WithCLOBMarketWSClient(&fakeCLOBMarketWSClient{}))
+	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}))
 	svc.started = true
 	svc.hotMarketItems = []*v1alpha1.PolymarketHotMarketItem{item}
 	svc.hotMarketFetched = 1717000000
@@ -156,46 +187,18 @@ func TestRealtimeStaleFallbackAndLimitValidation(t *testing.T) {
 	}
 }
 
-func TestRealtimeDecodeErrorDoesNotMarkStale(t *testing.T) {
-	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}), WithCLOBMarketWSClient(&fakeCLOBMarketWSClient{}))
-	svc.realtimeFetched = 1717000000
-	svc.realtimeStates["token-1"] = &realtimeTokenState{tokenID: "token-1", price: 0.5}
-
-	handler := svc.realtimeWSHandler()
-	handler.OnError(&utilpolymarket.CLOBMarketWSDecodeError{Err: errors.New("decode boom")})
-
-	if svc.realtimeStale {
-		t.Fatal("realtime stale = true, want false for frame decode error")
+func TestRealtimeTopHotMarketsUsesTop500(t *testing.T) {
+	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}))
+	for i := 0; i < hotMarketTargetLimit+5; i++ {
+		item, ok := mapHotMarket(validHotMarket(fmt.Sprintf("cond-%03d", i), float64(1000-i), float64(500-i)))
+		if !ok {
+			t.Fatalf("valid hot market %d was rejected", i)
+		}
+		svc.hotMarketItems = append(svc.hotMarketItems, item)
 	}
-}
 
-func TestRealtimeConnectionErrorMarksStale(t *testing.T) {
-	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}), WithCLOBMarketWSClient(&fakeCLOBMarketWSClient{}))
-	svc.realtimeFetched = 1717000000
-	svc.realtimeStates["token-1"] = &realtimeTokenState{tokenID: "token-1", price: 0.5}
-	svc.realtimeConnected = true
-
-	handler := svc.realtimeWSHandler()
-	handler.OnError(errors.New("failed reading polymarket market ws"))
-
-	if !svc.realtimeStale {
-		t.Fatal("realtime stale = false, want true for connection-level error")
-	}
-	if svc.realtimeConnected {
-		t.Fatal("realtime connected = true, want false after stale connection error")
-	}
-}
-
-func TestRealtimeSubscriptionBatchSize(t *testing.T) {
-	tokenIDs := make([]string, 0, 501)
-	for i := 0; i < 501; i++ {
-		tokenIDs = append(tokenIDs, fmt.Sprintf("token-%d", i))
-	}
-	chunks := chunkStrings(tokenIDs, realtimeSubscriptionBatchSize)
-	if len(chunks) != 3 {
-		t.Fatalf("chunks = %d, want 3", len(chunks))
-	}
-	if len(chunks[0]) != 250 || len(chunks[1]) != 250 || len(chunks[2]) != 1 {
-		t.Fatalf("chunk sizes = %d/%d/%d, want 250/250/1", len(chunks[0]), len(chunks[1]), len(chunks[2]))
+	markets := realtimeTopHotMarketsLocked(svc.hotMarketItems)
+	if len(markets) != hotMarketTargetLimit {
+		t.Fatalf("markets = %d, want %d", len(markets), hotMarketTargetLimit)
 	}
 }

@@ -159,16 +159,16 @@ func (s *Service) moverMarketItemLocked(market *v1alpha1.PolymarketHotMarketItem
 }
 
 func (s *Service) moverTokenItemLocked(token *v1alpha1.PolymarketHotMarketTokenItem, state *realtimeTokenState, nowUnix int64) *v1alpha1.PolymarketMoverTokenItem {
-	price := token.Price
-	outcome := token.Outcome
-	if state != nil {
-		outcome = firstNonEmpty(state.outcome, outcome)
-		price = firstPositive(state.price, price)
+	if state == nil {
+		return nil
 	}
+	price := state.price
+	outcome := token.Outcome
+	outcome = firstNonEmpty(state.outcome, outcome)
 	if price <= 0 || price > 1 {
 		return nil
 	}
-	if state == nil || state.lastEventAt <= 0 || nowUnix-state.lastEventAt > int64(moverFreshAfter.Seconds()) {
+	if state.lastEventAt <= 0 || nowUnix-state.lastEventAt > int64(moverFreshAfter.Seconds()) {
 		return nil
 	}
 
@@ -186,8 +186,6 @@ func (s *Service) moverTokenItemLocked(token *v1alpha1.PolymarketHotMarketTokenI
 		BestAsk:        state.bestAsk,
 		Spread:         state.spread,
 		LastTradePrice: state.lastTradePrice,
-		LastTradeSize:  state.lastTradeSize,
-		LastTradeSide:  state.lastTradeSide,
 		LastEventAt:    state.lastEventAt,
 		Windows:        windows,
 		Score:          score,

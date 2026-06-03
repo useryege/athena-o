@@ -86,14 +86,18 @@ func (s *Service) refreshHotMarkets(ctx context.Context) error {
 			s.cacheMu.Lock()
 			if len(s.hotMarketItems) > 0 || s.hotMarketFetched > 0 {
 				s.hotMarketStale = true
+				s.realtimeStale = true
+				s.realtimeConnected = false
 			}
 			s.cacheMu.Unlock()
 			return nil, fetchErr
 		}
 
 		s.cacheMu.Lock()
+		fetchedAt := s.nowUnix()
 		s.applyHotMarketCandidatesLocked(candidates)
-		s.hotMarketFetched = s.nowUnix()
+		s.sampleHotMarketCandidatesLocked(candidates, fetchedAt)
+		s.hotMarketFetched = fetchedAt
 		s.hotMarketStale = false
 		s.hotMarketCandidateCount = int32(len(candidates))
 		s.cacheMu.Unlock()

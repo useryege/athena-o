@@ -423,7 +423,7 @@ func (c *clobClientImpl) doJSON(ctx context.Context, method, path string, query 
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return decodeHTTPError(resp)
+		return decodeHTTPErrorWithService(resp, "clob")
 	}
 
 	if out == nil {

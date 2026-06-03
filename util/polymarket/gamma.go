@@ -105,6 +105,7 @@ func NewGammaClient(config GammaConfig) (GammaClient, error) {
 
 type APIError struct {
 	StatusCode int    `json:"-"`
+	Service    string `json:"-"`
 	Type       string `json:"type,omitempty"`
 	Message    string `json:"error,omitempty"`
 	RawBody    string `json:"-"`
@@ -114,16 +115,20 @@ func (e *APIError) Error() string {
 	if e == nil {
 		return ""
 	}
+	service := strings.TrimSpace(e.Service)
+	if service == "" {
+		service = "gamma"
+	}
 	if e.Type != "" && e.Message != "" {
-		return fmt.Sprintf("polymarket gamma request failed (%d): %s: %s", e.StatusCode, e.Type, e.Message)
+		return fmt.Sprintf("polymarket %s request failed (%d): %s: %s", service, e.StatusCode, e.Type, e.Message)
 	}
 	if e.Message != "" {
-		return fmt.Sprintf("polymarket gamma request failed (%d): %s", e.StatusCode, e.Message)
+		return fmt.Sprintf("polymarket %s request failed (%d): %s", service, e.StatusCode, e.Message)
 	}
 	if e.RawBody != "" {
-		return fmt.Sprintf("polymarket gamma request failed (%d): %s", e.StatusCode, e.RawBody)
+		return fmt.Sprintf("polymarket %s request failed (%d): %s", service, e.StatusCode, e.RawBody)
 	}
-	return fmt.Sprintf("polymarket gamma request failed with status %d", e.StatusCode)
+	return fmt.Sprintf("polymarket %s request failed with status %d", service, e.StatusCode)
 }
 
 // Query option structs.
@@ -843,14 +848,23 @@ func (c *gammaClientImpl) buildURL(path string, query url.Values) (*url.URL, err
 }
 
 func decodeHTTPError(resp *http.Response) error {
+	return decodeHTTPErrorWithService(resp, "gamma")
+}
+
+func decodeHTTPErrorWithService(resp *http.Response, service string) error {
+	service = strings.TrimSpace(service)
+	if service == "" {
+		service = "gamma"
+	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, errorBodyLimit))
 	if err != nil {
-		return fmt.Errorf("polymarket gamma request failed with status %s and unreadable body: %w", resp.Status, err)
+		return fmt.Errorf("polymarket %s request failed with status %s and unreadable body: %w", service, resp.Status, err)
 	}
 
 	var apiErr APIError
 	if err := json.Unmarshal(body, &apiErr); err == nil {
 		apiErr.StatusCode = resp.StatusCode
+		apiErr.Service = service
 		apiErr.RawBody = strings.TrimSpace(string(body))
 		if apiErr.Type != "" || apiErr.Message != "" {
 			return &apiErr
@@ -863,6 +877,7 @@ func decodeHTTPError(resp *http.Response) error {
 	}
 	return &APIError{
 		StatusCode: resp.StatusCode,
+		Service:    service,
 		Message:    trimmed,
 		RawBody:    trimmed,
 	}

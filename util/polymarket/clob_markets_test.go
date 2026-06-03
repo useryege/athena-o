@@ -218,4 +218,10 @@ func TestGetCurrentRebatedFeesErrorDecode(t *testing.T) {
 	if !strings.Contains(apiErr.Message, "Invalid maker_address") {
 		t.Fatalf("message = %q", apiErr.Message)
 	}
+	if !strings.Contains(err.Error(), "polymarket clob request failed") {
+		t.Fatalf("error = %q, want clob request context", err.Error())
+	}
+	if strings.Contains(err.Error(), "polymarket gamma request failed") {
+		t.Fatalf("error = %q, should not mention gamma for clob client", err.Error())
+	}
 }
