@@ -39,6 +39,12 @@ func (*PolymarketHotMarketItem) ProtoMessage() {}
 
 func (*PolymarketHotMarketTokenItem) ProtoMessage() {}
 
+func (*PolymarketMoverMarketItem) ProtoMessage() {}
+
+func (*PolymarketMoverTokenItem) ProtoMessage() {}
+
+func (*PolymarketMoverWindowItem) ProtoMessage() {}
+
 func (*PolymarketRealtimeMarketItem) ProtoMessage() {}
 
 func (*PolymarketRealtimeTokenItem) ProtoMessage() {}

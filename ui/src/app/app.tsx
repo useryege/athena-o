@@ -41,6 +41,7 @@ const routes: Routes = {
     '/wallet-blacklist': {component: walletBlacklist.component},
     '/worm': {component: worm.component},
     '/polymarket/realtime': {component: polymarket.realtimeComponent},
+    '/polymarket/movers': {component: polymarket.moversComponent},
     '/polymarket/sports-live': {component: polymarket.sportsLiveComponent},
     '/polymarket': {component: polymarket.component},
     '/notifications': {component: notifications.component},
@@ -130,6 +131,12 @@ const navItems: NavItem[] = [
                 tooltip: 'View Polymarket realtime quotes',
                 path: '/polymarket/realtime',
                 iconClassName: 'fa fa-signal'
+            },
+            {
+                title: 'Movers',
+                tooltip: 'View Polymarket price movers',
+                path: '/polymarket/movers',
+                iconClassName: 'fa fa-chart-line'
             },
             {
                 title: 'Sports Live',

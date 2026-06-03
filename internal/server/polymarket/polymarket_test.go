@@ -23,10 +23,12 @@ type fakePolymarketServiceClient struct {
 	statusResp          *v1alpha1.PolymarketStatus
 	hotMarketsResp      *polymarketapiclient.ListPolymarketHotMarketsResponse
 	realtimeMarketsResp *polymarketapiclient.ListPolymarketRealtimeMarketsResponse
+	moversResp          *polymarketapiclient.ListPolymarketMoversResponse
 	liveListResp        *polymarketapiclient.ListPolymarketSportsLiveMarketsResponse
 	liveSnapshotResp    *polymarketapiclient.GetPolymarketSportsLiveSnapshotResponse
 	lastHotMarketsLimit int32
 	lastRealtimeLimit   int32
+	lastMoversLimit     int32
 	lastListLimit       int32
 	lastSnapshotLimit   int32
 }
@@ -52,6 +54,14 @@ func (f *fakePolymarketServiceClient) ListPolymarketRealtimeMarkets(_ context.Co
 		return f.realtimeMarketsResp, nil
 	}
 	return &polymarketapiclient.ListPolymarketRealtimeMarketsResponse{}, nil
+}
+
+func (f *fakePolymarketServiceClient) ListPolymarketMovers(_ context.Context, req *polymarketapiclient.ListPolymarketMoversRequest, _ ...grpc.CallOption) (*polymarketapiclient.ListPolymarketMoversResponse, error) {
+	f.lastMoversLimit = req.GetLimit()
+	if f.moversResp != nil {
+		return f.moversResp, nil
+	}
+	return &polymarketapiclient.ListPolymarketMoversResponse{}, nil
 }
 
 func (f *fakePolymarketServiceClient) ListPolymarketSportsLiveMarkets(_ context.Context, req *polymarketapiclient.ListPolymarketSportsLiveMarketsRequest, _ ...grpc.CallOption) (*polymarketapiclient.ListPolymarketSportsLiveMarketsResponse, error) {
@@ -164,6 +174,51 @@ func TestListPolymarketRealtimeMarketsForwardsResponse(t *testing.T) {
 	}
 	if len(resp.GetItems()) != 1 || resp.GetItems()[0].ConditionID != "cond-1" || resp.GetItems()[0].EventSlug != "event-1" || !resp.GetStale() || !resp.GetConnected() || resp.GetFetchedAt() != 1717000001 || resp.GetSubscribedMarkets() != 500 || resp.GetSubscribedTokens() != 1000 || resp.GetLastEventAt() != 1717000000 || resp.GetCandidateCount() != 650 {
 		t.Fatalf("response = %#v, want forwarded realtime markets", resp)
+	}
+}
+
+func TestListPolymarketMoversForwardsResponse(t *testing.T) {
+	client := &fakePolymarketServiceClient{
+		moversResp: &polymarketapiclient.ListPolymarketMoversResponse{
+			Items: []*v1alpha1.PolymarketMoverMarketItem{
+				{
+					ConditionID: "cond-1",
+					MarketSlug:  "market-1",
+					EventSlug:   "event-1",
+					Question:    "Market 1",
+					Score:       8.5,
+					Direction:   "up",
+					Leader: &v1alpha1.PolymarketMoverTokenItem{
+						TokenID:   "token-1",
+						Outcome:   "Yes",
+						Price:     0.55,
+						Score:     8.5,
+						Direction: "up",
+						Windows:   []*v1alpha1.PolymarketMoverWindowItem{{Window: "1m", PriceChangePp: 8.5}},
+					},
+				},
+			},
+			FetchedAt:        1717000001,
+			Stale:            true,
+			Connected:        true,
+			LastEventAt:      1717000000,
+			MonitoredMarkets: 500,
+			MonitoredTokens:  1000,
+			CandidateCount:   650,
+		},
+	}
+
+	resp, err := NewServer(&fakePolymarketClientset{client: client}).ListPolymarketMovers(context.Background(), &polymarketpkg.ListPolymarketMoversRequest{
+		Limit: 66,
+	})
+	if err != nil {
+		t.Fatalf("ListPolymarketMovers: %v", err)
+	}
+	if client.lastMoversLimit != 66 {
+		t.Fatalf("forwarded limit = %d, want 66", client.lastMoversLimit)
+	}
+	if len(resp.GetItems()) != 1 || resp.GetItems()[0].ConditionID != "cond-1" || resp.GetItems()[0].Leader.TokenID != "token-1" || !resp.GetStale() || !resp.GetConnected() || resp.GetFetchedAt() != 1717000001 || resp.GetMonitoredMarkets() != 500 || resp.GetMonitoredTokens() != 1000 || resp.GetLastEventAt() != 1717000000 || resp.GetCandidateCount() != 650 {
+		t.Fatalf("response = %#v, want forwarded movers", resp)
 	}
 }
 

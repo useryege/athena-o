@@ -78,6 +78,57 @@ export interface ListPolymarketRealtimeMarketsResult {
     candidateCount?: number;
 }
 
+export interface PolymarketMoverWindowItem {
+    window: string;
+    priceChangePp?: number;
+    warmup?: boolean;
+    sampleCount?: number;
+}
+
+export interface PolymarketMoverTokenItem {
+    tokenId: string;
+    outcome: string;
+    price?: number;
+    bestBid?: number;
+    bestAsk?: number;
+    spread?: number;
+    lastTradePrice?: number;
+    lastTradeSize?: number;
+    lastTradeSide?: string;
+    lastEventAt?: number;
+    windows: PolymarketMoverWindowItem[];
+    warmup?: boolean;
+    score?: number;
+    direction?: string;
+}
+
+export interface PolymarketMoverMarketItem {
+    conditionId: string;
+    marketSlug: string;
+    eventSlug: string;
+    question: string;
+    image?: string;
+    volume24hr?: number;
+    volumeNum?: number;
+    liquidityNum?: number;
+    updatedAt?: string;
+    tokens: PolymarketMoverTokenItem[];
+    leader?: PolymarketMoverTokenItem;
+    score?: number;
+    direction?: string;
+}
+
+export interface ListPolymarketMoversResult {
+    items: PolymarketMoverMarketItem[];
+    fetchedAt?: number;
+    stale?: boolean;
+    connected?: boolean;
+    lastEventAt?: number;
+    monitoredMarkets?: number;
+    monitoredTokens?: number;
+    candidateCount?: number;
+}
+
 export interface PolymarketSportsLiveMarketItem {
     conditionId: string;
     marketSlug: string;
@@ -249,6 +300,53 @@ const normalizeRealtimeMarket = (item: any): PolymarketRealtimeMarketItem => {
     };
 };
 
+const normalizeMoverWindow = (item: any): PolymarketMoverWindowItem => ({
+    window: readString(item, 'window'),
+    priceChangePp: readNumber(item, 'priceChangePp', 'price_change_pp'),
+    warmup: readBoolean(item, 'warmup'),
+    sampleCount: readNumber(item, 'sampleCount', 'sample_count')
+});
+
+const normalizeMoverToken = (item: any): PolymarketMoverTokenItem => {
+    const windows = readValue(item, 'windows');
+    return {
+        tokenId: readString(item, 'tokenId', 'token_id'),
+        outcome: readString(item, 'outcome'),
+        price: readNumber(item, 'price'),
+        bestBid: readNumber(item, 'bestBid', 'best_bid'),
+        bestAsk: readNumber(item, 'bestAsk', 'best_ask'),
+        spread: readNumber(item, 'spread'),
+        lastTradePrice: readNumber(item, 'lastTradePrice', 'last_trade_price'),
+        lastTradeSize: readNumber(item, 'lastTradeSize', 'last_trade_size'),
+        lastTradeSide: readString(item, 'lastTradeSide', 'last_trade_side'),
+        lastEventAt: readNumber(item, 'lastEventAt', 'last_event_at'),
+        windows: Array.isArray(windows) ? windows.map(normalizeMoverWindow) : [],
+        warmup: readBoolean(item, 'warmup'),
+        score: readNumber(item, 'score'),
+        direction: readString(item, 'direction')
+    };
+};
+
+const normalizeMoverMarket = (item: any): PolymarketMoverMarketItem => {
+    const tokens = readValue(item, 'tokens');
+    const leader = readValue(item, 'leader');
+    return {
+        conditionId: readString(item, 'conditionId', 'condition_id'),
+        marketSlug: readString(item, 'marketSlug', 'market_slug'),
+        eventSlug: readString(item, 'eventSlug', 'event_slug'),
+        question: readString(item, 'question'),
+        image: readString(item, 'image'),
+        volume24hr: readNumber(item, 'volume24hr', 'volume_24hr'),
+        volumeNum: readNumber(item, 'volumeNum', 'volume_num'),
+        liquidityNum: readNumber(item, 'liquidityNum', 'liquidity_num'),
+        updatedAt: readString(item, 'updatedAt', 'updated_at'),
+        tokens: Array.isArray(tokens) ? tokens.map(normalizeMoverToken) : [],
+        leader: leader ? normalizeMoverToken(leader) : undefined,
+        score: readNumber(item, 'score'),
+        direction: readString(item, 'direction')
+    };
+};
+
 const normalizeMarketOption = (item: any): PolymarketSportsLiveMarketOptionItem => ({
     conditionId: readString(item, 'conditionId', 'condition_id'),
     marketSlug: readString(item, 'marketSlug', 'market_slug'),
@@ -327,6 +425,25 @@ export class PolymarketService {
                 subscribedTokens: readNumber(body, 'subscribedTokens', 'subscribed_tokens'),
                 connected: readBoolean(body, 'connected'),
                 lastEventAt: readNumber(body, 'lastEventAt', 'last_event_at'),
+                candidateCount: readNumber(body, 'candidateCount', 'candidate_count')
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listMovers(limit = 100): Promise<ListPolymarketMoversResult> & {abort?: () => void} {
+        const req = requests.get('/polymarket/movers').query({limit});
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                items: (body.items || []).map(normalizeMoverMarket),
+                fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
+                stale: readBoolean(body, 'stale'),
+                connected: readBoolean(body, 'connected'),
+                lastEventAt: readNumber(body, 'lastEventAt', 'last_event_at'),
+                monitoredMarkets: readNumber(body, 'monitoredMarkets', 'monitored_markets'),
+                monitoredTokens: readNumber(body, 'monitoredTokens', 'monitored_tokens'),
                 candidateCount: readNumber(body, 'candidateCount', 'candidate_count')
             };
         }) as any;

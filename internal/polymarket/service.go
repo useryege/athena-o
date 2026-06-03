@@ -31,6 +31,8 @@ const (
 	maxRealtimeListLimit             = 500
 	defaultRealtimeInitialSyncWait   = 15 * time.Second
 	defaultRealtimeSampleInterval    = time.Second
+	defaultMoverListLimit            = 100
+	maxMoverListLimit                = 500
 )
 
 type ServiceOption func(*Service)

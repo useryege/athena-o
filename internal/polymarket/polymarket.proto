@@ -42,6 +42,23 @@ message ListPolymarketRealtimeMarketsResponse {
   int32 candidate_count = 8;
 }
 
+// ListPolymarketMoversRequest queries price mover market rows.
+message ListPolymarketMoversRequest {
+  int32 limit = 1;
+}
+
+// ListPolymarketMoversResponse returns price mover market rows.
+message ListPolymarketMoversResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketMoverMarketItem items = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
+  bool connected = 4;
+  int64 last_event_at = 5;
+  int32 monitored_markets = 6;
+  int32 monitored_tokens = 7;
+  int32 candidate_count = 8;
+}
+
 // ListPolymarketSportsLiveMarketsRequest queries sports live market rows.
 message ListPolymarketSportsLiveMarketsRequest {
   int32 limit = 1;
@@ -75,6 +92,9 @@ service PolymarketService {
 
   // ListPolymarketRealtimeMarkets returns realtime market rows.
   rpc ListPolymarketRealtimeMarkets(ListPolymarketRealtimeMarketsRequest) returns (ListPolymarketRealtimeMarketsResponse);
+
+  // ListPolymarketMovers returns price mover market rows.
+  rpc ListPolymarketMovers(ListPolymarketMoversRequest) returns (ListPolymarketMoversResponse);
 
   // ListPolymarketSportsLiveMarkets returns sports live market rows.
   rpc ListPolymarketSportsLiveMarkets(ListPolymarketSportsLiveMarketsRequest) returns (ListPolymarketSportsLiveMarketsResponse);
