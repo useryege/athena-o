@@ -12,8 +12,6 @@ FROM docker.io/library/golang:1.25.1@sha256:d7098379b7da665ab25b99795465ec320b1c
 
 FROM docker.io/library/registry:3.0@sha256:cd92709b4191c5779cd7215ccd695db6c54652e7a62843197e367427efb84d0e AS registry
 
-FROM docker.io/bitnamilegacy/kubectl:1.32@sha256:9524faf8e3cefb47fa28244a5d15f95ec21a73d963273798e593e61f80712333 AS kubectl
-
 FROM docker.io/library/ubuntu:25.10@sha256:5922638447b1e3ba114332c896a2c7288c876bb94adec923d70d58a17d2fec5e
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -24,9 +22,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN  apt-get update && apt-get install --fix-missing -y \
     ca-certificates \
     curl \
-    openssh-server \
-    nginx \
-    fcgiwrap \
     git \
     git-lfs \
     gpg \
@@ -47,19 +42,14 @@ RUN  apt-get update && apt-get install --fix-missing -y \
 
 COPY --from=golang /usr/local/go /usr/local/go
 
-COPY --from=kubectl /opt/bitnami/kubectl/bin/kubectl /usr/local/bin/kubectl
-
 ENV PATH=/dist:/go/bin:/usr/local/go/bin:/go/src/github.com/useryege/athena/dist:$PATH
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/go
 
-# # Install build and test dependencies
 COPY hack/install.sh hack/tool-versions.sh go.* ./
 COPY hack/installers installers
 
-RUN ./install.sh helm && \
-    ./install.sh kustomize && \
-    ./install.sh codegen-tools && \
+RUN ./install.sh codegen-tools && \
     ./install.sh codegen-go-tools && \
     ./install.sh lint-tools && \
     ./install.sh gotestsum && \
@@ -67,14 +57,7 @@ RUN ./install.sh helm && \
     go install github.com/kisielk/godepgraph@latest && \
     go install github.com/jstemmer/go-junit-report@latest && \
     rm -rf /tmp/dl && \
-    rm -rf /tmp/helm && \
-    rm -rf /tmp/ks_*
-
-# # These are required for running end-to-end tests
-# COPY ./test/fixture/testrepos/id_rsa.pub /root/.ssh/authorized_keys
-# COPY ./test/fixture/testrepos/nginx.conf /etc/nginx/nginx.conf
-# COPY ./test/fixture/testrepos/sudoers.conf /etc/sudoers
-# COPY ./test/fixture/testrepos/ssh_host_*_key* /etc/ssh/
+    rm -rf /tmp/protoc_*
 
 # Copy redis binaries to the image
 COPY --from=redis /usr/local/bin/* /usr/local/bin/
@@ -105,7 +88,6 @@ ARG UID
 RUN userdel -r ubuntu && \
     useradd -l -u ${UID} -d /home/user -s /bin/bash user && \
     echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/user && \
-    mkdir -p /home/user/.kube && \
     mkdir -p /home/user/.cache && \
     chown -R user /home/user && \
     chgrp -R user /home/user && \
@@ -118,10 +100,6 @@ RUN userdel -r ubuntu && \
     mkdir -p /go/src && \
     mkdir -p /go/pkg && \
     chown -R user:user /go && \
-    mkdir -p /var/run/sshd && \
-    mkdir -p /root/.ssh && \
-    chown root /etc/ssh/ssh_host_*_key* && \
-    chmod 0600 /etc/ssh/ssh_host_*_key && \
     mkdir -p /tmp/go-build-cache && \
     chown -R user:user /tmp/go-build-cache && \
     ln -s /usr/local/bin/node /usr/local/bin/nodejs && \

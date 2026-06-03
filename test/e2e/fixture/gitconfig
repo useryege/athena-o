@@ -1,8 +1,0 @@
-# Git configuration for e2e tests
-# This file ensures reproducible test behavior by disabling system credential helpers
-
-[credential]
-    helper =
-
-[core]
-    askPass =

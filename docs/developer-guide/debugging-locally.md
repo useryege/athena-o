@@ -22,7 +22,7 @@ The `Procfile` is used by Goreman when running Athena locally with the local too
 
 Example for `api-server` configuration in `Procfile`:
 ``` text
-api-server: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_FAKE_IN_CLUSTER=true ATHENA_TLS_DATA_PATH=${ATHENA_TLS_DATA_PATH:-/tmp/athena-local/tls} ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server $COMMAND --loglevel debug --redis localhost:${ATHENA_E2E_REDIS_PORT:-6379} --disable-auth=${ATHENA_E2E_DISABLE_AUTH:-'true'} --insecure --dex-server http://localhost:${ATHENA_E2E_DEX_PORT:-5556} --otlp-address=${ATHENA_OTLP_ADDRESS} --application-namespaces=${ATHENA_APPLICATION_NAMESPACES:-''} --hydrator-enabled=${ATHENA_HYDRATOR_ENABLED:='false'}"
+api-server: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_FAKE_IN_CLUSTER=true ATHENA_TLS_DATA_PATH=${ATHENA_TLS_DATA_PATH:-/tmp/athena-local/tls} ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server $COMMAND --loglevel debug --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_DISABLE_AUTH:-'true'} --insecure --port ${ATHENA_SERVER_PORT:-8080}"
 ```
 This configuration example will be used as the basis for the next steps.
 
@@ -45,11 +45,8 @@ ATHENA_SSH_DATA_PATH=/tmp/athena-local/ssh
 ATHENA_TLS_DATA_PATH=/tmp/athena-local/tls
 ATHENA_TRACING_ENABLED=1
 FORCE_LOG_COLORS=1
-KUBECONFIG=/Users/<YOUR_USERNAME>/.kube/config # Must be an absolute full path
 ... 
-# and so on, for example: when you test the app-in-any-namespace feature, 
-# you'll need to add ATHENA_APPLICATION_NAMESPACES to this list 
-# only for testing this functionality and remove it afterwards.
+# and so on for the component-specific settings you are testing.
 ```
 
 ### Install DotENV / EnvFile plugin
@@ -117,8 +114,7 @@ Example for an `api-server` launch configuration snippet, based on our above exa
 
 ## Run Athena without the debugged component
 Next, we need to run all Athena components, except for the debugged component (cause we will run this component separately in the IDE).
-There is a mix-and-match approach to running the other components - you can run them in your K8s cluster or locally with the local toolchain.
-Below are the different options.
+Run the other components locally, then launch the debugged component from your IDE.
 
 ### Run the other components locally
 #### Run with "make start-local"
@@ -128,7 +124,7 @@ So for the case of debugging the `api-server`, run:
 `make start-local ATHENA_START="notification applicationset-controller repo-server redis dex controller ui"` 
 
 > [!NOTE]
-> By default, the api-server in this configuration runs with auth disabled. If you need to test argo cd auth-related functionality, run `export ATHENA_E2E_DISABLE_AUTH='false' && make start-local`
+> By default, the api-server in this configuration runs with auth disabled. To test authentication-related behavior, run `export ATHENA_DISABLE_AUTH='false' && make start-local`.
 #### Run with "make run"
 `make run` runs all the components by default, but it is also possible to run it with a blacklist of components, enabling the separation we need.
 

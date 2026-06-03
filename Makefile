@@ -27,7 +27,6 @@ GIT_COMMIT:=$(if $(GIT_COMMIT),$(GIT_COMMIT),$(shell git rev-parse HEAD))
 GIT_TAG:=$(if $(GIT_TAG),$(GIT_TAG),$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi))
 GIT_TREE_STATE:=$(if $(GIT_TREE_STATE),$(GIT_TREE_STATE),$(shell if [ -z "`git status --porcelain`" ]; then echo "clean" ; else echo "dirty"; fi))
 VOLUME_MOUNT=$(shell if test "$(go env GOOS)" = "darwin"; then echo ":delegated"; elif test selinuxenabled; then echo ":delegated"; else echo ""; fi)
-KUBECTL_VERSION=$(shell go list -m k8s.io/client-go | head -n 1 | rev | cut -d' ' -f1 | rev)
 
 GOPATH?=$(shell if test -x `which go`; then go env GOPATH; else echo "$(HOME)/go"; fi)
 GOCACHE?=$(HOME)/.cache/go-build
@@ -41,8 +40,6 @@ endif
 DOCKER_SRCDIR ?= $(GOPATH)/src
 DOCKER_WORKDIR ?= /go/src/github.com/useryege/athena
 # Allows you to control which Docker network the test-util containers attach to.
-# This is particularly useful if you are running Kubernetes in Docker (e.g., k3d)
-# and want the test containers to reach the Kubernetes API via an already-existing Docker network.
 DOCKER_NETWORK ?= default
 
 ifneq ($(DOCKER_NETWORK),default)
@@ -67,21 +64,15 @@ endif
 
 # You can change the ports where Athena components will be listening on by
 # setting the appropriate environment variables before running make.
-ATHENA_E2E_APISERVER_PORT?=8080
-ATHENA_E2E_REDIS_PORT?=6379
+ATHENA_SERVER_PORT?=8080
+ATHENA_REDIS_PORT?=6379
 ATHENA_POSTGRES_PORT?=5432
-ATHENA_E2E_DEX_PORT?=5556
-ATHENA_E2E_YARN_HOST?=localhost
-ATHENA_E2E_DISABLE_AUTH?=
-ATHENA_E2E_DIR?=/tmp/athena-e2e
+ATHENA_YARN_HOST?=localhost
+ATHENA_DISABLE_AUTH?=true
 ATHENA_POSTGRES_DATA_DIR?=/tmp/athena-local/postgres
 ATHENA_REDIS_DATA_DIR?=/tmp/athena-local/redis
 
-ATHENA_E2E_TEST_TIMEOUT?=90m
-ATHENA_E2E_RERUN_FAILS?=5
-
 ATHENA_IN_CI?=false
-ATHENA_TEST_E2E?=true
 ATHENA_BIN_MODE?=true
 
 ATHENA_LINT_GOGC?=20
@@ -139,9 +130,8 @@ define run-in-test-server
 		-e GOPATH=/go \
 		-e GOCACHE=/tmp/go-build-cache \
 		-e ATHENA_IN_CI=$(ATHENA_IN_CI) \
-		-e ATHENA_E2E_TEST=$(ATHENA_E2E_TEST) \
-		-e ATHENA_E2E_YARN_HOST=$(ATHENA_E2E_YARN_HOST) \
-		-e ATHENA_E2E_DISABLE_AUTH=$(ATHENA_E2E_DISABLE_AUTH) \
+		-e ATHENA_YARN_HOST=$(ATHENA_YARN_HOST) \
+		-e ATHENA_DISABLE_AUTH=$(ATHENA_DISABLE_AUTH) \
 		-e ATHENA_TLS_DATA_PATH=${ATHENA_TLS_DATA_PATH:-/tmp/athena-local/tls} \
 		-e ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} \
 		-e ATHENA_GPG_DATA_PATH=${ATHENA_GPG_DATA_PATH:-/tmp/athena-local/gpg/source} \
@@ -149,9 +139,8 @@ define run-in-test-server
 		-v ${DOCKER_SRC_MOUNT} \
 		-v ${GOPATH}/pkg/mod:/go/pkg/mod${VOLUME_MOUNT} \
 		-v ${GOCACHE}:/tmp/go-build-cache${VOLUME_MOUNT} \
-		-v ${HOME}/.kube:/home/user/.kube${VOLUME_MOUNT} \
 		-w ${DOCKER_WORKDIR} \
-		-p ${ATHENA_E2E_APISERVER_PORT}:8080 \
+		-p ${ATHENA_SERVER_PORT}:8080 \
 		-p 4000:4000 \
 		-p 5000:5000 \
 		$(DOCKER_NETWORK_ARG)\
@@ -166,23 +155,16 @@ define run-in-test-client
 		-u $(CONTAINER_UID):$(CONTAINER_GID) \
 		-e HOME=/home/user \
 		-e GOPATH=/go \
-		-e ATHENA_E2E_K3S=$(ATHENA_E2E_K3S) \
 		-e GITHUB_TOKEN \
 		-e GOCACHE=/tmp/go-build-cache \
 		-e ATHENA_LINT_GOGC=$(ATHENA_LINT_GOGC) \
 		-v $(DOCKER_SRC_MOUNT) \
 		-v $(GOPATH)/pkg/mod:/go/pkg/mod$(VOLUME_MOUNT) \
 		-v $(GOCACHE):/tmp/go-build-cache$(VOLUME_MOUNT) \
-		-v $(HOME)/.kube:/home/user/.kube$(VOLUME_MOUNT) \
 		-w $(DOCKER_WORKDIR) \
 		$(DOCKER_NETWORK_ARG) \
 		$(TEST_TOOLS_PREFIX)$(TEST_TOOLS_IMAGE):$(TEST_TOOLS_TAG) \
 		bash -c "$(1)"
-endef
-
-#
-define exec-in-test-server
-	$(SUDO) $(DOCKER) exec -it -u $(CONTAINER_UID):$(CONTAINER_GID) -e ATHENA_E2E_RECORD=$(ATHENA_E2E_RECORD) -e ATHENA_E2E_K3S=$(ATHENA_E2E_K3S) athena-test-server $(1)
 endef
 
 PATH:=$(PATH):$(PWD)/hack
@@ -208,10 +190,8 @@ STATIC_BUILD?=${DEFAULT_STATIC_BUILD}
 # build development images
 DEV_IMAGE?=false
 ATHENA_GPG_ENABLED?=true
-ATHENA_E2E_APISERVER_PORT?=8080
 
 ifeq (${COVERAGE_ENABLED}, true)
-# We use this in the cli-local target to enable code coverage for e2e tests.
 COVERAGE_FLAG=-cover
 else
 COVERAGE_FLAG=
@@ -222,7 +202,6 @@ override LDFLAGS += \
   -X ${PACKAGE}.buildDate=${BUILD_DATE} \
   -X ${PACKAGE}.gitCommit=${GIT_COMMIT} \
   -X ${PACKAGE}.gitTreeState=${GIT_TREE_STATE}\
-  -X ${PACKAGE}.kubectlVersion=${KUBECTL_VERSION}\
   -X "${PACKAGE}.extraBuildInfo=${EXTRA_BUILD_INFO}"
 
 ifeq (${STATIC_BUILD}, true)
@@ -255,14 +234,11 @@ endif
 .PHONY: install-tools-local
 install-tools-local: install-test-tools-local install-codegen-tools-local install-go-tools-local
 
-# Installs all tools required for running unit & end-to-end tests (Linux packages)
+# Installs all tools required for running unit tests (Linux packages)
 .PHONY: install-test-tools-local
 install-test-tools-local:
-	./hack/install.sh kustomize
-	./hack/install.sh helm
 	./hack/install.sh gotestsum
 	./hack/install.sh oras
-	./hack/install.sh kind
 
 
 # Installs all tools required for running codegen (Go packages)
@@ -320,14 +296,6 @@ else
 	go run tools/password-hash/main.go -password '$(PASSWORD)'
 endif
 
-.PHONY: manifests-local
-manifests-local:
-	./hack/update-manifests.sh
-
-.PHONY: manifests
-manifests: test-tools-image
-	$(call run-in-test-client,make manifests-local IMAGE_REGISTRY='${IMAGE_REGISTRY}' IMAGE_NAMESPACE='${IMAGE_NAMESPACE}' IMAGE_REPOSITORY='${IMAGE_REPOSITORY}' IMAGE_TAG='${IMAGE_TAG}')
-
 .PHONY: mod-download-local
 mod-download-local:
 	go mod download && go mod tidy
@@ -338,7 +306,7 @@ mod-vendor-local: mod-download-local
 
 # new codegen-local
 .PHONY: codegen-local
-codegen-local: mod-vendor-local mockgen gogen protogen sqlc-local clientgen clidocsgen manifests-local
+codegen-local: mod-vendor-local mockgen gogen protogen sqlc-local clientgen clidocsgen
 	rm -rf vendor/
 
 .PHONY: test-tools-image
@@ -362,7 +330,7 @@ build: test-tools-image
 # Build all Go code (local version)
 .PHONY: build-local
 build-local:
-	GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -v `go list ./... | grep -v 'resource_customizations\|test/e2e'`
+	GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -v `go list ./... | grep -v 'resource_customizations\|/test/'`
 
 # Run all unit tests
 #
@@ -377,7 +345,7 @@ test: test-tools-image
 .PHONY: test-local
 test-local:
 	if test "$(TEST_MODULE)" = ""; then \
-		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES=`go list ./... | grep -v 'test/e2e'` ./hack/test.sh -args -test.gocoverdir="$(PWD)/test-results"; \
+		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES=`go list ./...` ./hack/test.sh -args -test.gocoverdir="$(PWD)/test-results"; \
 	else \
 		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES="$(TEST_MODULE)" ./hack/test.sh -args -test.gocoverdir="$(PWD)/test-results" "$(TEST_MODULE)"; \
 	fi
@@ -391,7 +359,7 @@ test-race: test-tools-image
 .PHONY: test-race-local
 test-race-local:
 	if test "$(TEST_MODULE)" = ""; then \
-		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES=`go list ./... | grep -v 'test/e2e'` ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
+		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES=`go list ./...` ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
 	else \
 		DIST_DIR=${DIST_DIR} RERUN_FAILS=0 PACKAGES="$(TEST_MODULE)" ./hack/test.sh -race -args -test.gocoverdir="$(PWD)/test-results"; \
 	fi
@@ -408,12 +376,6 @@ lint-local:
 	# NOTE: If you get a "Killed" OOM message, try reducing the value of GOGC
 	# See https://github.com/golangci/golangci-lint#memory-usage-of-golangci-lint
 	GOGC=$(ATHENA_LINT_GOGC) GOMAXPROCS=2 golangci-lint run --fix --verbose
-
-# Verify that kubectl can connect to your K8s cluster from Docker
-.PHONY: verify-kube-connect
-verify-kube-connect: test-tools-image
-	$(call run-in-test-client,kubectl version)
-
 
 # Runs pre-commit validation with the virtualized toolchain
 .PHONY: pre-commit
@@ -439,18 +401,14 @@ start: test-tools-image
 start-local: mod-vendor-local dep-ui-local cli-local
 	# check we can connect to Docker to start Redis
 	killall goreman || true
-	kubectl create ns athena || true
-	kubectl config set-context --current --namespace=athena || true
 	rm -rf /tmp/athena-local
 	mkdir -p /tmp/athena-local
 	mkdir -p /tmp/athena-local/gpg/keys && chmod 0700 /tmp/athena-local/gpg/keys
 	mkdir -p /tmp/athena-local/gpg/source
-	REDIS_PASSWORD=$(shell kubectl get secret athena-redis -o jsonpath='{.data.auth}' | base64 -d) \
 	ATHENA_ZJWT_FEATURE_FLAG=always \
 	ATHENA_IN_CI=false \
 	ATHENA_GPG_ENABLED=$(ATHENA_GPG_ENABLED) \
 	BIN_MODE=$(ATHENA_BIN_MODE) \
-	ATHENA_E2E_TEST=false \
 		goreman -f $(ATHENA_PROCFILE) start ${ATHENA_START}
 
 
@@ -529,71 +487,6 @@ serve-docs-local:
 .PHONY: build-docs
 build-docs:
 	$(DOCKER) run ${MKDOCS_RUN_ARGS} --rm -it -v ${CURRENT_DIR}:/docs -w /docs --entrypoint "" ${MKDOCS_DOCKER_IMAGE} sh -c 'pip install -r docs/requirements.txt; mkdocs build'
-
-# Starts e2e server in a container
-.PHONY: start-e2e
-start-e2e: test-tools-image
-	$(DOCKER) version
-	mkdir -p ${GOCACHE}
-	$(call run-in-test-server,make ATHENA_PROCFILE=test/container/Procfile start-e2e-local)
-
-# Starts e2e server locally (or within a container)
-.PHONY: start-e2e-local
-start-e2e-local: mod-vendor-local dep-ui-local cli-local
-	kubectl create ns athena-e2e || true
-# kubectl create ns athena-e2e-external || true
-# kubectl create ns athena-e2e-external-2 || true
-	kubectl config set-context --current --namespace=athena-e2e
-	kustomize build test/manifests/base | kubectl apply --server-side --force-conflicts -f -
-# kubectl apply -f https://raw.githubusercontent.com/open-cluster-management/api/a6845f2ebcb186ec26b832f60c988537a58f3859/cluster/v1alpha1/0000_04_clusters.open-cluster-management.io_placementdecisions.crd.yaml
-# Create GPG keys and source directories
-# if test -d $(ATHENA_E2E_DIR)/app/config/gpg; then rm -rf $(ATHENA_E2E_DIR)/app/config/gpg/*; fi
-# mkdir -p $(ATHENA_E2E_DIR)/app/config/gpg/keys && chmod 0700 $(ATHENA_E2E_DIR)/app/config/gpg/keys
-# mkdir -p $(ATHENA_E2E_DIR)/app/config/gpg/source && chmod 0700 $(ATHENA_E2E_DIR)/app/config/gpg/source
-# mkdir -p $(ATHENA_E2E_DIR)/app/config/plugin && chmod 0700 $(ATHENA_E2E_DIR)/app/config/plugin
-# create folders to hold go coverage results for each component
-# mkdir -p /tmp/coverage/app-controller
-	mkdir -p /tmp/coverage/api-server
-# mkdir -p /tmp/coverage/repo-server
-# mkdir -p /tmp/coverage/applicationset-controller
-# mkdir -p /tmp/coverage/notification
-# mkdir -p /tmp/coverage/commit-server
-# set paths for locally managed ssh known hosts and tls certs data
-	# ATHENA_E2E_DIR=$(ATHENA_E2E_DIR) \
-	ATHENA_SSH_DATA_PATH=$(ATHENA_E2E_DIR)/app/config/ssh \
-	ATHENA_TLS_DATA_PATH=$(ATHENA_E2E_DIR)/app/config/tls \
-	# ATHENA_GPG_DATA_PATH=$(ATHENA_E2E_DIR)/app/config/gpg/source \
-	# ATHENA_GNUPGHOME=$(ATHENA_E2E_DIR)/app/config/gpg/keys \
-	# ATHENA_GPG_ENABLED=$(ATHENA_GPG_ENABLED) \
-	# ATHENA_PLUGINCONFIGFILEPATH=$(ATHENA_E2E_DIR)/app/config/plugin \
-	# ATHENA_PLUGINSOCKFILEPATH=$(ATHENA_E2E_DIR)/app/config/plugin \
-	# ATHENA_GIT_CONFIG=$(PWD)/test/e2e/fixture/gitconfig \
-	ATHENA_E2E_DISABLE_AUTH=false \
-	ATHENA_ZJWT_FEATURE_FLAG=always \
-	ATHENA_IN_CI=$(ATHENA_IN_CI) \
-	BIN_MODE=$(ATHENA_BIN_MODE) \
-	# ATHENA_APPLICATIONSET_CONTROLLER_NAMESPACES=athena-e2e-external,athena-e2e-external-2 \
-	# ATHENA_APPLICATIONSET_CONTROLLER_TOKENREF_STRICT_MODE=true \
-	# ATHENA_APPLICATIONSET_CONTROLLER_ALLOWED_SCM_PROVIDERS=http://127.0.0.1:8341,http://127.0.0.1:8342,http://127.0.0.1:8343,http://127.0.0.1:8344 \
-	# ATHENA_E2E_TEST=true \
-	ATHENA_HYDRATOR_ENABLED=true \
-	# ATHENA_CLUSTER_CACHE_EVENTS_PROCESSING_INTERVAL=1ms \
-		goreman -f $(ATHENA_PROCFILE) start ${ATHENA_START}
-	ls -lrt /tmp/coverage
-
-# Run the E2E test suite. E2E test servers (see start-e2e target) must be
-# started before.
-.PHONY: test-e2e
-test-e2e:
-	$(call exec-in-test-server,make test-e2e-local)
-
-# Run the E2E test suite (local version)
-.PHONY: test-e2e-local
-test-e2e-local: cli-local
-	# NO_PROXY ensures all tests don't go out through a proxy if one is configured on the test system
-	export GO111MODULE=off
-	DIST_DIR=${DIST_DIR} RERUN_FAILS=$(ATHENA_E2E_RERUN_FAILS) PACKAGES="./test/e2e" ATHENA_E2E_RECORD=${ATHENA_E2E_RECORD} ATHENA_CONFIG_DIR=$(HOME)/.config/athena-e2e ATHENA_GPG_ENABLED=true TEST_E2E_DEBUG=$(TEST_E2E_DEBUG) NO_PROXY=* ./hack/test.sh -timeout $(ATHENA_E2E_TEST_TIMEOUT) -v -args -test.gocoverdir="$(CURDIR)/test-results"
-
 
 # Upload the application to the remote VPS
 .PHONY: upload-application-remote

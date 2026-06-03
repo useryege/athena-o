@@ -25,7 +25,6 @@ triggered. This will be automated in the very near future.
 **The `Init Athena Release` workflow will perform the following steps:**
 
 * Update `VERSION` file in the release branch
-* Update manifests with image tags of the new version in the release branch
 * Create a pull request to submit the above changes
 
 **The `Publish Athena Release` workflow will perform the following steps:**
@@ -40,17 +39,17 @@ triggered. This will be automated in the very near future.
 
 ## Steps
 
-### Step 1 - Update Version and Manifest
+### Step 1 - Update Version
 
 1. Ensure that the TARGET_BRANCH already exist.
 2. Visit the [Release GitHub Action](https://github.com/useryege/athena/actions/workflows/init-release.yaml)
 and choose which branch you would like to work from.
 3. Enter the TARGET_BRANCH to checkout.
-4. Enter the TARGET_VERSION that will be used to build manifest and `VERSION` file. (e.g `2.7.0-rc1`)
+4. Enter the TARGET_VERSION that will be used to update the `VERSION` file. (e.g `2.7.0-rc1`)
 
 ![GitHub Release Action](../assets/release-action.png)
 
-When the action is completed a pull request will be generated that contains the updated manifest and `Version` file.
+When the action is completed a pull request will be generated that contains the updated `VERSION` file.
 
 5. Merge the pull request and proceed to step 2.
 
@@ -114,6 +113,6 @@ The release process does not allow a manual release process. Image signatures an
 |------------------------------------|--------------------------------------------------------|
 |goreleaser.yaml                     |Config to build CLI binaries, checksums, release-notes  |
 |.github/workflows/image-reuse.yaml  |Reusable workflow used to generate container images     |
-|.github/workflows/init-release.yaml |Used to generate manifest and `VERSION` file            |
+|.github/workflows/init-release.yaml |Used to update the `VERSION` file                       |
 |.github/workflows/release.yaml      |Build image, CLI binaries, provenances, sbom, post jobs |
 |./hack/trigger-release.sh           |Ensures all pre-requistes are met and pushes the tag    |  

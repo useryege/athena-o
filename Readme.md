@@ -8,7 +8,6 @@
 
 - Go：用于本地构建、测试、代码生成。
 - Docker：用于构建镜像、启动容器化测试工具、运行生产 compose。
-- kubectl：用于本地和 E2E 环境的 Kubernetes 命名空间与资源操作。
 - yarn：用于 `ui` 目录依赖安装、检查和构建。
 - mkdocs：用于本地文档预览和文档构建；也可以通过 Docker 目标运行。
 
@@ -32,9 +31,9 @@
 | `PROD_POSTGRES_VOLUME` | `athena-prod-postgres-data` | 生产 PostgreSQL external volume 名称。普通部署、停止和重启不得删除该 volume。 |
 | `CONFIRM_DESTROY_PROD_DATA` | 空 | 删除生产 PostgreSQL volume 的确认开关。只有精确等于 `yes` 时 `prod-destroy-data-remote` 才会执行。 |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | 本地默认 `true`，生产 compose 为 `false` | 控制服务启动时是否自动执行 PostgreSQL migration。生产环境通过显式迁移命令控制 schema 演进。 |
-| `TEST_MODULE` | 空 | 指定要运行的 Go 测试包。为空时运行全部非 E2E 测试。 |
+| `TEST_MODULE` | 空 | 指定要运行的 Go 测试包。为空时运行全部单元测试。 |
 | `TARGET_ARCH` | `linux/amd64` | Docker 镜像构建平台。 |
-| `ATHENA_*` | 多个默认值 | 控制本地、E2E、端口、数据目录、认证等运行参数。可先执行 `make print-env-vars` 查看部分配置。 |
+| `ATHENA_*` | 多个默认值 | 控制本地端口、数据目录、认证等运行参数。可先执行 `make print-env-vars` 查看部分配置。 |
 
 ## 环境与工具
 
@@ -70,13 +69,12 @@ ATHENA_ACCOUNT_LINGJIE_PASSWORD_HASH='$2a$10$...'
 | `make codegen-local` | 在本机执行完整代码生成流程。 | `make codegen-local` |
 | `make protogen` | 先准备 vendor，再生成 protobuf 相关代码。 | `make protogen` |
 | `make abigen-local` | 生成 Solidity ABI 相关 Go 代码。 | `make abigen-local` |
-| `make manifests-local` | 更新 Kubernetes manifests。 | `make manifests-local` |
 
 ## 构建
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make build-local` | 在本机编译全部 Go 代码，不包含 E2E 包。 | `make build-local` |
+| `make build-local` | 在本机编译全部 Go 代码。 | `make build-local` |
 | `make cli-local` | 构建本地 `athena` CLI 到 `dist/athena`。 | `make cli-local` |
 | `make image` | 构建 Athena Docker 镜像，可配合 `DOCKER_PUSH=true` 推送。 | `make image` |
 | `make prod-build-local` | 构建生产部署使用的本地镜像。 | `make prod-build-local` |
@@ -126,19 +124,6 @@ TEST_MODULE=./internal/application/... make test-local
 | --- | --- | --- |
 | `make serve-docs-local` | 使用本机 `mkdocs serve` 预览文档。 | `make serve-docs-local` |
 | `make build-docs` | 使用 Docker 构建 MkDocs 文档。 | `make build-docs` |
-
-## E2E
-
-| 命令 | 用途 | 示例 |
-| --- | --- | --- |
-| `make start-e2e-local` | 在本机启动 E2E 所需服务和资源。 | `make start-e2e-local` |
-| `make test-e2e-local` | 运行 E2E 测试。需要先启动 E2E 服务。 | `make test-e2e-local` |
-
-E2E 测试超时时间可通过 `ATHENA_E2E_TEST_TIMEOUT` 调整：
-
-```bash
-ATHENA_E2E_TEST_TIMEOUT=120m make test-e2e-local
-```
 
 ## 生产部署
 

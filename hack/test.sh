@@ -12,10 +12,6 @@ TEST_FLAGS=${TEST_FLAGS:-}
 DIST_DIR=${DIST_DIR:-dist}
 GOTESTSUM_FORMAT=testname
 
-if [[ "${TEST_E2E_DEBUG:-}" == "true" ]]; then
-	GOTESTSUM_FORMAT=standard-verbose
-fi
-
 # Add DIST_DIR to PATH so binaries installed for argo are found first
 export PATH="${DIST_DIR}:${PATH}"
 

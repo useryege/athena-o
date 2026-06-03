@@ -365,8 +365,7 @@ const (
 	DefaultGitRetryFactor                    = int64(2)
 )
 
-// Constants represent the pod selector labels of the Athena component names. These values are determined by the
-// installation manifests.
+// Constants represent the default Athena component names.
 const (
 	DefaultServerName = "athena-server"
 	// DefaultRepoServerName            = "athena-repo-server"

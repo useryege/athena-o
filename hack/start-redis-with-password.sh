@@ -1,14 +1,13 @@
 #!/bin/bash
 
 # Default values for environment variables
-REDIS_PORT="${ATHENA_E2E_REDIS_PORT:-6379}"
-REDIS_IMAGE_TAG=$(grep 'image: redis' manifests/base/redis/athena-redis-deployment.yaml | cut -d':' -f3)
+REDIS_PORT="${ATHENA_REDIS_PORT:-6379}"
+REDIS_IMAGE_TAG="${ATHENA_REDIS_IMAGE_TAG:-8.2.3}"
 ATHENA_LOCAL_DATA_MODE="${ATHENA_LOCAL_DATA_MODE:-ephemeral}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 REDIS_DATA_DIR="${ATHENA_REDIS_DATA_DIR:-/tmp/athena-local/redis}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-}"
 
-if [ "$ATHENA_REDIS_LOCAL" = 'true' ]; then
+if [ "${ATHENA_REDIS_LOCAL:-false}" = 'true' ]; then
     if ! command -v redis-server &>/dev/null; then
       echo "Redis server is not installed locally. Please install Redis or set ATHENA_REDIS_LOCAL to false."
       exit 1

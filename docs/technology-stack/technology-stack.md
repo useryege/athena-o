@@ -37,7 +37,6 @@
 * gRPC + Protobuf
 * REST
 * WebSocket
-* Kubernetes
 * Prometheus
 * Grafana
 * OpenTelemetry

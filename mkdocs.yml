@@ -28,7 +28,7 @@ plugins:
 - search
 - gh-admonitions
 repo_url: https://github.com/useryege/athena
-site_name: Athena - Declarative GitOps CD for Kubernetes
+site_name: Athena
 site_url: !ENV READTHEDOCS_CANONICAL_URL
 strict: true
 theme:

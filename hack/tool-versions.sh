@@ -8,11 +8,7 @@
 # downloaded binary with a ".sha256" suffix appended, containing the proper
 # SHA256 sum of the binary.
 #
-# Use ./hack/installers/checksums/add-helm-checksums.sh and
-# add-kustomize-checksums.sh to help download checksums.
+# Use helper scripts under ./hack/installers/checksums to help download checksums.
 ###############################################################################
-helm3_version=3.19.4
-kind_version=0.31.0
-kustomize5_version=5.8.1
 protoc_version=29.3
 oras_version=1.2.0

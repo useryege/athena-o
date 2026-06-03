@@ -44,11 +44,13 @@ athena-server [flags]
       --logformat string                              Set the logging format. One of: json|text (default "json")
       --login-attempts-expiration duration            Cache expiration for failed login attempts. DEPRECATED: this flag is unused and will be removed in a future version. (default 24h0m0s)
       --loglevel string                               Set the logging level. One of: debug|info|warn|error (default "info")
+      --notification-server-address string            Athena notification server address (default "localhost:8086")
       --oidc-cache-expiration duration                Cache expiration for OIDC state (default 3m0s)
       --otlp-address string                           OpenTelemetry collector address to send traces to
       --otlp-attrs strings                            List of OpenTelemetry collector extra attrs when send traces, each attribute is separated by a colon(e.g. key:value)
       --otlp-headers stringToString                   List of OpenTelemetry collector extra headers sent with traces, headers are comma-separated key-value pairs(e.g. key1=value1,key2=value2) (default [])
       --otlp-insecure                                 OpenTelemetry collector insecure mode (default true)
+      --polymarket-server-address string              Athena polymarket server address (default "localhost:8092")
       --port int                                      Listen on given port (default 8080)
       --redis string                                  Redis server hostname and port (e.g. athena-redis:6379). 
       --redis-ca-certificate string                   Path to Redis server CA certificate (e.g. /etc/certs/redis/ca.crt). If not specified, system trusted CAs will be used for server certificate validation.
@@ -61,13 +63,17 @@ athena-server [flags]
       --rootpath string                               Used if Athena is running behind reverse proxy under subpath different from /
       --sentinel stringArray                          Redis sentinel hostname and port (e.g. athena-redis-ha-announce-0:6379). 
       --sentinelmaster string                         Redis sentinel master group name. (default "master")
+      --solidity-server-address string                Athena solidity server address (default "localhost:8090")
       --staticassets string                           Directory path that contains additional static assets (default "/shared/app")
       --tlsciphers string                             The list of acceptable ciphers to be used when establishing TLS connections. Use 'list' to list available ciphers. (default "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")
       --tlsmaxversion string                          The maximum SSL/TLS version that is acceptable (one of: 1.0|1.1|1.2|1.3) (default "1.3")
       --tlsminversion string                          The minimum SSL/TLS version that is acceptable (one of: 1.0|1.1|1.2|1.3) (default "1.2")
+      --wallet-server-address string                  Athena wallet server address (default "localhost:8088")
+      --worm-server-address string                    Athena worm server address (default "localhost:8084")
       --x-frame-options value                         Set X-Frame-Options header in HTTP responses to value. To disable, set to "". (default "sameorigin")
 ```
 
 ### SEE ALSO
 
 * [athena-server version](athena-server_version.md)	 - Print version information
+

@@ -94,7 +94,7 @@ const config = {
             disableDotRule: true
         },
         port: 4000,
-        host: process.env.ATHENA_E2E_YARN_HOST || 'localhost',
+        host: process.env.ATHENA_YARN_HOST || 'localhost',
         proxy: {
             '/api': proxyConf,
             '/auth': proxyConf,
