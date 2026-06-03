@@ -165,7 +165,7 @@ func (m *GetNotificationStatusRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetNotificationStatusRequest proto.InternalMessageInfo
 
-// SendNotificationRequest sends one notification through the configured channel.
+// SendNotificationRequest enqueues one notification for the configured channel.
 type SendNotificationRequest struct {
 	Source               string               `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
 	Severity             NotificationSeverity `protobuf:"varint,2,opt,name=severity,proto3,enum=athena.internal.notification.NotificationSeverity" json:"severity,omitempty"`
@@ -253,7 +253,7 @@ func (m *SendNotificationRequest) GetTopic() NotificationTopic {
 	return NotificationTopic_NOTIFICATION_TOPIC_UNSPECIFIED
 }
 
-// SendNotificationResponse returns the delivery result for a sent notification.
+// SendNotificationResponse returns the persisted delivery queued for processing.
 type SendNotificationResponse struct {
 	NotificationId       int64                      `protobuf:"varint,1,opt,name=notification_id,json=notificationId,proto3" json:"notification_id,omitempty"`
 	Status               NotificationDeliveryStatus `protobuf:"varint,2,opt,name=status,proto3,enum=athena.internal.notification.NotificationDeliveryStatus" json:"status,omitempty"`
@@ -681,7 +681,7 @@ const _ = grpc.SupportPackageIsVersion4
 type NotificationServiceClient interface {
 	// GetNotificationStatus returns the notification service runtime status.
 	GetNotificationStatus(ctx context.Context, in *GetNotificationStatusRequest, opts ...grpc.CallOption) (*v1alpha1.NotificationStatus, error)
-	// SendNotification sends one notification through the configured channel.
+	// SendNotification enqueues one notification for the configured channel.
 	SendNotification(ctx context.Context, in *SendNotificationRequest, opts ...grpc.CallOption) (*SendNotificationResponse, error)
 	// ListNotificationDeliveries returns persisted notification delivery records.
 	ListNotificationDeliveries(ctx context.Context, in *ListNotificationDeliveriesRequest, opts ...grpc.CallOption) (*ListNotificationDeliveriesResponse, error)
@@ -737,7 +737,7 @@ func (c *notificationServiceClient) GetNotificationDelivery(ctx context.Context,
 type NotificationServiceServer interface {
 	// GetNotificationStatus returns the notification service runtime status.
 	GetNotificationStatus(context.Context, *GetNotificationStatusRequest) (*v1alpha1.NotificationStatus, error)
-	// SendNotification sends one notification through the configured channel.
+	// SendNotification enqueues one notification for the configured channel.
 	SendNotification(context.Context, *SendNotificationRequest) (*SendNotificationResponse, error)
 	// ListNotificationDeliveries returns persisted notification delivery records.
 	ListNotificationDeliveries(context.Context, *ListNotificationDeliveriesRequest) (*ListNotificationDeliveriesResponse, error)

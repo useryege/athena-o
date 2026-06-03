@@ -11,6 +11,85 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const claimPendingDeliveries = `-- name: ClaimPendingDeliveries :many
+WITH ready AS (
+  SELECT id
+  FROM notification_deliveries
+  WHERE status = 'pending'
+    AND next_attempt_at <= NOW()
+    AND (locked_at IS NULL OR locked_at < NOW() - $3::interval)
+  ORDER BY created_at ASC, id ASC
+  LIMIT $1
+  FOR UPDATE SKIP LOCKED
+)
+UPDATE notification_deliveries AS d
+SET locked_at = NOW(),
+    locked_by = $2,
+    attempts = d.attempts + 1,
+    last_attempt_at = NOW()
+FROM ready
+WHERE d.id = ready.id
+RETURNING d.id, d.source, d.severity, COALESCE(d.title, '') AS title, d.body, COALESCE(d.link, '') AS link, d.channel, d.status, d.topic, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.attempts
+`
+
+type ClaimPendingDeliveriesParams struct {
+	Limit       int32
+	LockedBy    pgtype.Text
+	LockTimeout pgtype.Interval
+}
+
+type ClaimPendingDeliveriesRow struct {
+	ID                int64
+	Source            string
+	Severity          string
+	Title             string
+	Body              string
+	Link              string
+	Channel           string
+	Status            string
+	Topic             string
+	ProviderMessageID pgtype.Text
+	ErrorMessage      pgtype.Text
+	CreatedAt         pgtype.Timestamptz
+	SentAt            pgtype.Timestamptz
+	Attempts          int32
+}
+
+func (q *Queries) ClaimPendingDeliveries(ctx context.Context, arg ClaimPendingDeliveriesParams) ([]ClaimPendingDeliveriesRow, error) {
+	rows, err := q.db.Query(ctx, claimPendingDeliveries, arg.Limit, arg.LockedBy, arg.LockTimeout)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ClaimPendingDeliveriesRow
+	for rows.Next() {
+		var i ClaimPendingDeliveriesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Source,
+			&i.Severity,
+			&i.Title,
+			&i.Body,
+			&i.Link,
+			&i.Channel,
+			&i.Status,
+			&i.Topic,
+			&i.ProviderMessageID,
+			&i.ErrorMessage,
+			&i.CreatedAt,
+			&i.SentAt,
+			&i.Attempts,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countDeliveries = `-- name: CountDeliveries :one
 SELECT COUNT(*)::bigint
 FROM notification_deliveries
@@ -242,7 +321,10 @@ func (q *Queries) ListDeliveries(ctx context.Context, arg ListDeliveriesParams) 
 
 const markDeliveryFailed = `-- name: MarkDeliveryFailed :exec
 UPDATE notification_deliveries
-SET status = 'failed', error_message = $2
+SET status = 'failed',
+    error_message = $2,
+    locked_at = NULL,
+    locked_by = NULL
 WHERE id = $1
 `
 
@@ -258,7 +340,12 @@ func (q *Queries) MarkDeliveryFailed(ctx context.Context, arg MarkDeliveryFailed
 
 const markDeliverySent = `-- name: MarkDeliverySent :exec
 UPDATE notification_deliveries
-SET status = 'sent', provider_message_id = $2, error_message = NULL, sent_at = NOW()
+SET status = 'sent',
+    provider_message_id = $2,
+    error_message = NULL,
+    sent_at = NOW(),
+    locked_at = NULL,
+    locked_by = NULL
 WHERE id = $1
 `
 
@@ -269,5 +356,25 @@ type MarkDeliverySentParams struct {
 
 func (q *Queries) MarkDeliverySent(ctx context.Context, arg MarkDeliverySentParams) error {
 	_, err := q.db.Exec(ctx, markDeliverySent, arg.ID, arg.ProviderMessageID)
+	return err
+}
+
+const scheduleDeliveryRetry = `-- name: ScheduleDeliveryRetry :exec
+UPDATE notification_deliveries
+SET error_message = $2,
+    next_attempt_at = $3,
+    locked_at = NULL,
+    locked_by = NULL
+WHERE id = $1
+`
+
+type ScheduleDeliveryRetryParams struct {
+	ID            int64
+	ErrorMessage  pgtype.Text
+	NextAttemptAt pgtype.Timestamptz
+}
+
+func (q *Queries) ScheduleDeliveryRetry(ctx context.Context, arg ScheduleDeliveryRetryParams) error {
+	_, err := q.db.Exec(ctx, scheduleDeliveryRetry, arg.ID, arg.ErrorMessage, arg.NextAttemptAt)
 	return err
 }

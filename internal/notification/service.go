@@ -20,6 +20,9 @@ type Service struct {
 	store         *notificationstore.SQLStore
 	sender        Sender
 	profileSyncer ProfileSyncer
+	workerConfig  WorkerConfig
+	workerCancel  context.CancelFunc
+	workerWG      sync.WaitGroup
 	startStopMu   sync.Mutex
 	started       bool
 }
@@ -55,7 +58,11 @@ type ProfileSyncer interface {
 }
 
 func NewService(store *notificationstore.SQLStore, sender Sender, profileSyncer ProfileSyncer) *Service {
-	return &Service{store: store, sender: sender, profileSyncer: profileSyncer}
+	return NewServiceWithWorkerConfig(store, sender, profileSyncer, DefaultWorkerConfig())
+}
+
+func NewServiceWithWorkerConfig(store *notificationstore.SQLStore, sender Sender, profileSyncer ProfileSyncer, workerConfig WorkerConfig) *Service {
+	return &Service{store: store, sender: sender, profileSyncer: profileSyncer, workerConfig: normalizeWorkerConfig(workerConfig)}
 }
 
 func (s *Service) Start(ctx context.Context) error {
@@ -76,6 +83,7 @@ func (s *Service) Start(ctx context.Context) error {
 	if err := s.profileSyncer.SyncProfile(ctx); err != nil {
 		return status.Errorf(codes.Unavailable, "failed to sync notification telegram bot profile: %v", err)
 	}
+	s.startWorkerLocked(ctx)
 	s.started = true
 	return nil
 }
@@ -83,6 +91,7 @@ func (s *Service) Start(ctx context.Context) error {
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
 	defer s.startStopMu.Unlock()
+	s.stopWorkerLocked()
 	s.started = false
 	return nil
 }
@@ -132,22 +141,9 @@ func (s *Service) SendNotification(ctx context.Context, req *apiclient.SendNotif
 		return nil, status.Errorf(codes.Internal, "failed to create notification delivery: %v", err)
 	}
 
-	providerMessageID, sendErr := s.sender.Send(ctx, SendRequest{Topic: params.topic, Text: text})
-	if sendErr != nil {
-		_ = s.store.MarkDeliveryFailed(ctx, delivery.ID, sendErr.Error())
-		return &apiclient.SendNotificationResponse{
-			NotificationId: delivery.ID,
-			Status:         apiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_FAILED,
-			ErrorMessage:   sendErr.Error(),
-		}, status.Errorf(codes.Unavailable, "failed to send telegram notification: %v", sendErr)
-	}
-	if err := s.store.MarkDeliverySent(ctx, delivery.ID, providerMessageID); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to update notification delivery: %v", err)
-	}
 	return &apiclient.SendNotificationResponse{
-		NotificationId:    delivery.ID,
-		Status:            apiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_SENT,
-		ProviderMessageId: providerMessageID,
+		NotificationId: delivery.ID,
+		Status:         apiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_PENDING,
 	}, nil
 }
 

@@ -9,12 +9,14 @@ import (
 )
 
 type Querier interface {
+	ClaimPendingDeliveries(ctx context.Context, arg ClaimPendingDeliveriesParams) ([]ClaimPendingDeliveriesRow, error)
 	CountDeliveries(ctx context.Context, arg CountDeliveriesParams) (int64, error)
 	CreateDelivery(ctx context.Context, arg CreateDeliveryParams) (CreateDeliveryRow, error)
 	GetDelivery(ctx context.Context, id int64) (GetDeliveryRow, error)
 	ListDeliveries(ctx context.Context, arg ListDeliveriesParams) ([]ListDeliveriesRow, error)
 	MarkDeliveryFailed(ctx context.Context, arg MarkDeliveryFailedParams) error
 	MarkDeliverySent(ctx context.Context, arg MarkDeliverySentParams) error
+	ScheduleDeliveryRetry(ctx context.Context, arg ScheduleDeliveryRetryParams) error
 }
 
 var _ Querier = (*Queries)(nil)

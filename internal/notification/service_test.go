@@ -20,9 +20,11 @@ type fakeSender struct {
 	err       error
 	topic     string
 	text      string
+	calls     int
 }
 
 func (f *fakeSender) Send(_ context.Context, request SendRequest) (string, error) {
+	f.calls++
 	f.topic = request.Topic
 	f.text = request.Text
 	if f.err != nil {
@@ -49,6 +51,11 @@ type fakeNotificationQuerier struct {
 	createDeliveryParams notificationsqlc.CreateDeliveryParams
 	markSentParams       notificationsqlc.MarkDeliverySentParams
 	markFailedParams     notificationsqlc.MarkDeliveryFailedParams
+	scheduleRetryParams  notificationsqlc.ScheduleDeliveryRetryParams
+}
+
+func (f *fakeNotificationQuerier) ClaimPendingDeliveries(context.Context, notificationsqlc.ClaimPendingDeliveriesParams) ([]notificationsqlc.ClaimPendingDeliveriesRow, error) {
+	return nil, nil
 }
 
 func (f *fakeNotificationQuerier) CountDeliveries(context.Context, notificationsqlc.CountDeliveriesParams) (int64, error) {
@@ -78,6 +85,11 @@ func (f *fakeNotificationQuerier) MarkDeliverySent(_ context.Context, arg notifi
 	return nil
 }
 
+func (f *fakeNotificationQuerier) ScheduleDeliveryRetry(_ context.Context, arg notificationsqlc.ScheduleDeliveryRetryParams) error {
+	f.scheduleRetryParams = arg
+	return nil
+}
+
 func TestNotificationStatusTransitions(t *testing.T) {
 	profileSyncer := &fakeProfileSyncer{}
 	service := NewService(notificationstore.NewSQLStore(nil), &fakeSender{}, profileSyncer)
@@ -93,6 +105,7 @@ func TestNotificationStatusTransitions(t *testing.T) {
 	if err := service.Start(context.Background()); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
+	defer service.Stop()
 	if profileSyncer.calls != 1 {
 		t.Fatalf("profile sync calls = %d, want 1", profileSyncer.calls)
 	}
@@ -160,6 +173,7 @@ func TestNotificationStartIsIdempotentAfterProfileSync(t *testing.T) {
 	if err := service.Start(context.Background()); err != nil {
 		t.Fatalf("first Start: %v", err)
 	}
+	defer service.Stop()
 	if err := service.Start(context.Background()); err != nil {
 		t.Fatalf("second Start: %v", err)
 	}
@@ -168,7 +182,7 @@ func TestNotificationStartIsIdempotentAfterProfileSync(t *testing.T) {
 	}
 }
 
-func TestSendNotificationSuccessRecordsDelivery(t *testing.T) {
+func TestSendNotificationQueuesDelivery(t *testing.T) {
 	createdAt := time.Date(2026, time.May, 27, 12, 0, 0, 0, time.UTC)
 	querier := &fakeNotificationQuerier{
 		createDeliveryResult: notificationsqlc.CreateDeliveryRow{
@@ -197,17 +211,14 @@ func TestSendNotificationSuccessRecordsDelivery(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SendNotification: %v", err)
 	}
-	if resp.NotificationId != 7 || resp.Status != apiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_SENT || resp.ProviderMessageId != "123" {
-		t.Fatalf("response = %#v, want sent delivery", resp)
+	if resp.NotificationId != 7 || resp.Status != apiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_PENDING || resp.ProviderMessageId != "" {
+		t.Fatalf("response = %#v, want pending delivery", resp)
 	}
-	if querier.markSentParams.ID != 7 || querier.markSentParams.ProviderMessageID.String != "123" {
-		t.Fatalf("mark sent params = %#v", querier.markSentParams)
+	if sender.calls != 0 {
+		t.Fatalf("sender calls = %d, want notification queued without synchronous send", sender.calls)
 	}
-	if querier.createDeliveryParams.Topic != "token" || sender.topic != "token" {
-		t.Fatalf("topic create/send = %q/%q, want token", querier.createDeliveryParams.Topic, sender.topic)
-	}
-	if !strings.Contains(sender.text, "Severity: WARNING") || !strings.Contains(sender.text, "Contract risk changed") {
-		t.Fatalf("telegram text = %q, want rendered notification text", sender.text)
+	if querier.createDeliveryParams.Topic != "token" {
+		t.Fatalf("topic create = %q, want token", querier.createDeliveryParams.Topic)
 	}
 }
 
@@ -235,8 +246,8 @@ func TestSendNotificationPolyTopic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SendNotification: %v", err)
 	}
-	if querier.createDeliveryParams.Topic != "poly" || sender.topic != "poly" {
-		t.Fatalf("topic create/send = %q/%q, want poly", querier.createDeliveryParams.Topic, sender.topic)
+	if querier.createDeliveryParams.Topic != "poly" || sender.calls != 0 {
+		t.Fatalf("topic create/sender calls = %q/%d, want queued poly", querier.createDeliveryParams.Topic, sender.calls)
 	}
 }
 
@@ -263,35 +274,96 @@ func TestSendNotificationRejectsUnknownTopic(t *testing.T) {
 	}
 }
 
-func TestSendNotificationFailureRecordsDelivery(t *testing.T) {
-	createdAt := time.Date(2026, time.May, 27, 12, 0, 0, 0, time.UTC)
-	querier := &fakeNotificationQuerier{
-		createDeliveryResult: notificationsqlc.CreateDeliveryRow{
-			ID:        9,
-			Source:    "application",
-			Severity:  "error",
-			Title:     "",
-			Body:      "Deploy failed",
-			Link:      "",
-			Channel:   "telegram",
-			Status:    "pending",
-			Topic:     "poly",
-			CreatedAt: pgtype.Timestamptz{Time: createdAt, Valid: true},
-		},
-	}
+func TestWorkerMarksDeliverySent(t *testing.T) {
+	querier := &fakeNotificationQuerier{}
+	sender := &fakeSender{messageID: "123"}
+	service := NewServiceWithWorkerConfig(notificationstore.NewSQLStoreWithQuerier(querier), sender, &fakeProfileSyncer{}, WorkerConfig{Disabled: true})
 
-	resp, err := NewService(notificationstore.NewSQLStoreWithQuerier(querier), &fakeSender{err: errors.New("telegram unavailable")}, &fakeProfileSyncer{}).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
+	service.processClaimedDelivery(context.Background(), notificationstore.ClaimedDelivery{
+		ID:       9,
 		Source:   "application",
-		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_ERROR,
+		Severity: "error",
 		Body:     "Deploy failed",
-		Topic:    apiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY,
+		Topic:    "poly",
+		Attempts: 1,
 	})
-	if status.Code(err) != codes.Unavailable {
-		t.Fatalf("SendNotification error = %v, want Unavailable", err)
+
+	if querier.markSentParams.ID != 9 || querier.markSentParams.ProviderMessageID.String != "123" {
+		t.Fatalf("mark sent params = %#v, want sent delivery", querier.markSentParams)
 	}
-	if resp == nil || resp.NotificationId != 9 || resp.Status != apiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_FAILED {
-		t.Fatalf("response = %#v, want failed delivery response", resp)
+	if sender.calls != 1 || sender.topic != "poly" || !strings.Contains(sender.text, "Severity: ERROR") || !strings.Contains(sender.text, "Deploy failed") {
+		t.Fatalf("sender = %#v, want rendered poly send", sender)
 	}
+}
+
+func TestWorkerSchedulesRetry(t *testing.T) {
+	querier := &fakeNotificationQuerier{}
+	service := NewServiceWithWorkerConfig(notificationstore.NewSQLStoreWithQuerier(querier), &fakeSender{err: errors.New("telegram unavailable")}, &fakeProfileSyncer{}, WorkerConfig{
+		Disabled:    true,
+		MaxAttempts: 5,
+	})
+
+	before := time.Now().UTC().Add(1500 * time.Millisecond)
+	service.processClaimedDelivery(context.Background(), notificationstore.ClaimedDelivery{
+		ID:       10,
+		Source:   "application",
+		Severity: "error",
+		Body:     "Deploy failed",
+		Topic:    "poly",
+		Attempts: 1,
+	})
+	after := time.Now().UTC().Add(2500 * time.Millisecond)
+
+	if querier.scheduleRetryParams.ID != 10 || querier.scheduleRetryParams.ErrorMessage.String != "telegram unavailable" {
+		t.Fatalf("retry params = %#v, want retry scheduled", querier.scheduleRetryParams)
+	}
+	if querier.scheduleRetryParams.NextAttemptAt.Time.Before(before) || querier.scheduleRetryParams.NextAttemptAt.Time.After(after) {
+		t.Fatalf("next attempt = %s, want about 2s from now", querier.scheduleRetryParams.NextAttemptAt.Time)
+	}
+}
+
+func TestWorkerUsesTelegramRetryAfter(t *testing.T) {
+	querier := &fakeNotificationQuerier{}
+	service := NewServiceWithWorkerConfig(notificationstore.NewSQLStoreWithQuerier(querier), &fakeSender{err: &RateLimitError{RetryAfter: 3 * time.Second, Err: errors.New("rate limited")}}, &fakeProfileSyncer{}, WorkerConfig{
+		Disabled:    true,
+		MaxAttempts: 5,
+	})
+
+	before := time.Now().UTC().Add(2500 * time.Millisecond)
+	service.processClaimedDelivery(context.Background(), notificationstore.ClaimedDelivery{
+		ID:       11,
+		Source:   "application",
+		Severity: "error",
+		Body:     "Deploy failed",
+		Topic:    "poly",
+		Attempts: 1,
+	})
+	after := time.Now().UTC().Add(3500 * time.Millisecond)
+
+	if querier.scheduleRetryParams.ID != 11 {
+		t.Fatalf("retry params = %#v, want retry scheduled", querier.scheduleRetryParams)
+	}
+	if querier.scheduleRetryParams.NextAttemptAt.Time.Before(before) || querier.scheduleRetryParams.NextAttemptAt.Time.After(after) {
+		t.Fatalf("next attempt = %s, want about retry_after 3s from now", querier.scheduleRetryParams.NextAttemptAt.Time)
+	}
+}
+
+func TestWorkerMarksDeliveryFailedAfterMaxAttempts(t *testing.T) {
+	querier := &fakeNotificationQuerier{}
+	service := NewServiceWithWorkerConfig(notificationstore.NewSQLStoreWithQuerier(querier), &fakeSender{err: errors.New("telegram unavailable")}, &fakeProfileSyncer{}, WorkerConfig{
+		Disabled:    true,
+		MaxAttempts: 5,
+	})
+
+	service.processClaimedDelivery(context.Background(), notificationstore.ClaimedDelivery{
+		ID:       9,
+		Source:   "application",
+		Severity: "error",
+		Body:     "Deploy failed",
+		Topic:    "poly",
+		Attempts: 5,
+	})
+
 	if querier.markFailedParams.ID != 9 || querier.markFailedParams.ErrorMessage.String != "telegram unavailable" {
 		t.Fatalf("mark failed params = %#v", querier.markFailedParams)
 	}

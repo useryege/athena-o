@@ -34,7 +34,7 @@ enum NotificationTopic {
   NOTIFICATION_TOPIC_POLY = 2;
 }
 
-// SendNotificationRequest sends one notification through the configured channel.
+// SendNotificationRequest enqueues one notification for the configured channel.
 message SendNotificationRequest {
   string source = 1;
   NotificationSeverity severity = 2;
@@ -44,7 +44,7 @@ message SendNotificationRequest {
   NotificationTopic topic = 6;
 }
 
-// SendNotificationResponse returns the delivery result for a sent notification.
+// SendNotificationResponse returns the persisted delivery queued for processing.
 message SendNotificationResponse {
   int64 notification_id = 1;
   NotificationDeliveryStatus status = 2;
@@ -85,7 +85,7 @@ service NotificationService {
   // GetNotificationStatus returns the notification service runtime status.
   rpc GetNotificationStatus(GetNotificationStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationStatus);
 
-  // SendNotification sends one notification through the configured channel.
+  // SendNotification enqueues one notification for the configured channel.
   rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
 
   // ListNotificationDeliveries returns persisted notification delivery records.

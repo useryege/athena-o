@@ -112,17 +112,16 @@ func TestGetNotificationDeliveryMapsResponse(t *testing.T) {
 func TestSendTestNotificationMapsFixedRequestAndResponse(t *testing.T) {
 	client := &fakeNotificationServiceClient{
 		sendResp: &notificationapiclient.SendNotificationResponse{
-			NotificationId:    11,
-			Status:            notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_SENT,
-			ProviderMessageId: "123",
+			NotificationId: 11,
+			Status:         notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_PENDING,
 		},
 	}
 	resp, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{Topic: "token"})
 	if err != nil {
 		t.Fatalf("SendTestNotification: %v", err)
 	}
-	if resp.NotificationId != 11 || resp.Status != "sent" || resp.ProviderMessageId != "123" {
-		t.Fatalf("response = %#v, want mapped sent response", resp)
+	if resp.NotificationId != 11 || resp.Status != "pending" || resp.ProviderMessageId != "" {
+		t.Fatalf("response = %#v, want mapped pending response", resp)
 	}
 	if client.sendReq == nil {
 		t.Fatalf("send request was not captured")

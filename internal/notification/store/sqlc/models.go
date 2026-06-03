@@ -22,4 +22,9 @@ type NotificationDelivery struct {
 	CreatedAt         pgtype.Timestamptz
 	SentAt            pgtype.Timestamptz
 	Topic             string
+	Attempts          int32
+	NextAttemptAt     pgtype.Timestamptz
+	LastAttemptAt     pgtype.Timestamptz
+	LockedAt          pgtype.Timestamptz
+	LockedBy          pgtype.Text
 }

@@ -2,9 +2,12 @@ package notification
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
+	tgbot "github.com/go-telegram/bot"
 	utiltelegram "github.com/useryege/athena/util/telegram"
 )
 
@@ -15,6 +18,22 @@ type Sender interface {
 type SendRequest struct {
 	Topic string
 	Text  string
+}
+
+type RateLimitError struct {
+	RetryAfter time.Duration
+	Err        error
+}
+
+func (e *RateLimitError) Error() string {
+	if e.Err == nil {
+		return fmt.Sprintf("telegram rate limited: retry_after %s", e.RetryAfter)
+	}
+	return e.Err.Error()
+}
+
+func (e *RateLimitError) Unwrap() error {
+	return e.Err
 }
 
 type TelegramSender struct {
@@ -43,9 +62,21 @@ func (s *TelegramSender) Send(ctx context.Context, request SendRequest) (string,
 	}
 	resp, err := s.client.SendMessage(ctx, utiltelegram.SendMessageRequest{Text: request.Text, MessageThreadID: threadID})
 	if err != nil {
+		var rateLimitErr *tgbot.TooManyRequestsError
+		if errors.As(err, &rateLimitErr) && rateLimitErr.RetryAfter > 0 {
+			return "", &RateLimitError{RetryAfter: time.Duration(rateLimitErr.RetryAfter) * time.Second, Err: err}
+		}
 		return "", err
 	}
 	return strconv.Itoa(resp.MessageID), nil
+}
+
+func RetryAfterFromError(err error) (time.Duration, bool) {
+	var rateLimitErr *RateLimitError
+	if errors.As(err, &rateLimitErr) && rateLimitErr.RetryAfter > 0 {
+		return rateLimitErr.RetryAfter, true
+	}
+	return 0, false
 }
 
 func validateTopicThreads(topicThreads map[string]int) error {

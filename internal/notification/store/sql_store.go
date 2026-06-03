@@ -50,6 +50,25 @@ type ListDeliveriesOptions struct {
 	Keyword  string
 }
 
+type ClaimDeliveriesOptions struct {
+	Limit       int
+	LockedBy    string
+	LockTimeout time.Duration
+}
+
+type ClaimedDelivery struct {
+	ID       int64
+	Source   string
+	Severity string
+	Title    string
+	Body     string
+	Link     string
+	Channel  string
+	Status   string
+	Topic    string
+	Attempts int
+}
+
 func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
 	if pool == nil {
 		return &SQLStore{}
@@ -110,6 +129,44 @@ func (s *SQLStore) CreateDelivery(ctx context.Context, req CreateDeliveryRequest
 	return item, nil
 }
 
+func (s *SQLStore) ClaimPendingDeliveries(ctx context.Context, opts ClaimDeliveriesOptions) ([]ClaimedDelivery, error) {
+	if s.queries == nil {
+		return nil, fmt.Errorf("notification postgres database is not configured")
+	}
+	limit := opts.Limit
+	if limit < 1 {
+		limit = 1
+	}
+	lockTimeout := opts.LockTimeout
+	if lockTimeout <= 0 {
+		lockTimeout = time.Minute
+	}
+	rows, err := s.queries.ClaimPendingDeliveries(ctx, notificationsqlc.ClaimPendingDeliveriesParams{
+		Limit:       int32(limit),
+		LockedBy:    textValue(opts.LockedBy),
+		LockTimeout: intervalValue(lockTimeout),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to claim pending notification deliveries: %w", err)
+	}
+	items := make([]ClaimedDelivery, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, ClaimedDelivery{
+			ID:       row.ID,
+			Source:   row.Source,
+			Severity: row.Severity,
+			Title:    row.Title,
+			Body:     row.Body,
+			Link:     row.Link,
+			Channel:  row.Channel,
+			Status:   row.Status,
+			Topic:    row.Topic,
+			Attempts: int(row.Attempts),
+		})
+	}
+	return items, nil
+}
+
 func (s *SQLStore) MarkDeliverySent(ctx context.Context, id int64, providerMessageID string) error {
 	if s.queries == nil {
 		return fmt.Errorf("notification postgres database is not configured")
@@ -126,6 +183,20 @@ func (s *SQLStore) MarkDeliveryFailed(ctx context.Context, id int64, errorMessag
 	}
 	if err := s.queries.MarkDeliveryFailed(ctx, notificationsqlc.MarkDeliveryFailedParams{ID: id, ErrorMessage: textValue(errorMessage)}); err != nil {
 		return fmt.Errorf("failed to mark notification delivery failed: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) ScheduleDeliveryRetry(ctx context.Context, id int64, errorMessage string, nextAttemptAt time.Time) error {
+	if s.queries == nil {
+		return fmt.Errorf("notification postgres database is not configured")
+	}
+	if err := s.queries.ScheduleDeliveryRetry(ctx, notificationsqlc.ScheduleDeliveryRetryParams{
+		ID:            id,
+		ErrorMessage:  textValue(errorMessage),
+		NextAttemptAt: pgtype.Timestamptz{Time: nextAttemptAt.UTC(), Valid: true},
+	}); err != nil {
+		return fmt.Errorf("failed to schedule notification delivery retry: %w", err)
 	}
 	return nil
 }
@@ -270,6 +341,10 @@ func deliveryDetailFromRow(row deliveryRow) *v1alpha1.NotificationDeliveryDetail
 
 func textValue(value string) pgtype.Text {
 	return pgtype.Text{String: value, Valid: true}
+}
+
+func intervalValue(value time.Duration) pgtype.Interval {
+	return pgtype.Interval{Microseconds: value.Microseconds(), Valid: true}
 }
 
 func nullableText(value string) pgtype.Text {

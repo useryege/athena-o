@@ -17,17 +17,27 @@ type fakeNotificationQuerier struct {
 	getDeliveryErr     error
 	markSentErr        error
 	markFailedErr      error
+	claimDeliveriesErr error
+	scheduleRetryErr   error
 
 	countDeliveriesParams notificationsqlc.CountDeliveriesParams
 	listDeliveriesParams  notificationsqlc.ListDeliveriesParams
 	createDeliveryParams  notificationsqlc.CreateDeliveryParams
 	markSentParams        notificationsqlc.MarkDeliverySentParams
 	markFailedParams      notificationsqlc.MarkDeliveryFailedParams
+	claimDeliveriesParams notificationsqlc.ClaimPendingDeliveriesParams
+	scheduleRetryParams   notificationsqlc.ScheduleDeliveryRetryParams
 
 	countDeliveriesResult int64
 	createDeliveryResult  notificationsqlc.CreateDeliveryRow
 	getDeliveryResult     notificationsqlc.GetDeliveryRow
 	listDeliveriesResult  []notificationsqlc.ListDeliveriesRow
+	claimDeliveriesResult []notificationsqlc.ClaimPendingDeliveriesRow
+}
+
+func (f *fakeNotificationQuerier) ClaimPendingDeliveries(_ context.Context, arg notificationsqlc.ClaimPendingDeliveriesParams) ([]notificationsqlc.ClaimPendingDeliveriesRow, error) {
+	f.claimDeliveriesParams = arg
+	return f.claimDeliveriesResult, f.claimDeliveriesErr
 }
 
 func (f *fakeNotificationQuerier) CountDeliveries(_ context.Context, arg notificationsqlc.CountDeliveriesParams) (int64, error) {
@@ -57,6 +67,11 @@ func (f *fakeNotificationQuerier) MarkDeliveryFailed(_ context.Context, arg noti
 func (f *fakeNotificationQuerier) MarkDeliverySent(_ context.Context, arg notificationsqlc.MarkDeliverySentParams) error {
 	f.markSentParams = arg
 	return f.markSentErr
+}
+
+func (f *fakeNotificationQuerier) ScheduleDeliveryRetry(_ context.Context, arg notificationsqlc.ScheduleDeliveryRetryParams) error {
+	f.scheduleRetryParams = arg
+	return f.scheduleRetryErr
 }
 
 func TestCreateDeliveryUsesQuerier(t *testing.T) {
@@ -138,6 +153,39 @@ func TestListDeliveriesUsesQuerierFiltersAndPagination(t *testing.T) {
 	}
 }
 
+func TestClaimPendingDeliveriesUsesQuerier(t *testing.T) {
+	now := time.Date(2026, time.May, 30, 12, 0, 0, 0, time.UTC)
+	querier := &fakeNotificationQuerier{
+		claimDeliveriesResult: []notificationsqlc.ClaimPendingDeliveriesRow{{
+			ID:        11,
+			Source:    "worm",
+			Severity:  "warning",
+			Title:     "Scan finished",
+			Body:      "Contract risk changed",
+			Channel:   "telegram",
+			Status:    "pending",
+			Topic:     "token",
+			CreatedAt: pgtype.Timestamptz{Time: now, Valid: true},
+			Attempts:  2,
+		}},
+	}
+
+	items, err := NewSQLStoreWithQuerier(querier).ClaimPendingDeliveries(context.Background(), ClaimDeliveriesOptions{
+		Limit:       10,
+		LockedBy:    "worker-1",
+		LockTimeout: 2 * time.Minute,
+	})
+	if err != nil {
+		t.Fatalf("ClaimPendingDeliveries: %v", err)
+	}
+	if len(items) != 1 || items[0].ID != 11 || items[0].Attempts != 2 || items[0].Topic != "token" {
+		t.Fatalf("items = %#v, want claimed delivery", items)
+	}
+	if querier.claimDeliveriesParams.Limit != 10 || querier.claimDeliveriesParams.LockedBy.String != "worker-1" || querier.claimDeliveriesParams.LockTimeout.Microseconds != (2*time.Minute).Microseconds() {
+		t.Fatalf("claim params = %#v, want limit/worker/timeout", querier.claimDeliveriesParams)
+	}
+}
+
 func TestGetDeliveryAndStatusUpdatesUseQuerier(t *testing.T) {
 	querier := &fakeNotificationQuerier{getDeliveryErr: pgx.ErrNoRows}
 	if _, err := NewSQLStoreWithQuerier(querier).GetDelivery(context.Background(), 404); !errors.Is(err, pgx.ErrNoRows) {
@@ -157,5 +205,12 @@ func TestGetDeliveryAndStatusUpdatesUseQuerier(t *testing.T) {
 	}
 	if querier.markFailedParams.ID != 7 || querier.markFailedParams.ErrorMessage.String != "telegram unavailable" {
 		t.Fatalf("failed params = %#v", querier.markFailedParams)
+	}
+	nextAttemptAt := time.Date(2026, time.May, 30, 12, 1, 0, 0, time.UTC)
+	if err := store.ScheduleDeliveryRetry(context.Background(), 7, "rate limited", nextAttemptAt); err != nil {
+		t.Fatalf("ScheduleDeliveryRetry: %v", err)
+	}
+	if querier.scheduleRetryParams.ID != 7 || querier.scheduleRetryParams.ErrorMessage.String != "rate limited" || !querier.scheduleRetryParams.NextAttemptAt.Time.Equal(nextAttemptAt) {
+		t.Fatalf("retry params = %#v", querier.scheduleRetryParams)
 	}
 }

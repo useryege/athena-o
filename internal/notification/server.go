@@ -22,6 +22,7 @@ type ServerOpts struct {
 	Store         *notificationstore.SQLStore
 	Sender        Sender
 	ProfileSyncer ProfileSyncer
+	WorkerConfig  WorkerConfig
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -29,7 +30,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
 		ServerOpts:    opts,
-		service:       NewService(opts.Store, opts.Sender, opts.ProfileSyncer),
+		service:       NewServiceWithWorkerConfig(opts.Store, opts.Sender, opts.ProfileSyncer, opts.WorkerConfig),
 		healthService: healthService,
 	}, nil
 }
