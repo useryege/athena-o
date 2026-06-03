@@ -86,7 +86,7 @@ func TestMoverAlertsSendWarningNotification(t *testing.T) {
 		t.Fatalf("sends = %d, want 1", len(client.sends))
 	}
 	req := client.sends[0]
-	if req.GetSource() != moverAlertSource || req.GetTopic() != notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY {
+	if req.GetSource() != moverAlertSource || req.GetTopic() != "poly" {
 		t.Fatalf("source/topic = %q/%v, want polymarket mover poly", req.GetSource(), req.GetTopic())
 	}
 	if req.GetSeverity() != notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING {

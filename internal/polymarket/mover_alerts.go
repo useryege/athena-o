@@ -271,7 +271,7 @@ func renderMoverAlertNotification(item *v1alpha1.PolymarketMoverMarketItem, seve
 		Title:    title,
 		Body:     body,
 		Link:     polymarketMoverLink(item),
-		Topic:    notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY,
+		Topic:    "poly",
 	}
 }
 

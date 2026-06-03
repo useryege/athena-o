@@ -36,6 +36,17 @@ func (f *fakeSender) Send(_ context.Context, request SendRequest) (string, error
 	return "1", nil
 }
 
+type fakeProvisioningSender struct {
+	fakeSender
+	topicConfigs []TopicConfig
+	provisionErr error
+}
+
+func (f *fakeProvisioningSender) ProvisionTopics(_ context.Context, configs []TopicConfig) error {
+	f.topicConfigs = append([]TopicConfig(nil), configs...)
+	return f.provisionErr
+}
+
 type fakeProfileSyncer struct {
 	calls int
 	err   error
@@ -182,6 +193,36 @@ func TestNotificationStartIsIdempotentAfterProfileSync(t *testing.T) {
 	}
 }
 
+func TestNotificationStartProvisionsDefaultTopics(t *testing.T) {
+	sender := &fakeProvisioningSender{}
+	service := NewServiceWithWorkerConfig(notificationstore.NewSQLStore(nil), sender, &fakeProfileSyncer{}, WorkerConfig{Disabled: true})
+
+	if err := service.Start(context.Background()); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer service.Stop()
+	if len(sender.topicConfigs) != 2 || sender.topicConfigs[0].Key != NotificationTopicToken || sender.topicConfigs[1].Key != NotificationTopicPoly {
+		t.Fatalf("topic configs = %#v, want default token/poly", sender.topicConfigs)
+	}
+}
+
+func TestNotificationStartProvisionFailureLeavesStopped(t *testing.T) {
+	sender := &fakeProvisioningSender{provisionErr: errors.New("telegram topic unavailable")}
+	service := NewServiceWithWorkerConfig(notificationstore.NewSQLStore(nil), sender, &fakeProfileSyncer{}, WorkerConfig{Disabled: true})
+
+	err := service.Start(context.Background())
+	if status.Code(err) != codes.Unavailable {
+		t.Fatalf("Start error = %v, want Unavailable", err)
+	}
+	resp, statusErr := service.GetNotificationStatus(context.Background(), &apiclient.GetNotificationStatusRequest{})
+	if statusErr != nil {
+		t.Fatalf("GetNotificationStatus: %v", statusErr)
+	}
+	if resp.Started || resp.Status != "stopped" {
+		t.Fatalf("status after failed start = %#v, want stopped", resp)
+	}
+}
+
 func TestSendNotificationQueuesDelivery(t *testing.T) {
 	createdAt := time.Date(2026, time.May, 27, 12, 0, 0, 0, time.UTC)
 	querier := &fakeNotificationQuerier{
@@ -206,7 +247,7 @@ func TestSendNotificationQueuesDelivery(t *testing.T) {
 		Title:    "Scan finished",
 		Body:     "Contract risk changed",
 		Link:     "https://example.com",
-		Topic:    apiclient.NotificationTopic_NOTIFICATION_TOPIC_TOKEN,
+		Topic:    "token",
 	})
 	if err != nil {
 		t.Fatalf("SendNotification: %v", err)
@@ -241,7 +282,7 @@ func TestSendNotificationPolyTopic(t *testing.T) {
 		Source:   "polymarket",
 		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
 		Body:     "Market updated",
-		Topic:    apiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY,
+		Topic:    "poly",
 	})
 	if err != nil {
 		t.Fatalf("SendNotification: %v", err)
@@ -262,12 +303,12 @@ func TestSendNotificationRequiresTopic(t *testing.T) {
 	}
 }
 
-func TestSendNotificationRejectsUnknownTopic(t *testing.T) {
+func TestSendNotificationRejectsInvalidTopic(t *testing.T) {
 	_, err := NewService(notificationstore.NewSQLStoreWithQuerier(&fakeNotificationQuerier{}), &fakeSender{}, &fakeProfileSyncer{}).SendNotification(context.Background(), &apiclient.SendNotificationRequest{
 		Source:   "worm",
 		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
 		Body:     "Contract risk changed",
-		Topic:    apiclient.NotificationTopic(99),
+		Topic:    "bad topic",
 	})
 	if status.Code(err) != codes.InvalidArgument {
 		t.Fatalf("SendNotification error = %v, want InvalidArgument", err)

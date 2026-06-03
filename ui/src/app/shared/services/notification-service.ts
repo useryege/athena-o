@@ -111,7 +111,7 @@ export class NotificationService {
         return promise;
     }
 
-    public sendTestNotification(topic: 'token' | 'poly'): Promise<SendTestNotificationResult> & {abort?: () => void} {
+    public sendTestNotification(topic: string): Promise<SendTestNotificationResult> & {abort?: () => void} {
         const req = requests.post(`/notifications/test/${encodeURIComponent(topic)}`).send({});
         const promise = req.then(res => {
             const body = res.body || {};

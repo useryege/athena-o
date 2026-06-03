@@ -132,7 +132,7 @@ func TestSendTestNotificationMapsFixedRequestAndResponse(t *testing.T) {
 	if client.sendReq.Severity != notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO {
 		t.Fatalf("severity = %s, want info", client.sendReq.Severity)
 	}
-	if client.sendReq.Topic != notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_TOKEN {
+	if client.sendReq.Topic != "token" {
 		t.Fatalf("topic = %s, want token", client.sendReq.Topic)
 	}
 	if client.sendReq.Title != "ATHENA TOKEN test notification" {
@@ -149,7 +149,7 @@ func TestSendTestNotificationMapsPolyTopic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SendTestNotification: %v", err)
 	}
-	if client.sendReq == nil || client.sendReq.Topic != notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY {
+	if client.sendReq == nil || client.sendReq.Topic != "poly" {
 		t.Fatalf("send request = %#v, want poly topic", client.sendReq)
 	}
 	if client.sendReq.Title != "ATHENA POLY test notification" {
@@ -157,9 +157,23 @@ func TestSendTestNotificationMapsPolyTopic(t *testing.T) {
 	}
 }
 
-func TestSendTestNotificationRejectsInvalidTopic(t *testing.T) {
+func TestSendTestNotificationAllowsDynamicTopic(t *testing.T) {
 	client := &fakeNotificationServiceClient{}
-	_, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{Topic: "bad"})
+	_, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{Topic: "risk"})
+	if err != nil {
+		t.Fatalf("SendTestNotification: %v", err)
+	}
+	if client.sendReq == nil || client.sendReq.Topic != "risk" {
+		t.Fatalf("send request = %#v, want dynamic risk topic", client.sendReq)
+	}
+	if client.sendReq.Title != "ATHENA RISK test notification" {
+		t.Fatalf("title = %q, want RISK title", client.sendReq.Title)
+	}
+}
+
+func TestSendTestNotificationRejectsEmptyTopic(t *testing.T) {
+	client := &fakeNotificationServiceClient{}
+	_, err := NewServer(&fakeNotificationClientset{client: client}).SendTestNotification(context.Background(), &notificationpkg.SendTestNotificationRequest{Topic: " "})
 	if status.Code(err) != codes.InvalidArgument {
 		t.Fatalf("error = %v, want InvalidArgument", err)
 	}

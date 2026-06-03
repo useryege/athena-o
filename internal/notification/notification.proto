@@ -27,13 +27,6 @@ enum NotificationDeliveryStatus {
   NOTIFICATION_DELIVERY_STATUS_FAILED = 3;
 }
 
-// NotificationTopic selects the Telegram forum topic for a notification.
-enum NotificationTopic {
-  NOTIFICATION_TOPIC_UNSPECIFIED = 0;
-  NOTIFICATION_TOPIC_TOKEN = 1;
-  NOTIFICATION_TOPIC_POLY = 2;
-}
-
 // SendNotificationRequest enqueues one notification for the configured channel.
 message SendNotificationRequest {
   string source = 1;
@@ -41,7 +34,7 @@ message SendNotificationRequest {
   string title = 3;
   string body = 4;
   string link = 5;
-  NotificationTopic topic = 6;
+  string topic = 6;
 }
 
 // SendNotificationResponse returns the persisted delivery queued for processing.

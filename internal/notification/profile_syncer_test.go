@@ -83,6 +83,10 @@ func (f *fakeTelegramClient) SendMessage(context.Context, utiltelegram.SendMessa
 	return &utiltelegram.SendMessageResponse{}, nil
 }
 
+func (f *fakeTelegramClient) CreateForumTopic(context.Context, utiltelegram.CreateForumTopicRequest) (*utiltelegram.ForumTopic, error) {
+	return &utiltelegram.ForumTopic{}, nil
+}
+
 func TestTelegramProfileSyncerSyncsBotAndChatProfiles(t *testing.T) {
 	client := &fakeTelegramClient{}
 	syncer := NewTelegramProfileSyncer(client, utiltelegram.BotProfileConfig{}, utiltelegram.ChatProfileConfig{})

@@ -85,6 +85,44 @@ func TestSendMessage(t *testing.T) {
 	}
 }
 
+func TestCreateForumTopic(t *testing.T) {
+	var gotPath string
+	var gotChatID string
+	var gotName string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if err := r.ParseMultipartForm(1024 * 1024); err != nil {
+			t.Fatalf("ParseMultipartForm: %v", err)
+		}
+		gotChatID = r.FormValue("chat_id")
+		gotName = r.FormValue("name")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true,"result":{"message_thread_id":222,"name":"POLY"}}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{BotToken: "token", ChatID: "chat-1", BaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	topic, err := client.CreateForumTopic(context.Background(), CreateForumTopicRequest{Name: " POLY "})
+	if err != nil {
+		t.Fatalf("CreateForumTopic: %v", err)
+	}
+	if topic.MessageThreadID != 222 || topic.Name != "POLY" {
+		t.Fatalf("topic = %#v, want POLY thread 222", topic)
+	}
+	if gotPath != "/bottoken/createForumTopic" {
+		t.Fatalf("path = %q, want /bottoken/createForumTopic", gotPath)
+	}
+	if gotChatID != "chat-1" || gotName != "POLY" {
+		t.Fatalf("chat_id/name = %q/%q, want chat-1/POLY", gotChatID, gotName)
+	}
+}
+
 func TestSendMessageErrors(t *testing.T) {
 	tests := []struct {
 		name       string

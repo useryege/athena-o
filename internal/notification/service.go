@@ -20,6 +20,7 @@ type Service struct {
 	store         *notificationstore.SQLStore
 	sender        Sender
 	profileSyncer ProfileSyncer
+	topicConfigs  []TopicConfig
 	workerConfig  WorkerConfig
 	workerCancel  context.CancelFunc
 	workerWG      sync.WaitGroup
@@ -39,18 +40,10 @@ const (
 	notificationSeverityError    = "error"
 	notificationSeverityCritical = "critical"
 
-	notificationTopicToken = "token"
-	notificationTopicPoly  = "poly"
-
 	maxNotificationSourceLength = 64
 	maxTelegramTextLength       = 4096
 	defaultNotificationPageSize = 20
 	maxNotificationPageSize     = 100
-)
-
-const (
-	NotificationTopicToken = notificationTopicToken
-	NotificationTopicPoly  = notificationTopicPoly
 )
 
 type ProfileSyncer interface {
@@ -62,7 +55,7 @@ func NewService(store *notificationstore.SQLStore, sender Sender, profileSyncer 
 }
 
 func NewServiceWithWorkerConfig(store *notificationstore.SQLStore, sender Sender, profileSyncer ProfileSyncer, workerConfig WorkerConfig) *Service {
-	return &Service{store: store, sender: sender, profileSyncer: profileSyncer, workerConfig: normalizeWorkerConfig(workerConfig)}
+	return &Service{store: store, sender: sender, profileSyncer: profileSyncer, topicConfigs: DefaultTopicConfigs(), workerConfig: normalizeWorkerConfig(workerConfig)}
 }
 
 func (s *Service) Start(ctx context.Context) error {
@@ -82,6 +75,11 @@ func (s *Service) Start(ctx context.Context) error {
 	}
 	if err := s.profileSyncer.SyncProfile(ctx); err != nil {
 		return status.Errorf(codes.Unavailable, "failed to sync notification telegram bot profile: %v", err)
+	}
+	if provisioner, ok := s.sender.(TopicProvisioner); ok {
+		if err := provisioner.ProvisionTopics(ctx, s.topicConfigs); err != nil {
+			return status.Errorf(codes.Unavailable, "failed to provision notification telegram topics: %v", err)
+		}
 	}
 	s.startWorkerLocked(ctx)
 	s.started = true
@@ -235,9 +233,9 @@ func normalizeSendNotificationRequest(req *apiclient.SendNotificationRequest) (s
 	if err != nil {
 		return sendNotificationParams{}, err
 	}
-	topic, err := topicFromEnum(req.GetTopic())
+	topic, err := normalizeTopicKeyValue(req.GetTopic())
 	if err != nil {
-		return sendNotificationParams{}, err
+		return sendNotificationParams{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 	return sendNotificationParams{
 		source:   source,
@@ -264,27 +262,8 @@ func severityFromEnum(value apiclient.NotificationSeverity) (string, error) {
 	}
 }
 
-func topicFromEnum(value apiclient.NotificationTopic) (string, error) {
-	switch value {
-	case apiclient.NotificationTopic_NOTIFICATION_TOPIC_TOKEN:
-		return notificationTopicToken, nil
-	case apiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY:
-		return notificationTopicPoly, nil
-	case apiclient.NotificationTopic_NOTIFICATION_TOPIC_UNSPECIFIED:
-		return "", status.Error(codes.InvalidArgument, "topic is required")
-	default:
-		return "", status.Error(codes.InvalidArgument, "topic is invalid")
-	}
-}
-
 func normalizeTopicFilter(value string) string {
-	value = strings.TrimSpace(strings.ToLower(value))
-	switch value {
-	case notificationTopicToken, notificationTopicPoly:
-		return value
-	default:
-		return ""
-	}
+	return NormalizeTopicKey(value)
 }
 
 func normalizeSeverityFilter(value string) (string, error) {

@@ -77,10 +77,11 @@ func (s *Server) GetNotificationDelivery(ctx context.Context, req *notificationp
 }
 
 func (s *Server) SendTestNotification(ctx context.Context, req *notificationpkg.SendTestNotificationRequest) (*notificationpkg.SendTestNotificationResponse, error) {
-	topic, topicLabel, err := internalNotificationTopic(req.GetTopic())
+	topic, err := normalizeNotificationTopic(req.GetTopic())
 	if err != nil {
 		return nil, err
 	}
+	topicLabel := strings.ToUpper(topic)
 
 	closer, client, err := s.notificationClientSet.NewNotificationServiceClient()
 	if err != nil {
@@ -106,15 +107,12 @@ func (s *Server) SendTestNotification(ctx context.Context, req *notificationpkg.
 	}, nil
 }
 
-func internalNotificationTopic(value string) (notificationapiclient.NotificationTopic, string, error) {
-	switch strings.TrimSpace(strings.ToLower(value)) {
-	case "token":
-		return notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_TOKEN, "TOKEN", nil
-	case "poly":
-		return notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_POLY, "POLY", nil
-	default:
-		return notificationapiclient.NotificationTopic_NOTIFICATION_TOPIC_UNSPECIFIED, "", status.Error(codes.InvalidArgument, "topic must be token or poly")
+func normalizeNotificationTopic(value string) (string, error) {
+	topic := strings.ToLower(strings.TrimSpace(value))
+	if topic == "" {
+		return "", status.Error(codes.InvalidArgument, "topic is required")
 	}
+	return topic, nil
 }
 
 func deliveryStatusString(status notificationapiclient.NotificationDeliveryStatus) string {

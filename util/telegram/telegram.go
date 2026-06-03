@@ -36,6 +36,7 @@ type Client interface {
 	SetChatDescription(ctx context.Context, description string) error
 	SetChatPhoto(ctx context.Context, request SetChatPhotoRequest) error
 	EnsureChatProfile(ctx context.Context, config ChatProfileConfig) (*ChatProfileSyncResult, error)
+	CreateForumTopic(ctx context.Context, request CreateForumTopicRequest) (*ForumTopic, error)
 	SendMessage(ctx context.Context, request SendMessageRequest) (*SendMessageResponse, error)
 }
 
@@ -53,6 +54,15 @@ type SendMessageRequest struct {
 
 type SendMessageResponse struct {
 	MessageID int
+}
+
+type CreateForumTopicRequest struct {
+	Name string
+}
+
+type ForumTopic struct {
+	MessageThreadID int
+	Name            string
 }
 
 type BotIdentity struct {
@@ -183,6 +193,25 @@ func (c *clientImpl) SendMessage(ctx context.Context, request SendMessageRequest
 		return nil, fmt.Errorf("failed to send telegram message: %w", err)
 	}
 	return &SendMessageResponse{MessageID: message.ID}, nil
+}
+
+func (c *clientImpl) CreateForumTopic(ctx context.Context, request CreateForumTopicRequest) (*ForumTopic, error) {
+	name := strings.TrimSpace(request.Name)
+	if name == "" {
+		return nil, errors.New("telegram forum topic name is required")
+	}
+	if utf8.RuneCountInString(name) > 128 {
+		return nil, errors.New("telegram forum topic name must be at most 128 characters")
+	}
+
+	topic, err := c.bot.CreateForumTopic(ctx, &tgbot.CreateForumTopicParams{
+		ChatID: c.config.ChatID,
+		Name:   name,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create telegram forum topic: %w", err)
+	}
+	return &ForumTopic{MessageThreadID: topic.MessageThreadID, Name: topic.Name}, nil
 }
 
 func (c *clientImpl) GetMe(ctx context.Context) (*BotIdentity, error) {

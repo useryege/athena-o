@@ -1005,7 +1005,7 @@ export const NotificationsPage = () => {
     const [keyword, setKeyword] = useKeywordParam('keyword');
     const [status, setStatus] = React.useState('');
     const data = useAsyncData(() => services.notification.listNotifications({page, pageSize, keyword, status: status || undefined}), [page, pageSize, keyword, status]);
-    const sendTest = async (topic: 'token' | 'poly') => {
+    const sendTest = async (topic: string) => {
         await services.notification.sendTestNotification(topic);
         data.reload();
     };
