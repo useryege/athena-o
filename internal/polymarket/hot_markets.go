@@ -80,6 +80,7 @@ func (s *Service) ListPolymarketHotMarkets(ctx context.Context, req *apiclient.L
 }
 
 func (s *Service) refreshHotMarkets(ctx context.Context) error {
+	var alerts []moverAlertCandidate
 	_, err, _ := s.syncGroup.Do("hot-markets", func() (any, error) {
 		candidates, fetchErr := s.fetchHotMarketCandidates(ctx)
 		if fetchErr != nil {
@@ -100,9 +101,13 @@ func (s *Service) refreshHotMarkets(ctx context.Context) error {
 		s.hotMarketFetched = fetchedAt
 		s.hotMarketStale = false
 		s.hotMarketCandidateCount = int32(len(candidates))
+		alerts = s.collectMoverAlertsLocked(fetchedAt)
 		s.cacheMu.Unlock()
 		return nil, nil
 	})
+	if err == nil {
+		s.sendMoverAlerts(ctx, alerts)
+	}
 	return err
 }
 

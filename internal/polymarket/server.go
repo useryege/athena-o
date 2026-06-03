@@ -1,6 +1,7 @@
 package polymarket
 
 import (
+	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/polymarket/apiclient"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
 	"github.com/useryege/athena/internal/server/version"
@@ -17,8 +18,10 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Store      *polymarketstore.SQLStore
-	WSUseProxy bool
+	Store                 *polymarketstore.SQLStore
+	WSUseProxy            bool
+	NotificationClientset notificationapiclient.Clientset
+	MoverAlertsConfig     MoverAlertsConfig
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -26,7 +29,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
 		ServerOpts:    opts,
-		service:       NewService(opts.Store, WithWSUseProxy(opts.WSUseProxy)),
+		service:       NewService(opts.Store, WithWSUseProxy(opts.WSUseProxy), WithNotificationClientset(opts.NotificationClientset), WithMoverAlertsConfig(opts.MoverAlertsConfig)),
 		healthService: healthService,
 	}, nil
 }

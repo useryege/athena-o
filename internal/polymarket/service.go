@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/polymarket/apiclient"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
@@ -87,15 +88,29 @@ func WithHotMarketRefreshInterval(interval time.Duration) ServiceOption {
 	}
 }
 
+func WithNotificationClientset(clientset notificationapiclient.Clientset) ServiceOption {
+	return func(s *Service) {
+		s.notificationClientset = clientset
+	}
+}
+
+func WithMoverAlertsConfig(config MoverAlertsConfig) ServiceOption {
+	return func(s *Service) {
+		s.moverAlertsConfig = normalizeMoverAlertsConfig(config)
+	}
+}
+
 type Service struct {
 	apiclient.UnimplementedPolymarketServiceServer
 	store                     *polymarketstore.SQLStore
 	gammaClient               sportsLiveGammaClient
 	sportsWSClient            sportsLiveWSClient
+	notificationClientset     notificationapiclient.Clientset
 	wsUseProxy                bool
 	syncInterval              time.Duration
 	eventPageLimit            int
 	hotMarketRefreshInterval  time.Duration
+	moverAlertsConfig         MoverAlertsConfig
 	nowFn                     func() time.Time
 	startStopMu               sync.Mutex
 	started                   bool
@@ -123,6 +138,7 @@ type Service struct {
 	realtimeLastEventAt       int64
 	realtimeSubscribedMarkets int32
 	realtimeSubscribedTokens  int32
+	moverAlertStates          map[string]moverAlertState
 	syncGroup                 singleflight.Group
 }
 
@@ -133,11 +149,13 @@ func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service
 		syncInterval:             defaultSportsLiveSyncInterval,
 		eventPageLimit:           defaultSportsLiveEventPageLimit,
 		hotMarketRefreshInterval: defaultHotMarketRefreshInterval,
+		moverAlertsConfig:        defaultMoverAlertsConfig(),
 		nowFn:                    time.Now,
 		sportsWSState:            make(map[string]sportsLiveWSState),
 		hotMarketMissing:         make(map[string]int),
 		realtimeStates:           make(map[string]*realtimeTokenState),
 		realtimeSamples:          make(map[string][]realtimeSample),
+		moverAlertStates:         make(map[string]moverAlertState),
 	}
 	for _, opt := range opts {
 		opt(s)
