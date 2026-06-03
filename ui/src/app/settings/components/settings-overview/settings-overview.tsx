@@ -16,6 +16,11 @@ const settings = [
         title: 'Appearance',
         description: 'Configure themes in UI',
         path: './appearance'
+    },
+    {
+        title: 'Application Discovery',
+        description: 'Control project discovery indexer',
+        path: './application-discovery'
     }
 ];
 

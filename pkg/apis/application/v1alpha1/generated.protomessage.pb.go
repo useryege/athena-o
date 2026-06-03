@@ -69,6 +69,8 @@ func (*ProjectBaseView) ProtoMessage() {}
 
 func (*ProjectChainState) ProtoMessage() {}
 
+func (*ProjectDiscoveryStatus) ProtoMessage() {}
+
 func (*ProjectListItem) ProtoMessage() {}
 
 func (*ProjectMeta) ProtoMessage() {}

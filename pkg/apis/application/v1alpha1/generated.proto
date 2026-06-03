@@ -732,6 +732,12 @@ message ProjectChainState {
   repeated GenesisWalletAssetState genesisWalletAssetStates = 7;
 }
 
+message ProjectDiscoveryStatus {
+  optional bool started = 1;
+
+  optional string status = 2;
+}
+
 message ProjectListItem {
   optional string contract = 1;
 

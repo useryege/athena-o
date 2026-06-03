@@ -6,6 +6,7 @@ import (
 
 	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
 type Server struct {
@@ -50,6 +51,33 @@ func (s *Server) ListProjects(ctx context.Context, req *applicationpkg.ListProje
 		Page:     resp.Page,
 		PageSize: resp.PageSize,
 	}, nil
+}
+
+func (s *Server) GetProjectDiscoveryStatus(ctx context.Context, _ *applicationpkg.GetProjectDiscoveryStatusRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	return client.GetProjectDiscoveryStatus(ctx, &applicationapiclient.GetProjectDiscoveryStatusRequest{})
+}
+
+func (s *Server) StartProjectDiscovery(ctx context.Context, _ *applicationpkg.StartProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	return client.StartProjectDiscovery(ctx, &applicationapiclient.StartProjectDiscoveryRequest{})
+}
+
+func (s *Server) StopProjectDiscovery(ctx context.Context, _ *applicationpkg.StopProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	return client.StopProjectDiscovery(ctx, &applicationapiclient.StopProjectDiscoveryRequest{})
 }
 
 func (s *Server) GetProject(ctx context.Context, req *applicationpkg.GetProjectRequest) (*applicationpkg.GetProjectResponse, error) {

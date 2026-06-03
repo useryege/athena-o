@@ -21,6 +21,12 @@ message ListProjectsResponse {
   int32 pageSize = 4;
 }
 
+message GetProjectDiscoveryStatusRequest {}
+
+message StartProjectDiscoveryRequest {}
+
+message StopProjectDiscoveryRequest {}
+
 // GetProjectRequest queries the project snapshot for a given contract.
 message GetProjectRequest {
   string contract = 1;
@@ -106,6 +112,9 @@ message GetProjectOptionsResponse {
 service ApplicationService {
   // ListProjects returns the current known project snapshot.
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc GetProjectDiscoveryStatus(GetProjectDiscoveryStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
+  rpc StartProjectDiscovery(StartProjectDiscoveryRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
+  rpc StopProjectDiscovery(StopProjectDiscoveryRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
   // GetProject returns the project snapshot for a given contract.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
   rpc GetProjectBase(GetProjectBaseRequest) returns (GetProjectBaseResponse);

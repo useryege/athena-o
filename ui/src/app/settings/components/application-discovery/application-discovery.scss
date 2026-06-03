@@ -1,0 +1,83 @@
+.application-discovery {
+    padding: 0 24px;
+
+    .argo-container {
+        max-width: 960px;
+        margin: 0 auto;
+    }
+
+    &__panel {
+        margin: 18px 0;
+        padding: 22px;
+    }
+
+    &__header {
+        align-items: center;
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+    }
+
+    &__label {
+        color: #6d7f8b;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+
+    &__status {
+        align-items: center;
+        display: flex;
+        font-size: 18px;
+        font-weight: 600;
+        gap: 8px;
+        text-transform: capitalize;
+    }
+
+    &__status--running {
+        color: #18ab56;
+    }
+
+    &__status--stopped {
+        color: #6d7f8b;
+    }
+
+    &__status-dot {
+        border-radius: 50%;
+        display: inline-block;
+        height: 10px;
+        width: 10px;
+        background: currentColor;
+    }
+
+    &__actions {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+
+        button {
+            margin: 0;
+            min-width: 84px;
+        }
+    }
+
+    &__activity {
+        color: #6d7f8b;
+        font-size: 12px;
+        margin-top: 14px;
+    }
+
+    &__error {
+        margin: 18px 0;
+        padding: 15px;
+        background-color: #fdf2f2;
+        color: #d9534f;
+        border: 1px solid #d9534f;
+        border-radius: 4px;
+
+        i {
+            margin-right: 10px;
+        }
+    }
+}

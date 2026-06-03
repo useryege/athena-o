@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-508-g70599b2-dirty"
+    "version": "v1.0.0-514-gf8e054e-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -207,6 +207,92 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountEmptyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/discovery/start": {
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_StartProjectDiscovery",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationStartProjectDiscoveryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ProjectDiscoveryStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/discovery/status": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_GetProjectDiscoveryStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ProjectDiscoveryStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/discovery/stop": {
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "operationId": "ApplicationService_StopProjectDiscovery",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationStopProjectDiscoveryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ProjectDiscoveryStatus"
             }
           },
           "default": {
@@ -2205,6 +2291,12 @@
         }
       }
     },
+    "applicationStartProjectDiscoveryRequest": {
+      "type": "object"
+    },
+    "applicationStopProjectDiscoveryRequest": {
+      "type": "object"
+    },
     "clusterConnector": {
       "type": "object",
       "properties": {
@@ -4137,6 +4229,17 @@
         },
         "wethPair": {
           "$ref": "#/definitions/v1alpha1PairV2State"
+        }
+      }
+    },
+    "v1alpha1ProjectDiscoveryStatus": {
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
         }
       }
     },

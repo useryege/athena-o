@@ -79,6 +79,13 @@ type Service struct {
 	bootstrapStop   context.CancelFunc
 	starting        bool
 	started         bool
+
+	discoveryMu             sync.Mutex
+	discoveryIntake         discovery.DiscoveryIntake
+	discoveryIndexer        pipeline.ProjectDiscoveryIndexer
+	discoveryStop           context.CancelFunc
+	discoveryStarted        bool
+	discoveryIndexerFactory func() (pipeline.ProjectDiscoveryIndexer, error)
 }
 
 func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, aveConfig ave.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client, solidityClientSet solidityapiclient.Clientset, walletClientSet walletapiclient.Clientset) (*Service, error) {
@@ -124,7 +131,7 @@ func (s *Service) Start() error {
 	s.bootstrapStop = cancel
 	s.startStopMu.Unlock()
 
-	pipeline, athenaFetcher, aveComponent, err := s.startWithContext(ctx)
+	pipeline, athenaFetcher, aveComponent, discoveryIntake, err := s.startWithContext(ctx)
 	if err != nil {
 		cancel()
 		s.startStopMu.Lock()
@@ -148,6 +155,7 @@ func (s *Service) Start() error {
 	s.pipeline = pipeline
 	s.athenaFetcher = athenaFetcher
 	s.aveComponent = aveComponent
+	s.discoveryIntake = discoveryIntake
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
 	s.bootstrapStop = nil
@@ -158,7 +166,7 @@ func (s *Service) Start() error {
 	return nil
 }
 
-func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeline.ProjectPipeline, athenaFetcher evm.AthenaFetcher, aveComponent *avecomponent.Component, err error) {
+func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeline.ProjectPipeline, athenaFetcher evm.AthenaFetcher, aveComponent *avecomponent.Component, discoveryIntake discovery.DiscoveryIntake, err error) {
 	startedAt := time.Now()
 	startLogger := log.WithFields(log.Fields{
 		"component": "application_start",
@@ -181,12 +189,12 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 
 	athenaFetcher, err = evm.NewAthenaFetcher(s.nodeClient, s.athenaContract, s.liquidityLocker)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	chainID, err := s.nodeClient.ChainID(ctx)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	aveStore, _ := s.store.(avecomponent.Store)
@@ -198,7 +206,7 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 		EventBus: s.componentEventBus,
 	})
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	if aveComponent != nil {
 		log.Info("Ave component configured")
@@ -261,12 +269,7 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 		WalletBlacklist:    s.walletBlacklist,
 		RequiredComponents: requiredReportComponents,
 	})
-	discoveryIntake := discovery.NewDiscoveryIntake(initializer)
-
-	discoveryIndexer, err := discovery.NewProjectDiscoveryIndexer(s.nodeClient, s.componentCache, s.store, discoveryIntake)
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	discoveryIntake = discovery.NewDiscoveryIntake(initializer)
 
 	projectPipeline = pipeline.NewProjectPipeline(
 		s.persistenceFlush,
@@ -277,18 +280,17 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 		creatorHistoryComponent,
 		bytecodeComponent,
 		reportComponent,
-		discoveryIndexer,
 	)
 	if err := projectPipeline.Start(ctx); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	if aveComponent != nil {
 		if err := aveComponent.Start(ctx); err != nil {
 			_ = projectPipeline.Stop()
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 	}
-	return projectPipeline, athenaFetcher, aveComponent, nil
+	return projectPipeline, athenaFetcher, aveComponent, discoveryIntake, nil
 }
 
 func (s *Service) Stop() error {
@@ -313,10 +315,7 @@ func (s *Service) Stop() error {
 	stop := s.lifecycleStop
 	pipeline := s.pipeline
 	aveComponent := s.aveComponent
-
-	if stop != nil {
-		stop()
-	}
+	discoveryIndexer, discoveryStop := s.stopProjectDiscoveryLocked()
 
 	s.lifecycleCtx = nil
 	s.lifecycleStop = nil
@@ -330,17 +329,105 @@ func (s *Service) Stop() error {
 	if aveComponent != nil {
 		aveComponent.Stop()
 	}
+	if discoveryStop != nil {
+		discoveryStop()
+	}
+	discoveryErr := error(nil)
+	if discoveryIndexer != nil {
+		discoveryErr = discoveryIndexer.Stop()
+	}
+	if stop != nil {
+		stop()
+	}
 	if pipeline != nil {
 		pipelineErr = pipeline.Stop()
 	}
 
-	return pipelineErr
+	return errors.Join(discoveryErr, pipelineErr)
 }
 
 func (s *Service) clearPipelineLocked() {
 	s.pipeline = nil
 	s.athenaFetcher = nil
 	s.aveComponent = nil
+	s.discoveryIntake = nil
+}
+
+func (s *Service) stopProjectDiscoveryLocked() (pipeline.ProjectDiscoveryIndexer, context.CancelFunc) {
+	s.discoveryMu.Lock()
+	defer s.discoveryMu.Unlock()
+	indexer := s.discoveryIndexer
+	stop := s.discoveryStop
+	s.discoveryIndexer = nil
+	s.discoveryStop = nil
+	s.discoveryStarted = false
+	return indexer, stop
+}
+
+func (s *Service) GetProjectDiscoveryStatus(context.Context, *applicationpkg.GetProjectDiscoveryStatusRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
+	s.discoveryMu.Lock()
+	started := s.discoveryStarted
+	s.discoveryMu.Unlock()
+	return projectDiscoveryStatus(started), nil
+}
+
+func (s *Service) StartProjectDiscovery(_ context.Context, _ *applicationpkg.StartProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
+	s.startStopMu.Lock()
+	defer s.startStopMu.Unlock()
+	if !s.started || s.lifecycleCtx == nil {
+		return nil, status.Error(codes.FailedPrecondition, "application service is not started")
+	}
+
+	s.discoveryMu.Lock()
+	defer s.discoveryMu.Unlock()
+	if s.discoveryStarted {
+		return projectDiscoveryStatus(true), nil
+	}
+
+	indexer, err := s.newProjectDiscoveryIndexer()
+	if err != nil {
+		return nil, err
+	}
+	runCtx, cancel := context.WithCancel(s.lifecycleCtx)
+	if err := indexer.Start(runCtx); err != nil {
+		cancel()
+		return nil, err
+	}
+	s.discoveryIndexer = indexer
+	s.discoveryStop = cancel
+	s.discoveryStarted = true
+	return projectDiscoveryStatus(true), nil
+}
+
+func (s *Service) StopProjectDiscovery(context.Context, *applicationpkg.StopProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
+	indexer, stop := s.stopProjectDiscoveryLocked()
+	if stop != nil {
+		stop()
+	}
+	if indexer != nil {
+		if err := indexer.Stop(); err != nil {
+			return nil, err
+		}
+	}
+	return projectDiscoveryStatus(false), nil
+}
+
+func (s *Service) newProjectDiscoveryIndexer() (pipeline.ProjectDiscoveryIndexer, error) {
+	if s.discoveryIndexerFactory != nil {
+		return s.discoveryIndexerFactory()
+	}
+	return discovery.NewProjectDiscoveryIndexer(s.nodeClient, s.componentCache, s.store, s.discoveryIntake)
+}
+
+func projectDiscoveryStatus(started bool) *v1alpha1.ProjectDiscoveryStatus {
+	statusText := "stopped"
+	if started {
+		statusText = "running"
+	}
+	return &v1alpha1.ProjectDiscoveryStatus{
+		Started: started,
+		Status:  statusText,
+	}
 }
 
 func (s *Service) fetchContractBytecode(ctx context.Context, contract common.Address) ([]byte, error) {

@@ -309,8 +309,19 @@ export interface GetProjectOptionsResponse {
     options?: ProjectOptions;
 }
 
+export interface ProjectDiscoveryStatus {
+    started: boolean;
+    status: string;
+}
+
 let cachedProjectOptions: ProjectOptions | undefined;
 let projectOptionsRequest: (Promise<ProjectOptions | undefined> & {abort?: () => void}) | null = null;
+
+const normalizeProjectDiscoveryStatus = (body: any): ProjectDiscoveryStatus => {
+    const started = !!(body && (body.started ?? body.Started));
+    const status = (body && (body.status || body.Status)) || (started ? 'running' : 'stopped');
+    return {started, status};
+};
 
 export class AthenaApplicationService {
     public listProjects(page = 1, pageSize = 20): Promise<{items: ProjectListItem[]; total: number; page: number; pageSize: number}> & {abort?: () => void} {
@@ -324,6 +335,27 @@ export class AthenaApplicationService {
                 pageSize: body.pageSize || pageSize
             };
         }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getProjectDiscoveryStatus(): Promise<ProjectDiscoveryStatus> & {abort?: () => void} {
+        const req = requests.get('/application/discovery/status');
+        const promise = req.then(res => normalizeProjectDiscoveryStatus(res.body || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public startProjectDiscovery(): Promise<ProjectDiscoveryStatus> & {abort?: () => void} {
+        const req = requests.post('/application/discovery/start').send({});
+        const promise = req.then(res => normalizeProjectDiscoveryStatus(res.body || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public stopProjectDiscovery(): Promise<ProjectDiscoveryStatus> & {abort?: () => void} {
+        const req = requests.post('/application/discovery/stop').send({});
+        const promise = req.then(res => normalizeProjectDiscoveryStatus(res.body || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }
