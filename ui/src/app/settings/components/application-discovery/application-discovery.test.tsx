@@ -4,6 +4,7 @@ import {act, create, ReactTestRenderer} from 'react-test-renderer';
 const getProjectDiscoveryStatus = jest.fn();
 const startProjectDiscovery = jest.fn();
 const stopProjectDiscovery = jest.fn();
+const canI = jest.fn();
 
 jest.mock('../../../shared/components', () => ({
     Page: ({children}: {children: React.ReactNode}) => <div>{children}</div>
@@ -15,6 +16,9 @@ jest.mock('../../../shared/services', () => ({
             getProjectDiscoveryStatus: (...args: any[]) => getProjectDiscoveryStatus(...args),
             startProjectDiscovery: (...args: any[]) => startProjectDiscovery(...args),
             stopProjectDiscovery: (...args: any[]) => stopProjectDiscovery(...args)
+        },
+        accounts: {
+            canI: (...args: any[]) => canI(...args)
         }
     }
 }));
@@ -53,9 +57,11 @@ describe('application discovery settings', () => {
         getProjectDiscoveryStatus.mockReset();
         startProjectDiscovery.mockReset();
         stopProjectDiscovery.mockReset();
+        canI.mockReset();
         getProjectDiscoveryStatus.mockReturnValue(promiseWithAbort(Promise.resolve({started: false, status: 'stopped'})));
         startProjectDiscovery.mockReturnValue(promiseWithAbort(Promise.resolve({started: true, status: 'running'})));
         stopProjectDiscovery.mockReturnValue(promiseWithAbort(Promise.resolve({started: false, status: 'stopped'})));
+        canI.mockReturnValue(Promise.resolve(true));
     });
 
     afterEach(() => {
@@ -73,6 +79,7 @@ describe('application discovery settings', () => {
         await flush();
 
         expect(getProjectDiscoveryStatus).toHaveBeenCalledTimes(1);
+        expect(canI).toHaveBeenCalledWith('application-discovery', 'update', '*');
         expect(nodeText(renderer!.root)).toContain('stopped');
     });
 
@@ -139,6 +146,25 @@ describe('application discovery settings', () => {
         expect(stopProjectDiscovery).toHaveBeenCalledTimes(1);
         expect(getProjectDiscoveryStatus).toHaveBeenCalledTimes(2);
         expect(nodeText(renderer!.root)).toContain('stopped');
+    });
+
+    it('disables controls when user lacks permission', async () => {
+        canI.mockReturnValue(Promise.resolve(false));
+        act(() => {
+            renderer = create(<ApplicationDiscovery />);
+        });
+        await flush();
+
+        expect(buttonByText(renderer!, 'Start').props.disabled).toBe(true);
+        expect(buttonByText(renderer!, 'Stop').props.disabled).toBe(true);
+        expect(nodeText(renderer!.root)).toContain('You do not have permission to control discovery.');
+
+        act(() => {
+            buttonByText(renderer!, 'Start').props.onClick();
+        });
+        await flush();
+
+        expect(startProjectDiscovery).toHaveBeenCalledTimes(0);
     });
 
     it('shows request errors', async () => {

@@ -470,7 +470,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// account service
 	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf)
 	// application service
-	applicationService := application.NewServer(server.ApplicationClientset)
+	applicationService := application.NewServer(server.ApplicationClientset, server.enf)
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// solidity service

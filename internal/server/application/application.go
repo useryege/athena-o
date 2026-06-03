@@ -2,21 +2,27 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
+	"github.com/useryege/athena/util/rbac"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Server struct {
 	applicationpkg.UnimplementedApplicationServiceServer
 	applicationClientSet applicationapiclient.Clientset
+	enf                  *rbac.Enforcer
 }
 
-func NewServer(applicationClientSet applicationapiclient.Clientset) *Server {
+func NewServer(applicationClientSet applicationapiclient.Clientset, enf *rbac.Enforcer) *Server {
 	return &Server{
 		applicationClientSet: applicationClientSet,
+		enf:                  enf,
 	}
 }
 
@@ -63,6 +69,9 @@ func (s *Server) GetProjectDiscoveryStatus(ctx context.Context, _ *applicationpk
 }
 
 func (s *Server) StartProjectDiscovery(ctx context.Context, _ *applicationpkg.StartProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
+	if err := s.ensureHasProjectDiscoveryPermission(ctx); err != nil {
+		return nil, err
+	}
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {
 		return nil, err
@@ -72,12 +81,25 @@ func (s *Server) StartProjectDiscovery(ctx context.Context, _ *applicationpkg.St
 }
 
 func (s *Server) StopProjectDiscovery(ctx context.Context, _ *applicationpkg.StopProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
+	if err := s.ensureHasProjectDiscoveryPermission(ctx); err != nil {
+		return nil, err
+	}
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {
 		return nil, err
 	}
 	defer closer.Close()
 	return client.StopProjectDiscovery(ctx, &applicationapiclient.StopProjectDiscoveryRequest{})
+}
+
+func (s *Server) ensureHasProjectDiscoveryPermission(ctx context.Context) error {
+	if s.enf == nil {
+		return status.Error(codes.PermissionDenied, "permission denied to control application discovery")
+	}
+	if err := s.enf.EnforceErr(ctx.Value("claims"), rbac.ResourceApplicationDiscovery, rbac.ActionUpdate, "*"); err != nil {
+		return fmt.Errorf("permission denied to control application discovery: %w", err)
+	}
+	return nil
 }
 
 func (s *Server) GetProject(ctx context.Context, req *applicationpkg.GetProjectRequest) (*applicationpkg.GetProjectResponse, error) {

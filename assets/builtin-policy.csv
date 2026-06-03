@@ -9,6 +9,7 @@
 p, role:readonly, accounts, get, *, allow
 p, role:readonly, logs, get, */*, allow
 
+p, role:admin, application-discovery, update, *, allow
 p, role:admin, accounts, update, *, allow
 
 g, role:admin, role:readonly

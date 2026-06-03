@@ -24,6 +24,8 @@ const errorMessage = (err: any) => {
 export const ApplicationDiscovery = () => {
     const [status, setStatus] = React.useState<ProjectDiscoveryStatus | null>(null);
     const [loading, setLoading] = React.useState(true);
+    const [permissionLoading, setPermissionLoading] = React.useState(true);
+    const [canControlDiscovery, setCanControlDiscovery] = React.useState(false);
     const [submitting, setSubmitting] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const mountedRef = React.useRef(false);
@@ -57,6 +59,23 @@ export const ApplicationDiscovery = () => {
     React.useEffect(() => {
         mountedRef.current = true;
         loadStatus();
+        setPermissionLoading(true);
+        services.accounts.canI('application-discovery', 'update', '*').then(
+            canControl => {
+                if (!mountedRef.current) {
+                    return;
+                }
+                setCanControlDiscovery(canControl);
+                setPermissionLoading(false);
+            },
+            () => {
+                if (!mountedRef.current) {
+                    return;
+                }
+                setCanControlDiscovery(false);
+                setPermissionLoading(false);
+            }
+        );
         return () => {
             mountedRef.current = false;
             if (requestRef.current && requestRef.current.abort) {
@@ -92,6 +111,7 @@ export const ApplicationDiscovery = () => {
 
     const running = !!status?.started;
     const statusText = loading && !status ? 'Loading' : status?.status || (running ? 'running' : 'stopped');
+    const actionDisabled = loading || permissionLoading || submitting || !canControlDiscovery;
 
     return (
         <Page
@@ -119,19 +139,20 @@ export const ApplicationDiscovery = () => {
                                 <button
                                     type='button'
                                     className='argo-button argo-button--base-o'
-                                    disabled={loading || submitting || running}
-                                    onClick={() => runAction(() => services.athenaApplication.startProjectDiscovery())}>
+                                    disabled={actionDisabled || running}
+                                    onClick={() => !actionDisabled && !running && runAction(() => services.athenaApplication.startProjectDiscovery())}>
                                     Start
                                 </button>
                                 <button
                                     type='button'
                                     className='argo-button argo-button--base-o'
-                                    disabled={loading || submitting || !running}
-                                    onClick={() => runAction(() => services.athenaApplication.stopProjectDiscovery())}>
+                                    disabled={actionDisabled || !running}
+                                    onClick={() => !actionDisabled && running && runAction(() => services.athenaApplication.stopProjectDiscovery())}>
                                     Stop
                                 </button>
                             </div>
                         </div>
+                        {!permissionLoading && !canControlDiscovery && <div className='application-discovery__permission'>You do not have permission to control discovery.</div>}
                         {(loading || submitting) && <div className='application-discovery__activity'>{submitting ? 'Updating...' : 'Loading status...'}</div>}
                     </div>
                 </div>
