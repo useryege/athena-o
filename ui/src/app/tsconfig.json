@@ -5,15 +5,16 @@
         "noImplicitAny": true,
         "module": "esnext",
         "moduleResolution": "node",
-        "target": "es5",
-        "jsx": "react",
+        "target": "es2020",
+        "jsx": "react-jsx",
         "experimentalDecorators": true,
         "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
         "skipLibCheck": true,
         "noUnusedLocals": true,
         "declaration": false,
         "lib": [
-            "es2017",
+            "es2020",
             "dom"
         ]
     },

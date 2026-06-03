@@ -1,177 +1,133 @@
-import {DataLoader, NavigationManager, Notifications, NotificationsManager, PageContext, Popup, PopupManager, PopupProps} from 'argo-ui';
-import {createBrowserHistory} from 'history';
-import * as PropTypes from 'prop-types';
+import '@fortawesome/fontawesome-free/css/all.css';
+import 'antd/dist/reset.css';
+import './mobile/styles.css';
+
+import {
+    ApiOutlined,
+    BellOutlined,
+    CodeOutlined,
+    DashboardOutlined,
+    FileTextOutlined,
+    MenuFoldOutlined,
+    MenuUnfoldOutlined,
+    MoonOutlined,
+    ProjectOutlined,
+    QuestionCircleOutlined,
+    SettingOutlined,
+    SunOutlined,
+    UserOutlined,
+    WalletOutlined
+} from '@ant-design/icons';
+import {App as AntApp, Button, ConfigProvider, Drawer, Dropdown, Layout as AntLayout, Menu, Result, Space, theme as antTheme, Typography} from 'antd';
+import type {MenuProps} from 'antd';
 import * as React from 'react';
-import {Helmet} from 'react-helmet';
-import {Redirect, Route, RouteComponentProps, Router, Switch} from 'react-router';
+import {BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
 import {Subscription} from 'rxjs';
-import help from './help';
-import login from './login';
-import notifications from './notifications';
-import polymarket from './polymarket';
-import projects from './projects';
-import settings from './settings';
-import solidity from './solidity';
-import wallet from './wallet';
-import walletBlacklist from './wallet-blacklist';
-import worm from './worm';
-import {Layout, ThemeWrapper} from './shared/components/layout/layout';
-import {VersionPanel} from './shared/components/version-info/version-info-panel';
 import {AuthSettingsCtx, Provider} from './shared/context';
-import {services} from './shared/services';
-import requests from './shared/services/requests';
-import {hashCode} from './shared/utils';
-import {Banner} from './ui-banner/ui-banner';
-import userInfo from './user-info';
 import {AuthSettings} from './shared/models';
+import {services, ViewPreferences} from './shared/services';
+import requests from './shared/services/requests';
+import {
+    BytecodeBlacklistPage,
+    BytecodeDetailPage,
+    BytecodesPage,
+    HelpPage,
+    LoginPage,
+    NotificationsDetailPage,
+    NotificationsPage,
+    PolymarketHotPage,
+    PolymarketMoversPage,
+    PolymarketRealtimePage,
+    PolymarketSportsLivePage,
+    ProjectDetailPage,
+    ProjectsPage,
+    SettingsPage,
+    SourceQualityPromptsPage,
+    UserInfoPage,
+    WalletBlacklistPage,
+    WalletsPage,
+    WormPage
+} from './mobile/pages';
 
 services.viewPreferences.init();
+
 const bases = document.getElementsByTagName('base');
 const base = bases.length > 0 ? bases[0].getAttribute('href') || '/' : '/';
-export const history = createBrowserHistory({basename: base});
 requests.setBaseHRef(base);
 
-type Routes = {[path: string]: {component: React.ComponentType<RouteComponentProps<any>>; noLayout?: boolean}};
+const authSettingsRetryDelays = [500, 1000, 2000, 3000];
 
-const routes: Routes = {
-    '/login': {component: login.component as any, noLayout: true},
-    '/projects': {component: projects.component},
-    '/solidity': {component: solidity.component},
-    '/wallet': {component: wallet.component},
-    '/wallet-blacklist': {component: walletBlacklist.component},
-    '/worm': {component: worm.component},
-    '/polymarket/realtime': {component: polymarket.realtimeComponent},
-    '/polymarket/movers': {component: polymarket.moversComponent},
-    '/polymarket/sports-live': {component: polymarket.sportsLiveComponent},
-    '/polymarket': {component: polymarket.component},
-    '/notifications': {component: notifications.component},
-    '/settings': {component: settings.component},
-    '/user-info': {component: userInfo.component},
-    '/help': {component: help.component}
-};
+const wait = (delayMs: number) => new Promise(resolve => window.setTimeout(resolve, delayMs));
 
 interface NavItem {
-    title: string;
-    tooltip?: string;
+    key: string;
+    label: string;
+    icon: React.ReactNode;
     path?: string;
-    iconClassName?: string;
     children?: NavItem[];
 }
 
 const navItems: NavItem[] = [
     {
-        title: 'Application',
-        tooltip: 'Manage Athena applications',
-        iconClassName: 'argo-icon argo-icon-application',
+        key: 'application',
+        label: 'Application',
+        icon: <DashboardOutlined />,
         children: [
-            {
-                title: 'Projects',
-                tooltip: 'View Athena projects',
-                path: '/projects',
-                iconClassName: 'fa fa-cubes'
-            },
-            {
-                title: 'Wallet Blacklist',
-                tooltip: 'Manage wallet blacklist addresses',
-                path: '/wallet-blacklist',
-                iconClassName: 'fa fa-ban'
-            }
+            {key: '/projects', label: 'Projects', path: '/projects', icon: <ProjectOutlined />},
+            {key: '/wallet-blacklist', label: 'Wallet Blacklist', path: '/wallet-blacklist', icon: <ApiOutlined />}
         ]
     },
     {
-        title: 'Solidity',
-        tooltip: 'View Solidity bytecodes',
-        iconClassName: 'fa fa-code',
+        key: 'solidity',
+        label: 'Solidity',
+        icon: <CodeOutlined />,
         children: [
-            {
-                title: 'Bytecode',
-                tooltip: 'View bytecode deployments',
-                path: '/solidity/bytecodes',
-                iconClassName: 'fa fa-cube'
-            },
-            {
-                title: 'Bytecode Blacklist',
-                tooltip: 'Manage bytecode blacklist entries',
-                path: '/solidity/bytecode-blacklist',
-                iconClassName: 'fa fa-ban'
-            },
-            {
-                title: 'Source Quality Prompts',
-                tooltip: 'Manage source quality prompts',
-                path: '/solidity/source-quality/prompts',
-                iconClassName: 'fa fa-clipboard-check'
-            }
+            {key: '/solidity/bytecodes', label: 'Bytecodes', path: '/solidity/bytecodes', icon: <CodeOutlined />},
+            {key: '/solidity/bytecode-blacklist', label: 'Bytecode Blacklist', path: '/solidity/bytecode-blacklist', icon: <ApiOutlined />},
+            {key: '/solidity/source-quality/prompts', label: 'Quality Prompts', path: '/solidity/source-quality/prompts', icon: <FileTextOutlined />}
         ]
     },
+    {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />},
+    {key: '/worm', label: 'Worm', path: '/worm', icon: <ApiOutlined />},
     {
-        title: 'Wallets',
-        tooltip: 'Manage wallet private keys',
-        path: '/wallet',
-        iconClassName: 'fa fa-wallet'
-    },
-    {
-        title: 'Worm',
-        tooltip: 'View Athena worm module',
-        path: '/worm',
-        iconClassName: 'fa fa-bug'
-    },
-    {
-        title: 'Polymarket',
-        tooltip: 'View Polymarket markets',
-        iconClassName: 'fa fa-trophy',
+        key: 'polymarket',
+        label: 'Polymarket',
+        icon: <DashboardOutlined />,
         children: [
-            {
-                title: 'Hot Markets',
-                tooltip: 'View Polymarket hot markets',
-                path: '/polymarket',
-                iconClassName: 'fa fa-fire'
-            },
-            {
-                title: 'Realtime',
-                tooltip: 'View Polymarket realtime quotes',
-                path: '/polymarket/realtime',
-                iconClassName: 'fa fa-signal'
-            },
-            {
-                title: 'Movers',
-                tooltip: 'View Polymarket price movers',
-                path: '/polymarket/movers',
-                iconClassName: 'fa fa-chart-line'
-            },
-            {
-                title: 'Sports Live',
-                tooltip: 'View Polymarket Sports live markets',
-                path: '/polymarket/sports-live',
-                iconClassName: 'fa fa-trophy'
-            }
+            {key: '/polymarket', label: 'Hot Markets', path: '/polymarket', icon: <DashboardOutlined />},
+            {key: '/polymarket/realtime', label: 'Realtime', path: '/polymarket/realtime', icon: <DashboardOutlined />},
+            {key: '/polymarket/movers', label: 'Movers', path: '/polymarket/movers', icon: <DashboardOutlined />},
+            {key: '/polymarket/sports-live', label: 'Sports Live', path: '/polymarket/sports-live', icon: <DashboardOutlined />}
         ]
     },
-    {
-        title: 'Notifications',
-        tooltip: 'View notification deliveries',
-        path: '/notifications',
-        iconClassName: 'fa fa-bell'
-    },
-    {
-        title: 'Settings',
-        tooltip: 'Manage your repositories, projects, settings',
-        path: '/settings',
-        iconClassName: 'argo-icon argo-icon-settings'
-    },
-    {
-        title: 'User Info',
-        path: '/user-info',
-        iconClassName: 'fa fa-user-circle'
-    },
-    {
-        title: 'Documentation',
-        tooltip: 'Read the documentation, and get help and assistance.',
-        path: '/help',
-        iconClassName: 'argo-icon argo-icon-docs'
-    }
+    {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />},
+    {key: '/settings', label: 'Settings', path: '/settings', icon: <SettingOutlined />},
+    {key: '/user-info', label: 'User Info', path: '/user-info', icon: <UserOutlined />},
+    {key: '/help', label: 'Help', path: '/help', icon: <QuestionCircleOutlined />}
 ];
 
-const versionLoader = services.version.version();
+const flattenNav = (items: NavItem[]): NavItem[] => items.flatMap(item => [item, ...(item.children ? flattenNav(item.children) : [])]);
+
+const toMenuItems = (items: NavItem[]): MenuProps['items'] =>
+    items.map(item => ({
+        key: item.key,
+        icon: item.icon,
+        label: item.label,
+        children: item.children ? toMenuItems(item.children) : undefined
+    }));
+
+const selectedKey = (pathname: string) => {
+    const exact = flattenNav(navItems)
+        .filter(item => item.path)
+        .sort((a, b) => (b.path || '').length - (a.path || '').length)
+        .find(item => pathname === item.path || pathname.startsWith(`${item.path}/`));
+    return exact?.key || '/user-info';
+};
+
+const openKeys = (pathname: string) =>
+    navItems.filter(item => (item.children || []).some(child => pathname === child.path || pathname.startsWith(`${child.path}/`))).map(item => item.key);
+
+const pageTitle = (pathname: string) => flattenNav(navItems).find(item => item.key === selectedKey(pathname))?.label || 'Athena';
 
 async function isExpiredSSO() {
     try {
@@ -186,168 +142,263 @@ async function isExpiredSSO() {
     return false;
 }
 
-export class App extends React.Component<{}, {popupProps: PopupProps; showVersionPanel: boolean; error: Error; navItems: NavItem[]; routes: Routes; authSettings: AuthSettings}> {
-    public static childContextTypes = {
-        history: PropTypes.object,
-        apis: PropTypes.object
+const usePreferences = () => {
+    const [pref, setPref] = React.useState<ViewPreferences>(null);
+    React.useEffect(() => {
+        const sub = services.viewPreferences.getPreferences().subscribe(setPref);
+        return () => sub.unsubscribe();
+    }, []);
+    return pref;
+};
+
+export async function loadAuthSettingsWithRetry(
+    load: () => Promise<AuthSettings>,
+    delays: number[] = authSettingsRetryDelays,
+    sleep: (delayMs: number) => Promise<unknown> = wait
+) {
+    let lastError: Error = null;
+    for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+            return await load();
+        } catch (err) {
+            lastError = err instanceof Error ? err : new Error(String(err));
+            if (attempt < delays.length) {
+                await sleep(delays[attempt]);
+            }
+        }
+    }
+    throw lastError;
+}
+
+const AppRoutes = () => (
+    <Routes>
+        <Route path='/' element={<Navigate replace={true} to='/user-info' />} />
+        <Route path='/login' element={<LoginPage />} />
+        <Route path='/projects' element={<ProjectsPage />} />
+        <Route path='/projects/:contract' element={<ProjectDetailPage />} />
+        <Route path='/wallet' element={<WalletsPage />} />
+        <Route path='/wallet-blacklist' element={<WalletBlacklistPage />} />
+        <Route path='/worm' element={<WormPage />} />
+        <Route path='/polymarket' element={<PolymarketHotPage />} />
+        <Route path='/polymarket/realtime' element={<PolymarketRealtimePage />} />
+        <Route path='/polymarket/movers' element={<PolymarketMoversPage />} />
+        <Route path='/polymarket/sports-live' element={<PolymarketSportsLivePage />} />
+        <Route path='/notifications' element={<NotificationsPage />} />
+        <Route path='/notifications/:id' element={<NotificationsDetailPage />} />
+        <Route path='/settings/*' element={<SettingsPage />} />
+        <Route path='/user-info' element={<UserInfoPage />} />
+        <Route path='/help' element={<HelpPage />} />
+        <Route path='/solidity' element={<Navigate replace={true} to='/solidity/bytecodes' />} />
+        <Route path='/solidity/bytecodes' element={<BytecodesPage />} />
+        <Route path='/solidity/bytecodes/:codeHash' element={<BytecodeDetailPage />} />
+        <Route path='/solidity/bytecode-blacklist' element={<BytecodeBlacklistPage />} />
+        <Route path='/solidity/source-quality/prompts' element={<SourceQualityPromptsPage />} />
+        <Route path='*' element={<Navigate replace={true} to='/user-info' />} />
+    </Routes>
+);
+
+const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const ant = AntApp.useApp();
+    const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+    const [desktopCollapsed, setDesktopCollapsed] = React.useState(props.pref.hideSidebar);
+
+    React.useEffect(() => {
+        setDesktopCollapsed(props.pref.hideSidebar);
+    }, [props.pref.hideSidebar]);
+
+    React.useEffect(() => {
+        const subscription: Subscription = requests.onError.subscribe(async err => {
+            if (err.status !== 401 || location.pathname.startsWith('/login')) {
+                return;
+            }
+            const isSSO = await isExpiredSSO();
+            if (window.location.pathname.startsWith(`${base.replace(/\/$/, '')}/login`)) {
+                return;
+            }
+            const basehref = document.querySelector('head > base')?.getAttribute('href')?.replace(/\/$/, '') || '';
+            if (isSSO) {
+                window.location.href = `${basehref}/auth/login?return_url=${encodeURIComponent(location.pathname + location.search)}`;
+            } else {
+                navigate(`/login?return_url=${encodeURIComponent(location.pathname + location.search)}`);
+            }
+        });
+        return () => subscription?.unsubscribe();
+    }, [location.pathname, location.search, navigate]);
+
+    React.useEffect(() => {
+        document.body.dataset.theme = props.pref.theme || 'light';
+    }, [props.pref.theme]);
+
+    const onMenuClick: MenuProps['onClick'] = item => {
+        const target = flattenNav(navItems).find(navItem => navItem.key === item.key);
+        if (target?.path) {
+            navigate(target.path);
+            setMobileNavOpen(false);
+        }
     };
 
-    public static getDerivedStateFromError(error: Error) {
-        return {error};
-    }
+    const notifications = React.useMemo(
+        () => ({
+            success: (message: string, description?: string) => ant.notification.success({message, description}),
+            error: (message: string, description?: string) => ant.notification.error({message, description}),
+            info: (message: string, description?: string) => ant.notification.info({message, description}),
+            warning: (message: string, description?: string) => ant.notification.warning({message, description})
+        }),
+        [ant.notification]
+    );
 
-    private popupManager: PopupManager;
-    private notificationsManager: NotificationsManager;
-    private navigationManager: NavigationManager;
-    private navItems: NavItem[];
-    private routes: Routes;
-    private popupPropsSubscription: Subscription;
-    private unauthorizedSubscription: Subscription;
+    const contextValue = React.useMemo(
+        () => ({
+            notifications,
+            modal: ant.modal,
+            navigation: {
+                goto: navigate,
+                replace: (path: string) => navigate(path, {replace: true})
+            },
+            baseHref: base
+        }),
+        [ant.modal, navigate, notifications]
+    );
 
-    constructor(props: {}) {
-        super(props);
-        this.state = {popupProps: null, error: null, showVersionPanel: false, navItems: [], routes: null, authSettings: null};
-        this.popupManager = new PopupManager();
-        this.notificationsManager = new NotificationsManager();
-        this.navigationManager = new NavigationManager(history);
-        this.navItems = navItems;
-        this.routes = routes;
-        this.popupPropsSubscription = null;
-        this.unauthorizedSubscription = null;
-    }
+    const themeMenu: MenuProps['items'] = [
+        {key: 'light', label: 'Light', icon: <SunOutlined />},
+        {key: 'dark', label: 'Dark', icon: <MoonOutlined />}
+    ];
 
-    public async componentDidMount() {
-        this.popupPropsSubscription = this.popupManager.popupProps.subscribe(popupProps => this.setState({popupProps}));
-        this.subscribeUnauthorized().then(subscription => {
-            this.unauthorizedSubscription = subscription;
-        });
-        const authSettings = await services.authService.settings();
-        const {trackingID, anonymizeUsers} = authSettings.googleAnalytics || {trackingID: '', anonymizeUsers: true};
-        const {loggedIn, username} = await services.users.get();
-        if (trackingID) {
-            const ga = await import('react-ga');
-            ga.initialize(trackingID);
-            const trackPageView = () => {
-                if (loggedIn && username) {
-                    const userId = !anonymizeUsers ? username : hashCode(username).toString();
-                    ga.set({userId});
-                }
-                ga.pageview(location.pathname + location.search);
-            };
-            trackPageView();
-            history.listen(trackPageView);
-        }
-        if (authSettings.uiCssURL) {
-            const link = document.createElement('link');
-            link.href = authSettings.uiCssURL;
-            link.rel = 'stylesheet';
-            link.type = 'text/css';
-            document.head.appendChild(link);
-        }
+    const menu = (
+        <Menu mode='inline' items={toMenuItems(navItems)} selectedKeys={[selectedKey(location.pathname)]} defaultOpenKeys={openKeys(location.pathname)} onClick={onMenuClick} />
+    );
 
-        this.setState({...this.state, navItems: this.navItems, routes: this.routes, authSettings});
-    }
-
-    public componentWillUnmount() {
-        if (this.popupPropsSubscription) {
-            this.popupPropsSubscription.unsubscribe();
-        }
-        if (this.unauthorizedSubscription) {
-            this.unauthorizedSubscription.unsubscribe();
-        }
-    }
-
-    public render() {
-        if (this.state.error != null) {
-            const stack = this.state.error.stack;
-
-            return (
-                <React.Fragment>
-                    <p>Something went wrong!</p>
-                    <br />
-                    <p>Stacktrace:</p>
-                    <pre>{stack}</pre>
-                </React.Fragment>
-            );
-        }
-
-        return (
-            <React.Fragment>
-                <Helmet>
-                    <link rel='icon' type='image/png' href={`${base}assets/favicon/favicon-32x32.png`} sizes='32x32' />
-                    <link rel='icon' type='image/png' href={`${base}assets/favicon/favicon-16x16.png`} sizes='16x16' />
-                </Helmet>
-                <PageContext.Provider value={{title: 'Athena'}}>
-                    <Provider value={{history, popup: this.popupManager, notifications: this.notificationsManager, navigation: this.navigationManager, baseHref: base}}>
-                        <DataLoader load={() => services.viewPreferences.getPreferences()}>
-                            {pref => <ThemeWrapper theme={pref.theme}>{this.state.popupProps && <Popup {...this.state.popupProps} />}</ThemeWrapper>}
-                        </DataLoader>
-                        <AuthSettingsCtx.Provider value={this.state.authSettings}>
-                            <Router history={history}>
-                                <Switch>
-                                    <Redirect exact={true} path='/' to='/user-info' />
-                                    {Object.keys(this.routes).map(path => {
-                                        const route = this.routes[path];
-                                        return (
-                                            <Route
-                                                key={path}
-                                                path={path}
-                                                render={routeProps =>
-                                                    route.noLayout ? (
-                                                        <div>
-                                                            <route.component {...routeProps} />
-                                                        </div>
-                                                    ) : (
-                                                        <DataLoader load={() => services.viewPreferences.getPreferences()}>
-                                                            {pref => (
-                                                                <Layout onVersionClick={() => this.setState({showVersionPanel: true})} navItems={this.navItems} pref={pref}>
-                                                                    <Banner>
-                                                                        <route.component {...routeProps} />
-                                                                    </Banner>
-                                                                </Layout>
-                                                            )}
-                                                        </DataLoader>
-                                                    )
-                                                }
-                                            />
-                                        );
-                                    })}
-                                </Switch>
-                            </Router>
+    const content = location.pathname.startsWith('/login') ? (
+        <AppRoutes />
+    ) : (
+        <AntLayout className='athena-shell'>
+            <AntLayout.Sider className='athena-shell__sider' collapsible={true} collapsed={desktopCollapsed} trigger={null} width={248}>
+                <div className='athena-brand' onClick={() => navigate('/user-info')}>
+                    <img src='images/athena.png' alt='Athena' />
+                    {!desktopCollapsed && <span>Athena</span>}
+                </div>
+                {menu}
+            </AntLayout.Sider>
+            <AntLayout>
+                <AntLayout.Header className='athena-shell__header'>
+                    <div className='athena-shell__header-left'>
+                        <Button
+                            className='athena-shell__desktop-toggle'
+                            type='text'
+                            icon={desktopCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                            onClick={() => {
+                                const next = !desktopCollapsed;
+                                setDesktopCollapsed(next);
+                                services.viewPreferences.updatePreferences({...props.pref, hideSidebar: next});
+                            }}
+                        />
+                        <Button className='athena-shell__mobile-menu' type='text' icon={<MenuUnfoldOutlined />} onClick={() => setMobileNavOpen(true)} />
+                        <Typography.Title level={4}>{pageTitle(location.pathname)}</Typography.Title>
+                    </div>
+                    <div className='athena-shell__header-actions'>
+                        <Dropdown
+                            menu={{
+                                items: themeMenu,
+                                selectedKeys: [props.pref.theme || 'light'],
+                                onClick: item => services.viewPreferences.updatePreferences({...props.pref, theme: item.key})
+                            }}>
+                            <Button type='text' icon={(props.pref.theme || 'light') === 'dark' ? <MoonOutlined /> : <SunOutlined />} />
+                        </Dropdown>
+                        <Button type='text' icon={<UserOutlined />} onClick={() => navigate('/user-info')} />
+                    </div>
+                </AntLayout.Header>
+                <AntLayout.Content className='athena-shell__content'>
+                    <Provider value={contextValue}>
+                        <AuthSettingsCtx.Provider value={props.authSettings}>
+                            <AppRoutes />
                         </AuthSettingsCtx.Provider>
                     </Provider>
-                </PageContext.Provider>
-                <Notifications notifications={this.notificationsManager.notifications} />
-                <VersionPanel version={versionLoader} isShown={this.state.showVersionPanel} onClose={() => this.setState({showVersionPanel: false})} />
-            </React.Fragment>
+                </AntLayout.Content>
+            </AntLayout>
+            <Drawer title='Athena' placement='left' open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} size={312}>
+                {menu}
+            </Drawer>
+        </AntLayout>
+    );
+
+    return (
+        <Provider value={contextValue}>
+            <AuthSettingsCtx.Provider value={props.authSettings}>{content}</AuthSettingsCtx.Provider>
+        </Provider>
+    );
+};
+
+const Bootstrap = () => {
+    const pref = usePreferences();
+    const [authSettings, setAuthSettings] = React.useState<AuthSettings>(null);
+    const [settingsError, setSettingsError] = React.useState<Error>(null);
+    const [settingsRetry, setSettingsRetry] = React.useState(0);
+
+    React.useEffect(() => {
+        let active = true;
+        setSettingsError(null);
+        setAuthSettings(null);
+        loadAuthSettingsWithRetry(() => services.authService.settings())
+            .then(settings => {
+                if (!active) {
+                    return;
+                }
+                setAuthSettings(settings);
+                if (settings.uiCssURL) {
+                    const link = document.createElement('link');
+                    link.href = settings.uiCssURL;
+                    link.rel = 'stylesheet';
+                    link.type = 'text/css';
+                    document.head.appendChild(link);
+                }
+            })
+            .catch(err => {
+                if (active) {
+                    setSettingsError(err instanceof Error ? err : new Error(String(err)));
+                }
+            });
+        return () => {
+            active = false;
+        };
+    }, [settingsRetry]);
+
+    if (settingsError) {
+        return (
+            <div className='athena-recoverable'>
+                <Result
+                    status='warning'
+                    title='API 服务暂不可用'
+                    subTitle='Athena 后端网关还没有准备好，或正在重启。请稍后重试。'
+                    extra={
+                        <Space orientation='vertical' size={12}>
+                            <Button type='primary' onClick={() => setSettingsRetry(value => value + 1)}>
+                                重试
+                            </Button>
+                            <Typography.Text type='secondary'>{settingsError.message}</Typography.Text>
+                        </Space>
+                    }
+                />
+            </div>
         );
     }
 
-    public getChildContext() {
-        return {history, apis: {popup: this.popupManager, notifications: this.notificationsManager, navigation: this.navigationManager, baseHref: base}};
+    if (!pref || !authSettings) {
+        return <div className='athena-boot'>Loading Athena...</div>;
     }
 
-    private async subscribeUnauthorized() {
-        return requests.onError.subscribe(async err => {
-            if (err.status === 401) {
-                if (history.location.pathname.startsWith('/login')) {
-                    return;
-                }
+    const isDark = pref.theme === 'dark';
+    return (
+        <ConfigProvider theme={{algorithm: isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm, token: {borderRadius: 6, colorPrimary: '#d9653b'}}}>
+            <AntApp>
+                <BrowserRouter basename={base} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                    <Shell pref={pref} authSettings={authSettings} />
+                </BrowserRouter>
+            </AntApp>
+        </ConfigProvider>
+    );
+};
 
-                const isSSO = await isExpiredSSO();
-                // location might change after async method call, so we need to check again.
-                if (history.location.pathname.startsWith('/login')) {
-                    return;
-                }
-                // Query for basehref and remove trailing /.
-                // If basehref is the default `/` it will become an empty string.
-                const basehref = document.querySelector('head > base').getAttribute('href').replace(/\/$/, '');
-                if (isSSO) {
-                    window.location.href = `${basehref}/auth/login?return_url=${encodeURIComponent(location.href)}`;
-                } else {
-                    history.push(`/login?return_url=${encodeURIComponent(location.href)}`);
-                }
-            }
-        });
-    }
-}
+export const App = () => <Bootstrap />;

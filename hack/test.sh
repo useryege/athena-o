@@ -12,7 +12,7 @@ TEST_FLAGS=${TEST_FLAGS:-}
 DIST_DIR=${DIST_DIR:-dist}
 GOTESTSUM_FORMAT=testname
 
-# Add DIST_DIR to PATH so binaries installed for argo are found first
+# Add DIST_DIR to PATH so binaries installed for Athena are found first
 export PATH="${DIST_DIR}:${PATH}"
 
 if test "${ATHENA_TEST_PARALLELISM:-}" != ""; then

@@ -3,7 +3,11 @@ module.exports = {
   testEnvironment: 'jsdom',
   reporters: ['default', 'jest-junit'],
   collectCoverage: true,
-  transformIgnorePatterns: ['node_modules/(?!(argo-ui)/)'],
+  testMatch: [
+    '<rootDir>/src/app/**/*.test.tsx',
+    '<rootDir>/src/app/mobile/**/*.test.tsx',
+    '<rootDir>/src/app/shared/**/*.test.ts'
+  ],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       isolatedModules: true,
