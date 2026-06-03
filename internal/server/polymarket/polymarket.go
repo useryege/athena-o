@@ -51,6 +51,32 @@ func (s *Server) ListPolymarketHotMarkets(ctx context.Context, req *polymarketpk
 	}, nil
 }
 
+func (s *Server) ListPolymarketRealtimeMarkets(ctx context.Context, req *polymarketpkg.ListPolymarketRealtimeMarketsRequest) (*polymarketpkg.ListPolymarketRealtimeMarketsResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListPolymarketRealtimeMarkets(ctx, &polymarketapiclient.ListPolymarketRealtimeMarketsRequest{
+		Limit: req.GetLimit(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &polymarketpkg.ListPolymarketRealtimeMarketsResponse{
+		Items:             resp.GetItems(),
+		FetchedAt:         resp.GetFetchedAt(),
+		Stale:             resp.GetStale(),
+		SubscribedMarkets: resp.GetSubscribedMarkets(),
+		SubscribedTokens:  resp.GetSubscribedTokens(),
+		Connected:         resp.GetConnected(),
+		LastEventAt:       resp.GetLastEventAt(),
+		CandidateCount:    resp.GetCandidateCount(),
+	}, nil
+}
+
 func (s *Server) ListPolymarketSportsLiveMarkets(ctx context.Context, req *polymarketpkg.ListPolymarketSportsLiveMarketsRequest) (*polymarketpkg.ListPolymarketSportsLiveMarketsResponse, error) {
 	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
 	if err != nil {

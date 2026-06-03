@@ -28,6 +28,23 @@ message ListPolymarketHotMarketsResponse {
   int32 candidate_count = 6;
 }
 
+// ListPolymarketRealtimeMarketsRequest queries realtime market rows.
+message ListPolymarketRealtimeMarketsRequest {
+  int32 limit = 1;
+}
+
+// ListPolymarketRealtimeMarketsResponse returns realtime market rows.
+message ListPolymarketRealtimeMarketsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketRealtimeMarketItem items = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
+  int32 subscribed_markets = 4;
+  int32 subscribed_tokens = 5;
+  bool connected = 6;
+  int64 last_event_at = 7;
+  int32 candidate_count = 8;
+}
+
 // ListPolymarketSportsLiveMarketsRequest queries the sports live market list.
 message ListPolymarketSportsLiveMarketsRequest {
   int32 limit = 1;
@@ -61,6 +78,11 @@ service PolymarketService {
   // ListPolymarketHotMarkets returns discovered hot markets.
   rpc ListPolymarketHotMarkets(ListPolymarketHotMarketsRequest) returns (ListPolymarketHotMarketsResponse) {
     option (google.api.http) = {get: "/api/v1/polymarket/hot-markets"};
+  }
+
+  // ListPolymarketRealtimeMarkets returns realtime market rows.
+  rpc ListPolymarketRealtimeMarkets(ListPolymarketRealtimeMarketsRequest) returns (ListPolymarketRealtimeMarketsResponse) {
+    option (google.api.http) = {get: "/api/v1/polymarket/realtime-markets"};
   }
 
   // ListPolymarketSportsLiveMarkets returns sports live market rows.

@@ -72,6 +72,38 @@ func TestHotMarketDiscoveryFiltersSortsAndParses(t *testing.T) {
 	}
 }
 
+func TestHotMarketEventSlugMapping(t *testing.T) {
+	sameSlugMarket := validHotMarket("cond-same", 20, 5)
+	sameSlugMarket.Events = []utilpolymarket.Event{{Slug: sameSlugMarket.Slug}}
+	sameSlug, ok := mapHotMarket(sameSlugMarket)
+	if !ok {
+		t.Fatal("same slug market rejected")
+	}
+	if sameSlug.EventSlug != sameSlug.MarketSlug {
+		t.Fatalf("event slug = %q, want market slug %q", sameSlug.EventSlug, sameSlug.MarketSlug)
+	}
+
+	eventSlug := "us-x-iran-permanent-peace-deal-by"
+	differentSlugMarket := validHotMarket("cond-different", 20, 5)
+	differentSlugMarket.Slug = strPtr("us-x-iran-permanent-peace-deal-by-june-15-2026-734-856-129")
+	differentSlugMarket.Events = []utilpolymarket.Event{{Slug: &eventSlug}}
+	differentSlug, ok := mapHotMarket(differentSlugMarket)
+	if !ok {
+		t.Fatal("different slug market rejected")
+	}
+	if differentSlug.MarketSlug != "us-x-iran-permanent-peace-deal-by-june-15-2026-734-856-129" || differentSlug.EventSlug != eventSlug {
+		t.Fatalf("slugs = market:%q event:%q, want market slug preserved and event slug mapped", differentSlug.MarketSlug, differentSlug.EventSlug)
+	}
+
+	noEvent, ok := mapHotMarket(validHotMarket("cond-no-event", 20, 5))
+	if !ok {
+		t.Fatal("no event market rejected")
+	}
+	if noEvent.EventSlug != "" {
+		t.Fatalf("event slug = %q, want empty fallback", noEvent.EventSlug)
+	}
+}
+
 func TestHotMarketDiscoveryHysteresis(t *testing.T) {
 	first := makeHotMarketBatch("old", 500, 1000)
 	second := makeHotMarketBatch("new", 500, 2000)

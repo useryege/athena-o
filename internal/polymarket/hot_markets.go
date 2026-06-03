@@ -286,7 +286,18 @@ func mapHotMarket(market utilpolymarket.Market) (*v1alpha1.PolymarketHotMarketIt
 		LastTradePrice: float64Value(market.LastTradePrice),
 		UpdatedAt:      formatTimeRFC3339(market.UpdatedAt),
 		Tokens:         tokens,
+		EventSlug:      hotMarketEventSlug(market),
 	}, true
+}
+
+func hotMarketEventSlug(market utilpolymarket.Market) string {
+	for i := range market.Events {
+		slug := strings.TrimSpace(stringValue(market.Events[i].Slug))
+		if slug != "" {
+			return slug
+		}
+	}
+	return ""
 }
 
 func parseHotMarketStringList(raw *string) []string {

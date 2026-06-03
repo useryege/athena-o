@@ -25,6 +25,42 @@ type PolymarketHotMarketItem struct {
 	LastTradePrice float64                         `protobuf:"fixed64,11,opt,name=lastTradePrice" json:"lastTradePrice"`
 	UpdatedAt      string                          `protobuf:"bytes,12,opt,name=updatedAt" json:"updatedAt"`
 	Tokens         []*PolymarketHotMarketTokenItem `protobuf:"bytes,13,rep,name=tokens" json:"tokens"`
+	EventSlug      string                          `protobuf:"bytes,14,opt,name=eventSlug" json:"eventSlug"`
+}
+
+type PolymarketRealtimeWindowItem struct {
+	Window        string  `protobuf:"bytes,1,opt,name=window" json:"window"`
+	PriceChangePp float64 `protobuf:"fixed64,2,opt,name=priceChangePp" json:"priceChangePp"`
+	Warmup        bool    `protobuf:"varint,3,opt,name=warmup" json:"warmup"`
+	SampleCount   int32   `protobuf:"varint,4,opt,name=sampleCount" json:"sampleCount"`
+}
+
+type PolymarketRealtimeTokenItem struct {
+	TokenID        string                          `protobuf:"bytes,1,opt,name=tokenId" json:"tokenId"`
+	Outcome        string                          `protobuf:"bytes,2,opt,name=outcome" json:"outcome"`
+	Price          float64                         `protobuf:"fixed64,3,opt,name=price" json:"price"`
+	BestBid        float64                         `protobuf:"fixed64,4,opt,name=bestBid" json:"bestBid"`
+	BestAsk        float64                         `protobuf:"fixed64,5,opt,name=bestAsk" json:"bestAsk"`
+	Spread         float64                         `protobuf:"fixed64,6,opt,name=spread" json:"spread"`
+	LastTradePrice float64                         `protobuf:"fixed64,7,opt,name=lastTradePrice" json:"lastTradePrice"`
+	LastTradeSize  float64                         `protobuf:"fixed64,8,opt,name=lastTradeSize" json:"lastTradeSize"`
+	LastTradeSide  string                          `protobuf:"bytes,9,opt,name=lastTradeSide" json:"lastTradeSide"`
+	LastEventAt    int64                           `protobuf:"varint,10,opt,name=lastEventAt" json:"lastEventAt"`
+	Windows        []*PolymarketRealtimeWindowItem `protobuf:"bytes,11,rep,name=windows" json:"windows"`
+	Warmup         bool                            `protobuf:"varint,12,opt,name=warmup" json:"warmup"`
+}
+
+type PolymarketRealtimeMarketItem struct {
+	ConditionID  string                         `protobuf:"bytes,1,opt,name=conditionId" json:"conditionId"`
+	MarketSlug   string                         `protobuf:"bytes,2,opt,name=marketSlug" json:"marketSlug"`
+	Question     string                         `protobuf:"bytes,3,opt,name=question" json:"question"`
+	Image        string                         `protobuf:"bytes,4,opt,name=image" json:"image"`
+	Volume24hr   float64                        `protobuf:"fixed64,5,opt,name=volume24hr" json:"volume24hr"`
+	VolumeNum    float64                        `protobuf:"fixed64,6,opt,name=volumeNum" json:"volumeNum"`
+	LiquidityNum float64                        `protobuf:"fixed64,7,opt,name=liquidityNum" json:"liquidityNum"`
+	UpdatedAt    string                         `protobuf:"bytes,8,opt,name=updatedAt" json:"updatedAt"`
+	Tokens       []*PolymarketRealtimeTokenItem `protobuf:"bytes,9,rep,name=tokens" json:"tokens"`
+	EventSlug    string                         `protobuf:"bytes,10,opt,name=eventSlug" json:"eventSlug"`
 }
 
 type PolymarketSportsLiveMarketItem struct {

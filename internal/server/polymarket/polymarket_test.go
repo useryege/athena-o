@@ -22,9 +22,11 @@ func (f *fakePolymarketClientset) NewPolymarketServiceClient() (utilio.Closer, p
 type fakePolymarketServiceClient struct {
 	statusResp          *v1alpha1.PolymarketStatus
 	hotMarketsResp      *polymarketapiclient.ListPolymarketHotMarketsResponse
+	realtimeMarketsResp *polymarketapiclient.ListPolymarketRealtimeMarketsResponse
 	liveListResp        *polymarketapiclient.ListPolymarketSportsLiveMarketsResponse
 	liveSnapshotResp    *polymarketapiclient.GetPolymarketSportsLiveSnapshotResponse
 	lastHotMarketsLimit int32
+	lastRealtimeLimit   int32
 	lastListLimit       int32
 	lastSnapshotLimit   int32
 }
@@ -42,6 +44,14 @@ func (f *fakePolymarketServiceClient) ListPolymarketHotMarkets(_ context.Context
 		return f.hotMarketsResp, nil
 	}
 	return &polymarketapiclient.ListPolymarketHotMarketsResponse{}, nil
+}
+
+func (f *fakePolymarketServiceClient) ListPolymarketRealtimeMarkets(_ context.Context, req *polymarketapiclient.ListPolymarketRealtimeMarketsRequest, _ ...grpc.CallOption) (*polymarketapiclient.ListPolymarketRealtimeMarketsResponse, error) {
+	f.lastRealtimeLimit = req.GetLimit()
+	if f.realtimeMarketsResp != nil {
+		return f.realtimeMarketsResp, nil
+	}
+	return &polymarketapiclient.ListPolymarketRealtimeMarketsResponse{}, nil
 }
 
 func (f *fakePolymarketServiceClient) ListPolymarketSportsLiveMarkets(_ context.Context, req *polymarketapiclient.ListPolymarketSportsLiveMarketsRequest, _ ...grpc.CallOption) (*polymarketapiclient.ListPolymarketSportsLiveMarketsResponse, error) {
@@ -84,6 +94,7 @@ func TestListPolymarketHotMarketsForwardsResponse(t *testing.T) {
 				{
 					ConditionID: "cond-1",
 					MarketSlug:  "market-1",
+					EventSlug:   "event-1",
 					Question:    "Market 1",
 					Volume24hr:  123,
 					Tokens: []*v1alpha1.PolymarketHotMarketTokenItem{
@@ -108,8 +119,51 @@ func TestListPolymarketHotMarketsForwardsResponse(t *testing.T) {
 	if client.lastHotMarketsLimit != 88 {
 		t.Fatalf("forwarded limit = %d, want 88", client.lastHotMarketsLimit)
 	}
-	if len(resp.GetItems()) != 1 || resp.GetItems()[0].ConditionID != "cond-1" || !resp.GetStale() || resp.GetFetchedAt() != 1717000000 || resp.GetMonitoredMarkets() != 501 || resp.GetMonitoredTokens() != 1002 || resp.GetCandidateCount() != 650 {
+	if len(resp.GetItems()) != 1 || resp.GetItems()[0].ConditionID != "cond-1" || resp.GetItems()[0].EventSlug != "event-1" || !resp.GetStale() || resp.GetFetchedAt() != 1717000000 || resp.GetMonitoredMarkets() != 501 || resp.GetMonitoredTokens() != 1002 || resp.GetCandidateCount() != 650 {
 		t.Fatalf("response = %#v, want forwarded hot markets", resp)
+	}
+}
+
+func TestListPolymarketRealtimeMarketsForwardsResponse(t *testing.T) {
+	client := &fakePolymarketServiceClient{
+		realtimeMarketsResp: &polymarketapiclient.ListPolymarketRealtimeMarketsResponse{
+			Items: []*v1alpha1.PolymarketRealtimeMarketItem{
+				{
+					ConditionID: "cond-1",
+					MarketSlug:  "market-1",
+					EventSlug:   "event-1",
+					Question:    "Market 1",
+					Tokens: []*v1alpha1.PolymarketRealtimeTokenItem{
+						{
+							TokenID: "token-1",
+							Outcome: "Yes",
+							Price:   0.55,
+							Windows: []*v1alpha1.PolymarketRealtimeWindowItem{{Window: "1m", PriceChangePp: 2.5}},
+						},
+					},
+				},
+			},
+			FetchedAt:         1717000001,
+			Stale:             true,
+			SubscribedMarkets: 500,
+			SubscribedTokens:  1000,
+			Connected:         true,
+			LastEventAt:       1717000000,
+			CandidateCount:    650,
+		},
+	}
+
+	resp, err := NewServer(&fakePolymarketClientset{client: client}).ListPolymarketRealtimeMarkets(context.Background(), &polymarketpkg.ListPolymarketRealtimeMarketsRequest{
+		Limit: 77,
+	})
+	if err != nil {
+		t.Fatalf("ListPolymarketRealtimeMarkets: %v", err)
+	}
+	if client.lastRealtimeLimit != 77 {
+		t.Fatalf("forwarded limit = %d, want 77", client.lastRealtimeLimit)
+	}
+	if len(resp.GetItems()) != 1 || resp.GetItems()[0].ConditionID != "cond-1" || resp.GetItems()[0].EventSlug != "event-1" || !resp.GetStale() || !resp.GetConnected() || resp.GetFetchedAt() != 1717000001 || resp.GetSubscribedMarkets() != 500 || resp.GetSubscribedTokens() != 1000 || resp.GetLastEventAt() != 1717000000 || resp.GetCandidateCount() != 650 {
+		t.Fatalf("response = %#v, want forwarded realtime markets", resp)
 	}
 }
 

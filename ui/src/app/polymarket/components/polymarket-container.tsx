@@ -60,14 +60,6 @@ const eventURL = (eventSlug?: string) => {
     return `https://polymarket.com/event/${slug}`;
 };
 
-const marketURL = (marketSlug?: string) => {
-    const slug = String(marketSlug || '').trim();
-    if (!slug) {
-        return POLYMARKET_SPORTS_LIVE_URL;
-    }
-    return `https://polymarket.com/event/${slug}`;
-};
-
 const openExternal = (url: string) => {
     try {
         const opened = window.open(url, '_blank', 'noopener,noreferrer');
@@ -288,7 +280,7 @@ export const PolymarketContainer = () => {
                                                                                 outcome={outcome}
                                                                                 price={prices[idx]}
                                                                                 team={findOutcomeTeam(event, outcome, idx)}
-                                                                                onClick={() => openExternal(marketURL(market.marketSlug))}
+                                                                                onClick={() => openExternal(eventURL(event.eventSlug))}
                                                                             />
                                                                         ));
                                                                     }
@@ -298,7 +290,7 @@ export const PolymarketContainer = () => {
                                                                             market={market}
                                                                             outcome={market.question || market.marketSlug || '-'}
                                                                             team={findOutcomeTeam(event, market.question || market.marketSlug || '-', 0)}
-                                                                            onClick={() => openExternal(marketURL(market.marketSlug))}
+                                                                            onClick={() => openExternal(eventURL(event.eventSlug))}
                                                                         />
                                                                     );
                                                                 })}

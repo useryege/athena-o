@@ -2,11 +2,11 @@ import {MockupList, Page} from 'argo-ui';
 import * as React from 'react';
 
 import {services} from '../../shared/services';
-import {PolymarketHotMarketItem, PolymarketHotMarketTokenItem} from '../../shared/services/polymarket-service';
+import {PolymarketRealtimeMarketItem, PolymarketRealtimeTokenItem, PolymarketRealtimeWindowItem} from '../../shared/services/polymarket-service';
 
 require('./polymarket-container.scss');
 
-const POLL_INTERVAL_MS = 10000;
+const POLL_INTERVAL_MS = 5000;
 const FETCH_LIMIT = 500;
 const PAGE_SIZE = 100;
 const POLYMARKET_URL = 'https://polymarket.com';
@@ -23,15 +23,11 @@ const formatFetchedAt = (fetchedAt?: number) => {
     return new Date(fetchedAt * 1000).toLocaleTimeString();
 };
 
-const formatTimestamp = (value?: string) => {
+const formatTimestamp = (value?: number) => {
     if (!value) {
         return '-';
     }
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-        return value;
-    }
-    return parsed.toLocaleString();
+    return new Date(value * 1000).toLocaleTimeString();
 };
 
 const formatNumber = (value?: number) => {
@@ -42,10 +38,18 @@ const formatNumber = (value?: number) => {
 };
 
 const formatPrice = (value?: number) => {
-    if (value === undefined || value === null) {
+    if (value === undefined || value === null || value <= 0) {
         return '-';
     }
-    return value.toFixed(2);
+    return value.toFixed(3);
+};
+
+const formatPp = (value?: number, warmup?: boolean) => {
+    if (warmup || value === undefined || value === null) {
+        return 'warming';
+    }
+    const sign = value > 0 ? '+' : '';
+    return `${sign}${value.toFixed(1)}pp`;
 };
 
 const marketURL = (eventSlug?: string, marketSlug?: string) => {
@@ -67,43 +71,75 @@ const openExternal = (url: string) => {
     }
 };
 
-const HotMarketLogo = ({market}: {market: PolymarketHotMarketItem}) => {
+const RealtimeMarketLogo = ({market}: {market: PolymarketRealtimeMarketItem}) => {
     const [failed, setFailed] = React.useState(false);
 
     React.useEffect(() => setFailed(false), [market.image]);
 
-    return <span className='polymarket-hot__logo'>{market.image && !failed ? <img src={market.image} alt='' onError={() => setFailed(true)} /> : <span>P</span>}</span>;
+    return <span className='polymarket-realtime__logo'>{market.image && !failed ? <img src={market.image} alt='' onError={() => setFailed(true)} /> : <span>P</span>}</span>;
 };
 
-const HotMarketToken = ({token}: {token: PolymarketHotMarketTokenItem}) => (
-    <div className='polymarket-hot__token' title={token.tokenId}>
-        <span className='polymarket-hot__token-outcome'>{token.outcome || '-'}</span>
-        <span className='polymarket-hot__token-price'>{formatPrice(token.price)}</span>
+const WindowChip = ({window}: {window: PolymarketRealtimeWindowItem}) => {
+    const className = ['polymarket-realtime__window'];
+    if (window.warmup) {
+        className.push('polymarket-realtime__window--warmup');
+    } else if ((window.priceChangePp || 0) > 0) {
+        className.push('polymarket-realtime__window--up');
+    } else if ((window.priceChangePp || 0) < 0) {
+        className.push('polymarket-realtime__window--down');
+    }
+    return (
+        <span className={className.join(' ')}>
+            <span>{window.window || '-'}</span>
+            <strong>{formatPp(window.priceChangePp, window.warmup)}</strong>
+        </span>
+    );
+};
+
+const RealtimeToken = ({token}: {token: PolymarketRealtimeTokenItem}) => (
+    <div className='polymarket-realtime__token' title={token.tokenId}>
+        <div className='polymarket-realtime__token-top'>
+            <strong>{token.outcome || '-'}</strong>
+            <span>{formatPrice(token.price)}</span>
+        </div>
+        <div className='polymarket-realtime__quote'>
+            <span>Bid {formatPrice(token.bestBid)}</span>
+            <span>Ask {formatPrice(token.bestAsk)}</span>
+            <span>Spr {formatPrice(token.spread)}</span>
+        </div>
+        <div className='polymarket-realtime__quote'>
+            <span>Last {formatPrice(token.lastTradePrice)}</span>
+            <span>{token.lastTradeSide || '-'}</span>
+            <span>{formatTimestamp(token.lastEventAt)}</span>
+        </div>
+        <div className='polymarket-realtime__windows'>{(token.windows || []).map(window => <WindowChip key={window.window} window={window} />)}</div>
     </div>
 );
 
-const HotMarketMetric = ({label, value}: {label: string; value: string}) => (
-    <div className='polymarket-hot__metric'>
+const RealtimeMetric = ({label, value}: {label: string; value: string}) => (
+    <div className='polymarket-realtime__metric'>
         <span>{label}</span>
         <strong>{value}</strong>
     </div>
 );
 
-export const HotMarketsContainer = () => {
-    const [markets, setMarkets] = React.useState<PolymarketHotMarketItem[]>([]);
+export const RealtimeMarketsContainer = () => {
+    const [markets, setMarkets] = React.useState<PolymarketRealtimeMarketItem[]>([]);
     const [currentPage, setCurrentPage] = React.useState(1);
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
     const [error, setError] = React.useState<Error | null>(null);
     const [stale, setStale] = React.useState(false);
+    const [connected, setConnected] = React.useState(false);
     const [fetchedAt, setFetchedAt] = React.useState<number | undefined>(undefined);
-    const [monitoredMarkets, setMonitoredMarkets] = React.useState<number | undefined>(undefined);
-    const [monitoredTokens, setMonitoredTokens] = React.useState<number | undefined>(undefined);
+    const [lastEventAt, setLastEventAt] = React.useState<number | undefined>(undefined);
+    const [subscribedMarkets, setSubscribedMarkets] = React.useState<number | undefined>(undefined);
+    const [subscribedTokens, setSubscribedTokens] = React.useState<number | undefined>(undefined);
     const [candidateCount, setCandidateCount] = React.useState<number | undefined>(undefined);
     const mountedRef = React.useRef(false);
     const requestRef = React.useRef<{abort?: () => void} | null>(null);
 
-    const loadHotMarkets = React.useCallback(async () => {
+    const loadRealtimeMarkets = React.useCallback(async () => {
         if (requestRef.current?.abort) {
             requestRef.current.abort();
         }
@@ -111,7 +147,7 @@ export const HotMarketsContainer = () => {
             setRefreshing(true);
         }
 
-        const req = services.polymarket.listHotMarkets(FETCH_LIMIT);
+        const req = services.polymarket.listRealtimeMarkets(FETCH_LIMIT);
         requestRef.current = req;
         try {
             const data = await req;
@@ -123,9 +159,11 @@ export const HotMarketsContainer = () => {
                     return Math.min(Math.max(1, page), nextTotalPages);
                 });
                 setFetchedAt(data.fetchedAt);
+                setLastEventAt(data.lastEventAt);
                 setStale(Boolean(data.stale));
-                setMonitoredMarkets(data.monitoredMarkets);
-                setMonitoredTokens(data.monitoredTokens);
+                setConnected(Boolean(data.connected));
+                setSubscribedMarkets(data.subscribedMarkets);
+                setSubscribedTokens(data.subscribedTokens);
                 setCandidateCount(data.candidateCount);
                 setError(null);
             }
@@ -146,7 +184,7 @@ export const HotMarketsContainer = () => {
 
     React.useEffect(() => {
         mountedRef.current = true;
-        loadHotMarkets();
+        loadRealtimeMarkets();
 
         return () => {
             mountedRef.current = false;
@@ -154,7 +192,7 @@ export const HotMarketsContainer = () => {
                 requestRef.current.abort();
             }
         };
-    }, [loadHotMarkets]);
+    }, [loadRealtimeMarkets]);
 
     React.useEffect(() => {
         let interval: number | undefined;
@@ -172,7 +210,7 @@ export const HotMarketsContainer = () => {
         const startPolling = () => {
             stopPolling();
             if (!document.hidden) {
-                interval = window.setInterval(() => loadHotMarkets(), POLL_INTERVAL_MS);
+                interval = window.setInterval(() => loadRealtimeMarkets(), POLL_INTERVAL_MS);
             }
         };
         const onVisibilityChange = () => {
@@ -181,7 +219,7 @@ export const HotMarketsContainer = () => {
                 abortCurrentRequest();
                 return;
             }
-            loadHotMarkets();
+            loadRealtimeMarkets();
             startPolling();
         };
 
@@ -192,7 +230,7 @@ export const HotMarketsContainer = () => {
             stopPolling();
             abortCurrentRequest();
         };
-    }, [loadHotMarkets]);
+    }, [loadRealtimeMarkets]);
 
     const totalPages = Math.max(1, Math.ceil(markets.length / PAGE_SIZE));
     const page = Math.min(Math.max(1, currentPage), totalPages);
@@ -208,11 +246,11 @@ export const HotMarketsContainer = () => {
     const goLast = () => setCurrentPage(totalPages);
 
     return (
-        <Page title='Polymarket Hot Markets' toolbar={{breadcrumbs: [{title: 'Polymarket', path: '/polymarket'}, {title: 'Hot Markets'}]}}>
-            <div className='polymarket-hot'>
+        <Page title='Polymarket Realtime' toolbar={{breadcrumbs: [{title: 'Polymarket', path: '/polymarket'}, {title: 'Realtime'}]}}>
+            <div className='polymarket-realtime'>
                 {error && (
-                    <div className='polymarket-hot__error'>
-                        <i className='fa fa-exclamation-triangle' /> Failed to load Polymarket hot markets: {error.message}
+                    <div className='polymarket-realtime__error'>
+                        <i className='fa fa-exclamation-triangle' /> Failed to load Polymarket realtime markets: {error.message}
                     </div>
                 )}
 
@@ -220,18 +258,20 @@ export const HotMarketsContainer = () => {
                     <MockupList height={130} marginTop={30} />
                 ) : (
                     <div className='argo-container'>
-                        <div className='white-box polymarket-hot__box'>
-                            <div className='polymarket-hot__status'>
+                        <div className='white-box polymarket-realtime__box'>
+                            <div className='polymarket-realtime__status'>
                                 <span>Shown: {shownLabel}</span>
-                                <span>Monitored: {formatNumber(monitoredMarkets)}</span>
-                                <span>Tokens: {formatNumber(monitoredTokens)}</span>
+                                <span>Connection: {connected ? 'Connected' : 'Waiting'}</span>
+                                <span>Snapshot: {stale ? 'Stale' : 'Fresh'}</span>
+                                <span>Subscribed: {formatNumber(subscribedMarkets)}</span>
+                                <span>Tokens: {formatNumber(subscribedTokens)}</span>
                                 <span>Candidates: {formatNumber(candidateCount)}</span>
+                                <span>Last Event: {formatTimestamp(lastEventAt)}</span>
                                 <span>Fetched At: {formatFetchedAt(fetchedAt)}</span>
                                 <span>Refresh: {refreshing ? 'Updating' : 'Idle'}</span>
-                                <span>Snapshot: {stale ? 'Stale' : 'Fresh'}</span>
                             </div>
 
-                            <div className='polymarket-hot__pagination' aria-label='Hot markets pagination'>
+                            <div className='polymarket-realtime__pagination' aria-label='Realtime markets pagination'>
                                 <button type='button' onClick={goFirst} disabled={!canGoPrevious}>
                                     First
                                 </button>
@@ -249,29 +289,26 @@ export const HotMarketsContainer = () => {
                                 </button>
                             </div>
 
-                            <div className='polymarket-hot__list'>
+                            <div className='polymarket-realtime__list'>
                                 {markets.length === 0 ? (
-                                    <div className='polymarket-hot__empty'>No hot markets found</div>
+                                    <div className='polymarket-realtime__empty'>No realtime markets found</div>
                                 ) : (
                                     visibleMarkets.map((market, index) => (
-                                        <article key={market.conditionId || `${market.marketSlug}-${index}`} className='polymarket-hot__row'>
-                                            <div className='polymarket-hot__rank'>{startIndex + index + 1}</div>
-                                            <HotMarketLogo market={market} />
-                                            <div className='polymarket-hot__main'>
-                                                <button type='button' className='polymarket-hot__title' onClick={() => openExternal(marketURL(market.eventSlug, market.marketSlug))}>
+                                        <article key={market.conditionId || `${market.marketSlug}-${index}`} className='polymarket-realtime__row'>
+                                            <div className='polymarket-realtime__rank'>{startIndex + index + 1}</div>
+                                            <RealtimeMarketLogo market={market} />
+                                            <div className='polymarket-realtime__main'>
+                                                <button type='button' className='polymarket-realtime__title' onClick={() => openExternal(marketURL(market.eventSlug, market.marketSlug))}>
                                                     {market.question || market.marketSlug || '-'}
                                                 </button>
-                                                <div className='polymarket-hot__subtitle'>{market.conditionId || '-'}</div>
-                                                <div className='polymarket-hot__tokens'>{(market.tokens || []).map(token => <HotMarketToken key={token.tokenId} token={token} />)}</div>
+                                                <div className='polymarket-realtime__subtitle'>{market.conditionId || '-'}</div>
+                                                <div className='polymarket-realtime__metrics'>
+                                                    <RealtimeMetric label='24h Vol' value={formatNumber(market.volume24hr)} />
+                                                    <RealtimeMetric label='Liquidity' value={formatNumber(market.liquidityNum)} />
+                                                    <RealtimeMetric label='Updated' value={market.updatedAt || '-'} />
+                                                </div>
                                             </div>
-                                            <div className='polymarket-hot__metrics'>
-                                                <HotMarketMetric label='24h Vol' value={formatNumber(market.volume24hr)} />
-                                                <HotMarketMetric label='Liquidity' value={formatNumber(market.liquidityNum)} />
-                                                <HotMarketMetric label='Last' value={formatPrice(market.lastTradePrice)} />
-                                                <HotMarketMetric label='Spread' value={formatPrice(market.spread)} />
-                                                <HotMarketMetric label='Bid / Ask' value={`${formatPrice(market.bestBid)} / ${formatPrice(market.bestAsk)}`} />
-                                                <HotMarketMetric label='Updated' value={formatTimestamp(market.updatedAt)} />
-                                            </div>
+                                            <div className='polymarket-realtime__tokens'>{(market.tokens || []).map(token => <RealtimeToken key={token.tokenId} token={token} />)}</div>
                                         </article>
                                     ))
                                 )}

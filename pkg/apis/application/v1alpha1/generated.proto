@@ -446,6 +446,8 @@ message PolymarketHotMarketItem {
   optional string updatedAt = 12;
 
   repeated PolymarketHotMarketTokenItem tokens = 13;
+
+  optional string eventSlug = 14;
 }
 
 message PolymarketHotMarketTokenItem {
@@ -454,6 +456,64 @@ message PolymarketHotMarketTokenItem {
   optional string outcome = 2;
 
   optional double price = 3;
+}
+
+message PolymarketRealtimeMarketItem {
+  optional string conditionId = 1;
+
+  optional string marketSlug = 2;
+
+  optional string question = 3;
+
+  optional string image = 4;
+
+  optional double volume24hr = 5;
+
+  optional double volumeNum = 6;
+
+  optional double liquidityNum = 7;
+
+  optional string updatedAt = 8;
+
+  repeated PolymarketRealtimeTokenItem tokens = 9;
+
+  optional string eventSlug = 10;
+}
+
+message PolymarketRealtimeTokenItem {
+  optional string tokenId = 1;
+
+  optional string outcome = 2;
+
+  optional double price = 3;
+
+  optional double bestBid = 4;
+
+  optional double bestAsk = 5;
+
+  optional double spread = 6;
+
+  optional double lastTradePrice = 7;
+
+  optional double lastTradeSize = 8;
+
+  optional string lastTradeSide = 9;
+
+  optional int64 lastEventAt = 10;
+
+  repeated PolymarketRealtimeWindowItem windows = 11;
+
+  optional bool warmup = 12;
+}
+
+message PolymarketRealtimeWindowItem {
+  optional string window = 1;
+
+  optional double priceChangePp = 2;
+
+  optional bool warmup = 3;
+
+  optional int32 sampleCount = 4;
 }
 
 message PolymarketSportsLiveEventItem {

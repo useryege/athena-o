@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-505-g25e5143-dirty"
+    "version": "v1.0.0-506-g4f5c96b-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -386,6 +386,37 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/polymarketListPolymarketHotMarketsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/realtime-markets": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "summary": "ListPolymarketRealtimeMarkets returns realtime market rows.",
+        "operationId": "PolymarketService_ListPolymarketRealtimeMarkets",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketListPolymarketRealtimeMarketsResponse"
             }
           },
           "default": {
@@ -2452,6 +2483,44 @@
         }
       }
     },
+    "polymarketListPolymarketRealtimeMarketsResponse": {
+      "description": "ListPolymarketRealtimeMarketsResponse returns realtime market rows.",
+      "type": "object",
+      "properties": {
+        "candidate_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "connected": {
+          "type": "boolean"
+        },
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketRealtimeMarketItem"
+          }
+        },
+        "last_event_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "stale": {
+          "type": "boolean"
+        },
+        "subscribed_markets": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "subscribed_tokens": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "polymarketListPolymarketSportsLiveMarketsResponse": {
       "description": "ListPolymarketSportsLiveMarketsResponse returns sports live market rows.",
       "type": "object",
@@ -3437,6 +3506,9 @@
         "conditionId": {
           "type": "string"
         },
+        "eventSlug": {
+          "type": "string"
+        },
         "image": {
           "type": "string"
         },
@@ -3488,6 +3560,117 @@
           "format": "double"
         },
         "tokenId": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketRealtimeMarketItem": {
+      "type": "object",
+      "properties": {
+        "conditionId": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "liquidityNum": {
+          "type": "number",
+          "format": "double"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "tokens": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketRealtimeTokenItem"
+          }
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "volume24hr": {
+          "type": "number",
+          "format": "double"
+        },
+        "volumeNum": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1alpha1PolymarketRealtimeTokenItem": {
+      "type": "object",
+      "properties": {
+        "bestAsk": {
+          "type": "number",
+          "format": "double"
+        },
+        "bestBid": {
+          "type": "number",
+          "format": "double"
+        },
+        "lastEventAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "lastTradePrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "lastTradeSide": {
+          "type": "string"
+        },
+        "lastTradeSize": {
+          "type": "number",
+          "format": "double"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "spread": {
+          "type": "number",
+          "format": "double"
+        },
+        "tokenId": {
+          "type": "string"
+        },
+        "warmup": {
+          "type": "boolean"
+        },
+        "windows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketRealtimeWindowItem"
+          }
+        }
+      }
+    },
+    "v1alpha1PolymarketRealtimeWindowItem": {
+      "type": "object",
+      "properties": {
+        "priceChangePp": {
+          "type": "number",
+          "format": "double"
+        },
+        "sampleCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "warmup": {
+          "type": "boolean"
+        },
+        "window": {
           "type": "string"
         }
       }
