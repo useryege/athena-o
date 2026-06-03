@@ -5,6 +5,28 @@ type PolymarketStatus struct {
 	Status  string `protobuf:"bytes,2,opt,name=status" json:"status"`
 }
 
+type PolymarketHotMarketTokenItem struct {
+	TokenID string  `protobuf:"bytes,1,opt,name=tokenId" json:"tokenId"`
+	Outcome string  `protobuf:"bytes,2,opt,name=outcome" json:"outcome"`
+	Price   float64 `protobuf:"fixed64,3,opt,name=price" json:"price"`
+}
+
+type PolymarketHotMarketItem struct {
+	ConditionID    string                          `protobuf:"bytes,1,opt,name=conditionId" json:"conditionId"`
+	MarketSlug     string                          `protobuf:"bytes,2,opt,name=marketSlug" json:"marketSlug"`
+	Question       string                          `protobuf:"bytes,3,opt,name=question" json:"question"`
+	Image          string                          `protobuf:"bytes,4,opt,name=image" json:"image"`
+	Volume24hr     float64                         `protobuf:"fixed64,5,opt,name=volume24hr" json:"volume24hr"`
+	VolumeNum      float64                         `protobuf:"fixed64,6,opt,name=volumeNum" json:"volumeNum"`
+	LiquidityNum   float64                         `protobuf:"fixed64,7,opt,name=liquidityNum" json:"liquidityNum"`
+	Spread         float64                         `protobuf:"fixed64,8,opt,name=spread" json:"spread"`
+	BestBid        float64                         `protobuf:"fixed64,9,opt,name=bestBid" json:"bestBid"`
+	BestAsk        float64                         `protobuf:"fixed64,10,opt,name=bestAsk" json:"bestAsk"`
+	LastTradePrice float64                         `protobuf:"fixed64,11,opt,name=lastTradePrice" json:"lastTradePrice"`
+	UpdatedAt      string                          `protobuf:"bytes,12,opt,name=updatedAt" json:"updatedAt"`
+	Tokens         []*PolymarketHotMarketTokenItem `protobuf:"bytes,13,rep,name=tokens" json:"tokens"`
+}
+
 type PolymarketSportsLiveMarketItem struct {
 	ConditionID  string  `protobuf:"bytes,1,opt,name=conditionId" json:"conditionId"`
 	MarketSlug   string  `protobuf:"bytes,2,opt,name=marketSlug" json:"marketSlug"`

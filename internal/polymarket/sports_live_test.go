@@ -14,10 +14,14 @@ import (
 )
 
 type fakeGammaClient struct {
-	responses []*utilpolymarket.EventKeysetResponse
-	err       error
-	calls     int
-	opts      []utilpolymarket.ListEventsKeysetOptions
+	responses       []*utilpolymarket.EventKeysetResponse
+	marketResponses []*utilpolymarket.MarketKeysetResponse
+	err             error
+	marketErr       error
+	calls           int
+	marketCalls     int
+	opts            []utilpolymarket.ListEventsKeysetOptions
+	marketOpts      []utilpolymarket.ListMarketsKeysetOptions
 }
 
 func (f *fakeGammaClient) ListEventsKeyset(_ context.Context, options utilpolymarket.ListEventsKeysetOptions) (*utilpolymarket.EventKeysetResponse, error) {
@@ -37,6 +41,25 @@ func (f *fakeGammaClient) ListEventsKeyset(_ context.Context, options utilpolyma
 		idx = len(f.responses) - 1
 	}
 	return f.responses[idx], nil
+}
+
+func (f *fakeGammaClient) ListMarketsKeyset(_ context.Context, options utilpolymarket.ListMarketsKeysetOptions) (*utilpolymarket.MarketKeysetResponse, error) {
+	f.marketCalls++
+	f.marketOpts = append(f.marketOpts, options)
+	if f.marketErr != nil {
+		return nil, f.marketErr
+	}
+	if len(f.marketResponses) == 0 {
+		return &utilpolymarket.MarketKeysetResponse{}, nil
+	}
+	idx := f.marketCalls - 1
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(f.marketResponses) {
+		idx = len(f.marketResponses) - 1
+	}
+	return f.marketResponses[idx], nil
 }
 
 type fakeSportsWSClient struct {

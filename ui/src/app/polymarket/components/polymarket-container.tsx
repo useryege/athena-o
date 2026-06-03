@@ -222,7 +222,7 @@ export const PolymarketContainer = () => {
     }, [loadSnapshot]);
 
     return (
-        <Page title='Polymarket' toolbar={{breadcrumbs: [{title: 'Polymarket'}]}}>
+        <Page title='Polymarket Sports Live' toolbar={{breadcrumbs: [{title: 'Polymarket', path: '/polymarket'}, {title: 'Sports Live'}]}}>
             <div className='polymarket-live'>
                 {error && (
                     <div className='polymarket-live__error'>

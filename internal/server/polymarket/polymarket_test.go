@@ -20,11 +20,13 @@ func (f *fakePolymarketClientset) NewPolymarketServiceClient() (utilio.Closer, p
 }
 
 type fakePolymarketServiceClient struct {
-	statusResp        *v1alpha1.PolymarketStatus
-	liveListResp      *polymarketapiclient.ListPolymarketSportsLiveMarketsResponse
-	liveSnapshotResp  *polymarketapiclient.GetPolymarketSportsLiveSnapshotResponse
-	lastListLimit     int32
-	lastSnapshotLimit int32
+	statusResp          *v1alpha1.PolymarketStatus
+	hotMarketsResp      *polymarketapiclient.ListPolymarketHotMarketsResponse
+	liveListResp        *polymarketapiclient.ListPolymarketSportsLiveMarketsResponse
+	liveSnapshotResp    *polymarketapiclient.GetPolymarketSportsLiveSnapshotResponse
+	lastHotMarketsLimit int32
+	lastListLimit       int32
+	lastSnapshotLimit   int32
 }
 
 func (f *fakePolymarketServiceClient) GetPolymarketStatus(context.Context, *polymarketapiclient.GetPolymarketStatusRequest, ...grpc.CallOption) (*v1alpha1.PolymarketStatus, error) {
@@ -32,6 +34,14 @@ func (f *fakePolymarketServiceClient) GetPolymarketStatus(context.Context, *poly
 		return f.statusResp, nil
 	}
 	return &v1alpha1.PolymarketStatus{}, nil
+}
+
+func (f *fakePolymarketServiceClient) ListPolymarketHotMarkets(_ context.Context, req *polymarketapiclient.ListPolymarketHotMarketsRequest, _ ...grpc.CallOption) (*polymarketapiclient.ListPolymarketHotMarketsResponse, error) {
+	f.lastHotMarketsLimit = req.GetLimit()
+	if f.hotMarketsResp != nil {
+		return f.hotMarketsResp, nil
+	}
+	return &polymarketapiclient.ListPolymarketHotMarketsResponse{}, nil
 }
 
 func (f *fakePolymarketServiceClient) ListPolymarketSportsLiveMarkets(_ context.Context, req *polymarketapiclient.ListPolymarketSportsLiveMarketsRequest, _ ...grpc.CallOption) (*polymarketapiclient.ListPolymarketSportsLiveMarketsResponse, error) {
@@ -64,6 +74,42 @@ func TestGetPolymarketStatusForwardsResponse(t *testing.T) {
 	}
 	if !resp.Started || resp.Status != "running" {
 		t.Fatalf("response = %#v, want running status", resp)
+	}
+}
+
+func TestListPolymarketHotMarketsForwardsResponse(t *testing.T) {
+	client := &fakePolymarketServiceClient{
+		hotMarketsResp: &polymarketapiclient.ListPolymarketHotMarketsResponse{
+			Items: []*v1alpha1.PolymarketHotMarketItem{
+				{
+					ConditionID: "cond-1",
+					MarketSlug:  "market-1",
+					Question:    "Market 1",
+					Volume24hr:  123,
+					Tokens: []*v1alpha1.PolymarketHotMarketTokenItem{
+						{TokenID: "token-1", Outcome: "Yes", Price: 0.55},
+					},
+				},
+			},
+			FetchedAt:        1717000000,
+			Stale:            true,
+			MonitoredMarkets: 501,
+			MonitoredTokens:  1002,
+			CandidateCount:   650,
+		},
+	}
+
+	resp, err := NewServer(&fakePolymarketClientset{client: client}).ListPolymarketHotMarkets(context.Background(), &polymarketpkg.ListPolymarketHotMarketsRequest{
+		Limit: 88,
+	})
+	if err != nil {
+		t.Fatalf("ListPolymarketHotMarkets: %v", err)
+	}
+	if client.lastHotMarketsLimit != 88 {
+		t.Fatalf("forwarded limit = %d, want 88", client.lastHotMarketsLimit)
+	}
+	if len(resp.GetItems()) != 1 || resp.GetItems()[0].ConditionID != "cond-1" || !resp.GetStale() || resp.GetFetchedAt() != 1717000000 || resp.GetMonitoredMarkets() != 501 || resp.GetMonitoredTokens() != 1002 || resp.GetCandidateCount() != 650 {
+		t.Fatalf("response = %#v, want forwarded hot markets", resp)
 	}
 }
 

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-504-g13e6c34-dirty"
+    "version": "v1.0.0-505-g25e5143-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -355,6 +355,37 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/notificationGetNotificationDeliveryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/hot-markets": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "summary": "ListPolymarketHotMarkets returns discovered hot markets.",
+        "operationId": "PolymarketService_ListPolymarketHotMarkets",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketListPolymarketHotMarketsResponse"
             }
           },
           "default": {
@@ -2390,6 +2421,37 @@
         }
       }
     },
+    "polymarketListPolymarketHotMarketsResponse": {
+      "description": "ListPolymarketHotMarketsResponse returns discovered hot markets.",
+      "type": "object",
+      "properties": {
+        "candidate_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketHotMarketItem"
+          }
+        },
+        "monitored_markets": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "monitored_tokens": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "stale": {
+          "type": "boolean"
+        }
+      }
+    },
     "polymarketListPolymarketSportsLiveMarketsResponse": {
       "description": "ListPolymarketSportsLiveMarketsResponse returns sports live market rows.",
       "type": "object",
@@ -3357,6 +3419,75 @@
           "type": "string"
         },
         "totalSupply": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketHotMarketItem": {
+      "type": "object",
+      "properties": {
+        "bestAsk": {
+          "type": "number",
+          "format": "double"
+        },
+        "bestBid": {
+          "type": "number",
+          "format": "double"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "lastTradePrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "liquidityNum": {
+          "type": "number",
+          "format": "double"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "spread": {
+          "type": "number",
+          "format": "double"
+        },
+        "tokens": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketHotMarketTokenItem"
+          }
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "volume24hr": {
+          "type": "number",
+          "format": "double"
+        },
+        "volumeNum": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1alpha1PolymarketHotMarketTokenItem": {
+      "type": "object",
+      "properties": {
+        "outcome": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "tokenId": {
           "type": "string"
         }
       }

@@ -69,6 +69,142 @@ func (m *GetPolymarketStatusRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetPolymarketStatusRequest proto.InternalMessageInfo
 
+// ListPolymarketHotMarketsRequest queries discovered hot markets.
+type ListPolymarketHotMarketsRequest struct {
+	Limit                int32    `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListPolymarketHotMarketsRequest) Reset()         { *m = ListPolymarketHotMarketsRequest{} }
+func (m *ListPolymarketHotMarketsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListPolymarketHotMarketsRequest) ProtoMessage()    {}
+func (*ListPolymarketHotMarketsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e55e8195b4f69ab4, []int{1}
+}
+func (m *ListPolymarketHotMarketsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListPolymarketHotMarketsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListPolymarketHotMarketsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListPolymarketHotMarketsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPolymarketHotMarketsRequest.Merge(m, src)
+}
+func (m *ListPolymarketHotMarketsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListPolymarketHotMarketsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPolymarketHotMarketsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPolymarketHotMarketsRequest proto.InternalMessageInfo
+
+func (m *ListPolymarketHotMarketsRequest) GetLimit() int32 {
+	if m != nil {
+		return m.Limit
+	}
+	return 0
+}
+
+// ListPolymarketHotMarketsResponse returns discovered hot markets.
+type ListPolymarketHotMarketsResponse struct {
+	Items                []*v1alpha1.PolymarketHotMarketItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	FetchedAt            int64                               `protobuf:"varint,2,opt,name=fetched_at,json=fetchedAt,proto3" json:"fetched_at,omitempty"`
+	Stale                bool                                `protobuf:"varint,3,opt,name=stale,proto3" json:"stale,omitempty"`
+	MonitoredMarkets     int32                               `protobuf:"varint,4,opt,name=monitored_markets,json=monitoredMarkets,proto3" json:"monitored_markets,omitempty"`
+	MonitoredTokens      int32                               `protobuf:"varint,5,opt,name=monitored_tokens,json=monitoredTokens,proto3" json:"monitored_tokens,omitempty"`
+	CandidateCount       int32                               `protobuf:"varint,6,opt,name=candidate_count,json=candidateCount,proto3" json:"candidate_count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
+	XXX_unrecognized     []byte                              `json:"-"`
+	XXX_sizecache        int32                               `json:"-"`
+}
+
+func (m *ListPolymarketHotMarketsResponse) Reset()         { *m = ListPolymarketHotMarketsResponse{} }
+func (m *ListPolymarketHotMarketsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListPolymarketHotMarketsResponse) ProtoMessage()    {}
+func (*ListPolymarketHotMarketsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e55e8195b4f69ab4, []int{2}
+}
+func (m *ListPolymarketHotMarketsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListPolymarketHotMarketsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListPolymarketHotMarketsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListPolymarketHotMarketsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPolymarketHotMarketsResponse.Merge(m, src)
+}
+func (m *ListPolymarketHotMarketsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListPolymarketHotMarketsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPolymarketHotMarketsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPolymarketHotMarketsResponse proto.InternalMessageInfo
+
+func (m *ListPolymarketHotMarketsResponse) GetItems() []*v1alpha1.PolymarketHotMarketItem {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+func (m *ListPolymarketHotMarketsResponse) GetFetchedAt() int64 {
+	if m != nil {
+		return m.FetchedAt
+	}
+	return 0
+}
+
+func (m *ListPolymarketHotMarketsResponse) GetStale() bool {
+	if m != nil {
+		return m.Stale
+	}
+	return false
+}
+
+func (m *ListPolymarketHotMarketsResponse) GetMonitoredMarkets() int32 {
+	if m != nil {
+		return m.MonitoredMarkets
+	}
+	return 0
+}
+
+func (m *ListPolymarketHotMarketsResponse) GetMonitoredTokens() int32 {
+	if m != nil {
+		return m.MonitoredTokens
+	}
+	return 0
+}
+
+func (m *ListPolymarketHotMarketsResponse) GetCandidateCount() int32 {
+	if m != nil {
+		return m.CandidateCount
+	}
+	return 0
+}
+
 // ListPolymarketSportsLiveMarketsRequest queries sports live market rows.
 type ListPolymarketSportsLiveMarketsRequest struct {
 	Limit                int32    `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
@@ -83,7 +219,7 @@ func (m *ListPolymarketSportsLiveMarketsRequest) Reset() {
 func (m *ListPolymarketSportsLiveMarketsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListPolymarketSportsLiveMarketsRequest) ProtoMessage()    {}
 func (*ListPolymarketSportsLiveMarketsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e55e8195b4f69ab4, []int{1}
+	return fileDescriptor_e55e8195b4f69ab4, []int{3}
 }
 func (m *ListPolymarketSportsLiveMarketsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -135,7 +271,7 @@ func (m *ListPolymarketSportsLiveMarketsResponse) Reset() {
 func (m *ListPolymarketSportsLiveMarketsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListPolymarketSportsLiveMarketsResponse) ProtoMessage()    {}
 func (*ListPolymarketSportsLiveMarketsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e55e8195b4f69ab4, []int{2}
+	return fileDescriptor_e55e8195b4f69ab4, []int{4}
 }
 func (m *ListPolymarketSportsLiveMarketsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -199,7 +335,7 @@ func (m *GetPolymarketSportsLiveSnapshotRequest) Reset() {
 func (m *GetPolymarketSportsLiveSnapshotRequest) String() string { return proto.CompactTextString(m) }
 func (*GetPolymarketSportsLiveSnapshotRequest) ProtoMessage()    {}
 func (*GetPolymarketSportsLiveSnapshotRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e55e8195b4f69ab4, []int{3}
+	return fileDescriptor_e55e8195b4f69ab4, []int{5}
 }
 func (m *GetPolymarketSportsLiveSnapshotRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -251,7 +387,7 @@ func (m *GetPolymarketSportsLiveSnapshotResponse) Reset() {
 func (m *GetPolymarketSportsLiveSnapshotResponse) String() string { return proto.CompactTextString(m) }
 func (*GetPolymarketSportsLiveSnapshotResponse) ProtoMessage()    {}
 func (*GetPolymarketSportsLiveSnapshotResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e55e8195b4f69ab4, []int{4}
+	return fileDescriptor_e55e8195b4f69ab4, []int{6}
 }
 func (m *GetPolymarketSportsLiveSnapshotResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -303,6 +439,8 @@ func (m *GetPolymarketSportsLiveSnapshotResponse) GetStale() bool {
 
 func init() {
 	proto.RegisterType((*GetPolymarketStatusRequest)(nil), "athena.internal.polymarket.GetPolymarketStatusRequest")
+	proto.RegisterType((*ListPolymarketHotMarketsRequest)(nil), "athena.internal.polymarket.ListPolymarketHotMarketsRequest")
+	proto.RegisterType((*ListPolymarketHotMarketsResponse)(nil), "athena.internal.polymarket.ListPolymarketHotMarketsResponse")
 	proto.RegisterType((*ListPolymarketSportsLiveMarketsRequest)(nil), "athena.internal.polymarket.ListPolymarketSportsLiveMarketsRequest")
 	proto.RegisterType((*ListPolymarketSportsLiveMarketsResponse)(nil), "athena.internal.polymarket.ListPolymarketSportsLiveMarketsResponse")
 	proto.RegisterType((*GetPolymarketSportsLiveSnapshotRequest)(nil), "athena.internal.polymarket.GetPolymarketSportsLiveSnapshotRequest")
@@ -314,35 +452,43 @@ func init() {
 }
 
 var fileDescriptor_e55e8195b4f69ab4 = []byte{
-	// 440 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0x4d, 0x8a, 0xd4, 0x40,
-	0x14, 0xa6, 0x6c, 0x7b, 0xd0, 0x72, 0x65, 0x74, 0x11, 0x82, 0xb6, 0xa1, 0x11, 0x27, 0xab, 0x2a,
-	0x66, 0x04, 0x71, 0x25, 0x38, 0xe2, 0x2f, 0x23, 0x48, 0x66, 0xa1, 0xb8, 0x91, 0x9a, 0xcc, 0x33,
-	0x29, 0x3a, 0xa9, 0x2a, 0x53, 0x2f, 0x81, 0x39, 0x82, 0x47, 0xf0, 0x0a, 0x9e, 0xc4, 0x95, 0x7a,
-	0x04, 0xe9, 0x93, 0x48, 0xfe, 0xa6, 0x23, 0x74, 0x27, 0x8d, 0xd3, 0xbb, 0xbc, 0xe4, 0xf1, 0xfd,
-	0xf1, 0xe5, 0xd1, 0xfb, 0x52, 0x21, 0xe4, 0x4a, 0xa4, 0xdc, 0xe8, 0xf4, 0x3c, 0x13, 0xf9, 0x02,
-	0xb0, 0xf7, 0xc8, 0x4c, 0xae, 0x51, 0x3b, 0x9e, 0xc0, 0x04, 0x94, 0x60, 0xdd, 0x32, 0x5b, 0x6d,
-	0x78, 0xaf, 0x62, 0x89, 0x49, 0x71, 0xca, 0x22, 0x9d, 0xf1, 0xc2, 0x42, 0x7e, 0x0e, 0x31, 0xf0,
-	0x66, 0x9f, 0x9b, 0x45, 0xcc, 0x85, 0x91, 0x96, 0x0b, 0x63, 0x52, 0x19, 0x09, 0x94, 0x5a, 0xf1,
-	0xf2, 0x40, 0xa4, 0x26, 0x11, 0x07, 0x3c, 0x06, 0x05, 0xb9, 0x40, 0x38, 0x6b, 0x58, 0xe6, 0x77,
-	0xa8, 0xf7, 0x12, 0xf0, 0xdd, 0x05, 0xf4, 0x09, 0x0a, 0x2c, 0x6c, 0x08, 0x5f, 0x0a, 0xb0, 0x38,
-	0x7f, 0x42, 0x1f, 0x1c, 0x4b, 0xdb, 0xff, 0x6c, 0x74, 0x8e, 0xf6, 0x58, 0x96, 0xf0, 0xb6, 0x9e,
-	0xbb, 0x4d, 0xe7, 0x36, 0x9d, 0xa6, 0x32, 0x93, 0xe8, 0x12, 0x9f, 0x04, 0xd3, 0xb0, 0x19, 0xe6,
-	0x3f, 0x09, 0xdd, 0x1f, 0x05, 0xb0, 0x46, 0x2b, 0x0b, 0x8e, 0xa2, 0x53, 0x89, 0x90, 0x59, 0x97,
-	0xf8, 0x93, 0xe0, 0xc6, 0xe1, 0x07, 0xb6, 0xf2, 0xc8, 0x3a, 0x8f, 0xac, 0xcd, 0xc4, 0x2c, 0x62,
-	0x56, 0x79, 0x64, 0x3d, 0x8f, 0xac, 0xf3, 0xc8, 0x36, 0xb3, 0xbd, 0x46, 0xc8, 0xc2, 0x86, 0xc6,
-	0xb9, 0x4b, 0xe9, 0x67, 0xc0, 0x28, 0x81, 0xb3, 0x4f, 0x02, 0xdd, 0x2b, 0x3e, 0x09, 0x26, 0xe1,
-	0xf5, 0xf6, 0xcd, 0xd3, 0xda, 0x90, 0x45, 0x91, 0x82, 0x3b, 0xf1, 0x49, 0x70, 0x2d, 0x6c, 0x86,
-	0x2a, 0x90, 0x7f, 0xe3, 0xba, 0x20, 0x38, 0x51, 0xc2, 0xd8, 0x44, 0xe3, 0x70, 0x20, 0xbf, 0x08,
-	0xdd, 0x1f, 0x05, 0x68, 0x03, 0xd1, 0x74, 0x0f, 0x4a, 0x50, 0xd8, 0x25, 0xf2, 0x7e, 0xb7, 0x89,
-	0x3c, 0xaf, 0xb0, 0xeb, 0x40, 0x5a, 0x9a, 0xff, 0x4a, 0xe4, 0xf0, 0xeb, 0x55, 0x7a, 0xb3, 0x07,
-	0x0f, 0x79, 0x29, 0x23, 0x70, 0xbe, 0x11, 0x7a, 0x6b, 0x4d, 0xaf, 0x9c, 0x47, 0x6c, 0x73, 0xab,
-	0xd9, 0xe6, 0x22, 0x7a, 0x6f, 0x76, 0xe2, 0xbd, 0xd1, 0xf0, 0x9d, 0xd0, 0x7b, 0x23, 0xa5, 0x74,
-	0x8e, 0x86, 0x74, 0x6e, 0xf7, 0x4b, 0x78, 0xcf, 0x2e, 0x85, 0xd1, 0x96, 0xa0, 0x12, 0x3b, 0x52,
-	0x98, 0x61, 0xb1, 0xdb, 0xd5, 0x75, 0x58, 0xec, 0x96, 0x8d, 0x3d, 0x7a, 0xf1, 0x63, 0x39, 0x23,
-	0xbf, 0x97, 0x33, 0xf2, 0x67, 0x39, 0x23, 0x1f, 0x1f, 0x0f, 0x1c, 0xa9, 0x75, 0x17, 0x50, 0x18,
-	0x19, 0xa5, 0x12, 0x14, 0x9e, 0xee, 0xd5, 0xb7, 0xe9, 0xe1, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff,
-	0xb3, 0x91, 0xf9, 0x8c, 0x29, 0x05, 0x00, 0x00,
+	// 564 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0xcf, 0x8a, 0x13, 0x4f,
+	0x10, 0xa6, 0x37, 0xbf, 0x84, 0x9f, 0x2d, 0xb8, 0x6e, 0xeb, 0x61, 0x18, 0x34, 0x86, 0x20, 0x26,
+	0x22, 0xf4, 0xb0, 0x2b, 0xa8, 0xa0, 0x08, 0xee, 0xa2, 0xae, 0xb2, 0x82, 0x26, 0x82, 0xe2, 0x25,
+	0xf4, 0x4e, 0xca, 0x49, 0x93, 0x99, 0xee, 0x76, 0xba, 0x12, 0xd8, 0x07, 0xf1, 0xe0, 0xd1, 0xab,
+	0x6f, 0xe1, 0xcd, 0x93, 0xfa, 0x08, 0x92, 0x27, 0x91, 0xcc, 0x4c, 0xfe, 0xad, 0x99, 0x49, 0xd8,
+	0xcd, 0xad, 0xbb, 0xba, 0xfa, 0xab, 0xfa, 0xbe, 0xea, 0xaa, 0xa6, 0x37, 0xa5, 0x42, 0x88, 0x95,
+	0x08, 0x3d, 0xa3, 0xc3, 0x93, 0x48, 0xc4, 0x7d, 0xc0, 0xb9, 0x25, 0x37, 0xb1, 0x46, 0xcd, 0x5c,
+	0x81, 0x3d, 0x50, 0x82, 0x4f, 0x9c, 0xf9, 0xcc, 0xc3, 0x3d, 0x0c, 0x24, 0xf6, 0x06, 0xc7, 0xdc,
+	0xd7, 0x91, 0x37, 0xb0, 0x10, 0x9f, 0x40, 0x00, 0x5e, 0xea, 0xef, 0x99, 0x7e, 0xe0, 0x09, 0x23,
+	0xad, 0x27, 0x8c, 0x09, 0xa5, 0x2f, 0x50, 0x6a, 0xe5, 0x0d, 0x77, 0x45, 0x68, 0x7a, 0x62, 0xd7,
+	0x0b, 0x40, 0x41, 0x2c, 0x10, 0xba, 0x69, 0x94, 0xfa, 0x35, 0xea, 0x3e, 0x07, 0x7c, 0x3d, 0x85,
+	0x6e, 0xa3, 0xc0, 0x81, 0x6d, 0xc1, 0xa7, 0x01, 0x58, 0xac, 0xdf, 0xa7, 0x37, 0x8e, 0xa4, 0x9d,
+	0x3b, 0x3e, 0xd4, 0xf8, 0x2a, 0x59, 0x4c, 0x5c, 0xd8, 0x55, 0x5a, 0x0e, 0x65, 0x24, 0xd1, 0x21,
+	0x35, 0xd2, 0x2c, 0xb7, 0xd2, 0x4d, 0xfd, 0xfb, 0x16, 0xad, 0xe5, 0xdf, 0xb4, 0x46, 0x2b, 0x0b,
+	0x2c, 0xa0, 0x65, 0x89, 0x10, 0x59, 0x87, 0xd4, 0x4a, 0xcd, 0x8b, 0x7b, 0x6f, 0xf8, 0x8c, 0x15,
+	0x9f, 0xb0, 0xe2, 0x99, 0x0a, 0xa6, 0x1f, 0xf0, 0x31, 0x2b, 0x3e, 0xc7, 0x8a, 0x4f, 0x58, 0xf1,
+	0x25, 0x61, 0x5e, 0x20, 0x44, 0xad, 0x14, 0x9f, 0x5d, 0xa7, 0xf4, 0x23, 0xa0, 0xdf, 0x83, 0x6e,
+	0x47, 0xa0, 0xb3, 0x55, 0x23, 0xcd, 0x52, 0xeb, 0x42, 0x66, 0x79, 0x92, 0x50, 0xb0, 0x28, 0x42,
+	0x70, 0x4a, 0x35, 0xd2, 0xfc, 0xbf, 0x95, 0x6e, 0xd8, 0x1d, 0xba, 0x13, 0x69, 0x25, 0x51, 0xc7,
+	0xd0, 0xed, 0xa4, 0xe0, 0xd6, 0xf9, 0x2f, 0x21, 0x79, 0x79, 0x7a, 0x90, 0x51, 0x62, 0xb7, 0xe9,
+	0xcc, 0xd6, 0x41, 0xdd, 0x07, 0x65, 0x9d, 0x72, 0xe2, 0xbb, 0x3d, 0xb5, 0xbf, 0x4d, 0xcc, 0xac,
+	0x41, 0xb7, 0x7d, 0xa1, 0xba, 0xb2, 0x2b, 0x10, 0x3a, 0xbe, 0x1e, 0x28, 0x74, 0x2a, 0x89, 0xe7,
+	0xa5, 0xa9, 0xf9, 0x60, 0x6c, 0xad, 0x3f, 0xa6, 0xb7, 0x16, 0x25, 0x6c, 0x1b, 0x1d, 0xa3, 0x3d,
+	0x92, 0x43, 0x58, 0xab, 0x06, 0x3f, 0x09, 0x6d, 0xac, 0x04, 0xc8, 0x4a, 0xa1, 0x16, 0x4b, 0xf1,
+	0x7e, 0x13, 0xa5, 0x38, 0x1d, 0xed, 0xbc, 0x15, 0x19, 0x0b, 0xb2, 0xf8, 0x56, 0xa7, 0x01, 0xda,
+	0x4a, 0x18, 0xdb, 0xd3, 0x58, 0x2c, 0xc8, 0x2f, 0x42, 0x1b, 0x2b, 0x01, 0x32, 0x41, 0x34, 0xad,
+	0xc0, 0x10, 0x14, 0x4e, 0x14, 0x79, 0xb7, 0x59, 0x45, 0x9e, 0x8e, 0xb1, 0x13, 0x41, 0xb2, 0x30,
+	0x67, 0x52, 0x64, 0xef, 0x6b, 0x99, 0xee, 0xcc, 0xc1, 0x43, 0x3c, 0x94, 0x3e, 0xb0, 0x2f, 0x84,
+	0x5e, 0x59, 0xd2, 0xd4, 0xec, 0x1e, 0xcf, 0x1f, 0x29, 0x3c, 0x7f, 0x0a, 0xb8, 0x2f, 0x37, 0xc2,
+	0x3d, 0xcd, 0xe1, 0x33, 0xa1, 0x4e, 0xde, 0x60, 0x60, 0x0f, 0x8b, 0x12, 0x5c, 0x31, 0x88, 0xdc,
+	0x47, 0x67, 0xbb, 0x9c, 0xd5, 0xfb, 0x1b, 0x39, 0x3d, 0xea, 0xfe, 0x69, 0x16, 0xb6, 0xbf, 0x7e,
+	0x84, 0xbc, 0x56, 0x75, 0x0f, 0xce, 0x85, 0x31, 0x97, 0xec, 0x8a, 0x87, 0x5c, 0x9c, 0xec, 0x7a,
+	0x6d, 0x54, 0x9c, 0xec, 0x9a, 0x9d, 0xb4, 0xff, 0xec, 0xc7, 0xa8, 0x4a, 0x7e, 0x8f, 0xaa, 0xe4,
+	0xcf, 0xa8, 0x4a, 0x3e, 0x3c, 0x28, 0xf8, 0xb9, 0x96, 0x7d, 0x8b, 0xc2, 0x48, 0x3f, 0x94, 0xa0,
+	0xf0, 0xb8, 0x92, 0x7c, 0x58, 0x77, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff, 0xa1, 0x33, 0xb9, 0x1a,
+	0x3e, 0x07, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -359,6 +505,8 @@ const _ = grpc.SupportPackageIsVersion4
 type PolymarketServiceClient interface {
 	// GetPolymarketStatus returns the polymarket service runtime status.
 	GetPolymarketStatus(ctx context.Context, in *GetPolymarketStatusRequest, opts ...grpc.CallOption) (*v1alpha1.PolymarketStatus, error)
+	// ListPolymarketHotMarkets returns discovered hot markets.
+	ListPolymarketHotMarkets(ctx context.Context, in *ListPolymarketHotMarketsRequest, opts ...grpc.CallOption) (*ListPolymarketHotMarketsResponse, error)
 	// ListPolymarketSportsLiveMarkets returns sports live market rows.
 	ListPolymarketSportsLiveMarkets(ctx context.Context, in *ListPolymarketSportsLiveMarketsRequest, opts ...grpc.CallOption) (*ListPolymarketSportsLiveMarketsResponse, error)
 	// GetPolymarketSportsLiveSnapshot returns sports live event cards.
@@ -376,6 +524,15 @@ func NewPolymarketServiceClient(cc *grpc.ClientConn) PolymarketServiceClient {
 func (c *polymarketServiceClient) GetPolymarketStatus(ctx context.Context, in *GetPolymarketStatusRequest, opts ...grpc.CallOption) (*v1alpha1.PolymarketStatus, error) {
 	out := new(v1alpha1.PolymarketStatus)
 	err := c.cc.Invoke(ctx, "/athena.internal.polymarket.PolymarketService/GetPolymarketStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *polymarketServiceClient) ListPolymarketHotMarkets(ctx context.Context, in *ListPolymarketHotMarketsRequest, opts ...grpc.CallOption) (*ListPolymarketHotMarketsResponse, error) {
+	out := new(ListPolymarketHotMarketsResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.polymarket.PolymarketService/ListPolymarketHotMarkets", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -404,6 +561,8 @@ func (c *polymarketServiceClient) GetPolymarketSportsLiveSnapshot(ctx context.Co
 type PolymarketServiceServer interface {
 	// GetPolymarketStatus returns the polymarket service runtime status.
 	GetPolymarketStatus(context.Context, *GetPolymarketStatusRequest) (*v1alpha1.PolymarketStatus, error)
+	// ListPolymarketHotMarkets returns discovered hot markets.
+	ListPolymarketHotMarkets(context.Context, *ListPolymarketHotMarketsRequest) (*ListPolymarketHotMarketsResponse, error)
 	// ListPolymarketSportsLiveMarkets returns sports live market rows.
 	ListPolymarketSportsLiveMarkets(context.Context, *ListPolymarketSportsLiveMarketsRequest) (*ListPolymarketSportsLiveMarketsResponse, error)
 	// GetPolymarketSportsLiveSnapshot returns sports live event cards.
@@ -416,6 +575,9 @@ type UnimplementedPolymarketServiceServer struct {
 
 func (*UnimplementedPolymarketServiceServer) GetPolymarketStatus(ctx context.Context, req *GetPolymarketStatusRequest) (*v1alpha1.PolymarketStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPolymarketStatus not implemented")
+}
+func (*UnimplementedPolymarketServiceServer) ListPolymarketHotMarkets(ctx context.Context, req *ListPolymarketHotMarketsRequest) (*ListPolymarketHotMarketsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPolymarketHotMarkets not implemented")
 }
 func (*UnimplementedPolymarketServiceServer) ListPolymarketSportsLiveMarkets(ctx context.Context, req *ListPolymarketSportsLiveMarketsRequest) (*ListPolymarketSportsLiveMarketsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPolymarketSportsLiveMarkets not implemented")
@@ -442,6 +604,24 @@ func _PolymarketService_GetPolymarketStatus_Handler(srv interface{}, ctx context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolymarketServiceServer).GetPolymarketStatus(ctx, req.(*GetPolymarketStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PolymarketService_ListPolymarketHotMarkets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPolymarketHotMarketsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PolymarketServiceServer).ListPolymarketHotMarkets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.polymarket.PolymarketService/ListPolymarketHotMarkets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PolymarketServiceServer).ListPolymarketHotMarkets(ctx, req.(*ListPolymarketHotMarketsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -491,6 +671,10 @@ var _PolymarketService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _PolymarketService_GetPolymarketStatus_Handler,
 		},
 		{
+			MethodName: "ListPolymarketHotMarkets",
+			Handler:    _PolymarketService_ListPolymarketHotMarkets_Handler,
+		},
+		{
 			MethodName: "ListPolymarketSportsLiveMarkets",
 			Handler:    _PolymarketService_ListPolymarketSportsLiveMarkets_Handler,
 		},
@@ -526,6 +710,109 @@ func (m *GetPolymarketStatusRequest) MarshalToSizedBuffer(dAtA []byte) (int, err
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListPolymarketHotMarketsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListPolymarketHotMarketsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListPolymarketHotMarketsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Limit != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.Limit))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListPolymarketHotMarketsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListPolymarketHotMarketsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListPolymarketHotMarketsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.CandidateCount != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.CandidateCount))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.MonitoredTokens != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.MonitoredTokens))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.MonitoredMarkets != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.MonitoredMarkets))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Stale {
+		i--
+		if m.Stale {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.FetchedAt != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.FetchedAt))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintPolymarket(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -729,6 +1016,54 @@ func (m *GetPolymarketStatusRequest) Size() (n int) {
 	return n
 }
 
+func (m *ListPolymarketHotMarketsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Limit != 0 {
+		n += 1 + sovPolymarket(uint64(m.Limit))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListPolymarketHotMarketsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovPolymarket(uint64(l))
+		}
+	}
+	if m.FetchedAt != 0 {
+		n += 1 + sovPolymarket(uint64(m.FetchedAt))
+	}
+	if m.Stale {
+		n += 2
+	}
+	if m.MonitoredMarkets != 0 {
+		n += 1 + sovPolymarket(uint64(m.MonitoredMarkets))
+	}
+	if m.MonitoredTokens != 0 {
+		n += 1 + sovPolymarket(uint64(m.MonitoredTokens))
+	}
+	if m.CandidateCount != 0 {
+		n += 1 + sovPolymarket(uint64(m.CandidateCount))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *ListPolymarketSportsLiveMarketsRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -842,6 +1177,257 @@ func (m *GetPolymarketStatusRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: GetPolymarketStatusRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListPolymarketHotMarketsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListPolymarketHotMarketsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListPolymarketHotMarketsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Limit", wireType)
+			}
+			m.Limit = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Limit |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListPolymarketHotMarketsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListPolymarketHotMarketsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListPolymarketHotMarketsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.PolymarketHotMarketItem{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FetchedAt", wireType)
+			}
+			m.FetchedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FetchedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Stale", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Stale = bool(v != 0)
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MonitoredMarkets", wireType)
+			}
+			m.MonitoredMarkets = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MonitoredMarkets |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MonitoredTokens", wireType)
+			}
+			m.MonitoredTokens = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MonitoredTokens |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CandidateCount", wireType)
+			}
+			m.CandidateCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CandidateCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipPolymarket(dAtA[iNdEx:])

@@ -420,6 +420,42 @@ message PairV2State {
   optional string feeAddressHoldLiquidityRatio = 15;
 }
 
+message PolymarketHotMarketItem {
+  optional string conditionId = 1;
+
+  optional string marketSlug = 2;
+
+  optional string question = 3;
+
+  optional string image = 4;
+
+  optional double volume24hr = 5;
+
+  optional double volumeNum = 6;
+
+  optional double liquidityNum = 7;
+
+  optional double spread = 8;
+
+  optional double bestBid = 9;
+
+  optional double bestAsk = 10;
+
+  optional double lastTradePrice = 11;
+
+  optional string updatedAt = 12;
+
+  repeated PolymarketHotMarketTokenItem tokens = 13;
+}
+
+message PolymarketHotMarketTokenItem {
+  optional string tokenId = 1;
+
+  optional string outcome = 2;
+
+  optional double price = 3;
+}
+
 message PolymarketSportsLiveEventItem {
   optional string eventSlug = 1;
 

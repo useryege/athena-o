@@ -1,3 +1,5 @@
 package v1alpha1
 
-func (*PolymarketStatus) ProtoMessage() {}
+func (*PolymarketHotMarketItem) ProtoMessage()      {}
+func (*PolymarketHotMarketTokenItem) ProtoMessage() {}
+func (*PolymarketStatus) ProtoMessage()             {}

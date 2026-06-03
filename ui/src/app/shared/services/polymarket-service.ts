@@ -1,5 +1,36 @@
 import requests from './requests';
 
+export interface PolymarketHotMarketTokenItem {
+    tokenId: string;
+    outcome: string;
+    price?: number;
+}
+
+export interface PolymarketHotMarketItem {
+    conditionId: string;
+    marketSlug: string;
+    question: string;
+    image?: string;
+    volume24hr?: number;
+    volumeNum?: number;
+    liquidityNum?: number;
+    spread?: number;
+    bestBid?: number;
+    bestAsk?: number;
+    lastTradePrice?: number;
+    updatedAt?: string;
+    tokens: PolymarketHotMarketTokenItem[];
+}
+
+export interface ListPolymarketHotMarketsResult {
+    items: PolymarketHotMarketItem[];
+    fetchedAt?: number;
+    stale?: boolean;
+    monitoredMarkets?: number;
+    monitoredTokens?: number;
+    candidateCount?: number;
+}
+
 export interface PolymarketSportsLiveMarketItem {
     conditionId: string;
     marketSlug: string;
@@ -104,6 +135,31 @@ const normalizeItem = (item: any): PolymarketSportsLiveMarketItem => ({
     volumeNum: readNumber(item, 'volumeNum', 'volume_num')
 });
 
+const normalizeHotMarketToken = (item: any): PolymarketHotMarketTokenItem => ({
+    tokenId: readString(item, 'tokenId', 'token_id'),
+    outcome: readString(item, 'outcome'),
+    price: readNumber(item, 'price')
+});
+
+const normalizeHotMarket = (item: any): PolymarketHotMarketItem => {
+    const tokens = readValue(item, 'tokens');
+    return {
+        conditionId: readString(item, 'conditionId', 'condition_id'),
+        marketSlug: readString(item, 'marketSlug', 'market_slug'),
+        question: readString(item, 'question'),
+        image: readString(item, 'image'),
+        volume24hr: readNumber(item, 'volume24hr', 'volume_24hr'),
+        volumeNum: readNumber(item, 'volumeNum', 'volume_num'),
+        liquidityNum: readNumber(item, 'liquidityNum', 'liquidity_num'),
+        spread: readNumber(item, 'spread'),
+        bestBid: readNumber(item, 'bestBid', 'best_bid'),
+        bestAsk: readNumber(item, 'bestAsk', 'best_ask'),
+        lastTradePrice: readNumber(item, 'lastTradePrice', 'last_trade_price'),
+        updatedAt: readString(item, 'updatedAt', 'updated_at'),
+        tokens: Array.isArray(tokens) ? tokens.map(normalizeHotMarketToken) : []
+    };
+};
+
 const normalizeMarketOption = (item: any): PolymarketSportsLiveMarketOptionItem => ({
     conditionId: readString(item, 'conditionId', 'condition_id'),
     marketSlug: readString(item, 'marketSlug', 'market_slug'),
@@ -153,6 +209,23 @@ const normalizeEvent = (item: any): PolymarketSportsLiveEventItem => {
 };
 
 export class PolymarketService {
+    public listHotMarkets(limit = 100): Promise<ListPolymarketHotMarketsResult> & {abort?: () => void} {
+        const req = requests.get('/polymarket/hot-markets').query({limit});
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                items: (body.items || []).map(normalizeHotMarket),
+                fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
+                stale: readBoolean(body, 'stale'),
+                monitoredMarkets: readNumber(body, 'monitoredMarkets', 'monitored_markets'),
+                monitoredTokens: readNumber(body, 'monitoredTokens', 'monitored_tokens'),
+                candidateCount: readNumber(body, 'candidateCount', 'candidate_count')
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
     public listSportsLiveMarkets(limit = 200): Promise<ListPolymarketSportsLiveMarketsResult> & {abort?: () => void} {
         const req = requests.get('/polymarket/sports/live/markets').query({limit});
         const promise = req.then(res => {

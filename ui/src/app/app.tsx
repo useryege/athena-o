@@ -40,6 +40,7 @@ const routes: Routes = {
     '/wallet': {component: wallet.component},
     '/wallet-blacklist': {component: walletBlacklist.component},
     '/worm': {component: worm.component},
+    '/polymarket/sports-live': {component: polymarket.sportsLiveComponent},
     '/polymarket': {component: polymarket.component},
     '/notifications': {component: notifications.component},
     '/settings': {component: settings.component},
@@ -114,9 +115,22 @@ const navItems: NavItem[] = [
     },
     {
         title: 'Polymarket',
-        tooltip: 'View Polymarket Sports live markets',
-        path: '/polymarket',
-        iconClassName: 'fa fa-trophy'
+        tooltip: 'View Polymarket markets',
+        iconClassName: 'fa fa-trophy',
+        children: [
+            {
+                title: 'Hot Markets',
+                tooltip: 'View Polymarket hot markets',
+                path: '/polymarket',
+                iconClassName: 'fa fa-fire'
+            },
+            {
+                title: 'Sports Live',
+                tooltip: 'View Polymarket Sports live markets',
+                path: '/polymarket/sports-live',
+                iconClassName: 'fa fa-trophy'
+            }
+        ]
     },
     {
         title: 'Notifications',

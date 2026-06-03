@@ -23,12 +23,17 @@ const (
 	defaultSportsLiveSyncInterval    = 10 * time.Second
 	defaultSportsLiveEventPageLimit  = 500
 	defaultSportsLiveInitialSyncWait = 15 * time.Second
+	defaultHotMarketListLimit        = 100
+	maxHotMarketListLimit            = 500
+	defaultHotMarketRefreshInterval  = time.Minute
+	defaultHotMarketInitialSyncWait  = 15 * time.Second
 )
 
 type ServiceOption func(*Service)
 
 type sportsLiveGammaClient interface {
 	ListEventsKeyset(context.Context, utilpolymarket.ListEventsKeysetOptions) (*utilpolymarket.EventKeysetResponse, error)
+	ListMarketsKeyset(context.Context, utilpolymarket.ListMarketsKeysetOptions) (*utilpolymarket.MarketKeysetResponse, error)
 }
 
 type sportsLiveWSClient interface {
@@ -69,39 +74,55 @@ func WithSportsLiveEventPageLimit(limit int) ServiceOption {
 	}
 }
 
+func WithHotMarketRefreshInterval(interval time.Duration) ServiceOption {
+	return func(s *Service) {
+		if interval > 0 {
+			s.hotMarketRefreshInterval = interval
+		}
+	}
+}
+
 type Service struct {
 	apiclient.UnimplementedPolymarketServiceServer
-	store           *polymarketstore.SQLStore
-	gammaClient     sportsLiveGammaClient
-	sportsWSClient  sportsLiveWSClient
-	wsUseProxy      bool
-	syncInterval    time.Duration
-	eventPageLimit  int
-	nowFn           func() time.Time
-	startStopMu     sync.Mutex
-	started         bool
-	runCancel       context.CancelFunc
-	runWG           sync.WaitGroup
-	cacheMu         sync.RWMutex
-	baseMarkets     []sportsLiveMarket
-	snapshotItems   []*v1alpha1.PolymarketSportsLiveMarketItem
-	snapshotEvents  []*v1alpha1.PolymarketSportsLiveEventItem
-	sportsWSState   map[string]sportsLiveWSState
-	snapshotFetched int64
-	snapshotStale   bool
-	eventFetched    int64
-	eventStale      bool
-	syncGroup       singleflight.Group
+	store                    *polymarketstore.SQLStore
+	gammaClient              sportsLiveGammaClient
+	sportsWSClient           sportsLiveWSClient
+	wsUseProxy               bool
+	syncInterval             time.Duration
+	eventPageLimit           int
+	hotMarketRefreshInterval time.Duration
+	nowFn                    func() time.Time
+	startStopMu              sync.Mutex
+	started                  bool
+	runCancel                context.CancelFunc
+	runWG                    sync.WaitGroup
+	cacheMu                  sync.RWMutex
+	baseMarkets              []sportsLiveMarket
+	snapshotItems            []*v1alpha1.PolymarketSportsLiveMarketItem
+	snapshotEvents           []*v1alpha1.PolymarketSportsLiveEventItem
+	sportsWSState            map[string]sportsLiveWSState
+	hotMarketItems           []*v1alpha1.PolymarketHotMarketItem
+	hotMarketMissing         map[string]int
+	snapshotFetched          int64
+	snapshotStale            bool
+	eventFetched             int64
+	eventStale               bool
+	hotMarketFetched         int64
+	hotMarketStale           bool
+	hotMarketCandidateCount  int32
+	syncGroup                singleflight.Group
 }
 
 func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service {
 	s := &Service{
-		store:          store,
-		wsUseProxy:     true,
-		syncInterval:   defaultSportsLiveSyncInterval,
-		eventPageLimit: defaultSportsLiveEventPageLimit,
-		nowFn:          time.Now,
-		sportsWSState:  make(map[string]sportsLiveWSState),
+		store:                    store,
+		wsUseProxy:               true,
+		syncInterval:             defaultSportsLiveSyncInterval,
+		eventPageLimit:           defaultSportsLiveEventPageLimit,
+		hotMarketRefreshInterval: defaultHotMarketRefreshInterval,
+		nowFn:                    time.Now,
+		sportsWSState:            make(map[string]sportsLiveWSState),
+		hotMarketMissing:         make(map[string]int),
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -145,6 +166,8 @@ func (s *Service) Start() error {
 
 	s.runWG.Add(1)
 	go s.runFullSyncLoop(ctx)
+	s.runWG.Add(1)
+	go s.runHotMarketDiscoveryLoop(ctx)
 	s.runWG.Add(1)
 	go s.runSportsWSLoop(ctx)
 	return nil
