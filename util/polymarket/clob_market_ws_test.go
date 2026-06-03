@@ -3,6 +3,7 @@ package polymarket
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -298,6 +299,97 @@ func TestCLOBMarketWSSubscriptionValidation(t *testing.T) {
 	err = client.Run(ctx, CLOBMarketWSSubscription{}, CLOBMarketWSHandler{})
 	if err == nil || !strings.Contains(err.Error(), "requires at least one asset id") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestDispatchMarketEventObjectPayload(t *testing.T) {
+	bookCount := 0
+	err := dispatchMarketEvent([]byte(`{"event_type":"book","asset_id":"a1","market":"m1","timestamp":"1","hash":"h"}`), CLOBMarketWSHandler{
+		OnBook: func(event CLOBMarketBookEvent) {
+			bookCount++
+			if event.AssetID != "a1" || event.Market != "m1" {
+				t.Fatalf("book event = %#v, want asset a1 market m1", event)
+			}
+		},
+	})
+	if err != nil {
+		t.Fatalf("dispatchMarketEvent: %v", err)
+	}
+	if bookCount != 1 {
+		t.Fatalf("book count = %d, want 1", bookCount)
+	}
+}
+
+func TestDispatchMarketEventArrayPayload(t *testing.T) {
+	bookCount := 0
+	priceChangeCount := 0
+	unknownCount := 0
+	err := dispatchMarketEvent([]byte(`[
+		{"event_type":"book","asset_id":"a1","market":"m1","timestamp":"1","hash":"h"},
+		{"event_type":"book","asset_id":"a2","market":"m2","timestamp":"2","hash":"h"},
+		{"event_type":"price_change","market":"m1","timestamp":"3","price_changes":[{"asset_id":"a1","price":"0.5","size":"1","side":"BUY","hash":"h"}]},
+		{"event_type":"not_supported","x":1}
+	]`), CLOBMarketWSHandler{
+		OnBook: func(CLOBMarketBookEvent) {
+			bookCount++
+		},
+		OnPriceChange: func(CLOBMarketPriceChangeEvent) {
+			priceChangeCount++
+		},
+		OnUnknown: func(json.RawMessage) {
+			unknownCount++
+		},
+	})
+	if err != nil {
+		t.Fatalf("dispatchMarketEvent: %v", err)
+	}
+	if bookCount != 2 || priceChangeCount != 1 || unknownCount != 1 {
+		t.Fatalf("counts book=%d price=%d unknown=%d, want 2/1/1", bookCount, priceChangeCount, unknownCount)
+	}
+}
+
+func TestDispatchMarketEventArrayContinuesAfterBadElement(t *testing.T) {
+	bookCount := 0
+	unknownCount := 0
+	err := dispatchMarketEvent([]byte(`[
+		1,
+		{"event_type":"book","asset_id":"a1","market":"m1","timestamp":"1","hash":"h"}
+	]`), CLOBMarketWSHandler{
+		OnBook: func(CLOBMarketBookEvent) {
+			bookCount++
+		},
+		OnUnknown: func(json.RawMessage) {
+			unknownCount++
+		},
+	})
+	if err == nil {
+		t.Fatal("expected decode error")
+	}
+	var decodeErr *CLOBMarketWSDecodeError
+	if !errors.As(err, &decodeErr) {
+		t.Fatalf("error = %T %v, want CLOBMarketWSDecodeError", err, err)
+	}
+	if bookCount != 1 || unknownCount != 1 {
+		t.Fatalf("counts book=%d unknown=%d, want 1/1", bookCount, unknownCount)
+	}
+}
+
+func TestDispatchMarketEventInvalidPayloadUnknownAndDecodeError(t *testing.T) {
+	unknownCount := 0
+	err := dispatchMarketEvent([]byte(`42`), CLOBMarketWSHandler{
+		OnUnknown: func(json.RawMessage) {
+			unknownCount++
+		},
+	})
+	if err == nil {
+		t.Fatal("expected decode error")
+	}
+	var decodeErr *CLOBMarketWSDecodeError
+	if !errors.As(err, &decodeErr) {
+		t.Fatalf("error = %T %v, want CLOBMarketWSDecodeError", err, err)
+	}
+	if unknownCount != 1 {
+		t.Fatalf("unknown count = %d, want 1", unknownCount)
 	}
 }
 

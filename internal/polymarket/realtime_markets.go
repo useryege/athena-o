@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"math"
 	"strconv"
 	"strings"
@@ -19,7 +20,7 @@ import (
 )
 
 const (
-	realtimeSubscriptionBatchSize       = 500
+	realtimeSubscriptionBatchSize       = 250
 	realtimeSubscriptionRefreshInterval = 5 * time.Second
 	realtimeWindowRetention             = 16 * time.Minute
 	realtimeConnectedStaleAfter         = 45 * time.Second
@@ -147,10 +148,16 @@ func (s *Service) realtimeWSHandler() utilpolymarket.CLOBMarketWSHandler {
 			s.markRealtimeConnected(s.nowUnix())
 		},
 		OnError: func(err error) {
-			if err != nil {
-				log.WithError(err).Debug("polymarket clob market ws event error")
-				s.markRealtimeStale()
+			if err == nil {
+				return
 			}
+			var decodeErr *utilpolymarket.CLOBMarketWSDecodeError
+			if errors.As(err, &decodeErr) {
+				log.WithError(err).Debug("polymarket clob market ws event decode error")
+				return
+			}
+			log.WithError(err).Debug("polymarket clob market ws event error")
+			s.markRealtimeStale()
 		},
 	}
 }

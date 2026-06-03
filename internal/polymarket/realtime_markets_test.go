@@ -2,6 +2,7 @@ package polymarket
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"testing"
@@ -152,5 +153,49 @@ func TestRealtimeStaleFallbackAndLimitValidation(t *testing.T) {
 	_, err := svc.ListPolymarketRealtimeMarkets(context.Background(), &apiclient.ListPolymarketRealtimeMarketsRequest{Limit: maxRealtimeListLimit + 1})
 	if status.Code(err) != codes.InvalidArgument {
 		t.Fatalf("ListPolymarketRealtimeMarkets error = %v, want InvalidArgument", err)
+	}
+}
+
+func TestRealtimeDecodeErrorDoesNotMarkStale(t *testing.T) {
+	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}), WithCLOBMarketWSClient(&fakeCLOBMarketWSClient{}))
+	svc.realtimeFetched = 1717000000
+	svc.realtimeStates["token-1"] = &realtimeTokenState{tokenID: "token-1", price: 0.5}
+
+	handler := svc.realtimeWSHandler()
+	handler.OnError(&utilpolymarket.CLOBMarketWSDecodeError{Err: errors.New("decode boom")})
+
+	if svc.realtimeStale {
+		t.Fatal("realtime stale = true, want false for frame decode error")
+	}
+}
+
+func TestRealtimeConnectionErrorMarksStale(t *testing.T) {
+	svc := NewService(polymarketstore.NewSQLStore(nil), WithGammaClient(&fakeGammaClient{}), WithSportsWSClient(&fakeSportsWSClient{}), WithCLOBMarketWSClient(&fakeCLOBMarketWSClient{}))
+	svc.realtimeFetched = 1717000000
+	svc.realtimeStates["token-1"] = &realtimeTokenState{tokenID: "token-1", price: 0.5}
+	svc.realtimeConnected = true
+
+	handler := svc.realtimeWSHandler()
+	handler.OnError(errors.New("failed reading polymarket market ws"))
+
+	if !svc.realtimeStale {
+		t.Fatal("realtime stale = false, want true for connection-level error")
+	}
+	if svc.realtimeConnected {
+		t.Fatal("realtime connected = true, want false after stale connection error")
+	}
+}
+
+func TestRealtimeSubscriptionBatchSize(t *testing.T) {
+	tokenIDs := make([]string, 0, 501)
+	for i := 0; i < 501; i++ {
+		tokenIDs = append(tokenIDs, fmt.Sprintf("token-%d", i))
+	}
+	chunks := chunkStrings(tokenIDs, realtimeSubscriptionBatchSize)
+	if len(chunks) != 3 {
+		t.Fatalf("chunks = %d, want 3", len(chunks))
+	}
+	if len(chunks[0]) != 250 || len(chunks[1]) != 250 || len(chunks[2]) != 1 {
+		t.Fatalf("chunk sizes = %d/%d/%d, want 250/250/1", len(chunks[0]), len(chunks[1]), len(chunks[2]))
 	}
 }

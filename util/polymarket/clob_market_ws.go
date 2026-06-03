@@ -3,6 +3,7 @@ package polymarket
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -96,6 +97,24 @@ type CLOBMarketWSHandler struct {
 
 type CLOBMarketEventEnvelope struct {
 	EventType string `json:"event_type"`
+}
+
+type CLOBMarketWSDecodeError struct {
+	Err error
+}
+
+func (e *CLOBMarketWSDecodeError) Error() string {
+	if e == nil || e.Err == nil {
+		return "polymarket market ws decode error"
+	}
+	return e.Err.Error()
+}
+
+func (e *CLOBMarketWSDecodeError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Err
 }
 
 type CLOBMarketBookEvent struct {
@@ -312,19 +331,57 @@ func (s CLOBMarketWSSubscription) normalize() (CLOBMarketWSSubscription, error) 
 }
 
 func dispatchMarketEvent(payload []byte, handler CLOBMarketWSHandler) error {
+	trimmed := strings.TrimSpace(string(payload))
+	if trimmed == "" {
+		if handler.OnUnknown != nil {
+			handler.OnUnknown(json.RawMessage(append([]byte(nil), payload...)))
+		}
+		return marketWSDecodeError("failed to decode market ws envelope: empty payload")
+	}
+
+	switch trimmed[0] {
+	case '[':
+		var events []json.RawMessage
+		if err := json.Unmarshal([]byte(trimmed), &events); err != nil {
+			if handler.OnUnknown != nil {
+				handler.OnUnknown(json.RawMessage(append([]byte(nil), payload...)))
+			}
+			return marketWSDecodeError("failed to decode market ws event array: %w", err)
+		}
+		errs := make([]error, 0)
+		for i := range events {
+			if err := dispatchSingleMarketEvent(events[i], handler); err != nil {
+				errs = append(errs, err)
+			}
+		}
+		if len(errs) > 0 {
+			return &CLOBMarketWSDecodeError{Err: errors.Join(errs...)}
+		}
+		return nil
+	case '{':
+		return dispatchSingleMarketEvent([]byte(trimmed), handler)
+	default:
+		if handler.OnUnknown != nil {
+			handler.OnUnknown(json.RawMessage(append([]byte(nil), payload...)))
+		}
+		return marketWSDecodeError("failed to decode market ws envelope: payload must be object or array")
+	}
+}
+
+func dispatchSingleMarketEvent(payload []byte, handler CLOBMarketWSHandler) error {
 	var env CLOBMarketEventEnvelope
 	if err := json.Unmarshal(payload, &env); err != nil {
 		if handler.OnUnknown != nil {
 			handler.OnUnknown(json.RawMessage(append([]byte(nil), payload...)))
 		}
-		return fmt.Errorf("failed to decode market ws envelope: %w", err)
+		return marketWSDecodeError("failed to decode market ws envelope: %w", err)
 	}
 
 	switch env.EventType {
 	case "book":
 		var e CLOBMarketBookEvent
 		if err := json.Unmarshal(payload, &e); err != nil {
-			return fmt.Errorf("failed to decode market ws book event: %w", err)
+			return marketWSDecodeError("failed to decode market ws book event: %w", err)
 		}
 		if handler.OnBook != nil {
 			handler.OnBook(e)
@@ -332,7 +389,7 @@ func dispatchMarketEvent(payload []byte, handler CLOBMarketWSHandler) error {
 	case "price_change":
 		var e CLOBMarketPriceChangeEvent
 		if err := json.Unmarshal(payload, &e); err != nil {
-			return fmt.Errorf("failed to decode market ws price_change event: %w", err)
+			return marketWSDecodeError("failed to decode market ws price_change event: %w", err)
 		}
 		if handler.OnPriceChange != nil {
 			handler.OnPriceChange(e)
@@ -340,7 +397,7 @@ func dispatchMarketEvent(payload []byte, handler CLOBMarketWSHandler) error {
 	case "last_trade_price":
 		var e CLOBMarketLastTradePriceEvent
 		if err := json.Unmarshal(payload, &e); err != nil {
-			return fmt.Errorf("failed to decode market ws last_trade_price event: %w", err)
+			return marketWSDecodeError("failed to decode market ws last_trade_price event: %w", err)
 		}
 		if handler.OnLastTrade != nil {
 			handler.OnLastTrade(e)
@@ -348,7 +405,7 @@ func dispatchMarketEvent(payload []byte, handler CLOBMarketWSHandler) error {
 	case "tick_size_change":
 		var e CLOBMarketTickSizeChangeEvent
 		if err := json.Unmarshal(payload, &e); err != nil {
-			return fmt.Errorf("failed to decode market ws tick_size_change event: %w", err)
+			return marketWSDecodeError("failed to decode market ws tick_size_change event: %w", err)
 		}
 		if handler.OnTickSize != nil {
 			handler.OnTickSize(e)
@@ -356,7 +413,7 @@ func dispatchMarketEvent(payload []byte, handler CLOBMarketWSHandler) error {
 	case "best_bid_ask":
 		var e CLOBMarketBestBidAskEvent
 		if err := json.Unmarshal(payload, &e); err != nil {
-			return fmt.Errorf("failed to decode market ws best_bid_ask event: %w", err)
+			return marketWSDecodeError("failed to decode market ws best_bid_ask event: %w", err)
 		}
 		if handler.OnBestBidAsk != nil {
 			handler.OnBestBidAsk(e)
@@ -364,7 +421,7 @@ func dispatchMarketEvent(payload []byte, handler CLOBMarketWSHandler) error {
 	case "new_market":
 		var e CLOBMarketNewMarketEvent
 		if err := json.Unmarshal(payload, &e); err != nil {
-			return fmt.Errorf("failed to decode market ws new_market event: %w", err)
+			return marketWSDecodeError("failed to decode market ws new_market event: %w", err)
 		}
 		if handler.OnNewMarket != nil {
 			handler.OnNewMarket(e)
@@ -372,7 +429,7 @@ func dispatchMarketEvent(payload []byte, handler CLOBMarketWSHandler) error {
 	case "market_resolved":
 		var e CLOBMarketResolvedEvent
 		if err := json.Unmarshal(payload, &e); err != nil {
-			return fmt.Errorf("failed to decode market ws market_resolved event: %w", err)
+			return marketWSDecodeError("failed to decode market ws market_resolved event: %w", err)
 		}
 		if handler.OnMarketResolve != nil {
 			handler.OnMarketResolve(e)
@@ -384,6 +441,10 @@ func dispatchMarketEvent(payload []byte, handler CLOBMarketWSHandler) error {
 	}
 
 	return nil
+}
+
+func marketWSDecodeError(format string, args ...any) error {
+	return &CLOBMarketWSDecodeError{Err: fmt.Errorf(format, args...)}
 }
 
 func sleepWithContext(ctx context.Context, d time.Duration) bool {
