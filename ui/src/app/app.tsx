@@ -27,6 +27,7 @@ import {AuthSettingsCtx, Provider} from './shared/context';
 import {AuthSettings} from './shared/models';
 import {services, ViewPreferences} from './shared/services';
 import requests from './shared/services/requests';
+import {BrandMark} from './mobile/components';
 import {
     BytecodeBlacklistPage,
     BytecodeDetailPage,
@@ -277,7 +278,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         <AntLayout className='athena-shell'>
             <AntLayout.Sider className='athena-shell__sider' collapsible={true} collapsed={desktopCollapsed} trigger={null} width={248}>
                 <div className='athena-brand' onClick={() => navigate('/user-info')}>
-                    <img src='images/athena.png' alt='Athena' />
+                    <BrandMark size='small' />
                     {!desktopCollapsed && <span>Athena</span>}
                 </div>
                 {menu}

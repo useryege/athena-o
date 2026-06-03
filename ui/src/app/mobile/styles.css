@@ -132,18 +132,58 @@ body[data-theme='dark'] .athena-shell__sider {
     color: var(--athena-text);
 }
 
-.athena-brand img {
-    width: 34px;
-    height: 34px;
-    object-fit: contain;
-    filter: drop-shadow(0 8px 14px rgba(224, 95, 63, 0.16));
-}
-
 .athena-brand span {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.brand-mark {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border: 1px solid color-mix(in srgb, var(--athena-primary) 46%, var(--athena-border));
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, rgba(224, 95, 63, 0.2), transparent 48%),
+        linear-gradient(225deg, rgba(25, 169, 116, 0.16), transparent 52%),
+        color-mix(in srgb, var(--athena-panel-solid) 86%, transparent);
+    color: var(--athena-text);
+    font-weight: 900;
+    letter-spacing: 0;
+    box-shadow: 0 10px 22px rgba(224, 95, 63, 0.18);
+    overflow: hidden;
+}
+
+.brand-mark::after {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 5px;
+    pointer-events: none;
+}
+
+.brand-mark--small {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+}
+
+.brand-mark--large {
+    width: 58px;
+    height: 58px;
+    font-size: 28px;
+}
+
+body[data-theme='dark'] .brand-mark {
+    background:
+        linear-gradient(135deg, rgba(224, 95, 63, 0.24), transparent 48%),
+        linear-gradient(225deg, rgba(25, 169, 116, 0.18), transparent 52%),
+        color-mix(in srgb, var(--athena-panel-solid) 82%, #000000);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
 }
 
 .athena-shell__sider .ant-menu {
@@ -621,11 +661,6 @@ body[data-theme='dark'] .metric {
     place-items: center;
     gap: 8px;
     margin-bottom: 20px;
-}
-
-.login-panel__brand img {
-    height: 56px;
-    filter: drop-shadow(0 12px 22px rgba(224, 95, 63, 0.2));
 }
 
 .login-panel__brand h3 {

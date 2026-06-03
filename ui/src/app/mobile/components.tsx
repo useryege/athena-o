@@ -147,6 +147,12 @@ export const CardTitle = (props: {title: React.ReactNode; subtitle?: React.React
     </div>
 );
 
+export const BrandMark = (props: {size?: 'small' | 'large'}) => (
+    <span className={`brand-mark brand-mark--${props.size || 'small'}`} aria-hidden='true'>
+        A
+    </span>
+);
+
 export const KeyValueGrid = (props: {items: Array<{label: React.ReactNode; value: React.ReactNode}>; columns?: number}) => (
     <Descriptions className='key-value-grid' bordered={true} size='small' column={{xs: 1, sm: 1, md: props.columns || 2, lg: props.columns || 3}}>
         {props.items.map(item => (

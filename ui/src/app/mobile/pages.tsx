@@ -3,7 +3,20 @@ import {Alert, Button, Card, Collapse, Form, Input, InputNumber, Modal, Select, 
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import {AppPage, CardTitle, InlineActions, KeyValueGrid, MetricRow, ResponsiveResourceList, SearchBar, Section, StatusTag, TruncatedText, useAsyncData} from './components';
+import {
+    AppPage,
+    BrandMark,
+    CardTitle,
+    InlineActions,
+    KeyValueGrid,
+    MetricRow,
+    ResponsiveResourceList,
+    SearchBar,
+    Section,
+    StatusTag,
+    TruncatedText,
+    useAsyncData
+} from './components';
 import {Context} from '../shared/context';
 import {BytecodeBlacklistEntry, BytecodeDeployment, BytecodeListItem, SourceQualityPrompt} from '../shared/services/athena-solidity-service';
 import {ProjectListItem} from '../shared/services/athena-application-service';
@@ -91,7 +104,7 @@ export const LoginPage = () => {
         <div className='login-screen'>
             <Card className='login-panel'>
                 <div className='login-panel__brand'>
-                    <img src='images/athena_o.svg' alt='Athena' />
+                    <BrandMark size='large' />
                     <Typography.Title level={3}>Athena</Typography.Title>
                 </div>
                 {error && <Alert type='error' title={error} showIcon={true} />}
