@@ -5,3 +5,6 @@ coverage
 /yarn-error.log
 .yalc
 yalc.lock
+*.zip
+
+playwright-report/
