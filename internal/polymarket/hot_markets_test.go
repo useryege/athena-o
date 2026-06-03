@@ -21,6 +21,7 @@ func TestHotMarketDiscoveryFiltersSortsAndParses(t *testing.T) {
 	gamma := &fakeGammaClient{marketResponses: []*utilpolymarket.MarketKeysetResponse{
 		{
 			Markets: []utilpolymarket.Market{
+				hotMarketWithMarketTag(validHotMarket("cond-crypto", 30, 30), "crypto", ""),
 				validHotMarket("cond-low", 10, 4),
 				invalidHotMarketNoToken("cond-no-token"),
 				validHotMarket("cond-high", 20, 3),
@@ -29,6 +30,7 @@ func TestHotMarketDiscoveryFiltersSortsAndParses(t *testing.T) {
 		},
 		{
 			Markets: []utilpolymarket.Market{
+				hotMarketWithSportsMarketType(validHotMarket("cond-sports", 30, 30)),
 				invalidHotMarketInactive("cond-inactive"),
 				validHotMarketWithUpdatedAt("cond-tie-a", 20, 9, updated),
 				validHotMarket("cond-tie-b", 20, 8),
@@ -46,6 +48,9 @@ func TestHotMarketDiscoveryFiltersSortsAndParses(t *testing.T) {
 	}
 	if gamma.marketOpts[0].Order != "volume24hr" || gamma.marketOpts[0].Ascending == nil || *gamma.marketOpts[0].Ascending || gamma.marketOpts[0].Closed == nil || *gamma.marketOpts[0].Closed {
 		t.Fatalf("unexpected market opts: %#v", gamma.marketOpts[0])
+	}
+	if gamma.marketOpts[0].IncludeTag == nil || !*gamma.marketOpts[0].IncludeTag || gamma.marketOpts[1].IncludeTag == nil || !*gamma.marketOpts[1].IncludeTag {
+		t.Fatalf("include_tag options = first:%#v second:%#v, want true", gamma.marketOpts[0].IncludeTag, gamma.marketOpts[1].IncludeTag)
 	}
 	if gamma.marketOpts[1].AfterCursor != cursor {
 		t.Fatalf("after cursor = %q, want %q", gamma.marketOpts[1].AfterCursor, cursor)
@@ -69,6 +74,107 @@ func TestHotMarketDiscoveryFiltersSortsAndParses(t *testing.T) {
 	}
 	if len(first.Tokens) != 2 || first.Tokens[0].Outcome != "Yes" || first.Tokens[0].Price != 0.6 {
 		t.Fatalf("tokens not parsed: %#v", first.Tokens)
+	}
+}
+
+func TestHotMarketDiscoveryExcludesIgnoredCategories(t *testing.T) {
+	tests := []struct {
+		name   string
+		market utilpolymarket.Market
+	}{
+		{
+			name:   "sports market type",
+			market: hotMarketWithSportsMarketType(validHotMarket("cond-sports-type", 20, 5)),
+		},
+		{
+			name:   "market tag slug sports",
+			market: hotMarketWithMarketTag(validHotMarket("cond-market-sports", 20, 5), "sports", ""),
+		},
+		{
+			name:   "market tag label crypto",
+			market: hotMarketWithMarketTag(validHotMarket("cond-market-crypto", 20, 5), "", "Crypto"),
+		},
+		{
+			name:   "event tag slug esports hyphen",
+			market: hotMarketWithEventTag(validHotMarket("cond-event-esports-slug", 20, 5), "E-Sports", ""),
+		},
+		{
+			name:   "event tag label esports space",
+			market: hotMarketWithEventTag(validHotMarket("cond-event-esports-label", 20, 5), "", "e sports"),
+		},
+		{
+			name:   "event category crypto",
+			market: hotMarketWithEventCategory(validHotMarket("cond-event-crypto", 20, 5), "crypto"),
+		},
+		{
+			name:   "event category esports underscore",
+			market: hotMarketWithEventCategory(validHotMarket("cond-event-esports", 20, 5), "E_Sports"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if item, ok := mapHotMarket(tt.market); ok {
+				t.Fatalf("market mapped = %#v, want excluded", item)
+			}
+		})
+	}
+
+	if item, ok := mapHotMarket(hotMarketWithMarketTag(validHotMarket("cond-news", 20, 5), "politics", "Politics")); !ok || item.ConditionID != "cond-news" {
+		t.Fatalf("non-excluded market mapped = %#v ok=%v, want included", item, ok)
+	}
+}
+
+func TestHotMarketDiscoveryContinuesPagingAfterExcludedMarkets(t *testing.T) {
+	cursor := "next"
+	gamma := &fakeGammaClient{marketResponses: []*utilpolymarket.MarketKeysetResponse{
+		{
+			Markets: []utilpolymarket.Market{
+				hotMarketWithSportsMarketType(validHotMarket("cond-sports", 100, 100)),
+				hotMarketWithMarketTag(validHotMarket("cond-crypto", 90, 90), "crypto", ""),
+				hotMarketWithEventTag(validHotMarket("cond-esports", 80, 80), "E-Sports", ""),
+			},
+			NextCursor: &cursor,
+		},
+		{
+			Markets: []utilpolymarket.Market{
+				validHotMarket("cond-valid", 10, 10),
+			},
+		},
+	}}
+	now := time.Date(2026, 6, 3, 2, 0, 0, 0, time.UTC)
+	svc := NewService(
+		polymarketstore.NewSQLStore(nil),
+		WithGammaClient(gamma),
+		WithSportsWSClient(&fakeSportsWSClient{}),
+	)
+	svc.nowFn = func() time.Time { return now }
+	svc.started = true
+
+	if err := svc.refreshHotMarkets(context.Background()); err != nil {
+		t.Fatalf("refreshHotMarkets: %v", err)
+	}
+	if gamma.marketCalls != 2 {
+		t.Fatalf("market calls = %d, want 2", gamma.marketCalls)
+	}
+	resp := svc.currentHotMarketResponse(10)
+	if resp == nil {
+		t.Fatal("response is nil")
+	}
+	if resp.GetCandidateCount() != 1 || resp.GetMonitoredMarkets() != 1 {
+		t.Fatalf("counts = candidates:%d markets:%d, want 1/1", resp.GetCandidateCount(), resp.GetMonitoredMarkets())
+	}
+	if len(resp.GetItems()) != 1 || resp.GetItems()[0].ConditionID != "cond-valid" {
+		t.Fatalf("items = %#v, want only cond-valid", resp.GetItems())
+	}
+
+	tokenID := "token-cond-valid-yes"
+	samples := svc.realtimeSamples[tokenID]
+	if len(samples) != 1 || samples[0].at != now.Unix() || samples[0].price != 0.6 {
+		t.Fatalf("valid token samples = %#v, want one Gamma minute sample", samples)
+	}
+	if len(svc.realtimeSamples["token-cond-sports-yes"]) != 0 || len(svc.realtimeSamples["token-cond-crypto-yes"]) != 0 || len(svc.realtimeSamples["token-cond-esports-yes"]) != 0 {
+		t.Fatalf("excluded market samples should be empty: %#v", svc.realtimeSamples)
 	}
 }
 
@@ -223,6 +329,38 @@ func validHotMarketWithUpdatedAt(conditionID string, volume24hr, liquidity float
 		market.UpdatedAt = &updatedAt
 	}
 	return market
+}
+
+func hotMarketWithSportsMarketType(market utilpolymarket.Market) utilpolymarket.Market {
+	sportsMarketType := "moneyline"
+	market.SportsMarketType = &sportsMarketType
+	return market
+}
+
+func hotMarketWithMarketTag(market utilpolymarket.Market, slug, label string) utilpolymarket.Market {
+	market.Tags = []utilpolymarket.Tag{hotMarketTag(slug, label)}
+	return market
+}
+
+func hotMarketWithEventTag(market utilpolymarket.Market, slug, label string) utilpolymarket.Market {
+	market.Events = []utilpolymarket.Event{{Tags: []utilpolymarket.Tag{hotMarketTag(slug, label)}}}
+	return market
+}
+
+func hotMarketWithEventCategory(market utilpolymarket.Market, category string) utilpolymarket.Market {
+	market.Events = []utilpolymarket.Event{{Category: strPtr(category)}}
+	return market
+}
+
+func hotMarketTag(slug, label string) utilpolymarket.Tag {
+	tag := utilpolymarket.Tag{}
+	if slug != "" {
+		tag.Slug = strPtr(slug)
+	}
+	if label != "" {
+		tag.Label = strPtr(label)
+	}
+	return tag
 }
 
 func invalidHotMarketNoToken(conditionID string) utilpolymarket.Market {

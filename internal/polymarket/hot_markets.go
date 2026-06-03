@@ -115,6 +115,7 @@ func (s *Service) fetchHotMarketCandidates(ctx context.Context) ([]hotMarketCand
 	cursor := ""
 	closed := false
 	ascending := false
+	includeTag := true
 	for len(items) < hotMarketCandidateLimit {
 		limit := hotMarketPageLimit
 		resp, err := s.gammaClient.ListMarketsKeyset(ctx, utilpolymarket.ListMarketsKeysetOptions{
@@ -123,6 +124,7 @@ func (s *Service) fetchHotMarketCandidates(ctx context.Context) ([]hotMarketCand
 			Ascending:   &ascending,
 			AfterCursor: cursor,
 			Closed:      &closed,
+			IncludeTag:  &includeTag,
 		})
 		if err != nil {
 			return nil, err
@@ -224,6 +226,9 @@ func (s *Service) applyHotMarketCandidatesLocked(candidates []hotMarketCandidate
 }
 
 func mapHotMarket(market utilpolymarket.Market) (*v1alpha1.PolymarketHotMarketItem, bool) {
+	if isExcludedHotMarketCategory(market) {
+		return nil, false
+	}
 	if !boolValue(market.Active) || boolValue(market.Closed) || !boolValue(market.EnableOrderBook) {
 		return nil, false
 	}
@@ -292,6 +297,53 @@ func mapHotMarket(market utilpolymarket.Market) (*v1alpha1.PolymarketHotMarketIt
 		Tokens:         tokens,
 		EventSlug:      hotMarketEventSlug(market),
 	}, true
+}
+
+func isExcludedHotMarketCategory(market utilpolymarket.Market) bool {
+	if strings.TrimSpace(stringValue(market.SportsMarketType)) != "" {
+		return true
+	}
+	for i := range market.Tags {
+		if isExcludedHotMarketTag(market.Tags[i]) {
+			return true
+		}
+	}
+	for i := range market.Events {
+		if isExcludedHotMarketCategoryValue(stringValue(market.Events[i].Category)) {
+			return true
+		}
+		for j := range market.Events[i].Tags {
+			if isExcludedHotMarketTag(market.Events[i].Tags[j]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func isExcludedHotMarketTag(tag utilpolymarket.Tag) bool {
+	return isExcludedHotMarketCategoryValue(stringValue(tag.Slug)) || isExcludedHotMarketCategoryValue(stringValue(tag.Label))
+}
+
+func isExcludedHotMarketCategoryValue(value string) bool {
+	switch normalizeHotMarketCategory(value) {
+	case "sports", "crypto", "esports":
+		return true
+	default:
+		return false
+	}
+}
+
+func normalizeHotMarketCategory(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	return strings.Map(func(r rune) rune {
+		switch r {
+		case ' ', '-', '_':
+			return -1
+		default:
+			return r
+		}
+	}, value)
 }
 
 func hotMarketEventSlug(market utilpolymarket.Market) string {
