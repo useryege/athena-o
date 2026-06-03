@@ -309,10 +309,12 @@ func (c *clientImpl) EnsureBotProfile(ctx context.Context, config BotProfileConf
 		result.ShortDescriptionUpdated = true
 	}
 
-	if err := c.SetMyProfilePhoto(ctx, config.ProfilePhoto); err != nil {
-		return nil, err
+	if botProfilePhotoConfigured(config.ProfilePhoto) {
+		if err := c.SetMyProfilePhoto(ctx, config.ProfilePhoto); err != nil {
+			return nil, err
+		}
+		result.ProfilePhotoUpdated = true
 	}
-	result.ProfilePhotoUpdated = true
 	return result, nil
 }
 
@@ -422,10 +424,12 @@ func (c *clientImpl) EnsureChatProfile(ctx context.Context, config ChatProfileCo
 		}
 		result.DescriptionUpdated = true
 	}
-	if err := c.SetChatPhoto(ctx, config.Photo); err != nil {
-		return nil, err
+	if chatPhotoConfigured(config.Photo) {
+		if err := c.SetChatPhoto(ctx, config.Photo); err != nil {
+			return nil, err
+		}
+		result.PhotoUpdated = true
 	}
-	result.PhotoUpdated = true
 	return result, nil
 }
 
@@ -446,6 +450,9 @@ func normalizeBotProfileConfig(config BotProfileConfig) (BotProfileConfig, error
 	}
 	if utf8.RuneCountInString(config.ShortDescription) > 120 {
 		return BotProfileConfig{}, errors.New("telegram bot profile short description must be at most 120 characters")
+	}
+	if !botProfilePhotoConfigured(config.ProfilePhoto) && len(config.ProfilePhoto.Data) == 0 {
+		return config, nil
 	}
 	if config.ProfilePhoto.Filename == "" {
 		return BotProfileConfig{}, errors.New("telegram bot profile photo filename is required")
@@ -470,6 +477,9 @@ func normalizeChatProfileConfig(config ChatProfileConfig) (ChatProfileConfig, er
 	if utf8.RuneCountInString(config.Description) > 255 {
 		return ChatProfileConfig{}, errors.New("telegram chat description must be at most 255 characters")
 	}
+	if !chatPhotoConfigured(config.Photo) && len(config.Photo.Data) == 0 {
+		return config, nil
+	}
 	if config.Photo.Filename == "" {
 		return ChatProfileConfig{}, errors.New("telegram chat photo filename is required")
 	}
@@ -477,6 +487,14 @@ func normalizeChatProfileConfig(config ChatProfileConfig) (ChatProfileConfig, er
 		return ChatProfileConfig{}, errors.New("telegram chat photo data is required")
 	}
 	return config, nil
+}
+
+func botProfilePhotoConfigured(photo SetMyProfilePhotoRequest) bool {
+	return strings.TrimSpace(photo.Filename) != ""
+}
+
+func chatPhotoConfigured(photo SetChatPhotoRequest) bool {
+	return strings.TrimSpace(photo.Filename) != ""
 }
 
 func validateChatAdminRights(chat *ChatInfo, member *ChatMemberInfo) error {

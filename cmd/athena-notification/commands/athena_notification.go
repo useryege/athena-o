@@ -40,6 +40,7 @@ const (
 	defaultTelegramChatProfileTitle           = "ATHENA Notifications"
 	defaultTelegramChatProfileDescription     = "ATHENA notification group for operational alerts and system updates."
 	defaultTelegramChatProfilePhotoPath       = "telegram-group-avatar.jpg"
+	telegramInitAvatarsEnv                    = "ATHENA_NOTIFICATION_TELEGRAM_INIT_AVATARS"
 )
 
 func NewCommand() *cobra.Command {
@@ -83,11 +84,12 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 
-			profileConfig, err := defaultTelegramBotProfileConfig()
+			initAvatars := telegramInitAvatarsFromEnv()
+			profileConfig, err := defaultTelegramBotProfileConfig(initAvatars)
 			if err != nil {
 				return err
 			}
-			chatProfileConfig, err := defaultTelegramChatProfileConfig()
+			chatProfileConfig, err := defaultTelegramChatProfileConfig(initAvatars)
 			if err != nil {
 				return err
 			}
@@ -159,35 +161,45 @@ func NewCommand() *cobra.Command {
 	return command
 }
 
-func defaultTelegramBotProfileConfig() (utiltelegram.BotProfileConfig, error) {
-	photo, err := assets.Embedded.ReadFile(defaultTelegramBotProfilePhotoPath)
-	if err != nil {
-		return utiltelegram.BotProfileConfig{}, fmt.Errorf("failed to read default telegram bot avatar: %w", err)
-	}
-	return utiltelegram.BotProfileConfig{
+func defaultTelegramBotProfileConfig(initAvatar bool) (utiltelegram.BotProfileConfig, error) {
+	config := utiltelegram.BotProfileConfig{
 		Name:             env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME", defaultTelegramBotProfileName),
 		ShortDescription: env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_SHORT_DESCRIPTION", defaultTelegramBotProfileShortDescription),
 		Description:      env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_DESCRIPTION", defaultTelegramBotProfileDescription),
-		ProfilePhoto: utiltelegram.SetMyProfilePhotoRequest{
+	}
+	if initAvatar {
+		photo, err := assets.Embedded.ReadFile(defaultTelegramBotProfilePhotoPath)
+		if err != nil {
+			return utiltelegram.BotProfileConfig{}, fmt.Errorf("failed to read default telegram bot avatar: %w", err)
+		}
+		config.ProfilePhoto = utiltelegram.SetMyProfilePhotoRequest{
 			Filename: defaultTelegramBotProfilePhotoPath,
 			Data:     photo,
-		},
-	}, nil
+		}
+	}
+	return config, nil
 }
 
-func defaultTelegramChatProfileConfig() (utiltelegram.ChatProfileConfig, error) {
-	photo, err := assets.Embedded.ReadFile(defaultTelegramChatProfilePhotoPath)
-	if err != nil {
-		return utiltelegram.ChatProfileConfig{}, fmt.Errorf("failed to read default telegram chat avatar: %w", err)
-	}
-	return utiltelegram.ChatProfileConfig{
+func telegramInitAvatarsFromEnv() bool {
+	return env.ParseBoolFromEnv(telegramInitAvatarsEnv, false)
+}
+
+func defaultTelegramChatProfileConfig(initAvatar bool) (utiltelegram.ChatProfileConfig, error) {
+	config := utiltelegram.ChatProfileConfig{
 		Title:       env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_TITLE", defaultTelegramChatProfileTitle),
 		Description: env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_DESCRIPTION", defaultTelegramChatProfileDescription),
-		Photo: utiltelegram.SetChatPhotoRequest{
+	}
+	if initAvatar {
+		photo, err := assets.Embedded.ReadFile(defaultTelegramChatProfilePhotoPath)
+		if err != nil {
+			return utiltelegram.ChatProfileConfig{}, fmt.Errorf("failed to read default telegram chat avatar: %w", err)
+		}
+		config.Photo = utiltelegram.SetChatPhotoRequest{
 			Filename: defaultTelegramChatProfilePhotoPath,
 			Data:     photo,
-		},
-	}, nil
+		}
+	}
+	return config, nil
 }
 
 func telegramTopicThreadsFromEnv() (map[string]int, error) {

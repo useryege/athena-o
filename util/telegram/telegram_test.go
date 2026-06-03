@@ -254,7 +254,7 @@ func TestEnsureBotProfileUpdatesDriftAndUploadsPhoto(t *testing.T) {
 	}
 }
 
-func TestEnsureBotProfileSkipsMatchingTextAndAlwaysUploadsPhoto(t *testing.T) {
+func TestEnsureBotProfileSkipsMatchingTextAndOmittedPhoto(t *testing.T) {
 	var setNameCalls int
 	var setPhotoCalls int
 
@@ -289,18 +289,18 @@ func TestEnsureBotProfileSkipsMatchingTextAndAlwaysUploadsPhoto(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
-	result, err := client.EnsureBotProfile(context.Background(), defaultTestBotProfileConfig())
+	result, err := client.EnsureBotProfile(context.Background(), defaultTestBotProfileConfigWithoutPhoto())
 	if err != nil {
 		t.Fatalf("EnsureBotProfile: %v", err)
 	}
-	if result.NameUpdated || result.DescriptionUpdated || result.ShortDescriptionUpdated || !result.ProfilePhotoUpdated {
-		t.Fatalf("sync result = %#v, want only photo update", result)
+	if result.NameUpdated || result.DescriptionUpdated || result.ShortDescriptionUpdated || result.ProfilePhotoUpdated {
+		t.Fatalf("sync result = %#v, want no updates", result)
 	}
 	if setNameCalls != 0 {
 		t.Fatalf("setMyName calls = %d, want 0", setNameCalls)
 	}
-	if setPhotoCalls != 1 {
-		t.Fatalf("setMyProfilePhoto calls = %d, want 1", setPhotoCalls)
+	if setPhotoCalls != 0 {
+		t.Fatalf("setMyProfilePhoto calls = %d, want 0", setPhotoCalls)
 	}
 }
 
@@ -340,7 +340,8 @@ func TestEnsureBotProfileValidatesConfig(t *testing.T) {
 		{name: "long name", config: BotProfileConfig{Name: strings.Repeat("a", 65), ProfilePhoto: SetMyProfilePhotoRequest{Filename: "avatar.jpg", Data: []byte("x")}}, want: "name must be at most 64"},
 		{name: "long short description", config: BotProfileConfig{Name: "ATHENA", ShortDescription: strings.Repeat("a", 121), ProfilePhoto: SetMyProfilePhotoRequest{Filename: "avatar.jpg", Data: []byte("x")}}, want: "short description must be at most 120"},
 		{name: "long description", config: BotProfileConfig{Name: "ATHENA", Description: strings.Repeat("a", 513), ProfilePhoto: SetMyProfilePhotoRequest{Filename: "avatar.jpg", Data: []byte("x")}}, want: "description must be at most 512"},
-		{name: "missing photo", config: BotProfileConfig{Name: "ATHENA", ProfilePhoto: SetMyProfilePhotoRequest{Filename: "avatar.jpg"}}, want: "photo data is required"},
+		{name: "partial photo without data", config: BotProfileConfig{Name: "ATHENA", ProfilePhoto: SetMyProfilePhotoRequest{Filename: "avatar.jpg"}}, want: "photo data is required"},
+		{name: "partial photo without filename", config: BotProfileConfig{Name: "ATHENA", ProfilePhoto: SetMyProfilePhotoRequest{Data: []byte("x")}}, want: "photo filename is required"},
 	}
 
 	for _, tt := range tests {
@@ -440,7 +441,7 @@ func TestEnsureChatProfileUpdatesDriftAndUploadsPhoto(t *testing.T) {
 	}
 }
 
-func TestEnsureChatProfileSkipsMatchingTextAndAlwaysUploadsPhoto(t *testing.T) {
+func TestEnsureChatProfileSkipsMatchingTextAndOmittedPhoto(t *testing.T) {
 	var setTitleCalls int
 	var setDescriptionCalls int
 	var setPhotoCalls int
@@ -474,14 +475,14 @@ func TestEnsureChatProfileSkipsMatchingTextAndAlwaysUploadsPhoto(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
-	result, err := client.EnsureChatProfile(context.Background(), defaultTestChatProfileConfig())
+	result, err := client.EnsureChatProfile(context.Background(), defaultTestChatProfileConfigWithoutPhoto())
 	if err != nil {
 		t.Fatalf("EnsureChatProfile: %v", err)
 	}
-	if result.TitleUpdated || result.DescriptionUpdated || !result.PhotoUpdated {
-		t.Fatalf("sync result = %#v, want only photo update", result)
+	if result.TitleUpdated || result.DescriptionUpdated || result.PhotoUpdated {
+		t.Fatalf("sync result = %#v, want no updates", result)
 	}
-	if setTitleCalls != 0 || setDescriptionCalls != 0 || setPhotoCalls != 1 {
+	if setTitleCalls != 0 || setDescriptionCalls != 0 || setPhotoCalls != 0 {
 		t.Fatalf("set calls title=%d description=%d photo=%d", setTitleCalls, setDescriptionCalls, setPhotoCalls)
 	}
 }
@@ -543,7 +544,8 @@ func TestEnsureChatProfileValidatesConfig(t *testing.T) {
 		{name: "missing title", config: ChatProfileConfig{Photo: SetChatPhotoRequest{Filename: "avatar.jpg", Data: []byte("x")}}, want: "title is required"},
 		{name: "long title", config: ChatProfileConfig{Title: strings.Repeat("a", 129), Photo: SetChatPhotoRequest{Filename: "avatar.jpg", Data: []byte("x")}}, want: "title must be at most 128"},
 		{name: "long description", config: ChatProfileConfig{Title: "ATHENA", Description: strings.Repeat("a", 256), Photo: SetChatPhotoRequest{Filename: "avatar.jpg", Data: []byte("x")}}, want: "description must be at most 255"},
-		{name: "missing photo", config: ChatProfileConfig{Title: "ATHENA", Photo: SetChatPhotoRequest{Filename: "avatar.jpg"}}, want: "photo data is required"},
+		{name: "partial photo without data", config: ChatProfileConfig{Title: "ATHENA", Photo: SetChatPhotoRequest{Filename: "avatar.jpg"}}, want: "photo data is required"},
+		{name: "partial photo without filename", config: ChatProfileConfig{Title: "ATHENA", Photo: SetChatPhotoRequest{Data: []byte("x")}}, want: "photo filename is required"},
 	}
 
 	for _, tt := range tests {
@@ -568,6 +570,14 @@ func defaultTestBotProfileConfig() BotProfileConfig {
 	}
 }
 
+func defaultTestBotProfileConfigWithoutPhoto() BotProfileConfig {
+	return BotProfileConfig{
+		Name:             "ATHENA",
+		Description:      "ATHENA notification bot for operational alerts and system updates.",
+		ShortDescription: "ATHENA operational alerts",
+	}
+}
+
 func defaultTestChatProfileConfig() ChatProfileConfig {
 	return ChatProfileConfig{
 		Title:       "ATHENA Notifications",
@@ -576,6 +586,13 @@ func defaultTestChatProfileConfig() ChatProfileConfig {
 			Filename: "telegram-group-avatar.jpg",
 			Data:     []byte("chat-photo-bytes"),
 		},
+	}
+}
+
+func defaultTestChatProfileConfigWithoutPhoto() ChatProfileConfig {
+	return ChatProfileConfig{
+		Title:       "ATHENA Notifications",
+		Description: "ATHENA notification group for operational alerts and system updates.",
 	}
 }
 
