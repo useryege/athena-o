@@ -517,7 +517,7 @@ prod-stop-local:
 prod-logs-local:
 	PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) logs -f $(PROD_LOG_SERVICE)
 
-# ssh -L 8080:127.0.0.1:8080 root@47.254.169.196
+# ssh -L 8080:127.0.0.1:8080 root@47.245.181.189
 # use http://127.0.0.1:8080
 .PHONY: prod-deploy-remote
 prod-deploy-remote: 
