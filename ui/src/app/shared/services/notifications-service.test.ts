@@ -104,9 +104,9 @@ describe('notifications service', () => {
         });
         mockPost.mockReturnValue(request);
 
-        const result = await new NotificationService().sendTestNotification('poly');
+        const result = await new NotificationService().sendTestNotification('poly-mover');
 
-        expect(mockPost).toHaveBeenCalledWith('/notifications/test/poly');
+        expect(mockPost).toHaveBeenCalledWith('/notifications/test/poly-mover');
         expect(request.send).toHaveBeenCalledWith({});
         expect(result).toMatchObject({
             notificationId: 11,

@@ -57,6 +57,12 @@ export const visibleAccountsForUser = (accounts: Account[], user?: UserInfo): Ac
     return accounts.filter(account => account.name === 'admin' || account.name === user?.username);
 };
 
+export const notificationTestTopics = [
+    {topic: 'token', label: '[TOKEN] 代币通知'},
+    {topic: 'poly-mover', label: '[POLY] 市场异动'},
+    {topic: 'poly-kickoff', label: '[POLY] 开赛通知'}
+];
+
 const usePagedParams = (defaultPageSize = 20) => {
     const [params, setParams] = useSearchParams();
     const page = Number(params.get('page') || 1) || 1;
@@ -1032,12 +1038,11 @@ export const NotificationsPage = () => {
             onRefresh={data.reload}
             extra={
                 <Space>
-                    <Button icon={<SendOutlined />} onClick={() => sendTest('token')}>
-                        Token Test
-                    </Button>
-                    <Button icon={<SendOutlined />} onClick={() => sendTest('poly')}>
-                        Poly Test
-                    </Button>
+                    {notificationTestTopics.map(item => (
+                        <Button key={item.topic} icon={<SendOutlined />} onClick={() => sendTest(item.topic)}>
+                            {item.label}
+                        </Button>
+                    ))}
                 </Space>
             }
             filters={

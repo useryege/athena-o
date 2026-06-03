@@ -1,5 +1,5 @@
 import {Account, UserInfo} from '../shared/models';
-import {visibleAccountsForUser} from './pages';
+import {notificationTestTopics, visibleAccountsForUser} from './pages';
 
 const accounts: Account[] = [
     {name: 'admin', enabled: true, capabilities: ['login'], tokens: []},
@@ -19,4 +19,12 @@ test('visibleAccountsForUser returns self and admin for regular users', () => {
 
 test('visibleAccountsForUser returns admin for users without a local account', () => {
     expect(visibleAccountsForUser(accounts, user('sso@example.com')).map(account => account.name)).toEqual(['admin']);
+});
+
+test('notificationTestTopics contains the three stable test topics', () => {
+    expect(notificationTestTopics).toEqual([
+        {topic: 'token', label: '[TOKEN] 代币通知'},
+        {topic: 'poly-mover', label: '[POLY] 市场异动'},
+        {topic: 'poly-kickoff', label: '[POLY] 开赛通知'}
+    ]);
 });
