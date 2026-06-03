@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/useryege/athena/internal/notification"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
@@ -86,8 +87,8 @@ func TestMoverAlertsSendWarningNotification(t *testing.T) {
 		t.Fatalf("sends = %d, want 1", len(client.sends))
 	}
 	req := client.sends[0]
-	if req.GetSource() != moverAlertSource || req.GetTopic() != "poly" {
-		t.Fatalf("source/topic = %q/%v, want polymarket mover poly", req.GetSource(), req.GetTopic())
+	if req.GetSource() != moverAlertSource || req.GetTopic() != notification.NotificationTopicPolyMover {
+		t.Fatalf("source/topic = %q/%v, want polymarket mover topic", req.GetSource(), req.GetTopic())
 	}
 	if req.GetSeverity() != notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING {
 		t.Fatalf("severity = %v, want warning", req.GetSeverity())

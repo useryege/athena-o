@@ -139,6 +139,7 @@ type Service struct {
 	realtimeSubscribedMarkets int32
 	realtimeSubscribedTokens  int32
 	moverAlertStates          map[string]moverAlertState
+	sportsKickoffStates       map[string]sportsKickoffState
 	syncGroup                 singleflight.Group
 }
 
@@ -156,6 +157,7 @@ func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service
 		realtimeStates:           make(map[string]*realtimeTokenState),
 		realtimeSamples:          make(map[string][]realtimeSample),
 		moverAlertStates:         make(map[string]moverAlertState),
+		sportsKickoffStates:      make(map[string]sportsKickoffState),
 	}
 	for _, opt := range opts {
 		opt(s)

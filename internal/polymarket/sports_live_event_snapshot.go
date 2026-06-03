@@ -21,9 +21,14 @@ type sportsLiveTeamRaw struct {
 	Ordering *string `json:"ordering,omitempty"`
 }
 
+type sportsLiveEventFetchResult struct {
+	Events   []*v1alpha1.PolymarketSportsLiveEventItem
+	Snapshot *utilpolymarket.SportsLiveSnapshot
+}
+
 func (s *Service) refreshSportsLiveEventSnapshot(ctx context.Context) error {
 	_, err, _ := s.syncGroup.Do("sports-live-event-snapshot", func() (any, error) {
-		events, fetchErr := s.fetchSportsLiveEvents(ctx)
+		result, fetchErr := s.fetchSportsLiveEvents(ctx)
 		if fetchErr != nil {
 			s.cacheMu.Lock()
 			if len(s.snapshotEvents) > 0 || s.eventFetched > 0 {
@@ -32,31 +37,35 @@ func (s *Service) refreshSportsLiveEventSnapshot(ctx context.Context) error {
 			s.cacheMu.Unlock()
 			return nil, fetchErr
 		}
+		events := result.Events
 		sortSportsLiveEvents(events)
+		nowUnix := s.nowUnix()
 		s.cacheMu.Lock()
 		s.snapshotEvents = events
-		s.eventFetched = s.nowUnix()
+		s.eventFetched = nowUnix
 		s.eventStale = false
+		alerts := s.collectSportsKickoffAlertsLocked(result.Snapshot, nowUnix)
 		s.cacheMu.Unlock()
+		s.sendSportsKickoffAlerts(ctx, alerts)
 		return nil, nil
 	})
 	return err
 }
 
-func (s *Service) fetchSportsLiveEvents(ctx context.Context) ([]*v1alpha1.PolymarketSportsLiveEventItem, error) {
+func (s *Service) fetchSportsLiveEvents(ctx context.Context) (sportsLiveEventFetchResult, error) {
 	if s.gammaClient == nil {
-		return nil, errNoSportsLiveEventSnapshot()
+		return sportsLiveEventFetchResult{}, errNoSportsLiveEventSnapshot()
 	}
 
 	snapshot, err := utilpolymarket.BuildSportsLiveSnapshot(ctx, s.gammaClient, utilpolymarket.SportsLiveSnapshotOptions{
 		LiveLimit: maxSportsLiveSnapshotLimit,
-		SoonLimit: 1,
+		SoonLimit: maxSportsLiveSnapshotLimit,
 		MarketTypes: []string{
 			sportsLiveMoneylineMarketType,
 		},
 	})
 	if err != nil {
-		return nil, err
+		return sportsLiveEventFetchResult{}, err
 	}
 
 	items := make([]*v1alpha1.PolymarketSportsLiveEventItem, 0, len(snapshot.Live))
@@ -93,7 +102,7 @@ func (s *Service) fetchSportsLiveEvents(ctx context.Context) ([]*v1alpha1.Polyma
 		})
 	}
 
-	return items, nil
+	return sportsLiveEventFetchResult{Events: items, Snapshot: snapshot}, nil
 }
 
 func mapSportsLiveTeams(rawTeams []json.RawMessage) []*v1alpha1.PolymarketSportsLiveTeamItem {

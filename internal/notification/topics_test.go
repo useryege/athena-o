@@ -4,14 +4,17 @@ import "testing"
 
 func TestDefaultTopicConfigs(t *testing.T) {
 	configs := DefaultTopicConfigs()
-	if len(configs) != 2 {
-		t.Fatalf("configs = %#v, want token/poly", configs)
+	if len(configs) != 3 {
+		t.Fatalf("configs = %#v, want token/poly-mover/poly-kickoff", configs)
 	}
-	if configs[0].Key != NotificationTopicToken || configs[0].Title != "TOKEN" {
-		t.Fatalf("first config = %#v, want token/TOKEN", configs[0])
+	if configs[0].Key != NotificationTopicToken || configs[0].Title != "[TOKEN] 代币通知" {
+		t.Fatalf("first config = %#v, want token title", configs[0])
 	}
-	if configs[1].Key != NotificationTopicPoly || configs[1].Title != "POLY" {
-		t.Fatalf("second config = %#v, want poly/POLY", configs[1])
+	if configs[1].Key != NotificationTopicPolyMover || configs[1].Title != "[POLY] 市场异动" {
+		t.Fatalf("second config = %#v, want poly mover title", configs[1])
+	}
+	if configs[2].Key != NotificationTopicPolyKickoff || configs[2].Title != "[POLY] 开赛通知" {
+		t.Fatalf("third config = %#v, want poly kickoff title", configs[2])
 	}
 }
 

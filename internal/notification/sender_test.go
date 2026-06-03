@@ -36,14 +36,14 @@ func (f *fakeTelegramSenderClient) CreateForumTopic(_ context.Context, request u
 func TestTelegramSenderRoutesTopicToThreadID(t *testing.T) {
 	client := &fakeTelegramSenderClient{}
 	sender, err := NewTelegramSender(client, map[string]int{
-		NotificationTopicToken: 111,
-		NotificationTopicPoly:  222,
+		NotificationTopicToken:     111,
+		NotificationTopicPolyMover: 222,
 	})
 	if err != nil {
 		t.Fatalf("NewTelegramSender: %v", err)
 	}
 
-	messageID, err := sender.Send(context.Background(), SendRequest{Topic: NotificationTopicPoly, Text: "hello"})
+	messageID, err := sender.Send(context.Background(), SendRequest{Topic: NotificationTopicPolyMover, Text: "hello"})
 	if err != nil {
 		t.Fatalf("Send: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestTelegramSenderRoutesTopicToThreadID(t *testing.T) {
 }
 
 func TestTelegramSenderProvisionTopicsCreatesThreadsAtomically(t *testing.T) {
-	client := &fakeTelegramSenderClient{topicIDs: []int{111, 222}}
+	client := &fakeTelegramSenderClient{topicIDs: []int{111, 222, 333}}
 	sender, err := NewTelegramSender(client, nil)
 	if err != nil {
 		t.Fatalf("NewTelegramSender: %v", err)
@@ -64,14 +64,17 @@ func TestTelegramSenderProvisionTopicsCreatesThreadsAtomically(t *testing.T) {
 	if err := sender.ProvisionTopics(context.Background(), DefaultTopicConfigs()); err != nil {
 		t.Fatalf("ProvisionTopics: %v", err)
 	}
-	if len(client.topicRequests) != 2 || client.topicRequests[0].Name != "TOKEN" || client.topicRequests[1].Name != "POLY" {
-		t.Fatalf("topic requests = %#v, want TOKEN/POLY", client.topicRequests)
+	if len(client.topicRequests) != 3 ||
+		client.topicRequests[0].Name != "[TOKEN] 代币通知" ||
+		client.topicRequests[1].Name != "[POLY] 市场异动" ||
+		client.topicRequests[2].Name != "[POLY] 开赛通知" {
+		t.Fatalf("topic requests = %#v, want default topics", client.topicRequests)
 	}
-	if _, err := sender.Send(context.Background(), SendRequest{Topic: " poly ", Text: "hello"}); err != nil {
+	if _, err := sender.Send(context.Background(), SendRequest{Topic: " poly-mover ", Text: "hello"}); err != nil {
 		t.Fatalf("Send: %v", err)
 	}
 	if client.request.MessageThreadID != 222 {
-		t.Fatalf("thread id = %d, want provisioned poly thread", client.request.MessageThreadID)
+		t.Fatalf("thread id = %d, want provisioned poly mover thread", client.request.MessageThreadID)
 	}
 }
 
@@ -80,7 +83,7 @@ func TestTelegramSenderRejectsUnknownTopic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewTelegramSender: %v", err)
 	}
-	_, err = sender.Send(context.Background(), SendRequest{Topic: NotificationTopicPoly, Text: "hello"})
+	_, err = sender.Send(context.Background(), SendRequest{Topic: NotificationTopicPolyKickoff, Text: "hello"})
 	if err == nil || !strings.Contains(err.Error(), "not initialized") {
 		t.Fatalf("Send error = %v, want uninitialized topic", err)
 	}

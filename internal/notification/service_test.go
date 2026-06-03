@@ -201,8 +201,11 @@ func TestNotificationStartProvisionsDefaultTopics(t *testing.T) {
 		t.Fatalf("Start: %v", err)
 	}
 	defer service.Stop()
-	if len(sender.topicConfigs) != 2 || sender.topicConfigs[0].Key != NotificationTopicToken || sender.topicConfigs[1].Key != NotificationTopicPoly {
-		t.Fatalf("topic configs = %#v, want default token/poly", sender.topicConfigs)
+	if len(sender.topicConfigs) != 3 ||
+		sender.topicConfigs[0].Key != NotificationTopicToken ||
+		sender.topicConfigs[1].Key != NotificationTopicPolyMover ||
+		sender.topicConfigs[2].Key != NotificationTopicPolyKickoff {
+		t.Fatalf("topic configs = %#v, want default token/poly-mover/poly-kickoff", sender.topicConfigs)
 	}
 }
 
@@ -263,7 +266,7 @@ func TestSendNotificationQueuesDelivery(t *testing.T) {
 	}
 }
 
-func TestSendNotificationPolyTopic(t *testing.T) {
+func TestSendNotificationPolyMoverTopic(t *testing.T) {
 	querier := &fakeNotificationQuerier{
 		createDeliveryResult: notificationsqlc.CreateDeliveryRow{
 			ID:        8,
@@ -272,7 +275,7 @@ func TestSendNotificationPolyTopic(t *testing.T) {
 			Body:      "Market updated",
 			Channel:   "telegram",
 			Status:    "pending",
-			Topic:     "poly",
+			Topic:     NotificationTopicPolyMover,
 			CreatedAt: pgtype.Timestamptz{Time: time.Now(), Valid: true},
 		},
 	}
@@ -282,13 +285,13 @@ func TestSendNotificationPolyTopic(t *testing.T) {
 		Source:   "polymarket",
 		Severity: apiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
 		Body:     "Market updated",
-		Topic:    "poly",
+		Topic:    NotificationTopicPolyMover,
 	})
 	if err != nil {
 		t.Fatalf("SendNotification: %v", err)
 	}
-	if querier.createDeliveryParams.Topic != "poly" || sender.calls != 0 {
-		t.Fatalf("topic create/sender calls = %q/%d, want queued poly", querier.createDeliveryParams.Topic, sender.calls)
+	if querier.createDeliveryParams.Topic != NotificationTopicPolyMover || sender.calls != 0 {
+		t.Fatalf("topic create/sender calls = %q/%d, want queued poly mover", querier.createDeliveryParams.Topic, sender.calls)
 	}
 }
 

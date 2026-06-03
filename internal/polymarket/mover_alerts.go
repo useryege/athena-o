@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"net/url"
 	"sort"
 	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/notification"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilio "github.com/useryege/athena/util/io"
@@ -19,7 +19,7 @@ const (
 	moverAlertSource           = "polymarket.movers"
 	moverAlertSeverityWarning  = "warning"
 	moverAlertSeverityCritical = "critical"
-	moverAlertBaseURL          = "https://polymarket.com/event/"
+	polymarketEventBaseURL     = "https://polymarket.com/event/"
 
 	defaultMoverAlertWarningScore       = 6
 	defaultMoverAlertCriticalScore      = 12
@@ -271,7 +271,7 @@ func renderMoverAlertNotification(item *v1alpha1.PolymarketMoverMarketItem, seve
 		Title:    title,
 		Body:     body,
 		Link:     polymarketMoverLink(item),
-		Topic:    "poly",
+		Topic:    notification.NotificationTopicPolyMover,
 	}
 }
 
@@ -339,10 +339,7 @@ func formatMoverSignedPP(value float64) string {
 
 func polymarketMoverLink(item *v1alpha1.PolymarketMoverMarketItem) string {
 	slug := firstNonEmpty(item.EventSlug, item.MarketSlug)
-	if slug == "" {
-		return ""
-	}
-	return moverAlertBaseURL + url.PathEscape(slug)
+	return polymarketEventLink(slug)
 }
 
 func truncateRunes(value string, maxRunes int) string {

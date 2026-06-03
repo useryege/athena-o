@@ -7,16 +7,18 @@ import (
 )
 
 const (
-	notificationTopicToken = "token"
-	notificationTopicPoly  = "poly"
+	notificationTopicToken       = "token"
+	notificationTopicPolyMover   = "poly-mover"
+	notificationTopicPolyKickoff = "poly-kickoff"
 
 	maxTopicKeyLength   = 64
 	maxTopicTitleLength = 128
 )
 
 const (
-	NotificationTopicToken = notificationTopicToken
-	NotificationTopicPoly  = notificationTopicPoly
+	NotificationTopicToken       = notificationTopicToken
+	NotificationTopicPolyMover   = notificationTopicPolyMover
+	NotificationTopicPolyKickoff = notificationTopicPolyKickoff
 )
 
 type TopicConfig struct {
@@ -26,8 +28,9 @@ type TopicConfig struct {
 
 func DefaultTopicConfigs() []TopicConfig {
 	return []TopicConfig{
-		{Key: notificationTopicToken, Title: "TOKEN"},
-		{Key: notificationTopicPoly, Title: "POLY"},
+		{Key: notificationTopicToken, Title: "[TOKEN] 代币通知"},
+		{Key: notificationTopicPolyMover, Title: "[POLY] 市场异动"},
+		{Key: notificationTopicPolyKickoff, Title: "[POLY] 开赛通知"},
 	}
 }
 
