@@ -50,6 +50,13 @@ const short = (value?: string, head = 10, tail = 8) => (value && value.length > 
 const boolTag = (value?: boolean) => <StatusTag value={fmt(value)} positive={value === true} negative={value === false} />;
 const dangerTag = (value?: boolean) => <StatusTag value={fmt(value)} positive={value === false} negative={value === true} />;
 
+export const visibleAccountsForUser = (accounts: Account[], user?: UserInfo): Account[] => {
+    if (user?.username === 'admin') {
+        return accounts;
+    }
+    return accounts.filter(account => account.name === 'admin' || account.name === user?.username);
+};
+
 const usePagedParams = (defaultPageSize = 20) => {
     const [params, setParams] = useSearchParams();
     const page = Number(params.get('page') || 1) || 1;
@@ -1098,8 +1105,10 @@ export const NotificationsDetailPage = () => {
 
 export const SettingsPage = () => {
     const ctx = React.useContext(Context);
+    const user = useAsyncData<UserInfo>(() => services.users.get() as any, []);
     const accounts = useAsyncData<Account[]>(() => services.accounts.list() as any, []);
     const discovery = useAsyncData(() => services.athenaApplication.getProjectDiscoveryStatus(), []);
+    const visibleAccounts = visibleAccountsForUser(accounts.data || [], user.data);
     const toggleDiscovery = async () => {
         if (discovery.data?.started) {
             await services.athenaApplication.stopProjectDiscovery();
@@ -1111,9 +1120,10 @@ export const SettingsPage = () => {
     return (
         <AppPage
             title='Settings'
-            loading={accounts.loading || discovery.loading}
-            error={accounts.error || discovery.error}
+            loading={user.loading || accounts.loading || discovery.loading}
+            error={user.error || accounts.error || discovery.error}
             onRefresh={() => {
+                user.reload();
                 accounts.reload();
                 discovery.reload();
             }}>
@@ -1134,7 +1144,7 @@ export const SettingsPage = () => {
             <Section title='Accounts'>
                 <ResponsiveResourceList
                     rowKey='name'
-                    items={accounts.data || []}
+                    items={visibleAccounts}
                     columns={[
                         {title: 'Name', dataIndex: 'name'},
                         {title: 'Enabled', render: item => boolTag(item.enabled)},

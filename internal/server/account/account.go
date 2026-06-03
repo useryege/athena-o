@@ -153,6 +153,22 @@ func toAPIAccount(name string, a settings.Account) *account.Account {
 	}
 }
 
+func canViewAccount(ctx context.Context, name string) bool {
+	id := session.GetUserIdentifier(ctx)
+	if id == common.AthenaAdminUsername {
+		return true
+	}
+	return name == id || name == common.AthenaAdminUsername
+}
+
+func accountForViewer(ctx context.Context, name string, a settings.Account) *account.Account {
+	apiAccount := toAPIAccount(name, a)
+	if session.GetUserIdentifier(ctx) != common.AthenaAdminUsername && name == common.AthenaAdminUsername {
+		apiAccount.Tokens = nil
+	}
+	return apiAccount
+}
+
 func (s *Server) ensureHasAccountPermission(ctx context.Context, action string, account string) error {
 	id := session.GetUserIdentifier(ctx)
 
@@ -174,8 +190,8 @@ func (s *Server) ListAccounts(ctx context.Context, _ *account.ListAccountRequest
 		return nil, fmt.Errorf("failed to get accounts: %w", err)
 	}
 	for name, a := range accounts {
-		if err := s.ensureHasAccountPermission(ctx, rbac.ActionGet, name); err == nil {
-			resp.Items = append(resp.Items, toAPIAccount(name, a))
+		if canViewAccount(ctx, name) {
+			resp.Items = append(resp.Items, accountForViewer(ctx, name, a))
 		}
 	}
 	sort.Slice(resp.Items, func(i, j int) bool {
@@ -186,14 +202,14 @@ func (s *Server) ListAccounts(ctx context.Context, _ *account.ListAccountRequest
 
 // GetAccount returns an account
 func (s *Server) GetAccount(ctx context.Context, r *account.GetAccountRequest) (*account.Account, error) {
-	if err := s.ensureHasAccountPermission(ctx, rbac.ActionGet, r.Name); err != nil {
-		return nil, fmt.Errorf("permission denied to get account %s: %w", r.Name, err)
+	if !canViewAccount(ctx, r.Name) {
+		return nil, status.Errorf(codes.PermissionDenied, "permission denied to get account %s", r.Name)
 	}
 	a, err := s.settingsMgr.GetAccount(r.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account %s: %w", r.Name, err)
 	}
-	return toAPIAccount(r.Name, *a), nil
+	return accountForViewer(ctx, r.Name, *a), nil
 }
 
 // CreateToken creates a token
