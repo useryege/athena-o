@@ -8,7 +8,9 @@
     "build": "find ./dist -type f -not -name gitkeep -delete && vite build",
     "lint": "tsc --noEmit --project ./src/app && eslint",
     "lint:fix": "eslint --fix",
-    "test": "jest"
+    "test": "jest",
+    "test:e2e": "playwright test",
+    "playwright:install": "playwright install"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
@@ -28,13 +30,14 @@
     "rxjs": "6.6.7"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^5.1.1",
     "@eslint/js": "^9.1.1",
+    "@playwright/test": "^1.60.0",
     "@types/jest": "^29.5.14",
     "@types/node": "20.14.12",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "@types/react-test-renderer": "^18.3.1",
+    "@vitejs/plugin-react": "^5.1.1",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
