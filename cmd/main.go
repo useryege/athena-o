@@ -8,6 +8,7 @@ import (
 	"k8s.io/klog/v2"
 
 	athenaApplicationCommands "github.com/useryege/athena/cmd/athena-application/commands"
+	athenaMigrateCommands "github.com/useryege/athena/cmd/athena-migrate/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
 	athenaPolymarketCommands "github.com/useryege/athena/cmd/athena-polymarket/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
@@ -51,6 +52,8 @@ func main() {
 		command = athenaApplicationCommands.NewCommand()
 	case "athena-worm":
 		command = athenaWormCommands.NewCommand()
+	case "athena-migrate":
+		command = athenaMigrateCommands.NewCommand()
 	default:
 		os.Exit(1)
 	}

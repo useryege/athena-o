@@ -18,6 +18,7 @@ WORM_DB="worm"
 SOLIDITY_DB="solidity"
 NOTIFICATION_DB="notification"
 WALLET_DB="wallet"
+POLYMARKET_DB="polymarket"
 
 perf_opts=(
   "-c" "fsync=off"
@@ -48,6 +49,7 @@ run_postgres_init() {
     ensure_database "$SOLIDITY_DB"
     ensure_database "$NOTIFICATION_DB"
     ensure_database "$WALLET_DB"
+    ensure_database "$POLYMARKET_DB"
 }
 
 if [ "${ATHENA_POSTGRES_LOCAL:-false}" = 'true' ]; then

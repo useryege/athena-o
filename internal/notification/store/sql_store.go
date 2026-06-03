@@ -20,6 +20,10 @@ import (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
+func Migrations() embed.FS {
+	return migrations
+}
+
 type SQLStore struct {
 	pool    *pgxpool.Pool
 	queries notificationsqlc.Querier

@@ -193,10 +193,12 @@ IMAGE_NAMESPACE?=
 PROD_IMAGE?=athena:local
 PROD_COMPOSE_FILE?=docker-compose.prod.yml
 PROD_ENV_FILE?=./.env
-PROD_CLEAR_DATA?=false
 REMOTE_APP_DIR?=/root/athena
 REMOTE_USER?=root
 PROD_LOG_SERVICE?=
+PROD_MIGRATE_MODULE?=all
+PROD_POSTGRES_VOLUME?=athena-prod-postgres-data
+CONFIRM_DESTROY_PROD_DATA?=
 # perform static compilation
 DEFAULT_STATIC_BUILD:=true
 ifeq ($(IS_DARWIN),true)
@@ -611,33 +613,54 @@ prod-build-local:
 # use http://127.0.0.1:8080 
 .PHONY: prod-start-local	
 prod-start-local:
-	$(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) up -d
+	$(DOCKER) volume create $(PROD_POSTGRES_VOLUME) >/dev/null
+	PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) up -d
 
 .PHONY: prod-stop-local
 prod-stop-local:
-	$(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) down
+	PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) down
 
 .PHONY: prod-logs-local
 prod-logs-local:
-	$(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) logs -f $(PROD_LOG_SERVICE)
+	PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) logs -f $(PROD_LOG_SERVICE)
 
 # ssh -L 8080:127.0.0.1:8080 root@47.254.169.196
 # use http://127.0.0.1:8080
 .PHONY: prod-deploy-remote
 prod-deploy-remote: 
-	PROD_IMAGE=$(PROD_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) PROD_CLEAR_DATA=$(PROD_CLEAR_DATA) REMOTE_APP_DIR=$(REMOTE_APP_DIR) bash ./hack/prod-remote-deploy.sh
+	PROD_IMAGE=$(PROD_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) bash ./hack/prod-remote-deploy.sh
 
 .PHONY: prod-start-remote
 prod-start-remote:
-	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && docker compose -f docker-compose.prod.yml --env-file .env up -d"
+	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "docker volume create $(PROD_POSTGRES_VOLUME) >/dev/null && cd $(REMOTE_APP_DIR) && PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) docker compose -f docker-compose.prod.yml --env-file .env up -d"
 
 .PHONY: prod-stop-remote
 prod-stop-remote:
-	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && docker compose -f docker-compose.prod.yml --env-file .env down"
+	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) docker compose -f docker-compose.prod.yml --env-file .env down"
 
 .PHONY: prod-logs-remote
 prod-logs-remote:
-	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && docker compose -f docker-compose.prod.yml --env-file .env logs -f $(PROD_LOG_SERVICE)"
+	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) docker compose -f docker-compose.prod.yml --env-file .env logs -f $(PROD_LOG_SERVICE)"
+
+.PHONY: prod-migrate-remote
+prod-migrate-remote:
+	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) docker compose -f docker-compose.prod.yml --env-file .env --profile tools run --rm athena-migrate athena up --module $(PROD_MIGRATE_MODULE)"
+
+.PHONY: prod-migration-status-remote
+prod-migration-status-remote:
+	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) docker compose -f docker-compose.prod.yml --env-file .env --profile tools run --rm athena-migrate athena status --module $(PROD_MIGRATE_MODULE)"
+
+.PHONY: prod-db-backup-remote
+prod-db-backup-remote:
+	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST 'cd "$(REMOTE_APP_DIR)" && set -a && . ./.env && set +a && mkdir -p backups && PROD_POSTGRES_VOLUME="$(PROD_POSTGRES_VOLUME)" docker compose -f docker-compose.prod.yml --env-file .env exec -T postgres sh -c '"'"'PGPASSWORD="$$POSTGRES_PASSWORD" pg_dumpall -U "$${POSTGRES_USER:-athena}"'"'"' > backups/athena-postgres-$$(date +%Y%m%d-%H%M%S).sql'
+
+.PHONY: prod-destroy-data-remote
+prod-destroy-data-remote:
+	@if [ "$(CONFIRM_DESTROY_PROD_DATA)" != "yes" ]; then \
+		echo "Refusing to destroy production data. Re-run with CONFIRM_DESTROY_PROD_DATA=yes."; \
+		exit 1; \
+	fi
+	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) docker compose -f docker-compose.prod.yml --env-file .env down && docker volume rm $(PROD_POSTGRES_VOLUME)"
 
 # Delete local PostgreSQL/Redis data directories so the next start can re-init. Stop goreman first if it is running.
 .PHONY: clean-postgres-data

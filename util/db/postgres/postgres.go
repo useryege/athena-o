@@ -20,9 +20,16 @@ import (
 const (
 	pingAttempts = 5
 	pingInterval = time.Second
+
+	AutoMigrateEnv = "ATHENA_POSTGRES_AUTO_MIGRATE"
 )
 
 var gooseMu sync.Mutex
+
+var (
+	runMigrations = Migrate
+	openPool      = OpenPool
+)
 
 type Options struct {
 	Module       string
@@ -38,11 +45,19 @@ func ConnectAndMigrate(ctx context.Context, opts Options) (*pgxpool.Pool, error)
 	}
 	dsn := DSN(opts.DSNEnv, opts.Database)
 	if opts.Migrations != nil {
-		if err := Migrate(ctx, dsn, opts.Migrations, opts.MigrationDir); err != nil {
-			return nil, err
+		if AutoMigrateEnabled() {
+			if err := runMigrations(ctx, dsn, opts.Migrations, opts.MigrationDir); err != nil {
+				return nil, err
+			}
+		} else {
+			log.Infof("automatic %s postgres migrations are disabled by %s", opts.Module, AutoMigrateEnv)
 		}
 	}
-	return OpenPool(ctx, opts.Module, dsn)
+	return openPool(ctx, opts.Module, dsn)
+}
+
+func AutoMigrateEnabled() bool {
+	return env.ParseBoolFromEnv(AutoMigrateEnv, true)
 }
 
 func OpenPool(ctx context.Context, module string, dsn string) (*pgxpool.Pool, error) {
@@ -82,6 +97,40 @@ func OpenPool(ctx context.Context, module string, dsn string) (*pgxpool.Pool, er
 }
 
 func Migrate(ctx context.Context, dsn string, migrations fs.FS, dir string) error {
+	return withMigrationDB(ctx, dsn, func(db *sql.DB) error {
+		gooseMu.Lock()
+		defer gooseMu.Unlock()
+
+		goose.SetBaseFS(migrations)
+		defer goose.SetBaseFS(nil)
+		if err := goose.SetDialect("postgres"); err != nil {
+			return fmt.Errorf("set goose postgres dialect: %w", err)
+		}
+		if err := goose.UpContext(ctx, db, dir); err != nil {
+			return fmt.Errorf("run postgres migrations: %w", err)
+		}
+		return nil
+	})
+}
+
+func MigrationStatus(ctx context.Context, dsn string, migrations fs.FS, dir string) error {
+	return withMigrationDB(ctx, dsn, func(db *sql.DB) error {
+		gooseMu.Lock()
+		defer gooseMu.Unlock()
+
+		goose.SetBaseFS(migrations)
+		defer goose.SetBaseFS(nil)
+		if err := goose.SetDialect("postgres"); err != nil {
+			return fmt.Errorf("set goose postgres dialect: %w", err)
+		}
+		if err := goose.StatusContext(ctx, db, dir); err != nil {
+			return fmt.Errorf("show postgres migration status: %w", err)
+		}
+		return nil
+	})
+}
+
+func withMigrationDB(ctx context.Context, dsn string, fn func(*sql.DB) error) error {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return fmt.Errorf("open postgres migration database: %w", err)
@@ -109,19 +158,7 @@ func Migrate(ctx context.Context, dsn string, migrations fs.FS, dir string) erro
 	if pingErr != nil {
 		return fmt.Errorf("failed to ping postgres migration database after %d attempts: %w", pingAttempts, pingErr)
 	}
-
-	gooseMu.Lock()
-	defer gooseMu.Unlock()
-
-	goose.SetBaseFS(migrations)
-	defer goose.SetBaseFS(nil)
-	if err := goose.SetDialect("postgres"); err != nil {
-		return fmt.Errorf("set goose postgres dialect: %w", err)
-	}
-	if err := goose.UpContext(ctx, db, dir); err != nil {
-		return fmt.Errorf("run postgres migrations: %w", err)
-	}
-	return nil
+	return fn(db)
 }
 
 func DSN(envName, database string) string {
