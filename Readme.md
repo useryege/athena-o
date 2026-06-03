@@ -141,6 +141,147 @@ TEST_MODULE=./internal/application/... make test-local
 | `make prod-db-backup-remote` | 在远端通过 `pg_dumpall` 备份 PostgreSQL 到 `$(REMOTE_APP_DIR)/backups`。 | `make prod-db-backup-remote` |
 | `make prod-destroy-data-remote` | 危险操作：停止远端 compose 并删除生产 PostgreSQL volume。必须显式确认。 | `make prod-destroy-data-remote CONFIRM_DESTROY_PROD_DATA=yes` |
 
+### 部署前本地预演
+
+部署远端服务器前，可以先用生产镜像和生产 compose 在本机跑一次。`prod-start-local` 已经是本地生产 compose 启动入口，不需要再手写完整的 `docker compose up -d`。
+
+如果使用 `.env.prod` 作为预演环境文件，至少需要包含：
+
+```env
+POSTGRES_PASSWORD=your_postgres_password
+REDIS_PASSWORD=your_redis_password
+ATHENA_JWT_SECRET=your_jwt_secret
+ATHENA_WALLET_ENCRYPTION_KEY=your_wallet_encryption_key
+```
+
+`ATHENA_WALLET_ENCRYPTION_KEY` 可用以下命令生成：
+
+```bash
+openssl rand -hex 32
+```
+
+该 key 用于加密 wallet 相关敏感数据。已有 wallet 数据后不要随意更换，否则旧数据可能无法解密。
+
+推荐预演流程：
+
+```bash
+PROD_ENV_FILE=.env.prod make prod-build-local
+PROD_ENV_FILE=.env.prod make prod-start-local
+```
+
+生产 compose 中各后端服务设置了 `ATHENA_POSTGRES_AUTO_MIGRATE=false`，因此本地预演和远程部署一样，需要显式执行数据库迁移：
+
+```bash
+PROD_ENV_FILE=.env.prod docker compose -f docker-compose.prod.yml --env-file .env.prod --profile tools run --rm athena-migrate athena up --module all
+```
+
+查看日志和访问本地服务：
+
+```bash
+PROD_ENV_FILE=.env.prod make prod-logs-local
+```
+
+```text
+http://127.0.0.1:8080
+```
+
+停止本地预演：
+
+```bash
+PROD_ENV_FILE=.env.prod make prod-stop-local
+```
+
+`prod-stop-local` 只会停止并移除 compose 容器，不会删除 PostgreSQL volume。如果需要重置预演数据，需手动删除默认的 `athena-prod-postgres-data` volume，或删除启动时通过 `PROD_POSTGRES_VOLUME` 指定的 volume。
+
+### 远程部署
+
+以下示例使用：
+
+```env
+REMOTE_HOST=47.245.181.189
+REMOTE_USER=root
+REMOTE_APP_DIR=/root/athena
+PROD_POSTGRES_VOLUME=athena-prod-postgres-data
+```
+
+部署前先确认远端 Docker 和 Docker Compose v2 可用：
+
+```bash
+ssh root@47.245.181.189 'docker --version && docker compose version'
+```
+
+如果远端提示 `docker: 'compose' is not a docker command`，说明缺少 Docker Compose v2 插件。优先尝试安装系统包：
+
+```bash
+ssh root@47.245.181.189 '
+set -e
+if command -v apt-get >/dev/null 2>&1; then
+  apt-get update
+  apt-get install -y docker-compose-plugin
+elif command -v yum >/dev/null 2>&1; then
+  yum install -y docker-compose-plugin
+elif command -v dnf >/dev/null 2>&1; then
+  dnf install -y docker-compose-plugin
+else
+  echo "Unsupported package manager; install Docker Compose plugin manually."
+  exit 1
+fi
+docker compose version
+'
+```
+
+如果系统包不存在，可手动安装 Compose CLI 插件：
+
+```bash
+ssh root@47.245.181.189 '
+set -e
+mkdir -p /usr/local/lib/docker/cli-plugins
+ARCH="$(uname -m)"
+case "$ARCH" in
+  x86_64|amd64) ARCH="x86_64" ;;
+  aarch64|arm64) ARCH="aarch64" ;;
+  *) echo "Unsupported arch: $ARCH"; exit 1 ;;
+esac
+curl -SL "https://github.com/docker/compose/releases/download/v5.1.2/docker-compose-linux-${ARCH}" -o /usr/local/lib/docker/cli-plugins/docker-compose
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+docker compose version
+'
+```
+
+推荐远程部署流程：
+
+```bash
+PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-build-local
+PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-deploy-remote
+PROD_ENV_FILE=./.env.prod make prod-migrate-remote
+PROD_ENV_FILE=./.env.prod PROD_LOG_SERVICE=athena-server make prod-logs-remote
+```
+
+`prod-deploy-remote` 会把 `$(PROD_ENV_FILE)` 上传到远端并命名为 `.env`，同时上传 `docker-compose.prod.yml`、`hack/postgres/init` 和本地 `$(PROD_IMAGE)` 镜像。
+
+远端迁移、日志、启停目标会通过 `. $(PROD_ENV_FILE)` 读取环境变量。使用 `.env.prod` 时建议写成 `PROD_ENV_FILE=./.env.prod`，避免 `/bin/sh` 找不到不带 `/` 的 dot 文件。
+
+验证远端服务：
+
+```bash
+ssh root@47.245.181.189 'cd /root/athena && PROD_POSTGRES_VOLUME=athena-prod-postgres-data docker compose -f docker-compose.prod.yml --env-file .env ps'
+ssh root@47.245.181.189 'curl -sS http://127.0.0.1:8080/api/version'
+```
+
+默认生产 compose 将 `athena-server` 绑定到远端 `127.0.0.1:8080`。本机访问时可打开 SSH 隧道：
+
+```bash
+ssh -L 8080:127.0.0.1:8080 root@47.245.181.189
+```
+
+然后访问：
+
+```text
+http://127.0.0.1:8080
+```
+
+如果日志出现 `ATHENA_ADMIN_PASSWORD_HASH is not set`，表示服务生成了临时 admin 密码，重启后会变化。生产环境建议配置固定的 `ATHENA_ADMIN_PASSWORD_HASH`。
+
 `prod-deploy-remote` 会执行以下操作：
 
 1. 检查远端 Docker 和 Docker Compose 是否可用。
