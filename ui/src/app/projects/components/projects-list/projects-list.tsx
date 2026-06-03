@@ -9,6 +9,7 @@ import {buildProjectsListSearch, parseProjectsListSearch} from './projects-list-
 require('./projects-list.scss');
 
 const AUTO_REFRESH_INTERVAL_MS = 3000;
+const MAX_CONSECUTIVE_FAILURES = 10;
 const PAGE_SIZE = 10;
 
 interface ProjectsListCacheEntry {
@@ -37,7 +38,7 @@ export const ProjectsList = () => {
     const [projects, setProjects] = React.useState<ProjectListItem[]>(initialCache?.projects || []);
     const [loading, setLoading] = React.useState(!initialCache);
     const [refreshing, setRefreshing] = React.useState(false);
-    const [autoRefresh, setAutoRefresh] = React.useState(false);
+    const [pollingStopped, setPollingStopped] = React.useState(false);
     const [page, setPage] = React.useState(initialCache?.page || initialQueryState.page);
     const [total, setTotal] = React.useState(initialCache?.total || 0);
     const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(initialCache?.lastUpdatedAt || null);
@@ -46,6 +47,7 @@ export const ProjectsList = () => {
     const intervalRef = React.useRef<number | undefined>(undefined);
     const isMountedRef = React.useRef(false);
     const currentPageRef = React.useRef(initialQueryState.page);
+    const consecutiveFailuresRef = React.useRef(0);
 
     const syncUrlState = React.useCallback((nextPage: number) => {
         const nextSearch = buildProjectsListSearch(nextPage);
@@ -57,16 +59,20 @@ export const ProjectsList = () => {
         }
     }, []);
 
-    const cleanupRequests = React.useCallback(() => {
+    const stopPolling = React.useCallback(() => {
         if (intervalRef.current !== undefined) {
             window.clearInterval(intervalRef.current);
             intervalRef.current = undefined;
         }
+    }, []);
+
+    const cleanupRequests = React.useCallback(() => {
+        stopPolling();
         if (requestRef.current?.abort) {
             requestRef.current.abort();
             requestRef.current = null;
         }
-    }, []);
+    }, [stopPolling]);
 
     const loadProjects = React.useCallback(
         async (targetPage?: number, syncSearch = false) => {
@@ -93,6 +99,7 @@ export const ProjectsList = () => {
                     }
                     setLastUpdatedAt(updatedAt);
                     setError(null);
+                    consecutiveFailuresRef.current = 0;
                     projectsListCache.set(buildProjectsListSearch(data.page), {
                         projects: data.items,
                         total: data.total,
@@ -103,6 +110,12 @@ export const ProjectsList = () => {
             } catch (err) {
                 if (isMountedRef.current) {
                     setError(err as Error);
+                    const nextFailures = consecutiveFailuresRef.current + 1;
+                    consecutiveFailuresRef.current = nextFailures;
+                    if (nextFailures >= MAX_CONSECUTIVE_FAILURES) {
+                        stopPolling();
+                        setPollingStopped(true);
+                    }
                 }
             } finally {
                 if (isMountedRef.current) {
@@ -112,41 +125,21 @@ export const ProjectsList = () => {
                 requestRef.current = null;
             }
         },
-        [syncUrlState]
+        [stopPolling, syncUrlState]
     );
 
     React.useEffect(() => {
         isMountedRef.current = true;
         loadProjects(initialQueryState.page, true);
+        intervalRef.current = window.setInterval(() => {
+            loadProjects(currentPageRef.current);
+        }, AUTO_REFRESH_INTERVAL_MS);
 
         return () => {
             isMountedRef.current = false;
             cleanupRequests();
         };
     }, [cleanupRequests, initialQueryState.page, loadProjects]);
-
-    const handleStart = React.useCallback(() => {
-        if (intervalRef.current !== undefined) {
-            return;
-        }
-        setAutoRefresh(true);
-        loadProjects(currentPageRef.current);
-        intervalRef.current = window.setInterval(() => {
-            loadProjects(currentPageRef.current);
-        }, AUTO_REFRESH_INTERVAL_MS);
-    }, [loadProjects]);
-
-    const handleStop = React.useCallback(() => {
-        cleanupRequests();
-        setAutoRefresh(false);
-    }, [cleanupRequests]);
-
-    const handleRefresh = React.useCallback(() => {
-        if (autoRefresh) {
-            return;
-        }
-        loadProjects(currentPageRef.current);
-    }, [autoRefresh, loadProjects]);
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -156,6 +149,7 @@ export const ProjectsList = () => {
                 {error && (
                     <div className='projects-list__error'>
                         <i className='fa fa-exclamation-triangle' /> Failed to load projects: {error.message}
+                        {pollingStopped && <div className='projects-list__error-detail'>Polling stopped after {MAX_CONSECUTIVE_FAILURES} consecutive failures.</div>}
                     </div>
                 )}
 
@@ -165,19 +159,8 @@ export const ProjectsList = () => {
                     <div className='argo-container'>
                         <div className='white-box projects-list__box'>
                             <div className='projects-list__controls'>
-                                <div className='projects-list__actions'>
-                                    <button type='button' className='argo-button argo-button--base' disabled={autoRefresh} onClick={handleStart}>
-                                        Start
-                                    </button>
-                                    <button type='button' className='argo-button argo-button--base-o' disabled={!autoRefresh} onClick={handleStop}>
-                                        Stop
-                                    </button>
-                                    <button type='button' className='argo-button argo-button--base' disabled={autoRefresh || refreshing} onClick={handleRefresh}>
-                                        {refreshing && !autoRefresh ? 'Refreshing...' : 'Refresh'}
-                                    </button>
-                                </div>
                                 <div className='projects-list__status'>
-                                    <span>{autoRefresh ? 'Auto refresh: On' : 'Auto refresh: Off'}</span>
+                                    <span>{pollingStopped ? `Polling stopped after ${MAX_CONSECUTIVE_FAILURES} failures` : 'Polling: Active'}</span>
                                     <span>Total: {total}</span>
                                     <span>
                                         Page: {page}/{totalPages}
