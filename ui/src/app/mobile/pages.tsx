@@ -831,7 +831,7 @@ const WormDetail = (props: {detail?: WormMarketDetail}) => {
         return null;
     }
     return (
-        <Space direction='vertical' style={{width: '100%'}}>
+        <Space orientation='vertical' style={{width: '100%'}}>
             <KeyValueGrid
                 items={[
                     {label: 'Title', value: detail.market.title},
@@ -1149,7 +1149,7 @@ export const SettingsPage = () => {
 export const HelpPage = () => (
     <AppPage title='Help' subtitle='Operational reference links'>
         <Section title='Resources'>
-            <Space direction='vertical'>
+            <Space orientation='vertical'>
                 <a href='swagger-ui'>Swagger UI</a>
                 <Typography.Text type='secondary'>ATHENA mobile UI is optimized for browsing, search, detail inspection, and common operations.</Typography.Text>
             </Space>

@@ -71,7 +71,7 @@ export const AppPage = (props: {
                     <Typography.Title level={2}>{props.title}</Typography.Title>
                     {props.subtitle && <Typography.Text type='secondary'>{props.subtitle}</Typography.Text>}
                 </div>
-                <Space wrap={true}>
+                <Space className='app-page__actions' wrap={true}>
                     {props.filters && isMobile && <Button icon={<FilterOutlined />} onClick={() => setFiltersOpen(true)} />}
                     {props.onRefresh && <Button icon={<ReloadOutlined />} onClick={props.onRefresh} />}
                     {props.extra}
@@ -121,6 +121,7 @@ export const ResponsiveResourceList = <T,>(props: {
     }
     return (
         <Table<T>
+            className='resource-table'
             rowKey={props.rowKey as any}
             columns={props.columns as any}
             dataSource={props.items}
@@ -175,6 +176,7 @@ export const StatusTag = (props: {value?: React.ReactNode; positive?: boolean; n
 
 export const SearchBar = (props: {value?: string; placeholder?: string; onChange: (value: string) => void; onSearch?: () => void}) => (
     <Input.Search
+        className='search-bar'
         allowClear={true}
         value={props.value}
         placeholder={props.placeholder || 'Search'}
@@ -184,9 +186,13 @@ export const SearchBar = (props: {value?: string; placeholder?: string; onChange
 );
 
 export const Section = (props: {title: string; extra?: React.ReactNode; children: React.ReactNode}) => (
-    <Card className='section-card' size='small' title={props.title} extra={props.extra}>
-        {props.children}
-    </Card>
+    <section className='section-panel'>
+        <div className='section-panel__header'>
+            <Typography.Title level={5}>{props.title}</Typography.Title>
+            {props.extra && <div className='section-panel__extra'>{props.extra}</div>}
+        </div>
+        <div className='section-panel__body'>{props.children}</div>
+    </section>
 );
 
 export const InlineActions = (props: {children: React.ReactNode}) => (

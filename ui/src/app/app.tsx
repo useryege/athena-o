@@ -391,7 +391,30 @@ const Bootstrap = () => {
 
     const isDark = pref.theme === 'dark';
     return (
-        <ConfigProvider theme={{algorithm: isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm, token: {borderRadius: 6, colorPrimary: '#d9653b'}}}>
+        <ConfigProvider
+            theme={{
+                algorithm: isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
+                token: {
+                    borderRadius: 8,
+                    colorPrimary: '#e05f3f',
+                    colorInfo: '#2f7df6',
+                    colorSuccess: '#19a974',
+                    colorWarning: '#d98b18',
+                    colorError: '#d14b57',
+                    colorLink: '#2f7df6',
+                    colorBgLayout: isDark ? '#101214' : '#f3f6f5',
+                    colorBgContainer: isDark ? '#171b1d' : '#ffffff',
+                    colorText: isDark ? '#edf2ef' : '#17211d',
+                    colorTextSecondary: isDark ? '#9aa7a1' : '#64726c',
+                    colorBorder: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(28,45,37,0.12)',
+                    boxShadow: isDark ? '0 18px 48px rgba(0,0,0,0.34)' : '0 18px 48px rgba(26,45,38,0.10)',
+                    fontFamily: 'Inter, Heebo, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                    fontSize: 14,
+                    controlHeight: 36,
+                    controlHeightSM: 30,
+                    wireframe: false
+                }
+            }}>
             <AntApp>
                 <BrowserRouter basename={base} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
                     <Shell pref={pref} authSettings={authSettings} />
