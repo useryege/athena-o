@@ -54,10 +54,14 @@ export const Sidebar = (props: SidebarProps) => {
     };
 
     const isActive = (item: SidebarNavItem): boolean => {
-        if (item.path && (locationPath === item.path || locationPath.startsWith(`${item.path}/`))) {
+        const children = item.children || [];
+        if (item.path && locationPath === item.path) {
             return true;
         }
-        return (item.children || []).some(child => isActive(child));
+        if (children.length > 0 && item.path && locationPath.startsWith(`${item.path}/`)) {
+            return true;
+        }
+        return children.some(child => isActive(child));
     };
 
     const renderNavItem = (item: SidebarNavItem, child = false) => {
