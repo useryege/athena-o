@@ -79,7 +79,6 @@ install-codegen-tools-local:
 	./hack/install.sh codegen-tools
 	./hack/install.sh codegen-go-tools
 
-
 .PHONY: mockgen
 mockgen:
 	./hack/generate-mock.sh
