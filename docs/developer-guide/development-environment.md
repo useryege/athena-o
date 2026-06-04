@@ -31,23 +31,17 @@ git remote add upstream https://github.com/useryege/athena.git
 
 ## Install Development Tools
 
-Install Go/codegen/lint tools:
+Install codegen tools:
 
 ```bash
-make install-go-tools-local
 make install-codegen-tools-local
 ```
 
 Install UI dependencies:
 
 ```bash
-make dep-ui-local
-```
-
-You can also install the broader local toolchain:
-
-```bash
-make install-tools-local
+cd ui
+yarn install
 ```
 
 ## Local Services
@@ -55,7 +49,7 @@ make install-tools-local
 Athena local development uses local processes plus Docker-backed dependencies. Start the local stack with:
 
 ```bash
-make start-local
+make run
 ```
 
 For production-like local validation, use Docker Compose:

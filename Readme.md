@@ -1,20 +1,20 @@
 # Athena Makefile 常用命令指南
 
-本文档说明项目根目录 `Makefile` 中常用命令的使用方式，偏向日常开发、测试、构建和部署速查。
+本文档说明项目根目录 `Makefile` 中保留的常用命令，偏向日常本地运行、代码生成、文档和生产部署速查。
 
 ## 前置依赖
 
 常用命令会依赖以下工具：
 
-- Go：用于本地构建、测试、代码生成。
-- Docker：用于构建镜像、启动容器化测试工具、运行生产 compose。
-- yarn：用于 `ui` 目录依赖安装、检查和构建。
+- Go：用于代码生成，以及生产镜像内部构建二进制。
+- Docker：用于构建生产镜像和运行生产 compose。
+- yarn：用于手动在 `ui` 目录运行前端开发命令。
 - mkdocs：用于本地文档预览和文档构建；也可以通过 Docker 目标运行。
 
 ## 命令约定
 
-- 带 `-local` 后缀的目标通常直接使用本机工具链执行，例如 `make build-local`。
-- 不带 `-local` 的构建、测试、生成目标通常会先构建 `athena-test-tools` 镜像，再在测试工具容器中执行，例如 `make test`。
+- Makefile 只保留当前日常使用的入口：本地运行、代码生成、文档、生产部署和数据清理。
+- 生产镜像构建通过 Dockerfile 完成，Dockerfile 内部仍会调用 `make athena-all` 构建二进制。
 - 所有命令默认在项目根目录执行。
 
 ## 常用环境变量
@@ -33,16 +33,15 @@
 | `PROD_RESET_REMOTE_DATA` | 空 | `prod-remote-deploy.sh` 内部开关。为 `yes` 时部署前停止远端 Athena compose 并删除 PostgreSQL volume。 |
 | `PROD_RUN_REMOTE_MIGRATIONS` | 空 | `prod-remote-deploy.sh` 内部开关。为 `yes` 时部署启动后自动执行远端 migration。 |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | 本地默认 `true`，生产 compose 为 `false` | 控制服务启动时是否自动执行 PostgreSQL migration。生产环境通过显式迁移命令控制 schema 演进。 |
-| `TEST_MODULE` | 空 | 指定要运行的 Go 测试包。为空时运行全部单元测试。 |
 | `TARGET_ARCH` | `linux/amd64` | Docker 镜像构建平台。 |
-| `ATHENA_*` | 多个默认值 | 控制本地端口、数据目录、认证等运行参数。可先执行 `make print-env-vars` 查看部分配置。 |
+| `ATHENA_POSTGRES_DATA_DIR` | `/tmp/athena-local/postgres` | `clean-postgres-data` 删除的本地 PostgreSQL 数据目录。 |
+| `ATHENA_REDIS_DATA_DIR` | `/tmp/athena-local/redis` | `clean-postgres-data` 删除的本地 Redis 数据目录。 |
 
 ## 环境与工具
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make print-env-vars` | 打印 Makefile 中常用环境变量和路径。 | `make print-env-vars` |
-| `make install-tools-local` | 安装本地开发、测试、代码生成需要的工具。 | `make install-tools-local` |
+| `make install-codegen-tools-local` | 安装代码生成需要的工具。 | `make install-codegen-tools-local` |
 | `make password-hash` | 将明文密码转换为 bcrypt hash，用于配置 `.env` 中的 `ATHENA_ACCOUNT_*_PASSWORD_HASH`。 | `make password-hash` |
 
 生成本地账号密码 hash：
@@ -70,55 +69,28 @@ ATHENA_ACCOUNT_LINGJIE_PASSWORD_HASH='$2a$10$...'
 | --- | --- | --- |
 | `make codegen-local` | 在本机执行完整代码生成流程。 | `make codegen-local` |
 | `make protogen` | 先准备 vendor，再生成 protobuf 相关代码。 | `make protogen` |
-| `make abigen-local` | 生成 Solidity ABI 相关 Go 代码。 | `make abigen-local` |
 
-## 构建
+## 生产构建
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make build-local` | 在本机编译全部 Go 代码。 | `make build-local` |
-| `make cli-local` | 构建本地 `athena` CLI 到 `dist/athena`。 | `make cli-local` |
-| `make image` | 构建 Athena Docker 镜像，可配合 `DOCKER_PUSH=true` 推送。 | `make image` |
 | `make prod-build-local` | 构建生产部署使用的本地镜像。 | `make prod-build-local` |
 
 常见用法：
 
 ```bash
 PROD_IMAGE=athena:local make prod-build-local
-TARGET_ARCH=linux/amd64 make image
-```
-
-## 测试与检查
-
-| 命令 | 用途 | 示例 |
-| --- | --- | --- |
-| `make test-local` | 运行本机单元测试。 | `make test-local` |
-| `make test-race-local` | 使用 Go race detector 运行单元测试。 | `make test-race-local` |
-| `make lint-local` | 运行 `golangci-lint`。 | `make lint-local` |
-| `make pre-commit-local` | 在本机执行代码生成、构建、lint、测试。 | `make pre-commit-local` |
-
-只测试某个包：
-
-```bash
-TEST_MODULE=./internal/application/... make test-local
 ```
 
 ## 本地运行
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make start-local` | 准备依赖并通过 `goreman` 启动本地 Athena。 | `make start-local` |
 | `make run` | 通过 `hack/goreman-start.sh` 启动，可使用脚本支持的排除参数。 | `make run` |
-
-`make start-local` 会清理并重建 `/tmp/athena-local`，适合需要完整本地环境时使用。
 
 ## UI
 
-| 命令 | 用途 | 示例 |
-| --- | --- | --- |
-| `make dep-ui-local` | 在 `ui` 目录执行 `yarn install`。 | `make dep-ui-local` |
-| `make lint-ui-local` | 在 `ui` 目录执行 `yarn lint`。 | `make lint-ui-local` |
-| `make build-ui` | 通过 Docker 构建 UI，并更新 `ui/dist/app`。 | `make build-ui` |
+UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start`。
 
 ## 文档
 
@@ -413,7 +385,6 @@ PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-deploy-fresh-remote
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make clean` | 删除 `dist`，并清理 VSCode `debug.test` 文件。 | `make clean` |
 | `make clean-postgres-data` | 删除本地 PostgreSQL 和 Redis 数据目录。 | `make clean-postgres-data` |
 
 注意：`make clean-postgres-data` 会执行 `sudo rm -rf "$(ATHENA_POSTGRES_DATA_DIR)" "$(ATHENA_REDIS_DATA_DIR)"`，默认会删除 `/tmp/athena-local/postgres` 和 `/tmp/athena-local/redis`。

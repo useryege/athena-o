@@ -7,7 +7,7 @@
 4. [Running Locally](running-locally.md)
 
 ## Preface
-Please make sure you are familiar with running Athena locally using the [local toolchain](running-locally.md#start-local-services-local-toolchain).
+Please make sure you are familiar with running Athena locally using [make run](running-locally.md#start-local-services).
 
 When running Athena locally for manual tests, the quickest way to do so is to run all the Athena components together, as described in [Running Locally](running-locally.md), 
 
@@ -117,14 +117,6 @@ Next, we need to run all Athena components, except for the debugged component (c
 Run the other components locally, then launch the debugged component from your IDE.
 
 ### Run the other components locally
-#### Run with "make start-local"
-`make start-local` runs all the components by default, but it is also possible to run it with a whitelist of components, enabling the separation we need.
-
-So for the case of debugging the `api-server`, run:
-`make start-local ATHENA_START="notification applicationset-controller repo-server redis dex controller ui"` 
-
-> [!NOTE]
-> By default, the api-server in this configuration runs with auth disabled. To test authentication-related behavior, run `export ATHENA_DISABLE_AUTH='false' && make start-local`.
 #### Run with "make run"
 `make run` runs all the components by default, but it is also possible to run it with a blacklist of components, enabling the separation we need.
 

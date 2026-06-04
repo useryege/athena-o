@@ -39,7 +39,7 @@ fi
 
 if ! docker image inspect "${IMAGE}" >/dev/null 2>&1; then
   echo "Docker image not found locally: ${IMAGE}"
-  echo "Build it first, for example: make prod-build"
+  echo "Build it first, for example: make prod-build-local"
   exit 1
 fi
 

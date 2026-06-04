@@ -7,9 +7,9 @@ The [documentation website](https://athena.readthedocs.io/) is built using `mkdo
 To test:
 
 ```bash
-make serve-docs
+make serve-docs-local
 ```
-Once running, you can view your locally built documentation at [http://0.0.0.0:8000/](http://0.0.0.0:8000/).
+Once running, you can view your locally built documentation at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 Making changes to documentation will automatically rebuild and refresh the view.
 
 Before submitting a PR build the website, to verify that there are no errors building the site
@@ -17,7 +17,7 @@ Before submitting a PR build the website, to verify that there are no errors bui
 make build-docs
 ```
 
-If you want to build and test the site directly on your local machine without the use of docker container, follow the below steps:
+If you want to build and test the site directly on your local machine, follow the below steps:
 
 1. Install the dependencies from the root of this repository using the `pip` command
     ```bash
@@ -25,7 +25,7 @@ If you want to build and test the site directly on your local machine without th
     ```
 2. Build the docs site locally from the root
    ```bash
-   make build-docs-local
+   mkdocs build
    ``` 
 3. Start the docs site locally
    ```bash

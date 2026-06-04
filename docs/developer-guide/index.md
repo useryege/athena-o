@@ -50,7 +50,7 @@ For backend and frontend contributions, that require a full building-testing-run
 
 ## Contributing to Athena backend and frontend 
 
-This guide will help you set up your build & test environment, so that you can start developing and testing bug fixes and feature enhancements without having to make too much effort in setting up a local toolchain.
+This guide will help you set up your local development environment so you can run Athena, update generated files, and prepare production deployments.
 
 As is the case with the development process, this document is under constant change. If you notice any error, or if you think this document is out-of-date, or if you think it is missing something: Feel free to submit a PR or submit a bug to our GitHub issue tracker.
 
@@ -60,12 +60,8 @@ As is the case with the development process, this document is under constant cha
 - [Install development tools](development-environment.md#install-development-tools)
 - [Start local services](development-environment.md#local-services)
 
-### Set up a development toolchain (local or virtualized)
-- [Understand the differences between the toolchains](toolchain-guide.md#local-vs-virtualized-toolchain)
-- Choose a development toolchain
-
-    - Either [set up a local toolchain](toolchain-guide.md#setting-up-a-local-toolchain)
-    - Or [set up a virtualized toolchain](toolchain-guide.md#setting-up-a-virtualized-toolchain)
+### Set up a development toolchain
+- [Set up the local toolchain](toolchain-guide.md#local-toolchain)
 
 ### Perform the development cycle 
 - [Pull in all build dependencies](development-cycle.md#pull-in-all-build-dependencies)

@@ -99,4 +99,4 @@ make run
 ## 补充说明
 
 - `make run` 仅调用 `goreman start`，不会自动清理或重建 `/tmp/athena-local`。
-- 若你希望每次都自动准备本地目录，可考虑使用 `make start-local` 流程，或在本地脚本中增加目录初始化步骤。
+- 若你需要重置本地数据目录，可先运行 `make clean-postgres-data`，再重新执行 `make run`。

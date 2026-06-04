@@ -4,24 +4,11 @@ Athena local development no longer requires a cluster. The local stack runs Athe
 
 ## Prerequisites
 
-1. Complete [Development Environment](development-environment.md).
-2. Read [Toolchain Guide](toolchain-guide.md) if you want to use the containerized toolchain.
+Complete [Development Environment](development-environment.md).
 
 ## Start Local Services
 
-Use the local toolchain:
-
-```bash
-make start-local
-```
-
-Use the containerized toolchain:
-
-```bash
-make start
-```
-
-You can also start through the helper script:
+Start through the local helper script:
 
 ```bash
 make run
@@ -47,7 +34,7 @@ Redis and PostgreSQL default to ephemeral data. To persist local data between ru
 
 ```bash
 export ATHENA_LOCAL_DATA_MODE=persistent
-make start-local
+make run
 ```
 
 Supported variables:
@@ -75,7 +62,7 @@ The dev server listens on port `4000`. Override the host with `ATHENA_YARN_HOST`
 
 ## Backend Changes
 
-When `make start-local` is running, restart a process with `goreman`:
+When `make run` is running, restart a process with `goreman`:
 
 ```bash
 goreman run restart api-server

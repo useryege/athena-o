@@ -27,10 +27,7 @@ git fetch upstream
 git rebase upstream/main
 ```
 
-2. Run pre-commit checks:
-```shell
-make pre-commit-local
-```
+2. Run the relevant checks for the files you changed, and run `make codegen-local` when generated files are affected.
 
 ## Continuous Integration process
 
@@ -62,26 +59,19 @@ Upon opening a PR, the details will contain a checklist from a template. Please 
 
 ## Automated builds & tests
 
-After you have submitted your PR, and whenever you push new commits to that branch, GitHub will run a number of Continuous Integration checks against your code. It will execute the following actions, and each of them has to pass:
+After you have submitted your PR, and whenever you push new commits to that branch, GitHub will run a number of Continuous Integration checks against your code. These checks cover build, code generation, lint, unit tests, UI, and CLI behavior.
 
-* Build the Go code (`make build`)
-* Generate API glue code and docs (`make codegen`)
-* Run a Go linter on the code (`make lint`)
-* Run the unit tests (`make test`)
-* Build and lint the UI code (`make lint-ui`)
-* Build the `athena` CLI (`make cli`)
-
-If any of these tests in the CI pipeline fail, it means that some of your contribution is considered faulty (or a test might be flaky, see below).
+If any of these checks in the CI pipeline fail, it means that some of your contribution is considered faulty (or a test might be flaky, see below).
 
 ## Code test coverage
 
 We use [CodeCov](https://codecov.io) in our CI pipeline to check for test coverage, and once you submit your PR, it will run and report on the coverage difference as a comment within your PR. If the difference is too high in the negative, i.e. your submission introduced a significant drop in code coverage, the CI check will fail.
 
 Whenever you develop a new feature or submit a bug fix, please also write appropriate unit tests for it. If you write a completely new module, please aim for at least 80% of coverage.
-If you want to see how much coverage just a specific module (i.e. your new one) has, you can set the `TEST_MODULE` to the (fully qualified) name of that module with `make test`, i.e.:
+If you want to see how much coverage just a specific module has, run the relevant Go package tests directly, i.e.:
 
 ```bash
- make test TEST_MODULE=github.com/useryege/athena/internal/server/cache
+ go test github.com/useryege/athena/internal/server/cache
 ...
 ok      github.com/useryege/athena/internal/server/cache        0.029s  coverage: 89.3% of statements
 ```

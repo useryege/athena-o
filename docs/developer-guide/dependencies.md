@@ -26,7 +26,7 @@ After your Notifications Engine PR has been merged, Athena needs to be updated t
   - `go.mod`
   - `go.sum`
 
-- If your notifications engine PR included docs changes, run `make codegen` or `make codegen-local`.
+- If your notifications engine PR included docs changes, run `make codegen-local`.
 
 - Create an Athena PR with a `refactor:` type in its title for the above file changes.
 

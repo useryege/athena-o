@@ -48,7 +48,7 @@ export GO111MODULE=on
 
 # protoc_include is the include directory containing the .proto files distributed with protoc binary
 if [ -d /dist/protoc-include ]; then
-    # containerized codegen build
+    # alternate tool distribution path
     protoc_include=/dist/protoc-include
 else
     # local codegen build
