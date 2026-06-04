@@ -50,6 +50,29 @@ const short = (value?: string, head = 10, tail = 8) => (value && value.length > 
 const boolTag = (value?: boolean) => <StatusTag value={fmt(value)} positive={value === true} negative={value === false} />;
 const dangerTag = (value?: boolean) => <StatusTag value={fmt(value)} positive={value === false} negative={value === true} />;
 
+const wormMarketLogo = (item: WormMarketItem) => item.logo || item.eventLogo || '';
+
+export const WormMarketSummary = (props: {item: WormMarketItem; onOpen?: (item: WormMarketItem) => void}) => {
+    const item = props.item;
+    const title = props.onOpen ? (
+        <Button className='worm-market-summary__button' type='link' onClick={() => props.onOpen?.(item)}>
+            {item.title}
+        </Button>
+    ) : (
+        item.title
+    );
+    return (
+        <div className='worm-market-summary'>
+            <CardTitle
+                title={title}
+                subtitle={item.eventTitle || item.category}
+                image={wormMarketLogo(item)}
+                tags={item.marginEnabled ? <Tag color='green'>Margin</Tag> : <Tag>{item.state}</Tag>}
+            />
+        </div>
+    );
+};
+
 export const visibleAccountsForUser = (accounts: Account[], user?: UserInfo): Account[] => {
     if (user?.username === 'admin') {
         return accounts;
@@ -787,11 +810,7 @@ export const WormPage = () => {
     const columns: ColumnsType<WormMarketItem> = [
         {
             title: 'Market',
-            render: item => (
-                <Button type='link' onClick={() => setDetailId(item.conditionId)}>
-                    {item.title}
-                </Button>
-            )
+            render: item => <WormMarketSummary item={item} onOpen={() => setDetailId(item.conditionId)} />
         },
         {title: 'Category', dataIndex: 'category'},
         {title: 'State', dataIndex: 'state'},
@@ -828,12 +847,7 @@ export const WormPage = () => {
                 loading={data.loading}
                 card={item => (
                     <div onClick={() => setDetailId(item.conditionId)}>
-                        <CardTitle
-                            title={item.title}
-                            subtitle={item.eventTitle || item.category}
-                            image={item.logo || item.eventLogo}
-                            tags={item.marginEnabled ? <Tag color='green'>Margin</Tag> : <Tag>{item.state}</Tag>}
-                        />
+                        <WormMarketSummary item={item} />
                         <MetricRow
                             items={[
                                 {label: 'Price', value: item.lastTradePrice},
@@ -844,7 +858,13 @@ export const WormPage = () => {
                     </div>
                 )}
             />
-            <Modal open={!!detailId} title='Market Detail' onCancel={() => setDetailId('')} footer={<Button onClick={() => setDetailId('')}>Close</Button>} width={820}>
+            <Modal
+                className='worm-detail-modal'
+                open={!!detailId}
+                title='Market Detail'
+                onCancel={() => setDetailId('')}
+                footer={<Button onClick={() => setDetailId('')}>Close</Button>}
+                width={860}>
                 <WormDetail detail={detail.data} />
             </Modal>
         </AppPage>
@@ -856,11 +876,24 @@ const WormDetail = (props: {detail?: WormMarketDetail}) => {
     if (!detail) {
         return null;
     }
+    const image = wormMarketLogo(detail.market);
     return (
-        <Space orientation='vertical' style={{width: '100%'}}>
+        <Space className='worm-detail' orientation='vertical' style={{width: '100%'}}>
+            <div className='worm-detail__header'>
+                {image && <img src={image} alt='' />}
+                <div className='worm-detail__heading'>
+                    <Typography.Title level={4}>{detail.market.title || '-'}</Typography.Title>
+                    <Space className='worm-detail__meta' wrap={true}>
+                        {detail.market.eventTitle && <Tag>{detail.market.eventTitle}</Tag>}
+                        {detail.market.category && <Tag>{detail.market.category}</Tag>}
+                        {detail.market.state && <Tag>{detail.market.state}</Tag>}
+                        {detail.market.marginEnabled && <Tag color='green'>Margin</Tag>}
+                    </Space>
+                </div>
+            </div>
             <KeyValueGrid
+                columns={2}
                 items={[
-                    {label: 'Title', value: detail.market.title},
                     {label: 'Condition', value: <TruncatedText value={detail.market.conditionId} copyable={true} />},
                     {label: 'Resolution', value: detail.resolutionDate},
                     {label: 'Maker Fee', value: detail.makerFee},

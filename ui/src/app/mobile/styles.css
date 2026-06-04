@@ -420,6 +420,25 @@ body[data-theme='dark'] .app-page__header {
     font-weight: 800;
 }
 
+.worm-market-summary {
+    min-width: 260px;
+}
+
+.worm-market-summary__button {
+    max-width: 100%;
+    height: auto;
+    min-height: 22px;
+    padding: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+}
+
+.worm-market-summary .card-title__main > span {
+    white-space: normal;
+}
+
 .metric-row {
     margin-top: 12px;
 }
@@ -537,6 +556,51 @@ body[data-theme='dark'] .metric {
     background: color-mix(in srgb, var(--athena-panel-solid) 92%, transparent) !important;
 }
 
+.worm-detail-modal .ant-modal-body {
+    max-height: min(68vh, 680px);
+    overflow: auto;
+}
+
+.worm-detail__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, rgba(224, 95, 63, 0.06), transparent 46%),
+        color-mix(in srgb, var(--athena-panel-solid) 94%, transparent);
+}
+
+.worm-detail__header img {
+    width: 58px;
+    height: 58px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex: 0 0 auto;
+    border: 1px solid var(--athena-border);
+    background: var(--athena-bg-soft);
+}
+
+.worm-detail__heading {
+    min-width: 0;
+    flex: 1;
+}
+
+.worm-detail__heading h4 {
+    margin: 0 0 8px;
+    color: var(--athena-text);
+    font-size: 18px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.worm-detail__meta {
+    row-gap: 6px;
+}
+
 .break-value,
 .truncate-text {
     overflow-wrap: anywhere;
@@ -545,6 +609,33 @@ body[data-theme='dark'] .metric {
 
 .truncate-text {
     max-width: 100%;
+}
+
+@media (max-width: 575px) {
+    .worm-market-summary {
+        min-width: 0;
+    }
+
+    .worm-detail-modal {
+        max-width: calc(100vw - 16px);
+    }
+
+    .worm-detail-modal .ant-modal-body {
+        max-height: 70vh;
+    }
+
+    .worm-detail__header {
+        padding: 12px;
+    }
+
+    .worm-detail__header img {
+        width: 46px;
+        height: 46px;
+    }
+
+    .worm-detail__heading h4 {
+        font-size: 16px;
+    }
 }
 
 .code-block {
