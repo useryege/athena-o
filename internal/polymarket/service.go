@@ -102,62 +102,63 @@ func WithMoverAlertsConfig(config MoverAlertsConfig) ServiceOption {
 
 type Service struct {
 	apiclient.UnimplementedPolymarketServiceServer
-	store                     *polymarketstore.SQLStore
-	gammaClient               sportsLiveGammaClient
-	sportsWSClient            sportsLiveWSClient
-	notificationClientset     notificationapiclient.Clientset
-	wsUseProxy                bool
-	syncInterval              time.Duration
-	eventPageLimit            int
-	hotMarketRefreshInterval  time.Duration
-	moverAlertsConfig         MoverAlertsConfig
-	nowFn                     func() time.Time
-	startStopMu               sync.Mutex
-	started                   bool
-	runCancel                 context.CancelFunc
-	runWG                     sync.WaitGroup
-	cacheMu                   sync.RWMutex
-	baseMarkets               []sportsLiveMarket
-	snapshotItems             []*v1alpha1.PolymarketSportsLiveMarketItem
-	snapshotEvents            []*v1alpha1.PolymarketSportsLiveEventItem
-	sportsWSState             map[string]sportsLiveWSState
-	hotMarketItems            []*v1alpha1.PolymarketHotMarketItem
-	hotMarketMissing          map[string]int
-	realtimeStates            map[string]*realtimeTokenState
-	realtimeSamples           map[string][]realtimeSample
-	snapshotFetched           int64
-	snapshotStale             bool
-	eventFetched              int64
-	eventStale                bool
-	hotMarketFetched          int64
-	hotMarketStale            bool
-	hotMarketCandidateCount   int32
-	realtimeFetched           int64
-	realtimeStale             bool
-	realtimeConnected         bool
-	realtimeLastEventAt       int64
-	realtimeSubscribedMarkets int32
-	realtimeSubscribedTokens  int32
-	moverAlertStates          map[string]moverAlertState
-	sportsKickoffStates       map[string]sportsKickoffState
-	syncGroup                 singleflight.Group
+	store                             *polymarketstore.SQLStore
+	gammaClient                       sportsLiveGammaClient
+	sportsWSClient                    sportsLiveWSClient
+	notificationClientset             notificationapiclient.Clientset
+	wsUseProxy                        bool
+	syncInterval                      time.Duration
+	eventPageLimit                    int
+	hotMarketRefreshInterval          time.Duration
+	moverAlertsConfig                 MoverAlertsConfig
+	nowFn                             func() time.Time
+	startStopMu                       sync.Mutex
+	started                           bool
+	runCancel                         context.CancelFunc
+	runWG                             sync.WaitGroup
+	cacheMu                           sync.RWMutex
+	baseMarkets                       []sportsLiveMarket
+	snapshotItems                     []*v1alpha1.PolymarketSportsLiveMarketItem
+	snapshotEvents                    []*v1alpha1.PolymarketSportsLiveEventItem
+	sportsWSState                     map[string]sportsLiveWSState
+	hotMarketItems                    []*v1alpha1.PolymarketHotMarketItem
+	hotMarketMissing                  map[string]int
+	realtimeStates                    map[string]*realtimeTokenState
+	realtimeSamples                   map[string][]realtimeSample
+	snapshotFetched                   int64
+	snapshotStale                     bool
+	eventFetched                      int64
+	eventStale                        bool
+	hotMarketFetched                  int64
+	hotMarketStale                    bool
+	hotMarketCandidateCount           int32
+	realtimeFetched                   int64
+	realtimeStale                     bool
+	realtimeConnected                 bool
+	realtimeLastEventAt               int64
+	realtimeSubscribedMarkets         int32
+	realtimeSubscribedTokens          int32
+	moverAlertStates                  map[string]moverAlertState
+	sportsLiveMarketAlertsInitialized bool
+	sportsLiveMarketAlertStates       map[string]sportsLiveMarketAlertState
+	syncGroup                         singleflight.Group
 }
 
 func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service {
 	s := &Service{
-		store:                    store,
-		wsUseProxy:               true,
-		syncInterval:             defaultSportsLiveSyncInterval,
-		eventPageLimit:           defaultSportsLiveEventPageLimit,
-		hotMarketRefreshInterval: defaultHotMarketRefreshInterval,
-		moverAlertsConfig:        defaultMoverAlertsConfig(),
-		nowFn:                    time.Now,
-		sportsWSState:            make(map[string]sportsLiveWSState),
-		hotMarketMissing:         make(map[string]int),
-		realtimeStates:           make(map[string]*realtimeTokenState),
-		realtimeSamples:          make(map[string][]realtimeSample),
-		moverAlertStates:         make(map[string]moverAlertState),
-		sportsKickoffStates:      make(map[string]sportsKickoffState),
+		store:                       store,
+		wsUseProxy:                  true,
+		syncInterval:                defaultSportsLiveSyncInterval,
+		eventPageLimit:              defaultSportsLiveEventPageLimit,
+		hotMarketRefreshInterval:    defaultHotMarketRefreshInterval,
+		moverAlertsConfig:           defaultMoverAlertsConfig(),
+		nowFn:                       time.Now,
+		sportsWSState:               make(map[string]sportsLiveWSState),
+		hotMarketMissing:            make(map[string]int),
+		realtimeStates:              make(map[string]*realtimeTokenState),
+		realtimeSamples:             make(map[string][]realtimeSample),
+		moverAlertStates:            make(map[string]moverAlertState),
+		sportsLiveMarketAlertStates: make(map[string]sportsLiveMarketAlertState),
 	}
 	for _, opt := range opts {
 		opt(s)

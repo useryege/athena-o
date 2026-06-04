@@ -77,6 +77,7 @@ func (s *Service) runSportsWSLoop(ctx context.Context) {
 }
 
 func (s *Service) refreshSportsLiveSnapshot(ctx context.Context) error {
+	var alerts []sportsKickoffAlertCandidate
 	_, err, _ := s.syncGroup.Do("sports-live-snapshot", func() (any, error) {
 		markets, fetchErr := s.fetchSportsLiveMarkets(ctx)
 		if fetchErr != nil {
@@ -92,9 +93,13 @@ func (s *Service) refreshSportsLiveSnapshot(ctx context.Context) error {
 		s.snapshotFetched = s.nowUnix()
 		s.snapshotStale = false
 		s.rebuildSnapshotLocked()
+		alerts = s.collectSportsKickoffAlertsLocked(s.snapshotItems, s.snapshotFetched)
 		s.cacheMu.Unlock()
 		return nil, nil
 	})
+	if err == nil {
+		s.sendSportsKickoffAlerts(ctx, alerts)
+	}
 	return err
 }
 
@@ -131,17 +136,21 @@ func (s *Service) fetchSportsLiveMarkets(ctx context.Context) ([]sportsLiveMarke
 			break
 		}
 		for i := range resp.Events {
-			eventSlug := strings.TrimSpace(stringValue(resp.Events[i].Slug))
+			event := resp.Events[i]
+			if boolValue(event.Ended) || (event.Live != nil && !boolValue(event.Live)) {
+				continue
+			}
+			eventSlug := strings.TrimSpace(stringValue(event.Slug))
 			if eventSlug == "" {
 				continue
 			}
-			eventTitle := strings.TrimSpace(stringValue(resp.Events[i].Title))
+			eventTitle := strings.TrimSpace(stringValue(event.Title))
 			eventImage := firstNonEmpty(
-				strings.TrimSpace(stringValue(resp.Events[i].Image)),
-				strings.TrimSpace(stringValue(resp.Events[i].Icon)),
+				strings.TrimSpace(stringValue(event.Image)),
+				strings.TrimSpace(stringValue(event.Icon)),
 			)
-			for j := range resp.Events[i].Markets {
-				market := resp.Events[i].Markets[j]
+			for j := range event.Markets {
+				market := event.Markets[j]
 				if boolValue(market.Closed) {
 					continue
 				}

@@ -10,8 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/notification"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilio "github.com/useryege/athena/util/io"
-	utilpolymarket "github.com/useryege/athena/util/polymarket"
 )
 
 const (
@@ -19,99 +19,82 @@ const (
 	defaultSportsKickoffStateTTL    = 72 * time.Hour
 	defaultSportsKickoffSendTimeout = 10 * time.Second
 	defaultSportsKickoffTitleRunes  = 96
-	defaultSportsKickoffMarketRunes = 80
-	defaultSportsKickoffMarketLimit = 5
 )
 
-type sportsKickoffState struct {
-	WasLive    bool
-	Alerted    bool
+type sportsLiveMarketAlertState struct {
 	LastSeenAt int64
 }
 
 type sportsKickoffAlertCandidate struct {
-	eventSlug string
-	request   *notificationapiclient.SendNotificationRequest
+	conditionID string
+	eventSlug   string
+	request     *notificationapiclient.SendNotificationRequest
 }
 
-func (s *Service) collectSportsKickoffAlertsLocked(snapshot *utilpolymarket.SportsLiveSnapshot, nowUnix int64) []sportsKickoffAlertCandidate {
-	if snapshot == nil {
+func (s *Service) collectSportsKickoffAlertsLocked(items []*v1alpha1.PolymarketSportsLiveMarketItem, nowUnix int64) []sportsKickoffAlertCandidate {
+	if items == nil {
 		return nil
 	}
 	if nowUnix <= 0 {
 		nowUnix = s.nowUnix()
 	}
-	if s.sportsKickoffStates == nil {
-		s.sportsKickoffStates = make(map[string]sportsKickoffState)
+	if s.sportsLiveMarketAlertStates == nil {
+		s.sportsLiveMarketAlertStates = make(map[string]sportsLiveMarketAlertState)
 	}
 
-	for i := range snapshot.Soon {
-		eventSlug := strings.TrimSpace(snapshot.Soon[i].Slug)
-		if eventSlug == "" {
-			continue
-		}
-		state := s.sportsKickoffStates[eventSlug]
-		state.WasLive = false
-		state.LastSeenAt = nowUnix
-		s.sportsKickoffStates[eventSlug] = state
-	}
-
+	initialized := s.sportsLiveMarketAlertsInitialized
 	alerts := make([]sportsKickoffAlertCandidate, 0)
-	for i := range snapshot.Live {
-		event := snapshot.Live[i]
-		eventSlug := strings.TrimSpace(event.Slug)
-		if eventSlug == "" || !isSportsLiveEventStarted(event) {
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		conditionID := strings.TrimSpace(item.ConditionID)
+		if conditionID == "" {
 			continue
 		}
 
-		state, seen := s.sportsKickoffStates[eventSlug]
-		if seen && !state.WasLive && !state.Alerted {
+		_, seen := s.sportsLiveMarketAlertStates[conditionID]
+		s.sportsLiveMarketAlertStates[conditionID] = sportsLiveMarketAlertState{LastSeenAt: nowUnix}
+		if initialized && !seen {
 			alerts = append(alerts, sportsKickoffAlertCandidate{
-				eventSlug: eventSlug,
-				request:   renderSportsKickoffNotification(event),
+				conditionID: conditionID,
+				eventSlug:   strings.TrimSpace(item.EventSlug),
+				request:     renderSportsKickoffNotification(item),
 			})
-			state.Alerted = true
 		}
-		if !seen {
-			state.Alerted = true
-		}
-		state.WasLive = true
-		state.LastSeenAt = nowUnix
-		s.sportsKickoffStates[eventSlug] = state
 	}
 
-	s.cleanupSportsKickoffStatesLocked(nowUnix)
+	s.sportsLiveMarketAlertsInitialized = true
+	s.cleanupSportsLiveMarketAlertStatesLocked(nowUnix)
 	return alerts
 }
 
-func (s *Service) cleanupSportsKickoffStatesLocked(nowUnix int64) {
+func (s *Service) cleanupSportsLiveMarketAlertStatesLocked(nowUnix int64) {
 	cutoff := nowUnix - int64(defaultSportsKickoffStateTTL.Seconds())
-	for eventSlug, state := range s.sportsKickoffStates {
+	for conditionID, state := range s.sportsLiveMarketAlertStates {
 		if state.LastSeenAt > 0 && state.LastSeenAt < cutoff {
-			delete(s.sportsKickoffStates, eventSlug)
+			delete(s.sportsLiveMarketAlertStates, conditionID)
 		}
 	}
 }
 
-func isSportsLiveEventStarted(event utilpolymarket.SportsEventSnapshot) bool {
-	return boolValue(event.Live) && !boolValue(event.Ended)
-}
-
-func renderSportsKickoffNotification(event utilpolymarket.SportsEventSnapshot) *notificationapiclient.SendNotificationRequest {
-	eventSlug := strings.TrimSpace(event.Slug)
-	titleText := firstNonEmpty(strings.TrimSpace(stringValue(event.Title)), eventSlug, "Sports event")
-	title := fmt.Sprintf("Polymarket kickoff: %s", truncateRunes(titleText, defaultSportsKickoffTitleRunes))
+func renderSportsKickoffNotification(item *v1alpha1.PolymarketSportsLiveMarketItem) *notificationapiclient.SendNotificationRequest {
+	eventSlug := strings.TrimSpace(item.EventSlug)
+	conditionID := strings.TrimSpace(item.ConditionID)
+	titleText := firstNonEmpty(strings.TrimSpace(item.Title), strings.TrimSpace(item.MarketSlug), conditionID, "Live sports market")
+	title := fmt.Sprintf("Polymarket live market: %s", truncateRunes(titleText, defaultSportsKickoffTitleRunes))
 
 	body := strings.Join([]string{
-		fmt.Sprintf("Event: %s", titleText),
-		fmt.Sprintf("Score: %s", firstNonEmpty(strings.TrimSpace(stringValue(event.Score)), "-")),
-		fmt.Sprintf("Period: %s", firstNonEmpty(strings.TrimSpace(stringValue(event.Period)), "-")),
-		fmt.Sprintf("Elapsed: %s", firstNonEmpty(strings.TrimSpace(stringValue(event.Elapsed)), "-")),
-		fmt.Sprintf("Game status: %s", firstNonEmpty(strings.TrimSpace(stringValue(event.GameStatus)), "-")),
-		fmt.Sprintf("Start time: %s", firstNonEmpty(formatTimeRFC3339(event.StartTime), "-")),
-		fmt.Sprintf("Event slug: %s", eventSlug),
-		"Moneyline markets:",
-		formatSportsKickoffMarketSummaries(event.Markets),
+		fmt.Sprintf("Market: %s", titleText),
+		fmt.Sprintf("Event slug: %s", firstNonEmpty(eventSlug, "-")),
+		fmt.Sprintf("Market slug: %s", firstNonEmpty(strings.TrimSpace(item.MarketSlug), "-")),
+		fmt.Sprintf("Condition ID: %s", conditionID),
+		fmt.Sprintf("Score: %s", firstNonEmpty(strings.TrimSpace(item.Score), "-")),
+		fmt.Sprintf("Period: %s", firstNonEmpty(strings.TrimSpace(item.Period), "-")),
+		fmt.Sprintf("Elapsed: %s", firstNonEmpty(strings.TrimSpace(item.Elapsed), "-")),
+		fmt.Sprintf("Last update: %s", firstNonEmpty(strings.TrimSpace(item.LastUpdate), "-")),
+		fmt.Sprintf("Volume: %.2f", item.VolumeNum),
+		fmt.Sprintf("Liquidity: %.2f", item.LiquidityNum),
 	}, "\n")
 
 	return &notificationapiclient.SendNotificationRequest{
@@ -122,59 +105,6 @@ func renderSportsKickoffNotification(event utilpolymarket.SportsEventSnapshot) *
 		Link:     polymarketEventLink(eventSlug),
 		Topic:    notification.NotificationTopicPolyKickoff,
 	}
-}
-
-func formatSportsKickoffMarketSummaries(groups []utilpolymarket.SportsMarketGroup) string {
-	lines := make([]string, 0, defaultSportsKickoffMarketLimit)
-	for i := range groups {
-		if strings.TrimSpace(strings.ToLower(groups[i].Type)) != sportsLiveMoneylineMarketType {
-			continue
-		}
-		for j := range groups[i].Markets {
-			if len(lines) >= defaultSportsKickoffMarketLimit {
-				return strings.Join(lines, "\n")
-			}
-			market := groups[i].Markets[j]
-			question := firstNonEmpty(strings.TrimSpace(stringValue(market.Question)), strings.TrimSpace(groups[i].Title), strings.TrimSpace(stringValue(market.Slug)), "Market")
-			outcomes := parseJSONStringList(market.Outcomes)
-			prices := parseJSONStringList(market.OutcomePrices)
-			lines = append(lines, fmt.Sprintf("- %s (%s): %s",
-				truncateRunes(question, defaultSportsKickoffMarketRunes),
-				firstNonEmpty(strings.TrimSpace(stringValue(market.ConditionID)), strings.TrimSpace(stringValue(market.Slug)), "-"),
-				formatSportsKickoffOutcomes(outcomes, prices),
-			))
-		}
-	}
-	if len(lines) == 0 {
-		return "-"
-	}
-	return strings.Join(lines, "\n")
-}
-
-func formatSportsKickoffOutcomes(outcomes, prices []string) string {
-	if len(outcomes) == 0 {
-		return "-"
-	}
-	parts := make([]string, 0, len(outcomes))
-	for i := range outcomes {
-		outcome := strings.TrimSpace(outcomes[i])
-		if outcome == "" {
-			continue
-		}
-		price := ""
-		if i < len(prices) {
-			price = strings.TrimSpace(prices[i])
-		}
-		if price == "" {
-			parts = append(parts, outcome)
-			continue
-		}
-		parts = append(parts, outcome+" "+price)
-	}
-	if len(parts) == 0 {
-		return "-"
-	}
-	return strings.Join(parts, " | ")
 }
 
 func (s *Service) sendSportsKickoffAlerts(ctx context.Context, alerts []sportsKickoffAlertCandidate) {
@@ -196,7 +126,10 @@ func (s *Service) sendSportsKickoffAlerts(ctx context.Context, alerts []sportsKi
 		_, err := client.SendNotification(sendCtx, alert.request)
 		cancel()
 		if err != nil {
-			log.WithError(err).WithField("event_slug", alert.eventSlug).Warn("failed to send polymarket sports kickoff notification")
+			log.WithError(err).
+				WithField("condition_id", alert.conditionID).
+				WithField("event_slug", alert.eventSlug).
+				Warn("failed to send polymarket sports live market notification")
 		}
 	}
 }

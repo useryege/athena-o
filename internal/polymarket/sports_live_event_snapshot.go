@@ -44,9 +44,7 @@ func (s *Service) refreshSportsLiveEventSnapshot(ctx context.Context) error {
 		s.snapshotEvents = events
 		s.eventFetched = nowUnix
 		s.eventStale = false
-		alerts := s.collectSportsKickoffAlertsLocked(result.Snapshot, nowUnix)
 		s.cacheMu.Unlock()
-		s.sendSportsKickoffAlerts(ctx, alerts)
 		return nil, nil
 	})
 	return err
