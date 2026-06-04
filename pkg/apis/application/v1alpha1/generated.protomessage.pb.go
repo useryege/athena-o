@@ -5,14 +5,6 @@
 
 package v1alpha1
 
-func (*AssetState) ProtoMessage() {}
-
-func (*AveDetail) ProtoMessage() {}
-
-func (*AvePair) ProtoMessage() {}
-
-func (*AveTokenDetail) ProtoMessage() {}
-
 func (*BytecodeBlacklistEntry) ProtoMessage() {}
 
 func (*BytecodeDeployment) ProtoMessage() {}
@@ -23,17 +15,11 @@ func (*BytecodeListItem) ProtoMessage() {}
 
 func (*ContractSourceInfo) ProtoMessage() {}
 
-func (*GenesisWalletAssetState) ProtoMessage() {}
-
-func (*GenesisWalletState) ProtoMessage() {}
-
 func (*NotificationDeliveryDetail) ProtoMessage() {}
 
 func (*NotificationDeliveryItem) ProtoMessage() {}
 
 func (*NotificationStatus) ProtoMessage() {}
-
-func (*PairV2State) ProtoMessage() {}
 
 func (*PolymarketHotMarketItem) ProtoMessage() {}
 
@@ -63,29 +49,11 @@ func (*PolymarketSportsLiveTeamItem) ProtoMessage() {}
 
 func (*PolymarketStatus) ProtoMessage() {}
 
-func (*ProjectAveState) ProtoMessage() {}
-
-func (*ProjectBaseView) ProtoMessage() {}
-
-func (*ProjectChainState) ProtoMessage() {}
-
 func (*ProjectDiscoveryStatus) ProtoMessage() {}
-
-func (*ProjectListItem) ProtoMessage() {}
-
-func (*ProjectMeta) ProtoMessage() {}
 
 func (*ProjectOption) ProtoMessage() {}
 
-func (*ProjectReport) ProtoMessage() {}
-
-func (*ProjectView) ProtoMessage() {}
-
-func (*SimulateResult) ProtoMessage() {}
-
 func (*SourceQualityPrompt) ProtoMessage() {}
-
-func (*TokenState) ProtoMessage() {}
 
 func (*WalletDetail) ProtoMessage() {}
 

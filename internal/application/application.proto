@@ -7,99 +7,11 @@ import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto
 
 option go_package = "github.com/useryege/athena/internal/application/apiclient";
 
-// ListProjectsRequest queries the current known project snapshot.
-message ListProjectsRequest {
-  int32 page = 1;
-  int32 pageSize = 2;
-}
-
-// ListProjectsResponse returns the current known project snapshot.
-message ListProjectsResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectListItem items = 1;
-  int64 total = 2;
-  int32 page = 3;
-  int32 pageSize = 4;
-}
-
 message GetProjectDiscoveryStatusRequest {}
 
 message StartProjectDiscoveryRequest {}
 
 message StopProjectDiscoveryRequest {}
-
-// GetProjectRequest queries the project snapshot for a given contract.
-message GetProjectRequest {
-  string contract = 1;
-}
-
-// GetProjectResponse returns the project snapshot for a given contract.
-message GetProjectResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectView item = 1;
-}
-
-message GetProjectBaseRequest {
-  string contract = 1;
-}
-
-message GetProjectBaseResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectBaseView item = 1;
-}
-
-message GetProjectReportRequest {
-  string contract = 1;
-}
-
-message GetProjectReportResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectReport item = 1;
-}
-
-message GetProjectChainStateRequest {
-  string contract = 1;
-}
-
-message GetProjectChainStateResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectChainState item = 1;
-}
-
-message GetProjectSimulationRequest {
-  string contract = 1;
-}
-
-message GetProjectSimulationResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.SimulateResult item = 1;
-}
-
-message GetProjectAveStateRequest {
-	string contract = 1;
-}
-
-message GetProjectAveStateResponse {
-	github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectAveState item = 1;
-}
-
-message RefreshProjectAveDetailRequest {
-	string contract = 1;
-}
-
-message RefreshProjectAveDetailResponse {
-	github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectAveState item = 1;
-}
-
-message ListProjectGenesisWalletsRequest {
-  string contract = 1;
-}
-
-message ListProjectGenesisWalletsResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.GenesisWalletState items = 1;
-}
-
-message ListProjectCreatorHistoricalProjectsRequest {
-  string contract = 1;
-}
-
-message ListProjectCreatorHistoricalProjectsResponse {
-  repeated string items = 1;
-}
 
 // GetContractSourceInfoRequest asks the application service to resolve contract bytecode/source facts.
 message GetContractSourceInfoRequest {
@@ -247,21 +159,9 @@ message GetProjectOptionsResponse {
 }
 
 service ApplicationService {
-  // ListProjects returns the current known project snapshot.
-  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
   rpc GetProjectDiscoveryStatus(GetProjectDiscoveryStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
   rpc StartProjectDiscovery(StartProjectDiscoveryRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
   rpc StopProjectDiscovery(StopProjectDiscoveryRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
-  // GetProject returns the project snapshot for a given contract.
-  rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
-  rpc GetProjectBase(GetProjectBaseRequest) returns (GetProjectBaseResponse);
-  rpc GetProjectReport(GetProjectReportRequest) returns (GetProjectReportResponse);
-  rpc GetProjectChainState(GetProjectChainStateRequest) returns (GetProjectChainStateResponse);
-  rpc GetProjectSimulation(GetProjectSimulationRequest) returns (GetProjectSimulationResponse);
-  rpc GetProjectAveState(GetProjectAveStateRequest) returns (GetProjectAveStateResponse);
-  rpc RefreshProjectAveDetail(RefreshProjectAveDetailRequest) returns (RefreshProjectAveDetailResponse);
-  rpc ListProjectGenesisWallets(ListProjectGenesisWalletsRequest) returns (ListProjectGenesisWalletsResponse);
-  rpc ListProjectCreatorHistoricalProjects(ListProjectCreatorHistoricalProjectsRequest) returns (ListProjectCreatorHistoricalProjectsResponse);
   // GetContractSourceInfo resolves bytecode/source facts for a contract.
   rpc GetContractSourceInfo(GetContractSourceInfoRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ContractSourceInfo);
   // ListBytecodes returns stored bytecodes.

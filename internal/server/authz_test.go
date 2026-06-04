@@ -55,7 +55,7 @@ func TestAuthorizeGRPCPublicMethodAllowsMissingSession(t *testing.T) {
 func TestAuthorizeGRPCProtectedMethodRequiresSession(t *testing.T) {
 	server := newAuthzTestServer(t)
 
-	_, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/ListProjects", testAuthOverride{err: ErrNoSession}, &applicationpkg.ListProjectsRequest{})
+	_, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/GetProjectOptions", testAuthOverride{err: ErrNoSession}, &applicationpkg.GetProjectOptionsRequest{})
 	if status.Code(err) != codes.Unauthenticated {
 		t.Fatalf("error = %v, want Unauthenticated", err)
 	}
@@ -64,8 +64,8 @@ func TestAuthorizeGRPCProtectedMethodRequiresSession(t *testing.T) {
 func TestAuthorizeGRPCReadonlyAndAdminPolicy(t *testing.T) {
 	server := newAuthzTestServer(t)
 
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/ListProjects", testAuthOverride{ctx: claimsCtx("LINGJIE")}, &applicationpkg.ListProjectsRequest{}); err != nil {
-		t.Fatalf("readonly list projects: %v", err)
+	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/GetProjectOptions", testAuthOverride{ctx: claimsCtx("LINGJIE")}, &applicationpkg.GetProjectOptionsRequest{}); err != nil {
+		t.Fatalf("readonly get project options: %v", err)
 	}
 	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/StartProjectDiscovery", testAuthOverride{ctx: claimsCtx("LINGJIE")}, &applicationpkg.StartProjectDiscoveryRequest{}); status.Code(err) != codes.PermissionDenied {
 		t.Fatalf("readonly start discovery error = %v, want PermissionDenied", err)
@@ -121,7 +121,7 @@ func TestAuthorizeGRPCAllowsLocalAccountSelfService(t *testing.T) {
 func TestAuthorizeGRPCRejectsUnmappedBusinessMethods(t *testing.T) {
 	server := newAuthzTestServer(t)
 
-	_, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/FutureMethod", testAuthOverride{ctx: claimsCtx("admin")}, &applicationpkg.ListProjectsRequest{})
+	_, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/FutureMethod", testAuthOverride{ctx: claimsCtx("admin")}, &applicationpkg.ListBytecodesRequest{})
 	if status.Code(err) != codes.PermissionDenied {
 		t.Fatalf("error = %v, want PermissionDenied", err)
 	}

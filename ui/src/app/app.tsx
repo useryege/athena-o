@@ -40,7 +40,6 @@ import {
     PolymarketMoversPage,
     PolymarketRealtimePage,
     PolymarketSportsLivePage,
-    ProjectDetailPage,
     ProjectsPage,
     SettingsPage,
     SourceQualityPromptsPage,
@@ -156,7 +155,6 @@ const AppRoutes = () => (
         <Route path='/' element={<Navigate replace={true} to='/user-info' />} />
         <Route path='/login' element={<LoginPage />} />
         <Route path='/projects' element={<ProjectsPage />} />
-        <Route path='/projects/:contract' element={<ProjectDetailPage />} />
         <Route path='/wallet' element={<WalletsPage />} />
         <Route path='/wallet-blacklist' element={<WalletBlacklistPage />} />
         <Route path='/worm' element={<WormPage />} />

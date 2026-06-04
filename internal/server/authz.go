@@ -52,31 +52,6 @@ func accountName(req any) string {
 	}
 }
 
-func projectContract(req any) string {
-	switch r := req.(type) {
-	case *applicationpkg.GetProjectRequest:
-		return nonEmptyObject(r.GetContract())
-	case *applicationpkg.GetProjectBaseRequest:
-		return nonEmptyObject(r.GetContract())
-	case *applicationpkg.GetProjectReportRequest:
-		return nonEmptyObject(r.GetContract())
-	case *applicationpkg.GetProjectChainStateRequest:
-		return nonEmptyObject(r.GetContract())
-	case *applicationpkg.GetProjectSimulationRequest:
-		return nonEmptyObject(r.GetContract())
-	case *applicationpkg.GetProjectAveStateRequest:
-		return nonEmptyObject(r.GetContract())
-	case *applicationpkg.RefreshProjectAveDetailRequest:
-		return nonEmptyObject(r.GetContract())
-	case *applicationpkg.ListProjectGenesisWalletsRequest:
-		return nonEmptyObject(r.GetContract())
-	case *applicationpkg.ListProjectCreatorHistoricalProjectsRequest:
-		return nonEmptyObject(r.GetContract())
-	default:
-		return "*"
-	}
-}
-
 func notificationObject(req any) string {
 	switch r := req.(type) {
 	case *notificationpkg.GetNotificationDeliveryRequest:
@@ -166,34 +141,24 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/account.AccountService/CreateToken":    {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
 	"/account.AccountService/DeleteToken":    {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
 
-	"/application.ApplicationService/ListProjects":                         fixedRule(rbac.ResourceProjects, rbac.ActionGet),
-	"/application.ApplicationService/GetProject":                           {resource: rbac.ResourceProjects, action: rbac.ActionGet, object: projectContract},
-	"/application.ApplicationService/GetProjectBase":                       {resource: rbac.ResourceProjects, action: rbac.ActionGet, object: projectContract},
-	"/application.ApplicationService/GetProjectReport":                     {resource: rbac.ResourceProjects, action: rbac.ActionGet, object: projectContract},
-	"/application.ApplicationService/GetProjectChainState":                 {resource: rbac.ResourceProjects, action: rbac.ActionGet, object: projectContract},
-	"/application.ApplicationService/GetProjectSimulation":                 {resource: rbac.ResourceProjects, action: rbac.ActionGet, object: projectContract},
-	"/application.ApplicationService/GetProjectAveState":                   {resource: rbac.ResourceProjects, action: rbac.ActionGet, object: projectContract},
-	"/application.ApplicationService/RefreshProjectAveDetail":              {resource: rbac.ResourceProjects, action: rbac.ActionInvoke, object: projectContract},
-	"/application.ApplicationService/ListProjectGenesisWallets":            {resource: rbac.ResourceProjects, action: rbac.ActionGet, object: projectContract},
-	"/application.ApplicationService/ListProjectCreatorHistoricalProjects": {resource: rbac.ResourceProjects, action: rbac.ActionGet, object: projectContract},
-	"/application.ApplicationService/GetProjectOptions":                    fixedRule(rbac.ResourceProjects, rbac.ActionGet),
-	"/application.ApplicationService/GetProjectDiscoveryStatus":            fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionGet),
-	"/application.ApplicationService/StartProjectDiscovery":                fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionUpdate),
-	"/application.ApplicationService/StopProjectDiscovery":                 fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionUpdate),
-	"/application.ApplicationService/GetContractSourceInfo":                {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/ListBytecodes":                        fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/GetBytecode":                          {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/ListBytecodeDeployments":              {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/ListBytecodeBlacklistEntries":         fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/AddBytecodeBlacklistEntry":            {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/UpdateBytecodeBlacklistNote":          {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/DeleteBytecodeBlacklist":              {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/ListSourceQualityPrompts":             fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/GetSourceQualityPrompt":               {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/CreateSourceQualityPrompt":            fixedRule(rbac.ResourceApplication, rbac.ActionUpdate),
-	"/application.ApplicationService/UpdateSourceQualityPrompt":            {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/ActivateSourceQualityPrompt":          {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/DeleteSourceQualityPrompt":            {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/GetProjectOptions":            fixedRule(rbac.ResourceProjects, rbac.ActionGet),
+	"/application.ApplicationService/GetProjectDiscoveryStatus":    fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionGet),
+	"/application.ApplicationService/StartProjectDiscovery":        fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionUpdate),
+	"/application.ApplicationService/StopProjectDiscovery":         fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionUpdate),
+	"/application.ApplicationService/GetContractSourceInfo":        {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/ListBytecodes":                fixedRule(rbac.ResourceApplication, rbac.ActionGet),
+	"/application.ApplicationService/GetBytecode":                  {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/ListBytecodeDeployments":      {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/ListBytecodeBlacklistEntries": fixedRule(rbac.ResourceApplication, rbac.ActionGet),
+	"/application.ApplicationService/AddBytecodeBlacklistEntry":    {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/UpdateBytecodeBlacklistNote":  {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/DeleteBytecodeBlacklist":      {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/ListSourceQualityPrompts":     fixedRule(rbac.ResourceApplication, rbac.ActionGet),
+	"/application.ApplicationService/GetSourceQualityPrompt":       {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/CreateSourceQualityPrompt":    fixedRule(rbac.ResourceApplication, rbac.ActionUpdate),
+	"/application.ApplicationService/UpdateSourceQualityPrompt":    {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/ActivateSourceQualityPrompt":  {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/DeleteSourceQualityPrompt":    {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
 
 	"/notification.NotificationService/GetNotificationStatus":      fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
 	"/notification.NotificationService/ListNotificationDeliveries": fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
