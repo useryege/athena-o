@@ -220,9 +220,9 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
             }
             const basehref = document.querySelector('head > base')?.getAttribute('href')?.replace(/\/$/, '') || '';
             if (isSSO) {
-                window.location.href = `${basehref}/auth/login?return_url=${encodeURIComponent(location.pathname + location.search)}`;
+                window.location.href = `${basehref}/auth/login?return_url=${encodeURIComponent('/settings')}`;
             } else {
-                navigate(`/login?return_url=${encodeURIComponent(location.pathname + location.search)}`);
+                navigate('/login');
             }
         });
         return () => subscription?.unsubscribe();

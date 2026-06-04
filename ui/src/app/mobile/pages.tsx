@@ -116,20 +116,35 @@ const useKeywordParam = (key = 'q') => {
     return [value, setValue] as const;
 };
 
+const postLoginPath = '/settings';
+
 export const LoginPage = () => {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
     const [form] = Form.useForm();
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState('');
-    const returnURL = searchParams.get('return_url') || '/user-info';
+
+    React.useEffect(() => {
+        let active = true;
+        services.users
+            .get()
+            .then(user => {
+                if (active && user.loggedIn) {
+                    navigate(postLoginPath, {replace: true});
+                }
+            })
+            .catch(() => undefined);
+        return () => {
+            active = false;
+        };
+    }, [navigate]);
 
     const submit = async (values: {username: string; password: string}) => {
         setLoading(true);
         setError('');
         try {
             await services.users.login(values.username, values.password);
-            navigate(returnURL, {replace: true});
+            navigate(postLoginPath, {replace: true});
         } catch (err: any) {
             setError(err?.message || 'Login failed');
         } finally {
