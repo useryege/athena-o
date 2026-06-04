@@ -1,5 +1,5 @@
 import {ApiOutlined, CheckCircleOutlined, DeleteOutlined, EyeOutlined, LoginOutlined, PlusOutlined, SaveOutlined, SendOutlined, StopOutlined} from '@ant-design/icons';
-import {Alert, Button, Card, Collapse, Form, Input, InputNumber, Modal, Select, Space, Tabs, Tag, Typography} from 'antd';
+import {Alert, Button, Card, Collapse, Dropdown, Form, Input, InputNumber, Modal, Select, Space, Tabs, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
@@ -15,7 +15,8 @@ import {
     Section,
     StatusTag,
     TruncatedText,
-    useAsyncData
+    useAsyncData,
+    useBreakpoint
 } from './components';
 import {Context} from '../shared/context';
 import {BytecodeBlacklistEntry, BytecodeDeployment, BytecodeListItem, SourceQualityPrompt} from '../shared/services/athena-solidity-service';
@@ -1040,6 +1041,7 @@ export const PolymarketSportsLivePage = () => {
 
 export const NotificationsPage = () => {
     const navigate = useNavigate();
+    const {isMobile} = useBreakpoint();
     const {page, pageSize, setPage} = usePagedParams();
     const [keyword, setKeyword] = useKeywordParam('keyword');
     const [status, setStatus] = React.useState('');
@@ -1048,6 +1050,24 @@ export const NotificationsPage = () => {
         await services.notification.sendTestNotification(topic);
         data.reload();
     };
+    const testNotificationActions = isMobile ? (
+        <Dropdown
+            menu={{
+                items: notificationTestTopics.map(item => ({key: item.topic, label: item.label})),
+                onClick: item => void sendTest(item.key)
+            }}
+            trigger={['click']}>
+            <Button icon={<SendOutlined />}>Test</Button>
+        </Dropdown>
+    ) : (
+        <Space>
+            {notificationTestTopics.map(item => (
+                <Button key={item.topic} icon={<SendOutlined />} onClick={() => void sendTest(item.topic)}>
+                    {item.label}
+                </Button>
+            ))}
+        </Space>
+    );
     const columns: ColumnsType<NotificationDelivery> = [
         {
             title: 'Title',
@@ -1069,15 +1089,7 @@ export const NotificationsPage = () => {
             loading={data.loading}
             error={data.error}
             onRefresh={data.reload}
-            extra={
-                <Space>
-                    {notificationTestTopics.map(item => (
-                        <Button key={item.topic} icon={<SendOutlined />} onClick={() => sendTest(item.topic)}>
-                            {item.label}
-                        </Button>
-                    ))}
-                </Space>
-            }
+            extra={testNotificationActions}
             filters={
                 <Space wrap={true}>
                     <SearchBar value={keyword} onChange={setKeyword} placeholder='Keyword' />
