@@ -242,10 +242,10 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
 
     const notifications = React.useMemo(
         () => ({
-            success: (message: string, description?: string) => ant.notification.success({message, description}),
-            error: (message: string, description?: string) => ant.notification.error({message, description}),
-            info: (message: string, description?: string) => ant.notification.info({message, description}),
-            warning: (message: string, description?: string) => ant.notification.warning({message, description})
+            success: (message: string, description?: string) => ant.notification.success({title: message, description}),
+            error: (message: string, description?: string) => ant.notification.error({title: message, description}),
+            info: (message: string, description?: string) => ant.notification.info({title: message, description}),
+            warning: (message: string, description?: string) => ant.notification.warning({title: message, description})
         }),
         [ant.notification]
     );

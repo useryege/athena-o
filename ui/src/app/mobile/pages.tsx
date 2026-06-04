@@ -177,6 +177,7 @@ export const LoginPage = () => {
 };
 
 export const UserInfoPage = () => {
+    const ctx = React.useContext(Context);
     const user = useAsyncData<UserInfo>(() => services.users.get() as any, []);
     const version = useAsyncData<VersionMessage & {version?: string}>(() => services.version.version() as any, []);
     const uiVersion = typeof SYSTEM_INFO === 'undefined' ? 'latest' : SYSTEM_INFO.version;
@@ -200,6 +201,16 @@ export const UserInfoPage = () => {
                         {label: 'Version', value: version.data?.Version || version.data?.version || '-'}
                     ]}
                 />
+            </Section>
+            <Section title='Session'>
+                <Button
+                    danger={true}
+                    onClick={() => {
+                        ctx.notifications.info('Logging out');
+                        window.location.href = requests.toAbsURL('/auth/logout');
+                    }}>
+                    Log out
+                </Button>
             </Section>
         </AppPage>
     );
@@ -1169,7 +1180,6 @@ export const NotificationsDetailPage = () => {
 };
 
 export const SettingsPage = () => {
-    const ctx = React.useContext(Context);
     const user = useAsyncData<UserInfo>(() => services.users.get() as any, []);
     const accounts = useAsyncData<Account[]>(() => services.accounts.list() as any, []);
     const discovery = useAsyncData(() => services.athenaApplication.getProjectDiscoveryStatus(), []);
@@ -1219,16 +1229,6 @@ export const SettingsPage = () => {
                         <CardTitle title={item.name} subtitle={(item.capabilities || []).join(', ')} tags={item.enabled ? <Tag color='green'>Enabled</Tag> : <Tag>Disabled</Tag>} />
                     )}
                 />
-            </Section>
-            <Section title='Session'>
-                <Button
-                    danger={true}
-                    onClick={() => {
-                        ctx.notifications.info('Logging out');
-                        window.location.href = requests.toAbsURL('/auth/logout');
-                    }}>
-                    Log out
-                </Button>
             </Section>
         </AppPage>
     );

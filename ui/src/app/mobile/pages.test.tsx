@@ -2,7 +2,7 @@ import {Account, UserInfo} from '../shared/models';
 import * as React from 'react';
 import {MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
 import renderer, {act} from 'react-test-renderer';
-import {LoginPage, WormMarketSummary, notificationTestTopics, visibleAccountsForUser} from './pages';
+import {LoginPage, SettingsPage, UserInfoPage, WormMarketSummary, notificationTestTopics, visibleAccountsForUser} from './pages';
 import {WormMarketItem} from '../shared/services/worm-service';
 import {services} from '../shared/services';
 
@@ -70,6 +70,8 @@ const renderLoginRoute = async (initialEntry = '/login') => {
 
 const currentLocation = (tree: renderer.ReactTestRenderer) => tree.root.findByProps({'data-testid': 'location'}).children.join('');
 
+const isLogoutButton = (node: renderer.ReactTestInstance) => node.props?.danger === true && node.props?.children === 'Log out';
+
 test('LoginPage redirects successful local login to settings and ignores return_url', async () => {
     jest.spyOn(services.users, 'get').mockResolvedValue(loggedOutUser);
     const login = jest.spyOn(services.users, 'login').mockResolvedValue({token: 'created'});
@@ -100,6 +102,31 @@ test('LoginPage keeps logged-out users on login form', async () => {
 
     expect(currentLocation(tree)).toBe('/login');
     expect(tree.root.findAllByProps({htmlType: 'submit'})).toHaveLength(1);
+});
+
+test('UserInfoPage renders the session logout action', async () => {
+    jest.spyOn(services.users, 'get').mockResolvedValue(user('admin'));
+    jest.spyOn(services.version, 'version').mockResolvedValue({Version: 'test-version'} as any);
+
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+        tree = renderer.create(<UserInfoPage />);
+    });
+
+    expect(tree.root.findAll(isLogoutButton)).toHaveLength(1);
+});
+
+test('SettingsPage does not render the session logout action', async () => {
+    jest.spyOn(services.users, 'get').mockResolvedValue(user('admin'));
+    jest.spyOn(services.accounts, 'list').mockResolvedValue(accounts);
+    jest.spyOn(services.athenaApplication, 'getProjectDiscoveryStatus').mockResolvedValue({started: false, status: 'stopped'});
+
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+        tree = renderer.create(<SettingsPage />);
+    });
+
+    expect(tree.root.findAll(isLogoutButton)).toHaveLength(0);
 });
 
 test('visibleAccountsForUser returns all accounts for admin', () => {
