@@ -60,8 +60,6 @@ const (
 	DefaultPortNotification = 8086
 	// Athena Wallet
 	DefaultPortWallet = 8088
-	// Athena Solidity
-	DefaultPortSolidity = 8090
 	// Athena Polymarket
 	DefaultPortPolymarket = 8092
 )
@@ -74,7 +72,6 @@ const (
 	DefaultAddressWorm           = "0.0.0.0"
 	DefaultAddressNotification   = "0.0.0.0"
 	DefaultAddressWallet         = "0.0.0.0"
-	DefaultAddressSolidity       = "0.0.0.0"
 	DefaultAddressPolymarket     = "0.0.0.0"
 )
 

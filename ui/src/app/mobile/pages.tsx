@@ -19,10 +19,15 @@ import {
     useBreakpoint
 } from './components';
 import {Context} from '../shared/context';
-import {BytecodeBlacklistEntry, BytecodeDeployment, BytecodeListItem, SourceQualityPrompt} from '../shared/services/athena-solidity-service';
-import {ProjectListItem} from '../shared/services/athena-application-service';
+import {
+    BytecodeBlacklistEntry,
+    BytecodeDeployment,
+    BytecodeListItem,
+    GenesisWalletState,
+    ProjectListItem,
+    SourceQualityPrompt
+} from '../shared/services/athena-application-service';
 import {Account, UserInfo, VersionMessage} from '../shared/models';
-import {GenesisWalletState} from '../shared/services/athena-application-service';
 import {NotificationDelivery} from '../shared/services/notification-service';
 import {
     PolymarketHotMarketItem,
@@ -87,9 +92,9 @@ export const notificationTestTopics = [
 ];
 
 const rbacResources = {
+    application: 'application',
     applicationDiscovery: 'application-discovery',
     notifications: 'notifications',
-    solidity: 'solidity',
     wallets: 'wallets'
 };
 
@@ -665,9 +670,9 @@ export const BytecodesPage = () => {
     const navigate = useNavigate();
     const {page, pageSize, setPage} = usePagedParams();
     const [codeHash, setCodeHash] = useKeywordParam('codeHash');
-    const data = useAsyncData(() => services.athenaSolidity.listBytecodes({page, pageSize, codeHash: codeHash || undefined}), [page, pageSize, codeHash]);
+    const data = useAsyncData(() => services.athenaApplication.listBytecodes({page, pageSize, codeHash: codeHash || undefined}), [page, pageSize, codeHash]);
     const columns: ColumnsType<BytecodeListItem> = [
-        {title: 'Code Hash', render: item => <Link to={`/solidity/bytecodes/${encodeURIComponent(item.codeHash || '')}`}>{short(item.codeHash)}</Link>},
+        {title: 'Code Hash', render: item => <Link to={`/application/bytecodes/${encodeURIComponent(item.codeHash || '')}`}>{short(item.codeHash)}</Link>},
         {title: 'Deployments', dataIndex: 'deploymentCount'},
         {title: 'Runtime Size', dataIndex: 'runtimeBytecodeSize'},
         {title: 'Open Source', render: item => boolTag(item.isOpenSource)},
@@ -690,7 +695,7 @@ export const BytecodesPage = () => {
                 pageSize={pageSize}
                 onPageChange={setPage}
                 card={item => (
-                    <div onClick={() => navigate(`/solidity/bytecodes/${encodeURIComponent(item.codeHash || '')}`)}>
+                    <div onClick={() => navigate(`/application/bytecodes/${encodeURIComponent(item.codeHash || '')}`)}>
                         <CardTitle
                             title={short(item.codeHash)}
                             subtitle={<TruncatedText value={item.codeHash} copyable={true} />}
@@ -715,7 +720,7 @@ export const BytecodeDetailPage = () => {
     const decoded = decodeURIComponent(codeHash);
     const detail = useAsyncData<any>(
         () =>
-            Promise.all([services.athenaSolidity.getBytecode(decoded), services.athenaSolidity.listBytecodeDeployments(decoded, {page: 1, pageSize: 20})]).then(
+            Promise.all([services.athenaApplication.getBytecode(decoded), services.athenaApplication.listBytecodeDeployments(decoded, {page: 1, pageSize: 20})]).then(
                 ([bytecode, deployments]) => ({bytecode, deployments})
             ) as any,
         [decoded]
@@ -763,14 +768,14 @@ export const BytecodeDetailPage = () => {
 
 export const BytecodeBlacklistPage = () => {
     const ctx = React.useContext(Context);
-    const data = useAsyncData(() => services.athenaSolidity.listBytecodeBlacklistEntries(), []);
-    const canUpdate = useCanI(rbacResources.solidity, rbacActions.update);
+    const data = useAsyncData(() => services.athenaApplication.listBytecodeBlacklistEntries(), []);
+    const canUpdate = useCanI(rbacResources.application, rbacActions.update);
     const canModify = canUpdate.data === true;
     const add = async (values: {sourceContract: string; note?: string; sourceChainID?: number}) => {
         if (!canModify) {
             return;
         }
-        await services.athenaSolidity.addBytecodeBlacklistEntry(values.sourceContract, values.note || '', values.sourceChainID);
+        await services.athenaApplication.addBytecodeBlacklistEntry(values.sourceContract, values.note || '', values.sourceChainID);
         ctx.notifications.success('Bytecode blacklisted');
         data.reload();
     };
@@ -782,7 +787,7 @@ export const BytecodeBlacklistPage = () => {
             title: 'Delete bytecode blacklist entry?',
             content: codeHash,
             onOk: async () => {
-                await services.athenaSolidity.deleteBytecodeBlacklist(codeHash);
+                await services.athenaApplication.deleteBytecodeBlacklist(codeHash);
                 data.reload();
             }
         });
@@ -805,17 +810,17 @@ export const BytecodeBlacklistPage = () => {
 export const SourceQualityPromptsPage = () => {
     const ctx = React.useContext(Context);
     const [editing, setEditing] = React.useState<SourceQualityPrompt>(null);
-    const data = useAsyncData(() => services.athenaSolidity.listSourceQualityPrompts(), []);
-    const canUpdate = useCanI(rbacResources.solidity, rbacActions.update);
+    const data = useAsyncData(() => services.athenaApplication.listSourceQualityPrompts(), []);
+    const canUpdate = useCanI(rbacResources.application, rbacActions.update);
     const canModify = canUpdate.data === true;
     const save = async (values: {name: string; systemPrompt: string}) => {
         if (!canModify) {
             return;
         }
         if (editing?.id) {
-            await services.athenaSolidity.updateSourceQualityPrompt(editing.id, values.name, values.systemPrompt);
+            await services.athenaApplication.updateSourceQualityPrompt(editing.id, values.name, values.systemPrompt);
         } else {
-            await services.athenaSolidity.createSourceQualityPrompt(values.name, values.systemPrompt);
+            await services.athenaApplication.createSourceQualityPrompt(values.name, values.systemPrompt);
         }
         setEditing(null);
         data.reload();
@@ -850,7 +855,7 @@ export const SourceQualityPromptsPage = () => {
                                     icon={<CheckCircleOutlined />}
                                     disabled={!canModify || !item.id}
                                     onClick={async () => {
-                                        await services.athenaSolidity.activateSourceQualityPrompt(item.id || 0);
+                                        await services.athenaApplication.activateSourceQualityPrompt(item.id || 0);
                                         ctx.notifications.success('Prompt activated');
                                         data.reload();
                                     }}>

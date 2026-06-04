@@ -12,7 +12,6 @@ import (
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
 	athenaPolymarketCommands "github.com/useryege/athena/cmd/athena-polymarket/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
-	athenaSolidityCommands "github.com/useryege/athena/cmd/athena-solidity/commands"
 	athenaWalletCommands "github.com/useryege/athena/cmd/athena-wallet/commands"
 	athenaWormCommands "github.com/useryege/athena/cmd/athena-worm/commands"
 	"github.com/useryege/athena/util/log"
@@ -44,8 +43,6 @@ func main() {
 		command = athenaNotificationCommands.NewCommand()
 	case "athena-polymarket":
 		command = athenaPolymarketCommands.NewCommand()
-	case "athena-solidity":
-		command = athenaSolidityCommands.NewCommand()
 	case "athena-wallet":
 		command = athenaWalletCommands.NewCommand()
 	case "athena-application":

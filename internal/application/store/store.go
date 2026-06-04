@@ -191,6 +191,34 @@ type ProjectCreatorHistoricalProjectStore interface {
 	ListProjectCreatorHistoricalProjectsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address][]ProjectCreatorHistoricalProject, error)
 }
 
+type BytecodeStore interface {
+	UpsertBytecode(ctx context.Context, codeHash common.Hash, runtimeBytecode []byte) error
+	UpsertContractBytecodeDeployment(ctx context.Context, item ContractBytecodeDeployment) error
+	GetBytecode(ctx context.Context, codeHash common.Hash) (*Bytecode, error)
+	UpdateBytecodeSourceCode(ctx context.Context, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, origin string) error
+	UpdateBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, report string, origin string, promptVersion int64) error
+	ListBytecodes(ctx context.Context, codeHash *common.Hash, limit, offset int64) ([]BytecodeListRecord, int64, error)
+	GetBytecodeDetail(ctx context.Context, codeHash common.Hash) (*BytecodeDetailRecord, error)
+	ListBytecodeDeployments(ctx context.Context, codeHash common.Hash, chainID int64, contract *common.Address, limit, offset int64) ([]BytecodeDeploymentRecord, int64, error)
+	IsBytecodeBlacklisted(ctx context.Context, codeHash common.Hash) (bool, error)
+	ListBytecodeBlacklistEntries(ctx context.Context) ([]BytecodeBlacklistEntry, error)
+	AddBytecodeBlacklistEntry(ctx context.Context, item BytecodeBlacklistEntry) error
+	UpdateBytecodeBlacklistNote(ctx context.Context, codeHash common.Hash, note string) error
+	DeleteBytecodeBlacklist(ctx context.Context, codeHash common.Hash) error
+	GetBytecodeBlacklistEntry(ctx context.Context, codeHash common.Hash) (*BytecodeBlacklistEntry, error)
+}
+
+type SourceQualityPromptStore interface {
+	EnsureDefaultSourceQualityPrompt(ctx context.Context, name, systemPrompt string) (*SourceQualityPrompt, error)
+	GetActiveSourceQualityPrompt(ctx context.Context) (*SourceQualityPrompt, error)
+	ListSourceQualityPrompts(ctx context.Context) ([]SourceQualityPrompt, error)
+	GetSourceQualityPrompt(ctx context.Context, id int64) (*SourceQualityPrompt, error)
+	CreateSourceQualityPrompt(ctx context.Context, name, systemPrompt string) (*SourceQualityPrompt, error)
+	UpdateSourceQualityPrompt(ctx context.Context, id int64, name, systemPrompt string) (*SourceQualityPrompt, error)
+	ActivateSourceQualityPrompt(ctx context.Context, id int64) (*SourceQualityPrompt, error)
+	DeleteSourceQualityPrompt(ctx context.Context, id int64) error
+}
+
 type Store interface {
 	ProjectStore
 	ProjectBaseStore
@@ -203,4 +231,6 @@ type Store interface {
 	ProjectAveRefreshStore
 	ProjectGenesisWalletStore
 	ProjectCreatorHistoricalProjectStore
+	BytecodeStore
+	SourceQualityPromptStore
 }

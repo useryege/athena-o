@@ -26,11 +26,12 @@ import (
 	"github.com/useryege/athena/internal/application/model"
 	"github.com/useryege/athena/internal/application/persistence"
 	"github.com/useryege/athena/internal/application/pipeline"
+	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
-	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ave"
+	"github.com/useryege/athena/util/ethereumapi"
 	"github.com/useryege/athena/util/redisport"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -51,10 +52,12 @@ type Service struct {
 	wethDecimals      uint8
 	usdtDecimals      uint8
 	athenaContract    common.Address
+	chainID           int64
 
-	aveConfig         ave.Config
-	liquidityLocker   []common.Address
-	solidityClientSet solidityapiclient.Clientset
+	aveConfig             ave.Config
+	liquidityLocker       []common.Address
+	apiFetcher            ethereumapi.EthereumAPI
+	sourceQualityAnalyzer sourcequality.Analyzer
 
 	pipeline        *pipeline.ProjectPipeline
 	athenaFetcher   evm.AthenaFetcher
@@ -62,7 +65,7 @@ type Service struct {
 	walletBlacklist walletBlacklistLister
 
 	dbStore           appstore.Store
-	store             appstore.ProjectStore
+	store             appstore.Store
 	componentCache    appcache.ProjectComponentCache
 	componentEventBus appcomponents.EventBus
 	persistenceFlush  *persistence.Flusher
@@ -88,28 +91,50 @@ type Service struct {
 	discoveryIndexerFactory func() (pipeline.ProjectDiscoveryIndexer, error)
 }
 
-func NewService(nodeClient *ethclient.Client, v2FactoryContract common.Address, wethContract common.Address, usdtContract common.Address, wethDecimals uint8, usdtDecimals uint8, athenaContract common.Address, aveConfig ave.Config, store appstore.Store, liquidityLocker []common.Address, redisClient redisport.Client, solidityClientSet solidityapiclient.Clientset, walletClientSet walletapiclient.Clientset) (*Service, error) {
-	bufferedStore, err := persistence.NewRedisBufferedStore(store, redisClient)
+type ServiceOpts struct {
+	NodeClient            *ethclient.Client
+	V2FactoryContract     common.Address
+	WethContract          common.Address
+	UsdtContract          common.Address
+	WethDecimals          uint8
+	UsdtDecimals          uint8
+	AthenaContract        common.Address
+	ChainID               int64
+	AveConfig             ave.Config
+	Store                 appstore.Store
+	LiquidityLocker       []common.Address
+	RedisClient           redisport.Client
+	APIFetcher            ethereumapi.EthereumAPI
+	SourceQualityAnalyzer sourcequality.Analyzer
+	WalletClientset       walletapiclient.Clientset
+	CodeAtFunc            func(ctx context.Context, contract common.Address) ([]byte, error)
+}
+
+func NewService(opts ServiceOpts) (*Service, error) {
+	bufferedStore, err := persistence.NewRedisBufferedStore(opts.Store, opts.RedisClient)
 	if err != nil {
 		return nil, err
 	}
 	return &Service{
-		nodeClient:            nodeClient,
-		dbStore:               store,
+		nodeClient:            opts.NodeClient,
+		dbStore:               opts.Store,
 		store:                 bufferedStore,
-		componentCache:        appcache.NewProjectComponentCache(redisClient),
-		componentEventBus:     appcomponents.NewRedisEventBus(redisClient),
+		componentCache:        appcache.NewProjectComponentCache(opts.RedisClient),
+		componentEventBus:     appcomponents.NewRedisEventBus(opts.RedisClient),
 		persistenceFlush:      persistence.NewFlusher(bufferedStore, time.Minute),
-		walletBlacklist:       newWalletBlacklistClientLister(walletClientSet),
-		v2FactoryContract:     v2FactoryContract,
-		wethContract:          wethContract,
-		usdtContract:          usdtContract,
-		wethDecimals:          wethDecimals,
-		usdtDecimals:          usdtDecimals,
-		athenaContract:        athenaContract,
-		aveConfig:             aveConfig,
-		liquidityLocker:       liquidityLocker,
-		solidityClientSet:     solidityClientSet,
+		walletBlacklist:       newWalletBlacklistClientLister(opts.WalletClientset),
+		v2FactoryContract:     opts.V2FactoryContract,
+		wethContract:          opts.WethContract,
+		usdtContract:          opts.UsdtContract,
+		wethDecimals:          opts.WethDecimals,
+		usdtDecimals:          opts.UsdtDecimals,
+		athenaContract:        opts.AthenaContract,
+		chainID:               opts.ChainID,
+		aveConfig:             opts.AveConfig,
+		liquidityLocker:       opts.LiquidityLocker,
+		apiFetcher:            opts.APIFetcher,
+		sourceQualityAnalyzer: opts.SourceQualityAnalyzer,
+		codeAtFunc:            opts.CodeAtFunc,
 		projectRefreshLastRun: map[common.Address]time.Time{},
 		projectRefreshWindow:  projectRefreshThrottleInterval,
 	}, nil
@@ -196,6 +221,10 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
+	s.chainID = chainID.Int64()
+	if _, err := s.store.EnsureDefaultSourceQualityPrompt(ctx, "Default Solidity Source Quality Prompt", sourcequality.DefaultSystemPrompt); err != nil {
+		return nil, nil, nil, nil, err
+	}
 
 	aveStore, _ := s.store.(avecomponent.Store)
 	aveComponent, err = avecomponent.NewComponent(avecomponent.Options{
@@ -243,11 +272,11 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 		Bus:   s.componentEventBus,
 	})
 	bytecodeComponent := bytecodecomponent.NewComponent(bytecodecomponent.Options{
-		Store:   componentStore,
-		Cache:   s.componentCache,
-		Clients: s.solidityClientSet,
-		ChainID: chainID.Int64(),
-		Bus:     s.componentEventBus,
+		Store:    componentStore,
+		Cache:    s.componentCache,
+		Resolver: s,
+		ChainID:  chainID.Int64(),
+		Bus:      s.componentEventBus,
 	})
 	requiredReportComponents := []string{
 		appstore.ProjectComponentInitializer,
@@ -428,16 +457,6 @@ func projectDiscoveryStatus(started bool) *v1alpha1.ProjectDiscoveryStatus {
 		Started: started,
 		Status:  statusText,
 	}
-}
-
-func (s *Service) fetchContractBytecode(ctx context.Context, contract common.Address) ([]byte, error) {
-	if s.codeAtFunc != nil {
-		return s.codeAtFunc(ctx, contract)
-	}
-	if s.nodeClient == nil {
-		return nil, errors.New("node client is not configured")
-	}
-	return s.nodeClient.CodeAt(ctx, contract, nil)
 }
 
 func genesisWalletMetasFromStore(items []appstore.ProjectGenesisWallet) []GenesisWalletMeta {

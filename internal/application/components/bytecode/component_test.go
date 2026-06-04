@@ -6,12 +6,10 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	appcomponents "github.com/useryege/athena/internal/application/components"
 	appstore "github.com/useryege/athena/internal/application/store"
-	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	applicationv1alpha1 "github.com/useryege/athena/pkg/apis/application/v1alpha1"
-	utilio "github.com/useryege/athena/util/io"
-	"google.golang.org/grpc"
 )
 
 func TestComponentHandleRefreshWritesStateAndPublishes(t *testing.T) {
@@ -22,19 +20,18 @@ func TestComponentHandleRefreshWritesStateAndPublishes(t *testing.T) {
 			contract: {Contract: contract},
 		},
 	}
-	client := &solidityClientFake{
+	resolver := &contractSourceResolverFake{
 		info: &applicationv1alpha1.ContractSourceInfo{
 			IsBytecodeBlacklisted: true,
 			CodeBinHash:           "0x2222222222222222222222222222222222222222222222222222222222222222",
 		},
 	}
-	clients := &solidityClientsetFake{client: client}
 	bus := &eventBusFake{}
 	component := NewComponent(Options{
-		Store:   store,
-		Clients: clients,
-		ChainID: 1,
-		Bus:     bus,
+		Store:    store,
+		Resolver: resolver,
+		ChainID:  1,
+		Bus:      bus,
 	})
 	if component == nil {
 		t.Fatal("component is nil")
@@ -47,8 +44,8 @@ func TestComponentHandleRefreshWritesStateAndPublishes(t *testing.T) {
 		t.Fatalf("handle event: %v", err)
 	}
 
-	if clients.newClientCalls != 1 {
-		t.Fatalf("new client calls = %d, want 1", clients.newClientCalls)
+	if resolver.calls != 1 {
+		t.Fatalf("resolver calls = %d, want 1", resolver.calls)
 	}
 	if store.upsertBytecodeFactCalls != 1 {
 		t.Fatalf("upsert bytecode fact calls = %d, want 1", store.upsertBytecodeFactCalls)
@@ -88,22 +85,13 @@ func (s *bytecodeStoreFake) UpsertProjectBytecodeFact(context.Context, appstore.
 	return nil
 }
 
-type solidityClientsetFake struct {
-	client         solidityapiclient.SolidityServiceClient
-	newClientCalls int
+type contractSourceResolverFake struct {
+	info  *applicationv1alpha1.ContractSourceInfo
+	calls int
 }
 
-func (c *solidityClientsetFake) NewSolidityServiceClient() (utilio.Closer, solidityapiclient.SolidityServiceClient, error) {
-	c.newClientCalls++
-	return utilio.NopCloser, c.client, nil
-}
-
-type solidityClientFake struct {
-	solidityapiclient.SolidityServiceClient
-	info *applicationv1alpha1.ContractSourceInfo
-}
-
-func (c *solidityClientFake) GetContractSourceInfo(context.Context, *solidityapiclient.GetContractSourceInfoRequest, ...grpc.CallOption) (*applicationv1alpha1.ContractSourceInfo, error) {
+func (c *contractSourceResolverFake) GetContractSourceInfo(context.Context, *applicationpkg.GetContractSourceInfoRequest) (*applicationv1alpha1.ContractSourceInfo, error) {
+	c.calls++
 	return c.info, nil
 }
 

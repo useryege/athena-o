@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
-	soliditysqlc "github.com/useryege/athena/internal/solidity/store/sqlc"
+	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 )
 
 var (
@@ -75,9 +75,9 @@ type BytecodeDeploymentRecord struct {
 
 func (s *SQLStore) UpsertBytecode(ctx context.Context, codeHash common.Hash, runtimeBytecode []byte) error {
 	if s.queries == nil {
-		return fmt.Errorf("solidity postgres database is not configured")
+		return fmt.Errorf("application postgres database is not configured")
 	}
-	err := s.queries.UpsertBytecode(ctx, soliditysqlc.UpsertBytecodeParams{
+	err := s.queries.UpsertBytecode(ctx, appsqlc.UpsertBytecodeParams{
 		CodeHash:        codeHash.Bytes(),
 		RuntimeBytecode: runtimeBytecode,
 	})
@@ -89,9 +89,9 @@ func (s *SQLStore) UpsertBytecode(ctx context.Context, codeHash common.Hash, run
 
 func (s *SQLStore) UpsertContractBytecodeDeployment(ctx context.Context, item ContractBytecodeDeployment) error {
 	if s.queries == nil {
-		return fmt.Errorf("solidity postgres database is not configured")
+		return fmt.Errorf("application postgres database is not configured")
 	}
-	err := s.queries.UpsertContractBytecodeDeployment(ctx, soliditysqlc.UpsertContractBytecodeDeploymentParams{
+	err := s.queries.UpsertContractBytecodeDeployment(ctx, appsqlc.UpsertContractBytecodeDeploymentParams{
 		ChainID:  item.ChainID,
 		Contract: item.Contract.Bytes(),
 		CodeHash: item.CodeHash.Bytes(),
@@ -104,7 +104,7 @@ func (s *SQLStore) UpsertContractBytecodeDeployment(ctx context.Context, item Co
 
 func (s *SQLStore) GetBytecode(ctx context.Context, codeHash common.Hash) (*Bytecode, error) {
 	if s.queries == nil {
-		return nil, fmt.Errorf("solidity postgres database is not configured")
+		return nil, fmt.Errorf("application postgres database is not configured")
 	}
 	row, err := s.queries.GetBytecode(ctx, codeHash.Bytes())
 	if err != nil {
@@ -119,9 +119,9 @@ func (s *SQLStore) GetBytecode(ctx context.Context, codeHash common.Hash) (*Byte
 
 func (s *SQLStore) UpdateBytecodeSourceCode(ctx context.Context, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, origin string) error {
 	if s.queries == nil {
-		return fmt.Errorf("solidity postgres database is not configured")
+		return fmt.Errorf("application postgres database is not configured")
 	}
-	err := s.queries.UpdateBytecodeSourceCode(ctx, soliditysqlc.UpdateBytecodeSourceCodeParams{
+	err := s.queries.UpdateBytecodeSourceCode(ctx, appsqlc.UpdateBytecodeSourceCodeParams{
 		CodeHash:         codeHash.Bytes(),
 		SourceCode:       textValue(sourceCode),
 		SourceCodeHash:   nullableHashBytes(sourceCodeHash),
@@ -135,9 +135,9 @@ func (s *SQLStore) UpdateBytecodeSourceCode(ctx context.Context, codeHash common
 
 func (s *SQLStore) UpdateBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, report string, origin string, promptVersion int64) error {
 	if s.queries == nil {
-		return fmt.Errorf("solidity postgres database is not configured")
+		return fmt.Errorf("application postgres database is not configured")
 	}
-	err := s.queries.UpdateBytecodeSourceQualityReport(ctx, soliditysqlc.UpdateBytecodeSourceQualityReportParams{
+	err := s.queries.UpdateBytecodeSourceQualityReport(ctx, appsqlc.UpdateBytecodeSourceQualityReportParams{
 		CodeHash:                   codeHash.Bytes(),
 		SourceQualityReport:        textValue(report),
 		SourceQualityReportOrigin:  nullableTrimmedText(origin),
@@ -151,9 +151,9 @@ func (s *SQLStore) UpdateBytecodeSourceQualityReport(ctx context.Context, codeHa
 
 func (s *SQLStore) ListBytecodes(ctx context.Context, codeHash *common.Hash, limit, offset int64) ([]BytecodeListRecord, int64, error) {
 	if s.queries == nil {
-		return nil, 0, fmt.Errorf("solidity postgres database is not configured")
+		return nil, 0, fmt.Errorf("application postgres database is not configured")
 	}
-	rows, err := s.queries.ListBytecodes(ctx, soliditysqlc.ListBytecodesParams{
+	rows, err := s.queries.ListBytecodes(ctx, appsqlc.ListBytecodesParams{
 		CodeHash: nullableHashPtrBytes(codeHash),
 		Limit:    int32(limit),
 		Offset:   int32(offset),
@@ -176,7 +176,7 @@ func (s *SQLStore) ListBytecodes(ctx context.Context, codeHash *common.Hash, lim
 
 func (s *SQLStore) GetBytecodeDetail(ctx context.Context, codeHash common.Hash) (*BytecodeDetailRecord, error) {
 	if s.queries == nil {
-		return nil, fmt.Errorf("solidity postgres database is not configured")
+		return nil, fmt.Errorf("application postgres database is not configured")
 	}
 	row, err := s.queries.GetBytecodeDetail(ctx, codeHash.Bytes())
 	if err != nil {
@@ -191,9 +191,9 @@ func (s *SQLStore) GetBytecodeDetail(ctx context.Context, codeHash common.Hash) 
 
 func (s *SQLStore) ListBytecodeDeployments(ctx context.Context, codeHash common.Hash, chainID int64, contract *common.Address, limit, offset int64) ([]BytecodeDeploymentRecord, int64, error) {
 	if s.queries == nil {
-		return nil, 0, fmt.Errorf("solidity postgres database is not configured")
+		return nil, 0, fmt.Errorf("application postgres database is not configured")
 	}
-	rows, err := s.queries.ListBytecodeDeployments(ctx, soliditysqlc.ListBytecodeDeploymentsParams{
+	rows, err := s.queries.ListBytecodeDeployments(ctx, appsqlc.ListBytecodeDeploymentsParams{
 		CodeHash: codeHash.Bytes(),
 		ChainID:  nullableInt64(chainID),
 		Contract: nullableAddressPtrBytes(contract),
@@ -218,7 +218,7 @@ func (s *SQLStore) ListBytecodeDeployments(ctx context.Context, codeHash common.
 
 func (s *SQLStore) IsBytecodeBlacklisted(ctx context.Context, codeHash common.Hash) (bool, error) {
 	if s.queries == nil {
-		return false, fmt.Errorf("solidity postgres database is not configured")
+		return false, fmt.Errorf("application postgres database is not configured")
 	}
 	exists, err := s.queries.IsBytecodeBlacklisted(ctx, codeHash.Bytes())
 	if err != nil {
@@ -229,7 +229,7 @@ func (s *SQLStore) IsBytecodeBlacklisted(ctx context.Context, codeHash common.Ha
 
 func (s *SQLStore) ListBytecodeBlacklistEntries(ctx context.Context) ([]BytecodeBlacklistEntry, error) {
 	if s.queries == nil {
-		return nil, fmt.Errorf("solidity postgres database is not configured")
+		return nil, fmt.Errorf("application postgres database is not configured")
 	}
 	rows, err := s.queries.ListBytecodeBlacklistEntries(ctx)
 	if err != nil {
@@ -245,9 +245,9 @@ func (s *SQLStore) ListBytecodeBlacklistEntries(ctx context.Context) ([]Bytecode
 
 func (s *SQLStore) AddBytecodeBlacklistEntry(ctx context.Context, item BytecodeBlacklistEntry) error {
 	if s.queries == nil {
-		return fmt.Errorf("solidity postgres database is not configured")
+		return fmt.Errorf("application postgres database is not configured")
 	}
-	err := s.queries.AddBytecodeBlacklistEntry(ctx, soliditysqlc.AddBytecodeBlacklistEntryParams{
+	err := s.queries.AddBytecodeBlacklistEntry(ctx, appsqlc.AddBytecodeBlacklistEntryParams{
 		CodeHash:       item.CodeHash.Bytes(),
 		Note:           nullableTrimmedText(item.Note),
 		SourceChainID:  nullableInt64(item.SourceChainID),
@@ -264,9 +264,9 @@ func (s *SQLStore) AddBytecodeBlacklistEntry(ctx context.Context, item BytecodeB
 
 func (s *SQLStore) UpdateBytecodeBlacklistNote(ctx context.Context, codeHash common.Hash, note string) error {
 	if s.queries == nil {
-		return fmt.Errorf("solidity postgres database is not configured")
+		return fmt.Errorf("application postgres database is not configured")
 	}
-	affected, err := s.queries.UpdateBytecodeBlacklistNote(ctx, soliditysqlc.UpdateBytecodeBlacklistNoteParams{
+	affected, err := s.queries.UpdateBytecodeBlacklistNote(ctx, appsqlc.UpdateBytecodeBlacklistNoteParams{
 		CodeHash: codeHash.Bytes(),
 		Note:     nullableTrimmedText(note),
 	})
@@ -281,7 +281,7 @@ func (s *SQLStore) UpdateBytecodeBlacklistNote(ctx context.Context, codeHash com
 
 func (s *SQLStore) DeleteBytecodeBlacklist(ctx context.Context, codeHash common.Hash) error {
 	if s.queries == nil {
-		return fmt.Errorf("solidity postgres database is not configured")
+		return fmt.Errorf("application postgres database is not configured")
 	}
 	affected, err := s.queries.DeleteBytecodeBlacklist(ctx, codeHash.Bytes())
 	if err != nil {
@@ -295,7 +295,7 @@ func (s *SQLStore) DeleteBytecodeBlacklist(ctx context.Context, codeHash common.
 
 func (s *SQLStore) GetBytecodeBlacklistEntry(ctx context.Context, codeHash common.Hash) (*BytecodeBlacklistEntry, error) {
 	if s.queries == nil {
-		return nil, fmt.Errorf("solidity postgres database is not configured")
+		return nil, fmt.Errorf("application postgres database is not configured")
 	}
 	row, err := s.queries.GetBytecodeBlacklistEntry(ctx, codeHash.Bytes())
 	if err != nil {
@@ -308,7 +308,7 @@ func (s *SQLStore) GetBytecodeBlacklistEntry(ctx context.Context, codeHash commo
 	return &item, nil
 }
 
-func bytecodeFromSQLC(row soliditysqlc.Bytecode) Bytecode {
+func bytecodeFromSQLC(row appsqlc.Bytecode) Bytecode {
 	return Bytecode{
 		CodeHash:                     common.BytesToHash(row.CodeHash),
 		RuntimeBytecode:              row.RuntimeBytecode,
@@ -325,7 +325,7 @@ func bytecodeFromSQLC(row soliditysqlc.Bytecode) Bytecode {
 	}
 }
 
-func bytecodeListRecordFromSQLC(row soliditysqlc.ListBytecodesRow) BytecodeListRecord {
+func bytecodeListRecordFromSQLC(row appsqlc.ListBytecodesRow) BytecodeListRecord {
 	return BytecodeListRecord{
 		CodeHash:              common.BytesToHash(row.CodeHash),
 		RuntimeBytecodeSize:   row.RuntimeBytecodeSize,
@@ -338,7 +338,7 @@ func bytecodeListRecordFromSQLC(row soliditysqlc.ListBytecodesRow) BytecodeListR
 	}
 }
 
-func bytecodeDetailRecordFromSQLC(row soliditysqlc.GetBytecodeDetailRow) BytecodeDetailRecord {
+func bytecodeDetailRecordFromSQLC(row appsqlc.GetBytecodeDetailRow) BytecodeDetailRecord {
 	return BytecodeDetailRecord{
 		Bytecode: Bytecode{
 			CodeHash:                     common.BytesToHash(row.CodeHash),
@@ -360,7 +360,7 @@ func bytecodeDetailRecordFromSQLC(row soliditysqlc.GetBytecodeDetailRow) Bytecod
 	}
 }
 
-func bytecodeDeploymentRecordFromSQLC(row soliditysqlc.ListBytecodeDeploymentsRow) BytecodeDeploymentRecord {
+func bytecodeDeploymentRecordFromSQLC(row appsqlc.ListBytecodeDeploymentsRow) BytecodeDeploymentRecord {
 	return BytecodeDeploymentRecord{
 		ContractBytecodeDeployment: ContractBytecodeDeployment{
 			ChainID:     row.ChainID,
@@ -373,7 +373,7 @@ func bytecodeDeploymentRecordFromSQLC(row soliditysqlc.ListBytecodeDeploymentsRo
 	}
 }
 
-func bytecodeBlacklistEntryFromSQLC(row soliditysqlc.BytecodeBlacklist) BytecodeBlacklistEntry {
+func bytecodeBlacklistEntryFromSQLC(row appsqlc.BytecodeBlacklist) BytecodeBlacklistEntry {
 	return BytecodeBlacklistEntry{
 		CodeHash:       common.BytesToHash(row.CodeHash),
 		Note:           row.Note.String,

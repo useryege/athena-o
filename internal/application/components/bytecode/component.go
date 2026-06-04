@@ -6,35 +6,39 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	appcomponents "github.com/useryege/athena/internal/application/components"
 	appstore "github.com/useryege/athena/internal/application/store"
-	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
-	utilio "github.com/useryege/athena/util/io"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
+type ContractSourceResolver interface {
+	GetContractSourceInfo(ctx context.Context, req *applicationpkg.GetContractSourceInfoRequest) (*v1alpha1.ContractSourceInfo, error)
+}
+
 type Options struct {
-	Store   appstore.Store
-	Cache   appcache.ProjectComponentCache
-	Clients solidityapiclient.Clientset
-	ChainID int64
-	Bus     appcomponents.EventBus
+	Store    appstore.Store
+	Cache    appcache.ProjectComponentCache
+	Resolver ContractSourceResolver
+	ChainID  int64
+	Bus      appcomponents.EventBus
 }
 
 type Component struct {
 	store    appstore.Store
 	cache    appcache.ProjectComponentCache
-	clients  solidityapiclient.Clientset
+	resolver ContractSourceResolver
 	chainID  int64
 	bus      appcomponents.EventBus
 	consumer *appcomponents.Consumer
 }
 
 func NewComponent(opts Options) *Component {
-	if opts.Store == nil || opts.Clients == nil || opts.ChainID <= 0 {
+	if opts.Store == nil || opts.Resolver == nil || opts.ChainID <= 0 {
 		return nil
 	}
-	c := &Component{store: opts.Store, cache: opts.Cache, clients: opts.Clients, chainID: opts.ChainID, bus: opts.Bus}
+	c := &Component{store: opts.Store, cache: opts.Cache, resolver: opts.Resolver, chainID: opts.ChainID, bus: opts.Bus}
 	c.consumer = appcomponents.NewConsumer(appstore.ProjectComponentBytecodeFact, opts.Bus, c.handleEvent)
 	return c
 }
@@ -78,12 +82,7 @@ func (c *Component) refresh(ctx context.Context, contract common.Address) error 
 	if err := appcomponents.MarkComponentRunning(ctx, c.store, contract, appstore.ProjectComponentBytecodeFact, nowUTC()); err != nil {
 		return err
 	}
-	closer, client, err := c.clients.NewSolidityServiceClient()
-	if err != nil {
-		return err
-	}
-	defer utilio.Close(closer)
-	info, err := client.GetContractSourceInfo(ctx, &solidityapiclient.GetContractSourceInfoRequest{
+	info, err := c.resolver.GetContractSourceInfo(ctx, &applicationpkg.GetContractSourceInfoRequest{
 		ChainId:  c.chainID,
 		Contract: contract.Hex(),
 	})

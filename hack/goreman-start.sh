@@ -103,7 +103,6 @@ cleanup_athena_ports() {
 		"worm:${ATHENA_WORM_PORT:-8084}"
 		"notification:${ATHENA_NOTIFICATION_PORT:-8086}"
 		"wallet:${ATHENA_WALLET_PORT:-8088}"
-		"solidity:${ATHENA_SOLIDITY_PORT:-8090}"
 		"polymarket:${ATHENA_POLYMARKET_PORT:-8092}"
 	)
 	local entry name port pid pids cmd

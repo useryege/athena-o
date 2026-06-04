@@ -75,17 +75,10 @@ const navItems: NavItem[] = [
         icon: <DashboardOutlined />,
         children: [
             {key: '/projects', label: 'Projects', path: '/projects', icon: <ProjectOutlined />},
-            {key: '/wallet-blacklist', label: 'Wallet Blacklist', path: '/wallet-blacklist', icon: <ApiOutlined />}
-        ]
-    },
-    {
-        key: 'solidity',
-        label: 'Solidity',
-        icon: <CodeOutlined />,
-        children: [
-            {key: '/solidity/bytecodes', label: 'Bytecodes', path: '/solidity/bytecodes', icon: <CodeOutlined />},
-            {key: '/solidity/bytecode-blacklist', label: 'Bytecode Blacklist', path: '/solidity/bytecode-blacklist', icon: <ApiOutlined />},
-            {key: '/solidity/source-quality/prompts', label: 'Quality Prompts', path: '/solidity/source-quality/prompts', icon: <FileTextOutlined />}
+            {key: '/wallet-blacklist', label: 'Wallet Blacklist', path: '/wallet-blacklist', icon: <ApiOutlined />},
+            {key: '/application/bytecodes', label: 'Bytecodes', path: '/application/bytecodes', icon: <CodeOutlined />},
+            {key: '/application/bytecode-blacklist', label: 'Bytecode Blacklist', path: '/application/bytecode-blacklist', icon: <ApiOutlined />},
+            {key: '/application/source-quality/prompts', label: 'Quality Prompts', path: '/application/source-quality/prompts', icon: <FileTextOutlined />}
         ]
     },
     {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />},
@@ -176,11 +169,11 @@ const AppRoutes = () => (
         <Route path='/settings/*' element={<SettingsPage />} />
         <Route path='/user-info' element={<UserInfoPage />} />
         <Route path='/help' element={<HelpPage />} />
-        <Route path='/solidity' element={<Navigate replace={true} to='/solidity/bytecodes' />} />
-        <Route path='/solidity/bytecodes' element={<BytecodesPage />} />
-        <Route path='/solidity/bytecodes/:codeHash' element={<BytecodeDetailPage />} />
-        <Route path='/solidity/bytecode-blacklist' element={<BytecodeBlacklistPage />} />
-        <Route path='/solidity/source-quality/prompts' element={<SourceQualityPromptsPage />} />
+        <Route path='/application' element={<Navigate replace={true} to='/application/bytecodes' />} />
+        <Route path='/application/bytecodes' element={<BytecodesPage />} />
+        <Route path='/application/bytecodes/:codeHash' element={<BytecodeDetailPage />} />
+        <Route path='/application/bytecode-blacklist' element={<BytecodeBlacklistPage />} />
+        <Route path='/application/source-quality/prompts' element={<SourceQualityPromptsPage />} />
         <Route path='*' element={<Navigate replace={true} to='/user-info' />} />
     </Routes>
 );

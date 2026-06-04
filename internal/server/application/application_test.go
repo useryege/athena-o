@@ -28,9 +28,11 @@ func (f *fakeApplicationClientset) NewApplicationServiceClient() (utilio.Closer,
 type fakeApplicationServiceClient struct {
 	applicationapiclient.ApplicationServiceClient
 
-	statusCalls int
-	startCalls  int
-	stopCalls   int
+	statusCalls        int
+	startCalls         int
+	stopCalls          int
+	listBytecodesCalls int
+	listBytecodesReq   *applicationapiclient.ListBytecodesRequest
 }
 
 func (f *fakeApplicationServiceClient) GetProjectDiscoveryStatus(context.Context, *applicationapiclient.GetProjectDiscoveryStatusRequest, ...grpc.CallOption) (*v1alpha1.ProjectDiscoveryStatus, error) {
@@ -46,6 +48,20 @@ func (f *fakeApplicationServiceClient) StartProjectDiscovery(context.Context, *a
 func (f *fakeApplicationServiceClient) StopProjectDiscovery(context.Context, *applicationapiclient.StopProjectDiscoveryRequest, ...grpc.CallOption) (*v1alpha1.ProjectDiscoveryStatus, error) {
 	f.stopCalls++
 	return &v1alpha1.ProjectDiscoveryStatus{Started: false, Status: "stopped"}, nil
+}
+
+func (f *fakeApplicationServiceClient) ListBytecodes(_ context.Context, req *applicationapiclient.ListBytecodesRequest, _ ...grpc.CallOption) (*applicationapiclient.ListBytecodesResponse, error) {
+	f.listBytecodesCalls++
+	f.listBytecodesReq = req
+	return &applicationapiclient.ListBytecodesResponse{
+		Items: []*v1alpha1.BytecodeListItem{{
+			CodeHash:            "0x1111111111111111111111111111111111111111111111111111111111111111",
+			RuntimeBytecodeSize: 2,
+		}},
+		Total:    1,
+		Page:     req.GetPage(),
+		PageSize: req.GetPageSize(),
+	}, nil
 }
 
 func newTestApplicationServer(client *fakeApplicationServiceClient) *Server {
@@ -116,5 +132,26 @@ func TestProjectDiscoveryControlRequiresRBACPermission(t *testing.T) {
 	}
 	if client.startCalls != 0 || client.stopCalls != 0 {
 		t.Fatalf("internal client calls start=%d stop=%d, want none", client.startCalls, client.stopCalls)
+	}
+}
+
+func TestListBytecodesProxiesToApplication(t *testing.T) {
+	client := &fakeApplicationServiceClient{}
+	resp, err := newTestApplicationServer(client).ListBytecodes(context.Background(), &applicationpkg.ListBytecodesRequest{
+		Page:     2,
+		PageSize: 10,
+		CodeHash: "0x1111111111111111111111111111111111111111111111111111111111111111",
+	})
+	if err != nil {
+		t.Fatalf("ListBytecodes: %v", err)
+	}
+	if client.listBytecodesCalls != 1 {
+		t.Fatalf("list bytecodes calls = %d, want 1", client.listBytecodesCalls)
+	}
+	if client.listBytecodesReq.GetPage() != 2 || client.listBytecodesReq.GetPageSize() != 10 || client.listBytecodesReq.GetCodeHash() == "" {
+		t.Fatalf("proxied request = %#v, want pagination and code hash", client.listBytecodesReq)
+	}
+	if resp.GetTotal() != 1 || len(resp.GetItems()) != 1 {
+		t.Fatalf("response = %#v, want one bytecode", resp)
 	}
 }

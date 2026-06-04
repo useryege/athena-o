@@ -5,13 +5,14 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/useryege/athena/internal/application/api"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
-	"github.com/useryege/athena/util/redisport"
+	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/server/version"
-	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"github.com/useryege/athena/util/ave"
+	"github.com/useryege/athena/util/ethereumapi"
+	"github.com/useryege/athena/util/redisport"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -24,14 +25,16 @@ type ApplicationServer struct {
 }
 
 type ApplicationServerOpts struct {
-	NodeClient        *ethclient.Client
-	AthenaContract    common.Address
-	AveConfig         ave.Config
-	Store             appstore.Store
-	LiquidityLocker   []common.Address
-	RedisClient       redisport.Client
-	SolidityClientset solidityapiclient.Clientset
-	WalletClientset   walletapiclient.Clientset
+	NodeClient            *ethclient.Client
+	AthenaContract        common.Address
+	ChainID               int64
+	AveConfig             ave.Config
+	Store                 appstore.Store
+	LiquidityLocker       []common.Address
+	RedisClient           redisport.Client
+	APIFetcher            ethereumapi.EthereumAPI
+	SourceQualityAnalyzer sourcequality.Analyzer
+	WalletClientset       walletapiclient.Clientset
 
 	// Fetch from Athena contract
 	V2FactoryContract common.Address
@@ -42,19 +45,23 @@ type ApplicationServerOpts struct {
 }
 
 func NewServer(opts ApplicationServerOpts) (*ApplicationServer, error) {
-	service, err := api.NewService(opts.NodeClient,
-		opts.V2FactoryContract,
-		opts.WethContract,
-		opts.UsdtContract,
-		opts.WethDecimals,
-		opts.UsdtDecimals,
-		opts.AthenaContract,
-		opts.AveConfig,
-		opts.Store,
-		opts.LiquidityLocker,
-		opts.RedisClient,
-		opts.SolidityClientset,
-		opts.WalletClientset)
+	service, err := api.NewService(api.ServiceOpts{
+		NodeClient:            opts.NodeClient,
+		V2FactoryContract:     opts.V2FactoryContract,
+		WethContract:          opts.WethContract,
+		UsdtContract:          opts.UsdtContract,
+		WethDecimals:          opts.WethDecimals,
+		UsdtDecimals:          opts.UsdtDecimals,
+		AthenaContract:        opts.AthenaContract,
+		ChainID:               opts.ChainID,
+		AveConfig:             opts.AveConfig,
+		Store:                 opts.Store,
+		LiquidityLocker:       opts.LiquidityLocker,
+		RedisClient:           opts.RedisClient,
+		APIFetcher:            opts.APIFetcher,
+		SourceQualityAnalyzer: opts.SourceQualityAnalyzer,
+		WalletClientset:       opts.WalletClientset,
+	})
 	if err != nil {
 		return nil, err
 	}

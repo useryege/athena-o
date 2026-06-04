@@ -73,6 +73,94 @@ func (s *RedisBufferedStore) SQLStore() appstore.Store {
 	return s.db
 }
 
+func (s *RedisBufferedStore) UpsertBytecode(ctx context.Context, codeHash common.Hash, runtimeBytecode []byte) error {
+	return s.db.UpsertBytecode(ctx, codeHash, runtimeBytecode)
+}
+
+func (s *RedisBufferedStore) UpsertContractBytecodeDeployment(ctx context.Context, item appstore.ContractBytecodeDeployment) error {
+	return s.db.UpsertContractBytecodeDeployment(ctx, item)
+}
+
+func (s *RedisBufferedStore) GetBytecode(ctx context.Context, codeHash common.Hash) (*appstore.Bytecode, error) {
+	return s.db.GetBytecode(ctx, codeHash)
+}
+
+func (s *RedisBufferedStore) UpdateBytecodeSourceCode(ctx context.Context, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, origin string) error {
+	return s.db.UpdateBytecodeSourceCode(ctx, codeHash, sourceCode, sourceCodeHash, origin)
+}
+
+func (s *RedisBufferedStore) UpdateBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, report string, origin string, promptVersion int64) error {
+	return s.db.UpdateBytecodeSourceQualityReport(ctx, codeHash, report, origin, promptVersion)
+}
+
+func (s *RedisBufferedStore) ListBytecodes(ctx context.Context, codeHash *common.Hash, limit, offset int64) ([]appstore.BytecodeListRecord, int64, error) {
+	return s.db.ListBytecodes(ctx, codeHash, limit, offset)
+}
+
+func (s *RedisBufferedStore) GetBytecodeDetail(ctx context.Context, codeHash common.Hash) (*appstore.BytecodeDetailRecord, error) {
+	return s.db.GetBytecodeDetail(ctx, codeHash)
+}
+
+func (s *RedisBufferedStore) ListBytecodeDeployments(ctx context.Context, codeHash common.Hash, chainID int64, contract *common.Address, limit, offset int64) ([]appstore.BytecodeDeploymentRecord, int64, error) {
+	return s.db.ListBytecodeDeployments(ctx, codeHash, chainID, contract, limit, offset)
+}
+
+func (s *RedisBufferedStore) IsBytecodeBlacklisted(ctx context.Context, codeHash common.Hash) (bool, error) {
+	return s.db.IsBytecodeBlacklisted(ctx, codeHash)
+}
+
+func (s *RedisBufferedStore) ListBytecodeBlacklistEntries(ctx context.Context) ([]appstore.BytecodeBlacklistEntry, error) {
+	return s.db.ListBytecodeBlacklistEntries(ctx)
+}
+
+func (s *RedisBufferedStore) AddBytecodeBlacklistEntry(ctx context.Context, item appstore.BytecodeBlacklistEntry) error {
+	return s.db.AddBytecodeBlacklistEntry(ctx, item)
+}
+
+func (s *RedisBufferedStore) UpdateBytecodeBlacklistNote(ctx context.Context, codeHash common.Hash, note string) error {
+	return s.db.UpdateBytecodeBlacklistNote(ctx, codeHash, note)
+}
+
+func (s *RedisBufferedStore) DeleteBytecodeBlacklist(ctx context.Context, codeHash common.Hash) error {
+	return s.db.DeleteBytecodeBlacklist(ctx, codeHash)
+}
+
+func (s *RedisBufferedStore) GetBytecodeBlacklistEntry(ctx context.Context, codeHash common.Hash) (*appstore.BytecodeBlacklistEntry, error) {
+	return s.db.GetBytecodeBlacklistEntry(ctx, codeHash)
+}
+
+func (s *RedisBufferedStore) EnsureDefaultSourceQualityPrompt(ctx context.Context, name, systemPrompt string) (*appstore.SourceQualityPrompt, error) {
+	return s.db.EnsureDefaultSourceQualityPrompt(ctx, name, systemPrompt)
+}
+
+func (s *RedisBufferedStore) GetActiveSourceQualityPrompt(ctx context.Context) (*appstore.SourceQualityPrompt, error) {
+	return s.db.GetActiveSourceQualityPrompt(ctx)
+}
+
+func (s *RedisBufferedStore) ListSourceQualityPrompts(ctx context.Context) ([]appstore.SourceQualityPrompt, error) {
+	return s.db.ListSourceQualityPrompts(ctx)
+}
+
+func (s *RedisBufferedStore) GetSourceQualityPrompt(ctx context.Context, id int64) (*appstore.SourceQualityPrompt, error) {
+	return s.db.GetSourceQualityPrompt(ctx, id)
+}
+
+func (s *RedisBufferedStore) CreateSourceQualityPrompt(ctx context.Context, name, systemPrompt string) (*appstore.SourceQualityPrompt, error) {
+	return s.db.CreateSourceQualityPrompt(ctx, name, systemPrompt)
+}
+
+func (s *RedisBufferedStore) UpdateSourceQualityPrompt(ctx context.Context, id int64, name, systemPrompt string) (*appstore.SourceQualityPrompt, error) {
+	return s.db.UpdateSourceQualityPrompt(ctx, id, name, systemPrompt)
+}
+
+func (s *RedisBufferedStore) ActivateSourceQualityPrompt(ctx context.Context, id int64) (*appstore.SourceQualityPrompt, error) {
+	return s.db.ActivateSourceQualityPrompt(ctx, id)
+}
+
+func (s *RedisBufferedStore) DeleteSourceQualityPrompt(ctx context.Context, id int64) error {
+	return s.db.DeleteSourceQualityPrompt(ctx, id)
+}
+
 func (s *RedisBufferedStore) SaveProjectMeta(ctx context.Context, meta appstore.ProjectMeta) error {
 	txHash := meta.TxHash
 	if txHash == (common.Hash{}) && meta.GenesisTx != nil {

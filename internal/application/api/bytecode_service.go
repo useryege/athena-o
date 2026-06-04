@@ -1,22 +1,19 @@
-package solidity
+package api
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/useryege/athena/internal/solidity/apiclient"
-	"github.com/useryege/athena/internal/solidity/sourcequality"
-	soliditystore "github.com/useryege/athena/internal/solidity/store"
+	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
+	"github.com/useryege/athena/internal/application/sourcequality"
+	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
-	"github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -28,79 +25,9 @@ const (
 	maxPageSize               = int64(100)
 )
 
-type Service struct {
-	apiclient.UnimplementedSolidityServiceServer
-	store                 *soliditystore.SQLStore
-	nodeClient            *ethclient.Client
-	chainID               int64
-	apiFetcher            ethereumapi.EthereumAPI
-	sourceQualityAnalyzer sourcequality.Analyzer
-	codeAtFunc            func(ctx context.Context, contract common.Address) ([]byte, error)
-	startStopMu           sync.Mutex
-	started               bool
-}
-
-type ServiceOpts struct {
-	Store                 *soliditystore.SQLStore
-	NodeClient            *ethclient.Client
-	ChainID               int64
-	APIFetcher            ethereumapi.EthereumAPI
-	SourceQualityAnalyzer sourcequality.Analyzer
-	CodeAtFunc            func(ctx context.Context, contract common.Address) ([]byte, error)
-}
-
-func NewService(opts ServiceOpts) *Service {
-	return &Service{
-		store:                 opts.Store,
-		nodeClient:            opts.NodeClient,
-		chainID:               opts.ChainID,
-		apiFetcher:            opts.APIFetcher,
-		sourceQualityAnalyzer: opts.SourceQualityAnalyzer,
-		codeAtFunc:            opts.CodeAtFunc,
-	}
-}
-
-func (s *Service) Start() error {
-	s.startStopMu.Lock()
-	defer s.startStopMu.Unlock()
-	if s.started {
-		return nil
-	}
+func (s *Service) GetContractSourceInfo(ctx context.Context, req *applicationpkg.GetContractSourceInfoRequest) (*v1alpha1.ContractSourceInfo, error) {
 	if s.store == nil {
-		return status.Error(codes.FailedPrecondition, "solidity store is required")
-	}
-	if _, err := s.store.EnsureDefaultSourceQualityPrompt(context.Background(), "Default Solidity Source Quality Prompt", sourcequality.DefaultSystemPrompt); err != nil {
-		return err
-	}
-	s.started = true
-	return nil
-}
-
-func (s *Service) Stop() error {
-	s.startStopMu.Lock()
-	defer s.startStopMu.Unlock()
-	s.started = false
-	return nil
-}
-
-func (s *Service) GetSolidityStatus(context.Context, *apiclient.GetSolidityStatusRequest) (*v1alpha1.SolidityStatus, error) {
-	s.startStopMu.Lock()
-	started := s.started
-	s.startStopMu.Unlock()
-
-	statusText := "stopped"
-	if started {
-		statusText = "running"
-	}
-	return &v1alpha1.SolidityStatus{
-		Started: started,
-		Status:  statusText,
-	}, nil
-}
-
-func (s *Service) GetContractSourceInfo(ctx context.Context, req *apiclient.GetContractSourceInfoRequest) (*v1alpha1.ContractSourceInfo, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	chainID := s.resolveRequestChainID(req.GetChainId())
 	if err := s.validateChainID(chainID); err != nil {
@@ -120,9 +47,9 @@ func (s *Service) GetContractSourceInfo(ctx context.Context, req *apiclient.GetC
 	return s.contractSourceInfo(ctx, chainID, contract, codeHash)
 }
 
-func (s *Service) ListBytecodes(ctx context.Context, req *apiclient.ListBytecodesRequest) (*apiclient.ListBytecodesResponse, error) {
+func (s *Service) ListBytecodes(ctx context.Context, req *applicationpkg.ListBytecodesRequest) (*applicationpkg.ListBytecodesResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	page, pageSize, offset, err := normalizePagination(req.GetPage(), req.GetPageSize())
 	if err != nil {
@@ -144,7 +71,7 @@ func (s *Service) ListBytecodes(ctx context.Context, req *apiclient.ListBytecode
 	for _, record := range records {
 		items = append(items, bytecodeListRecordToAPI(record))
 	}
-	return &apiclient.ListBytecodesResponse{
+	return &applicationpkg.ListBytecodesResponse{
 		Items:    items,
 		Total:    total,
 		Page:     page,
@@ -152,9 +79,9 @@ func (s *Service) ListBytecodes(ctx context.Context, req *apiclient.ListBytecode
 	}, nil
 }
 
-func (s *Service) GetBytecode(ctx context.Context, req *apiclient.GetBytecodeRequest) (*v1alpha1.BytecodeDetail, error) {
+func (s *Service) GetBytecode(ctx context.Context, req *applicationpkg.GetBytecodeRequest) (*v1alpha1.BytecodeDetail, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	codeHash, err := parseHash(req.GetCodeHash())
 	if err != nil {
@@ -178,9 +105,9 @@ func (s *Service) GetBytecode(ctx context.Context, req *apiclient.GetBytecodeReq
 	return bytecodeDetailRecordToAPI(*record), nil
 }
 
-func (s *Service) ListBytecodeDeployments(ctx context.Context, req *apiclient.ListBytecodeDeploymentsRequest) (*apiclient.ListBytecodeDeploymentsResponse, error) {
+func (s *Service) ListBytecodeDeployments(ctx context.Context, req *applicationpkg.ListBytecodeDeploymentsRequest) (*applicationpkg.ListBytecodeDeploymentsResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	codeHash, err := parseHash(req.GetCodeHash())
 	if err != nil {
@@ -209,7 +136,7 @@ func (s *Service) ListBytecodeDeployments(ctx context.Context, req *apiclient.Li
 	for _, record := range records {
 		items = append(items, bytecodeDeploymentRecordToAPI(record))
 	}
-	return &apiclient.ListBytecodeDeploymentsResponse{
+	return &applicationpkg.ListBytecodeDeploymentsResponse{
 		Items:    items,
 		Total:    total,
 		Page:     page,
@@ -217,9 +144,9 @@ func (s *Service) ListBytecodeDeployments(ctx context.Context, req *apiclient.Li
 	}, nil
 }
 
-func (s *Service) ListBytecodeBlacklistEntries(ctx context.Context, _ *apiclient.ListBytecodeBlacklistEntriesRequest) (*apiclient.ListBytecodeBlacklistEntriesResponse, error) {
+func (s *Service) ListBytecodeBlacklistEntries(ctx context.Context, _ *applicationpkg.ListBytecodeBlacklistEntriesRequest) (*applicationpkg.ListBytecodeBlacklistEntriesResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	records, err := s.store.ListBytecodeBlacklistEntries(ctx)
 	if err != nil {
@@ -229,25 +156,25 @@ func (s *Service) ListBytecodeBlacklistEntries(ctx context.Context, _ *apiclient
 	for _, record := range records {
 		items = append(items, bytecodeBlacklistEntryToAPI(record))
 	}
-	return &apiclient.ListBytecodeBlacklistEntriesResponse{Items: items}, nil
+	return &applicationpkg.ListBytecodeBlacklistEntriesResponse{Items: items}, nil
 }
 
-func (s *Service) AddBytecodeBlacklistEntry(ctx context.Context, req *apiclient.AddBytecodeBlacklistEntryRequest) (*apiclient.AddBytecodeBlacklistEntryResponse, error) {
+func (s *Service) AddBytecodeBlacklistEntry(ctx context.Context, req *applicationpkg.AddBytecodeBlacklistEntryRequest) (*applicationpkg.AddBytecodeBlacklistEntryResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	codeHash, sourceChainID, sourceContract, err := s.blacklistRequestCodeHash(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	record := soliditystore.BytecodeBlacklistEntry{
+	record := appstore.BytecodeBlacklistEntry{
 		CodeHash:       codeHash,
 		Note:           req.GetNote(),
 		SourceChainID:  sourceChainID,
 		SourceContract: sourceContract,
 	}
 	if err := s.store.AddBytecodeBlacklistEntry(ctx, record); err != nil {
-		if errors.Is(err, soliditystore.ErrBytecodeBlacklistAlreadyExists) {
+		if errors.Is(err, appstore.ErrBytecodeBlacklistAlreadyExists) {
 			return nil, status.Errorf(codes.AlreadyExists, "bytecode blacklist entry %s already exists", codeHash.Hex())
 		}
 		return nil, err
@@ -257,21 +184,21 @@ func (s *Service) AddBytecodeBlacklistEntry(ctx context.Context, req *apiclient.
 		return nil, err
 	}
 	if created == nil {
-		return &apiclient.AddBytecodeBlacklistEntryResponse{Item: bytecodeBlacklistEntryToAPI(record)}, nil
+		return &applicationpkg.AddBytecodeBlacklistEntryResponse{Item: bytecodeBlacklistEntryToAPI(record)}, nil
 	}
-	return &apiclient.AddBytecodeBlacklistEntryResponse{Item: bytecodeBlacklistEntryToAPI(*created)}, nil
+	return &applicationpkg.AddBytecodeBlacklistEntryResponse{Item: bytecodeBlacklistEntryToAPI(*created)}, nil
 }
 
-func (s *Service) UpdateBytecodeBlacklistNote(ctx context.Context, req *apiclient.UpdateBytecodeBlacklistNoteRequest) (*apiclient.UpdateBytecodeBlacklistNoteResponse, error) {
+func (s *Service) UpdateBytecodeBlacklistNote(ctx context.Context, req *applicationpkg.UpdateBytecodeBlacklistNoteRequest) (*applicationpkg.UpdateBytecodeBlacklistNoteResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	codeHash, err := parseHash(req.GetCodeHash())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid code hash %q", req.GetCodeHash())
 	}
 	if err := s.store.UpdateBytecodeBlacklistNote(ctx, codeHash, req.GetNote()); err != nil {
-		if errors.Is(err, soliditystore.ErrBytecodeBlacklistNotFound) {
+		if errors.Is(err, appstore.ErrBytecodeBlacklistNotFound) {
 			return nil, status.Errorf(codes.NotFound, "bytecode blacklist entry %s not found", codeHash.Hex())
 		}
 		return nil, err
@@ -283,29 +210,29 @@ func (s *Service) UpdateBytecodeBlacklistNote(ctx context.Context, req *apiclien
 	if updated == nil {
 		return nil, status.Errorf(codes.NotFound, "bytecode blacklist entry %s not found", codeHash.Hex())
 	}
-	return &apiclient.UpdateBytecodeBlacklistNoteResponse{Item: bytecodeBlacklistEntryToAPI(*updated)}, nil
+	return &applicationpkg.UpdateBytecodeBlacklistNoteResponse{Item: bytecodeBlacklistEntryToAPI(*updated)}, nil
 }
 
-func (s *Service) DeleteBytecodeBlacklist(ctx context.Context, req *apiclient.DeleteBytecodeBlacklistRequest) (*apiclient.DeleteBytecodeBlacklistResponse, error) {
+func (s *Service) DeleteBytecodeBlacklist(ctx context.Context, req *applicationpkg.DeleteBytecodeBlacklistRequest) (*applicationpkg.DeleteBytecodeBlacklistResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	codeHash, err := parseHash(req.GetCodeHash())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid code hash %q", req.GetCodeHash())
 	}
 	if err := s.store.DeleteBytecodeBlacklist(ctx, codeHash); err != nil {
-		if errors.Is(err, soliditystore.ErrBytecodeBlacklistNotFound) {
+		if errors.Is(err, appstore.ErrBytecodeBlacklistNotFound) {
 			return nil, status.Errorf(codes.NotFound, "bytecode blacklist entry %s not found", codeHash.Hex())
 		}
 		return nil, err
 	}
-	return &apiclient.DeleteBytecodeBlacklistResponse{}, nil
+	return &applicationpkg.DeleteBytecodeBlacklistResponse{}, nil
 }
 
-func (s *Service) ListSourceQualityPrompts(ctx context.Context, _ *apiclient.ListSourceQualityPromptsRequest) (*apiclient.ListSourceQualityPromptsResponse, error) {
+func (s *Service) ListSourceQualityPrompts(ctx context.Context, _ *applicationpkg.ListSourceQualityPromptsRequest) (*applicationpkg.ListSourceQualityPromptsResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	records, err := s.store.ListSourceQualityPrompts(ctx)
 	if err != nil {
@@ -315,12 +242,12 @@ func (s *Service) ListSourceQualityPrompts(ctx context.Context, _ *apiclient.Lis
 	for _, record := range records {
 		items = append(items, sourceQualityPromptToAPI(record))
 	}
-	return &apiclient.ListSourceQualityPromptsResponse{Items: items}, nil
+	return &applicationpkg.ListSourceQualityPromptsResponse{Items: items}, nil
 }
 
-func (s *Service) GetSourceQualityPrompt(ctx context.Context, req *apiclient.GetSourceQualityPromptRequest) (*v1alpha1.SourceQualityPrompt, error) {
+func (s *Service) GetSourceQualityPrompt(ctx context.Context, req *applicationpkg.GetSourceQualityPromptRequest) (*v1alpha1.SourceQualityPrompt, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	if req.GetId() <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "id must be positive")
@@ -335,9 +262,9 @@ func (s *Service) GetSourceQualityPrompt(ctx context.Context, req *apiclient.Get
 	return sourceQualityPromptToAPI(*record), nil
 }
 
-func (s *Service) CreateSourceQualityPrompt(ctx context.Context, req *apiclient.CreateSourceQualityPromptRequest) (*apiclient.CreateSourceQualityPromptResponse, error) {
+func (s *Service) CreateSourceQualityPrompt(ctx context.Context, req *applicationpkg.CreateSourceQualityPromptRequest) (*applicationpkg.CreateSourceQualityPromptResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	if err := validateSourceQualityPromptInput(req.GetName(), req.GetSystemPrompt()); err != nil {
 		return nil, err
@@ -346,12 +273,12 @@ func (s *Service) CreateSourceQualityPrompt(ctx context.Context, req *apiclient.
 	if err != nil {
 		return nil, err
 	}
-	return &apiclient.CreateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
+	return &applicationpkg.CreateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
 }
 
-func (s *Service) UpdateSourceQualityPrompt(ctx context.Context, req *apiclient.UpdateSourceQualityPromptRequest) (*apiclient.UpdateSourceQualityPromptResponse, error) {
+func (s *Service) UpdateSourceQualityPrompt(ctx context.Context, req *applicationpkg.UpdateSourceQualityPromptRequest) (*applicationpkg.UpdateSourceQualityPromptResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	if req.GetId() <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "id must be positive")
@@ -361,49 +288,49 @@ func (s *Service) UpdateSourceQualityPrompt(ctx context.Context, req *apiclient.
 	}
 	record, err := s.store.UpdateSourceQualityPrompt(ctx, req.GetId(), req.GetName(), req.GetSystemPrompt())
 	if err != nil {
-		if errors.Is(err, soliditystore.ErrSourceQualityPromptNotFound) {
+		if errors.Is(err, appstore.ErrSourceQualityPromptNotFound) {
 			return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
 		}
 		return nil, err
 	}
-	return &apiclient.UpdateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
+	return &applicationpkg.UpdateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
 }
 
-func (s *Service) ActivateSourceQualityPrompt(ctx context.Context, req *apiclient.ActivateSourceQualityPromptRequest) (*apiclient.ActivateSourceQualityPromptResponse, error) {
+func (s *Service) ActivateSourceQualityPrompt(ctx context.Context, req *applicationpkg.ActivateSourceQualityPromptRequest) (*applicationpkg.ActivateSourceQualityPromptResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	if req.GetId() <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "id must be positive")
 	}
 	record, err := s.store.ActivateSourceQualityPrompt(ctx, req.GetId())
 	if err != nil {
-		if errors.Is(err, soliditystore.ErrSourceQualityPromptNotFound) {
+		if errors.Is(err, appstore.ErrSourceQualityPromptNotFound) {
 			return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
 		}
 		return nil, err
 	}
-	return &apiclient.ActivateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
+	return &applicationpkg.ActivateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
 }
 
-func (s *Service) DeleteSourceQualityPrompt(ctx context.Context, req *apiclient.DeleteSourceQualityPromptRequest) (*apiclient.DeleteSourceQualityPromptResponse, error) {
+func (s *Service) DeleteSourceQualityPrompt(ctx context.Context, req *applicationpkg.DeleteSourceQualityPromptRequest) (*applicationpkg.DeleteSourceQualityPromptResponse, error) {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "solidity store is required")
+		return nil, status.Error(codes.FailedPrecondition, "application store is required")
 	}
 	if req.GetId() <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "id must be positive")
 	}
 	if err := s.store.DeleteSourceQualityPrompt(ctx, req.GetId()); err != nil {
 		switch {
-		case errors.Is(err, soliditystore.ErrSourceQualityPromptNotFound):
+		case errors.Is(err, appstore.ErrSourceQualityPromptNotFound):
 			return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
-		case errors.Is(err, soliditystore.ErrSourceQualityPromptActiveDelete):
+		case errors.Is(err, appstore.ErrSourceQualityPromptActiveDelete):
 			return nil, status.Error(codes.FailedPrecondition, "active source quality prompt cannot be deleted")
 		default:
 			return nil, err
 		}
 	}
-	return &apiclient.DeleteSourceQualityPromptResponse{}, nil
+	return &applicationpkg.DeleteSourceQualityPromptResponse{}, nil
 }
 
 func (s *Service) validateChainID(chainID int64) error {
@@ -435,7 +362,7 @@ func (s *Service) resolveContractBytecode(ctx context.Context, chainID int64, co
 	if err := s.store.UpsertBytecode(ctx, codeHash, code); err != nil {
 		return common.Hash{}, err
 	}
-	if err := s.store.UpsertContractBytecodeDeployment(ctx, soliditystore.ContractBytecodeDeployment{
+	if err := s.store.UpsertContractBytecodeDeployment(ctx, appstore.ContractBytecodeDeployment{
 		ChainID:  chainID,
 		Contract: contract,
 		CodeHash: codeHash,
@@ -467,7 +394,7 @@ func (s *Service) enrichBytecodeSource(ctx context.Context, contract common.Addr
 	return s.refreshBytecodeSourceQualityReport(ctx, codeHash, record)
 }
 
-func (s *Service) refreshBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, record *soliditystore.Bytecode) error {
+func (s *Service) refreshBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, record *appstore.Bytecode) error {
 	if record == nil || strings.TrimSpace(record.SourceCode) == "" || s.sourceQualityAnalyzer == nil {
 		return nil
 	}
@@ -496,7 +423,7 @@ func (s *Service) refreshBytecodeSourceQualityReport(ctx context.Context, codeHa
 	return nil
 }
 
-func (s *Service) currentSourceQualityPrompt(ctx context.Context) (*soliditystore.SourceQualityPrompt, error) {
+func (s *Service) currentSourceQualityPrompt(ctx context.Context) (*appstore.SourceQualityPrompt, error) {
 	prompt, err := s.store.GetActiveSourceQualityPrompt(ctx)
 	if err != nil {
 		return nil, err
@@ -504,7 +431,7 @@ func (s *Service) currentSourceQualityPrompt(ctx context.Context) (*soliditystor
 	if prompt != nil {
 		return prompt, nil
 	}
-	return &soliditystore.SourceQualityPrompt{
+	return &appstore.SourceQualityPrompt{
 		Name:         "Default Solidity Source Quality Prompt",
 		SystemPrompt: sourcequality.DefaultSystemPrompt,
 	}, nil
@@ -530,7 +457,7 @@ func (s *Service) contractSourceInfo(ctx context.Context, chainID int64, contrac
 	return bytecodeToContractSourceInfo(chainID, contract, *record, blacklisted), nil
 }
 
-func (s *Service) blacklistRequestCodeHash(ctx context.Context, req *apiclient.AddBytecodeBlacklistEntryRequest) (common.Hash, int64, common.Address, error) {
+func (s *Service) blacklistRequestCodeHash(ctx context.Context, req *applicationpkg.AddBytecodeBlacklistEntryRequest) (common.Hash, int64, common.Address, error) {
 	if strings.TrimSpace(req.GetCodeHash()) != "" {
 		codeHash, err := parseHash(req.GetCodeHash())
 		if err != nil {
@@ -605,7 +532,7 @@ func normalizePagination(page, pageSize int64) (int64, int64, int64, error) {
 	return page, pageSize, (page - 1) * pageSize, nil
 }
 
-func bytecodeToContractSourceInfo(chainID int64, contract common.Address, item soliditystore.Bytecode, blacklisted bool) *v1alpha1.ContractSourceInfo {
+func bytecodeToContractSourceInfo(chainID int64, contract common.Address, item appstore.Bytecode, blacklisted bool) *v1alpha1.ContractSourceInfo {
 	return &v1alpha1.ContractSourceInfo{
 		Contract:                     contract.Hex(),
 		ChainID:                      chainID,
@@ -623,7 +550,7 @@ func bytecodeToContractSourceInfo(chainID int64, contract common.Address, item s
 	}
 }
 
-func bytecodeListRecordToAPI(item soliditystore.BytecodeListRecord) *v1alpha1.BytecodeListItem {
+func bytecodeListRecordToAPI(item appstore.BytecodeListRecord) *v1alpha1.BytecodeListItem {
 	return &v1alpha1.BytecodeListItem{
 		CodeHash:              item.CodeHash.Hex(),
 		RuntimeBytecodeSize:   item.RuntimeBytecodeSize,
@@ -635,7 +562,7 @@ func bytecodeListRecordToAPI(item soliditystore.BytecodeListRecord) *v1alpha1.By
 	}
 }
 
-func bytecodeDetailRecordToAPI(item soliditystore.BytecodeDetailRecord) *v1alpha1.BytecodeDetail {
+func bytecodeDetailRecordToAPI(item appstore.BytecodeDetailRecord) *v1alpha1.BytecodeDetail {
 	return &v1alpha1.BytecodeDetail{
 		CodeHash:                     item.CodeHash.Hex(),
 		RuntimeBytecodeSize:          item.RuntimeBytecodeSize,
@@ -656,7 +583,7 @@ func bytecodeDetailRecordToAPI(item soliditystore.BytecodeDetailRecord) *v1alpha
 	}
 }
 
-func bytecodeDeploymentRecordToAPI(item soliditystore.BytecodeDeploymentRecord) *v1alpha1.BytecodeDeployment {
+func bytecodeDeploymentRecordToAPI(item appstore.BytecodeDeploymentRecord) *v1alpha1.BytecodeDeployment {
 	return &v1alpha1.BytecodeDeployment{
 		ChainID:     item.ChainID,
 		Contract:    item.Contract.Hex(),
@@ -665,7 +592,7 @@ func bytecodeDeploymentRecordToAPI(item soliditystore.BytecodeDeploymentRecord) 
 	}
 }
 
-func bytecodeBlacklistEntryToAPI(item soliditystore.BytecodeBlacklistEntry) *v1alpha1.BytecodeBlacklistEntry {
+func bytecodeBlacklistEntryToAPI(item appstore.BytecodeBlacklistEntry) *v1alpha1.BytecodeBlacklistEntry {
 	return &v1alpha1.BytecodeBlacklistEntry{
 		CodeHash:       item.CodeHash.Hex(),
 		Note:           item.Note,
@@ -675,7 +602,7 @@ func bytecodeBlacklistEntryToAPI(item soliditystore.BytecodeBlacklistEntry) *v1a
 	}
 }
 
-func sourceQualityPromptToAPI(item soliditystore.SourceQualityPrompt) *v1alpha1.SourceQualityPrompt {
+func sourceQualityPromptToAPI(item appstore.SourceQualityPrompt) *v1alpha1.SourceQualityPrompt {
 	return &v1alpha1.SourceQualityPrompt{
 		ID:           item.ID,
 		Version:      item.Version,

@@ -8,6 +8,37 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Bytecode struct {
+	CodeHash                     []byte
+	RuntimeBytecode              []byte
+	SourceCode                   pgtype.Text
+	SourceCodeHash               []byte
+	SourceCodeFetchedAt          pgtype.Timestamptz
+	SourceCodeOrigin             pgtype.Text
+	SourceQualityReport          pgtype.Text
+	SourceQualityReportFetchedAt pgtype.Timestamptz
+	SourceQualityReportOrigin    pgtype.Text
+	SourceQualityPromptVersion   int64
+	CreatedAt                    pgtype.Timestamptz
+	UpdatedAt                    pgtype.Timestamptz
+}
+
+type BytecodeBlacklist struct {
+	CodeHash       []byte
+	Note           pgtype.Text
+	SourceChainID  pgtype.Int8
+	SourceContract []byte
+	CreatedAt      pgtype.Timestamptz
+}
+
+type ContractBytecodeDeployment struct {
+	ChainID     int64
+	Contract    []byte
+	CodeHash    []byte
+	FirstSeenAt pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
 type Project struct {
 	ID          int64
 	BlockNumber int64
@@ -193,4 +224,15 @@ type ProjectSimulationResult struct {
 	CanMintViaTransferToUsdtPair       bool
 	FetchedAt                          pgtype.Timestamptz
 	UpdatedAt                          pgtype.Timestamptz
+}
+
+type SourceQualityPrompt struct {
+	ID           int64
+	Version      int64
+	Name         string
+	SystemPrompt string
+	IsActive     bool
+	DeletedAt    pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }

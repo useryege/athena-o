@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	soliditysqlc "github.com/useryege/athena/internal/solidity/store/sqlc"
+	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 )
 
 var (
@@ -46,7 +46,7 @@ func (s *SQLStore) EnsureDefaultSourceQualityPrompt(ctx context.Context, name, s
 
 func (s *SQLStore) GetActiveSourceQualityPrompt(ctx context.Context) (*SourceQualityPrompt, error) {
 	if s.queries == nil {
-		return nil, fmt.Errorf("solidity postgres database is not configured")
+		return nil, fmt.Errorf("application postgres database is not configured")
 	}
 	row, err := s.queries.GetActiveSourceQualityPrompt(ctx)
 	if err != nil {
@@ -61,7 +61,7 @@ func (s *SQLStore) GetActiveSourceQualityPrompt(ctx context.Context) (*SourceQua
 
 func (s *SQLStore) ListSourceQualityPrompts(ctx context.Context) ([]SourceQualityPrompt, error) {
 	if s.queries == nil {
-		return nil, fmt.Errorf("solidity postgres database is not configured")
+		return nil, fmt.Errorf("application postgres database is not configured")
 	}
 	rows, err := s.queries.ListSourceQualityPrompts(ctx)
 	if err != nil {
@@ -77,7 +77,7 @@ func (s *SQLStore) ListSourceQualityPrompts(ctx context.Context) ([]SourceQualit
 
 func (s *SQLStore) GetSourceQualityPrompt(ctx context.Context, id int64) (*SourceQualityPrompt, error) {
 	if s.queries == nil {
-		return nil, fmt.Errorf("solidity postgres database is not configured")
+		return nil, fmt.Errorf("application postgres database is not configured")
 	}
 	row, err := s.queries.GetSourceQualityPrompt(ctx, id)
 	if err != nil {
@@ -96,14 +96,14 @@ func (s *SQLStore) CreateSourceQualityPrompt(ctx context.Context, name, systemPr
 
 func (s *SQLStore) UpdateSourceQualityPrompt(ctx context.Context, id int64, name, systemPrompt string) (*SourceQualityPrompt, error) {
 	if s.pool == nil {
-		return nil, fmt.Errorf("solidity postgres database is not configured")
+		return nil, fmt.Errorf("application postgres database is not configured")
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin update source quality prompt: %w", err)
 	}
 	defer tx.Rollback(ctx)
-	queries := soliditysqlc.New(tx)
+	queries := appsqlc.New(tx)
 
 	existing, err := getSourceQualityPromptForUpdate(ctx, queries, id)
 	if err != nil {
@@ -129,14 +129,14 @@ func (s *SQLStore) UpdateSourceQualityPrompt(ctx context.Context, id int64, name
 
 func (s *SQLStore) ActivateSourceQualityPrompt(ctx context.Context, id int64) (*SourceQualityPrompt, error) {
 	if s.pool == nil {
-		return nil, fmt.Errorf("solidity postgres database is not configured")
+		return nil, fmt.Errorf("application postgres database is not configured")
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin activate source quality prompt: %w", err)
 	}
 	defer tx.Rollback(ctx)
-	queries := soliditysqlc.New(tx)
+	queries := appsqlc.New(tx)
 
 	existing, err := getSourceQualityPromptForUpdate(ctx, queries, id)
 	if err != nil {
@@ -180,11 +180,11 @@ func (s *SQLStore) DeleteSourceQualityPrompt(ctx context.Context, id int64) erro
 	return nil
 }
 
-func (s *SQLStore) insertSourceQualityPrompt(ctx context.Context, queries soliditysqlc.Querier, name, systemPrompt string, active bool) (*SourceQualityPrompt, error) {
+func (s *SQLStore) insertSourceQualityPrompt(ctx context.Context, queries appsqlc.Querier, name, systemPrompt string, active bool) (*SourceQualityPrompt, error) {
 	if queries == nil {
-		return nil, fmt.Errorf("solidity postgres database is not configured")
+		return nil, fmt.Errorf("application postgres database is not configured")
 	}
-	row, err := queries.InsertSourceQualityPrompt(ctx, soliditysqlc.InsertSourceQualityPromptParams{
+	row, err := queries.InsertSourceQualityPrompt(ctx, appsqlc.InsertSourceQualityPromptParams{
 		Name:         strings.TrimSpace(name),
 		SystemPrompt: strings.TrimSpace(systemPrompt),
 		IsActive:     active,
@@ -196,7 +196,7 @@ func (s *SQLStore) insertSourceQualityPrompt(ctx context.Context, queries solidi
 	return &item, nil
 }
 
-func getSourceQualityPromptForUpdate(ctx context.Context, queries soliditysqlc.Querier, id int64) (*SourceQualityPrompt, error) {
+func getSourceQualityPromptForUpdate(ctx context.Context, queries appsqlc.Querier, id int64) (*SourceQualityPrompt, error) {
 	row, err := queries.GetSourceQualityPromptForUpdate(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -208,7 +208,7 @@ func getSourceQualityPromptForUpdate(ctx context.Context, queries soliditysqlc.Q
 	return &item, nil
 }
 
-func sourceQualityPromptFromActiveRow(row soliditysqlc.GetActiveSourceQualityPromptRow) SourceQualityPrompt {
+func sourceQualityPromptFromActiveRow(row appsqlc.GetActiveSourceQualityPromptRow) SourceQualityPrompt {
 	return SourceQualityPrompt{
 		ID:           row.ID,
 		Version:      row.Version,
@@ -220,7 +220,7 @@ func sourceQualityPromptFromActiveRow(row soliditysqlc.GetActiveSourceQualityPro
 	}
 }
 
-func sourceQualityPromptFromListRow(row soliditysqlc.ListSourceQualityPromptsRow) SourceQualityPrompt {
+func sourceQualityPromptFromListRow(row appsqlc.ListSourceQualityPromptsRow) SourceQualityPrompt {
 	return SourceQualityPrompt{
 		ID:           row.ID,
 		Version:      row.Version,
@@ -232,7 +232,7 @@ func sourceQualityPromptFromListRow(row soliditysqlc.ListSourceQualityPromptsRow
 	}
 }
 
-func sourceQualityPromptFromGetRow(row soliditysqlc.GetSourceQualityPromptRow) SourceQualityPrompt {
+func sourceQualityPromptFromGetRow(row appsqlc.GetSourceQualityPromptRow) SourceQualityPrompt {
 	return SourceQualityPrompt{
 		ID:           row.ID,
 		Version:      row.Version,
@@ -244,7 +244,7 @@ func sourceQualityPromptFromGetRow(row soliditysqlc.GetSourceQualityPromptRow) S
 	}
 }
 
-func sourceQualityPromptFromInsertRow(row soliditysqlc.InsertSourceQualityPromptRow) SourceQualityPrompt {
+func sourceQualityPromptFromInsertRow(row appsqlc.InsertSourceQualityPromptRow) SourceQualityPrompt {
 	return SourceQualityPrompt{
 		ID:           row.ID,
 		Version:      row.Version,
@@ -256,7 +256,7 @@ func sourceQualityPromptFromInsertRow(row soliditysqlc.InsertSourceQualityPrompt
 	}
 }
 
-func sourceQualityPromptFromForUpdateRow(row soliditysqlc.GetSourceQualityPromptForUpdateRow) SourceQualityPrompt {
+func sourceQualityPromptFromForUpdateRow(row appsqlc.GetSourceQualityPromptForUpdateRow) SourceQualityPrompt {
 	return SourceQualityPrompt{
 		ID:           row.ID,
 		Version:      row.Version,
@@ -268,7 +268,7 @@ func sourceQualityPromptFromForUpdateRow(row soliditysqlc.GetSourceQualityPrompt
 	}
 }
 
-func sourceQualityPromptFromActivateRow(row soliditysqlc.ActivateSourceQualityPromptRow) SourceQualityPrompt {
+func sourceQualityPromptFromActivateRow(row appsqlc.ActivateSourceQualityPromptRow) SourceQualityPrompt {
 	return SourceQualityPrompt{
 		ID:           row.ID,
 		Version:      row.Version,

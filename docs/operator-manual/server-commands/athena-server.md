@@ -53,7 +53,6 @@ athena-server [flags]
       --rootpath string                               Used if Athena is running behind reverse proxy under subpath different from /
       --sentinel stringArray                          Redis sentinel hostname and port (e.g. athena-redis-ha-announce-0:6379). 
       --sentinelmaster string                         Redis sentinel master group name. (default "master")
-      --solidity-server-address string                Athena solidity server address (default "localhost:8090")
       --staticassets string                           Directory path that contains additional static assets (default "/shared/app")
       --wallet-server-address string                  Athena wallet server address (default "localhost:8088")
       --worm-server-address string                    Athena worm server address (default "localhost:8084")
@@ -63,3 +62,4 @@ athena-server [flags]
 ### SEE ALSO
 
 * [athena-server version](athena-server_version.md)	 - Print version information
+

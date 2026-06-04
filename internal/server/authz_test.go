@@ -75,6 +75,21 @@ func TestAuthorizeGRPCReadonlyAndAdminPolicy(t *testing.T) {
 	}
 }
 
+func TestAuthorizeGRPCApplicationBytecodePolicy(t *testing.T) {
+	server := newAuthzTestServer(t)
+
+	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/ListBytecodes", testAuthOverride{ctx: claimsCtx("LINGJIE")}, &applicationpkg.ListBytecodesRequest{}); err != nil {
+		t.Fatalf("readonly list bytecodes: %v", err)
+	}
+	req := &applicationpkg.AddBytecodeBlacklistEntryRequest{CodeHash: "0x1111111111111111111111111111111111111111111111111111111111111111"}
+	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/AddBytecodeBlacklistEntry", testAuthOverride{ctx: claimsCtx("LINGJIE")}, req); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("readonly add bytecode blacklist error = %v, want PermissionDenied", err)
+	}
+	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/AddBytecodeBlacklistEntry", testAuthOverride{ctx: claimsCtx("admin")}, req); err != nil {
+		t.Fatalf("admin add bytecode blacklist: %v", err)
+	}
+}
+
 func TestAuthorizeGRPCWalletRevealRequiresInvokePermission(t *testing.T) {
 	server := newAuthzTestServer(t)
 

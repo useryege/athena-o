@@ -10,108 +10,110 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
-	soliditysqlc "github.com/useryege/athena/internal/solidity/store/sqlc"
+	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 )
 
-type fakeSolidityQuerier struct {
-	upsertBytecodeParams   soliditysqlc.UpsertBytecodeParams
-	listBytecodesParams    soliditysqlc.ListBytecodesParams
-	listDeploymentsParams  soliditysqlc.ListBytecodeDeploymentsParams
-	addBlacklistParams     soliditysqlc.AddBytecodeBlacklistEntryParams
-	insertPromptParams     soliditysqlc.InsertSourceQualityPromptParams
-	updateReportParams     soliditysqlc.UpdateBytecodeSourceQualityReportParams
-	updateSourceCodeParams soliditysqlc.UpdateBytecodeSourceCodeParams
+type fakeApplicationQuerier struct {
+	appsqlc.Querier
+
+	upsertBytecodeParams   appsqlc.UpsertBytecodeParams
+	listBytecodesParams    appsqlc.ListBytecodesParams
+	listDeploymentsParams  appsqlc.ListBytecodeDeploymentsParams
+	addBlacklistParams     appsqlc.AddBytecodeBlacklistEntryParams
+	insertPromptParams     appsqlc.InsertSourceQualityPromptParams
+	updateReportParams     appsqlc.UpdateBytecodeSourceQualityReportParams
+	updateSourceCodeParams appsqlc.UpdateBytecodeSourceCodeParams
 
 	getBytecodeDetailErr error
 	getPromptErr         error
 	getActivePromptErr   error
 	addBlacklistErr      error
 
-	listBytecodesResult         []soliditysqlc.ListBytecodesRow
-	listDeploymentsResult       []soliditysqlc.ListBytecodeDeploymentsRow
-	getPromptResult             soliditysqlc.GetSourceQualityPromptRow
-	getActivePromptResult       soliditysqlc.GetActiveSourceQualityPromptRow
-	insertPromptResult          soliditysqlc.InsertSourceQualityPromptRow
-	getBytecodeDetailResult     soliditysqlc.GetBytecodeDetailRow
+	listBytecodesResult         []appsqlc.ListBytecodesRow
+	listDeploymentsResult       []appsqlc.ListBytecodeDeploymentsRow
+	getPromptResult             appsqlc.GetSourceQualityPromptRow
+	getActivePromptResult       appsqlc.GetActiveSourceQualityPromptRow
+	insertPromptResult          appsqlc.InsertSourceQualityPromptRow
+	getBytecodeDetailResult     appsqlc.GetBytecodeDetailRow
 	updateBlacklistRowsAffected int64
 	deleteBlacklistRowsAffected int64
 	deletePromptRowsAffected    int64
 }
 
-func (f *fakeSolidityQuerier) ActivateSourceQualityPrompt(context.Context, int64) (soliditysqlc.ActivateSourceQualityPromptRow, error) {
-	return soliditysqlc.ActivateSourceQualityPromptRow{}, nil
+func (f *fakeApplicationQuerier) ActivateSourceQualityPrompt(context.Context, int64) (appsqlc.ActivateSourceQualityPromptRow, error) {
+	return appsqlc.ActivateSourceQualityPromptRow{}, nil
 }
-func (f *fakeSolidityQuerier) AddBytecodeBlacklistEntry(_ context.Context, arg soliditysqlc.AddBytecodeBlacklistEntryParams) error {
+func (f *fakeApplicationQuerier) AddBytecodeBlacklistEntry(_ context.Context, arg appsqlc.AddBytecodeBlacklistEntryParams) error {
 	f.addBlacklistParams = arg
 	return f.addBlacklistErr
 }
-func (f *fakeSolidityQuerier) DeactivateActiveSourceQualityPrompts(context.Context) error { return nil }
-func (f *fakeSolidityQuerier) DeleteBytecodeBlacklist(context.Context, []byte) (int64, error) {
+func (f *fakeApplicationQuerier) DeactivateActiveSourceQualityPrompts(context.Context) error { return nil }
+func (f *fakeApplicationQuerier) DeleteBytecodeBlacklist(context.Context, []byte) (int64, error) {
 	return f.deleteBlacklistRowsAffected, nil
 }
-func (f *fakeSolidityQuerier) DeleteSourceQualityPrompt(context.Context, int64) (int64, error) {
+func (f *fakeApplicationQuerier) DeleteSourceQualityPrompt(context.Context, int64) (int64, error) {
 	return f.deletePromptRowsAffected, nil
 }
-func (f *fakeSolidityQuerier) GetActiveSourceQualityPrompt(context.Context) (soliditysqlc.GetActiveSourceQualityPromptRow, error) {
+func (f *fakeApplicationQuerier) GetActiveSourceQualityPrompt(context.Context) (appsqlc.GetActiveSourceQualityPromptRow, error) {
 	return f.getActivePromptResult, f.getActivePromptErr
 }
-func (f *fakeSolidityQuerier) GetBytecode(context.Context, []byte) (soliditysqlc.Bytecode, error) {
-	return soliditysqlc.Bytecode{}, nil
+func (f *fakeApplicationQuerier) GetBytecode(context.Context, []byte) (appsqlc.Bytecode, error) {
+	return appsqlc.Bytecode{}, nil
 }
-func (f *fakeSolidityQuerier) GetBytecodeBlacklistEntry(context.Context, []byte) (soliditysqlc.BytecodeBlacklist, error) {
-	return soliditysqlc.BytecodeBlacklist{}, nil
+func (f *fakeApplicationQuerier) GetBytecodeBlacklistEntry(context.Context, []byte) (appsqlc.BytecodeBlacklist, error) {
+	return appsqlc.BytecodeBlacklist{}, nil
 }
-func (f *fakeSolidityQuerier) GetBytecodeDetail(context.Context, []byte) (soliditysqlc.GetBytecodeDetailRow, error) {
+func (f *fakeApplicationQuerier) GetBytecodeDetail(context.Context, []byte) (appsqlc.GetBytecodeDetailRow, error) {
 	return f.getBytecodeDetailResult, f.getBytecodeDetailErr
 }
-func (f *fakeSolidityQuerier) GetSourceQualityPrompt(context.Context, int64) (soliditysqlc.GetSourceQualityPromptRow, error) {
+func (f *fakeApplicationQuerier) GetSourceQualityPrompt(context.Context, int64) (appsqlc.GetSourceQualityPromptRow, error) {
 	return f.getPromptResult, f.getPromptErr
 }
-func (f *fakeSolidityQuerier) GetSourceQualityPromptForUpdate(context.Context, int64) (soliditysqlc.GetSourceQualityPromptForUpdateRow, error) {
-	return soliditysqlc.GetSourceQualityPromptForUpdateRow{}, nil
+func (f *fakeApplicationQuerier) GetSourceQualityPromptForUpdate(context.Context, int64) (appsqlc.GetSourceQualityPromptForUpdateRow, error) {
+	return appsqlc.GetSourceQualityPromptForUpdateRow{}, nil
 }
-func (f *fakeSolidityQuerier) InsertSourceQualityPrompt(_ context.Context, arg soliditysqlc.InsertSourceQualityPromptParams) (soliditysqlc.InsertSourceQualityPromptRow, error) {
+func (f *fakeApplicationQuerier) InsertSourceQualityPrompt(_ context.Context, arg appsqlc.InsertSourceQualityPromptParams) (appsqlc.InsertSourceQualityPromptRow, error) {
 	f.insertPromptParams = arg
 	return f.insertPromptResult, nil
 }
-func (f *fakeSolidityQuerier) IsBytecodeBlacklisted(context.Context, []byte) (bool, error) {
+func (f *fakeApplicationQuerier) IsBytecodeBlacklisted(context.Context, []byte) (bool, error) {
 	return false, nil
 }
-func (f *fakeSolidityQuerier) ListBytecodeBlacklistEntries(context.Context) ([]soliditysqlc.BytecodeBlacklist, error) {
+func (f *fakeApplicationQuerier) ListBytecodeBlacklistEntries(context.Context) ([]appsqlc.BytecodeBlacklist, error) {
 	return nil, nil
 }
-func (f *fakeSolidityQuerier) ListBytecodeDeployments(_ context.Context, arg soliditysqlc.ListBytecodeDeploymentsParams) ([]soliditysqlc.ListBytecodeDeploymentsRow, error) {
+func (f *fakeApplicationQuerier) ListBytecodeDeployments(_ context.Context, arg appsqlc.ListBytecodeDeploymentsParams) ([]appsqlc.ListBytecodeDeploymentsRow, error) {
 	f.listDeploymentsParams = arg
 	return f.listDeploymentsResult, nil
 }
-func (f *fakeSolidityQuerier) ListBytecodes(_ context.Context, arg soliditysqlc.ListBytecodesParams) ([]soliditysqlc.ListBytecodesRow, error) {
+func (f *fakeApplicationQuerier) ListBytecodes(_ context.Context, arg appsqlc.ListBytecodesParams) ([]appsqlc.ListBytecodesRow, error) {
 	f.listBytecodesParams = arg
 	return f.listBytecodesResult, nil
 }
-func (f *fakeSolidityQuerier) ListSourceQualityPrompts(context.Context) ([]soliditysqlc.ListSourceQualityPromptsRow, error) {
+func (f *fakeApplicationQuerier) ListSourceQualityPrompts(context.Context) ([]appsqlc.ListSourceQualityPromptsRow, error) {
 	return nil, nil
 }
-func (f *fakeSolidityQuerier) UpdateBytecodeBlacklistNote(context.Context, soliditysqlc.UpdateBytecodeBlacklistNoteParams) (int64, error) {
+func (f *fakeApplicationQuerier) UpdateBytecodeBlacklistNote(context.Context, appsqlc.UpdateBytecodeBlacklistNoteParams) (int64, error) {
 	return f.updateBlacklistRowsAffected, nil
 }
-func (f *fakeSolidityQuerier) UpdateBytecodeSourceCode(_ context.Context, arg soliditysqlc.UpdateBytecodeSourceCodeParams) error {
+func (f *fakeApplicationQuerier) UpdateBytecodeSourceCode(_ context.Context, arg appsqlc.UpdateBytecodeSourceCodeParams) error {
 	f.updateSourceCodeParams = arg
 	return nil
 }
-func (f *fakeSolidityQuerier) UpdateBytecodeSourceQualityReport(_ context.Context, arg soliditysqlc.UpdateBytecodeSourceQualityReportParams) error {
+func (f *fakeApplicationQuerier) UpdateBytecodeSourceQualityReport(_ context.Context, arg appsqlc.UpdateBytecodeSourceQualityReportParams) error {
 	f.updateReportParams = arg
 	return nil
 }
-func (f *fakeSolidityQuerier) UpsertBytecode(_ context.Context, arg soliditysqlc.UpsertBytecodeParams) error {
+func (f *fakeApplicationQuerier) UpsertBytecode(_ context.Context, arg appsqlc.UpsertBytecodeParams) error {
 	f.upsertBytecodeParams = arg
 	return nil
 }
-func (f *fakeSolidityQuerier) UpsertContractBytecodeDeployment(context.Context, soliditysqlc.UpsertContractBytecodeDeploymentParams) error {
+func (f *fakeApplicationQuerier) UpsertContractBytecodeDeployment(context.Context, appsqlc.UpsertContractBytecodeDeploymentParams) error {
 	return nil
 }
 
 func TestUpsertBytecodeUsesQuerier(t *testing.T) {
-	querier := &fakeSolidityQuerier{}
+	querier := &fakeApplicationQuerier{}
 	codeHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
 	runtimeBytecode := []byte{0x60, 0x00}
 
@@ -127,8 +129,8 @@ func TestListBytecodesReturnsItemsAndTotal(t *testing.T) {
 	codeHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
 	createdAt := time.Now().Add(-time.Hour).UTC()
 	updatedAt := time.Now().UTC()
-	querier := &fakeSolidityQuerier{
-		listBytecodesResult: []soliditysqlc.ListBytecodesRow{{
+	querier := &fakeApplicationQuerier{
+		listBytecodesResult: []appsqlc.ListBytecodesRow{{
 			CodeHash:              codeHash.Bytes(),
 			RuntimeBytecodeSize:   2,
 			DeploymentCount:       3,
@@ -156,7 +158,7 @@ func TestListBytecodesReturnsItemsAndTotal(t *testing.T) {
 }
 
 func TestGetBytecodeDetailNotFound(t *testing.T) {
-	querier := &fakeSolidityQuerier{getBytecodeDetailErr: pgx.ErrNoRows}
+	querier := &fakeApplicationQuerier{getBytecodeDetailErr: pgx.ErrNoRows}
 	item, err := NewSQLStoreWithQuerier(querier).GetBytecodeDetail(context.Background(), common.Hash{})
 	if err != nil {
 		t.Fatalf("get bytecode detail: %v", err)
@@ -167,7 +169,7 @@ func TestGetBytecodeDetailNotFound(t *testing.T) {
 }
 
 func TestAddBytecodeBlacklistEntryDuplicateReturnsExists(t *testing.T) {
-	querier := &fakeSolidityQuerier{addBlacklistErr: &pgconn.PgError{Code: "23505"}}
+	querier := &fakeApplicationQuerier{addBlacklistErr: &pgconn.PgError{Code: "23505"}}
 	err := NewSQLStoreWithQuerier(querier).AddBytecodeBlacklistEntry(context.Background(), BytecodeBlacklistEntry{
 		CodeHash:       common.HexToHash("0x3333333333333333333333333333333333333333333333333333333333333333"),
 		Note:           "bad runtime",
@@ -184,8 +186,8 @@ func TestAddBytecodeBlacklistEntryDuplicateReturnsExists(t *testing.T) {
 
 func TestCreateAndDeleteSourceQualityPromptUseQuerier(t *testing.T) {
 	now := time.Now().UTC()
-	querier := &fakeSolidityQuerier{
-		insertPromptResult: soliditysqlc.InsertSourceQualityPromptRow{
+	querier := &fakeApplicationQuerier{
+		insertPromptResult: appsqlc.InsertSourceQualityPromptRow{
 			ID:           1,
 			Version:      2,
 			Name:         "prompt one",
@@ -194,7 +196,7 @@ func TestCreateAndDeleteSourceQualityPromptUseQuerier(t *testing.T) {
 			CreatedAt:    pgtype.Timestamptz{Time: now, Valid: true},
 			UpdatedAt:    pgtype.Timestamptz{Time: now, Valid: true},
 		},
-		getPromptResult: soliditysqlc.GetSourceQualityPromptRow{
+		getPromptResult: appsqlc.GetSourceQualityPromptRow{
 			ID:           1,
 			Version:      2,
 			Name:         "prompt one",

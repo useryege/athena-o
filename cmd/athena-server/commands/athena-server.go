@@ -18,7 +18,6 @@ import (
 	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
-	solidityapiclient "github.com/useryege/athena/internal/solidity/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
 	"github.com/useryege/athena/pkg/stats"
@@ -55,7 +54,6 @@ func NewCommand() *cobra.Command {
 		contentSecurityPolicy     string
 		applicationServerAddress  string
 		notificationServerAddress string
-		solidityServerAddress     string
 		walletServerAddress       string
 		wormServerAddress         string
 		polymarketServerAddress   string
@@ -107,7 +105,6 @@ func NewCommand() *cobra.Command {
 
 			applicationclientset := applicationapiclient.NewApplicationClientset(applicationServerAddress)
 			notificationclientset := notificationapiclient.NewNotificationClientset(notificationServerAddress)
-			solidityclientset := solidityapiclient.NewSolidityClientset(solidityServerAddress)
 			walletclientset := walletapiclient.NewWalletClientset(walletServerAddress)
 			wormclientset := wormapiclient.NewWormClientset(wormServerAddress)
 			polymarketclientset := polymarketapiclient.NewPolymarketClientset(polymarketServerAddress)
@@ -117,9 +114,6 @@ func NewCommand() *cobra.Command {
 			log.Infof("waiting for athena notification grpc service at %s", notificationServerAddress)
 			errors.CheckError(notificationapiclient.WaitForNotificationService(ctx, notificationServerAddress))
 			log.Infof("athena notification grpc service is ready at %s", notificationServerAddress)
-			log.Infof("waiting for athena solidity grpc service at %s", solidityServerAddress)
-			errors.CheckError(solidityapiclient.WaitForSolidityService(ctx, solidityServerAddress))
-			log.Infof("athena solidity grpc service is ready at %s", solidityServerAddress)
 			log.Infof("waiting for athena wallet grpc service at %s", walletServerAddress)
 			errors.CheckError(walletapiclient.WaitForWalletService(ctx, walletServerAddress))
 			log.Infof("athena wallet grpc service is ready at %s", walletServerAddress)
@@ -145,7 +139,6 @@ func NewCommand() *cobra.Command {
 				Cache:                 cache,
 				ApplicationClientset:  applicationclientset,
 				NotificationClientset: notificationclientset,
-				SolidityClientset:     solidityclientset,
 				WalletClientset:       walletclientset,
 				WormClientset:         wormclientset,
 				PolymarketClientset:   polymarketclientset,
@@ -212,7 +205,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&contentSecurityPolicy, "content-security-policy", env.StringFromEnv("ATHENA_SERVER_CONTENT_SECURITY_POLICY", "frame-ancestors 'self';"), "Set Content-Security-Policy header in HTTP responses to `value`. To disable, set to \"\".")
 	command.Flags().StringVar(&applicationServerAddress, "application-server-address", env.StringFromEnv("ATHENA_APPLICATION_SERVER_ADDRESS", "localhost:8082"), "Athena application server address")
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_NOTIFICATION_SERVER_ADDRESS", "localhost:8086"), "Athena notification server address")
-	command.Flags().StringVar(&solidityServerAddress, "solidity-server-address", env.StringFromEnv("ATHENA_SOLIDITY_SERVER_ADDRESS", "localhost:8090"), "Athena solidity server address")
 	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_WALLET_SERVER_ADDRESS", "localhost:8088"), "Athena wallet server address")
 	command.Flags().StringVar(&wormServerAddress, "worm-server-address", env.StringFromEnv("ATHENA_WORM_SERVER_ADDRESS", "localhost:8084"), "Athena worm server address")
 	command.Flags().StringVar(&polymarketServerAddress, "polymarket-server-address", env.StringFromEnv("ATHENA_POLYMARKET_SERVER_ADDRESS", "localhost:8092"), "Athena polymarket server address")

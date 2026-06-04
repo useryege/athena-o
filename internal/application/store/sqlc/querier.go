@@ -9,10 +9,19 @@ import (
 )
 
 type Querier interface {
+	ActivateSourceQualityPrompt(ctx context.Context, id int64) (ActivateSourceQualityPromptRow, error)
+	AddBytecodeBlacklistEntry(ctx context.Context, arg AddBytecodeBlacklistEntryParams) error
 	CountProjectBases(ctx context.Context) (int64, error)
+	DeactivateActiveSourceQualityPrompts(ctx context.Context) error
+	DeleteBytecodeBlacklist(ctx context.Context, codeHash []byte) (int64, error)
 	DeleteProjectAvePairsByContract(ctx context.Context, projectContract []byte) error
 	DeleteProjectCreatorHistoricalProjectsByContract(ctx context.Context, projectContract []byte) error
 	DeleteProjectGenesisWalletsByContract(ctx context.Context, projectContract []byte) error
+	DeleteSourceQualityPrompt(ctx context.Context, id int64) (int64, error)
+	GetActiveSourceQualityPrompt(ctx context.Context) (GetActiveSourceQualityPromptRow, error)
+	GetBytecode(ctx context.Context, codeHash []byte) (Bytecode, error)
+	GetBytecodeBlacklistEntry(ctx context.Context, codeHash []byte) (BytecodeBlacklist, error)
+	GetBytecodeDetail(ctx context.Context, codeHash []byte) (GetBytecodeDetailRow, error)
 	GetMaxProjectBlockNumber(ctx context.Context) (GetMaxProjectBlockNumberRow, error)
 	GetProjectAveComponentState(ctx context.Context, projectContract []byte) (ProjectComponentState, error)
 	GetProjectBaseByContract(ctx context.Context, contract []byte) (GetProjectBaseByContractRow, error)
@@ -22,10 +31,17 @@ type Querier interface {
 	GetProjectMetaByContract(ctx context.Context, contract []byte) (GetProjectMetaByContractRow, error)
 	GetProjectReportState(ctx context.Context, projectContract []byte) (ProjectReport, error)
 	GetProjectSimulationResult(ctx context.Context, projectContract []byte) (ProjectSimulationResult, error)
+	GetSourceQualityPrompt(ctx context.Context, id int64) (GetSourceQualityPromptRow, error)
+	GetSourceQualityPromptForUpdate(ctx context.Context, id int64) (GetSourceQualityPromptForUpdateRow, error)
 	InsertProjectAvePair(ctx context.Context, arg InsertProjectAvePairParams) error
 	InsertProjectBase(ctx context.Context, arg InsertProjectBaseParams) error
 	InsertProjectCreatorHistoricalProject(ctx context.Context, arg InsertProjectCreatorHistoricalProjectParams) error
 	InsertProjectGenesisWallet(ctx context.Context, arg InsertProjectGenesisWalletParams) error
+	InsertSourceQualityPrompt(ctx context.Context, arg InsertSourceQualityPromptParams) (InsertSourceQualityPromptRow, error)
+	IsBytecodeBlacklisted(ctx context.Context, codeHash []byte) (bool, error)
+	ListBytecodeBlacklistEntries(ctx context.Context) ([]BytecodeBlacklist, error)
+	ListBytecodeDeployments(ctx context.Context, arg ListBytecodeDeploymentsParams) ([]ListBytecodeDeploymentsRow, error)
+	ListBytecodes(ctx context.Context, arg ListBytecodesParams) ([]ListBytecodesRow, error)
 	ListProjectAvePairsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ListProjectAvePairsByContractsRow, error)
 	ListProjectAveRefreshCandidates(ctx context.Context, arg ListProjectAveRefreshCandidatesParams) ([][]byte, error)
 	ListProjectAveTokenDetailsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectAveTokenDetail, error)
@@ -44,11 +60,17 @@ type Querier interface {
 	ListProjectMetasByCreatorBefore(ctx context.Context, arg ListProjectMetasByCreatorBeforeParams) ([]ListProjectMetasByCreatorBeforeRow, error)
 	ListProjectMetasByPairAddresses(ctx context.Context, dollar_1 [][]byte) ([]ListProjectMetasByPairAddressesRow, error)
 	ListProjectReportStatesByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectReport, error)
+	ListSourceQualityPrompts(ctx context.Context) ([]ListSourceQualityPromptsRow, error)
 	MarkProjectAveRefreshFailed(ctx context.Context, arg MarkProjectAveRefreshFailedParams) error
 	MarkProjectAveRefreshRunning(ctx context.Context, arg MarkProjectAveRefreshRunningParams) error
 	MarkProjectAveRefreshSuccess(ctx context.Context, arg MarkProjectAveRefreshSuccessParams) error
 	MarkProjectComponentSuccessNow(ctx context.Context, arg MarkProjectComponentSuccessNowParams) error
 	ScheduleProjectAveRefresh(ctx context.Context, arg ScheduleProjectAveRefreshParams) error
+	UpdateBytecodeBlacklistNote(ctx context.Context, arg UpdateBytecodeBlacklistNoteParams) (int64, error)
+	UpdateBytecodeSourceCode(ctx context.Context, arg UpdateBytecodeSourceCodeParams) error
+	UpdateBytecodeSourceQualityReport(ctx context.Context, arg UpdateBytecodeSourceQualityReportParams) error
+	UpsertBytecode(ctx context.Context, arg UpsertBytecodeParams) error
+	UpsertContractBytecodeDeployment(ctx context.Context, arg UpsertContractBytecodeDeploymentParams) error
 	UpsertProjectAveTokenDetail(ctx context.Context, arg UpsertProjectAveTokenDetailParams) error
 	UpsertProjectBytecodeFact(ctx context.Context, arg UpsertProjectBytecodeFactParams) error
 	UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) error

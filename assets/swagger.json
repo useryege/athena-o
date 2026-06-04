@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-553-g8fee92a-dirty"
+    "version": "v1.0.0-554-g03db0c9-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -218,6 +218,294 @@
         }
       }
     },
+    "/api/v1/application/bytecode/blacklist": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ListBytecodeBlacklistEntries returns configured bytecode blacklist entries.",
+        "operationId": "ApplicationService_ListBytecodeBlacklistEntries",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListBytecodeBlacklistEntriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "AddBytecodeBlacklistEntry adds a bytecode blacklist entry.",
+        "operationId": "ApplicationService_AddBytecodeBlacklistEntry",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationAddBytecodeBlacklistEntryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationAddBytecodeBlacklistEntryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/bytecode/blacklist/{code_hash}": {
+      "delete": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "DeleteBytecodeBlacklist deletes a bytecode blacklist entry.",
+        "operationId": "ApplicationService_DeleteBytecodeBlacklist",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationDeleteBytecodeBlacklistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/bytecode/blacklist/{code_hash}/note": {
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "UpdateBytecodeBlacklistNote updates a bytecode blacklist note.",
+        "operationId": "ApplicationService_UpdateBytecodeBlacklistNote",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationUpdateBytecodeBlacklistNoteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationUpdateBytecodeBlacklistNoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/bytecodes": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ListBytecodes returns stored bytecodes.",
+        "operationId": "ApplicationService_ListBytecodes",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListBytecodesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/bytecodes/{code_hash}": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "GetBytecode returns one stored bytecode.",
+        "operationId": "ApplicationService_GetBytecode",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1BytecodeDetail"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/bytecodes/{code_hash}/deployments": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ListBytecodeDeployments returns contracts using a bytecode.",
+        "operationId": "ApplicationService_ListBytecodeDeployments",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListBytecodeDeploymentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/contracts/{contract}/source": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "GetContractSourceInfo resolves bytecode/source facts for a contract.",
+        "operationId": "ApplicationService_GetContractSourceInfo",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ContractSourceInfo"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/application/discovery/start": {
       "post": {
         "tags": [
@@ -293,6 +581,200 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v1alpha1ProjectDiscoveryStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/source-quality/prompts": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ListSourceQualityPrompts returns configured source quality prompts.",
+        "operationId": "ApplicationService_ListSourceQualityPrompts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListSourceQualityPromptsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "CreateSourceQualityPrompt creates a source quality prompt.",
+        "operationId": "ApplicationService_CreateSourceQualityPrompt",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationCreateSourceQualityPromptRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationCreateSourceQualityPromptResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/source-quality/prompts/{id}": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "GetSourceQualityPrompt returns one source quality prompt.",
+        "operationId": "ApplicationService_GetSourceQualityPrompt",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "UpdateSourceQualityPrompt creates a new source quality prompt version.",
+        "operationId": "ApplicationService_UpdateSourceQualityPrompt",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationUpdateSourceQualityPromptRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationUpdateSourceQualityPromptResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "DeleteSourceQualityPrompt soft deletes a prompt.",
+        "operationId": "ApplicationService_DeleteSourceQualityPrompt",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationDeleteSourceQualityPromptResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/source-quality/prompts/{id}/activate": {
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ActivateSourceQualityPrompt marks a prompt as current.",
+        "operationId": "ApplicationService_ActivateSourceQualityPrompt",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationActivateSourceQualityPromptRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationActivateSourceQualityPromptResponse"
             }
           },
           "default": {
@@ -1069,511 +1551,6 @@
         }
       }
     },
-    "/api/v1/solidity/bytecode/blacklist": {
-      "get": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "ListBytecodeBlacklistEntries returns configured bytecode blacklist entries.",
-        "operationId": "SolidityService_ListBytecodeBlacklistEntries",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityListBytecodeBlacklistEntriesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "AddBytecodeBlacklistEntry adds a bytecode blacklist entry.",
-        "operationId": "SolidityService_AddBytecodeBlacklistEntry",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/solidityAddBytecodeBlacklistEntryRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityAddBytecodeBlacklistEntryResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/solidity/bytecode/blacklist/{code_hash}": {
-      "delete": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "DeleteBytecodeBlacklist deletes a bytecode blacklist entry.",
-        "operationId": "SolidityService_DeleteBytecodeBlacklist",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "code_hash",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityDeleteBytecodeBlacklistResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/solidity/bytecode/blacklist/{code_hash}/note": {
-      "post": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "UpdateBytecodeBlacklistNote updates a bytecode blacklist note.",
-        "operationId": "SolidityService_UpdateBytecodeBlacklistNote",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "code_hash",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/solidityUpdateBytecodeBlacklistNoteRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityUpdateBytecodeBlacklistNoteResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/solidity/bytecodes": {
-      "get": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "ListBytecodes returns stored bytecodes.",
-        "operationId": "SolidityService_ListBytecodes",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "page_size",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "code_hash",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityListBytecodesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/solidity/bytecodes/{code_hash}": {
-      "get": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "GetBytecode returns one stored bytecode.",
-        "operationId": "SolidityService_GetBytecode",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "code_hash",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1alpha1BytecodeDetail"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/solidity/bytecodes/{code_hash}/deployments": {
-      "get": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "ListBytecodeDeployments returns contracts using a bytecode.",
-        "operationId": "SolidityService_ListBytecodeDeployments",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "code_hash",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "page_size",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "chain_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "contract",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityListBytecodeDeploymentsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/solidity/contracts/{contract}/source": {
-      "get": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "GetContractSourceInfo resolves bytecode/source facts for a contract.",
-        "operationId": "SolidityService_GetContractSourceInfo",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "contract",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "chain_id",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1alpha1ContractSourceInfo"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/solidity/source-quality/prompts": {
-      "get": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "ListSourceQualityPrompts returns configured source quality prompts.",
-        "operationId": "SolidityService_ListSourceQualityPrompts",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityListSourceQualityPromptsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "CreateSourceQualityPrompt creates a source quality prompt.",
-        "operationId": "SolidityService_CreateSourceQualityPrompt",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/solidityCreateSourceQualityPromptRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityCreateSourceQualityPromptResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/solidity/source-quality/prompts/{id}": {
-      "get": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "GetSourceQualityPrompt returns one source quality prompt.",
-        "operationId": "SolidityService_GetSourceQualityPrompt",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "UpdateSourceQualityPrompt creates a new source quality prompt version.",
-        "operationId": "SolidityService_UpdateSourceQualityPrompt",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/solidityUpdateSourceQualityPromptRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityUpdateSourceQualityPromptResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "DeleteSourceQualityPrompt soft deletes a source quality prompt.",
-        "operationId": "SolidityService_DeleteSourceQualityPrompt",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityDeleteSourceQualityPromptResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/solidity/source-quality/prompts/{id}/activate": {
-      "post": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "ActivateSourceQualityPrompt marks a prompt as current.",
-        "operationId": "SolidityService_ActivateSourceQualityPrompt",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/solidityActivateSourceQualityPromptRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/solidityActivateSourceQualityPromptResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/solidity/status": {
-      "get": {
-        "tags": [
-          "SolidityService"
-        ],
-        "summary": "GetSolidityStatus returns the solidity service runtime status.",
-        "operationId": "SolidityService_GetSolidityStatus",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1alpha1SolidityStatus"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
     "/api/v1/wallet/blacklist": {
       "get": {
         "tags": [
@@ -2171,6 +2148,82 @@
     "accountUpdatePasswordResponse": {
       "type": "object"
     },
+    "applicationActivateSourceQualityPromptRequest": {
+      "description": "ActivateSourceQualityPromptRequest marks a prompt as current.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "applicationActivateSourceQualityPromptResponse": {
+      "description": "ActivateSourceQualityPromptResponse returns the activated prompt.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
+        }
+      }
+    },
+    "applicationAddBytecodeBlacklistEntryRequest": {
+      "description": "AddBytecodeBlacklistEntryRequest adds a bytecode blacklist entry by code hash or source contract.",
+      "type": "object",
+      "properties": {
+        "code_hash": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "source_chain_id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "source_contract": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationAddBytecodeBlacklistEntryResponse": {
+      "description": "AddBytecodeBlacklistEntryResponse returns the stored bytecode blacklist entry.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1BytecodeBlacklistEntry"
+        }
+      }
+    },
+    "applicationCreateSourceQualityPromptRequest": {
+      "description": "CreateSourceQualityPromptRequest creates a source quality prompt.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "system_prompt": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationCreateSourceQualityPromptResponse": {
+      "description": "CreateSourceQualityPromptResponse returns the created prompt.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
+        }
+      }
+    },
+    "applicationDeleteBytecodeBlacklistResponse": {
+      "description": "DeleteBytecodeBlacklistResponse is returned after deleting a bytecode blacklist entry.",
+      "type": "object"
+    },
+    "applicationDeleteSourceQualityPromptResponse": {
+      "description": "DeleteSourceQualityPromptResponse is returned after deleting a prompt.",
+      "type": "object"
+    },
     "applicationGetProjectAveStateResponse": {
       "type": "object",
       "properties": {
@@ -2229,6 +2282,66 @@
         }
       }
     },
+    "applicationListBytecodeBlacklistEntriesResponse": {
+      "description": "ListBytecodeBlacklistEntriesResponse returns bytecode blacklist entries.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1BytecodeBlacklistEntry"
+          }
+        }
+      }
+    },
+    "applicationListBytecodeDeploymentsResponse": {
+      "description": "ListBytecodeDeploymentsResponse returns contracts using a bytecode.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1BytecodeDeployment"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "applicationListBytecodesResponse": {
+      "description": "ListBytecodesResponse returns stored bytecodes.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1BytecodeListItem"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "applicationListProjectCreatorHistoricalProjectsResponse": {
       "type": "object",
       "properties": {
@@ -2275,6 +2388,18 @@
         }
       }
     },
+    "applicationListSourceQualityPromptsResponse": {
+      "description": "ListSourceQualityPromptsResponse returns source quality prompt records.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
+          }
+        }
+      }
+    },
     "applicationRefreshProjectAveDetailRequest": {
       "type": "object",
       "properties": {
@@ -2296,6 +2421,52 @@
     },
     "applicationStopProjectDiscoveryRequest": {
       "type": "object"
+    },
+    "applicationUpdateBytecodeBlacklistNoteRequest": {
+      "description": "UpdateBytecodeBlacklistNoteRequest updates a bytecode blacklist note.",
+      "type": "object",
+      "properties": {
+        "code_hash": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationUpdateBytecodeBlacklistNoteResponse": {
+      "description": "UpdateBytecodeBlacklistNoteResponse returns the updated bytecode blacklist entry.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1BytecodeBlacklistEntry"
+        }
+      }
+    },
+    "applicationUpdateSourceQualityPromptRequest": {
+      "description": "UpdateSourceQualityPromptRequest creates a new source quality prompt version.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "system_prompt": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationUpdateSourceQualityPromptResponse": {
+      "description": "UpdateSourceQualityPromptResponse returns the new prompt version.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
+        }
+      }
     },
     "clusterGoogleAnalyticsConfig": {
       "type": "object",
@@ -2699,200 +2870,6 @@
       "properties": {
         "token": {
           "type": "string"
-        }
-      }
-    },
-    "solidityActivateSourceQualityPromptRequest": {
-      "description": "ActivateSourceQualityPromptRequest marks a prompt as current.",
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "solidityActivateSourceQualityPromptResponse": {
-      "description": "ActivateSourceQualityPromptResponse returns the activated prompt.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
-        }
-      }
-    },
-    "solidityAddBytecodeBlacklistEntryRequest": {
-      "description": "AddBytecodeBlacklistEntryRequest adds a bytecode blacklist entry by code hash or source contract.",
-      "type": "object",
-      "properties": {
-        "code_hash": {
-          "type": "string"
-        },
-        "note": {
-          "type": "string"
-        },
-        "source_chain_id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "source_contract": {
-          "type": "string"
-        }
-      }
-    },
-    "solidityAddBytecodeBlacklistEntryResponse": {
-      "description": "AddBytecodeBlacklistEntryResponse returns the stored bytecode blacklist entry.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/v1alpha1BytecodeBlacklistEntry"
-        }
-      }
-    },
-    "solidityCreateSourceQualityPromptRequest": {
-      "description": "CreateSourceQualityPromptRequest creates a source quality prompt.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "system_prompt": {
-          "type": "string"
-        }
-      }
-    },
-    "solidityCreateSourceQualityPromptResponse": {
-      "description": "CreateSourceQualityPromptResponse returns the created prompt.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
-        }
-      }
-    },
-    "solidityDeleteBytecodeBlacklistResponse": {
-      "description": "DeleteBytecodeBlacklistResponse is returned after deleting a bytecode blacklist entry.",
-      "type": "object"
-    },
-    "solidityDeleteSourceQualityPromptResponse": {
-      "description": "DeleteSourceQualityPromptResponse is returned after deleting a prompt.",
-      "type": "object"
-    },
-    "solidityListBytecodeBlacklistEntriesResponse": {
-      "description": "ListBytecodeBlacklistEntriesResponse returns bytecode blacklist entries.",
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1BytecodeBlacklistEntry"
-          }
-        }
-      }
-    },
-    "solidityListBytecodeDeploymentsResponse": {
-      "description": "ListBytecodeDeploymentsResponse returns contracts using a bytecode.",
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1BytecodeDeployment"
-          }
-        },
-        "page": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "page_size": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "solidityListBytecodesResponse": {
-      "description": "ListBytecodesResponse returns stored bytecodes.",
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1BytecodeListItem"
-          }
-        },
-        "page": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "page_size": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "solidityListSourceQualityPromptsResponse": {
-      "description": "ListSourceQualityPromptsResponse returns source quality prompt records.",
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
-          }
-        }
-      }
-    },
-    "solidityUpdateBytecodeBlacklistNoteRequest": {
-      "description": "UpdateBytecodeBlacklistNoteRequest updates a bytecode blacklist note.",
-      "type": "object",
-      "properties": {
-        "code_hash": {
-          "type": "string"
-        },
-        "note": {
-          "type": "string"
-        }
-      }
-    },
-    "solidityUpdateBytecodeBlacklistNoteResponse": {
-      "description": "UpdateBytecodeBlacklistNoteResponse returns the updated bytecode blacklist entry.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/v1alpha1BytecodeBlacklistEntry"
-        }
-      }
-    },
-    "solidityUpdateSourceQualityPromptRequest": {
-      "description": "UpdateSourceQualityPromptRequest creates a new source quality prompt version.",
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "name": {
-          "type": "string"
-        },
-        "system_prompt": {
-          "type": "string"
-        }
-      }
-    },
-    "solidityUpdateSourceQualityPromptResponse": {
-      "description": "UpdateSourceQualityPromptResponse returns the new prompt version.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
         }
       }
     },
@@ -4409,17 +4386,6 @@
         },
         "canMintViaTransferToWethPair": {
           "type": "boolean"
-        }
-      }
-    },
-    "v1alpha1SolidityStatus": {
-      "type": "object",
-      "properties": {
-        "started": {
-          "type": "boolean"
-        },
-        "status": {
-          "type": "string"
         }
       }
     },

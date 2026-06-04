@@ -16,9 +16,9 @@ const ROUTES = [
     '/polymarket/movers',
     '/polymarket/sports-live',
     '/notifications',
-    '/solidity/bytecodes',
-    '/solidity/bytecode-blacklist',
-    '/solidity/source-quality/prompts',
+    '/application/bytecodes',
+    '/application/bytecode-blacklist',
+    '/application/source-quality/prompts',
     '/settings',
     '/help'
 ];

@@ -8,7 +8,6 @@ import (
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
-	soliditypkg "github.com/useryege/athena/pkg/apiclient/solidity"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	wormpkg "github.com/useryege/athena/pkg/apiclient/worm"
 	"github.com/useryege/athena/util/rbac"
@@ -89,27 +88,27 @@ func notificationObject(req any) string {
 	}
 }
 
-func solidityObject(req any) string {
+func applicationObject(req any) string {
 	switch r := req.(type) {
-	case *soliditypkg.GetContractSourceInfoRequest:
+	case *applicationpkg.GetContractSourceInfoRequest:
 		return nonEmptyObject(r.GetContract())
-	case *soliditypkg.GetBytecodeRequest:
+	case *applicationpkg.GetBytecodeRequest:
 		return nonEmptyObject(r.GetCodeHash())
-	case *soliditypkg.ListBytecodeDeploymentsRequest:
+	case *applicationpkg.ListBytecodeDeploymentsRequest:
 		return nonEmptyObject(r.GetCodeHash())
-	case *soliditypkg.AddBytecodeBlacklistEntryRequest:
+	case *applicationpkg.AddBytecodeBlacklistEntryRequest:
 		return nonEmptyObject(r.GetCodeHash())
-	case *soliditypkg.UpdateBytecodeBlacklistNoteRequest:
+	case *applicationpkg.UpdateBytecodeBlacklistNoteRequest:
 		return nonEmptyObject(r.GetCodeHash())
-	case *soliditypkg.DeleteBytecodeBlacklistRequest:
+	case *applicationpkg.DeleteBytecodeBlacklistRequest:
 		return nonEmptyObject(r.GetCodeHash())
-	case *soliditypkg.GetSourceQualityPromptRequest:
+	case *applicationpkg.GetSourceQualityPromptRequest:
 		return fmt.Sprintf("%d", r.GetId())
-	case *soliditypkg.UpdateSourceQualityPromptRequest:
+	case *applicationpkg.UpdateSourceQualityPromptRequest:
 		return fmt.Sprintf("%d", r.GetId())
-	case *soliditypkg.ActivateSourceQualityPromptRequest:
+	case *applicationpkg.ActivateSourceQualityPromptRequest:
 		return fmt.Sprintf("%d", r.GetId())
-	case *soliditypkg.DeleteSourceQualityPromptRequest:
+	case *applicationpkg.DeleteSourceQualityPromptRequest:
 		return fmt.Sprintf("%d", r.GetId())
 	default:
 		return "*"
@@ -181,27 +180,25 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/application.ApplicationService/GetProjectDiscoveryStatus":            fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionGet),
 	"/application.ApplicationService/StartProjectDiscovery":                fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionUpdate),
 	"/application.ApplicationService/StopProjectDiscovery":                 fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionUpdate),
+	"/application.ApplicationService/GetContractSourceInfo":                {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/ListBytecodes":                        fixedRule(rbac.ResourceApplication, rbac.ActionGet),
+	"/application.ApplicationService/GetBytecode":                          {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/ListBytecodeDeployments":              {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/ListBytecodeBlacklistEntries":         fixedRule(rbac.ResourceApplication, rbac.ActionGet),
+	"/application.ApplicationService/AddBytecodeBlacklistEntry":            {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/UpdateBytecodeBlacklistNote":          {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/DeleteBytecodeBlacklist":              {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/ListSourceQualityPrompts":             fixedRule(rbac.ResourceApplication, rbac.ActionGet),
+	"/application.ApplicationService/GetSourceQualityPrompt":               {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/CreateSourceQualityPrompt":            fixedRule(rbac.ResourceApplication, rbac.ActionUpdate),
+	"/application.ApplicationService/UpdateSourceQualityPrompt":            {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/ActivateSourceQualityPrompt":          {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/DeleteSourceQualityPrompt":            {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
 
 	"/notification.NotificationService/GetNotificationStatus":      fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
 	"/notification.NotificationService/ListNotificationDeliveries": fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
 	"/notification.NotificationService/GetNotificationDelivery":    {resource: rbac.ResourceNotifications, action: rbac.ActionGet, object: notificationObject},
 	"/notification.NotificationService/SendTestNotification":       {resource: rbac.ResourceNotifications, action: rbac.ActionInvoke, object: notificationObject},
-
-	"/solidity.SolidityService/GetSolidityStatus":            fixedRule(rbac.ResourceSolidity, rbac.ActionGet),
-	"/solidity.SolidityService/GetContractSourceInfo":        {resource: rbac.ResourceSolidity, action: rbac.ActionGet, object: solidityObject},
-	"/solidity.SolidityService/ListBytecodes":                fixedRule(rbac.ResourceSolidity, rbac.ActionGet),
-	"/solidity.SolidityService/GetBytecode":                  {resource: rbac.ResourceSolidity, action: rbac.ActionGet, object: solidityObject},
-	"/solidity.SolidityService/ListBytecodeDeployments":      {resource: rbac.ResourceSolidity, action: rbac.ActionGet, object: solidityObject},
-	"/solidity.SolidityService/ListBytecodeBlacklistEntries": fixedRule(rbac.ResourceSolidity, rbac.ActionGet),
-	"/solidity.SolidityService/AddBytecodeBlacklistEntry":    {resource: rbac.ResourceSolidity, action: rbac.ActionUpdate, object: solidityObject},
-	"/solidity.SolidityService/UpdateBytecodeBlacklistNote":  {resource: rbac.ResourceSolidity, action: rbac.ActionUpdate, object: solidityObject},
-	"/solidity.SolidityService/DeleteBytecodeBlacklist":      {resource: rbac.ResourceSolidity, action: rbac.ActionUpdate, object: solidityObject},
-	"/solidity.SolidityService/ListSourceQualityPrompts":     fixedRule(rbac.ResourceSolidity, rbac.ActionGet),
-	"/solidity.SolidityService/GetSourceQualityPrompt":       {resource: rbac.ResourceSolidity, action: rbac.ActionGet, object: solidityObject},
-	"/solidity.SolidityService/CreateSourceQualityPrompt":    fixedRule(rbac.ResourceSolidity, rbac.ActionUpdate),
-	"/solidity.SolidityService/UpdateSourceQualityPrompt":    {resource: rbac.ResourceSolidity, action: rbac.ActionUpdate, object: solidityObject},
-	"/solidity.SolidityService/ActivateSourceQualityPrompt":  {resource: rbac.ResourceSolidity, action: rbac.ActionUpdate, object: solidityObject},
-	"/solidity.SolidityService/DeleteSourceQualityPrompt":    {resource: rbac.ResourceSolidity, action: rbac.ActionUpdate, object: solidityObject},
 
 	"/wallet.WalletService/GetWalletStatus":                fixedRule(rbac.ResourceWallets, rbac.ActionGet),
 	"/wallet.WalletService/ListWallets":                    fixedRule(rbac.ResourceWallets, rbac.ActionGet),

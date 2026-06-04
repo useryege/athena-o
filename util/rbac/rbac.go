@@ -52,10 +52,10 @@ const (
 	// please add new items to Resources
 	ResourceAccounts             = "accounts"
 	ResourceApplicationDiscovery = "application-discovery"
+	ResourceApplication          = "application"
 	ResourceLogs                 = "logs"
 	ResourceProjects             = "projects"
 	ResourceNotifications        = "notifications"
-	ResourceSolidity             = "solidity"
 	ResourceWallets              = "wallets"
 	ResourceWorm                 = "worm"
 	ResourcePolymarket           = "polymarket"
@@ -71,10 +71,10 @@ var (
 	Resources     = []string{
 		ResourceAccounts,
 		ResourceApplicationDiscovery,
+		ResourceApplication,
 		ResourceLogs,
 		ResourceProjects,
 		ResourceNotifications,
-		ResourceSolidity,
 		ResourceWallets,
 		ResourceWorm,
 		ResourcePolymarket,

@@ -1,6 +1,5 @@
 import {AccountsService} from './accounts-service';
 import {AthenaApplicationService} from './athena-application-service';
-import {AthenaSolidityService} from './athena-solidity-service';
 import {AuthService} from './auth-service';
 import {NotificationService} from './notification-service';
 import {PolymarketService} from './polymarket-service';
@@ -12,7 +11,6 @@ import {WormService} from './worm-service';
 
 export interface Services {
     athenaApplication: AthenaApplicationService;
-    athenaSolidity: AthenaSolidityService;
     users: UserService;
     authService: AuthService;
     viewPreferences: ViewPreferencesService;
@@ -26,7 +24,6 @@ export interface Services {
 
 export const services: Services = {
     athenaApplication: new AthenaApplicationService(),
-    athenaSolidity: new AthenaSolidityService(),
     authService: new AuthService(),
     users: new UserService(),
     viewPreferences: new ViewPreferencesService(),

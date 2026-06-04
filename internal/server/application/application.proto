@@ -104,6 +104,143 @@ message ListProjectCreatorHistoricalProjectsResponse {
   repeated string items = 1;
 }
 
+// GetContractSourceInfoRequest asks the application service to resolve contract bytecode/source facts.
+message GetContractSourceInfoRequest {
+  int64 chain_id = 1;
+  string contract = 2;
+}
+
+// ListBytecodesRequest queries stored bytecodes.
+message ListBytecodesRequest {
+  int64 page = 1;
+  int64 page_size = 2;
+  string code_hash = 3;
+}
+
+// ListBytecodesResponse returns stored bytecodes.
+message ListBytecodesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeListItem items = 1;
+  int64 total = 2;
+  int64 page = 3;
+  int64 page_size = 4;
+}
+
+// GetBytecodeRequest queries one stored bytecode.
+message GetBytecodeRequest {
+  string code_hash = 1;
+}
+
+// ListBytecodeDeploymentsRequest queries contracts using a bytecode.
+message ListBytecodeDeploymentsRequest {
+  string code_hash = 1;
+  int64 page = 2;
+  int64 page_size = 3;
+  int64 chain_id = 4;
+  string contract = 5;
+}
+
+// ListBytecodeDeploymentsResponse returns contracts using a bytecode.
+message ListBytecodeDeploymentsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeDeployment items = 1;
+  int64 total = 2;
+  int64 page = 3;
+  int64 page_size = 4;
+}
+
+// ListBytecodeBlacklistEntriesRequest queries all bytecode blacklist entries.
+message ListBytecodeBlacklistEntriesRequest {}
+
+// ListBytecodeBlacklistEntriesResponse returns bytecode blacklist entries.
+message ListBytecodeBlacklistEntriesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeBlacklistEntry items = 1;
+}
+
+// AddBytecodeBlacklistEntryRequest adds a bytecode blacklist entry by code hash or source contract.
+message AddBytecodeBlacklistEntryRequest {
+  string code_hash = 1;
+  int64 source_chain_id = 2;
+  string source_contract = 3;
+  string note = 4;
+}
+
+// AddBytecodeBlacklistEntryResponse returns the stored bytecode blacklist entry.
+message AddBytecodeBlacklistEntryResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeBlacklistEntry item = 1;
+}
+
+// UpdateBytecodeBlacklistNoteRequest updates a bytecode blacklist note.
+message UpdateBytecodeBlacklistNoteRequest {
+  string code_hash = 1;
+  string note = 2;
+}
+
+// UpdateBytecodeBlacklistNoteResponse returns the updated bytecode blacklist entry.
+message UpdateBytecodeBlacklistNoteResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeBlacklistEntry item = 1;
+}
+
+// DeleteBytecodeBlacklistRequest deletes a bytecode blacklist entry.
+message DeleteBytecodeBlacklistRequest {
+  string code_hash = 1;
+}
+
+// DeleteBytecodeBlacklistResponse is returned after deleting a bytecode blacklist entry.
+message DeleteBytecodeBlacklistResponse {}
+
+// ListSourceQualityPromptsRequest queries source quality prompts.
+message ListSourceQualityPromptsRequest {}
+
+// ListSourceQualityPromptsResponse returns source quality prompt records.
+message ListSourceQualityPromptsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt items = 1;
+}
+
+// GetSourceQualityPromptRequest queries one source quality prompt.
+message GetSourceQualityPromptRequest {
+  int64 id = 1;
+}
+
+// CreateSourceQualityPromptRequest creates a source quality prompt.
+message CreateSourceQualityPromptRequest {
+  string name = 1;
+  string system_prompt = 2;
+}
+
+// CreateSourceQualityPromptResponse returns the created prompt.
+message CreateSourceQualityPromptResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
+}
+
+// UpdateSourceQualityPromptRequest creates a new source quality prompt version.
+message UpdateSourceQualityPromptRequest {
+  int64 id = 1;
+  string name = 2;
+  string system_prompt = 3;
+}
+
+// UpdateSourceQualityPromptResponse returns the new prompt version.
+message UpdateSourceQualityPromptResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
+}
+
+// ActivateSourceQualityPromptRequest marks a prompt as current.
+message ActivateSourceQualityPromptRequest {
+  int64 id = 1;
+}
+
+// ActivateSourceQualityPromptResponse returns the activated prompt.
+message ActivateSourceQualityPromptResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
+}
+
+// DeleteSourceQualityPromptRequest soft deletes a prompt.
+message DeleteSourceQualityPromptRequest {
+  int64 id = 1;
+}
+
+// DeleteSourceQualityPromptResponse is returned after deleting a prompt.
+message DeleteSourceQualityPromptResponse {}
+
 // GetProjectOptionsRequest don't need any parameters.
 message GetProjectOptionsRequest {}
 
@@ -174,6 +311,91 @@ service ApplicationService {
 
   rpc ListProjectCreatorHistoricalProjects(ListProjectCreatorHistoricalProjectsRequest) returns (ListProjectCreatorHistoricalProjectsResponse) {
     option (google.api.http) = {get: "/api/v1/projects/{contract}/creator-history"};
+  }
+
+  // GetContractSourceInfo resolves bytecode/source facts for a contract.
+  rpc GetContractSourceInfo(GetContractSourceInfoRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ContractSourceInfo) {
+    option (google.api.http) = {get: "/api/v1/application/contracts/{contract}/source"};
+  }
+
+  // ListBytecodes returns stored bytecodes.
+  rpc ListBytecodes(ListBytecodesRequest) returns (ListBytecodesResponse) {
+    option (google.api.http) = {get: "/api/v1/application/bytecodes"};
+  }
+
+  // GetBytecode returns one stored bytecode.
+  rpc GetBytecode(GetBytecodeRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.BytecodeDetail) {
+    option (google.api.http) = {get: "/api/v1/application/bytecodes/{code_hash}"};
+  }
+
+  // ListBytecodeDeployments returns contracts using a bytecode.
+  rpc ListBytecodeDeployments(ListBytecodeDeploymentsRequest) returns (ListBytecodeDeploymentsResponse) {
+    option (google.api.http) = {get: "/api/v1/application/bytecodes/{code_hash}/deployments"};
+  }
+
+  // ListBytecodeBlacklistEntries returns configured bytecode blacklist entries.
+  rpc ListBytecodeBlacklistEntries(ListBytecodeBlacklistEntriesRequest) returns (ListBytecodeBlacklistEntriesResponse) {
+    option (google.api.http) = {get: "/api/v1/application/bytecode/blacklist"};
+  }
+
+  // AddBytecodeBlacklistEntry adds a bytecode blacklist entry.
+  rpc AddBytecodeBlacklistEntry(AddBytecodeBlacklistEntryRequest) returns (AddBytecodeBlacklistEntryResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/application/bytecode/blacklist"
+      body: "*"
+    };
+  }
+
+  // UpdateBytecodeBlacklistNote updates a bytecode blacklist note.
+  rpc UpdateBytecodeBlacklistNote(UpdateBytecodeBlacklistNoteRequest) returns (UpdateBytecodeBlacklistNoteResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/application/bytecode/blacklist/{code_hash}/note"
+      body: "*"
+    };
+  }
+
+  // DeleteBytecodeBlacklist deletes a bytecode blacklist entry.
+  rpc DeleteBytecodeBlacklist(DeleteBytecodeBlacklistRequest) returns (DeleteBytecodeBlacklistResponse) {
+    option (google.api.http) = {delete: "/api/v1/application/bytecode/blacklist/{code_hash}"};
+  }
+
+  // ListSourceQualityPrompts returns configured source quality prompts.
+  rpc ListSourceQualityPrompts(ListSourceQualityPromptsRequest) returns (ListSourceQualityPromptsResponse) {
+    option (google.api.http) = {get: "/api/v1/application/source-quality/prompts"};
+  }
+
+  // GetSourceQualityPrompt returns one source quality prompt.
+  rpc GetSourceQualityPrompt(GetSourceQualityPromptRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt) {
+    option (google.api.http) = {get: "/api/v1/application/source-quality/prompts/{id}"};
+  }
+
+  // CreateSourceQualityPrompt creates a source quality prompt.
+  rpc CreateSourceQualityPrompt(CreateSourceQualityPromptRequest) returns (CreateSourceQualityPromptResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/application/source-quality/prompts"
+      body: "*"
+    };
+  }
+
+  // UpdateSourceQualityPrompt creates a new source quality prompt version.
+  rpc UpdateSourceQualityPrompt(UpdateSourceQualityPromptRequest) returns (UpdateSourceQualityPromptResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/application/source-quality/prompts/{id}"
+      body: "*"
+    };
+  }
+
+  // ActivateSourceQualityPrompt marks a prompt as current.
+  rpc ActivateSourceQualityPrompt(ActivateSourceQualityPromptRequest) returns (ActivateSourceQualityPromptResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/application/source-quality/prompts/{id}/activate"
+      body: "*"
+    };
+  }
+
+  // DeleteSourceQualityPrompt soft deletes a prompt.
+  rpc DeleteSourceQualityPrompt(DeleteSourceQualityPromptRequest) returns (DeleteSourceQualityPromptResponse) {
+    option (google.api.http) = {delete: "/api/v1/application/source-quality/prompts/{id}"};
   }
 
   // GetProjectOptions returns the options.

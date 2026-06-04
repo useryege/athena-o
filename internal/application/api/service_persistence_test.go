@@ -7,9 +7,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redis/go-redis/v9"
 	"github.com/useryege/athena/internal/application/persistence"
-	"github.com/useryege/athena/util/redisport"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/util/ave"
+	"github.com/useryege/athena/util/redisport"
 )
 
 type servicePersistenceStore struct {
@@ -17,7 +17,14 @@ type servicePersistenceStore struct {
 }
 
 func TestNewServiceRequiresRedisClient(t *testing.T) {
-	_, err := NewService(nil, common.Address{}, common.Address{}, common.Address{}, 0, 0, common.Address{}, ave.Config{}, &servicePersistenceStore{}, nil, nil, nil, nil)
+	_, err := NewService(ServiceOpts{
+		V2FactoryContract: common.Address{},
+		WethContract:      common.Address{},
+		UsdtContract:      common.Address{},
+		AthenaContract:    common.Address{},
+		AveConfig:         ave.Config{},
+		Store:             &servicePersistenceStore{},
+	})
 	if err == nil {
 		t.Fatal("expected nil redis client error")
 	}
@@ -28,7 +35,15 @@ func TestNewServiceUsesRedisBufferedStore(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: mini.Addr()})
 	t.Cleanup(func() { _ = client.Close() })
 
-	service, err := NewService(nil, common.Address{}, common.Address{}, common.Address{}, 0, 0, common.Address{}, ave.Config{}, &servicePersistenceStore{}, nil, redisport.NewGoRedisAdapter(client), nil, nil)
+	service, err := NewService(ServiceOpts{
+		V2FactoryContract: common.Address{},
+		WethContract:      common.Address{},
+		UsdtContract:      common.Address{},
+		AthenaContract:    common.Address{},
+		AveConfig:         ave.Config{},
+		Store:             &servicePersistenceStore{},
+		RedisClient:       redisport.NewGoRedisAdapter(client),
+	})
 	if err != nil {
 		t.Fatalf("new service: %v", err)
 	}
