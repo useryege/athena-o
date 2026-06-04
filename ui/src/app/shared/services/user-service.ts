@@ -10,7 +10,12 @@ export class UserService {
     }
 
     public logout(): Promise<boolean> {
-        return requests.delete('/session').then(() => true);
+        return fetch(requests.toAbsURL('/auth/logout'), {credentials: 'same-origin', redirect: 'manual'}).then(res => {
+            if (res.status >= 400) {
+                throw new Error(res.statusText || `Logout failed (${res.status})`);
+            }
+            return true;
+        });
     }
 
     public get(): Promise<UserInfo> {

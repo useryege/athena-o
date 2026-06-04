@@ -34,7 +34,6 @@ import {
 import {services} from '../shared/services';
 import {WalletBlacklistEntry, WalletDetail, WalletItem} from '../shared/services/wallet-service';
 import {WormMarketDetail, WormMarketItem} from '../shared/services/worm-service';
-import requests from '../shared/services/requests';
 
 const fmt = (value: unknown) => {
     if (value === undefined || value === null || value === '') {
@@ -193,9 +192,22 @@ export const LoginPage = () => {
 
 export const UserInfoPage = () => {
     const ctx = React.useContext(Context);
+    const navigate = useNavigate();
+    const [loggingOut, setLoggingOut] = React.useState(false);
     const user = useAsyncData<UserInfo>(() => services.users.get() as any, []);
     const version = useAsyncData<VersionMessage & {version?: string}>(() => services.version.version() as any, []);
     const uiVersion = typeof SYSTEM_INFO === 'undefined' ? 'latest' : SYSTEM_INFO.version;
+    const logout = async () => {
+        setLoggingOut(true);
+        ctx.notifications.info('Logging out');
+        try {
+            await services.users.logout();
+            navigate('/login', {replace: true});
+        } catch (err: any) {
+            setLoggingOut(false);
+            ctx.notifications.error('Logout failed', err?.message || 'Could not log out');
+        }
+    };
     return (
         <AppPage
             title='User Info'
@@ -218,12 +230,7 @@ export const UserInfoPage = () => {
                 />
             </Section>
             <Section title='Session'>
-                <Button
-                    danger={true}
-                    onClick={() => {
-                        ctx.notifications.info('Logging out');
-                        window.location.href = requests.toAbsURL('/auth/logout');
-                    }}>
+                <Button danger={true} loading={loggingOut} onClick={logout}>
                     Log out
                 </Button>
             </Section>

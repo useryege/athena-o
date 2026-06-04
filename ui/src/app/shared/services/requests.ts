@@ -1,7 +1,6 @@
 import * as agent from 'superagent';
 
-import {BehaviorSubject, Observable, Observer} from 'rxjs';
-import {filter} from 'rxjs/operators';
+import {Observable, Observer, Subject} from 'rxjs';
 
 type Callback = (data: any) => void;
 
@@ -23,7 +22,7 @@ enum ReadyState {
 
 let baseHRef = '/';
 
-const onError = new BehaviorSubject<agent.ResponseError>(null);
+const onError = new Subject<agent.ResponseError>();
 
 function toAbsURL(val: string): string {
     const base = (baseHRef || '/').replace(/\/+$/, '');
@@ -47,7 +46,7 @@ export default {
     },
     agent,
     toAbsURL,
-    onError: onError.asObservable().pipe(filter(err => err != null)),
+    onError: onError.asObservable(),
     get(url: string) {
         return initHandlers(agent.get(`${apiRoot()}${url}`));
     },

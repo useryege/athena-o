@@ -6,6 +6,7 @@ import renderer, {act} from 'react-test-renderer';
 import {LoginPage, SettingsPage, UserInfoPage, WormMarketSummary, notificationTestTopics, visibleAccountsForUser} from './pages';
 import {WormMarketItem} from '../shared/services/worm-service';
 import {services} from '../shared/services';
+import {Provider} from '../shared/context';
 
 const accounts: Account[] = [
     {name: 'admin', enabled: true, capabilities: ['login'], tokens: []},
@@ -69,6 +70,44 @@ const renderLoginRoute = async (initialEntry = '/login') => {
     return tree;
 };
 
+const testContextApis = () => ({
+    notifications: {
+        success: jest.fn(),
+        error: jest.fn(),
+        info: jest.fn(),
+        warning: jest.fn()
+    },
+    modal: {
+        confirm: jest.fn(),
+        info: jest.fn(),
+        error: jest.fn()
+    },
+    navigation: {
+        goto: jest.fn(),
+        replace: jest.fn()
+    },
+    baseHref: '/'
+});
+
+const renderUserInfoRoute = async () => {
+    const apis = testContextApis();
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+        tree = renderer.create(
+            <Provider value={apis}>
+                <MemoryRouter initialEntries={['/user-info']} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                    <LocationProbe />
+                    <Routes>
+                        <Route path='/user-info' element={<UserInfoPage />} />
+                        <Route path='/login' element={<span>login destination</span>} />
+                    </Routes>
+                </MemoryRouter>
+            </Provider>
+        );
+    });
+    return {apis, tree};
+};
+
 const currentLocation = (tree: renderer.ReactTestRenderer) => tree.root.findByProps({'data-testid': 'location'}).children.join('');
 
 const isLogoutButton = (node: renderer.ReactTestInstance) => node.props?.danger === true && node.props?.children === 'Log out';
@@ -109,12 +148,40 @@ test('UserInfoPage renders the session logout action', async () => {
     jest.spyOn(services.users, 'get').mockResolvedValue(user('admin'));
     jest.spyOn(services.version, 'version').mockResolvedValue({Version: 'test-version'} as any);
 
-    let tree: renderer.ReactTestRenderer;
-    await act(async () => {
-        tree = renderer.create(<UserInfoPage />);
-    });
+    const {tree} = await renderUserInfoRoute();
 
     expect(tree.root.findAll(isLogoutButton)).toHaveLength(1);
+});
+
+test('UserInfoPage logs out local sessions and redirects to login', async () => {
+    jest.spyOn(services.users, 'get').mockResolvedValue(user('admin'));
+    jest.spyOn(services.version, 'version').mockResolvedValue({Version: 'test-version'} as any);
+    const logout = jest.spyOn(services.users, 'logout').mockResolvedValue(true);
+
+    const {apis, tree} = await renderUserInfoRoute();
+
+    await act(async () => {
+        await tree.root.find(isLogoutButton).props.onClick();
+    });
+
+    expect(logout).toHaveBeenCalledTimes(1);
+    expect(apis.notifications.info).toHaveBeenCalledWith('Logging out');
+    expect(currentLocation(tree)).toBe('/login');
+});
+
+test('UserInfoPage reports local logout failures without leaving the page', async () => {
+    jest.spyOn(services.users, 'get').mockResolvedValue(user('admin'));
+    jest.spyOn(services.version, 'version').mockResolvedValue({Version: 'test-version'} as any);
+    jest.spyOn(services.users, 'logout').mockRejectedValue(new Error('session delete failed'));
+
+    const {apis, tree} = await renderUserInfoRoute();
+
+    await act(async () => {
+        await tree.root.find(isLogoutButton).props.onClick();
+    });
+
+    expect(apis.notifications.error).toHaveBeenCalledWith('Logout failed', 'session delete failed');
+    expect(currentLocation(tree)).toBe('/user-info');
 });
 
 test('SettingsPage does not render the session logout action', async () => {

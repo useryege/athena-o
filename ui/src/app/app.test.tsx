@@ -4,6 +4,7 @@ import {Button} from 'antd';
 import {App, loadAuthSettingsWithRetry} from './app';
 import {AuthSettings} from './shared/models';
 import {services} from './shared/services';
+import requests from './shared/services/requests';
 
 const authSettings: AuthSettings = {
     url: '',
@@ -155,4 +156,38 @@ test('Bootstrap redirects logged-out protected routes to login', async () => {
 
     expect(window.location.pathname).toBe('/login');
     expect(containsText(tree.toJSON(), 'Log in')).toBe(true);
+});
+
+test('Bootstrap keeps successful local login on settings after stale request errors', async () => {
+    (requests.get('/stale-401') as any).emit('error', {status: 401});
+
+    jest.spyOn(services.authService, 'settings').mockResolvedValue(authSettings);
+    jest.spyOn(services.users, 'get').mockResolvedValueOnce(loggedOutUser).mockResolvedValue(loggedInUser);
+    const login = jest.spyOn(services.users, 'login').mockResolvedValue({token: 'created'});
+    jest.spyOn(services.accounts, 'list').mockResolvedValue([]);
+    jest.spyOn(services.accounts, 'canI').mockResolvedValue(true);
+    jest.spyOn(services.athenaApplication, 'getProjectDiscoveryStatus').mockResolvedValue({started: false, status: 'stopped'});
+    window.history.replaceState(null, '', '/login');
+
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+        tree = renderer.create(<App />);
+    });
+    await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+    });
+
+    const form = tree.root.findByProps({layout: 'vertical'});
+    await act(async () => {
+        await form.props.onFinish({username: 'admin', password: 'password'});
+    });
+    await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+    });
+
+    expect(login).toHaveBeenCalledWith('admin', 'password');
+    expect(window.location.pathname).toBe('/settings');
 });
