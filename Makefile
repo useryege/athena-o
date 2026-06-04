@@ -181,6 +181,8 @@ PROD_LOG_SERVICE?=
 PROD_MIGRATE_MODULE?=all
 PROD_POSTGRES_VOLUME?=athena-prod-postgres-data
 CONFIRM_DESTROY_PROD_DATA?=
+PROD_RESET_REMOTE_DATA?=
+PROD_RUN_REMOTE_MIGRATIONS?=
 # perform static compilation
 DEFAULT_STATIC_BUILD:=true
 ifeq ($(IS_DARWIN),true)
@@ -521,6 +523,10 @@ prod-logs-local:
 .PHONY: prod-deploy-remote
 prod-deploy-remote: 
 	PROD_IMAGE=$(PROD_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) bash ./hack/prod-remote-deploy.sh
+
+.PHONY: prod-deploy-fresh-remote
+prod-deploy-fresh-remote: prod-build-local
+	PROD_IMAGE=$(PROD_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) PROD_RESET_REMOTE_DATA=yes PROD_RUN_REMOTE_MIGRATIONS=yes bash ./hack/prod-remote-deploy.sh
 
 .PHONY: prod-start-remote
 prod-start-remote:

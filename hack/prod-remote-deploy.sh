@@ -10,6 +10,9 @@ IMAGE="${PROD_IMAGE:-athena:local}"
 REMOTE_USER="${REMOTE_USER:-root}"
 REMOTE_APP_DIR="${REMOTE_APP_DIR:-/root/athena}"
 POSTGRES_VOLUME="${PROD_POSTGRES_VOLUME:-athena-prod-postgres-data}"
+RESET_REMOTE_DATA="${PROD_RESET_REMOTE_DATA:-}"
+RUN_REMOTE_MIGRATIONS="${PROD_RUN_REMOTE_MIGRATIONS:-}"
+MIGRATE_MODULE="${PROD_MIGRATE_MODULE:-all}"
 
 if [[ -f "${ENV_FILE}" ]]; then
   set -a
@@ -41,28 +44,59 @@ if ! docker image inspect "${IMAGE}" >/dev/null 2>&1; then
 fi
 
 REMOTE="${REMOTE_USER}@${REMOTE_HOST}"
+UPLOAD_DIR="$(mktemp -d)"
+cleanup() {
+  rm -rf "${UPLOAD_DIR}"
+}
+trap cleanup EXIT
 
-echo "Checking Docker on ${REMOTE}..."
-ssh "${REMOTE}" "docker --version >/dev/null && docker compose version >/dev/null"
+echo "Preparing remote host ${REMOTE}..."
+if [[ "${RESET_REMOTE_DATA}" == "yes" ]]; then
+  echo "Resetting Athena containers and PostgreSQL volume on ${REMOTE}..."
+  ssh "${REMOTE}" "set -e
+docker --version >/dev/null
+docker compose version >/dev/null
+mkdir -p '${REMOTE_APP_DIR}'
+if [ -f '${REMOTE_APP_DIR}/docker-compose.prod.yml' ]; then
+  cd '${REMOTE_APP_DIR}'
+  if [ -f .env ]; then
+    compose_env_file=.env
+  else
+    compose_env_file=/dev/null
+  fi
+  POSTGRES_PASSWORD=dummy REDIS_PASSWORD=dummy ATHENA_WALLET_ENCRYPTION_KEY=dummy PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file \"\${compose_env_file}\" down --remove-orphans
+fi
+docker volume rm '${POSTGRES_VOLUME}' >/dev/null 2>&1 || true
+docker volume create '${POSTGRES_VOLUME}' >/dev/null"
+else
+  ssh "${REMOTE}" "set -e
+docker --version >/dev/null
+docker compose version >/dev/null
+mkdir -p '${REMOTE_APP_DIR}'
+docker volume create '${POSTGRES_VOLUME}' >/dev/null"
+fi
 
-echo "Creating remote deployment directory: ${REMOTE_APP_DIR}"
-ssh "${REMOTE}" "mkdir -p '${REMOTE_APP_DIR}/hack/postgres'"
+echo "Preparing deployment archive..."
+cp "${COMPOSE_FILE}" "${UPLOAD_DIR}/docker-compose.prod.yml"
+cp "${ENV_FILE}" "${UPLOAD_DIR}/.env"
+mkdir -p "${UPLOAD_DIR}/hack/postgres"
+cp -a "${REPO_ROOT}/hack/postgres/init" "${UPLOAD_DIR}/hack/postgres/init"
 
-echo "Ensuring production PostgreSQL volume exists: ${POSTGRES_VOLUME}"
-ssh "${REMOTE}" "docker volume create '${POSTGRES_VOLUME}' >/dev/null"
-
-echo "Uploading compose file and environment file..."
-scp "${COMPOSE_FILE}" "${REMOTE}:${REMOTE_APP_DIR}/docker-compose.prod.yml"
-scp "${ENV_FILE}" "${REMOTE}:${REMOTE_APP_DIR}/.env"
-
-echo "Uploading PostgreSQL init scripts..."
-scp -r "${REPO_ROOT}/hack/postgres/init" "${REMOTE}:${REMOTE_APP_DIR}/hack/postgres/"
+echo "Uploading compose file, environment file, and PostgreSQL init scripts..."
+tar -C "${UPLOAD_DIR}" -cf - docker-compose.prod.yml .env hack | ssh "${REMOTE}" "set -e
+mkdir -p '${REMOTE_APP_DIR}'
+tar -C '${REMOTE_APP_DIR}' -xf -"
 
 echo "Streaming Docker image ${IMAGE} to ${REMOTE}..."
 docker save "${IMAGE}" | ssh "${REMOTE}" "docker load"
 
 echo "Starting Athena on ${REMOTE}..."
 ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env up -d"
+
+if [[ "${RUN_REMOTE_MIGRATIONS}" == "yes" ]]; then
+  echo "Running Athena migrations on ${REMOTE}..."
+  ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env --profile tools run --rm athena-migrate athena up --module '${MIGRATE_MODULE}'"
+fi
 
 echo "Remote deployment status:"
 ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env ps"
