@@ -29,6 +29,7 @@ export class AccountsService {
     }
 
     public canI(resource: string, action: string, subresource: string): Promise<boolean> {
-        return requests.get(`/account/can-i/${resource}/${action}/${subresource}`).then(res => res.body.value === 'yes');
+        const parts = [resource, action, subresource || '*'].map(part => encodeURIComponent(part));
+        return requests.get(`/account/can-i/${parts.join('/')}`).then(res => res.body.value === 'yes');
     }
 }

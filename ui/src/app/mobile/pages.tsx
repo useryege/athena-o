@@ -87,6 +87,21 @@ export const notificationTestTopics = [
     {topic: 'poly-kickoff', label: '[POLY] 开赛通知'}
 ];
 
+const rbacResources = {
+    applicationDiscovery: 'application-discovery',
+    notifications: 'notifications',
+    solidity: 'solidity',
+    wallets: 'wallets'
+};
+
+const rbacActions = {
+    update: 'update',
+    invoke: 'invoke'
+};
+
+const useCanI = (resource: string, action: string, subresource = '*') =>
+    useAsyncData<boolean>(() => services.accounts.canI(resource, action, subresource) as any, [resource, action, subresource]);
+
 const usePagedParams = (defaultPageSize = 20) => {
     const [params, setParams] = useSearchParams();
     const page = Number(params.get('page') || 1) || 1;
@@ -411,8 +426,20 @@ export const WalletsPage = () => {
     const [createOpen, setCreateOpen] = React.useState(false);
     const [secret, setSecret] = React.useState<WalletDetail>(null);
     const data = useAsyncData(() => services.wallet.listWallets({page, pageSize, query, chain: chain || undefined}), [page, pageSize, query, chain]);
-    const reveal = async (id: number) => setSecret(await services.wallet.getWallet(id, true));
+    const canUpdateWallets = useCanI(rbacResources.wallets, rbacActions.update);
+    const canRevealWallets = useCanI(rbacResources.wallets, rbacActions.invoke);
+    const canCreateWallet = canUpdateWallets.data === true;
+    const canRevealWallet = canRevealWallets.data === true;
+    const reveal = async (id: number) => {
+        if (!canRevealWallet) {
+            return;
+        }
+        setSecret(await services.wallet.getWallet(id, true));
+    };
     const create = async (values: {chain: string; alias?: string}) => {
+        if (!canCreateWallet) {
+            return;
+        }
         await services.wallet.createWallet(values.chain, values.alias || '');
         setCreateOpen(false);
         ctx.notifications.success('Wallet created');
@@ -426,7 +453,7 @@ export const WalletsPage = () => {
         {
             title: 'Actions',
             render: item => (
-                <Button icon={<EyeOutlined />} onClick={() => reveal(item.id)}>
+                <Button icon={<EyeOutlined />} disabled={!canRevealWallet} onClick={() => reveal(item.id)}>
                     Reveal
                 </Button>
             )
@@ -440,7 +467,7 @@ export const WalletsPage = () => {
             error={data.error}
             onRefresh={data.reload}
             extra={
-                <Button type='primary' icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+                <Button type='primary' icon={<PlusOutlined />} disabled={!canCreateWallet} onClick={() => setCreateOpen(true)}>
                     Create
                 </Button>
             }
@@ -476,7 +503,7 @@ export const WalletsPage = () => {
                             ]}
                         />
                         <InlineActions>
-                            <Button size='small' icon={<EyeOutlined />} onClick={() => reveal(item.id)}>
+                            <Button size='small' icon={<EyeOutlined />} disabled={!canRevealWallet} onClick={() => reveal(item.id)}>
                                 Reveal
                             </Button>
                         </InlineActions>
@@ -491,7 +518,7 @@ export const WalletsPage = () => {
                     <Form.Item name='alias' label='Alias'>
                         <Input />
                     </Form.Item>
-                    <Button type='primary' htmlType='submit'>
+                    <Button type='primary' htmlType='submit' disabled={!canCreateWallet}>
                         Create
                     </Button>
                 </Form>
@@ -512,12 +539,20 @@ export const WalletsPage = () => {
 export const WalletBlacklistPage = () => {
     const ctx = React.useContext(Context);
     const data = useAsyncData(() => services.wallet.listWalletBlacklistEntries(), []);
+    const canUpdate = useCanI(rbacResources.wallets, rbacActions.update);
+    const canModify = canUpdate.data === true;
     const add = async (values: {wallet: string; note?: string}) => {
+        if (!canModify) {
+            return;
+        }
         await services.wallet.addWalletBlacklistEntry(values.wallet, values.note || '');
         ctx.notifications.success('Wallet blacklisted');
         data.reload();
     };
-    const remove = (wallet: string) =>
+    const remove = (wallet: string) => {
+        if (!canModify) {
+            return;
+        }
         ctx.modal.confirm({
             title: 'Delete wallet blacklist entry?',
             content: wallet,
@@ -526,6 +561,7 @@ export const WalletBlacklistPage = () => {
                 data.reload();
             }
         });
+    };
     return (
         <BlacklistPage
             title='Wallet Blacklist'
@@ -536,6 +572,7 @@ export const WalletBlacklistPage = () => {
             idField='wallet'
             add={add}
             remove={remove}
+            canModify={canModify}
         />
     );
 };
@@ -549,6 +586,7 @@ const BlacklistPage = <T extends WalletBlacklistEntry | BytecodeBlacklistEntry>(
     idField: 'wallet' | 'codeHash';
     add: (values: any) => Promise<void>;
     remove: (id: string) => void;
+    canModify: boolean;
 }) => {
     const [form] = Form.useForm();
     const idLabel = props.idField === 'wallet' ? 'Wallet' : 'Contract or Code Hash';
@@ -559,7 +597,7 @@ const BlacklistPage = <T extends WalletBlacklistEntry | BytecodeBlacklistEntry>(
         {
             title: 'Actions',
             render: item => (
-                <Button danger={true} icon={<DeleteOutlined />} onClick={() => props.remove((item as any)[props.idField])}>
+                <Button danger={true} icon={<DeleteOutlined />} disabled={!props.canModify} onClick={() => props.remove((item as any)[props.idField])}>
                     Delete
                 </Button>
             )
@@ -590,7 +628,7 @@ const BlacklistPage = <T extends WalletBlacklistEntry | BytecodeBlacklistEntry>(
                     <Form.Item name='note'>
                         <Input placeholder='Note' />
                     </Form.Item>
-                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />}>
+                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />} disabled={!props.canModify}>
                         Add
                     </Button>
                 </Form>
@@ -605,7 +643,7 @@ const BlacklistPage = <T extends WalletBlacklistEntry | BytecodeBlacklistEntry>(
                         <CardTitle title={<TruncatedText value={(item as any)[props.idField]} copyable={true} />} subtitle={(item as any).note} />
                         <MetricRow items={[{label: 'Created', value: (item as any).createdAt}]} />
                         <InlineActions>
-                            <Button size='small' danger={true} icon={<DeleteOutlined />} onClick={() => props.remove((item as any)[props.idField])}>
+                            <Button size='small' danger={true} icon={<DeleteOutlined />} disabled={!props.canModify} onClick={() => props.remove((item as any)[props.idField])}>
                                 Delete
                             </Button>
                         </InlineActions>
@@ -719,12 +757,20 @@ export const BytecodeDetailPage = () => {
 export const BytecodeBlacklistPage = () => {
     const ctx = React.useContext(Context);
     const data = useAsyncData(() => services.athenaSolidity.listBytecodeBlacklistEntries(), []);
+    const canUpdate = useCanI(rbacResources.solidity, rbacActions.update);
+    const canModify = canUpdate.data === true;
     const add = async (values: {sourceContract: string; note?: string; sourceChainID?: number}) => {
+        if (!canModify) {
+            return;
+        }
         await services.athenaSolidity.addBytecodeBlacklistEntry(values.sourceContract, values.note || '', values.sourceChainID);
         ctx.notifications.success('Bytecode blacklisted');
         data.reload();
     };
-    const remove = (codeHash: string) =>
+    const remove = (codeHash: string) => {
+        if (!canModify) {
+            return;
+        }
         ctx.modal.confirm({
             title: 'Delete bytecode blacklist entry?',
             content: codeHash,
@@ -733,6 +779,7 @@ export const BytecodeBlacklistPage = () => {
                 data.reload();
             }
         });
+    };
     return (
         <BlacklistPage
             title='Bytecode Blacklist'
@@ -743,6 +790,7 @@ export const BytecodeBlacklistPage = () => {
             idField='codeHash'
             add={add}
             remove={remove}
+            canModify={canModify}
         />
     );
 };
@@ -751,7 +799,12 @@ export const SourceQualityPromptsPage = () => {
     const ctx = React.useContext(Context);
     const [editing, setEditing] = React.useState<SourceQualityPrompt>(null);
     const data = useAsyncData(() => services.athenaSolidity.listSourceQualityPrompts(), []);
+    const canUpdate = useCanI(rbacResources.solidity, rbacActions.update);
+    const canModify = canUpdate.data === true;
     const save = async (values: {name: string; systemPrompt: string}) => {
+        if (!canModify) {
+            return;
+        }
         if (editing?.id) {
             await services.athenaSolidity.updateSourceQualityPrompt(editing.id, values.name, values.systemPrompt);
         } else {
@@ -767,7 +820,7 @@ export const SourceQualityPromptsPage = () => {
             error={data.error}
             onRefresh={data.reload}
             extra={
-                <Button type='primary' icon={<PlusOutlined />} onClick={() => setEditing({})}>
+                <Button type='primary' icon={<PlusOutlined />} disabled={!canModify} onClick={() => setEditing({})}>
                     New
                 </Button>
             }>
@@ -783,12 +836,12 @@ export const SourceQualityPromptsPage = () => {
                         title: 'Actions',
                         render: item => (
                             <Space>
-                                <Button icon={<SaveOutlined />} onClick={() => setEditing(item)}>
+                                <Button icon={<SaveOutlined />} disabled={!canModify} onClick={() => setEditing(item)}>
                                     Edit
                                 </Button>
                                 <Button
                                     icon={<CheckCircleOutlined />}
-                                    disabled={!item.id}
+                                    disabled={!canModify || !item.id}
                                     onClick={async () => {
                                         await services.athenaSolidity.activateSourceQualityPrompt(item.id || 0);
                                         ctx.notifications.success('Prompt activated');
@@ -804,7 +857,7 @@ export const SourceQualityPromptsPage = () => {
                     <>
                         <CardTitle title={item.name} subtitle={`v${item.version || '-'}`} tags={item.isActive ? <Tag color='green'>Active</Tag> : <Tag>Draft</Tag>} />
                         <InlineActions>
-                            <Button size='small' onClick={() => setEditing(item)}>
+                            <Button size='small' disabled={!canModify} onClick={() => setEditing(item)}>
                                 Edit
                             </Button>
                         </InlineActions>
@@ -819,7 +872,7 @@ export const SourceQualityPromptsPage = () => {
                     <Form.Item name='systemPrompt' label='System Prompt' rules={[{required: true}]}>
                         <Input.TextArea rows={10} />
                     </Form.Item>
-                    <Button type='primary' htmlType='submit'>
+                    <Button type='primary' htmlType='submit' disabled={!canModify}>
                         Save
                     </Button>
                 </Form>
@@ -1072,23 +1125,30 @@ export const NotificationsPage = () => {
     const [keyword, setKeyword] = useKeywordParam('keyword');
     const [status, setStatus] = React.useState('');
     const data = useAsyncData(() => services.notification.listNotifications({page, pageSize, keyword, status: status || undefined}), [page, pageSize, keyword, status]);
+    const canInvoke = useCanI(rbacResources.notifications, rbacActions.invoke);
+    const canSendTest = canInvoke.data === true;
     const sendTest = async (topic: string) => {
+        if (!canSendTest) {
+            return;
+        }
         await services.notification.sendTestNotification(topic);
         data.reload();
     };
     const testNotificationActions = isMobile ? (
         <Dropdown
             menu={{
-                items: notificationTestTopics.map(item => ({key: item.topic, label: item.label})),
+                items: notificationTestTopics.map(item => ({key: item.topic, label: item.label, disabled: !canSendTest})),
                 onClick: item => void sendTest(item.key)
             }}
             trigger={['click']}>
-            <Button icon={<SendOutlined />}>Test</Button>
+            <Button icon={<SendOutlined />} disabled={!canSendTest}>
+                Test
+            </Button>
         </Dropdown>
     ) : (
         <Space>
             {notificationTestTopics.map(item => (
-                <Button key={item.topic} icon={<SendOutlined />} onClick={() => void sendTest(item.topic)}>
+                <Button key={item.topic} icon={<SendOutlined />} disabled={!canSendTest} onClick={() => void sendTest(item.topic)}>
                     {item.label}
                 </Button>
             ))}
@@ -1183,8 +1243,13 @@ export const SettingsPage = () => {
     const user = useAsyncData<UserInfo>(() => services.users.get() as any, []);
     const accounts = useAsyncData<Account[]>(() => services.accounts.list() as any, []);
     const discovery = useAsyncData(() => services.athenaApplication.getProjectDiscoveryStatus(), []);
+    const canUpdateDiscovery = useCanI(rbacResources.applicationDiscovery, rbacActions.update);
+    const canToggleDiscovery = canUpdateDiscovery.data === true;
     const visibleAccounts = visibleAccountsForUser(accounts.data || [], user.data);
     const toggleDiscovery = async () => {
+        if (!canToggleDiscovery) {
+            return;
+        }
         if (discovery.data?.started) {
             await services.athenaApplication.stopProjectDiscovery();
         } else {
@@ -1205,7 +1270,7 @@ export const SettingsPage = () => {
             <Section
                 title='Application Discovery'
                 extra={
-                    <Button icon={discovery.data?.started ? <StopOutlined /> : <ApiOutlined />} onClick={toggleDiscovery}>
+                    <Button icon={discovery.data?.started ? <StopOutlined /> : <ApiOutlined />} disabled={!canToggleDiscovery} onClick={toggleDiscovery}>
                         {discovery.data?.started ? 'Stop' : 'Start'}
                     </Button>
                 }>

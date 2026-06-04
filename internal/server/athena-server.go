@@ -29,7 +29,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	golang_proto "github.com/golang/protobuf/proto" //nolint:staticcheck
 	"github.com/gorilla/handlers"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -395,7 +394,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	// This is because TLS handshaking occurs in cmux handling
 	sOpts = append(sOpts, grpc.ChainStreamInterceptor(
 		logging.StreamServerInterceptor(grpc_util.InterceptorLogger(server.log)),
-		grpc_auth.StreamServerInterceptor(server.Authenticate),
+		server.streamAuthInterceptor,
 		// grpc_util.UserAgentStreamServerInterceptor(common.AthenaUserAgentName, clientConstraint),
 		// grpc_util.PayloadStreamServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
 		// 	return !sensitiveMethods[c.FullMethod()]
@@ -407,7 +406,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	sOpts = append(sOpts, grpc.ChainUnaryInterceptor(
 		// bug21955WorkaroundInterceptor,
 		logging.UnaryServerInterceptor(grpc_util.InterceptorLogger(server.log)),
-		grpc_auth.UnaryServerInterceptor(server.Authenticate),
+		server.unaryAuthInterceptor,
 		// grpc_util.UserAgentUnaryServerInterceptor(common.AthenaUserAgentName, clientConstraint),
 		// grpc_util.PayloadUnaryServerInterceptor(server.log, true, func(_ context.Context, c interceptors.CallMeta) bool {
 		// 	return !sensitiveMethods[c.FullMethod()]
@@ -485,14 +484,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// certificateService := certificate.NewServer(a.db, a.enf)
 	// gpgkeyService := gpgkey.NewServer(a.db, a.enf)
 	versionService := version.NewServer(server, func() (bool, error) {
-		if server.DisableAuth {
-			return true, nil
-		}
-		sett, err := server.settingsMgr.GetSettings()
-		if err != nil {
-			return false, err
-		}
-		return sett.AnonymousUserEnabled, err
+		return server.DisableAuth, nil
 	})
 	healthService := health.NewServer()
 
@@ -1164,21 +1156,7 @@ func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, 
 		ctx = context.WithValue(ctx, util_session.AuthErrorCtxKey, claimsErr) // ctx {data:data, auth-error:claimsErr}
 	}
 
-	if claimsErr != nil {
-		// get the athena settings from the settings manager
-		athenaSettings, err := server.settingsMgr.GetSettings()
-		if err != nil {
-			return ctx, status.Errorf(codes.Internal, "unable to load settings: %v", err)
-		}
-		// if anonymous user is not enabled, return the error
-		if !athenaSettings.AnonymousUserEnabled {
-			return ctx, claimsErr
-		}
-		//nolint:staticcheck
-		ctx = context.WithValue(ctx, "claims", "") // ctx {data:data, claims:""}
-	}
-
-	return ctx, nil
+	return ctx, claimsErr
 }
 
 // getClaims extracts, validates and refreshes a JWT token from an incoming request context.

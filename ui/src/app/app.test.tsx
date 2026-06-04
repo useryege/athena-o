@@ -35,6 +35,24 @@ const authSettings: AuthSettings = {
     syncWithReplaceAllowed: false
 };
 
+const loggedOutUser = {loggedIn: false, username: '', iss: '', groups: []};
+const loggedInUser = {loggedIn: true, username: 'admin', iss: 'athena', groups: []};
+
+beforeAll(() => {
+    if (typeof globalThis.MessageChannel === 'undefined') {
+        class TestMessageChannel {
+            public port1 = {onmessage: null as ((event: unknown) => void) | null};
+            public port2 = {
+                postMessage: () => {
+                    window.setTimeout(() => this.port1.onmessage?.({}), 0);
+                }
+            };
+        }
+        (globalThis as any).MessageChannel = TestMessageChannel;
+        (window as any).MessageChannel = TestMessageChannel;
+    }
+});
+
 beforeEach(() => {
     localStorage.clear();
     window.history.replaceState(null, '', '/');
@@ -50,6 +68,10 @@ beforeEach(() => {
             removeEventListener: jest.fn(),
             dispatchEvent: jest.fn()
         }));
+});
+
+afterEach(() => {
+    jest.restoreAllMocks();
 });
 
 const containsText = (node: renderer.ReactTestRendererJSON | renderer.ReactTestRendererJSON[] | string | null, text: string): boolean => {
@@ -96,6 +118,7 @@ test('Bootstrap renders recoverable settings failure and retries on demand', asy
         .mockRejectedValueOnce(new Error('api offline'))
         .mockRejectedValueOnce(new Error('api offline'))
         .mockResolvedValue(authSettings);
+    jest.spyOn(services.users, 'get').mockResolvedValue(loggedInUser);
 
     let tree: renderer.ReactTestRenderer;
     await act(async () => {
@@ -114,4 +137,22 @@ test('Bootstrap renders recoverable settings failure and retries on demand', asy
     expect(settings).toHaveBeenCalledTimes(6);
     settings.mockRestore();
     jest.useRealTimers();
+});
+
+test('Bootstrap redirects logged-out protected routes to login', async () => {
+    jest.spyOn(services.authService, 'settings').mockResolvedValue(authSettings);
+    jest.spyOn(services.users, 'get').mockResolvedValue(loggedOutUser);
+    window.history.replaceState(null, '', '/projects');
+
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+        tree = renderer.create(<App />);
+    });
+    await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+    });
+
+    expect(window.location.pathname).toBe('/login');
+    expect(containsText(tree.toJSON(), 'Log in')).toBe(true);
 });

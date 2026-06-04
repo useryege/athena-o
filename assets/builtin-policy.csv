@@ -7,10 +7,23 @@
 # p, <role/user/group>, <resource>, <action>, <object>, <allow/deny>
 
 p, role:readonly, accounts, get, *, allow
+p, role:readonly, application-discovery, get, *, allow
 p, role:readonly, logs, get, */*, allow
+p, role:readonly, projects, get, *, allow
+p, role:readonly, notifications, get, *, allow
+p, role:readonly, solidity, get, *, allow
+p, role:readonly, wallets, get, *, allow
+p, role:readonly, worm, get, *, allow
+p, role:readonly, polymarket, get, *, allow
 
 p, role:admin, application-discovery, update, *, allow
 p, role:admin, accounts, update, *, allow
+p, role:admin, projects, update, *, allow
+p, role:admin, projects, invoke, *, allow
+p, role:admin, notifications, invoke, *, allow
+p, role:admin, solidity, update, *, allow
+p, role:admin, wallets, update, *, allow
+p, role:admin, wallets, invoke, *, allow
 
 g, role:admin, role:readonly
 g, admin, role:admin

@@ -204,14 +204,52 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     const ant = AntApp.useApp();
     const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
     const [desktopCollapsed, setDesktopCollapsed] = React.useState(props.pref.hideSidebar);
+    const isLoginPath = location.pathname.startsWith('/login');
+    const locationKey = `${location.pathname}${location.search}`;
+    const [authorizedLocationKey, setAuthorizedLocationKey] = React.useState(isLoginPath ? locationKey : '');
 
     React.useEffect(() => {
         setDesktopCollapsed(props.pref.hideSidebar);
     }, [props.pref.hideSidebar]);
 
     React.useEffect(() => {
+        if (isLoginPath) {
+            setAuthorizedLocationKey(locationKey);
+            return;
+        }
+
+        let active = true;
+        setAuthorizedLocationKey('');
+        services.users
+            .get()
+            .then(user => {
+                if (!active) {
+                    return;
+                }
+                if (!user.loggedIn) {
+                    navigate('/login', {replace: true});
+                    return;
+                }
+                setAuthorizedLocationKey(locationKey);
+            })
+            .catch(err => {
+                if (!active) {
+                    return;
+                }
+                if (err?.status === 401) {
+                    navigate('/login', {replace: true});
+                    return;
+                }
+                setAuthorizedLocationKey(locationKey);
+            });
+        return () => {
+            active = false;
+        };
+    }, [isLoginPath, locationKey, navigate]);
+
+    React.useEffect(() => {
         const subscription: Subscription = requests.onError.subscribe(async err => {
-            if (err.status !== 401 || location.pathname.startsWith('/login')) {
+            if (err.status !== 401 || isLoginPath) {
                 return;
             }
             const isSSO = await isExpiredSSO();
@@ -222,11 +260,11 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
             if (isSSO) {
                 window.location.href = `${basehref}/auth/login?return_url=${encodeURIComponent('/settings')}`;
             } else {
-                navigate('/login');
+                navigate('/login', {replace: true});
             }
         });
         return () => subscription?.unsubscribe();
-    }, [location.pathname, location.search, navigate]);
+    }, [isLoginPath, navigate]);
 
     React.useEffect(() => {
         document.body.dataset.theme = props.pref.theme || 'light';
@@ -272,8 +310,9 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         <Menu mode='inline' items={toMenuItems(navItems)} selectedKeys={[selectedKey(location.pathname)]} defaultOpenKeys={openKeys(location.pathname)} onClick={onMenuClick} />
     );
 
-    const content = location.pathname.startsWith('/login') ? (
-        <AppRoutes />
+    const routes = !isLoginPath && authorizedLocationKey !== locationKey ? <div className='athena-boot'>Loading Athena...</div> : <AppRoutes />;
+    const content = isLoginPath ? (
+        routes
     ) : (
         <AntLayout className='athena-shell'>
             <AntLayout.Sider className='athena-shell__sider' collapsible={true} collapsed={desktopCollapsed} trigger={null} width={248}>
@@ -313,9 +352,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                 </AntLayout.Header>
                 <AntLayout.Content className='athena-shell__content'>
                     <Provider value={contextValue}>
-                        <AuthSettingsCtx.Provider value={props.authSettings}>
-                            <AppRoutes />
-                        </AuthSettingsCtx.Provider>
+                        <AuthSettingsCtx.Provider value={props.authSettings}>{routes}</AuthSettingsCtx.Provider>
                     </Provider>
                 </AntLayout.Content>
             </AntLayout>

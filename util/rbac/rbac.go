@@ -53,6 +53,12 @@ const (
 	ResourceAccounts             = "accounts"
 	ResourceApplicationDiscovery = "application-discovery"
 	ResourceLogs                 = "logs"
+	ResourceProjects             = "projects"
+	ResourceNotifications        = "notifications"
+	ResourceSolidity             = "solidity"
+	ResourceWallets              = "wallets"
+	ResourceWorm                 = "worm"
+	ResourcePolymarket           = "polymarket"
 
 	// please add new items to Actions
 	ActionGet    = "get"
@@ -66,6 +72,12 @@ var (
 		ResourceAccounts,
 		ResourceApplicationDiscovery,
 		ResourceLogs,
+		ResourceProjects,
+		ResourceNotifications,
+		ResourceSolidity,
+		ResourceWallets,
+		ResourceWorm,
+		ResourcePolymarket,
 	}
 	Actions = []string{
 		ActionGet,

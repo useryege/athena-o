@@ -1,5 +1,6 @@
 import {Account, UserInfo} from '../shared/models';
 import * as React from 'react';
+import {Button} from 'antd';
 import {MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
 import renderer, {act} from 'react-test-renderer';
 import {LoginPage, SettingsPage, UserInfoPage, WormMarketSummary, notificationTestTopics, visibleAccountsForUser} from './pages';
@@ -119,6 +120,7 @@ test('UserInfoPage renders the session logout action', async () => {
 test('SettingsPage does not render the session logout action', async () => {
     jest.spyOn(services.users, 'get').mockResolvedValue(user('admin'));
     jest.spyOn(services.accounts, 'list').mockResolvedValue(accounts);
+    jest.spyOn(services.accounts, 'canI').mockResolvedValue(true);
     jest.spyOn(services.athenaApplication, 'getProjectDiscoveryStatus').mockResolvedValue({started: false, status: 'stopped'});
 
     let tree: renderer.ReactTestRenderer;
@@ -127,6 +129,21 @@ test('SettingsPage does not render the session logout action', async () => {
     });
 
     expect(tree.root.findAll(isLogoutButton)).toHaveLength(0);
+});
+
+test('SettingsPage disables discovery controls without update permission', async () => {
+    jest.spyOn(services.users, 'get').mockResolvedValue(user('LINGJIE'));
+    jest.spyOn(services.accounts, 'list').mockResolvedValue(accounts);
+    jest.spyOn(services.accounts, 'canI').mockResolvedValue(false);
+    jest.spyOn(services.athenaApplication, 'getProjectDiscoveryStatus').mockResolvedValue({started: false, status: 'stopped'});
+
+    let tree: renderer.ReactTestRenderer;
+    await act(async () => {
+        tree = renderer.create(<SettingsPage />);
+    });
+
+    const startButton = tree.root.findAllByType(Button).find(node => node.props.children === 'Start');
+    expect(startButton?.props.disabled).toBe(true);
 });
 
 test('visibleAccountsForUser returns all accounts for admin', () => {
