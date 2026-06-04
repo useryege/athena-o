@@ -54,10 +54,7 @@ func toFrame(msg []byte) []byte {
 }
 
 func (c *client) executeRequest(ctx context.Context, fullMethodName string, msg []byte, md metadata.MD) (*http.Response, error) {
-	schema := "https"
-	if c.PlainText {
-		schema = "http"
-	}
+	schema := "http"
 	rootPath := strings.TrimRight(strings.TrimLeft(c.GRPCWebRootPath, "/"), "/")
 
 	var requestURL string

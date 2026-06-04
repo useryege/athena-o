@@ -2,7 +2,6 @@ package account
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"sort"
@@ -53,28 +52,10 @@ func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRe
 		}
 	}
 
-	if issuer == session.SessionManagerClaimsIssuer {
-		// local user is changing own password or another user password
-
-		// user is changing own password.
-		// ensure token belongs to a user, not project
-		// if q.Name == "" && rbacpolicy.IsProjectSubject(username) {
-		// 	return nil, status.Errorf(codes.InvalidArgument, "password can only be changed for local users, not user %q", username)
-		// }
-
+	if updatedUsername == username && issuer == session.SessionManagerClaimsIssuer {
 		err := s.sessionMgr.VerifyUsernamePassword(username, q.CurrentPassword)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "current password does not match")
-		}
-	} else {
-		// SSO user is changing or local user password
-
-		iat, err := session.Iat(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get issue time: %w", err)
-		}
-		if time.Since(iat) > common.ChangePasswordSSOTokenMaxAge {
-			return nil, errors.New("SSO token is too old. Please use 'athena relogin' to get a new token")
 		}
 	}
 

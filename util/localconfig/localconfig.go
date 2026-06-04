@@ -39,30 +39,18 @@ type Context struct {
 type Server struct {
 	// Server is the Athena CD server address
 	Server string `json:"server"`
-	// Insecure indicates to connect to the server over TLS insecurely
-	Insecure bool `json:"insecure,omitempty"`
 	// GRPCWeb indicates to connect to the server using gRPC Web protocol
 	GRPCWeb bool `json:"grpc-web,omitempty"`
 	// GRPCWebRootPath indicates to connect to the server using gRPC Web protocol with this root path
 	GRPCWebRootPath string `json:"grpc-web-root-path"`
-	// CACertificateAuthorityData is the base64 string of a PEM encoded certificate
-	// TODO: not yet implemented
-	CACertificateAuthorityData string `json:"certificate-authority-data,omitempty"`
-	// ClientCertificateData is the base64 string of a PEM encoded certificate used to authenticate the client
-	ClientCertificateData string `json:"client-certificate-data,omitempty"`
-	// ClientCertificateKeyData is the base64 string of a PEM encoded private key of the client certificate
-	ClientCertificateKeyData string `json:"client-certificate-key-data,omitempty"`
-	// PlainText indicates to connect with TLS disabled
-	PlainText bool `json:"plain-text,omitempty"`
 	// Core indicates to talk to Kubernetes API without using Athena CD API server
 	Core bool `json:"core,omitempty"`
 }
 
 // User contains user authentication information
 type User struct {
-	Name         string `json:"name"`
-	AuthToken    string `json:"auth-token,omitempty"`
-	RefreshToken string `json:"refresh-token,omitempty"`
+	Name      string `json:"name"`
+	AuthToken string `json:"auth-token,omitempty"`
 }
 
 // Claims returns the standard claims from the JWT claims
@@ -220,7 +208,6 @@ func (l *LocalConfig) RemoveUser(serverName string) bool {
 func (l *LocalConfig) RemoveToken(serverName string) bool {
 	for i, u := range l.Users {
 		if u.Name == serverName {
-			l.Users[i].RefreshToken = ""
 			l.Users[i].AuthToken = ""
 			return true
 		}

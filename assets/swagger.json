@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-536-gb14a1a8-dirty"
+    "version": "v1.0.0-553-g8fee92a-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -2297,28 +2297,6 @@
     "applicationStopProjectDiscoveryRequest": {
       "type": "object"
     },
-    "clusterConnector": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
-        }
-      }
-    },
-    "clusterDexConfig": {
-      "type": "object",
-      "properties": {
-        "connectors": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/clusterConnector"
-          }
-        }
-      }
-    },
     "clusterGoogleAnalyticsConfig": {
       "type": "object",
       "properties": {
@@ -2351,38 +2329,6 @@
         }
       }
     },
-    "clusterOIDCConfig": {
-      "type": "object",
-      "properties": {
-        "cliClientID": {
-          "type": "string"
-        },
-        "clientID": {
-          "type": "string"
-        },
-        "enablePKCEAuthentication": {
-          "type": "boolean"
-        },
-        "idTokenClaims": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/oidcClaim"
-          }
-        },
-        "issuer": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "scopes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
     "clusterPlugin": {
       "type": "object",
       "title": "Plugin settings",
@@ -2411,9 +2357,6 @@
         "controllerNamespace": {
           "type": "string"
         },
-        "dexConfig": {
-          "$ref": "#/definitions/clusterDexConfig"
-        },
         "execEnabled": {
           "type": "boolean"
         },
@@ -2438,9 +2381,6 @@
           "items": {
             "type": "string"
           }
-        },
-        "oidcConfig": {
-          "$ref": "#/definitions/clusterOIDCConfig"
         },
         "passwordPattern": {
           "type": "string"
@@ -2536,23 +2476,6 @@
         },
         "status": {
           "type": "string"
-        }
-      }
-    },
-    "oidcClaim": {
-      "type": "object",
-      "properties": {
-        "essential": {
-          "type": "boolean"
-        },
-        "value": {
-          "type": "string"
-        },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },

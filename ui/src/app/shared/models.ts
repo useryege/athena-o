@@ -22,15 +22,6 @@ export interface AuthSettings {
         trackingID: string;
         anonymizeUsers: boolean;
     };
-    dexConfig: {
-        connectors: {
-            name: string;
-            type: string;
-        }[];
-    };
-    oidcConfig: {
-        name: string;
-    };
     help: {
         chatUrl: string;
         chatText: string;

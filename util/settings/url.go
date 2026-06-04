@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
-
-	"github.com/useryege/athena/common"
 )
 
 // ValidateExternalURL ensures the external URL that is set on the configmap is valid
@@ -45,21 +42,6 @@ func splitCommaSeparated(value string) []string {
 	return result
 }
 
-func appendURLPath(inputURL string, inputPath string) (string, error) {
-	u, err := url.Parse(inputURL)
-	if err != nil {
-		return "", err
-	}
-
-	u.Path = path.Join(u.Path, inputPath)
-
-	return u.String(), nil
-}
-
-func (a *AthenaSettings) RedirectURL() (string, error) {
-	return appendURLPath(a.URL, common.CallbackEndpoint)
-}
-
 func (a *AthenaSettings) AthenaURLForRequest(r *http.Request) (string, error) {
 	for _, candidateURL := range append([]string{a.URL}, a.AdditionalURLs...) {
 		u, err := url.Parse(candidateURL)
@@ -72,35 +54,4 @@ func (a *AthenaSettings) AthenaURLForRequest(r *http.Request) (string, error) {
 	}
 
 	return a.URL, nil
-}
-
-func (a *AthenaSettings) RedirectURLForRequest(r *http.Request) (string, error) {
-	if r == nil {
-		return "", errors.New("request is nil")
-	}
-
-	base, err := a.AthenaURLForRequest(r)
-	if err != nil {
-		return "", err
-	}
-
-	return appendURLPath(base, common.CallbackEndpoint)
-}
-
-func (a *AthenaSettings) RedirectAdditionalURLs() ([]string, error) {
-	RedirectAdditionalURLs := []string{}
-	for _, url := range a.AdditionalURLs {
-		redirectURL, err := appendURLPath(url, common.CallbackEndpoint)
-		if err != nil {
-			return []string{}, err
-		}
-
-		RedirectAdditionalURLs = append(RedirectAdditionalURLs, redirectURL)
-	}
-
-	return RedirectAdditionalURLs, nil
-}
-
-func (a *AthenaSettings) DexRedirectURL() (string, error) {
-	return appendURLPath(a.URL, common.DexCallbackEndpoint)
 }

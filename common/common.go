@@ -23,8 +23,6 @@ const (
 
 // Default service addresses and URLS of Athena internal services
 const (
-	// DefaultDexServerAddr is the HTTP address of the Dex OIDC server, which we run a reverse proxy against
-	DefaultDexServerAddr = "athena-dex-server:5556"
 	// DefaultRedisAddr is the default redis address
 	DefaultRedisAddr = "athena-redis:6379"
 )
@@ -38,9 +36,7 @@ const (
 	AthenaRBACConfigMapName          = "athena-rbac-cm"
 	// AthenaKnownHostsConfigMapName contains SSH known hosts data for connecting repositories. Will get mounted as volume to pods
 	AthenaKnownHostsConfigMapName = "athena-ssh-known-hosts-cm"
-	// AthenaTLSCertsConfigMapName contains TLS certificate data for connecting repositories. Will get mounted as volume to pods
-	AthenaTLSCertsConfigMapName = "athena-tls-certs-cm"
-	AthenaGPGKeysConfigMapName  = "athena-gpg-keys-cm"
+	AthenaGPGKeysConfigMapName    = "athena-gpg-keys-cm"
 	// AthenaAppControllerShardConfigMapName contains the application controller to shard mapping
 	AthenaAppControllerShardConfigMapName = "athena-app-controller-shard-cm"
 	AthenaCmdParamsConfigMapName          = "athena-cmd-params-cm"
@@ -84,8 +80,6 @@ const (
 
 // Default paths on the pod's file system
 const (
-	// DefaultPathTLSConfig is the default path where TLS certificates for repositories are located
-	DefaultPathTLSConfig = "/app/config/tls"
 	// DefaultPathSSHConfig is the default path where SSH known hosts are stored
 	DefaultPathSSHConfig = "/app/config/ssh"
 	// DefaultSSHKnownHostsName is the Default name for the SSH known hosts file
@@ -119,13 +113,6 @@ const (
 	AthenaSSAManager = "athena-controller"
 	// AuthCookieName is the HTTP cookie name where we store our auth token
 	AuthCookieName = "athena.token"
-	// StateCookieName is the HTTP cookie name that holds temporary nonce tokens for CSRF protection
-	StateCookieName = "athena.oauthstate"
-	// StateCookieMaxAge is the maximum age of the oauth state cookie
-	StateCookieMaxAge = time.Minute * 5
-
-	// ChangePasswordSSOTokenMaxAge is the max token age for password change operation
-	ChangePasswordSSOTokenMaxAge = time.Minute * 5
 	// GithubAppCredsExpirationDuration is the default time used to cache the GitHub app credentials
 	GithubAppCredsExpirationDuration = time.Minute * 60
 
@@ -147,28 +134,10 @@ const (
 	DefaultShardingAlgorithm = LegacyShardingAlgorithm
 )
 
-// Dex related constants
+// Auth endpoint constants
 const (
-	// DexAPIEndpoint is the endpoint where we serve the Dex API server
-	DexAPIEndpoint = "/api/dex"
-	// LoginEndpoint is Athena's shorthand login endpoint which redirects to dex's OAuth 2.0 provider's consent page
-	LoginEndpoint = "/auth/login"
-	// LogoutEndpoint is Athena's shorthand logout endpoint which invalidates OIDC session after logout
+	// LogoutEndpoint is Athena's shorthand logout endpoint which invalidates local session state after logout
 	LogoutEndpoint = "/auth/logout"
-	// CallbackEndpoint is Athena's final callback endpoint we reach after OAuth 2.0 login flow has been completed
-	CallbackEndpoint = "/auth/callback"
-	// DexCallbackEndpoint is Athena's final callback endpoint when Dex is configured
-	DexCallbackEndpoint = "/api/dex/callback"
-	// AthenaClientAppName is name of the Oauth client app used when registering our web app to dex
-	AthenaClientAppName = "Athena"
-	// AthenaClientAppID is the Oauth client ID we will use when registering our app to dex
-	AthenaClientAppID = "athena"
-	// AthenaCLIClientAppName is name of the Oauth client app used when registering our CLI to dex
-	AthenaCLIClientAppName = "Athena CLI"
-	// AthenaCLIClientAppID is the Oauth client ID we will use when registering our CLI to dex
-	AthenaCLIClientAppID = "athena-cli"
-	// DexFederatedScope allows to receive the federated_claims from Dex. https://dexidp.io/docs/configuration/custom-scopes-claims-clients/
-	DexFederatedScope = "federated:id"
 )
 
 // Resource metadata labels and annotations (keys and values) used by Athena components
@@ -244,14 +213,10 @@ const (
 
 // Environment variables for tuning and debugging Athena
 const (
-	// EnvVarSSODebug is an environment variable to enable additional OAuth debugging in the API server
-	EnvVarSSODebug = "ATHENA_SSO_DEBUG"
 	// EnvVarRBACDebug is an environment variable to enable additional RBAC debugging in the API server
 	EnvVarRBACDebug = "ATHENA_RBAC_DEBUG"
 	// EnvVarSSHDataPath overrides the location where SSH known hosts for repo access data is stored
 	EnvVarSSHDataPath = "ATHENA_SSH_DATA_PATH"
-	// EnvVarTLSDataPath overrides the location where TLS certificate for repo access data is stored
-	EnvVarTLSDataPath = "ATHENA_TLS_DATA_PATH"
 	// EnvGitAttemptsCount specifies number of git remote operations attempts count
 	EnvGitAttemptsCount = "ATHENA_GIT_ATTEMPTS_COUNT"
 	// EnvGitRetryMaxDuration specifies max duration of git remote operation retry

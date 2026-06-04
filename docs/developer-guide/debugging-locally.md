@@ -22,7 +22,7 @@ The `Procfile` is used by Goreman when running Athena locally with the local too
 
 Example for `api-server` configuration in `Procfile`:
 ``` text
-api-server: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_FAKE_IN_CLUSTER=true ATHENA_TLS_DATA_PATH=${ATHENA_TLS_DATA_PATH:-/tmp/athena-local/tls} ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server $COMMAND --loglevel debug --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_DISABLE_AUTH:-'true'} --insecure --port ${ATHENA_SERVER_PORT:-8080}"
+api-server: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_FAKE_IN_CLUSTER=true ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server $COMMAND --loglevel debug --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_DISABLE_AUTH:-'true'} --port ${ATHENA_SERVER_PORT:-8080}"
 ```
 This configuration example will be used as the basis for the next steps.
 
@@ -42,7 +42,6 @@ ATHENA_GPG_DATA_PATH=/tmp/athena-local/gpg/source
 ATHENA_GPG_ENABLED=false
 ATHENA_LOG_FORMAT_ENABLE_FULL_TIMESTAMP=1
 ATHENA_SSH_DATA_PATH=/tmp/athena-local/ssh
-ATHENA_TLS_DATA_PATH=/tmp/athena-local/tls
 ATHENA_TRACING_ENABLED=1
 FORCE_LOG_COLORS=1
 ... 
@@ -69,13 +68,8 @@ Example for an `api-server` launch configuration, based on our above example for
         "debug",
         "--redis",
         "localhost:6379",
-        "--repo-server",
-        "localhost:8081",
-        "--dex-server",
-        "http://localhost:5556",
         "--port",
-        "8080",
-        "--insecure"
+        "8080"
       ],
       "envFile": "YOUR_ENV_FILES_PATH/api-server.env", # Assuming you installed DotENV plugin
     }
@@ -89,7 +83,7 @@ Example for an `api-server` launch configuration snippet, based on our above exa
   <configuration default="false" name="api-server" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="athena" />
     <working_directory value="$PROJECT_DIR$" />
-    <parameters value="--loglevel debug --redis localhost:6379 --insecure --dex-server http://localhost:5556 --repo-server localhost:8081 --port 8080" />
+    <parameters value="--loglevel debug --redis localhost:6379 --port 8080" />
     <EXTENSION ID="net.ashald.envfile"> <!-- Assuming you installed the EnvFile plugin-->
       <option name="IS_ENABLED" value="true" />
       <option name="IS_SUBST" value="false" />
@@ -127,7 +121,7 @@ So for the case of debugging the `api-server`, run:
 `goreman start` runs all the components by default, but it is also possible to run it with a whitelist of components, enabling separation as needed.
 
 To debug the `api-server`, run:
-`goreman start notification applicationset-controller repo-server redis dex controller ui` 
+`goreman start notification applicationset-controller redis controller ui` 
 
 ## Run Athena debugged component from your IDE
 Finally, run the component you wish to debug from your IDE and make sure it does not have any errors.

@@ -2,21 +2,16 @@ package apiclient
 
 import (
 	"context"
-	"crypto/tls"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"math"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang/protobuf/ptypes/empty"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"github.com/hashicorp/go-retryablehttp"
@@ -24,38 +19,10 @@ import (
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/localconfig"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 
-	// "context"
-	// "crypto/tls"
-	// "encoding/base64"
-	// "errors"
-	// "fmt"
-	// "io"
-	// "math"
-	// "net"
-	// "net/http"
-	// "os"
-	// "strings"
-	// "sync"
-	// "time"
-	// "github.com/coreos/go-oidc/v3/oidc"
-	// "github.com/golang-jwt/jwt/v5"
-	// "github.com/golang/protobuf/ptypes/empty"
-	// grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
-	// "github.com/hashicorp/go-retryablehttp"
 	log "github.com/sirupsen/logrus"
-	// "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	// "golang.org/x/oauth2"
-	// "google.golang.org/grpc"
-	// "google.golang.org/grpc/codes"
-	// "google.golang.org/grpc/credentials"
-	// "google.golang.org/grpc/metadata"
-	// "google.golang.org/grpc/status"
-	// "github.com/useryege/athena/v3/common"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 
 	// applicationsetpkg "github.com/useryege/athena/v3/pkg/apiclient/applicationset"
@@ -76,10 +43,6 @@ import (
 	grpc_util "github.com/useryege/athena/util/grpc"
 	http_util "github.com/useryege/athena/util/http"
 	utilio "github.com/useryege/athena/util/io"
-
-	// "github.com/useryege/athena/v3/util/localconfig"
-	oidcutil "github.com/useryege/athena/util/oidc"
-	tls_util "github.com/useryege/athena/util/tls"
 )
 
 const (
@@ -97,7 +60,6 @@ var MaxGRPCMessageSize = env.ParseNumFromEnv(common.EnvGRPCMaxSizeMB, 200, 0, ma
 type Client interface {
 	ClientOptions() ClientOptions
 	HTTPClient() (*http.Client, error)
-	OIDCConfig(context.Context, *settingspkg.Settings) (*oauth2.Config, *oidc.Provider, error)
 	// NewRepoClient() (io.Closer, repositorypkg.RepositoryServiceClient, error)
 	// NewRepoClientOrDie() (io.Closer, repositorypkg.RepositoryServiceClient)
 	// NewRepoCredsClient() (io.Closer, repocredspkg.RepoCredsServiceClient, error)
@@ -130,11 +92,6 @@ type Client interface {
 // ClientOptions hold address, security, and other settings for the API client.
 type ClientOptions struct {
 	ServerAddr        string
-	PlainText         bool
-	Insecure          bool
-	CertFile          string
-	ClientCertFile    string
-	ClientCertKeyFile string
 	AuthToken         string
 	ConfigPath        string
 	Context           string
@@ -155,12 +112,7 @@ type ClientOptions struct {
 
 type client struct {
 	ServerAddr      string
-	PlainText       bool
-	Insecure        bool
-	CertPEMData     []byte
-	ClientCert      *tls.Certificate
 	AuthToken       string
-	RefreshToken    string
 	UserAgent       string
 	GRPCWeb         bool
 	GRPCWebRootPath string
@@ -181,7 +133,6 @@ func NewClient(opts *ClientOptions) (Client, error) {
 		return nil, err
 	}
 	c.proxyMutex = &sync.Mutex{}
-	var ctxName string
 	if localCfg != nil {
 		configCtx, err := localCfg.ResolveContext(opts.Context)
 		if err != nil {
@@ -189,36 +140,9 @@ func NewClient(opts *ClientOptions) (Client, error) {
 		}
 		if configCtx != nil {
 			c.ServerAddr = configCtx.Server.Server
-			if configCtx.Server.CACertificateAuthorityData != "" {
-				c.CertPEMData, err = base64.StdEncoding.DecodeString(configCtx.Server.CACertificateAuthorityData)
-				if err != nil {
-					return nil, err
-				}
-			}
-			if configCtx.Server.ClientCertificateData != "" && configCtx.Server.ClientCertificateKeyData != "" {
-				clientCertData, err := base64.StdEncoding.DecodeString(configCtx.Server.ClientCertificateData)
-				if err != nil {
-					return nil, err
-				}
-				clientCertKeyData, err := base64.StdEncoding.DecodeString(configCtx.Server.ClientCertificateKeyData)
-				if err != nil {
-					return nil, err
-				}
-				clientCert, err := tls.X509KeyPair(clientCertData, clientCertKeyData)
-				if err != nil {
-					return nil, err
-				}
-				c.ClientCert = &clientCert
-			} else if configCtx.Server.ClientCertificateData != "" || configCtx.Server.ClientCertificateKeyData != "" {
-				return nil, errors.New("ClientCertificateData and ClientCertificateKeyData must always be specified together")
-			}
-			c.PlainText = configCtx.Server.PlainText
-			c.Insecure = configCtx.Server.Insecure
 			c.GRPCWeb = configCtx.Server.GRPCWeb
 			c.GRPCWebRootPath = configCtx.Server.GRPCWebRootPath
 			c.AuthToken = configCtx.User.AuthToken
-			c.RefreshToken = configCtx.User.RefreshToken
-			ctxName = configCtx.Name
 		}
 	}
 	if opts.UserAgent != "" {
@@ -241,31 +165,6 @@ func NewClient(opts *ClientOptions) (Client, error) {
 	if opts.AuthToken != "" {
 		c.AuthToken = strings.TrimSpace(opts.AuthToken)
 	}
-	// Override certificate data if specified from CLI flag
-	if opts.CertFile != "" {
-		b, err := os.ReadFile(opts.CertFile)
-		if err != nil {
-			return nil, err
-		}
-		c.CertPEMData = b
-	}
-	// Override client certificate data if specified from CLI flag
-	if opts.ClientCertFile != "" && opts.ClientCertKeyFile != "" {
-		clientCert, err := tls.LoadX509KeyPair(opts.ClientCertFile, opts.ClientCertKeyFile)
-		if err != nil {
-			return nil, err
-		}
-		c.ClientCert = &clientCert
-	} else if opts.ClientCertFile != "" || opts.ClientCertKeyFile != "" {
-		return nil, errors.New("--client-crt and --client-crt-key must always be specified together")
-	}
-	// Override insecure/plaintext options if specified from CLI
-	if opts.PlainText {
-		c.PlainText = true
-	}
-	if opts.Insecure {
-		c.Insecure = true
-	}
 	if opts.GRPCWeb {
 		c.GRPCWeb = true
 	}
@@ -281,19 +180,9 @@ func NewClient(opts *ClientOptions) (Client, error) {
 		c.httpClient = &http.Client{}
 	}
 
-	if !c.PlainText {
-		tlsConfig, err := c.tlsConfig()
-		if err != nil {
-			return nil, err
-		}
-		c.httpClient.Transport = &http.Transport{
-			TLSClientConfig: tlsConfig,
-		}
-	}
 	if !c.GRPCWeb {
 		if parts := strings.Split(c.ServerAddr, ":"); len(parts) == 1 {
-			// If port is unspecified, assume the most likely port
-			c.ServerAddr += ":443"
+			c.ServerAddr += fmt.Sprintf(":%d", common.DefaultPortAthenaAPIServer)
 		}
 		// test if we need to set it to true
 		// if a call to grpc failed, then try again with GRPCWeb
@@ -315,65 +204,13 @@ func NewClient(opts *ClientOptions) (Client, error) {
 			}
 		}
 	}
-	if localCfg != nil {
-		err = c.refreshAuthToken(localCfg, ctxName, opts.ConfigPath)
-		if err != nil {
-			return nil, err
-		}
-	}
 	c.Headers = opts.Headers
 
 	return &c, nil
 }
 
-// OIDCConfig returns OAuth2 client config and a OpenID Provider based on Athena settings
-// ctx can hold an appropriate http.Client to use for the exchange
-func (c *client) OIDCConfig(ctx context.Context, set *settingspkg.Settings) (*oauth2.Config, *oidc.Provider, error) {
-	var clientID string
-	var issuerURL string
-	var scopes []string
-	switch {
-	case set.OIDCConfig != nil && set.OIDCConfig.Issuer != "":
-		if set.OIDCConfig.CLIClientID != "" {
-			clientID = set.OIDCConfig.CLIClientID
-		} else {
-			clientID = set.OIDCConfig.ClientID
-		}
-		issuerURL = set.OIDCConfig.Issuer
-		scopes = oidcutil.GetScopesOrDefault(set.OIDCConfig.Scopes)
-	case set.DexConfig != nil && len(set.DexConfig.Connectors) > 0:
-		clientID = common.AthenaCLIClientAppID
-		scopes = append(oidcutil.GetScopesOrDefault(nil), common.DexFederatedScope)
-		issuerURL = fmt.Sprintf("%s%s", set.URL, common.DexAPIEndpoint)
-	default:
-		return nil, nil, fmt.Errorf("%s is not configured with SSO", c.ServerAddr)
-	}
-	provider, err := oidc.NewProvider(ctx, issuerURL)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to query provider %q: %w", issuerURL, err)
-	}
-	oidcConf, err := oidcutil.ParseConfig(provider)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse provider config: %w", err)
-	}
-	if oidcutil.OfflineAccess(oidcConf.ScopesSupported) {
-		scopes = append(scopes, oidc.ScopeOfflineAccess)
-	}
-	oauth2conf := oauth2.Config{
-		ClientID: clientID,
-		Scopes:   scopes,
-		Endpoint: provider.Endpoint(),
-	}
-	return &oauth2conf, provider, nil
-}
-
-// HTTPClient returns a HTTPClient appropriate for performing OAuth, based on TLS settings
+// HTTPClient returns a HTTP client configured with API client headers.
 func (c *client) HTTPClient() (*http.Client, error) {
-	tlsConfig, err := c.tlsConfig()
-	if err != nil {
-		return nil, err
-	}
-
 	headers, err := parseHeaders(c.Headers)
 	if err != nil {
 		return nil, err
@@ -386,8 +223,7 @@ func (c *client) HTTPClient() (*http.Client, error) {
 	return &http.Client{
 		Transport: &http_util.TransportWithHeader{
 			RoundTripper: &http.Transport{
-				TLSClientConfig: tlsConfig,
-				Proxy:           http.ProxyFromEnvironment,
+				Proxy: http.ProxyFromEnvironment,
 				Dial: (&net.Dialer{
 					Timeout:   30 * time.Second,
 					KeepAlive: 30 * time.Second,
@@ -398,82 +234,6 @@ func (c *client) HTTPClient() (*http.Client, error) {
 			Header: headers,
 		},
 	}, nil
-}
-
-// refreshAuthToken refreshes a JWT auth token if it is invalid (e.g. expired)
-func (c *client) refreshAuthToken(localCfg *localconfig.LocalConfig, ctxName, configPath string) error {
-	if c.RefreshToken == "" {
-		// If we have no refresh token, there's no point in doing anything
-		return nil
-	}
-	configCtx, err := localCfg.ResolveContext(ctxName)
-	if err != nil {
-		return err
-	}
-	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
-	var claims jwt.RegisteredClaims
-	_, _, err = parser.ParseUnverified(configCtx.User.AuthToken, &claims)
-	if err != nil {
-		return err
-	}
-	validator := jwt.NewValidator()
-	if validator.Validate(claims) == nil {
-		// token is still valid
-		return nil
-	}
-
-	log.Debug("Auth token no longer valid. Refreshing")
-	rawIDToken, refreshToken, err := c.redeemRefreshToken()
-	if err != nil {
-		return err
-	}
-	c.AuthToken = rawIDToken
-	c.RefreshToken = refreshToken
-	localCfg.UpsertUser(localconfig.User{
-		Name:         ctxName,
-		AuthToken:    c.AuthToken,
-		RefreshToken: c.RefreshToken,
-	})
-	err = localconfig.WriteLocalConfig(*localCfg, configPath)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// redeemRefreshToken performs the exchange of a refresh_token for a new id_token and refresh_token
-func (c *client) redeemRefreshToken() (string, string, error) {
-	setConn, setIf, err := c.NewSettingsClient()
-	if err != nil {
-		return "", "", err
-	}
-	defer func() { _ = setConn.Close() }()
-	httpClient, err := c.HTTPClient()
-	if err != nil {
-		return "", "", err
-	}
-	ctx := oidc.ClientContext(context.Background(), httpClient)
-	acdSet, err := setIf.Get(ctx, &settingspkg.SettingsQuery{})
-	if err != nil {
-		return "", "", err
-	}
-	oauth2conf, _, err := c.OIDCConfig(ctx, acdSet)
-	if err != nil {
-		return "", "", err
-	}
-	t := &oauth2.Token{
-		RefreshToken: c.RefreshToken,
-	}
-	token, err := oauth2conf.TokenSource(ctx, t).Token()
-	if err != nil {
-		return "", "", err
-	}
-	rawIDToken, ok := token.Extra("id_token").(string)
-	if !ok {
-		return "", "", errors.New("no id_token in token response")
-	}
-	refreshToken, _ := token.Extra("refresh_token").(string)
-	return rawIDToken, refreshToken, nil
 }
 
 // NewClientOrDie creates a new API client from a set of config options, or fails fatally if the new client creation fails.
@@ -516,14 +276,6 @@ func (c *client) newConn(ctx context.Context) (*grpc.ClientConn, io.Closer, erro
 		closers = append(closers, closer)
 	}
 
-	var creds credentials.TransportCredentials
-	if !c.PlainText && !c.GRPCWeb && c.GRPCWebRootPath == "" {
-		tlsConfig, err := c.tlsConfig()
-		if err != nil {
-			return nil, nil, err
-		}
-		creds = credentials.NewTLS(tlsConfig)
-	}
 	endpointCredentials := jwtCredentials{
 		Token: c.AuthToken,
 	}
@@ -551,7 +303,7 @@ func (c *client) newConn(ctx context.Context) (*grpc.ClientConn, io.Closer, erro
 	if c.UserAgent != "" {
 		dialOpts = append(dialOpts, grpc.WithUserAgent(c.UserAgent))
 	}
-	conn, e := grpc_util.BlockingNewClient(ctx, network, serverAddr, creds, dialOpts...)
+	conn, e := grpc_util.BlockingNewClient(ctx, network, serverAddr, dialOpts...)
 	closers = append(closers, conn)
 	return conn, utilio.NewCloser(func() error {
 		var firstErr error
@@ -565,29 +317,9 @@ func (c *client) newConn(ctx context.Context) (*grpc.ClientConn, io.Closer, erro
 	}), e
 }
 
-func (c *client) tlsConfig() (*tls.Config, error) {
-	var tlsConfig tls.Config
-	if len(c.CertPEMData) > 0 {
-		cp := tls_util.BestEffortSystemCertPool()
-		if !cp.AppendCertsFromPEM(c.CertPEMData) {
-			return nil, errors.New("credentials: failed to append certificates")
-		}
-		tlsConfig.RootCAs = cp
-	}
-	if c.ClientCert != nil {
-		tlsConfig.Certificates = append(tlsConfig.Certificates, *c.ClientCert)
-	}
-	if c.Insecure {
-		tlsConfig.InsecureSkipVerify = true
-	}
-	return &tlsConfig, nil
-}
-
 func (c *client) ClientOptions() ClientOptions {
 	return ClientOptions{
 		ServerAddr: c.ServerAddr,
-		PlainText:  c.PlainText,
-		Insecure:   c.Insecure,
 		AuthToken:  c.AuthToken,
 	}
 }

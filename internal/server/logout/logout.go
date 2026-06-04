@@ -3,7 +3,6 @@ package logout
 import (
 	"context"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
@@ -15,11 +14,6 @@ import (
 	jwtutil "github.com/useryege/athena/util/jwt"
 	session "github.com/useryege/athena/util/session"
 	settings "github.com/useryege/athena/util/settings"
-)
-
-var (
-	tokenPattern             = regexp.MustCompile(`{{token}}`)
-	logoutRedirectURLPattern = regexp.MustCompile(`{{logoutRedirectURL}}`)
 )
 
 type Handler struct {
@@ -41,16 +35,9 @@ func NewHandler(settingsMrg *settings.SettingsManager, sessionMgr *session.Sessi
 	}
 }
 
-func constructLogoutURL(logoutURL, token, logoutRedirectURL string) string {
-	constructedLogoutURL := tokenPattern.ReplaceAllString(logoutURL, token)
-	return logoutRedirectURLPattern.ReplaceAllString(constructedLogoutURL, logoutRedirectURL)
-}
-
-// ServeHTTP is the logout handler for Athena and constructs OIDC logout URL and redirects to it for OIDC issued sessions,
-// and redirects user to '/login' for athena issued sessions
+// ServeHTTP clears the Athena auth cookie, revokes the local session token when possible, and redirects to Athena.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var tokenString string
-	var oidcConfig *settings.OIDCConfig
 
 	athenaSettings, err := h.settingsMgr.GetSettings()
 	if err != nil {
@@ -106,7 +93,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	issuer := jwtutil.StringField(mapClaims, "iss")
 	id := jwtutil.StringField(mapClaims, "jti")
 	if exp, err := jwtutil.ExpirationTime(mapClaims); err == nil && id != "" {
 		if err := h.revokeToken(context.Background(), id, time.Until(exp)); err != nil {
@@ -114,11 +100,5 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if athenaSettings.OIDCConfig() == nil || athenaSettings.OIDCConfig().LogoutURL == "" || issuer == session.SessionManagerClaimsIssuer {
-		http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
-	} else {
-		oidcConfig = athenaSettings.OIDCConfig()
-		logoutURL := constructLogoutURL(oidcConfig.LogoutURL, tokenString, logoutRedirectURL)
-		http.Redirect(w, r, logoutURL, http.StatusSeeOther)
-	}
+	http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
 }

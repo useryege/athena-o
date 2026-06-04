@@ -12,7 +12,7 @@ import (
 // This function DOES NOT VERIFY THE TOKEN. You still have to verify the token to confirm that the token holder has not
 // altered the claims.
 //
-// This code is copied almost verbatim from go-oidc (https://github.com/coreos/go-oidc).
+// This code is copied almost verbatim from the upstream JWT validation helper.
 func parseJWT(p string) ([]byte, error) {
 	parts := strings.Split(p, ".")
 	if len(parts) < 2 {
@@ -28,7 +28,7 @@ func parseJWT(p string) ([]byte, error) {
 type audience []string
 
 // UnmarshalJSON allows us to unmarshal either a single audience or a list of audiences.
-// Taken from: https://github.com/coreos/go-oidc/blob/a8ceb9a2043fca2e43518633920db746808b1138/oidc/oidc.go#L475
+// Adapted from the upstream JWT validation helper.
 func (a *audience) UnmarshalJSON(b []byte) error {
 	var s string
 	if json.Unmarshal(b, &s) == nil {
@@ -54,7 +54,7 @@ type jwtWithOnlyAudClaim struct {
 // This function DOES NOT VERIFY THE TOKEN. You still have to verify the token to confirm that the token holder has not
 // altered the "aud" claim.
 //
-// This code is copied almost verbatim from go-oidc (https://github.com/coreos/go-oidc).
+// This code is copied almost verbatim from the upstream JWT validation helper.
 func getUnverifiedAudClaim(rawIDToken string) ([]string, error) {
 	payload, err := parseJWT(rawIDToken)
 	if err != nil {

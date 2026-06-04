@@ -6,14 +6,11 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"net"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -21,11 +18,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/useryege/athena/common"
-	"github.com/useryege/athena/util/dex"
 	"github.com/useryege/athena/util/env"
 	httputil "github.com/useryege/athena/util/http"
 	jwtutil "github.com/useryege/athena/util/jwt"
-	oidcutil "github.com/useryege/athena/util/oidc"
 	passwordutil "github.com/useryege/athena/util/password"
 	"github.com/useryege/athena/util/settings"
 )
@@ -34,8 +29,6 @@ import (
 type SessionManager struct {
 	settingsMgr *settings.SettingsManager
 	// projectsLister                v1alpha1.AppProjectNamespaceLister
-	client                        *http.Client
-	prov                          oidcutil.Provider
 	storage                       UserStateStorage
 	sleep                         func(d time.Duration)
 	verificationDelayNoiseEnabled bool
@@ -112,46 +105,15 @@ func getLoginFailureWindow() time.Duration {
 	return time.Duration(env.ParseNumFromEnv(envLoginFailureWindowSeconds, defaultFailureWindow, 0, math.MaxInt32))
 }
 
-// NewSessionManager creates a new session manager from Athena settings
-func NewSessionManager(settingsMgr *settings.SettingsManager, dexServerAddr string, dexTLSConfig *dex.DexTLSConfig, storage UserStateStorage) *SessionManager {
-	s := SessionManager{
+// NewSessionManager creates a new session manager from Athena settings.
+func NewSessionManager(settingsMgr *settings.SettingsManager, storage UserStateStorage) *SessionManager {
+	return &SessionManager{
 		settingsMgr: settingsMgr,
 		storage:     storage,
 		sleep:       time.Sleep,
 		// projectsLister:                projectsLister,
 		verificationDelayNoiseEnabled: true,
 	}
-	settings, err := settingsMgr.GetSettings()
-	if err != nil {
-		panic(err)
-	}
-
-	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		Dial: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
-
-	s.client = &http.Client{
-		Transport: transport,
-	}
-
-	if settings.DexConfig != "" {
-		transport.TLSClientConfig = dex.TLSConfig(dexTLSConfig)
-		addrWithProto := dex.DexServerAddressWithProtocol(dexServerAddr, dexTLSConfig)
-		s.client.Transport = dex.NewDexRewriteURLRoundTripper(addrWithProto, s.client.Transport)
-	} else {
-		transport.TLSClientConfig = settings.OIDCTLSConfig()
-	}
-	if os.Getenv(common.EnvVarSSODebug) == "1" {
-		s.client.Transport = httputil.DebugTransport{T: s.client.Transport}
-	}
-
-	return &s
 }
 
 // Create creates a new token for a given subject (user) and returns it as a string.
@@ -477,9 +439,9 @@ func (mgr *SessionManager) VerifyUsernamePassword(username string, password stri
 
 // AuthMiddlewareFunc returns a function that can be used as an
 // authentication middleware for HTTP requests.
-func (mgr *SessionManager) AuthMiddlewareFunc(disabled bool, isSSOConfigured bool, ssoClientApp *oidcutil.ClientApp) func(http.Handler) http.Handler {
+func (mgr *SessionManager) AuthMiddlewareFunc(disabled bool) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
-		return WithAuthMiddleware(disabled, isSSOConfigured, ssoClientApp, mgr, h)
+		return WithAuthMiddleware(disabled, mgr, h)
 	}
 }
 
@@ -492,7 +454,7 @@ type TokenVerifier interface {
 // WithAuthMiddleware is an HTTP middleware used to ensure incoming
 // requests are authenticated before invoking the target handler. If
 // disabled is true, it will just invoke the next handler in the chain.
-func WithAuthMiddleware(disabled bool, isSSOConfigured bool, ssoClientApp *oidcutil.ClientApp, authn TokenVerifier, next http.Handler) http.Handler {
+func WithAuthMiddleware(disabled bool, authn TokenVerifier, next http.Handler) http.Handler {
 	if disabled {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			next.ServeHTTP(w, r)
@@ -513,91 +475,28 @@ func WithAuthMiddleware(disabled bool, isSSOConfigured bool, ssoClientApp *oidcu
 			return
 		}
 
-		finalClaims := claims
-		if isSSOConfigured {
-			finalClaims, err = ssoClientApp.SetGroupsFromUserInfo(ctx, claims, SessionManagerClaimsIssuer)
-			if err != nil {
-				http.Error(w, "Invalid session", http.StatusUnauthorized)
-				return
-			}
-		}
 		// Add claims to the context to inspect for RBAC
 		//nolint:staticcheck
-		ctx = context.WithValue(ctx, "claims", finalClaims)
+		ctx = context.WithValue(ctx, "claims", claims)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-// VerifyToken verifies if a token is correct. Tokens can be issued either from us or by an IDP.
-// We choose how to verify based on the issuer.
-func (mgr *SessionManager) VerifyToken(ctx context.Context, tokenString string) (jwt.Claims, string, error) {
+// VerifyToken verifies Athena-issued session and API tokens.
+func (mgr *SessionManager) VerifyToken(_ context.Context, tokenString string) (jwt.Claims, string, error) {
 	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
 	claims := jwt.MapClaims{}
 	_, _, err := parser.ParseUnverified(tokenString, &claims)
 	if err != nil {
 		return nil, "", err
 	}
-	// Get issuer from MapClaims
 	issuer, _ := claims["iss"].(string)
-	switch issuer {
-	case SessionManagerClaimsIssuer:
-		// Athena signed token
-		return mgr.Parse(tokenString)
-	default:
-		// IDP signed token
-		prov, err := mgr.provider()
-		if err != nil {
-			return nil, "", err
-		}
-
-		athenaSettings, err := mgr.settingsMgr.GetSettings()
-		if err != nil {
-			return nil, "", fmt.Errorf("cannot access settings while verifying the token: %w", err)
-		}
-		if athenaSettings == nil {
-			return nil, "", errors.New("settings are not available while verifying the token")
-		}
-
-		idToken, err := prov.Verify(ctx, tokenString, athenaSettings)
-		// The token verification has failed. If the token has expired, we will
-		// return a dummy claims only containing a value for the issuer, so the
-		// UI can handle expired tokens appropriately.
-		if err != nil {
-			log.Warnf("Failed to verify session token: %s", err)
-			tokenExpiredError := &oidc.TokenExpiredError{}
-			if errors.As(err, &tokenExpiredError) {
-				claims = jwt.MapClaims{
-					"iss": "sso",
-				}
-				return claims, "", common.ErrTokenVerification
-			}
-			return nil, "", common.ErrTokenVerification
-		}
-
-		var claims jwt.MapClaims
-		err = idToken.Claims(&claims)
-		if err != nil {
-			return nil, "", err
-		}
-		return claims, "", nil
+	if issuer != SessionManagerClaimsIssuer {
+		return nil, "", common.ErrTokenVerification
 	}
-}
-
-func (mgr *SessionManager) provider() (oidcutil.Provider, error) {
-	if mgr.prov != nil {
-		return mgr.prov, nil
-	}
-	settings, err := mgr.settingsMgr.GetSettings()
-	if err != nil {
-		return nil, err
-	}
-	if !settings.IsSSOConfigured() {
-		return nil, errors.New("SSO is not configured")
-	}
-	mgr.prov = oidcutil.NewOIDCProvider(settings.IssuerURL(), mgr.client)
-	return mgr.prov, nil
+	return mgr.Parse(tokenString)
 }
 
 func (mgr *SessionManager) RevokeToken(ctx context.Context, id string, expiringAt time.Duration) error {
@@ -614,16 +513,7 @@ func Username(ctx context.Context) string {
 	if !ok {
 		return ""
 	}
-	switch jwtutil.StringField(mapClaims, "iss") {
-	case SessionManagerClaimsIssuer:
-		return jwtutil.GetUserIdentifier(mapClaims)
-	default:
-		e := jwtutil.StringField(mapClaims, "email")
-		if e != "" {
-			return e
-		}
-		return jwtutil.GetUserIdentifier(mapClaims)
-	}
+	return jwtutil.GetUserIdentifier(mapClaims)
 }
 
 func Iss(ctx context.Context) string {
@@ -642,7 +532,7 @@ func Iat(ctx context.Context) (time.Time, error) {
 	return jwtutil.IssuedAtTime(mapClaims)
 }
 
-// GetUserIdentifier returns the user identifier from context, prioritizing federated claims over subject
+// GetUserIdentifier returns the user identifier from context.
 func GetUserIdentifier(ctx context.Context) string {
 	mapClaims, ok := mapClaims(ctx)
 	if !ok {

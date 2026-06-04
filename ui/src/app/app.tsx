@@ -130,19 +130,6 @@ const openKeys = (pathname: string) =>
 
 const pageTitle = (pathname: string) => flattenNav(navItems).find(item => item.key === selectedKey(pathname))?.label || 'Athena';
 
-async function isExpiredSSO() {
-    try {
-        const {iss} = await services.users.get();
-        const authSettings = await services.authService.settings();
-        if (iss && iss !== 'athena') {
-            return ((authSettings.dexConfig && authSettings.dexConfig.connectors) || []).length > 0 || authSettings.oidcConfig;
-        }
-    } catch {
-        return false;
-    }
-    return false;
-}
-
 const usePreferences = () => {
     const [pref, setPref] = React.useState<ViewPreferences>(null);
     React.useEffect(() => {
@@ -248,20 +235,14 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     }, [isLoginPath, locationKey, navigate]);
 
     React.useEffect(() => {
-        const subscription: Subscription = requests.onError.subscribe(async err => {
+        const subscription: Subscription = requests.onError.subscribe(err => {
             if (err.status !== 401 || isLoginPath) {
                 return;
             }
-            const isSSO = await isExpiredSSO();
             if (window.location.pathname.startsWith(`${base.replace(/\/$/, '')}/login`)) {
                 return;
             }
-            const basehref = document.querySelector('head > base')?.getAttribute('href')?.replace(/\/$/, '') || '';
-            if (isSSO) {
-                window.location.href = `${basehref}/auth/login?return_url=${encodeURIComponent('/settings')}`;
-            } else {
-                navigate('/login', {replace: true});
-            }
+            navigate('/login', {replace: true});
         });
         return () => subscription?.unsubscribe();
     }, [isLoginPath, navigate]);

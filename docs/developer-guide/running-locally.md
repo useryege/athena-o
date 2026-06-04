@@ -25,7 +25,6 @@ Use the CLI against the local API with:
 
 ```bash
 export ATHENA_SERVER=127.0.0.1:8080
-export ATHENA_OPTS="--plaintext --insecure"
 ```
 
 ## Local Data

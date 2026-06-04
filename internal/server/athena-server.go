@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	goio "io"
@@ -61,7 +60,6 @@ import (
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
 	"github.com/useryege/athena/ui"
 	"github.com/useryege/athena/util/assets"
-	dexutil "github.com/useryege/athena/util/dex"
 	"github.com/useryege/athena/util/env"
 	errorsutil "github.com/useryege/athena/util/errors"
 	grpc_util "github.com/useryege/athena/util/grpc"
@@ -70,18 +68,15 @@ import (
 	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/io/files"
 	jwtutil "github.com/useryege/athena/util/jwt"
-	"github.com/useryege/athena/util/oidc"
 	"github.com/useryege/athena/util/rbac"
 	util_session "github.com/useryege/athena/util/session"
 	settings_util "github.com/useryege/athena/util/settings"
 	"github.com/useryege/athena/util/swagger"
-	tlsutil "github.com/useryege/athena/util/tls"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -146,12 +141,11 @@ func init() {
 // AthenaServer is the API server for Athena
 type AthenaServer struct {
 	AthenaServerOpts
-	ssoClientApp *oidc.ClientApp
-	settings     *settings_util.AthenaSettings
-	log          *log.Entry
-	sessionMgr   *util_session.SessionManager
-	settingsMgr  *settings_util.SettingsManager
-	enf          *rbac.Enforcer
+	settings    *settings_util.AthenaSettings
+	log         *log.Entry
+	sessionMgr  *util_session.SessionManager
+	settingsMgr *settings_util.SettingsManager
+	enf         *rbac.Enforcer
 	// projInformer   cache.SharedIndexInformer
 	policyEnforcer *rbacpolicy.RBACPolicyEnforcer
 	// appInformer    cache.SharedIndexInformer
@@ -184,12 +178,9 @@ type AthenaServerOpts struct {
 	DisableAuth     bool
 	ContentTypes    []string
 	EnableGZip      bool
-	Insecure        bool
 	StaticAssetsDir string
 	ListenPort      int
 	ListenHost      string
-	DexServerAddr   string
-	DexTLSConfig    *dexutil.DexTLSConfig
 	BaseHRef        string
 	RootPath        string
 	// DynamicClientset        dynamic.Interface
@@ -199,7 +190,6 @@ type AthenaServerOpts struct {
 	Cache *servercache.Cache
 	// RepoServerCache         *repocache.Cache
 	RedisClient           *redis.Client
-	TLSConfigCustomizer   tlsutil.ConfigCustomizer
 	XFrameOptions         string
 	ContentSecurityPolicy string
 	ApplicationClientset  applicationapiclient.Clientset
@@ -220,12 +210,12 @@ type AthenaServerOpts struct {
 func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	settingsMgr, err := settings_util.NewSettingsManagerFromEnv(ctx)
 	errorsutil.CheckError(err)
-	settings, err := settingsMgr.InitializeSettings(opts.Insecure)
+	settings, err := settingsMgr.InitializeSettings()
 	errorsutil.CheckError(err)
 
 	userStateStorage := util_session.NewUserStateStorage(opts.RedisClient)
 
-	sessionMgr := util_session.NewSessionManager(settingsMgr, opts.DexServerAddr, opts.DexTLSConfig, userStateStorage)
+	sessionMgr := util_session.NewSessionManager(settingsMgr, userStateStorage)
 
 	enf := rbac.NewEnforcer(nil)
 	enf.EnableEnforce(!opts.DisableAuth)
@@ -300,7 +290,7 @@ func startListener(host string, port int) (net.Listener, error) {
 }
 
 func (server *AthenaServer) Listen() (*Listeners, error) {
-	log.Debugf("Listen started (host=%s, listenPort=%d, useTLS=%t)", server.ListenHost, server.ListenPort, server.useTLS())
+	log.Debugf("Listen started (host=%s, listenPort=%d)", server.ListenHost, server.ListenPort)
 	mainLn, err := startListener(server.ListenHost, server.ListenPort)
 	if err != nil {
 		log.Debugf("Failed to start main listener on %s:%d: %v", server.ListenHost, server.ListenPort, err)
@@ -313,25 +303,7 @@ func (server *AthenaServer) Listen() (*Listeners, error) {
 	dOpts = append(dOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(apiclient.MaxGRPCMessageSize)))
 	dOpts = append(dOpts, grpc.WithUserAgent(userAgent))
 	dOpts = append(dOpts, grpc.WithStatsHandler(otelgrpc.NewClientHandler()))
-	if server.useTLS() {
-		// The following sets up the dial Options for grpc-gateway to talk to gRPC server over TLS.
-		// grpc-gateway is just translating HTTP/HTTPS requests as gRPC requests over localhost,
-		// so we need to supply the same certificates to establish the connections that a normal,
-		// external gRPC client would need.
-		log.Debugf("TLS enabled for gRPC gateway client, building TLS config (hasCustomizer=%t)", server.TLSConfigCustomizer != nil)
-		tlsConfig := server.settings.TLSConfig()
-		if server.TLSConfigCustomizer != nil {
-			server.TLSConfigCustomizer(tlsConfig)
-			log.Debug("Applied TLS config customizer for gRPC gateway client")
-		}
-		tlsConfig.InsecureSkipVerify = true
-		dCreds := credentials.NewTLS(tlsConfig)
-		dOpts = append(dOpts, grpc.WithTransportCredentials(dCreds))
-		log.Debug("Configured TLS transport credentials for gRPC gateway client")
-	} else {
-		dOpts = append(dOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		log.Debug("TLS disabled, configured insecure transport credentials for gRPC gateway client")
-	}
+	dOpts = append(dOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	gatewayAddr := fmt.Sprintf("localhost:%d", server.ListenPort)
 	log.Debugf("Creating gRPC gateway client connection to %s", gatewayAddr)
@@ -390,8 +362,6 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	// 	// Remove from logs both because the contents are sensitive and because they may be very large.
 	// 	"/application.ApplicationService/GetManifestsWithFiles": true,
 	// }
-	// NOTE: notice we do not configure the gRPC server here with TLS (e.g. grpc.Creds(creds))
-	// This is because TLS handshaking occurs in cmux handling
 	sOpts = append(sOpts, grpc.ChainStreamInterceptor(
 		logging.StreamServerInterceptor(grpc_util.InterceptorLogger(server.log)),
 		server.streamAuthInterceptor,
@@ -503,42 +473,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	}
 }
 
-// newRedirectServer returns an HTTP server which does a 307 redirect to the HTTPS server
-func newRedirectServer(port int, rootPath string) *http.Server {
-	var addr string
-	if rootPath == "" {
-		addr = fmt.Sprintf("localhost:%d", port)
-	} else {
-		addr = fmt.Sprintf("localhost:%d/%s", port, strings.Trim(rootPath, "/"))
-	}
-
-	return &http.Server{
-		Addr: addr,
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			target := "https://" + req.Host
-
-			if rootPath != "" {
-				root := strings.Trim(rootPath, "/")
-				prefix := "/" + root
-
-				// If the request path already starts with rootPath, no need to add rootPath again
-				if strings.HasPrefix(req.URL.Path, prefix) {
-					target += req.URL.Path
-				} else {
-					target += prefix + req.URL.Path
-				}
-			} else {
-				target += req.URL.Path
-			}
-
-			if req.URL.RawQuery != "" {
-				target += "?" + req.URL.RawQuery
-			}
-			http.Redirect(w, req, target, http.StatusTemporaryRedirect)
-		}),
-	}
-}
-
 type handlerSwitcher struct {
 	handler              http.Handler
 	urlToHandler         map[string]http.Handler
@@ -572,7 +506,7 @@ func (server *AthenaServer) translateGrpcCookieHeader(ctx context.Context, w htt
 	return nil
 }
 func (server *AthenaServer) setTokenCookie(token string, w http.ResponseWriter) error {
-	return httputil.SetTokenCookie(token, server.BaseHRef, !server.Insecure, w)
+	return httputil.SetTokenCookie(token, server.BaseHRef, false, w)
 }
 
 func compressHandler(handler http.Handler) http.Handler {
@@ -607,17 +541,6 @@ func mustRegisterGWHandler(ctx context.Context, register registerFunc, mux *runt
 	if err != nil {
 		panic(err)
 	}
-}
-
-// registerDexHandlers will register dex HTTP handlers
-func (server *AthenaServer) registerDexHandlers(mux *http.ServeMux) {
-	if !server.settings.IsSSOConfigured() {
-		return
-	}
-	// Run dex OpenID Connect Identity Provider behind a reverse proxy (served at /api/dex)
-	mux.HandleFunc(common.DexAPIEndpoint+"/", dexutil.NewDexHTTPReverseProxy(server.DexServerAddr, server.BaseHRef, server.DexTLSConfig))
-	mux.HandleFunc(common.LoginEndpoint, server.ssoClientApp.HandleLogin)
-	mux.HandleFunc(common.CallbackEndpoint, server.ssoClientApp.HandleCallback)
 }
 
 // registerDownloadHandlers registers HTTP handlers to support downloads directly from the API server
@@ -847,9 +770,6 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	swagger.ServeSwaggerUI(mux, assets.SwaggerJSON, "/swagger-ui", server.RootPath)
 	healthz.ServeHealthCheck(mux, server.healthCheck)
 
-	// Dex reverse proxy and OAuth2 login/callback
-	server.registerDexHandlers(mux)
-
 	// mux.HandleFunc("/api/webhook", acdWebhookHandler.Handler)
 
 	// Serve cli binaries directly from API server
@@ -947,75 +867,25 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 	grpcS := server.newGRPCServer()
 	// wrap the gRPC server l(grpc server => http handler)
 	grpcWebS := grpcweb.WrapServer(grpcS)
-	var httpS *http.Server
-	var httpsS *http.Server
-	if server.useTLS() {
-		httpS = newRedirectServer(server.ListenPort, server.RootPath)                          // http request => redirect to https
-		httpsS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn) // implement the https server
-	} else {
-		httpS = server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn) // implement the http server
-	}
+	httpS := server.newHTTPServer(ctx, server.ListenPort, grpcWebS, listeners.GatewayConn)
 	if server.RootPath != "" {
 		httpS.Handler = withRootPath(httpS.Handler, server)
-
-		if httpsS != nil {
-			httpsS.Handler = withRootPath(httpsS.Handler, server)
-		}
 	}
-	// httpS.Handler = &bug21955Workaround{handler: httpS.Handler}
-	// if httpsS != nil {
-	// 	httpsS.Handler = &bug21955Workaround{handler: httpsS.Handler}
-	// }
-
 	// CMux is used to support servicing gRPC and HTTP1.1+JSON on the same port
 	tcpm := cmux.New(listeners.Main)
-	var tlsm cmux.CMux
 	var grpcL net.Listener
 	var httpL net.Listener
-	var httpsL net.Listener
-	if !server.useTLS() {
-		httpL = tcpm.Match(cmux.HTTP1Fast("PATCH"))
-		grpcL = tcpm.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
-	} else {
-		// We first match on HTTP 1.1 methods.
-		httpL = tcpm.Match(cmux.HTTP1Fast("PATCH"))
-
-		// If not matched, we assume that its TLS.
-		tlsl := tcpm.Match(cmux.Any())
-		tlsConfig := tls.Config{
-			// Advertise that we support both http/1.1 and http2 for application level communication.
-			// By putting http/1.1 first, we ensure that HTTPS clients will use http/1.1, which is the only
-			// protocol our server supports for HTTPS clients. By including h2 in the list, we ensure that
-			// gRPC clients know we support http2 for their communication.
-			NextProtos: []string{"http/1.1", "h2"},
-		}
-		tlsConfig.GetCertificate = func(_ *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			return server.settings.Certificate, nil
-		}
-		if server.TLSConfigCustomizer != nil {
-			server.TLSConfigCustomizer(&tlsConfig)
-		}
-		tlsl = tls.NewListener(tlsl, &tlsConfig)
-
-		// Now, we build another mux recursively to match HTTPS and gRPC.
-		tlsm = cmux.New(tlsl)
-		httpsL = tlsm.Match(cmux.HTTP1Fast("PATCH"))
-		grpcL = tlsm.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
-	}
+	httpL = tcpm.Match(cmux.HTTP1Fast("PATCH"))
+	grpcL = tcpm.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
 
 	// Start the muxed listeners for our servers
-	log.Infof("athena %s serving on port %d (url: %s, tls: %v, sso: %v)",
-		common.GetVersion(), server.ListenPort, server.settings.URL, server.useTLS(), server.settings.IsSSOConfigured())
+	log.Infof("athena %s serving on port %d (url: %s)", common.GetVersion(), server.ListenPort, server.settings.URL)
 	// log.Infof("Enabled application namespace patterns: %s", server.allowedApplicationNamespacesAsString())
 
-	go func() { server.checkServeErr("grpcS", grpcS.Serve(grpcL)) }()
-	go func() { server.checkServeErr("httpS", httpS.Serve(httpL)) }()
-	if server.useTLS() {
-		go func() { server.checkServeErr("httpsS", httpsS.Serve(httpsL)) }()
-		go func() { server.checkServeErr("tlsm", tlsm.Serve()) }()
-	}
+	go func() { server.checkServeErr("gRPC server", grpcS.Serve(grpcL)) }()
+	go func() { server.checkServeErr("HTTP server", httpS.Serve(httpL)) }()
 	// go server.rbacPolicyLoader(ctx)
-	go func() { server.checkServeErr("tcpm", tcpm.Serve()) }()
+	go func() { server.checkServeErr("TCP mux", tcpm.Serve()) }()
 	// if !cache.WaitForCacheSync(ctx.Done(), server.projInformer.HasSynced, server.appInformer.HasSynced) {
 	// 	log.Fatal("Timed out waiting for project cache to sync")
 	// }
@@ -1037,33 +907,12 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 			}
 		}()
 
-		if server.useTLS() {
-			// Shutdown https server
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				err := httpsS.Shutdown(shutdownCtx)
-				if err != nil {
-					log.Errorf("Error shutting down https server: %s", err)
-				}
-			}()
-		}
-
 		// Shutdown gRPC server
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			grpcS.GracefulStop()
 		}()
-
-		if server.useTLS() {
-			// Shutdown tls server
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				tlsm.Close()
-			}()
-		}
 
 		// Shutdown tcp server
 		wg.Add(1)
@@ -1123,13 +972,6 @@ func (server *AthenaServer) checkServeErr(name string, err error) {
 	}
 }
 
-func (server *AthenaServer) useTLS() bool {
-	if server.Insecure || server.settings.Certificate == nil {
-		return false
-	}
-	return true
-}
-
 // Authenticate checks for the presence of a valid token when accessing server-side resources.
 func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, error) {
 	// if authentication is disabled, return the context without any changes
@@ -1169,33 +1011,12 @@ func (server *AthenaServer) getClaims(ctx context.Context) (jwt.Claims, string, 
 	if tokenString == "" {
 		return nil, "", ErrNoSession
 	}
-	// A valid athena-issued token is automatically refreshed here prior to expiration.
-	// OIDC tokens will be verified but will not be refreshed here.
 	claims, newToken, err := server.sessionMgr.VerifyToken(ctx, tokenString)
 	if err != nil {
 		return claims, "", status.Errorf(codes.Unauthenticated, "invalid session: %v", err)
 	}
 
-	finalClaims := claims
-	oidcConfig := server.settings.OIDCConfig()
-	if oidcConfig != nil || server.settings.IsDexConfigured() {
-		updatedClaims, err := server.ssoClientApp.SetGroupsFromUserInfo(ctx, claims, util_session.SessionManagerClaimsIssuer)
-		if err != nil {
-			return claims, "", status.Errorf(codes.Unauthenticated, "invalid session: %v", err)
-		}
-		finalClaims = updatedClaims
-		// OIDC tokens are automatically refreshed here prior to expiration
-		refreshedToken, err := server.ssoClientApp.CheckAndRefreshToken(ctx, updatedClaims, server.settings.RefreshTokenThresholdWithConfig(oidcConfig))
-		if err != nil {
-			log.Errorf("error checking and refreshing token: %v", err)
-		}
-		if refreshedToken != "" && refreshedToken != tokenString {
-			newToken = refreshedToken
-			log.Infof("refreshed token for subject: %v", jwtutil.StringField(updatedClaims, "sub"))
-		}
-	}
-
-	return finalClaims, newToken, nil
+	return claims, newToken, nil
 }
 
 // getToken extracts the token from gRPC metadata or cookie headers

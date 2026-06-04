@@ -222,7 +222,7 @@ test('visibleAccountsForUser returns self and admin for regular users', () => {
 });
 
 test('visibleAccountsForUser returns admin for users without a local account', () => {
-    expect(visibleAccountsForUser(accounts, user('sso@example.com')).map(account => account.name)).toEqual(['admin']);
+    expect(visibleAccountsForUser(accounts, user('external@example.com')).map(account => account.name)).toEqual(['admin']);
 });
 
 test('notificationTestTopics contains the three stable test topics', () => {

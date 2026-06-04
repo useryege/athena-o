@@ -3,8 +3,6 @@ package settings
 import (
 	"context"
 
-	"sigs.k8s.io/yaml"
-
 	sessionmgr "github.com/useryege/athena/util/session"
 
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
@@ -95,26 +93,6 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 	}
 	if sessionmgr.LoggedIn(ctx) {
 		settings.PasswordPattern = athenaSettings.PasswordPattern
-	}
-	if athenaSettings.DexConfig != "" {
-		var cfg settingspkg.DexConfig
-		err = yaml.Unmarshal([]byte(athenaSettings.DexConfig), &cfg)
-		if err == nil {
-			settings.DexConfig = &cfg
-		}
-	}
-	if oidcConfig := athenaSettings.OIDCConfig(); oidcConfig != nil {
-		settings.OIDCConfig = &settingspkg.OIDCConfig{
-			Name:                     oidcConfig.Name,
-			Issuer:                   oidcConfig.Issuer,
-			ClientID:                 oidcConfig.ClientID,
-			CLIClientID:              oidcConfig.CLIClientID,
-			Scopes:                   oidcConfig.RequestedScopes,
-			EnablePKCEAuthentication: oidcConfig.EnablePKCEAuthentication,
-		}
-		if len(athenaSettings.OIDCConfig().RequestedIDTokenClaims) > 0 {
-			settings.OIDCConfig.IDTokenClaims = athenaSettings.OIDCConfig().RequestedIDTokenClaims
-		}
 	}
 	return &settings, nil
 }

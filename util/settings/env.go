@@ -1,8 +1,6 @@
 package settings
 
 import (
-	"crypto/tls"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -49,28 +47,20 @@ func loadSettingsFromEnv(secrets map[string]string) (AthenaSettings, error) {
 	}
 
 	settings := AthenaSettings{
-		DexConfig:                 os.Getenv("ATHENA_DEX_CONFIG"),
-		StatusBadgeEnabled:        env.ParseBoolFromEnv("ATHENA_STATUS_BADGE_ENABLED", false),
-		StatusBadgeRootUrl:        os.Getenv("ATHENA_STATUS_BADGE_ROOT_URL"),
-		AnonymousUserEnabled:      env.ParseBoolFromEnv("ATHENA_ANONYMOUS_USER_ENABLED", false),
-		UiCssURL:                  os.Getenv("ATHENA_UI_CSS_URL"),
-		UiBannerContent:           os.Getenv("ATHENA_UI_BANNER_CONTENT"),
-		UiBannerPermanent:         env.ParseBoolFromEnv("ATHENA_UI_BANNER_PERMANENT", false),
-		UiBannerPosition:          os.Getenv("ATHENA_UI_BANNER_POSITION"),
-		BinaryUrls:                getDownloadBinaryUrlsFromEnv(),
-		UiBannerURL:               os.Getenv("ATHENA_UI_BANNER_URL"),
-		UserSessionDuration:       time.Hour * 24,
-		PasswordPattern:           env.StringFromEnv("ATHENA_PASSWORD_PATTERN", common.PasswordPatten),
-		OIDCTLSInsecureSkipVerify: env.ParseBoolFromEnv("ATHENA_OIDC_TLS_INSECURE_SKIP_VERIFY", false),
-		ServerSignature:           []byte(serverSignature),
-		Secrets:                   secrets,
+		StatusBadgeEnabled:   env.ParseBoolFromEnv("ATHENA_STATUS_BADGE_ENABLED", false),
+		StatusBadgeRootUrl:   os.Getenv("ATHENA_STATUS_BADGE_ROOT_URL"),
+		AnonymousUserEnabled: env.ParseBoolFromEnv("ATHENA_ANONYMOUS_USER_ENABLED", false),
+		UiCssURL:             os.Getenv("ATHENA_UI_CSS_URL"),
+		UiBannerContent:      os.Getenv("ATHENA_UI_BANNER_CONTENT"),
+		UiBannerPermanent:    env.ParseBoolFromEnv("ATHENA_UI_BANNER_PERMANENT", false),
+		UiBannerPosition:     os.Getenv("ATHENA_UI_BANNER_POSITION"),
+		BinaryUrls:           getDownloadBinaryUrlsFromEnv(),
+		UiBannerURL:          os.Getenv("ATHENA_UI_BANNER_URL"),
+		UserSessionDuration:  time.Hour * 24,
+		PasswordPattern:      env.StringFromEnv("ATHENA_PASSWORD_PATTERN", common.PasswordPatten),
+		ServerSignature:      []byte(serverSignature),
+		Secrets:              secrets,
 	}
-
-	oidcConfig, err := loadOIDCConfigFromEnv()
-	if err != nil {
-		return settings, err
-	}
-	settings.OIDCConfigRAW = oidcConfig
 
 	settings.URL = os.Getenv("ATHENA_URL")
 	if err := ValidateExternalURL(settings.URL); err != nil {
@@ -133,32 +123,4 @@ func loadRawSettingsFromEnv() (RawSettings, error) {
 	}
 
 	return raw, nil
-}
-
-func loadTLSCertificateFromEnv(parser func([]byte, []byte) (tls.Certificate, error)) (*tls.Certificate, error) {
-	certFile := os.Getenv("ATHENA_TLS_CERT_FILE")
-	keyFile := os.Getenv("ATHENA_TLS_KEY_FILE")
-	if certFile == "" && keyFile == "" {
-		return nil, nil
-	}
-	if certFile == "" || keyFile == "" {
-		return nil, errors.New("ATHENA_TLS_CERT_FILE and ATHENA_TLS_KEY_FILE must be set together")
-	}
-
-	certBytes, err := os.ReadFile(certFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed reading ATHENA_TLS_CERT_FILE: %w", err)
-	}
-
-	keyBytes, err := os.ReadFile(keyFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed reading ATHENA_TLS_KEY_FILE: %w", err)
-	}
-
-	cert, err := parser(certBytes, keyBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cert, nil
 }

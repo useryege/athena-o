@@ -24,11 +24,9 @@ import (
 	"github.com/useryege/athena/pkg/stats"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
-	"github.com/useryege/athena/util/dex"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/templates"
-	"github.com/useryege/athena/util/tls"
 	traceutil "github.com/useryege/athena/util/trace"
 )
 
@@ -40,12 +38,10 @@ const (
 // NewCommand returns a new instance of an athena command
 func NewCommand() *cobra.Command {
 	var (
-		insecure        bool
-		staticAssetsDir string
-		baseHRef        string
-		rootPath        string
-		glogLevel       int
-		// dexServerAddress      string
+		staticAssetsDir           string
+		baseHRef                  string
+		rootPath                  string
+		glogLevel                 int
 		disableAuth               bool
 		contentTypes              string
 		enableGZip                bool
@@ -57,9 +53,6 @@ func NewCommand() *cobra.Command {
 		otlpAttrs                 []string
 		frameOptions              string
 		contentSecurityPolicy     string
-		dexServerAddress          string
-		dexServerPlaintext        bool
-		dexServerStrictTLS        bool
 		applicationServerAddress  string
 		notificationServerAddress string
 		solidityServerAddress     string
@@ -69,9 +62,8 @@ func NewCommand() *cobra.Command {
 		// hydratorEnabled        bool
 		// syncWithReplaceAllowed bool
 
-		tlsConfigCustomizerSrc func() (tls.ConfigCustomizer, error)
-		redisClient            *redis.Client
-		cacheSrc               func() (*servercache.Cache, error)
+		redisClient *redis.Client
+		cacheSrc    func() (*servercache.Cache, error)
 	)
 	command := &cobra.Command{
 		Use:               cliName,
@@ -103,36 +95,10 @@ func NewCommand() *cobra.Command {
 				}
 			}()
 
-			// Load the TLS config from the command line flags
-			tlsConfigCustomizer, err := tlsConfigCustomizerSrc()
-			errors.CheckError(err)
-
 			cache, err := cacheSrc()
 			errors.CheckError(err)
 
 			log.Infof("athena-server/%s (%s)", vers.Version, vers.Platform)
-
-			dexTLSConfig := &dex.DexTLSConfig{
-				DisableTLS:       dexServerPlaintext,
-				StrictValidation: dexServerStrictTLS,
-			}
-
-			if !dexServerPlaintext && dexServerStrictTLS {
-				pool, err := tls.LoadX509CertPool(
-					env.StringFromEnv(common.EnvAppConfigPath, common.DefaultAppConfigPath) + "/dex/tls/ca.crt",
-				)
-				if err != nil {
-					log.Fatalf("%v", err)
-				}
-				dexTLSConfig.RootCAs = pool
-				cert, err := tls.LoadX509Cert(
-					env.StringFromEnv(common.EnvAppConfigPath, common.DefaultAppConfigPath) + "/dex/tls/tls.crt",
-				)
-				if err != nil {
-					log.Fatalf("%v", err)
-				}
-				dexTLSConfig.Certificate = cert.Raw
-			}
 
 			var contentTypesList []string
 			if contentTypes != "" {
@@ -165,22 +131,18 @@ func NewCommand() *cobra.Command {
 			log.Infof("athena polymarket grpc service is ready at %s", polymarketServerAddress)
 
 			athenaOpts := server.AthenaServerOpts{
-				TLSConfigCustomizer:   tlsConfigCustomizer,
 				ContentTypes:          contentTypesList,
 				ListenPort:            listenPort,
 				ListenHost:            listenHost,
 				StaticAssetsDir:       staticAssetsDir,
 				BaseHRef:              baseHRef,
 				RootPath:              rootPath,
-				Insecure:              insecure,
 				DisableAuth:           disableAuth,
 				EnableGZip:            enableGZip,
 				XFrameOptions:         frameOptions,
 				ContentSecurityPolicy: contentSecurityPolicy,
 				RedisClient:           redisClient,
 				Cache:                 cache,
-				DexServerAddr:         dexServerAddress,
-				DexTLSConfig:          dexTLSConfig,
 				ApplicationClientset:  applicationclientset,
 				NotificationClientset: notificationclientset,
 				SolidityClientset:     solidityclientset,
@@ -230,7 +192,6 @@ func NewCommand() *cobra.Command {
 		`),
 	}
 
-	command.Flags().BoolVar(&insecure, "insecure", env.ParseBoolFromEnv("ATHENA_SERVER_INSECURE", false), "Run server without TLS")
 	command.Flags().StringVar(&staticAssetsDir, "staticassets", env.StringFromEnv("ATHENA_SERVER_STATIC_ASSETS", "/shared/app"), "Directory path that contains additional static assets")
 	command.Flags().StringVar(&baseHRef, "basehref", env.StringFromEnv("ATHENA_SERVER_BASEHREF", "/"), "Value for base href in index.html. Used if Athena is running behind reverse proxy under subpath different from /")
 	command.Flags().StringVar(&rootPath, "rootpath", env.StringFromEnv("ATHENA_SERVER_ROOTPATH", ""), "Used if Athena is running behind reverse proxy under subpath different from /")
@@ -249,9 +210,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringSliceVar(&otlpAttrs, "otlp-attrs", env.StringsFromEnv("ATHENA_SERVER_OTLP_ATTRS", []string{}, ","), "List of OpenTelemetry collector extra attrs when send traces, each attribute is separated by a colon(e.g. key:value)")
 	command.Flags().StringVar(&frameOptions, "x-frame-options", env.StringFromEnv("ATHENA_SERVER_X_FRAME_OPTIONS", "sameorigin"), "Set X-Frame-Options header in HTTP responses to `value`. To disable, set to \"\".")
 	command.Flags().StringVar(&contentSecurityPolicy, "content-security-policy", env.StringFromEnv("ATHENA_SERVER_CONTENT_SECURITY_POLICY", "frame-ancestors 'self';"), "Set Content-Security-Policy header in HTTP responses to `value`. To disable, set to \"\".")
-	command.Flags().StringVar(&dexServerAddress, "dex-server", env.StringFromEnv("ATHENA_SERVER_DEX_SERVER", common.DefaultDexServerAddr), "Dex server address")
-	command.Flags().BoolVar(&dexServerPlaintext, "dex-server-plaintext", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_PLAINTEXT", false), "Use a plaintext client (non-TLS) to connect to dex server")
-	command.Flags().BoolVar(&dexServerStrictTLS, "dex-server-strict-tls", env.ParseBoolFromEnv("ATHENA_SERVER_DEX_SERVER_STRICT_TLS", false), "Perform strict validation of TLS certificates when connecting to dex server")
 	command.Flags().StringVar(&applicationServerAddress, "application-server-address", env.StringFromEnv("ATHENA_APPLICATION_SERVER_ADDRESS", "localhost:8082"), "Athena application server address")
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_NOTIFICATION_SERVER_ADDRESS", "localhost:8086"), "Athena notification server address")
 	command.Flags().StringVar(&solidityServerAddress, "solidity-server-address", env.StringFromEnv("ATHENA_SOLIDITY_SERVER_ADDRESS", "localhost:8090"), "Athena solidity server address")
@@ -260,7 +218,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&polymarketServerAddress, "polymarket-server-address", env.StringFromEnv("ATHENA_POLYMARKET_SERVER_ADDRESS", "localhost:8092"), "Athena polymarket server address")
 	// command.Flags().BoolVar(&hydratorEnabled, "hydrator-enabled", env.ParseBoolFromEnv("ATHENA_SERVER_HYDRATOR_ENABLED", false), "Feature flag to enable Hydrator. Default (\"false\")")
 	// command.Flags().BoolVar(&syncWithReplaceAllowed, "sync-with-replace-allowed", env.ParseBoolFromEnv("ATHENA_SERVER_SYNC_WITH_REPLACE_ALLOWED", true), "Whether to allow users to select replace for syncs from UI/CLI")
-	tlsConfigCustomizerSrc = tls.AddTLSFlagsToCmd(command)
 
 	cacheSrc = servercache.AddCacheFlagsToCmd(command, cacheutil.Options{
 		OnClientCreated: func(client *redis.Client) {

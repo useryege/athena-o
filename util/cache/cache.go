@@ -2,8 +2,6 @@ package cache
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"math"
@@ -17,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/useryege/athena/common"
-	certutil "github.com/useryege/athena/util/cert"
 	"github.com/useryege/athena/util/env"
 )
 
@@ -47,33 +44,31 @@ func NewCache(client CacheClient) *Cache {
 	return &Cache{client}
 }
 
-func buildRedisClient(redisAddress, password, username string, redisDB, maxRetries int, tlsConfig *tls.Config) *redis.Client {
+func buildRedisClient(redisAddress, password, username string, redisDB, maxRetries int) *redis.Client {
 	opts := &redis.Options{
 		Addr:       redisAddress,
 		Password:   password,
 		DB:         redisDB,
 		MaxRetries: maxRetries,
-		TLSConfig:  tlsConfig,
 		Username:   username,
 	}
 
 	client := redis.NewClient(opts)
 
 	client.AddHook(redis.Hook(NewAthenaRedisHook(func() {
-		*client = *buildRedisClient(redisAddress, password, username, redisDB, maxRetries, tlsConfig)
+		*client = *buildRedisClient(redisAddress, password, username, redisDB, maxRetries)
 	})))
 
 	return client
 }
 
-func buildFailoverRedisClient(sentinelMaster, sentinelUsername, sentinelPassword, password, username string, redisDB, maxRetries int, tlsConfig *tls.Config, sentinelAddresses []string) *redis.Client {
+func buildFailoverRedisClient(sentinelMaster, sentinelUsername, sentinelPassword, password, username string, redisDB, maxRetries int, sentinelAddresses []string) *redis.Client {
 	opts := &redis.FailoverOptions{
 		MasterName:       sentinelMaster,
 		SentinelAddrs:    sentinelAddresses,
 		DB:               redisDB,
 		Password:         password,
 		MaxRetries:       maxRetries,
-		TLSConfig:        tlsConfig,
 		Username:         username,
 		SentinelUsername: sentinelUsername,
 		SentinelPassword: sentinelPassword,
@@ -82,7 +77,7 @@ func buildFailoverRedisClient(sentinelMaster, sentinelUsername, sentinelPassword
 	client := redis.NewFailoverClient(opts)
 
 	client.AddHook(redis.Hook(NewAthenaRedisHook(func() {
-		*client = *buildFailoverRedisClient(sentinelMaster, sentinelUsername, sentinelPassword, password, username, redisDB, maxRetries, tlsConfig, sentinelAddresses)
+		*client = *buildFailoverRedisClient(sentinelMaster, sentinelUsername, sentinelPassword, password, username, redisDB, maxRetries, sentinelAddresses)
 	})))
 
 	return client
@@ -213,11 +208,6 @@ func AddCacheFlagsToCmd(cmd *cobra.Command, opts ...Options) func() (*Cache, err
 	sentinelAddresses := make([]string, 0)
 	sentinelMaster := ""
 	redisDB := 0
-	redisCACertificate := ""
-	redisClientCertificate := ""
-	redisClientKey := ""
-	redisUseTLS := false
-	insecureRedis := false
 	compressionStr := ""
 	opt := mergeOptions(opts...)
 	var defaultCacheExpiration time.Duration
@@ -232,16 +222,6 @@ func AddCacheFlagsToCmd(cmd *cobra.Command, opts ...Options) func() (*Cache, err
 	sentinelMasterSrc := getFlagVal(cmd, opt, "sentinelmaster", cmd.Flags().GetString)
 	cmd.Flags().DurationVar(&defaultCacheExpiration, opt.FlagPrefix+"default-cache-expiration", env.ParseDurationFromEnv("ATHENA_DEFAULT_CACHE_EXPIRATION", 24*time.Hour, 0, math.MaxInt64), "Cache expiration default")
 	defaultCacheExpirationSrc := getFlagVal(cmd, opt, "default-cache-expiration", cmd.Flags().GetDuration)
-	cmd.Flags().BoolVar(&redisUseTLS, opt.FlagPrefix+"redis-use-tls", false, "Use TLS when connecting to Redis. ")
-	redisUseTLSSrc := getFlagVal(cmd, opt, "redis-use-tls", cmd.Flags().GetBool)
-	cmd.Flags().StringVar(&redisClientCertificate, opt.FlagPrefix+"redis-client-certificate", "", "Path to Redis client certificate (e.g. /etc/certs/redis/client.crt).")
-	redisClientCertificateSrc := getFlagVal(cmd, opt, "redis-client-certificate", cmd.Flags().GetString)
-	cmd.Flags().StringVar(&redisClientKey, opt.FlagPrefix+"redis-client-key", "", "Path to Redis client key (e.g. /etc/certs/redis/client.crt).")
-	redisClientKeySrc := getFlagVal(cmd, opt, "redis-client-key", cmd.Flags().GetString)
-	cmd.Flags().BoolVar(&insecureRedis, opt.FlagPrefix+"redis-insecure-skip-tls-verify", false, "Skip Redis server certificate validation.")
-	insecureRedisSrc := getFlagVal(cmd, opt, "redis-insecure-skip-tls-verify", cmd.Flags().GetBool)
-	cmd.Flags().StringVar(&redisCACertificate, opt.FlagPrefix+"redis-ca-certificate", "", "Path to Redis server CA certificate (e.g. /etc/certs/redis/ca.crt). If not specified, system trusted CAs will be used for server certificate validation.")
-	redisCACertificateSrc := getFlagVal(cmd, opt, "redis-ca-certificate", cmd.Flags().GetString)
 	cmd.Flags().StringVar(&compressionStr, opt.FlagPrefix+CLIFlagRedisCompress, env.StringFromEnv(opt.getEnvPrefix()+"REDIS_COMPRESSION", string(RedisCompressionGZip)), "Enable compression for data sent to Redis with the required compression algorithm. (possible values: gzip, none)")
 	compressionStrSrc := getFlagVal(cmd, opt, CLIFlagRedisCompress, cmd.Flags().GetString)
 	return func() (*Cache, error) {
@@ -250,40 +230,8 @@ func AddCacheFlagsToCmd(cmd *cobra.Command, opts ...Options) func() (*Cache, err
 		sentinelAddresses := sentinelAddressesSrc()
 		sentinelMaster := sentinelMasterSrc()
 		defaultCacheExpiration := defaultCacheExpirationSrc()
-		redisUseTLS := redisUseTLSSrc()
-		redisClientCertificate := redisClientCertificateSrc()
-		redisClientKey := redisClientKeySrc()
-		insecureRedis := insecureRedisSrc()
-		redisCACertificate := redisCACertificateSrc()
 		compressionStr := compressionStrSrc()
 
-		var tlsConfig *tls.Config
-		if redisUseTLS {
-			tlsConfig = &tls.Config{}
-			if redisClientCertificate != "" {
-				clientCert, err := tls.LoadX509KeyPair(redisClientCertificate, redisClientKey)
-				if err != nil {
-					return nil, err
-				}
-				tlsConfig.Certificates = []tls.Certificate{clientCert}
-			}
-			switch {
-			case insecureRedis:
-				tlsConfig.InsecureSkipVerify = true
-			case redisCACertificate != "":
-				redisCA, err := certutil.ParseTLSCertificatesFromPath(redisCACertificate)
-				if err != nil {
-					return nil, err
-				}
-				tlsConfig.RootCAs = certutil.GetCertPoolFromPEMData(redisCA)
-			default:
-				var err error
-				tlsConfig.RootCAs, err = x509.SystemCertPool()
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
 		var password, username, sentinelUsername, sentinelPassword string
 		credsDirPath := os.Getenv(envRedisCredsDirPath)
 		if opt.FlagPrefix != "" {
@@ -301,7 +249,7 @@ func AddCacheFlagsToCmd(cmd *cobra.Command, opts ...Options) func() (*Cache, err
 			return nil, err
 		}
 		if len(sentinelAddresses) > 0 {
-			client := buildFailoverRedisClient(sentinelMaster, sentinelUsername, sentinelPassword, password, username, redisDB, maxRetries, tlsConfig, sentinelAddresses)
+			client := buildFailoverRedisClient(sentinelMaster, sentinelUsername, sentinelPassword, password, username, redisDB, maxRetries, sentinelAddresses)
 			opt.callOnClientCreated(client)
 			return NewCache(NewRedisCache(client, defaultCacheExpiration, compression)), nil
 		}
@@ -309,7 +257,7 @@ func AddCacheFlagsToCmd(cmd *cobra.Command, opts ...Options) func() (*Cache, err
 			redisAddress = common.DefaultRedisAddr
 		}
 
-		client := buildRedisClient(redisAddress, password, username, redisDB, maxRetries, tlsConfig)
+		client := buildRedisClient(redisAddress, password, username, redisDB, maxRetries)
 		opt.callOnClientCreated(client)
 		return NewCache(NewRedisCache(client, defaultCacheExpiration, compression)), nil
 	}

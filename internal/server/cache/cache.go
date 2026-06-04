@@ -15,24 +15,20 @@ var ErrCacheMiss = appstatecache.ErrCacheMiss
 type Cache struct {
 	cache                           *appstatecache.Cache
 	connectionStatusCacheExpiration time.Duration
-	oidcCacheExpiration             time.Duration
 }
 
 func NewCache(
 	cache *appstatecache.Cache,
 	connectionStatusCacheExpiration time.Duration,
-	oidcCacheExpiration time.Duration,
 ) *Cache {
-	return &Cache{cache, connectionStatusCacheExpiration, oidcCacheExpiration}
+	return &Cache{cache, connectionStatusCacheExpiration}
 }
 
 func AddCacheFlagsToCmd(cmd *cobra.Command, opts ...cacheutil.Options) func() (*Cache, error) {
 	var connectionStatusCacheExpiration time.Duration
-	var oidcCacheExpiration time.Duration
 	var loginAttemptsExpiration time.Duration
 
 	cmd.Flags().DurationVar(&connectionStatusCacheExpiration, "connection-status-cache-expiration", env.ParseDurationFromEnv("ATHENA_SERVER_CONNECTION_STATUS_CACHE_EXPIRATION", 1*time.Hour, 0, math.MaxInt64), "Cache expiration for cluster/repo connection status")
-	cmd.Flags().DurationVar(&oidcCacheExpiration, "oidc-cache-expiration", env.ParseDurationFromEnv("ATHENA_SERVER_OIDC_CACHE_EXPIRATION", 3*time.Minute, 0, math.MaxInt64), "Cache expiration for OIDC state")
 	cmd.Flags().DurationVar(&loginAttemptsExpiration, "login-attempts-expiration", env.ParseDurationFromEnv("ATHENA_SERVER_LOGIN_ATTEMPTS_EXPIRATION", 24*time.Hour, 0, math.MaxInt64), "Cache expiration for failed login attempts. DEPRECATED: this flag is unused and will be removed in a future version.")
 
 	fn := appstatecache.AddCacheFlagsToCmd(cmd, opts...)
@@ -43,7 +39,7 @@ func AddCacheFlagsToCmd(cmd *cobra.Command, opts ...cacheutil.Options) func() (*
 			return nil, err
 		}
 
-		return NewCache(cache, connectionStatusCacheExpiration, oidcCacheExpiration), nil
+		return NewCache(cache, connectionStatusCacheExpiration), nil
 	}
 }
 

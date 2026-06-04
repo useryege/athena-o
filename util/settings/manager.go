@@ -2,7 +2,6 @@ package settings
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -16,7 +15,6 @@ import (
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/util"
 	"github.com/useryege/athena/util/password"
-	tlsutil "github.com/useryege/athena/util/tls"
 )
 
 type SettingsManagerOpts func(mgs *SettingsManager)
@@ -39,22 +37,15 @@ func NewSettingsManagerFromEnv(ctx context.Context, opts ...SettingsManagerOpts)
 	}
 
 	mgr := &SettingsManager{
-		ctx:           ctx,
-		raw:           raw,
-		settings:      settings,
-		help:          loadHelpFromEnv(),
-		accounts:      accounts,
-		mutex:         &sync.RWMutex{},
-		tlsCertParser: tls.X509KeyPair,
+		ctx:      ctx,
+		raw:      raw,
+		settings: settings,
+		help:     loadHelpFromEnv(),
+		accounts: accounts,
+		mutex:    &sync.RWMutex{},
 	}
 	for i := range opts {
 		opts[i](mgr)
-	}
-
-	if cert, err := loadTLSCertificateFromEnv(mgr.tlsCertParser); err != nil {
-		return nil, err
-	} else if cert != nil {
-		mgr.settings.Certificate = cert
 	}
 
 	logLoadedAccounts(raw, accounts)
@@ -129,12 +120,12 @@ func (mgr *SettingsManager) GetSettings() (*AthenaSettings, error) {
 	return &mgr.settings, nil
 }
 
-// InitializeSettings is used to initialize empty admin password, signature, certificate etc if missing
-func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*AthenaSettings, error) {
+// InitializeSettings initializes transient admin password and JWT signature if missing.
+func (mgr *SettingsManager) InitializeSettings() (*AthenaSettings, error) {
 	mgr.mutex.Lock()
 	defer mgr.mutex.Unlock()
 
-	log.Debugf("InitializeSettings started (insecureModeEnabled=%t)", insecureModeEnabled)
+	log.Debug("InitializeSettings started")
 
 	adminAccount := mgr.accounts[common.AthenaAdminUsername]
 	if adminAccount.Enabled && adminAccount.PasswordHash == "" {
@@ -169,28 +160,6 @@ func (mgr *SettingsManager) InitializeSettings(insecureModeEnabled bool) (*Athen
 
 		mgr.settings.ServerSignature = signature
 		log.Warnf("Generated transient JWT secret because ATHENA_JWT_SECRET is not set, existing sessions will be invalid after restart: %s", string(signature))
-	}
-
-	if mgr.settings.Certificate == nil && !insecureModeEnabled {
-		log.Debug("TLS certificate missing and insecure mode disabled, generating TLS certificate")
-
-		hosts := []string{
-			"localhost",
-			"athena-server",
-		}
-		certOpts := tlsutil.CertOptions{
-			Hosts:        hosts,
-			Organization: "Athena",
-			IsCA:         false,
-		}
-
-		cert, err := tlsutil.GenerateX509KeyPair(certOpts)
-		if err != nil {
-			return nil, err
-		}
-
-		mgr.settings.Certificate = cert
-		log.Warn("Generated transient TLS certificate because ATHENA_TLS_CERT_FILE/ATHENA_TLS_KEY_FILE are not set.")
 	}
 
 	log.Debug("InitializeSettings completed successfully")
