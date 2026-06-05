@@ -11,11 +11,9 @@ import (
 const (
 	SchemaVersionV1 = 1
 
-	EventTypeBlockFinalized   = "evm.block_finalized"
 	EventTypeContractCreated  = "evm.contract_created"
 	EventTypeDexSwap          = "evm.dex_swap"
 	EventTypeProjectEvent     = "application.project_event"
-	TopicBlockFinalizedV1     = "athena.evm.block_finalized.v1"
 	TopicContractCreatedV1    = "athena.evm.contract_created.v1"
 	TopicDexSwapV1            = "athena.evm.dex_swap.v1"
 	TopicApplicationProjectV1 = "athena.application.project_event.v1"

@@ -193,16 +193,6 @@ func (i *Ingestor) publishBlock(ctx context.Context, block Block) error {
 	if err != nil {
 		return err
 	}
-	envelope, err := appevents.NewEnvelope(appevents.EventTypeBlockFinalized, i.chainID, appevents.BlockFinalizedPayload{
-		BlockNumber: blockNumber,
-		BlockHash:   block.Hash.Hex(),
-	})
-	if err != nil {
-		return err
-	}
-	if err := i.producer.Publish(ctx, appevents.TopicBlockFinalizedV1, appevents.BlockFinalizedKey(i.chainID, blockNumber), envelope); err != nil {
-		return err
-	}
 	for _, item := range block.ContractCreations {
 		if item.Contract == (common.Address{}) {
 			continue

@@ -43,8 +43,6 @@ func (p *Processor) ProcessEnvelope(ctx context.Context, envelope Envelope) erro
 		return errors.New("application event chain_id must be positive")
 	}
 	switch envelope.EventType {
-	case EventTypeBlockFinalized:
-		return nil
 	case EventTypeContractCreated:
 		return p.processContractCreated(ctx, envelope)
 	case EventTypeDexSwap:
@@ -128,7 +126,7 @@ func NewKafkaConsumer(brokers []string, group string, store ProjectEventStore) (
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.ConsumerGroup(group),
-		kgo.ConsumeTopics(TopicContractCreatedV1, TopicDexSwapV1, TopicBlockFinalizedV1),
+		kgo.ConsumeTopics(TopicContractCreatedV1, TopicDexSwapV1),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create application kafka consumer: %w", err)

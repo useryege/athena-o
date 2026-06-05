@@ -5,11 +5,6 @@ import (
 	"strings"
 )
 
-type BlockFinalizedPayload struct {
-	BlockNumber int64  `json:"block_number"`
-	BlockHash   string `json:"block_hash"`
-}
-
 type ContractCreatedPayload struct {
 	Contract    string `json:"contract"`
 	Creator     string `json:"creator"`
@@ -31,10 +26,6 @@ type ProjectEventPayload struct {
 	Contract string `json:"contract"`
 	Action   string `json:"action"`
 	Reason   string `json:"reason,omitempty"`
-}
-
-func BlockFinalizedKey(chainID int64, blockNumber int64) string {
-	return fmt.Sprintf("%d:%d", chainID, blockNumber)
 }
 
 func ContractCreatedKey(chainID int64, contract string) string {

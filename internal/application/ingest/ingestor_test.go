@@ -116,8 +116,8 @@ func TestIngestorPublishesEventsAndAdvancesCheckpoint(t *testing.T) {
 	if count != 1 {
 		t.Fatalf("count = %d, want 1", count)
 	}
-	if len(producer.records) != 3 {
-		t.Fatalf("published records = %d, want finalized+contract+swap", len(producer.records))
+	if len(producer.records) != 2 {
+		t.Fatalf("published records = %d, want contract+swap", len(producer.records))
 	}
 	checkpoint := store.items[56]
 	if checkpoint.CursorBlockNumber != 10 || checkpoint.FinalizedBlockNumber != 10 {
@@ -135,7 +135,15 @@ func TestIngestorDoesNotAdvanceCheckpointWhenKafkaPublishFails(t *testing.T) {
 		ConfirmationDepth: 1,
 		StartBlock:        5,
 		Reader: &readerFake{latest: 6, blocks: map[uint64]Block{
-			5: {ChainID: 1, Number: 5, Hash: common.HexToHash("0x5"), ContractCreations: []ContractCreated{{Contract: common.HexToAddress("0x1000000000000000000000000000000000000001")}}},
+			5: {
+				ChainID: 1,
+				Number:  5,
+				Hash:    common.HexToHash("0x5"),
+				ContractCreations: []ContractCreated{{
+					Contract: common.HexToAddress("0x1000000000000000000000000000000000000001"),
+				}},
+				DexSwaps: []DexSwap{{Pair: common.HexToAddress("0x2000000000000000000000000000000000000002")}},
+			},
 		}},
 		Producer: producer,
 		Store:    store,
