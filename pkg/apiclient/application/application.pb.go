@@ -149,6 +149,398 @@ func (m *StopProjectDiscoveryRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_StopProjectDiscoveryRequest proto.InternalMessageInfo
 
+type ListChainsRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListChainsRequest) Reset()         { *m = ListChainsRequest{} }
+func (m *ListChainsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListChainsRequest) ProtoMessage()    {}
+func (*ListChainsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{3}
+}
+func (m *ListChainsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListChainsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListChainsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListChainsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListChainsRequest.Merge(m, src)
+}
+func (m *ListChainsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListChainsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListChainsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListChainsRequest proto.InternalMessageInfo
+
+type ListChainsResponse struct {
+	Items                []*v1alpha1.ApplicationChain `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *ListChainsResponse) Reset()         { *m = ListChainsResponse{} }
+func (m *ListChainsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListChainsResponse) ProtoMessage()    {}
+func (*ListChainsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{4}
+}
+func (m *ListChainsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListChainsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListChainsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListChainsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListChainsResponse.Merge(m, src)
+}
+func (m *ListChainsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListChainsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListChainsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListChainsResponse proto.InternalMessageInfo
+
+func (m *ListChainsResponse) GetItems() []*v1alpha1.ApplicationChain {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+type GetChainIngestStatusRequest struct {
+	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetChainIngestStatusRequest) Reset()         { *m = GetChainIngestStatusRequest{} }
+func (m *GetChainIngestStatusRequest) String() string { return proto.CompactTextString(m) }
+func (*GetChainIngestStatusRequest) ProtoMessage()    {}
+func (*GetChainIngestStatusRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{5}
+}
+func (m *GetChainIngestStatusRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetChainIngestStatusRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetChainIngestStatusRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetChainIngestStatusRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetChainIngestStatusRequest.Merge(m, src)
+}
+func (m *GetChainIngestStatusRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetChainIngestStatusRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetChainIngestStatusRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetChainIngestStatusRequest proto.InternalMessageInfo
+
+func (m *GetChainIngestStatusRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+type StartChainIngestRequest struct {
+	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *StartChainIngestRequest) Reset()         { *m = StartChainIngestRequest{} }
+func (m *StartChainIngestRequest) String() string { return proto.CompactTextString(m) }
+func (*StartChainIngestRequest) ProtoMessage()    {}
+func (*StartChainIngestRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{6}
+}
+func (m *StartChainIngestRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *StartChainIngestRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_StartChainIngestRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *StartChainIngestRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StartChainIngestRequest.Merge(m, src)
+}
+func (m *StartChainIngestRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *StartChainIngestRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_StartChainIngestRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StartChainIngestRequest proto.InternalMessageInfo
+
+func (m *StartChainIngestRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+type StopChainIngestRequest struct {
+	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *StopChainIngestRequest) Reset()         { *m = StopChainIngestRequest{} }
+func (m *StopChainIngestRequest) String() string { return proto.CompactTextString(m) }
+func (*StopChainIngestRequest) ProtoMessage()    {}
+func (*StopChainIngestRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{7}
+}
+func (m *StopChainIngestRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *StopChainIngestRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_StopChainIngestRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *StopChainIngestRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StopChainIngestRequest.Merge(m, src)
+}
+func (m *StopChainIngestRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *StopChainIngestRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_StopChainIngestRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StopChainIngestRequest proto.InternalMessageInfo
+
+func (m *StopChainIngestRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+type RequestProjectCollectionRequest struct {
+	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	Contract             string   `protobuf:"bytes,2,opt,name=contract,proto3" json:"contract,omitempty"`
+	Reason               string   `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RequestProjectCollectionRequest) Reset()         { *m = RequestProjectCollectionRequest{} }
+func (m *RequestProjectCollectionRequest) String() string { return proto.CompactTextString(m) }
+func (*RequestProjectCollectionRequest) ProtoMessage()    {}
+func (*RequestProjectCollectionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{8}
+}
+func (m *RequestProjectCollectionRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RequestProjectCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RequestProjectCollectionRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RequestProjectCollectionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RequestProjectCollectionRequest.Merge(m, src)
+}
+func (m *RequestProjectCollectionRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *RequestProjectCollectionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RequestProjectCollectionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RequestProjectCollectionRequest proto.InternalMessageInfo
+
+func (m *RequestProjectCollectionRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+func (m *RequestProjectCollectionRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
+func (m *RequestProjectCollectionRequest) GetReason() string {
+	if m != nil {
+		return m.Reason
+	}
+	return ""
+}
+
+type RequestProjectCollectionResponse struct {
+	Status               *v1alpha1.ProjectCollectionStatus `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
+	XXX_unrecognized     []byte                            `json:"-"`
+	XXX_sizecache        int32                             `json:"-"`
+}
+
+func (m *RequestProjectCollectionResponse) Reset()         { *m = RequestProjectCollectionResponse{} }
+func (m *RequestProjectCollectionResponse) String() string { return proto.CompactTextString(m) }
+func (*RequestProjectCollectionResponse) ProtoMessage()    {}
+func (*RequestProjectCollectionResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{9}
+}
+func (m *RequestProjectCollectionResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RequestProjectCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RequestProjectCollectionResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RequestProjectCollectionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RequestProjectCollectionResponse.Merge(m, src)
+}
+func (m *RequestProjectCollectionResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *RequestProjectCollectionResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RequestProjectCollectionResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RequestProjectCollectionResponse proto.InternalMessageInfo
+
+func (m *RequestProjectCollectionResponse) GetStatus() *v1alpha1.ProjectCollectionStatus {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+type GetProjectCollectionStatusRequest struct {
+	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	Contract             string   `protobuf:"bytes,2,opt,name=contract,proto3" json:"contract,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetProjectCollectionStatusRequest) Reset()         { *m = GetProjectCollectionStatusRequest{} }
+func (m *GetProjectCollectionStatusRequest) String() string { return proto.CompactTextString(m) }
+func (*GetProjectCollectionStatusRequest) ProtoMessage()    {}
+func (*GetProjectCollectionStatusRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbb8cd1a14781c7f, []int{10}
+}
+func (m *GetProjectCollectionStatusRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetProjectCollectionStatusRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetProjectCollectionStatusRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetProjectCollectionStatusRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetProjectCollectionStatusRequest.Merge(m, src)
+}
+func (m *GetProjectCollectionStatusRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetProjectCollectionStatusRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetProjectCollectionStatusRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetProjectCollectionStatusRequest proto.InternalMessageInfo
+
+func (m *GetProjectCollectionStatusRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+func (m *GetProjectCollectionStatusRequest) GetContract() string {
+	if m != nil {
+		return m.Contract
+	}
+	return ""
+}
+
 // GetContractSourceInfoRequest asks the application service to resolve contract bytecode/source facts.
 type GetContractSourceInfoRequest struct {
 	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
@@ -162,7 +554,7 @@ func (m *GetContractSourceInfoRequest) Reset()         { *m = GetContractSourceI
 func (m *GetContractSourceInfoRequest) String() string { return proto.CompactTextString(m) }
 func (*GetContractSourceInfoRequest) ProtoMessage()    {}
 func (*GetContractSourceInfoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{3}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{11}
 }
 func (m *GetContractSourceInfoRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -219,7 +611,7 @@ func (m *ListBytecodesRequest) Reset()         { *m = ListBytecodesRequest{} }
 func (m *ListBytecodesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodesRequest) ProtoMessage()    {}
 func (*ListBytecodesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{4}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{12}
 }
 func (m *ListBytecodesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -284,7 +676,7 @@ func (m *ListBytecodesResponse) Reset()         { *m = ListBytecodesResponse{} }
 func (m *ListBytecodesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodesResponse) ProtoMessage()    {}
 func (*ListBytecodesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{5}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{13}
 }
 func (m *ListBytecodesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -353,7 +745,7 @@ func (m *GetBytecodeRequest) Reset()         { *m = GetBytecodeRequest{} }
 func (m *GetBytecodeRequest) String() string { return proto.CompactTextString(m) }
 func (*GetBytecodeRequest) ProtoMessage()    {}
 func (*GetBytecodeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{6}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{14}
 }
 func (m *GetBytecodeRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -405,7 +797,7 @@ func (m *ListBytecodeDeploymentsRequest) Reset()         { *m = ListBytecodeDepl
 func (m *ListBytecodeDeploymentsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodeDeploymentsRequest) ProtoMessage()    {}
 func (*ListBytecodeDeploymentsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{7}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{15}
 }
 func (m *ListBytecodeDeploymentsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -484,7 +876,7 @@ func (m *ListBytecodeDeploymentsResponse) Reset()         { *m = ListBytecodeDep
 func (m *ListBytecodeDeploymentsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodeDeploymentsResponse) ProtoMessage()    {}
 func (*ListBytecodeDeploymentsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{8}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{16}
 }
 func (m *ListBytecodeDeploymentsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -552,7 +944,7 @@ func (m *ListBytecodeBlacklistEntriesRequest) Reset()         { *m = ListBytecod
 func (m *ListBytecodeBlacklistEntriesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodeBlacklistEntriesRequest) ProtoMessage()    {}
 func (*ListBytecodeBlacklistEntriesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{9}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{17}
 }
 func (m *ListBytecodeBlacklistEntriesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -593,7 +985,7 @@ func (m *ListBytecodeBlacklistEntriesResponse) Reset()         { *m = ListByteco
 func (m *ListBytecodeBlacklistEntriesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodeBlacklistEntriesResponse) ProtoMessage()    {}
 func (*ListBytecodeBlacklistEntriesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{10}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{18}
 }
 func (m *ListBytecodeBlacklistEntriesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -644,7 +1036,7 @@ func (m *AddBytecodeBlacklistEntryRequest) Reset()         { *m = AddBytecodeBla
 func (m *AddBytecodeBlacklistEntryRequest) String() string { return proto.CompactTextString(m) }
 func (*AddBytecodeBlacklistEntryRequest) ProtoMessage()    {}
 func (*AddBytecodeBlacklistEntryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{11}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{19}
 }
 func (m *AddBytecodeBlacklistEntryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -713,7 +1105,7 @@ func (m *AddBytecodeBlacklistEntryResponse) Reset()         { *m = AddBytecodeBl
 func (m *AddBytecodeBlacklistEntryResponse) String() string { return proto.CompactTextString(m) }
 func (*AddBytecodeBlacklistEntryResponse) ProtoMessage()    {}
 func (*AddBytecodeBlacklistEntryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{12}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{20}
 }
 func (m *AddBytecodeBlacklistEntryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -762,7 +1154,7 @@ func (m *UpdateBytecodeBlacklistNoteRequest) Reset()         { *m = UpdateByteco
 func (m *UpdateBytecodeBlacklistNoteRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateBytecodeBlacklistNoteRequest) ProtoMessage()    {}
 func (*UpdateBytecodeBlacklistNoteRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{13}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{21}
 }
 func (m *UpdateBytecodeBlacklistNoteRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -817,7 +1209,7 @@ func (m *UpdateBytecodeBlacklistNoteResponse) Reset()         { *m = UpdateBytec
 func (m *UpdateBytecodeBlacklistNoteResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateBytecodeBlacklistNoteResponse) ProtoMessage()    {}
 func (*UpdateBytecodeBlacklistNoteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{14}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{22}
 }
 func (m *UpdateBytecodeBlacklistNoteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -865,7 +1257,7 @@ func (m *DeleteBytecodeBlacklistRequest) Reset()         { *m = DeleteBytecodeBl
 func (m *DeleteBytecodeBlacklistRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteBytecodeBlacklistRequest) ProtoMessage()    {}
 func (*DeleteBytecodeBlacklistRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{15}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{23}
 }
 func (m *DeleteBytecodeBlacklistRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -912,7 +1304,7 @@ func (m *DeleteBytecodeBlacklistResponse) Reset()         { *m = DeleteBytecodeB
 func (m *DeleteBytecodeBlacklistResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteBytecodeBlacklistResponse) ProtoMessage()    {}
 func (*DeleteBytecodeBlacklistResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{16}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{24}
 }
 func (m *DeleteBytecodeBlacklistResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -952,7 +1344,7 @@ func (m *ListWalletBlacklistEntriesRequest) Reset()         { *m = ListWalletBla
 func (m *ListWalletBlacklistEntriesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListWalletBlacklistEntriesRequest) ProtoMessage()    {}
 func (*ListWalletBlacklistEntriesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{17}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{25}
 }
 func (m *ListWalletBlacklistEntriesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -993,7 +1385,7 @@ func (m *ListWalletBlacklistEntriesResponse) Reset()         { *m = ListWalletBl
 func (m *ListWalletBlacklistEntriesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListWalletBlacklistEntriesResponse) ProtoMessage()    {}
 func (*ListWalletBlacklistEntriesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{18}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{26}
 }
 func (m *ListWalletBlacklistEntriesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1042,7 +1434,7 @@ func (m *AddWalletBlacklistEntryRequest) Reset()         { *m = AddWalletBlackli
 func (m *AddWalletBlacklistEntryRequest) String() string { return proto.CompactTextString(m) }
 func (*AddWalletBlacklistEntryRequest) ProtoMessage()    {}
 func (*AddWalletBlacklistEntryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{19}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{27}
 }
 func (m *AddWalletBlacklistEntryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1097,7 +1489,7 @@ func (m *AddWalletBlacklistEntryResponse) Reset()         { *m = AddWalletBlackl
 func (m *AddWalletBlacklistEntryResponse) String() string { return proto.CompactTextString(m) }
 func (*AddWalletBlacklistEntryResponse) ProtoMessage()    {}
 func (*AddWalletBlacklistEntryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{20}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{28}
 }
 func (m *AddWalletBlacklistEntryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1146,7 +1538,7 @@ func (m *UpdateWalletBlacklistEntryNoteRequest) Reset()         { *m = UpdateWal
 func (m *UpdateWalletBlacklistEntryNoteRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateWalletBlacklistEntryNoteRequest) ProtoMessage()    {}
 func (*UpdateWalletBlacklistEntryNoteRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{21}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{29}
 }
 func (m *UpdateWalletBlacklistEntryNoteRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1203,7 +1595,7 @@ func (m *UpdateWalletBlacklistEntryNoteResponse) Reset() {
 func (m *UpdateWalletBlacklistEntryNoteResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateWalletBlacklistEntryNoteResponse) ProtoMessage()    {}
 func (*UpdateWalletBlacklistEntryNoteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{22}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{30}
 }
 func (m *UpdateWalletBlacklistEntryNoteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1251,7 +1643,7 @@ func (m *DeleteWalletBlacklistEntryRequest) Reset()         { *m = DeleteWalletB
 func (m *DeleteWalletBlacklistEntryRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteWalletBlacklistEntryRequest) ProtoMessage()    {}
 func (*DeleteWalletBlacklistEntryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{23}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{31}
 }
 func (m *DeleteWalletBlacklistEntryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1298,7 +1690,7 @@ func (m *DeleteWalletBlacklistEntryResponse) Reset()         { *m = DeleteWallet
 func (m *DeleteWalletBlacklistEntryResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteWalletBlacklistEntryResponse) ProtoMessage()    {}
 func (*DeleteWalletBlacklistEntryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{24}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{32}
 }
 func (m *DeleteWalletBlacklistEntryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1327,542 +1719,6 @@ func (m *DeleteWalletBlacklistEntryResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteWalletBlacklistEntryResponse proto.InternalMessageInfo
 
-// ListSourceQualityPromptsRequest queries source quality prompts.
-type ListSourceQualityPromptsRequest struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *ListSourceQualityPromptsRequest) Reset()         { *m = ListSourceQualityPromptsRequest{} }
-func (m *ListSourceQualityPromptsRequest) String() string { return proto.CompactTextString(m) }
-func (*ListSourceQualityPromptsRequest) ProtoMessage()    {}
-func (*ListSourceQualityPromptsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{25}
-}
-func (m *ListSourceQualityPromptsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ListSourceQualityPromptsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ListSourceQualityPromptsRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ListSourceQualityPromptsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListSourceQualityPromptsRequest.Merge(m, src)
-}
-func (m *ListSourceQualityPromptsRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *ListSourceQualityPromptsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListSourceQualityPromptsRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ListSourceQualityPromptsRequest proto.InternalMessageInfo
-
-// ListSourceQualityPromptsResponse returns source quality prompt records.
-type ListSourceQualityPromptsResponse struct {
-	Items                []*v1alpha1.SourceQualityPrompt `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
-	XXX_unrecognized     []byte                          `json:"-"`
-	XXX_sizecache        int32                           `json:"-"`
-}
-
-func (m *ListSourceQualityPromptsResponse) Reset()         { *m = ListSourceQualityPromptsResponse{} }
-func (m *ListSourceQualityPromptsResponse) String() string { return proto.CompactTextString(m) }
-func (*ListSourceQualityPromptsResponse) ProtoMessage()    {}
-func (*ListSourceQualityPromptsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{26}
-}
-func (m *ListSourceQualityPromptsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ListSourceQualityPromptsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ListSourceQualityPromptsResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ListSourceQualityPromptsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListSourceQualityPromptsResponse.Merge(m, src)
-}
-func (m *ListSourceQualityPromptsResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *ListSourceQualityPromptsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListSourceQualityPromptsResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ListSourceQualityPromptsResponse proto.InternalMessageInfo
-
-func (m *ListSourceQualityPromptsResponse) GetItems() []*v1alpha1.SourceQualityPrompt {
-	if m != nil {
-		return m.Items
-	}
-	return nil
-}
-
-// GetSourceQualityPromptRequest queries one source quality prompt.
-type GetSourceQualityPromptRequest struct {
-	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetSourceQualityPromptRequest) Reset()         { *m = GetSourceQualityPromptRequest{} }
-func (m *GetSourceQualityPromptRequest) String() string { return proto.CompactTextString(m) }
-func (*GetSourceQualityPromptRequest) ProtoMessage()    {}
-func (*GetSourceQualityPromptRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{27}
-}
-func (m *GetSourceQualityPromptRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *GetSourceQualityPromptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_GetSourceQualityPromptRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *GetSourceQualityPromptRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetSourceQualityPromptRequest.Merge(m, src)
-}
-func (m *GetSourceQualityPromptRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *GetSourceQualityPromptRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetSourceQualityPromptRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetSourceQualityPromptRequest proto.InternalMessageInfo
-
-func (m *GetSourceQualityPromptRequest) GetId() int64 {
-	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
-// CreateSourceQualityPromptRequest creates a source quality prompt.
-type CreateSourceQualityPromptRequest struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	SystemPrompt         string   `protobuf:"bytes,2,opt,name=system_prompt,json=systemPrompt,proto3" json:"system_prompt,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *CreateSourceQualityPromptRequest) Reset()         { *m = CreateSourceQualityPromptRequest{} }
-func (m *CreateSourceQualityPromptRequest) String() string { return proto.CompactTextString(m) }
-func (*CreateSourceQualityPromptRequest) ProtoMessage()    {}
-func (*CreateSourceQualityPromptRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{28}
-}
-func (m *CreateSourceQualityPromptRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CreateSourceQualityPromptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CreateSourceQualityPromptRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CreateSourceQualityPromptRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateSourceQualityPromptRequest.Merge(m, src)
-}
-func (m *CreateSourceQualityPromptRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *CreateSourceQualityPromptRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreateSourceQualityPromptRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CreateSourceQualityPromptRequest proto.InternalMessageInfo
-
-func (m *CreateSourceQualityPromptRequest) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *CreateSourceQualityPromptRequest) GetSystemPrompt() string {
-	if m != nil {
-		return m.SystemPrompt
-	}
-	return ""
-}
-
-// CreateSourceQualityPromptResponse returns the created prompt.
-type CreateSourceQualityPromptResponse struct {
-	Item                 *v1alpha1.SourceQualityPrompt `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
-	XXX_unrecognized     []byte                        `json:"-"`
-	XXX_sizecache        int32                         `json:"-"`
-}
-
-func (m *CreateSourceQualityPromptResponse) Reset()         { *m = CreateSourceQualityPromptResponse{} }
-func (m *CreateSourceQualityPromptResponse) String() string { return proto.CompactTextString(m) }
-func (*CreateSourceQualityPromptResponse) ProtoMessage()    {}
-func (*CreateSourceQualityPromptResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{29}
-}
-func (m *CreateSourceQualityPromptResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CreateSourceQualityPromptResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CreateSourceQualityPromptResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CreateSourceQualityPromptResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateSourceQualityPromptResponse.Merge(m, src)
-}
-func (m *CreateSourceQualityPromptResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *CreateSourceQualityPromptResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreateSourceQualityPromptResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CreateSourceQualityPromptResponse proto.InternalMessageInfo
-
-func (m *CreateSourceQualityPromptResponse) GetItem() *v1alpha1.SourceQualityPrompt {
-	if m != nil {
-		return m.Item
-	}
-	return nil
-}
-
-// UpdateSourceQualityPromptRequest creates a new source quality prompt version.
-type UpdateSourceQualityPromptRequest struct {
-	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	SystemPrompt         string   `protobuf:"bytes,3,opt,name=system_prompt,json=systemPrompt,proto3" json:"system_prompt,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UpdateSourceQualityPromptRequest) Reset()         { *m = UpdateSourceQualityPromptRequest{} }
-func (m *UpdateSourceQualityPromptRequest) String() string { return proto.CompactTextString(m) }
-func (*UpdateSourceQualityPromptRequest) ProtoMessage()    {}
-func (*UpdateSourceQualityPromptRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{30}
-}
-func (m *UpdateSourceQualityPromptRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *UpdateSourceQualityPromptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_UpdateSourceQualityPromptRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *UpdateSourceQualityPromptRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateSourceQualityPromptRequest.Merge(m, src)
-}
-func (m *UpdateSourceQualityPromptRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *UpdateSourceQualityPromptRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateSourceQualityPromptRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UpdateSourceQualityPromptRequest proto.InternalMessageInfo
-
-func (m *UpdateSourceQualityPromptRequest) GetId() int64 {
-	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
-func (m *UpdateSourceQualityPromptRequest) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *UpdateSourceQualityPromptRequest) GetSystemPrompt() string {
-	if m != nil {
-		return m.SystemPrompt
-	}
-	return ""
-}
-
-// UpdateSourceQualityPromptResponse returns the new prompt version.
-type UpdateSourceQualityPromptResponse struct {
-	Item                 *v1alpha1.SourceQualityPrompt `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
-	XXX_unrecognized     []byte                        `json:"-"`
-	XXX_sizecache        int32                         `json:"-"`
-}
-
-func (m *UpdateSourceQualityPromptResponse) Reset()         { *m = UpdateSourceQualityPromptResponse{} }
-func (m *UpdateSourceQualityPromptResponse) String() string { return proto.CompactTextString(m) }
-func (*UpdateSourceQualityPromptResponse) ProtoMessage()    {}
-func (*UpdateSourceQualityPromptResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{31}
-}
-func (m *UpdateSourceQualityPromptResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *UpdateSourceQualityPromptResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_UpdateSourceQualityPromptResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *UpdateSourceQualityPromptResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateSourceQualityPromptResponse.Merge(m, src)
-}
-func (m *UpdateSourceQualityPromptResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *UpdateSourceQualityPromptResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateSourceQualityPromptResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UpdateSourceQualityPromptResponse proto.InternalMessageInfo
-
-func (m *UpdateSourceQualityPromptResponse) GetItem() *v1alpha1.SourceQualityPrompt {
-	if m != nil {
-		return m.Item
-	}
-	return nil
-}
-
-// ActivateSourceQualityPromptRequest marks a prompt as current.
-type ActivateSourceQualityPromptRequest struct {
-	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *ActivateSourceQualityPromptRequest) Reset()         { *m = ActivateSourceQualityPromptRequest{} }
-func (m *ActivateSourceQualityPromptRequest) String() string { return proto.CompactTextString(m) }
-func (*ActivateSourceQualityPromptRequest) ProtoMessage()    {}
-func (*ActivateSourceQualityPromptRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{32}
-}
-func (m *ActivateSourceQualityPromptRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ActivateSourceQualityPromptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ActivateSourceQualityPromptRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ActivateSourceQualityPromptRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ActivateSourceQualityPromptRequest.Merge(m, src)
-}
-func (m *ActivateSourceQualityPromptRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *ActivateSourceQualityPromptRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ActivateSourceQualityPromptRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ActivateSourceQualityPromptRequest proto.InternalMessageInfo
-
-func (m *ActivateSourceQualityPromptRequest) GetId() int64 {
-	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
-// ActivateSourceQualityPromptResponse returns the activated prompt.
-type ActivateSourceQualityPromptResponse struct {
-	Item                 *v1alpha1.SourceQualityPrompt `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
-	XXX_unrecognized     []byte                        `json:"-"`
-	XXX_sizecache        int32                         `json:"-"`
-}
-
-func (m *ActivateSourceQualityPromptResponse) Reset()         { *m = ActivateSourceQualityPromptResponse{} }
-func (m *ActivateSourceQualityPromptResponse) String() string { return proto.CompactTextString(m) }
-func (*ActivateSourceQualityPromptResponse) ProtoMessage()    {}
-func (*ActivateSourceQualityPromptResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{33}
-}
-func (m *ActivateSourceQualityPromptResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ActivateSourceQualityPromptResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ActivateSourceQualityPromptResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ActivateSourceQualityPromptResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ActivateSourceQualityPromptResponse.Merge(m, src)
-}
-func (m *ActivateSourceQualityPromptResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *ActivateSourceQualityPromptResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ActivateSourceQualityPromptResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ActivateSourceQualityPromptResponse proto.InternalMessageInfo
-
-func (m *ActivateSourceQualityPromptResponse) GetItem() *v1alpha1.SourceQualityPrompt {
-	if m != nil {
-		return m.Item
-	}
-	return nil
-}
-
-// DeleteSourceQualityPromptRequest soft deletes a prompt.
-type DeleteSourceQualityPromptRequest struct {
-	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeleteSourceQualityPromptRequest) Reset()         { *m = DeleteSourceQualityPromptRequest{} }
-func (m *DeleteSourceQualityPromptRequest) String() string { return proto.CompactTextString(m) }
-func (*DeleteSourceQualityPromptRequest) ProtoMessage()    {}
-func (*DeleteSourceQualityPromptRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{34}
-}
-func (m *DeleteSourceQualityPromptRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *DeleteSourceQualityPromptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_DeleteSourceQualityPromptRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *DeleteSourceQualityPromptRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteSourceQualityPromptRequest.Merge(m, src)
-}
-func (m *DeleteSourceQualityPromptRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *DeleteSourceQualityPromptRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteSourceQualityPromptRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeleteSourceQualityPromptRequest proto.InternalMessageInfo
-
-func (m *DeleteSourceQualityPromptRequest) GetId() int64 {
-	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
-// DeleteSourceQualityPromptResponse is returned after deleting a prompt.
-type DeleteSourceQualityPromptResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeleteSourceQualityPromptResponse) Reset()         { *m = DeleteSourceQualityPromptResponse{} }
-func (m *DeleteSourceQualityPromptResponse) String() string { return proto.CompactTextString(m) }
-func (*DeleteSourceQualityPromptResponse) ProtoMessage()    {}
-func (*DeleteSourceQualityPromptResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{35}
-}
-func (m *DeleteSourceQualityPromptResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *DeleteSourceQualityPromptResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_DeleteSourceQualityPromptResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *DeleteSourceQualityPromptResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteSourceQualityPromptResponse.Merge(m, src)
-}
-func (m *DeleteSourceQualityPromptResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *DeleteSourceQualityPromptResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteSourceQualityPromptResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeleteSourceQualityPromptResponse proto.InternalMessageInfo
-
 // GetProjectOptionsRequest don't need any parameters.
 type GetProjectOptionsRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -1874,7 +1730,7 @@ func (m *GetProjectOptionsRequest) Reset()         { *m = GetProjectOptionsReque
 func (m *GetProjectOptionsRequest) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsRequest) ProtoMessage()    {}
 func (*GetProjectOptionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{36}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{33}
 }
 func (m *GetProjectOptionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1915,7 +1771,7 @@ func (m *GetProjectOptionsResponse) Reset()         { *m = GetProjectOptionsResp
 func (m *GetProjectOptionsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetProjectOptionsResponse) ProtoMessage()    {}
 func (*GetProjectOptionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbb8cd1a14781c7f, []int{37}
+	return fileDescriptor_dbb8cd1a14781c7f, []int{34}
 }
 func (m *GetProjectOptionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1955,6 +1811,14 @@ func init() {
 	proto.RegisterType((*GetProjectDiscoveryStatusRequest)(nil), "application.GetProjectDiscoveryStatusRequest")
 	proto.RegisterType((*StartProjectDiscoveryRequest)(nil), "application.StartProjectDiscoveryRequest")
 	proto.RegisterType((*StopProjectDiscoveryRequest)(nil), "application.StopProjectDiscoveryRequest")
+	proto.RegisterType((*ListChainsRequest)(nil), "application.ListChainsRequest")
+	proto.RegisterType((*ListChainsResponse)(nil), "application.ListChainsResponse")
+	proto.RegisterType((*GetChainIngestStatusRequest)(nil), "application.GetChainIngestStatusRequest")
+	proto.RegisterType((*StartChainIngestRequest)(nil), "application.StartChainIngestRequest")
+	proto.RegisterType((*StopChainIngestRequest)(nil), "application.StopChainIngestRequest")
+	proto.RegisterType((*RequestProjectCollectionRequest)(nil), "application.RequestProjectCollectionRequest")
+	proto.RegisterType((*RequestProjectCollectionResponse)(nil), "application.RequestProjectCollectionResponse")
+	proto.RegisterType((*GetProjectCollectionStatusRequest)(nil), "application.GetProjectCollectionStatusRequest")
 	proto.RegisterType((*GetContractSourceInfoRequest)(nil), "application.GetContractSourceInfoRequest")
 	proto.RegisterType((*ListBytecodesRequest)(nil), "application.ListBytecodesRequest")
 	proto.RegisterType((*ListBytecodesResponse)(nil), "application.ListBytecodesResponse")
@@ -1977,17 +1841,6 @@ func init() {
 	proto.RegisterType((*UpdateWalletBlacklistEntryNoteResponse)(nil), "application.UpdateWalletBlacklistEntryNoteResponse")
 	proto.RegisterType((*DeleteWalletBlacklistEntryRequest)(nil), "application.DeleteWalletBlacklistEntryRequest")
 	proto.RegisterType((*DeleteWalletBlacklistEntryResponse)(nil), "application.DeleteWalletBlacklistEntryResponse")
-	proto.RegisterType((*ListSourceQualityPromptsRequest)(nil), "application.ListSourceQualityPromptsRequest")
-	proto.RegisterType((*ListSourceQualityPromptsResponse)(nil), "application.ListSourceQualityPromptsResponse")
-	proto.RegisterType((*GetSourceQualityPromptRequest)(nil), "application.GetSourceQualityPromptRequest")
-	proto.RegisterType((*CreateSourceQualityPromptRequest)(nil), "application.CreateSourceQualityPromptRequest")
-	proto.RegisterType((*CreateSourceQualityPromptResponse)(nil), "application.CreateSourceQualityPromptResponse")
-	proto.RegisterType((*UpdateSourceQualityPromptRequest)(nil), "application.UpdateSourceQualityPromptRequest")
-	proto.RegisterType((*UpdateSourceQualityPromptResponse)(nil), "application.UpdateSourceQualityPromptResponse")
-	proto.RegisterType((*ActivateSourceQualityPromptRequest)(nil), "application.ActivateSourceQualityPromptRequest")
-	proto.RegisterType((*ActivateSourceQualityPromptResponse)(nil), "application.ActivateSourceQualityPromptResponse")
-	proto.RegisterType((*DeleteSourceQualityPromptRequest)(nil), "application.DeleteSourceQualityPromptRequest")
-	proto.RegisterType((*DeleteSourceQualityPromptResponse)(nil), "application.DeleteSourceQualityPromptResponse")
 	proto.RegisterType((*GetProjectOptionsRequest)(nil), "application.GetProjectOptionsRequest")
 	proto.RegisterType((*GetProjectOptionsResponse)(nil), "application.GetProjectOptionsResponse")
 }
@@ -1997,110 +1850,109 @@ func init() {
 }
 
 var fileDescriptor_dbb8cd1a14781c7f = []byte{
-	// 1641 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x59, 0x4d, 0x4f, 0xdd, 0x46,
-	0x17, 0xd6, 0x00, 0xf9, 0x3a, 0x79, 0x93, 0x57, 0xef, 0x28, 0x09, 0x60, 0xc8, 0xe5, 0x32, 0x04,
-	0x42, 0x48, 0xb8, 0x0e, 0x24, 0x51, 0x5e, 0xa5, 0xcd, 0x02, 0x48, 0x45, 0x52, 0xa5, 0x29, 0x05,
-	0x45, 0x95, 0xda, 0x05, 0x35, 0xf6, 0xe4, 0xe2, 0x62, 0x6c, 0xc7, 0x1e, 0xa8, 0x6e, 0x22, 0xba,
-	0x68, 0xd5, 0xef, 0xaa, 0x9b, 0xfe, 0x85, 0x66, 0x55, 0x55, 0x6a, 0x95, 0xaa, 0xeb, 0x46, 0x4a,
-	0xa5, 0xb4, 0xca, 0xa2, 0x52, 0xff, 0x40, 0x15, 0xf5, 0x87, 0x54, 0x9e, 0x19, 0x1b, 0xdb, 0xd7,
-	0x5f, 0x17, 0x08, 0x2b, 0x7c, 0xed, 0x33, 0x67, 0x9e, 0xe7, 0x9c, 0x67, 0x66, 0xfc, 0x18, 0x98,
-	0x34, 0x6d, 0x46, 0x3d, 0x5b, 0xb3, 0x54, 0x9f, 0x7a, 0x9b, 0xd4, 0x53, 0x35, 0xd7, 0xb5, 0x4c,
-	0x5d, 0x63, 0xa6, 0x63, 0xc7, 0xaf, 0x1b, 0xae, 0xe7, 0x30, 0x07, 0x1f, 0x8d, 0xdd, 0x52, 0x6e,
-	0x36, 0x4d, 0xb6, 0xba, 0xb1, 0xd2, 0xd0, 0x9d, 0x75, 0x75, 0xc3, 0xa7, 0x5e, 0x8b, 0x36, 0xa9,
-	0xaa, 0xb1, 0x55, 0x6a, 0x6b, 0xaa, 0xbb, 0xd6, 0x54, 0x35, 0xd7, 0xf4, 0x13, 0xf9, 0x36, 0xa7,
-	0x34, 0xcb, 0x5d, 0xd5, 0xa6, 0xd4, 0x26, 0xb5, 0xa9, 0xa7, 0x31, 0x6a, 0x88, 0xb4, 0xca, 0x60,
-	0xd3, 0x71, 0x9a, 0x16, 0x0d, 0x46, 0xa8, 0x9a, 0x6d, 0x3b, 0x8c, 0xc7, 0xfb, 0xe2, 0x29, 0x21,
-	0x50, 0x9f, 0xa7, 0x6c, 0xc1, 0x73, 0xde, 0xa7, 0x3a, 0xbb, 0x61, 0xfa, 0xba, 0xb3, 0x49, 0xbd,
-	0xd6, 0x12, 0xd3, 0xd8, 0x86, 0xbf, 0x48, 0xef, 0x6f, 0x50, 0x9f, 0x91, 0x1a, 0x0c, 0x2e, 0x31,
-	0xcd, 0x6b, 0x8b, 0x0a, 0x9f, 0x9f, 0x86, 0x81, 0x25, 0xe6, 0xb8, 0x79, 0x8f, 0xef, 0xc2, 0xe0,
-	0x3c, 0x65, 0x73, 0x8e, 0xcd, 0x3c, 0x4d, 0x67, 0x4b, 0xce, 0x86, 0xa7, 0xd3, 0x5b, 0xf6, 0x3d,
-	0x47, 0x3e, 0xc7, 0xfd, 0x70, 0x58, 0x5f, 0xd5, 0x4c, 0x7b, 0xd9, 0x34, 0xfa, 0x50, 0x1d, 0x8d,
-	0x77, 0x2f, 0x1e, 0xe2, 0xbf, 0x6f, 0x19, 0x58, 0x81, 0xc3, 0xba, 0x1c, 0xd7, 0xd7, 0x55, 0x47,
-	0xe3, 0x47, 0x16, 0xa3, 0xdf, 0xc4, 0x80, 0x13, 0xb7, 0x4d, 0x9f, 0xcd, 0xb6, 0x18, 0xd5, 0x1d,
-	0x83, 0x86, 0x68, 0x31, 0x86, 0x1e, 0x57, 0x6b, 0x52, 0x99, 0x8a, 0x5f, 0xe3, 0x01, 0x38, 0x12,
-	0xfc, 0x5d, 0xf6, 0xcd, 0x07, 0x94, 0x27, 0xea, 0x5e, 0x3c, 0x1c, 0xdc, 0x58, 0x32, 0x1f, 0xf0,
-	0x87, 0x41, 0x82, 0xe5, 0x55, 0xcd, 0x5f, 0xed, 0xeb, 0x0e, 0x67, 0x31, 0xe8, 0x4d, 0xcd, 0x5f,
-	0x25, 0xbf, 0x22, 0x38, 0x99, 0x9a, 0xc6, 0x77, 0x1d, 0xdb, 0xa7, 0xf8, 0x3d, 0x38, 0x60, 0x32,
-	0xba, 0xee, 0xf7, 0xa1, 0x7a, 0xf7, 0xf8, 0xd1, 0xe9, 0xd7, 0x1b, 0xdb, 0x1d, 0x6b, 0x84, 0x1d,
-	0x6b, 0x88, 0x8e, 0x35, 0xdc, 0xb5, 0x66, 0x23, 0xe8, 0x58, 0x23, 0xde, 0xf5, 0xb0, 0x63, 0x8d,
-	0x30, 0x77, 0x30, 0xcf, 0x2d, 0x46, 0xd7, 0x17, 0x45, 0x62, 0x7c, 0x02, 0x0e, 0x30, 0x87, 0x69,
-	0x96, 0x44, 0x2c, 0x7e, 0x44, 0xfc, 0xba, 0xf3, 0xf8, 0xf5, 0x24, 0xf9, 0x91, 0x29, 0xc0, 0xf3,
-	0x34, 0x22, 0x10, 0x96, 0x29, 0xc1, 0x1a, 0xa5, 0x58, 0x3f, 0x42, 0x50, 0x8b, 0xb3, 0xbe, 0x41,
-	0x5d, 0xcb, 0x69, 0xad, 0x53, 0x9b, 0xf9, 0x55, 0xc6, 0x47, 0x18, 0xbb, 0xf2, 0x30, 0x76, 0xa7,
-	0x7a, 0x10, 0xd7, 0x40, 0x4f, 0xbe, 0x06, 0x0e, 0xa4, 0x34, 0xf0, 0x1c, 0xc1, 0x50, 0x2e, 0x4e,
-	0xd9, 0xa7, 0x95, 0x64, 0x9f, 0x6e, 0xef, 0xbe, 0x4f, 0xdb, 0xb3, 0xec, 0x71, 0xa7, 0x46, 0x61,
-	0x24, 0xce, 0x66, 0xd6, 0xd2, 0xf4, 0x35, 0xcb, 0xf4, 0xd9, 0x6b, 0x36, 0xf3, 0xcc, 0x48, 0xe1,
-	0xe4, 0x1b, 0x04, 0x67, 0x8a, 0xe3, 0x24, 0xf5, 0x7b, 0x49, 0xea, 0x0b, 0xbb, 0xa7, 0x9e, 0x98,
-	0xaa, 0x25, 0xe9, 0x93, 0xef, 0x10, 0xd4, 0x67, 0x0c, 0x23, 0x27, 0xa8, 0x8a, 0x60, 0xc6, 0xe0,
-	0xbf, 0x3e, 0xdf, 0x18, 0x96, 0x23, 0x19, 0x88, 0x52, 0x1e, 0x13, 0xb7, 0xe7, 0xa4, 0x18, 0xce,
-	0x6e, 0xc7, 0x85, 0x9a, 0x10, 0x2b, 0xf6, 0xb8, 0x8c, 0x93, 0x77, 0x83, 0xda, 0xdb, 0x0e, 0x13,
-	0x25, 0x3e, 0xb2, 0xc8, 0xaf, 0xc9, 0x17, 0x08, 0x86, 0x0b, 0x60, 0xca, 0xa2, 0x19, 0xd0, 0x13,
-	0xb0, 0xe2, 0x10, 0x5f, 0x46, 0xcd, 0x78, 0x76, 0x72, 0x17, 0xc8, 0x5d, 0xd7, 0xd0, 0x18, 0x6d,
-	0x8b, 0xba, 0xe3, 0x30, 0x5a, 0x75, 0x91, 0x71, 0x8a, 0x5d, 0x31, 0x8a, 0x5f, 0x21, 0x18, 0x29,
-	0xcc, 0xbb, 0xaf, 0x24, 0xaf, 0x43, 0xed, 0x06, 0xb5, 0x68, 0x06, 0x98, 0x4a, 0xbb, 0xd0, 0x30,
-	0x0c, 0xe5, 0x0e, 0x17, 0x3c, 0xc8, 0x08, 0x0c, 0x07, 0x2b, 0xe1, 0x6d, 0xcd, 0xb2, 0x28, 0xcb,
-	0x5b, 0x2f, 0x5f, 0x22, 0x20, 0x45, 0x51, 0x51, 0x4d, 0x12, 0xab, 0xe5, 0xce, 0xce, 0x8b, 0x92,
-	0x31, 0x51, 0xb4, 0x56, 0x6e, 0x43, 0x6d, 0xc6, 0x30, 0x32, 0x23, 0x64, 0x4d, 0x4e, 0xc1, 0xc1,
-	0x0f, 0xf8, 0x63, 0x59, 0x10, 0xf9, 0x2b, 0xb3, 0xdf, 0x9f, 0x20, 0x18, 0xca, 0x4d, 0x17, 0x6d,
-	0x80, 0xf1, 0x5e, 0xef, 0x35, 0x2d, 0xd1, 0xe9, 0x25, 0x18, 0x15, 0xb2, 0xcb, 0x8a, 0x89, 0x2b,
-	0xba, 0x13, 0x72, 0x5f, 0x23, 0x18, 0x2b, 0xcb, 0xba, 0x8f, 0x1c, 0x5f, 0x81, 0x61, 0x21, 0xc7,
-	0x1d, 0x34, 0x8f, 0x9c, 0x01, 0x52, 0x34, 0x58, 0xca, 0x79, 0x58, 0x1c, 0x67, 0xe2, 0x1d, 0xe9,
-	0xad, 0x0d, 0xcd, 0x32, 0x59, 0x6b, 0xc1, 0x73, 0xd6, 0xdd, 0xe8, 0xdc, 0x25, 0x9f, 0x21, 0xa8,
-	0xe7, 0xc7, 0xc8, 0x72, 0xe8, 0x49, 0x29, 0xbf, 0xb1, 0xf3, 0x7a, 0x64, 0x4c, 0x13, 0x2a, 0x59,
-	0x85, 0xd3, 0xf3, 0x34, 0x0b, 0x47, 0x58, 0x8b, 0xe3, 0xd0, 0x15, 0xbd, 0xd2, 0x75, 0x99, 0x06,
-	0x79, 0x17, 0xea, 0x73, 0x1e, 0xd5, 0x18, 0x2d, 0x18, 0x13, 0xe8, 0x40, 0x5b, 0xa7, 0xb2, 0x7a,
-	0xfc, 0x1a, 0x8f, 0xc0, 0x31, 0xbf, 0xe5, 0x33, 0xba, 0xbe, 0xec, 0xf2, 0x58, 0x29, 0x92, 0xff,
-	0x88, 0x9b, 0x62, 0x3c, 0xf9, 0x14, 0xc1, 0x70, 0x41, 0x76, 0x59, 0x18, 0x2d, 0xa1, 0x93, 0x3d,
-	0xae, 0x8b, 0x90, 0xc9, 0x1a, 0xd4, 0x85, 0x68, 0xab, 0x57, 0x26, 0x62, 0xdd, 0x55, 0xc4, 0xba,
-	0x3b, 0x87, 0x75, 0xc1, 0x6c, 0xfb, 0xc7, 0xfa, 0x32, 0x90, 0x19, 0x9d, 0x99, 0x9b, 0x1d, 0xf1,
-	0x26, 0x9f, 0x23, 0x18, 0x29, 0x1c, 0xb6, 0x7f, 0x04, 0xa6, 0xa1, 0x2e, 0x16, 0x68, 0x07, 0xf0,
-	0x47, 0xc2, 0x1d, 0xa1, 0x00, 0x3b, 0x51, 0xa0, 0x6f, 0xdb, 0x61, 0xbd, 0xe9, 0x72, 0xf3, 0x15,
-	0x2e, 0xe6, 0x0f, 0xa1, 0x3f, 0xe3, 0x59, 0x44, 0xfa, 0x90, 0x23, 0x6e, 0x49, 0xde, 0xf3, 0x3b,
-	0xe7, 0x9d, 0x98, 0x62, 0x31, 0xcc, 0x3b, 0xfd, 0x64, 0x08, 0xf0, 0xcc, 0x76, 0xfc, 0x12, 0xf5,
-	0x36, 0x4d, 0x9d, 0xe2, 0x3f, 0x50, 0x1c, 0x57, 0xca, 0x15, 0xe2, 0xc9, 0xc4, 0x14, 0x65, 0xee,
-	0x51, 0x59, 0xd8, 0x35, 0xea, 0x54, 0x62, 0x72, 0xe1, 0xa3, 0xbf, 0xfe, 0xf9, 0xb6, 0x6b, 0x0c,
-	0x9f, 0xe1, 0x9e, 0x76, 0x73, 0x2a, 0xe1, 0x83, 0x8d, 0x30, 0x58, 0xf5, 0x05, 0xdc, 0xa7, 0x08,
-	0x4e, 0x66, 0xda, 0x57, 0x7c, 0x2e, 0x31, 0x6b, 0x91, 0xc5, 0x7d, 0x09, 0x24, 0x1a, 0x9c, 0xc4,
-	0x38, 0x19, 0x29, 0x25, 0xe1, 0xb1, 0x6b, 0x68, 0x02, 0x3f, 0x41, 0x70, 0x22, 0xcb, 0x65, 0xe3,
-	0xf1, 0x14, 0x8b, 0x5c, 0x23, 0xfe, 0x12, 0x48, 0x4c, 0x72, 0x12, 0x67, 0x09, 0x29, 0x23, 0xe1,
-	0xb8, 0x01, 0x87, 0xdf, 0x11, 0x9c, 0xcc, 0xfc, 0x14, 0x90, 0x6a, 0x45, 0xd1, 0xe7, 0x02, 0x65,
-	0x17, 0x06, 0xae, 0x3d, 0x29, 0xb9, 0xca, 0x19, 0x4c, 0x61, 0x35, 0x8b, 0x41, 0xe8, 0x31, 0x7c,
-	0xf5, 0x61, 0x78, 0xb9, 0xa5, 0x0a, 0xa3, 0x81, 0xb7, 0xe0, 0x58, 0xe2, 0xbb, 0x00, 0x1e, 0x4e,
-	0xcc, 0x99, 0xf5, 0x69, 0x42, 0x21, 0x45, 0x21, 0x72, 0xbb, 0x18, 0xe5, 0x80, 0x86, 0xf0, 0xe9,
-	0x2c, 0x40, 0x2b, 0xd1, 0x6c, 0xdf, 0x23, 0x38, 0x1a, 0x73, 0xf5, 0x78, 0x28, 0x5d, 0xc0, 0x94,
-	0xdf, 0x57, 0x6e, 0xee, 0x85, 0xef, 0x65, 0x9a, 0x69, 0x91, 0x29, 0x8e, 0xf0, 0x3c, 0x3e, 0x57,
-	0x88, 0x30, 0x28, 0x99, 0x7c, 0xb1, 0xdf, 0xc2, 0x8f, 0x11, 0xf4, 0xe6, 0xf8, 0x74, 0x7c, 0x3e,
-	0xb7, 0x28, 0xed, 0x5f, 0x1d, 0x94, 0x0b, 0xd5, 0x82, 0x65, 0x2d, 0xaf, 0x73, 0xa4, 0x57, 0xf1,
-	0x95, 0xca, 0x48, 0x55, 0x23, 0x86, 0xec, 0x31, 0x82, 0xc1, 0x22, 0x9f, 0x8d, 0x2f, 0xe6, 0xa2,
-	0xc9, 0xb1, 0x22, 0xca, 0x54, 0x07, 0x23, 0x24, 0x09, 0xb9, 0x51, 0xe0, 0xb1, 0x22, 0x12, 0xea,
-	0x4a, 0x38, 0x1c, 0xff, 0x80, 0xa0, 0x3f, 0xd7, 0xe5, 0xa6, 0x36, 0xef, 0x32, 0xd3, 0xae, 0x34,
-	0xaa, 0x86, 0x4b, 0xb0, 0x52, 0x1b, 0xa4, 0x22, 0xd8, 0x60, 0x53, 0x78, 0x8a, 0x60, 0xa0, 0xc0,
-	0xb2, 0x62, 0x35, 0x01, 0xa1, 0xdc, 0x34, 0x2b, 0x17, 0xab, 0x0f, 0x90, 0xa8, 0x67, 0x39, 0xea,
-	0x57, 0xc9, 0xd5, 0x6a, 0xa8, 0x13, 0x82, 0x09, 0x9c, 0x4a, 0x40, 0xe3, 0x47, 0x04, 0xbd, 0x39,
-	0x6e, 0x35, 0x25, 0xf1, 0x62, 0x4b, 0x9c, 0x92, 0x78, 0x99, 0x01, 0xbe, 0xc6, 0xa1, 0x5f, 0x9e,
-	0x98, 0xee, 0x1c, 0x7a, 0xb0, 0x87, 0x28, 0xf9, 0xbe, 0x18, 0x37, 0xda, 0xb4, 0x5a, 0x68, 0xb3,
-	0x15, 0xb5, 0x72, 0xbc, 0xc4, 0x5e, 0x78, 0x8e, 0x0b, 0xdf, 0x14, 0xd3, 0xf5, 0x23, 0x04, 0xbd,
-	0x39, 0x56, 0x37, 0x55, 0xe0, 0x62, 0x7f, 0x9d, 0x2a, 0x70, 0x89, 0x7b, 0x26, 0x2a, 0x07, 0x79,
-	0x8e, 0x54, 0x02, 0x19, 0x08, 0xe1, 0x19, 0x82, 0x5a, 0xb1, 0x6b, 0xc5, 0xd3, 0x19, 0x0a, 0x2d,
-	0x31, 0xce, 0xca, 0xa5, 0x8e, 0xc6, 0x24, 0x37, 0x40, 0x32, 0x5d, 0x05, 0xbc, 0xfa, 0x50, 0xdc,
-	0xd9, 0xd6, 0xf4, 0xcf, 0x08, 0x94, 0x7c, 0xd7, 0x9a, 0x12, 0x48, 0xa9, 0x37, 0x4e, 0x09, 0xa4,
-	0x82, 0x1d, 0xbe, 0xc2, 0xe1, 0xab, 0x13, 0x93, 0x1d, 0xc1, 0x0f, 0x74, 0xdd, 0x97, 0x67, 0x91,
-	0x71, 0xfb, 0x09, 0x52, 0xe0, 0xb6, 0x95, 0xc9, 0x8a, 0xd1, 0x12, 0xf0, 0x34, 0x07, 0x7c, 0x01,
-	0x4f, 0x64, 0x01, 0x16, 0x2f, 0x0e, 0x93, 0xf7, 0xc5, 0x50, 0xd5, 0x95, 0x80, 0x9e, 0x23, 0x38,
-	0x95, 0xed, 0xa3, 0xf1, 0x44, 0xfa, 0x50, 0xcf, 0xf7, 0x26, 0xca, 0xde, 0x9a, 0xa2, 0xe2, 0xf7,
-	0xa2, 0x6c, 0x26, 0xea, 0x43, 0xd3, 0xd8, 0xc2, 0x3f, 0x21, 0xe8, 0xcf, 0xf5, 0xe1, 0xa9, 0xe3,
-	0xa7, 0xec, 0x6b, 0x40, 0xea, 0xf8, 0x29, 0xb5, 0xf7, 0xa1, 0x60, 0x48, 0x07, 0xf5, 0x0f, 0x74,
-	0xfe, 0x0b, 0x82, 0xfe, 0x5c, 0x17, 0x9d, 0xc2, 0x5c, 0xe6, 0xed, 0x53, 0x98, 0x4b, 0xcd, 0x79,
-	0xb8, 0x83, 0x93, 0x4e, 0x2b, 0x1d, 0x00, 0xff, 0x0d, 0xc1, 0x40, 0x81, 0x7f, 0x4e, 0x9d, 0x9d,
-	0xe5, 0x06, 0x3d, 0x75, 0x76, 0x56, 0xb0, 0xe6, 0x64, 0x8e, 0xc3, 0xbf, 0x4e, 0xfe, 0xdf, 0x21,
-	0x7c, 0x55, 0x93, 0xc9, 0x03, 0x1e, 0x8f, 0x11, 0xf4, 0xe7, 0x3a, 0xe9, 0x54, 0x03, 0xca, 0x5c,
-	0xba, 0xd2, 0xa8, 0x1a, 0x2e, 0x19, 0x48, 0xa9, 0x4f, 0x74, 0x2c, 0xf5, 0x8f, 0x11, 0xfc, 0xaf,
-	0xcd, 0xbe, 0xe3, 0xd1, 0x1c, 0x7b, 0x9c, 0xb4, 0xfe, 0xca, 0x58, 0x59, 0x98, 0x44, 0x37, 0xc4,
-	0xd1, 0xf5, 0xe3, 0xde, 0x10, 0x9d, 0x2b, 0xe2, 0x26, 0xa5, 0x87, 0x9f, 0x9d, 0x7d, 0xf6, 0xa2,
-	0x86, 0xfe, 0x7c, 0x51, 0x43, 0x7f, 0xbf, 0xa8, 0xa1, 0x77, 0x2e, 0x97, 0xff, 0xdf, 0x58, 0xb7,
-	0x4c, 0x6a, 0xb3, 0x38, 0xcb, 0x95, 0x83, 0xfc, 0x9f, 0xc1, 0x97, 0xfe, 0x0d, 0x00, 0x00, 0xff,
-	0xff, 0xe6, 0x7d, 0x84, 0x66, 0xb2, 0x1e, 0x00, 0x00,
+	// 1622 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x59, 0x5d, 0x6f, 0xd4, 0xc6,
+	0x1a, 0xd6, 0x24, 0x21, 0x84, 0x37, 0xe2, 0x70, 0x98, 0x13, 0x48, 0xe2, 0x84, 0xdd, 0x64, 0xf2,
+	0x41, 0x80, 0x64, 0xcd, 0x86, 0x70, 0x38, 0xe2, 0x80, 0x2a, 0x02, 0x28, 0x84, 0x22, 0x9a, 0xee,
+	0x0a, 0x55, 0xe2, 0x26, 0x75, 0xbc, 0xc3, 0xae, 0x8b, 0x63, 0x1b, 0x7b, 0x92, 0x2a, 0xa0, 0xf4,
+	0xa2, 0x55, 0x2f, 0xfa, 0x79, 0xd3, 0xbf, 0x50, 0xae, 0xaa, 0x4a, 0x95, 0xe8, 0x0f, 0x68, 0x55,
+	0x2e, 0x68, 0xd5, 0x8b, 0xaa, 0xfd, 0x03, 0x15, 0xaa, 0xfa, 0x3b, 0x2a, 0x8f, 0xc7, 0xbb, 0xb6,
+	0xd7, 0x5f, 0x9b, 0x5d, 0xb8, 0x62, 0x6d, 0xbf, 0xf3, 0xbe, 0xcf, 0xf3, 0xce, 0x33, 0xc3, 0x3c,
+	0x13, 0x58, 0xd2, 0x0c, 0x46, 0x6d, 0x43, 0xd1, 0x65, 0x87, 0xda, 0xbb, 0xd4, 0x96, 0x15, 0xcb,
+	0xd2, 0x35, 0x55, 0x61, 0x9a, 0x69, 0x04, 0x7f, 0x97, 0x2c, 0xdb, 0x64, 0x26, 0x1e, 0x0e, 0xbc,
+	0x92, 0x6e, 0xd5, 0x35, 0xd6, 0xd8, 0xd9, 0x2a, 0xa9, 0xe6, 0xb6, 0xbc, 0xe3, 0x50, 0x7b, 0x8f,
+	0xd6, 0xa9, 0xac, 0xb0, 0x06, 0x35, 0x14, 0xd9, 0x7a, 0x58, 0x97, 0x15, 0x4b, 0x73, 0x42, 0xf9,
+	0x76, 0xcb, 0x8a, 0x6e, 0x35, 0x94, 0xb2, 0x5c, 0xa7, 0x06, 0xb5, 0x15, 0x46, 0x6b, 0x5e, 0x5a,
+	0x69, 0xb2, 0x6e, 0x9a, 0x75, 0x9d, 0xba, 0x23, 0x64, 0xc5, 0x30, 0x4c, 0xc6, 0xe3, 0x1d, 0xef,
+	0x2b, 0x21, 0x30, 0xb5, 0x46, 0xd9, 0x86, 0x6d, 0xbe, 0x47, 0x55, 0x76, 0x43, 0x73, 0x54, 0x73,
+	0x97, 0xda, 0x7b, 0x55, 0xa6, 0xb0, 0x1d, 0xa7, 0x42, 0x1f, 0xed, 0x50, 0x87, 0x91, 0x02, 0x4c,
+	0x56, 0x99, 0x62, 0xb7, 0x45, 0xf9, 0xdf, 0x4f, 0xc1, 0x44, 0x95, 0x99, 0x56, 0xd2, 0xe7, 0xff,
+	0xc0, 0xf1, 0x3b, 0x9a, 0xc3, 0xae, 0x37, 0x14, 0xcd, 0x68, 0xe6, 0xdc, 0x05, 0x1c, 0x7c, 0xe9,
+	0x58, 0xa6, 0xe1, 0x50, 0xfc, 0x2e, 0x1c, 0xd2, 0x18, 0xdd, 0x76, 0xc6, 0xd0, 0x54, 0xff, 0xc2,
+	0xf0, 0xf2, 0xed, 0x52, 0xab, 0x0b, 0x25, 0xbf, 0x0b, 0x25, 0xaf, 0x0b, 0x25, 0xeb, 0x61, 0xbd,
+	0xe4, 0x76, 0xa1, 0x14, 0xec, 0xa4, 0xdf, 0x85, 0xd2, 0xb5, 0xd6, 0x4b, 0x5e, 0xa3, 0xe2, 0x25,
+	0x26, 0xff, 0x83, 0x89, 0x35, 0xea, 0x95, 0x5d, 0x37, 0xea, 0xd4, 0x61, 0x21, 0xaa, 0x78, 0x1c,
+	0x86, 0x54, 0xf7, 0xdb, 0xa6, 0x56, 0x1b, 0x43, 0x53, 0x68, 0xa1, 0xbf, 0x72, 0x98, 0x3f, 0xaf,
+	0xd7, 0xc8, 0x0a, 0x8c, 0xf2, 0x2e, 0x04, 0xc6, 0xe6, 0x18, 0x75, 0x01, 0x4e, 0xba, 0xbd, 0xe9,
+	0x6c, 0x90, 0x05, 0x45, 0x11, 0x25, 0x7a, 0x7a, 0xdd, 0xd4, 0x75, 0xaa, 0xba, 0x64, 0xb2, 0x47,
+	0x63, 0x09, 0x86, 0x54, 0xd3, 0x60, 0xb6, 0xa2, 0xb2, 0xb1, 0xbe, 0x29, 0xb4, 0x70, 0xa4, 0xd2,
+	0x7c, 0xc6, 0x27, 0x61, 0xd0, 0xa6, 0x8a, 0x63, 0x1a, 0x63, 0xfd, 0xfc, 0x8b, 0x78, 0x22, 0x5f,
+	0x20, 0x98, 0x4a, 0x2e, 0x29, 0x66, 0x47, 0x83, 0x41, 0x87, 0x77, 0x8b, 0x57, 0x1c, 0x5e, 0x7e,
+	0xfb, 0xe0, 0xd3, 0xd3, 0x56, 0x44, 0x4c, 0x83, 0x28, 0x40, 0xee, 0xc3, 0x74, 0x4b, 0x96, 0x6d,
+	0x51, 0x5d, 0xf5, 0x80, 0xdc, 0x83, 0x49, 0x57, 0x02, 0xe2, 0xb1, 0x6a, 0xee, 0xd8, 0x2a, 0x5d,
+	0x37, 0x1e, 0x98, 0x5d, 0xa6, 0xad, 0xc1, 0x88, 0xab, 0xe8, 0xd5, 0x3d, 0x46, 0x55, 0xb3, 0x46,
+	0x9b, 0x28, 0x31, 0x0c, 0x58, 0x4a, 0x9d, 0x8a, 0x54, 0xfc, 0x37, 0x9e, 0x80, 0x23, 0xee, 0xbf,
+	0x9b, 0x8e, 0xf6, 0x98, 0xf2, 0x44, 0xfd, 0x95, 0x21, 0xf7, 0x45, 0x55, 0x7b, 0xcc, 0x3f, 0xba,
+	0x09, 0x36, 0x1b, 0x8a, 0xd3, 0x10, 0xd3, 0x34, 0xe4, 0xbe, 0xb8, 0xa5, 0x38, 0x0d, 0xf2, 0x03,
+	0x82, 0x13, 0x91, 0x32, 0x3d, 0x5f, 0x3b, 0x7e, 0x6e, 0xb7, 0xce, 0x3a, 0xa3, 0xdb, 0x62, 0xed,
+	0xe0, 0x11, 0x38, 0xc4, 0x4c, 0xa6, 0xe8, 0x02, 0xb1, 0xf7, 0xd0, 0xe4, 0xd7, 0x9f, 0xc4, 0x6f,
+	0x20, 0xcc, 0x8f, 0x94, 0x01, 0xaf, 0xd1, 0x26, 0x01, 0xbf, 0x4d, 0x21, 0xd6, 0x28, 0xc2, 0xfa,
+	0x29, 0x82, 0x42, 0x90, 0xf5, 0x0d, 0x6a, 0xe9, 0xe6, 0xde, 0x36, 0x35, 0x98, 0x93, 0x67, 0x7c,
+	0x13, 0x63, 0x5f, 0x12, 0xc6, 0xfe, 0xc8, 0x1c, 0x04, 0x35, 0x30, 0x90, 0xac, 0x81, 0x43, 0x11,
+	0x0d, 0xfc, 0x8a, 0xa0, 0x98, 0x88, 0x53, 0xcc, 0xd3, 0x56, 0x78, 0x9e, 0xee, 0x74, 0x3f, 0x4f,
+	0xad, 0x2a, 0x3d, 0x9e, 0xa9, 0x39, 0x98, 0x09, 0xb2, 0x59, 0xd5, 0x15, 0xf5, 0xa1, 0xae, 0x39,
+	0xec, 0xa6, 0xc1, 0x6c, 0xad, 0xa9, 0x70, 0xf2, 0x25, 0x82, 0xd9, 0xf4, 0x38, 0x41, 0xfd, 0x41,
+	0x98, 0xfa, 0x46, 0xf7, 0xd4, 0x43, 0xa5, 0xf6, 0xfc, 0x4d, 0xfe, 0x6b, 0x04, 0x53, 0xd7, 0x6a,
+	0xb5, 0x84, 0xa0, 0x3c, 0x82, 0x99, 0x87, 0x63, 0x0e, 0xdf, 0x18, 0x36, 0x9b, 0x32, 0xf0, 0x5a,
+	0x79, 0xd4, 0x7b, 0x7d, 0x5d, 0x88, 0xe1, 0x74, 0x2b, 0xce, 0xd7, 0x84, 0xb7, 0x62, 0xff, 0x25,
+	0xe2, 0xfc, 0x8d, 0x17, 0xc3, 0x80, 0x61, 0x32, 0xaf, 0xc5, 0x47, 0x2a, 0xfc, 0x37, 0xf9, 0x04,
+	0xc1, 0x74, 0x0a, 0x4c, 0xd1, 0xb4, 0x1a, 0x0c, 0xb8, 0xac, 0xc4, 0x9e, 0xdb, 0xfb, 0x9e, 0xf1,
+	0xec, 0xe4, 0x1e, 0x90, 0x7b, 0x56, 0x4d, 0x61, 0xb4, 0x2d, 0xea, 0xae, 0xc9, 0x68, 0xde, 0x45,
+	0xc6, 0x29, 0xf6, 0x05, 0x28, 0x7e, 0x86, 0x60, 0x26, 0x35, 0xef, 0x6b, 0x25, 0x79, 0x15, 0x0a,
+	0x37, 0xa8, 0x4e, 0x63, 0xc0, 0xe4, 0xda, 0x85, 0xa6, 0xa1, 0x98, 0x38, 0xdc, 0xe3, 0x41, 0x66,
+	0x60, 0xda, 0x5d, 0x09, 0xef, 0x28, 0xba, 0x4e, 0x59, 0xd2, 0x7a, 0xf9, 0x14, 0x01, 0x49, 0x8b,
+	0x6a, 0xf6, 0x24, 0xb4, 0x5a, 0xee, 0x1e, 0xbc, 0x29, 0x31, 0x85, 0x9a, 0x6b, 0xe5, 0x0e, 0x14,
+	0xae, 0xd5, 0x6a, 0xb1, 0x11, 0xa2, 0x27, 0x27, 0x61, 0xf0, 0x7d, 0xfe, 0x59, 0x34, 0x44, 0x3c,
+	0xc5, 0xce, 0xf7, 0xc7, 0x08, 0x8a, 0x89, 0xe9, 0x9a, 0x1b, 0x60, 0x70, 0xae, 0x7b, 0x4d, 0xcb,
+	0x9b, 0xe9, 0x2a, 0xcc, 0x79, 0xb2, 0x8b, 0x8b, 0x09, 0x2a, 0xba, 0x13, 0x72, 0x9f, 0x23, 0x98,
+	0xcf, 0xca, 0xfa, 0x1a, 0x39, 0xfe, 0x1f, 0xa6, 0x3d, 0x39, 0x1e, 0x60, 0xf2, 0xc8, 0x2c, 0x90,
+	0xb4, 0xc1, 0x42, 0xce, 0x12, 0x8c, 0xb5, 0x8e, 0x61, 0x6f, 0x59, 0xdc, 0x38, 0xf8, 0x2a, 0xfe,
+	0x00, 0xc6, 0x63, 0xbe, 0x09, 0xfe, 0x0a, 0x1c, 0x36, 0xbd, 0x57, 0xa2, 0x05, 0x6b, 0x5d, 0x9f,
+	0x15, 0xbd, 0x12, 0x15, 0x3f, 0xef, 0xf2, 0xef, 0x45, 0xc0, 0x81, 0x53, 0x7e, 0x95, 0xda, 0xbb,
+	0x9a, 0x4a, 0xf1, 0x2f, 0x28, 0x88, 0x2b, 0xe2, 0x68, 0xf0, 0x52, 0xa8, 0x44, 0x96, 0xf3, 0x91,
+	0x36, 0xba, 0x46, 0x1d, 0x49, 0x4c, 0x16, 0x3f, 0xfc, 0xe3, 0xaf, 0xaf, 0xfa, 0xe6, 0xf1, 0x2c,
+	0xf7, 0x63, 0xbb, 0xe5, 0x90, 0x87, 0xab, 0xf9, 0xc1, 0xb2, 0x77, 0x0c, 0xc6, 0xcf, 0x11, 0x9c,
+	0x88, 0xb5, 0x5e, 0xf8, 0x4c, 0xa8, 0x6a, 0x9a, 0x3d, 0x7b, 0x05, 0x24, 0x4a, 0x9c, 0xc4, 0x02,
+	0x99, 0xc9, 0x24, 0x61, 0xb3, 0xcb, 0xe8, 0x2c, 0xfe, 0x11, 0xc1, 0x48, 0x9c, 0x43, 0xc4, 0x0b,
+	0x11, 0x16, 0x89, 0x26, 0xf2, 0x15, 0x90, 0x58, 0xe2, 0x24, 0x4e, 0x13, 0x92, 0x45, 0xc2, 0xb4,
+	0x5c, 0x0e, 0x8f, 0x00, 0x5a, 0x86, 0x15, 0x17, 0x42, 0xa5, 0xda, 0xec, 0xad, 0x54, 0x4c, 0xfc,
+	0x2e, 0x56, 0x16, 0xe1, 0xd5, 0x27, 0xb1, 0x14, 0x57, 0x5d, 0xf5, 0x8a, 0xfc, 0x84, 0x60, 0x24,
+	0xce, 0xac, 0x46, 0xda, 0x96, 0xe2, 0x67, 0xa5, 0x37, 0x0f, 0xde, 0xb6, 0xb6, 0x9c, 0x64, 0x85,
+	0x63, 0x2e, 0xe1, 0xc5, 0x64, 0xcc, 0xf2, 0x13, 0xff, 0xbc, 0xb4, 0x2f, 0x6b, 0x7c, 0xac, 0xab,
+	0xe1, 0x7f, 0x47, 0x8d, 0x33, 0x9e, 0x6d, 0x97, 0x6f, 0xbb, 0x45, 0xee, 0x2d, 0xfa, 0xab, 0x1c,
+	0xfd, 0x25, 0xb2, 0xdc, 0x09, 0xfa, 0x90, 0x86, 0x8f, 0x45, 0x9c, 0x3c, 0x9e, 0x69, 0x93, 0xef,
+	0xab, 0x26, 0x71, 0x85, 0x93, 0xf8, 0x2f, 0x29, 0x77, 0x48, 0xc2, 0xd3, 0xf0, 0xcf, 0x08, 0xc6,
+	0x92, 0x5c, 0x3e, 0x5e, 0x0c, 0x61, 0xc8, 0xb8, 0x7f, 0x90, 0x96, 0x72, 0x46, 0x0b, 0xb9, 0x6f,
+	0x70, 0xdc, 0xb7, 0xc9, 0xcd, 0x38, 0xdc, 0x96, 0x37, 0x2c, 0x84, 0xfc, 0x89, 0x7f, 0x9e, 0xde,
+	0x97, 0xd5, 0x66, 0x3a, 0xd9, 0xf6, 0xea, 0xb8, 0x5c, 0xfe, 0x46, 0x20, 0x25, 0x5f, 0x11, 0xe0,
+	0x52, 0xc2, 0x46, 0x9f, 0x70, 0x97, 0x20, 0xf5, 0xfe, 0x2e, 0x83, 0xdc, 0xe4, 0x9c, 0xdf, 0xc0,
+	0x57, 0xbb, 0xe2, 0xec, 0x4e, 0xda, 0x89, 0xd8, 0xfb, 0x8a, 0xc8, 0xff, 0x01, 0x69, 0x77, 0x1a,
+	0x52, 0x17, 0x2e, 0xb3, 0x3d, 0x29, 0xb9, 0xc4, 0x99, 0x95, 0xb1, 0x1c, 0xab, 0x42, 0x11, 0xef,
+	0x04, 0xf9, 0x78, 0x6e, 0x08, 0xef, 0xc3, 0xd1, 0xd0, 0xe5, 0x05, 0x9e, 0x6e, 0xdb, 0x27, 0xa3,
+	0xf7, 0x27, 0x12, 0x49, 0x0b, 0x11, 0xf2, 0x9a, 0xe3, 0x80, 0x8a, 0xf8, 0x54, 0x1c, 0xa0, 0xad,
+	0x66, 0xb5, 0x6f, 0x10, 0x0c, 0x07, 0xae, 0x1e, 0x70, 0x31, 0xda, 0xc0, 0xc8, 0xa5, 0x84, 0x74,
+	0xab, 0x17, 0xe6, 0x9c, 0x29, 0x9a, 0x4e, 0xca, 0x1c, 0xe1, 0x39, 0x7c, 0x26, 0x15, 0xa1, 0xdb,
+	0x32, 0xe1, 0x3e, 0xf6, 0xf1, 0x33, 0x04, 0xa3, 0x09, 0x97, 0x09, 0xf8, 0x5c, 0x62, 0x53, 0xda,
+	0xaf, 0x46, 0xa4, 0xc5, 0x7c, 0xc1, 0xa2, 0x97, 0x62, 0x9f, 0xc4, 0x17, 0x73, 0x23, 0x95, 0x6b,
+	0x01, 0x64, 0xcf, 0x10, 0x4c, 0xa6, 0x5d, 0x06, 0xe0, 0xf3, 0x89, 0x68, 0x12, 0xfc, 0x92, 0x54,
+	0xee, 0x60, 0x84, 0x20, 0x21, 0x4e, 0x28, 0x78, 0x3e, 0x8d, 0x84, 0xbc, 0xe5, 0x0f, 0xc7, 0xdf,
+	0x22, 0x18, 0x4f, 0xb4, 0xe2, 0x91, 0x53, 0x63, 0xd6, 0xcd, 0x82, 0x54, 0xca, 0x1b, 0x2e, 0xc0,
+	0x0a, 0x6d, 0x90, 0x9c, 0x60, 0xdd, 0xdd, 0xef, 0x39, 0x82, 0x89, 0x14, 0x5f, 0x8d, 0xe5, 0x10,
+	0x84, 0x6c, 0x67, 0x2f, 0x9d, 0xcf, 0x3f, 0x40, 0xa0, 0x5e, 0xe5, 0xa8, 0xaf, 0x90, 0x4b, 0xf9,
+	0x50, 0x87, 0x04, 0xe3, 0xda, 0x29, 0x97, 0xc6, 0x77, 0x08, 0x46, 0x13, 0x2c, 0x75, 0x44, 0xe2,
+	0xe9, 0xbe, 0x3d, 0x22, 0xf1, 0x2c, 0x97, 0x7e, 0x99, 0x43, 0x5f, 0x39, 0xbb, 0xdc, 0x39, 0x74,
+	0x77, 0x0f, 0x91, 0x92, 0xcd, 0x7b, 0xe4, 0xff, 0x9d, 0xcc, 0xbb, 0x00, 0x49, 0xce, 0x1d, 0x2f,
+	0xb0, 0xa7, 0x1a, 0x08, 0xcf, 0xdc, 0x05, 0x74, 0xfd, 0x14, 0xc1, 0x68, 0x82, 0x1f, 0x8f, 0x34,
+	0x38, 0xfd, 0x12, 0x20, 0xd2, 0xe0, 0x0c, 0x8b, 0x4f, 0x64, 0x0e, 0xf2, 0x0c, 0xc9, 0x05, 0xd2,
+	0x15, 0xc2, 0x0b, 0x04, 0x85, 0x74, 0x6b, 0x8d, 0x97, 0x63, 0x14, 0x9a, 0xe1, 0xee, 0xa5, 0x0b,
+	0x1d, 0x8d, 0x09, 0x6f, 0x80, 0xf1, 0x07, 0xc5, 0x28, 0x78, 0xf9, 0x89, 0xf7, 0xa6, 0xa5, 0xe9,
+	0xef, 0x11, 0x48, 0xc9, 0xd6, 0x3a, 0x22, 0x90, 0x4c, 0x03, 0x1f, 0x11, 0x48, 0x0e, 0xcf, 0x7e,
+	0x91, 0xc3, 0x97, 0xcf, 0x2e, 0x75, 0x04, 0x1f, 0x7f, 0x84, 0xe0, 0x78, 0x9b, 0x9f, 0xc7, 0x73,
+	0x09, 0xc7, 0xa8, 0xf0, 0x5d, 0x80, 0x34, 0x9f, 0x15, 0x26, 0xb0, 0x15, 0x39, 0xb6, 0x71, 0x3c,
+	0xea, 0x63, 0x13, 0xc7, 0xa0, 0x25, 0x61, 0xea, 0x57, 0x57, 0x5f, 0xbc, 0x2c, 0xa0, 0xdf, 0x5e,
+	0x16, 0xd0, 0x9f, 0x2f, 0x0b, 0xe8, 0xfe, 0x4a, 0xf6, 0x1f, 0x41, 0x55, 0x5d, 0xa3, 0x06, 0x0b,
+	0x72, 0xdc, 0x1a, 0xe4, 0x7f, 0xd9, 0xbc, 0xf0, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x86, 0x16,
+	0x58, 0x3d, 0x7f, 0x1d, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -2118,6 +1970,12 @@ type ApplicationServiceClient interface {
 	GetProjectDiscoveryStatus(ctx context.Context, in *GetProjectDiscoveryStatusRequest, opts ...grpc.CallOption) (*v1alpha1.ProjectDiscoveryStatus, error)
 	StartProjectDiscovery(ctx context.Context, in *StartProjectDiscoveryRequest, opts ...grpc.CallOption) (*v1alpha1.ProjectDiscoveryStatus, error)
 	StopProjectDiscovery(ctx context.Context, in *StopProjectDiscoveryRequest, opts ...grpc.CallOption) (*v1alpha1.ProjectDiscoveryStatus, error)
+	ListChains(ctx context.Context, in *ListChainsRequest, opts ...grpc.CallOption) (*ListChainsResponse, error)
+	GetChainIngestStatus(ctx context.Context, in *GetChainIngestStatusRequest, opts ...grpc.CallOption) (*v1alpha1.ChainIngestStatus, error)
+	StartChainIngest(ctx context.Context, in *StartChainIngestRequest, opts ...grpc.CallOption) (*v1alpha1.ChainIngestStatus, error)
+	StopChainIngest(ctx context.Context, in *StopChainIngestRequest, opts ...grpc.CallOption) (*v1alpha1.ChainIngestStatus, error)
+	RequestProjectCollection(ctx context.Context, in *RequestProjectCollectionRequest, opts ...grpc.CallOption) (*RequestProjectCollectionResponse, error)
+	GetProjectCollectionStatus(ctx context.Context, in *GetProjectCollectionStatusRequest, opts ...grpc.CallOption) (*v1alpha1.ProjectCollectionStatus, error)
 	// GetContractSourceInfo resolves bytecode/source facts for a contract.
 	GetContractSourceInfo(ctx context.Context, in *GetContractSourceInfoRequest, opts ...grpc.CallOption) (*v1alpha1.ContractSourceInfo, error)
 	// ListBytecodes returns stored bytecodes.
@@ -2142,18 +2000,6 @@ type ApplicationServiceClient interface {
 	UpdateWalletBlacklistEntryNote(ctx context.Context, in *UpdateWalletBlacklistEntryNoteRequest, opts ...grpc.CallOption) (*UpdateWalletBlacklistEntryNoteResponse, error)
 	// DeleteWalletBlacklistEntry deletes a wallet blacklist entry.
 	DeleteWalletBlacklistEntry(ctx context.Context, in *DeleteWalletBlacklistEntryRequest, opts ...grpc.CallOption) (*DeleteWalletBlacklistEntryResponse, error)
-	// ListSourceQualityPrompts returns configured source quality prompts.
-	ListSourceQualityPrompts(ctx context.Context, in *ListSourceQualityPromptsRequest, opts ...grpc.CallOption) (*ListSourceQualityPromptsResponse, error)
-	// GetSourceQualityPrompt returns one source quality prompt.
-	GetSourceQualityPrompt(ctx context.Context, in *GetSourceQualityPromptRequest, opts ...grpc.CallOption) (*v1alpha1.SourceQualityPrompt, error)
-	// CreateSourceQualityPrompt creates a source quality prompt.
-	CreateSourceQualityPrompt(ctx context.Context, in *CreateSourceQualityPromptRequest, opts ...grpc.CallOption) (*CreateSourceQualityPromptResponse, error)
-	// UpdateSourceQualityPrompt creates a new source quality prompt version.
-	UpdateSourceQualityPrompt(ctx context.Context, in *UpdateSourceQualityPromptRequest, opts ...grpc.CallOption) (*UpdateSourceQualityPromptResponse, error)
-	// ActivateSourceQualityPrompt marks a prompt as current.
-	ActivateSourceQualityPrompt(ctx context.Context, in *ActivateSourceQualityPromptRequest, opts ...grpc.CallOption) (*ActivateSourceQualityPromptResponse, error)
-	// DeleteSourceQualityPrompt soft deletes a prompt.
-	DeleteSourceQualityPrompt(ctx context.Context, in *DeleteSourceQualityPromptRequest, opts ...grpc.CallOption) (*DeleteSourceQualityPromptResponse, error)
 	// GetProjectOptions returns the options.
 	GetProjectOptions(ctx context.Context, in *GetProjectOptionsRequest, opts ...grpc.CallOption) (*GetProjectOptionsResponse, error)
 }
@@ -2187,6 +2033,60 @@ func (c *applicationServiceClient) StartProjectDiscovery(ctx context.Context, in
 func (c *applicationServiceClient) StopProjectDiscovery(ctx context.Context, in *StopProjectDiscoveryRequest, opts ...grpc.CallOption) (*v1alpha1.ProjectDiscoveryStatus, error) {
 	out := new(v1alpha1.ProjectDiscoveryStatus)
 	err := c.cc.Invoke(ctx, "/application.ApplicationService/StopProjectDiscovery", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) ListChains(ctx context.Context, in *ListChainsRequest, opts ...grpc.CallOption) (*ListChainsResponse, error) {
+	out := new(ListChainsResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/ListChains", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) GetChainIngestStatus(ctx context.Context, in *GetChainIngestStatusRequest, opts ...grpc.CallOption) (*v1alpha1.ChainIngestStatus, error) {
+	out := new(v1alpha1.ChainIngestStatus)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetChainIngestStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) StartChainIngest(ctx context.Context, in *StartChainIngestRequest, opts ...grpc.CallOption) (*v1alpha1.ChainIngestStatus, error) {
+	out := new(v1alpha1.ChainIngestStatus)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/StartChainIngest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) StopChainIngest(ctx context.Context, in *StopChainIngestRequest, opts ...grpc.CallOption) (*v1alpha1.ChainIngestStatus, error) {
+	out := new(v1alpha1.ChainIngestStatus)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/StopChainIngest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) RequestProjectCollection(ctx context.Context, in *RequestProjectCollectionRequest, opts ...grpc.CallOption) (*RequestProjectCollectionResponse, error) {
+	out := new(RequestProjectCollectionResponse)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/RequestProjectCollection", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) GetProjectCollectionStatus(ctx context.Context, in *GetProjectCollectionStatusRequest, opts ...grpc.CallOption) (*v1alpha1.ProjectCollectionStatus, error) {
+	out := new(v1alpha1.ProjectCollectionStatus)
+	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProjectCollectionStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2301,60 +2201,6 @@ func (c *applicationServiceClient) DeleteWalletBlacklistEntry(ctx context.Contex
 	return out, nil
 }
 
-func (c *applicationServiceClient) ListSourceQualityPrompts(ctx context.Context, in *ListSourceQualityPromptsRequest, opts ...grpc.CallOption) (*ListSourceQualityPromptsResponse, error) {
-	out := new(ListSourceQualityPromptsResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/ListSourceQualityPrompts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *applicationServiceClient) GetSourceQualityPrompt(ctx context.Context, in *GetSourceQualityPromptRequest, opts ...grpc.CallOption) (*v1alpha1.SourceQualityPrompt, error) {
-	out := new(v1alpha1.SourceQualityPrompt)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetSourceQualityPrompt", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *applicationServiceClient) CreateSourceQualityPrompt(ctx context.Context, in *CreateSourceQualityPromptRequest, opts ...grpc.CallOption) (*CreateSourceQualityPromptResponse, error) {
-	out := new(CreateSourceQualityPromptResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/CreateSourceQualityPrompt", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *applicationServiceClient) UpdateSourceQualityPrompt(ctx context.Context, in *UpdateSourceQualityPromptRequest, opts ...grpc.CallOption) (*UpdateSourceQualityPromptResponse, error) {
-	out := new(UpdateSourceQualityPromptResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/UpdateSourceQualityPrompt", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *applicationServiceClient) ActivateSourceQualityPrompt(ctx context.Context, in *ActivateSourceQualityPromptRequest, opts ...grpc.CallOption) (*ActivateSourceQualityPromptResponse, error) {
-	out := new(ActivateSourceQualityPromptResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/ActivateSourceQualityPrompt", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *applicationServiceClient) DeleteSourceQualityPrompt(ctx context.Context, in *DeleteSourceQualityPromptRequest, opts ...grpc.CallOption) (*DeleteSourceQualityPromptResponse, error) {
-	out := new(DeleteSourceQualityPromptResponse)
-	err := c.cc.Invoke(ctx, "/application.ApplicationService/DeleteSourceQualityPrompt", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *applicationServiceClient) GetProjectOptions(ctx context.Context, in *GetProjectOptionsRequest, opts ...grpc.CallOption) (*GetProjectOptionsResponse, error) {
 	out := new(GetProjectOptionsResponse)
 	err := c.cc.Invoke(ctx, "/application.ApplicationService/GetProjectOptions", in, out, opts...)
@@ -2369,6 +2215,12 @@ type ApplicationServiceServer interface {
 	GetProjectDiscoveryStatus(context.Context, *GetProjectDiscoveryStatusRequest) (*v1alpha1.ProjectDiscoveryStatus, error)
 	StartProjectDiscovery(context.Context, *StartProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error)
 	StopProjectDiscovery(context.Context, *StopProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error)
+	ListChains(context.Context, *ListChainsRequest) (*ListChainsResponse, error)
+	GetChainIngestStatus(context.Context, *GetChainIngestStatusRequest) (*v1alpha1.ChainIngestStatus, error)
+	StartChainIngest(context.Context, *StartChainIngestRequest) (*v1alpha1.ChainIngestStatus, error)
+	StopChainIngest(context.Context, *StopChainIngestRequest) (*v1alpha1.ChainIngestStatus, error)
+	RequestProjectCollection(context.Context, *RequestProjectCollectionRequest) (*RequestProjectCollectionResponse, error)
+	GetProjectCollectionStatus(context.Context, *GetProjectCollectionStatusRequest) (*v1alpha1.ProjectCollectionStatus, error)
 	// GetContractSourceInfo resolves bytecode/source facts for a contract.
 	GetContractSourceInfo(context.Context, *GetContractSourceInfoRequest) (*v1alpha1.ContractSourceInfo, error)
 	// ListBytecodes returns stored bytecodes.
@@ -2393,18 +2245,6 @@ type ApplicationServiceServer interface {
 	UpdateWalletBlacklistEntryNote(context.Context, *UpdateWalletBlacklistEntryNoteRequest) (*UpdateWalletBlacklistEntryNoteResponse, error)
 	// DeleteWalletBlacklistEntry deletes a wallet blacklist entry.
 	DeleteWalletBlacklistEntry(context.Context, *DeleteWalletBlacklistEntryRequest) (*DeleteWalletBlacklistEntryResponse, error)
-	// ListSourceQualityPrompts returns configured source quality prompts.
-	ListSourceQualityPrompts(context.Context, *ListSourceQualityPromptsRequest) (*ListSourceQualityPromptsResponse, error)
-	// GetSourceQualityPrompt returns one source quality prompt.
-	GetSourceQualityPrompt(context.Context, *GetSourceQualityPromptRequest) (*v1alpha1.SourceQualityPrompt, error)
-	// CreateSourceQualityPrompt creates a source quality prompt.
-	CreateSourceQualityPrompt(context.Context, *CreateSourceQualityPromptRequest) (*CreateSourceQualityPromptResponse, error)
-	// UpdateSourceQualityPrompt creates a new source quality prompt version.
-	UpdateSourceQualityPrompt(context.Context, *UpdateSourceQualityPromptRequest) (*UpdateSourceQualityPromptResponse, error)
-	// ActivateSourceQualityPrompt marks a prompt as current.
-	ActivateSourceQualityPrompt(context.Context, *ActivateSourceQualityPromptRequest) (*ActivateSourceQualityPromptResponse, error)
-	// DeleteSourceQualityPrompt soft deletes a prompt.
-	DeleteSourceQualityPrompt(context.Context, *DeleteSourceQualityPromptRequest) (*DeleteSourceQualityPromptResponse, error)
 	// GetProjectOptions returns the options.
 	GetProjectOptions(context.Context, *GetProjectOptionsRequest) (*GetProjectOptionsResponse, error)
 }
@@ -2421,6 +2261,24 @@ func (*UnimplementedApplicationServiceServer) StartProjectDiscovery(ctx context.
 }
 func (*UnimplementedApplicationServiceServer) StopProjectDiscovery(ctx context.Context, req *StopProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopProjectDiscovery not implemented")
+}
+func (*UnimplementedApplicationServiceServer) ListChains(ctx context.Context, req *ListChainsRequest) (*ListChainsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListChains not implemented")
+}
+func (*UnimplementedApplicationServiceServer) GetChainIngestStatus(ctx context.Context, req *GetChainIngestStatusRequest) (*v1alpha1.ChainIngestStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetChainIngestStatus not implemented")
+}
+func (*UnimplementedApplicationServiceServer) StartChainIngest(ctx context.Context, req *StartChainIngestRequest) (*v1alpha1.ChainIngestStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartChainIngest not implemented")
+}
+func (*UnimplementedApplicationServiceServer) StopChainIngest(ctx context.Context, req *StopChainIngestRequest) (*v1alpha1.ChainIngestStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopChainIngest not implemented")
+}
+func (*UnimplementedApplicationServiceServer) RequestProjectCollection(ctx context.Context, req *RequestProjectCollectionRequest) (*RequestProjectCollectionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestProjectCollection not implemented")
+}
+func (*UnimplementedApplicationServiceServer) GetProjectCollectionStatus(ctx context.Context, req *GetProjectCollectionStatusRequest) (*v1alpha1.ProjectCollectionStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectCollectionStatus not implemented")
 }
 func (*UnimplementedApplicationServiceServer) GetContractSourceInfo(ctx context.Context, req *GetContractSourceInfoRequest) (*v1alpha1.ContractSourceInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetContractSourceInfo not implemented")
@@ -2457,24 +2315,6 @@ func (*UnimplementedApplicationServiceServer) UpdateWalletBlacklistEntryNote(ctx
 }
 func (*UnimplementedApplicationServiceServer) DeleteWalletBlacklistEntry(ctx context.Context, req *DeleteWalletBlacklistEntryRequest) (*DeleteWalletBlacklistEntryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteWalletBlacklistEntry not implemented")
-}
-func (*UnimplementedApplicationServiceServer) ListSourceQualityPrompts(ctx context.Context, req *ListSourceQualityPromptsRequest) (*ListSourceQualityPromptsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListSourceQualityPrompts not implemented")
-}
-func (*UnimplementedApplicationServiceServer) GetSourceQualityPrompt(ctx context.Context, req *GetSourceQualityPromptRequest) (*v1alpha1.SourceQualityPrompt, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSourceQualityPrompt not implemented")
-}
-func (*UnimplementedApplicationServiceServer) CreateSourceQualityPrompt(ctx context.Context, req *CreateSourceQualityPromptRequest) (*CreateSourceQualityPromptResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateSourceQualityPrompt not implemented")
-}
-func (*UnimplementedApplicationServiceServer) UpdateSourceQualityPrompt(ctx context.Context, req *UpdateSourceQualityPromptRequest) (*UpdateSourceQualityPromptResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateSourceQualityPrompt not implemented")
-}
-func (*UnimplementedApplicationServiceServer) ActivateSourceQualityPrompt(ctx context.Context, req *ActivateSourceQualityPromptRequest) (*ActivateSourceQualityPromptResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ActivateSourceQualityPrompt not implemented")
-}
-func (*UnimplementedApplicationServiceServer) DeleteSourceQualityPrompt(ctx context.Context, req *DeleteSourceQualityPromptRequest) (*DeleteSourceQualityPromptResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteSourceQualityPrompt not implemented")
 }
 func (*UnimplementedApplicationServiceServer) GetProjectOptions(ctx context.Context, req *GetProjectOptionsRequest) (*GetProjectOptionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProjectOptions not implemented")
@@ -2534,6 +2374,114 @@ func _ApplicationService_StopProjectDiscovery_Handler(srv interface{}, ctx conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApplicationServiceServer).StopProjectDiscovery(ctx, req.(*StopProjectDiscoveryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_ListChains_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChainsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).ListChains(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/ListChains",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).ListChains(ctx, req.(*ListChainsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_GetChainIngestStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetChainIngestStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).GetChainIngestStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/GetChainIngestStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).GetChainIngestStatus(ctx, req.(*GetChainIngestStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_StartChainIngest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartChainIngestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).StartChainIngest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/StartChainIngest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).StartChainIngest(ctx, req.(*StartChainIngestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_StopChainIngest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StopChainIngestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).StopChainIngest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/StopChainIngest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).StopChainIngest(ctx, req.(*StopChainIngestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_RequestProjectCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestProjectCollectionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).RequestProjectCollection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/RequestProjectCollection",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).RequestProjectCollection(ctx, req.(*RequestProjectCollectionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_GetProjectCollectionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectCollectionStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).GetProjectCollectionStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/application.ApplicationService/GetProjectCollectionStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).GetProjectCollectionStatus(ctx, req.(*GetProjectCollectionStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2754,114 +2702,6 @@ func _ApplicationService_DeleteWalletBlacklistEntry_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_ListSourceQualityPrompts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListSourceQualityPromptsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).ListSourceQualityPrompts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/application.ApplicationService/ListSourceQualityPrompts",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).ListSourceQualityPrompts(ctx, req.(*ListSourceQualityPromptsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApplicationService_GetSourceQualityPrompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSourceQualityPromptRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).GetSourceQualityPrompt(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/application.ApplicationService/GetSourceQualityPrompt",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).GetSourceQualityPrompt(ctx, req.(*GetSourceQualityPromptRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApplicationService_CreateSourceQualityPrompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateSourceQualityPromptRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).CreateSourceQualityPrompt(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/application.ApplicationService/CreateSourceQualityPrompt",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).CreateSourceQualityPrompt(ctx, req.(*CreateSourceQualityPromptRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApplicationService_UpdateSourceQualityPrompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateSourceQualityPromptRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).UpdateSourceQualityPrompt(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/application.ApplicationService/UpdateSourceQualityPrompt",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).UpdateSourceQualityPrompt(ctx, req.(*UpdateSourceQualityPromptRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApplicationService_ActivateSourceQualityPrompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ActivateSourceQualityPromptRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).ActivateSourceQualityPrompt(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/application.ApplicationService/ActivateSourceQualityPrompt",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).ActivateSourceQualityPrompt(ctx, req.(*ActivateSourceQualityPromptRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApplicationService_DeleteSourceQualityPrompt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteSourceQualityPromptRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).DeleteSourceQualityPrompt(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/application.ApplicationService/DeleteSourceQualityPrompt",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).DeleteSourceQualityPrompt(ctx, req.(*DeleteSourceQualityPromptRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApplicationService_GetProjectOptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetProjectOptionsRequest)
 	if err := dec(in); err != nil {
@@ -2895,6 +2735,30 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StopProjectDiscovery",
 			Handler:    _ApplicationService_StopProjectDiscovery_Handler,
+		},
+		{
+			MethodName: "ListChains",
+			Handler:    _ApplicationService_ListChains_Handler,
+		},
+		{
+			MethodName: "GetChainIngestStatus",
+			Handler:    _ApplicationService_GetChainIngestStatus_Handler,
+		},
+		{
+			MethodName: "StartChainIngest",
+			Handler:    _ApplicationService_StartChainIngest_Handler,
+		},
+		{
+			MethodName: "StopChainIngest",
+			Handler:    _ApplicationService_StopChainIngest_Handler,
+		},
+		{
+			MethodName: "RequestProjectCollection",
+			Handler:    _ApplicationService_RequestProjectCollection_Handler,
+		},
+		{
+			MethodName: "GetProjectCollectionStatus",
+			Handler:    _ApplicationService_GetProjectCollectionStatus_Handler,
 		},
 		{
 			MethodName: "GetContractSourceInfo",
@@ -2943,30 +2807,6 @@ var _ApplicationService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteWalletBlacklistEntry",
 			Handler:    _ApplicationService_DeleteWalletBlacklistEntry_Handler,
-		},
-		{
-			MethodName: "ListSourceQualityPrompts",
-			Handler:    _ApplicationService_ListSourceQualityPrompts_Handler,
-		},
-		{
-			MethodName: "GetSourceQualityPrompt",
-			Handler:    _ApplicationService_GetSourceQualityPrompt_Handler,
-		},
-		{
-			MethodName: "CreateSourceQualityPrompt",
-			Handler:    _ApplicationService_CreateSourceQualityPrompt_Handler,
-		},
-		{
-			MethodName: "UpdateSourceQualityPrompt",
-			Handler:    _ApplicationService_UpdateSourceQualityPrompt_Handler,
-		},
-		{
-			MethodName: "ActivateSourceQualityPrompt",
-			Handler:    _ApplicationService_ActivateSourceQualityPrompt_Handler,
-		},
-		{
-			MethodName: "DeleteSourceQualityPrompt",
-			Handler:    _ApplicationService_DeleteSourceQualityPrompt_Handler,
 		},
 		{
 			MethodName: "GetProjectOptions",
@@ -3054,6 +2894,294 @@ func (m *StopProjectDiscoveryRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListChainsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListChainsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListChainsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListChainsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListChainsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListChainsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintApplication(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetChainIngestStatusRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetChainIngestStatusRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetChainIngestStatusRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *StartChainIngestRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *StartChainIngestRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *StartChainIngestRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *StopChainIngestRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *StopChainIngestRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *StopChainIngestRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RequestProjectCollectionRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RequestProjectCollectionRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RequestProjectCollectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Reason) > 0 {
+		i -= len(m.Reason)
+		copy(dAtA[i:], m.Reason)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Reason)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RequestProjectCollectionResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RequestProjectCollectionResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RequestProjectCollectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Status != nil {
+		{
+			size, err := m.Status.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApplication(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetProjectCollectionStatusRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetProjectCollectionStatusRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetProjectCollectionStatusRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contract) > 0 {
+		i -= len(m.Contract)
+		copy(dAtA[i:], m.Contract)
+		i = encodeVarintApplication(dAtA, i, uint64(len(m.Contract)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintApplication(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -3933,401 +4061,6 @@ func (m *DeleteWalletBlacklistEntryResponse) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *ListSourceQualityPromptsRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ListSourceQualityPromptsRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ListSourceQualityPromptsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ListSourceQualityPromptsResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ListSourceQualityPromptsResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ListSourceQualityPromptsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Items) > 0 {
-		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintApplication(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *GetSourceQualityPromptRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GetSourceQualityPromptRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GetSourceQualityPromptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Id != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.Id))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *CreateSourceQualityPromptRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CreateSourceQualityPromptRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CreateSourceQualityPromptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.SystemPrompt) > 0 {
-		i -= len(m.SystemPrompt)
-		copy(dAtA[i:], m.SystemPrompt)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.SystemPrompt)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *CreateSourceQualityPromptResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CreateSourceQualityPromptResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CreateSourceQualityPromptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Item != nil {
-		{
-			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintApplication(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *UpdateSourceQualityPromptRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *UpdateSourceQualityPromptRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *UpdateSourceQualityPromptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.SystemPrompt) > 0 {
-		i -= len(m.SystemPrompt)
-		copy(dAtA[i:], m.SystemPrompt)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.SystemPrompt)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintApplication(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if m.Id != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.Id))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *UpdateSourceQualityPromptResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *UpdateSourceQualityPromptResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *UpdateSourceQualityPromptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Item != nil {
-		{
-			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintApplication(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ActivateSourceQualityPromptRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ActivateSourceQualityPromptRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ActivateSourceQualityPromptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Id != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.Id))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ActivateSourceQualityPromptResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ActivateSourceQualityPromptResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ActivateSourceQualityPromptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Item != nil {
-		{
-			size, err := m.Item.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintApplication(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *DeleteSourceQualityPromptRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *DeleteSourceQualityPromptRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DeleteSourceQualityPromptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Id != 0 {
-		i = encodeVarintApplication(dAtA, i, uint64(m.Id))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *DeleteSourceQualityPromptResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *DeleteSourceQualityPromptResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *DeleteSourceQualityPromptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *GetProjectOptionsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -4435,6 +4168,139 @@ func (m *StopProjectDiscoveryRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListChainsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListChainsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovApplication(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetChainIngestStatusRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovApplication(uint64(m.ChainId))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *StartChainIngestRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovApplication(uint64(m.ChainId))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *StopChainIngestRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovApplication(uint64(m.ChainId))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *RequestProjectCollectionRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovApplication(uint64(m.ChainId))
+	}
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	l = len(m.Reason)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *RequestProjectCollectionResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Status != nil {
+		l = m.Status.Size()
+		n += 1 + l + sovApplication(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetProjectCollectionStatusRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovApplication(uint64(m.ChainId))
+	}
+	l = len(m.Contract)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -4848,184 +4714,6 @@ func (m *DeleteWalletBlacklistEntryResponse) Size() (n int) {
 	return n
 }
 
-func (m *ListSourceQualityPromptsRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *ListSourceQualityPromptsResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Items) > 0 {
-		for _, e := range m.Items {
-			l = e.Size()
-			n += 1 + l + sovApplication(uint64(l))
-		}
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *GetSourceQualityPromptRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Id != 0 {
-		n += 1 + sovApplication(uint64(m.Id))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *CreateSourceQualityPromptRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	l = len(m.SystemPrompt)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *CreateSourceQualityPromptResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Item != nil {
-		l = m.Item.Size()
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *UpdateSourceQualityPromptRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Id != 0 {
-		n += 1 + sovApplication(uint64(m.Id))
-	}
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	l = len(m.SystemPrompt)
-	if l > 0 {
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *UpdateSourceQualityPromptResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Item != nil {
-		l = m.Item.Size()
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *ActivateSourceQualityPromptRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Id != 0 {
-		n += 1 + sovApplication(uint64(m.Id))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *ActivateSourceQualityPromptResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Item != nil {
-		l = m.Item.Size()
-		n += 1 + l + sovApplication(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *DeleteSourceQualityPromptRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Id != 0 {
-		n += 1 + sovApplication(uint64(m.Id))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *DeleteSourceQualityPromptResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *GetProjectOptionsRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -5191,6 +4879,675 @@ func (m *StopProjectDiscoveryRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: StopProjectDiscoveryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListChainsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListChainsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListChainsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListChainsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListChainsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListChainsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.ApplicationChain{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetChainIngestStatusRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetChainIngestStatusRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetChainIngestStatusRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *StartChainIngestRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: StartChainIngestRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: StartChainIngestRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *StopChainIngestRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: StopChainIngestRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: StopChainIngestRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RequestProjectCollectionRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RequestProjectCollectionRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RequestProjectCollectionRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Reason = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RequestProjectCollectionResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RequestProjectCollectionResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RequestProjectCollectionResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Status == nil {
+				m.Status = &v1alpha1.ProjectCollectionStatus{}
+			}
+			if err := m.Status.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetProjectCollectionStatusRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetProjectCollectionStatusRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetProjectCollectionStatusRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contract", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contract = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipApplication(dAtA[iNdEx:])
@@ -7350,913 +7707,6 @@ func (m *DeleteWalletBlacklistEntryResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: DeleteWalletBlacklistEntryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ListSourceQualityPromptsRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ListSourceQualityPromptsRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListSourceQualityPromptsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ListSourceQualityPromptsResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ListSourceQualityPromptsResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListSourceQualityPromptsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Items = append(m.Items, &v1alpha1.SourceQualityPrompt{})
-			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetSourceQualityPromptRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetSourceQualityPromptRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetSourceQualityPromptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
-			}
-			m.Id = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Id |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CreateSourceQualityPromptRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CreateSourceQualityPromptRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CreateSourceQualityPromptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SystemPrompt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SystemPrompt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CreateSourceQualityPromptResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CreateSourceQualityPromptResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CreateSourceQualityPromptResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Item == nil {
-				m.Item = &v1alpha1.SourceQualityPrompt{}
-			}
-			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *UpdateSourceQualityPromptRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: UpdateSourceQualityPromptRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UpdateSourceQualityPromptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
-			}
-			m.Id = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Id |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SystemPrompt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SystemPrompt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *UpdateSourceQualityPromptResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: UpdateSourceQualityPromptResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UpdateSourceQualityPromptResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Item == nil {
-				m.Item = &v1alpha1.SourceQualityPrompt{}
-			}
-			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ActivateSourceQualityPromptRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ActivateSourceQualityPromptRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ActivateSourceQualityPromptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
-			}
-			m.Id = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Id |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ActivateSourceQualityPromptResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ActivateSourceQualityPromptResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ActivateSourceQualityPromptResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Item", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Item == nil {
-				m.Item = &v1alpha1.SourceQualityPrompt{}
-			}
-			if err := m.Item.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeleteSourceQualityPromptRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeleteSourceQualityPromptRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeleteSourceQualityPromptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
-			}
-			m.Id = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Id |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipApplication(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthApplication
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeleteSourceQualityPromptResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowApplication
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeleteSourceQualityPromptResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeleteSourceQualityPromptResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

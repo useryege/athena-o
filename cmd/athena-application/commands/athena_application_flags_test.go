@@ -52,19 +52,45 @@ func TestApplicationNodeWSUseProxy_FlagOverridesEnv(t *testing.T) {
 func TestApplicationBytecodeFlags(t *testing.T) {
 	t.Setenv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://example.invalid/etherscan")
 	t.Setenv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", "etherscan-key")
-	t.Setenv("ATHENA_APPLICATION_DEEPSEEK_API_KEY", "deepseek-key")
-	t.Setenv("ATHENA_APPLICATION_DEEPSEEK_BASE_URL", "https://example.invalid/deepseek")
-	t.Setenv("ATHENA_APPLICATION_DEEPSEEK_MODEL", "deepseek-test")
 
 	cmd := NewCommand()
 	assertStringFlag(t, cmd, "etherscan-api-base-url", "https://example.invalid/etherscan")
 	assertStringFlag(t, cmd, "etherscan-api-key", "etherscan-key")
-	assertStringFlag(t, cmd, "deepseek-api-key", "deepseek-key")
-	assertStringFlag(t, cmd, "deepseek-api-base-url", "https://example.invalid/deepseek")
-	assertStringFlag(t, cmd, "deepseek-model", "deepseek-test")
+	deprecatedPrefix := "deep" + "seek"
+	deprecatedTemporalFlag := "temporal" + "-enabled"
+	for _, name := range []string{deprecatedPrefix + "-api-key", deprecatedPrefix + "-api-base-url", deprecatedPrefix + "-model", deprecatedTemporalFlag} {
+		if flag := cmd.Flags().Lookup(name); flag != nil {
+			t.Fatalf("%s flag is still registered", name)
+		}
+	}
 	deprecatedFlag := "sol" + "idity-server-address"
 	if flag := cmd.Flags().Lookup(deprecatedFlag); flag != nil {
 		t.Fatalf("%s flag is still registered", deprecatedFlag)
+	}
+}
+
+func TestApplicationRuntimeModeFlags(t *testing.T) {
+	t.Setenv("ATHENA_APPLICATION_MODE", "kafka-consumer")
+	t.Setenv("ATHENA_APPLICATION_CHAIN_ID", "56")
+	t.Setenv("ATHENA_APPLICATION_KAFKA_BROKERS", "kafka-1:9092,kafka-2:9092")
+	t.Setenv("ATHENA_APPLICATION_KAFKA_CONSUMER_GROUP", "application-test")
+
+	cmd := NewCommand()
+	assertStringFlag(t, cmd, "mode", "kafka-consumer")
+	assertStringFlag(t, cmd, "kafka-consumer-group", "application-test")
+	gotChainID, err := cmd.Flags().GetInt64("chain-id")
+	if err != nil {
+		t.Fatalf("get chain-id flag: %v", err)
+	}
+	if gotChainID != 56 {
+		t.Fatalf("chain-id = %d, want 56", gotChainID)
+	}
+	brokers, err := cmd.Flags().GetStringSlice("kafka-brokers")
+	if err != nil {
+		t.Fatalf("get kafka-brokers flag: %v", err)
+	}
+	if len(brokers) != 2 || brokers[0] != "kafka-1:9092" || brokers[1] != "kafka-2:9092" {
+		t.Fatalf("kafka-brokers = %#v, want two brokers from env", brokers)
 	}
 }
 

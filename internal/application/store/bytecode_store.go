@@ -20,18 +20,14 @@ var (
 )
 
 type Bytecode struct {
-	CodeHash                     common.Hash
-	RuntimeBytecode              []byte
-	SourceCode                   string
-	SourceCodeHash               common.Hash
-	SourceCodeFetchedAt          time.Time
-	SourceCodeOrigin             string
-	SourceQualityReport          string
-	SourceQualityReportFetchedAt time.Time
-	SourceQualityReportOrigin    string
-	SourceQualityPromptVersion   int64
-	CreatedAt                    time.Time
-	UpdatedAt                    time.Time
+	CodeHash            common.Hash
+	RuntimeBytecode     []byte
+	SourceCode          string
+	SourceCodeHash      common.Hash
+	SourceCodeFetchedAt time.Time
+	SourceCodeOrigin    string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 }
 
 type ContractBytecodeDeployment struct {
@@ -129,22 +125,6 @@ func (s *SQLStore) UpdateBytecodeSourceCode(ctx context.Context, codeHash common
 	})
 	if err != nil {
 		return fmt.Errorf("update bytecode source code: %w", err)
-	}
-	return nil
-}
-
-func (s *SQLStore) UpdateBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, report string, origin string, promptVersion int64) error {
-	if s.queries == nil {
-		return fmt.Errorf("application postgres database is not configured")
-	}
-	err := s.queries.UpdateBytecodeSourceQualityReport(ctx, appsqlc.UpdateBytecodeSourceQualityReportParams{
-		CodeHash:                   codeHash.Bytes(),
-		SourceQualityReport:        textValue(report),
-		SourceQualityReportOrigin:  nullableTrimmedText(origin),
-		SourceQualityPromptVersion: promptVersion,
-	})
-	if err != nil {
-		return fmt.Errorf("update bytecode source quality report: %w", err)
 	}
 	return nil
 }
@@ -310,18 +290,14 @@ func (s *SQLStore) GetBytecodeBlacklistEntry(ctx context.Context, codeHash commo
 
 func bytecodeFromSQLC(row appsqlc.Bytecode) Bytecode {
 	return Bytecode{
-		CodeHash:                     common.BytesToHash(row.CodeHash),
-		RuntimeBytecode:              row.RuntimeBytecode,
-		SourceCode:                   row.SourceCode.String,
-		SourceCodeHash:               common.BytesToHash(row.SourceCodeHash),
-		SourceCodeFetchedAt:          timestamptzTime(row.SourceCodeFetchedAt),
-		SourceCodeOrigin:             row.SourceCodeOrigin.String,
-		SourceQualityReport:          row.SourceQualityReport.String,
-		SourceQualityReportFetchedAt: timestamptzTime(row.SourceQualityReportFetchedAt),
-		SourceQualityReportOrigin:    row.SourceQualityReportOrigin.String,
-		SourceQualityPromptVersion:   row.SourceQualityPromptVersion,
-		CreatedAt:                    timestamptzTime(row.CreatedAt),
-		UpdatedAt:                    timestamptzTime(row.UpdatedAt),
+		CodeHash:            common.BytesToHash(row.CodeHash),
+		RuntimeBytecode:     row.RuntimeBytecode,
+		SourceCode:          row.SourceCode.String,
+		SourceCodeHash:      common.BytesToHash(row.SourceCodeHash),
+		SourceCodeFetchedAt: timestamptzTime(row.SourceCodeFetchedAt),
+		SourceCodeOrigin:    row.SourceCodeOrigin.String,
+		CreatedAt:           timestamptzTime(row.CreatedAt),
+		UpdatedAt:           timestamptzTime(row.UpdatedAt),
 	}
 }
 
@@ -341,18 +317,14 @@ func bytecodeListRecordFromSQLC(row appsqlc.ListBytecodesRow) BytecodeListRecord
 func bytecodeDetailRecordFromSQLC(row appsqlc.GetBytecodeDetailRow) BytecodeDetailRecord {
 	return BytecodeDetailRecord{
 		Bytecode: Bytecode{
-			CodeHash:                     common.BytesToHash(row.CodeHash),
-			RuntimeBytecode:              row.RuntimeBytecode,
-			SourceCode:                   row.SourceCode.String,
-			SourceCodeHash:               common.BytesToHash(row.SourceCodeHash),
-			SourceCodeFetchedAt:          timestamptzTime(row.SourceCodeFetchedAt),
-			SourceCodeOrigin:             row.SourceCodeOrigin.String,
-			SourceQualityReport:          row.SourceQualityReport.String,
-			SourceQualityReportFetchedAt: timestamptzTime(row.SourceQualityReportFetchedAt),
-			SourceQualityReportOrigin:    row.SourceQualityReportOrigin.String,
-			SourceQualityPromptVersion:   row.SourceQualityPromptVersion,
-			CreatedAt:                    timestamptzTime(row.CreatedAt),
-			UpdatedAt:                    timestamptzTime(row.UpdatedAt),
+			CodeHash:            common.BytesToHash(row.CodeHash),
+			RuntimeBytecode:     row.RuntimeBytecode,
+			SourceCode:          row.SourceCode.String,
+			SourceCodeHash:      common.BytesToHash(row.SourceCodeHash),
+			SourceCodeFetchedAt: timestamptzTime(row.SourceCodeFetchedAt),
+			SourceCodeOrigin:    row.SourceCodeOrigin.String,
+			CreatedAt:           timestamptzTime(row.CreatedAt),
+			UpdatedAt:           timestamptzTime(row.UpdatedAt),
 		},
 		RuntimeBytecodeSize:   row.RuntimeBytecodeSize,
 		DeploymentCount:       row.DeploymentCount,

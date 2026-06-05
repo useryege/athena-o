@@ -12,23 +12,45 @@ import (
 )
 
 const getProjectSimulationResult = `-- name: GetProjectSimulationResult :one
-SELECT project_contract,
-  can_mint_from_dead_via_transfer_from,
-  can_mint_from_zero_via_transfer_from,
-  can_mint_from_weth_pair_via_transfer_from,
-  can_mint_from_usdt_pair_via_transfer_from,
-  can_mint_via_transfer_to_weth_pair,
-  can_mint_via_transfer_to_usdt_pair,
-  fetched_at,
-  updated_at
-FROM project_simulation_result
-WHERE project_contract = $1
+SELECT p.chain_id,
+  p.contract AS project_contract,
+  sr.can_mint_from_dead_via_transfer_from,
+  sr.can_mint_from_zero_via_transfer_from,
+  sr.can_mint_from_weth_pair_via_transfer_from,
+  sr.can_mint_from_usdt_pair_via_transfer_from,
+  sr.can_mint_via_transfer_to_weth_pair,
+  sr.can_mint_via_transfer_to_usdt_pair,
+  sr.fetched_at,
+  sr.updated_at
+FROM project_simulation_result sr
+JOIN project p ON p.id = sr.project_id
+WHERE p.chain_id = $1
+  AND p.contract = $2
 `
 
-func (q *Queries) GetProjectSimulationResult(ctx context.Context, projectContract []byte) (ProjectSimulationResult, error) {
-	row := q.db.QueryRow(ctx, getProjectSimulationResult, projectContract)
-	var i ProjectSimulationResult
+type GetProjectSimulationResultParams struct {
+	ChainID         int64
+	ProjectContract []byte
+}
+
+type GetProjectSimulationResultRow struct {
+	ChainID                            int64
+	ProjectContract                    []byte
+	CanMintFromDeadViaTransferFrom     bool
+	CanMintFromZeroViaTransferFrom     bool
+	CanMintFromWethPairViaTransferFrom bool
+	CanMintFromUsdtPairViaTransferFrom bool
+	CanMintViaTransferToWethPair       bool
+	CanMintViaTransferToUsdtPair       bool
+	FetchedAt                          pgtype.Timestamptz
+	UpdatedAt                          pgtype.Timestamptz
+}
+
+func (q *Queries) GetProjectSimulationResult(ctx context.Context, arg GetProjectSimulationResultParams) (GetProjectSimulationResultRow, error) {
+	row := q.db.QueryRow(ctx, getProjectSimulationResult, arg.ChainID, arg.ProjectContract)
+	var i GetProjectSimulationResultRow
 	err := row.Scan(
+		&i.ChainID,
 		&i.ProjectContract,
 		&i.CanMintFromDeadViaTransferFrom,
 		&i.CanMintFromZeroViaTransferFrom,
@@ -44,7 +66,7 @@ func (q *Queries) GetProjectSimulationResult(ctx context.Context, projectContrac
 
 const upsertProjectSimulationResult = `-- name: UpsertProjectSimulationResult :exec
 INSERT INTO project_simulation_result (
-  project_contract,
+  project_id,
   can_mint_from_dead_via_transfer_from,
   can_mint_from_zero_via_transfer_from,
   can_mint_from_weth_pair_via_transfer_from,
@@ -52,8 +74,17 @@ INSERT INTO project_simulation_result (
   can_mint_via_transfer_to_weth_pair,
   can_mint_via_transfer_to_usdt_pair,
   fetched_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-ON CONFLICT (project_contract) DO UPDATE
+) VALUES (
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9
+)
+ON CONFLICT (project_id) DO UPDATE
 SET can_mint_from_dead_via_transfer_from = EXCLUDED.can_mint_from_dead_via_transfer_from,
   can_mint_from_zero_via_transfer_from = EXCLUDED.can_mint_from_zero_via_transfer_from,
   can_mint_from_weth_pair_via_transfer_from = EXCLUDED.can_mint_from_weth_pair_via_transfer_from,
@@ -65,6 +96,7 @@ SET can_mint_from_dead_via_transfer_from = EXCLUDED.can_mint_from_dead_via_trans
 `
 
 type UpsertProjectSimulationResultParams struct {
+	ChainID                            int64
 	ProjectContract                    []byte
 	CanMintFromDeadViaTransferFrom     bool
 	CanMintFromZeroViaTransferFrom     bool
@@ -77,6 +109,7 @@ type UpsertProjectSimulationResultParams struct {
 
 func (q *Queries) UpsertProjectSimulationResult(ctx context.Context, arg UpsertProjectSimulationResultParams) error {
 	_, err := q.db.Exec(ctx, upsertProjectSimulationResult,
+		arg.ChainID,
 		arg.ProjectContract,
 		arg.CanMintFromDeadViaTransferFrom,
 		arg.CanMintFromZeroViaTransferFrom,

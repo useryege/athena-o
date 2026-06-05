@@ -6,18 +6,17 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	appcomponents "github.com/useryege/athena/internal/application/components"
 	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
-func TestComponentHandleRefreshWritesStateAndPublishes(t *testing.T) {
+func TestComponentCollectWritesState(t *testing.T) {
 	ctx := context.Background()
 	contract := common.BigToAddress(big.NewInt(21))
 	creator := common.BigToAddress(big.NewInt(22))
 	store := &chainStateStoreFake{
 		baseByContract: map[common.Address]appstore.ProjectBase{
-			contract: {Contract: contract, Creator: creator},
+			contract: {ChainID: 1, Contract: contract, Creator: creator},
 		},
 	}
 	fetcher := &athenaFetcherFake{
@@ -30,17 +29,13 @@ func TestComponentHandleRefreshWritesStateAndPublishes(t *testing.T) {
 			},
 		},
 	}
-	bus := &eventBusFake{}
-	component := NewComponent(Options{Store: store, Fetcher: fetcher, Bus: bus})
+	component := NewComponent(Options{ChainID: 1, Store: store, Fetcher: fetcher})
 	if component == nil {
 		t.Fatal("component is nil")
 	}
 
-	if err := component.handleEvent(ctx, appcomponents.Event{
-		Type:     appcomponents.EventProjectRefresh,
-		Contract: contract.Hex(),
-	}); err != nil {
-		t.Fatalf("handle event: %v", err)
+	if err := component.Collect(ctx, 1, contract); err != nil {
+		t.Fatalf("collect: %v", err)
 	}
 
 	if fetcher.fetchProjectCalls != 1 {
@@ -52,9 +47,6 @@ func TestComponentHandleRefreshWritesStateAndPublishes(t *testing.T) {
 	if store.lastComponentStatus != appstore.ProjectComponentStatusSuccess {
 		t.Fatalf("last status = %s, want success", store.lastComponentStatus)
 	}
-	if len(bus.events) != 1 || bus.events[0].Type != appcomponents.EventComponentCompleted {
-		t.Fatalf("published events = %#v, want single component completed", bus.events)
-	}
 }
 
 type chainStateStoreFake struct {
@@ -65,7 +57,7 @@ type chainStateStoreFake struct {
 	lastComponentStatus   string
 }
 
-func (s *chainStateStoreFake) GetProjectBaseByContract(_ context.Context, contract common.Address) (*appstore.ProjectBase, error) {
+func (s *chainStateStoreFake) GetProjectBaseByContract(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectBase, error) {
 	item, ok := s.baseByContract[contract]
 	if !ok {
 		return nil, nil
@@ -108,17 +100,4 @@ func (f *athenaFetcherFake) FetchSimulationState(context.Context, athenacontract
 
 func (f *athenaFetcherFake) FetchSimulationStates(context.Context, []athenacontract.AthenaProjectQuery) ([]athenacontract.AthenaSimulationState, error) {
 	return nil, nil
-}
-
-type eventBusFake struct {
-	events []appcomponents.Event
-}
-
-func (b *eventBusFake) Publish(_ context.Context, event appcomponents.Event) error {
-	b.events = append(b.events, event)
-	return nil
-}
-
-func (b *eventBusFake) Subscribe(context.Context, string, string, appcomponents.Handler) error {
-	return nil
 }

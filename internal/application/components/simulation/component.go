@@ -17,20 +17,19 @@ type SimulationNodeClient interface {
 }
 
 type Options struct {
+	ChainID    int64
 	Store      appstore.Store
 	Cache      appcache.ProjectComponentCache
 	Fetcher    evm.AthenaFetcher
 	NodeClient SimulationNodeClient
-	Bus        appcomponents.EventBus
 }
 
 type Component struct {
+	chainID    int64
 	store      appstore.Store
 	cache      appcache.ProjectComponentCache
 	fetcher    evm.AthenaFetcher
 	nodeClient SimulationNodeClient
-	bus        appcomponents.EventBus
-	consumer   *appcomponents.Consumer
 }
 
 func NewComponent(opts Options) *Component {
@@ -39,60 +38,42 @@ func NewComponent(opts Options) *Component {
 	}
 	c := &Component{
 		store:      opts.Store,
+		chainID:    opts.ChainID,
 		cache:      opts.Cache,
 		fetcher:    opts.Fetcher,
 		nodeClient: opts.NodeClient,
-		bus:        opts.Bus,
 	}
-	c.consumer = appcomponents.NewConsumer(appstore.ProjectComponentSimulation, opts.Bus, c.handleEvent)
 	return c
 }
 
-func (c *Component) Start(ctx context.Context) error {
-	if c == nil || c.consumer == nil {
-		return nil
-	}
-	return c.consumer.Start(ctx)
-}
+func (c *Component) Start(context.Context) error { return nil }
 
-func (c *Component) Stop() error {
-	if c == nil || c.consumer == nil {
-		return nil
-	}
-	return c.consumer.Stop()
-}
+func (c *Component) Stop() error { return nil }
 
-func (c *Component) handleEvent(ctx context.Context, event appcomponents.Event) error {
-	if event.Type == appcomponents.EventComponentCompleted && event.Component != appstore.ProjectComponentChainState {
+func (c *Component) Collect(ctx context.Context, chainID int64, contract common.Address) error {
+	if c == nil || c.store == nil || c.fetcher == nil || c.nodeClient == nil {
 		return nil
 	}
-	if event.Type != appcomponents.EventComponentCompleted && event.Type != appcomponents.EventProjectRefresh {
-		return nil
-	}
-	contract := event.ProjectContract()
 	if contract == (common.Address{}) {
 		return nil
 	}
-	if err := c.refresh(ctx, contract); err != nil {
-		_ = appcomponents.MarkComponentFailed(ctx, c.store, contract, appstore.ProjectComponentSimulation, err, nowUTC())
-		if c.bus != nil {
-			_ = c.bus.Publish(ctx, appcomponents.ComponentFailedEvent(contract, appstore.ProjectComponentSimulation, err))
-		}
-		return nil
+	if err := c.refresh(ctx, chainID, contract); err != nil {
+		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentSimulation, err, nowUTC())
+		return err
 	}
 	return nil
 }
 
-func (c *Component) refresh(ctx context.Context, contract common.Address) error {
-	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, contract)
+func (c *Component) refresh(ctx context.Context, chainID int64, contract common.Address) error {
+	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, chainID, contract)
 	if err != nil || base == nil {
 		return err
 	}
-	chainState, err := appcomponents.LoadProjectChainState(ctx, c.cache, c.store, contract)
+	chainState, err := appcomponents.LoadProjectChainState(ctx, c.cache, c.store, chainID, contract)
 	if err != nil || chainState == nil {
 		return err
 	}
-	if err := appcomponents.MarkComponentRunning(ctx, c.store, contract, appstore.ProjectComponentSimulation, nowUTC()); err != nil {
+	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentSimulation, nowUTC()); err != nil {
 		return err
 	}
 	simulationState, err := c.fetcher.FetchSimulationState(ctx, appcomponents.ProjectQuery(*base, nil))
@@ -103,11 +84,8 @@ func (c *Component) refresh(ctx context.Context, contract common.Address) error 
 	usdtPair := chainState.UsdtPair
 	if wethPair == (common.Address{}) || usdtPair == (common.Address{}) {
 		at := nowUTC()
-		if err := appcomponents.MarkComponentSuccess(ctx, c.store, contract, appstore.ProjectComponentSimulation, at); err != nil {
+		if err := appcomponents.MarkComponentSuccess(ctx, c.store, chainID, contract, appstore.ProjectComponentSimulation, at); err != nil {
 			return err
-		}
-		if c.bus != nil {
-			return c.bus.Publish(ctx, appcomponents.ComponentCompletedEvent(contract, appstore.ProjectComponentSimulation))
 		}
 		return nil
 	}
@@ -115,7 +93,7 @@ func (c *Component) refresh(ctx context.Context, contract common.Address) error 
 	if err != nil {
 		return err
 	}
-	item := appstore.ProjectSimulationResult{ProjectContract: contract, Result: appstore.SimulateResult(result), FetchedAt: nowUTC()}
+	item := appstore.ProjectSimulationResult{ChainID: chainID, ProjectContract: contract, Result: appstore.SimulateResult(result), FetchedAt: nowUTC()}
 	if err := c.store.UpsertProjectSimulationResult(ctx, item); err != nil {
 		return err
 	}
@@ -124,11 +102,8 @@ func (c *Component) refresh(ctx context.Context, contract common.Address) error 
 			return err
 		}
 	}
-	if err := appcomponents.MarkComponentSuccess(ctx, c.store, contract, appstore.ProjectComponentSimulation, item.FetchedAt); err != nil {
+	if err := appcomponents.MarkComponentSuccess(ctx, c.store, chainID, contract, appstore.ProjectComponentSimulation, item.FetchedAt); err != nil {
 		return err
-	}
-	if c.bus != nil {
-		return c.bus.Publish(ctx, appcomponents.ComponentCompletedEvent(contract, appstore.ProjectComponentSimulation))
 	}
 	return nil
 }

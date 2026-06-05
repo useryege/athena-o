@@ -13,17 +13,22 @@ import (
 
 const deleteProjectAvePairsByContract = `-- name: DeleteProjectAvePairsByContract :exec
 DELETE FROM project_ave_pair
-WHERE project_contract = $1
+WHERE project_id = (SELECT id FROM project WHERE chain_id = $1 AND contract = $2)
 `
 
-func (q *Queries) DeleteProjectAvePairsByContract(ctx context.Context, projectContract []byte) error {
-	_, err := q.db.Exec(ctx, deleteProjectAvePairsByContract, projectContract)
+type DeleteProjectAvePairsByContractParams struct {
+	ChainID         int64
+	ProjectContract []byte
+}
+
+func (q *Queries) DeleteProjectAvePairsByContract(ctx context.Context, arg DeleteProjectAvePairsByContractParams) error {
+	_, err := q.db.Exec(ctx, deleteProjectAvePairsByContract, arg.ChainID, arg.ProjectContract)
 	return err
 }
 
 const insertProjectAvePair = `-- name: InsertProjectAvePair :exec
 INSERT INTO project_ave_pair (
-  project_contract,
+  project_id,
   rank_index,
   reserve0,
   reserve1,
@@ -58,8 +63,13 @@ INSERT INTO project_ave_pair (
   fdv,
   is_fake
 ) VALUES (
-  $1,
-  $2,
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
+  $3,
+  $4::text,
+  $5::text,
+  $6::text,
+  $7::text,
+  $8::text,
   $9::text,
   $10::text,
   $11::text,
@@ -75,35 +85,25 @@ INSERT INTO project_ave_pair (
   $21::text,
   $22::text,
   $23::text,
-  $24::text,
+  $24,
   $25::text,
   $26::text,
-  $27::text,
+  $27,
   $28::text,
-  $3,
   $29::text,
-  $30::text,
-  $4,
-  $31::text,
-  $32::text,
-  $5,
-  $6,
-  $7,
+  $30,
+  $31,
+  $32,
   $33::text,
   $34::text,
-  $8
+  $35
 )
 `
 
 type InsertProjectAvePairParams struct {
+	ChainID         int64
 	ProjectContract []byte
 	RankIndex       int32
-	Token0Decimal   int32
-	Token1Decimal   int32
-	CreatedAt       int64
-	TxCount         int32
-	UpdatedAt       int64
-	IsFake          bool
 	Reserve0        pgtype.Text
 	Reserve1        pgtype.Text
 	Token0PriceEth  pgtype.Text
@@ -124,24 +124,25 @@ type InsertProjectAvePairParams struct {
 	Amm             pgtype.Text
 	Token0Address   pgtype.Text
 	Token0Symbol    pgtype.Text
+	Token0Decimal   int32
 	Token1Address   pgtype.Text
 	Token1Symbol    pgtype.Text
+	Token1Decimal   int32
 	TargetToken     pgtype.Text
 	PriceChange1d   pgtype.Text
+	CreatedAt       int64
+	TxCount         int32
+	UpdatedAt       int64
 	MarketCap       pgtype.Text
 	Fdv             pgtype.Text
+	IsFake          bool
 }
 
 func (q *Queries) InsertProjectAvePair(ctx context.Context, arg InsertProjectAvePairParams) error {
 	_, err := q.db.Exec(ctx, insertProjectAvePair,
+		arg.ChainID,
 		arg.ProjectContract,
 		arg.RankIndex,
-		arg.Token0Decimal,
-		arg.Token1Decimal,
-		arg.CreatedAt,
-		arg.TxCount,
-		arg.UpdatedAt,
-		arg.IsFake,
 		arg.Reserve0,
 		arg.Reserve1,
 		arg.Token0PriceEth,
@@ -162,57 +163,72 @@ func (q *Queries) InsertProjectAvePair(ctx context.Context, arg InsertProjectAve
 		arg.Amm,
 		arg.Token0Address,
 		arg.Token0Symbol,
+		arg.Token0Decimal,
 		arg.Token1Address,
 		arg.Token1Symbol,
+		arg.Token1Decimal,
 		arg.TargetToken,
 		arg.PriceChange1d,
+		arg.CreatedAt,
+		arg.TxCount,
+		arg.UpdatedAt,
 		arg.MarketCap,
 		arg.Fdv,
+		arg.IsFake,
 	)
 	return err
 }
 
 const listProjectAvePairsByContracts = `-- name: ListProjectAvePairsByContracts :many
-SELECT project_contract,
-  rank_index,
-  reserve0,
-  reserve1,
-  token0_price_eth,
-  token0_price_usd,
-  token1_price_eth,
-  token1_price_usd,
-  price_change,
-  price_change_24h,
-  price_change_1h,
-  volume_u,
-  low_u,
-  high_u,
-  fee,
-  total_supply,
-  tx_amount,
-  pair,
-  chain,
-  amm,
-  token0_address,
-  token0_symbol,
-  token0_decimal,
-  token1_address,
-  token1_symbol,
-  token1_decimal,
-  target_token,
-  price_change_1d,
-  created_at,
-  tx_count,
-  updated_at,
-  market_cap,
-  fdv,
-  is_fake
-FROM project_ave_pair
-WHERE project_contract = ANY($1::bytea[])
-ORDER BY project_contract, rank_index
+SELECT p.chain_id,
+  p.contract AS project_contract,
+  ap.rank_index,
+  ap.reserve0,
+  ap.reserve1,
+  ap.token0_price_eth,
+  ap.token0_price_usd,
+  ap.token1_price_eth,
+  ap.token1_price_usd,
+  ap.price_change,
+  ap.price_change_24h,
+  ap.price_change_1h,
+  ap.volume_u,
+  ap.low_u,
+  ap.high_u,
+  ap.fee,
+  ap.total_supply,
+  ap.tx_amount,
+  ap.pair,
+  ap.chain,
+  ap.amm,
+  ap.token0_address,
+  ap.token0_symbol,
+  ap.token0_decimal,
+  ap.token1_address,
+  ap.token1_symbol,
+  ap.token1_decimal,
+  ap.target_token,
+  ap.price_change_1d,
+  ap.created_at,
+  ap.tx_count,
+  ap.updated_at,
+  ap.market_cap,
+  ap.fdv,
+  ap.is_fake
+FROM project_ave_pair ap
+JOIN project p ON p.id = ap.project_id
+WHERE p.chain_id = $1
+  AND p.contract = ANY($2::bytea[])
+ORDER BY p.contract, ap.rank_index
 `
 
+type ListProjectAvePairsByContractsParams struct {
+	ChainID          int64
+	ProjectContracts [][]byte
+}
+
 type ListProjectAvePairsByContractsRow struct {
+	ChainID         int64
 	ProjectContract []byte
 	RankIndex       int32
 	Reserve0        pgtype.Text
@@ -249,8 +265,8 @@ type ListProjectAvePairsByContractsRow struct {
 	IsFake          bool
 }
 
-func (q *Queries) ListProjectAvePairsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ListProjectAvePairsByContractsRow, error) {
-	rows, err := q.db.Query(ctx, listProjectAvePairsByContracts, dollar_1)
+func (q *Queries) ListProjectAvePairsByContracts(ctx context.Context, arg ListProjectAvePairsByContractsParams) ([]ListProjectAvePairsByContractsRow, error) {
+	rows, err := q.db.Query(ctx, listProjectAvePairsByContracts, arg.ChainID, arg.ProjectContracts)
 	if err != nil {
 		return nil, err
 	}
@@ -259,6 +275,7 @@ func (q *Queries) ListProjectAvePairsByContracts(ctx context.Context, dollar_1 [
 	for rows.Next() {
 		var i ListProjectAvePairsByContractsRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.ProjectContract,
 			&i.RankIndex,
 			&i.Reserve0,
@@ -305,79 +322,151 @@ func (q *Queries) ListProjectAvePairsByContracts(ctx context.Context, dollar_1 [
 }
 
 const listProjectAveTokenDetailsByContracts = `-- name: ListProjectAveTokenDetailsByContracts :many
-SELECT project_contract,
-  status,
-  msg,
-  data_type,
-  is_audited,
-  fetched_at,
-  total,
-  launch_price,
-  current_price_eth,
-  current_price_usd,
-  price_change_1d,
-  price_change_24h,
-  price_change_1h,
-  lock_amount,
-  burn_amount,
-  other_amount,
-  tx_amount_24h,
-  tx_volume_u_24h,
-  locked_percent,
-  market_cap,
-  fdv,
-  tvl,
-  main_pair_tvl,
-  token_price_change_5m,
-  token_price_change_1h,
-  token_price_change_4h,
-  token_price_change_24h,
-  token_tx_volume_usd_5m,
-  token_tx_volume_usd_1h,
-  token_tx_volume_usd_4h,
-  token_tx_volume_usd_24h,
-  token_buy_volume_u_5m,
-  token_sell_volume_u_5m,
-  token,
-  chain,
-  decimal,
-  name,
-  symbol,
-  holders,
-  appendix,
-  risk_level,
-  logo_url,
-  risk_info,
-  risk_score,
-  launch_at,
-  created_at,
-  tx_count_24h,
-  lock_platform,
-  is_mintable,
-  updated_at,
-  main_pair,
-  has_mint_method,
-  is_lp_not_locked,
-  has_not_renounced,
-  has_not_audited,
-  has_not_open_source,
-  is_in_blacklist,
-  is_honeypot,
-  ave_risk_level
-FROM project_ave_token_detail
-WHERE project_contract = ANY($1::bytea[])
+SELECT p.chain_id,
+  p.contract AS project_contract,
+  d.status,
+  d.msg,
+  d.data_type,
+  d.is_audited,
+  d.fetched_at,
+  d.total,
+  d.launch_price,
+  d.current_price_eth,
+  d.current_price_usd,
+  d.price_change_1d,
+  d.price_change_24h,
+  d.price_change_1h,
+  d.lock_amount,
+  d.burn_amount,
+  d.other_amount,
+  d.tx_amount_24h,
+  d.tx_volume_u_24h,
+  d.locked_percent,
+  d.market_cap,
+  d.fdv,
+  d.tvl,
+  d.main_pair_tvl,
+  d.token_price_change_5m,
+  d.token_price_change_1h,
+  d.token_price_change_4h,
+  d.token_price_change_24h,
+  d.token_tx_volume_usd_5m,
+  d.token_tx_volume_usd_1h,
+  d.token_tx_volume_usd_4h,
+  d.token_tx_volume_usd_24h,
+  d.token_buy_volume_u_5m,
+  d.token_sell_volume_u_5m,
+  d.token,
+  d.chain,
+  d.decimal,
+  d.name,
+  d.symbol,
+  d.holders,
+  d.appendix,
+  d.risk_level,
+  d.logo_url,
+  d.risk_info,
+  d.risk_score,
+  d.launch_at,
+  d.created_at,
+  d.tx_count_24h,
+  d.lock_platform,
+  d.is_mintable,
+  d.updated_at,
+  d.main_pair,
+  d.has_mint_method,
+  d.is_lp_not_locked,
+  d.has_not_renounced,
+  d.has_not_audited,
+  d.has_not_open_source,
+  d.is_in_blacklist,
+  d.is_honeypot,
+  d.ave_risk_level
+FROM project_ave_token_detail d
+JOIN project p ON p.id = d.project_id
+WHERE p.chain_id = $1
+  AND p.contract = ANY($2::bytea[])
 `
 
-func (q *Queries) ListProjectAveTokenDetailsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectAveTokenDetail, error) {
-	rows, err := q.db.Query(ctx, listProjectAveTokenDetailsByContracts, dollar_1)
+type ListProjectAveTokenDetailsByContractsParams struct {
+	ChainID          int64
+	ProjectContracts [][]byte
+}
+
+type ListProjectAveTokenDetailsByContractsRow struct {
+	ChainID             int64
+	ProjectContract     []byte
+	Status              int32
+	Msg                 pgtype.Text
+	DataType            int32
+	IsAudited           bool
+	FetchedAt           pgtype.Timestamptz
+	Total               pgtype.Text
+	LaunchPrice         pgtype.Text
+	CurrentPriceEth     pgtype.Text
+	CurrentPriceUsd     pgtype.Text
+	PriceChange1d       pgtype.Text
+	PriceChange24h      pgtype.Text
+	PriceChange1h       pgtype.Text
+	LockAmount          pgtype.Text
+	BurnAmount          pgtype.Text
+	OtherAmount         pgtype.Text
+	TxAmount24h         pgtype.Text
+	TxVolumeU24h        pgtype.Text
+	LockedPercent       pgtype.Text
+	MarketCap           pgtype.Text
+	Fdv                 pgtype.Text
+	Tvl                 pgtype.Text
+	MainPairTvl         pgtype.Text
+	TokenPriceChange5m  pgtype.Text
+	TokenPriceChange1h  pgtype.Text
+	TokenPriceChange4h  pgtype.Text
+	TokenPriceChange24h pgtype.Text
+	TokenTxVolumeUsd5m  pgtype.Text
+	TokenTxVolumeUsd1h  pgtype.Text
+	TokenTxVolumeUsd4h  pgtype.Text
+	TokenTxVolumeUsd24h pgtype.Text
+	TokenBuyVolumeU5m   pgtype.Text
+	TokenSellVolumeU5m  pgtype.Text
+	Token               pgtype.Text
+	Chain               pgtype.Text
+	Decimal             int32
+	Name                pgtype.Text
+	Symbol              pgtype.Text
+	Holders             int32
+	Appendix            pgtype.Text
+	RiskLevel           int32
+	LogoUrl             pgtype.Text
+	RiskInfo            pgtype.Text
+	RiskScore           pgtype.Text
+	LaunchAt            int64
+	CreatedAt           int64
+	TxCount24h          int32
+	LockPlatform        pgtype.Text
+	IsMintable          pgtype.Text
+	UpdatedAt           int64
+	MainPair            pgtype.Text
+	HasMintMethod       bool
+	IsLpNotLocked       bool
+	HasNotRenounced     bool
+	HasNotAudited       bool
+	HasNotOpenSource    bool
+	IsInBlacklist       bool
+	IsHoneypot          bool
+	AveRiskLevel        int32
+}
+
+func (q *Queries) ListProjectAveTokenDetailsByContracts(ctx context.Context, arg ListProjectAveTokenDetailsByContractsParams) ([]ListProjectAveTokenDetailsByContractsRow, error) {
+	rows, err := q.db.Query(ctx, listProjectAveTokenDetailsByContracts, arg.ChainID, arg.ProjectContracts)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ProjectAveTokenDetail
+	var items []ListProjectAveTokenDetailsByContractsRow
 	for rows.Next() {
-		var i ProjectAveTokenDetail
+		var i ListProjectAveTokenDetailsByContractsRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.ProjectContract,
 			&i.Status,
 			&i.Msg,
@@ -450,7 +539,7 @@ func (q *Queries) ListProjectAveTokenDetailsByContracts(ctx context.Context, dol
 
 const upsertProjectAveTokenDetail = `-- name: UpsertProjectAveTokenDetail :exec
 INSERT INTO project_ave_token_detail (
-  project_contract,
+  project_id,
   status,
   msg,
   data_type,
@@ -510,12 +599,26 @@ INSERT INTO project_ave_token_detail (
   is_honeypot,
   ave_risk_level
 ) VALUES (
-  $1,
-  $2,
-  $21::text,
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
   $3,
-  $4,
+  $4::text,
   $5,
+  $6,
+  $7,
+  $8::text,
+  $9::text,
+  $10::text,
+  $11::text,
+  $12::text,
+  $13::text,
+  $14::text,
+  $15::text,
+  $16::text,
+  $17::text,
+  $18::text,
+  $19::text,
+  $20::text,
+  $21::text,
   $22::text,
   $23::text,
   $24::text,
@@ -531,46 +634,32 @@ INSERT INTO project_ave_token_detail (
   $34::text,
   $35::text,
   $36::text,
-  $37::text,
+  $37,
   $38::text,
   $39::text,
-  $40::text,
+  $40,
   $41::text,
-  $42::text,
+  $42,
   $43::text,
   $44::text,
   $45::text,
-  $46::text,
-  $47::text,
-  $48::text,
+  $46,
+  $47,
+  $48,
   $49::text,
   $50::text,
-  $6,
-  $51::text,
+  $51,
   $52::text,
-  $7,
-  $53::text,
-  $8,
-  $54::text,
-  $55::text,
-  $56::text,
-  $9,
-  $10,
-  $11,
-  $57::text,
-  $58::text,
-  $12,
-  $59::text,
-  $13,
-  $14,
-  $15,
-  $16,
-  $17,
-  $18,
-  $19,
-  $20
+  $53,
+  $54,
+  $55,
+  $56,
+  $57,
+  $58,
+  $59,
+  $60
 )
-ON CONFLICT (project_contract) DO UPDATE SET
+ON CONFLICT (project_id) DO UPDATE SET
   status = EXCLUDED.status,
   msg = EXCLUDED.msg,
   data_type = EXCLUDED.data_type,
@@ -632,27 +721,13 @@ ON CONFLICT (project_contract) DO UPDATE SET
 `
 
 type UpsertProjectAveTokenDetailParams struct {
+	ChainID             int64
 	ProjectContract     []byte
 	Status              int32
+	Msg                 pgtype.Text
 	DataType            int32
 	IsAudited           bool
 	FetchedAt           pgtype.Timestamptz
-	Decimal             int32
-	Holders             int32
-	RiskLevel           int32
-	LaunchAt            int64
-	CreatedAt           int64
-	TxCount24h          int32
-	UpdatedAt           int64
-	HasMintMethod       bool
-	IsLpNotLocked       bool
-	HasNotRenounced     bool
-	HasNotAudited       bool
-	HasNotOpenSource    bool
-	IsInBlacklist       bool
-	IsHoneypot          bool
-	AveRiskLevel        int32
-	Msg                 pgtype.Text
 	Total               pgtype.Text
 	LaunchPrice         pgtype.Text
 	CurrentPriceEth     pgtype.Text
@@ -682,40 +757,41 @@ type UpsertProjectAveTokenDetailParams struct {
 	TokenSellVolumeU5m  pgtype.Text
 	Token               pgtype.Text
 	Chain               pgtype.Text
+	Decimal             int32
 	Name                pgtype.Text
 	Symbol              pgtype.Text
+	Holders             int32
 	Appendix            pgtype.Text
+	RiskLevel           int32
 	LogoUrl             pgtype.Text
 	RiskInfo            pgtype.Text
 	RiskScore           pgtype.Text
+	LaunchAt            int64
+	CreatedAt           int64
+	TxCount24h          int32
 	LockPlatform        pgtype.Text
 	IsMintable          pgtype.Text
+	UpdatedAt           int64
 	MainPair            pgtype.Text
+	HasMintMethod       bool
+	IsLpNotLocked       bool
+	HasNotRenounced     bool
+	HasNotAudited       bool
+	HasNotOpenSource    bool
+	IsInBlacklist       bool
+	IsHoneypot          bool
+	AveRiskLevel        int32
 }
 
 func (q *Queries) UpsertProjectAveTokenDetail(ctx context.Context, arg UpsertProjectAveTokenDetailParams) error {
 	_, err := q.db.Exec(ctx, upsertProjectAveTokenDetail,
+		arg.ChainID,
 		arg.ProjectContract,
 		arg.Status,
+		arg.Msg,
 		arg.DataType,
 		arg.IsAudited,
 		arg.FetchedAt,
-		arg.Decimal,
-		arg.Holders,
-		arg.RiskLevel,
-		arg.LaunchAt,
-		arg.CreatedAt,
-		arg.TxCount24h,
-		arg.UpdatedAt,
-		arg.HasMintMethod,
-		arg.IsLpNotLocked,
-		arg.HasNotRenounced,
-		arg.HasNotAudited,
-		arg.HasNotOpenSource,
-		arg.IsInBlacklist,
-		arg.IsHoneypot,
-		arg.AveRiskLevel,
-		arg.Msg,
 		arg.Total,
 		arg.LaunchPrice,
 		arg.CurrentPriceEth,
@@ -745,15 +821,30 @@ func (q *Queries) UpsertProjectAveTokenDetail(ctx context.Context, arg UpsertPro
 		arg.TokenSellVolumeU5m,
 		arg.Token,
 		arg.Chain,
+		arg.Decimal,
 		arg.Name,
 		arg.Symbol,
+		arg.Holders,
 		arg.Appendix,
+		arg.RiskLevel,
 		arg.LogoUrl,
 		arg.RiskInfo,
 		arg.RiskScore,
+		arg.LaunchAt,
+		arg.CreatedAt,
+		arg.TxCount24h,
 		arg.LockPlatform,
 		arg.IsMintable,
+		arg.UpdatedAt,
 		arg.MainPair,
+		arg.HasMintMethod,
+		arg.IsLpNotLocked,
+		arg.HasNotRenounced,
+		arg.HasNotAudited,
+		arg.HasNotOpenSource,
+		arg.IsInBlacklist,
+		arg.IsHoneypot,
+		arg.AveRiskLevel,
 	)
 	return err
 }

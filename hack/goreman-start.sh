@@ -3,6 +3,55 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+DEFAULT_RUN_EXCLUDE="application-ingestor-bsc,application-ingestor-eth,application-temporal-eth"
+
+run_exclude_value() {
+	if [[ "${ATHENA_RUN_EXCLUDE+x}" == "x" ]]; then
+		printf '%s' "${ATHENA_RUN_EXCLUDE}"
+		return
+	fi
+	printf '%s' "${DEFAULT_RUN_EXCLUDE}"
+}
+
+split_excludes() {
+	local value="$1"
+	local item
+
+	[[ -n "${value}" ]] || return
+	while IFS= read -r item; do
+		item="$(printf '%s' "${item}" | xargs)"
+		[[ -n "${item}" ]] || continue
+		printf '%s\n' "${item}"
+	done < <(tr ',' '\n' <<<"${value}")
+}
+
+is_excluded_service() {
+	local name="$1"
+	local item
+
+	while IFS= read -r item; do
+		[[ "${item}" == "${name}" ]] && return 0
+	done < <(split_excludes "$(run_exclude_value)")
+
+	return 1
+}
+
+write_filtered_procfile() {
+	local source="$1"
+	local target="$2"
+	local line name
+
+	: >"${target}"
+	while IFS= read -r line || [[ -n "${line}" ]]; do
+		if [[ "${line}" =~ ^[[:space:]]*([A-Za-z0-9_-]+): ]]; then
+			name="${BASH_REMATCH[1]}"
+			if is_excluded_service "${name}"; then
+				continue
+			fi
+		fi
+		printf '%s\n' "${line}" >>"${target}"
+	done <"${source}"
+}
 
 listening_pids() {
 	local port="$1"
@@ -134,4 +183,18 @@ if [[ "${ATHENA_RUN_PORT_CLEANUP:-true}" != "false" ]]; then
 	cleanup_athena_ports
 fi
 
-exec goreman start
+procfile="${ATHENA_PROCFILE:-Procfile}"
+filtered_procfile="$(mktemp -t athena-procfile.XXXXXX)"
+trap 'rm -f "${filtered_procfile}"' EXIT
+
+write_filtered_procfile "${procfile}" "${filtered_procfile}"
+if [[ -n "$(run_exclude_value)" ]]; then
+	printf 'excluding Procfile services: %s\n' "$(run_exclude_value)" >&2
+fi
+
+if [[ "${ATHENA_RUN_DRY_RUN:-false}" == "true" ]]; then
+	cat "${filtered_procfile}"
+	exit 0
+fi
+
+goreman -f "${filtered_procfile}" start

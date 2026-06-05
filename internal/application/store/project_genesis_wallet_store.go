@@ -12,7 +12,7 @@ import (
 	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 )
 
-func (s *SQLStore) ReplaceProjectGenesisWallets(ctx context.Context, contract common.Address, items []ProjectGenesisWallet) error {
+func (s *SQLStore) ReplaceProjectGenesisWallets(ctx context.Context, chainID int64, contract common.Address, items []ProjectGenesisWallet) error {
 	if s.pool == nil {
 		return fmt.Errorf("application postgres database is not configured")
 	}
@@ -25,7 +25,14 @@ func (s *SQLStore) ReplaceProjectGenesisWallets(ctx context.Context, contract co
 	}()
 
 	queries := appsqlc.New(tx)
-	if err := queries.DeleteProjectGenesisWalletsByContract(ctx, contract.Bytes()); err != nil {
+	chainID = s.chainIDForProject(chainID)
+	if len(items) > 0 && items[0].ChainID > 0 {
+		chainID = s.chainIDForProject(items[0].ChainID)
+	}
+	if err := queries.DeleteProjectGenesisWalletsByContract(ctx, appsqlc.DeleteProjectGenesisWalletsByContractParams{
+		ChainID:         chainID,
+		ProjectContract: contract.Bytes(),
+	}); err != nil {
 		return fmt.Errorf("delete project genesis wallets: %w", err)
 	}
 
@@ -47,12 +54,13 @@ func (s *SQLStore) ReplaceProjectGenesisWallets(ctx context.Context, contract co
 		}
 
 		err = queries.InsertProjectGenesisWallet(ctx, appsqlc.InsertProjectGenesisWalletParams{
+			ChainID:           chainID,
 			ProjectContract:   contract.Bytes(),
 			Wallet:            item.Wallet.Bytes(),
-			Column3:           numericFromBigInt(item.NetAmount),
+			NetAmount:         numericFromBigInt(item.NetAmount),
 			RatioBps:          item.RatioBPS,
 			RankIndex:         item.RankIndex,
-			Column6:           numericFromBigInt(item.TotalSupply),
+			TotalSupply:       numericFromBigInt(item.TotalSupply),
 			SourceTxHash:      item.SourceTxHash.Bytes(),
 			SourceBlockNumber: int64(item.SourceBlockNumber),
 		})
@@ -62,6 +70,7 @@ func (s *SQLStore) ReplaceProjectGenesisWallets(ctx context.Context, contract co
 	}
 
 	if err := queries.MarkProjectComponentSuccessNow(ctx, appsqlc.MarkProjectComponentSuccessNowParams{
+		ChainID:         chainID,
 		ProjectContract: contract.Bytes(),
 		Component:       ProjectComponentGenesisWallet,
 	}); err != nil {
@@ -74,19 +83,22 @@ func (s *SQLStore) ReplaceProjectGenesisWallets(ctx context.Context, contract co
 	return nil
 }
 
-func (s *SQLStore) ListProjectGenesisWalletsByContract(ctx context.Context, contract common.Address) ([]ProjectGenesisWallet, error) {
+func (s *SQLStore) ListProjectGenesisWalletsByContract(ctx context.Context, chainID int64, contract common.Address) ([]ProjectGenesisWallet, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectGenesisWalletsByContract(ctx, contract.Bytes())
+	rows, err := queries.ListProjectGenesisWalletsByContract(ctx, appsqlc.ListProjectGenesisWalletsByContractParams{
+		ChainID:         s.chainIDForProject(chainID),
+		ProjectContract: contract.Bytes(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list project genesis wallets by contract: %w", err)
 	}
 
 	items := make([]ProjectGenesisWallet, 0, len(rows))
 	for _, row := range rows {
-		item, err := projectGenesisWalletFromFields(row.ID, row.ProjectContract, row.Wallet, row.NetAmount, row.RatioBps, row.RankIndex, row.TotalSupply, row.SourceTxHash, row.SourceBlockNumber, row.CreatedAt.Time)
+		item, err := projectGenesisWalletFromFields(row.ID, row.ChainID, row.ProjectContract, row.Wallet, row.NetAmount, row.RatioBps, row.RankIndex, row.TotalSupply, row.SourceTxHash, row.SourceBlockNumber, row.CreatedAt.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +107,7 @@ func (s *SQLStore) ListProjectGenesisWalletsByContract(ctx context.Context, cont
 	return items, nil
 }
 
-func (s *SQLStore) ListProjectGenesisWalletsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address][]ProjectGenesisWallet, error) {
+func (s *SQLStore) ListProjectGenesisWalletsByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address][]ProjectGenesisWallet, error) {
 	result := make(map[common.Address][]ProjectGenesisWallet)
 	uniqueContracts := uniqueNonZeroAddresses(contracts)
 	if len(uniqueContracts) == 0 {
@@ -105,13 +117,16 @@ func (s *SQLStore) ListProjectGenesisWalletsByContracts(ctx context.Context, con
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectGenesisWalletsByContracts(ctx, addressesToBytes(uniqueContracts))
+	rows, err := queries.ListProjectGenesisWalletsByContracts(ctx, appsqlc.ListProjectGenesisWalletsByContractsParams{
+		ChainID:          s.chainIDForProject(chainID),
+		ProjectContracts: addressesToBytes(uniqueContracts),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list project genesis wallets by contracts: %w", err)
 	}
 
 	for _, row := range rows {
-		item, err := projectGenesisWalletFromFields(row.ID, row.ProjectContract, row.Wallet, row.NetAmount, row.RatioBps, row.RankIndex, row.TotalSupply, row.SourceTxHash, row.SourceBlockNumber, row.CreatedAt.Time)
+		item, err := projectGenesisWalletFromFields(row.ID, row.ChainID, row.ProjectContract, row.Wallet, row.NetAmount, row.RatioBps, row.RankIndex, row.TotalSupply, row.SourceTxHash, row.SourceBlockNumber, row.CreatedAt.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -120,19 +135,22 @@ func (s *SQLStore) ListProjectGenesisWalletsByContracts(ctx context.Context, con
 	return result, nil
 }
 
-func (s *SQLStore) ListProjectGenesisWalletsByWallet(ctx context.Context, wallet common.Address) ([]ProjectGenesisWallet, error) {
+func (s *SQLStore) ListProjectGenesisWalletsByWallet(ctx context.Context, chainID int64, wallet common.Address) ([]ProjectGenesisWallet, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectGenesisWalletsByWallet(ctx, wallet.Bytes())
+	rows, err := queries.ListProjectGenesisWalletsByWallet(ctx, appsqlc.ListProjectGenesisWalletsByWalletParams{
+		ChainID: s.chainIDForProject(chainID),
+		Wallet:  wallet.Bytes(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list project genesis wallets by wallet: %w", err)
 	}
 
 	items := make([]ProjectGenesisWallet, 0, len(rows))
 	for _, row := range rows {
-		item, err := projectGenesisWalletFromFields(row.ID, row.ProjectContract, row.Wallet, row.NetAmount, row.RatioBps, row.RankIndex, row.TotalSupply, row.SourceTxHash, row.SourceBlockNumber, row.CreatedAt.Time)
+		item, err := projectGenesisWalletFromFields(row.ID, row.ChainID, row.ProjectContract, row.Wallet, row.NetAmount, row.RatioBps, row.RankIndex, row.TotalSupply, row.SourceTxHash, row.SourceBlockNumber, row.CreatedAt.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -141,7 +159,7 @@ func (s *SQLStore) ListProjectGenesisWalletsByWallet(ctx context.Context, wallet
 	return items, nil
 }
 
-func projectGenesisWalletFromFields(id int64, projectContract []byte, wallet []byte, netAmountText string, ratioBps int64, rankIndex int32, totalSupplyText string, sourceTxHash []byte, sourceBlockNumber int64, createdAt time.Time) (ProjectGenesisWallet, error) {
+func projectGenesisWalletFromFields(id int64, chainID int64, projectContract []byte, wallet []byte, netAmountText string, ratioBps int64, rankIndex int32, totalSupplyText string, sourceTxHash []byte, sourceBlockNumber int64, createdAt time.Time) (ProjectGenesisWallet, error) {
 	if sourceBlockNumber < 0 {
 		return ProjectGenesisWallet{}, fmt.Errorf("project genesis wallet source block number %d is negative", sourceBlockNumber)
 	}
@@ -157,6 +175,7 @@ func projectGenesisWalletFromFields(id int64, projectContract []byte, wallet []b
 
 	return ProjectGenesisWallet{
 		ID:                id,
+		ChainID:           chainID,
 		ProjectContract:   common.BytesToAddress(projectContract),
 		Wallet:            common.BytesToAddress(wallet),
 		NetAmount:         netAmount,

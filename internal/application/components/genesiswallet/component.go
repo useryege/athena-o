@@ -37,80 +37,54 @@ type GenesisWalletShare struct {
 }
 
 type Options struct {
+	ChainID    int64
 	Store      appstore.Store
 	Cache      appcache.ProjectComponentCache
 	NodeClient GenesisWalletNodeClient
-	Bus        appcomponents.EventBus
 }
 
 type Component struct {
+	chainID    int64
 	store      appstore.Store
 	cache      appcache.ProjectComponentCache
 	nodeClient GenesisWalletNodeClient
-	bus        appcomponents.EventBus
-	consumer   *appcomponents.Consumer
 }
 
 func NewComponent(opts Options) *Component {
 	if opts.Store == nil || opts.NodeClient == nil {
 		return nil
 	}
-	c := &Component{store: opts.Store, cache: opts.Cache, nodeClient: opts.NodeClient, bus: opts.Bus}
-	c.consumer = appcomponents.NewConsumer(appstore.ProjectComponentGenesisWallet, opts.Bus, c.handleEvent)
-	return c
+	return &Component{chainID: opts.ChainID, store: opts.Store, cache: opts.Cache, nodeClient: opts.NodeClient}
 }
 
-func (c *Component) Start(ctx context.Context) error {
-	if c == nil || c.consumer == nil {
-		return nil
-	}
-	return c.consumer.Start(ctx)
-}
+func (c *Component) Start(context.Context) error { return nil }
 
-func (c *Component) Stop() error {
-	if c == nil || c.consumer == nil {
-		return nil
-	}
-	return c.consumer.Stop()
-}
+func (c *Component) Stop() error { return nil }
 
-func (c *Component) handleEvent(ctx context.Context, event appcomponents.Event) error {
-	if event.Type == appcomponents.EventComponentCompleted && event.Component != appstore.ProjectComponentChainState {
+func (c *Component) Collect(ctx context.Context, chainID int64, contract common.Address) error {
+	if c == nil || c.store == nil || c.nodeClient == nil {
 		return nil
 	}
-	if event.Type != appcomponents.EventComponentCompleted && event.Type != appcomponents.EventProjectInitialized && event.Type != appcomponents.EventProjectRefresh {
-		return nil
-	}
-	contract := event.ProjectContract()
 	if contract == (common.Address{}) {
 		return nil
 	}
-	if event.Type != appcomponents.EventProjectRefresh {
-		done, err := appcomponents.ComponentSucceeded(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet)
-		if err != nil || done {
-			return nil
-		}
-	}
-	if err := c.refresh(ctx, contract); err != nil {
-		_ = appcomponents.MarkComponentFailed(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet, err, nowUTC())
-		if c.bus != nil {
-			_ = c.bus.Publish(ctx, appcomponents.ComponentFailedEvent(contract, appstore.ProjectComponentGenesisWallet, err))
-		}
-		return nil
+	if err := c.refresh(ctx, chainID, contract); err != nil {
+		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentGenesisWallet, err, nowUTC())
+		return err
 	}
 	return nil
 }
 
-func (c *Component) refresh(ctx context.Context, contract common.Address) error {
-	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, contract)
+func (c *Component) refresh(ctx context.Context, chainID int64, contract common.Address) error {
+	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, chainID, contract)
 	if err != nil || base == nil {
 		return err
 	}
-	chainState, err := appcomponents.LoadProjectChainState(ctx, c.cache, c.store, contract)
+	chainState, err := appcomponents.LoadProjectChainState(ctx, c.cache, c.store, chainID, contract)
 	if err != nil || chainState == nil {
 		return err
 	}
-	if err := appcomponents.MarkComponentRunning(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet, nowUTC()); err != nil {
+	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentGenesisWallet, nowUTC()); err != nil {
 		return err
 	}
 	shares, err := c.fetchGenesisWallets(ctx, *base, chainState.ChainState.Token.TotalSupply)
@@ -118,20 +92,17 @@ func (c *Component) refresh(ctx context.Context, contract common.Address) error 
 		return err
 	}
 	items := genesisWalletsToStore(*base, chainState.ChainState.Token.TotalSupply, shares)
-	if err := c.store.ReplaceProjectGenesisWallets(ctx, contract, items); err != nil {
+	if err := c.store.ReplaceProjectGenesisWallets(ctx, chainID, contract, items); err != nil {
 		return err
 	}
 	if c.cache != nil {
-		if err := c.cache.SetGenesisWallets(ctx, contract, items); err != nil {
+		if err := c.cache.SetGenesisWallets(ctx, chainID, contract, items); err != nil {
 			return err
 		}
 	}
 	at := nowUTC()
-	if err := appcomponents.MarkComponentSuccess(ctx, c.store, contract, appstore.ProjectComponentGenesisWallet, at); err != nil {
+	if err := appcomponents.MarkComponentSuccess(ctx, c.store, chainID, contract, appstore.ProjectComponentGenesisWallet, at); err != nil {
 		return err
-	}
-	if c.bus != nil {
-		return c.bus.Publish(ctx, appcomponents.ComponentCompletedEvent(contract, appstore.ProjectComponentGenesisWallet))
 	}
 	return nil
 }

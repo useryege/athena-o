@@ -14,10 +14,11 @@ import (
 const countProjectBases = `-- name: CountProjectBases :one
 SELECT COUNT(*)::bigint
 FROM project
+WHERE chain_id = $1
 `
 
-func (q *Queries) CountProjectBases(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countProjectBases)
+func (q *Queries) CountProjectBases(ctx context.Context, chainID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countProjectBases, chainID)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -28,6 +29,7 @@ SELECT
   COALESCE(MAX(block_number), 0)::bigint AS max_block,
   (COUNT(*)::bigint > 0) AS has_value
 FROM project
+WHERE chain_id = $1
 `
 
 type GetMaxProjectBlockNumberRow struct {
@@ -35,20 +37,27 @@ type GetMaxProjectBlockNumberRow struct {
 	HasValue bool
 }
 
-func (q *Queries) GetMaxProjectBlockNumber(ctx context.Context) (GetMaxProjectBlockNumberRow, error) {
-	row := q.db.QueryRow(ctx, getMaxProjectBlockNumber)
+func (q *Queries) GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (GetMaxProjectBlockNumberRow, error) {
+	row := q.db.QueryRow(ctx, getMaxProjectBlockNumber, chainID)
 	var i GetMaxProjectBlockNumberRow
 	err := row.Scan(&i.MaxBlock, &i.HasValue)
 	return i, err
 }
 
 const getProjectBaseByContract = `-- name: GetProjectBaseByContract :one
-SELECT block_number, block_time, contract, creator, tx_hash, tx_index, created_at
+SELECT chain_id, block_number, block_time, contract, creator, tx_hash, tx_index, created_at
 FROM project
-WHERE contract = $1
+WHERE chain_id = $1
+  AND contract = $2
 `
 
+type GetProjectBaseByContractParams struct {
+	ChainID  int64
+	Contract []byte
+}
+
 type GetProjectBaseByContractRow struct {
+	ChainID     int64
 	BlockNumber int64
 	BlockTime   int64
 	Contract    []byte
@@ -58,10 +67,11 @@ type GetProjectBaseByContractRow struct {
 	CreatedAt   pgtype.Timestamptz
 }
 
-func (q *Queries) GetProjectBaseByContract(ctx context.Context, contract []byte) (GetProjectBaseByContractRow, error) {
-	row := q.db.QueryRow(ctx, getProjectBaseByContract, contract)
+func (q *Queries) GetProjectBaseByContract(ctx context.Context, arg GetProjectBaseByContractParams) (GetProjectBaseByContractRow, error) {
+	row := q.db.QueryRow(ctx, getProjectBaseByContract, arg.ChainID, arg.Contract)
 	var i GetProjectBaseByContractRow
 	err := row.Scan(
+		&i.ChainID,
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.Contract,
@@ -75,17 +85,19 @@ func (q *Queries) GetProjectBaseByContract(ctx context.Context, contract []byte)
 
 const insertProjectBase = `-- name: InsertProjectBase :exec
 INSERT INTO project (
+  chain_id,
   block_number,
   block_time,
   contract,
   creator,
   tx_hash,
   tx_index
-) VALUES ($1, $2, $3, $4, $5, $6)
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
 ON CONFLICT DO NOTHING
 `
 
 type InsertProjectBaseParams struct {
+	ChainID     int64
 	BlockNumber int64
 	BlockTime   int64
 	Contract    []byte
@@ -96,6 +108,7 @@ type InsertProjectBaseParams struct {
 
 func (q *Queries) InsertProjectBase(ctx context.Context, arg InsertProjectBaseParams) error {
 	_, err := q.db.Exec(ctx, insertProjectBase,
+		arg.ChainID,
 		arg.BlockNumber,
 		arg.BlockTime,
 		arg.Contract,
@@ -107,12 +120,14 @@ func (q *Queries) InsertProjectBase(ctx context.Context, arg InsertProjectBasePa
 }
 
 const listProjectBases = `-- name: ListProjectBases :many
-SELECT block_number, block_time, contract, creator, tx_hash, tx_index, created_at
+SELECT chain_id, block_number, block_time, contract, creator, tx_hash, tx_index, created_at
 FROM project
+WHERE chain_id = $1
 ORDER BY block_number, tx_index, id
 `
 
 type ListProjectBasesRow struct {
+	ChainID     int64
 	BlockNumber int64
 	BlockTime   int64
 	Contract    []byte
@@ -122,8 +137,8 @@ type ListProjectBasesRow struct {
 	CreatedAt   pgtype.Timestamptz
 }
 
-func (q *Queries) ListProjectBases(ctx context.Context) ([]ListProjectBasesRow, error) {
-	rows, err := q.db.Query(ctx, listProjectBases)
+func (q *Queries) ListProjectBases(ctx context.Context, chainID int64) ([]ListProjectBasesRow, error) {
+	rows, err := q.db.Query(ctx, listProjectBases, chainID)
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +147,7 @@ func (q *Queries) ListProjectBases(ctx context.Context) ([]ListProjectBasesRow, 
 	for rows.Next() {
 		var i ListProjectBasesRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.Contract,
@@ -151,20 +167,23 @@ func (q *Queries) ListProjectBases(ctx context.Context) ([]ListProjectBasesRow, 
 }
 
 const listProjectBasesByCreatorBefore = `-- name: ListProjectBasesByCreatorBefore :many
-SELECT block_number, block_time, contract, creator, tx_hash, tx_index, created_at
+SELECT chain_id, block_number, block_time, contract, creator, tx_hash, tx_index, created_at
 FROM project
-WHERE creator = $1
-  AND (block_number < $2 OR (block_number = $2 AND tx_index < $3))
+WHERE chain_id = $1
+  AND creator = $2
+  AND (block_number < $3 OR (block_number = $3 AND tx_index < $4))
 ORDER BY block_number, tx_index, id
 `
 
 type ListProjectBasesByCreatorBeforeParams struct {
+	ChainID     int64
 	Creator     []byte
 	BlockNumber int64
 	TxIndex     int64
 }
 
 type ListProjectBasesByCreatorBeforeRow struct {
+	ChainID     int64
 	BlockNumber int64
 	BlockTime   int64
 	Contract    []byte
@@ -175,7 +194,12 @@ type ListProjectBasesByCreatorBeforeRow struct {
 }
 
 func (q *Queries) ListProjectBasesByCreatorBefore(ctx context.Context, arg ListProjectBasesByCreatorBeforeParams) ([]ListProjectBasesByCreatorBeforeRow, error) {
-	rows, err := q.db.Query(ctx, listProjectBasesByCreatorBefore, arg.Creator, arg.BlockNumber, arg.TxIndex)
+	rows, err := q.db.Query(ctx, listProjectBasesByCreatorBefore,
+		arg.ChainID,
+		arg.Creator,
+		arg.BlockNumber,
+		arg.TxIndex,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -184,6 +208,7 @@ func (q *Queries) ListProjectBasesByCreatorBefore(ctx context.Context, arg ListP
 	for rows.Next() {
 		var i ListProjectBasesByCreatorBeforeRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.Contract,
@@ -203,18 +228,21 @@ func (q *Queries) ListProjectBasesByCreatorBefore(ctx context.Context, arg ListP
 }
 
 const listProjectBasesPage = `-- name: ListProjectBasesPage :many
-SELECT block_number, block_time, contract, creator, tx_hash, tx_index, created_at
+SELECT chain_id, block_number, block_time, contract, creator, tx_hash, tx_index, created_at
 FROM project
+WHERE chain_id = $1
 ORDER BY block_number, tx_index, id
-LIMIT $1 OFFSET $2
+LIMIT $3 OFFSET $2
 `
 
 type ListProjectBasesPageParams struct {
-	Limit  int32
-	Offset int32
+	ChainID     int64
+	OffsetCount int32
+	LimitCount  int32
 }
 
 type ListProjectBasesPageRow struct {
+	ChainID     int64
 	BlockNumber int64
 	BlockTime   int64
 	Contract    []byte
@@ -225,7 +253,7 @@ type ListProjectBasesPageRow struct {
 }
 
 func (q *Queries) ListProjectBasesPage(ctx context.Context, arg ListProjectBasesPageParams) ([]ListProjectBasesPageRow, error) {
-	rows, err := q.db.Query(ctx, listProjectBasesPage, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listProjectBasesPage, arg.ChainID, arg.OffsetCount, arg.LimitCount)
 	if err != nil {
 		return nil, err
 	}
@@ -234,6 +262,7 @@ func (q *Queries) ListProjectBasesPage(ctx context.Context, arg ListProjectBases
 	for rows.Next() {
 		var i ListProjectBasesPageRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.Contract,

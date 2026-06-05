@@ -13,67 +13,50 @@ import (
 )
 
 type Options struct {
+	ChainID int64
 	Store   appstore.Store
 	Cache   appcache.ProjectComponentCache
 	Fetcher evm.AthenaFetcher
-	Bus     appcomponents.EventBus
 }
 
 type Component struct {
-	store    appstore.Store
-	cache    appcache.ProjectComponentCache
-	fetcher  evm.AthenaFetcher
-	bus      appcomponents.EventBus
-	consumer *appcomponents.Consumer
+	chainID int64
+	store   appstore.Store
+	cache   appcache.ProjectComponentCache
+	fetcher evm.AthenaFetcher
 }
 
 func NewComponent(opts Options) *Component {
 	if opts.Store == nil || opts.Fetcher == nil {
 		return nil
 	}
-	c := &Component{store: opts.Store, cache: opts.Cache, fetcher: opts.Fetcher, bus: opts.Bus}
-	c.consumer = appcomponents.NewConsumer(appstore.ProjectComponentChainState, opts.Bus, c.handleEvent)
-	return c
+	return &Component{chainID: opts.ChainID, store: opts.Store, cache: opts.Cache, fetcher: opts.Fetcher}
 }
 
-func (c *Component) Start(ctx context.Context) error {
-	if c == nil || c.consumer == nil {
-		return nil
-	}
-	return c.consumer.Start(ctx)
-}
+func (c *Component) Start(context.Context) error { return nil }
 
-func (c *Component) Stop() error {
-	if c == nil || c.consumer == nil {
-		return nil
-	}
-	return c.consumer.Stop()
-}
+func (c *Component) Stop() error { return nil }
 
-func (c *Component) handleEvent(ctx context.Context, event appcomponents.Event) error {
-	if event.Type != appcomponents.EventProjectInitialized && event.Type != appcomponents.EventProjectRefresh {
+func (c *Component) Collect(ctx context.Context, chainID int64, contract common.Address) error {
+	if c == nil || c.store == nil || c.fetcher == nil {
 		return nil
 	}
-	contract := event.ProjectContract()
 	if contract == (common.Address{}) {
 		return nil
 	}
-	if err := c.refresh(ctx, contract); err != nil {
-		_ = appcomponents.MarkComponentFailed(ctx, c.store, contract, appstore.ProjectComponentChainState, err, nowUTC())
-		if c.bus != nil {
-			_ = c.bus.Publish(ctx, appcomponents.ComponentFailedEvent(contract, appstore.ProjectComponentChainState, err))
-		}
-		return nil
+	if err := c.refresh(ctx, chainID, contract); err != nil {
+		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentChainState, err, nowUTC())
+		return err
 	}
 	return nil
 }
 
-func (c *Component) refresh(ctx context.Context, contract common.Address) error {
-	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, contract)
+func (c *Component) refresh(ctx context.Context, chainID int64, contract common.Address) error {
+	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, chainID, contract)
 	if err != nil || base == nil {
 		return err
 	}
-	if err := appcomponents.MarkComponentRunning(ctx, c.store, contract, appstore.ProjectComponentChainState, nowUTC()); err != nil {
+	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentChainState, nowUTC()); err != nil {
 		return err
 	}
 	snapshot, err := c.fetcher.FetchProject(ctx, appcomponents.ProjectQuery(*base, nil))
@@ -86,7 +69,7 @@ func (c *Component) refresh(ctx context.Context, contract common.Address) error 
 	if !snapshot.Token.IsValidERC20 {
 		return fmt.Errorf("project token is not a valid ERC20")
 	}
-	item, err := appcomponents.ChainStateFromSnapshot(contract, snapshot, nowUTC())
+	item, err := appcomponents.ChainStateFromSnapshot(chainID, contract, snapshot, nowUTC())
 	if err != nil {
 		return err
 	}
@@ -98,11 +81,8 @@ func (c *Component) refresh(ctx context.Context, contract common.Address) error 
 			return err
 		}
 	}
-	if err := appcomponents.MarkComponentSuccess(ctx, c.store, contract, appstore.ProjectComponentChainState, item.FetchedAt); err != nil {
+	if err := appcomponents.MarkComponentSuccess(ctx, c.store, chainID, contract, appstore.ProjectComponentChainState, item.FetchedAt); err != nil {
 		return err
-	}
-	if c.bus != nil {
-		return c.bus.Publish(ctx, appcomponents.ComponentCompletedEvent(contract, appstore.ProjectComponentChainState))
 	}
 	return nil
 }

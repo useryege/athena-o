@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
-	appcomponents "github.com/useryege/athena/internal/application/components"
 	appstore "github.com/useryege/athena/internal/application/store"
 	utilave "github.com/useryege/athena/util/ave"
 	"google.golang.org/grpc/codes"
@@ -30,8 +29,8 @@ type Store interface {
 }
 
 type Cache interface {
-	SetAveDetail(ctx context.Context, contract common.Address, item appstore.ProjectAveDetail) error
-	GetAveDetail(ctx context.Context, contract common.Address) (*appstore.ProjectAveDetail, bool, error)
+	SetAveDetail(ctx context.Context, chainID int64, contract common.Address, item appstore.ProjectAveDetail) error
+	GetAveDetail(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectAveDetail, bool, error)
 }
 
 type Options struct {
@@ -39,7 +38,6 @@ type Options struct {
 	ChainID           int64
 	Store             Store
 	Cache             Cache
-	EventBus          appcomponents.EventBus
 	Fetcher           Fetcher
 	Chain             string
 	DetailTTL         time.Duration
@@ -58,10 +56,9 @@ type State struct {
 }
 
 type Component struct {
+	chainID           int64
 	store             Store
 	cache             Cache
-	eventBus          appcomponents.EventBus
-	consumer          *appcomponents.Consumer
 	fetcher           Fetcher
 	chain             string
 	detailTTL         time.Duration
@@ -103,8 +100,8 @@ func NewComponent(opts Options) (*Component, error) {
 	}
 	component := &Component{
 		store:             opts.Store,
+		chainID:           opts.ChainID,
 		cache:             opts.Cache,
-		eventBus:          opts.EventBus,
 		fetcher:           opts.Fetcher,
 		chain:             strings.TrimSpace(opts.Chain),
 		detailTTL:         opts.DetailTTL,
@@ -113,7 +110,6 @@ func NewComponent(opts Options) (*Component, error) {
 		batchSize:         opts.BatchSize,
 		now:               opts.Now,
 	}
-	component.consumer = appcomponents.NewConsumer(appstore.ProjectComponentAveDetail, opts.EventBus, component.handleEvent)
 	return component, nil
 }
 
@@ -140,9 +136,6 @@ func (c *Component) Start(ctx context.Context) error {
 	if c == nil || c.store == nil || c.fetcher == nil || strings.TrimSpace(c.chain) == "" {
 		return nil
 	}
-	if c.consumer != nil {
-		return c.consumer.Start(ctx)
-	}
 	c.startStopMu.Lock()
 	defer c.startStopMu.Unlock()
 	if c.started {
@@ -159,9 +152,6 @@ func (c *Component) Start(ctx context.Context) error {
 func (c *Component) Stop() {
 	if c == nil {
 		return
-	}
-	if c.consumer != nil {
-		_ = c.consumer.Stop()
 	}
 	c.startStopMu.Lock()
 	cancel := c.cancel
@@ -184,7 +174,7 @@ func (c *Component) ScheduleRefresh(ctx context.Context, contract common.Address
 	if contract == (common.Address{}) {
 		return status.Error(codes.InvalidArgument, "Ave refresh contract is empty")
 	}
-	return c.store.ScheduleProjectAveRefresh(ctx, contract, c.now())
+	return c.store.ScheduleProjectAveRefresh(ctx, c.chainID, contract, c.now())
 }
 
 func (c *Component) State(ctx context.Context, contract common.Address) (*State, error) {
@@ -198,7 +188,7 @@ func (c *Component) State(ctx context.Context, contract common.Address) (*State,
 	if err != nil {
 		return nil, err
 	}
-	componentState, err := c.store.GetProjectAveComponentState(ctx, contract)
+	componentState, err := c.store.GetProjectAveComponentState(ctx, c.chainID, contract)
 	if err != nil {
 		return nil, err
 	}
@@ -209,6 +199,16 @@ func (c *Component) State(ctx context.Context, contract common.Address) (*State,
 		DetailAvailable: detail != nil,
 		Stale:           detail == nil || detail.FetchedAt.Before(c.now().Add(-c.detailTTL)),
 	}, nil
+}
+
+func (c *Component) RefreshDetail(ctx context.Context, contract common.Address) error {
+	if c == nil || c.store == nil || c.fetcher == nil || strings.TrimSpace(c.chain) == "" {
+		return nil
+	}
+	if contract == (common.Address{}) {
+		return nil
+	}
+	return c.refreshOne(ctx, contract)
 }
 
 func (c *Component) run(ctx context.Context) {
@@ -228,7 +228,7 @@ func (c *Component) run(ctx context.Context) {
 
 func (c *Component) runOnce(ctx context.Context) {
 	now := c.now()
-	candidates, err := c.store.ListProjectAveRefreshCandidates(ctx, now.Add(-c.detailTTL), now, c.batchSize)
+	candidates, err := c.store.ListProjectAveRefreshCandidates(ctx, c.chainID, now.Add(-c.detailTTL), now, c.batchSize)
 	if err != nil {
 		if !errors.Is(err, context.Canceled) {
 			log.WithError(err).Warn("failed to list Ave refresh candidates")
@@ -250,71 +250,49 @@ func (c *Component) refreshOne(ctx context.Context, contract common.Address) err
 		return nil
 	}
 	attemptAt := c.now()
-	if err := c.store.MarkProjectAveRefreshRunning(ctx, contract, attemptAt); err != nil {
+	if err := c.store.MarkProjectAveRefreshRunning(ctx, c.chainID, contract, attemptAt); err != nil {
 		return err
 	}
 	response, err := c.fetcher.FetchDetail(ctx, tokenID(contract, c.chain))
 	if err != nil {
-		_ = c.store.MarkProjectAveRefreshFailed(ctx, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
+		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
 		return err
 	}
 	detail := DetailFromResponse(response, c.now())
 	if detail == nil {
 		err := errors.New("Ave token detail response is empty")
-		_ = c.store.MarkProjectAveRefreshFailed(ctx, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
+		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
 		return err
 	}
-	if err := c.store.UpsertProjectAveDetail(ctx, contract, *detail); err != nil {
-		_ = c.store.MarkProjectAveRefreshFailed(ctx, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
+	if err := c.store.UpsertProjectAveDetail(ctx, c.chainID, contract, *detail); err != nil {
+		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
 		return err
 	}
 	if c.cache != nil {
-		if err := c.cache.SetAveDetail(ctx, contract, *detail); err != nil {
+		if err := c.cache.SetAveDetail(ctx, c.chainID, contract, *detail); err != nil {
 			return err
 		}
 	}
-	if err := c.store.MarkProjectAveRefreshSuccess(ctx, contract, detail.FetchedAt, detail.FetchedAt.Add(c.detailTTL)); err != nil {
+	if err := c.store.MarkProjectAveRefreshSuccess(ctx, c.chainID, contract, detail.FetchedAt, detail.FetchedAt.Add(c.detailTTL)); err != nil {
 		return err
-	}
-	if c.eventBus != nil {
-		if err := c.eventBus.Publish(ctx, appcomponents.ComponentCompletedEvent(contract, appstore.ProjectComponentAveDetail)); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *Component) handleEvent(ctx context.Context, event appcomponents.Event) error {
-	if event.Type != appcomponents.EventProjectInitialized && event.Type != appcomponents.EventProjectRefresh {
-		return nil
-	}
-	contract := event.ProjectContract()
-	if contract == (common.Address{}) {
-		return nil
-	}
-	if err := c.refreshOne(ctx, contract); err != nil {
-		if c.eventBus != nil {
-			_ = c.eventBus.Publish(ctx, appcomponents.ComponentFailedEvent(contract, appstore.ProjectComponentAveDetail, err))
-		}
-		return nil
 	}
 	return nil
 }
 
 func (c *Component) detail(ctx context.Context, contract common.Address) (*appstore.ProjectAveDetail, error) {
 	if c.cache != nil {
-		if item, ok, err := c.cache.GetAveDetail(ctx, contract); err != nil {
+		if item, ok, err := c.cache.GetAveDetail(ctx, c.chainID, contract); err != nil {
 			return nil, err
 		} else if ok && item != nil {
 			return item, nil
 		}
 	}
-	item, err := c.store.GetProjectAveDetail(ctx, contract)
+	item, err := c.store.GetProjectAveDetail(ctx, c.chainID, contract)
 	if err != nil || item == nil {
 		return item, err
 	}
 	if c.cache != nil {
-		if err := c.cache.SetAveDetail(ctx, contract, *item); err != nil {
+		if err := c.cache.SetAveDetail(ctx, c.chainID, contract, *item); err != nil {
 			return nil, err
 		}
 	}

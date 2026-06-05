@@ -13,17 +13,22 @@ import (
 
 const deleteProjectGenesisWalletsByContract = `-- name: DeleteProjectGenesisWalletsByContract :exec
 DELETE FROM project_genesis_wallet
-WHERE project_contract = $1
+WHERE project_id = (SELECT id FROM project WHERE chain_id = $1 AND contract = $2)
 `
 
-func (q *Queries) DeleteProjectGenesisWalletsByContract(ctx context.Context, projectContract []byte) error {
-	_, err := q.db.Exec(ctx, deleteProjectGenesisWalletsByContract, projectContract)
+type DeleteProjectGenesisWalletsByContractParams struct {
+	ChainID         int64
+	ProjectContract []byte
+}
+
+func (q *Queries) DeleteProjectGenesisWalletsByContract(ctx context.Context, arg DeleteProjectGenesisWalletsByContractParams) error {
+	_, err := q.db.Exec(ctx, deleteProjectGenesisWalletsByContract, arg.ChainID, arg.ProjectContract)
 	return err
 }
 
 const insertProjectGenesisWallet = `-- name: InsertProjectGenesisWallet :exec
 INSERT INTO project_genesis_wallet (
-  project_contract,
+  project_id,
   wallet,
   net_amount,
   ratio_bps,
@@ -31,28 +36,39 @@ INSERT INTO project_genesis_wallet (
   total_supply,
   source_tx_hash,
   source_block_number
-) VALUES ($1, $2, $3::numeric, $4, $5, $6::numeric, $7, $8)
+) VALUES (
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
+  $3,
+  $4::numeric,
+  $5,
+  $6,
+  $7::numeric,
+  $8,
+  $9
+)
 `
 
 type InsertProjectGenesisWalletParams struct {
+	ChainID           int64
 	ProjectContract   []byte
 	Wallet            []byte
-	Column3           pgtype.Numeric
+	NetAmount         pgtype.Numeric
 	RatioBps          int64
 	RankIndex         int32
-	Column6           pgtype.Numeric
+	TotalSupply       pgtype.Numeric
 	SourceTxHash      []byte
 	SourceBlockNumber int64
 }
 
 func (q *Queries) InsertProjectGenesisWallet(ctx context.Context, arg InsertProjectGenesisWalletParams) error {
 	_, err := q.db.Exec(ctx, insertProjectGenesisWallet,
+		arg.ChainID,
 		arg.ProjectContract,
 		arg.Wallet,
-		arg.Column3,
+		arg.NetAmount,
 		arg.RatioBps,
 		arg.RankIndex,
-		arg.Column6,
+		arg.TotalSupply,
 		arg.SourceTxHash,
 		arg.SourceBlockNumber,
 	)
@@ -61,23 +77,32 @@ func (q *Queries) InsertProjectGenesisWallet(ctx context.Context, arg InsertProj
 
 const listProjectGenesisWalletsByContract = `-- name: ListProjectGenesisWalletsByContract :many
 SELECT
-  id,
-  project_contract,
-  wallet,
-  net_amount::text AS net_amount,
-  ratio_bps,
-  rank_index,
-  total_supply::text AS total_supply,
-  source_tx_hash,
-  source_block_number,
-  created_at
-FROM project_genesis_wallet
-WHERE project_contract = $1
-ORDER BY rank_index ASC, id ASC
+  gw.id,
+  p.chain_id,
+  p.contract AS project_contract,
+  gw.wallet,
+  gw.net_amount::text AS net_amount,
+  gw.ratio_bps,
+  gw.rank_index,
+  gw.total_supply::text AS total_supply,
+  gw.source_tx_hash,
+  gw.source_block_number,
+  gw.created_at
+FROM project_genesis_wallet gw
+JOIN project p ON p.id = gw.project_id
+WHERE p.chain_id = $1
+  AND p.contract = $2
+ORDER BY gw.rank_index ASC, gw.id ASC
 `
+
+type ListProjectGenesisWalletsByContractParams struct {
+	ChainID         int64
+	ProjectContract []byte
+}
 
 type ListProjectGenesisWalletsByContractRow struct {
 	ID                int64
+	ChainID           int64
 	ProjectContract   []byte
 	Wallet            []byte
 	NetAmount         string
@@ -89,8 +114,8 @@ type ListProjectGenesisWalletsByContractRow struct {
 	CreatedAt         pgtype.Timestamptz
 }
 
-func (q *Queries) ListProjectGenesisWalletsByContract(ctx context.Context, projectContract []byte) ([]ListProjectGenesisWalletsByContractRow, error) {
-	rows, err := q.db.Query(ctx, listProjectGenesisWalletsByContract, projectContract)
+func (q *Queries) ListProjectGenesisWalletsByContract(ctx context.Context, arg ListProjectGenesisWalletsByContractParams) ([]ListProjectGenesisWalletsByContractRow, error) {
+	rows, err := q.db.Query(ctx, listProjectGenesisWalletsByContract, arg.ChainID, arg.ProjectContract)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +125,7 @@ func (q *Queries) ListProjectGenesisWalletsByContract(ctx context.Context, proje
 		var i ListProjectGenesisWalletsByContractRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.ChainID,
 			&i.ProjectContract,
 			&i.Wallet,
 			&i.NetAmount,
@@ -122,23 +148,32 @@ func (q *Queries) ListProjectGenesisWalletsByContract(ctx context.Context, proje
 
 const listProjectGenesisWalletsByContracts = `-- name: ListProjectGenesisWalletsByContracts :many
 SELECT
-  id,
-  project_contract,
-  wallet,
-  net_amount::text AS net_amount,
-  ratio_bps,
-  rank_index,
-  total_supply::text AS total_supply,
-  source_tx_hash,
-  source_block_number,
-  created_at
-FROM project_genesis_wallet
-WHERE project_contract = ANY($1::bytea[])
-ORDER BY project_contract ASC, rank_index ASC, id ASC
+  gw.id,
+  p.chain_id,
+  p.contract AS project_contract,
+  gw.wallet,
+  gw.net_amount::text AS net_amount,
+  gw.ratio_bps,
+  gw.rank_index,
+  gw.total_supply::text AS total_supply,
+  gw.source_tx_hash,
+  gw.source_block_number,
+  gw.created_at
+FROM project_genesis_wallet gw
+JOIN project p ON p.id = gw.project_id
+WHERE p.chain_id = $1
+  AND p.contract = ANY($2::bytea[])
+ORDER BY p.contract ASC, gw.rank_index ASC, gw.id ASC
 `
+
+type ListProjectGenesisWalletsByContractsParams struct {
+	ChainID          int64
+	ProjectContracts [][]byte
+}
 
 type ListProjectGenesisWalletsByContractsRow struct {
 	ID                int64
+	ChainID           int64
 	ProjectContract   []byte
 	Wallet            []byte
 	NetAmount         string
@@ -150,8 +185,8 @@ type ListProjectGenesisWalletsByContractsRow struct {
 	CreatedAt         pgtype.Timestamptz
 }
 
-func (q *Queries) ListProjectGenesisWalletsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ListProjectGenesisWalletsByContractsRow, error) {
-	rows, err := q.db.Query(ctx, listProjectGenesisWalletsByContracts, dollar_1)
+func (q *Queries) ListProjectGenesisWalletsByContracts(ctx context.Context, arg ListProjectGenesisWalletsByContractsParams) ([]ListProjectGenesisWalletsByContractsRow, error) {
+	rows, err := q.db.Query(ctx, listProjectGenesisWalletsByContracts, arg.ChainID, arg.ProjectContracts)
 	if err != nil {
 		return nil, err
 	}
@@ -161,6 +196,7 @@ func (q *Queries) ListProjectGenesisWalletsByContracts(ctx context.Context, doll
 		var i ListProjectGenesisWalletsByContractsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.ChainID,
 			&i.ProjectContract,
 			&i.Wallet,
 			&i.NetAmount,
@@ -183,23 +219,32 @@ func (q *Queries) ListProjectGenesisWalletsByContracts(ctx context.Context, doll
 
 const listProjectGenesisWalletsByWallet = `-- name: ListProjectGenesisWalletsByWallet :many
 SELECT
-  id,
-  project_contract,
-  wallet,
-  net_amount::text AS net_amount,
-  ratio_bps,
-  rank_index,
-  total_supply::text AS total_supply,
-  source_tx_hash,
-  source_block_number,
-  created_at
-FROM project_genesis_wallet
-WHERE wallet = $1
-ORDER BY ratio_bps DESC, project_contract ASC, id ASC
+  gw.id,
+  p.chain_id,
+  p.contract AS project_contract,
+  gw.wallet,
+  gw.net_amount::text AS net_amount,
+  gw.ratio_bps,
+  gw.rank_index,
+  gw.total_supply::text AS total_supply,
+  gw.source_tx_hash,
+  gw.source_block_number,
+  gw.created_at
+FROM project_genesis_wallet gw
+JOIN project p ON p.id = gw.project_id
+WHERE p.chain_id = $1
+  AND gw.wallet = $2
+ORDER BY gw.ratio_bps DESC, p.contract ASC, gw.id ASC
 `
+
+type ListProjectGenesisWalletsByWalletParams struct {
+	ChainID int64
+	Wallet  []byte
+}
 
 type ListProjectGenesisWalletsByWalletRow struct {
 	ID                int64
+	ChainID           int64
 	ProjectContract   []byte
 	Wallet            []byte
 	NetAmount         string
@@ -211,8 +256,8 @@ type ListProjectGenesisWalletsByWalletRow struct {
 	CreatedAt         pgtype.Timestamptz
 }
 
-func (q *Queries) ListProjectGenesisWalletsByWallet(ctx context.Context, wallet []byte) ([]ListProjectGenesisWalletsByWalletRow, error) {
-	rows, err := q.db.Query(ctx, listProjectGenesisWalletsByWallet, wallet)
+func (q *Queries) ListProjectGenesisWalletsByWallet(ctx context.Context, arg ListProjectGenesisWalletsByWalletParams) ([]ListProjectGenesisWalletsByWalletRow, error) {
+	rows, err := q.db.Query(ctx, listProjectGenesisWalletsByWallet, arg.ChainID, arg.Wallet)
 	if err != nil {
 		return nil, err
 	}
@@ -222,6 +267,7 @@ func (q *Queries) ListProjectGenesisWalletsByWallet(ctx context.Context, wallet 
 		var i ListProjectGenesisWalletsByWalletRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.ChainID,
 			&i.ProjectContract,
 			&i.Wallet,
 			&i.NetAmount,

@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -21,84 +22,52 @@ func NewKeyspace(prefix string) Keyspace {
 	return Keyspace{prefix: prefix}
 }
 
-func (k Keyspace) ProjectBase(contract common.Address) string {
-	return k.join("project", contract.Hex(), "base")
+func (k Keyspace) ProjectBase(chainID int64, contract common.Address) string {
+	return k.join("project", chainIDPart(chainID), contract.Hex(), "base")
 }
 
-func (k Keyspace) ProjectChainState(contract common.Address) string {
-	return k.join("project", contract.Hex(), "chain_state")
+func (k Keyspace) ProjectChainState(chainID int64, contract common.Address) string {
+	return k.join("project", chainIDPart(chainID), contract.Hex(), "chain_state")
 }
 
-func (k Keyspace) ProjectSimulation(contract common.Address) string {
-	return k.join("project", contract.Hex(), "simulation")
+func (k Keyspace) ProjectSimulation(chainID int64, contract common.Address) string {
+	return k.join("project", chainIDPart(chainID), contract.Hex(), "simulation")
 }
 
-func (k Keyspace) ProjectReport(contract common.Address) string {
-	return k.join("project", contract.Hex(), "report")
+func (k Keyspace) ProjectBytecodeFact(chainID int64, contract common.Address) string {
+	return k.join("project", chainIDPart(chainID), contract.Hex(), "bytecode_fact")
 }
 
-func (k Keyspace) ProjectBytecodeFact(contract common.Address) string {
-	return k.join("project", contract.Hex(), "bytecode_fact")
+func (k Keyspace) ProjectAveDetail(chainID int64, contract common.Address) string {
+	return k.join("project", chainIDPart(chainID), contract.Hex(), "ave_detail")
 }
 
-func (k Keyspace) ProjectAveDetail(contract common.Address) string {
-	return k.join("project", contract.Hex(), "ave_detail")
+func (k Keyspace) ProjectGenesisWallets(chainID int64, contract common.Address) string {
+	return k.join("project", chainIDPart(chainID), contract.Hex(), "genesis_wallets")
 }
 
-func (k Keyspace) ProjectGenesisWallets(contract common.Address) string {
-	return k.join("project", contract.Hex(), "genesis_wallets")
+func (k Keyspace) ProjectCreatorHistory(chainID int64, contract common.Address) string {
+	return k.join("project", chainIDPart(chainID), contract.Hex(), "creator_history")
 }
 
-func (k Keyspace) ProjectCreatorHistory(contract common.Address) string {
-	return k.join("project", contract.Hex(), "creator_history")
+func (k Keyspace) ProjectComponentState(chainID int64, contract common.Address, component string) string {
+	return k.join("project", chainIDPart(chainID), contract.Hex(), "component_state", component)
 }
 
-func (k Keyspace) ProjectComponentState(contract common.Address, component string) string {
-	return k.join("project", contract.Hex(), "component_state", component)
+func (k Keyspace) ProjectIndexBase(chainID int64) string {
+	return k.join("index", "project", chainIDPart(chainID), "base")
 }
 
-func (k Keyspace) ProjectIndexBase() string {
-	return k.join("index", "project", "base")
+func (k Keyspace) ProjectIndexCreator(chainID int64, creator common.Address) string {
+	return k.join("index", "project", chainIDPart(chainID), "creator", creator.Hex())
 }
 
-func (k Keyspace) ProjectIndexCreator(creator common.Address) string {
-	return k.join("index", "project", "creator", creator.Hex())
+func (k Keyspace) ProjectIndexPair(chainID int64, pair common.Address) string {
+	return k.join("index", "project", chainIDPart(chainID), "pair", pair.Hex())
 }
 
-func (k Keyspace) ProjectIndexPair(pair common.Address) string {
-	return k.join("index", "project", "pair", pair.Hex())
-}
-
-func (k Keyspace) ProjectIndexComponentNextRun(component string) string {
-	return k.join("index", "component", "next_run", component)
-}
-
-func (k Keyspace) ProjectComponentStream() string {
-	return k.join("stream", "component")
-}
-
-func (k Keyspace) BufferItem(kind string, member string) string {
-	return k.join("buffer", kind, member)
-}
-
-func (k Keyspace) BufferDirty(kind string) string {
-	return k.join("dirty", kind)
-}
-
-func (k Keyspace) BufferIndexBase() string {
-	return k.join("index", "buffer", "base")
-}
-
-func (k Keyspace) BufferIndexCreator(creator common.Address) string {
-	return k.join("index", "buffer", "creator", creator.Hex())
-}
-
-func (k Keyspace) BufferIndexPair(pair common.Address) string {
-	return k.join("index", "buffer", "pair", pair.Hex())
-}
-
-func (k Keyspace) BufferIndexComponentNextRun(component string) string {
-	return k.join("index", "buffer", "component_next_run", component)
+func (k Keyspace) ProjectIndexComponentNextRun(chainID int64, component string) string {
+	return k.join("index", "component", chainIDPart(chainID), "next_run", component)
 }
 
 func (k Keyspace) join(parts ...string) string {
@@ -110,4 +79,8 @@ func (k Keyspace) join(parts ...string) string {
 		key = fmt.Sprintf("%s:%s", key, part)
 	}
 	return key
+}
+
+func chainIDPart(chainID int64) string {
+	return strconv.FormatInt(chainID, 10)
 }

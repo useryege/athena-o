@@ -9,12 +9,11 @@ import (
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	appcomponents "github.com/useryege/athena/internal/application/components"
 	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
-func TestComponentRefreshEventRerunsAfterSuccess(t *testing.T) {
+func TestComponentCollectRerunsAfterSuccess(t *testing.T) {
 	ctx := context.Background()
 	contract := common.BigToAddress(big.NewInt(11))
 	creator := common.BigToAddress(big.NewInt(12))
@@ -22,6 +21,7 @@ func TestComponentRefreshEventRerunsAfterSuccess(t *testing.T) {
 	store := &refreshComponentStoreFake{
 		baseByContract: map[common.Address]appstore.ProjectBase{
 			contract: {
+				ChainID:     56,
 				Contract:    contract,
 				Creator:     creator,
 				BlockNumber: 77,
@@ -31,6 +31,7 @@ func TestComponentRefreshEventRerunsAfterSuccess(t *testing.T) {
 		},
 		chainStateByContract: map[common.Address]appstore.ProjectChainState{
 			contract: {
+				ChainID:         56,
 				ProjectContract: contract,
 				ChainState: athenacontract.AthenaProject{
 					Token: athenacontract.AthenaToken{
@@ -41,6 +42,7 @@ func TestComponentRefreshEventRerunsAfterSuccess(t *testing.T) {
 		},
 		componentStates: map[string]appstore.ProjectComponentState{
 			componentKey(contract, appstore.ProjectComponentGenesisWallet): {
+				ChainID:         56,
 				ProjectContract: contract,
 				Component:       appstore.ProjectComponentGenesisWallet,
 				Status:          appstore.ProjectComponentStatusSuccess,
@@ -53,16 +55,13 @@ func TestComponentRefreshEventRerunsAfterSuccess(t *testing.T) {
 			txHash: {Logs: nil},
 		},
 	}
-	component := NewComponent(Options{Store: store, NodeClient: node})
+	component := NewComponent(Options{ChainID: 56, Store: store, NodeClient: node})
 	if component == nil {
 		t.Fatal("genesis wallet component is nil")
 	}
 
-	if err := component.handleEvent(ctx, appcomponents.Event{
-		Type:     appcomponents.EventProjectRefresh,
-		Contract: contract.Hex(),
-	}); err != nil {
-		t.Fatalf("handle refresh: %v", err)
+	if err := component.Collect(ctx, 56, contract); err != nil {
+		t.Fatalf("collect: %v", err)
 	}
 
 	if got := store.replaceGenesisWalletCalls; got != 1 {
@@ -80,7 +79,7 @@ type refreshComponentStoreFake struct {
 	replaceGenesisWalletCalls int
 }
 
-func (s *refreshComponentStoreFake) GetProjectBaseByContract(_ context.Context, contract common.Address) (*appstore.ProjectBase, error) {
+func (s *refreshComponentStoreFake) GetProjectBaseByContract(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectBase, error) {
 	item, ok := s.baseByContract[contract]
 	if !ok {
 		return nil, nil
@@ -89,7 +88,7 @@ func (s *refreshComponentStoreFake) GetProjectBaseByContract(_ context.Context, 
 	return &copy, nil
 }
 
-func (s *refreshComponentStoreFake) GetProjectChainState(_ context.Context, contract common.Address) (*appstore.ProjectChainState, error) {
+func (s *refreshComponentStoreFake) GetProjectChainState(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectChainState, error) {
 	item, ok := s.chainStateByContract[contract]
 	if !ok {
 		return nil, nil
@@ -98,7 +97,7 @@ func (s *refreshComponentStoreFake) GetProjectChainState(_ context.Context, cont
 	return &copy, nil
 }
 
-func (s *refreshComponentStoreFake) GetProjectComponentState(_ context.Context, contract common.Address, component string) (*appstore.ProjectComponentState, error) {
+func (s *refreshComponentStoreFake) GetProjectComponentState(_ context.Context, _ int64, contract common.Address, component string) (*appstore.ProjectComponentState, error) {
 	item, ok := s.componentStates[componentKey(contract, component)]
 	if !ok {
 		return nil, nil
@@ -115,7 +114,7 @@ func (s *refreshComponentStoreFake) UpsertProjectComponentState(_ context.Contex
 	return nil
 }
 
-func (s *refreshComponentStoreFake) ReplaceProjectGenesisWallets(_ context.Context, _ common.Address, _ []appstore.ProjectGenesisWallet) error {
+func (s *refreshComponentStoreFake) ReplaceProjectGenesisWallets(_ context.Context, _ int64, _ common.Address, _ []appstore.ProjectGenesisWallet) error {
 	s.replaceGenesisWalletCalls++
 	return nil
 }

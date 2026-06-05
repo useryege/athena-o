@@ -13,6 +13,7 @@ import (
 
 const getProjectMetaByContract = `-- name: GetProjectMetaByContract :one
 SELECT
+  p.chain_id,
   p.block_number,
   p.block_time,
   p.contract,
@@ -31,14 +32,21 @@ SELECT
   gw.last_success_at AS genesis_wallets_fetched_at,
   ch.last_success_at AS creator_historical_projects_fetched_at
 FROM project p
-LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
-LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
-LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
-WHERE p.contract = $1
+LEFT JOIN project_chain_state cs ON cs.project_id = p.id
+LEFT JOIN project_simulation_result sr ON sr.project_id = p.id
+LEFT JOIN project_component_state gw ON gw.project_id = p.id AND gw.component = 'genesis_wallet'
+LEFT JOIN project_component_state ch ON ch.project_id = p.id AND ch.component = 'creator_history'
+WHERE p.chain_id = $1
+  AND p.contract = $2
 `
 
+type GetProjectMetaByContractParams struct {
+	ChainID  int64
+	Contract []byte
+}
+
 type GetProjectMetaByContractRow struct {
+	ChainID                            int64
 	BlockNumber                        int64
 	BlockTime                          int64
 	Contract                           []byte
@@ -58,10 +66,11 @@ type GetProjectMetaByContractRow struct {
 	CreatorHistoricalProjectsFetchedAt pgtype.Timestamptz
 }
 
-func (q *Queries) GetProjectMetaByContract(ctx context.Context, contract []byte) (GetProjectMetaByContractRow, error) {
-	row := q.db.QueryRow(ctx, getProjectMetaByContract, contract)
+func (q *Queries) GetProjectMetaByContract(ctx context.Context, arg GetProjectMetaByContractParams) (GetProjectMetaByContractRow, error) {
+	row := q.db.QueryRow(ctx, getProjectMetaByContract, arg.ChainID, arg.Contract)
 	var i GetProjectMetaByContractRow
 	err := row.Scan(
+		&i.ChainID,
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.Contract,
@@ -85,6 +94,7 @@ func (q *Queries) GetProjectMetaByContract(ctx context.Context, contract []byte)
 
 const listProjectMetas = `-- name: ListProjectMetas :many
 SELECT
+  p.chain_id,
   p.block_number,
   p.block_time,
   p.contract,
@@ -103,14 +113,16 @@ SELECT
   gw.last_success_at AS genesis_wallets_fetched_at,
   ch.last_success_at AS creator_historical_projects_fetched_at
 FROM project p
-LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
-LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
-LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
+LEFT JOIN project_chain_state cs ON cs.project_id = p.id
+LEFT JOIN project_simulation_result sr ON sr.project_id = p.id
+LEFT JOIN project_component_state gw ON gw.project_id = p.id AND gw.component = 'genesis_wallet'
+LEFT JOIN project_component_state ch ON ch.project_id = p.id AND ch.component = 'creator_history'
+WHERE p.chain_id = $1
 ORDER BY p.block_number, p.tx_index, p.id
 `
 
 type ListProjectMetasRow struct {
+	ChainID                            int64
 	BlockNumber                        int64
 	BlockTime                          int64
 	Contract                           []byte
@@ -130,8 +142,8 @@ type ListProjectMetasRow struct {
 	CreatorHistoricalProjectsFetchedAt pgtype.Timestamptz
 }
 
-func (q *Queries) ListProjectMetas(ctx context.Context) ([]ListProjectMetasRow, error) {
-	rows, err := q.db.Query(ctx, listProjectMetas)
+func (q *Queries) ListProjectMetas(ctx context.Context, chainID int64) ([]ListProjectMetasRow, error) {
+	rows, err := q.db.Query(ctx, listProjectMetas, chainID)
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +152,7 @@ func (q *Queries) ListProjectMetas(ctx context.Context) ([]ListProjectMetasRow, 
 	for rows.Next() {
 		var i ListProjectMetasRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.Contract,
@@ -170,6 +183,7 @@ func (q *Queries) ListProjectMetas(ctx context.Context) ([]ListProjectMetasRow, 
 
 const listProjectMetasByCreator = `-- name: ListProjectMetasByCreator :many
 SELECT
+  p.chain_id,
   p.block_number,
   p.block_time,
   p.contract,
@@ -188,15 +202,22 @@ SELECT
   gw.last_success_at AS genesis_wallets_fetched_at,
   ch.last_success_at AS creator_historical_projects_fetched_at
 FROM project p
-LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
-LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
-LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
-WHERE p.creator = $1
+LEFT JOIN project_chain_state cs ON cs.project_id = p.id
+LEFT JOIN project_simulation_result sr ON sr.project_id = p.id
+LEFT JOIN project_component_state gw ON gw.project_id = p.id AND gw.component = 'genesis_wallet'
+LEFT JOIN project_component_state ch ON ch.project_id = p.id AND ch.component = 'creator_history'
+WHERE p.chain_id = $1
+  AND p.creator = $2
 ORDER BY p.block_number, p.tx_index, p.id
 `
 
+type ListProjectMetasByCreatorParams struct {
+	ChainID int64
+	Creator []byte
+}
+
 type ListProjectMetasByCreatorRow struct {
+	ChainID                            int64
 	BlockNumber                        int64
 	BlockTime                          int64
 	Contract                           []byte
@@ -216,8 +237,8 @@ type ListProjectMetasByCreatorRow struct {
 	CreatorHistoricalProjectsFetchedAt pgtype.Timestamptz
 }
 
-func (q *Queries) ListProjectMetasByCreator(ctx context.Context, creator []byte) ([]ListProjectMetasByCreatorRow, error) {
-	rows, err := q.db.Query(ctx, listProjectMetasByCreator, creator)
+func (q *Queries) ListProjectMetasByCreator(ctx context.Context, arg ListProjectMetasByCreatorParams) ([]ListProjectMetasByCreatorRow, error) {
+	rows, err := q.db.Query(ctx, listProjectMetasByCreator, arg.ChainID, arg.Creator)
 	if err != nil {
 		return nil, err
 	}
@@ -226,6 +247,7 @@ func (q *Queries) ListProjectMetasByCreator(ctx context.Context, creator []byte)
 	for rows.Next() {
 		var i ListProjectMetasByCreatorRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.Contract,
@@ -256,6 +278,7 @@ func (q *Queries) ListProjectMetasByCreator(ctx context.Context, creator []byte)
 
 const listProjectMetasByCreatorBefore = `-- name: ListProjectMetasByCreatorBefore :many
 SELECT
+  p.chain_id,
   p.block_number,
   p.block_time,
   p.contract,
@@ -274,22 +297,25 @@ SELECT
   gw.last_success_at AS genesis_wallets_fetched_at,
   ch.last_success_at AS creator_historical_projects_fetched_at
 FROM project p
-LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
-LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
-LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
-WHERE p.creator = $1
-  AND (p.block_number < $2 OR (p.block_number = $2 AND p.tx_index < $3))
+LEFT JOIN project_chain_state cs ON cs.project_id = p.id
+LEFT JOIN project_simulation_result sr ON sr.project_id = p.id
+LEFT JOIN project_component_state gw ON gw.project_id = p.id AND gw.component = 'genesis_wallet'
+LEFT JOIN project_component_state ch ON ch.project_id = p.id AND ch.component = 'creator_history'
+WHERE p.chain_id = $1
+  AND p.creator = $2
+  AND (p.block_number < $3 OR (p.block_number = $3 AND p.tx_index < $4))
 ORDER BY p.block_number, p.tx_index, p.id
 `
 
 type ListProjectMetasByCreatorBeforeParams struct {
+	ChainID     int64
 	Creator     []byte
 	BlockNumber int64
 	TxIndex     int64
 }
 
 type ListProjectMetasByCreatorBeforeRow struct {
+	ChainID                            int64
 	BlockNumber                        int64
 	BlockTime                          int64
 	Contract                           []byte
@@ -310,7 +336,12 @@ type ListProjectMetasByCreatorBeforeRow struct {
 }
 
 func (q *Queries) ListProjectMetasByCreatorBefore(ctx context.Context, arg ListProjectMetasByCreatorBeforeParams) ([]ListProjectMetasByCreatorBeforeRow, error) {
-	rows, err := q.db.Query(ctx, listProjectMetasByCreatorBefore, arg.Creator, arg.BlockNumber, arg.TxIndex)
+	rows, err := q.db.Query(ctx, listProjectMetasByCreatorBefore,
+		arg.ChainID,
+		arg.Creator,
+		arg.BlockNumber,
+		arg.TxIndex,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -319,6 +350,7 @@ func (q *Queries) ListProjectMetasByCreatorBefore(ctx context.Context, arg ListP
 	for rows.Next() {
 		var i ListProjectMetasByCreatorBeforeRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.Contract,
@@ -349,6 +381,7 @@ func (q *Queries) ListProjectMetasByCreatorBefore(ctx context.Context, arg ListP
 
 const listProjectMetasByPairAddresses = `-- name: ListProjectMetasByPairAddresses :many
 SELECT
+  p.chain_id,
   p.block_number,
   p.block_time,
   p.contract,
@@ -367,15 +400,22 @@ SELECT
   gw.last_success_at AS genesis_wallets_fetched_at,
   ch.last_success_at AS creator_historical_projects_fetched_at
 FROM project p
-LEFT JOIN project_chain_state cs ON cs.project_contract = p.contract
-LEFT JOIN project_simulation_result sr ON sr.project_contract = p.contract
-LEFT JOIN project_component_state gw ON gw.project_contract = p.contract AND gw.component = 'genesis_wallet'
-LEFT JOIN project_component_state ch ON ch.project_contract = p.contract AND ch.component = 'creator_history'
-WHERE cs.weth_pair = ANY($1::bytea[]) OR cs.usdt_pair = ANY($1::bytea[])
+LEFT JOIN project_chain_state cs ON cs.project_id = p.id
+LEFT JOIN project_simulation_result sr ON sr.project_id = p.id
+LEFT JOIN project_component_state gw ON gw.project_id = p.id AND gw.component = 'genesis_wallet'
+LEFT JOIN project_component_state ch ON ch.project_id = p.id AND ch.component = 'creator_history'
+WHERE p.chain_id = $1
+  AND (cs.weth_pair = ANY($2::bytea[]) OR cs.usdt_pair = ANY($2::bytea[]))
 ORDER BY p.block_number, p.tx_index, p.id
 `
 
+type ListProjectMetasByPairAddressesParams struct {
+	ChainID int64
+	Pairs   [][]byte
+}
+
 type ListProjectMetasByPairAddressesRow struct {
+	ChainID                            int64
 	BlockNumber                        int64
 	BlockTime                          int64
 	Contract                           []byte
@@ -395,8 +435,8 @@ type ListProjectMetasByPairAddressesRow struct {
 	CreatorHistoricalProjectsFetchedAt pgtype.Timestamptz
 }
 
-func (q *Queries) ListProjectMetasByPairAddresses(ctx context.Context, dollar_1 [][]byte) ([]ListProjectMetasByPairAddressesRow, error) {
-	rows, err := q.db.Query(ctx, listProjectMetasByPairAddresses, dollar_1)
+func (q *Queries) ListProjectMetasByPairAddresses(ctx context.Context, arg ListProjectMetasByPairAddressesParams) ([]ListProjectMetasByPairAddressesRow, error) {
+	rows, err := q.db.Query(ctx, listProjectMetasByPairAddresses, arg.ChainID, arg.Pairs)
 	if err != nil {
 		return nil, err
 	}
@@ -405,6 +445,7 @@ func (q *Queries) ListProjectMetasByPairAddresses(ctx context.Context, dollar_1 
 	for rows.Next() {
 		var i ListProjectMetasByPairAddressesRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.Contract,

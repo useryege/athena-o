@@ -73,6 +73,14 @@ func TestConnectAndMigrateSkipsMigrationWhenDisabled(t *testing.T) {
 	}
 }
 
+func TestMigrationLockNameOmitsCredentials(t *testing.T) {
+	got := migrationLockName("postgres://athena:secret@127.0.0.1:5432/application?sslmode=disable", "migrations")
+	want := "postgres://127.0.0.1:5432/application:migrations"
+	if got != want {
+		t.Fatalf("migrationLockName() = %q, want %q", got, want)
+	}
+}
+
 func replaceConnectHooks(
 	migrate func(context.Context, string, fs.FS, string) error,
 	open func(context.Context, string, string) (*pgxpool.Pool, error),

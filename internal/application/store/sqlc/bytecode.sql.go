@@ -48,8 +48,7 @@ func (q *Queries) DeleteBytecodeBlacklist(ctx context.Context, codeHash []byte) 
 
 const getBytecode = `-- name: GetBytecode :one
 SELECT code_hash, runtime_bytecode, source_code, source_code_hash, source_code_fetched_at,
-  source_code_origin, source_quality_report, source_quality_report_fetched_at,
-  source_quality_report_origin, source_quality_prompt_version, created_at, updated_at
+  source_code_origin, created_at, updated_at
 FROM bytecode
 WHERE code_hash = $1
 `
@@ -64,10 +63,6 @@ func (q *Queries) GetBytecode(ctx context.Context, codeHash []byte) (Bytecode, e
 		&i.SourceCodeHash,
 		&i.SourceCodeFetchedAt,
 		&i.SourceCodeOrigin,
-		&i.SourceQualityReport,
-		&i.SourceQualityReportFetchedAt,
-		&i.SourceQualityReportOrigin,
-		&i.SourceQualityPromptVersion,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -101,8 +96,7 @@ WITH deployment_counts AS (
   GROUP BY code_hash
 )
 SELECT b.code_hash, b.runtime_bytecode, b.source_code, b.source_code_hash, b.source_code_fetched_at,
-  b.source_code_origin, b.source_quality_report, b.source_quality_report_fetched_at,
-  b.source_quality_report_origin, b.source_quality_prompt_version, b.created_at, b.updated_at,
+  b.source_code_origin, b.created_at, b.updated_at,
   length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
   COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
   (bl.code_hash IS NOT NULL)::boolean AS is_bytecode_blacklisted
@@ -113,21 +107,17 @@ WHERE b.code_hash = $1
 `
 
 type GetBytecodeDetailRow struct {
-	CodeHash                     []byte
-	RuntimeBytecode              []byte
-	SourceCode                   pgtype.Text
-	SourceCodeHash               []byte
-	SourceCodeFetchedAt          pgtype.Timestamptz
-	SourceCodeOrigin             pgtype.Text
-	SourceQualityReport          pgtype.Text
-	SourceQualityReportFetchedAt pgtype.Timestamptz
-	SourceQualityReportOrigin    pgtype.Text
-	SourceQualityPromptVersion   int64
-	CreatedAt                    pgtype.Timestamptz
-	UpdatedAt                    pgtype.Timestamptz
-	RuntimeBytecodeSize          int64
-	DeploymentCount              int64
-	IsBytecodeBlacklisted        bool
+	CodeHash              []byte
+	RuntimeBytecode       []byte
+	SourceCode            pgtype.Text
+	SourceCodeHash        []byte
+	SourceCodeFetchedAt   pgtype.Timestamptz
+	SourceCodeOrigin      pgtype.Text
+	CreatedAt             pgtype.Timestamptz
+	UpdatedAt             pgtype.Timestamptz
+	RuntimeBytecodeSize   int64
+	DeploymentCount       int64
+	IsBytecodeBlacklisted bool
 }
 
 func (q *Queries) GetBytecodeDetail(ctx context.Context, codeHash []byte) (GetBytecodeDetailRow, error) {
@@ -140,10 +130,6 @@ func (q *Queries) GetBytecodeDetail(ctx context.Context, codeHash []byte) (GetBy
 		&i.SourceCodeHash,
 		&i.SourceCodeFetchedAt,
 		&i.SourceCodeOrigin,
-		&i.SourceQualityReport,
-		&i.SourceQualityReportFetchedAt,
-		&i.SourceQualityReportOrigin,
-		&i.SourceQualityPromptVersion,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.RuntimeBytecodeSize,
@@ -370,33 +356,6 @@ func (q *Queries) UpdateBytecodeSourceCode(ctx context.Context, arg UpdateByteco
 		arg.SourceCode,
 		arg.SourceCodeHash,
 		arg.SourceCodeOrigin,
-	)
-	return err
-}
-
-const updateBytecodeSourceQualityReport = `-- name: UpdateBytecodeSourceQualityReport :exec
-UPDATE bytecode
-SET source_quality_report = $2,
-  source_quality_report_fetched_at = now(),
-  source_quality_report_origin = $3,
-  source_quality_prompt_version = $4,
-  updated_at = now()
-WHERE code_hash = $1
-`
-
-type UpdateBytecodeSourceQualityReportParams struct {
-	CodeHash                   []byte
-	SourceQualityReport        pgtype.Text
-	SourceQualityReportOrigin  pgtype.Text
-	SourceQualityPromptVersion int64
-}
-
-func (q *Queries) UpdateBytecodeSourceQualityReport(ctx context.Context, arg UpdateBytecodeSourceQualityReportParams) error {
-	_, err := q.db.Exec(ctx, updateBytecodeSourceQualityReport,
-		arg.CodeHash,
-		arg.SourceQualityReport,
-		arg.SourceQualityReportOrigin,
-		arg.SourceQualityPromptVersion,
 	)
 	return err
 }

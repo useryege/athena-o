@@ -12,16 +12,17 @@ import (
 )
 
 type Options struct {
-	Store appstore.Store
-	Cache appcache.ProjectComponentCache
-	Bus   appcomponents.EventBus
+	ChainID int64
+	Store   appstore.Store
+	Cache   appcache.ProjectComponentCache
 }
 
 type Component struct {
-	store appstore.ProjectBaseStore
-	state appstore.ProjectComponentStateStore
-	cache appcache.ProjectComponentCache
-	bus   appcomponents.EventBus
+	chainID int64
+	store   appstore.ProjectBaseStore
+	intake  appstore.ProjectIntakeStore
+	state   appstore.ProjectComponentStateStore
+	cache   appcache.ProjectComponentCache
 }
 
 func NewComponent(opts Options) *Component {
@@ -29,10 +30,11 @@ func NewComponent(opts Options) *Component {
 		return nil
 	}
 	return &Component{
-		store: opts.Store,
-		state: opts.Store,
-		cache: opts.Cache,
-		bus:   opts.Bus,
+		chainID: opts.ChainID,
+		store:   opts.Store,
+		intake:  opts.Store,
+		state:   opts.Store,
+		cache:   opts.Cache,
 	}
 }
 
@@ -51,40 +53,32 @@ func (c *Component) IntakeCandidates(ctx context.Context, items []model.Discover
 		if candidate.Source == "" {
 			candidate.Source = model.ProjectDiscoverySourceCatchUp
 		}
+		if candidate.ChainID <= 0 {
+			candidate.ChainID = c.chainID
+		}
 		base := appcomponents.ProjectBaseFromCandidate(candidate)
-		if err := appcomponents.MarkComponentRunning(ctx, c.state, candidate.Contract, appstore.ProjectComponentInitializer, nowUTC()); err != nil {
+		if err := appcomponents.MarkComponentRunning(ctx, c.state, candidate.ChainID, candidate.Contract, appstore.ProjectComponentInitializer, nowUTC()); err != nil {
 			return err
 		}
 		if err := c.store.SaveProjectBase(ctx, base); err != nil {
-			_ = appcomponents.MarkComponentFailed(ctx, c.state, candidate.Contract, appstore.ProjectComponentInitializer, err, nowUTC())
-			if c.bus != nil {
-				_ = c.bus.Publish(ctx, appcomponents.ComponentFailedEvent(candidate.Contract, appstore.ProjectComponentInitializer, err))
-			}
+			_ = appcomponents.MarkComponentFailed(ctx, c.state, candidate.ChainID, candidate.Contract, appstore.ProjectComponentInitializer, err, nowUTC())
 			return err
 		}
 		if c.cache != nil {
 			if err := c.cache.SetBase(ctx, base); err != nil {
-				_ = appcomponents.MarkComponentFailed(ctx, c.state, candidate.Contract, appstore.ProjectComponentInitializer, err, nowUTC())
+				_ = appcomponents.MarkComponentFailed(ctx, c.state, candidate.ChainID, candidate.Contract, appstore.ProjectComponentInitializer, err, nowUTC())
 				return err
 			}
 		}
-		if err := appcomponents.MarkComponentSuccess(ctx, c.state, candidate.Contract, appstore.ProjectComponentInitializer, nowUTC()); err != nil {
+		if err := appcomponents.MarkComponentSuccess(ctx, c.state, candidate.ChainID, candidate.Contract, appstore.ProjectComponentInitializer, nowUTC()); err != nil {
 			return err
-		}
-		if c.bus != nil {
-			if err := c.bus.Publish(ctx, appcomponents.ProjectInitializedEvent(candidate)); err != nil {
-				return err
-			}
-			if err := c.bus.Publish(ctx, appcomponents.ComponentCompletedEvent(candidate.Contract, appstore.ProjectComponentInitializer)); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
 }
 
 func (c *Component) ScheduleProjects(ctx context.Context, items []model.DiscoveredProjectCandidate) error {
-	if c == nil || c.bus == nil {
+	if c == nil || c.intake == nil {
 		return nil
 	}
 	for _, candidate := range items {
@@ -95,7 +89,11 @@ func (c *Component) ScheduleProjects(ctx context.Context, items []model.Discover
 		if source == "" {
 			source = model.ProjectDiscoverySourcePairSwap
 		}
-		if err := c.bus.Publish(ctx, appcomponents.ProjectRefreshEvent(candidate.Contract, source)); err != nil {
+		chainID := candidate.ChainID
+		if chainID <= 0 {
+			chainID = c.chainID
+		}
+		if err := c.intake.EnqueueProjectCollection(ctx, model.ProjectRef{ChainID: chainID, Contract: candidate.Contract}, string(source)); err != nil {
 			return err
 		}
 	}

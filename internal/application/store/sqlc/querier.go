@@ -9,78 +9,82 @@ import (
 )
 
 type Querier interface {
-	ActivateSourceQualityPrompt(ctx context.Context, id int64) (ActivateSourceQualityPromptRow, error)
 	AddBytecodeBlacklistEntry(ctx context.Context, arg AddBytecodeBlacklistEntryParams) error
 	AddWalletBlacklistEntry(ctx context.Context, arg AddWalletBlacklistEntryParams) error
-	CountProjectBases(ctx context.Context) (int64, error)
-	DeactivateActiveSourceQualityPrompts(ctx context.Context) error
+	ClaimOutboxEvents(ctx context.Context, arg ClaimOutboxEventsParams) ([]OutboxEvent, error)
+	ClaimOutboxEventsByTypes(ctx context.Context, arg ClaimOutboxEventsByTypesParams) ([]OutboxEvent, error)
+	CountProjectBases(ctx context.Context, chainID int64) (int64, error)
 	DeleteBytecodeBlacklist(ctx context.Context, codeHash []byte) (int64, error)
-	DeleteProjectAvePairsByContract(ctx context.Context, projectContract []byte) error
-	DeleteProjectCreatorHistoricalProjectsByContract(ctx context.Context, projectContract []byte) error
-	DeleteProjectGenesisWalletsByContract(ctx context.Context, projectContract []byte) error
-	DeleteSourceQualityPrompt(ctx context.Context, id int64) (int64, error)
+	DeleteProjectAvePairsByContract(ctx context.Context, arg DeleteProjectAvePairsByContractParams) error
+	DeleteProjectCreatorHistoricalProjectsByContract(ctx context.Context, arg DeleteProjectCreatorHistoricalProjectsByContractParams) error
+	DeleteProjectGenesisWalletsByContract(ctx context.Context, arg DeleteProjectGenesisWalletsByContractParams) error
 	DeleteWalletBlacklistEntry(ctx context.Context, wallet []byte) (int64, error)
-	GetActiveSourceQualityPrompt(ctx context.Context) (GetActiveSourceQualityPromptRow, error)
 	GetBytecode(ctx context.Context, codeHash []byte) (Bytecode, error)
 	GetBytecodeBlacklistEntry(ctx context.Context, codeHash []byte) (BytecodeBlacklist, error)
 	GetBytecodeDetail(ctx context.Context, codeHash []byte) (GetBytecodeDetailRow, error)
-	GetMaxProjectBlockNumber(ctx context.Context) (GetMaxProjectBlockNumberRow, error)
-	GetProjectAveComponentState(ctx context.Context, projectContract []byte) (ProjectComponentState, error)
-	GetProjectBaseByContract(ctx context.Context, contract []byte) (GetProjectBaseByContractRow, error)
-	GetProjectBytecodeFact(ctx context.Context, projectContract []byte) (ProjectBytecodeFact, error)
-	GetProjectChainState(ctx context.Context, projectContract []byte) (ProjectChainState, error)
-	GetProjectComponentState(ctx context.Context, arg GetProjectComponentStateParams) (ProjectComponentState, error)
-	GetProjectMetaByContract(ctx context.Context, contract []byte) (GetProjectMetaByContractRow, error)
-	GetProjectReportState(ctx context.Context, projectContract []byte) (ProjectReport, error)
-	GetProjectSimulationResult(ctx context.Context, projectContract []byte) (ProjectSimulationResult, error)
-	GetSourceQualityPrompt(ctx context.Context, id int64) (GetSourceQualityPromptRow, error)
-	GetSourceQualityPromptForUpdate(ctx context.Context, id int64) (GetSourceQualityPromptForUpdateRow, error)
+	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (GetChainIngestCheckpointRow, error)
+	GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (GetMaxProjectBlockNumberRow, error)
+	GetProjectAveComponentState(ctx context.Context, arg GetProjectAveComponentStateParams) (GetProjectAveComponentStateRow, error)
+	GetProjectBaseByContract(ctx context.Context, arg GetProjectBaseByContractParams) (GetProjectBaseByContractRow, error)
+	GetProjectBytecodeFact(ctx context.Context, arg GetProjectBytecodeFactParams) (GetProjectBytecodeFactRow, error)
+	GetProjectChainState(ctx context.Context, arg GetProjectChainStateParams) (GetProjectChainStateRow, error)
+	GetProjectCollectionState(ctx context.Context, arg GetProjectCollectionStateParams) (GetProjectCollectionStateRow, error)
+	GetProjectComponentState(ctx context.Context, arg GetProjectComponentStateParams) (GetProjectComponentStateRow, error)
+	GetProjectMetaByContract(ctx context.Context, arg GetProjectMetaByContractParams) (GetProjectMetaByContractRow, error)
+	GetProjectSimulationResult(ctx context.Context, arg GetProjectSimulationResultParams) (GetProjectSimulationResultRow, error)
 	GetWalletBlacklistEntry(ctx context.Context, wallet []byte) (WalletBlacklist, error)
+	InsertOutboxEvent(ctx context.Context, arg InsertOutboxEventParams) (InsertOutboxEventRow, error)
 	InsertProjectAvePair(ctx context.Context, arg InsertProjectAvePairParams) error
 	InsertProjectBase(ctx context.Context, arg InsertProjectBaseParams) error
 	InsertProjectCreatorHistoricalProject(ctx context.Context, arg InsertProjectCreatorHistoricalProjectParams) error
 	InsertProjectGenesisWallet(ctx context.Context, arg InsertProjectGenesisWalletParams) error
-	InsertSourceQualityPrompt(ctx context.Context, arg InsertSourceQualityPromptParams) (InsertSourceQualityPromptRow, error)
 	IsBytecodeBlacklisted(ctx context.Context, codeHash []byte) (bool, error)
 	ListBytecodeBlacklistEntries(ctx context.Context) ([]BytecodeBlacklist, error)
 	ListBytecodeDeployments(ctx context.Context, arg ListBytecodeDeploymentsParams) ([]ListBytecodeDeploymentsRow, error)
 	ListBytecodes(ctx context.Context, arg ListBytecodesParams) ([]ListBytecodesRow, error)
-	ListProjectAvePairsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ListProjectAvePairsByContractsRow, error)
+	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
+	ListProjectAvePairsByContracts(ctx context.Context, arg ListProjectAvePairsByContractsParams) ([]ListProjectAvePairsByContractsRow, error)
 	ListProjectAveRefreshCandidates(ctx context.Context, arg ListProjectAveRefreshCandidatesParams) ([][]byte, error)
-	ListProjectAveTokenDetailsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectAveTokenDetail, error)
-	ListProjectBases(ctx context.Context) ([]ListProjectBasesRow, error)
+	ListProjectAveTokenDetailsByContracts(ctx context.Context, arg ListProjectAveTokenDetailsByContractsParams) ([]ListProjectAveTokenDetailsByContractsRow, error)
+	ListProjectBases(ctx context.Context, chainID int64) ([]ListProjectBasesRow, error)
 	ListProjectBasesByCreatorBefore(ctx context.Context, arg ListProjectBasesByCreatorBeforeParams) ([]ListProjectBasesByCreatorBeforeRow, error)
 	ListProjectBasesPage(ctx context.Context, arg ListProjectBasesPageParams) ([]ListProjectBasesPageRow, error)
-	ListProjectChainStatesByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectChainState, error)
-	ListProjectChainStatesByPairAddresses(ctx context.Context, dollar_1 [][]byte) ([]ProjectChainState, error)
-	ListProjectCreatorHistoricalProjectsByContract(ctx context.Context, projectContract []byte) ([]ProjectCreatorHistoricalProject, error)
-	ListProjectCreatorHistoricalProjectsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectCreatorHistoricalProject, error)
-	ListProjectGenesisWalletsByContract(ctx context.Context, projectContract []byte) ([]ListProjectGenesisWalletsByContractRow, error)
-	ListProjectGenesisWalletsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ListProjectGenesisWalletsByContractsRow, error)
-	ListProjectGenesisWalletsByWallet(ctx context.Context, wallet []byte) ([]ListProjectGenesisWalletsByWalletRow, error)
-	ListProjectMetas(ctx context.Context) ([]ListProjectMetasRow, error)
-	ListProjectMetasByCreator(ctx context.Context, creator []byte) ([]ListProjectMetasByCreatorRow, error)
+	ListProjectChainStatesByContracts(ctx context.Context, arg ListProjectChainStatesByContractsParams) ([]ListProjectChainStatesByContractsRow, error)
+	ListProjectChainStatesByPairAddresses(ctx context.Context, arg ListProjectChainStatesByPairAddressesParams) ([]ListProjectChainStatesByPairAddressesRow, error)
+	ListProjectComponentStates(ctx context.Context, arg ListProjectComponentStatesParams) ([]ListProjectComponentStatesRow, error)
+	ListProjectCreatorHistoricalProjectsByContract(ctx context.Context, arg ListProjectCreatorHistoricalProjectsByContractParams) ([]ListProjectCreatorHistoricalProjectsByContractRow, error)
+	ListProjectCreatorHistoricalProjectsByContracts(ctx context.Context, arg ListProjectCreatorHistoricalProjectsByContractsParams) ([]ListProjectCreatorHistoricalProjectsByContractsRow, error)
+	ListProjectGenesisWalletsByContract(ctx context.Context, arg ListProjectGenesisWalletsByContractParams) ([]ListProjectGenesisWalletsByContractRow, error)
+	ListProjectGenesisWalletsByContracts(ctx context.Context, arg ListProjectGenesisWalletsByContractsParams) ([]ListProjectGenesisWalletsByContractsRow, error)
+	ListProjectGenesisWalletsByWallet(ctx context.Context, arg ListProjectGenesisWalletsByWalletParams) ([]ListProjectGenesisWalletsByWalletRow, error)
+	ListProjectMetas(ctx context.Context, chainID int64) ([]ListProjectMetasRow, error)
+	ListProjectMetasByCreator(ctx context.Context, arg ListProjectMetasByCreatorParams) ([]ListProjectMetasByCreatorRow, error)
 	ListProjectMetasByCreatorBefore(ctx context.Context, arg ListProjectMetasByCreatorBeforeParams) ([]ListProjectMetasByCreatorBeforeRow, error)
-	ListProjectMetasByPairAddresses(ctx context.Context, dollar_1 [][]byte) ([]ListProjectMetasByPairAddressesRow, error)
-	ListProjectReportStatesByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectReport, error)
-	ListSourceQualityPrompts(ctx context.Context) ([]ListSourceQualityPromptsRow, error)
+	ListProjectMetasByPairAddresses(ctx context.Context, arg ListProjectMetasByPairAddressesParams) ([]ListProjectMetasByPairAddressesRow, error)
 	ListWalletBlacklistEntries(ctx context.Context) ([]WalletBlacklist, error)
+	MarkOutboxEventDiscarded(ctx context.Context, arg MarkOutboxEventDiscardedParams) error
+	MarkOutboxEventFailed(ctx context.Context, arg MarkOutboxEventFailedParams) error
+	MarkOutboxEventProcessed(ctx context.Context, id int64) error
 	MarkProjectAveRefreshFailed(ctx context.Context, arg MarkProjectAveRefreshFailedParams) error
 	MarkProjectAveRefreshRunning(ctx context.Context, arg MarkProjectAveRefreshRunningParams) error
 	MarkProjectAveRefreshSuccess(ctx context.Context, arg MarkProjectAveRefreshSuccessParams) error
+	MarkProjectCollectionCompleted(ctx context.Context, arg MarkProjectCollectionCompletedParams) error
+	MarkProjectCollectionFailed(ctx context.Context, arg MarkProjectCollectionFailedParams) error
+	MarkProjectCollectionRunning(ctx context.Context, arg MarkProjectCollectionRunningParams) error
 	MarkProjectComponentSuccessNow(ctx context.Context, arg MarkProjectComponentSuccessNowParams) error
 	ScheduleProjectAveRefresh(ctx context.Context, arg ScheduleProjectAveRefreshParams) error
 	UpdateBytecodeBlacklistNote(ctx context.Context, arg UpdateBytecodeBlacklistNoteParams) (int64, error)
 	UpdateBytecodeSourceCode(ctx context.Context, arg UpdateBytecodeSourceCodeParams) error
-	UpdateBytecodeSourceQualityReport(ctx context.Context, arg UpdateBytecodeSourceQualityReportParams) error
 	UpdateWalletBlacklistEntryNote(ctx context.Context, arg UpdateWalletBlacklistEntryNoteParams) (int64, error)
 	UpsertBytecode(ctx context.Context, arg UpsertBytecodeParams) error
+	UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertChainIngestCheckpointParams) (ChainIngestCheckpoint, error)
 	UpsertContractBytecodeDeployment(ctx context.Context, arg UpsertContractBytecodeDeploymentParams) error
 	UpsertProjectAveTokenDetail(ctx context.Context, arg UpsertProjectAveTokenDetailParams) error
 	UpsertProjectBytecodeFact(ctx context.Context, arg UpsertProjectBytecodeFactParams) error
+	UpsertProjectCandidate(ctx context.Context, arg UpsertProjectCandidateParams) error
 	UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) error
+	UpsertProjectCollectionRequest(ctx context.Context, arg UpsertProjectCollectionRequestParams) error
 	UpsertProjectComponentState(ctx context.Context, arg UpsertProjectComponentStateParams) error
-	UpsertProjectReportState(ctx context.Context, arg UpsertProjectReportStateParams) error
 	UpsertProjectSimulationResult(ctx context.Context, arg UpsertProjectSimulationResultParams) error
 }
 

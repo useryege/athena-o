@@ -15,6 +15,7 @@ import (
 
 func ProjectBaseFromCandidate(candidate model.DiscoveredProjectCandidate) appstore.ProjectBase {
 	return appstore.ProjectBase{
+		ChainID:     candidate.ChainID,
 		BlockTime:   candidate.BlockTime,
 		BlockNumber: candidate.BlockNumber,
 		Contract:    candidate.Contract,
@@ -25,9 +26,9 @@ func ProjectBaseFromCandidate(candidate model.DiscoveredProjectCandidate) appsto
 	}
 }
 
-func LoadProjectBase(ctx context.Context, cache appcache.ProjectComponentCache, store appstore.ProjectBaseStore, contract common.Address) (*appstore.ProjectBase, error) {
+func LoadProjectBase(ctx context.Context, cache appcache.ProjectComponentCache, store appstore.ProjectBaseStore, chainID int64, contract common.Address) (*appstore.ProjectBase, error) {
 	if cache != nil {
-		if base, ok, err := cache.GetBase(ctx, contract); err != nil {
+		if base, ok, err := cache.GetBase(ctx, chainID, contract); err != nil {
 			return nil, err
 		} else if ok && base != nil {
 			return base, nil
@@ -36,7 +37,7 @@ func LoadProjectBase(ctx context.Context, cache appcache.ProjectComponentCache, 
 	if store == nil {
 		return nil, nil
 	}
-	base, err := store.GetProjectBaseByContract(ctx, contract)
+	base, err := store.GetProjectBaseByContract(ctx, chainID, contract)
 	if err != nil || base == nil {
 		return base, err
 	}
@@ -48,9 +49,9 @@ func LoadProjectBase(ctx context.Context, cache appcache.ProjectComponentCache, 
 	return base, nil
 }
 
-func LoadProjectChainState(ctx context.Context, cache appcache.ProjectComponentCache, store appstore.ProjectChainStateStore, contract common.Address) (*appstore.ProjectChainState, error) {
+func LoadProjectChainState(ctx context.Context, cache appcache.ProjectComponentCache, store appstore.ProjectChainStateStore, chainID int64, contract common.Address) (*appstore.ProjectChainState, error) {
 	if cache != nil {
-		if item, ok, err := cache.GetChainState(ctx, contract); err != nil {
+		if item, ok, err := cache.GetChainState(ctx, chainID, contract); err != nil {
 			return nil, err
 		} else if ok && item != nil {
 			return item, nil
@@ -59,7 +60,7 @@ func LoadProjectChainState(ctx context.Context, cache appcache.ProjectComponentC
 	if store == nil {
 		return nil, nil
 	}
-	item, err := store.GetProjectChainState(ctx, contract)
+	item, err := store.GetProjectChainState(ctx, chainID, contract)
 	if err != nil || item == nil {
 		return item, err
 	}
@@ -89,7 +90,7 @@ func ProjectQuery(base appstore.ProjectBase, genesisWallets []appstore.ProjectGe
 	}
 }
 
-func ChainStateFromSnapshot(contract common.Address, snapshot athenacontract.AthenaProject, fetchedAt time.Time) (appstore.ProjectChainState, error) {
+func ChainStateFromSnapshot(chainID int64, contract common.Address, snapshot athenacontract.AthenaProject, fetchedAt time.Time) (appstore.ProjectChainState, error) {
 	if fetchedAt.IsZero() {
 		fetchedAt = time.Now().UTC()
 	}
@@ -98,6 +99,7 @@ func ChainStateFromSnapshot(contract common.Address, snapshot athenacontract.Ath
 		return appstore.ProjectChainState{}, err
 	}
 	return appstore.ProjectChainState{
+		ChainID:         chainID,
 		ProjectContract: contract,
 		ChainState:      snapshot,
 		RawChainState:   raw,
@@ -109,7 +111,7 @@ func ChainStateFromSnapshot(contract common.Address, snapshot athenacontract.Ath
 	}, nil
 }
 
-func MarkComponentRunning(ctx context.Context, store appstore.ProjectComponentStateStore, contract common.Address, component string, at time.Time) error {
+func MarkComponentRunning(ctx context.Context, store appstore.ProjectComponentStateStore, chainID int64, contract common.Address, component string, at time.Time) error {
 	if store == nil || contract == (common.Address{}) {
 		return nil
 	}
@@ -117,6 +119,7 @@ func MarkComponentRunning(ctx context.Context, store appstore.ProjectComponentSt
 		at = time.Now().UTC()
 	}
 	return store.UpsertProjectComponentState(ctx, appstore.ProjectComponentState{
+		ChainID:         chainID,
 		ProjectContract: contract,
 		Component:       component,
 		Status:          appstore.ProjectComponentStatusRunning,
@@ -124,7 +127,7 @@ func MarkComponentRunning(ctx context.Context, store appstore.ProjectComponentSt
 	})
 }
 
-func MarkComponentSuccess(ctx context.Context, store appstore.ProjectComponentStateStore, contract common.Address, component string, at time.Time) error {
+func MarkComponentSuccess(ctx context.Context, store appstore.ProjectComponentStateStore, chainID int64, contract common.Address, component string, at time.Time) error {
 	if store == nil || contract == (common.Address{}) {
 		return nil
 	}
@@ -132,6 +135,7 @@ func MarkComponentSuccess(ctx context.Context, store appstore.ProjectComponentSt
 		at = time.Now().UTC()
 	}
 	return store.UpsertProjectComponentState(ctx, appstore.ProjectComponentState{
+		ChainID:         chainID,
 		ProjectContract: contract,
 		Component:       component,
 		Status:          appstore.ProjectComponentStatusSuccess,
@@ -140,7 +144,7 @@ func MarkComponentSuccess(ctx context.Context, store appstore.ProjectComponentSt
 	})
 }
 
-func MarkComponentFailed(ctx context.Context, store appstore.ProjectComponentStateStore, contract common.Address, component string, cause error, at time.Time) error {
+func MarkComponentFailed(ctx context.Context, store appstore.ProjectComponentStateStore, chainID int64, contract common.Address, component string, cause error, at time.Time) error {
 	if store == nil || contract == (common.Address{}) {
 		return nil
 	}
@@ -152,6 +156,7 @@ func MarkComponentFailed(ctx context.Context, store appstore.ProjectComponentSta
 		lastError = cause.Error()
 	}
 	return store.UpsertProjectComponentState(ctx, appstore.ProjectComponentState{
+		ChainID:         chainID,
 		ProjectContract: contract,
 		Component:       component,
 		Status:          appstore.ProjectComponentStatusFailed,
@@ -160,11 +165,11 @@ func MarkComponentFailed(ctx context.Context, store appstore.ProjectComponentSta
 	})
 }
 
-func ComponentSucceeded(ctx context.Context, store appstore.ProjectComponentStateStore, contract common.Address, component string) (bool, error) {
+func ComponentSucceeded(ctx context.Context, store appstore.ProjectComponentStateStore, chainID int64, contract common.Address, component string) (bool, error) {
 	if store == nil || contract == (common.Address{}) {
 		return false, nil
 	}
-	state, err := store.GetProjectComponentState(ctx, contract, component)
+	state, err := store.GetProjectComponentState(ctx, chainID, contract, component)
 	if err != nil || state == nil {
 		return false, err
 	}

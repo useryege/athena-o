@@ -212,7 +212,7 @@ prod-destroy-data-remote:
 	fi
 	. $(PROD_ENV_FILE); ssh $(REMOTE_USER)@$$REMOTE_HOST "cd $(REMOTE_APP_DIR) && PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) docker compose -f docker-compose.prod.yml --env-file .env down && docker volume rm $(PROD_POSTGRES_VOLUME)"
 
-# Delete local PostgreSQL/Redis data directories so the next run can re-init. Stop goreman first if it is running.
+# Delete local PostgreSQL/Redis/Kafka data directories so the next run can re-init. Stop goreman first if it is running.
 .PHONY: clean-postgres-data
 clean-postgres-data:
-	sudo rm -rf "$(ATHENA_POSTGRES_DATA_DIR)" "$(ATHENA_REDIS_DATA_DIR)"
+	sudo rm -rf "$(ATHENA_POSTGRES_DATA_DIR)" "$(ATHENA_REDIS_DATA_DIR)" "$(ATHENA_KAFKA_DATA_DIR)"

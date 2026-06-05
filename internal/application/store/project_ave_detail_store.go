@@ -10,7 +10,7 @@ import (
 	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 )
 
-func (s *SQLStore) UpsertProjectAveDetail(ctx context.Context, contract common.Address, detail ProjectAveDetail) error {
+func (s *SQLStore) UpsertProjectAveDetail(ctx context.Context, chainID int64, contract common.Address, detail ProjectAveDetail) error {
 	if detail.FetchedAt.IsZero() {
 		detail.FetchedAt = time.Now().UTC()
 	}
@@ -27,15 +27,22 @@ func (s *SQLStore) UpsertProjectAveDetail(ctx context.Context, contract common.A
 	}()
 
 	queries := appsqlc.New(tx)
-	if err := queries.UpsertProjectAveTokenDetail(ctx, projectAveTokenUpsertParams(contract, detail)); err != nil {
+	chainID = s.chainIDForProject(chainID)
+	if detail.ChainID > 0 {
+		chainID = s.chainIDForProject(detail.ChainID)
+	}
+	if err := queries.UpsertProjectAveTokenDetail(ctx, projectAveTokenUpsertParams(chainID, contract, detail)); err != nil {
 		return fmt.Errorf("upsert project ave token detail: %w", err)
 	}
 
-	if err := queries.DeleteProjectAvePairsByContract(ctx, contract.Bytes()); err != nil {
+	if err := queries.DeleteProjectAvePairsByContract(ctx, appsqlc.DeleteProjectAvePairsByContractParams{
+		ChainID:         chainID,
+		ProjectContract: contract.Bytes(),
+	}); err != nil {
 		return fmt.Errorf("replace project ave pairs: %w", err)
 	}
 	for i, pair := range detail.Pairs {
-		if err := queries.InsertProjectAvePair(ctx, projectAvePairInsertParams(contract, int32(i), pair)); err != nil {
+		if err := queries.InsertProjectAvePair(ctx, projectAvePairInsertParams(chainID, contract, int32(i), pair)); err != nil {
 			return fmt.Errorf("insert project ave pair %d: %w", i, err)
 		}
 	}
@@ -46,8 +53,8 @@ func (s *SQLStore) UpsertProjectAveDetail(ctx context.Context, contract common.A
 	return nil
 }
 
-func (s *SQLStore) GetProjectAveDetail(ctx context.Context, contract common.Address) (*ProjectAveDetail, error) {
-	details, err := s.ListProjectAveDetailsByContracts(ctx, []common.Address{contract})
+func (s *SQLStore) GetProjectAveDetail(ctx context.Context, chainID int64, contract common.Address) (*ProjectAveDetail, error) {
+	details, err := s.ListProjectAveDetailsByContracts(ctx, chainID, []common.Address{contract})
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +65,7 @@ func (s *SQLStore) GetProjectAveDetail(ctx context.Context, contract common.Addr
 	return &detail, nil
 }
 
-func (s *SQLStore) ListProjectAveDetailsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectAveDetail, error) {
+func (s *SQLStore) ListProjectAveDetailsByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address]ProjectAveDetail, error) {
 	unique := uniqueNonZeroAddresses(contracts)
 	result := make(map[common.Address]ProjectAveDetail, len(unique))
 	if len(unique) == 0 {
@@ -69,7 +76,10 @@ func (s *SQLStore) ListProjectAveDetailsByContracts(ctx context.Context, contrac
 		return nil, err
 	}
 
-	tokenRows, err := queries.ListProjectAveTokenDetailsByContracts(ctx, addressesToBytes(unique))
+	tokenRows, err := queries.ListProjectAveTokenDetailsByContracts(ctx, appsqlc.ListProjectAveTokenDetailsByContractsParams{
+		ChainID:          s.chainIDForProject(chainID),
+		ProjectContracts: addressesToBytes(unique),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list project ave token details: %w", err)
 	}
@@ -81,7 +91,10 @@ func (s *SQLStore) ListProjectAveDetailsByContracts(ctx context.Context, contrac
 		return result, nil
 	}
 
-	pairRows, err := queries.ListProjectAvePairsByContracts(ctx, addressesToBytes(unique))
+	pairRows, err := queries.ListProjectAvePairsByContracts(ctx, appsqlc.ListProjectAvePairsByContractsParams{
+		ChainID:          s.chainIDForProject(chainID),
+		ProjectContracts: addressesToBytes(unique),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list project ave pairs: %w", err)
 	}
@@ -94,9 +107,10 @@ func (s *SQLStore) ListProjectAveDetailsByContracts(ctx context.Context, contrac
 	return result, nil
 }
 
-func projectAveTokenUpsertParams(contract common.Address, detail ProjectAveDetail) appsqlc.UpsertProjectAveTokenDetailParams {
+func projectAveTokenUpsertParams(chainID int64, contract common.Address, detail ProjectAveDetail) appsqlc.UpsertProjectAveTokenDetailParams {
 	t := detail.Token
 	return appsqlc.UpsertProjectAveTokenDetailParams{
+		ChainID:             chainID,
 		ProjectContract:     contract.Bytes(),
 		Status:              int32(detail.Status),
 		DataType:            int32(detail.DataType),
@@ -159,8 +173,9 @@ func projectAveTokenUpsertParams(contract common.Address, detail ProjectAveDetai
 	}
 }
 
-func projectAvePairInsertParams(contract common.Address, rankIndex int32, pair ProjectAvePair) appsqlc.InsertProjectAvePairParams {
+func projectAvePairInsertParams(chainID int64, contract common.Address, rankIndex int32, pair ProjectAvePair) appsqlc.InsertProjectAvePairParams {
 	return appsqlc.InsertProjectAvePairParams{
+		ChainID:         chainID,
 		ProjectContract: contract.Bytes(),
 		RankIndex:       rankIndex,
 		Token0Decimal:   int32(pair.Token0Decimal),
@@ -198,8 +213,9 @@ func projectAvePairInsertParams(contract common.Address, rankIndex int32, pair P
 	}
 }
 
-func projectAveTokenDetailFromSQLC(row appsqlc.ProjectAveTokenDetail) (common.Address, ProjectAveDetail) {
+func projectAveTokenDetailFromSQLC(row appsqlc.ListProjectAveTokenDetailsByContractsRow) (common.Address, ProjectAveDetail) {
 	detail := ProjectAveDetail{
+		ChainID:   row.ChainID,
 		Status:    int(row.Status),
 		Msg:       row.Msg.String,
 		DataType:  int(row.DataType),

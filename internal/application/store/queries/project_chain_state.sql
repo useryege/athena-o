@@ -1,6 +1,6 @@
 -- name: UpsertProjectChainState :exec
 INSERT INTO project_chain_state (
-  project_contract,
+  project_id,
   chain_state,
   weth_pair,
   usdt_pair,
@@ -8,15 +8,15 @@ INSERT INTO project_chain_state (
   token_symbol,
   fetched_at
 ) VALUES (
-  $1,
-  $2::jsonb,
-  $3,
-  $4,
+  (SELECT id FROM project WHERE chain_id = @chain_id AND contract = @project_contract),
+  @chain_state::jsonb,
+  @weth_pair,
+  @usdt_pair,
   sqlc.narg('token_name')::text,
   sqlc.narg('token_symbol')::text,
-  $5
+  @fetched_at
 )
-ON CONFLICT (project_contract) DO UPDATE
+ON CONFLICT (project_id) DO UPDATE
 SET chain_state = EXCLUDED.chain_state,
   weth_pair = EXCLUDED.weth_pair,
   usdt_pair = EXCLUDED.usdt_pair,
@@ -26,16 +26,22 @@ SET chain_state = EXCLUDED.chain_state,
   updated_at = now();
 
 -- name: GetProjectChainState :one
-SELECT project_contract, chain_state, weth_pair, usdt_pair, token_name, token_symbol, fetched_at, updated_at
-FROM project_chain_state
-WHERE project_contract = $1;
+SELECT p.chain_id, p.contract AS project_contract, cs.chain_state, cs.weth_pair, cs.usdt_pair, cs.token_name, cs.token_symbol, cs.fetched_at, cs.updated_at
+FROM project_chain_state cs
+JOIN project p ON p.id = cs.project_id
+WHERE p.chain_id = @chain_id
+  AND p.contract = @project_contract;
 
 -- name: ListProjectChainStatesByContracts :many
-SELECT project_contract, chain_state, weth_pair, usdt_pair, token_name, token_symbol, fetched_at, updated_at
-FROM project_chain_state
-WHERE project_contract = ANY($1::bytea[]);
+SELECT p.chain_id, p.contract AS project_contract, cs.chain_state, cs.weth_pair, cs.usdt_pair, cs.token_name, cs.token_symbol, cs.fetched_at, cs.updated_at
+FROM project_chain_state cs
+JOIN project p ON p.id = cs.project_id
+WHERE p.chain_id = @chain_id
+  AND p.contract = ANY(@project_contracts::bytea[]);
 
 -- name: ListProjectChainStatesByPairAddresses :many
-SELECT project_contract, chain_state, weth_pair, usdt_pair, token_name, token_symbol, fetched_at, updated_at
-FROM project_chain_state
-WHERE weth_pair = ANY($1::bytea[]) OR usdt_pair = ANY($1::bytea[]);
+SELECT p.chain_id, p.contract AS project_contract, cs.chain_state, cs.weth_pair, cs.usdt_pair, cs.token_name, cs.token_symbol, cs.fetched_at, cs.updated_at
+FROM project_chain_state cs
+JOIN project p ON p.id = cs.project_id
+WHERE p.chain_id = @chain_id
+  AND (cs.weth_pair = ANY(@pairs::bytea[]) OR cs.usdt_pair = ANY(@pairs::bytea[]));

@@ -13,6 +13,39 @@ message StartProjectDiscoveryRequest {}
 
 message StopProjectDiscoveryRequest {}
 
+message ListChainsRequest {}
+
+message ListChainsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ApplicationChain items = 1;
+}
+
+message GetChainIngestStatusRequest {
+  int64 chain_id = 1;
+}
+
+message StartChainIngestRequest {
+  int64 chain_id = 1;
+}
+
+message StopChainIngestRequest {
+  int64 chain_id = 1;
+}
+
+message RequestProjectCollectionRequest {
+  int64 chain_id = 1;
+  string contract = 2;
+  string reason = 3;
+}
+
+message RequestProjectCollectionResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectCollectionStatus status = 1;
+}
+
+message GetProjectCollectionStatusRequest {
+  int64 chain_id = 1;
+  string contract = 2;
+}
+
 // GetContractSourceInfoRequest asks the application service to resolve contract bytecode/source facts.
 message GetContractSourceInfoRequest {
   int64 chain_id = 1;
@@ -134,60 +167,6 @@ message DeleteWalletBlacklistEntryRequest {
 // DeleteWalletBlacklistEntryResponse is returned after deleting a wallet blacklist entry.
 message DeleteWalletBlacklistEntryResponse {}
 
-// ListSourceQualityPromptsRequest queries source quality prompts.
-message ListSourceQualityPromptsRequest {}
-
-// ListSourceQualityPromptsResponse returns source quality prompt records.
-message ListSourceQualityPromptsResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt items = 1;
-}
-
-// GetSourceQualityPromptRequest queries one source quality prompt.
-message GetSourceQualityPromptRequest {
-  int64 id = 1;
-}
-
-// CreateSourceQualityPromptRequest creates a source quality prompt.
-message CreateSourceQualityPromptRequest {
-  string name = 1;
-  string system_prompt = 2;
-}
-
-// CreateSourceQualityPromptResponse returns the created prompt.
-message CreateSourceQualityPromptResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
-}
-
-// UpdateSourceQualityPromptRequest creates a new source quality prompt version.
-message UpdateSourceQualityPromptRequest {
-  int64 id = 1;
-  string name = 2;
-  string system_prompt = 3;
-}
-
-// UpdateSourceQualityPromptResponse returns the new prompt version.
-message UpdateSourceQualityPromptResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
-}
-
-// ActivateSourceQualityPromptRequest marks a prompt as current.
-message ActivateSourceQualityPromptRequest {
-  int64 id = 1;
-}
-
-// ActivateSourceQualityPromptResponse returns the activated prompt.
-message ActivateSourceQualityPromptResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
-}
-
-// DeleteSourceQualityPromptRequest soft deletes a prompt.
-message DeleteSourceQualityPromptRequest {
-  int64 id = 1;
-}
-
-// DeleteSourceQualityPromptResponse is returned after deleting a prompt.
-message DeleteSourceQualityPromptResponse {}
-
 // GetProjectOptionsRequest don't need any parameters.
 message GetProjectOptionsRequest {}
 
@@ -200,6 +179,12 @@ service ApplicationService {
   rpc GetProjectDiscoveryStatus(GetProjectDiscoveryStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
   rpc StartProjectDiscovery(StartProjectDiscoveryRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
   rpc StopProjectDiscovery(StopProjectDiscoveryRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
+  rpc ListChains(ListChainsRequest) returns (ListChainsResponse);
+  rpc GetChainIngestStatus(GetChainIngestStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ChainIngestStatus);
+  rpc StartChainIngest(StartChainIngestRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ChainIngestStatus);
+  rpc StopChainIngest(StopChainIngestRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ChainIngestStatus);
+  rpc RequestProjectCollection(RequestProjectCollectionRequest) returns (RequestProjectCollectionResponse);
+  rpc GetProjectCollectionStatus(GetProjectCollectionStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectCollectionStatus);
   // GetContractSourceInfo resolves bytecode/source facts for a contract.
   rpc GetContractSourceInfo(GetContractSourceInfoRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ContractSourceInfo);
   // ListBytecodes returns stored bytecodes.
@@ -224,18 +209,6 @@ service ApplicationService {
   rpc UpdateWalletBlacklistEntryNote(UpdateWalletBlacklistEntryNoteRequest) returns (UpdateWalletBlacklistEntryNoteResponse);
   // DeleteWalletBlacklistEntry deletes a wallet blacklist entry.
   rpc DeleteWalletBlacklistEntry(DeleteWalletBlacklistEntryRequest) returns (DeleteWalletBlacklistEntryResponse);
-  // ListSourceQualityPrompts returns configured source quality prompts.
-  rpc ListSourceQualityPrompts(ListSourceQualityPromptsRequest) returns (ListSourceQualityPromptsResponse);
-  // GetSourceQualityPrompt returns one source quality prompt.
-  rpc GetSourceQualityPrompt(GetSourceQualityPromptRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt);
-  // CreateSourceQualityPrompt creates a source quality prompt.
-  rpc CreateSourceQualityPrompt(CreateSourceQualityPromptRequest) returns (CreateSourceQualityPromptResponse);
-  // UpdateSourceQualityPrompt creates a new prompt version.
-  rpc UpdateSourceQualityPrompt(UpdateSourceQualityPromptRequest) returns (UpdateSourceQualityPromptResponse);
-  // ActivateSourceQualityPrompt marks a prompt as current.
-  rpc ActivateSourceQualityPrompt(ActivateSourceQualityPromptRequest) returns (ActivateSourceQualityPromptResponse);
-  // DeleteSourceQualityPrompt soft deletes a prompt.
-  rpc DeleteSourceQualityPrompt(DeleteSourceQualityPromptRequest) returns (DeleteSourceQualityPromptResponse);
   // GetProjectOptions returns the options.
   rpc GetProjectOptions(GetProjectOptionsRequest) returns (GetProjectOptionsResponse);
 }

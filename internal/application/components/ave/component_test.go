@@ -32,7 +32,7 @@ type fakeCache struct {
 	details map[common.Address]appstore.ProjectAveDetail
 }
 
-func (c *fakeCache) SetAveDetail(_ context.Context, contract common.Address, item appstore.ProjectAveDetail) error {
+func (c *fakeCache) SetAveDetail(_ context.Context, _ int64, contract common.Address, item appstore.ProjectAveDetail) error {
 	if c.details == nil {
 		c.details = map[common.Address]appstore.ProjectAveDetail{}
 	}
@@ -40,7 +40,7 @@ func (c *fakeCache) SetAveDetail(_ context.Context, contract common.Address, ite
 	return nil
 }
 
-func (c *fakeCache) GetAveDetail(_ context.Context, contract common.Address) (*appstore.ProjectAveDetail, bool, error) {
+func (c *fakeCache) GetAveDetail(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectAveDetail, bool, error) {
 	item, ok := c.details[contract]
 	if !ok {
 		return nil, false, nil
@@ -54,7 +54,7 @@ type fakeStore struct {
 	candidates []common.Address
 }
 
-func (s *fakeStore) UpsertProjectAveDetail(_ context.Context, contract common.Address, detail appstore.ProjectAveDetail) error {
+func (s *fakeStore) UpsertProjectAveDetail(_ context.Context, _ int64, contract common.Address, detail appstore.ProjectAveDetail) error {
 	if s.details == nil {
 		s.details = map[common.Address]appstore.ProjectAveDetail{}
 	}
@@ -62,7 +62,7 @@ func (s *fakeStore) UpsertProjectAveDetail(_ context.Context, contract common.Ad
 	return nil
 }
 
-func (s *fakeStore) GetProjectAveDetail(_ context.Context, contract common.Address) (*appstore.ProjectAveDetail, error) {
+func (s *fakeStore) GetProjectAveDetail(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectAveDetail, error) {
 	item, ok := s.details[contract]
 	if !ok {
 		return nil, nil
@@ -70,7 +70,7 @@ func (s *fakeStore) GetProjectAveDetail(_ context.Context, contract common.Addre
 	return &item, nil
 }
 
-func (s *fakeStore) ListProjectAveDetailsByContracts(_ context.Context, contracts []common.Address) (map[common.Address]appstore.ProjectAveDetail, error) {
+func (s *fakeStore) ListProjectAveDetailsByContracts(_ context.Context, _ int64, contracts []common.Address) (map[common.Address]appstore.ProjectAveDetail, error) {
 	result := map[common.Address]appstore.ProjectAveDetail{}
 	for _, contract := range contracts {
 		if item, ok := s.details[contract]; ok {
@@ -80,31 +80,31 @@ func (s *fakeStore) ListProjectAveDetailsByContracts(_ context.Context, contract
 	return result, nil
 }
 
-func (s *fakeStore) ListProjectAveRefreshCandidates(context.Context, time.Time, time.Time, int32) ([]common.Address, error) {
+func (s *fakeStore) ListProjectAveRefreshCandidates(context.Context, int64, time.Time, time.Time, int32) ([]common.Address, error) {
 	return append([]common.Address(nil), s.candidates...), nil
 }
 
-func (s *fakeStore) ScheduleProjectAveRefresh(_ context.Context, contract common.Address, nextRunAt time.Time) error {
+func (s *fakeStore) ScheduleProjectAveRefresh(_ context.Context, _ int64, contract common.Address, nextRunAt time.Time) error {
 	s.setState(contract, appstore.ProjectComponentStatusPending, time.Time{}, time.Time{}, nextRunAt, "")
 	return nil
 }
 
-func (s *fakeStore) MarkProjectAveRefreshRunning(_ context.Context, contract common.Address, at time.Time) error {
+func (s *fakeStore) MarkProjectAveRefreshRunning(_ context.Context, _ int64, contract common.Address, at time.Time) error {
 	s.setState(contract, appstore.ProjectComponentStatusRunning, at, time.Time{}, at, "")
 	return nil
 }
 
-func (s *fakeStore) MarkProjectAveRefreshSuccess(_ context.Context, contract common.Address, successAt time.Time, nextRunAt time.Time) error {
+func (s *fakeStore) MarkProjectAveRefreshSuccess(_ context.Context, _ int64, contract common.Address, successAt time.Time, nextRunAt time.Time) error {
 	s.setState(contract, appstore.ProjectComponentStatusSuccess, successAt, successAt, nextRunAt, "")
 	return nil
 }
 
-func (s *fakeStore) MarkProjectAveRefreshFailed(_ context.Context, contract common.Address, attemptAt time.Time, nextRunAt time.Time, lastError string) error {
+func (s *fakeStore) MarkProjectAveRefreshFailed(_ context.Context, _ int64, contract common.Address, attemptAt time.Time, nextRunAt time.Time, lastError string) error {
 	s.setState(contract, appstore.ProjectComponentStatusFailed, attemptAt, time.Time{}, nextRunAt, lastError)
 	return nil
 }
 
-func (s *fakeStore) GetProjectAveComponentState(_ context.Context, contract common.Address) (*appstore.ProjectComponentState, error) {
+func (s *fakeStore) GetProjectAveComponentState(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectComponentState, error) {
 	item, ok := s.states[contract]
 	if !ok {
 		return nil, nil

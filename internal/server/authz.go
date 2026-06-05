@@ -85,14 +85,6 @@ func applicationObject(req any) string {
 		return nonEmptyObject(r.GetWallet())
 	case *applicationpkg.DeleteWalletBlacklistEntryRequest:
 		return nonEmptyObject(r.GetWallet())
-	case *applicationpkg.GetSourceQualityPromptRequest:
-		return fmt.Sprintf("%d", r.GetId())
-	case *applicationpkg.UpdateSourceQualityPromptRequest:
-		return fmt.Sprintf("%d", r.GetId())
-	case *applicationpkg.ActivateSourceQualityPromptRequest:
-		return fmt.Sprintf("%d", r.GetId())
-	case *applicationpkg.DeleteSourceQualityPromptRequest:
-		return fmt.Sprintf("%d", r.GetId())
 	default:
 		return "*"
 	}
@@ -166,17 +158,10 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/application.ApplicationService/AddWalletBlacklistEntry":        {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
 	"/application.ApplicationService/UpdateWalletBlacklistEntryNote": {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
 	"/application.ApplicationService/DeleteWalletBlacklistEntry":     {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/ListSourceQualityPrompts":       fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/GetSourceQualityPrompt":         {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/CreateSourceQualityPrompt":      fixedRule(rbac.ResourceApplication, rbac.ActionUpdate),
-	"/application.ApplicationService/UpdateSourceQualityPrompt":      {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/ActivateSourceQualityPrompt":    {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/DeleteSourceQualityPrompt":      {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-
-	"/notification.NotificationService/GetNotificationStatus":      fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
-	"/notification.NotificationService/ListNotificationDeliveries": fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
-	"/notification.NotificationService/GetNotificationDelivery":    {resource: rbac.ResourceNotifications, action: rbac.ActionGet, object: notificationObject},
-	"/notification.NotificationService/SendTestNotification":       {resource: rbac.ResourceNotifications, action: rbac.ActionInvoke, object: notificationObject},
+	"/notification.NotificationService/GetNotificationStatus":        fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
+	"/notification.NotificationService/ListNotificationDeliveries":   fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
+	"/notification.NotificationService/GetNotificationDelivery":      {resource: rbac.ResourceNotifications, action: rbac.ActionGet, object: notificationObject},
+	"/notification.NotificationService/SendTestNotification":         {resource: rbac.ResourceNotifications, action: rbac.ActionInvoke, object: notificationObject},
 
 	"/wallet.WalletService/GetWalletStatus":   fixedRule(rbac.ResourceWallets, rbac.ActionGet),
 	"/wallet.WalletService/ListWallets":       fixedRule(rbac.ResourceWallets, rbac.ActionGet),

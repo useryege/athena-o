@@ -9,18 +9,14 @@ import (
 )
 
 type Bytecode struct {
-	CodeHash                     []byte
-	RuntimeBytecode              []byte
-	SourceCode                   pgtype.Text
-	SourceCodeHash               []byte
-	SourceCodeFetchedAt          pgtype.Timestamptz
-	SourceCodeOrigin             pgtype.Text
-	SourceQualityReport          pgtype.Text
-	SourceQualityReportFetchedAt pgtype.Timestamptz
-	SourceQualityReportOrigin    pgtype.Text
-	SourceQualityPromptVersion   int64
-	CreatedAt                    pgtype.Timestamptz
-	UpdatedAt                    pgtype.Timestamptz
+	CodeHash            []byte
+	RuntimeBytecode     []byte
+	SourceCode          pgtype.Text
+	SourceCodeHash      []byte
+	SourceCodeFetchedAt pgtype.Timestamptz
+	SourceCodeOrigin    pgtype.Text
+	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
 }
 
 type BytecodeBlacklist struct {
@@ -31,6 +27,26 @@ type BytecodeBlacklist struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
+type Chain struct {
+	ID        int64
+	Name      string
+	Enabled   bool
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
+type ChainIngestCheckpoint struct {
+	ChainID              int64
+	FinalizedBlockNumber int64
+	FinalizedBlockHash   []byte
+	CursorBlockNumber    int64
+	CursorBlockHash      []byte
+	Status               string
+	LockedAt             pgtype.Timestamptz
+	LockedBy             pgtype.Text
+	UpdatedAt            pgtype.Timestamptz
+}
+
 type ContractBytecodeDeployment struct {
 	ChainID     int64
 	Contract    []byte
@@ -39,8 +55,27 @@ type ContractBytecodeDeployment struct {
 	UpdatedAt   pgtype.Timestamptz
 }
 
+type OutboxEvent struct {
+	ID            int64
+	Type          string
+	AggregateType string
+	AggregateID   string
+	ChainID       int64
+	DedupKey      string
+	Payload       []byte
+	Status        string
+	Attempts      int32
+	NextAttemptAt pgtype.Timestamptz
+	LockedAt      pgtype.Timestamptz
+	LockedBy      pgtype.Text
+	LastError     pgtype.Text
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+}
+
 type Project struct {
 	ID          int64
+	ChainID     int64
 	BlockNumber int64
 	BlockTime   int64
 	Contract    []byte
@@ -48,49 +83,50 @@ type Project struct {
 	TxHash      []byte
 	TxIndex     int64
 	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
 }
 
 type ProjectAvePair struct {
-	ID              int64
-	ProjectContract []byte
-	RankIndex       int32
-	Reserve0        pgtype.Text
-	Reserve1        pgtype.Text
-	Token0PriceEth  pgtype.Text
-	Token0PriceUsd  pgtype.Text
-	Token1PriceEth  pgtype.Text
-	Token1PriceUsd  pgtype.Text
-	PriceChange     pgtype.Text
-	PriceChange24h  pgtype.Text
-	PriceChange1h   pgtype.Text
-	VolumeU         pgtype.Text
-	LowU            pgtype.Text
-	HighU           pgtype.Text
-	Fee             pgtype.Text
-	TotalSupply     pgtype.Text
-	TxAmount        pgtype.Text
-	Pair            pgtype.Text
-	Chain           pgtype.Text
-	Amm             pgtype.Text
-	Token0Address   pgtype.Text
-	Token0Symbol    pgtype.Text
-	Token0Decimal   int32
-	Token1Address   pgtype.Text
-	Token1Symbol    pgtype.Text
-	Token1Decimal   int32
-	TargetToken     pgtype.Text
-	PriceChange1d   pgtype.Text
-	CreatedAt       int64
-	TxCount         int32
-	UpdatedAt       int64
-	MarketCap       pgtype.Text
-	Fdv             pgtype.Text
-	IsFake          bool
-	PersistedAt     pgtype.Timestamptz
+	ID             int64
+	ProjectID      int64
+	RankIndex      int32
+	Reserve0       pgtype.Text
+	Reserve1       pgtype.Text
+	Token0PriceEth pgtype.Text
+	Token0PriceUsd pgtype.Text
+	Token1PriceEth pgtype.Text
+	Token1PriceUsd pgtype.Text
+	PriceChange    pgtype.Text
+	PriceChange24h pgtype.Text
+	PriceChange1h  pgtype.Text
+	VolumeU        pgtype.Text
+	LowU           pgtype.Text
+	HighU          pgtype.Text
+	Fee            pgtype.Text
+	TotalSupply    pgtype.Text
+	TxAmount       pgtype.Text
+	Pair           pgtype.Text
+	Chain          pgtype.Text
+	Amm            pgtype.Text
+	Token0Address  pgtype.Text
+	Token0Symbol   pgtype.Text
+	Token0Decimal  int32
+	Token1Address  pgtype.Text
+	Token1Symbol   pgtype.Text
+	Token1Decimal  int32
+	TargetToken    pgtype.Text
+	PriceChange1d  pgtype.Text
+	CreatedAt      int64
+	TxCount        int32
+	UpdatedAt      int64
+	MarketCap      pgtype.Text
+	Fdv            pgtype.Text
+	IsFake         bool
+	PersistedAt    pgtype.Timestamptz
 }
 
 type ProjectAveTokenDetail struct {
-	ProjectContract     []byte
+	ProjectID           int64
 	Status              int32
 	Msg                 pgtype.Text
 	DataType            int32
@@ -152,38 +188,67 @@ type ProjectAveTokenDetail struct {
 }
 
 type ProjectBytecodeFact struct {
-	ProjectContract       []byte
+	ProjectID             int64
 	CodeHash              []byte
 	IsBytecodeBlacklisted bool
 	FetchedAt             pgtype.Timestamptz
 	UpdatedAt             pgtype.Timestamptz
 }
 
-type ProjectChainState struct {
-	ProjectContract []byte
-	ChainState      []byte
-	WethPair        []byte
-	UsdtPair        []byte
-	TokenName       pgtype.Text
-	TokenSymbol     pgtype.Text
-	FetchedAt       pgtype.Timestamptz
-	UpdatedAt       pgtype.Timestamptz
+type ProjectCandidate struct {
+	ID           int64
+	ChainID      int64
+	Contract     []byte
+	Creator      []byte
+	TxHash       []byte
+	BlockNumber  pgtype.Int8
+	BlockTime    pgtype.Int8
+	TxIndex      pgtype.Int8
+	Source       string
+	Status       string
+	Reason       pgtype.Text
+	Payload      []byte
+	DiscoveredAt pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
-type ProjectComponentState struct {
-	ProjectContract []byte
-	Component       string
+type ProjectChainState struct {
+	ProjectID   int64
+	ChainState  []byte
+	WethPair    []byte
+	UsdtPair    []byte
+	TokenName   pgtype.Text
+	TokenSymbol pgtype.Text
+	FetchedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+type ProjectCollectionState struct {
+	ProjectID       int64
 	Status          string
-	LastAttemptAt   pgtype.Timestamptz
-	LastSuccessAt   pgtype.Timestamptz
+	WorkflowID      pgtype.Text
+	LastRequestedAt pgtype.Timestamptz
+	LastStartedAt   pgtype.Timestamptz
+	LastCompletedAt pgtype.Timestamptz
 	NextRunAt       pgtype.Timestamptz
 	LastError       pgtype.Text
 	UpdatedAt       pgtype.Timestamptz
 }
 
+type ProjectComponentState struct {
+	ProjectID     int64
+	Component     string
+	Status        string
+	LastAttemptAt pgtype.Timestamptz
+	LastSuccessAt pgtype.Timestamptz
+	NextRunAt     pgtype.Timestamptz
+	LastError     pgtype.Text
+	UpdatedAt     pgtype.Timestamptz
+}
+
 type ProjectCreatorHistoricalProject struct {
 	ID                        int64
-	ProjectContract           []byte
+	ProjectID                 int64
 	HistoricalProjectContract []byte
 	RankIndex                 int32
 	CreatedAt                 pgtype.Timestamptz
@@ -191,7 +256,7 @@ type ProjectCreatorHistoricalProject struct {
 
 type ProjectGenesisWallet struct {
 	ID                int64
-	ProjectContract   []byte
+	ProjectID         int64
 	Wallet            []byte
 	NetAmount         pgtype.Numeric
 	RatioBps          int64
@@ -202,20 +267,8 @@ type ProjectGenesisWallet struct {
 	CreatedAt         pgtype.Timestamptz
 }
 
-type ProjectReport struct {
-	ProjectContract            []byte
-	IsReportEvaluated          bool
-	IsReportComplete           bool
-	IsBlacklistedCreatorWallet bool
-	IsBlacklistedGenesisWallet bool
-	IsBlacklistedBytecode      bool
-	HasMintRisk                bool
-	EvaluatedAt                pgtype.Timestamptz
-	UpdatedAt                  pgtype.Timestamptz
-}
-
 type ProjectSimulationResult struct {
-	ProjectContract                    []byte
+	ProjectID                          int64
 	CanMintFromDeadViaTransferFrom     bool
 	CanMintFromZeroViaTransferFrom     bool
 	CanMintFromWethPairViaTransferFrom bool
@@ -224,17 +277,6 @@ type ProjectSimulationResult struct {
 	CanMintViaTransferToUsdtPair       bool
 	FetchedAt                          pgtype.Timestamptz
 	UpdatedAt                          pgtype.Timestamptz
-}
-
-type SourceQualityPrompt struct {
-	ID           int64
-	Version      int64
-	Name         string
-	SystemPrompt string
-	IsActive     bool
-	DeletedAt    pgtype.Timestamptz
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
 }
 
 type WalletBlacklist struct {

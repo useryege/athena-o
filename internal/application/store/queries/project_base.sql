@@ -1,43 +1,50 @@
 -- name: InsertProjectBase :exec
 INSERT INTO project (
+  chain_id,
   block_number,
   block_time,
   contract,
   creator,
   tx_hash,
   tx_index
-) VALUES ($1, $2, $3, $4, $5, $6)
+) VALUES (@chain_id, @block_number, @block_time, @contract, @creator, @tx_hash, @tx_index)
 ON CONFLICT DO NOTHING;
 
 -- name: GetMaxProjectBlockNumber :one
 SELECT
   COALESCE(MAX(block_number), 0)::bigint AS max_block,
   (COUNT(*)::bigint > 0) AS has_value
-FROM project;
+FROM project
+WHERE chain_id = @chain_id;
 
 -- name: ListProjectBases :many
-SELECT block_number, block_time, contract, creator, tx_hash, tx_index, created_at
+SELECT chain_id, block_number, block_time, contract, creator, tx_hash, tx_index, created_at
 FROM project
+WHERE chain_id = @chain_id
 ORDER BY block_number, tx_index, id;
 
 -- name: CountProjectBases :one
 SELECT COUNT(*)::bigint
-FROM project;
+FROM project
+WHERE chain_id = @chain_id;
 
 -- name: ListProjectBasesPage :many
-SELECT block_number, block_time, contract, creator, tx_hash, tx_index, created_at
+SELECT chain_id, block_number, block_time, contract, creator, tx_hash, tx_index, created_at
 FROM project
+WHERE chain_id = @chain_id
 ORDER BY block_number, tx_index, id
-LIMIT $1 OFFSET $2;
+LIMIT @limit_count OFFSET @offset_count;
 
 -- name: GetProjectBaseByContract :one
-SELECT block_number, block_time, contract, creator, tx_hash, tx_index, created_at
+SELECT chain_id, block_number, block_time, contract, creator, tx_hash, tx_index, created_at
 FROM project
-WHERE contract = $1;
+WHERE chain_id = @chain_id
+  AND contract = @contract;
 
 -- name: ListProjectBasesByCreatorBefore :many
-SELECT block_number, block_time, contract, creator, tx_hash, tx_index, created_at
+SELECT chain_id, block_number, block_time, contract, creator, tx_hash, tx_index, created_at
 FROM project
-WHERE creator = $1
-  AND (block_number < $2 OR (block_number = $2 AND tx_index < $3))
+WHERE chain_id = @chain_id
+  AND creator = @creator
+  AND (block_number < @block_number OR (block_number = @block_number AND tx_index < @tx_index))
 ORDER BY block_number, tx_index, id;

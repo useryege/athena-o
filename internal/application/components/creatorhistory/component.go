@@ -11,74 +11,51 @@ import (
 )
 
 type Options struct {
-	Store appstore.Store
-	Cache appcache.ProjectComponentCache
-	Bus   appcomponents.EventBus
+	ChainID int64
+	Store   appstore.Store
+	Cache   appcache.ProjectComponentCache
 }
 
 type Component struct {
-	store    appstore.Store
-	cache    appcache.ProjectComponentCache
-	bus      appcomponents.EventBus
-	consumer *appcomponents.Consumer
+	chainID int64
+	store   appstore.Store
+	cache   appcache.ProjectComponentCache
 }
 
 func NewComponent(opts Options) *Component {
 	if opts.Store == nil {
 		return nil
 	}
-	c := &Component{store: opts.Store, cache: opts.Cache, bus: opts.Bus}
-	c.consumer = appcomponents.NewConsumer(appstore.ProjectComponentCreatorHistory, opts.Bus, c.handleEvent)
-	return c
+	return &Component{chainID: opts.ChainID, store: opts.Store, cache: opts.Cache}
 }
 
-func (c *Component) Start(ctx context.Context) error {
-	if c == nil || c.consumer == nil {
-		return nil
-	}
-	return c.consumer.Start(ctx)
-}
+func (c *Component) Start(context.Context) error { return nil }
 
-func (c *Component) Stop() error {
-	if c == nil || c.consumer == nil {
-		return nil
-	}
-	return c.consumer.Stop()
-}
+func (c *Component) Stop() error { return nil }
 
-func (c *Component) handleEvent(ctx context.Context, event appcomponents.Event) error {
-	if event.Type != appcomponents.EventProjectInitialized && event.Type != appcomponents.EventProjectRefresh {
+func (c *Component) Collect(ctx context.Context, chainID int64, contract common.Address) error {
+	if c == nil || c.store == nil {
 		return nil
 	}
-	contract := event.ProjectContract()
 	if contract == (common.Address{}) {
 		return nil
 	}
-	if event.Type != appcomponents.EventProjectRefresh {
-		done, err := appcomponents.ComponentSucceeded(ctx, c.store, contract, appstore.ProjectComponentCreatorHistory)
-		if err != nil || done {
-			return nil
-		}
-	}
-	if err := c.refresh(ctx, contract); err != nil {
-		_ = appcomponents.MarkComponentFailed(ctx, c.store, contract, appstore.ProjectComponentCreatorHistory, err, nowUTC())
-		if c.bus != nil {
-			_ = c.bus.Publish(ctx, appcomponents.ComponentFailedEvent(contract, appstore.ProjectComponentCreatorHistory, err))
-		}
-		return nil
+	if err := c.refresh(ctx, chainID, contract); err != nil {
+		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentCreatorHistory, err, nowUTC())
+		return err
 	}
 	return nil
 }
 
-func (c *Component) refresh(ctx context.Context, contract common.Address) error {
-	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, contract)
+func (c *Component) refresh(ctx context.Context, chainID int64, contract common.Address) error {
+	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, chainID, contract)
 	if err != nil || base == nil {
 		return err
 	}
-	if err := appcomponents.MarkComponentRunning(ctx, c.store, contract, appstore.ProjectComponentCreatorHistory, nowUTC()); err != nil {
+	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentCreatorHistory, nowUTC()); err != nil {
 		return err
 	}
-	metas, err := c.store.ListProjectMetasByCreatorBefore(ctx, base.Creator, base.BlockNumber, base.TxIndex)
+	metas, err := c.store.ListProjectMetasByCreatorBefore(ctx, chainID, base.Creator, base.BlockNumber, base.TxIndex)
 	if err != nil {
 		return err
 	}
@@ -93,25 +70,23 @@ func (c *Component) refresh(ctx context.Context, contract common.Address) error 
 		}
 		seen[meta.Contract] = struct{}{}
 		items = append(items, appstore.ProjectCreatorHistoricalProject{
+			ChainID:                   chainID,
 			ProjectContract:           contract,
 			HistoricalProjectContract: meta.Contract,
 			RankIndex:                 int32(len(items)),
 		})
 	}
-	if err := c.store.ReplaceProjectCreatorHistoricalProjects(ctx, contract, items); err != nil {
+	if err := c.store.ReplaceProjectCreatorHistoricalProjects(ctx, chainID, contract, items); err != nil {
 		return err
 	}
 	if c.cache != nil {
-		if err := c.cache.SetCreatorHistory(ctx, contract, items); err != nil {
+		if err := c.cache.SetCreatorHistory(ctx, chainID, contract, items); err != nil {
 			return err
 		}
 	}
 	at := nowUTC()
-	if err := appcomponents.MarkComponentSuccess(ctx, c.store, contract, appstore.ProjectComponentCreatorHistory, at); err != nil {
+	if err := appcomponents.MarkComponentSuccess(ctx, c.store, chainID, contract, appstore.ProjectComponentCreatorHistory, at); err != nil {
 		return err
-	}
-	if c.bus != nil {
-		return c.bus.Publish(ctx, appcomponents.ComponentCompletedEvent(contract, appstore.ProjectComponentCreatorHistory))
 	}
 	return nil
 }

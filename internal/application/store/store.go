@@ -17,9 +17,9 @@ type ProjectAveDetail = model.ProjectAveDetail
 type ProjectAveTokenDetail = model.ProjectAveTokenDetail
 type ProjectAvePair = model.ProjectAvePair
 type SimulateResult = model.SimulateResult
-type ProjectReport = model.ProjectReport
 
 type ProjectBase struct {
+	ChainID     int64
 	BlockTime   uint64
 	BlockNumber uint64
 	Contract    common.Address
@@ -31,6 +31,7 @@ type ProjectBase struct {
 }
 
 type ProjectChainState struct {
+	ChainID         int64
 	ProjectContract common.Address
 	ChainState      athenacontract.AthenaProject
 	RawChainState   json.RawMessage
@@ -43,20 +44,15 @@ type ProjectChainState struct {
 }
 
 type ProjectSimulationResult struct {
+	ChainID         int64
 	ProjectContract common.Address
 	Result          SimulateResult
 	FetchedAt       time.Time
 	UpdatedAt       time.Time
 }
 
-type ProjectReportState struct {
-	ProjectContract common.Address
-	Report          ProjectReport
-	EvaluatedAt     time.Time
-	UpdatedAt       time.Time
-}
-
 type ProjectBytecodeFact struct {
+	ChainID               int64
 	ProjectContract       common.Address
 	CodeHash              common.Hash
 	IsBytecodeBlacklisted bool
@@ -65,6 +61,7 @@ type ProjectBytecodeFact struct {
 }
 
 type ProjectComponentState struct {
+	ChainID         int64
 	ProjectContract common.Address
 	Component       string
 	Status          string
@@ -83,7 +80,6 @@ const (
 	ProjectComponentCreatorHistory = "creator_history"
 	ProjectComponentBytecodeFact   = "bytecode_fact"
 	ProjectComponentAveDetail      = "ave_detail"
-	ProjectComponentReport         = "report"
 
 	ProjectComponentStatusPending = "pending"
 	ProjectComponentStatusRunning = "running"
@@ -91,8 +87,17 @@ const (
 	ProjectComponentStatusFailed  = "failed"
 )
 
+const (
+	ProjectCollectionStatusRequested    = "requested"
+	ProjectCollectionStatusRunning      = "running"
+	ProjectCollectionStatusCompleted    = "completed"
+	ProjectCollectionStatusFailed       = "failed"
+	ProjectCollectionStatusNotRequested = "not_requested"
+)
+
 type ProjectGenesisWallet struct {
 	ID                int64
+	ChainID           int64
 	ProjectContract   common.Address
 	Wallet            common.Address
 	NetAmount         *big.Int
@@ -106,89 +111,145 @@ type ProjectGenesisWallet struct {
 
 type ProjectCreatorHistoricalProject struct {
 	ID                        int64
+	ChainID                   int64
 	ProjectContract           common.Address
 	HistoricalProjectContract common.Address
 	RankIndex                 int32
 	CreatedAt                 time.Time
 }
 
+type ChainInfo struct {
+	ID      int64
+	Name    string
+	Enabled bool
+}
+
+type ChainIngestCheckpoint struct {
+	ChainID              int64
+	ChainName            string
+	Enabled              bool
+	FinalizedBlockNumber uint64
+	FinalizedBlockHash   common.Hash
+	CursorBlockNumber    uint64
+	CursorBlockHash      common.Hash
+	Status               string
+	LockedAt             time.Time
+	LockedBy             string
+	UpdatedAt            time.Time
+}
+
+type ProjectCollectionState struct {
+	ChainID         int64
+	ProjectContract common.Address
+	Status          string
+	WorkflowID      string
+	LastRequestedAt time.Time
+	LastStartedAt   time.Time
+	LastCompletedAt time.Time
+	NextRunAt       time.Time
+	LastError       string
+	UpdatedAt       time.Time
+	ComponentStates []ProjectComponentState
+}
+
+type ChainStore interface {
+	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (*ChainIngestCheckpoint, error)
+	ListChainIngestCheckpoints(ctx context.Context) ([]ChainIngestCheckpoint, error)
+	UpsertChainIngestCheckpoint(ctx context.Context, item ChainIngestCheckpoint) (*ChainIngestCheckpoint, error)
+}
+
+type ProjectCollectionStateStore interface {
+	GetProjectCollectionState(ctx context.Context, chainID int64, contract common.Address) (*ProjectCollectionState, error)
+	ListProjectComponentStates(ctx context.Context, chainID int64, contract common.Address) ([]ProjectComponentState, error)
+	MarkProjectCollectionRunning(ctx context.Context, chainID int64, contract common.Address, workflowID string, startedAt time.Time) error
+	MarkProjectCollectionCompleted(ctx context.Context, chainID int64, contract common.Address, completedAt time.Time) error
+	MarkProjectCollectionFailed(ctx context.Context, chainID int64, contract common.Address, nextRunAt time.Time, lastError string) error
+}
+
+type ProjectIntakeStore interface {
+	UpsertProjectCandidateAndEnqueueQualification(ctx context.Context, candidate model.DiscoveredProjectCandidate) error
+	EnqueueProjectCollection(ctx context.Context, ref model.ProjectRef, reason string) error
+}
+
+type OutboxStore interface {
+	InsertOutboxEvent(ctx context.Context, item CreateOutboxEventParams) (*OutboxEvent, error)
+	ClaimOutboxEvents(ctx context.Context, lockedBy string, now time.Time, limit int32) ([]OutboxEvent, error)
+	ClaimOutboxEventsByTypes(ctx context.Context, lockedBy string, now time.Time, limit int32, types []string) ([]OutboxEvent, error)
+	MarkOutboxEventProcessed(ctx context.Context, id int64) error
+	MarkOutboxEventFailed(ctx context.Context, id int64, nextAttemptAt time.Time, lastError string) error
+	MarkOutboxEventDiscarded(ctx context.Context, id int64, lastError string) error
+}
+
 type ProjectStore interface {
 	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
-	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
-	ListProjectMetas(ctx context.Context) ([]ProjectMeta, error)
-	ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, error)
-	ListProjectMetasByPairAddresses(ctx context.Context, pairs []common.Address) ([]ProjectMeta, error)
-	UpsertProjectAveDetail(ctx context.Context, contract common.Address, detail ProjectAveDetail) error
-	UpdateProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error
-	UpdateProjectReport(ctx context.Context, contract common.Address, report ProjectReport) error
-	ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error)
-	ListProjectMetasByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error)
-	GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error)
+	GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error)
+	ListProjectMetas(ctx context.Context, chainID int64) ([]ProjectMeta, error)
+	ListAllProjectMetas(ctx context.Context, chainID int64) ([]ProjectMeta, error)
+	ListProjectMetasByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]ProjectMeta, error)
+	UpsertProjectAveDetail(ctx context.Context, chainID int64, contract common.Address, detail ProjectAveDetail) error
+	UpdateProjectCreatorResult(ctx context.Context, chainID int64, contract common.Address, result SimulateResult) error
+	ListProjectMetasByCreator(ctx context.Context, chainID int64, creator common.Address) ([]ProjectMeta, error)
+	ListProjectMetasByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error)
+	GetProjectMetaByContract(ctx context.Context, chainID int64, contract common.Address) (*ProjectMeta, error)
 }
 
 type ProjectBaseStore interface {
 	SaveProjectBase(ctx context.Context, base ProjectBase) error
-	GetProjectBaseByContract(ctx context.Context, contract common.Address) (*ProjectBase, error)
-	ListProjectBases(ctx context.Context) ([]ProjectBase, error)
-	ListProjectBasesPage(ctx context.Context, page int32, pageSize int32) ([]ProjectBase, int64, int32, int32, error)
-	ListProjectBasesByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectBase, error)
-	GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error)
+	GetProjectBaseByContract(ctx context.Context, chainID int64, contract common.Address) (*ProjectBase, error)
+	ListProjectBases(ctx context.Context, chainID int64) ([]ProjectBase, error)
+	ListProjectBasesPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]ProjectBase, int64, int32, int32, error)
+	ListProjectBasesByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectBase, error)
+	GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error)
 }
 
 type ProjectChainStateStore interface {
 	UpsertProjectChainState(ctx context.Context, item ProjectChainState) error
-	GetProjectChainState(ctx context.Context, contract common.Address) (*ProjectChainState, error)
-	ListProjectChainStatesByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectChainState, error)
-	ListProjectChainStatesByPairAddresses(ctx context.Context, pairs []common.Address) ([]ProjectChainState, error)
+	GetProjectChainState(ctx context.Context, chainID int64, contract common.Address) (*ProjectChainState, error)
+	ListProjectChainStatesByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address]ProjectChainState, error)
+	ListProjectChainStatesByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]ProjectChainState, error)
 }
 
 type ProjectSimulationStore interface {
 	UpsertProjectSimulationResult(ctx context.Context, item ProjectSimulationResult) error
-	GetProjectSimulationResult(ctx context.Context, contract common.Address) (*ProjectSimulationResult, error)
-}
-
-type ProjectReportStore interface {
-	UpsertProjectReportState(ctx context.Context, item ProjectReportState) error
-	GetProjectReportState(ctx context.Context, contract common.Address) (*ProjectReportState, error)
-	ListProjectReportStatesByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectReportState, error)
+	GetProjectSimulationResult(ctx context.Context, chainID int64, contract common.Address) (*ProjectSimulationResult, error)
 }
 
 type ProjectBytecodeFactStore interface {
 	UpsertProjectBytecodeFact(ctx context.Context, item ProjectBytecodeFact) error
-	GetProjectBytecodeFact(ctx context.Context, contract common.Address) (*ProjectBytecodeFact, error)
+	GetProjectBytecodeFact(ctx context.Context, chainID int64, contract common.Address) (*ProjectBytecodeFact, error)
 }
 
 type ProjectComponentStateStore interface {
 	UpsertProjectComponentState(ctx context.Context, item ProjectComponentState) error
-	GetProjectComponentState(ctx context.Context, contract common.Address, component string) (*ProjectComponentState, error)
+	GetProjectComponentState(ctx context.Context, chainID int64, contract common.Address, component string) (*ProjectComponentState, error)
 }
 
 type ProjectAveDetailStore interface {
-	UpsertProjectAveDetail(ctx context.Context, contract common.Address, detail ProjectAveDetail) error
-	GetProjectAveDetail(ctx context.Context, contract common.Address) (*ProjectAveDetail, error)
-	ListProjectAveDetailsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectAveDetail, error)
+	UpsertProjectAveDetail(ctx context.Context, chainID int64, contract common.Address, detail ProjectAveDetail) error
+	GetProjectAveDetail(ctx context.Context, chainID int64, contract common.Address) (*ProjectAveDetail, error)
+	ListProjectAveDetailsByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address]ProjectAveDetail, error)
 }
 
 type ProjectAveRefreshStore interface {
-	ListProjectAveRefreshCandidates(ctx context.Context, staleBefore time.Time, now time.Time, limit int32) ([]common.Address, error)
-	ScheduleProjectAveRefresh(ctx context.Context, contract common.Address, nextRunAt time.Time) error
-	MarkProjectAveRefreshRunning(ctx context.Context, contract common.Address, at time.Time) error
-	MarkProjectAveRefreshSuccess(ctx context.Context, contract common.Address, successAt time.Time, nextRunAt time.Time) error
-	MarkProjectAveRefreshFailed(ctx context.Context, contract common.Address, attemptAt time.Time, nextRunAt time.Time, lastError string) error
-	GetProjectAveComponentState(ctx context.Context, contract common.Address) (*ProjectComponentState, error)
+	ListProjectAveRefreshCandidates(ctx context.Context, chainID int64, staleBefore time.Time, now time.Time, limit int32) ([]common.Address, error)
+	ScheduleProjectAveRefresh(ctx context.Context, chainID int64, contract common.Address, nextRunAt time.Time) error
+	MarkProjectAveRefreshRunning(ctx context.Context, chainID int64, contract common.Address, at time.Time) error
+	MarkProjectAveRefreshSuccess(ctx context.Context, chainID int64, contract common.Address, successAt time.Time, nextRunAt time.Time) error
+	MarkProjectAveRefreshFailed(ctx context.Context, chainID int64, contract common.Address, attemptAt time.Time, nextRunAt time.Time, lastError string) error
+	GetProjectAveComponentState(ctx context.Context, chainID int64, contract common.Address) (*ProjectComponentState, error)
 }
 
 type ProjectGenesisWalletStore interface {
-	ReplaceProjectGenesisWallets(ctx context.Context, contract common.Address, items []ProjectGenesisWallet) error
-	ListProjectGenesisWalletsByContract(ctx context.Context, contract common.Address) ([]ProjectGenesisWallet, error)
-	ListProjectGenesisWalletsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address][]ProjectGenesisWallet, error)
-	ListProjectGenesisWalletsByWallet(ctx context.Context, wallet common.Address) ([]ProjectGenesisWallet, error)
+	ReplaceProjectGenesisWallets(ctx context.Context, chainID int64, contract common.Address, items []ProjectGenesisWallet) error
+	ListProjectGenesisWalletsByContract(ctx context.Context, chainID int64, contract common.Address) ([]ProjectGenesisWallet, error)
+	ListProjectGenesisWalletsByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address][]ProjectGenesisWallet, error)
+	ListProjectGenesisWalletsByWallet(ctx context.Context, chainID int64, wallet common.Address) ([]ProjectGenesisWallet, error)
 }
 
 type ProjectCreatorHistoricalProjectStore interface {
-	ReplaceProjectCreatorHistoricalProjects(ctx context.Context, contract common.Address, items []ProjectCreatorHistoricalProject) error
-	ListProjectCreatorHistoricalProjectsByContract(ctx context.Context, contract common.Address) ([]ProjectCreatorHistoricalProject, error)
-	ListProjectCreatorHistoricalProjectsByContracts(ctx context.Context, contracts []common.Address) (map[common.Address][]ProjectCreatorHistoricalProject, error)
+	ReplaceProjectCreatorHistoricalProjects(ctx context.Context, chainID int64, contract common.Address, items []ProjectCreatorHistoricalProject) error
+	ListProjectCreatorHistoricalProjectsByContract(ctx context.Context, chainID int64, contract common.Address) ([]ProjectCreatorHistoricalProject, error)
+	ListProjectCreatorHistoricalProjectsByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address][]ProjectCreatorHistoricalProject, error)
 }
 
 type BytecodeStore interface {
@@ -196,7 +257,6 @@ type BytecodeStore interface {
 	UpsertContractBytecodeDeployment(ctx context.Context, item ContractBytecodeDeployment) error
 	GetBytecode(ctx context.Context, codeHash common.Hash) (*Bytecode, error)
 	UpdateBytecodeSourceCode(ctx context.Context, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, origin string) error
-	UpdateBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, report string, origin string, promptVersion int64) error
 	ListBytecodes(ctx context.Context, codeHash *common.Hash, limit, offset int64) ([]BytecodeListRecord, int64, error)
 	GetBytecodeDetail(ctx context.Context, codeHash common.Hash) (*BytecodeDetailRecord, error)
 	ListBytecodeDeployments(ctx context.Context, codeHash common.Hash, chainID int64, contract *common.Address, limit, offset int64) ([]BytecodeDeploymentRecord, int64, error)
@@ -216,23 +276,15 @@ type WalletBlacklistStore interface {
 	GetWalletBlacklistEntry(ctx context.Context, wallet common.Address) (*WalletBlacklistEntry, error)
 }
 
-type SourceQualityPromptStore interface {
-	EnsureDefaultSourceQualityPrompt(ctx context.Context, name, systemPrompt string) (*SourceQualityPrompt, error)
-	GetActiveSourceQualityPrompt(ctx context.Context) (*SourceQualityPrompt, error)
-	ListSourceQualityPrompts(ctx context.Context) ([]SourceQualityPrompt, error)
-	GetSourceQualityPrompt(ctx context.Context, id int64) (*SourceQualityPrompt, error)
-	CreateSourceQualityPrompt(ctx context.Context, name, systemPrompt string) (*SourceQualityPrompt, error)
-	UpdateSourceQualityPrompt(ctx context.Context, id int64, name, systemPrompt string) (*SourceQualityPrompt, error)
-	ActivateSourceQualityPrompt(ctx context.Context, id int64) (*SourceQualityPrompt, error)
-	DeleteSourceQualityPrompt(ctx context.Context, id int64) error
-}
-
 type Store interface {
+	ChainStore
+	ProjectCollectionStateStore
+	OutboxStore
+	ProjectIntakeStore
 	ProjectStore
 	ProjectBaseStore
 	ProjectChainStateStore
 	ProjectSimulationStore
-	ProjectReportStore
 	ProjectBytecodeFactStore
 	ProjectComponentStateStore
 	ProjectAveDetailStore
@@ -241,5 +293,4 @@ type Store interface {
 	ProjectCreatorHistoricalProjectStore
 	BytecodeStore
 	WalletBlacklistStore
-	SourceQualityPromptStore
 }

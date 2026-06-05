@@ -12,20 +12,37 @@ import (
 )
 
 const getProjectComponentState = `-- name: GetProjectComponentState :one
-SELECT project_contract, component, status, last_attempt_at, last_success_at, next_run_at, last_error, updated_at
-FROM project_component_state
-WHERE project_contract = $1 AND component = $2
+SELECT p.chain_id, p.contract AS project_contract, s.component, s.status, s.last_attempt_at, s.last_success_at, s.next_run_at, s.last_error, s.updated_at
+FROM project_component_state s
+JOIN project p ON p.id = s.project_id
+WHERE p.chain_id = $1
+  AND p.contract = $2
+  AND s.component = $3
 `
 
 type GetProjectComponentStateParams struct {
+	ChainID         int64
 	ProjectContract []byte
 	Component       string
 }
 
-func (q *Queries) GetProjectComponentState(ctx context.Context, arg GetProjectComponentStateParams) (ProjectComponentState, error) {
-	row := q.db.QueryRow(ctx, getProjectComponentState, arg.ProjectContract, arg.Component)
-	var i ProjectComponentState
+type GetProjectComponentStateRow struct {
+	ChainID         int64
+	ProjectContract []byte
+	Component       string
+	Status          string
+	LastAttemptAt   pgtype.Timestamptz
+	LastSuccessAt   pgtype.Timestamptz
+	NextRunAt       pgtype.Timestamptz
+	LastError       pgtype.Text
+	UpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) GetProjectComponentState(ctx context.Context, arg GetProjectComponentStateParams) (GetProjectComponentStateRow, error) {
+	row := q.db.QueryRow(ctx, getProjectComponentState, arg.ChainID, arg.ProjectContract, arg.Component)
+	var i GetProjectComponentStateRow
 	err := row.Scan(
+		&i.ChainID,
 		&i.ProjectContract,
 		&i.Component,
 		&i.Status,
@@ -40,13 +57,19 @@ func (q *Queries) GetProjectComponentState(ctx context.Context, arg GetProjectCo
 
 const markProjectComponentSuccessNow = `-- name: MarkProjectComponentSuccessNow :exec
 INSERT INTO project_component_state (
-  project_contract,
+  project_id,
   component,
   status,
   last_attempt_at,
   last_success_at
-) VALUES ($1, $2, 'success', now(), now())
-ON CONFLICT (project_contract, component) DO UPDATE
+) VALUES (
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
+  $3,
+  'success',
+  now(),
+  now()
+)
+ON CONFLICT (project_id, component) DO UPDATE
 SET status = EXCLUDED.status,
   last_attempt_at = EXCLUDED.last_attempt_at,
   last_success_at = EXCLUDED.last_success_at,
@@ -55,18 +78,19 @@ SET status = EXCLUDED.status,
 `
 
 type MarkProjectComponentSuccessNowParams struct {
+	ChainID         int64
 	ProjectContract []byte
 	Component       string
 }
 
 func (q *Queries) MarkProjectComponentSuccessNow(ctx context.Context, arg MarkProjectComponentSuccessNowParams) error {
-	_, err := q.db.Exec(ctx, markProjectComponentSuccessNow, arg.ProjectContract, arg.Component)
+	_, err := q.db.Exec(ctx, markProjectComponentSuccessNow, arg.ChainID, arg.ProjectContract, arg.Component)
 	return err
 }
 
 const upsertProjectComponentState = `-- name: UpsertProjectComponentState :exec
 INSERT INTO project_component_state (
-  project_contract,
+  project_id,
   component,
   status,
   last_attempt_at,
@@ -74,15 +98,15 @@ INSERT INTO project_component_state (
   next_run_at,
   last_error
 ) VALUES (
-  $1,
-  $2,
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
   $3,
-  $4::timestamptz,
+  $4,
   $5::timestamptz,
   $6::timestamptz,
-  $7::text
+  $7::timestamptz,
+  $8::text
 )
-ON CONFLICT (project_contract, component) DO UPDATE
+ON CONFLICT (project_id, component) DO UPDATE
 SET status = EXCLUDED.status,
   last_attempt_at = EXCLUDED.last_attempt_at,
   last_success_at = EXCLUDED.last_success_at,
@@ -92,6 +116,7 @@ SET status = EXCLUDED.status,
 `
 
 type UpsertProjectComponentStateParams struct {
+	ChainID         int64
 	ProjectContract []byte
 	Component       string
 	Status          string
@@ -103,6 +128,7 @@ type UpsertProjectComponentStateParams struct {
 
 func (q *Queries) UpsertProjectComponentState(ctx context.Context, arg UpsertProjectComponentStateParams) error {
 	_, err := q.db.Exec(ctx, upsertProjectComponentState,
+		arg.ChainID,
 		arg.ProjectContract,
 		arg.Component,
 		arg.Status,

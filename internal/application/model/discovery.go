@@ -6,6 +6,7 @@ import (
 )
 
 type DiscoveredProjectCandidate struct {
+	ChainID     int64
 	BlockTime   uint64
 	BlockNumber uint64
 	TxIndex     uint64

@@ -8,6 +8,14 @@ package github.com.useryege.athena.pkg.apis.application.v1alpha1;
 // Package-wide variables from generator "generated".
 option go_package = "github.com/useryege/athena/pkg/apis/application/v1alpha1";
 
+message ApplicationChain {
+  optional int64 chainID = 1;
+
+  optional string name = 2;
+
+  optional bool enabled = 3;
+}
+
 message BytecodeBlacklistEntry {
   optional string codeHash = 1;
 
@@ -54,14 +62,6 @@ message BytecodeDetail {
   optional string sourceCodeFetchedAt = 11;
 
   optional string sourceCodeOrigin = 12;
-
-  optional string sourceQualityReport = 13;
-
-  optional string sourceQualityReportFetchedAt = 14;
-
-  optional string sourceQualityReportOrigin = 15;
-
-  optional int64 sourceQualityPromptVersion = 16;
 }
 
 message BytecodeListItem {
@@ -80,6 +80,26 @@ message BytecodeListItem {
   optional string updatedAt = 7;
 }
 
+message ChainIngestStatus {
+  optional int64 chainID = 1;
+
+  optional string name = 2;
+
+  optional bool enabled = 3;
+
+  optional string status = 4;
+
+  optional uint64 finalizedBlockNumber = 5;
+
+  optional string finalizedBlockHash = 6;
+
+  optional uint64 cursorBlockNumber = 7;
+
+  optional string cursorBlockHash = 8;
+
+  optional string updatedAt = 9;
+}
+
 message ContractSourceInfo {
   optional string contract = 1;
 
@@ -95,17 +115,9 @@ message ContractSourceInfo {
 
   optional string sourceCodeOrigin = 7;
 
-  optional string sourceQualityReport = 8;
-
-  optional string sourceQualityReportFetchedAt = 9;
-
-  optional string sourceQualityReportOrigin = 10;
-
   optional bool isOpenSource = 11;
 
   optional bool isBytecodeBlacklisted = 12;
-
-  optional int64 sourceQualityPromptVersion = 13;
 }
 
 message NotificationDeliveryDetail {
@@ -430,6 +442,46 @@ message PolymarketStatus {
   optional string status = 2;
 }
 
+message ProjectCollectionStatus {
+  optional int64 chainID = 1;
+
+  optional string contract = 2;
+
+  optional string status = 3;
+
+  optional string workflowID = 4;
+
+  optional string lastRequestedAt = 5;
+
+  optional string lastStartedAt = 6;
+
+  optional string lastCompletedAt = 7;
+
+  optional string nextRunAt = 8;
+
+  optional string lastError = 9;
+
+  optional string updatedAt = 10;
+
+  repeated ProjectComponentStatus components = 11;
+}
+
+message ProjectComponentStatus {
+  optional string component = 1;
+
+  optional string status = 2;
+
+  optional string lastAttemptAt = 3;
+
+  optional string lastSuccessAt = 4;
+
+  optional string nextRunAt = 5;
+
+  optional string lastError = 6;
+
+  optional string updatedAt = 7;
+}
+
 message ProjectDiscoveryStatus {
   optional bool started = 1;
 
@@ -446,22 +498,6 @@ message ProjectOption {
   optional uint32 wethDecimals = 4;
 
   optional uint32 usdtDecimals = 5;
-}
-
-message SourceQualityPrompt {
-  optional int64 id = 1;
-
-  optional int64 version = 2;
-
-  optional string name = 3;
-
-  optional string systemPrompt = 4;
-
-  optional bool isActive = 5;
-
-  optional string createdAt = 6;
-
-  optional string updatedAt = 7;
 }
 
 message WalletBlacklistEntry {

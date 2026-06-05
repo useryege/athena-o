@@ -21,32 +21,21 @@ type fakeApplicationQuerier struct {
 	listDeploymentsParams    appsqlc.ListBytecodeDeploymentsParams
 	addBlacklistParams       appsqlc.AddBytecodeBlacklistEntryParams
 	addWalletBlacklistParams appsqlc.AddWalletBlacklistEntryParams
-	insertPromptParams       appsqlc.InsertSourceQualityPromptParams
-	updateReportParams       appsqlc.UpdateBytecodeSourceQualityReportParams
 	updateSourceCodeParams   appsqlc.UpdateBytecodeSourceCodeParams
 
 	getBytecodeDetailErr  error
-	getPromptErr          error
-	getActivePromptErr    error
 	addBlacklistErr       error
 	addWalletBlacklistErr error
 
 	listBytecodesResult               []appsqlc.ListBytecodesRow
 	listDeploymentsResult             []appsqlc.ListBytecodeDeploymentsRow
-	getPromptResult                   appsqlc.GetSourceQualityPromptRow
-	getActivePromptResult             appsqlc.GetActiveSourceQualityPromptRow
-	insertPromptResult                appsqlc.InsertSourceQualityPromptRow
 	getBytecodeDetailResult           appsqlc.GetBytecodeDetailRow
 	updateBlacklistRowsAffected       int64
 	deleteBlacklistRowsAffected       int64
 	updateWalletBlacklistRowsAffected int64
 	deleteWalletBlacklistRowsAffected int64
-	deletePromptRowsAffected          int64
 }
 
-func (f *fakeApplicationQuerier) ActivateSourceQualityPrompt(context.Context, int64) (appsqlc.ActivateSourceQualityPromptRow, error) {
-	return appsqlc.ActivateSourceQualityPromptRow{}, nil
-}
 func (f *fakeApplicationQuerier) AddBytecodeBlacklistEntry(_ context.Context, arg appsqlc.AddBytecodeBlacklistEntryParams) error {
 	f.addBlacklistParams = arg
 	return f.addBlacklistErr
@@ -55,20 +44,11 @@ func (f *fakeApplicationQuerier) AddWalletBlacklistEntry(_ context.Context, arg 
 	f.addWalletBlacklistParams = arg
 	return f.addWalletBlacklistErr
 }
-func (f *fakeApplicationQuerier) DeactivateActiveSourceQualityPrompts(context.Context) error {
-	return nil
-}
 func (f *fakeApplicationQuerier) DeleteBytecodeBlacklist(context.Context, []byte) (int64, error) {
 	return f.deleteBlacklistRowsAffected, nil
 }
 func (f *fakeApplicationQuerier) DeleteWalletBlacklistEntry(context.Context, []byte) (int64, error) {
 	return f.deleteWalletBlacklistRowsAffected, nil
-}
-func (f *fakeApplicationQuerier) DeleteSourceQualityPrompt(context.Context, int64) (int64, error) {
-	return f.deletePromptRowsAffected, nil
-}
-func (f *fakeApplicationQuerier) GetActiveSourceQualityPrompt(context.Context) (appsqlc.GetActiveSourceQualityPromptRow, error) {
-	return f.getActivePromptResult, f.getActivePromptErr
 }
 func (f *fakeApplicationQuerier) GetBytecode(context.Context, []byte) (appsqlc.Bytecode, error) {
 	return appsqlc.Bytecode{}, nil
@@ -81,16 +61,6 @@ func (f *fakeApplicationQuerier) GetWalletBlacklistEntry(context.Context, []byte
 }
 func (f *fakeApplicationQuerier) GetBytecodeDetail(context.Context, []byte) (appsqlc.GetBytecodeDetailRow, error) {
 	return f.getBytecodeDetailResult, f.getBytecodeDetailErr
-}
-func (f *fakeApplicationQuerier) GetSourceQualityPrompt(context.Context, int64) (appsqlc.GetSourceQualityPromptRow, error) {
-	return f.getPromptResult, f.getPromptErr
-}
-func (f *fakeApplicationQuerier) GetSourceQualityPromptForUpdate(context.Context, int64) (appsqlc.GetSourceQualityPromptForUpdateRow, error) {
-	return appsqlc.GetSourceQualityPromptForUpdateRow{}, nil
-}
-func (f *fakeApplicationQuerier) InsertSourceQualityPrompt(_ context.Context, arg appsqlc.InsertSourceQualityPromptParams) (appsqlc.InsertSourceQualityPromptRow, error) {
-	f.insertPromptParams = arg
-	return f.insertPromptResult, nil
 }
 func (f *fakeApplicationQuerier) IsBytecodeBlacklisted(context.Context, []byte) (bool, error) {
 	return false, nil
@@ -109,9 +79,6 @@ func (f *fakeApplicationQuerier) ListBytecodes(_ context.Context, arg appsqlc.Li
 	f.listBytecodesParams = arg
 	return f.listBytecodesResult, nil
 }
-func (f *fakeApplicationQuerier) ListSourceQualityPrompts(context.Context) ([]appsqlc.ListSourceQualityPromptsRow, error) {
-	return nil, nil
-}
 func (f *fakeApplicationQuerier) UpdateBytecodeBlacklistNote(context.Context, appsqlc.UpdateBytecodeBlacklistNoteParams) (int64, error) {
 	return f.updateBlacklistRowsAffected, nil
 }
@@ -120,10 +87,6 @@ func (f *fakeApplicationQuerier) UpdateWalletBlacklistEntryNote(context.Context,
 }
 func (f *fakeApplicationQuerier) UpdateBytecodeSourceCode(_ context.Context, arg appsqlc.UpdateBytecodeSourceCodeParams) error {
 	f.updateSourceCodeParams = arg
-	return nil
-}
-func (f *fakeApplicationQuerier) UpdateBytecodeSourceQualityReport(_ context.Context, arg appsqlc.UpdateBytecodeSourceQualityReportParams) error {
-	f.updateReportParams = arg
 	return nil
 }
 func (f *fakeApplicationQuerier) UpsertBytecode(_ context.Context, arg appsqlc.UpsertBytecodeParams) error {
@@ -234,44 +197,5 @@ func TestWalletBlacklistRowsAffectedMapNotFound(t *testing.T) {
 	}
 	if err := store.DeleteWalletBlacklistEntry(context.Background(), wallet); !errors.Is(err, ErrWalletBlacklistEntryNotFound) {
 		t.Fatalf("DeleteWalletBlacklistEntry error = %v, want not found", err)
-	}
-}
-
-func TestCreateAndDeleteSourceQualityPromptUseQuerier(t *testing.T) {
-	now := time.Now().UTC()
-	querier := &fakeApplicationQuerier{
-		insertPromptResult: appsqlc.InsertSourceQualityPromptRow{
-			ID:           1,
-			Version:      2,
-			Name:         "prompt one",
-			SystemPrompt: "system prompt",
-			IsActive:     false,
-			CreatedAt:    pgtype.Timestamptz{Time: now, Valid: true},
-			UpdatedAt:    pgtype.Timestamptz{Time: now, Valid: true},
-		},
-		getPromptResult: appsqlc.GetSourceQualityPromptRow{
-			ID:           1,
-			Version:      2,
-			Name:         "prompt one",
-			SystemPrompt: "system prompt",
-			IsActive:     false,
-			CreatedAt:    pgtype.Timestamptz{Time: now, Valid: true},
-			UpdatedAt:    pgtype.Timestamptz{Time: now, Valid: true},
-		},
-		deletePromptRowsAffected: 1,
-	}
-
-	item, err := NewSQLStoreWithQuerier(querier).CreateSourceQualityPrompt(context.Background(), " prompt one ", " system prompt ")
-	if err != nil {
-		t.Fatalf("create source quality prompt: %v", err)
-	}
-	if item.ID != 1 || item.Version != 2 || item.IsActive {
-		t.Fatalf("item = %#v, want inactive prompt version 2", item)
-	}
-	if querier.insertPromptParams.Name != "prompt one" || querier.insertPromptParams.SystemPrompt != "system prompt" {
-		t.Fatalf("insert params = %#v, want trimmed prompt", querier.insertPromptParams)
-	}
-	if err := NewSQLStoreWithQuerier(querier).DeleteSourceQualityPrompt(context.Background(), 1); err != nil {
-		t.Fatalf("delete source quality prompt: %v", err)
 	}
 }

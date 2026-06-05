@@ -11,20 +11,16 @@ import (
 
 type Project struct {
 	Meta      ProjectMeta
-	Report    ProjectReport
 	AveDetail *ProjectAveDetail
 }
 
-type ProjectReport struct {
-	IsReportEvaluated          bool
-	IsReportComplete           bool
-	IsBlacklistedCreatorWallet bool
-	IsBlacklistedGenesisWallet bool
-	IsBlacklistedBytecode      bool
-	HasMintRisk                bool
+type ProjectRef struct {
+	ChainID  int64          `json:"chain_id"`
+	Contract common.Address `json:"contract"`
 }
 
 type ProjectMeta struct {
+	ChainID                            int64
 	BlockTime                          uint64
 	BlockNumber                        uint64
 	Contract                           common.Address
@@ -45,6 +41,7 @@ type ProjectMeta struct {
 }
 
 type ProjectAveDetail struct {
+	ChainID   int64
 	Status    int
 	Msg       string
 	DataType  int

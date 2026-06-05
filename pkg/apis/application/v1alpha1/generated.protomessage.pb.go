@@ -5,6 +5,8 @@
 
 package v1alpha1
 
+func (*ApplicationChain) ProtoMessage() {}
+
 func (*BytecodeBlacklistEntry) ProtoMessage() {}
 
 func (*BytecodeDeployment) ProtoMessage() {}
@@ -12,6 +14,8 @@ func (*BytecodeDeployment) ProtoMessage() {}
 func (*BytecodeDetail) ProtoMessage() {}
 
 func (*BytecodeListItem) ProtoMessage() {}
+
+func (*ChainIngestStatus) ProtoMessage() {}
 
 func (*ContractSourceInfo) ProtoMessage() {}
 
@@ -49,11 +53,13 @@ func (*PolymarketSportsLiveTeamItem) ProtoMessage() {}
 
 func (*PolymarketStatus) ProtoMessage() {}
 
+func (*ProjectCollectionStatus) ProtoMessage() {}
+
+func (*ProjectComponentStatus) ProtoMessage() {}
+
 func (*ProjectDiscoveryStatus) ProtoMessage() {}
 
 func (*ProjectOption) ProtoMessage() {}
-
-func (*SourceQualityPrompt) ProtoMessage() {}
 
 func (*WalletBlacklistEntry) ProtoMessage() {}
 

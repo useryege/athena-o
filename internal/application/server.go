@@ -5,7 +5,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/useryege/athena/internal/application/api"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
-	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/server/version"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
@@ -24,15 +23,14 @@ type ApplicationServer struct {
 }
 
 type ApplicationServerOpts struct {
-	NodeClient            *ethclient.Client
-	AthenaContract        common.Address
-	ChainID               int64
-	AveConfig             ave.Config
-	Store                 appstore.Store
-	LiquidityLocker       []common.Address
-	RedisClient           redisport.Client
-	APIFetcher            ethereumapi.EthereumAPI
-	SourceQualityAnalyzer sourcequality.Analyzer
+	NodeClient      *ethclient.Client
+	AthenaContract  common.Address
+	ChainID         int64
+	AveConfig       ave.Config
+	Store           appstore.Store
+	LiquidityLocker []common.Address
+	RedisClient     redisport.Client
+	APIFetcher      ethereumapi.EthereumAPI
 
 	// Fetch from Athena contract
 	V2FactoryContract common.Address
@@ -44,20 +42,19 @@ type ApplicationServerOpts struct {
 
 func NewServer(opts ApplicationServerOpts) (*ApplicationServer, error) {
 	service, err := api.NewService(api.ServiceOpts{
-		NodeClient:            opts.NodeClient,
-		V2FactoryContract:     opts.V2FactoryContract,
-		WethContract:          opts.WethContract,
-		UsdtContract:          opts.UsdtContract,
-		WethDecimals:          opts.WethDecimals,
-		UsdtDecimals:          opts.UsdtDecimals,
-		AthenaContract:        opts.AthenaContract,
-		ChainID:               opts.ChainID,
-		AveConfig:             opts.AveConfig,
-		Store:                 opts.Store,
-		LiquidityLocker:       opts.LiquidityLocker,
-		RedisClient:           opts.RedisClient,
-		APIFetcher:            opts.APIFetcher,
-		SourceQualityAnalyzer: opts.SourceQualityAnalyzer,
+		NodeClient:        opts.NodeClient,
+		V2FactoryContract: opts.V2FactoryContract,
+		WethContract:      opts.WethContract,
+		UsdtContract:      opts.UsdtContract,
+		WethDecimals:      opts.WethDecimals,
+		UsdtDecimals:      opts.UsdtDecimals,
+		AthenaContract:    opts.AthenaContract,
+		ChainID:           opts.ChainID,
+		AveConfig:         opts.AveConfig,
+		Store:             opts.Store,
+		LiquidityLocker:   opts.LiquidityLocker,
+		RedisClient:       opts.RedisClient,
+		APIFetcher:        opts.APIFetcher,
 	})
 	if err != nil {
 		return nil, err

@@ -12,15 +12,35 @@ import (
 )
 
 const getProjectChainState = `-- name: GetProjectChainState :one
-SELECT project_contract, chain_state, weth_pair, usdt_pair, token_name, token_symbol, fetched_at, updated_at
-FROM project_chain_state
-WHERE project_contract = $1
+SELECT p.chain_id, p.contract AS project_contract, cs.chain_state, cs.weth_pair, cs.usdt_pair, cs.token_name, cs.token_symbol, cs.fetched_at, cs.updated_at
+FROM project_chain_state cs
+JOIN project p ON p.id = cs.project_id
+WHERE p.chain_id = $1
+  AND p.contract = $2
 `
 
-func (q *Queries) GetProjectChainState(ctx context.Context, projectContract []byte) (ProjectChainState, error) {
-	row := q.db.QueryRow(ctx, getProjectChainState, projectContract)
-	var i ProjectChainState
+type GetProjectChainStateParams struct {
+	ChainID         int64
+	ProjectContract []byte
+}
+
+type GetProjectChainStateRow struct {
+	ChainID         int64
+	ProjectContract []byte
+	ChainState      []byte
+	WethPair        []byte
+	UsdtPair        []byte
+	TokenName       pgtype.Text
+	TokenSymbol     pgtype.Text
+	FetchedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) GetProjectChainState(ctx context.Context, arg GetProjectChainStateParams) (GetProjectChainStateRow, error) {
+	row := q.db.QueryRow(ctx, getProjectChainState, arg.ChainID, arg.ProjectContract)
+	var i GetProjectChainStateRow
 	err := row.Scan(
+		&i.ChainID,
 		&i.ProjectContract,
 		&i.ChainState,
 		&i.WethPair,
@@ -34,21 +54,41 @@ func (q *Queries) GetProjectChainState(ctx context.Context, projectContract []by
 }
 
 const listProjectChainStatesByContracts = `-- name: ListProjectChainStatesByContracts :many
-SELECT project_contract, chain_state, weth_pair, usdt_pair, token_name, token_symbol, fetched_at, updated_at
-FROM project_chain_state
-WHERE project_contract = ANY($1::bytea[])
+SELECT p.chain_id, p.contract AS project_contract, cs.chain_state, cs.weth_pair, cs.usdt_pair, cs.token_name, cs.token_symbol, cs.fetched_at, cs.updated_at
+FROM project_chain_state cs
+JOIN project p ON p.id = cs.project_id
+WHERE p.chain_id = $1
+  AND p.contract = ANY($2::bytea[])
 `
 
-func (q *Queries) ListProjectChainStatesByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectChainState, error) {
-	rows, err := q.db.Query(ctx, listProjectChainStatesByContracts, dollar_1)
+type ListProjectChainStatesByContractsParams struct {
+	ChainID          int64
+	ProjectContracts [][]byte
+}
+
+type ListProjectChainStatesByContractsRow struct {
+	ChainID         int64
+	ProjectContract []byte
+	ChainState      []byte
+	WethPair        []byte
+	UsdtPair        []byte
+	TokenName       pgtype.Text
+	TokenSymbol     pgtype.Text
+	FetchedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) ListProjectChainStatesByContracts(ctx context.Context, arg ListProjectChainStatesByContractsParams) ([]ListProjectChainStatesByContractsRow, error) {
+	rows, err := q.db.Query(ctx, listProjectChainStatesByContracts, arg.ChainID, arg.ProjectContracts)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ProjectChainState
+	var items []ListProjectChainStatesByContractsRow
 	for rows.Next() {
-		var i ProjectChainState
+		var i ListProjectChainStatesByContractsRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.ProjectContract,
 			&i.ChainState,
 			&i.WethPair,
@@ -69,21 +109,41 @@ func (q *Queries) ListProjectChainStatesByContracts(ctx context.Context, dollar_
 }
 
 const listProjectChainStatesByPairAddresses = `-- name: ListProjectChainStatesByPairAddresses :many
-SELECT project_contract, chain_state, weth_pair, usdt_pair, token_name, token_symbol, fetched_at, updated_at
-FROM project_chain_state
-WHERE weth_pair = ANY($1::bytea[]) OR usdt_pair = ANY($1::bytea[])
+SELECT p.chain_id, p.contract AS project_contract, cs.chain_state, cs.weth_pair, cs.usdt_pair, cs.token_name, cs.token_symbol, cs.fetched_at, cs.updated_at
+FROM project_chain_state cs
+JOIN project p ON p.id = cs.project_id
+WHERE p.chain_id = $1
+  AND (cs.weth_pair = ANY($2::bytea[]) OR cs.usdt_pair = ANY($2::bytea[]))
 `
 
-func (q *Queries) ListProjectChainStatesByPairAddresses(ctx context.Context, dollar_1 [][]byte) ([]ProjectChainState, error) {
-	rows, err := q.db.Query(ctx, listProjectChainStatesByPairAddresses, dollar_1)
+type ListProjectChainStatesByPairAddressesParams struct {
+	ChainID int64
+	Pairs   [][]byte
+}
+
+type ListProjectChainStatesByPairAddressesRow struct {
+	ChainID         int64
+	ProjectContract []byte
+	ChainState      []byte
+	WethPair        []byte
+	UsdtPair        []byte
+	TokenName       pgtype.Text
+	TokenSymbol     pgtype.Text
+	FetchedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) ListProjectChainStatesByPairAddresses(ctx context.Context, arg ListProjectChainStatesByPairAddressesParams) ([]ListProjectChainStatesByPairAddressesRow, error) {
+	rows, err := q.db.Query(ctx, listProjectChainStatesByPairAddresses, arg.ChainID, arg.Pairs)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ProjectChainState
+	var items []ListProjectChainStatesByPairAddressesRow
 	for rows.Next() {
-		var i ProjectChainState
+		var i ListProjectChainStatesByPairAddressesRow
 		if err := rows.Scan(
+			&i.ChainID,
 			&i.ProjectContract,
 			&i.ChainState,
 			&i.WethPair,
@@ -105,7 +165,7 @@ func (q *Queries) ListProjectChainStatesByPairAddresses(ctx context.Context, dol
 
 const upsertProjectChainState = `-- name: UpsertProjectChainState :exec
 INSERT INTO project_chain_state (
-  project_contract,
+  project_id,
   chain_state,
   weth_pair,
   usdt_pair,
@@ -113,15 +173,15 @@ INSERT INTO project_chain_state (
   token_symbol,
   fetched_at
 ) VALUES (
-  $1,
-  $2::jsonb,
-  $3,
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
+  $3::jsonb,
   $4,
+  $5,
   $6::text,
   $7::text,
-  $5
+  $8
 )
-ON CONFLICT (project_contract) DO UPDATE
+ON CONFLICT (project_id) DO UPDATE
 SET chain_state = EXCLUDED.chain_state,
   weth_pair = EXCLUDED.weth_pair,
   usdt_pair = EXCLUDED.usdt_pair,
@@ -132,24 +192,26 @@ SET chain_state = EXCLUDED.chain_state,
 `
 
 type UpsertProjectChainStateParams struct {
+	ChainID         int64
 	ProjectContract []byte
-	Column2         []byte
+	ChainState      []byte
 	WethPair        []byte
 	UsdtPair        []byte
-	FetchedAt       pgtype.Timestamptz
 	TokenName       pgtype.Text
 	TokenSymbol     pgtype.Text
+	FetchedAt       pgtype.Timestamptz
 }
 
 func (q *Queries) UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) error {
 	_, err := q.db.Exec(ctx, upsertProjectChainState,
+		arg.ChainID,
 		arg.ProjectContract,
-		arg.Column2,
+		arg.ChainState,
 		arg.WethPair,
 		arg.UsdtPair,
-		arg.FetchedAt,
 		arg.TokenName,
 		arg.TokenSymbol,
+		arg.FetchedAt,
 	)
 	return err
 }

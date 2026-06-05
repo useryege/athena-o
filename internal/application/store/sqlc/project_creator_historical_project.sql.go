@@ -7,60 +7,95 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const deleteProjectCreatorHistoricalProjectsByContract = `-- name: DeleteProjectCreatorHistoricalProjectsByContract :exec
 DELETE FROM project_creator_historical_project
-WHERE project_contract = $1
+WHERE project_id = (SELECT id FROM project WHERE chain_id = $1 AND contract = $2)
 `
 
-func (q *Queries) DeleteProjectCreatorHistoricalProjectsByContract(ctx context.Context, projectContract []byte) error {
-	_, err := q.db.Exec(ctx, deleteProjectCreatorHistoricalProjectsByContract, projectContract)
+type DeleteProjectCreatorHistoricalProjectsByContractParams struct {
+	ChainID         int64
+	ProjectContract []byte
+}
+
+func (q *Queries) DeleteProjectCreatorHistoricalProjectsByContract(ctx context.Context, arg DeleteProjectCreatorHistoricalProjectsByContractParams) error {
+	_, err := q.db.Exec(ctx, deleteProjectCreatorHistoricalProjectsByContract, arg.ChainID, arg.ProjectContract)
 	return err
 }
 
 const insertProjectCreatorHistoricalProject = `-- name: InsertProjectCreatorHistoricalProject :exec
 INSERT INTO project_creator_historical_project (
-  project_contract,
+  project_id,
   historical_project_contract,
   rank_index
-) VALUES ($1, $2, $3)
+) VALUES (
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
+  $3,
+  $4
+)
 `
 
 type InsertProjectCreatorHistoricalProjectParams struct {
+	ChainID                   int64
 	ProjectContract           []byte
 	HistoricalProjectContract []byte
 	RankIndex                 int32
 }
 
 func (q *Queries) InsertProjectCreatorHistoricalProject(ctx context.Context, arg InsertProjectCreatorHistoricalProjectParams) error {
-	_, err := q.db.Exec(ctx, insertProjectCreatorHistoricalProject, arg.ProjectContract, arg.HistoricalProjectContract, arg.RankIndex)
+	_, err := q.db.Exec(ctx, insertProjectCreatorHistoricalProject,
+		arg.ChainID,
+		arg.ProjectContract,
+		arg.HistoricalProjectContract,
+		arg.RankIndex,
+	)
 	return err
 }
 
 const listProjectCreatorHistoricalProjectsByContract = `-- name: ListProjectCreatorHistoricalProjectsByContract :many
 SELECT
-  id,
-  project_contract,
-  historical_project_contract,
-  rank_index,
-  created_at
-FROM project_creator_historical_project
-WHERE project_contract = $1
-ORDER BY rank_index ASC, id ASC
+  h.id,
+  p.chain_id,
+  p.contract AS project_contract,
+  h.historical_project_contract,
+  h.rank_index,
+  h.created_at
+FROM project_creator_historical_project h
+JOIN project p ON p.id = h.project_id
+WHERE p.chain_id = $1
+  AND p.contract = $2
+ORDER BY h.rank_index ASC, h.id ASC
 `
 
-func (q *Queries) ListProjectCreatorHistoricalProjectsByContract(ctx context.Context, projectContract []byte) ([]ProjectCreatorHistoricalProject, error) {
-	rows, err := q.db.Query(ctx, listProjectCreatorHistoricalProjectsByContract, projectContract)
+type ListProjectCreatorHistoricalProjectsByContractParams struct {
+	ChainID         int64
+	ProjectContract []byte
+}
+
+type ListProjectCreatorHistoricalProjectsByContractRow struct {
+	ID                        int64
+	ChainID                   int64
+	ProjectContract           []byte
+	HistoricalProjectContract []byte
+	RankIndex                 int32
+	CreatedAt                 pgtype.Timestamptz
+}
+
+func (q *Queries) ListProjectCreatorHistoricalProjectsByContract(ctx context.Context, arg ListProjectCreatorHistoricalProjectsByContractParams) ([]ListProjectCreatorHistoricalProjectsByContractRow, error) {
+	rows, err := q.db.Query(ctx, listProjectCreatorHistoricalProjectsByContract, arg.ChainID, arg.ProjectContract)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ProjectCreatorHistoricalProject
+	var items []ListProjectCreatorHistoricalProjectsByContractRow
 	for rows.Next() {
-		var i ProjectCreatorHistoricalProject
+		var i ListProjectCreatorHistoricalProjectsByContractRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.ChainID,
 			&i.ProjectContract,
 			&i.HistoricalProjectContract,
 			&i.RankIndex,
@@ -78,27 +113,45 @@ func (q *Queries) ListProjectCreatorHistoricalProjectsByContract(ctx context.Con
 
 const listProjectCreatorHistoricalProjectsByContracts = `-- name: ListProjectCreatorHistoricalProjectsByContracts :many
 SELECT
-  id,
-  project_contract,
-  historical_project_contract,
-  rank_index,
-  created_at
-FROM project_creator_historical_project
-WHERE project_contract = ANY($1::bytea[])
-ORDER BY project_contract ASC, rank_index ASC, id ASC
+  h.id,
+  p.chain_id,
+  p.contract AS project_contract,
+  h.historical_project_contract,
+  h.rank_index,
+  h.created_at
+FROM project_creator_historical_project h
+JOIN project p ON p.id = h.project_id
+WHERE p.chain_id = $1
+  AND p.contract = ANY($2::bytea[])
+ORDER BY p.contract ASC, h.rank_index ASC, h.id ASC
 `
 
-func (q *Queries) ListProjectCreatorHistoricalProjectsByContracts(ctx context.Context, dollar_1 [][]byte) ([]ProjectCreatorHistoricalProject, error) {
-	rows, err := q.db.Query(ctx, listProjectCreatorHistoricalProjectsByContracts, dollar_1)
+type ListProjectCreatorHistoricalProjectsByContractsParams struct {
+	ChainID          int64
+	ProjectContracts [][]byte
+}
+
+type ListProjectCreatorHistoricalProjectsByContractsRow struct {
+	ID                        int64
+	ChainID                   int64
+	ProjectContract           []byte
+	HistoricalProjectContract []byte
+	RankIndex                 int32
+	CreatedAt                 pgtype.Timestamptz
+}
+
+func (q *Queries) ListProjectCreatorHistoricalProjectsByContracts(ctx context.Context, arg ListProjectCreatorHistoricalProjectsByContractsParams) ([]ListProjectCreatorHistoricalProjectsByContractsRow, error) {
+	rows, err := q.db.Query(ctx, listProjectCreatorHistoricalProjectsByContracts, arg.ChainID, arg.ProjectContracts)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ProjectCreatorHistoricalProject
+	var items []ListProjectCreatorHistoricalProjectsByContractsRow
 	for rows.Next() {
-		var i ProjectCreatorHistoricalProject
+		var i ListProjectCreatorHistoricalProjectsByContractsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.ChainID,
 			&i.ProjectContract,
 			&i.HistoricalProjectContract,
 			&i.RankIndex,

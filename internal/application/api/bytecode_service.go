@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
-	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"google.golang.org/grpc/codes"
@@ -93,14 +92,6 @@ func (s *Service) GetBytecode(ctx context.Context, req *applicationpkg.GetByteco
 	}
 	if record == nil {
 		return nil, status.Errorf(codes.NotFound, "bytecode %s not found", codeHash.Hex())
-	}
-	if err := s.refreshBytecodeSourceQualityReport(ctx, codeHash, &record.Bytecode); err != nil {
-		return nil, err
-	}
-	if updated, err := s.store.GetBytecodeDetail(ctx, codeHash); err != nil {
-		return nil, err
-	} else if updated != nil {
-		record = updated
 	}
 	return bytecodeDetailRecordToAPI(*record), nil
 }
@@ -230,109 +221,6 @@ func (s *Service) DeleteBytecodeBlacklist(ctx context.Context, req *applicationp
 	return &applicationpkg.DeleteBytecodeBlacklistResponse{}, nil
 }
 
-func (s *Service) ListSourceQualityPrompts(ctx context.Context, _ *applicationpkg.ListSourceQualityPromptsRequest) (*applicationpkg.ListSourceQualityPromptsResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "application store is required")
-	}
-	records, err := s.store.ListSourceQualityPrompts(ctx)
-	if err != nil {
-		return nil, err
-	}
-	items := make([]*v1alpha1.SourceQualityPrompt, 0, len(records))
-	for _, record := range records {
-		items = append(items, sourceQualityPromptToAPI(record))
-	}
-	return &applicationpkg.ListSourceQualityPromptsResponse{Items: items}, nil
-}
-
-func (s *Service) GetSourceQualityPrompt(ctx context.Context, req *applicationpkg.GetSourceQualityPromptRequest) (*v1alpha1.SourceQualityPrompt, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "application store is required")
-	}
-	if req.GetId() <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "id must be positive")
-	}
-	record, err := s.store.GetSourceQualityPrompt(ctx, req.GetId())
-	if err != nil {
-		return nil, err
-	}
-	if record == nil {
-		return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
-	}
-	return sourceQualityPromptToAPI(*record), nil
-}
-
-func (s *Service) CreateSourceQualityPrompt(ctx context.Context, req *applicationpkg.CreateSourceQualityPromptRequest) (*applicationpkg.CreateSourceQualityPromptResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "application store is required")
-	}
-	if err := validateSourceQualityPromptInput(req.GetName(), req.GetSystemPrompt()); err != nil {
-		return nil, err
-	}
-	record, err := s.store.CreateSourceQualityPrompt(ctx, req.GetName(), req.GetSystemPrompt())
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.CreateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
-}
-
-func (s *Service) UpdateSourceQualityPrompt(ctx context.Context, req *applicationpkg.UpdateSourceQualityPromptRequest) (*applicationpkg.UpdateSourceQualityPromptResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "application store is required")
-	}
-	if req.GetId() <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "id must be positive")
-	}
-	if err := validateSourceQualityPromptInput(req.GetName(), req.GetSystemPrompt()); err != nil {
-		return nil, err
-	}
-	record, err := s.store.UpdateSourceQualityPrompt(ctx, req.GetId(), req.GetName(), req.GetSystemPrompt())
-	if err != nil {
-		if errors.Is(err, appstore.ErrSourceQualityPromptNotFound) {
-			return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
-		}
-		return nil, err
-	}
-	return &applicationpkg.UpdateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
-}
-
-func (s *Service) ActivateSourceQualityPrompt(ctx context.Context, req *applicationpkg.ActivateSourceQualityPromptRequest) (*applicationpkg.ActivateSourceQualityPromptResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "application store is required")
-	}
-	if req.GetId() <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "id must be positive")
-	}
-	record, err := s.store.ActivateSourceQualityPrompt(ctx, req.GetId())
-	if err != nil {
-		if errors.Is(err, appstore.ErrSourceQualityPromptNotFound) {
-			return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
-		}
-		return nil, err
-	}
-	return &applicationpkg.ActivateSourceQualityPromptResponse{Item: sourceQualityPromptToAPI(*record)}, nil
-}
-
-func (s *Service) DeleteSourceQualityPrompt(ctx context.Context, req *applicationpkg.DeleteSourceQualityPromptRequest) (*applicationpkg.DeleteSourceQualityPromptResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "application store is required")
-	}
-	if req.GetId() <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "id must be positive")
-	}
-	if err := s.store.DeleteSourceQualityPrompt(ctx, req.GetId()); err != nil {
-		switch {
-		case errors.Is(err, appstore.ErrSourceQualityPromptNotFound):
-			return nil, status.Errorf(codes.NotFound, "source quality prompt %d not found", req.GetId())
-		case errors.Is(err, appstore.ErrSourceQualityPromptActiveDelete):
-			return nil, status.Error(codes.FailedPrecondition, "active source quality prompt cannot be deleted")
-		default:
-			return nil, err
-		}
-	}
-	return &applicationpkg.DeleteSourceQualityPromptResponse{}, nil
-}
-
 func (s *Service) validateChainID(chainID int64) error {
 	if chainID <= 0 {
 		return status.Error(codes.InvalidArgument, "chain_id must be positive")
@@ -391,50 +279,7 @@ func (s *Service) enrichBytecodeSource(ctx context.Context, contract common.Addr
 			record.SourceCodeHash = sourceCodeHash
 		}
 	}
-	return s.refreshBytecodeSourceQualityReport(ctx, codeHash, record)
-}
-
-func (s *Service) refreshBytecodeSourceQualityReport(ctx context.Context, codeHash common.Hash, record *appstore.Bytecode) error {
-	if record == nil || strings.TrimSpace(record.SourceCode) == "" || s.sourceQualityAnalyzer == nil {
-		return nil
-	}
-	prompt, err := s.currentSourceQualityPrompt(ctx)
-	if err != nil {
-		return err
-	}
-	if strings.TrimSpace(record.SourceQualityReport) != "" && record.SourceQualityPromptVersion >= prompt.Version {
-		return nil
-	}
-	report, err := s.sourceQualityAnalyzer.AnalyzeContractSource(ctx, prompt.SystemPrompt, record.SourceCode)
-	if err != nil {
-		return nil
-	}
-	report = strings.TrimSpace(report)
-	if report == "" {
-		return nil
-	}
-	if err := s.store.UpdateBytecodeSourceQualityReport(ctx, codeHash, report, sourceOriginThirdPartyAPI, prompt.Version); err != nil {
-		return err
-	}
-	record.SourceQualityReport = report
-	record.SourceQualityReportOrigin = sourceOriginThirdPartyAPI
-	record.SourceQualityPromptVersion = prompt.Version
-	record.SourceQualityReportFetchedAt = time.Now().UTC()
 	return nil
-}
-
-func (s *Service) currentSourceQualityPrompt(ctx context.Context) (*appstore.SourceQualityPrompt, error) {
-	prompt, err := s.store.GetActiveSourceQualityPrompt(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if prompt != nil {
-		return prompt, nil
-	}
-	return &appstore.SourceQualityPrompt{
-		Name:         "Default Solidity Source Quality Prompt",
-		SystemPrompt: sourcequality.DefaultSystemPrompt,
-	}, nil
 }
 
 func (s *Service) contractSourceInfo(ctx context.Context, chainID int64, contract common.Address, codeHash common.Hash) (*v1alpha1.ContractSourceInfo, error) {
@@ -534,19 +379,15 @@ func normalizePagination(page, pageSize int64) (int64, int64, int64, error) {
 
 func bytecodeToContractSourceInfo(chainID int64, contract common.Address, item appstore.Bytecode, blacklisted bool) *v1alpha1.ContractSourceInfo {
 	return &v1alpha1.ContractSourceInfo{
-		Contract:                     contract.Hex(),
-		ChainID:                      chainID,
-		CodeBinHash:                  item.CodeHash.Hex(),
-		SourceCode:                   item.SourceCode,
-		SourceCodeHash:               hashHex(item.SourceCodeHash),
-		SourceCodeFetchedAt:          formatTime(item.SourceCodeFetchedAt),
-		SourceCodeOrigin:             item.SourceCodeOrigin,
-		SourceQualityReport:          item.SourceQualityReport,
-		SourceQualityReportFetchedAt: formatTime(item.SourceQualityReportFetchedAt),
-		SourceQualityReportOrigin:    item.SourceQualityReportOrigin,
-		IsOpenSource:                 strings.TrimSpace(item.SourceCode) != "",
-		IsBytecodeBlacklisted:        blacklisted,
-		SourceQualityPromptVersion:   item.SourceQualityPromptVersion,
+		Contract:              contract.Hex(),
+		ChainID:               chainID,
+		CodeBinHash:           item.CodeHash.Hex(),
+		SourceCode:            item.SourceCode,
+		SourceCodeHash:        hashHex(item.SourceCodeHash),
+		SourceCodeFetchedAt:   formatTime(item.SourceCodeFetchedAt),
+		SourceCodeOrigin:      item.SourceCodeOrigin,
+		IsOpenSource:          strings.TrimSpace(item.SourceCode) != "",
+		IsBytecodeBlacklisted: blacklisted,
 	}
 }
 
@@ -564,22 +405,18 @@ func bytecodeListRecordToAPI(item appstore.BytecodeListRecord) *v1alpha1.Bytecod
 
 func bytecodeDetailRecordToAPI(item appstore.BytecodeDetailRecord) *v1alpha1.BytecodeDetail {
 	return &v1alpha1.BytecodeDetail{
-		CodeHash:                     item.CodeHash.Hex(),
-		RuntimeBytecodeSize:          item.RuntimeBytecodeSize,
-		DeploymentCount:              item.DeploymentCount,
-		IsOpenSource:                 strings.TrimSpace(item.SourceCode) != "",
-		IsBytecodeBlacklisted:        item.IsBytecodeBlacklisted,
-		CreatedAt:                    formatTime(item.CreatedAt),
-		UpdatedAt:                    formatTime(item.UpdatedAt),
-		RuntimeBytecode:              hexutil.Encode(item.RuntimeBytecode),
-		SourceCode:                   item.SourceCode,
-		SourceCodeHash:               hashHex(item.SourceCodeHash),
-		SourceCodeFetchedAt:          formatTime(item.SourceCodeFetchedAt),
-		SourceCodeOrigin:             item.SourceCodeOrigin,
-		SourceQualityReport:          item.SourceQualityReport,
-		SourceQualityReportFetchedAt: formatTime(item.SourceQualityReportFetchedAt),
-		SourceQualityReportOrigin:    item.SourceQualityReportOrigin,
-		SourceQualityPromptVersion:   item.SourceQualityPromptVersion,
+		CodeHash:              item.CodeHash.Hex(),
+		RuntimeBytecodeSize:   item.RuntimeBytecodeSize,
+		DeploymentCount:       item.DeploymentCount,
+		IsOpenSource:          strings.TrimSpace(item.SourceCode) != "",
+		IsBytecodeBlacklisted: item.IsBytecodeBlacklisted,
+		CreatedAt:             formatTime(item.CreatedAt),
+		UpdatedAt:             formatTime(item.UpdatedAt),
+		RuntimeBytecode:       hexutil.Encode(item.RuntimeBytecode),
+		SourceCode:            item.SourceCode,
+		SourceCodeHash:        hashHex(item.SourceCodeHash),
+		SourceCodeFetchedAt:   formatTime(item.SourceCodeFetchedAt),
+		SourceCodeOrigin:      item.SourceCodeOrigin,
 	}
 }
 
@@ -602,18 +439,6 @@ func bytecodeBlacklistEntryToAPI(item appstore.BytecodeBlacklistEntry) *v1alpha1
 	}
 }
 
-func sourceQualityPromptToAPI(item appstore.SourceQualityPrompt) *v1alpha1.SourceQualityPrompt {
-	return &v1alpha1.SourceQualityPrompt{
-		ID:           item.ID,
-		Version:      item.Version,
-		Name:         item.Name,
-		SystemPrompt: item.SystemPrompt,
-		IsActive:     item.IsActive,
-		CreatedAt:    formatTime(item.CreatedAt),
-		UpdatedAt:    formatTime(item.UpdatedAt),
-	}
-}
-
 func hashHex(value common.Hash) string {
 	if value == (common.Hash{}) {
 		return ""
@@ -633,14 +458,4 @@ func formatTime(value time.Time) string {
 		return ""
 	}
 	return value.UTC().Format(time.RFC3339Nano)
-}
-
-func validateSourceQualityPromptInput(name, systemPrompt string) error {
-	if strings.TrimSpace(name) == "" {
-		return status.Error(codes.InvalidArgument, "name is required")
-	}
-	if strings.TrimSpace(systemPrompt) == "" {
-		return status.Error(codes.InvalidArgument, "system_prompt is required")
-	}
-	return nil
 }

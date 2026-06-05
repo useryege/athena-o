@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -22,13 +21,12 @@ import (
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/application"
-	"github.com/useryege/athena/internal/application/sourcequality"
+	appoutbox "github.com/useryege/athena/internal/application/outbox"
 	appstore "github.com/useryege/athena/internal/application/store"
-	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
+	appworkflows "github.com/useryege/athena/internal/application/workflows"
 	"github.com/useryege/athena/util/ave"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
-	"github.com/useryege/athena/util/deepseek"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/ethereumapi"
@@ -41,8 +39,10 @@ const cliName = "athena-application"
 
 func NewCommand() *cobra.Command {
 	var (
+		applicationMode     string
 		listenHost          string
 		listenPort          int
+		chainID             int64
 		nodewsurl           string
 		nodeWSUseProxy      bool
 		athenaContract      string
@@ -50,9 +50,15 @@ func NewCommand() *cobra.Command {
 		aveAPIBaseURL       string
 		etherscanAPIBaseURL string
 		etherscanAPIKey     string
-		deepseekAPIKey      string
-		deepseekAPIBaseURL  string
-		deepseekModel       string
+		temporalAddress     string
+		temporalNamespace   string
+		temporalIdentity    string
+		kafkaBrokers        []string
+		kafkaConsumerGroup  string
+		confirmationDepth   uint64
+		startBlock          uint64
+		ingestPollInterval  time.Duration
+		outboxPollInterval  time.Duration
 		liquidityLockers    []string
 		storeSrc            func(context.Context) (*appstore.SQLStore, error)
 		redisClient         *redis.Client
@@ -70,6 +76,7 @@ func NewCommand() *cobra.Command {
 				"Athena Application",
 				map[string]any{
 					"port": listenPort,
+					"mode": normalizeApplicationMode(applicationMode),
 				},
 			)
 
@@ -81,6 +88,32 @@ func NewCommand() *cobra.Command {
 			store, err := storeSrc(ctx)
 			errors.CheckError(err)
 			defer utilio.Close(store)
+
+			if normalizeApplicationMode(applicationMode) != applicationModeAPI {
+				return runNonAPIMode(ctx, runtimeOptions{
+					Mode:                applicationMode,
+					ChainID:             chainID,
+					NodeWSURL:           nodewsurl,
+					NodeWSUseProxy:      nodeWSUseProxy,
+					AthenaContract:      athenaContract,
+					LiquidityLockers:    liquidityLockers,
+					AveAPIKey:           aveAPIKey,
+					AveAPIBaseURL:       aveAPIBaseURL,
+					EtherscanAPIBaseURL: etherscanAPIBaseURL,
+					EtherscanAPIKey:     etherscanAPIKey,
+					TemporalAddress:     temporalAddress,
+					TemporalNamespace:   temporalNamespace,
+					TemporalIdentity:    temporalIdentity,
+					KafkaBrokers:        kafkaBrokers,
+					KafkaConsumerGroup:  kafkaConsumerGroup,
+					ConfirmationDepth:   confirmationDepth,
+					StartBlock:          startBlock,
+					IngestPollInterval:  ingestPollInterval,
+					OutboxPollInterval:  outboxPollInterval,
+					Store:               store,
+					RedisClient:         redisClient,
+				})
+			}
 
 			_, err = cacheSrc()
 			errors.CheckError(err)
@@ -96,67 +129,18 @@ func NewCommand() *cobra.Command {
 			defer nodeClient.Close()
 
 			// chain id
-			chainID, err := nodeClient.ChainID(ctx)
+			nodeChainID, err := nodeClient.ChainID(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to fetch node chain id: %w", err)
 			}
-			log.Infof("node chain id: %d", chainID.Int64())
+			log.Infof("node chain id: %d", nodeChainID.Int64())
 
 			var apiFetcher ethereumapi.EthereumAPI
 			if etherscanAPIBaseURL != "" && etherscanAPIKey != "" {
-				apiFetcher = ethereumapi.NewEthereumAPI(etherscanAPIBaseURL, etherscanAPIKey, chainID.Int64())
+				apiFetcher = ethereumapi.NewEthereumAPI(etherscanAPIBaseURL, etherscanAPIKey, nodeChainID.Int64())
 			}
 
-			var analyzer sourcequality.Analyzer
-			if deepseekAPIKey != "" {
-				deepseekConfig := deepseek.Config{
-					BaseURL: deepseekAPIBaseURL,
-					APIKey:  deepseekAPIKey,
-					Model:   deepseekModel,
-				}
-				deepseekClient, err := deepseek.NewClient(deepseekConfig)
-				if err != nil {
-					return fmt.Errorf("failed to configure DeepSeek source quality analyzer: %w", err)
-				}
-				if err := deepseekClient.Ping(ctx); err != nil {
-					return fmt.Errorf("failed to ping DeepSeek source quality analyzer: %w", err)
-				}
-				configWithDefaults := deepseekConfig.WithDefaults()
-				analyzer = sourcequality.NewAnalyzer(deepseekClient, sourcequality.Options{
-					Model:     configWithDefaults.Model,
-					MaxTokens: configWithDefaults.MaxTokens,
-				})
-			}
-
-			athenaContractAddress, err := parseRequiredAddress("ATHENA contract address", athenaContract, "--athena-contract", "ATHENA_APPLICATION_ATHENA_CONTRACT")
-			if err != nil {
-				return err
-			}
-
-			athenaClient, err := athenacontract.NewATHENA(athenaContractAddress, nodeClient)
-			if err != nil {
-				return err
-			}
-
-			wethContractAddress, err := athenaClient.WethContract(&bind.CallOpts{Context: ctx})
-			if err != nil {
-				return err
-			}
-			usdtContractAddress, err := athenaClient.UsdtContract(&bind.CallOpts{Context: ctx})
-			if err != nil {
-				return err
-			}
-
-			wethDecimals, err := athenaClient.WethDecimals(&bind.CallOpts{Context: ctx})
-			if err != nil {
-				return err
-			}
-			usdtDecimals, err := athenaClient.UsdtDecimals(&bind.CallOpts{Context: ctx})
-			if err != nil {
-				return err
-			}
-
-			v2FactoryContractAddress, err := athenaClient.FactoryContract(&bind.CallOpts{Context: ctx})
+			athenaContractAddress, v2FactoryContractAddress, wethContractAddress, usdtContractAddress, wethDecimals, usdtDecimals, err := loadAthenaContractOptions(ctx, nodeClient, athenaContract)
 			if err != nil {
 				return err
 			}
@@ -169,16 +153,15 @@ func NewCommand() *cobra.Command {
 			server, err := application.NewServer(application.ApplicationServerOpts{
 				NodeClient:     nodeClient,
 				AthenaContract: athenaContractAddress,
-				ChainID:        chainID.Int64(),
+				ChainID:        nodeChainID.Int64(),
 				AveConfig: ave.Config{
 					BaseURL: aveAPIBaseURL,
 					APIKey:  aveAPIKey,
 				},
-				Store:                 store,
-				LiquidityLocker:       liquidityLockerAddresses,
-				RedisClient:           redisport.NewGoRedisAdapter(redisClient),
-				APIFetcher:            apiFetcher,
-				SourceQualityAnalyzer: analyzer,
+				Store:           store,
+				LiquidityLocker: liquidityLockerAddresses,
+				RedisClient:     redisport.NewGoRedisAdapter(redisClient),
+				APIFetcher:      apiFetcher,
 
 				// Fetch from Athena contract
 				V2FactoryContract: v2FactoryContractAddress,
@@ -231,8 +214,10 @@ func NewCommand() *cobra.Command {
 
 	command.Flags().StringVar(&cmdutil.LogFormat, "logformat", env.StringFromEnv("ATHENA_APPLICATION_LOGFORMAT", "json"), "Set the logging format. One of: json|text")
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv("ATHENA_APPLICATION_LOGLEVEL", "info"), "Set the logging level. One of: debug|info|warn|error")
+	command.Flags().StringVar(&applicationMode, "mode", env.StringFromEnv("ATHENA_APPLICATION_MODE", applicationModeAPI), "Run mode: api|chain-ingestor|kafka-consumer|outbox-worker|temporal-worker-control|temporal-worker-chain|temporal-worker-external")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_APPLICATION_LISTEN_ADDRESS", common.DefaultAddressApplication), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortApplication, "Listen on given port for incoming connections")
+	command.Flags().Int64Var(&chainID, "chain-id", env.ParseInt64FromEnv("ATHENA_APPLICATION_CHAIN_ID", 0, 1, 9223372036854775807), "EVM chain ID for chain-scoped application modes")
 	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_APPLICATION_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
 	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_APPLICATION_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
 	command.Flags().StringVar(&athenaContract, "athena-contract", env.StringFromEnv("ATHENA_APPLICATION_ATHENA_CONTRACT", ""), "ATHENA aggregation contract address")
@@ -240,9 +225,15 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL")
 	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")
 	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_KEY", ""), "Etherscan API key")
-	command.Flags().StringVar(&deepseekAPIKey, "deepseek-api-key", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_API_KEY", ""), "DeepSeek API key")
-	command.Flags().StringVar(&deepseekAPIBaseURL, "deepseek-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_BASE_URL", deepseek.DefaultBaseURL), "DeepSeek API base URL")
-	command.Flags().StringVar(&deepseekModel, "deepseek-model", env.StringFromEnv("ATHENA_APPLICATION_DEEPSEEK_MODEL", deepseek.DefaultModel), "DeepSeek model for contract source quality analysis")
+	command.Flags().StringVar(&temporalAddress, "temporal-address", env.StringFromEnv("ATHENA_APPLICATION_TEMPORAL_ADDRESS", appworkflows.DefaultTemporalAddress), "Temporal frontend host:port")
+	command.Flags().StringVar(&temporalNamespace, "temporal-namespace", env.StringFromEnv("ATHENA_APPLICATION_TEMPORAL_NAMESPACE", appworkflows.DefaultTemporalNamespace), "Temporal namespace")
+	command.Flags().StringVar(&temporalIdentity, "temporal-identity", env.StringFromEnv("ATHENA_APPLICATION_TEMPORAL_IDENTITY", ""), "Temporal worker identity")
+	command.Flags().StringSliceVar(&kafkaBrokers, "kafka-brokers", env.StringsFromEnv("ATHENA_APPLICATION_KAFKA_BROKERS", nil, ","), "Comma-separated Kafka broker addresses")
+	command.Flags().StringVar(&kafkaConsumerGroup, "kafka-consumer-group", env.StringFromEnv("ATHENA_APPLICATION_KAFKA_CONSUMER_GROUP", "athena-application"), "Kafka consumer group")
+	command.Flags().Uint64Var(&confirmationDepth, "confirmation-depth", uint64(env.ParseInt64FromEnv("ATHENA_APPLICATION_CONFIRMATION_DEPTH", 0, 0, 9223372036854775807)), "Chain ingestor confirmation depth; defaults by chain when zero")
+	command.Flags().Uint64Var(&startBlock, "start-block", uint64(env.ParseInt64FromEnv("ATHENA_APPLICATION_START_BLOCK", 0, 0, 9223372036854775807)), "Chain ingestor start block when no checkpoint exists")
+	command.Flags().DurationVar(&ingestPollInterval, "ingest-poll-interval", env.ParseDurationFromEnv("ATHENA_APPLICATION_INGEST_POLL_INTERVAL", 2*time.Second, time.Second, 24*time.Hour), "Chain ingestor poll interval")
+	command.Flags().DurationVar(&outboxPollInterval, "outbox-poll-interval", env.ParseDurationFromEnv("ATHENA_APPLICATION_OUTBOX_POLL_INTERVAL", appoutbox.DefaultPollInterval, time.Second, 24*time.Hour), "Outbox worker poll interval")
 	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")
 	storeSrc = appstore.NewSQLStoreSource()
 	cacheSrc = cacheutil.AddCacheFlagsToCmd(command, cacheutil.Options{

@@ -14,8 +14,7 @@ SET code_hash = EXCLUDED.code_hash,
 
 -- name: GetBytecode :one
 SELECT code_hash, runtime_bytecode, source_code, source_code_hash, source_code_fetched_at,
-  source_code_origin, source_quality_report, source_quality_report_fetched_at,
-  source_quality_report_origin, source_quality_prompt_version, created_at, updated_at
+  source_code_origin, created_at, updated_at
 FROM bytecode
 WHERE code_hash = $1;
 
@@ -25,15 +24,6 @@ SET source_code = $2,
   source_code_hash = $3,
   source_code_fetched_at = now(),
   source_code_origin = $4,
-  updated_at = now()
-WHERE code_hash = $1;
-
--- name: UpdateBytecodeSourceQualityReport :exec
-UPDATE bytecode
-SET source_quality_report = $2,
-  source_quality_report_fetched_at = now(),
-  source_quality_report_origin = $3,
-  source_quality_prompt_version = $4,
   updated_at = now()
 WHERE code_hash = $1;
 
@@ -70,8 +60,7 @@ WITH deployment_counts AS (
   GROUP BY code_hash
 )
 SELECT b.code_hash, b.runtime_bytecode, b.source_code, b.source_code_hash, b.source_code_fetched_at,
-  b.source_code_origin, b.source_quality_report, b.source_quality_report_fetched_at,
-  b.source_quality_report_origin, b.source_quality_prompt_version, b.created_at, b.updated_at,
+  b.source_code_origin, b.created_at, b.updated_at,
   length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
   COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
   (bl.code_hash IS NOT NULL)::boolean AS is_bytecode_blacklisted

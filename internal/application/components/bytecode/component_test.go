@@ -7,17 +7,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
-	appcomponents "github.com/useryege/athena/internal/application/components"
 	appstore "github.com/useryege/athena/internal/application/store"
 	applicationv1alpha1 "github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
-func TestComponentHandleRefreshWritesStateAndPublishes(t *testing.T) {
+func TestComponentCollectWritesState(t *testing.T) {
 	ctx := context.Background()
 	contract := common.BigToAddress(big.NewInt(41))
 	store := &bytecodeStoreFake{
 		baseByContract: map[common.Address]appstore.ProjectBase{
-			contract: {Contract: contract},
+			contract: {ChainID: 1, Contract: contract},
 		},
 	}
 	resolver := &contractSourceResolverFake{
@@ -26,22 +25,17 @@ func TestComponentHandleRefreshWritesStateAndPublishes(t *testing.T) {
 			CodeBinHash:           "0x2222222222222222222222222222222222222222222222222222222222222222",
 		},
 	}
-	bus := &eventBusFake{}
 	component := NewComponent(Options{
 		Store:    store,
 		Resolver: resolver,
 		ChainID:  1,
-		Bus:      bus,
 	})
 	if component == nil {
 		t.Fatal("component is nil")
 	}
 
-	if err := component.handleEvent(ctx, appcomponents.Event{
-		Type:     appcomponents.EventProjectRefresh,
-		Contract: contract.Hex(),
-	}); err != nil {
-		t.Fatalf("handle event: %v", err)
+	if err := component.Collect(ctx, 1, contract); err != nil {
+		t.Fatalf("collect: %v", err)
 	}
 
 	if resolver.calls != 1 {
@@ -53,9 +47,6 @@ func TestComponentHandleRefreshWritesStateAndPublishes(t *testing.T) {
 	if store.lastComponentStatus != appstore.ProjectComponentStatusSuccess {
 		t.Fatalf("last status = %s, want success", store.lastComponentStatus)
 	}
-	if len(bus.events) != 1 || bus.events[0].Type != appcomponents.EventComponentCompleted {
-		t.Fatalf("published events = %#v, want single component completed", bus.events)
-	}
 }
 
 type bytecodeStoreFake struct {
@@ -66,7 +57,7 @@ type bytecodeStoreFake struct {
 	lastComponentStatus     string
 }
 
-func (s *bytecodeStoreFake) GetProjectBaseByContract(_ context.Context, contract common.Address) (*appstore.ProjectBase, error) {
+func (s *bytecodeStoreFake) GetProjectBaseByContract(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectBase, error) {
 	item, ok := s.baseByContract[contract]
 	if !ok {
 		return nil, nil
@@ -93,17 +84,4 @@ type contractSourceResolverFake struct {
 func (c *contractSourceResolverFake) GetContractSourceInfo(context.Context, *applicationpkg.GetContractSourceInfoRequest) (*applicationv1alpha1.ContractSourceInfo, error) {
 	c.calls++
 	return c.info, nil
-}
-
-type eventBusFake struct {
-	events []appcomponents.Event
-}
-
-func (b *eventBusFake) Publish(_ context.Context, event appcomponents.Event) error {
-	b.events = append(b.events, event)
-	return nil
-}
-
-func (b *eventBusFake) Subscribe(context.Context, string, string, appcomponents.Handler) error {
-	return nil
 }

@@ -7,11 +7,10 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	appcomponents "github.com/useryege/athena/internal/application/components"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
-func TestComponentRefreshEventRerunsAfterSuccess(t *testing.T) {
+func TestComponentCollectRerunsAfterSuccess(t *testing.T) {
 	ctx := context.Background()
 	contract := common.BigToAddress(big.NewInt(1))
 	creator := common.BigToAddress(big.NewInt(2))
@@ -19,6 +18,7 @@ func TestComponentRefreshEventRerunsAfterSuccess(t *testing.T) {
 	store := &refreshComponentStoreFake{
 		baseByContract: map[common.Address]appstore.ProjectBase{
 			contract: {
+				ChainID:     56,
 				Contract:    contract,
 				Creator:     creator,
 				BlockNumber: 10,
@@ -27,11 +27,13 @@ func TestComponentRefreshEventRerunsAfterSuccess(t *testing.T) {
 		},
 		metasByCreatorBefore: map[common.Address][]appstore.ProjectMeta{
 			creator: {{
+				ChainID:  56,
 				Contract: historical,
 			}},
 		},
 		componentStates: map[string]appstore.ProjectComponentState{
 			componentKey(contract, appstore.ProjectComponentCreatorHistory): {
+				ChainID:         56,
 				ProjectContract: contract,
 				Component:       appstore.ProjectComponentCreatorHistory,
 				Status:          appstore.ProjectComponentStatusSuccess,
@@ -39,16 +41,13 @@ func TestComponentRefreshEventRerunsAfterSuccess(t *testing.T) {
 			},
 		},
 	}
-	component := NewComponent(Options{Store: store})
+	component := NewComponent(Options{ChainID: 56, Store: store})
 	if component == nil {
 		t.Fatal("creator history component is nil")
 	}
 
-	if err := component.handleEvent(ctx, appcomponents.Event{
-		Type:     appcomponents.EventProjectRefresh,
-		Contract: contract.Hex(),
-	}); err != nil {
-		t.Fatalf("handle refresh: %v", err)
+	if err := component.Collect(ctx, 56, contract); err != nil {
+		t.Fatalf("collect: %v", err)
 	}
 
 	if got := store.replaceCreatorHistoryCalls; got != 1 {
@@ -73,7 +72,7 @@ type refreshComponentStoreFake struct {
 	lastCreatorHistoryItems    []appstore.ProjectCreatorHistoricalProject
 }
 
-func (s *refreshComponentStoreFake) GetProjectBaseByContract(_ context.Context, contract common.Address) (*appstore.ProjectBase, error) {
+func (s *refreshComponentStoreFake) GetProjectBaseByContract(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectBase, error) {
 	item, ok := s.baseByContract[contract]
 	if !ok {
 		return nil, nil
@@ -82,7 +81,7 @@ func (s *refreshComponentStoreFake) GetProjectBaseByContract(_ context.Context, 
 	return &copy, nil
 }
 
-func (s *refreshComponentStoreFake) GetProjectComponentState(_ context.Context, contract common.Address, component string) (*appstore.ProjectComponentState, error) {
+func (s *refreshComponentStoreFake) GetProjectComponentState(_ context.Context, _ int64, contract common.Address, component string) (*appstore.ProjectComponentState, error) {
 	item, ok := s.componentStates[componentKey(contract, component)]
 	if !ok {
 		return nil, nil
@@ -99,12 +98,12 @@ func (s *refreshComponentStoreFake) UpsertProjectComponentState(_ context.Contex
 	return nil
 }
 
-func (s *refreshComponentStoreFake) ListProjectMetasByCreatorBefore(_ context.Context, creator common.Address, _ uint64, _ uint64) ([]appstore.ProjectMeta, error) {
+func (s *refreshComponentStoreFake) ListProjectMetasByCreatorBefore(_ context.Context, _ int64, creator common.Address, _ uint64, _ uint64) ([]appstore.ProjectMeta, error) {
 	items := s.metasByCreatorBefore[creator]
 	return append([]appstore.ProjectMeta(nil), items...), nil
 }
 
-func (s *refreshComponentStoreFake) ReplaceProjectCreatorHistoricalProjects(_ context.Context, _ common.Address, items []appstore.ProjectCreatorHistoricalProject) error {
+func (s *refreshComponentStoreFake) ReplaceProjectCreatorHistoricalProjects(_ context.Context, _ int64, _ common.Address, items []appstore.ProjectCreatorHistoricalProject) error {
 	s.replaceCreatorHistoryCalls++
 	s.lastCreatorHistoryItems = append([]appstore.ProjectCreatorHistoricalProject(nil), items...)
 	return nil

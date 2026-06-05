@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
-	"github.com/useryege/athena/internal/application/pipeline"
+	"github.com/useryege/athena/internal/application/discovery"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -58,7 +58,7 @@ func TestProjectDiscoveryStartStopLifecycle(t *testing.T) {
 		started:       true,
 		lifecycleCtx:  lifecycleCtx,
 		lifecycleStop: lifecycleStop,
-		discoveryIndexerFactory: func() (pipeline.ProjectDiscoveryIndexer, error) {
+		discoveryIndexerFactory: func() (discovery.ProjectDiscoveryIndexer, error) {
 			return indexer, nil
 		},
 	}

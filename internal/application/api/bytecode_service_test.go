@@ -12,28 +12,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type fakeSourceQualityAnalyzer struct {
-	systemPrompt string
-	sourceCode   string
-	report       string
-	err          error
-}
-
-func (f *fakeSourceQualityAnalyzer) AnalyzeContractSource(_ context.Context, systemPrompt string, sourceCode string) (string, error) {
-	f.systemPrompt = systemPrompt
-	f.sourceCode = sourceCode
-	return f.report, f.err
-}
-
 type bytecodeServiceStoreFake struct {
 	appstore.Store
 
-	detailRows           []appstore.BytecodeDetailRecord
-	activePrompt         *appstore.SourceQualityPrompt
-	updateReportCodeHash common.Hash
-	updateReport         string
-	updateReportVersion  int64
-	updateReportCallSeen bool
+	detailRows []appstore.BytecodeDetailRecord
 }
 
 func (s *bytecodeServiceStoreFake) ListBytecodes(context.Context, *common.Hash, int64, int64) ([]appstore.BytecodeListRecord, int64, error) {
@@ -47,18 +29,6 @@ func (s *bytecodeServiceStoreFake) GetBytecodeDetail(context.Context, common.Has
 	row := s.detailRows[0]
 	s.detailRows = s.detailRows[1:]
 	return &row, nil
-}
-
-func (s *bytecodeServiceStoreFake) GetActiveSourceQualityPrompt(context.Context) (*appstore.SourceQualityPrompt, error) {
-	return s.activePrompt, nil
-}
-
-func (s *bytecodeServiceStoreFake) UpdateBytecodeSourceQualityReport(_ context.Context, codeHash common.Hash, report string, _ string, promptVersion int64) error {
-	s.updateReportCodeHash = codeHash
-	s.updateReport = report
-	s.updateReportVersion = promptVersion
-	s.updateReportCallSeen = true
-	return nil
 }
 
 type walletBlacklistServiceStoreFake struct {
@@ -112,40 +82,23 @@ func TestGetBytecodeReturnsNotFound(t *testing.T) {
 	}
 }
 
-func TestGetBytecodeRefreshesStaleSourceQualityReport(t *testing.T) {
+func TestGetBytecodeReturnsStoredBytecodeDetail(t *testing.T) {
 	codeHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
 	createdAt := time.Now().Add(-time.Hour).UTC()
 	updatedAt := time.Now().UTC()
-	analyzer := &fakeSourceQualityAnalyzer{report: "fresh report"}
 	store := &bytecodeServiceStoreFake{
-		activePrompt: &appstore.SourceQualityPrompt{
-			ID:           2,
-			Version:      2,
-			Name:         "prompt v2",
-			SystemPrompt: "system prompt v2",
-			IsActive:     true,
-			CreatedAt:    createdAt,
-			UpdatedAt:    updatedAt,
-		},
 		detailRows: []appstore.BytecodeDetailRecord{
-			bytecodeDetailRecord(codeHash, "old report", 1, createdAt, updatedAt),
-			bytecodeDetailRecord(codeHash, "fresh report", 2, createdAt, updatedAt),
+			bytecodeDetailRecord(codeHash, createdAt, updatedAt),
 		},
 	}
 
-	service := &Service{store: store, sourceQualityAnalyzer: analyzer}
+	service := &Service{store: store}
 	resp, err := service.GetBytecode(context.Background(), &applicationpkg.GetBytecodeRequest{CodeHash: codeHash.Hex()})
 	if err != nil {
 		t.Fatalf("GetBytecode: %v", err)
 	}
-	if resp.SourceQualityReport != "fresh report" || resp.SourceQualityPromptVersion != 2 {
-		t.Fatalf("report/version = %q/%d, want fresh report/2", resp.SourceQualityReport, resp.SourceQualityPromptVersion)
-	}
-	if analyzer.systemPrompt != "system prompt v2" || analyzer.sourceCode != "contract C {}" {
-		t.Fatalf("analyzer prompt/source = %q/%q, want active prompt and source", analyzer.systemPrompt, analyzer.sourceCode)
-	}
-	if !store.updateReportCallSeen || store.updateReportCodeHash != codeHash || store.updateReportVersion != 2 {
-		t.Fatalf("update report = %s/%q/%d, want refreshed code hash/report/version", store.updateReportCodeHash, store.updateReport, store.updateReportVersion)
+	if resp.CodeHash != codeHash.Hex() || resp.SourceCode != "contract C {}" || !resp.IsOpenSource {
+		t.Fatalf("detail = %#v, want stored bytecode/source facts", resp)
 	}
 }
 
@@ -212,20 +165,16 @@ func TestWalletBlacklistServiceMapsResponses(t *testing.T) {
 	}
 }
 
-func bytecodeDetailRecord(codeHash common.Hash, report string, promptVersion int64, createdAt, updatedAt time.Time) appstore.BytecodeDetailRecord {
+func bytecodeDetailRecord(codeHash common.Hash, createdAt, updatedAt time.Time) appstore.BytecodeDetailRecord {
 	return appstore.BytecodeDetailRecord{
 		Bytecode: appstore.Bytecode{
-			CodeHash:                     codeHash,
-			RuntimeBytecode:              []byte{0x60, 0x00},
-			SourceCode:                   "contract C {}",
-			SourceCodeFetchedAt:          updatedAt,
-			SourceCodeOrigin:             "third_party_api",
-			SourceQualityReport:          report,
-			SourceQualityReportFetchedAt: updatedAt,
-			SourceQualityReportOrigin:    "third_party_api",
-			SourceQualityPromptVersion:   promptVersion,
-			CreatedAt:                    createdAt,
-			UpdatedAt:                    updatedAt,
+			CodeHash:            codeHash,
+			RuntimeBytecode:     []byte{0x60, 0x00},
+			SourceCode:          "contract C {}",
+			SourceCodeFetchedAt: updatedAt,
+			SourceCodeOrigin:    "third_party_api",
+			CreatedAt:           createdAt,
+			UpdatedAt:           updatedAt,
 		},
 		RuntimeBytecodeSize:   2,
 		DeploymentCount:       1,

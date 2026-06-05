@@ -16,6 +16,39 @@ message StartProjectDiscoveryRequest {}
 
 message StopProjectDiscoveryRequest {}
 
+message ListChainsRequest {}
+
+message ListChainsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ApplicationChain items = 1;
+}
+
+message GetChainIngestStatusRequest {
+  int64 chain_id = 1;
+}
+
+message StartChainIngestRequest {
+  int64 chain_id = 1;
+}
+
+message StopChainIngestRequest {
+  int64 chain_id = 1;
+}
+
+message RequestProjectCollectionRequest {
+  int64 chain_id = 1;
+  string contract = 2;
+  string reason = 3;
+}
+
+message RequestProjectCollectionResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectCollectionStatus status = 1;
+}
+
+message GetProjectCollectionStatusRequest {
+  int64 chain_id = 1;
+  string contract = 2;
+}
+
 // GetContractSourceInfoRequest asks the application service to resolve contract bytecode/source facts.
 message GetContractSourceInfoRequest {
   int64 chain_id = 1;
@@ -137,60 +170,6 @@ message DeleteWalletBlacklistEntryRequest {
 // DeleteWalletBlacklistEntryResponse is returned after deleting a wallet blacklist entry.
 message DeleteWalletBlacklistEntryResponse {}
 
-// ListSourceQualityPromptsRequest queries source quality prompts.
-message ListSourceQualityPromptsRequest {}
-
-// ListSourceQualityPromptsResponse returns source quality prompt records.
-message ListSourceQualityPromptsResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt items = 1;
-}
-
-// GetSourceQualityPromptRequest queries one source quality prompt.
-message GetSourceQualityPromptRequest {
-  int64 id = 1;
-}
-
-// CreateSourceQualityPromptRequest creates a source quality prompt.
-message CreateSourceQualityPromptRequest {
-  string name = 1;
-  string system_prompt = 2;
-}
-
-// CreateSourceQualityPromptResponse returns the created prompt.
-message CreateSourceQualityPromptResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
-}
-
-// UpdateSourceQualityPromptRequest creates a new source quality prompt version.
-message UpdateSourceQualityPromptRequest {
-  int64 id = 1;
-  string name = 2;
-  string system_prompt = 3;
-}
-
-// UpdateSourceQualityPromptResponse returns the new prompt version.
-message UpdateSourceQualityPromptResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
-}
-
-// ActivateSourceQualityPromptRequest marks a prompt as current.
-message ActivateSourceQualityPromptRequest {
-  int64 id = 1;
-}
-
-// ActivateSourceQualityPromptResponse returns the activated prompt.
-message ActivateSourceQualityPromptResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt item = 1;
-}
-
-// DeleteSourceQualityPromptRequest soft deletes a prompt.
-message DeleteSourceQualityPromptRequest {
-  int64 id = 1;
-}
-
-// DeleteSourceQualityPromptResponse is returned after deleting a prompt.
-message DeleteSourceQualityPromptResponse {}
-
 // GetProjectOptionsRequest don't need any parameters.
 message GetProjectOptionsRequest {}
 
@@ -216,6 +195,39 @@ service ApplicationService {
       post: "/api/v1/application/discovery/stop"
       body: "*"
     };
+  }
+
+  rpc ListChains(ListChainsRequest) returns (ListChainsResponse) {
+    option (google.api.http) = {get: "/api/v1/application/chains"};
+  }
+
+  rpc GetChainIngestStatus(GetChainIngestStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ChainIngestStatus) {
+    option (google.api.http) = {get: "/api/v1/application/chains/{chain_id}/ingest"};
+  }
+
+  rpc StartChainIngest(StartChainIngestRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ChainIngestStatus) {
+    option (google.api.http) = {
+      post: "/api/v1/application/chains/{chain_id}/ingest/start"
+      body: "*"
+    };
+  }
+
+  rpc StopChainIngest(StopChainIngestRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ChainIngestStatus) {
+    option (google.api.http) = {
+      post: "/api/v1/application/chains/{chain_id}/ingest/stop"
+      body: "*"
+    };
+  }
+
+  rpc RequestProjectCollection(RequestProjectCollectionRequest) returns (RequestProjectCollectionResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/application/projects/{chain_id}/{contract}/collection/request"
+      body: "*"
+    };
+  }
+
+  rpc GetProjectCollectionStatus(GetProjectCollectionStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectCollectionStatus) {
+    option (google.api.http) = {get: "/api/v1/application/projects/{chain_id}/{contract}/collection"};
   }
 
   // GetContractSourceInfo resolves bytecode/source facts for a contract.
@@ -288,45 +300,6 @@ service ApplicationService {
   // DeleteWalletBlacklistEntry deletes a wallet blacklist entry.
   rpc DeleteWalletBlacklistEntry(DeleteWalletBlacklistEntryRequest) returns (DeleteWalletBlacklistEntryResponse) {
     option (google.api.http) = {delete: "/api/v1/application/wallet/blacklist/{wallet}"};
-  }
-
-  // ListSourceQualityPrompts returns configured source quality prompts.
-  rpc ListSourceQualityPrompts(ListSourceQualityPromptsRequest) returns (ListSourceQualityPromptsResponse) {
-    option (google.api.http) = {get: "/api/v1/application/source-quality/prompts"};
-  }
-
-  // GetSourceQualityPrompt returns one source quality prompt.
-  rpc GetSourceQualityPrompt(GetSourceQualityPromptRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.SourceQualityPrompt) {
-    option (google.api.http) = {get: "/api/v1/application/source-quality/prompts/{id}"};
-  }
-
-  // CreateSourceQualityPrompt creates a source quality prompt.
-  rpc CreateSourceQualityPrompt(CreateSourceQualityPromptRequest) returns (CreateSourceQualityPromptResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/application/source-quality/prompts"
-      body: "*"
-    };
-  }
-
-  // UpdateSourceQualityPrompt creates a new source quality prompt version.
-  rpc UpdateSourceQualityPrompt(UpdateSourceQualityPromptRequest) returns (UpdateSourceQualityPromptResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/application/source-quality/prompts/{id}"
-      body: "*"
-    };
-  }
-
-  // ActivateSourceQualityPrompt marks a prompt as current.
-  rpc ActivateSourceQualityPrompt(ActivateSourceQualityPromptRequest) returns (ActivateSourceQualityPromptResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/application/source-quality/prompts/{id}/activate"
-      body: "*"
-    };
-  }
-
-  // DeleteSourceQualityPrompt soft deletes a prompt.
-  rpc DeleteSourceQualityPrompt(DeleteSourceQualityPromptRequest) returns (DeleteSourceQualityPromptResponse) {
-    option (google.api.http) = {delete: "/api/v1/application/source-quality/prompts/{id}"};
   }
 
   // GetProjectOptions returns the options.

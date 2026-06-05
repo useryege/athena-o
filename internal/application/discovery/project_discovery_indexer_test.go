@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
+	"github.com/useryege/athena/internal/application/model"
 	appstore "github.com/useryege/athena/internal/application/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
@@ -165,6 +166,7 @@ type discoveryProjectStoreFake struct {
 	gotBlockNumber uint64
 	gotTxIndex     uint64
 	gotPairs       []common.Address
+	gotChainID     int64
 	gotCodeBinHash common.Hash
 }
 
@@ -172,20 +174,21 @@ func (s *discoveryProjectStoreFake) SaveProjectMeta(context.Context, appstore.Pr
 	return nil
 }
 
-func (s *discoveryProjectStoreFake) GetMaxProjectBlockNumber(context.Context) (uint64, bool, error) {
+func (s *discoveryProjectStoreFake) GetMaxProjectBlockNumber(context.Context, int64) (uint64, bool, error) {
 	return s.maxBlock, s.maxBlockOK, s.maxBlockErr
 }
 
-func (s *discoveryProjectStoreFake) ListProjectMetas(context.Context) ([]appstore.ProjectMeta, error) {
+func (s *discoveryProjectStoreFake) ListProjectMetas(context.Context, int64) ([]appstore.ProjectMeta, error) {
 	return nil, nil
 }
 
-func (s *discoveryProjectStoreFake) ListAllProjectMetas(context.Context) ([]appstore.ProjectMeta, error) {
+func (s *discoveryProjectStoreFake) ListAllProjectMetas(context.Context, int64) ([]appstore.ProjectMeta, error) {
 	return nil, nil
 }
 
-func (s *discoveryProjectStoreFake) ListProjectMetasByPairAddresses(_ context.Context, pairs []common.Address) ([]appstore.ProjectMeta, error) {
+func (s *discoveryProjectStoreFake) ListProjectMetasByPairAddresses(_ context.Context, chainID int64, pairs []common.Address) ([]appstore.ProjectMeta, error) {
 	s.pairCalls++
+	s.gotChainID = chainID
 	s.gotPairs = append([]common.Address(nil), pairs...)
 	return append([]appstore.ProjectMeta(nil), s.pairMetas...), nil
 }
@@ -204,27 +207,19 @@ func (s *discoveryProjectStoreFake) UpdateProjectCodeBinHash(context.Context, co
 	return nil
 }
 
-func (s *discoveryProjectStoreFake) UpdateProjectSourceQualityReport(context.Context, common.Address, string, string) error {
+func (s *discoveryProjectStoreFake) UpsertProjectAveDetail(context.Context, int64, common.Address, appstore.ProjectAveDetail) error {
 	return nil
 }
 
-func (s *discoveryProjectStoreFake) UpsertProjectAveDetail(context.Context, common.Address, appstore.ProjectAveDetail) error {
+func (s *discoveryProjectStoreFake) UpdateProjectCreatorResult(context.Context, int64, common.Address, appstore.SimulateResult) error {
 	return nil
 }
 
-func (s *discoveryProjectStoreFake) UpdateProjectCreatorResult(context.Context, common.Address, appstore.SimulateResult) error {
-	return nil
-}
-
-func (s *discoveryProjectStoreFake) UpdateProjectReport(context.Context, common.Address, appstore.ProjectReport) error {
-	return nil
-}
-
-func (s *discoveryProjectStoreFake) ListProjectMetasByCreator(context.Context, common.Address) ([]appstore.ProjectMeta, error) {
+func (s *discoveryProjectStoreFake) ListProjectMetasByCreator(context.Context, int64, common.Address) ([]appstore.ProjectMeta, error) {
 	return nil, nil
 }
 
-func (s *discoveryProjectStoreFake) ListProjectMetasByCreatorBefore(_ context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectMeta, error) {
+func (s *discoveryProjectStoreFake) ListProjectMetasByCreatorBefore(_ context.Context, _ int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectMeta, error) {
 	s.calls++
 	s.gotCreator = creator
 	s.gotBlockNumber = blockNumber
@@ -239,7 +234,7 @@ func (s *discoveryProjectStoreFake) ListProjectMetasByCreatorBefore(_ context.Co
 	return append([]appstore.ProjectMeta(nil), s.metas...), nil
 }
 
-func (s *discoveryProjectStoreFake) GetProjectMetaByContract(context.Context, common.Address) (*appstore.ProjectMeta, error) {
+func (s *discoveryProjectStoreFake) GetProjectMetaByContract(context.Context, int64, common.Address) (*appstore.ProjectMeta, error) {
 	return nil, nil
 }
 
@@ -249,6 +244,7 @@ func TestProjectDiscoveryIndexerLoadCursorUsesStoreMaxProjectBlock(t *testing.T)
 	indexer := &projectDiscoveryIndexerImpl{
 		nodeClient:   node,
 		projectStore: &discoveryProjectStoreFake{maxBlock: 103, maxBlockOK: true},
+		chainID:      big.NewInt(56),
 	}
 
 	cursor, err := indexer.loadCursor(ctx)
@@ -331,7 +327,8 @@ func TestProjectDiscoveryIndexerScanBlockRunsProjectCreationAndSwapTasks(t *test
 	}
 	indexer := &projectDiscoveryIndexerImpl{
 		nodeClient: node,
-		intake:     &discoveryIntakeImpl{intake: &discoveryIntakeFake{}},
+		intake:     &discoveryIntakeImpl{store: &discoveryIntakeFake{}, chainID: 56},
+		chainID:    big.NewInt(56),
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -388,6 +385,7 @@ func TestProjectDiscoveryIndexerSchedulesCachedProjectBySwapPair(t *testing.T) {
 	pair := common.HexToAddress("0x00000000000000000000000000000000000000a1")
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
 	if err := cache.SetChainState(ctx, appstore.ProjectChainState{
+		ChainID:         56,
 		ProjectContract: contract,
 		WethPair:        pair,
 	}); err != nil {
@@ -403,7 +401,8 @@ func TestProjectDiscoveryIndexerSchedulesCachedProjectBySwapPair(t *testing.T) {
 		nodeClient:     node,
 		componentCache: cache,
 		projectStore:   store,
-		intake:         &discoveryIntakeImpl{intake: intakeFake},
+		intake:         &discoveryIntakeImpl{store: intakeFake, chainID: 56},
+		chainID:        big.NewInt(56),
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -439,7 +438,8 @@ func TestProjectDiscoveryIndexerSchedulesStoredProjectBySwapPair(t *testing.T) {
 		nodeClient:     node,
 		componentCache: cache,
 		projectStore:   store,
-		intake:         &discoveryIntakeImpl{intake: intakeFake},
+		intake:         &discoveryIntakeImpl{store: intakeFake, chainID: 56},
+		chainID:        big.NewInt(56),
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -470,7 +470,8 @@ func TestProjectDiscoveryIndexerSkipsSwapPairsWithoutProjectMatch(t *testing.T) 
 		nodeClient:     node,
 		componentCache: cache,
 		projectStore:   store,
-		intake:         &discoveryIntakeImpl{intake: intakeFake},
+		intake:         &discoveryIntakeImpl{store: intakeFake, chainID: 56},
+		chainID:        big.NewInt(56),
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -491,6 +492,7 @@ func TestProjectDiscoveryIndexerDeduplicatesSwapPairProjectSchedules(t *testing.
 	usdtPair := common.HexToAddress("0x00000000000000000000000000000000000000a2")
 	contract := common.HexToAddress("0x00000000000000000000000000000000000000c1")
 	if err := cache.SetChainState(ctx, appstore.ProjectChainState{
+		ChainID:         56,
 		ProjectContract: contract,
 		WethPair:        wethPair,
 		UsdtPair:        usdtPair,
@@ -510,7 +512,8 @@ func TestProjectDiscoveryIndexerDeduplicatesSwapPairProjectSchedules(t *testing.
 		nodeClient:     node,
 		componentCache: cache,
 		projectStore:   &discoveryProjectStoreFake{},
-		intake:         &discoveryIntakeImpl{intake: intakeFake},
+		intake:         &discoveryIntakeImpl{store: intakeFake, chainID: 56},
+		chainID:        big.NewInt(56),
 	}
 
 	if err := indexer.scanBlock(ctx, 123, ProjectDiscoverySourceCatchUp); err != nil {
@@ -531,25 +534,26 @@ type discoveryIntakeFake struct {
 	scheduled     []DiscoveredProjectCandidate
 }
 
-func (r *discoveryIntakeFake) Start(context.Context) error { return nil }
-func (r *discoveryIntakeFake) Stop() error                 { return nil }
-
-func (r *discoveryIntakeFake) IntakeCandidates(_ context.Context, items []DiscoveredProjectCandidate) error {
+func (r *discoveryIntakeFake) UpsertProjectCandidateAndEnqueueQualification(_ context.Context, item model.DiscoveredProjectCandidate) error {
 	r.calls++
-	r.items = append([]DiscoveredProjectCandidate(nil), items...)
+	r.items = append(r.items, item)
 	return nil
 }
 
-func (r *discoveryIntakeFake) ScheduleProjects(_ context.Context, items []DiscoveredProjectCandidate) error {
+func (r *discoveryIntakeFake) EnqueueProjectCollection(_ context.Context, ref model.ProjectRef, reason string) error {
 	r.scheduleCalls++
-	r.scheduled = append([]DiscoveredProjectCandidate(nil), items...)
+	r.scheduled = append(r.scheduled, DiscoveredProjectCandidate{
+		ChainID:  ref.ChainID,
+		Contract: ref.Contract,
+		Source:   model.ProjectDiscoverySource(reason),
+	})
 	return nil
 }
 
-func TestDiscoveryIntakeCandidatesPassesBatchToIntakeCandidates(t *testing.T) {
+func TestDiscoveryIntakeCandidatesUpsertsCandidatesAndEnqueuesQualification(t *testing.T) {
 	ctx := context.Background()
 	intakeFake := &discoveryIntakeFake{}
-	intake := &discoveryIntakeImpl{intake: intakeFake}
+	intake := &discoveryIntakeImpl{store: intakeFake, chainID: 56}
 	items := []DiscoveredProjectCandidate{
 		{Contract: common.HexToAddress("0x00000000000000000000000000000000000000a1")},
 		{Contract: common.HexToAddress("0x00000000000000000000000000000000000000a2")},
@@ -558,10 +562,15 @@ func TestDiscoveryIntakeCandidatesPassesBatchToIntakeCandidates(t *testing.T) {
 	if err := intake.IntakeCandidates(ctx, items); err != nil {
 		t.Fatalf("intake candidates: %v", err)
 	}
-	if intakeFake.calls != 1 {
-		t.Fatalf("intake candidates calls = %d, want 1", intakeFake.calls)
+	if intakeFake.calls != len(items) {
+		t.Fatalf("intake candidates calls = %d, want %d", intakeFake.calls, len(items))
 	}
 	if len(intakeFake.items) != len(items) {
 		t.Fatalf("intake candidates item count = %d, want %d", len(intakeFake.items), len(items))
+	}
+	for _, item := range intakeFake.items {
+		if item.ChainID != 56 {
+			t.Fatalf("candidate chain id = %d, want 56", item.ChainID)
+		}
 	}
 }

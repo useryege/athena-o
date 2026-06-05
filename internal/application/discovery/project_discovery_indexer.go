@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/application/model"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -42,7 +43,8 @@ type projectDiscoveryIndexerImpl struct {
 }
 
 type discoveryIntakeImpl struct {
-	intake DiscoveryIntake
+	store   appstore.ProjectIntakeStore
+	chainID int64
 }
 
 func NewProjectDiscoveryIndexer(
@@ -65,11 +67,10 @@ func NewProjectDiscoveryIndexer(
 	}, nil
 }
 
-func NewDiscoveryIntake(
-	intake DiscoveryIntake,
-) DiscoveryIntake {
+func NewDiscoveryIntake(store appstore.ProjectIntakeStore, chainID int64) DiscoveryIntake {
 	return &discoveryIntakeImpl{
-		intake: intake,
+		store:   store,
+		chainID: chainID,
 	}
 }
 
@@ -89,6 +90,17 @@ func (w *projectDiscoveryIndexerImpl) Start(ctx context.Context) error {
 func (w *projectDiscoveryIndexerImpl) Stop() error {
 	w.wg.Wait()
 	return nil
+}
+
+func (w *projectDiscoveryIndexerImpl) chainIDValue() int64 {
+	if w != nil && w.chainID != nil && w.chainID.Sign() > 0 {
+		return w.chainID.Int64()
+	}
+	return appstore.DefaultChainID
+}
+
+func (w *projectDiscoveryIndexerImpl) chainIDBig() *big.Int {
+	return big.NewInt(w.chainIDValue())
 }
 
 func (w *projectDiscoveryIndexerImpl) getLatestBlock(ctx context.Context) (uint64, error) {
@@ -113,7 +125,7 @@ func (w *projectDiscoveryIndexerImpl) run(ctx context.Context) error {
 
 func (w *projectDiscoveryIndexerImpl) loadCursor(ctx context.Context) (uint64, error) {
 	if w.projectStore != nil {
-		maxBlock, ok, err := w.projectStore.GetMaxProjectBlockNumber(ctx)
+		maxBlock, ok, err := w.projectStore.GetMaxProjectBlockNumber(ctx, w.chainIDValue())
 		if err != nil {
 			return 0, err
 		}
@@ -371,7 +383,7 @@ func (w *projectDiscoveryIndexerImpl) scheduleProjectsBySwapPairs(ctx context.Co
 		projects = append(projects, dbProjects...)
 	}
 
-	candidates := discoveredCandidatesFromSwapProjects(blockNumber, projects)
+	candidates := discoveredCandidatesFromSwapProjects(w.chainIDValue(), blockNumber, projects)
 	if len(candidates) == 0 {
 		return nil
 	}
@@ -390,7 +402,7 @@ func (w *projectDiscoveryIndexerImpl) projectsByCachedSwapPairs(ctx context.Cont
 	if w.componentCache == nil {
 		return nil, matchedPairs, nil
 	}
-	states, err := w.componentCache.ListChainStatesByPairAddresses(ctx, pairAddresses)
+	states, err := w.componentCache.ListChainStatesByPairAddresses(ctx, w.chainIDValue(), pairAddresses)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -416,7 +428,7 @@ func (w *projectDiscoveryIndexerImpl) projectsByStoredSwapPairs(ctx context.Cont
 	}
 	store, ok := w.projectStore.(appstore.ProjectChainStateStore)
 	if !ok || store == nil {
-		metas, err := w.projectStore.ListProjectMetasByPairAddresses(ctx, pairAddresses)
+		metas, err := w.projectStore.ListProjectMetasByPairAddresses(ctx, w.chainIDValue(), pairAddresses)
 		if err != nil {
 			return nil, err
 		}
@@ -426,7 +438,7 @@ func (w *projectDiscoveryIndexerImpl) projectsByStoredSwapPairs(ctx context.Cont
 		}
 		return projects, nil
 	}
-	states, err := store.ListProjectChainStatesByPairAddresses(ctx, pairAddresses)
+	states, err := store.ListProjectChainStatesByPairAddresses(ctx, w.chainIDValue(), pairAddresses)
 	if err != nil {
 		return nil, err
 	}
@@ -453,9 +465,14 @@ func (w *projectDiscoveryIndexerImpl) projectFromChainState(ctx context.Context,
 	if state.ProjectContract == (common.Address{}) {
 		return nil, nil
 	}
+	chainID := state.ChainID
+	if chainID <= 0 {
+		chainID = w.chainIDValue()
+		state.ChainID = chainID
+	}
 	var base *appstore.ProjectBase
 	if w.componentCache != nil {
-		if cached, ok, err := w.componentCache.GetBase(ctx, state.ProjectContract); err != nil {
+		if cached, ok, err := w.componentCache.GetBase(ctx, chainID, state.ProjectContract); err != nil {
 			return nil, err
 		} else if ok {
 			base = cached
@@ -463,7 +480,7 @@ func (w *projectDiscoveryIndexerImpl) projectFromChainState(ctx context.Context,
 	}
 	if base == nil {
 		if store, ok := w.projectStore.(appstore.ProjectBaseStore); ok && store != nil {
-			loaded, err := store.GetProjectBaseByContract(ctx, state.ProjectContract)
+			loaded, err := store.GetProjectBaseByContract(ctx, chainID, state.ProjectContract)
 			if err != nil {
 				return nil, err
 			}
@@ -476,9 +493,10 @@ func (w *projectDiscoveryIndexerImpl) projectFromChainState(ctx context.Context,
 		}
 	}
 	if base == nil {
-		return &Project{Meta: ProjectMeta{Contract: state.ProjectContract, WethPair: state.WethPair, UsdtPair: state.UsdtPair}}, nil
+		return &Project{Meta: ProjectMeta{ChainID: chainID, Contract: state.ProjectContract, WethPair: state.WethPair, UsdtPair: state.UsdtPair}}, nil
 	}
 	return &Project{Meta: ProjectMeta{
+		ChainID:     chainID,
 		BlockTime:   base.BlockTime,
 		BlockNumber: base.BlockNumber,
 		Contract:    base.Contract,
@@ -490,7 +508,7 @@ func (w *projectDiscoveryIndexerImpl) projectFromChainState(ctx context.Context,
 	}}, nil
 }
 
-func discoveredCandidatesFromSwapProjects(blockNumber uint64, projects []*Project) []DiscoveredProjectCandidate {
+func discoveredCandidatesFromSwapProjects(chainID int64, blockNumber uint64, projects []*Project) []DiscoveredProjectCandidate {
 	seen := make(map[common.Address]struct{}, len(projects))
 	candidates := make([]DiscoveredProjectCandidate, 0, len(projects))
 	for _, project := range projects {
@@ -502,6 +520,7 @@ func discoveredCandidatesFromSwapProjects(blockNumber uint64, projects []*Projec
 		}
 		seen[project.Meta.Contract] = struct{}{}
 		candidates = append(candidates, DiscoveredProjectCandidate{
+			ChainID:     chainID,
 			BlockTime:   project.Meta.BlockTime,
 			BlockNumber: blockNumber,
 			TxIndex:     project.Meta.TxIndex,
@@ -553,12 +572,13 @@ func (w *projectDiscoveryIndexerImpl) discoverBlockCandidates(block *types.Block
 		if tx.To() != nil {
 			continue
 		}
-		from, err := types.Sender(types.LatestSignerForChainID(w.chainID), tx)
+		from, err := types.Sender(types.LatestSignerForChainID(w.chainIDBig()), tx)
 		if err != nil {
 			continue
 		}
 		contractAddress := crypto.CreateAddress(from, tx.Nonce())
 		candidates = append(candidates, DiscoveredProjectCandidate{
+			ChainID:     w.chainIDValue(),
 			BlockTime:   block.Time(),
 			BlockNumber: blockNumber,
 			TxIndex:     uint64(txIndex),
@@ -576,18 +596,35 @@ func (d *discoveryIntakeImpl) IntakeCandidates(ctx context.Context, items []Disc
 	if len(items) == 0 {
 		return nil
 	}
-	if d == nil || d.intake == nil {
+	if d == nil || d.store == nil {
 		return nil
 	}
-	return d.intake.IntakeCandidates(ctx, items)
+	for _, item := range items {
+		if item.ChainID <= 0 {
+			item.ChainID = d.chainID
+		}
+		if err := d.store.UpsertProjectCandidateAndEnqueueQualification(ctx, item); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (d *discoveryIntakeImpl) ScheduleProjects(ctx context.Context, items []DiscoveredProjectCandidate) error {
 	if len(items) == 0 {
 		return nil
 	}
-	if d == nil || d.intake == nil {
+	if d == nil || d.store == nil {
 		return nil
 	}
-	return d.intake.ScheduleProjects(ctx, items)
+	for _, item := range items {
+		chainID := item.ChainID
+		if chainID <= 0 {
+			chainID = d.chainID
+		}
+		if err := d.store.EnqueueProjectCollection(ctx, model.ProjectRef{ChainID: chainID, Contract: item.Contract}, string(item.Source)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

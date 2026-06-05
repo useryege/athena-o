@@ -58,6 +58,90 @@ func (s *Server) StopProjectDiscovery(ctx context.Context, _ *applicationpkg.Sto
 	return client.StopProjectDiscovery(ctx, &applicationapiclient.StopProjectDiscoveryRequest{})
 }
 
+func (s *Server) ListChains(ctx context.Context, _ *applicationpkg.ListChainsRequest) (*applicationpkg.ListChainsResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListChains(ctx, &applicationapiclient.ListChainsRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.ListChainsResponse{Items: resp.GetItems()}, nil
+}
+
+func (s *Server) GetChainIngestStatus(ctx context.Context, req *applicationpkg.GetChainIngestStatusRequest) (*v1alpha1.ChainIngestStatus, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	return client.GetChainIngestStatus(ctx, &applicationapiclient.GetChainIngestStatusRequest{ChainId: req.GetChainId()})
+}
+
+func (s *Server) StartChainIngest(ctx context.Context, req *applicationpkg.StartChainIngestRequest) (*v1alpha1.ChainIngestStatus, error) {
+	if err := s.ensureHasProjectDiscoveryPermission(ctx); err != nil {
+		return nil, err
+	}
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	return client.StartChainIngest(ctx, &applicationapiclient.StartChainIngestRequest{ChainId: req.GetChainId()})
+}
+
+func (s *Server) StopChainIngest(ctx context.Context, req *applicationpkg.StopChainIngestRequest) (*v1alpha1.ChainIngestStatus, error) {
+	if err := s.ensureHasProjectDiscoveryPermission(ctx); err != nil {
+		return nil, err
+	}
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	return client.StopChainIngest(ctx, &applicationapiclient.StopChainIngestRequest{ChainId: req.GetChainId()})
+}
+
+func (s *Server) RequestProjectCollection(ctx context.Context, req *applicationpkg.RequestProjectCollectionRequest) (*applicationpkg.RequestProjectCollectionResponse, error) {
+	if err := s.ensureHasProjectDiscoveryPermission(ctx); err != nil {
+		return nil, err
+	}
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.RequestProjectCollection(ctx, &applicationapiclient.RequestProjectCollectionRequest{
+		ChainId:  req.GetChainId(),
+		Contract: req.GetContract(),
+		Reason:   req.GetReason(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.RequestProjectCollectionResponse{Status: resp.GetStatus()}, nil
+}
+
+func (s *Server) GetProjectCollectionStatus(ctx context.Context, req *applicationpkg.GetProjectCollectionStatusRequest) (*v1alpha1.ProjectCollectionStatus, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	return client.GetProjectCollectionStatus(ctx, &applicationapiclient.GetProjectCollectionStatusRequest{
+		ChainId:  req.GetChainId(),
+		Contract: req.GetContract(),
+	})
+}
+
 func (s *Server) ensureHasProjectDiscoveryPermission(ctx context.Context) error {
 	if s.enf == nil {
 		return status.Error(codes.PermissionDenied, "permission denied to control application discovery")
@@ -275,90 +359,4 @@ func (s *Server) DeleteWalletBlacklistEntry(ctx context.Context, req *applicatio
 		return nil, err
 	}
 	return &applicationpkg.DeleteWalletBlacklistEntryResponse{}, nil
-}
-
-func (s *Server) ListSourceQualityPrompts(ctx context.Context, _ *applicationpkg.ListSourceQualityPromptsRequest) (*applicationpkg.ListSourceQualityPromptsResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListSourceQualityPrompts(ctx, &applicationapiclient.ListSourceQualityPromptsRequest{})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.ListSourceQualityPromptsResponse{Items: resp.GetItems()}, nil
-}
-
-func (s *Server) GetSourceQualityPrompt(ctx context.Context, req *applicationpkg.GetSourceQualityPromptRequest) (*v1alpha1.SourceQualityPrompt, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	return client.GetSourceQualityPrompt(ctx, &applicationapiclient.GetSourceQualityPromptRequest{Id: req.GetId()})
-}
-
-func (s *Server) CreateSourceQualityPrompt(ctx context.Context, req *applicationpkg.CreateSourceQualityPromptRequest) (*applicationpkg.CreateSourceQualityPromptResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.CreateSourceQualityPrompt(ctx, &applicationapiclient.CreateSourceQualityPromptRequest{
-		Name:         req.GetName(),
-		SystemPrompt: req.GetSystemPrompt(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.CreateSourceQualityPromptResponse{Item: resp.GetItem()}, nil
-}
-
-func (s *Server) UpdateSourceQualityPrompt(ctx context.Context, req *applicationpkg.UpdateSourceQualityPromptRequest) (*applicationpkg.UpdateSourceQualityPromptResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.UpdateSourceQualityPrompt(ctx, &applicationapiclient.UpdateSourceQualityPromptRequest{
-		Id:           req.GetId(),
-		Name:         req.GetName(),
-		SystemPrompt: req.GetSystemPrompt(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.UpdateSourceQualityPromptResponse{Item: resp.GetItem()}, nil
-}
-
-func (s *Server) ActivateSourceQualityPrompt(ctx context.Context, req *applicationpkg.ActivateSourceQualityPromptRequest) (*applicationpkg.ActivateSourceQualityPromptResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ActivateSourceQualityPrompt(ctx, &applicationapiclient.ActivateSourceQualityPromptRequest{Id: req.GetId()})
-	if err != nil {
-		return nil, err
-	}
-	return &applicationpkg.ActivateSourceQualityPromptResponse{Item: resp.GetItem()}, nil
-}
-
-func (s *Server) DeleteSourceQualityPrompt(ctx context.Context, req *applicationpkg.DeleteSourceQualityPromptRequest) (*applicationpkg.DeleteSourceQualityPromptResponse, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	if _, err := client.DeleteSourceQualityPrompt(ctx, &applicationapiclient.DeleteSourceQualityPromptRequest{Id: req.GetId()}); err != nil {
-		return nil, err
-	}
-	return &applicationpkg.DeleteSourceQualityPromptResponse{}, nil
 }

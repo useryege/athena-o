@@ -13,23 +13,44 @@ import (
 
 const getProjectAveComponentState = `-- name: GetProjectAveComponentState :one
 SELECT
-  project_contract,
-  component,
-  status,
-  last_attempt_at,
-  last_success_at,
-  next_run_at,
-  last_error,
-  updated_at
-FROM project_component_state
-WHERE project_contract = $1
-  AND component = 'ave_detail'
+  p.chain_id,
+  p.contract AS project_contract,
+  s.component,
+  s.status,
+  s.last_attempt_at,
+  s.last_success_at,
+  s.next_run_at,
+  s.last_error,
+  s.updated_at
+FROM project_component_state s
+JOIN project p ON p.id = s.project_id
+WHERE p.chain_id = $1
+  AND p.contract = $2
+  AND s.component = 'ave_detail'
 `
 
-func (q *Queries) GetProjectAveComponentState(ctx context.Context, projectContract []byte) (ProjectComponentState, error) {
-	row := q.db.QueryRow(ctx, getProjectAveComponentState, projectContract)
-	var i ProjectComponentState
+type GetProjectAveComponentStateParams struct {
+	ChainID         int64
+	ProjectContract []byte
+}
+
+type GetProjectAveComponentStateRow struct {
+	ChainID         int64
+	ProjectContract []byte
+	Component       string
+	Status          string
+	LastAttemptAt   pgtype.Timestamptz
+	LastSuccessAt   pgtype.Timestamptz
+	NextRunAt       pgtype.Timestamptz
+	LastError       pgtype.Text
+	UpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) GetProjectAveComponentState(ctx context.Context, arg GetProjectAveComponentStateParams) (GetProjectAveComponentStateRow, error) {
+	row := q.db.QueryRow(ctx, getProjectAveComponentState, arg.ChainID, arg.ProjectContract)
+	var i GetProjectAveComponentStateRow
 	err := row.Scan(
+		&i.ChainID,
 		&i.ProjectContract,
 		&i.Component,
 		&i.Status,
@@ -46,25 +67,32 @@ const listProjectAveRefreshCandidates = `-- name: ListProjectAveRefreshCandidate
 SELECT p.contract
 FROM project p
 LEFT JOIN project_ave_token_detail d
-  ON d.project_contract = p.contract
+  ON d.project_id = p.id
 LEFT JOIN project_component_state s
-  ON s.project_contract = p.contract
+  ON s.project_id = p.id
   AND s.component = 'ave_detail'
-WHERE (d.project_contract IS NULL OR d.fetched_at < $1::timestamptz)
-  AND (s.next_run_at IS NULL OR s.next_run_at <= $2::timestamptz)
+WHERE p.chain_id = $1
+  AND (d.project_id IS NULL OR d.fetched_at < $2::timestamptz)
+  AND (s.next_run_at IS NULL OR s.next_run_at <= $3::timestamptz)
   AND COALESCE(s.status, '') <> 'running'
 ORDER BY COALESCE(s.next_run_at, d.fetched_at, p.created_at), p.id
-LIMIT $3
+LIMIT $4
 `
 
 type ListProjectAveRefreshCandidatesParams struct {
+	ChainID     int64
 	StaleBefore pgtype.Timestamptz
 	Now         pgtype.Timestamptz
 	LimitCount  int32
 }
 
 func (q *Queries) ListProjectAveRefreshCandidates(ctx context.Context, arg ListProjectAveRefreshCandidatesParams) ([][]byte, error) {
-	rows, err := q.db.Query(ctx, listProjectAveRefreshCandidates, arg.StaleBefore, arg.Now, arg.LimitCount)
+	rows, err := q.db.Query(ctx, listProjectAveRefreshCandidates,
+		arg.ChainID,
+		arg.StaleBefore,
+		arg.Now,
+		arg.LimitCount,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -85,14 +113,21 @@ func (q *Queries) ListProjectAveRefreshCandidates(ctx context.Context, arg ListP
 
 const markProjectAveRefreshFailed = `-- name: MarkProjectAveRefreshFailed :exec
 INSERT INTO project_component_state (
-  project_contract,
+  project_id,
   component,
   status,
   last_attempt_at,
   next_run_at,
   last_error
-) VALUES ($1, 'ave_detail', 'failed', $2, $3, $4)
-ON CONFLICT (project_contract, component) DO UPDATE
+) VALUES (
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
+  'ave_detail',
+  'failed',
+  $3,
+  $4,
+  $5
+)
+ON CONFLICT (project_id, component) DO UPDATE
 SET status = EXCLUDED.status,
   last_attempt_at = EXCLUDED.last_attempt_at,
   next_run_at = EXCLUDED.next_run_at,
@@ -101,6 +136,7 @@ SET status = EXCLUDED.status,
 `
 
 type MarkProjectAveRefreshFailedParams struct {
+	ChainID         int64
 	ProjectContract []byte
 	LastAttemptAt   pgtype.Timestamptz
 	NextRunAt       pgtype.Timestamptz
@@ -109,6 +145,7 @@ type MarkProjectAveRefreshFailedParams struct {
 
 func (q *Queries) MarkProjectAveRefreshFailed(ctx context.Context, arg MarkProjectAveRefreshFailedParams) error {
 	_, err := q.db.Exec(ctx, markProjectAveRefreshFailed,
+		arg.ChainID,
 		arg.ProjectContract,
 		arg.LastAttemptAt,
 		arg.NextRunAt,
@@ -119,13 +156,19 @@ func (q *Queries) MarkProjectAveRefreshFailed(ctx context.Context, arg MarkProje
 
 const markProjectAveRefreshRunning = `-- name: MarkProjectAveRefreshRunning :exec
 INSERT INTO project_component_state (
-  project_contract,
+  project_id,
   component,
   status,
   last_attempt_at,
   next_run_at
-) VALUES ($1, 'ave_detail', 'running', $2, NULL)
-ON CONFLICT (project_contract, component) DO UPDATE
+) VALUES (
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
+  'ave_detail',
+  'running',
+  $3,
+  NULL
+)
+ON CONFLICT (project_id, component) DO UPDATE
 SET status = EXCLUDED.status,
   last_attempt_at = EXCLUDED.last_attempt_at,
   next_run_at = NULL,
@@ -133,26 +176,35 @@ SET status = EXCLUDED.status,
 `
 
 type MarkProjectAveRefreshRunningParams struct {
+	ChainID         int64
 	ProjectContract []byte
 	LastAttemptAt   pgtype.Timestamptz
 }
 
 func (q *Queries) MarkProjectAveRefreshRunning(ctx context.Context, arg MarkProjectAveRefreshRunningParams) error {
-	_, err := q.db.Exec(ctx, markProjectAveRefreshRunning, arg.ProjectContract, arg.LastAttemptAt)
+	_, err := q.db.Exec(ctx, markProjectAveRefreshRunning, arg.ChainID, arg.ProjectContract, arg.LastAttemptAt)
 	return err
 }
 
 const markProjectAveRefreshSuccess = `-- name: MarkProjectAveRefreshSuccess :exec
 INSERT INTO project_component_state (
-  project_contract,
+  project_id,
   component,
   status,
   last_attempt_at,
   last_success_at,
   next_run_at,
   last_error
-) VALUES ($1, 'ave_detail', 'success', $2, $2, $3, NULL)
-ON CONFLICT (project_contract, component) DO UPDATE
+) VALUES (
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
+  'ave_detail',
+  'success',
+  $3,
+  $3,
+  $4,
+  NULL
+)
+ON CONFLICT (project_id, component) DO UPDATE
 SET status = EXCLUDED.status,
   last_attempt_at = EXCLUDED.last_attempt_at,
   last_success_at = EXCLUDED.last_success_at,
@@ -162,35 +214,47 @@ SET status = EXCLUDED.status,
 `
 
 type MarkProjectAveRefreshSuccessParams struct {
+	ChainID         int64
 	ProjectContract []byte
 	LastAttemptAt   pgtype.Timestamptz
 	NextRunAt       pgtype.Timestamptz
 }
 
 func (q *Queries) MarkProjectAveRefreshSuccess(ctx context.Context, arg MarkProjectAveRefreshSuccessParams) error {
-	_, err := q.db.Exec(ctx, markProjectAveRefreshSuccess, arg.ProjectContract, arg.LastAttemptAt, arg.NextRunAt)
+	_, err := q.db.Exec(ctx, markProjectAveRefreshSuccess,
+		arg.ChainID,
+		arg.ProjectContract,
+		arg.LastAttemptAt,
+		arg.NextRunAt,
+	)
 	return err
 }
 
 const scheduleProjectAveRefresh = `-- name: ScheduleProjectAveRefresh :exec
 INSERT INTO project_component_state (
-  project_contract,
+  project_id,
   component,
   status,
   next_run_at
-) VALUES ($1, 'ave_detail', 'pending', $2)
-ON CONFLICT (project_contract, component) DO UPDATE
+) VALUES (
+  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
+  'ave_detail',
+  'pending',
+  $3
+)
+ON CONFLICT (project_id, component) DO UPDATE
 SET status = EXCLUDED.status,
   next_run_at = EXCLUDED.next_run_at,
   updated_at = now()
 `
 
 type ScheduleProjectAveRefreshParams struct {
+	ChainID         int64
 	ProjectContract []byte
 	NextRunAt       pgtype.Timestamptz
 }
 
 func (q *Queries) ScheduleProjectAveRefresh(ctx context.Context, arg ScheduleProjectAveRefreshParams) error {
-	_, err := q.db.Exec(ctx, scheduleProjectAveRefresh, arg.ProjectContract, arg.NextRunAt)
+	_, err := q.db.Exec(ctx, scheduleProjectAveRefresh, arg.ChainID, arg.ProjectContract, arg.NextRunAt)
 	return err
 }

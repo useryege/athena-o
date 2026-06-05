@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -101,15 +102,17 @@ func Migrate(ctx context.Context, dsn string, migrations fs.FS, dir string) erro
 		gooseMu.Lock()
 		defer gooseMu.Unlock()
 
-		goose.SetBaseFS(migrations)
-		defer goose.SetBaseFS(nil)
-		if err := goose.SetDialect("postgres"); err != nil {
-			return fmt.Errorf("set goose postgres dialect: %w", err)
-		}
-		if err := goose.UpContext(ctx, db, dir); err != nil {
-			return fmt.Errorf("run postgres migrations: %w", err)
-		}
-		return nil
+		return withMigrationAdvisoryLock(ctx, db, migrationLockName(dsn, dir), func() error {
+			goose.SetBaseFS(migrations)
+			defer goose.SetBaseFS(nil)
+			if err := goose.SetDialect("postgres"); err != nil {
+				return fmt.Errorf("set goose postgres dialect: %w", err)
+			}
+			if err := goose.UpContext(ctx, db, dir); err != nil {
+				return fmt.Errorf("run postgres migrations: %w", err)
+			}
+			return nil
+		})
 	})
 }
 
@@ -118,16 +121,48 @@ func MigrationStatus(ctx context.Context, dsn string, migrations fs.FS, dir stri
 		gooseMu.Lock()
 		defer gooseMu.Unlock()
 
-		goose.SetBaseFS(migrations)
-		defer goose.SetBaseFS(nil)
-		if err := goose.SetDialect("postgres"); err != nil {
-			return fmt.Errorf("set goose postgres dialect: %w", err)
-		}
-		if err := goose.StatusContext(ctx, db, dir); err != nil {
-			return fmt.Errorf("show postgres migration status: %w", err)
-		}
-		return nil
+		return withMigrationAdvisoryLock(ctx, db, migrationLockName(dsn, dir), func() error {
+			goose.SetBaseFS(migrations)
+			defer goose.SetBaseFS(nil)
+			if err := goose.SetDialect("postgres"); err != nil {
+				return fmt.Errorf("set goose postgres dialect: %w", err)
+			}
+			if err := goose.StatusContext(ctx, db, dir); err != nil {
+				return fmt.Errorf("show postgres migration status: %w", err)
+			}
+			return nil
+		})
 	})
+}
+
+func withMigrationAdvisoryLock(ctx context.Context, db *sql.DB, lockName string, fn func() error) error {
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return fmt.Errorf("open postgres migration lock connection: %w", err)
+	}
+	defer conn.Close()
+
+	if _, err := conn.ExecContext(ctx, "SELECT pg_advisory_lock(hashtext($1::text)::bigint)", lockName); err != nil {
+		return fmt.Errorf("acquire postgres migration lock: %w", err)
+	}
+	defer func() {
+		if _, err := conn.ExecContext(context.Background(), "SELECT pg_advisory_unlock(hashtext($1::text)::bigint)", lockName); err != nil {
+			log.Warnf("failed to release postgres migration lock %q: %v", lockName, err)
+		}
+	}()
+
+	return fn()
+}
+
+func migrationLockName(dsn string, dir string) string {
+	if parsed, err := url.Parse(dsn); err == nil && parsed.Host != "" {
+		database := strings.TrimPrefix(parsed.Path, "/")
+		if database == "" {
+			database = parsed.Query().Get("dbname")
+		}
+		return fmt.Sprintf("%s://%s/%s:%s", parsed.Scheme, parsed.Host, database, dir)
+	}
+	return fmt.Sprintf("%s:%s", dsn, dir)
 }
 
 func withMigrationDB(ctx context.Context, dsn string, fn func(*sql.DB) error) error {

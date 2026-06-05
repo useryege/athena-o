@@ -30,6 +30,7 @@ func (s *SQLStore) SaveProjectBase(ctx context.Context, base ProjectBase) error 
 		return err
 	}
 	err = queries.InsertProjectBase(ctx, appsqlc.InsertProjectBaseParams{
+		ChainID:     s.chainIDForProject(base.ChainID),
 		BlockNumber: int64(base.BlockNumber),
 		BlockTime:   int64(base.BlockTime),
 		Contract:    base.Contract.Bytes(),
@@ -49,6 +50,7 @@ func (s *SQLStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error 
 		txHash = meta.GenesisTx.Hash()
 	}
 	return s.SaveProjectBase(ctx, ProjectBase{
+		ChainID:     meta.ChainID,
 		BlockTime:   meta.BlockTime,
 		BlockNumber: meta.BlockNumber,
 		Contract:    meta.Contract,
@@ -58,12 +60,12 @@ func (s *SQLStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error 
 	})
 }
 
-func (s *SQLStore) GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, error) {
+func (s *SQLStore) GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return 0, false, err
 	}
-	row, err := queries.GetMaxProjectBlockNumber(ctx)
+	row, err := queries.GetMaxProjectBlockNumber(ctx, s.chainIDForProject(chainID))
 	if err != nil {
 		return 0, false, fmt.Errorf("get max project block number: %w", err)
 	}
@@ -76,18 +78,18 @@ func (s *SQLStore) GetMaxProjectBlockNumber(ctx context.Context) (uint64, bool, 
 	return uint64(row.MaxBlock), true, nil
 }
 
-func (s *SQLStore) ListProjectBases(ctx context.Context) ([]ProjectBase, error) {
+func (s *SQLStore) ListProjectBases(ctx context.Context, chainID int64) ([]ProjectBase, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectBases(ctx)
+	rows, err := queries.ListProjectBases(ctx, s.chainIDForProject(chainID))
 	if err != nil {
 		return nil, fmt.Errorf("list project bases: %w", err)
 	}
 	items := make([]ProjectBase, 0, len(rows))
 	for _, row := range rows {
-		item, err := projectBaseFromFields(row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
+		item, err := projectBaseFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -96,13 +98,14 @@ func (s *SQLStore) ListProjectBases(ctx context.Context) ([]ProjectBase, error) 
 	return items, nil
 }
 
-func (s *SQLStore) ListProjectBasesPage(ctx context.Context, page int32, pageSize int32) ([]ProjectBase, int64, int32, int32, error) {
+func (s *SQLStore) ListProjectBasesPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]ProjectBase, int64, int32, int32, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
 	page, pageSize = normalizePage(page, pageSize)
-	total, err := queries.CountProjectBases(ctx)
+	chainID = s.chainIDForProject(chainID)
+	total, err := queries.CountProjectBases(ctx, chainID)
 	if err != nil {
 		return nil, 0, page, pageSize, fmt.Errorf("count project bases: %w", err)
 	}
@@ -111,15 +114,16 @@ func (s *SQLStore) ListProjectBasesPage(ctx context.Context, page int32, pageSiz
 		return nil, 0, page, pageSize, fmt.Errorf("project base page offset %d exceeds int32", offset)
 	}
 	rows, err := queries.ListProjectBasesPage(ctx, appsqlc.ListProjectBasesPageParams{
-		Limit:  pageSize,
-		Offset: int32(offset),
+		ChainID:     chainID,
+		LimitCount:  pageSize,
+		OffsetCount: int32(offset),
 	})
 	if err != nil {
 		return nil, 0, page, pageSize, fmt.Errorf("list project bases page: %w", err)
 	}
 	items := make([]ProjectBase, 0, len(rows))
 	for _, row := range rows {
-		item, err := projectBaseFromFields(row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
+		item, err := projectBaseFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
 		if err != nil {
 			return nil, 0, page, pageSize, err
 		}
@@ -128,26 +132,29 @@ func (s *SQLStore) ListProjectBasesPage(ctx context.Context, page int32, pageSiz
 	return items, total, page, pageSize, nil
 }
 
-func (s *SQLStore) GetProjectBaseByContract(ctx context.Context, contract common.Address) (*ProjectBase, error) {
+func (s *SQLStore) GetProjectBaseByContract(ctx context.Context, chainID int64, contract common.Address) (*ProjectBase, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	row, err := queries.GetProjectBaseByContract(ctx, contract.Bytes())
+	row, err := queries.GetProjectBaseByContract(ctx, appsqlc.GetProjectBaseByContractParams{
+		ChainID:  s.chainIDForProject(chainID),
+		Contract: contract.Bytes(),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("get project base by contract: %w", err)
 	}
-	base, err := projectBaseFromFields(row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
+	base, err := projectBaseFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return &base, nil
 }
 
-func (s *SQLStore) ListProjectBasesByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectBase, error) {
+func (s *SQLStore) ListProjectBasesByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectBase, error) {
 	if err := validateProjectOrderNumbers(blockNumber, txIndex); err != nil {
 		return nil, err
 	}
@@ -156,6 +163,7 @@ func (s *SQLStore) ListProjectBasesByCreatorBefore(ctx context.Context, creator 
 		return nil, err
 	}
 	rows, err := queries.ListProjectBasesByCreatorBefore(ctx, appsqlc.ListProjectBasesByCreatorBeforeParams{
+		ChainID:     s.chainIDForProject(chainID),
 		Creator:     creator.Bytes(),
 		BlockNumber: int64(blockNumber),
 		TxIndex:     int64(txIndex),
@@ -165,7 +173,7 @@ func (s *SQLStore) ListProjectBasesByCreatorBefore(ctx context.Context, creator 
 	}
 	items := make([]ProjectBase, 0, len(rows))
 	for _, row := range rows {
-		item, err := projectBaseFromFields(row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
+		item, err := projectBaseFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -174,18 +182,19 @@ func (s *SQLStore) ListProjectBasesByCreatorBefore(ctx context.Context, creator 
 	return items, nil
 }
 
-func (s *SQLStore) ListProjectMetas(ctx context.Context) ([]ProjectMeta, error) {
+func (s *SQLStore) ListProjectMetas(ctx context.Context, chainID int64) ([]ProjectMeta, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectMetas(ctx)
+	rows, err := queries.ListProjectMetas(ctx, s.chainIDForProject(chainID))
 	if err != nil {
 		return nil, fmt.Errorf("list project metas: %w", err)
 	}
 	items := make([]ProjectMeta, 0, len(rows))
 	for _, row := range rows {
 		item, err := projectMetaFromFields(
+			row.ChainID,
 			row.BlockNumber,
 			row.BlockTime,
 			row.Contract,
@@ -212,11 +221,11 @@ func (s *SQLStore) ListProjectMetas(ctx context.Context) ([]ProjectMeta, error) 
 	return items, nil
 }
 
-func (s *SQLStore) ListAllProjectMetas(ctx context.Context) ([]ProjectMeta, error) {
-	return s.ListProjectMetas(ctx)
+func (s *SQLStore) ListAllProjectMetas(ctx context.Context, chainID int64) ([]ProjectMeta, error) {
+	return s.ListProjectMetas(ctx, chainID)
 }
 
-func (s *SQLStore) ListProjectMetasByPairAddresses(ctx context.Context, pairs []common.Address) ([]ProjectMeta, error) {
+func (s *SQLStore) ListProjectMetasByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]ProjectMeta, error) {
 	uniquePairs := uniqueNonZeroAddresses(pairs)
 	if len(uniquePairs) == 0 {
 		return nil, nil
@@ -225,13 +234,17 @@ func (s *SQLStore) ListProjectMetasByPairAddresses(ctx context.Context, pairs []
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectMetasByPairAddresses(ctx, addressesToBytes(uniquePairs))
+	rows, err := queries.ListProjectMetasByPairAddresses(ctx, appsqlc.ListProjectMetasByPairAddressesParams{
+		ChainID: s.chainIDForProject(chainID),
+		Pairs:   addressesToBytes(uniquePairs),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list project metas by pair addresses: %w", err)
 	}
 	items := make([]ProjectMeta, 0, len(rows))
 	for _, row := range rows {
 		item, err := projectMetaFromFields(
+			row.ChainID,
 			row.BlockNumber,
 			row.BlockTime,
 			row.Contract,
@@ -258,18 +271,22 @@ func (s *SQLStore) ListProjectMetasByPairAddresses(ctx context.Context, pairs []
 	return items, nil
 }
 
-func (s *SQLStore) ListProjectMetasByCreator(ctx context.Context, creator common.Address) ([]ProjectMeta, error) {
+func (s *SQLStore) ListProjectMetasByCreator(ctx context.Context, chainID int64, creator common.Address) ([]ProjectMeta, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectMetasByCreator(ctx, creator.Bytes())
+	rows, err := queries.ListProjectMetasByCreator(ctx, appsqlc.ListProjectMetasByCreatorParams{
+		ChainID: s.chainIDForProject(chainID),
+		Creator: creator.Bytes(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list project metas by creator: %w", err)
 	}
 	items := make([]ProjectMeta, 0, len(rows))
 	for _, row := range rows {
 		item, err := projectMetaFromFields(
+			row.ChainID,
 			row.BlockNumber,
 			row.BlockTime,
 			row.Contract,
@@ -296,7 +313,7 @@ func (s *SQLStore) ListProjectMetasByCreator(ctx context.Context, creator common
 	return items, nil
 }
 
-func (s *SQLStore) ListProjectMetasByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error) {
+func (s *SQLStore) ListProjectMetasByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error) {
 	if err := validateProjectOrderNumbers(blockNumber, txIndex); err != nil {
 		return nil, err
 	}
@@ -305,6 +322,7 @@ func (s *SQLStore) ListProjectMetasByCreatorBefore(ctx context.Context, creator 
 		return nil, err
 	}
 	rows, err := queries.ListProjectMetasByCreatorBefore(ctx, appsqlc.ListProjectMetasByCreatorBeforeParams{
+		ChainID:     s.chainIDForProject(chainID),
 		Creator:     creator.Bytes(),
 		BlockNumber: int64(blockNumber),
 		TxIndex:     int64(txIndex),
@@ -315,6 +333,7 @@ func (s *SQLStore) ListProjectMetasByCreatorBefore(ctx context.Context, creator 
 	items := make([]ProjectMeta, 0, len(rows))
 	for _, row := range rows {
 		item, err := projectMetaFromFields(
+			row.ChainID,
 			row.BlockNumber,
 			row.BlockTime,
 			row.Contract,
@@ -341,12 +360,15 @@ func (s *SQLStore) ListProjectMetasByCreatorBefore(ctx context.Context, creator 
 	return items, nil
 }
 
-func (s *SQLStore) GetProjectMetaByContract(ctx context.Context, contract common.Address) (*ProjectMeta, error) {
+func (s *SQLStore) GetProjectMetaByContract(ctx context.Context, chainID int64, contract common.Address) (*ProjectMeta, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	row, err := queries.GetProjectMetaByContract(ctx, contract.Bytes())
+	row, err := queries.GetProjectMetaByContract(ctx, appsqlc.GetProjectMetaByContractParams{
+		ChainID:  s.chainIDForProject(chainID),
+		Contract: contract.Bytes(),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -354,6 +376,7 @@ func (s *SQLStore) GetProjectMetaByContract(ctx context.Context, contract common
 		return nil, fmt.Errorf("get project meta by contract: %w", err)
 	}
 	item, err := projectMetaFromFields(
+		row.ChainID,
 		row.BlockNumber,
 		row.BlockTime,
 		row.Contract,
@@ -409,8 +432,9 @@ func (s *SQLStore) UpsertProjectChainState(ctx context.Context, item ProjectChai
 		return err
 	}
 	err = queries.UpsertProjectChainState(ctx, appsqlc.UpsertProjectChainStateParams{
+		ChainID:         s.chainIDForProject(item.ChainID),
 		ProjectContract: item.ProjectContract.Bytes(),
-		Column2:         payload,
+		ChainState:      payload,
 		WethPair:        item.WethPair.Bytes(),
 		UsdtPair:        item.UsdtPair.Bytes(),
 		FetchedAt:       pgtype.Timestamptz{Time: fetchedAt.UTC(), Valid: true},
@@ -423,26 +447,29 @@ func (s *SQLStore) UpsertProjectChainState(ctx context.Context, item ProjectChai
 	return nil
 }
 
-func (s *SQLStore) GetProjectChainState(ctx context.Context, contract common.Address) (*ProjectChainState, error) {
+func (s *SQLStore) GetProjectChainState(ctx context.Context, chainID int64, contract common.Address) (*ProjectChainState, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	row, err := queries.GetProjectChainState(ctx, contract.Bytes())
+	row, err := queries.GetProjectChainState(ctx, appsqlc.GetProjectChainStateParams{
+		ChainID:         s.chainIDForProject(chainID),
+		ProjectContract: contract.Bytes(),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("get project chain state: %w", err)
 	}
-	item, err := projectChainStateFromSQLC(row)
+	item, err := projectChainStateFromFields(row.ChainID, row.ProjectContract, row.ChainState, row.WethPair, row.UsdtPair, row.TokenName, row.TokenSymbol, row.FetchedAt, row.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return &item, nil
 }
 
-func (s *SQLStore) ListProjectChainStatesByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectChainState, error) {
+func (s *SQLStore) ListProjectChainStatesByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address]ProjectChainState, error) {
 	unique := uniqueNonZeroAddresses(contracts)
 	result := make(map[common.Address]ProjectChainState, len(unique))
 	if len(unique) == 0 {
@@ -452,12 +479,15 @@ func (s *SQLStore) ListProjectChainStatesByContracts(ctx context.Context, contra
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectChainStatesByContracts(ctx, addressesToBytes(unique))
+	rows, err := queries.ListProjectChainStatesByContracts(ctx, appsqlc.ListProjectChainStatesByContractsParams{
+		ChainID:          s.chainIDForProject(chainID),
+		ProjectContracts: addressesToBytes(unique),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list project chain states by contracts: %w", err)
 	}
 	for _, row := range rows {
-		item, err := projectChainStateFromSQLC(row)
+		item, err := projectChainStateFromFields(row.ChainID, row.ProjectContract, row.ChainState, row.WethPair, row.UsdtPair, row.TokenName, row.TokenSymbol, row.FetchedAt, row.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -466,7 +496,7 @@ func (s *SQLStore) ListProjectChainStatesByContracts(ctx context.Context, contra
 	return result, nil
 }
 
-func (s *SQLStore) ListProjectChainStatesByPairAddresses(ctx context.Context, pairs []common.Address) ([]ProjectChainState, error) {
+func (s *SQLStore) ListProjectChainStatesByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]ProjectChainState, error) {
 	unique := uniqueNonZeroAddresses(pairs)
 	if len(unique) == 0 {
 		return nil, nil
@@ -475,13 +505,16 @@ func (s *SQLStore) ListProjectChainStatesByPairAddresses(ctx context.Context, pa
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectChainStatesByPairAddresses(ctx, addressesToBytes(unique))
+	rows, err := queries.ListProjectChainStatesByPairAddresses(ctx, appsqlc.ListProjectChainStatesByPairAddressesParams{
+		ChainID: s.chainIDForProject(chainID),
+		Pairs:   addressesToBytes(unique),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("list project chain states by pair addresses: %w", err)
 	}
 	items := make([]ProjectChainState, 0, len(rows))
 	for _, row := range rows {
-		item, err := projectChainStateFromSQLC(row)
+		item, err := projectChainStateFromFields(row.ChainID, row.ProjectContract, row.ChainState, row.WethPair, row.UsdtPair, row.TokenName, row.TokenSymbol, row.FetchedAt, row.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -501,6 +534,7 @@ func (s *SQLStore) UpsertProjectSimulationResult(ctx context.Context, item Proje
 		return err
 	}
 	err = queries.UpsertProjectSimulationResult(ctx, appsqlc.UpsertProjectSimulationResultParams{
+		ChainID:                            s.chainIDForProject(item.ChainID),
 		ProjectContract:                    item.ProjectContract.Bytes(),
 		CanMintFromDeadViaTransferFrom:     r.CanMintFromDeadViaTransferFrom,
 		CanMintFromZeroViaTransferFrom:     r.CanMintFromZeroViaTransferFrom,
@@ -516,16 +550,19 @@ func (s *SQLStore) UpsertProjectSimulationResult(ctx context.Context, item Proje
 	return nil
 }
 
-func (s *SQLStore) UpdateProjectCreatorResult(ctx context.Context, contract common.Address, result SimulateResult) error {
-	return s.UpsertProjectSimulationResult(ctx, ProjectSimulationResult{ProjectContract: contract, Result: result})
+func (s *SQLStore) UpdateProjectCreatorResult(ctx context.Context, chainID int64, contract common.Address, result SimulateResult) error {
+	return s.UpsertProjectSimulationResult(ctx, ProjectSimulationResult{ChainID: chainID, ProjectContract: contract, Result: result})
 }
 
-func (s *SQLStore) GetProjectSimulationResult(ctx context.Context, contract common.Address) (*ProjectSimulationResult, error) {
+func (s *SQLStore) GetProjectSimulationResult(ctx context.Context, chainID int64, contract common.Address) (*ProjectSimulationResult, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	row, err := queries.GetProjectSimulationResult(ctx, contract.Bytes())
+	row, err := queries.GetProjectSimulationResult(ctx, appsqlc.GetProjectSimulationResultParams{
+		ChainID:         s.chainIDForProject(chainID),
+		ProjectContract: contract.Bytes(),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -533,6 +570,7 @@ func (s *SQLStore) GetProjectSimulationResult(ctx context.Context, contract comm
 		return nil, fmt.Errorf("get project simulation result: %w", err)
 	}
 	item := ProjectSimulationResult{
+		ChainID:         row.ChainID,
 		ProjectContract: common.BytesToAddress(row.ProjectContract),
 		Result: SimulateResult{
 			CanMintFromDeadViaTransferFrom:     row.CanMintFromDeadViaTransferFrom,
@@ -548,73 +586,6 @@ func (s *SQLStore) GetProjectSimulationResult(ctx context.Context, contract comm
 	return &item, nil
 }
 
-func (s *SQLStore) UpsertProjectReportState(ctx context.Context, item ProjectReportState) error {
-	evaluatedAt := item.EvaluatedAt
-	if evaluatedAt.IsZero() {
-		evaluatedAt = time.Now().UTC()
-	}
-	r := item.Report
-	queries, err := s.querier()
-	if err != nil {
-		return err
-	}
-	err = queries.UpsertProjectReportState(ctx, appsqlc.UpsertProjectReportStateParams{
-		ProjectContract:            item.ProjectContract.Bytes(),
-		IsReportEvaluated:          r.IsReportEvaluated,
-		IsReportComplete:           r.IsReportComplete,
-		IsBlacklistedCreatorWallet: r.IsBlacklistedCreatorWallet,
-		IsBlacklistedGenesisWallet: r.IsBlacklistedGenesisWallet,
-		IsBlacklistedBytecode:      r.IsBlacklistedBytecode,
-		HasMintRisk:                r.HasMintRisk,
-		EvaluatedAt:                pgtype.Timestamptz{Time: evaluatedAt.UTC(), Valid: true},
-	})
-	if err != nil {
-		return fmt.Errorf("upsert project report: %w", err)
-	}
-	return nil
-}
-
-func (s *SQLStore) UpdateProjectReport(ctx context.Context, contract common.Address, report ProjectReport) error {
-	return s.UpsertProjectReportState(ctx, ProjectReportState{ProjectContract: contract, Report: report})
-}
-
-func (s *SQLStore) GetProjectReportState(ctx context.Context, contract common.Address) (*ProjectReportState, error) {
-	queries, err := s.querier()
-	if err != nil {
-		return nil, err
-	}
-	row, err := queries.GetProjectReportState(ctx, contract.Bytes())
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("get project report state: %w", err)
-	}
-	item := projectReportStateFromSQLC(row)
-	return &item, nil
-}
-
-func (s *SQLStore) ListProjectReportStatesByContracts(ctx context.Context, contracts []common.Address) (map[common.Address]ProjectReportState, error) {
-	unique := uniqueNonZeroAddresses(contracts)
-	result := make(map[common.Address]ProjectReportState, len(unique))
-	if len(unique) == 0 {
-		return result, nil
-	}
-	queries, err := s.querier()
-	if err != nil {
-		return nil, err
-	}
-	rows, err := queries.ListProjectReportStatesByContracts(ctx, addressesToBytes(unique))
-	if err != nil {
-		return nil, fmt.Errorf("list project reports by contracts: %w", err)
-	}
-	for _, row := range rows {
-		item := projectReportStateFromSQLC(row)
-		result[item.ProjectContract] = item
-	}
-	return result, nil
-}
-
 func (s *SQLStore) UpsertProjectBytecodeFact(ctx context.Context, item ProjectBytecodeFact) error {
 	fetchedAt := item.FetchedAt
 	if fetchedAt.IsZero() {
@@ -625,6 +596,7 @@ func (s *SQLStore) UpsertProjectBytecodeFact(ctx context.Context, item ProjectBy
 		return err
 	}
 	err = queries.UpsertProjectBytecodeFact(ctx, appsqlc.UpsertProjectBytecodeFactParams{
+		ChainID:               s.chainIDForProject(item.ChainID),
 		ProjectContract:       item.ProjectContract.Bytes(),
 		IsBytecodeBlacklisted: item.IsBytecodeBlacklisted,
 		FetchedAt:             pgtype.Timestamptz{Time: fetchedAt.UTC(), Valid: true},
@@ -636,12 +608,15 @@ func (s *SQLStore) UpsertProjectBytecodeFact(ctx context.Context, item ProjectBy
 	return nil
 }
 
-func (s *SQLStore) GetProjectBytecodeFact(ctx context.Context, contract common.Address) (*ProjectBytecodeFact, error) {
+func (s *SQLStore) GetProjectBytecodeFact(ctx context.Context, chainID int64, contract common.Address) (*ProjectBytecodeFact, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	row, err := queries.GetProjectBytecodeFact(ctx, contract.Bytes())
+	row, err := queries.GetProjectBytecodeFact(ctx, appsqlc.GetProjectBytecodeFactParams{
+		ChainID:         s.chainIDForProject(chainID),
+		ProjectContract: contract.Bytes(),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -649,6 +624,7 @@ func (s *SQLStore) GetProjectBytecodeFact(ctx context.Context, contract common.A
 		return nil, fmt.Errorf("get project bytecode fact: %w", err)
 	}
 	item := ProjectBytecodeFact{
+		ChainID:               row.ChainID,
 		ProjectContract:       common.BytesToAddress(row.ProjectContract),
 		IsBytecodeBlacklisted: row.IsBytecodeBlacklisted,
 		FetchedAt:             row.FetchedAt.Time,
@@ -666,6 +642,7 @@ func (s *SQLStore) UpsertProjectComponentState(ctx context.Context, item Project
 		return err
 	}
 	err = queries.UpsertProjectComponentState(ctx, appsqlc.UpsertProjectComponentStateParams{
+		ChainID:         s.chainIDForProject(item.ChainID),
 		ProjectContract: item.ProjectContract.Bytes(),
 		Component:       item.Component,
 		Status:          item.Status,
@@ -680,12 +657,13 @@ func (s *SQLStore) UpsertProjectComponentState(ctx context.Context, item Project
 	return nil
 }
 
-func (s *SQLStore) GetProjectComponentState(ctx context.Context, contract common.Address, component string) (*ProjectComponentState, error) {
+func (s *SQLStore) GetProjectComponentState(ctx context.Context, chainID int64, contract common.Address, component string) (*ProjectComponentState, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
 	row, err := queries.GetProjectComponentState(ctx, appsqlc.GetProjectComponentStateParams{
+		ChainID:         s.chainIDForProject(chainID),
 		ProjectContract: contract.Bytes(),
 		Component:       component,
 	})
@@ -695,15 +673,16 @@ func (s *SQLStore) GetProjectComponentState(ctx context.Context, contract common
 		}
 		return nil, fmt.Errorf("get project component state: %w", err)
 	}
-	item := projectComponentStateFromSQLC(row)
+	item := projectComponentStateFromFields(row.ChainID, row.ProjectContract, row.Component, row.Status, row.LastAttemptAt, row.LastSuccessAt, row.NextRunAt, row.LastError, row.UpdatedAt)
 	return &item, nil
 }
 
-func projectBaseFromFields(blockNumber int64, blockTime int64, contract []byte, creator []byte, txHash []byte, txIndex int64, createdAt pgtype.Timestamptz) (ProjectBase, error) {
+func projectBaseFromFields(chainID int64, blockNumber int64, blockTime int64, contract []byte, creator []byte, txHash []byte, txIndex int64, createdAt pgtype.Timestamptz) (ProjectBase, error) {
 	if blockNumber < 0 || blockTime < 0 || txIndex < 0 {
 		return ProjectBase{}, fmt.Errorf("project base has negative order fields")
 	}
 	item := ProjectBase{
+		ChainID:     chainID,
 		BlockNumber: uint64(blockNumber),
 		BlockTime:   uint64(blockTime),
 		Contract:    common.BytesToAddress(contract),
@@ -718,6 +697,7 @@ func projectBaseFromFields(blockNumber int64, blockTime int64, contract []byte, 
 }
 
 func projectMetaFromFields(
+	chainID int64,
 	blockNumber int64,
 	blockTime int64,
 	contract []byte,
@@ -740,6 +720,7 @@ func projectMetaFromFields(
 		return ProjectMeta{}, fmt.Errorf("project meta has negative order fields")
 	}
 	item := ProjectMeta{
+		ChainID:     chainID,
 		BlockNumber: uint64(blockNumber),
 		BlockTime:   uint64(blockTime),
 		Contract:    common.BytesToAddress(contract),
@@ -769,44 +750,24 @@ func projectMetaFromFields(
 	return item, nil
 }
 
-func projectChainStateFromSQLC(row appsqlc.ProjectChainState) (ProjectChainState, error) {
+func projectChainStateFromFields(chainID int64, projectContract []byte, chainState []byte, wethPair []byte, usdtPair []byte, tokenName pgtype.Text, tokenSymbol pgtype.Text, fetchedAt pgtype.Timestamptz, updatedAt pgtype.Timestamptz) (ProjectChainState, error) {
 	item := ProjectChainState{
-		ProjectContract: common.BytesToAddress(row.ProjectContract),
-		RawChainState:   append(json.RawMessage(nil), row.ChainState...),
-		WethPair:        common.BytesToAddress(row.WethPair),
-		UsdtPair:        common.BytesToAddress(row.UsdtPair),
-		TokenName:       row.TokenName.String,
-		TokenSymbol:     row.TokenSymbol.String,
+		ChainID:         chainID,
+		ProjectContract: common.BytesToAddress(projectContract),
+		RawChainState:   append(json.RawMessage(nil), chainState...),
+		WethPair:        common.BytesToAddress(wethPair),
+		UsdtPair:        common.BytesToAddress(usdtPair),
+		TokenName:       tokenName.String,
+		TokenSymbol:     tokenSymbol.String,
 	}
-	_ = json.Unmarshal(row.ChainState, &item.ChainState)
-	if row.FetchedAt.Valid {
-		item.FetchedAt = row.FetchedAt.Time
+	_ = json.Unmarshal(chainState, &item.ChainState)
+	if fetchedAt.Valid {
+		item.FetchedAt = fetchedAt.Time
 	}
-	if row.UpdatedAt.Valid {
-		item.UpdatedAt = row.UpdatedAt.Time
+	if updatedAt.Valid {
+		item.UpdatedAt = updatedAt.Time
 	}
 	return item, nil
-}
-
-func projectReportStateFromSQLC(row appsqlc.ProjectReport) ProjectReportState {
-	item := ProjectReportState{
-		ProjectContract: common.BytesToAddress(row.ProjectContract),
-		Report: ProjectReport{
-			IsReportEvaluated:          row.IsReportEvaluated,
-			IsReportComplete:           row.IsReportComplete,
-			IsBlacklistedCreatorWallet: row.IsBlacklistedCreatorWallet,
-			IsBlacklistedGenesisWallet: row.IsBlacklistedGenesisWallet,
-			IsBlacklistedBytecode:      row.IsBlacklistedBytecode,
-			HasMintRisk:                row.HasMintRisk,
-		},
-	}
-	if row.EvaluatedAt.Valid {
-		item.EvaluatedAt = row.EvaluatedAt.Time
-	}
-	if row.UpdatedAt.Valid {
-		item.UpdatedAt = row.UpdatedAt.Time
-	}
-	return item
 }
 
 func validateProjectBaseNumbers(blockNumber, blockTime, txIndex uint64) error {

@@ -19,34 +19,31 @@ const (
 
 type ProjectComponentCache interface {
 	SetBase(ctx context.Context, item appstore.ProjectBase) error
-	GetBase(ctx context.Context, contract common.Address) (*appstore.ProjectBase, bool, error)
-	ListBasePage(ctx context.Context, page int32, pageSize int32) ([]appstore.ProjectBase, int64, int32, int32, error)
-	ListBasesByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectBase, error)
-	GetMaxBaseBlockNumber(ctx context.Context) (uint64, bool, error)
+	GetBase(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectBase, bool, error)
+	ListBasePage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]appstore.ProjectBase, int64, int32, int32, error)
+	ListBasesByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectBase, error)
+	GetMaxBaseBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error)
 
 	SetChainState(ctx context.Context, item appstore.ProjectChainState) error
-	GetChainState(ctx context.Context, contract common.Address) (*appstore.ProjectChainState, bool, error)
-	ListChainStatesByPairAddresses(ctx context.Context, pairs []common.Address) ([]appstore.ProjectChainState, error)
+	GetChainState(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectChainState, bool, error)
+	ListChainStatesByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]appstore.ProjectChainState, error)
 
 	SetSimulation(ctx context.Context, item appstore.ProjectSimulationResult) error
-	GetSimulation(ctx context.Context, contract common.Address) (*appstore.ProjectSimulationResult, bool, error)
-
-	SetReport(ctx context.Context, item appstore.ProjectReportState) error
-	GetReport(ctx context.Context, contract common.Address) (*appstore.ProjectReportState, bool, error)
+	GetSimulation(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectSimulationResult, bool, error)
 
 	SetBytecodeFact(ctx context.Context, item appstore.ProjectBytecodeFact) error
-	GetBytecodeFact(ctx context.Context, contract common.Address) (*appstore.ProjectBytecodeFact, bool, error)
+	GetBytecodeFact(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectBytecodeFact, bool, error)
 
-	SetAveDetail(ctx context.Context, contract common.Address, item appstore.ProjectAveDetail) error
-	GetAveDetail(ctx context.Context, contract common.Address) (*appstore.ProjectAveDetail, bool, error)
-	SetGenesisWallets(ctx context.Context, contract common.Address, items []appstore.ProjectGenesisWallet) error
-	GetGenesisWallets(ctx context.Context, contract common.Address) ([]appstore.ProjectGenesisWallet, bool, error)
-	SetCreatorHistory(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
-	GetCreatorHistory(ctx context.Context, contract common.Address) ([]appstore.ProjectCreatorHistoricalProject, bool, error)
+	SetAveDetail(ctx context.Context, chainID int64, contract common.Address, item appstore.ProjectAveDetail) error
+	GetAveDetail(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectAveDetail, bool, error)
+	SetGenesisWallets(ctx context.Context, chainID int64, contract common.Address, items []appstore.ProjectGenesisWallet) error
+	GetGenesisWallets(ctx context.Context, chainID int64, contract common.Address) ([]appstore.ProjectGenesisWallet, bool, error)
+	SetCreatorHistory(ctx context.Context, chainID int64, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error
+	GetCreatorHistory(ctx context.Context, chainID int64, contract common.Address) ([]appstore.ProjectCreatorHistoricalProject, bool, error)
 
 	SetComponentState(ctx context.Context, item appstore.ProjectComponentState) error
-	GetComponentState(ctx context.Context, contract common.Address, component string) (*appstore.ProjectComponentState, bool, error)
-	ListComponentStatesByNextRun(ctx context.Context, component string, now time.Time, limit int32) ([]appstore.ProjectComponentState, error)
+	GetComponentState(ctx context.Context, chainID int64, contract common.Address, component string) (*appstore.ProjectComponentState, bool, error)
+	ListComponentStatesByNextRun(ctx context.Context, chainID int64, component string, now time.Time, limit int32) ([]appstore.ProjectComponentState, error)
 }
 
 type RedisProjectComponentCache struct {
@@ -78,34 +75,34 @@ func (c *RedisProjectComponentCache) SetBase(ctx context.Context, item appstore.
 	if err != nil {
 		return err
 	}
-	key := c.keys.ProjectBase(item.Contract)
+	key := c.keys.ProjectBase(item.ChainID, item.Contract)
 	pipe := c.client.TxPipeline()
 	pipe.Set(ctx, key, string(data), projectComponentCacheTTL)
-	pipe.ZAdd(ctx, c.keys.ProjectIndexBase(), redisport.ZMember{Score: projectBaseScore(item), Member: item.Contract.Hex()})
-	pipe.ZAdd(ctx, c.keys.ProjectIndexCreator(item.Creator), redisport.ZMember{Score: projectBaseScore(item), Member: item.Contract.Hex()})
-	pipe.Expire(ctx, c.keys.ProjectIndexBase(), projectComponentCacheTTL)
-	pipe.Expire(ctx, c.keys.ProjectIndexCreator(item.Creator), projectComponentCacheTTL)
+	pipe.ZAdd(ctx, c.keys.ProjectIndexBase(item.ChainID), redisport.ZMember{Score: projectBaseScore(item), Member: item.Contract.Hex()})
+	pipe.ZAdd(ctx, c.keys.ProjectIndexCreator(item.ChainID, item.Creator), redisport.ZMember{Score: projectBaseScore(item), Member: item.Contract.Hex()})
+	pipe.Expire(ctx, c.keys.ProjectIndexBase(item.ChainID), projectComponentCacheTTL)
+	pipe.Expire(ctx, c.keys.ProjectIndexCreator(item.ChainID, item.Creator), projectComponentCacheTTL)
 	return pipe.Exec(ctx)
 }
 
-func (c *RedisProjectComponentCache) GetBase(ctx context.Context, contract common.Address) (*appstore.ProjectBase, bool, error) {
+func (c *RedisProjectComponentCache) GetBase(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectBase, bool, error) {
 	var item appstore.ProjectBase
-	ok, err := c.getJSON(ctx, c.keys.ProjectBase(contract), &item)
+	ok, err := c.getJSON(ctx, c.keys.ProjectBase(chainID, contract), &item)
 	return &item, ok, err
 }
 
-func (c *RedisProjectComponentCache) ListBasePage(ctx context.Context, page int32, pageSize int32) ([]appstore.ProjectBase, int64, int32, int32, error) {
+func (c *RedisProjectComponentCache) ListBasePage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]appstore.ProjectBase, int64, int32, int32, error) {
 	if c == nil || c.client == nil {
 		return nil, 0, 0, 0, nil
 	}
 	page, pageSize = normalizeCachePage(page, pageSize)
-	total, err := c.client.ZCard(ctx, c.keys.ProjectIndexBase())
+	total, err := c.client.ZCard(ctx, c.keys.ProjectIndexBase(chainID))
 	if err != nil {
 		return nil, 0, page, pageSize, err
 	}
 	start := int64(page-1) * int64(pageSize)
 	stop := start + int64(pageSize) - 1
-	members, err := c.client.ZRange(ctx, c.keys.ProjectIndexBase(), start, stop)
+	members, err := c.client.ZRange(ctx, c.keys.ProjectIndexBase(chainID), start, stop)
 	if err != nil {
 		return nil, 0, page, pageSize, err
 	}
@@ -114,7 +111,7 @@ func (c *RedisProjectComponentCache) ListBasePage(ctx context.Context, page int3
 		if !common.IsHexAddress(member) {
 			continue
 		}
-		item, ok, err := c.GetBase(ctx, common.HexToAddress(member))
+		item, ok, err := c.GetBase(ctx, chainID, common.HexToAddress(member))
 		if err != nil {
 			return nil, 0, page, pageSize, err
 		}
@@ -125,12 +122,12 @@ func (c *RedisProjectComponentCache) ListBasePage(ctx context.Context, page int3
 	return items, total, page, pageSize, nil
 }
 
-func (c *RedisProjectComponentCache) ListBasesByCreatorBefore(ctx context.Context, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectBase, error) {
+func (c *RedisProjectComponentCache) ListBasesByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectBase, error) {
 	if c == nil || c.client == nil {
 		return nil, nil
 	}
 	max := fmt.Sprintf("(%f", projectBaseOrderScore(blockNumber, txIndex))
-	members, err := c.client.ZRangeByScore(ctx, c.keys.ProjectIndexCreator(creator), "-inf", max, 0, 0)
+	members, err := c.client.ZRangeByScore(ctx, c.keys.ProjectIndexCreator(chainID, creator), "-inf", max, 0, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +136,7 @@ func (c *RedisProjectComponentCache) ListBasesByCreatorBefore(ctx context.Contex
 		if !common.IsHexAddress(member) {
 			continue
 		}
-		item, ok, err := c.GetBase(ctx, common.HexToAddress(member))
+		item, ok, err := c.GetBase(ctx, chainID, common.HexToAddress(member))
 		if err != nil {
 			return nil, err
 		}
@@ -150,18 +147,18 @@ func (c *RedisProjectComponentCache) ListBasesByCreatorBefore(ctx context.Contex
 	return items, nil
 }
 
-func (c *RedisProjectComponentCache) GetMaxBaseBlockNumber(ctx context.Context) (uint64, bool, error) {
+func (c *RedisProjectComponentCache) GetMaxBaseBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error) {
 	if c == nil || c.client == nil {
 		return 0, false, nil
 	}
-	members, err := c.client.ZRevRange(ctx, c.keys.ProjectIndexBase(), 0, 0)
+	members, err := c.client.ZRevRange(ctx, c.keys.ProjectIndexBase(chainID), 0, 0)
 	if err != nil {
 		return 0, false, err
 	}
 	if len(members) == 0 || !common.IsHexAddress(members[0]) {
 		return 0, false, nil
 	}
-	item, ok, err := c.GetBase(ctx, common.HexToAddress(members[0]))
+	item, ok, err := c.GetBase(ctx, chainID, common.HexToAddress(members[0]))
 	if err != nil || !ok || item == nil {
 		return 0, false, err
 	}
@@ -176,30 +173,30 @@ func (c *RedisProjectComponentCache) SetChainState(ctx context.Context, item app
 	if err != nil {
 		return err
 	}
-	key := c.keys.ProjectChainState(item.ProjectContract)
+	key := c.keys.ProjectChainState(item.ChainID, item.ProjectContract)
 	pipe := c.client.TxPipeline()
 	pipe.Set(ctx, key, string(data), projectComponentCacheTTL)
 	for _, pair := range uniqueCacheAddresses([]common.Address{item.WethPair, item.UsdtPair}) {
-		pipe.ZAdd(ctx, c.keys.ProjectIndexPair(pair), redisport.ZMember{Score: float64(item.FetchedAt.Unix()), Member: item.ProjectContract.Hex()})
-		pipe.Expire(ctx, c.keys.ProjectIndexPair(pair), projectComponentCacheTTL)
+		pipe.ZAdd(ctx, c.keys.ProjectIndexPair(item.ChainID, pair), redisport.ZMember{Score: float64(item.FetchedAt.Unix()), Member: item.ProjectContract.Hex()})
+		pipe.Expire(ctx, c.keys.ProjectIndexPair(item.ChainID, pair), projectComponentCacheTTL)
 	}
 	return pipe.Exec(ctx)
 }
 
-func (c *RedisProjectComponentCache) GetChainState(ctx context.Context, contract common.Address) (*appstore.ProjectChainState, bool, error) {
+func (c *RedisProjectComponentCache) GetChainState(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectChainState, bool, error) {
 	var item appstore.ProjectChainState
-	ok, err := c.getJSON(ctx, c.keys.ProjectChainState(contract), &item)
+	ok, err := c.getJSON(ctx, c.keys.ProjectChainState(chainID, contract), &item)
 	return &item, ok, err
 }
 
-func (c *RedisProjectComponentCache) ListChainStatesByPairAddresses(ctx context.Context, pairs []common.Address) ([]appstore.ProjectChainState, error) {
+func (c *RedisProjectComponentCache) ListChainStatesByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]appstore.ProjectChainState, error) {
 	if c == nil || c.client == nil {
 		return nil, nil
 	}
 	seenContracts := map[common.Address]struct{}{}
 	items := make([]appstore.ProjectChainState, 0)
 	for _, pair := range uniqueCacheAddresses(pairs) {
-		members, err := c.client.ZRange(ctx, c.keys.ProjectIndexPair(pair), 0, -1)
+		members, err := c.client.ZRange(ctx, c.keys.ProjectIndexPair(chainID, pair), 0, -1)
 		if err != nil {
 			return nil, err
 		}
@@ -212,7 +209,7 @@ func (c *RedisProjectComponentCache) ListChainStatesByPairAddresses(ctx context.
 				continue
 			}
 			seenContracts[contract] = struct{}{}
-			item, ok, err := c.GetChainState(ctx, contract)
+			item, ok, err := c.GetChainState(ctx, chainID, contract)
 			if err != nil {
 				return nil, err
 			}
@@ -228,62 +225,52 @@ func (c *RedisProjectComponentCache) ListChainStatesByPairAddresses(ctx context.
 }
 
 func (c *RedisProjectComponentCache) SetSimulation(ctx context.Context, item appstore.ProjectSimulationResult) error {
-	return c.setJSON(ctx, c.keys.ProjectSimulation(item.ProjectContract), item)
+	return c.setJSON(ctx, c.keys.ProjectSimulation(item.ChainID, item.ProjectContract), item)
 }
 
-func (c *RedisProjectComponentCache) GetSimulation(ctx context.Context, contract common.Address) (*appstore.ProjectSimulationResult, bool, error) {
+func (c *RedisProjectComponentCache) GetSimulation(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectSimulationResult, bool, error) {
 	var item appstore.ProjectSimulationResult
-	ok, err := c.getJSON(ctx, c.keys.ProjectSimulation(contract), &item)
-	return &item, ok, err
-}
-
-func (c *RedisProjectComponentCache) SetReport(ctx context.Context, item appstore.ProjectReportState) error {
-	return c.setJSON(ctx, c.keys.ProjectReport(item.ProjectContract), item)
-}
-
-func (c *RedisProjectComponentCache) GetReport(ctx context.Context, contract common.Address) (*appstore.ProjectReportState, bool, error) {
-	var item appstore.ProjectReportState
-	ok, err := c.getJSON(ctx, c.keys.ProjectReport(contract), &item)
+	ok, err := c.getJSON(ctx, c.keys.ProjectSimulation(chainID, contract), &item)
 	return &item, ok, err
 }
 
 func (c *RedisProjectComponentCache) SetBytecodeFact(ctx context.Context, item appstore.ProjectBytecodeFact) error {
-	return c.setJSON(ctx, c.keys.ProjectBytecodeFact(item.ProjectContract), item)
+	return c.setJSON(ctx, c.keys.ProjectBytecodeFact(item.ChainID, item.ProjectContract), item)
 }
 
-func (c *RedisProjectComponentCache) GetBytecodeFact(ctx context.Context, contract common.Address) (*appstore.ProjectBytecodeFact, bool, error) {
+func (c *RedisProjectComponentCache) GetBytecodeFact(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectBytecodeFact, bool, error) {
 	var item appstore.ProjectBytecodeFact
-	ok, err := c.getJSON(ctx, c.keys.ProjectBytecodeFact(contract), &item)
+	ok, err := c.getJSON(ctx, c.keys.ProjectBytecodeFact(chainID, contract), &item)
 	return &item, ok, err
 }
 
-func (c *RedisProjectComponentCache) SetAveDetail(ctx context.Context, contract common.Address, item appstore.ProjectAveDetail) error {
-	return c.setJSON(ctx, c.keys.ProjectAveDetail(contract), item)
+func (c *RedisProjectComponentCache) SetAveDetail(ctx context.Context, chainID int64, contract common.Address, item appstore.ProjectAveDetail) error {
+	return c.setJSON(ctx, c.keys.ProjectAveDetail(chainID, contract), item)
 }
 
-func (c *RedisProjectComponentCache) GetAveDetail(ctx context.Context, contract common.Address) (*appstore.ProjectAveDetail, bool, error) {
+func (c *RedisProjectComponentCache) GetAveDetail(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectAveDetail, bool, error) {
 	var item appstore.ProjectAveDetail
-	ok, err := c.getJSON(ctx, c.keys.ProjectAveDetail(contract), &item)
+	ok, err := c.getJSON(ctx, c.keys.ProjectAveDetail(chainID, contract), &item)
 	return &item, ok, err
 }
 
-func (c *RedisProjectComponentCache) SetGenesisWallets(ctx context.Context, contract common.Address, items []appstore.ProjectGenesisWallet) error {
-	return c.setJSON(ctx, c.keys.ProjectGenesisWallets(contract), items)
+func (c *RedisProjectComponentCache) SetGenesisWallets(ctx context.Context, chainID int64, contract common.Address, items []appstore.ProjectGenesisWallet) error {
+	return c.setJSON(ctx, c.keys.ProjectGenesisWallets(chainID, contract), items)
 }
 
-func (c *RedisProjectComponentCache) GetGenesisWallets(ctx context.Context, contract common.Address) ([]appstore.ProjectGenesisWallet, bool, error) {
+func (c *RedisProjectComponentCache) GetGenesisWallets(ctx context.Context, chainID int64, contract common.Address) ([]appstore.ProjectGenesisWallet, bool, error) {
 	var items []appstore.ProjectGenesisWallet
-	ok, err := c.getJSON(ctx, c.keys.ProjectGenesisWallets(contract), &items)
+	ok, err := c.getJSON(ctx, c.keys.ProjectGenesisWallets(chainID, contract), &items)
 	return items, ok, err
 }
 
-func (c *RedisProjectComponentCache) SetCreatorHistory(ctx context.Context, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error {
-	return c.setJSON(ctx, c.keys.ProjectCreatorHistory(contract), items)
+func (c *RedisProjectComponentCache) SetCreatorHistory(ctx context.Context, chainID int64, contract common.Address, items []appstore.ProjectCreatorHistoricalProject) error {
+	return c.setJSON(ctx, c.keys.ProjectCreatorHistory(chainID, contract), items)
 }
 
-func (c *RedisProjectComponentCache) GetCreatorHistory(ctx context.Context, contract common.Address) ([]appstore.ProjectCreatorHistoricalProject, bool, error) {
+func (c *RedisProjectComponentCache) GetCreatorHistory(ctx context.Context, chainID int64, contract common.Address) ([]appstore.ProjectCreatorHistoricalProject, bool, error) {
 	var items []appstore.ProjectCreatorHistoricalProject
-	ok, err := c.getJSON(ctx, c.keys.ProjectCreatorHistory(contract), &items)
+	ok, err := c.getJSON(ctx, c.keys.ProjectCreatorHistory(chainID, contract), &items)
 	return items, ok, err
 }
 
@@ -296,27 +283,27 @@ func (c *RedisProjectComponentCache) SetComponentState(ctx context.Context, item
 		return err
 	}
 	pipe := c.client.TxPipeline()
-	pipe.Set(ctx, c.keys.ProjectComponentState(item.ProjectContract, item.Component), string(data), projectComponentCacheTTL)
+	pipe.Set(ctx, c.keys.ProjectComponentState(item.ChainID, item.ProjectContract, item.Component), string(data), projectComponentCacheTTL)
 	if !item.NextRunAt.IsZero() {
-		pipe.ZAdd(ctx, c.keys.ProjectIndexComponentNextRun(item.Component), redisport.ZMember{Score: float64(item.NextRunAt.Unix()), Member: item.ProjectContract.Hex()})
+		pipe.ZAdd(ctx, c.keys.ProjectIndexComponentNextRun(item.ChainID, item.Component), redisport.ZMember{Score: float64(item.NextRunAt.Unix()), Member: item.ProjectContract.Hex()})
 	} else {
-		pipe.ZRem(ctx, c.keys.ProjectIndexComponentNextRun(item.Component), item.ProjectContract.Hex())
+		pipe.ZRem(ctx, c.keys.ProjectIndexComponentNextRun(item.ChainID, item.Component), item.ProjectContract.Hex())
 	}
-	pipe.Expire(ctx, c.keys.ProjectIndexComponentNextRun(item.Component), projectComponentCacheTTL)
+	pipe.Expire(ctx, c.keys.ProjectIndexComponentNextRun(item.ChainID, item.Component), projectComponentCacheTTL)
 	return pipe.Exec(ctx)
 }
 
-func (c *RedisProjectComponentCache) GetComponentState(ctx context.Context, contract common.Address, component string) (*appstore.ProjectComponentState, bool, error) {
+func (c *RedisProjectComponentCache) GetComponentState(ctx context.Context, chainID int64, contract common.Address, component string) (*appstore.ProjectComponentState, bool, error) {
 	var item appstore.ProjectComponentState
-	ok, err := c.getJSON(ctx, c.keys.ProjectComponentState(contract, component), &item)
+	ok, err := c.getJSON(ctx, c.keys.ProjectComponentState(chainID, contract, component), &item)
 	return &item, ok, err
 }
 
-func (c *RedisProjectComponentCache) ListComponentStatesByNextRun(ctx context.Context, component string, now time.Time, limit int32) ([]appstore.ProjectComponentState, error) {
+func (c *RedisProjectComponentCache) ListComponentStatesByNextRun(ctx context.Context, chainID int64, component string, now time.Time, limit int32) ([]appstore.ProjectComponentState, error) {
 	if c == nil || c.client == nil || limit <= 0 {
 		return nil, nil
 	}
-	members, err := c.client.ZRangeByScore(ctx, c.keys.ProjectIndexComponentNextRun(component), "-inf", strconv.FormatInt(now.Unix(), 10), 0, int64(limit))
+	members, err := c.client.ZRangeByScore(ctx, c.keys.ProjectIndexComponentNextRun(chainID, component), "-inf", strconv.FormatInt(now.Unix(), 10), 0, int64(limit))
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +312,7 @@ func (c *RedisProjectComponentCache) ListComponentStatesByNextRun(ctx context.Co
 		if !common.IsHexAddress(member) {
 			continue
 		}
-		item, ok, err := c.GetComponentState(ctx, common.HexToAddress(member), component)
+		item, ok, err := c.GetComponentState(ctx, chainID, common.HexToAddress(member), component)
 		if err != nil {
 			return nil, err
 		}

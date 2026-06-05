@@ -6,17 +6,15 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	appcomponents "github.com/useryege/athena/internal/application/components"
 	"github.com/useryege/athena/internal/application/model"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
-func TestComponentIntakeCandidatesPublishesAndWritesState(t *testing.T) {
+func TestComponentIntakeCandidatesWritesBaseAndState(t *testing.T) {
 	contract := common.BigToAddress(big.NewInt(10))
 	creator := common.BigToAddress(big.NewInt(11))
 	store := &initializerStoreFake{}
-	bus := &eventBusFake{}
-	component := NewComponent(Options{Store: store, Bus: bus})
+	component := NewComponent(Options{Store: store})
 
 	err := component.IntakeCandidates(context.Background(), []model.DiscoveredProjectCandidate{
 		{Contract: contract, Creator: creator},
@@ -31,14 +29,21 @@ func TestComponentIntakeCandidatesPublishesAndWritesState(t *testing.T) {
 	if store.componentStatusByName[appstore.ProjectComponentInitializer] != appstore.ProjectComponentStatusSuccess {
 		t.Fatalf("initializer status = %s, want success", store.componentStatusByName[appstore.ProjectComponentInitializer])
 	}
-	if len(bus.events) != 2 {
-		t.Fatalf("published events = %d, want 2", len(bus.events))
+}
+
+func TestComponentScheduleProjectsEnqueuesCollection(t *testing.T) {
+	contract := common.BigToAddress(big.NewInt(12))
+	store := &initializerStoreFake{}
+	component := NewComponent(Options{Store: store, ChainID: 56})
+
+	if err := component.ScheduleProjects(context.Background(), []model.DiscoveredProjectCandidate{{Contract: contract}}); err != nil {
+		t.Fatalf("schedule projects: %v", err)
 	}
-	if bus.events[0].Type != appcomponents.EventProjectInitialized {
-		t.Fatalf("first event = %s, want %s", bus.events[0].Type, appcomponents.EventProjectInitialized)
+	if len(store.enqueuedCollections) != 1 {
+		t.Fatalf("enqueued collections = %d, want 1", len(store.enqueuedCollections))
 	}
-	if bus.events[1].Type != appcomponents.EventComponentCompleted {
-		t.Fatalf("second event = %s, want %s", bus.events[1].Type, appcomponents.EventComponentCompleted)
+	if got := store.enqueuedCollections[0]; got.ChainID != 56 || got.Contract != contract || store.enqueuedReasons[0] != string(model.ProjectDiscoverySourcePairSwap) {
+		t.Fatalf("enqueued = %#v reason=%q, want chain 56 pair_swap", got, store.enqueuedReasons[0])
 	}
 }
 
@@ -47,6 +52,8 @@ type initializerStoreFake struct {
 
 	savedBases            []appstore.ProjectBase
 	componentStatusByName map[string]string
+	enqueuedCollections   []model.ProjectRef
+	enqueuedReasons       []string
 }
 
 func (s *initializerStoreFake) SaveProjectBase(_ context.Context, base appstore.ProjectBase) error {
@@ -62,15 +69,8 @@ func (s *initializerStoreFake) UpsertProjectComponentState(_ context.Context, it
 	return nil
 }
 
-type eventBusFake struct {
-	events []appcomponents.Event
-}
-
-func (b *eventBusFake) Publish(_ context.Context, event appcomponents.Event) error {
-	b.events = append(b.events, event)
-	return nil
-}
-
-func (b *eventBusFake) Subscribe(context.Context, string, string, appcomponents.Handler) error {
+func (s *initializerStoreFake) EnqueueProjectCollection(_ context.Context, ref model.ProjectRef, reason string) error {
+	s.enqueuedCollections = append(s.enqueuedCollections, ref)
+	s.enqueuedReasons = append(s.enqueuedReasons, reason)
 	return nil
 }
