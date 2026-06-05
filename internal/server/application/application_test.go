@@ -28,11 +28,15 @@ func (f *fakeApplicationClientset) NewApplicationServiceClient() (utilio.Closer,
 type fakeApplicationServiceClient struct {
 	applicationapiclient.ApplicationServiceClient
 
-	statusCalls        int
-	startCalls         int
-	stopCalls          int
-	listBytecodesCalls int
-	listBytecodesReq   *applicationapiclient.ListBytecodesRequest
+	statusCalls              int
+	startCalls               int
+	stopCalls                int
+	listBytecodesCalls       int
+	listBytecodesReq         *applicationapiclient.ListBytecodesRequest
+	listWalletBlacklistReq   *applicationapiclient.ListWalletBlacklistEntriesRequest
+	addWalletBlacklistReq    *applicationapiclient.AddWalletBlacklistEntryRequest
+	updateWalletBlacklistReq *applicationapiclient.UpdateWalletBlacklistEntryNoteRequest
+	deleteWalletBlacklistReq *applicationapiclient.DeleteWalletBlacklistEntryRequest
 }
 
 func (f *fakeApplicationServiceClient) GetProjectDiscoveryStatus(context.Context, *applicationapiclient.GetProjectDiscoveryStatusRequest, ...grpc.CallOption) (*v1alpha1.ProjectDiscoveryStatus, error) {
@@ -62,6 +66,28 @@ func (f *fakeApplicationServiceClient) ListBytecodes(_ context.Context, req *app
 		Page:     req.GetPage(),
 		PageSize: req.GetPageSize(),
 	}, nil
+}
+
+func (f *fakeApplicationServiceClient) ListWalletBlacklistEntries(_ context.Context, req *applicationapiclient.ListWalletBlacklistEntriesRequest, _ ...grpc.CallOption) (*applicationapiclient.ListWalletBlacklistEntriesResponse, error) {
+	f.listWalletBlacklistReq = req
+	return &applicationapiclient.ListWalletBlacklistEntriesResponse{
+		Items: []*v1alpha1.WalletBlacklistEntry{{Wallet: "0xabc", Note: "seed"}},
+	}, nil
+}
+
+func (f *fakeApplicationServiceClient) AddWalletBlacklistEntry(_ context.Context, req *applicationapiclient.AddWalletBlacklistEntryRequest, _ ...grpc.CallOption) (*applicationapiclient.AddWalletBlacklistEntryResponse, error) {
+	f.addWalletBlacklistReq = req
+	return &applicationapiclient.AddWalletBlacklistEntryResponse{Item: &v1alpha1.WalletBlacklistEntry{Wallet: req.GetWallet(), Note: req.GetNote()}}, nil
+}
+
+func (f *fakeApplicationServiceClient) UpdateWalletBlacklistEntryNote(_ context.Context, req *applicationapiclient.UpdateWalletBlacklistEntryNoteRequest, _ ...grpc.CallOption) (*applicationapiclient.UpdateWalletBlacklistEntryNoteResponse, error) {
+	f.updateWalletBlacklistReq = req
+	return &applicationapiclient.UpdateWalletBlacklistEntryNoteResponse{Item: &v1alpha1.WalletBlacklistEntry{Wallet: req.GetWallet(), Note: req.GetNote()}}, nil
+}
+
+func (f *fakeApplicationServiceClient) DeleteWalletBlacklistEntry(_ context.Context, req *applicationapiclient.DeleteWalletBlacklistEntryRequest, _ ...grpc.CallOption) (*applicationapiclient.DeleteWalletBlacklistEntryResponse, error) {
+	f.deleteWalletBlacklistReq = req
+	return &applicationapiclient.DeleteWalletBlacklistEntryResponse{}, nil
 }
 
 func newTestApplicationServer(client *fakeApplicationServiceClient) *Server {
@@ -153,5 +179,42 @@ func TestListBytecodesProxiesToApplication(t *testing.T) {
 	}
 	if resp.GetTotal() != 1 || len(resp.GetItems()) != 1 {
 		t.Fatalf("response = %#v, want one bytecode", resp)
+	}
+}
+
+func TestWalletBlacklistProxiesToApplication(t *testing.T) {
+	client := &fakeApplicationServiceClient{}
+	server := newTestApplicationServer(client)
+
+	listResp, err := server.ListWalletBlacklistEntries(context.Background(), &applicationpkg.ListWalletBlacklistEntriesRequest{})
+	if err != nil {
+		t.Fatalf("ListWalletBlacklistEntries: %v", err)
+	}
+	if client.listWalletBlacklistReq == nil || len(listResp.GetItems()) != 1 {
+		t.Fatalf("list wallet blacklist request/response = %#v/%#v", client.listWalletBlacklistReq, listResp)
+	}
+
+	_, err = server.AddWalletBlacklistEntry(context.Background(), &applicationpkg.AddWalletBlacklistEntryRequest{Wallet: "0xabc", Note: "seed"})
+	if err != nil {
+		t.Fatalf("AddWalletBlacklistEntry: %v", err)
+	}
+	if client.addWalletBlacklistReq.GetWallet() != "0xabc" || client.addWalletBlacklistReq.GetNote() != "seed" {
+		t.Fatalf("add wallet blacklist request = %#v", client.addWalletBlacklistReq)
+	}
+
+	_, err = server.UpdateWalletBlacklistEntryNote(context.Background(), &applicationpkg.UpdateWalletBlacklistEntryNoteRequest{Wallet: "0xabc", Note: "updated"})
+	if err != nil {
+		t.Fatalf("UpdateWalletBlacklistEntryNote: %v", err)
+	}
+	if client.updateWalletBlacklistReq.GetWallet() != "0xabc" || client.updateWalletBlacklistReq.GetNote() != "updated" {
+		t.Fatalf("update wallet blacklist request = %#v", client.updateWalletBlacklistReq)
+	}
+
+	_, err = server.DeleteWalletBlacklistEntry(context.Background(), &applicationpkg.DeleteWalletBlacklistEntryRequest{Wallet: "0xabc"})
+	if err != nil {
+		t.Fatalf("DeleteWalletBlacklistEntry: %v", err)
+	}
+	if client.deleteWalletBlacklistReq.GetWallet() != "0xabc" {
+		t.Fatalf("delete wallet blacklist request = %#v", client.deleteWalletBlacklistReq)
 	}
 }

@@ -24,7 +24,6 @@ import (
 	"github.com/useryege/athena/internal/application"
 	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
-	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/util/ave"
 	cacheutil "github.com/useryege/athena/util/cache"
@@ -47,7 +46,6 @@ func NewCommand() *cobra.Command {
 		nodewsurl           string
 		nodeWSUseProxy      bool
 		athenaContract      string
-		walletServerAddress string
 		aveAPIKey           string
 		aveAPIBaseURL       string
 		etherscanAPIBaseURL string
@@ -163,16 +161,11 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 
-			log.Infof("waiting for athena wallet grpc service at %s", walletServerAddress)
-			errors.CheckError(walletapiclient.WaitForWalletService(ctx, walletServerAddress))
-			log.Infof("athena wallet grpc service is ready at %s", walletServerAddress)
-
 			liquidityLockerAddresses, err := parseLiquidityLockerAddresses(liquidityLockers)
 			if err != nil {
 				return err
 			}
 
-			walletClientset := walletapiclient.NewWalletClientset(walletServerAddress)
 			server, err := application.NewServer(application.ApplicationServerOpts{
 				NodeClient:     nodeClient,
 				AthenaContract: athenaContractAddress,
@@ -186,7 +179,6 @@ func NewCommand() *cobra.Command {
 				RedisClient:           redisport.NewGoRedisAdapter(redisClient),
 				APIFetcher:            apiFetcher,
 				SourceQualityAnalyzer: analyzer,
-				WalletClientset:       walletClientset,
 
 				// Fetch from Athena contract
 				V2FactoryContract: v2FactoryContractAddress,
@@ -244,7 +236,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&nodewsurl, "node-ws-url", env.StringFromEnv("ATHENA_APPLICATION_NODE_WS_URL", "ws://localhost:8546"), "Node WebSocket address")
 	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_APPLICATION_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
 	command.Flags().StringVar(&athenaContract, "athena-contract", env.StringFromEnv("ATHENA_APPLICATION_ATHENA_CONTRACT", ""), "ATHENA aggregation contract address")
-	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_APPLICATION_WALLET_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortWallet)), "Wallet service gRPC address")
 	command.Flags().StringVar(&aveAPIKey, "ave-api-key", env.StringFromEnv("ATHENA_APPLICATION_AVE_API_KEY", ""), "Ave API key for project logo fetching")
 	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL")
 	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_APPLICATION_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL")

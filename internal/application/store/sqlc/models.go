@@ -236,3 +236,9 @@ type SourceQualityPrompt struct {
 	CreatedAt    pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
 }
+
+type WalletBlacklist struct {
+	Wallet    []byte
+	Note      pgtype.Text
+	CreatedAt pgtype.Timestamptz
+}

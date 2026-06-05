@@ -16,28 +16,32 @@ import (
 type fakeApplicationQuerier struct {
 	appsqlc.Querier
 
-	upsertBytecodeParams   appsqlc.UpsertBytecodeParams
-	listBytecodesParams    appsqlc.ListBytecodesParams
-	listDeploymentsParams  appsqlc.ListBytecodeDeploymentsParams
-	addBlacklistParams     appsqlc.AddBytecodeBlacklistEntryParams
-	insertPromptParams     appsqlc.InsertSourceQualityPromptParams
-	updateReportParams     appsqlc.UpdateBytecodeSourceQualityReportParams
-	updateSourceCodeParams appsqlc.UpdateBytecodeSourceCodeParams
+	upsertBytecodeParams     appsqlc.UpsertBytecodeParams
+	listBytecodesParams      appsqlc.ListBytecodesParams
+	listDeploymentsParams    appsqlc.ListBytecodeDeploymentsParams
+	addBlacklistParams       appsqlc.AddBytecodeBlacklistEntryParams
+	addWalletBlacklistParams appsqlc.AddWalletBlacklistEntryParams
+	insertPromptParams       appsqlc.InsertSourceQualityPromptParams
+	updateReportParams       appsqlc.UpdateBytecodeSourceQualityReportParams
+	updateSourceCodeParams   appsqlc.UpdateBytecodeSourceCodeParams
 
-	getBytecodeDetailErr error
-	getPromptErr         error
-	getActivePromptErr   error
-	addBlacklistErr      error
+	getBytecodeDetailErr  error
+	getPromptErr          error
+	getActivePromptErr    error
+	addBlacklistErr       error
+	addWalletBlacklistErr error
 
-	listBytecodesResult         []appsqlc.ListBytecodesRow
-	listDeploymentsResult       []appsqlc.ListBytecodeDeploymentsRow
-	getPromptResult             appsqlc.GetSourceQualityPromptRow
-	getActivePromptResult       appsqlc.GetActiveSourceQualityPromptRow
-	insertPromptResult          appsqlc.InsertSourceQualityPromptRow
-	getBytecodeDetailResult     appsqlc.GetBytecodeDetailRow
-	updateBlacklistRowsAffected int64
-	deleteBlacklistRowsAffected int64
-	deletePromptRowsAffected    int64
+	listBytecodesResult               []appsqlc.ListBytecodesRow
+	listDeploymentsResult             []appsqlc.ListBytecodeDeploymentsRow
+	getPromptResult                   appsqlc.GetSourceQualityPromptRow
+	getActivePromptResult             appsqlc.GetActiveSourceQualityPromptRow
+	insertPromptResult                appsqlc.InsertSourceQualityPromptRow
+	getBytecodeDetailResult           appsqlc.GetBytecodeDetailRow
+	updateBlacklistRowsAffected       int64
+	deleteBlacklistRowsAffected       int64
+	updateWalletBlacklistRowsAffected int64
+	deleteWalletBlacklistRowsAffected int64
+	deletePromptRowsAffected          int64
 }
 
 func (f *fakeApplicationQuerier) ActivateSourceQualityPrompt(context.Context, int64) (appsqlc.ActivateSourceQualityPromptRow, error) {
@@ -47,9 +51,18 @@ func (f *fakeApplicationQuerier) AddBytecodeBlacklistEntry(_ context.Context, ar
 	f.addBlacklistParams = arg
 	return f.addBlacklistErr
 }
-func (f *fakeApplicationQuerier) DeactivateActiveSourceQualityPrompts(context.Context) error { return nil }
+func (f *fakeApplicationQuerier) AddWalletBlacklistEntry(_ context.Context, arg appsqlc.AddWalletBlacklistEntryParams) error {
+	f.addWalletBlacklistParams = arg
+	return f.addWalletBlacklistErr
+}
+func (f *fakeApplicationQuerier) DeactivateActiveSourceQualityPrompts(context.Context) error {
+	return nil
+}
 func (f *fakeApplicationQuerier) DeleteBytecodeBlacklist(context.Context, []byte) (int64, error) {
 	return f.deleteBlacklistRowsAffected, nil
+}
+func (f *fakeApplicationQuerier) DeleteWalletBlacklistEntry(context.Context, []byte) (int64, error) {
+	return f.deleteWalletBlacklistRowsAffected, nil
 }
 func (f *fakeApplicationQuerier) DeleteSourceQualityPrompt(context.Context, int64) (int64, error) {
 	return f.deletePromptRowsAffected, nil
@@ -62,6 +75,9 @@ func (f *fakeApplicationQuerier) GetBytecode(context.Context, []byte) (appsqlc.B
 }
 func (f *fakeApplicationQuerier) GetBytecodeBlacklistEntry(context.Context, []byte) (appsqlc.BytecodeBlacklist, error) {
 	return appsqlc.BytecodeBlacklist{}, nil
+}
+func (f *fakeApplicationQuerier) GetWalletBlacklistEntry(context.Context, []byte) (appsqlc.WalletBlacklist, error) {
+	return appsqlc.WalletBlacklist{}, nil
 }
 func (f *fakeApplicationQuerier) GetBytecodeDetail(context.Context, []byte) (appsqlc.GetBytecodeDetailRow, error) {
 	return f.getBytecodeDetailResult, f.getBytecodeDetailErr
@@ -82,6 +98,9 @@ func (f *fakeApplicationQuerier) IsBytecodeBlacklisted(context.Context, []byte) 
 func (f *fakeApplicationQuerier) ListBytecodeBlacklistEntries(context.Context) ([]appsqlc.BytecodeBlacklist, error) {
 	return nil, nil
 }
+func (f *fakeApplicationQuerier) ListWalletBlacklistEntries(context.Context) ([]appsqlc.WalletBlacklist, error) {
+	return nil, nil
+}
 func (f *fakeApplicationQuerier) ListBytecodeDeployments(_ context.Context, arg appsqlc.ListBytecodeDeploymentsParams) ([]appsqlc.ListBytecodeDeploymentsRow, error) {
 	f.listDeploymentsParams = arg
 	return f.listDeploymentsResult, nil
@@ -95,6 +114,9 @@ func (f *fakeApplicationQuerier) ListSourceQualityPrompts(context.Context) ([]ap
 }
 func (f *fakeApplicationQuerier) UpdateBytecodeBlacklistNote(context.Context, appsqlc.UpdateBytecodeBlacklistNoteParams) (int64, error) {
 	return f.updateBlacklistRowsAffected, nil
+}
+func (f *fakeApplicationQuerier) UpdateWalletBlacklistEntryNote(context.Context, appsqlc.UpdateWalletBlacklistEntryNoteParams) (int64, error) {
+	return f.updateWalletBlacklistRowsAffected, nil
 }
 func (f *fakeApplicationQuerier) UpdateBytecodeSourceCode(_ context.Context, arg appsqlc.UpdateBytecodeSourceCodeParams) error {
 	f.updateSourceCodeParams = arg
@@ -181,6 +203,37 @@ func TestAddBytecodeBlacklistEntryDuplicateReturnsExists(t *testing.T) {
 	}
 	if querier.addBlacklistParams.Note.String != "bad runtime" || querier.addBlacklistParams.SourceChainID.Int64 != 56 {
 		t.Fatalf("params = %#v, want normalized blacklist entry", querier.addBlacklistParams)
+	}
+}
+
+func TestAddWalletBlacklistEntryDuplicateReturnsExists(t *testing.T) {
+	querier := &fakeApplicationQuerier{addWalletBlacklistErr: &pgconn.PgError{Code: "23505"}}
+	wallet := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+
+	err := NewSQLStoreWithQuerier(querier).AddWalletBlacklistEntry(context.Background(), WalletBlacklistEntry{
+		Wallet: wallet,
+		Note:   " bad wallet ",
+	})
+	if !errors.Is(err, ErrWalletBlacklistEntryAlreadyExists) {
+		t.Fatalf("err = %v, want %v", err, ErrWalletBlacklistEntryAlreadyExists)
+	}
+	if common.BytesToAddress(querier.addWalletBlacklistParams.Wallet) != wallet || querier.addWalletBlacklistParams.Note.String != "bad wallet" {
+		t.Fatalf("params = %#v, want normalized wallet blacklist entry", querier.addWalletBlacklistParams)
+	}
+}
+
+func TestWalletBlacklistRowsAffectedMapNotFound(t *testing.T) {
+	store := NewSQLStoreWithQuerier(&fakeApplicationQuerier{
+		updateWalletBlacklistRowsAffected: 0,
+		deleteWalletBlacklistRowsAffected: 0,
+	})
+	wallet := common.HexToAddress("0x00000000000000000000000000000000000000a1")
+
+	if err := store.UpdateWalletBlacklistEntryNote(context.Background(), wallet, ""); !errors.Is(err, ErrWalletBlacklistEntryNotFound) {
+		t.Fatalf("UpdateWalletBlacklistEntryNote error = %v, want not found", err)
+	}
+	if err := store.DeleteWalletBlacklistEntry(context.Background(), wallet); !errors.Is(err, ErrWalletBlacklistEntryNotFound) {
+		t.Fatalf("DeleteWalletBlacklistEntry error = %v, want not found", err)
 	}
 }
 

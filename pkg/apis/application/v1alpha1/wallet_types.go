@@ -28,3 +28,9 @@ type WalletDetail struct {
 	PrivateKey     string `protobuf:"bytes,9,opt,name=private_key,json=privateKey" json:"privateKey"`
 	Mnemonic       string `protobuf:"bytes,10,opt,name=mnemonic" json:"mnemonic"`
 }
+
+type WalletBlacklistEntry struct {
+	Wallet    string `protobuf:"bytes,1,opt,name=wallet" json:"wallet"`
+	Note      string `protobuf:"bytes,2,opt,name=note" json:"note"`
+	CreatedAt string `protobuf:"bytes,3,opt,name=createdAt" json:"createdAt"`
+}

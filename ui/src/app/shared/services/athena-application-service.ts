@@ -51,6 +51,12 @@ export interface BytecodeBlacklistEntry {
     createdAt?: string;
 }
 
+export interface WalletBlacklistEntry {
+    wallet?: string;
+    note?: string;
+    createdAt?: string;
+}
+
 export interface BytecodeListItem {
     codeHash?: string;
     runtimeBytecodeSize?: number;
@@ -91,12 +97,24 @@ interface ListBytecodeBlacklistEntriesResponse {
     items?: BytecodeBlacklistEntry[];
 }
 
+interface ListWalletBlacklistEntriesResponse {
+    items?: WalletBlacklistEntry[];
+}
+
 interface AddBytecodeBlacklistEntryResponse {
     item?: BytecodeBlacklistEntry;
 }
 
+interface AddWalletBlacklistEntryResponse {
+    item?: WalletBlacklistEntry;
+}
+
 interface UpdateBytecodeBlacklistNoteResponse {
     item?: BytecodeBlacklistEntry;
+}
+
+interface UpdateWalletBlacklistEntryNoteResponse {
+    item?: WalletBlacklistEntry;
 }
 
 interface ListSourceQualityPromptsResponse {
@@ -111,6 +129,8 @@ let cachedProjectOptions: ProjectOptions | undefined;
 let projectOptionsRequest: (Promise<ProjectOptions | undefined> & {abort?: () => void}) | null = null;
 let cachedBytecodeBlacklistEntries: BytecodeBlacklistEntry[] | undefined;
 let bytecodeBlacklistEntriesRequest: (Promise<BytecodeBlacklistEntry[]> & {abort?: () => void}) | null = null;
+let cachedWalletBlacklistEntries: WalletBlacklistEntry[] | undefined;
+let walletBlacklistEntriesRequest: (Promise<WalletBlacklistEntry[]> & {abort?: () => void}) | null = null;
 
 function normalizeBytecodeBlacklistEntry(item: BytecodeBlacklistEntry | any): BytecodeBlacklistEntry {
     return {
@@ -118,6 +138,14 @@ function normalizeBytecodeBlacklistEntry(item: BytecodeBlacklistEntry | any): By
         note: item.note,
         sourceChainID: item.sourceChainID ?? item.source_chain_id,
         sourceContract: item.sourceContract ?? item.source_contract,
+        createdAt: item.createdAt ?? item.created_at
+    };
+}
+
+function normalizeWalletBlacklistEntry(item: WalletBlacklistEntry | any): WalletBlacklistEntry {
+    return {
+        wallet: item.wallet,
+        note: item.note,
         createdAt: item.createdAt ?? item.created_at
     };
 }
@@ -384,6 +412,72 @@ export class AthenaApplicationService {
         const req = requests.delete(`/application/bytecode/blacklist/${encodeURIComponent(codeHash)}`);
         const promise = req.then(() => {
             cachedBytecodeBlacklistEntries = undefined;
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listWalletBlacklistEntries(): Promise<WalletBlacklistEntry[]> & {abort?: () => void} {
+        if (cachedWalletBlacklistEntries) {
+            const promise = Promise.resolve(cachedWalletBlacklistEntries) as Promise<WalletBlacklistEntry[]> & {abort?: () => void};
+            promise.abort = () => {};
+            return promise;
+        }
+        if (walletBlacklistEntriesRequest) {
+            const promise = walletBlacklistEntriesRequest as Promise<WalletBlacklistEntry[]> & {abort?: () => void};
+            promise.abort = () => {};
+            return promise;
+        }
+        const req = requests.get('/application/wallet/blacklist');
+        const promise = req
+            .then(res => {
+                const body = (res.body as ListWalletBlacklistEntriesResponse) || {};
+                return (body.items || []).map(normalizeWalletBlacklistEntry);
+            })
+            .then(
+                items => {
+                    cachedWalletBlacklistEntries = items;
+                    walletBlacklistEntriesRequest = null;
+                    return items;
+                },
+                err => {
+                    walletBlacklistEntriesRequest = null;
+                    throw err;
+                }
+            ) as any;
+        promise.abort = () => {};
+        walletBlacklistEntriesRequest = promise;
+        return promise;
+    }
+
+    public addWalletBlacklistEntry(wallet: string, note: string): Promise<WalletBlacklistEntry> & {abort?: () => void} {
+        const req = requests.post('/application/wallet/blacklist').send({wallet, note});
+        const promise = req
+            .then(res => normalizeWalletBlacklistEntry(((res.body as AddWalletBlacklistEntryResponse) || {}).item || {}))
+            .then(item => {
+                cachedWalletBlacklistEntries = undefined;
+                return item;
+            }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public updateWalletBlacklistEntryNote(wallet: string, note: string): Promise<WalletBlacklistEntry> & {abort?: () => void} {
+        const req = requests.post(`/application/wallet/blacklist/${encodeURIComponent(wallet)}/note`).send({wallet, note});
+        const promise = req
+            .then(res => normalizeWalletBlacklistEntry(((res.body as UpdateWalletBlacklistEntryNoteResponse) || {}).item || {}))
+            .then(item => {
+                cachedWalletBlacklistEntries = undefined;
+                return item;
+            }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public deleteWalletBlacklistEntry(wallet: string): Promise<void> & {abort?: () => void} {
+        const req = requests.delete(`/application/wallet/blacklist/${encodeURIComponent(wallet)}`);
+        const promise = req.then(() => {
+            cachedWalletBlacklistEntries = undefined;
         }) as any;
         promise.abort = () => req.abort();
         return promise;

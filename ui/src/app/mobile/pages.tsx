@@ -19,7 +19,7 @@ import {
     useBreakpoint
 } from './components';
 import {Context} from '../shared/context';
-import {BytecodeBlacklistEntry, BytecodeDeployment, BytecodeListItem, SourceQualityPrompt} from '../shared/services/athena-application-service';
+import {BytecodeBlacklistEntry, BytecodeDeployment, BytecodeListItem, SourceQualityPrompt, WalletBlacklistEntry} from '../shared/services/athena-application-service';
 import {Account, UserInfo, VersionMessage} from '../shared/models';
 import {NotificationDelivery} from '../shared/services/notification-service';
 import {
@@ -30,7 +30,7 @@ import {
     PolymarketSportsLiveMarketItem
 } from '../shared/services/polymarket-service';
 import {services} from '../shared/services';
-import {WalletBlacklistEntry, WalletDetail, WalletItem} from '../shared/services/wallet-service';
+import {WalletDetail, WalletItem} from '../shared/services/wallet-service';
 import {WormMarketDetail, WormMarketItem} from '../shared/services/worm-service';
 
 const fmt = (value: unknown) => {
@@ -358,14 +358,14 @@ export const WalletsPage = () => {
 
 export const WalletBlacklistPage = () => {
     const ctx = React.useContext(Context);
-    const data = useAsyncData(() => services.wallet.listWalletBlacklistEntries(), []);
-    const canUpdate = useCanI(rbacResources.wallets, rbacActions.update);
+    const data = useAsyncData(() => services.athenaApplication.listWalletBlacklistEntries(), []);
+    const canUpdate = useCanI(rbacResources.application, rbacActions.update);
     const canModify = canUpdate.data === true;
     const add = async (values: {wallet: string; note?: string}) => {
         if (!canModify) {
             return;
         }
-        await services.wallet.addWalletBlacklistEntry(values.wallet, values.note || '');
+        await services.athenaApplication.addWalletBlacklistEntry(values.wallet, values.note || '');
         ctx.notifications.success('Wallet blacklisted');
         data.reload();
     };
@@ -377,7 +377,7 @@ export const WalletBlacklistPage = () => {
             title: 'Delete wallet blacklist entry?',
             content: wallet,
             onOk: async () => {
-                await services.wallet.deleteWalletBlacklistEntry(wallet);
+                await services.athenaApplication.deleteWalletBlacklistEntry(wallet);
                 data.reload();
             }
         });

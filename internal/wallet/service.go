@@ -5,9 +5,7 @@ import (
 	"errors"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/useryege/athena/internal/wallet/apiclient"
 	walletstore "github.com/useryege/athena/internal/wallet/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
@@ -203,85 +201,6 @@ func (s *Service) UpdateWalletAlias(ctx context.Context, req *apiclient.UpdateWa
 	return &apiclient.UpdateWalletAliasResponse{Item: item}, nil
 }
 
-func (s *Service) ListWalletBlacklistEntries(ctx context.Context, _ *apiclient.ListWalletBlacklistEntriesRequest) (*apiclient.ListWalletBlacklistEntriesResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
-	}
-	records, err := s.store.ListWalletBlacklistEntries(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to list wallet blacklist entries: %v", err)
-	}
-	items := make([]*apiclient.WalletBlacklistEntry, 0, len(records))
-	for _, record := range records {
-		items = append(items, walletBlacklistEntryToAPI(record))
-	}
-	return &apiclient.ListWalletBlacklistEntriesResponse{Items: items}, nil
-}
-
-func (s *Service) AddWalletBlacklistEntry(ctx context.Context, req *apiclient.AddWalletBlacklistEntryRequest) (*apiclient.AddWalletBlacklistEntryResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
-	}
-	if !common.IsHexAddress(req.GetWallet()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid wallet %q", req.GetWallet())
-	}
-	wallet := common.HexToAddress(req.GetWallet())
-	record := walletstore.WalletBlacklistEntry{
-		Wallet:    wallet,
-		Note:      req.GetNote(),
-		CreatedAt: time.Now().UTC(),
-	}
-	if err := s.store.AddWalletBlacklistEntry(ctx, record); err != nil {
-		if errors.Is(err, walletstore.ErrWalletBlacklistEntryAlreadyExists) {
-			return nil, status.Errorf(codes.AlreadyExists, "wallet blacklist entry %s already exists", wallet.Hex())
-		}
-		return nil, status.Errorf(codes.Internal, "failed to add wallet blacklist entry: %v", err)
-	}
-	created, err := s.getWalletBlacklistEntry(ctx, wallet)
-	if err != nil {
-		return &apiclient.AddWalletBlacklistEntryResponse{Item: walletBlacklistEntryToAPI(record)}, nil
-	}
-	return &apiclient.AddWalletBlacklistEntryResponse{Item: walletBlacklistEntryToAPI(created)}, nil
-}
-
-func (s *Service) UpdateWalletBlacklistEntryNote(ctx context.Context, req *apiclient.UpdateWalletBlacklistEntryNoteRequest) (*apiclient.UpdateWalletBlacklistEntryNoteResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
-	}
-	if !common.IsHexAddress(req.GetWallet()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid wallet %q", req.GetWallet())
-	}
-	wallet := common.HexToAddress(req.GetWallet())
-	if err := s.store.UpdateWalletBlacklistEntryNote(ctx, wallet, req.GetNote()); err != nil {
-		if errors.Is(err, walletstore.ErrWalletBlacklistEntryNotFound) {
-			return nil, status.Errorf(codes.NotFound, "wallet blacklist entry %s not found", wallet.Hex())
-		}
-		return nil, status.Errorf(codes.Internal, "failed to update wallet blacklist entry note: %v", err)
-	}
-	updated, err := s.getWalletBlacklistEntry(ctx, wallet)
-	if err != nil {
-		return nil, err
-	}
-	return &apiclient.UpdateWalletBlacklistEntryNoteResponse{Item: walletBlacklistEntryToAPI(updated)}, nil
-}
-
-func (s *Service) DeleteWalletBlacklistEntry(ctx context.Context, req *apiclient.DeleteWalletBlacklistEntryRequest) (*apiclient.DeleteWalletBlacklistEntryResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
-	}
-	if !common.IsHexAddress(req.GetWallet()) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid wallet %q", req.GetWallet())
-	}
-	wallet := common.HexToAddress(req.GetWallet())
-	if err := s.store.DeleteWalletBlacklistEntry(ctx, wallet); err != nil {
-		if errors.Is(err, walletstore.ErrWalletBlacklistEntryNotFound) {
-			return nil, status.Errorf(codes.NotFound, "wallet blacklist entry %s not found", wallet.Hex())
-		}
-		return nil, status.Errorf(codes.Internal, "failed to delete wallet blacklist entry: %v", err)
-	}
-	return &apiclient.DeleteWalletBlacklistEntryResponse{}, nil
-}
-
 func (s *Service) getWalletRecord(ctx context.Context, id int64) (*walletstore.WalletRecord, error) {
 	if s.store == nil {
 		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
@@ -294,31 +213,6 @@ func (s *Service) getWalletRecord(ctx context.Context, id int64) (*walletstore.W
 		return nil, status.Errorf(codes.Internal, "failed to get wallet: %v", err)
 	}
 	return record, nil
-}
-
-func (s *Service) getWalletBlacklistEntry(ctx context.Context, wallet common.Address) (walletstore.WalletBlacklistEntry, error) {
-	items, err := s.store.ListWalletBlacklistEntries(ctx)
-	if err != nil {
-		return walletstore.WalletBlacklistEntry{}, status.Errorf(codes.Internal, "failed to list wallet blacklist entries: %v", err)
-	}
-	for _, item := range items {
-		if item.Wallet == wallet {
-			return item, nil
-		}
-	}
-	return walletstore.WalletBlacklistEntry{}, status.Errorf(codes.NotFound, "wallet blacklist entry %s not found", wallet.Hex())
-}
-
-func walletBlacklistEntryToAPI(item walletstore.WalletBlacklistEntry) *apiclient.WalletBlacklistEntry {
-	createdAt := ""
-	if !item.CreatedAt.IsZero() {
-		createdAt = item.CreatedAt.UTC().Format(time.RFC3339Nano)
-	}
-	return &apiclient.WalletBlacklistEntry{
-		Wallet:    item.Wallet.Hex(),
-		Note:      item.Note,
-		CreatedAt: createdAt,
-	}
 }
 
 func (s *Service) storeWalletMaterial(ctx context.Context, material walletKeyMaterial, alias string) (*walletstore.WalletRecord, error) {

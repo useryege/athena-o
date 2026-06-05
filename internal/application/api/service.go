@@ -26,7 +26,6 @@ import (
 	"github.com/useryege/athena/internal/application/pipeline"
 	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
-	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/ethereumapi"
@@ -52,10 +51,9 @@ type Service struct {
 	apiFetcher            ethereumapi.EthereumAPI
 	sourceQualityAnalyzer sourcequality.Analyzer
 
-	pipeline        *pipeline.ProjectPipeline
-	athenaFetcher   evm.AthenaFetcher
-	aveComponent    *avecomponent.Component
-	walletBlacklist walletBlacklistLister
+	pipeline      *pipeline.ProjectPipeline
+	athenaFetcher evm.AthenaFetcher
+	aveComponent  *avecomponent.Component
 
 	store             appstore.Store
 	componentCache    appcache.ProjectComponentCache
@@ -94,7 +92,6 @@ type ServiceOpts struct {
 	RedisClient           redisport.Client
 	APIFetcher            ethereumapi.EthereumAPI
 	SourceQualityAnalyzer sourcequality.Analyzer
-	WalletClientset       walletapiclient.Clientset
 	CodeAtFunc            func(ctx context.Context, contract common.Address) ([]byte, error)
 }
 
@@ -109,7 +106,6 @@ func NewService(opts ServiceOpts) (*Service, error) {
 		componentCache:        appcache.NewProjectComponentCache(opts.RedisClient),
 		componentEventBus:     appcomponents.NewRedisEventBus(opts.RedisClient),
 		persistenceFlush:      persistence.NewFlusher(bufferedStore, time.Minute),
-		walletBlacklist:       newWalletBlacklistClientLister(opts.WalletClientset),
 		v2FactoryContract:     opts.V2FactoryContract,
 		wethContract:          opts.WethContract,
 		usdtContract:          opts.UsdtContract,
@@ -280,7 +276,6 @@ func (s *Service) startWithContext(ctx context.Context) (projectPipeline *pipeli
 		Store:              componentStore,
 		Cache:              s.componentCache,
 		Bus:                s.componentEventBus,
-		WalletBlacklist:    s.walletBlacklist,
 		RequiredComponents: requiredReportComponents,
 	})
 	discoveryIntake = discovery.NewDiscoveryIntake(initializer)

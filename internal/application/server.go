@@ -8,7 +8,6 @@ import (
 	"github.com/useryege/athena/internal/application/sourcequality"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/server/version"
-	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/ethereumapi"
@@ -34,7 +33,6 @@ type ApplicationServerOpts struct {
 	RedisClient           redisport.Client
 	APIFetcher            ethereumapi.EthereumAPI
 	SourceQualityAnalyzer sourcequality.Analyzer
-	WalletClientset       walletapiclient.Clientset
 
 	// Fetch from Athena contract
 	V2FactoryContract common.Address
@@ -60,7 +58,6 @@ func NewServer(opts ApplicationServerOpts) (*ApplicationServer, error) {
 		RedisClient:           opts.RedisClient,
 		APIFetcher:            opts.APIFetcher,
 		SourceQualityAnalyzer: opts.SourceQualityAnalyzer,
-		WalletClientset:       opts.WalletClientset,
 	})
 	if err != nil {
 		return nil, err

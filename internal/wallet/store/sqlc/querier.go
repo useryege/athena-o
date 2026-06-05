@@ -9,15 +9,11 @@ import (
 )
 
 type Querier interface {
-	AddWalletBlacklistEntry(ctx context.Context, arg AddWalletBlacklistEntryParams) error
 	CountWallets(ctx context.Context, arg CountWalletsParams) (int64, error)
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (WalletPrivateKey, error)
-	DeleteWalletBlacklistEntry(ctx context.Context, wallet []byte) (int64, error)
 	GetWallet(ctx context.Context, id int64) (WalletPrivateKey, error)
-	ListWalletBlacklistEntries(ctx context.Context) ([]WalletBlacklist, error)
 	ListWallets(ctx context.Context, arg ListWalletsParams) ([]ListWalletsRow, error)
 	UpdateWalletAlias(ctx context.Context, arg UpdateWalletAliasParams) (UpdateWalletAliasRow, error)
-	UpdateWalletBlacklistEntryNote(ctx context.Context, arg UpdateWalletBlacklistEntryNoteParams) (int64, error)
 }
 
 var _ Querier = (*Queries)(nil)

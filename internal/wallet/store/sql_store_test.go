@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -23,25 +22,12 @@ type fakeWalletQuerier struct {
 	createWalletParams walletsqlc.CreateWalletParams
 	listWalletsParams  walletsqlc.ListWalletsParams
 	updateAliasParams  walletsqlc.UpdateWalletAliasParams
-	addBlacklistParams walletsqlc.AddWalletBlacklistEntryParams
 
 	countWalletsResult int64
 	createWalletResult walletsqlc.WalletPrivateKey
 	getWalletResult    walletsqlc.WalletPrivateKey
 	listWalletsResult  []walletsqlc.ListWalletsRow
 	updateAliasResult  walletsqlc.UpdateWalletAliasRow
-	blacklistResult    []walletsqlc.WalletBlacklist
-
-	addBlacklistErr    error
-	updateBlacklistErr error
-	deleteBlacklistErr error
-	updateRowsAffected int64
-	deleteRowsAffected int64
-}
-
-func (f *fakeWalletQuerier) AddWalletBlacklistEntry(_ context.Context, arg walletsqlc.AddWalletBlacklistEntryParams) error {
-	f.addBlacklistParams = arg
-	return f.addBlacklistErr
 }
 
 func (f *fakeWalletQuerier) CountWallets(_ context.Context, arg walletsqlc.CountWalletsParams) (int64, error) {
@@ -54,16 +40,8 @@ func (f *fakeWalletQuerier) CreateWallet(_ context.Context, arg walletsqlc.Creat
 	return f.createWalletResult, f.createWalletErr
 }
 
-func (f *fakeWalletQuerier) DeleteWalletBlacklistEntry(_ context.Context, _ []byte) (int64, error) {
-	return f.deleteRowsAffected, f.deleteBlacklistErr
-}
-
 func (f *fakeWalletQuerier) GetWallet(_ context.Context, _ int64) (walletsqlc.WalletPrivateKey, error) {
 	return f.getWalletResult, f.getWalletErr
-}
-
-func (f *fakeWalletQuerier) ListWalletBlacklistEntries(context.Context) ([]walletsqlc.WalletBlacklist, error) {
-	return f.blacklistResult, nil
 }
 
 func (f *fakeWalletQuerier) ListWallets(_ context.Context, arg walletsqlc.ListWalletsParams) ([]walletsqlc.ListWalletsRow, error) {
@@ -74,10 +52,6 @@ func (f *fakeWalletQuerier) ListWallets(_ context.Context, arg walletsqlc.ListWa
 func (f *fakeWalletQuerier) UpdateWalletAlias(_ context.Context, arg walletsqlc.UpdateWalletAliasParams) (walletsqlc.UpdateWalletAliasRow, error) {
 	f.updateAliasParams = arg
 	return f.updateAliasResult, f.updateAliasErr
-}
-
-func (f *fakeWalletQuerier) UpdateWalletBlacklistEntryNote(context.Context, walletsqlc.UpdateWalletBlacklistEntryNoteParams) (int64, error) {
-	return f.updateRowsAffected, f.updateBlacklistErr
 }
 
 func TestCreateWalletUsesQuerierAndMapsUniqueViolation(t *testing.T) {
@@ -159,25 +133,9 @@ func TestListWalletsUsesQuerierFiltersAndPagination(t *testing.T) {
 	}
 }
 
-func TestWalletStoreMapsNotFoundAndBlacklistRowsAffected(t *testing.T) {
+func TestWalletStoreMapsNotFound(t *testing.T) {
 	querier := &fakeWalletQuerier{getWalletErr: pgx.ErrNoRows}
 	if _, err := NewSQLStoreWithQuerier(querier).GetWallet(context.Background(), 404); !errors.Is(err, ErrWalletNotFound) {
 		t.Fatalf("GetWallet error = %v, want ErrWalletNotFound", err)
-	}
-
-	wallet := common.HexToAddress("0x00000000000000000000000000000000000000a1")
-	store := NewSQLStoreWithQuerier(&fakeWalletQuerier{
-		addBlacklistErr:    &pgconn.PgError{Code: "23505"},
-		updateRowsAffected: 0,
-		deleteRowsAffected: 0,
-	})
-	if err := store.AddWalletBlacklistEntry(context.Background(), WalletBlacklistEntry{Wallet: wallet}); !errors.Is(err, ErrWalletBlacklistEntryAlreadyExists) {
-		t.Fatalf("AddWalletBlacklistEntry error = %v, want duplicate", err)
-	}
-	if err := store.UpdateWalletBlacklistEntryNote(context.Background(), wallet, ""); !errors.Is(err, ErrWalletBlacklistEntryNotFound) {
-		t.Fatalf("UpdateWalletBlacklistEntryNote error = %v, want not found", err)
-	}
-	if err := store.DeleteWalletBlacklistEntry(context.Background(), wallet); !errors.Is(err, ErrWalletBlacklistEntryNotFound) {
-		t.Fatalf("DeleteWalletBlacklistEntry error = %v, want not found", err)
 	}
 }

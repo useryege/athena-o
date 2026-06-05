@@ -464,6 +464,14 @@ message SourceQualityPrompt {
   optional string updatedAt = 7;
 }
 
+message WalletBlacklistEntry {
+  optional string wallet = 1;
+
+  optional string note = 2;
+
+  optional string createdAt = 3;
+}
+
 message WalletDetail {
   optional int64 id = 1;
 

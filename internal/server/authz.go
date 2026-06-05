@@ -77,6 +77,12 @@ func applicationObject(req any) string {
 		return nonEmptyObject(r.GetCodeHash())
 	case *applicationpkg.DeleteBytecodeBlacklistRequest:
 		return nonEmptyObject(r.GetCodeHash())
+	case *applicationpkg.AddWalletBlacklistEntryRequest:
+		return nonEmptyObject(r.GetWallet())
+	case *applicationpkg.UpdateWalletBlacklistEntryNoteRequest:
+		return nonEmptyObject(r.GetWallet())
+	case *applicationpkg.DeleteWalletBlacklistEntryRequest:
+		return nonEmptyObject(r.GetWallet())
 	case *applicationpkg.GetSourceQualityPromptRequest:
 		return fmt.Sprintf("%d", r.GetId())
 	case *applicationpkg.UpdateSourceQualityPromptRequest:
@@ -96,12 +102,6 @@ func walletObject(req any) string {
 		return fmt.Sprintf("%d", r.GetId())
 	case *walletpkg.UpdateWalletAliasRequest:
 		return fmt.Sprintf("%d", r.GetId())
-	case *walletpkg.AddWalletBlacklistEntryRequest:
-		return nonEmptyObject(r.GetWallet())
-	case *walletpkg.UpdateWalletBlacklistEntryNoteRequest:
-		return nonEmptyObject(r.GetWallet())
-	case *walletpkg.DeleteWalletBlacklistEntryRequest:
-		return nonEmptyObject(r.GetWallet())
 	default:
 		return "*"
 	}
@@ -141,45 +141,44 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/account.AccountService/CreateToken":    {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
 	"/account.AccountService/DeleteToken":    {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
 
-	"/application.ApplicationService/GetProjectOptions":            fixedRule(rbac.ResourceProjects, rbac.ActionGet),
-	"/application.ApplicationService/GetProjectDiscoveryStatus":    fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionGet),
-	"/application.ApplicationService/StartProjectDiscovery":        fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionUpdate),
-	"/application.ApplicationService/StopProjectDiscovery":         fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionUpdate),
-	"/application.ApplicationService/GetContractSourceInfo":        {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/ListBytecodes":                fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/GetBytecode":                  {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/ListBytecodeDeployments":      {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/ListBytecodeBlacklistEntries": fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/AddBytecodeBlacklistEntry":    {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/UpdateBytecodeBlacklistNote":  {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/DeleteBytecodeBlacklist":      {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/ListSourceQualityPrompts":     fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/GetSourceQualityPrompt":       {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/CreateSourceQualityPrompt":    fixedRule(rbac.ResourceApplication, rbac.ActionUpdate),
-	"/application.ApplicationService/UpdateSourceQualityPrompt":    {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/ActivateSourceQualityPrompt":  {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/DeleteSourceQualityPrompt":    {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/GetProjectOptions":              fixedRule(rbac.ResourceProjects, rbac.ActionGet),
+	"/application.ApplicationService/GetProjectDiscoveryStatus":      fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionGet),
+	"/application.ApplicationService/StartProjectDiscovery":          fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionUpdate),
+	"/application.ApplicationService/StopProjectDiscovery":           fixedRule(rbac.ResourceApplicationDiscovery, rbac.ActionUpdate),
+	"/application.ApplicationService/GetContractSourceInfo":          {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/ListBytecodes":                  fixedRule(rbac.ResourceApplication, rbac.ActionGet),
+	"/application.ApplicationService/GetBytecode":                    {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/ListBytecodeDeployments":        {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/ListBytecodeBlacklistEntries":   fixedRule(rbac.ResourceApplication, rbac.ActionGet),
+	"/application.ApplicationService/AddBytecodeBlacklistEntry":      {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/UpdateBytecodeBlacklistNote":    {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/DeleteBytecodeBlacklist":        {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/ListWalletBlacklistEntries":     fixedRule(rbac.ResourceApplication, rbac.ActionGet),
+	"/application.ApplicationService/AddWalletBlacklistEntry":        {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/UpdateWalletBlacklistEntryNote": {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/DeleteWalletBlacklistEntry":     {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/ListSourceQualityPrompts":       fixedRule(rbac.ResourceApplication, rbac.ActionGet),
+	"/application.ApplicationService/GetSourceQualityPrompt":         {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
+	"/application.ApplicationService/CreateSourceQualityPrompt":      fixedRule(rbac.ResourceApplication, rbac.ActionUpdate),
+	"/application.ApplicationService/UpdateSourceQualityPrompt":      {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/ActivateSourceQualityPrompt":    {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
+	"/application.ApplicationService/DeleteSourceQualityPrompt":      {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
 
 	"/notification.NotificationService/GetNotificationStatus":      fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
 	"/notification.NotificationService/ListNotificationDeliveries": fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
 	"/notification.NotificationService/GetNotificationDelivery":    {resource: rbac.ResourceNotifications, action: rbac.ActionGet, object: notificationObject},
 	"/notification.NotificationService/SendTestNotification":       {resource: rbac.ResourceNotifications, action: rbac.ActionInvoke, object: notificationObject},
 
-	"/wallet.WalletService/GetWalletStatus":                fixedRule(rbac.ResourceWallets, rbac.ActionGet),
-	"/wallet.WalletService/ListWallets":                    fixedRule(rbac.ResourceWallets, rbac.ActionGet),
-	"/wallet.WalletService/GetWallet":                      {resource: rbac.ResourceWallets, action: rbac.ActionGet, object: walletObject},
-	"/wallet.WalletService/CreateWallet":                   fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
-	"/wallet.WalletService/ImportPrivateKey":               fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
-	"/wallet.WalletService/ImportMnemonic":                 fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
-	"/wallet.WalletService/UpdateWalletAlias":              {resource: rbac.ResourceWallets, action: rbac.ActionUpdate, object: walletObject},
-	"/wallet.WalletService/ListWalletBlacklistEntries":     fixedRule(rbac.ResourceWallets, rbac.ActionGet),
-	"/wallet.WalletService/AddWalletBlacklistEntry":        {resource: rbac.ResourceWallets, action: rbac.ActionUpdate, object: walletObject},
-	"/wallet.WalletService/UpdateWalletBlacklistEntryNote": {resource: rbac.ResourceWallets, action: rbac.ActionUpdate, object: walletObject},
-	"/wallet.WalletService/DeleteWalletBlacklistEntry":     {resource: rbac.ResourceWallets, action: rbac.ActionUpdate, object: walletObject},
-
-	"/worm.WormService/GetWormStatus":   fixedRule(rbac.ResourceWorm, rbac.ActionGet),
-	"/worm.WormService/ListWormMarkets": fixedRule(rbac.ResourceWorm, rbac.ActionGet),
-	"/worm.WormService/GetWormMarket":   {resource: rbac.ResourceWorm, action: rbac.ActionGet, object: wormObject},
+	"/wallet.WalletService/GetWalletStatus":   fixedRule(rbac.ResourceWallets, rbac.ActionGet),
+	"/wallet.WalletService/ListWallets":       fixedRule(rbac.ResourceWallets, rbac.ActionGet),
+	"/wallet.WalletService/GetWallet":         {resource: rbac.ResourceWallets, action: rbac.ActionGet, object: walletObject},
+	"/wallet.WalletService/CreateWallet":      fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
+	"/wallet.WalletService/ImportPrivateKey":  fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
+	"/wallet.WalletService/ImportMnemonic":    fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
+	"/wallet.WalletService/UpdateWalletAlias": {resource: rbac.ResourceWallets, action: rbac.ActionUpdate, object: walletObject},
+	"/worm.WormService/GetWormStatus":         fixedRule(rbac.ResourceWorm, rbac.ActionGet),
+	"/worm.WormService/ListWormMarkets":       fixedRule(rbac.ResourceWorm, rbac.ActionGet),
+	"/worm.WormService/GetWormMarket":         {resource: rbac.ResourceWorm, action: rbac.ActionGet, object: wormObject},
 
 	"/polymarket.PolymarketService/GetPolymarketStatus":             fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ListPolymarketHotMarkets":        fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),

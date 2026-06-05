@@ -11,21 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const addWalletBlacklistEntry = `-- name: AddWalletBlacklistEntry :exec
-INSERT INTO wallet_blacklist (wallet, note)
-VALUES ($1, $2)
-`
-
-type AddWalletBlacklistEntryParams struct {
-	Wallet []byte
-	Note   pgtype.Text
-}
-
-func (q *Queries) AddWalletBlacklistEntry(ctx context.Context, arg AddWalletBlacklistEntryParams) error {
-	_, err := q.db.Exec(ctx, addWalletBlacklistEntry, arg.Wallet, arg.Note)
-	return err
-}
-
 const countWallets = `-- name: CountWallets :one
 SELECT COUNT(*)::bigint
 FROM wallet_private_keys
@@ -94,19 +79,6 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (Wal
 	return i, err
 }
 
-const deleteWalletBlacklistEntry = `-- name: DeleteWalletBlacklistEntry :execrows
-DELETE FROM wallet_blacklist
-WHERE wallet = $1
-`
-
-func (q *Queries) DeleteWalletBlacklistEntry(ctx context.Context, wallet []byte) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteWalletBlacklistEntry, wallet)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const getWallet = `-- name: GetWallet :one
 SELECT id, chain, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
 FROM wallet_private_keys
@@ -130,32 +102,6 @@ func (q *Queries) GetWallet(ctx context.Context, id int64) (WalletPrivateKey, er
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const listWalletBlacklistEntries = `-- name: ListWalletBlacklistEntries :many
-SELECT wallet, note, created_at
-FROM wallet_blacklist
-ORDER BY created_at DESC, wallet
-`
-
-func (q *Queries) ListWalletBlacklistEntries(ctx context.Context) ([]WalletBlacklist, error) {
-	rows, err := q.db.Query(ctx, listWalletBlacklistEntries)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []WalletBlacklist
-	for rows.Next() {
-		var i WalletBlacklist
-		if err := rows.Scan(&i.Wallet, &i.Note, &i.CreatedAt); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const listWallets = `-- name: ListWallets :many
@@ -260,23 +206,4 @@ func (q *Queries) UpdateWalletAlias(ctx context.Context, arg UpdateWalletAliasPa
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const updateWalletBlacklistEntryNote = `-- name: UpdateWalletBlacklistEntryNote :execrows
-UPDATE wallet_blacklist
-SET note = $2
-WHERE wallet = $1
-`
-
-type UpdateWalletBlacklistEntryNoteParams struct {
-	Wallet []byte
-	Note   pgtype.Text
-}
-
-func (q *Queries) UpdateWalletBlacklistEntryNote(ctx context.Context, arg UpdateWalletBlacklistEntryNoteParams) (int64, error) {
-	result, err := q.db.Exec(ctx, updateWalletBlacklistEntryNote, arg.Wallet, arg.Note)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
 }

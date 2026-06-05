@@ -99,6 +99,44 @@ message DeleteBytecodeBlacklistRequest {
 // DeleteBytecodeBlacklistResponse is returned after deleting a bytecode blacklist entry.
 message DeleteBytecodeBlacklistResponse {}
 
+// ListWalletBlacklistEntriesRequest queries all wallet blacklist entries.
+message ListWalletBlacklistEntriesRequest {}
+
+// ListWalletBlacklistEntriesResponse returns wallet blacklist entries.
+message ListWalletBlacklistEntriesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletBlacklistEntry items = 1;
+}
+
+// AddWalletBlacklistEntryRequest adds a wallet blacklist entry.
+message AddWalletBlacklistEntryRequest {
+  string wallet = 1;
+  string note = 2;
+}
+
+// AddWalletBlacklistEntryResponse returns the stored wallet blacklist entry.
+message AddWalletBlacklistEntryResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletBlacklistEntry item = 1;
+}
+
+// UpdateWalletBlacklistEntryNoteRequest updates a wallet blacklist note.
+message UpdateWalletBlacklistEntryNoteRequest {
+  string wallet = 1;
+  string note = 2;
+}
+
+// UpdateWalletBlacklistEntryNoteResponse returns the updated wallet blacklist entry.
+message UpdateWalletBlacklistEntryNoteResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletBlacklistEntry item = 1;
+}
+
+// DeleteWalletBlacklistEntryRequest deletes a wallet blacklist entry.
+message DeleteWalletBlacklistEntryRequest {
+  string wallet = 1;
+}
+
+// DeleteWalletBlacklistEntryResponse is returned after deleting a wallet blacklist entry.
+message DeleteWalletBlacklistEntryResponse {}
+
 // ListSourceQualityPromptsRequest queries source quality prompts.
 message ListSourceQualityPromptsRequest {}
 
@@ -224,6 +262,32 @@ service ApplicationService {
   // DeleteBytecodeBlacklist deletes a bytecode blacklist entry.
   rpc DeleteBytecodeBlacklist(DeleteBytecodeBlacklistRequest) returns (DeleteBytecodeBlacklistResponse) {
     option (google.api.http) = {delete: "/api/v1/application/bytecode/blacklist/{code_hash}"};
+  }
+
+  // ListWalletBlacklistEntries returns configured wallet blacklist entries.
+  rpc ListWalletBlacklistEntries(ListWalletBlacklistEntriesRequest) returns (ListWalletBlacklistEntriesResponse) {
+    option (google.api.http) = {get: "/api/v1/application/wallet/blacklist"};
+  }
+
+  // AddWalletBlacklistEntry adds a wallet blacklist entry.
+  rpc AddWalletBlacklistEntry(AddWalletBlacklistEntryRequest) returns (AddWalletBlacklistEntryResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/application/wallet/blacklist"
+      body: "*"
+    };
+  }
+
+  // UpdateWalletBlacklistEntryNote updates a wallet blacklist note.
+  rpc UpdateWalletBlacklistEntryNote(UpdateWalletBlacklistEntryNoteRequest) returns (UpdateWalletBlacklistEntryNoteResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/application/wallet/blacklist/{wallet}/note"
+      body: "*"
+    };
+  }
+
+  // DeleteWalletBlacklistEntry deletes a wallet blacklist entry.
+  rpc DeleteWalletBlacklistEntry(DeleteWalletBlacklistEntryRequest) returns (DeleteWalletBlacklistEntryResponse) {
+    option (google.api.http) = {delete: "/api/v1/application/wallet/blacklist/{wallet}"};
   }
 
   // ListSourceQualityPrompts returns configured source quality prompts.

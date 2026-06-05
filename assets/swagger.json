@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-555-g136128f-dirty"
+    "version": "v1.0.0-556-gad89707-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -786,6 +786,130 @@
         }
       }
     },
+    "/api/v1/application/wallet/blacklist": {
+      "get": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "ListWalletBlacklistEntries returns configured wallet blacklist entries.",
+        "operationId": "ApplicationService_ListWalletBlacklistEntries",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationListWalletBlacklistEntriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "AddWalletBlacklistEntry adds a wallet blacklist entry.",
+        "operationId": "ApplicationService_AddWalletBlacklistEntry",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationAddWalletBlacklistEntryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationAddWalletBlacklistEntryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/wallet/blacklist/{wallet}": {
+      "delete": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "DeleteWalletBlacklistEntry deletes a wallet blacklist entry.",
+        "operationId": "ApplicationService_DeleteWalletBlacklistEntry",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationDeleteWalletBlacklistEntryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application/wallet/blacklist/{wallet}/note": {
+      "post": {
+        "tags": [
+          "ApplicationService"
+        ],
+        "summary": "UpdateWalletBlacklistEntryNote updates a wallet blacklist note.",
+        "operationId": "ApplicationService_UpdateWalletBlacklistEntryNote",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/applicationUpdateWalletBlacklistEntryNoteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/applicationUpdateWalletBlacklistEntryNoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notification/status": {
       "get": {
         "tags": [
@@ -1224,130 +1348,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/clusterSettings"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/wallet/blacklist": {
-      "get": {
-        "tags": [
-          "WalletService"
-        ],
-        "summary": "ListWalletBlacklistEntries returns all globally configured wallet-blacklist entries.",
-        "operationId": "WalletService_ListWalletBlacklistEntries",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/walletListWalletBlacklistEntriesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "WalletService"
-        ],
-        "summary": "AddWalletBlacklistEntry adds a globally configured wallet-blacklist entry.",
-        "operationId": "WalletService_AddWalletBlacklistEntry",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/walletAddWalletBlacklistEntryRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/walletAddWalletBlacklistEntryResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/wallet/blacklist/{wallet}": {
-      "delete": {
-        "tags": [
-          "WalletService"
-        ],
-        "summary": "DeleteWalletBlacklistEntry deletes a globally configured wallet-blacklist entry.",
-        "operationId": "WalletService_DeleteWalletBlacklistEntry",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "wallet",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/walletDeleteWalletBlacklistEntryResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/wallet/blacklist/{wallet}/note": {
-      "post": {
-        "tags": [
-          "WalletService"
-        ],
-        "summary": "UpdateWalletBlacklistEntryNote updates the note of a globally configured wallet-blacklist entry.",
-        "operationId": "WalletService_UpdateWalletBlacklistEntryNote",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "wallet",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/walletUpdateWalletBlacklistEntryNoteRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/walletUpdateWalletBlacklistEntryNoteResponse"
             }
           },
           "default": {
@@ -1879,6 +1879,27 @@
         }
       }
     },
+    "applicationAddWalletBlacklistEntryRequest": {
+      "description": "AddWalletBlacklistEntryRequest adds a wallet blacklist entry.",
+      "type": "object",
+      "properties": {
+        "note": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationAddWalletBlacklistEntryResponse": {
+      "description": "AddWalletBlacklistEntryResponse returns the stored wallet blacklist entry.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1WalletBlacklistEntry"
+        }
+      }
+    },
     "applicationCreateSourceQualityPromptRequest": {
       "description": "CreateSourceQualityPromptRequest creates a source quality prompt.",
       "type": "object",
@@ -1906,6 +1927,10 @@
     },
     "applicationDeleteSourceQualityPromptResponse": {
       "description": "DeleteSourceQualityPromptResponse is returned after deleting a prompt.",
+      "type": "object"
+    },
+    "applicationDeleteWalletBlacklistEntryResponse": {
+      "description": "DeleteWalletBlacklistEntryResponse is returned after deleting a wallet blacklist entry.",
       "type": "object"
     },
     "applicationGetProjectOptionsResponse": {
@@ -1989,6 +2014,18 @@
         }
       }
     },
+    "applicationListWalletBlacklistEntriesResponse": {
+      "description": "ListWalletBlacklistEntriesResponse returns wallet blacklist entries.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1WalletBlacklistEntry"
+          }
+        }
+      }
+    },
     "applicationStartProjectDiscoveryRequest": {
       "type": "object"
     },
@@ -2038,6 +2075,27 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1SourceQualityPrompt"
+        }
+      }
+    },
+    "applicationUpdateWalletBlacklistEntryNoteRequest": {
+      "description": "UpdateWalletBlacklistEntryNoteRequest updates a wallet blacklist note.",
+      "type": "object",
+      "properties": {
+        "note": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "applicationUpdateWalletBlacklistEntryNoteResponse": {
+      "description": "UpdateWalletBlacklistEntryNoteResponse returns the updated wallet blacklist entry.",
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1WalletBlacklistEntry"
         }
       }
     },
@@ -3266,6 +3324,20 @@
         }
       }
     },
+    "v1alpha1WalletBlacklistEntry": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1WalletDetail": {
       "type": "object",
       "properties": {
@@ -3550,27 +3622,6 @@
         }
       }
     },
-    "walletAddWalletBlacklistEntryRequest": {
-      "description": "AddWalletBlacklistEntryRequest adds a wallet-blacklist entry.",
-      "type": "object",
-      "properties": {
-        "note": {
-          "type": "string"
-        },
-        "wallet": {
-          "type": "string"
-        }
-      }
-    },
-    "walletAddWalletBlacklistEntryResponse": {
-      "description": "AddWalletBlacklistEntryResponse returns the stored wallet-blacklist entry.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/walletWalletBlacklistEntry"
-        }
-      }
-    },
     "walletCreateWalletRequest": {
       "description": "CreateWalletRequest creates a new wallet for one chain.",
       "type": "object",
@@ -3591,10 +3642,6 @@
           "$ref": "#/definitions/v1alpha1WalletDetail"
         }
       }
-    },
-    "walletDeleteWalletBlacklistEntryResponse": {
-      "description": "DeleteWalletBlacklistEntryResponse is returned after deleting a wallet-blacklist entry.",
-      "type": "object"
     },
     "walletGetWalletResponse": {
       "description": "GetWalletResponse returns one persisted wallet record.",
@@ -3653,18 +3700,6 @@
         }
       }
     },
-    "walletListWalletBlacklistEntriesResponse": {
-      "description": "ListWalletBlacklistEntriesResponse returns all wallet-blacklist entries.",
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/walletWalletBlacklistEntry"
-          }
-        }
-      }
-    },
     "walletListWalletsResponse": {
       "description": "ListWalletsResponse returns persisted wallet records without secret material.",
       "type": "object",
@@ -3708,42 +3743,6 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1WalletItem"
-        }
-      }
-    },
-    "walletUpdateWalletBlacklistEntryNoteRequest": {
-      "description": "UpdateWalletBlacklistEntryNoteRequest updates the note of a wallet-blacklist entry.",
-      "type": "object",
-      "properties": {
-        "note": {
-          "type": "string"
-        },
-        "wallet": {
-          "type": "string"
-        }
-      }
-    },
-    "walletUpdateWalletBlacklistEntryNoteResponse": {
-      "description": "UpdateWalletBlacklistEntryNoteResponse returns the updated wallet-blacklist entry.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/walletWalletBlacklistEntry"
-        }
-      }
-    },
-    "walletWalletBlacklistEntry": {
-      "description": "WalletBlacklistEntry is a globally maintained wallet-blacklist entry.",
-      "type": "object",
-      "properties": {
-        "created_at": {
-          "type": "string"
-        },
-        "note": {
-          "type": "string"
-        },
-        "wallet": {
-          "type": "string"
         }
       }
     },

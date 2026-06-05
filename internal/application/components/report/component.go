@@ -12,15 +12,10 @@ import (
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
-type WalletBlacklistLister interface {
-	ListWalletBlacklist(ctx context.Context) ([]common.Address, error)
-}
-
 type Options struct {
 	Store              appstore.Store
 	Cache              appcache.ProjectComponentCache
 	Bus                appcomponents.EventBus
-	WalletBlacklist    WalletBlacklistLister
 	RequiredComponents []string
 }
 
@@ -28,7 +23,6 @@ type Component struct {
 	store              appstore.Store
 	cache              appcache.ProjectComponentCache
 	bus                appcomponents.EventBus
-	walletBlacklist    WalletBlacklistLister
 	requiredComponents []string
 	consumer           *appcomponents.Consumer
 }
@@ -41,7 +35,6 @@ func NewComponent(opts Options) *Component {
 		store:              opts.Store,
 		cache:              opts.Cache,
 		bus:                opts.Bus,
-		walletBlacklist:    opts.WalletBlacklist,
 		requiredComponents: opts.RequiredComponents,
 	}
 	c.consumer = appcomponents.NewConsumer(appstore.ProjectComponentReport, opts.Bus, c.handleEvent)
@@ -165,15 +158,15 @@ func (c *Component) Evaluate(ctx context.Context, contract common.Address) error
 
 func (c *Component) walletBlacklistSet(ctx context.Context) (map[common.Address]struct{}, error) {
 	result := map[common.Address]struct{}{}
-	if c.walletBlacklist == nil {
+	if c.store == nil {
 		return result, nil
 	}
-	wallets, err := c.walletBlacklist.ListWalletBlacklist(ctx)
+	wallets, err := c.store.ListWalletBlacklistEntries(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for _, wallet := range wallets {
-		result[wallet] = struct{}{}
+	for _, item := range wallets {
+		result[item.Wallet] = struct{}{}
 	}
 	return result, nil
 }

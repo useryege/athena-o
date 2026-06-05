@@ -88,6 +88,14 @@ func TestAuthorizeGRPCApplicationBytecodePolicy(t *testing.T) {
 	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/AddBytecodeBlacklistEntry", testAuthOverride{ctx: claimsCtx("admin")}, req); err != nil {
 		t.Fatalf("admin add bytecode blacklist: %v", err)
 	}
+
+	walletReq := &applicationpkg.AddWalletBlacklistEntryRequest{Wallet: "0x00000000000000000000000000000000000000a1"}
+	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/AddWalletBlacklistEntry", testAuthOverride{ctx: claimsCtx("LINGJIE")}, walletReq); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("readonly add wallet blacklist error = %v, want PermissionDenied", err)
+	}
+	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/AddWalletBlacklistEntry", testAuthOverride{ctx: claimsCtx("admin")}, walletReq); err != nil {
+		t.Fatalf("admin add wallet blacklist: %v", err)
+	}
 }
 
 func TestAuthorizeGRPCWalletRevealRequiresInvokePermission(t *testing.T) {

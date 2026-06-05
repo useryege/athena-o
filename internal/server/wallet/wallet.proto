@@ -86,51 +86,6 @@ message UpdateWalletAliasResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
 }
 
-// WalletBlacklistEntry is a globally maintained wallet-blacklist entry.
-message WalletBlacklistEntry {
-  string wallet = 1;
-  string note = 2;
-  string created_at = 3;
-}
-
-// ListWalletBlacklistEntriesRequest queries all wallet-blacklist entries.
-message ListWalletBlacklistEntriesRequest {}
-
-// ListWalletBlacklistEntriesResponse returns all wallet-blacklist entries.
-message ListWalletBlacklistEntriesResponse {
-  repeated WalletBlacklistEntry items = 1;
-}
-
-// AddWalletBlacklistEntryRequest adds a wallet-blacklist entry.
-message AddWalletBlacklistEntryRequest {
-  string wallet = 1;
-  string note = 2;
-}
-
-// AddWalletBlacklistEntryResponse returns the stored wallet-blacklist entry.
-message AddWalletBlacklistEntryResponse {
-  WalletBlacklistEntry item = 1;
-}
-
-// UpdateWalletBlacklistEntryNoteRequest updates the note of a wallet-blacklist entry.
-message UpdateWalletBlacklistEntryNoteRequest {
-  string wallet = 1;
-  string note = 2;
-}
-
-// UpdateWalletBlacklistEntryNoteResponse returns the updated wallet-blacklist entry.
-message UpdateWalletBlacklistEntryNoteResponse {
-  WalletBlacklistEntry item = 1;
-}
-
-// DeleteWalletBlacklistEntryRequest deletes a wallet-blacklist entry.
-message DeleteWalletBlacklistEntryRequest {
-  string wallet = 1;
-}
-
-// DeleteWalletBlacklistEntryResponse is returned after deleting a wallet-blacklist entry.
-message DeleteWalletBlacklistEntryResponse {}
-
 service WalletService {
   // GetWalletStatus returns the wallet service runtime status.
   rpc GetWalletStatus(GetWalletStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletStatus) {
@@ -179,29 +134,4 @@ service WalletService {
     };
   }
 
-  // ListWalletBlacklistEntries returns all globally configured wallet-blacklist entries.
-  rpc ListWalletBlacklistEntries(ListWalletBlacklistEntriesRequest) returns (ListWalletBlacklistEntriesResponse) {
-    option (google.api.http) = {get: "/api/v1/wallet/blacklist"};
-  }
-
-  // AddWalletBlacklistEntry adds a globally configured wallet-blacklist entry.
-  rpc AddWalletBlacklistEntry(AddWalletBlacklistEntryRequest) returns (AddWalletBlacklistEntryResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/wallet/blacklist"
-      body: "*"
-    };
-  }
-
-  // UpdateWalletBlacklistEntryNote updates the note of a globally configured wallet-blacklist entry.
-  rpc UpdateWalletBlacklistEntryNote(UpdateWalletBlacklistEntryNoteRequest) returns (UpdateWalletBlacklistEntryNoteResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/wallet/blacklist/{wallet}/note"
-      body: "*"
-    };
-  }
-
-  // DeleteWalletBlacklistEntry deletes a globally configured wallet-blacklist entry.
-  rpc DeleteWalletBlacklistEntry(DeleteWalletBlacklistEntryRequest) returns (DeleteWalletBlacklistEntryResponse) {
-    option (google.api.http) = {delete: "/api/v1/wallet/blacklist/{wallet}"};
-  }
 }

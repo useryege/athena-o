@@ -208,6 +208,14 @@ type BytecodeStore interface {
 	GetBytecodeBlacklistEntry(ctx context.Context, codeHash common.Hash) (*BytecodeBlacklistEntry, error)
 }
 
+type WalletBlacklistStore interface {
+	ListWalletBlacklistEntries(ctx context.Context) ([]WalletBlacklistEntry, error)
+	AddWalletBlacklistEntry(ctx context.Context, item WalletBlacklistEntry) error
+	UpdateWalletBlacklistEntryNote(ctx context.Context, wallet common.Address, note string) error
+	DeleteWalletBlacklistEntry(ctx context.Context, wallet common.Address) error
+	GetWalletBlacklistEntry(ctx context.Context, wallet common.Address) (*WalletBlacklistEntry, error)
+}
+
 type SourceQualityPromptStore interface {
 	EnsureDefaultSourceQualityPrompt(ctx context.Context, name, systemPrompt string) (*SourceQualityPrompt, error)
 	GetActiveSourceQualityPrompt(ctx context.Context) (*SourceQualityPrompt, error)
@@ -232,5 +240,6 @@ type Store interface {
 	ProjectGenesisWalletStore
 	ProjectCreatorHistoricalProjectStore
 	BytecodeStore
+	WalletBlacklistStore
 	SourceQualityPromptStore
 }

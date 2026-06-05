@@ -55,6 +55,8 @@ func (*ProjectOption) ProtoMessage() {}
 
 func (*SourceQualityPrompt) ProtoMessage() {}
 
+func (*WalletBlacklistEntry) ProtoMessage() {}
+
 func (*WalletDetail) ProtoMessage() {}
 
 func (*WalletItem) ProtoMessage() {}

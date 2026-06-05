@@ -216,6 +216,67 @@ func (s *Server) DeleteBytecodeBlacklist(ctx context.Context, req *applicationpk
 	return &applicationpkg.DeleteBytecodeBlacklistResponse{}, nil
 }
 
+func (s *Server) ListWalletBlacklistEntries(ctx context.Context, _ *applicationpkg.ListWalletBlacklistEntriesRequest) (*applicationpkg.ListWalletBlacklistEntriesResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListWalletBlacklistEntries(ctx, &applicationapiclient.ListWalletBlacklistEntriesRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.ListWalletBlacklistEntriesResponse{Items: resp.GetItems()}, nil
+}
+
+func (s *Server) AddWalletBlacklistEntry(ctx context.Context, req *applicationpkg.AddWalletBlacklistEntryRequest) (*applicationpkg.AddWalletBlacklistEntryResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.AddWalletBlacklistEntry(ctx, &applicationapiclient.AddWalletBlacklistEntryRequest{
+		Wallet: req.GetWallet(),
+		Note:   req.GetNote(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.AddWalletBlacklistEntryResponse{Item: resp.GetItem()}, nil
+}
+
+func (s *Server) UpdateWalletBlacklistEntryNote(ctx context.Context, req *applicationpkg.UpdateWalletBlacklistEntryNoteRequest) (*applicationpkg.UpdateWalletBlacklistEntryNoteResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.UpdateWalletBlacklistEntryNote(ctx, &applicationapiclient.UpdateWalletBlacklistEntryNoteRequest{
+		Wallet: req.GetWallet(),
+		Note:   req.GetNote(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &applicationpkg.UpdateWalletBlacklistEntryNoteResponse{Item: resp.GetItem()}, nil
+}
+
+func (s *Server) DeleteWalletBlacklistEntry(ctx context.Context, req *applicationpkg.DeleteWalletBlacklistEntryRequest) (*applicationpkg.DeleteWalletBlacklistEntryResponse, error) {
+	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	if _, err := client.DeleteWalletBlacklistEntry(ctx, &applicationapiclient.DeleteWalletBlacklistEntryRequest{Wallet: req.GetWallet()}); err != nil {
+		return nil, err
+	}
+	return &applicationpkg.DeleteWalletBlacklistEntryResponse{}, nil
+}
+
 func (s *Server) ListSourceQualityPrompts(ctx context.Context, _ *applicationpkg.ListSourceQualityPromptsRequest) (*applicationpkg.ListSourceQualityPromptsResponse, error) {
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {

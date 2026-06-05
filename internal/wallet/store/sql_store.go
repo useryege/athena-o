@@ -269,6 +269,14 @@ func nullableBytes(value []byte) []byte {
 	return value
 }
 
+func nullableTrimmedText(value string) pgtype.Text {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return pgtype.Text{}
+	}
+	return pgtype.Text{String: value, Valid: true}
+}
+
 func nullableKeyword(value string) pgtype.Text {
 	value = strings.TrimSpace(value)
 	if value == "" {

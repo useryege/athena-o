@@ -129,6 +129,26 @@ func (s *RedisBufferedStore) GetBytecodeBlacklistEntry(ctx context.Context, code
 	return s.db.GetBytecodeBlacklistEntry(ctx, codeHash)
 }
 
+func (s *RedisBufferedStore) ListWalletBlacklistEntries(ctx context.Context) ([]appstore.WalletBlacklistEntry, error) {
+	return s.db.ListWalletBlacklistEntries(ctx)
+}
+
+func (s *RedisBufferedStore) AddWalletBlacklistEntry(ctx context.Context, item appstore.WalletBlacklistEntry) error {
+	return s.db.AddWalletBlacklistEntry(ctx, item)
+}
+
+func (s *RedisBufferedStore) UpdateWalletBlacklistEntryNote(ctx context.Context, wallet common.Address, note string) error {
+	return s.db.UpdateWalletBlacklistEntryNote(ctx, wallet, note)
+}
+
+func (s *RedisBufferedStore) DeleteWalletBlacklistEntry(ctx context.Context, wallet common.Address) error {
+	return s.db.DeleteWalletBlacklistEntry(ctx, wallet)
+}
+
+func (s *RedisBufferedStore) GetWalletBlacklistEntry(ctx context.Context, wallet common.Address) (*appstore.WalletBlacklistEntry, error) {
+	return s.db.GetWalletBlacklistEntry(ctx, wallet)
+}
+
 func (s *RedisBufferedStore) EnsureDefaultSourceQualityPrompt(ctx context.Context, name, systemPrompt string) (*appstore.SourceQualityPrompt, error) {
 	return s.db.EnsureDefaultSourceQualityPrompt(ctx, name, systemPrompt)
 }

@@ -8,12 +8,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type WalletBlacklist struct {
-	Wallet    []byte
-	Note      pgtype.Text
-	CreatedAt pgtype.Timestamptz
-}
-
 type WalletPrivateKey struct {
 	ID                   int64
 	Chain                string
