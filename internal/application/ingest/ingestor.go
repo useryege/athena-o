@@ -261,7 +261,7 @@ type LoopOptions struct {
 
 func (i *Ingestor) Run(ctx context.Context, opts LoopOptions) error {
 	if opts.PollInterval <= 0 {
-		opts.PollInterval = 2 * time.Second
+		opts.PollInterval = 3 * time.Second
 	}
 	ticker := time.NewTicker(opts.PollInterval)
 	defer ticker.Stop()

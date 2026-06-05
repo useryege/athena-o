@@ -141,7 +141,7 @@ func runChainIngestorMode(ctx context.Context, opts runtimeOptions) error {
 func runLazyChainIngestor(ctx context.Context, opts runtimeOptions, producer ingest.Producer) error {
 	pollInterval := opts.IngestPollInterval
 	if pollInterval <= 0 {
-		pollInterval = 2 * time.Second
+		pollInterval = 3 * time.Second
 	}
 	var nodeClient *ethclient.Client
 	var ingestorInstance *ingest.Ingestor
