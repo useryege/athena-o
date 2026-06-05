@@ -8,13 +8,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
-	appcache "github.com/useryege/athena/internal/application/cache"
-	"github.com/useryege/athena/internal/application/discovery"
 	appstore "github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/ethereumapi"
-	"github.com/useryege/athena/util/redisport"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -35,8 +32,7 @@ type Service struct {
 	liquidityLocker []common.Address
 	apiFetcher      ethereumapi.EthereumAPI
 
-	store          appstore.Store
-	componentCache appcache.ProjectComponentCache
+	store appstore.Store
 
 	delayedFetchSem chan struct{}
 	codeAtFunc      func(ctx context.Context, contract common.Address) ([]byte, error)
@@ -46,13 +42,6 @@ type Service struct {
 	bootstrapStop   context.CancelFunc
 	starting        bool
 	started         bool
-
-	discoveryMu             sync.Mutex
-	discoveryIntake         discovery.DiscoveryIntake
-	discoveryIndexer        discovery.ProjectDiscoveryIndexer
-	discoveryStop           context.CancelFunc
-	discoveryStarted        bool
-	discoveryIndexerFactory func() (discovery.ProjectDiscoveryIndexer, error)
 }
 
 type ServiceOpts struct {
@@ -67,7 +56,6 @@ type ServiceOpts struct {
 	AveConfig         ave.Config
 	Store             appstore.Store
 	LiquidityLocker   []common.Address
-	RedisClient       redisport.Client
 	APIFetcher        ethereumapi.EthereumAPI
 	CodeAtFunc        func(ctx context.Context, contract common.Address) ([]byte, error)
 }
@@ -79,7 +67,6 @@ func NewService(opts ServiceOpts) (*Service, error) {
 	return &Service{
 		nodeClient:        opts.NodeClient,
 		store:             opts.Store,
-		componentCache:    appcache.NewProjectComponentCache(opts.RedisClient),
 		v2FactoryContract: opts.V2FactoryContract,
 		wethContract:      opts.WethContract,
 		usdtContract:      opts.UsdtContract,
@@ -91,7 +78,6 @@ func NewService(opts ServiceOpts) (*Service, error) {
 		liquidityLocker:   opts.LiquidityLocker,
 		apiFetcher:        opts.APIFetcher,
 		codeAtFunc:        opts.CodeAtFunc,
-		discoveryIntake:   discovery.NewDiscoveryIntake(opts.Store, opts.ChainID),
 	}, nil
 }
 
@@ -147,7 +133,6 @@ func (s *Service) Stop() error {
 	}
 
 	stop := s.lifecycleStop
-	discoveryIndexer, discoveryStop := s.stopProjectDiscoveryLocked()
 
 	s.lifecycleCtx = nil
 	s.lifecycleStop = nil
@@ -156,98 +141,11 @@ func (s *Service) Stop() error {
 	s.started = false
 	s.startStopMu.Unlock()
 
-	if discoveryStop != nil {
-		discoveryStop()
-	}
-	discoveryErr := error(nil)
-	if discoveryIndexer != nil {
-		discoveryErr = discoveryIndexer.Stop()
-	}
 	if stop != nil {
 		stop()
 	}
 
-	return discoveryErr
-}
-
-func (s *Service) stopProjectDiscoveryLocked() (discovery.ProjectDiscoveryIndexer, context.CancelFunc) {
-	s.discoveryMu.Lock()
-	defer s.discoveryMu.Unlock()
-	indexer := s.discoveryIndexer
-	stop := s.discoveryStop
-	s.discoveryIndexer = nil
-	s.discoveryStop = nil
-	s.discoveryStarted = false
-	return indexer, stop
-}
-
-func (s *Service) GetProjectDiscoveryStatus(context.Context, *applicationpkg.GetProjectDiscoveryStatusRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
-	s.discoveryMu.Lock()
-	started := s.discoveryStarted
-	s.discoveryMu.Unlock()
-	return projectDiscoveryStatus(started), nil
-}
-
-func (s *Service) StartProjectDiscovery(_ context.Context, _ *applicationpkg.StartProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
-	s.startStopMu.Lock()
-	defer s.startStopMu.Unlock()
-	if !s.started || s.lifecycleCtx == nil {
-		return nil, status.Error(codes.FailedPrecondition, "application service is not started")
-	}
-
-	s.discoveryMu.Lock()
-	defer s.discoveryMu.Unlock()
-	if s.discoveryStarted {
-		return projectDiscoveryStatus(true), nil
-	}
-	if s.discoveryIndexerFactory == nil {
-		return nil, status.Error(codes.FailedPrecondition, "application discovery is handled by chain-ingestor and kafka-consumer modes")
-	}
-
-	indexer, err := s.newProjectDiscoveryIndexer()
-	if err != nil {
-		return nil, err
-	}
-	runCtx, cancel := context.WithCancel(s.lifecycleCtx)
-	if err := indexer.Start(runCtx); err != nil {
-		cancel()
-		return nil, err
-	}
-	s.discoveryIndexer = indexer
-	s.discoveryStop = cancel
-	s.discoveryStarted = true
-	return projectDiscoveryStatus(true), nil
-}
-
-func (s *Service) StopProjectDiscovery(context.Context, *applicationpkg.StopProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
-	indexer, stop := s.stopProjectDiscoveryLocked()
-	if stop != nil {
-		stop()
-	}
-	if indexer != nil {
-		if err := indexer.Stop(); err != nil {
-			return nil, err
-		}
-	}
-	return projectDiscoveryStatus(false), nil
-}
-
-func (s *Service) newProjectDiscoveryIndexer() (discovery.ProjectDiscoveryIndexer, error) {
-	if s.discoveryIndexerFactory != nil {
-		return s.discoveryIndexerFactory()
-	}
-	return discovery.NewProjectDiscoveryIndexer(s.nodeClient, s.componentCache, s.store, s.discoveryIntake)
-}
-
-func projectDiscoveryStatus(started bool) *v1alpha1.ProjectDiscoveryStatus {
-	statusText := "stopped"
-	if started {
-		statusText = "running"
-	}
-	return &v1alpha1.ProjectDiscoveryStatus{
-		Started: started,
-		Status:  statusText,
-	}
+	return nil
 }
 
 func (s *Service) GetProjectOptions(context.Context, *applicationpkg.GetProjectOptionsRequest) (*applicationpkg.GetProjectOptionsResponse, error) {

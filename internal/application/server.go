@@ -10,7 +10,6 @@ import (
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/ethereumapi"
-	"github.com/useryege/athena/util/redisport"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -29,7 +28,6 @@ type ApplicationServerOpts struct {
 	AveConfig       ave.Config
 	Store           appstore.Store
 	LiquidityLocker []common.Address
-	RedisClient     redisport.Client
 	APIFetcher      ethereumapi.EthereumAPI
 
 	// Fetch from Athena contract
@@ -53,7 +51,6 @@ func NewServer(opts ApplicationServerOpts) (*ApplicationServer, error) {
 		AveConfig:         opts.AveConfig,
 		Store:             opts.Store,
 		LiquidityLocker:   opts.LiquidityLocker,
-		RedisClient:       opts.RedisClient,
 		APIFetcher:        opts.APIFetcher,
 	})
 	if err != nil {

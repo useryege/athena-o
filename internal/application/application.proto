@@ -1,17 +1,11 @@
 syntax = "proto3";
 
-// Application Service API exposes project discovery snapshots.
+// Application Service API exposes application controls and project metadata.
 package athena.internal.application;
 
 import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
 
 option go_package = "github.com/useryege/athena/internal/application/apiclient";
-
-message GetProjectDiscoveryStatusRequest {}
-
-message StartProjectDiscoveryRequest {}
-
-message StopProjectDiscoveryRequest {}
 
 message ListChainsRequest {}
 
@@ -176,9 +170,6 @@ message GetProjectOptionsResponse {
 }
 
 service ApplicationService {
-  rpc GetProjectDiscoveryStatus(GetProjectDiscoveryStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
-  rpc StartProjectDiscovery(StartProjectDiscoveryRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
-  rpc StopProjectDiscovery(StopProjectDiscoveryRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus);
   rpc ListChains(ListChainsRequest) returns (ListChainsResponse);
   rpc GetChainIngestStatus(GetChainIngestStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ChainIngestStatus);
   rpc StartChainIngest(StartChainIngestRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ChainIngestStatus);

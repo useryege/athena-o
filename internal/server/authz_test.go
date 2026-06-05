@@ -104,11 +104,11 @@ func TestAuthorizeGRPCReadonlyAndAdminPolicy(t *testing.T) {
 	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/GetProjectOptions", testAuthOverride{ctx: claimsCtx("LINGJIE")}, &applicationpkg.GetProjectOptionsRequest{}); err != nil {
 		t.Fatalf("readonly get project options: %v", err)
 	}
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/StartProjectDiscovery", testAuthOverride{ctx: claimsCtx("LINGJIE")}, &applicationpkg.StartProjectDiscoveryRequest{}); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("readonly start discovery error = %v, want PermissionDenied", err)
+	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/StartChainIngest", testAuthOverride{ctx: claimsCtx("LINGJIE")}, &applicationpkg.StartChainIngestRequest{ChainId: 56}); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("readonly start chain ingest error = %v, want PermissionDenied", err)
 	}
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/StartProjectDiscovery", testAuthOverride{ctx: claimsCtx("admin")}, &applicationpkg.StartProjectDiscoveryRequest{}); err != nil {
-		t.Fatalf("admin start discovery: %v", err)
+	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/StartChainIngest", testAuthOverride{ctx: claimsCtx("admin")}, &applicationpkg.StartChainIngestRequest{ChainId: 56}); err != nil {
+		t.Fatalf("admin start chain ingest: %v", err)
 	}
 }
 

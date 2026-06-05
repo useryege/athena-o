@@ -482,12 +482,6 @@ message ProjectComponentStatus {
   optional string updatedAt = 7;
 }
 
-message ProjectDiscoveryStatus {
-  optional bool started = 1;
-
-  optional string status = 2;
-}
-
 message ProjectOption {
   optional string factoryContract = 1;
 

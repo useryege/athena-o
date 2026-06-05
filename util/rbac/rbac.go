@@ -50,15 +50,14 @@ type CasbinEnforcer interface {
 
 const (
 	// please add new items to Resources
-	ResourceAccounts             = "accounts"
-	ResourceApplicationDiscovery = "application-discovery"
-	ResourceApplication          = "application"
-	ResourceLogs                 = "logs"
-	ResourceProjects             = "projects"
-	ResourceNotifications        = "notifications"
-	ResourceWallets              = "wallets"
-	ResourceWorm                 = "worm"
-	ResourcePolymarket           = "polymarket"
+	ResourceAccounts      = "accounts"
+	ResourceApplication   = "application"
+	ResourceLogs          = "logs"
+	ResourceProjects      = "projects"
+	ResourceNotifications = "notifications"
+	ResourceWallets       = "wallets"
+	ResourceWorm          = "worm"
+	ResourcePolymarket    = "polymarket"
 
 	// please add new items to Actions
 	ActionGet    = "get"
@@ -70,7 +69,6 @@ var (
 	DefaultScopes = []string{"groups"}
 	Resources     = []string{
 		ResourceAccounts,
-		ResourceApplicationDiscovery,
 		ResourceApplication,
 		ResourceLogs,
 		ResourceProjects,

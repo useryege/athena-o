@@ -8,6 +8,4 @@ func (*ProjectCollectionStatus) ProtoMessage() {}
 
 func (*ProjectComponentStatus) ProtoMessage() {}
 
-func (*ProjectDiscoveryStatus) ProtoMessage() {}
-
 func (*ProjectOption) ProtoMessage() {}

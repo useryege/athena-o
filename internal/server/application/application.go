@@ -25,39 +25,6 @@ func NewServer(applicationClientSet applicationapiclient.Clientset, enf *rbac.En
 	}
 }
 
-func (s *Server) GetProjectDiscoveryStatus(ctx context.Context, _ *applicationpkg.GetProjectDiscoveryStatusRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-	return client.GetProjectDiscoveryStatus(ctx, &applicationapiclient.GetProjectDiscoveryStatusRequest{})
-}
-
-func (s *Server) StartProjectDiscovery(ctx context.Context, _ *applicationpkg.StartProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
-	if err := s.ensureHasProjectDiscoveryPermission(ctx); err != nil {
-		return nil, err
-	}
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-	return client.StartProjectDiscovery(ctx, &applicationapiclient.StartProjectDiscoveryRequest{})
-}
-
-func (s *Server) StopProjectDiscovery(ctx context.Context, _ *applicationpkg.StopProjectDiscoveryRequest) (*v1alpha1.ProjectDiscoveryStatus, error) {
-	if err := s.ensureHasProjectDiscoveryPermission(ctx); err != nil {
-		return nil, err
-	}
-	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-	return client.StopProjectDiscovery(ctx, &applicationapiclient.StopProjectDiscoveryRequest{})
-}
-
 func (s *Server) ListChains(ctx context.Context, _ *applicationpkg.ListChainsRequest) (*applicationpkg.ListChainsResponse, error) {
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
 	if err != nil {
@@ -83,7 +50,7 @@ func (s *Server) GetChainIngestStatus(ctx context.Context, req *applicationpkg.G
 }
 
 func (s *Server) StartChainIngest(ctx context.Context, req *applicationpkg.StartChainIngestRequest) (*v1alpha1.ChainIngestStatus, error) {
-	if err := s.ensureHasProjectDiscoveryPermission(ctx); err != nil {
+	if err := s.ensureHasApplicationUpdatePermission(ctx); err != nil {
 		return nil, err
 	}
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
@@ -96,7 +63,7 @@ func (s *Server) StartChainIngest(ctx context.Context, req *applicationpkg.Start
 }
 
 func (s *Server) StopChainIngest(ctx context.Context, req *applicationpkg.StopChainIngestRequest) (*v1alpha1.ChainIngestStatus, error) {
-	if err := s.ensureHasProjectDiscoveryPermission(ctx); err != nil {
+	if err := s.ensureHasApplicationUpdatePermission(ctx); err != nil {
 		return nil, err
 	}
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
@@ -109,7 +76,7 @@ func (s *Server) StopChainIngest(ctx context.Context, req *applicationpkg.StopCh
 }
 
 func (s *Server) RequestProjectCollection(ctx context.Context, req *applicationpkg.RequestProjectCollectionRequest) (*applicationpkg.RequestProjectCollectionResponse, error) {
-	if err := s.ensureHasProjectDiscoveryPermission(ctx); err != nil {
+	if err := s.ensureHasApplicationUpdatePermission(ctx); err != nil {
 		return nil, err
 	}
 	closer, client, err := s.applicationClientSet.NewApplicationServiceClient()
@@ -142,12 +109,12 @@ func (s *Server) GetProjectCollectionStatus(ctx context.Context, req *applicatio
 	})
 }
 
-func (s *Server) ensureHasProjectDiscoveryPermission(ctx context.Context) error {
+func (s *Server) ensureHasApplicationUpdatePermission(ctx context.Context) error {
 	if s.enf == nil {
-		return status.Error(codes.PermissionDenied, "permission denied to control application discovery")
+		return status.Error(codes.PermissionDenied, "permission denied to update application")
 	}
-	if err := s.enf.EnforceErr(ctx.Value("claims"), rbac.ResourceApplicationDiscovery, rbac.ActionUpdate, "*"); err != nil {
-		return fmt.Errorf("permission denied to control application discovery: %w", err)
+	if err := s.enf.EnforceErr(ctx.Value("claims"), rbac.ResourceApplication, rbac.ActionUpdate, "*"); err != nil {
+		return fmt.Errorf("permission denied to update application: %w", err)
 	}
 	return nil
 }

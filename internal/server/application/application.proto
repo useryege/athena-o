@@ -10,12 +10,6 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/application";
 
-message GetProjectDiscoveryStatusRequest {}
-
-message StartProjectDiscoveryRequest {}
-
-message StopProjectDiscoveryRequest {}
-
 message ListChainsRequest {}
 
 message ListChainsResponse {
@@ -179,24 +173,6 @@ message GetProjectOptionsResponse {
 }
 
 service ApplicationService {
-  rpc GetProjectDiscoveryStatus(GetProjectDiscoveryStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus) {
-    option (google.api.http) = {get: "/api/v1/application/discovery/status"};
-  }
-
-  rpc StartProjectDiscovery(StartProjectDiscoveryRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus) {
-    option (google.api.http) = {
-      post: "/api/v1/application/discovery/start"
-      body: "*"
-    };
-  }
-
-  rpc StopProjectDiscovery(StopProjectDiscoveryRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.ProjectDiscoveryStatus) {
-    option (google.api.http) = {
-      post: "/api/v1/application/discovery/stop"
-      body: "*"
-    };
-  }
-
   rpc ListChains(ListChainsRequest) returns (ListChainsResponse) {
     option (google.api.http) = {get: "/api/v1/application/chains"};
   }

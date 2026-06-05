@@ -12,11 +12,6 @@ export interface GetProjectOptionsResponse {
     options?: ProjectOptions;
 }
 
-export interface ProjectDiscoveryStatus {
-    started: boolean;
-    status: string;
-}
-
 export interface ContractSourceInfo {
     contract?: string;
     chainID?: number;
@@ -198,34 +193,7 @@ function normalizeBytecodeDeployment(item: BytecodeDeployment | any): BytecodeDe
     };
 }
 
-const normalizeProjectDiscoveryStatus = (body: any): ProjectDiscoveryStatus => {
-    const started = !!(body && (body.started ?? body.Started));
-    const status = (body && (body.status || body.Status)) || (started ? 'running' : 'stopped');
-    return {started, status};
-};
-
 export class AthenaApplicationService {
-    public getProjectDiscoveryStatus(): Promise<ProjectDiscoveryStatus> & {abort?: () => void} {
-        const req = requests.get('/application/discovery/status');
-        const promise = req.then(res => normalizeProjectDiscoveryStatus(res.body || {})) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public startProjectDiscovery(): Promise<ProjectDiscoveryStatus> & {abort?: () => void} {
-        const req = requests.post('/application/discovery/start').send({});
-        const promise = req.then(res => normalizeProjectDiscoveryStatus(res.body || {})) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public stopProjectDiscovery(): Promise<ProjectDiscoveryStatus> & {abort?: () => void} {
-        const req = requests.post('/application/discovery/stop').send({});
-        const promise = req.then(res => normalizeProjectDiscoveryStatus(res.body || {})) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
     public getProjectOptions(): Promise<ProjectOptions | undefined> & {abort?: () => void} {
         if (cachedProjectOptions) {
             const promise = Promise.resolve(cachedProjectOptions) as Promise<ProjectOptions | undefined> & {abort?: () => void};

@@ -1,4 +1,4 @@
-import {ApiOutlined, CheckCircleOutlined, DeleteOutlined, EyeOutlined, LoginOutlined, PlusOutlined, SaveOutlined, SendOutlined, StopOutlined} from '@ant-design/icons';
+import {CheckCircleOutlined, DeleteOutlined, EyeOutlined, LoginOutlined, PlusOutlined, SaveOutlined, SendOutlined} from '@ant-design/icons';
 import {Alert, Button, Card, Collapse, Dropdown, Form, Input, InputNumber, Modal, Select, Space, Tabs, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
@@ -86,7 +86,6 @@ export const notificationTestTopics = [
 
 const rbacResources = {
     application: 'application',
-    applicationDiscovery: 'application-discovery',
     notifications: 'notifications',
     wallets: 'wallets'
 };
@@ -1062,45 +1061,16 @@ export const NotificationsDetailPage = () => {
 export const SettingsPage = () => {
     const user = useAsyncData<UserInfo>(() => services.users.get() as any, []);
     const accounts = useAsyncData<Account[]>(() => services.accounts.list() as any, []);
-    const discovery = useAsyncData(() => services.athenaApplication.getProjectDiscoveryStatus(), []);
-    const canUpdateDiscovery = useCanI(rbacResources.applicationDiscovery, rbacActions.update);
-    const canToggleDiscovery = canUpdateDiscovery.data === true;
     const visibleAccounts = visibleAccountsForUser(accounts.data || [], user.data);
-    const toggleDiscovery = async () => {
-        if (!canToggleDiscovery) {
-            return;
-        }
-        if (discovery.data?.started) {
-            await services.athenaApplication.stopProjectDiscovery();
-        } else {
-            await services.athenaApplication.startProjectDiscovery();
-        }
-        discovery.reload();
-    };
     return (
         <AppPage
             title='Settings'
-            loading={user.loading || accounts.loading || discovery.loading}
-            error={user.error || accounts.error || discovery.error}
+            loading={user.loading || accounts.loading}
+            error={user.error || accounts.error}
             onRefresh={() => {
                 user.reload();
                 accounts.reload();
-                discovery.reload();
             }}>
-            <Section
-                title='Application Discovery'
-                extra={
-                    <Button icon={discovery.data?.started ? <StopOutlined /> : <ApiOutlined />} disabled={!canToggleDiscovery} onClick={toggleDiscovery}>
-                        {discovery.data?.started ? 'Stop' : 'Start'}
-                    </Button>
-                }>
-                <KeyValueGrid
-                    items={[
-                        {label: 'Started', value: boolTag(discovery.data?.started)},
-                        {label: 'Status', value: discovery.data?.status}
-                    ]}
-                />
-            </Section>
             <Section title='Accounts'>
                 <ResponsiveResourceList
                     rowKey='name'

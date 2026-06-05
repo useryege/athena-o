@@ -1,10 +1,5 @@
 package v1alpha1
 
-type ProjectDiscoveryStatus struct {
-	Started bool   `protobuf:"varint,1,opt,name=started" json:"started"`
-	Status  string `protobuf:"bytes,2,opt,name=status" json:"status"`
-}
-
 type ProjectOption struct {
 	FactoryContract string `protobuf:"bytes,1,opt,name=factoryContract" json:"factoryContract"`
 	WethContract    string `protobuf:"bytes,2,opt,name=wethContract" json:"wethContract"`

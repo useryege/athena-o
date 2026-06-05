@@ -32,7 +32,6 @@ import (
 	"github.com/useryege/athena/util/ethereumapi"
 	"github.com/useryege/athena/util/ethws"
 	utilio "github.com/useryege/athena/util/io"
-	"github.com/useryege/athena/util/redisport"
 )
 
 const cliName = "athena-application"
@@ -62,7 +61,6 @@ func NewCommand() *cobra.Command {
 		liquidityLockers    []string
 		storeSrc            func(context.Context) (*appstore.SQLStore, error)
 		redisClient         *redis.Client
-		cacheSrc            func() (*cacheutil.Cache, error)
 	)
 
 	command := &cobra.Command{
@@ -115,12 +113,6 @@ func NewCommand() *cobra.Command {
 				})
 			}
 
-			_, err = cacheSrc()
-			errors.CheckError(err)
-			if err := requireApplicationRedis(ctx, redisClient); err != nil {
-				return err
-			}
-
 			// create a new node client
 			nodeClient, err := ethws.DialContext(ctx, nodewsurl, nodeWSUseProxy)
 			if err != nil {
@@ -160,7 +152,6 @@ func NewCommand() *cobra.Command {
 				},
 				Store:           store,
 				LiquidityLocker: liquidityLockerAddresses,
-				RedisClient:     redisport.NewGoRedisAdapter(redisClient),
 				APIFetcher:      apiFetcher,
 
 				// Fetch from Athena contract
@@ -236,7 +227,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().DurationVar(&outboxPollInterval, "outbox-poll-interval", env.ParseDurationFromEnv("ATHENA_APPLICATION_OUTBOX_POLL_INTERVAL", appoutbox.DefaultPollInterval, time.Second, 24*time.Hour), "Outbox worker poll interval")
 	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_APPLICATION_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses")
 	storeSrc = appstore.NewSQLStoreSource()
-	cacheSrc = cacheutil.AddCacheFlagsToCmd(command, cacheutil.Options{
+	cacheutil.AddCacheFlagsToCmd(command, cacheutil.Options{
 		OnClientCreated: func(client *redis.Client) {
 			redisClient = client
 		},
@@ -279,35 +270,4 @@ func parseLiquidityLockerAddresses(values []string) ([]ethcommon.Address, error)
 		addresses = append(addresses, ethcommon.HexToAddress(value))
 	}
 	return addresses, nil
-}
-
-func requireApplicationRedis(ctx context.Context, client *redis.Client) error {
-	if client == nil {
-		return fmt.Errorf("redis client is required for athena-application")
-	}
-	pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	if err := client.Ping(pingCtx).Err(); err != nil {
-		return fmt.Errorf("failed to ping redis: %w", err)
-	}
-	version, err := getRedisVersion(pingCtx, client)
-	if err != nil {
-		return fmt.Errorf("connected to redis, but failed to get redis version: %w", err)
-	}
-	log.Infof("connected to redis, version=%s", version)
-	return nil
-}
-
-func getRedisVersion(ctx context.Context, client *redis.Client) (string, error) {
-	info, err := client.Info(ctx, "server").Result()
-	if err != nil {
-		return "", err
-	}
-	for _, line := range strings.Split(info, "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "redis_version:") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "redis_version:")), nil
-		}
-	}
-	return "", fmt.Errorf("redis_version not found in INFO server response")
 }

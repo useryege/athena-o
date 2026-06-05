@@ -28,9 +28,12 @@ func (f *fakeApplicationClientset) NewApplicationServiceClient() (utilio.Closer,
 type fakeApplicationServiceClient struct {
 	applicationapiclient.ApplicationServiceClient
 
-	statusCalls              int
-	startCalls               int
-	stopCalls                int
+	startChainIngestCalls    int
+	startChainIngestReq      *applicationapiclient.StartChainIngestRequest
+	stopChainIngestCalls     int
+	stopChainIngestReq       *applicationapiclient.StopChainIngestRequest
+	projectCollectionCalls   int
+	projectCollectionReq     *applicationapiclient.RequestProjectCollectionRequest
 	listBytecodesCalls       int
 	listBytecodesReq         *applicationapiclient.ListBytecodesRequest
 	listWalletBlacklistReq   *applicationapiclient.ListWalletBlacklistEntriesRequest
@@ -39,19 +42,24 @@ type fakeApplicationServiceClient struct {
 	deleteWalletBlacklistReq *applicationapiclient.DeleteWalletBlacklistEntryRequest
 }
 
-func (f *fakeApplicationServiceClient) GetProjectDiscoveryStatus(context.Context, *applicationapiclient.GetProjectDiscoveryStatusRequest, ...grpc.CallOption) (*v1alpha1.ProjectDiscoveryStatus, error) {
-	f.statusCalls++
-	return &v1alpha1.ProjectDiscoveryStatus{Started: true, Status: "running"}, nil
+func (f *fakeApplicationServiceClient) StartChainIngest(_ context.Context, req *applicationapiclient.StartChainIngestRequest, _ ...grpc.CallOption) (*v1alpha1.ChainIngestStatus, error) {
+	f.startChainIngestCalls++
+	f.startChainIngestReq = req
+	return &v1alpha1.ChainIngestStatus{ChainID: req.GetChainId(), Status: "running"}, nil
 }
 
-func (f *fakeApplicationServiceClient) StartProjectDiscovery(context.Context, *applicationapiclient.StartProjectDiscoveryRequest, ...grpc.CallOption) (*v1alpha1.ProjectDiscoveryStatus, error) {
-	f.startCalls++
-	return &v1alpha1.ProjectDiscoveryStatus{Started: true, Status: "running"}, nil
+func (f *fakeApplicationServiceClient) StopChainIngest(_ context.Context, req *applicationapiclient.StopChainIngestRequest, _ ...grpc.CallOption) (*v1alpha1.ChainIngestStatus, error) {
+	f.stopChainIngestCalls++
+	f.stopChainIngestReq = req
+	return &v1alpha1.ChainIngestStatus{ChainID: req.GetChainId(), Status: "stopped"}, nil
 }
 
-func (f *fakeApplicationServiceClient) StopProjectDiscovery(context.Context, *applicationapiclient.StopProjectDiscoveryRequest, ...grpc.CallOption) (*v1alpha1.ProjectDiscoveryStatus, error) {
-	f.stopCalls++
-	return &v1alpha1.ProjectDiscoveryStatus{Started: false, Status: "stopped"}, nil
+func (f *fakeApplicationServiceClient) RequestProjectCollection(_ context.Context, req *applicationapiclient.RequestProjectCollectionRequest, _ ...grpc.CallOption) (*applicationapiclient.RequestProjectCollectionResponse, error) {
+	f.projectCollectionCalls++
+	f.projectCollectionReq = req
+	return &applicationapiclient.RequestProjectCollectionResponse{
+		Status: &v1alpha1.ProjectCollectionStatus{ChainID: req.GetChainId(), Contract: req.GetContract(), Status: "queued"},
+	}, nil
 }
 
 func (f *fakeApplicationServiceClient) ListBytecodes(_ context.Context, req *applicationapiclient.ListBytecodesRequest, _ ...grpc.CallOption) (*applicationapiclient.ListBytecodesResponse, error) {
@@ -104,60 +112,76 @@ func contextWithSubject(subject string) context.Context {
 	return context.WithValue(context.Background(), "claims", jwt.MapClaims{"sub": subject})
 }
 
-func TestGetProjectDiscoveryStatusProxiesToApplication(t *testing.T) {
+func TestStartChainIngestProxiesToApplication(t *testing.T) {
 	client := &fakeApplicationServiceClient{}
-	resp, err := newTestApplicationServer(client).GetProjectDiscoveryStatus(context.Background(), &applicationpkg.GetProjectDiscoveryStatusRequest{})
+	resp, err := newTestApplicationServer(client).StartChainIngest(contextWithSubject("admin"), &applicationpkg.StartChainIngestRequest{ChainId: 56})
 	if err != nil {
-		t.Fatalf("GetProjectDiscoveryStatus: %v", err)
+		t.Fatalf("StartChainIngest: %v", err)
 	}
-	if client.statusCalls != 1 {
-		t.Fatalf("status calls = %d, want 1", client.statusCalls)
+	if client.startChainIngestCalls != 1 {
+		t.Fatalf("start chain ingest calls = %d, want 1", client.startChainIngestCalls)
 	}
-	if !resp.Started || resp.Status != "running" {
+	if client.startChainIngestReq.GetChainId() != 56 {
+		t.Fatalf("proxied start chain ingest request = %#v", client.startChainIngestReq)
+	}
+	if resp.ChainID != 56 || resp.Status != "running" {
 		t.Fatalf("status = %#v, want running", resp)
 	}
 }
 
-func TestStartProjectDiscoveryProxiesToApplication(t *testing.T) {
+func TestStopChainIngestProxiesToApplication(t *testing.T) {
 	client := &fakeApplicationServiceClient{}
-	resp, err := newTestApplicationServer(client).StartProjectDiscovery(contextWithSubject("admin"), &applicationpkg.StartProjectDiscoveryRequest{})
+	resp, err := newTestApplicationServer(client).StopChainIngest(contextWithSubject("admin"), &applicationpkg.StopChainIngestRequest{ChainId: 56})
 	if err != nil {
-		t.Fatalf("StartProjectDiscovery: %v", err)
+		t.Fatalf("StopChainIngest: %v", err)
 	}
-	if client.startCalls != 1 {
-		t.Fatalf("start calls = %d, want 1", client.startCalls)
+	if client.stopChainIngestCalls != 1 {
+		t.Fatalf("stop chain ingest calls = %d, want 1", client.stopChainIngestCalls)
 	}
-	if !resp.Started || resp.Status != "running" {
-		t.Fatalf("status = %#v, want running", resp)
+	if client.stopChainIngestReq.GetChainId() != 56 {
+		t.Fatalf("proxied stop chain ingest request = %#v", client.stopChainIngestReq)
 	}
-}
-
-func TestStopProjectDiscoveryProxiesToApplication(t *testing.T) {
-	client := &fakeApplicationServiceClient{}
-	resp, err := newTestApplicationServer(client).StopProjectDiscovery(contextWithSubject("admin"), &applicationpkg.StopProjectDiscoveryRequest{})
-	if err != nil {
-		t.Fatalf("StopProjectDiscovery: %v", err)
-	}
-	if client.stopCalls != 1 {
-		t.Fatalf("stop calls = %d, want 1", client.stopCalls)
-	}
-	if resp.Started || resp.Status != "stopped" {
+	if resp.ChainID != 56 || resp.Status != "stopped" {
 		t.Fatalf("status = %#v, want stopped", resp)
 	}
 }
 
-func TestProjectDiscoveryControlRequiresRBACPermission(t *testing.T) {
+func TestRequestProjectCollectionProxiesToApplication(t *testing.T) {
+	client := &fakeApplicationServiceClient{}
+	resp, err := newTestApplicationServer(client).RequestProjectCollection(contextWithSubject("admin"), &applicationpkg.RequestProjectCollectionRequest{
+		ChainId:  56,
+		Contract: "0xabc",
+		Reason:   "manual",
+	})
+	if err != nil {
+		t.Fatalf("RequestProjectCollection: %v", err)
+	}
+	if client.projectCollectionCalls != 1 {
+		t.Fatalf("project collection calls = %d, want 1", client.projectCollectionCalls)
+	}
+	if client.projectCollectionReq.GetChainId() != 56 || client.projectCollectionReq.GetContract() != "0xabc" || client.projectCollectionReq.GetReason() != "manual" {
+		t.Fatalf("proxied project collection request = %#v", client.projectCollectionReq)
+	}
+	if resp.GetStatus().Status != "queued" {
+		t.Fatalf("response = %#v, want queued status", resp)
+	}
+}
+
+func TestApplicationUpdateControlsRequireRBACPermission(t *testing.T) {
 	client := &fakeApplicationServiceClient{}
 	server := newTestApplicationServer(client)
 
-	if _, err := server.StartProjectDiscovery(contextWithSubject("viewer"), &applicationpkg.StartProjectDiscoveryRequest{}); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("StartProjectDiscovery error = %v, want PermissionDenied", err)
+	if _, err := server.StartChainIngest(contextWithSubject("viewer"), &applicationpkg.StartChainIngestRequest{ChainId: 56}); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("StartChainIngest error = %v, want PermissionDenied", err)
 	}
-	if _, err := server.StopProjectDiscovery(contextWithSubject("viewer"), &applicationpkg.StopProjectDiscoveryRequest{}); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("StopProjectDiscovery error = %v, want PermissionDenied", err)
+	if _, err := server.StopChainIngest(contextWithSubject("viewer"), &applicationpkg.StopChainIngestRequest{ChainId: 56}); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("StopChainIngest error = %v, want PermissionDenied", err)
 	}
-	if client.startCalls != 0 || client.stopCalls != 0 {
-		t.Fatalf("internal client calls start=%d stop=%d, want none", client.startCalls, client.stopCalls)
+	if _, err := server.RequestProjectCollection(contextWithSubject("viewer"), &applicationpkg.RequestProjectCollectionRequest{ChainId: 56, Contract: "0xabc"}); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("RequestProjectCollection error = %v, want PermissionDenied", err)
+	}
+	if client.startChainIngestCalls != 0 || client.stopChainIngestCalls != 0 || client.projectCollectionCalls != 0 {
+		t.Fatalf("internal client calls start=%d stop=%d collection=%d, want none", client.startChainIngestCalls, client.stopChainIngestCalls, client.projectCollectionCalls)
 	}
 }
 

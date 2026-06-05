@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-559-g9644609-dirty"
+    "version": "v1.0.0-561-gc4027db-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -626,92 +626,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v1alpha1ContractSourceInfo"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/application/discovery/start": {
-      "post": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "operationId": "ApplicationService_StartProjectDiscovery",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/applicationStartProjectDiscoveryRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1alpha1ProjectDiscoveryStatus"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/application/discovery/status": {
-      "get": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "operationId": "ApplicationService_GetProjectDiscoveryStatus",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1alpha1ProjectDiscoveryStatus"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/application/discovery/stop": {
-      "post": {
-        "tags": [
-          "ApplicationService"
-        ],
-        "operationId": "ApplicationService_StopProjectDiscovery",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/applicationStopProjectDiscoveryRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1alpha1ProjectDiscoveryStatus"
             }
           },
           "default": {
@@ -2032,9 +1946,6 @@
         }
       }
     },
-    "applicationStartProjectDiscoveryRequest": {
-      "type": "object"
-    },
     "applicationStopChainIngestRequest": {
       "type": "object",
       "properties": {
@@ -2043,9 +1954,6 @@
           "format": "int64"
         }
       }
-    },
-    "applicationStopProjectDiscoveryRequest": {
-      "type": "object"
     },
     "applicationUpdateBytecodeBlacklistNoteRequest": {
       "description": "UpdateBytecodeBlacklistNoteRequest updates a bytecode blacklist note.",
@@ -3341,17 +3249,6 @@
           "type": "string"
         },
         "updatedAt": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1ProjectDiscoveryStatus": {
-      "type": "object",
-      "properties": {
-        "started": {
-          "type": "boolean"
-        },
-        "status": {
           "type": "string"
         }
       }
