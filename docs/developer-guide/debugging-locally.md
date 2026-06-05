@@ -22,7 +22,7 @@ The `Procfile` is used by Goreman when running Athena locally with the local too
 
 Example for `api-server` configuration in `Procfile`:
 ``` text
-api-server: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_FAKE_IN_CLUSTER=true ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server $COMMAND --loglevel debug --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_DISABLE_AUTH:-'true'} --port ${ATHENA_SERVER_PORT:-8080}"
+api-server: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_FAKE_IN_CLUSTER=true ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server $COMMAND --loglevel debug --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_SERVER_DISABLE_AUTH:-'true'} --port ${ATHENA_SERVER_PORT:-8080}"
 ```
 This configuration example will be used as the basis for the next steps.
 

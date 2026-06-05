@@ -964,9 +964,9 @@ func (server *AthenaServer) checkServeErr(name string, err error) {
 
 // Authenticate checks for the presence of a valid token when accessing server-side resources.
 func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, error) {
-	// if authentication is disabled, return the context without any changes
+	// if authentication is disabled, present the request as a local admin session
 	if server.DisableAuth {
-		return ctx, nil
+		return withDisabledAuthClaims(ctx), nil
 	}
 
 	claims, newToken, claimsErr := server.getClaims(ctx)

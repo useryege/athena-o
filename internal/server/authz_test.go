@@ -5,12 +5,14 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/server/rbacpolicy"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	"github.com/useryege/athena/util/assets"
 	"github.com/useryege/athena/util/rbac"
+	sessionmgr "github.com/useryege/athena/util/session"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -41,6 +43,41 @@ func newAuthzTestServer(t *testing.T) *AthenaServer {
 
 func claimsCtx(subject string) context.Context {
 	return context.WithValue(context.Background(), "claims", jwt.MapClaims{"sub": subject, "iss": "athena"})
+}
+
+func assertDisabledAuthAdminSession(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	if !sessionmgr.LoggedIn(ctx) {
+		t.Fatalf("LoggedIn() = false, want true")
+	}
+	if got := sessionmgr.Username(ctx); got != common.AthenaAdminUsername {
+		t.Fatalf("Username() = %q, want %q", got, common.AthenaAdminUsername)
+	}
+	if got := sessionmgr.Iss(ctx); got != sessionmgr.SessionManagerClaimsIssuer {
+		t.Fatalf("Iss() = %q, want %q", got, sessionmgr.SessionManagerClaimsIssuer)
+	}
+}
+
+func TestAuthorizeGRPCDisableAuthInjectsAdminSession(t *testing.T) {
+	server := newAuthzTestServer(t)
+	server.DisableAuth = true
+
+	ctx, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/GetProjectOptions", nil, &applicationpkg.GetProjectOptionsRequest{})
+	if err != nil {
+		t.Fatalf("authorize disable auth: %v", err)
+	}
+	assertDisabledAuthAdminSession(t, ctx)
+}
+
+func TestAuthenticateDisableAuthInjectsAdminSession(t *testing.T) {
+	server := &AthenaServer{AthenaServerOpts: AthenaServerOpts{DisableAuth: true}}
+
+	ctx, err := server.Authenticate(context.Background())
+	if err != nil {
+		t.Fatalf("Authenticate disable auth: %v", err)
+	}
+	assertDisabledAuthAdminSession(t, ctx)
 }
 
 func TestAuthorizeGRPCPublicMethodAllowsMissingSession(t *testing.T) {

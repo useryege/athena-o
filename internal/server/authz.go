@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/useryege/athena/common"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
@@ -121,6 +123,13 @@ func nonEmptyObject(value string) string {
 	return value
 }
 
+func withDisabledAuthClaims(ctx context.Context) context.Context {
+	return context.WithValue(ctx, "claims", jwt.MapClaims{
+		"sub": common.AthenaAdminUsername,
+		"iss": util_session.SessionManagerClaimsIssuer,
+	})
+}
+
 var publicGRPCMethods = map[string]bool{
 	"/grpc.health.v1.Health/Check": true,
 	"/grpc.health.v1.Health/Watch": true,
@@ -215,7 +224,7 @@ func (s *authenticatedServerStream) Context() context.Context {
 
 func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string, srv any, req any) (context.Context, error) {
 	if server.DisableAuth {
-		return ctx, nil
+		return withDisabledAuthClaims(ctx), nil
 	}
 
 	if publicGRPCMethods[fullMethod] {
