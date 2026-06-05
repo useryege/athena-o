@@ -46,6 +46,8 @@ type CandidateFacts struct {
 	Contract    common.Address               `json:"contract,omitempty"`
 	Creator     common.Address               `json:"creator,omitempty"`
 	TxHash      common.Hash                  `json:"tx_hash,omitempty"`
+	WethPair    common.Address               `json:"weth_pair,omitempty"`
+	UsdtPair    common.Address               `json:"usdt_pair,omitempty"`
 	Source      model.ProjectDiscoverySource `json:"source,omitempty"`
 }
 
@@ -67,6 +69,8 @@ func (c CandidateFacts) DiscoveredProjectCandidate(fallback ProjectRef, source s
 		Contract:    c.Contract,
 		Creator:     c.Creator,
 		TxHash:      c.TxHash,
+		WethPair:    c.WethPair,
+		UsdtPair:    c.UsdtPair,
 		Source:      c.Source,
 	}
 }

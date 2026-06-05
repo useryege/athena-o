@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -62,6 +63,8 @@ func TestUpsertProjectCandidateAndEnqueueQualificationUsesStableOutboxDedup(t *t
 	ctx := context.Background()
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 	creator := common.HexToAddress("0x1000000000000000000000000000000000000002")
+	wethPair := common.HexToAddress("0x1000000000000000000000000000000000000003")
+	usdtPair := common.HexToAddress("0x1000000000000000000000000000000000000004")
 	querier := &projectIntakeQuerierFake{}
 	store := NewSQLStoreWithQuerier(querier)
 
@@ -72,6 +75,8 @@ func TestUpsertProjectCandidateAndEnqueueQualificationUsesStableOutboxDedup(t *t
 		BlockNumber: 10,
 		BlockTime:   20,
 		TxIndex:     1,
+		WethPair:    wethPair,
+		UsdtPair:    usdtPair,
 		Source:      appmodel.ProjectDiscoverySourceCatchUp,
 	}
 	if err := store.UpsertProjectCandidateAndEnqueueQualification(ctx, candidate); err != nil {
@@ -90,11 +95,26 @@ func TestUpsertProjectCandidateAndEnqueueQualificationUsesStableOutboxDedup(t *t
 	if querier.lastCandidate.ChainID != 56 || common.BytesToAddress(querier.lastCandidate.Contract) != contract {
 		t.Fatalf("candidate params = %#v, want chain/contract", querier.lastCandidate)
 	}
+	if common.BytesToAddress(querier.lastCandidate.WethPair) != wethPair || common.BytesToAddress(querier.lastCandidate.UsdtPair) != usdtPair {
+		t.Fatalf("candidate pair params = %#v, want weth/usdt pairs", querier.lastCandidate)
+	}
 	if querier.lastOutbox.Type != OutboxTypeCandidateQualificationRequested || querier.lastOutbox.ChainID != 56 {
 		t.Fatalf("outbox params = %#v, want candidate qualification on chain 56", querier.lastOutbox)
 	}
 	if querier.lastOutbox.DedupKey != projectDedupKey(contract) {
 		t.Fatalf("dedup key = %q, want contract key", querier.lastOutbox.DedupKey)
+	}
+	var outboxPayload struct {
+		Candidate struct {
+			WethPair common.Address `json:"weth_pair"`
+			UsdtPair common.Address `json:"usdt_pair"`
+		} `json:"candidate"`
+	}
+	if err := json.Unmarshal(querier.lastOutbox.Payload, &outboxPayload); err != nil {
+		t.Fatalf("decode outbox payload: %v", err)
+	}
+	if outboxPayload.Candidate.WethPair != wethPair || outboxPayload.Candidate.UsdtPair != usdtPair {
+		t.Fatalf("outbox candidate pairs = %s/%s, want %s/%s", outboxPayload.Candidate.WethPair.Hex(), outboxPayload.Candidate.UsdtPair.Hex(), wethPair.Hex(), usdtPair.Hex())
 	}
 }
 

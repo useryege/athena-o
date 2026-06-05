@@ -9,6 +9,8 @@ type ContractCreatedPayload struct {
 	Contract    string `json:"contract"`
 	Creator     string `json:"creator"`
 	TxHash      string `json:"tx_hash"`
+	WethPair    string `json:"weth_pair,omitempty"`
+	UsdtPair    string `json:"usdt_pair,omitempty"`
 	BlockNumber int64  `json:"block_number"`
 	BlockTime   int64  `json:"block_time"`
 	TxIndex     int64  `json:"tx_index"`

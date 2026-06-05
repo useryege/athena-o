@@ -21,6 +21,10 @@ type Producer interface {
 	Publish(ctx context.Context, topic string, key string, envelope appevents.Envelope) error
 }
 
+type TokenValidator interface {
+	ValidateERC20(ctx context.Context, contracts []common.Address) ([]model.TokenValidation, error)
+}
+
 type CheckpointStore interface {
 	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (*appstore.ChainIngestCheckpoint, error)
 	UpsertChainIngestCheckpoint(ctx context.Context, item appstore.ChainIngestCheckpoint) (*appstore.ChainIngestCheckpoint, error)
@@ -56,6 +60,7 @@ type Options struct {
 	Reader            Reader
 	Producer          Producer
 	Store             CheckpointStore
+	TokenValidator    TokenValidator
 }
 
 type Ingestor struct {
@@ -65,6 +70,7 @@ type Ingestor struct {
 	reader            Reader
 	producer          Producer
 	store             CheckpointStore
+	tokenValidator    TokenValidator
 }
 
 func NewIngestor(opts Options) (*Ingestor, error) {
@@ -86,6 +92,9 @@ func NewIngestor(opts Options) (*Ingestor, error) {
 	if opts.Store == nil {
 		return nil, errors.New("application chain ingestor checkpoint store is required")
 	}
+	if opts.TokenValidator == nil {
+		return nil, errors.New("application chain ingestor token validator is required")
+	}
 	return &Ingestor{
 		chainID:           opts.ChainID,
 		confirmationDepth: opts.ConfirmationDepth,
@@ -93,6 +102,7 @@ func NewIngestor(opts Options) (*Ingestor, error) {
 		reader:            opts.Reader,
 		producer:          opts.Producer,
 		store:             opts.Store,
+		tokenValidator:    opts.TokenValidator,
 	}, nil
 }
 
@@ -193,27 +203,28 @@ func (i *Ingestor) publishBlock(ctx context.Context, block Block) error {
 	if err != nil {
 		return err
 	}
-	for _, item := range block.ContractCreations {
-		if item.Contract == (common.Address{}) {
-			continue
-		}
-		txIndex, err := int64FromUint64(item.TxIndex, "tx index")
-		if err != nil {
-			return err
-		}
-		envelope, err := appevents.NewEnvelope(appevents.EventTypeContractCreated, i.chainID, appevents.ContractCreatedPayload{
-			Contract:    item.Contract.Hex(),
-			Creator:     item.Creator.Hex(),
-			TxHash:      item.TxHash.Hex(),
-			BlockNumber: blockNumber,
-			BlockTime:   blockTime,
-			TxIndex:     txIndex,
-		})
-		if err != nil {
-			return err
-		}
-		if err := i.producer.Publish(ctx, appevents.TopicContractCreatedV1, appevents.ContractCreatedKey(i.chainID, item.Contract.Hex()), envelope); err != nil {
-			return err
+	if validatedCreations, ok := i.validatedContractCreations(ctx, block.ContractCreations); ok {
+		for _, item := range validatedCreations {
+			txIndex, err := int64FromUint64(item.creation.TxIndex, "tx index")
+			if err != nil {
+				return err
+			}
+			envelope, err := appevents.NewEnvelope(appevents.EventTypeContractCreated, i.chainID, appevents.ContractCreatedPayload{
+				Contract:    item.creation.Contract.Hex(),
+				Creator:     item.creation.Creator.Hex(),
+				TxHash:      item.creation.TxHash.Hex(),
+				WethPair:    item.validation.WethPair.Hex(),
+				UsdtPair:    item.validation.UsdtPair.Hex(),
+				BlockNumber: blockNumber,
+				BlockTime:   blockTime,
+				TxIndex:     txIndex,
+			})
+			if err != nil {
+				return err
+			}
+			if err := i.producer.Publish(ctx, appevents.TopicContractCreatedV1, appevents.ContractCreatedKey(i.chainID, item.creation.Contract.Hex()), envelope); err != nil {
+				return err
+			}
 		}
 	}
 	for _, item := range block.DexSwaps {
@@ -235,6 +246,44 @@ func (i *Ingestor) publishBlock(ctx context.Context, block Block) error {
 		}
 	}
 	return nil
+}
+
+type validatedContractCreation struct {
+	creation   ContractCreated
+	validation model.TokenValidation
+}
+
+func (i *Ingestor) validatedContractCreations(ctx context.Context, items []ContractCreated) ([]validatedContractCreation, bool) {
+	if len(items) == 0 {
+		return nil, true
+	}
+	creations := make([]ContractCreated, 0, len(items))
+	contracts := make([]common.Address, 0, len(items))
+	for _, item := range items {
+		if item.Contract == (common.Address{}) {
+			continue
+		}
+		creations = append(creations, item)
+		contracts = append(contracts, item.Contract)
+	}
+	if len(contracts) == 0 {
+		return nil, true
+	}
+	validations, err := i.tokenValidator.ValidateERC20(ctx, contracts)
+	if err != nil || len(validations) != len(creations) {
+		return nil, false
+	}
+	result := make([]validatedContractCreation, 0, len(creations))
+	for idx, validation := range validations {
+		if !validation.IsValidERC20 {
+			continue
+		}
+		result = append(result, validatedContractCreation{
+			creation:   creations[idx],
+			validation: validation,
+		})
+	}
+	return result, true
 }
 
 func int64FromUint64(value uint64, name string) (int64, error) {

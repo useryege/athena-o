@@ -204,6 +204,8 @@ type ProjectCandidate struct {
 	BlockNumber  pgtype.Int8
 	BlockTime    pgtype.Int8
 	TxIndex      pgtype.Int8
+	WethPair     []byte
+	UsdtPair     []byte
 	Source       string
 	Status       string
 	Reason       pgtype.Text

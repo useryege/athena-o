@@ -171,11 +171,21 @@ func runLazyChainIngestor(ctx context.Context, opts runtimeOptions, producer ing
 			if strings.TrimSpace(opts.NodeWSURL) == "" {
 				return fmt.Errorf("node websocket URL is required for running chain-ingestor chain %d", opts.ChainID)
 			}
+			athenaContractAddress, err := parseRequiredAddress("ATHENA contract address", opts.AthenaContract, "--athena-contract", "ATHENA_APPLICATION_ATHENA_CONTRACT")
+			if err != nil {
+				return err
+			}
 			nodeClient, err = ethws.DialContext(ctx, opts.NodeWSURL, opts.NodeWSUseProxy)
 			if err != nil {
 				return fmt.Errorf("connect chain ingestor node: %w", err)
 			}
 			reader := ingest.NewEVMReader(nodeClient, opts.ChainID)
+			tokenValidator, err := evm.NewAthenaTokenValidator(nodeClient, athenaContractAddress)
+			if err != nil {
+				nodeClient.Close()
+				nodeClient = nil
+				return err
+			}
 			ingestorInstance, err = ingest.NewIngestor(ingest.Options{
 				ChainID:           opts.ChainID,
 				ConfirmationDepth: opts.ConfirmationDepth,
@@ -183,6 +193,7 @@ func runLazyChainIngestor(ctx context.Context, opts runtimeOptions, producer ing
 				Reader:            reader,
 				Producer:          producer,
 				Store:             opts.Store,
+				TokenValidator:    tokenValidator,
 			})
 			if err != nil {
 				nodeClient.Close()

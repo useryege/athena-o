@@ -35,6 +35,12 @@ contract Athena {
         uint256 totalSupply;
     }
 
+    struct TokenValidation {
+        bool isValidERC20;
+        address wethPair;
+        address usdtPair;
+    }
+
     struct Pair {
         // Address of the pair contract
         address contractAddress;
@@ -143,20 +149,27 @@ contract Athena {
         return _pairFor(tokenA, tokenB);
     }
 
-    function PairForWithInitCodeHash(address tokenA, address tokenB) public view returns (address pair) {
-        (address token0, address token1) = _sortTokens(tokenA, tokenB);
-        bytes32 salt = keccak256(abi.encodePacked(token0, token1));
-
-        pair = address(uint160(uint256(keccak256(abi.encodePacked(
-            hex"ff",
-            factoryContract,
-            salt,
-            initCodePairHash
-        )))));
-    }
-
     function Get(ProjectQuery calldata query, address[] calldata lockers) external view returns (Project memory) {
         return _get(query.tokenContract, query.msgCaller, query.genesisWallets, lockers);
+    }
+
+    function ValidateERC20(address[] calldata tokenContracts) external view returns (TokenValidation[] memory results) {
+        results = new TokenValidation[](tokenContracts.length);
+        for (uint256 i = 0; i < tokenContracts.length;) {
+            Token memory token = _getToken(tokenContracts[i]);
+            results[i].isValidERC20 = token.isValidERC20;
+            if (token.isValidERC20) {
+                if (tokenContracts[i] != wethContract) {
+                    results[i].wethPair = _pairFor(tokenContracts[i], wethContract);
+                }
+                if (tokenContracts[i] != usdtContract) {
+                    results[i].usdtPair = _pairFor(tokenContracts[i], usdtContract);
+                }
+            }
+            unchecked {
+                i++;
+            }
+        }
     }
 
     function List(ProjectQuery[] calldata queries, address[] calldata lockers) external view returns (Project[] memory projects) {
@@ -261,31 +274,7 @@ contract Athena {
 
         project.tokenContract = tokenContract;
         project.updatedAt = block.timestamp;
-
-        bool nameOk;
-        bool symbolOk;
-        bool decimalsOk;
-        bool totalSupplyOk;
-        bool balanceOfZeroOk;
-        bool allowanceZeroOk;
-
-        (nameOk, project.token.name) = _safeString(tokenContract, IERC20View.name.selector);
-        (symbolOk, project.token.symbol) = _safeString(tokenContract, IERC20View.symbol.selector);
-        (decimalsOk, project.token.decimals) = _safeUint8(tokenContract, IERC20View.decimals.selector);
-        (totalSupplyOk, project.token.totalSupply) = _safeUint256(tokenContract, IERC20View.totalSupply.selector);
-        (balanceOfZeroOk,) = _safeBalanceOf(tokenContract, address(0));
-        (allowanceZeroOk,) = _safeAllowance(tokenContract, address(0), address(0));
-
-        project.token.isValidERC20 = totalSupplyOk
-            && project.token.totalSupply > 0
-            && balanceOfZeroOk
-            && allowanceZeroOk
-            && decimalsOk
-            && project.token.decimals > 0
-            && nameOk
-            && bytes(project.token.name).length > 0
-            && symbolOk
-            && bytes(project.token.symbol).length > 0;
+        project.token = _getToken(tokenContract);
 
         project.assetState = _getAssetState(tokenContract, msgCaller);
         if (genesisWallets.length > 0) {
@@ -307,6 +296,33 @@ contract Athena {
         }
 
         return project;
+    }
+
+    function _getToken(address tokenContract) private view returns (Token memory token) {
+        bool nameOk;
+        bool symbolOk;
+        bool decimalsOk;
+        bool totalSupplyOk;
+        bool balanceOfZeroOk;
+        bool allowanceZeroOk;
+
+        (nameOk, token.name) = _safeString(tokenContract, IERC20View.name.selector);
+        (symbolOk, token.symbol) = _safeString(tokenContract, IERC20View.symbol.selector);
+        (decimalsOk, token.decimals) = _safeUint8(tokenContract, IERC20View.decimals.selector);
+        (totalSupplyOk, token.totalSupply) = _safeUint256(tokenContract, IERC20View.totalSupply.selector);
+        (balanceOfZeroOk,) = _safeBalanceOf(tokenContract, address(0));
+        (allowanceZeroOk,) = _safeAllowance(tokenContract, address(0), address(0));
+
+        token.isValidERC20 = totalSupplyOk
+            && token.totalSupply > 0
+            && balanceOfZeroOk
+            && allowanceZeroOk
+            && decimalsOk
+            && token.decimals > 0
+            && nameOk
+            && bytes(token.name).length > 0
+            && symbolOk
+            && bytes(token.symbol).length > 0;
     }
 
     function _buildGenesisWalletAssetStates(address tokenContract, address[] calldata wallets)
@@ -396,7 +412,19 @@ contract Athena {
     }
 
     function _pairFor(address tokenA, address tokenB) private view returns (address pair) {
-        return PairForWithInitCodeHash(tokenA, tokenB);
+        return _pairForWithInitCodeHash(tokenA, tokenB);
+    }
+
+    function _pairForWithInitCodeHash(address tokenA, address tokenB) private view returns (address pair) {
+        (address token0, address token1) = _sortTokens(tokenA, tokenB);
+        bytes32 salt = keccak256(abi.encodePacked(token0, token1));
+
+        pair = address(uint160(uint256(keccak256(abi.encodePacked(
+            hex"ff",
+            factoryContract,
+            salt,
+            initCodePairHash
+        )))));
     }
 
     function _sortTokens(address tokenA, address tokenB) private pure returns (address token0, address token1) {

@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS project_candidate (
   block_number BIGINT,
   block_time BIGINT,
   tx_index BIGINT,
+  weth_pair BYTEA,
+  usdt_pair BYTEA,
   source TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
   reason TEXT,
@@ -58,6 +60,8 @@ CREATE TABLE IF NOT EXISTS project_candidate (
   CONSTRAINT project_candidate_block_number_nonnegative CHECK (block_number IS NULL OR block_number >= 0),
   CONSTRAINT project_candidate_block_time_nonnegative CHECK (block_time IS NULL OR block_time >= 0),
   CONSTRAINT project_candidate_tx_index_nonnegative CHECK (tx_index IS NULL OR tx_index >= 0),
+  CONSTRAINT project_candidate_weth_pair_len CHECK (weth_pair IS NULL OR length(weth_pair) = 20),
+  CONSTRAINT project_candidate_usdt_pair_len CHECK (usdt_pair IS NULL OR length(usdt_pair) = 20),
   CONSTRAINT project_candidate_source_not_empty CHECK (btrim(source) <> ''),
   CONSTRAINT project_candidate_status_not_empty CHECK (btrim(status) <> '')
 );

@@ -20,6 +20,8 @@ INSERT INTO project_candidate (
   block_number,
   block_time,
   tx_index,
+  weth_pair,
+  usdt_pair,
   source,
   status,
   payload
@@ -31,9 +33,11 @@ INSERT INTO project_candidate (
   $5::bigint,
   $6::bigint,
   $7::bigint,
-  $8,
+  $8::bytea,
+  $9::bytea,
+  $10,
   'pending',
-  $9::jsonb
+  $11::jsonb
 )
 ON CONFLICT (chain_id, contract) DO UPDATE
 SET creator = COALESCE(project_candidate.creator, EXCLUDED.creator),
@@ -41,6 +45,8 @@ SET creator = COALESCE(project_candidate.creator, EXCLUDED.creator),
   block_number = COALESCE(project_candidate.block_number, EXCLUDED.block_number),
   block_time = COALESCE(project_candidate.block_time, EXCLUDED.block_time),
   tx_index = COALESCE(project_candidate.tx_index, EXCLUDED.tx_index),
+  weth_pair = COALESCE(project_candidate.weth_pair, EXCLUDED.weth_pair),
+  usdt_pair = COALESCE(project_candidate.usdt_pair, EXCLUDED.usdt_pair),
   source = EXCLUDED.source,
   status = CASE
     WHEN project_candidate.status = 'processed' THEN project_candidate.status
@@ -58,6 +64,8 @@ type UpsertProjectCandidateParams struct {
 	BlockNumber pgtype.Int8
 	BlockTime   pgtype.Int8
 	TxIndex     pgtype.Int8
+	WethPair    []byte
+	UsdtPair    []byte
 	Source      string
 	Payload     []byte
 }
@@ -71,6 +79,8 @@ func (q *Queries) UpsertProjectCandidate(ctx context.Context, arg UpsertProjectC
 		arg.BlockNumber,
 		arg.BlockTime,
 		arg.TxIndex,
+		arg.WethPair,
+		arg.UsdtPair,
 		arg.Source,
 		arg.Payload,
 	)

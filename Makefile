@@ -100,6 +100,10 @@ protogen-fast:
 sqlc-local:
 	go run -mod=mod github.com/sqlc-dev/sqlc/cmd/sqlc generate
 
+.PHONY: abigen-local
+abigen-local:
+	./hack/generate-abi.sh
+
 .PHONY: clientgen
 clientgen:
 	export GO111MODULE=off

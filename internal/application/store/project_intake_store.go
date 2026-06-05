@@ -40,6 +40,8 @@ func (s *SQLStore) UpsertProjectCandidateAndEnqueueQualification(ctx context.Con
 			BlockNumber: nullableUint64(candidate.BlockNumber),
 			BlockTime:   nullableUint64(candidate.BlockTime),
 			TxIndex:     nullableUint64(candidate.TxIndex),
+			WethPair:    nullableAddressBytes(candidate.WethPair),
+			UsdtPair:    nullableAddressBytes(candidate.UsdtPair),
 			Source:      string(candidate.Source),
 			Payload:     payload,
 		}); err != nil {
@@ -135,6 +137,8 @@ func candidatePayload(candidate model.DiscoveredProjectCandidate) map[string]any
 		"block_number": candidate.BlockNumber,
 		"block_time":   candidate.BlockTime,
 		"tx_index":     candidate.TxIndex,
+		"weth_pair":    optionalAddressHex(candidate.WethPair),
+		"usdt_pair":    optionalAddressHex(candidate.UsdtPair),
 		"source":       candidate.Source,
 	}
 }

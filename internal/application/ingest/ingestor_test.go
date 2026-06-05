@@ -2,11 +2,13 @@ package ingest
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	appevents "github.com/useryege/athena/internal/application/events"
+	"github.com/useryege/athena/internal/application/model"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -33,6 +35,7 @@ func (f *readerFake) ReadBlock(_ context.Context, number uint64) (Block, error) 
 
 type producerFake struct {
 	failAfter int
+	failTopic string
 	records   []publishedRecord
 }
 
@@ -43,11 +46,49 @@ type publishedRecord struct {
 }
 
 func (f *producerFake) Publish(_ context.Context, topic string, key string, envelope appevents.Envelope) error {
+	if f.failTopic != "" && topic == f.failTopic {
+		return errors.New("publish failed")
+	}
 	if f.failAfter > 0 && len(f.records) >= f.failAfter {
 		return errors.New("publish failed")
 	}
 	f.records = append(f.records, publishedRecord{topic: topic, key: key, event: envelope})
 	return nil
+}
+
+type tokenValidatorFake struct {
+	err         error
+	results     []model.TokenValidation
+	contracts   []common.Address
+	defaultWeth common.Address
+	defaultUsdt common.Address
+}
+
+func (f *tokenValidatorFake) ValidateERC20(_ context.Context, contracts []common.Address) ([]model.TokenValidation, error) {
+	f.contracts = append(f.contracts, contracts...)
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.results != nil {
+		return append([]model.TokenValidation(nil), f.results...), nil
+	}
+	results := make([]model.TokenValidation, 0, len(contracts))
+	wethPair := f.defaultWeth
+	if wethPair == (common.Address{}) {
+		wethPair = common.HexToAddress("0x4000000000000000000000000000000000000004")
+	}
+	usdtPair := f.defaultUsdt
+	if usdtPair == (common.Address{}) {
+		usdtPair = common.HexToAddress("0x5000000000000000000000000000000000000005")
+	}
+	for range contracts {
+		results = append(results, model.TokenValidation{
+			IsValidERC20: true,
+			WethPair:     wethPair,
+			UsdtPair:     usdtPair,
+		})
+	}
+	return results, nil
 }
 
 type checkpointStoreFake struct {
@@ -76,10 +117,13 @@ func (f *checkpointStoreFake) UpsertChainIngestCheckpoint(_ context.Context, ite
 func TestIngestorPublishesEventsAndAdvancesCheckpoint(t *testing.T) {
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 	pair := common.HexToAddress("0x2000000000000000000000000000000000000002")
+	wethPair := common.HexToAddress("0x4000000000000000000000000000000000000004")
+	usdtPair := common.HexToAddress("0x5000000000000000000000000000000000000005")
 	producer := &producerFake{}
 	store := &checkpointStoreFake{items: map[int64]appstore.ChainIngestCheckpoint{
 		56: {ChainID: 56, Status: appstore.ChainIngestStatusRunning},
 	}}
+	validator := &tokenValidatorFake{defaultWeth: wethPair, defaultUsdt: usdtPair}
 	ingestor, err := NewIngestor(Options{
 		ChainID:           56,
 		ConfirmationDepth: 2,
@@ -102,8 +146,9 @@ func TestIngestorPublishesEventsAndAdvancesCheckpoint(t *testing.T) {
 				},
 			},
 		},
-		Producer: producer,
-		Store:    store,
+		Producer:       producer,
+		Store:          store,
+		TokenValidator: validator,
 	})
 	if err != nil {
 		t.Fatalf("NewIngestor: %v", err)
@@ -119,6 +164,16 @@ func TestIngestorPublishesEventsAndAdvancesCheckpoint(t *testing.T) {
 	if len(producer.records) != 2 {
 		t.Fatalf("published records = %d, want contract+swap", len(producer.records))
 	}
+	if len(validator.contracts) != 1 || validator.contracts[0] != contract {
+		t.Fatalf("validated contracts = %#v, want contract", validator.contracts)
+	}
+	var payload appevents.ContractCreatedPayload
+	if err := json.Unmarshal(producer.records[0].event.Payload, &payload); err != nil {
+		t.Fatalf("decode contract payload: %v", err)
+	}
+	if payload.WethPair != wethPair.Hex() || payload.UsdtPair != usdtPair.Hex() {
+		t.Fatalf("payload pairs = %s/%s, want %s/%s", payload.WethPair, payload.UsdtPair, wethPair.Hex(), usdtPair.Hex())
+	}
 	checkpoint := store.items[56]
 	if checkpoint.CursorBlockNumber != 10 || checkpoint.FinalizedBlockNumber != 10 {
 		t.Fatalf("checkpoint = %#v, want block 10", checkpoint)
@@ -126,7 +181,7 @@ func TestIngestorPublishesEventsAndAdvancesCheckpoint(t *testing.T) {
 }
 
 func TestIngestorDoesNotAdvanceCheckpointWhenKafkaPublishFails(t *testing.T) {
-	producer := &producerFake{failAfter: 1}
+	producer := &producerFake{failTopic: appevents.TopicContractCreatedV1}
 	store := &checkpointStoreFake{items: map[int64]appstore.ChainIngestCheckpoint{
 		1: {ChainID: 1, Status: appstore.ChainIngestStatusRunning},
 	}}
@@ -145,8 +200,9 @@ func TestIngestorDoesNotAdvanceCheckpointWhenKafkaPublishFails(t *testing.T) {
 				DexSwaps: []DexSwap{{Pair: common.HexToAddress("0x2000000000000000000000000000000000000002")}},
 			},
 		}},
-		Producer: producer,
-		Store:    store,
+		Producer:       producer,
+		Store:          store,
+		TokenValidator: &tokenValidatorFake{},
 	})
 	if err != nil {
 		t.Fatalf("NewIngestor: %v", err)
@@ -156,6 +212,134 @@ func TestIngestorDoesNotAdvanceCheckpointWhenKafkaPublishFails(t *testing.T) {
 	}
 	if checkpoint := store.items[1]; checkpoint.CursorBlockNumber != 0 || checkpoint.FinalizedBlockNumber != 0 {
 		t.Fatalf("checkpoint = %#v, want no progress after publish failure", checkpoint)
+	}
+}
+
+func TestIngestorSkipsInvalidERC20ContractsAndAdvancesCheckpoint(t *testing.T) {
+	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
+	pair := common.HexToAddress("0x2000000000000000000000000000000000000002")
+	producer := &producerFake{}
+	store := &checkpointStoreFake{items: map[int64]appstore.ChainIngestCheckpoint{
+		1: {ChainID: 1, Status: appstore.ChainIngestStatusRunning},
+	}}
+	ingestor, err := NewIngestor(Options{
+		ChainID:           1,
+		ConfirmationDepth: 1,
+		StartBlock:        5,
+		Reader: &readerFake{latest: 6, blocks: map[uint64]Block{
+			5: {
+				ChainID:           1,
+				Number:            5,
+				Hash:              common.HexToHash("0x5"),
+				ContractCreations: []ContractCreated{{Contract: contract}},
+				DexSwaps:          []DexSwap{{Pair: pair}},
+			},
+		}},
+		Producer: producer,
+		Store:    store,
+		TokenValidator: &tokenValidatorFake{results: []model.TokenValidation{{
+			IsValidERC20: false,
+		}}},
+	})
+	if err != nil {
+		t.Fatalf("NewIngestor: %v", err)
+	}
+	count, err := ingestor.ProcessOnce(context.Background())
+	if err != nil {
+		t.Fatalf("ProcessOnce: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("count = %d, want 1", count)
+	}
+	if len(producer.records) != 1 || producer.records[0].topic != appevents.TopicDexSwapV1 {
+		t.Fatalf("published records = %#v, want only dex swap", producer.records)
+	}
+	if checkpoint := store.items[1]; checkpoint.CursorBlockNumber != 5 || checkpoint.FinalizedBlockNumber != 5 {
+		t.Fatalf("checkpoint = %#v, want block 5", checkpoint)
+	}
+}
+
+func TestIngestorSkipsContractCreationsWhenValidationFails(t *testing.T) {
+	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
+	pair := common.HexToAddress("0x2000000000000000000000000000000000000002")
+	producer := &producerFake{}
+	store := &checkpointStoreFake{items: map[int64]appstore.ChainIngestCheckpoint{
+		1: {ChainID: 1, Status: appstore.ChainIngestStatusRunning},
+	}}
+	ingestor, err := NewIngestor(Options{
+		ChainID:           1,
+		ConfirmationDepth: 1,
+		StartBlock:        5,
+		Reader: &readerFake{latest: 6, blocks: map[uint64]Block{
+			5: {
+				ChainID:           1,
+				Number:            5,
+				Hash:              common.HexToHash("0x5"),
+				ContractCreations: []ContractCreated{{Contract: contract}},
+				DexSwaps:          []DexSwap{{Pair: pair}},
+			},
+		}},
+		Producer:       producer,
+		Store:          store,
+		TokenValidator: &tokenValidatorFake{err: errors.New("validate failed")},
+	})
+	if err != nil {
+		t.Fatalf("NewIngestor: %v", err)
+	}
+	count, err := ingestor.ProcessOnce(context.Background())
+	if err != nil {
+		t.Fatalf("ProcessOnce: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("count = %d, want 1", count)
+	}
+	if len(producer.records) != 1 || producer.records[0].topic != appevents.TopicDexSwapV1 {
+		t.Fatalf("published records = %#v, want only dex swap", producer.records)
+	}
+	if checkpoint := store.items[1]; checkpoint.CursorBlockNumber != 5 || checkpoint.FinalizedBlockNumber != 5 {
+		t.Fatalf("checkpoint = %#v, want block 5", checkpoint)
+	}
+}
+
+func TestIngestorSkipsContractCreationsWhenValidationLengthMismatches(t *testing.T) {
+	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
+	pair := common.HexToAddress("0x2000000000000000000000000000000000000002")
+	producer := &producerFake{}
+	store := &checkpointStoreFake{items: map[int64]appstore.ChainIngestCheckpoint{
+		1: {ChainID: 1, Status: appstore.ChainIngestStatusRunning},
+	}}
+	ingestor, err := NewIngestor(Options{
+		ChainID:           1,
+		ConfirmationDepth: 1,
+		StartBlock:        5,
+		Reader: &readerFake{latest: 6, blocks: map[uint64]Block{
+			5: {
+				ChainID:           1,
+				Number:            5,
+				Hash:              common.HexToHash("0x5"),
+				ContractCreations: []ContractCreated{{Contract: contract}},
+				DexSwaps:          []DexSwap{{Pair: pair}},
+			},
+		}},
+		Producer:       producer,
+		Store:          store,
+		TokenValidator: &tokenValidatorFake{results: []model.TokenValidation{}},
+	})
+	if err != nil {
+		t.Fatalf("NewIngestor: %v", err)
+	}
+	count, err := ingestor.ProcessOnce(context.Background())
+	if err != nil {
+		t.Fatalf("ProcessOnce: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("count = %d, want 1", count)
+	}
+	if len(producer.records) != 1 || producer.records[0].topic != appevents.TopicDexSwapV1 {
+		t.Fatalf("published records = %#v, want only dex swap", producer.records)
+	}
+	if checkpoint := store.items[1]; checkpoint.CursorBlockNumber != 5 || checkpoint.FinalizedBlockNumber != 5 {
+		t.Fatalf("checkpoint = %#v, want block 5", checkpoint)
 	}
 }
 
@@ -170,6 +354,7 @@ func TestIngestorCheckpointsAreChainScoped(t *testing.T) {
 			Reader:            &readerFake{latest: 9, blocks: map[uint64]Block{8: {ChainID: chainID, Number: 8, Hash: common.HexToHash("0x8")}}},
 			Producer:          &producerFake{},
 			Store:             store,
+			TokenValidator:    &tokenValidatorFake{},
 		})
 		if err != nil {
 			t.Fatalf("NewIngestor chain %d: %v", chainID, err)
@@ -197,6 +382,7 @@ func TestIngestorStoppedCheckpointDoesNotReadNodeOrPublish(t *testing.T) {
 		Reader:            &readerFake{latest: 100, latestCalls: &latestCalls, readNumbers: &readNumbers},
 		Producer:          producer,
 		Store:             store,
+		TokenValidator:    &tokenValidatorFake{},
 	})
 	if err != nil {
 		t.Fatalf("NewIngestor: %v", err)
@@ -229,8 +415,9 @@ func TestIngestorContinuesFromCheckpointCursor(t *testing.T) {
 				9: {ChainID: 1, Number: 9, Hash: common.HexToHash("0x9")},
 			},
 		},
-		Producer: &producerFake{},
-		Store:    store,
+		Producer:       &producerFake{},
+		Store:          store,
+		TokenValidator: &tokenValidatorFake{},
 	})
 	if err != nil {
 		t.Fatalf("NewIngestor: %v", err)

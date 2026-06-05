@@ -42,12 +42,16 @@ func (f *processorStoreFake) ListProjectMetasByPairAddresses(_ context.Context, 
 func TestProcessorContractCreatedIsIdempotentByChainAndContract(t *testing.T) {
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 	creator := common.HexToAddress("0x2000000000000000000000000000000000000002")
+	wethPair := common.HexToAddress("0x3000000000000000000000000000000000000003")
+	usdtPair := common.HexToAddress("0x4000000000000000000000000000000000000004")
 	store := &processorStoreFake{}
 	processor := NewProcessor(store)
 	envelope := testEnvelope(t, EventTypeContractCreated, 56, ContractCreatedPayload{
 		Contract:    contract.Hex(),
 		Creator:     creator.Hex(),
 		TxHash:      "0xabc",
+		WethPair:    wethPair.Hex(),
+		UsdtPair:    usdtPair.Hex(),
 		BlockNumber: 123,
 		BlockTime:   456,
 		TxIndex:     7,
@@ -65,6 +69,9 @@ func TestProcessorContractCreatedIsIdempotentByChainAndContract(t *testing.T) {
 	item := store.candidates[projectKey(56, contract)]
 	if item.ChainID != 56 || item.Contract != contract || item.Creator != creator || item.BlockNumber != 123 || item.BlockTime != 456 || item.TxIndex != 7 {
 		t.Fatalf("candidate = %#v, want decoded event fields", item)
+	}
+	if item.WethPair != wethPair || item.UsdtPair != usdtPair {
+		t.Fatalf("candidate pairs = %s/%s, want %s/%s", item.WethPair.Hex(), item.UsdtPair.Hex(), wethPair.Hex(), usdtPair.Hex())
 	}
 	if item.Source != model.ProjectDiscoverySourceFollowHeads {
 		t.Fatalf("source = %q, want follow_heads", item.Source)

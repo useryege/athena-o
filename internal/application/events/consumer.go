@@ -77,6 +77,12 @@ func (p *Processor) processContractCreated(ctx context.Context, envelope Envelop
 	if strings.TrimSpace(payload.TxHash) != "" {
 		candidate.TxHash = common.HexToHash(payload.TxHash)
 	}
+	if common.IsHexAddress(payload.WethPair) {
+		candidate.WethPair = common.HexToAddress(payload.WethPair)
+	}
+	if common.IsHexAddress(payload.UsdtPair) {
+		candidate.UsdtPair = common.HexToAddress(payload.UsdtPair)
+	}
 	return p.store.UpsertProjectCandidateAndEnqueueQualification(ctx, candidate)
 }
 

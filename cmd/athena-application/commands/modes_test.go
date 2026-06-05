@@ -65,3 +65,22 @@ func TestRunLazyChainIngestorRunningRequiresNodeURL(t *testing.T) {
 		t.Fatalf("runLazyChainIngestor error = %v, want missing node URL after running checkpoint", err)
 	}
 }
+
+func TestRunLazyChainIngestorRunningRequiresAthenaContract(t *testing.T) {
+	store := appstore.NewSQLStoreWithQuerier(&chainIngestQuerierFake{row: appsqlc.GetChainIngestCheckpointRow{
+		ChainID:   1,
+		ChainName: "Ethereum Mainnet",
+		Enabled:   true,
+		Status:    appstore.ChainIngestStatusRunning,
+	}})
+
+	err := runLazyChainIngestor(context.Background(), runtimeOptions{
+		ChainID:            1,
+		NodeWSURL:          "ws://example.invalid:8546",
+		Store:              store,
+		IngestPollInterval: time.Millisecond,
+	}, chainIngestProducerNoop{})
+	if err == nil || !strings.Contains(err.Error(), "ATHENA contract address is required") {
+		t.Fatalf("runLazyChainIngestor error = %v, want missing ATHENA contract", err)
+	}
+}

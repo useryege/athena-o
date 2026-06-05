@@ -7,6 +7,8 @@ INSERT INTO project_candidate (
   block_number,
   block_time,
   tx_index,
+  weth_pair,
+  usdt_pair,
   source,
   status,
   payload
@@ -18,6 +20,8 @@ INSERT INTO project_candidate (
   sqlc.narg('block_number')::bigint,
   sqlc.narg('block_time')::bigint,
   sqlc.narg('tx_index')::bigint,
+  sqlc.narg('weth_pair')::bytea,
+  sqlc.narg('usdt_pair')::bytea,
   @source,
   'pending',
   @payload::jsonb
@@ -28,6 +32,8 @@ SET creator = COALESCE(project_candidate.creator, EXCLUDED.creator),
   block_number = COALESCE(project_candidate.block_number, EXCLUDED.block_number),
   block_time = COALESCE(project_candidate.block_time, EXCLUDED.block_time),
   tx_index = COALESCE(project_candidate.tx_index, EXCLUDED.tx_index),
+  weth_pair = COALESCE(project_candidate.weth_pair, EXCLUDED.weth_pair),
+  usdt_pair = COALESCE(project_candidate.usdt_pair, EXCLUDED.usdt_pair),
   source = EXCLUDED.source,
   status = CASE
     WHEN project_candidate.status = 'processed' THEN project_candidate.status

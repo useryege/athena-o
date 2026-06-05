@@ -13,8 +13,16 @@ type DiscoveredProjectCandidate struct {
 	Contract    common.Address
 	Creator     common.Address
 	TxHash      common.Hash
+	WethPair    common.Address
+	UsdtPair    common.Address
 	Tx          *types.Transaction
 	Source      ProjectDiscoverySource
+}
+
+type TokenValidation struct {
+	IsValidERC20 bool
+	WethPair     common.Address
+	UsdtPair     common.Address
 }
 
 type ProjectDiscoverySource string
