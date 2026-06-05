@@ -180,7 +180,7 @@ func runLazyChainIngestor(ctx context.Context, opts runtimeOptions, producer ing
 				return fmt.Errorf("connect chain ingestor node: %w", err)
 			}
 			reader := ingest.NewEVMReader(nodeClient, opts.ChainID)
-			tokenValidator, err := evm.NewAthenaTokenValidator(nodeClient, athenaContractAddress)
+			chainValidator, err := evm.NewAthenaChainValidator(nodeClient, athenaContractAddress)
 			if err != nil {
 				nodeClient.Close()
 				nodeClient = nil
@@ -193,7 +193,7 @@ func runLazyChainIngestor(ctx context.Context, opts runtimeOptions, producer ing
 				Reader:            reader,
 				Producer:          producer,
 				Store:             opts.Store,
-				TokenValidator:    tokenValidator,
+				ChainValidator:    chainValidator,
 			})
 			if err != nil {
 				nodeClient.Close()

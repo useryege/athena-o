@@ -18,8 +18,8 @@ type ContractCreatedPayload struct {
 
 type DexSwapPayload struct {
 	Pair        string `json:"pair"`
-	Token0      string `json:"token0,omitempty"`
-	Token1      string `json:"token1,omitempty"`
+	Token0      string `json:"token0"`
+	Token1      string `json:"token1"`
 	TxHash      string `json:"tx_hash"`
 	BlockNumber int64  `json:"block_number"`
 }

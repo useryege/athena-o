@@ -95,6 +95,23 @@ func (p *Processor) processDexSwap(ctx context.Context, envelope Envelope) error
 		return fmt.Errorf("dex swap payload pair is invalid: %q", payload.Pair)
 	}
 	pair := common.HexToAddress(payload.Pair)
+	if pair == (common.Address{}) {
+		return errors.New("dex swap payload pair cannot be zero address")
+	}
+	if !common.IsHexAddress(payload.Token0) {
+		return fmt.Errorf("dex swap payload token0 is invalid: %q", payload.Token0)
+	}
+	token0 := common.HexToAddress(payload.Token0)
+	if token0 == (common.Address{}) {
+		return errors.New("dex swap payload token0 cannot be zero address")
+	}
+	if !common.IsHexAddress(payload.Token1) {
+		return fmt.Errorf("dex swap payload token1 is invalid: %q", payload.Token1)
+	}
+	token1 := common.HexToAddress(payload.Token1)
+	if token1 == (common.Address{}) {
+		return errors.New("dex swap payload token1 cannot be zero address")
+	}
 	metas, err := p.store.ListProjectMetasByPairAddresses(ctx, envelope.ChainID, []common.Address{pair})
 	if err != nil {
 		return err

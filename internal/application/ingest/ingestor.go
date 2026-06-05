@@ -21,8 +21,9 @@ type Producer interface {
 	Publish(ctx context.Context, topic string, key string, envelope appevents.Envelope) error
 }
 
-type TokenValidator interface {
+type ChainValidator interface {
 	ValidateERC20(ctx context.Context, contracts []common.Address) ([]model.TokenValidation, error)
+	ValidatePairs(ctx context.Context, pairs []common.Address) ([]model.PairValidation, error)
 }
 
 type CheckpointStore interface {
@@ -48,8 +49,6 @@ type ContractCreated struct {
 
 type DexSwap struct {
 	Pair   common.Address
-	Token0 common.Address
-	Token1 common.Address
 	TxHash common.Hash
 }
 
@@ -60,7 +59,7 @@ type Options struct {
 	Reader            Reader
 	Producer          Producer
 	Store             CheckpointStore
-	TokenValidator    TokenValidator
+	ChainValidator    ChainValidator
 }
 
 type Ingestor struct {
@@ -70,7 +69,7 @@ type Ingestor struct {
 	reader            Reader
 	producer          Producer
 	store             CheckpointStore
-	tokenValidator    TokenValidator
+	chainValidator    ChainValidator
 }
 
 func NewIngestor(opts Options) (*Ingestor, error) {
@@ -92,8 +91,8 @@ func NewIngestor(opts Options) (*Ingestor, error) {
 	if opts.Store == nil {
 		return nil, errors.New("application chain ingestor checkpoint store is required")
 	}
-	if opts.TokenValidator == nil {
-		return nil, errors.New("application chain ingestor token validator is required")
+	if opts.ChainValidator == nil {
+		return nil, errors.New("application chain ingestor chain validator is required")
 	}
 	return &Ingestor{
 		chainID:           opts.ChainID,
@@ -102,7 +101,7 @@ func NewIngestor(opts Options) (*Ingestor, error) {
 		reader:            opts.Reader,
 		producer:          opts.Producer,
 		store:             opts.Store,
-		tokenValidator:    opts.TokenValidator,
+		chainValidator:    opts.ChainValidator,
 	}, nil
 }
 
@@ -227,22 +226,21 @@ func (i *Ingestor) publishBlock(ctx context.Context, block Block) error {
 			}
 		}
 	}
-	for _, item := range block.DexSwaps {
-		if item.Pair == (common.Address{}) {
-			continue
-		}
-		envelope, err := appevents.NewEnvelope(appevents.EventTypeDexSwap, i.chainID, appevents.DexSwapPayload{
-			Pair:        item.Pair.Hex(),
-			Token0:      item.Token0.Hex(),
-			Token1:      item.Token1.Hex(),
-			TxHash:      item.TxHash.Hex(),
-			BlockNumber: blockNumber,
-		})
-		if err != nil {
-			return err
-		}
-		if err := i.producer.Publish(ctx, appevents.TopicDexSwapV1, appevents.DexSwapKey(i.chainID, item.Pair.Hex()), envelope); err != nil {
-			return err
+	if validatedSwaps, ok := i.validatedDexSwaps(ctx, block.DexSwaps); ok {
+		for _, item := range validatedSwaps {
+			envelope, err := appevents.NewEnvelope(appevents.EventTypeDexSwap, i.chainID, appevents.DexSwapPayload{
+				Pair:        item.swap.Pair.Hex(),
+				Token0:      item.validation.Token0.Hex(),
+				Token1:      item.validation.Token1.Hex(),
+				TxHash:      item.swap.TxHash.Hex(),
+				BlockNumber: blockNumber,
+			})
+			if err != nil {
+				return err
+			}
+			if err := i.producer.Publish(ctx, appevents.TopicDexSwapV1, appevents.DexSwapKey(i.chainID, item.swap.Pair.Hex()), envelope); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -269,7 +267,7 @@ func (i *Ingestor) validatedContractCreations(ctx context.Context, items []Contr
 	if len(contracts) == 0 {
 		return nil, true
 	}
-	validations, err := i.tokenValidator.ValidateERC20(ctx, contracts)
+	validations, err := i.chainValidator.ValidateERC20(ctx, contracts)
 	if err != nil || len(validations) != len(creations) {
 		return nil, false
 	}
@@ -280,6 +278,49 @@ func (i *Ingestor) validatedContractCreations(ctx context.Context, items []Contr
 		}
 		result = append(result, validatedContractCreation{
 			creation:   creations[idx],
+			validation: validation,
+		})
+	}
+	return result, true
+}
+
+type validatedDexSwap struct {
+	swap       DexSwap
+	validation model.PairValidation
+}
+
+func (i *Ingestor) validatedDexSwaps(ctx context.Context, items []DexSwap) ([]validatedDexSwap, bool) {
+	if len(items) == 0 {
+		return nil, true
+	}
+	swaps := make([]DexSwap, 0, len(items))
+	pairs := make([]common.Address, 0, len(items))
+	seen := make(map[common.Address]struct{}, len(items))
+	for _, item := range items {
+		if item.Pair == (common.Address{}) {
+			continue
+		}
+		if _, ok := seen[item.Pair]; ok {
+			continue
+		}
+		seen[item.Pair] = struct{}{}
+		swaps = append(swaps, item)
+		pairs = append(pairs, item.Pair)
+	}
+	if len(pairs) == 0 {
+		return nil, true
+	}
+	validations, err := i.chainValidator.ValidatePairs(ctx, pairs)
+	if err != nil || len(validations) != len(swaps) {
+		return nil, false
+	}
+	result := make([]validatedDexSwap, 0, len(swaps))
+	for idx, validation := range validations {
+		if !validation.IsValidPancakePair {
+			continue
+		}
+		result = append(result, validatedDexSwap{
+			swap:       swaps[idx],
 			validation: validation,
 		})
 	}

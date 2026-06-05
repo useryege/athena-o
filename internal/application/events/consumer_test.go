@@ -99,6 +99,8 @@ func TestProcessorContractCreatedKeepsSameContractOnDifferentChainsSeparate(t *t
 
 func TestProcessorDexSwapSchedulesKnownProjects(t *testing.T) {
 	pair := common.HexToAddress("0x3000000000000000000000000000000000000003")
+	token0 := common.HexToAddress("0x5000000000000000000000000000000000000005")
+	token1 := common.HexToAddress("0x6000000000000000000000000000000000000006")
 	project := common.HexToAddress("0x4000000000000000000000000000000000000004")
 	store := &processorStoreFake{
 		projectsByPair: map[string][]appstore.ProjectMeta{
@@ -107,7 +109,12 @@ func TestProcessorDexSwapSchedulesKnownProjects(t *testing.T) {
 	}
 	processor := NewProcessor(store)
 
-	envelope := testEnvelope(t, EventTypeDexSwap, 1, DexSwapPayload{Pair: pair.Hex(), BlockNumber: 100})
+	envelope := testEnvelope(t, EventTypeDexSwap, 1, DexSwapPayload{
+		Pair:        pair.Hex(),
+		Token0:      token0.Hex(),
+		Token1:      token1.Hex(),
+		BlockNumber: 100,
+	})
 	if err := processor.ProcessEnvelope(context.Background(), envelope); err != nil {
 		t.Fatalf("ProcessEnvelope: %v", err)
 	}
@@ -119,6 +126,30 @@ func TestProcessorDexSwapSchedulesKnownProjects(t *testing.T) {
 	}
 	if store.collectionReasons[0] != ReasonDexSwap {
 		t.Fatalf("reason = %q, want dex_swap", store.collectionReasons[0])
+	}
+}
+
+func TestProcessorDexSwapRequiresPairTokens(t *testing.T) {
+	pair := common.HexToAddress("0x3000000000000000000000000000000000000003")
+	token0 := common.HexToAddress("0x5000000000000000000000000000000000000005")
+	token1 := common.HexToAddress("0x6000000000000000000000000000000000000006")
+	processor := NewProcessor(&processorStoreFake{})
+
+	for _, tc := range []struct {
+		name    string
+		payload DexSwapPayload
+	}{
+		{name: "missing token0", payload: DexSwapPayload{Pair: pair.Hex(), Token1: token1.Hex()}},
+		{name: "missing token1", payload: DexSwapPayload{Pair: pair.Hex(), Token0: token0.Hex()}},
+		{name: "zero token0", payload: DexSwapPayload{Pair: pair.Hex(), Token0: common.Address{}.Hex(), Token1: token1.Hex()}},
+		{name: "zero token1", payload: DexSwapPayload{Pair: pair.Hex(), Token0: token0.Hex(), Token1: common.Address{}.Hex()}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			envelope := testEnvelope(t, EventTypeDexSwap, 1, tc.payload)
+			if err := processor.ProcessEnvelope(context.Background(), envelope); err == nil {
+				t.Fatalf("ProcessEnvelope error = nil, want invalid dex swap payload")
+			}
+		})
 	}
 }
 

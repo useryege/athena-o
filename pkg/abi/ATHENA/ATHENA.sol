@@ -41,6 +41,12 @@ contract Athena {
         address usdtPair;
     }
 
+    struct PairValidation {
+        bool isValidPancakePair;
+        address token0;
+        address token1;
+    }
+
     struct Pair {
         // Address of the pair contract
         address contractAddress;
@@ -166,6 +172,16 @@ contract Athena {
                     results[i].usdtPair = _pairFor(tokenContracts[i], usdtContract);
                 }
             }
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    function ValidatePairs(address[] calldata pairContracts) external view returns (PairValidation[] memory results) {
+        results = new PairValidation[](pairContracts.length);
+        for (uint256 i = 0; i < pairContracts.length;) {
+            results[i] = _validatePair(pairContracts[i]);
             unchecked {
                 i++;
             }
@@ -323,6 +339,25 @@ contract Athena {
             && bytes(token.name).length > 0
             && symbolOk
             && bytes(token.symbol).length > 0;
+    }
+
+    function _validatePair(address pairContract) private view returns (PairValidation memory result) {
+        if (pairContract == ZERO_ADDRESS || pairContract.code.length == 0) {
+            return result;
+        }
+
+        address token0 = _safeAddress(pairContract, IUniswapV2PairView.token0.selector);
+        address token1 = _safeAddress(pairContract, IUniswapV2PairView.token1.selector);
+        if (token0 == ZERO_ADDRESS || token1 == ZERO_ADDRESS || token0 == token1) {
+            return result;
+        }
+        if (_pairFor(token0, token1) != pairContract) {
+            return result;
+        }
+
+        result.isValidPancakePair = true;
+        result.token0 = token0;
+        result.token1 = token1;
     }
 
     function _buildGenesisWalletAssetStates(address tokenContract, address[] calldata wallets)

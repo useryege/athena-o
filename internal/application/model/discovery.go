@@ -25,6 +25,12 @@ type TokenValidation struct {
 	UsdtPair     common.Address
 }
 
+type PairValidation struct {
+	IsValidPancakePair bool
+	Token0             common.Address
+	Token1             common.Address
+}
+
 type ProjectDiscoverySource string
 
 const (
