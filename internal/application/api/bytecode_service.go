@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	applicationpkg "github.com/useryege/athena/internal/application/apiclient"
 	appstore "github.com/useryege/athena/internal/application/store"
@@ -247,7 +246,7 @@ func (s *Service) resolveContractBytecode(ctx context.Context, chainID int64, co
 		return common.Hash{}, status.Errorf(codes.FailedPrecondition, "contract %s has empty runtime bytecode", contract.Hex())
 	}
 	codeHash := crypto.Keccak256Hash(code)
-	if err := s.store.UpsertBytecode(ctx, codeHash, code); err != nil {
+	if err := s.store.UpsertBytecode(ctx, codeHash); err != nil {
 		return common.Hash{}, err
 	}
 	if err := s.store.UpsertContractBytecodeDeployment(ctx, appstore.ContractBytecodeDeployment{
@@ -394,7 +393,6 @@ func bytecodeToContractSourceInfo(chainID int64, contract common.Address, item a
 func bytecodeListRecordToAPI(item appstore.BytecodeListRecord) *v1alpha1.BytecodeListItem {
 	return &v1alpha1.BytecodeListItem{
 		CodeHash:              item.CodeHash.Hex(),
-		RuntimeBytecodeSize:   item.RuntimeBytecodeSize,
 		DeploymentCount:       item.DeploymentCount,
 		IsOpenSource:          item.IsOpenSource,
 		IsBytecodeBlacklisted: item.IsBytecodeBlacklisted,
@@ -406,13 +404,11 @@ func bytecodeListRecordToAPI(item appstore.BytecodeListRecord) *v1alpha1.Bytecod
 func bytecodeDetailRecordToAPI(item appstore.BytecodeDetailRecord) *v1alpha1.BytecodeDetail {
 	return &v1alpha1.BytecodeDetail{
 		CodeHash:              item.CodeHash.Hex(),
-		RuntimeBytecodeSize:   item.RuntimeBytecodeSize,
 		DeploymentCount:       item.DeploymentCount,
 		IsOpenSource:          strings.TrimSpace(item.SourceCode) != "",
 		IsBytecodeBlacklisted: item.IsBytecodeBlacklisted,
 		CreatedAt:             formatTime(item.CreatedAt),
 		UpdatedAt:             formatTime(item.UpdatedAt),
-		RuntimeBytecode:       hexutil.Encode(item.RuntimeBytecode),
 		SourceCode:            item.SourceCode,
 		SourceCodeHash:        hashHex(item.SourceCodeHash),
 		SourceCodeFetchedAt:   formatTime(item.SourceCodeFetchedAt),

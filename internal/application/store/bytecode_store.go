@@ -21,7 +21,6 @@ var (
 
 type Bytecode struct {
 	CodeHash            common.Hash
-	RuntimeBytecode     []byte
 	SourceCode          string
 	SourceCodeHash      common.Hash
 	SourceCodeFetchedAt time.Time
@@ -48,7 +47,6 @@ type BytecodeBlacklistEntry struct {
 
 type BytecodeListRecord struct {
 	CodeHash              common.Hash
-	RuntimeBytecodeSize   int64
 	DeploymentCount       int64
 	IsOpenSource          bool
 	IsBytecodeBlacklisted bool
@@ -59,7 +57,6 @@ type BytecodeListRecord struct {
 
 type BytecodeDetailRecord struct {
 	Bytecode
-	RuntimeBytecodeSize   int64
 	DeploymentCount       int64
 	IsBytecodeBlacklisted bool
 }
@@ -69,14 +66,11 @@ type BytecodeDeploymentRecord struct {
 	Total int64
 }
 
-func (s *SQLStore) UpsertBytecode(ctx context.Context, codeHash common.Hash, runtimeBytecode []byte) error {
+func (s *SQLStore) UpsertBytecode(ctx context.Context, codeHash common.Hash) error {
 	if s.queries == nil {
 		return fmt.Errorf("application postgres database is not configured")
 	}
-	err := s.queries.UpsertBytecode(ctx, appsqlc.UpsertBytecodeParams{
-		CodeHash:        codeHash.Bytes(),
-		RuntimeBytecode: runtimeBytecode,
-	})
+	err := s.queries.UpsertBytecode(ctx, codeHash.Bytes())
 	if err != nil {
 		return fmt.Errorf("upsert bytecode: %w", err)
 	}
@@ -291,7 +285,6 @@ func (s *SQLStore) GetBytecodeBlacklistEntry(ctx context.Context, codeHash commo
 func bytecodeFromSQLC(row appsqlc.Bytecode) Bytecode {
 	return Bytecode{
 		CodeHash:            common.BytesToHash(row.CodeHash),
-		RuntimeBytecode:     row.RuntimeBytecode,
 		SourceCode:          row.SourceCode.String,
 		SourceCodeHash:      common.BytesToHash(row.SourceCodeHash),
 		SourceCodeFetchedAt: timestamptzTime(row.SourceCodeFetchedAt),
@@ -304,7 +297,6 @@ func bytecodeFromSQLC(row appsqlc.Bytecode) Bytecode {
 func bytecodeListRecordFromSQLC(row appsqlc.ListBytecodesRow) BytecodeListRecord {
 	return BytecodeListRecord{
 		CodeHash:              common.BytesToHash(row.CodeHash),
-		RuntimeBytecodeSize:   row.RuntimeBytecodeSize,
 		DeploymentCount:       row.DeploymentCount,
 		IsOpenSource:          row.IsOpenSource,
 		IsBytecodeBlacklisted: row.IsBytecodeBlacklisted,
@@ -318,7 +310,6 @@ func bytecodeDetailRecordFromSQLC(row appsqlc.GetBytecodeDetailRow) BytecodeDeta
 	return BytecodeDetailRecord{
 		Bytecode: Bytecode{
 			CodeHash:            common.BytesToHash(row.CodeHash),
-			RuntimeBytecode:     row.RuntimeBytecode,
 			SourceCode:          row.SourceCode.String,
 			SourceCodeHash:      common.BytesToHash(row.SourceCodeHash),
 			SourceCodeFetchedAt: timestamptzTime(row.SourceCodeFetchedAt),
@@ -326,7 +317,6 @@ func bytecodeDetailRecordFromSQLC(row appsqlc.GetBytecodeDetailRow) BytecodeDeta
 			CreatedAt:           timestamptzTime(row.CreatedAt),
 			UpdatedAt:           timestamptzTime(row.UpdatedAt),
 		},
-		RuntimeBytecodeSize:   row.RuntimeBytecodeSize,
 		DeploymentCount:       row.DeploymentCount,
 		IsBytecodeBlacklisted: row.IsBytecodeBlacklisted,
 	}

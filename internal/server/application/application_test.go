@@ -67,8 +67,7 @@ func (f *fakeApplicationServiceClient) ListBytecodes(_ context.Context, req *app
 	f.listBytecodesReq = req
 	return &applicationapiclient.ListBytecodesResponse{
 		Items: []*v1alpha1.BytecodeListItem{{
-			CodeHash:            "0x1111111111111111111111111111111111111111111111111111111111111111",
-			RuntimeBytecodeSize: 2,
+			CodeHash: "0x1111111111111111111111111111111111111111111111111111111111111111",
 		}},
 		Total:    1,
 		Page:     req.GetPage(),

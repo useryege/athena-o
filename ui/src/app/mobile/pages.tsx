@@ -481,7 +481,6 @@ export const BytecodesPage = () => {
     const columns: ColumnsType<BytecodeListItem> = [
         {title: 'Code Hash', render: item => <Link to={`/application/bytecodes/${encodeURIComponent(item.codeHash || '')}`}>{short(item.codeHash)}</Link>},
         {title: 'Deployments', dataIndex: 'deploymentCount'},
-        {title: 'Runtime Size', dataIndex: 'runtimeBytecodeSize'},
         {title: 'Open Source', render: item => boolTag(item.isOpenSource)},
         {title: 'Blacklisted', render: item => dangerTag(item.isBytecodeBlacklisted)}
     ];
@@ -511,7 +510,6 @@ export const BytecodesPage = () => {
                         <MetricRow
                             items={[
                                 {label: 'Deployments', value: item.deploymentCount},
-                                {label: 'Size', value: item.runtimeBytecodeSize},
                                 {label: 'Open Source', value: fmt(item.isOpenSource)}
                             ]}
                         />
@@ -544,7 +542,6 @@ export const BytecodeDetailPage = () => {
                 <KeyValueGrid
                     items={[
                         {label: 'Code Hash', value: <TruncatedText value={decoded} copyable={true} />},
-                        {label: 'Runtime Size', value: detail.data?.bytecode.runtimeBytecodeSize},
                         {label: 'Open Source', value: boolTag(detail.data?.bytecode.isOpenSource)},
                         {label: 'Blacklisted', value: dangerTag(detail.data?.bytecode.isBytecodeBlacklisted)}
                     ]}
@@ -564,7 +561,6 @@ export const BytecodeDetailPage = () => {
                             />
                         )
                     },
-                    {key: 'runtime', label: 'Runtime', children: <pre className='code-block'>{detail.data?.bytecode.runtimeBytecode || 'No runtime bytecode available'}</pre>},
                     {key: 'source', label: 'Source', children: <pre className='code-block'>{detail.data?.bytecode.sourceCode || 'No source available'}</pre>},
                     {key: 'report', label: 'Report', children: <pre className='code-block'>{detail.data?.bytecode.sourceQualityReport || 'No report available'}</pre>}
                 ]}

@@ -169,14 +169,12 @@ func bytecodeDetailRecord(codeHash common.Hash, createdAt, updatedAt time.Time) 
 	return appstore.BytecodeDetailRecord{
 		Bytecode: appstore.Bytecode{
 			CodeHash:            codeHash,
-			RuntimeBytecode:     []byte{0x60, 0x00},
 			SourceCode:          "contract C {}",
 			SourceCodeFetchedAt: updatedAt,
 			SourceCodeOrigin:    "third_party_api",
 			CreatedAt:           createdAt,
 			UpdatedAt:           updatedAt,
 		},
-		RuntimeBytecodeSize:   2,
 		DeploymentCount:       1,
 		IsBytecodeBlacklisted: false,
 	}

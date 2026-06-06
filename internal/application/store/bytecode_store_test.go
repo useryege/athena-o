@@ -16,7 +16,7 @@ import (
 type fakeApplicationQuerier struct {
 	appsqlc.Querier
 
-	upsertBytecodeParams     appsqlc.UpsertBytecodeParams
+	upsertBytecodeHash       []byte
 	listBytecodesParams      appsqlc.ListBytecodesParams
 	listDeploymentsParams    appsqlc.ListBytecodeDeploymentsParams
 	addBlacklistParams       appsqlc.AddBytecodeBlacklistEntryParams
@@ -89,8 +89,8 @@ func (f *fakeApplicationQuerier) UpdateBytecodeSourceCode(_ context.Context, arg
 	f.updateSourceCodeParams = arg
 	return nil
 }
-func (f *fakeApplicationQuerier) UpsertBytecode(_ context.Context, arg appsqlc.UpsertBytecodeParams) error {
-	f.upsertBytecodeParams = arg
+func (f *fakeApplicationQuerier) UpsertBytecode(_ context.Context, codeHash []byte) error {
+	f.upsertBytecodeHash = codeHash
 	return nil
 }
 func (f *fakeApplicationQuerier) UpsertContractBytecodeDeployment(context.Context, appsqlc.UpsertContractBytecodeDeploymentParams) error {
@@ -100,13 +100,12 @@ func (f *fakeApplicationQuerier) UpsertContractBytecodeDeployment(context.Contex
 func TestUpsertBytecodeUsesQuerier(t *testing.T) {
 	querier := &fakeApplicationQuerier{}
 	codeHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
-	runtimeBytecode := []byte{0x60, 0x00}
 
-	if err := NewSQLStoreWithQuerier(querier).UpsertBytecode(context.Background(), codeHash, runtimeBytecode); err != nil {
+	if err := NewSQLStoreWithQuerier(querier).UpsertBytecode(context.Background(), codeHash); err != nil {
 		t.Fatalf("upsert bytecode: %v", err)
 	}
-	if common.BytesToHash(querier.upsertBytecodeParams.CodeHash) != codeHash || string(querier.upsertBytecodeParams.RuntimeBytecode) != string(runtimeBytecode) {
-		t.Fatalf("params = %#v, want code hash/runtime bytecode", querier.upsertBytecodeParams)
+	if common.BytesToHash(querier.upsertBytecodeHash) != codeHash {
+		t.Fatalf("code hash = %x, want %s", querier.upsertBytecodeHash, codeHash.Hex())
 	}
 }
 
@@ -117,7 +116,6 @@ func TestListBytecodesReturnsItemsAndTotal(t *testing.T) {
 	querier := &fakeApplicationQuerier{
 		listBytecodesResult: []appsqlc.ListBytecodesRow{{
 			CodeHash:              codeHash.Bytes(),
-			RuntimeBytecodeSize:   2,
 			DeploymentCount:       3,
 			IsOpenSource:          true,
 			IsBytecodeBlacklisted: false,

@@ -1,9 +1,8 @@
 -- name: UpsertBytecode :exec
-INSERT INTO bytecode (code_hash, runtime_bytecode)
-VALUES ($1, $2)
+INSERT INTO bytecode (code_hash)
+VALUES ($1)
 ON CONFLICT (code_hash) DO UPDATE
-SET runtime_bytecode = EXCLUDED.runtime_bytecode,
-  updated_at = now();
+SET updated_at = now();
 
 -- name: UpsertContractBytecodeDeployment :exec
 INSERT INTO contract_bytecode_deployment (chain_id, contract, code_hash)
@@ -13,7 +12,7 @@ SET code_hash = EXCLUDED.code_hash,
   updated_at = now();
 
 -- name: GetBytecode :one
-SELECT code_hash, runtime_bytecode, source_code, source_code_hash, source_code_fetched_at,
+SELECT code_hash, source_code, source_code_hash, source_code_fetched_at,
   source_code_origin, created_at, updated_at
 FROM bytecode
 WHERE code_hash = $1;
@@ -35,7 +34,6 @@ WITH deployment_counts AS (
 ),
 filtered AS (
   SELECT b.code_hash,
-    length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
     COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
     COALESCE(btrim(b.source_code), '') <> '' AS is_open_source,
     (bl.code_hash IS NOT NULL)::boolean AS is_bytecode_blacklisted,
@@ -46,7 +44,7 @@ filtered AS (
   LEFT JOIN bytecode_blacklist bl ON bl.code_hash = b.code_hash
   WHERE (sqlc.narg('code_hash')::bytea IS NULL OR b.code_hash = sqlc.narg('code_hash')::bytea)
 )
-SELECT code_hash, runtime_bytecode_size, deployment_count, is_open_source,
+SELECT code_hash, deployment_count, is_open_source,
   is_bytecode_blacklisted, created_at, updated_at, COUNT(*) OVER()::bigint AS total
 FROM filtered
 ORDER BY updated_at DESC, code_hash
@@ -59,9 +57,8 @@ WITH deployment_counts AS (
   WHERE code_hash = $1
   GROUP BY code_hash
 )
-SELECT b.code_hash, b.runtime_bytecode, b.source_code, b.source_code_hash, b.source_code_fetched_at,
+SELECT b.code_hash, b.source_code, b.source_code_hash, b.source_code_fetched_at,
   b.source_code_origin, b.created_at, b.updated_at,
-  length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
   COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
   (bl.code_hash IS NOT NULL)::boolean AS is_bytecode_blacklisted
 FROM bytecode b

@@ -250,11 +250,6 @@ func (m *BytecodeDetail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCode)))
 	i--
 	dAtA[i] = 0x4a
-	i -= len(m.RuntimeBytecode)
-	copy(dAtA[i:], m.RuntimeBytecode)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.RuntimeBytecode)))
-	i--
-	dAtA[i] = 0x42
 	i -= len(m.UpdatedAt)
 	copy(dAtA[i:], m.UpdatedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UpdatedAt)))
@@ -284,9 +279,6 @@ func (m *BytecodeDetail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintGenerated(dAtA, i, uint64(m.DeploymentCount))
 	i--
 	dAtA[i] = 0x18
-	i = encodeVarintGenerated(dAtA, i, uint64(m.RuntimeBytecodeSize))
-	i--
-	dAtA[i] = 0x10
 	i -= len(m.CodeHash)
 	copy(dAtA[i:], m.CodeHash)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CodeHash)))
@@ -344,9 +336,6 @@ func (m *BytecodeListItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintGenerated(dAtA, i, uint64(m.DeploymentCount))
 	i--
 	dAtA[i] = 0x18
-	i = encodeVarintGenerated(dAtA, i, uint64(m.RuntimeBytecodeSize))
-	i--
-	dAtA[i] = 0x10
 	i -= len(m.CodeHash)
 	copy(dAtA[i:], m.CodeHash)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CodeHash)))
@@ -2456,15 +2445,12 @@ func (m *BytecodeDetail) Size() (n int) {
 	_ = l
 	l = len(m.CodeHash)
 	n += 1 + l + sovGenerated(uint64(l))
-	n += 1 + sovGenerated(uint64(m.RuntimeBytecodeSize))
 	n += 1 + sovGenerated(uint64(m.DeploymentCount))
 	n += 2
 	n += 2
 	l = len(m.CreatedAt)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.UpdatedAt)
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.RuntimeBytecode)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.SourceCode)
 	n += 1 + l + sovGenerated(uint64(l))
@@ -2485,7 +2471,6 @@ func (m *BytecodeListItem) Size() (n int) {
 	_ = l
 	l = len(m.CodeHash)
 	n += 1 + l + sovGenerated(uint64(l))
-	n += 1 + sovGenerated(uint64(m.RuntimeBytecodeSize))
 	n += 1 + sovGenerated(uint64(m.DeploymentCount))
 	n += 2
 	n += 2
@@ -3300,13 +3285,11 @@ func (this *BytecodeDetail) String() string {
 	}
 	s := strings.Join([]string{`&BytecodeDetail{`,
 		`CodeHash:` + fmt.Sprintf("%v", this.CodeHash) + `,`,
-		`RuntimeBytecodeSize:` + fmt.Sprintf("%v", this.RuntimeBytecodeSize) + `,`,
 		`DeploymentCount:` + fmt.Sprintf("%v", this.DeploymentCount) + `,`,
 		`IsOpenSource:` + fmt.Sprintf("%v", this.IsOpenSource) + `,`,
 		`IsBytecodeBlacklisted:` + fmt.Sprintf("%v", this.IsBytecodeBlacklisted) + `,`,
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
 		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
-		`RuntimeBytecode:` + fmt.Sprintf("%v", this.RuntimeBytecode) + `,`,
 		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
 		`SourceCodeHash:` + fmt.Sprintf("%v", this.SourceCodeHash) + `,`,
 		`SourceCodeFetchedAt:` + fmt.Sprintf("%v", this.SourceCodeFetchedAt) + `,`,
@@ -3321,7 +3304,6 @@ func (this *BytecodeListItem) String() string {
 	}
 	s := strings.Join([]string{`&BytecodeListItem{`,
 		`CodeHash:` + fmt.Sprintf("%v", this.CodeHash) + `,`,
-		`RuntimeBytecodeSize:` + fmt.Sprintf("%v", this.RuntimeBytecodeSize) + `,`,
 		`DeploymentCount:` + fmt.Sprintf("%v", this.DeploymentCount) + `,`,
 		`IsOpenSource:` + fmt.Sprintf("%v", this.IsOpenSource) + `,`,
 		`IsBytecodeBlacklisted:` + fmt.Sprintf("%v", this.IsBytecodeBlacklisted) + `,`,
@@ -4454,25 +4436,6 @@ func (m *BytecodeDetail) Unmarshal(dAtA []byte) error {
 			}
 			m.CodeHash = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RuntimeBytecodeSize", wireType)
-			}
-			m.RuntimeBytecodeSize = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.RuntimeBytecodeSize |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		case 3:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentCount", wireType)
@@ -4595,38 +4558,6 @@ func (m *BytecodeDetail) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdatedAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RuntimeBytecode", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RuntimeBytecode = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 9:
 			if wireType != 2 {
@@ -4838,25 +4769,6 @@ func (m *BytecodeListItem) Unmarshal(dAtA []byte) error {
 			}
 			m.CodeHash = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RuntimeBytecodeSize", wireType)
-			}
-			m.RuntimeBytecodeSize = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.RuntimeBytecodeSize |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		case 3:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentCount", wireType)

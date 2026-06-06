@@ -365,7 +365,6 @@ CREATE INDEX IF NOT EXISTS project_genesis_wallet_wallet_ratio_idx
 
 CREATE TABLE IF NOT EXISTS bytecode (
   code_hash BYTEA PRIMARY KEY,
-  runtime_bytecode BYTEA NOT NULL,
   source_code TEXT,
   source_code_hash BYTEA,
   source_code_fetched_at TIMESTAMPTZ,
@@ -373,7 +372,6 @@ CREATE TABLE IF NOT EXISTS bytecode (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT bytecode_code_hash_len CHECK (length(code_hash) = 32),
-  CONSTRAINT bytecode_runtime_bytecode_not_empty CHECK (length(runtime_bytecode) > 0),
   CONSTRAINT bytecode_source_code_hash_len CHECK (source_code_hash IS NULL OR length(source_code_hash) = 32)
 );
 

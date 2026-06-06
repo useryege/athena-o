@@ -22,7 +22,6 @@ type BytecodeBlacklistEntry struct {
 
 type BytecodeListItem struct {
 	CodeHash              string `protobuf:"bytes,1,opt,name=codeHash" json:"codeHash"`
-	RuntimeBytecodeSize   int64  `protobuf:"varint,2,opt,name=runtimeBytecodeSize" json:"runtimeBytecodeSize"`
 	DeploymentCount       int64  `protobuf:"varint,3,opt,name=deploymentCount" json:"deploymentCount"`
 	IsOpenSource          bool   `protobuf:"varint,4,opt,name=isOpenSource" json:"isOpenSource"`
 	IsBytecodeBlacklisted bool   `protobuf:"varint,5,opt,name=isBytecodeBlacklisted" json:"isBytecodeBlacklisted"`
@@ -32,13 +31,11 @@ type BytecodeListItem struct {
 
 type BytecodeDetail struct {
 	CodeHash              string `protobuf:"bytes,1,opt,name=codeHash" json:"codeHash"`
-	RuntimeBytecodeSize   int64  `protobuf:"varint,2,opt,name=runtimeBytecodeSize" json:"runtimeBytecodeSize"`
 	DeploymentCount       int64  `protobuf:"varint,3,opt,name=deploymentCount" json:"deploymentCount"`
 	IsOpenSource          bool   `protobuf:"varint,4,opt,name=isOpenSource" json:"isOpenSource"`
 	IsBytecodeBlacklisted bool   `protobuf:"varint,5,opt,name=isBytecodeBlacklisted" json:"isBytecodeBlacklisted"`
 	CreatedAt             string `protobuf:"bytes,6,opt,name=createdAt" json:"createdAt"`
 	UpdatedAt             string `protobuf:"bytes,7,opt,name=updatedAt" json:"updatedAt"`
-	RuntimeBytecode       string `protobuf:"bytes,8,opt,name=runtimeBytecode" json:"runtimeBytecode"`
 	SourceCode            string `protobuf:"bytes,9,opt,name=sourceCode" json:"sourceCode"`
 	SourceCodeHash        string `protobuf:"bytes,10,opt,name=sourceCodeHash" json:"sourceCodeHash"`
 	SourceCodeFetchedAt   string `protobuf:"bytes,11,opt,name=sourceCodeFetchedAt" json:"sourceCodeFetchedAt"`

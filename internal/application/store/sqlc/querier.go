@@ -76,7 +76,7 @@ type Querier interface {
 	UpdateBytecodeBlacklistNote(ctx context.Context, arg UpdateBytecodeBlacklistNoteParams) (int64, error)
 	UpdateBytecodeSourceCode(ctx context.Context, arg UpdateBytecodeSourceCodeParams) error
 	UpdateWalletBlacklistEntryNote(ctx context.Context, arg UpdateWalletBlacklistEntryNoteParams) (int64, error)
-	UpsertBytecode(ctx context.Context, arg UpsertBytecodeParams) error
+	UpsertBytecode(ctx context.Context, codeHash []byte) error
 	UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertChainIngestCheckpointParams) (ChainIngestCheckpoint, error)
 	UpsertContractBytecodeDeployment(ctx context.Context, arg UpsertContractBytecodeDeploymentParams) error
 	UpsertProjectAveTokenDetail(ctx context.Context, arg UpsertProjectAveTokenDetailParams) error

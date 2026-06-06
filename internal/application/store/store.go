@@ -253,7 +253,7 @@ type ProjectCreatorHistoricalProjectStore interface {
 }
 
 type BytecodeStore interface {
-	UpsertBytecode(ctx context.Context, codeHash common.Hash, runtimeBytecode []byte) error
+	UpsertBytecode(ctx context.Context, codeHash common.Hash) error
 	UpsertContractBytecodeDeployment(ctx context.Context, item ContractBytecodeDeployment) error
 	GetBytecode(ctx context.Context, codeHash common.Hash) (*Bytecode, error)
 	UpdateBytecodeSourceCode(ctx context.Context, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, origin string) error

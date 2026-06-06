@@ -47,7 +47,7 @@ func (q *Queries) DeleteBytecodeBlacklist(ctx context.Context, codeHash []byte) 
 }
 
 const getBytecode = `-- name: GetBytecode :one
-SELECT code_hash, runtime_bytecode, source_code, source_code_hash, source_code_fetched_at,
+SELECT code_hash, source_code, source_code_hash, source_code_fetched_at,
   source_code_origin, created_at, updated_at
 FROM bytecode
 WHERE code_hash = $1
@@ -58,7 +58,6 @@ func (q *Queries) GetBytecode(ctx context.Context, codeHash []byte) (Bytecode, e
 	var i Bytecode
 	err := row.Scan(
 		&i.CodeHash,
-		&i.RuntimeBytecode,
 		&i.SourceCode,
 		&i.SourceCodeHash,
 		&i.SourceCodeFetchedAt,
@@ -95,9 +94,8 @@ WITH deployment_counts AS (
   WHERE code_hash = $1
   GROUP BY code_hash
 )
-SELECT b.code_hash, b.runtime_bytecode, b.source_code, b.source_code_hash, b.source_code_fetched_at,
+SELECT b.code_hash, b.source_code, b.source_code_hash, b.source_code_fetched_at,
   b.source_code_origin, b.created_at, b.updated_at,
-  length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
   COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
   (bl.code_hash IS NOT NULL)::boolean AS is_bytecode_blacklisted
 FROM bytecode b
@@ -108,14 +106,12 @@ WHERE b.code_hash = $1
 
 type GetBytecodeDetailRow struct {
 	CodeHash              []byte
-	RuntimeBytecode       []byte
 	SourceCode            pgtype.Text
 	SourceCodeHash        []byte
 	SourceCodeFetchedAt   pgtype.Timestamptz
 	SourceCodeOrigin      pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 	UpdatedAt             pgtype.Timestamptz
-	RuntimeBytecodeSize   int64
 	DeploymentCount       int64
 	IsBytecodeBlacklisted bool
 }
@@ -125,14 +121,12 @@ func (q *Queries) GetBytecodeDetail(ctx context.Context, codeHash []byte) (GetBy
 	var i GetBytecodeDetailRow
 	err := row.Scan(
 		&i.CodeHash,
-		&i.RuntimeBytecode,
 		&i.SourceCode,
 		&i.SourceCodeHash,
 		&i.SourceCodeFetchedAt,
 		&i.SourceCodeOrigin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.RuntimeBytecodeSize,
 		&i.DeploymentCount,
 		&i.IsBytecodeBlacklisted,
 	)
@@ -250,7 +244,6 @@ WITH deployment_counts AS (
 ),
 filtered AS (
   SELECT b.code_hash,
-    length(b.runtime_bytecode)::bigint AS runtime_bytecode_size,
     COALESCE(dc.deployment_count, 0)::bigint AS deployment_count,
     COALESCE(btrim(b.source_code), '') <> '' AS is_open_source,
     (bl.code_hash IS NOT NULL)::boolean AS is_bytecode_blacklisted,
@@ -261,7 +254,7 @@ filtered AS (
   LEFT JOIN bytecode_blacklist bl ON bl.code_hash = b.code_hash
   WHERE ($3::bytea IS NULL OR b.code_hash = $3::bytea)
 )
-SELECT code_hash, runtime_bytecode_size, deployment_count, is_open_source,
+SELECT code_hash, deployment_count, is_open_source,
   is_bytecode_blacklisted, created_at, updated_at, COUNT(*) OVER()::bigint AS total
 FROM filtered
 ORDER BY updated_at DESC, code_hash
@@ -276,7 +269,6 @@ type ListBytecodesParams struct {
 
 type ListBytecodesRow struct {
 	CodeHash              []byte
-	RuntimeBytecodeSize   int64
 	DeploymentCount       int64
 	IsOpenSource          bool
 	IsBytecodeBlacklisted bool
@@ -296,7 +288,6 @@ func (q *Queries) ListBytecodes(ctx context.Context, arg ListBytecodesParams) ([
 		var i ListBytecodesRow
 		if err := rows.Scan(
 			&i.CodeHash,
-			&i.RuntimeBytecodeSize,
 			&i.DeploymentCount,
 			&i.IsOpenSource,
 			&i.IsBytecodeBlacklisted,
@@ -361,20 +352,14 @@ func (q *Queries) UpdateBytecodeSourceCode(ctx context.Context, arg UpdateByteco
 }
 
 const upsertBytecode = `-- name: UpsertBytecode :exec
-INSERT INTO bytecode (code_hash, runtime_bytecode)
-VALUES ($1, $2)
+INSERT INTO bytecode (code_hash)
+VALUES ($1)
 ON CONFLICT (code_hash) DO UPDATE
-SET runtime_bytecode = EXCLUDED.runtime_bytecode,
-  updated_at = now()
+SET updated_at = now()
 `
 
-type UpsertBytecodeParams struct {
-	CodeHash        []byte
-	RuntimeBytecode []byte
-}
-
-func (q *Queries) UpsertBytecode(ctx context.Context, arg UpsertBytecodeParams) error {
-	_, err := q.db.Exec(ctx, upsertBytecode, arg.CodeHash, arg.RuntimeBytecode)
+func (q *Queries) UpsertBytecode(ctx context.Context, codeHash []byte) error {
+	_, err := q.db.Exec(ctx, upsertBytecode, codeHash)
 	return err
 }
 

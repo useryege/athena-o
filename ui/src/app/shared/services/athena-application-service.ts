@@ -54,7 +54,6 @@ export interface WalletBlacklistEntry {
 
 export interface BytecodeListItem {
     codeHash?: string;
-    runtimeBytecodeSize?: number;
     deploymentCount?: number;
     isOpenSource?: boolean;
     isBytecodeBlacklisted?: boolean;
@@ -63,7 +62,6 @@ export interface BytecodeListItem {
 }
 
 export interface BytecodeDetail extends BytecodeListItem {
-    runtimeBytecode?: string;
     sourceCode?: string;
     sourceCodeHash?: string;
     sourceCodeFetchedAt?: string;
@@ -148,7 +146,6 @@ function normalizeWalletBlacklistEntry(item: WalletBlacklistEntry | any): Wallet
 function normalizeBytecode(item: BytecodeListItem | any): BytecodeListItem {
     return {
         codeHash: item.codeHash ?? item.code_hash,
-        runtimeBytecodeSize: item.runtimeBytecodeSize ?? item.runtime_bytecode_size,
         deploymentCount: item.deploymentCount ?? item.deployment_count,
         isOpenSource: item.isOpenSource ?? item.is_open_source,
         isBytecodeBlacklisted: item.isBytecodeBlacklisted ?? item.is_bytecode_blacklisted,
@@ -160,7 +157,6 @@ function normalizeBytecode(item: BytecodeListItem | any): BytecodeListItem {
 function normalizeBytecodeDetail(item: BytecodeDetail | any): BytecodeDetail {
     return {
         ...normalizeBytecode(item),
-        runtimeBytecode: item.runtimeBytecode ?? item.runtime_bytecode,
         sourceCode: item.sourceCode ?? item.source_code,
         sourceCodeHash: item.sourceCodeHash ?? item.source_code_hash,
         sourceCodeFetchedAt: item.sourceCodeFetchedAt ?? item.source_code_fetched_at,

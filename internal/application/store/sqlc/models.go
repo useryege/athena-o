@@ -10,7 +10,6 @@ import (
 
 type Bytecode struct {
 	CodeHash            []byte
-	RuntimeBytecode     []byte
 	SourceCode          pgtype.Text
 	SourceCodeHash      []byte
 	SourceCodeFetchedAt pgtype.Timestamptz

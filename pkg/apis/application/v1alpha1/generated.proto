@@ -41,8 +41,6 @@ message BytecodeDeployment {
 message BytecodeDetail {
   optional string codeHash = 1;
 
-  optional int64 runtimeBytecodeSize = 2;
-
   optional int64 deploymentCount = 3;
 
   optional bool isOpenSource = 4;
@@ -52,8 +50,6 @@ message BytecodeDetail {
   optional string createdAt = 6;
 
   optional string updatedAt = 7;
-
-  optional string runtimeBytecode = 8;
 
   optional string sourceCode = 9;
 
@@ -66,8 +62,6 @@ message BytecodeDetail {
 
 message BytecodeListItem {
   optional string codeHash = 1;
-
-  optional int64 runtimeBytecodeSize = 2;
 
   optional int64 deploymentCount = 3;
 
