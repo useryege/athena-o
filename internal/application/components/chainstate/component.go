@@ -2,7 +2,6 @@ package chainstate
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -62,12 +61,6 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 	snapshot, err := c.fetcher.FetchProject(ctx, appcomponents.ProjectQuery(*base, nil))
 	if err != nil {
 		return err
-	}
-	if snapshot.TokenContract != (common.Address{}) && snapshot.TokenContract != contract {
-		return fmt.Errorf("athena project token contract = %s, want %s", snapshot.TokenContract.Hex(), contract.Hex())
-	}
-	if !snapshot.Token.IsValidERC20 {
-		return fmt.Errorf("project token is not a valid ERC20")
 	}
 	item, err := appcomponents.ChainStateFromSnapshot(chainID, contract, snapshot, nowUTC())
 	if err != nil {
