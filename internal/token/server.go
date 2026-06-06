@@ -39,6 +39,8 @@ type ServerOpts struct {
 	BSCNodeWSURL      string
 	EthAthenaContract string
 	BSCAthenaContract string
+	EthEnabled        bool
+	BSCEnabled        bool
 	NodeWSUseProxy    bool
 }
 
@@ -94,6 +96,8 @@ func (s *Server) Start(ctx context.Context) error {
 			Store:          store,
 			EthNodeWSURL:   s.EthNodeWSURL,
 			BSCNodeWSURL:   s.BSCNodeWSURL,
+			EthEnabled:     s.EthEnabled,
+			BSCEnabled:     s.BSCEnabled,
 			NodeWSUseProxy: s.NodeWSUseProxy,
 		})
 		if err := s.chainWorker.Start(ctx); err != nil {
@@ -115,6 +119,8 @@ func (s *Server) Start(ctx context.Context) error {
 			BSCNodeWSURL:      s.BSCNodeWSURL,
 			EthAthenaContract: s.EthAthenaContract,
 			BSCAthenaContract: s.BSCAthenaContract,
+			EthEnabled:        s.EthEnabled,
+			BSCEnabled:        s.BSCEnabled,
 			NodeWSUseProxy:    s.NodeWSUseProxy,
 		})
 		if err := s.qualifier.Start(ctx); err != nil {

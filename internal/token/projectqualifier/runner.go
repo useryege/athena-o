@@ -17,6 +17,7 @@ import (
 
 type qualifierRunnerOptions struct {
 	store           *tokenstore.SQLStore
+	chainIDs        []int64
 	nodeWSURLs      map[int64]string
 	athenaContracts map[int64]ethcommon.Address
 	nodeWSUseProxy  bool
@@ -56,24 +57,32 @@ func (r *qualifierRunner) run(ctx context.Context) {
 }
 
 func (r *qualifierRunner) processPendingCandidates(ctx context.Context) error {
-	candidates, err := r.opts.store.ListProjectCandidatesByStatus(ctx, tokenstore.ProjectCandidateStatusPending, r.opts.candidateLimit)
-	if err != nil {
-		return err
-	}
-	if len(candidates) == 0 {
-		log.Debug("token project qualifier has no pending candidates")
+	if len(r.opts.chainIDs) == 0 {
+		log.Debug("token project qualifier has no enabled chains")
 		return nil
 	}
-	candidatesByChain := groupCandidatesByChain(candidates)
-	for chainID, chainCandidates := range candidatesByChain {
+	totalCandidates := 0
+	for _, chainID := range r.opts.chainIDs {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if err := r.processChainCandidates(ctx, chainID, chainCandidates); err != nil {
+		page, err := r.opts.store.ListProjectCandidates(ctx, chainID, tokenstore.ProjectCandidateStatusPending, 1, r.opts.candidateLimit)
+		if err != nil {
+			return err
+		}
+		if len(page.Items) == 0 {
+			continue
+		}
+		totalCandidates += len(page.Items)
+		if err := r.processChainCandidates(ctx, chainID, page.Items); err != nil {
 			return err
 		}
 	}
-	log.WithField("candidate_count", len(candidates)).Debug("token project qualifier processed candidate batch")
+	if totalCandidates == 0 {
+		log.Debug("token project qualifier has no pending candidates")
+		return nil
+	}
+	log.WithField("candidate_count", totalCandidates).Debug("token project qualifier processed candidate batch")
 	return nil
 }
 
@@ -236,14 +245,6 @@ func (r *qualifierRunner) close() {
 	for chainID := range r.validators {
 		delete(r.validators, chainID)
 	}
-}
-
-func groupCandidatesByChain(candidates []tokenstore.ProjectCandidate) map[int64][]tokenstore.ProjectCandidate {
-	items := make(map[int64][]tokenstore.ProjectCandidate)
-	for _, candidate := range candidates {
-		items[candidate.ChainID] = append(items[candidate.ChainID], candidate)
-	}
-	return items
 }
 
 func sleepContext(ctx context.Context, interval time.Duration) bool {

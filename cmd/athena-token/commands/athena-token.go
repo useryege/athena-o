@@ -35,6 +35,8 @@ func NewCommand() *cobra.Command {
 		bscNodeWSURL      string
 		ethAthenaContract string
 		bscAthenaContract string
+		ethEnabled        bool
+		bscEnabled        bool
 		nodeWSUseProxy    bool
 	)
 
@@ -65,6 +67,8 @@ func NewCommand() *cobra.Command {
 				BSCNodeWSURL:      bscNodeWSURL,
 				EthAthenaContract: ethAthenaContract,
 				BSCAthenaContract: bscAthenaContract,
+				EthEnabled:        ethEnabled,
+				BSCEnabled:        bscEnabled,
 				NodeWSUseProxy:    nodeWSUseProxy,
 			})
 			if err != nil {
@@ -108,6 +112,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&bscNodeWSURL, "bsc-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_BSC_NODE_WS_URL", ""), "BSC Mainnet node WebSocket address for worker modes")
 	command.Flags().StringVar(&ethAthenaContract, "eth-athena-contract", env.StringFromEnv("ATHENA_TOKEN_ETH_ATHENA_CONTRACT", ""), "Ethereum Mainnet ATHENA contract address for project-qualifier mode")
 	command.Flags().StringVar(&bscAthenaContract, "bsc-athena-contract", env.StringFromEnv("ATHENA_TOKEN_BSC_ATHENA_CONTRACT", ""), "BSC Mainnet ATHENA contract address for project-qualifier mode")
+	command.Flags().BoolVar(&ethEnabled, "eth-enabled", env.ParseBoolFromEnv("ATHENA_TOKEN_ETH_ENABLED", true), "Whether to enable Ethereum Mainnet token worker logic")
+	command.Flags().BoolVar(&bscEnabled, "bsc-enabled", env.ParseBoolFromEnv("ATHENA_TOKEN_BSC_ENABLED", true), "Whether to enable BSC Mainnet token worker logic")
 	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_TOKEN_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 )
@@ -22,6 +23,8 @@ type Options struct {
 	BSCNodeWSURL      string
 	EthAthenaContract string
 	BSCAthenaContract string
+	EthEnabled        bool
+	BSCEnabled        bool
 	NodeWSUseProxy    bool
 }
 
@@ -47,13 +50,7 @@ func (w *Worker) Start(ctx context.Context) error {
 	if w.opts.Store == nil {
 		return errStoreRequired()
 	}
-	if strings.TrimSpace(w.opts.EthNodeWSURL) == "" {
-		return errNodeWSURLRequired(common.ChainIDEthereumMainnet)
-	}
-	if strings.TrimSpace(w.opts.BSCNodeWSURL) == "" {
-		return errNodeWSURLRequired(common.ChainIDBSCMainnet)
-	}
-	athenaContracts, err := w.athenaContracts()
+	chainIDs, nodeWSURLs, athenaContracts, err := w.enabledChainRuntime()
 	if err != nil {
 		return err
 	}
@@ -61,7 +58,8 @@ func (w *Worker) Start(ctx context.Context) error {
 	runCtx, cancel := context.WithCancel(ctx)
 	runner := newQualifierRunner(qualifierRunnerOptions{
 		store:           w.opts.Store,
-		nodeWSURLs:      w.nodeWSURLs(),
+		chainIDs:        chainIDs,
+		nodeWSURLs:      nodeWSURLs,
 		athenaContracts: athenaContracts,
 		nodeWSUseProxy:  w.opts.NodeWSUseProxy,
 		pollInterval:    pollInterval,
@@ -105,26 +103,33 @@ func (w *Worker) run(ctx context.Context, runner *qualifierRunner) {
 	runner.run(ctx)
 }
 
-func (w *Worker) nodeWSURLs() map[int64]string {
-	return map[int64]string{
-		common.ChainIDEthereumMainnet: w.opts.EthNodeWSURL,
-		common.ChainIDBSCMainnet:      w.opts.BSCNodeWSURL,
+func (w *Worker) enabledChainRuntime() ([]int64, map[int64]string, map[int64]ethcommon.Address, error) {
+	chainIDs := make([]int64, 0, 2)
+	nodeWSURLs := make(map[int64]string)
+	athenaContracts := make(map[int64]ethcommon.Address)
+	for _, cfg := range w.chainConfigs() {
+		if !cfg.enabled {
+			log.WithFields(log.Fields{
+				"chain_id":   cfg.chainID,
+				"chain_name": common.ChainName(cfg.chainID),
+			}).Info("token project qualifier chain disabled by runtime config")
+			continue
+		}
+		if strings.TrimSpace(cfg.nodeWSURL) == "" {
+			return nil, nil, nil, errNodeWSURLRequired(cfg.chainID)
+		}
+		athenaContract, err := parseAthenaContract(cfg.chainID, cfg.athenaContract)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		chainIDs = append(chainIDs, cfg.chainID)
+		nodeWSURLs[cfg.chainID] = cfg.nodeWSURL
+		athenaContracts[cfg.chainID] = athenaContract
 	}
-}
-
-func (w *Worker) athenaContracts() (map[int64]ethcommon.Address, error) {
-	ethContract, err := parseAthenaContract(common.ChainIDEthereumMainnet, w.opts.EthAthenaContract)
-	if err != nil {
-		return nil, err
+	if len(chainIDs) == 0 {
+		log.Info("token project qualifier has no enabled chains")
 	}
-	bscContract, err := parseAthenaContract(common.ChainIDBSCMainnet, w.opts.BSCAthenaContract)
-	if err != nil {
-		return nil, err
-	}
-	return map[int64]ethcommon.Address{
-		common.ChainIDEthereumMainnet: ethContract,
-		common.ChainIDBSCMainnet:      bscContract,
-	}, nil
+	return chainIDs, nodeWSURLs, athenaContracts, nil
 }
 
 func parseAthenaContract(chainID int64, value string) (ethcommon.Address, error) {
@@ -140,4 +145,28 @@ func parseAthenaContract(chainID int64, value string) (ethcommon.Address, error)
 		return ethcommon.Address{}, errAthenaContractInvalid(chainID, value)
 	}
 	return address, nil
+}
+
+type chainConfig struct {
+	chainID        int64
+	nodeWSURL      string
+	athenaContract string
+	enabled        bool
+}
+
+func (w *Worker) chainConfigs() []chainConfig {
+	return []chainConfig{
+		{
+			chainID:        common.ChainIDEthereumMainnet,
+			nodeWSURL:      w.opts.EthNodeWSURL,
+			athenaContract: w.opts.EthAthenaContract,
+			enabled:        w.opts.EthEnabled,
+		},
+		{
+			chainID:        common.ChainIDBSCMainnet,
+			nodeWSURL:      w.opts.BSCNodeWSURL,
+			athenaContract: w.opts.BSCAthenaContract,
+			enabled:        w.opts.BSCEnabled,
+		},
+	}
 }

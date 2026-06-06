@@ -21,6 +21,8 @@ type Options struct {
 	Store          *tokenstore.SQLStore
 	EthNodeWSURL   string
 	BSCNodeWSURL   string
+	EthEnabled     bool
+	BSCEnabled     bool
 	NodeWSUseProxy bool
 }
 
@@ -46,19 +48,21 @@ func (w *Worker) Start(ctx context.Context) error {
 	if w.opts.Store == nil {
 		return errStoreRequired()
 	}
-	if strings.TrimSpace(w.opts.EthNodeWSURL) == "" {
-		return errNodeWSURLRequired(common.ChainIDEthereumMainnet)
-	}
-	if strings.TrimSpace(w.opts.BSCNodeWSURL) == "" {
-		return errNodeWSURLRequired(common.ChainIDBSCMainnet)
-	}
 
 	runCtx, cancel := context.WithCancel(ctx)
 	runners := make(map[int64]*chainRunner)
-	for _, cfg := range []chainConfig{
-		{chainID: common.ChainIDEthereumMainnet, name: common.ChainNameEthereumMainnet, nodeWSURL: w.opts.EthNodeWSURL, pollInterval: ethereumPollInterval},
-		{chainID: common.ChainIDBSCMainnet, name: common.ChainNameBSCMainnet, nodeWSURL: w.opts.BSCNodeWSURL, pollInterval: bscPollInterval},
-	} {
+	for _, cfg := range w.chainConfigs() {
+		if !cfg.enabled {
+			log.WithFields(log.Fields{
+				"chain_id":   cfg.chainID,
+				"chain_name": cfg.name,
+			}).Info("token chain ingestor chain disabled by runtime config")
+			continue
+		}
+		if strings.TrimSpace(cfg.nodeWSURL) == "" {
+			cancel()
+			return errNodeWSURLRequired(cfg.chainID)
+		}
 		checkpoint, err := w.opts.Store.GetChainIngestCheckpoint(ctx, cfg.chainID)
 		if err != nil {
 			cancel()
@@ -95,6 +99,9 @@ func (w *Worker) Start(ctx context.Context) error {
 			"cursor_block_number": checkpoint.CursorBlockNumber,
 			"poll_interval":       cfg.pollInterval.String(),
 		}).Info("token chain ingestor checkpoint activated")
+	}
+	if len(runners) == 0 {
+		log.Info("token chain ingestor has no enabled chains")
 	}
 
 	w.cancel = cancel
@@ -163,4 +170,24 @@ type chainConfig struct {
 	name         string
 	nodeWSURL    string
 	pollInterval time.Duration
+	enabled      bool
+}
+
+func (w *Worker) chainConfigs() []chainConfig {
+	return []chainConfig{
+		{
+			chainID:      common.ChainIDEthereumMainnet,
+			name:         common.ChainNameEthereumMainnet,
+			nodeWSURL:    w.opts.EthNodeWSURL,
+			pollInterval: ethereumPollInterval,
+			enabled:      w.opts.EthEnabled,
+		},
+		{
+			chainID:      common.ChainIDBSCMainnet,
+			name:         common.ChainNameBSCMainnet,
+			nodeWSURL:    w.opts.BSCNodeWSURL,
+			pollInterval: bscPollInterval,
+			enabled:      w.opts.BSCEnabled,
+		},
+	}
 }
