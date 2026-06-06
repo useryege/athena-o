@@ -4,6 +4,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 DEFAULT_RUN_EXCLUDE="application-ingestor-bsc,application-ingestor-eth,application-temporal-eth"
+MANAGED_INFRA_SERVICES=(postgres redis kafka temporal)
+managed_infra_names=()
+managed_infra_pids=()
+goreman_pid=""
+cleanup_started=false
 
 run_exclude_value() {
 	if [[ "${ATHENA_RUN_EXCLUDE+x}" == "x" ]]; then
@@ -36,6 +41,17 @@ is_excluded_service() {
 	return 1
 }
 
+is_managed_infra_service() {
+	local name="$1"
+	local service
+
+	for service in "${MANAGED_INFRA_SERVICES[@]}"; do
+		[[ "${service}" == "${name}" ]] && return 0
+	done
+
+	return 1
+}
+
 write_filtered_procfile() {
 	local source="$1"
 	local target="$2"
@@ -48,9 +64,27 @@ write_filtered_procfile() {
 			if is_excluded_service "${name}"; then
 				continue
 			fi
+			if is_managed_infra_service "${name}"; then
+				continue
+			fi
 		fi
 		printf '%s\n' "${line}" >>"${target}"
 	done <"${source}"
+}
+
+procfile_service_command() {
+	local source="$1"
+	local service="$2"
+	local line
+
+	while IFS= read -r line || [[ -n "${line}" ]]; do
+		if [[ "${line}" =~ ^[[:space:]]*${service}:[[:space:]]*(.*)$ ]]; then
+			printf '%s\n' "${BASH_REMATCH[1]}"
+			return 0
+		fi
+	done <"${source}"
+
+	return 1
 }
 
 listening_pids() {
@@ -179,22 +213,170 @@ cleanup_athena_ports() {
 	done
 }
 
+process_group_alive() {
+	local pid="$1"
+
+	kill -0 -- "-${pid}" 2>/dev/null
+}
+
+wait_for_process_group_exit() {
+	local pid="$1"
+	local attempts="$2"
+	local attempt
+
+	for ((attempt = 1; attempt <= attempts; attempt++)); do
+		if ! process_group_alive "${pid}"; then
+			wait "${pid}" 2>/dev/null || true
+			return 0
+		fi
+		sleep 0.1
+	done
+
+	return 1
+}
+
+stop_process_group() {
+	local name="$1"
+	local pid="$2"
+	local graceful_signal="${3:-TERM}"
+
+	if [[ -z "${pid}" ]]; then
+		return
+	fi
+	if ! process_group_alive "${pid}"; then
+		wait "${pid}" 2>/dev/null || true
+		return
+	fi
+
+	printf 'stopping %s pid=%s signal=%s\n' "${name}" "${pid}" "${graceful_signal}" >&2
+	kill "-${graceful_signal}" -- "-${pid}" 2>/dev/null || true
+	if wait_for_process_group_exit "${pid}" 200; then
+		return
+	fi
+
+	printf '%s did not stop after %s, sending KILL pid=%s\n' "${name}" "${graceful_signal}" "${pid}" >&2
+	kill -KILL -- "-${pid}" 2>/dev/null || true
+	wait_for_process_group_exit "${pid}" 100 || true
+}
+
+start_managed_infra_services() {
+	local procfile="$1"
+	local service command pid
+
+	for service in "${MANAGED_INFRA_SERVICES[@]}"; do
+		if is_excluded_service "${service}"; then
+			printf 'not starting infrastructure service=%s because it is excluded\n' "${service}" >&2
+			continue
+		fi
+
+		if ! command="$(procfile_service_command "${procfile}" "${service}")"; then
+			printf 'infrastructure service=%s is not present in %s; skipping\n' "${service}" "${procfile}" >&2
+			continue
+		fi
+
+		printf 'starting infrastructure service=%s command=%s\n' "${service}" "${command}" >&2
+		(
+			cd "${REPO_ROOT}"
+			exec setsid bash -lc "${command}"
+		) &
+		pid="$!"
+		managed_infra_names+=("${service}")
+		managed_infra_pids+=("${pid}")
+		printf 'started infrastructure service=%s pid=%s\n' "${service}" "${pid}" >&2
+	done
+}
+
+stop_managed_infra_services() {
+	local index service pid
+
+	for ((index = ${#managed_infra_pids[@]} - 1; index >= 0; index--)); do
+		service="${managed_infra_names[index]}"
+		pid="${managed_infra_pids[index]}"
+		stop_process_group "infrastructure service=${service}" "${pid}" TERM
+	done
+}
+
+start_goreman() {
+	local procfile="$1"
+
+	printf 'starting Procfile application services with goreman\n' >&2
+	(
+		cd "${REPO_ROOT}"
+		exec setsid goreman -f "${procfile}" start
+	) &
+	goreman_pid="$!"
+	printf 'started goreman pid=%s\n' "${goreman_pid}" >&2
+}
+
+stop_goreman() {
+	if [[ -z "${goreman_pid}" ]]; then
+		return
+	fi
+	if ! process_group_alive "${goreman_pid}"; then
+		wait "${goreman_pid}" 2>/dev/null || true
+		return
+	fi
+
+	printf 'stopping Procfile application services before infrastructure pid=%s\n' "${goreman_pid}" >&2
+	kill -INT "${goreman_pid}" 2>/dev/null || true
+	if wait_for_process_group_exit "${goreman_pid}" 200; then
+		return
+	fi
+
+	printf 'goreman did not stop after INT, sending TERM to application process group pid=%s\n' "${goreman_pid}" >&2
+	kill -TERM -- "-${goreman_pid}" 2>/dev/null || true
+	if wait_for_process_group_exit "${goreman_pid}" 100; then
+		return
+	fi
+
+	printf 'goreman application process group did not stop after TERM, sending KILL pid=%s\n' "${goreman_pid}" >&2
+	kill -KILL -- "-${goreman_pid}" 2>/dev/null || true
+	wait_for_process_group_exit "${goreman_pid}" 100 || true
+}
+
+cleanup() {
+	local status="$?"
+
+	if [[ "${cleanup_started}" == "true" ]]; then
+		return
+	fi
+	cleanup_started=true
+	trap - EXIT INT TERM
+
+	stop_goreman
+	stop_managed_infra_services
+	rm -f "${filtered_procfile:-}"
+
+	exit "${status}"
+}
+
 if [[ "${ATHENA_RUN_PORT_CLEANUP:-true}" != "false" ]]; then
 	cleanup_athena_ports
 fi
 
 procfile="${ATHENA_PROCFILE:-Procfile}"
 filtered_procfile="$(mktemp -t athena-procfile.XXXXXX)"
-trap 'rm -f "${filtered_procfile}"' EXIT
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 write_filtered_procfile "${procfile}" "${filtered_procfile}"
 if [[ -n "$(run_exclude_value)" ]]; then
 	printf 'excluding Procfile services: %s\n' "$(run_exclude_value)" >&2
 fi
+printf 'managing infrastructure services outside goreman: %s\n' "${MANAGED_INFRA_SERVICES[*]}" >&2
 
 if [[ "${ATHENA_RUN_DRY_RUN:-false}" == "true" ]]; then
 	cat "${filtered_procfile}"
 	exit 0
 fi
 
-goreman -f "${filtered_procfile}" start
+start_managed_infra_services "${procfile}"
+start_goreman "${filtered_procfile}"
+
+set +e
+wait "${goreman_pid}"
+goreman_status="$?"
+set -e
+
+exit "${goreman_status}"
