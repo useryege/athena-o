@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	BatchUpsertProjectCandidates(ctx context.Context, arg BatchUpsertProjectCandidatesParams) error
 	CountContractCodes(ctx context.Context, codeHash []byte) (int64, error)
 	CountProjectCandidates(ctx context.Context, arg CountProjectCandidatesParams) (int64, error)
 	CountProjects(ctx context.Context, arg CountProjectsParams) (int64, error)

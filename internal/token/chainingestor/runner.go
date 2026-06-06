@@ -16,6 +16,8 @@ import (
 	"github.com/useryege/athena/util/ethws"
 )
 
+const maxBlocksPerBatch = uint64(100)
+
 type chainRunnerOptions struct {
 	store          *tokenstore.SQLStore
 	chainID        int64
@@ -94,7 +96,7 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 		}).Debug("token chain ingestor is caught up")
 		return nil
 	}
-	for number := next; number <= latest; number++ {
+	for next <= latest {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -105,33 +107,45 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 		if checkpoint == nil || !checkpoint.Enabled || checkpoint.Status != tokenstore.ChainIngestStatusRunning {
 			return nil
 		}
-		block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(number))
-		if err != nil {
-			r.resetClient()
-			return err
+		batchStart := next
+		batchEnd := batchStart + maxBlocksPerBatch - 1
+		if batchEnd > latest {
+			batchEnd = latest
 		}
-		candidates, err := r.projectCandidatesFromBlock(block)
-		if err != nil {
-			return err
-		}
-		for _, candidate := range candidates {
-			if _, err := r.opts.store.UpsertProjectCandidate(ctx, candidate); err != nil {
+		candidates := make([]tokenstore.ProjectCandidate, 0)
+		for number := batchStart; number <= batchEnd; number++ {
+			if err := ctx.Err(); err != nil {
 				return err
 			}
+			block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(number))
+			if err != nil {
+				r.resetClient()
+				return err
+			}
+			blockCandidates, err := r.projectCandidatesFromBlock(block)
+			if err != nil {
+				return err
+			}
+			candidates = append(candidates, blockCandidates...)
+		}
+		if err := r.opts.store.BatchUpsertProjectCandidates(ctx, candidates); err != nil {
+			return err
 		}
 		if _, err := r.opts.store.UpsertChainIngestCheckpoint(ctx, tokenstore.ChainIngestCheckpoint{
 			ChainID:           r.opts.chainID,
-			CursorBlockNumber: block.NumberU64(),
+			CursorBlockNumber: batchEnd,
 			Status:            tokenstore.ChainIngestStatusRunning,
 		}); err != nil {
 			return err
 		}
 		log.WithFields(log.Fields{
 			"chain_id":         r.opts.chainID,
-			"block_number":     block.NumberU64(),
+			"batch_start":      batchStart,
+			"batch_end":        batchEnd,
 			"candidate_count":  len(candidates),
 			"latest_block_num": latest,
-		}).Debug("token chain ingestor processed block")
+		}).Debug("token chain ingestor processed block batch")
+		next = batchEnd + 1
 	}
 	return nil
 }

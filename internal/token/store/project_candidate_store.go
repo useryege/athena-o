@@ -51,6 +51,63 @@ func (s *SQLStore) UpsertProjectCandidate(ctx context.Context, item ProjectCandi
 	return mapped, nil
 }
 
+func (s *SQLStore) BatchUpsertProjectCandidates(ctx context.Context, items []ProjectCandidate) error {
+	if len(items) == 0 {
+		return nil
+	}
+	q, err := s.querier()
+	if err != nil {
+		return err
+	}
+	chainIDs := make([]int64, 0, len(items))
+	contracts := make([][]byte, 0, len(items))
+	creators := make([][]byte, 0, len(items))
+	txHashes := make([][]byte, 0, len(items))
+	txIndexes := make([]int64, 0, len(items))
+	blockNumbers := make([]int64, 0, len(items))
+	blockTimes := make([]int64, 0, len(items))
+	statuses := make([]string, 0, len(items))
+	for _, item := range items {
+		status := item.Status
+		if status == "" {
+			status = ProjectCandidateStatusPending
+		}
+		txIndex, err := uint64ToInt64("tx_index", item.TxIndex)
+		if err != nil {
+			return err
+		}
+		blockNumber, err := uint64ToInt64("block_number", item.BlockNumber)
+		if err != nil {
+			return err
+		}
+		blockTime, err := uint64ToInt64("block_time", item.BlockTime)
+		if err != nil {
+			return err
+		}
+		chainIDs = append(chainIDs, item.ChainID)
+		contracts = append(contracts, item.Contract.Bytes())
+		creators = append(creators, item.Creator.Bytes())
+		txHashes = append(txHashes, item.TxHash.Bytes())
+		txIndexes = append(txIndexes, txIndex)
+		blockNumbers = append(blockNumbers, blockNumber)
+		blockTimes = append(blockTimes, blockTime)
+		statuses = append(statuses, status)
+	}
+	if err := q.BatchUpsertProjectCandidates(ctx, tokensqlc.BatchUpsertProjectCandidatesParams{
+		ChainIds:     chainIDs,
+		Contracts:    contracts,
+		Creators:     creators,
+		TxHashes:     txHashes,
+		TxIndexes:    txIndexes,
+		BlockNumbers: blockNumbers,
+		BlockTimes:   blockTimes,
+		Statuses:     statuses,
+	}); err != nil {
+		return fmt.Errorf("batch upsert project candidates: %w", err)
+	}
+	return nil
+}
+
 func (s *SQLStore) GetProjectCandidate(ctx context.Context, id int64) (*ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {

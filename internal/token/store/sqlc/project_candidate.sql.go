@@ -11,6 +11,58 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const batchUpsertProjectCandidates = `-- name: BatchUpsertProjectCandidates :exec
+INSERT INTO project_candidate (
+  chain_id,
+  contract,
+  creator,
+  tx_hash,
+  tx_index,
+  block_number,
+  block_time,
+  status
+)
+SELECT
+  unnest($1::bigint[]),
+  unnest($2::bytea[]),
+  unnest($3::bytea[]),
+  unnest($4::bytea[]),
+  unnest($5::bigint[]),
+  unnest($6::bigint[]),
+  unnest($7::bigint[]),
+  unnest($8::text[])
+ON CONFLICT (chain_id, contract) DO UPDATE
+SET status = CASE
+  WHEN project_candidate.status = 'pending' THEN EXCLUDED.status
+  ELSE project_candidate.status
+END
+`
+
+type BatchUpsertProjectCandidatesParams struct {
+	ChainIds     []int64
+	Contracts    [][]byte
+	Creators     [][]byte
+	TxHashes     [][]byte
+	TxIndexes    []int64
+	BlockNumbers []int64
+	BlockTimes   []int64
+	Statuses     []string
+}
+
+func (q *Queries) BatchUpsertProjectCandidates(ctx context.Context, arg BatchUpsertProjectCandidatesParams) error {
+	_, err := q.db.Exec(ctx, batchUpsertProjectCandidates,
+		arg.ChainIds,
+		arg.Contracts,
+		arg.Creators,
+		arg.TxHashes,
+		arg.TxIndexes,
+		arg.BlockNumbers,
+		arg.BlockTimes,
+		arg.Statuses,
+	)
+	return err
+}
+
 const countProjectCandidates = `-- name: CountProjectCandidates :one
 SELECT COUNT(*)::bigint
 FROM project_candidate
