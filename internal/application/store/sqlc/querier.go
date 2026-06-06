@@ -15,7 +15,6 @@ type Querier interface {
 	ClaimOutboxEventsByTypes(ctx context.Context, arg ClaimOutboxEventsByTypesParams) ([]OutboxEvent, error)
 	CountProjectBases(ctx context.Context, chainID int64) (int64, error)
 	DeleteBytecodeBlacklist(ctx context.Context, codeHash []byte) (int64, error)
-	DeleteProjectAvePairsByContract(ctx context.Context, arg DeleteProjectAvePairsByContractParams) error
 	DeleteProjectCreatorHistoricalProjectsByContract(ctx context.Context, arg DeleteProjectCreatorHistoricalProjectsByContractParams) error
 	DeleteProjectGenesisWalletsByContract(ctx context.Context, arg DeleteProjectGenesisWalletsByContractParams) error
 	DeleteWalletBlacklistEntry(ctx context.Context, wallet []byte) (int64, error)
@@ -33,7 +32,6 @@ type Querier interface {
 	GetProjectSimulationResult(ctx context.Context, arg GetProjectSimulationResultParams) (GetProjectSimulationResultRow, error)
 	GetWalletBlacklistEntry(ctx context.Context, wallet []byte) (WalletBlacklist, error)
 	InsertOutboxEvent(ctx context.Context, arg InsertOutboxEventParams) (InsertOutboxEventRow, error)
-	InsertProjectAvePair(ctx context.Context, arg InsertProjectAvePairParams) error
 	InsertProjectBase(ctx context.Context, arg InsertProjectBaseParams) error
 	InsertProjectCreatorHistoricalProject(ctx context.Context, arg InsertProjectCreatorHistoricalProjectParams) error
 	InsertProjectGenesisWallet(ctx context.Context, arg InsertProjectGenesisWalletParams) error
@@ -42,9 +40,8 @@ type Querier interface {
 	ListBytecodeDeployments(ctx context.Context, arg ListBytecodeDeploymentsParams) ([]ListBytecodeDeploymentsRow, error)
 	ListBytecodes(ctx context.Context, arg ListBytecodesParams) ([]ListBytecodesRow, error)
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
-	ListProjectAvePairsByContracts(ctx context.Context, arg ListProjectAvePairsByContractsParams) ([]ListProjectAvePairsByContractsRow, error)
+	ListProjectAveDetailsByContracts(ctx context.Context, arg ListProjectAveDetailsByContractsParams) ([]ListProjectAveDetailsByContractsRow, error)
 	ListProjectAveRefreshCandidates(ctx context.Context, arg ListProjectAveRefreshCandidatesParams) ([][]byte, error)
-	ListProjectAveTokenDetailsByContracts(ctx context.Context, arg ListProjectAveTokenDetailsByContractsParams) ([]ListProjectAveTokenDetailsByContractsRow, error)
 	ListProjectBases(ctx context.Context, chainID int64) ([]ListProjectBasesRow, error)
 	ListProjectBasesByCreatorBefore(ctx context.Context, arg ListProjectBasesByCreatorBeforeParams) ([]ListProjectBasesByCreatorBeforeRow, error)
 	ListProjectBasesPage(ctx context.Context, arg ListProjectBasesPageParams) ([]ListProjectBasesPageRow, error)
@@ -78,7 +75,7 @@ type Querier interface {
 	UpsertBytecode(ctx context.Context, codeHash []byte) error
 	UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertChainIngestCheckpointParams) (ChainIngestCheckpoint, error)
 	UpsertContractBytecodeDeployment(ctx context.Context, arg UpsertContractBytecodeDeploymentParams) error
-	UpsertProjectAveTokenDetail(ctx context.Context, arg UpsertProjectAveTokenDetailParams) error
+	UpsertProjectAveDetail(ctx context.Context, arg UpsertProjectAveDetailParams) error
 	UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) error
 	UpsertProjectCollectionRequest(ctx context.Context, arg UpsertProjectCollectionRequestParams) error
 	UpsertProjectComponentState(ctx context.Context, arg UpsertProjectComponentStateParams) error

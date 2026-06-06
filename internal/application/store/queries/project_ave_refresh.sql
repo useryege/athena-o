@@ -1,7 +1,7 @@
 -- name: ListProjectAveRefreshCandidates :many
 SELECT p.contract
 FROM project p
-LEFT JOIN project_ave_token_detail d
+LEFT JOIN project_ave_detail d
   ON d.project_id = p.id
 LEFT JOIN project_component_state s
   ON s.project_id = p.id

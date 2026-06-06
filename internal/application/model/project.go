@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"math/big"
 	"time"
 
@@ -40,14 +41,15 @@ type ProjectMeta struct {
 }
 
 type ProjectAveDetail struct {
-	ChainID   int64
-	Status    int
-	Msg       string
-	DataType  int
-	IsAudited bool
-	FetchedAt time.Time
-	Token     ProjectAveTokenDetail
-	Pairs     []ProjectAvePair
+	ChainID     int64
+	Status      int
+	Msg         string
+	DataType    int
+	IsAudited   bool
+	FetchedAt   time.Time
+	RawResponse json.RawMessage `json:"-"`
+	Token       ProjectAveTokenDetail
+	Pairs       []ProjectAvePair
 }
 
 type ProjectAveTokenDetail struct {

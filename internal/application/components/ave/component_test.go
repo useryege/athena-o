@@ -221,6 +221,9 @@ func TestRunOnceRefreshSuccessWritesDetailCacheAndState(t *testing.T) {
 	if detail.Token.LogoURL != "https://example.com/logo.png" || len(detail.Pairs) != 1 {
 		t.Fatalf("detail = %#v, want trimmed logo and pair", detail)
 	}
+	if len(detail.RawResponse) == 0 {
+		t.Fatalf("detail RawResponse is empty")
+	}
 	if cache.details[contract].Token.LogoURL != "https://example.com/logo.png" {
 		t.Fatalf("cached detail = %#v, want cached logo", cache.details[contract])
 	}

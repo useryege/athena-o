@@ -93,105 +93,11 @@ type Project struct {
 	UpdatedAt    pgtype.Timestamptz
 }
 
-type ProjectAvePair struct {
-	ID             int64
-	ProjectID      int64
-	RankIndex      int32
-	Reserve0       pgtype.Text
-	Reserve1       pgtype.Text
-	Token0PriceEth pgtype.Text
-	Token0PriceUsd pgtype.Text
-	Token1PriceEth pgtype.Text
-	Token1PriceUsd pgtype.Text
-	PriceChange    pgtype.Text
-	PriceChange24h pgtype.Text
-	PriceChange1h  pgtype.Text
-	VolumeU        pgtype.Text
-	LowU           pgtype.Text
-	HighU          pgtype.Text
-	Fee            pgtype.Text
-	TotalSupply    pgtype.Text
-	TxAmount       pgtype.Text
-	Pair           pgtype.Text
-	Chain          pgtype.Text
-	Amm            pgtype.Text
-	Token0Address  pgtype.Text
-	Token0Symbol   pgtype.Text
-	Token0Decimal  int32
-	Token1Address  pgtype.Text
-	Token1Symbol   pgtype.Text
-	Token1Decimal  int32
-	TargetToken    pgtype.Text
-	PriceChange1d  pgtype.Text
-	CreatedAt      int64
-	TxCount        int32
-	UpdatedAt      int64
-	MarketCap      pgtype.Text
-	Fdv            pgtype.Text
-	IsFake         bool
-	PersistedAt    pgtype.Timestamptz
-}
-
-type ProjectAveTokenDetail struct {
-	ProjectID           int64
-	Status              int32
-	Msg                 pgtype.Text
-	DataType            int32
-	IsAudited           bool
-	FetchedAt           pgtype.Timestamptz
-	Total               pgtype.Text
-	LaunchPrice         pgtype.Text
-	CurrentPriceEth     pgtype.Text
-	CurrentPriceUsd     pgtype.Text
-	PriceChange1d       pgtype.Text
-	PriceChange24h      pgtype.Text
-	PriceChange1h       pgtype.Text
-	LockAmount          pgtype.Text
-	BurnAmount          pgtype.Text
-	OtherAmount         pgtype.Text
-	TxAmount24h         pgtype.Text
-	TxVolumeU24h        pgtype.Text
-	LockedPercent       pgtype.Text
-	MarketCap           pgtype.Text
-	Fdv                 pgtype.Text
-	Tvl                 pgtype.Text
-	MainPairTvl         pgtype.Text
-	TokenPriceChange5m  pgtype.Text
-	TokenPriceChange1h  pgtype.Text
-	TokenPriceChange4h  pgtype.Text
-	TokenPriceChange24h pgtype.Text
-	TokenTxVolumeUsd5m  pgtype.Text
-	TokenTxVolumeUsd1h  pgtype.Text
-	TokenTxVolumeUsd4h  pgtype.Text
-	TokenTxVolumeUsd24h pgtype.Text
-	TokenBuyVolumeU5m   pgtype.Text
-	TokenSellVolumeU5m  pgtype.Text
-	Token               pgtype.Text
-	Chain               pgtype.Text
-	Decimal             int32
-	Name                pgtype.Text
-	Symbol              pgtype.Text
-	Holders             int32
-	Appendix            pgtype.Text
-	RiskLevel           int32
-	LogoUrl             pgtype.Text
-	RiskInfo            pgtype.Text
-	RiskScore           pgtype.Text
-	LaunchAt            int64
-	CreatedAt           int64
-	TxCount24h          int32
-	LockPlatform        pgtype.Text
-	IsMintable          pgtype.Text
-	UpdatedAt           int64
-	MainPair            pgtype.Text
-	HasMintMethod       bool
-	IsLpNotLocked       bool
-	HasNotRenounced     bool
-	HasNotAudited       bool
-	HasNotOpenSource    bool
-	IsInBlacklist       bool
-	IsHoneypot          bool
-	AveRiskLevel        int32
+type ProjectAveDetail struct {
+	ProjectID   int64
+	AveResponse []byte
+	FetchedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
 }
 
 type ProjectChainState struct {

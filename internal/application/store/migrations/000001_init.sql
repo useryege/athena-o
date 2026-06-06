@@ -194,113 +194,13 @@ CREATE TABLE IF NOT EXISTS project_component_state (
 CREATE INDEX IF NOT EXISTS project_component_state_next_run_idx
   ON project_component_state (component, next_run_at);
 
-CREATE TABLE IF NOT EXISTS project_ave_token_detail (
+CREATE TABLE IF NOT EXISTS project_ave_detail (
   project_id BIGINT PRIMARY KEY,
-  status INT NOT NULL,
-  msg TEXT,
-  data_type INT NOT NULL,
-  is_audited BOOLEAN NOT NULL DEFAULT false,
+  ave_response JSONB NOT NULL DEFAULT '{}'::jsonb,
   fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  total TEXT,
-  launch_price TEXT,
-  current_price_eth TEXT,
-  current_price_usd TEXT,
-  price_change_1d TEXT,
-  price_change_24h TEXT,
-  price_change_1h TEXT,
-  lock_amount TEXT,
-  burn_amount TEXT,
-  other_amount TEXT,
-  tx_amount_24h TEXT,
-  tx_volume_u_24h TEXT,
-  locked_percent TEXT,
-  market_cap TEXT,
-  fdv TEXT,
-  tvl TEXT,
-  main_pair_tvl TEXT,
-  token_price_change_5m TEXT,
-  token_price_change_1h TEXT,
-  token_price_change_4h TEXT,
-  token_price_change_24h TEXT,
-  token_tx_volume_usd_5m TEXT,
-  token_tx_volume_usd_1h TEXT,
-  token_tx_volume_usd_4h TEXT,
-  token_tx_volume_usd_24h TEXT,
-  token_buy_volume_u_5m TEXT,
-  token_sell_volume_u_5m TEXT,
-  token TEXT,
-  chain TEXT,
-  decimal INT NOT NULL DEFAULT 0,
-  name TEXT,
-  symbol TEXT,
-  holders INT NOT NULL DEFAULT 0,
-  appendix TEXT,
-  risk_level INT NOT NULL DEFAULT 0,
-  logo_url TEXT,
-  risk_info TEXT,
-  risk_score TEXT,
-  launch_at BIGINT NOT NULL DEFAULT 0,
-  created_at BIGINT NOT NULL DEFAULT 0,
-  tx_count_24h INT NOT NULL DEFAULT 0,
-  lock_platform TEXT,
-  is_mintable TEXT,
-  updated_at BIGINT NOT NULL DEFAULT 0,
-  main_pair TEXT,
-  has_mint_method BOOLEAN NOT NULL DEFAULT false,
-  is_lp_not_locked BOOLEAN NOT NULL DEFAULT false,
-  has_not_renounced BOOLEAN NOT NULL DEFAULT false,
-  has_not_audited BOOLEAN NOT NULL DEFAULT false,
-  has_not_open_source BOOLEAN NOT NULL DEFAULT false,
-  is_in_blacklist BOOLEAN NOT NULL DEFAULT false,
-  is_honeypot BOOLEAN NOT NULL DEFAULT false,
-  ave_risk_level INT NOT NULL DEFAULT 0,
-  CONSTRAINT project_ave_token_detail_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_ave_detail_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
 );
-
-CREATE TABLE IF NOT EXISTS project_ave_pair (
-  id BIGSERIAL PRIMARY KEY,
-  project_id BIGINT NOT NULL,
-  rank_index INT NOT NULL,
-  reserve0 TEXT,
-  reserve1 TEXT,
-  token0_price_eth TEXT,
-  token0_price_usd TEXT,
-  token1_price_eth TEXT,
-  token1_price_usd TEXT,
-  price_change TEXT,
-  price_change_24h TEXT,
-  price_change_1h TEXT,
-  volume_u TEXT,
-  low_u TEXT,
-  high_u TEXT,
-  fee TEXT,
-  total_supply TEXT,
-  tx_amount TEXT,
-  pair TEXT,
-  chain TEXT,
-  amm TEXT,
-  token0_address TEXT,
-  token0_symbol TEXT,
-  token0_decimal INT NOT NULL DEFAULT 0,
-  token1_address TEXT,
-  token1_symbol TEXT,
-  token1_decimal INT NOT NULL DEFAULT 0,
-  target_token TEXT,
-  price_change_1d TEXT,
-  created_at BIGINT NOT NULL DEFAULT 0,
-  tx_count INT NOT NULL DEFAULT 0,
-  updated_at BIGINT NOT NULL DEFAULT 0,
-  market_cap TEXT,
-  fdv TEXT,
-  is_fake BOOLEAN NOT NULL DEFAULT false,
-  persisted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_ave_pair_rank_index_nonnegative CHECK (rank_index >= 0),
-  CONSTRAINT project_ave_pair_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_ave_pair_project_rank_uidx UNIQUE (project_id, rank_index)
-);
-
-CREATE INDEX IF NOT EXISTS project_ave_pair_project_rank_idx
-  ON project_ave_pair (project_id, rank_index);
 
 CREATE TABLE IF NOT EXISTS project_creator_historical_project (
   id BIGSERIAL PRIMARY KEY,
@@ -394,8 +294,7 @@ DROP TABLE IF EXISTS contract_bytecode_deployment;
 DROP TABLE IF EXISTS bytecode;
 DROP TABLE IF EXISTS project_genesis_wallet;
 DROP TABLE IF EXISTS project_creator_historical_project;
-DROP TABLE IF EXISTS project_ave_pair;
-DROP TABLE IF EXISTS project_ave_token_detail;
+DROP TABLE IF EXISTS project_ave_detail;
 DROP TABLE IF EXISTS project_component_state;
 DROP TABLE IF EXISTS project_simulation_result;
 DROP TABLE IF EXISTS project_chain_state;

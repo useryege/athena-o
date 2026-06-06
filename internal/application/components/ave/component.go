@@ -258,7 +258,11 @@ func (c *Component) refreshOne(ctx context.Context, contract common.Address) err
 		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
 		return err
 	}
-	detail := DetailFromResponse(response, c.now())
+	detail, err := DetailFromResponse(response, c.now())
+	if err != nil {
+		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
+		return err
+	}
 	if detail == nil {
 		err := errors.New("Ave token detail response is empty")
 		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
