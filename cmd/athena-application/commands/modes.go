@@ -445,7 +445,6 @@ func buildExternalWorkerActivities(ctx context.Context, opts runtimeOptions) (ap
 	if opts.Store == nil {
 		return appworkflows.Activities{}, func() {}, fmt.Errorf("application store is required for temporal-worker-external mode")
 	}
-	cache := appcache.NewProjectComponentCache(redisport.NewGoRedisAdapter(opts.RedisClient))
 	return appworkflows.Activities{
 		CollectAveDetailFunc: func(ctx context.Context, input appworkflows.ProjectCollectionInput) error {
 			component, err := avecomponent.NewComponent(avecomponent.Options{
@@ -455,7 +454,6 @@ func buildExternalWorkerActivities(ctx context.Context, opts runtimeOptions) (ap
 				},
 				ChainID: input.Project.ChainID,
 				Store:   opts.Store,
-				Cache:   cache,
 			})
 			if err != nil {
 				return err

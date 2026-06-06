@@ -16,7 +16,6 @@ func TestKeyspaceProjectKeys(t *testing.T) {
 	assertEqual(t, keys.ProjectBase(chainID, contract), "application:project:56:"+contract.Hex()+":base")
 	assertEqual(t, keys.ProjectChainState(chainID, contract), "application:project:56:"+contract.Hex()+":chain_state")
 	assertEqual(t, keys.ProjectSimulation(chainID, contract), "application:project:56:"+contract.Hex()+":simulation")
-	assertEqual(t, keys.ProjectAveDetail(chainID, contract), "application:project:56:"+contract.Hex()+":ave_detail")
 	assertEqual(t, keys.ProjectGenesisWallets(chainID, contract), "application:project:56:"+contract.Hex()+":genesis_wallets")
 	assertEqual(t, keys.ProjectCreatorHistory(chainID, contract), "application:project:56:"+contract.Hex()+":creator_history")
 	assertEqual(t, keys.ProjectComponentState(chainID, contract, "bytecode_fact"), "application:project:56:"+contract.Hex()+":component_state:bytecode_fact")

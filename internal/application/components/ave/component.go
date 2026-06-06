@@ -28,16 +28,10 @@ type Store interface {
 	appstore.ProjectAveRefreshStore
 }
 
-type Cache interface {
-	SetAveDetail(ctx context.Context, chainID int64, contract common.Address, item appstore.ProjectAveDetail) error
-	GetAveDetail(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectAveDetail, bool, error)
-}
-
 type Options struct {
 	Config            utilave.Config
 	ChainID           int64
 	Store             Store
-	Cache             Cache
 	Fetcher           Fetcher
 	DetailTTL         time.Duration
 	PollInterval      time.Duration
@@ -57,7 +51,6 @@ type State struct {
 type Component struct {
 	chainID           int64
 	store             Store
-	cache             Cache
 	fetcher           Fetcher
 	detailTTL         time.Duration
 	pollInterval      time.Duration
@@ -93,7 +86,6 @@ func NewComponent(opts Options) (*Component, error) {
 	component := &Component{
 		store:             opts.Store,
 		chainID:           opts.ChainID,
-		cache:             opts.Cache,
 		fetcher:           opts.Fetcher,
 		detailTTL:         opts.DetailTTL,
 		pollInterval:      opts.PollInterval,
@@ -259,38 +251,12 @@ func (c *Component) refreshOne(ctx context.Context, contract common.Address) err
 		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
 		return err
 	}
-	detail := appstore.ProjectAveDetail{
-		ChainID:   c.chainID,
-		FetchedAt: fetchedAt,
-		Data:      response.Data,
-	}
-	if c.cache != nil {
-		if err := c.cache.SetAveDetail(ctx, c.chainID, contract, detail); err != nil {
-			return err
-		}
-	}
-	if err := c.store.MarkProjectAveRefreshSuccess(ctx, c.chainID, contract, detail.FetchedAt, detail.FetchedAt.Add(c.detailTTL)); err != nil {
+	if err := c.store.MarkProjectAveRefreshSuccess(ctx, c.chainID, contract, fetchedAt, fetchedAt.Add(c.detailTTL)); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (c *Component) detail(ctx context.Context, contract common.Address) (*appstore.ProjectAveDetail, error) {
-	if c.cache != nil {
-		if item, ok, err := c.cache.GetAveDetail(ctx, c.chainID, contract); err != nil {
-			return nil, err
-		} else if ok && item != nil {
-			return item, nil
-		}
-	}
-	item, err := c.store.GetProjectAveDetail(ctx, c.chainID, contract)
-	if err != nil || item == nil {
-		return item, err
-	}
-	if c.cache != nil {
-		if err := c.cache.SetAveDetail(ctx, c.chainID, contract, *item); err != nil {
-			return nil, err
-		}
-	}
-	return item, nil
+	return c.store.GetProjectAveDetail(ctx, c.chainID, contract)
 }
