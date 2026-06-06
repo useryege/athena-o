@@ -3,11 +3,13 @@ package ingest
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -45,7 +47,14 @@ func (r *EVMReader) ReadBlock(ctx context.Context, number uint64) (Block, error)
 		Hash:    block.Hash(),
 		Time:    block.Time(),
 	}
-	for _, tx := range block.Transactions() {
+	for txIndex, tx := range block.Transactions() {
+		creation, err := contractCreationFromTransaction(r.signer, tx, txIndex)
+		if err != nil {
+			return Block{}, err
+		}
+		if creation != nil {
+			item.ContractCreations = append(item.ContractCreations, *creation)
+		}
 		receipt, err := r.client.TransactionReceipt(ctx, tx.Hash())
 		if err != nil {
 			if errors.Is(err, ethereum.NotFound) {
@@ -53,28 +62,48 @@ func (r *EVMReader) ReadBlock(ctx context.Context, number uint64) (Block, error)
 			}
 			return Block{}, err
 		}
-		if tx.To() == nil && receipt != nil && receipt.ContractAddress != (common.Address{}) {
-			creator, _ := types.Sender(r.signer, tx)
-			item.ContractCreations = append(item.ContractCreations, ContractCreated{
-				Contract: receipt.ContractAddress,
-				Creator:  creator,
-				TxHash:   tx.Hash(),
-				TxIndex:  uint64(receipt.TransactionIndex),
-			})
-		}
-		for _, logItem := range receipt.Logs {
-			if len(logItem.Topics) == 0 || logItem.Topics[0] != uniswapV2SwapTopic {
-				continue
-			}
-			item.DexSwaps = append(item.DexSwaps, DexSwap{
-				Pair:   logItem.Address,
-				TxHash: tx.Hash(),
-			})
-		}
+		item.DexSwaps = append(item.DexSwaps, dexSwapsFromReceipt(tx.Hash(), receipt)...)
 	}
 	return item, nil
 }
 
 func (r *EVMReader) ReadContractCode(ctx context.Context, contract common.Address) ([]byte, error) {
 	return r.client.CodeAt(ctx, contract, nil)
+}
+
+func contractCreationFromTransaction(signer types.Signer, tx *types.Transaction, txIndex int) (*ContractCreated, error) {
+	if tx == nil || tx.To() != nil {
+		return nil, nil
+	}
+	creator, err := types.Sender(signer, tx)
+	if err != nil {
+		return nil, fmt.Errorf("derive contract creator for tx %s: %w", tx.Hash().Hex(), err)
+	}
+	contract := crypto.CreateAddress(creator, tx.Nonce())
+	if contract == (common.Address{}) {
+		return nil, nil
+	}
+	return &ContractCreated{
+		Contract: contract,
+		Creator:  creator,
+		TxHash:   tx.Hash(),
+		TxIndex:  uint64(txIndex),
+	}, nil
+}
+
+func dexSwapsFromReceipt(txHash common.Hash, receipt *types.Receipt) []DexSwap {
+	if receipt == nil {
+		return nil
+	}
+	items := make([]DexSwap, 0)
+	for _, logItem := range receipt.Logs {
+		if logItem == nil || len(logItem.Topics) == 0 || logItem.Topics[0] != uniswapV2SwapTopic {
+			continue
+		}
+		items = append(items, DexSwap{
+			Pair:   logItem.Address,
+			TxHash: txHash,
+		})
+	}
+	return items
 }
