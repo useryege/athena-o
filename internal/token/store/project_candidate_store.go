@@ -59,6 +59,17 @@ func (s *SQLStore) BatchUpsertProjectCandidates(ctx context.Context, items []Pro
 	if err != nil {
 		return err
 	}
+	params, err := batchUpsertProjectCandidatesParams(items)
+	if err != nil {
+		return err
+	}
+	if err := q.BatchUpsertProjectCandidates(ctx, params); err != nil {
+		return fmt.Errorf("batch upsert project candidates: %w", err)
+	}
+	return nil
+}
+
+func batchUpsertProjectCandidatesParams(items []ProjectCandidate) (tokensqlc.BatchUpsertProjectCandidatesParams, error) {
 	chainIDs := make([]int64, 0, len(items))
 	contracts := make([][]byte, 0, len(items))
 	creators := make([][]byte, 0, len(items))
@@ -74,15 +85,15 @@ func (s *SQLStore) BatchUpsertProjectCandidates(ctx context.Context, items []Pro
 		}
 		txIndex, err := uint64ToInt64("tx_index", item.TxIndex)
 		if err != nil {
-			return err
+			return tokensqlc.BatchUpsertProjectCandidatesParams{}, err
 		}
 		blockNumber, err := uint64ToInt64("block_number", item.BlockNumber)
 		if err != nil {
-			return err
+			return tokensqlc.BatchUpsertProjectCandidatesParams{}, err
 		}
 		blockTime, err := uint64ToInt64("block_time", item.BlockTime)
 		if err != nil {
-			return err
+			return tokensqlc.BatchUpsertProjectCandidatesParams{}, err
 		}
 		chainIDs = append(chainIDs, item.ChainID)
 		contracts = append(contracts, item.Contract.Bytes())
@@ -93,7 +104,7 @@ func (s *SQLStore) BatchUpsertProjectCandidates(ctx context.Context, items []Pro
 		blockTimes = append(blockTimes, blockTime)
 		statuses = append(statuses, status)
 	}
-	if err := q.BatchUpsertProjectCandidates(ctx, tokensqlc.BatchUpsertProjectCandidatesParams{
+	return tokensqlc.BatchUpsertProjectCandidatesParams{
 		ChainIds:     chainIDs,
 		Contracts:    contracts,
 		Creators:     creators,
@@ -102,10 +113,7 @@ func (s *SQLStore) BatchUpsertProjectCandidates(ctx context.Context, items []Pro
 		BlockNumbers: blockNumbers,
 		BlockTimes:   blockTimes,
 		Statuses:     statuses,
-	}); err != nil {
-		return fmt.Errorf("batch upsert project candidates: %w", err)
-	}
-	return nil
+	}, nil
 }
 
 func (s *SQLStore) GetProjectCandidate(ctx context.Context, id int64) (*ProjectCandidate, error) {

@@ -128,14 +128,11 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 			}
 			candidates = append(candidates, blockCandidates...)
 		}
-		if err := r.opts.store.BatchUpsertProjectCandidates(ctx, candidates); err != nil {
-			return err
-		}
-		if _, err := r.opts.store.UpsertChainIngestCheckpoint(ctx, tokenstore.ChainIngestCheckpoint{
+		if _, err := r.opts.store.IngestProjectCandidateBatch(ctx, tokenstore.ChainIngestCheckpoint{
 			ChainID:           r.opts.chainID,
 			CursorBlockNumber: batchEnd,
 			Status:            tokenstore.ChainIngestStatusRunning,
-		}); err != nil {
+		}, candidates); err != nil {
 			return err
 		}
 		log.WithFields(log.Fields{
