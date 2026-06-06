@@ -15,7 +15,8 @@ const (
 	ChainIDEthereumMainnet int64 = 1
 	ChainIDBSCMainnet      int64 = 56
 
-	defaultPollInterval = 30 * time.Second
+	ethereumPollInterval = 30 * time.Second
+	bscPollInterval      = 3 * time.Second
 )
 
 type Options struct {
@@ -23,7 +24,6 @@ type Options struct {
 	EthNodeWSURL   string
 	BSCNodeWSURL   string
 	NodeWSUseProxy bool
-	PollInterval   time.Duration
 }
 
 type Worker struct {
@@ -36,9 +36,6 @@ type Worker struct {
 }
 
 func NewWorker(opts Options) *Worker {
-	if opts.PollInterval <= 0 {
-		opts.PollInterval = defaultPollInterval
-	}
 	return &Worker{opts: opts}
 }
 
@@ -61,8 +58,8 @@ func (w *Worker) Start(ctx context.Context) error {
 	runCtx, cancel := context.WithCancel(ctx)
 	runners := make(map[int64]*chainRunner)
 	for _, cfg := range []chainConfig{
-		{chainID: ChainIDEthereumMainnet, name: "Ethereum Mainnet", nodeWSURL: w.opts.EthNodeWSURL},
-		{chainID: ChainIDBSCMainnet, name: "BSC Mainnet", nodeWSURL: w.opts.BSCNodeWSURL},
+		{chainID: ChainIDEthereumMainnet, name: "Ethereum Mainnet", nodeWSURL: w.opts.EthNodeWSURL, pollInterval: ethereumPollInterval},
+		{chainID: ChainIDBSCMainnet, name: "BSC Mainnet", nodeWSURL: w.opts.BSCNodeWSURL, pollInterval: bscPollInterval},
 	} {
 		checkpoint, err := w.opts.Store.GetChainIngestCheckpoint(ctx, cfg.chainID)
 		if err != nil {
@@ -91,13 +88,14 @@ func (w *Worker) Start(ctx context.Context) error {
 			chainName:      cfg.name,
 			nodeWSURL:      cfg.nodeWSURL,
 			nodeWSUseProxy: w.opts.NodeWSUseProxy,
-			pollInterval:   w.opts.PollInterval,
+			pollInterval:   cfg.pollInterval,
 		})
 		runners[cfg.chainID] = runner
 		log.WithFields(log.Fields{
 			"chain_id":            checkpoint.ChainID,
 			"chain_name":          checkpoint.ChainName,
 			"cursor_block_number": checkpoint.CursorBlockNumber,
+			"poll_interval":       cfg.pollInterval.String(),
 		}).Info("token chain ingestor checkpoint activated")
 	}
 
@@ -163,7 +161,8 @@ func (w *Worker) run(ctx context.Context, runners map[int64]*chainRunner) {
 }
 
 type chainConfig struct {
-	chainID   int64
-	name      string
-	nodeWSURL string
+	chainID      int64
+	name         string
+	nodeWSURL    string
+	pollInterval time.Duration
 }
