@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/common"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	"github.com/useryege/athena/util/ethws"
 )
@@ -131,7 +132,7 @@ func (r *qualifierRunner) ensureClient(ctx context.Context, chainID int64) (*eth
 	r.clients[chainID] = client
 	log.WithFields(log.Fields{
 		"chain_id":   chainID,
-		"chain_name": chainName(chainID),
+		"chain_name": common.ChainName(chainID),
 	}).Info("token project qualifier connected to node websocket")
 	return client, nil
 }

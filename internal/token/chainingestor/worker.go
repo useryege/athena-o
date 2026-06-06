@@ -8,13 +8,11 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/common"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 )
 
 const (
-	ChainIDEthereumMainnet int64 = 1
-	ChainIDBSCMainnet      int64 = 56
-
 	ethereumPollInterval = 30 * time.Second
 	bscPollInterval      = 3 * time.Second
 )
@@ -49,17 +47,17 @@ func (w *Worker) Start(ctx context.Context) error {
 		return errStoreRequired()
 	}
 	if strings.TrimSpace(w.opts.EthNodeWSURL) == "" {
-		return errNodeWSURLRequired(ChainIDEthereumMainnet)
+		return errNodeWSURLRequired(common.ChainIDEthereumMainnet)
 	}
 	if strings.TrimSpace(w.opts.BSCNodeWSURL) == "" {
-		return errNodeWSURLRequired(ChainIDBSCMainnet)
+		return errNodeWSURLRequired(common.ChainIDBSCMainnet)
 	}
 
 	runCtx, cancel := context.WithCancel(ctx)
 	runners := make(map[int64]*chainRunner)
 	for _, cfg := range []chainConfig{
-		{chainID: ChainIDEthereumMainnet, name: "Ethereum Mainnet", nodeWSURL: w.opts.EthNodeWSURL, pollInterval: ethereumPollInterval},
-		{chainID: ChainIDBSCMainnet, name: "BSC Mainnet", nodeWSURL: w.opts.BSCNodeWSURL, pollInterval: bscPollInterval},
+		{chainID: common.ChainIDEthereumMainnet, name: common.ChainNameEthereumMainnet, nodeWSURL: w.opts.EthNodeWSURL, pollInterval: ethereumPollInterval},
+		{chainID: common.ChainIDBSCMainnet, name: common.ChainNameBSCMainnet, nodeWSURL: w.opts.BSCNodeWSURL, pollInterval: bscPollInterval},
 	} {
 		checkpoint, err := w.opts.Store.GetChainIngestCheckpoint(ctx, cfg.chainID)
 		if err != nil {

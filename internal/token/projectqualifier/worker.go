@@ -2,12 +2,11 @@ package projectqualifier
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/useryege/athena/internal/token/chainingestor"
+	"github.com/useryege/athena/common"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 )
 
@@ -46,10 +45,10 @@ func (w *Worker) Start(ctx context.Context) error {
 		return errStoreRequired()
 	}
 	if strings.TrimSpace(w.opts.EthNodeWSURL) == "" {
-		return errNodeWSURLRequired(chainingestor.ChainIDEthereumMainnet)
+		return errNodeWSURLRequired(common.ChainIDEthereumMainnet)
 	}
 	if strings.TrimSpace(w.opts.BSCNodeWSURL) == "" {
-		return errNodeWSURLRequired(chainingestor.ChainIDBSCMainnet)
+		return errNodeWSURLRequired(common.ChainIDBSCMainnet)
 	}
 
 	runCtx, cancel := context.WithCancel(ctx)
@@ -100,18 +99,7 @@ func (w *Worker) run(ctx context.Context, runner *qualifierRunner) {
 
 func (w *Worker) nodeWSURLs() map[int64]string {
 	return map[int64]string{
-		chainingestor.ChainIDEthereumMainnet: w.opts.EthNodeWSURL,
-		chainingestor.ChainIDBSCMainnet:      w.opts.BSCNodeWSURL,
-	}
-}
-
-func chainName(chainID int64) string {
-	switch chainID {
-	case chainingestor.ChainIDEthereumMainnet:
-		return "Ethereum Mainnet"
-	case chainingestor.ChainIDBSCMainnet:
-		return "BSC Mainnet"
-	default:
-		return fmt.Sprintf("chain %d", chainID)
+		common.ChainIDEthereumMainnet: w.opts.EthNodeWSURL,
+		common.ChainIDBSCMainnet:      w.opts.BSCNodeWSURL,
 	}
 }
