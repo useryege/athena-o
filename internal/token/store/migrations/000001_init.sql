@@ -24,6 +24,12 @@ CREATE TABLE IF NOT EXISTS chain_ingest_checkpoint (
   CONSTRAINT chain_ingest_checkpoint_status_allowed CHECK (status IN ('running', 'stopped'))
 );
 
+INSERT INTO chain_ingest_checkpoint (chain_id, cursor_block_number, status)
+VALUES
+  (1, 25211026, 'stopped'),
+  (56, 101719406, 'stopped')
+ON CONFLICT (chain_id) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS project_candidate (
   id BIGSERIAL PRIMARY KEY,
   chain_id BIGINT NOT NULL,
