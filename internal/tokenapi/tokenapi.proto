@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+// Token API Service API exposes token-api-level workload status.
+package athena.internal.tokenapi;
+
+option go_package = "github.com/useryege/athena/internal/tokenapi/apiclient";
+
+// GetTokenAPIStatusRequest queries the token API service runtime status.
+message GetTokenAPIStatusRequest {}
+
+// GetTokenAPIStatusResponse returns the token API service runtime status.
+message GetTokenAPIStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+service TokenAPIService {
+  // GetTokenAPIStatus returns the token API service runtime status.
+  rpc GetTokenAPIStatus(GetTokenAPIStatusRequest) returns (GetTokenAPIStatusResponse);
+}
