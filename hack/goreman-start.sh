@@ -4,7 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 DEFAULT_RUN_EXCLUDE="application-ingestor-bsc,application-ingestor-eth,application-temporal-eth"
-MANAGED_INFRA_SERVICES=(postgres redis kafka temporal)
+MANAGED_INFRA_SERVICES=(postgres redis temporal)
 managed_infra_names=()
 managed_infra_pids=()
 goreman_pid=""

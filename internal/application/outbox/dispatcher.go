@@ -11,7 +11,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
-	appevents "github.com/useryege/athena/internal/application/events"
 	"github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/application/workflows"
 )
@@ -25,10 +24,7 @@ const (
 
 var dispatchTypes = []string{
 	store.OutboxTypeProjectCollectionRequested,
-	store.OutboxTypeKafkaProjectEventPublish,
 }
-
-var errProjectEventDiscarded = errors.New("project event outbox discarded")
 
 type WorkflowStarter interface {
 	StartProjectCollection(ctx context.Context, input workflows.ProjectCollectionInput) (string, error)
@@ -42,7 +38,6 @@ type Store interface {
 type Options struct {
 	Store                Store
 	Starter              WorkflowStarter
-	ProjectEventProducer appevents.Producer
 	LockedBy             string
 	BatchSize            int32
 	PollInterval         time.Duration
@@ -54,7 +49,6 @@ type Options struct {
 type Dispatcher struct {
 	store                Store
 	starter              WorkflowStarter
-	projectEventProducer appevents.Producer
 	lockedBy             string
 	batchSize            int32
 	pollInterval         time.Duration
@@ -96,7 +90,6 @@ func NewDispatcher(opts Options) (*Dispatcher, error) {
 	return &Dispatcher{
 		store:                opts.Store,
 		starter:              opts.Starter,
-		projectEventProducer: opts.ProjectEventProducer,
 		lockedBy:             strings.TrimSpace(opts.LockedBy),
 		batchSize:            opts.BatchSize,
 		pollInterval:         opts.PollInterval,
@@ -186,13 +179,6 @@ func (d *Dispatcher) process(ctx context.Context, item store.OutboxEvent) error 
 		if err := d.store.MarkProjectCollectionRunning(ctx, input.Project.ChainID, input.Project.Contract, workflowID, d.now()); err != nil {
 			return d.fail(ctx, item, err)
 		}
-	case store.OutboxTypeKafkaProjectEventPublish:
-		if err := d.publishProjectEvent(ctx, item); err != nil {
-			if errors.Is(err, errProjectEventDiscarded) {
-				return nil
-			}
-			return d.fail(ctx, item, err)
-		}
 	default:
 		return d.discard(ctx, item, fmt.Errorf("unsupported application outbox type %q", item.Type))
 	}
@@ -254,50 +240,6 @@ func collectionInput(item store.OutboxEvent) (workflows.ProjectCollectionInput, 
 		return workflows.ProjectCollectionInput{}, errors.New("project collection payload contract is empty")
 	}
 	return workflows.ProjectCollectionInput{Project: payload.Project, Reason: strings.TrimSpace(payload.Reason)}, nil
-}
-
-type projectEventOutboxPayload struct {
-	Project workflows.ProjectRef `json:"project"`
-	Action  string               `json:"action,omitempty"`
-	Reason  string               `json:"reason,omitempty"`
-}
-
-func (d *Dispatcher) publishProjectEvent(ctx context.Context, item store.OutboxEvent) error {
-	if d.projectEventProducer == nil {
-		return errors.New("application project event kafka producer is not configured")
-	}
-	var payload projectEventOutboxPayload
-	if err := json.Unmarshal(item.Payload, &payload); err != nil {
-		if discardErr := d.discard(ctx, item, fmt.Errorf("decode project event payload: %w", err)); discardErr != nil {
-			return discardErr
-		}
-		return errProjectEventDiscarded
-	}
-	if payload.Project.ChainID <= 0 {
-		payload.Project.ChainID = item.ChainID
-	}
-	if payload.Project.ChainID <= 0 {
-		if discardErr := d.discard(ctx, item, errors.New("project event payload chain_id is empty")); discardErr != nil {
-			return discardErr
-		}
-		return errProjectEventDiscarded
-	}
-	if payload.Project.Contract == (common.Address{}) {
-		if discardErr := d.discard(ctx, item, errors.New("project event payload contract is empty")); discardErr != nil {
-			return discardErr
-		}
-		return errProjectEventDiscarded
-	}
-	eventPayload := appevents.ProjectEventPayload{
-		Contract: payload.Project.Contract.Hex(),
-		Action:   strings.TrimSpace(payload.Action),
-		Reason:   strings.TrimSpace(payload.Reason),
-	}
-	envelope, err := appevents.NewEnvelope(appevents.EventTypeProjectEvent, payload.Project.ChainID, eventPayload)
-	if err != nil {
-		return err
-	}
-	return d.projectEventProducer.Publish(ctx, appevents.TopicApplicationProjectV1, appevents.ProjectEventKey(payload.Project.ChainID, payload.Project.Contract.Hex()), envelope)
 }
 
 func sleep(ctx context.Context, delay time.Duration) bool {

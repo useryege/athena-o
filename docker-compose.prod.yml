@@ -34,27 +34,6 @@ services:
       timeout: 5s
       retries: 5
 
-  kafka:
-    image: docker.io/bitnami/kafka:3.7
-    restart: unless-stopped
-    environment:
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-      KAFKA_CFG_NODE_ID: "1"
-      KAFKA_CFG_PROCESS_ROLES: controller,broker
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-    volumes:
-      - kafka-data:/bitnami/kafka
-    healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   temporal:
     image: docker.io/temporalio/auto-setup:1.24
     restart: unless-stopped
@@ -113,8 +92,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -125,7 +102,6 @@ services:
       ATHENA_APPLICATION_CONFIRMATION_DEPTH: "3"
       ATHENA_APPLICATION_NODE_WS_URL: ${ATHENA_APPLICATION_ETH_NODE_WS_URL:-ws://localhost:8546}
       ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-      ATHENA_APPLICATION_KAFKA_BROKERS: kafka:9092
     command: ["athena"]
 
   athena-application-ingestor-bsc:
@@ -133,8 +109,6 @@ services:
     restart: unless-stopped
     depends_on:
       postgres:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
     env_file:
       - .env
@@ -146,26 +120,6 @@ services:
       ATHENA_APPLICATION_CONFIRMATION_DEPTH: "10"
       ATHENA_APPLICATION_NODE_WS_URL: ${ATHENA_APPLICATION_BSC_NODE_WS_URL:-ws://localhost:8546}
       ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-      ATHENA_APPLICATION_KAFKA_BROKERS: kafka:9092
-    command: ["athena"]
-
-  athena-application-kafka-consumer:
-    image: athena:local
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-application
-      ATHENA_APPLICATION_MODE: kafka-consumer
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-      ATHENA_APPLICATION_KAFKA_BROKERS: kafka:9092
-      ATHENA_APPLICATION_KAFKA_CONSUMER_GROUP: athena-application
     command: ["athena"]
 
   athena-application-outbox-worker:
@@ -173,8 +127,6 @@ services:
     restart: unless-stopped
     depends_on:
       postgres:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
       temporal:
         condition: service_started
@@ -185,7 +137,6 @@ services:
       ATHENA_APPLICATION_MODE: outbox-worker
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-      ATHENA_APPLICATION_KAFKA_BROKERS: kafka:9092
       ATHENA_APPLICATION_TEMPORAL_ADDRESS: temporal:7233
     command: ["athena"]
 
@@ -394,4 +345,3 @@ volumes:
   postgres-data:
     name: ${PROD_POSTGRES_VOLUME:-athena-prod-postgres-data}
     external: true
-  kafka-data:

@@ -12,7 +12,6 @@ import (
 
 const (
 	OutboxTypeProjectCollectionRequested = "project.collection_requested"
-	OutboxTypeKafkaProjectEventPublish   = "kafka.project_event_publish_requested"
 )
 
 const (

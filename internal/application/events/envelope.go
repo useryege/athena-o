@@ -11,15 +11,9 @@ import (
 const (
 	SchemaVersionV1 = 1
 
-	// TOPIC
-	TopicContractCreatedV1    = "athena.evm.contract_created.v1"
-	TopicDexSwapV1            = "athena.evm.dex_swap.v1"
-	TopicApplicationProjectV1 = "athena.application.project_event.v1"
-
 	// EVENT
 	EventTypeContractCreated = "evm.contract_created"
 	EventTypeDexSwap         = "evm.dex_swap"
-	EventTypeProjectEvent    = "application.project_event"
 )
 
 type Envelope struct {
@@ -50,19 +44,6 @@ func NewEnvelope(eventType string, chainID int64, payload any) (Envelope, error)
 		OccurredAt:    time.Now().UTC(),
 		Payload:       raw,
 	}, nil
-}
-
-func (e Envelope) MarshalJSONBytes() ([]byte, error) {
-	if e.EventID == "" {
-		e.EventID = newEventID()
-	}
-	if e.SchemaVersion == 0 {
-		e.SchemaVersion = SchemaVersionV1
-	}
-	if e.OccurredAt.IsZero() {
-		e.OccurredAt = time.Now().UTC()
-	}
-	return json.Marshal(e)
 }
 
 func newEventID() string {

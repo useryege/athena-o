@@ -37,7 +37,6 @@ import (
 const (
 	applicationModeAPI                    = "api"
 	applicationModeChainIngestor          = "chain-ingestor"
-	applicationModeKafkaConsumer          = "kafka-consumer"
 	applicationModeOutboxWorker           = "outbox-worker"
 	applicationModeTemporalWorkerControl  = "temporal-worker-control"
 	applicationModeTemporalWorkerChain    = "temporal-worker-chain"
@@ -61,8 +60,6 @@ type runtimeOptions struct {
 	TemporalAddress     string
 	TemporalNamespace   string
 	TemporalIdentity    string
-	KafkaBrokers        []string
-	KafkaConsumerGroup  string
 	ConfirmationDepth   uint64
 	StartBlock          uint64
 	IngestPollInterval  time.Duration
@@ -83,8 +80,6 @@ func runNonAPIMode(ctx context.Context, opts runtimeOptions) error {
 	switch normalizeApplicationMode(opts.Mode) {
 	case applicationModeChainIngestor:
 		return runChainIngestorMode(ctx, opts)
-	case applicationModeKafkaConsumer:
-		return runKafkaConsumerMode(ctx, opts)
 	case applicationModeOutboxWorker:
 		return runOutboxWorkerMode(ctx, opts)
 	case applicationModeTemporalWorkerControl:
@@ -98,23 +93,6 @@ func runNonAPIMode(ctx context.Context, opts runtimeOptions) error {
 	}
 }
 
-func runKafkaConsumerMode(ctx context.Context, opts runtimeOptions) error {
-	if opts.Store == nil {
-		return fmt.Errorf("application store is required for kafka-consumer mode")
-	}
-	consumer, err := events.NewKafkaConsumer(opts.KafkaBrokers, opts.KafkaConsumerGroup, opts.Store)
-	if err != nil {
-		return err
-	}
-	if err := consumer.Start(ctx); err != nil {
-		consumer.Stop()
-		return err
-	}
-	log.Info("athena-application kafka consumer started")
-	defer consumer.Stop()
-	return waitForShutdown(ctx)
-}
-
 func runChainIngestorMode(ctx context.Context, opts runtimeOptions) error {
 	if opts.Store == nil {
 		return fmt.Errorf("application store is required for chain-ingestor mode")
@@ -122,11 +100,7 @@ func runChainIngestorMode(ctx context.Context, opts runtimeOptions) error {
 	if opts.ChainID <= 0 {
 		return fmt.Errorf("chain-ingestor mode requires --chain-id or ATHENA_APPLICATION_CHAIN_ID")
 	}
-	producer, err := events.NewKafkaProducer(opts.KafkaBrokers)
-	if err != nil {
-		return err
-	}
-	defer producer.Close()
+	producer := events.NewDirectProducer(opts.Store)
 	log.WithField("chain_id", opts.ChainID).Info("athena-application chain ingestor started")
 	return runUntilShutdown(ctx, func(runCtx context.Context) error {
 		return runLazyChainIngestor(runCtx, opts, producer)
@@ -226,17 +200,11 @@ func runOutboxWorkerMode(ctx context.Context, opts runtimeOptions) error {
 		return err
 	}
 	defer temporalClient.Close()
-	producer, err := events.NewKafkaProducer(opts.KafkaBrokers)
-	if err != nil {
-		return err
-	}
-	defer producer.Close()
 	dispatcher, err := appoutbox.NewDispatcher(appoutbox.Options{
-		Store:                opts.Store,
-		Starter:              appworkflows.NewTemporalStarter(temporalClient),
-		ProjectEventProducer: producer,
-		LockedBy:             fmt.Sprintf("application-outbox-%d", os.Getpid()),
-		PollInterval:         opts.OutboxPollInterval,
+		Store:        opts.Store,
+		Starter:      appworkflows.NewTemporalStarter(temporalClient),
+		LockedBy:     fmt.Sprintf("application-outbox-%d", os.Getpid()),
+		PollInterval: opts.OutboxPollInterval,
 	})
 	if err != nil {
 		return err

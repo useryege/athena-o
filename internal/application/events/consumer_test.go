@@ -3,6 +3,8 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -199,5 +201,5 @@ func testEnvelope(t *testing.T, eventType string, chainID int64, payload any) En
 }
 
 func projectKey(chainID int64, address common.Address) string {
-	return ContractCreatedKey(chainID, address.Hex())
+	return fmt.Sprintf("%d:%s", chainID, strings.ToLower(address.Hex()))
 }

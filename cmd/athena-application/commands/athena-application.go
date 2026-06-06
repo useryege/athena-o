@@ -52,8 +52,6 @@ func NewCommand() *cobra.Command {
 		temporalAddress     string
 		temporalNamespace   string
 		temporalIdentity    string
-		kafkaBrokers        []string
-		kafkaConsumerGroup  string
 		confirmationDepth   uint64
 		startBlock          uint64
 		ingestPollInterval  time.Duration
@@ -102,8 +100,6 @@ func NewCommand() *cobra.Command {
 					TemporalAddress:     temporalAddress,
 					TemporalNamespace:   temporalNamespace,
 					TemporalIdentity:    temporalIdentity,
-					KafkaBrokers:        kafkaBrokers,
-					KafkaConsumerGroup:  kafkaConsumerGroup,
 					ConfirmationDepth:   confirmationDepth,
 					StartBlock:          startBlock,
 					IngestPollInterval:  ingestPollInterval,
@@ -205,7 +201,7 @@ func NewCommand() *cobra.Command {
 
 	command.Flags().StringVar(&cmdutil.LogFormat, "logformat", env.StringFromEnv("ATHENA_APPLICATION_LOGFORMAT", "json"), "Set the logging format. One of: json|text")
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv("ATHENA_APPLICATION_LOGLEVEL", "info"), "Set the logging level. One of: debug|info|warn|error")
-	command.Flags().StringVar(&applicationMode, "mode", env.StringFromEnv("ATHENA_APPLICATION_MODE", applicationModeAPI), "Run mode: api|chain-ingestor|kafka-consumer|outbox-worker|temporal-worker-control|temporal-worker-chain|temporal-worker-external")
+	command.Flags().StringVar(&applicationMode, "mode", env.StringFromEnv("ATHENA_APPLICATION_MODE", applicationModeAPI), "Run mode: api|chain-ingestor|outbox-worker|temporal-worker-control|temporal-worker-chain|temporal-worker-external")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_APPLICATION_LISTEN_ADDRESS", common.DefaultAddressApplication), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortApplication, "Listen on given port for incoming connections")
 	command.Flags().Int64Var(&chainID, "chain-id", env.ParseInt64FromEnv("ATHENA_APPLICATION_CHAIN_ID", 0, 1, 9223372036854775807), "EVM chain ID for chain-scoped application modes")
@@ -219,8 +215,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&temporalAddress, "temporal-address", env.StringFromEnv("ATHENA_APPLICATION_TEMPORAL_ADDRESS", appworkflows.DefaultTemporalAddress), "Temporal frontend host:port")
 	command.Flags().StringVar(&temporalNamespace, "temporal-namespace", env.StringFromEnv("ATHENA_APPLICATION_TEMPORAL_NAMESPACE", appworkflows.DefaultTemporalNamespace), "Temporal namespace")
 	command.Flags().StringVar(&temporalIdentity, "temporal-identity", env.StringFromEnv("ATHENA_APPLICATION_TEMPORAL_IDENTITY", ""), "Temporal worker identity")
-	command.Flags().StringSliceVar(&kafkaBrokers, "kafka-brokers", env.StringsFromEnv("ATHENA_APPLICATION_KAFKA_BROKERS", nil, ","), "Comma-separated Kafka broker addresses")
-	command.Flags().StringVar(&kafkaConsumerGroup, "kafka-consumer-group", env.StringFromEnv("ATHENA_APPLICATION_KAFKA_CONSUMER_GROUP", "athena-application"), "Kafka consumer group")
 	command.Flags().Uint64Var(&confirmationDepth, "confirmation-depth", uint64(env.ParseInt64FromEnv("ATHENA_APPLICATION_CONFIRMATION_DEPTH", 0, 0, 9223372036854775807)), "Chain ingestor confirmation depth; defaults by chain when zero")
 	command.Flags().Uint64Var(&startBlock, "start-block", uint64(env.ParseInt64FromEnv("ATHENA_APPLICATION_START_BLOCK", 0, 0, 9223372036854775807)), "Chain ingestor start block when no checkpoint exists")
 	command.Flags().DurationVar(&ingestPollInterval, "ingest-poll-interval", env.ParseDurationFromEnv("ATHENA_APPLICATION_INGEST_POLL_INTERVAL", 2*time.Second, time.Second, 24*time.Hour), "Chain ingestor poll interval")

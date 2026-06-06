@@ -20,7 +20,7 @@ type Reader interface {
 }
 
 type Producer interface {
-	Publish(ctx context.Context, topic string, key string, envelope appevents.Envelope) error
+	Publish(ctx context.Context, envelope appevents.Envelope) error
 }
 
 type ChainValidator interface {
@@ -88,7 +88,7 @@ func NewIngestor(opts Options) (*Ingestor, error) {
 		return nil, errors.New("application chain ingestor reader is required")
 	}
 	if opts.Producer == nil {
-		return nil, errors.New("application chain ingestor kafka producer is required")
+		return nil, errors.New("application chain ingestor event producer is required")
 	}
 	if opts.Store == nil {
 		return nil, errors.New("application chain ingestor checkpoint store is required")
@@ -229,7 +229,7 @@ func (i *Ingestor) publishBlock(ctx context.Context, block Block) error {
 			if err != nil {
 				return err
 			}
-			if err := i.producer.Publish(ctx, appevents.TopicContractCreatedV1, appevents.ContractCreatedKey(i.chainID, item.creation.Contract.Hex()), envelope); err != nil {
+			if err := i.producer.Publish(ctx, envelope); err != nil {
 				return err
 			}
 		}
@@ -246,7 +246,7 @@ func (i *Ingestor) publishBlock(ctx context.Context, block Block) error {
 			if err != nil {
 				return err
 			}
-			if err := i.producer.Publish(ctx, appevents.TopicDexSwapV1, appevents.DexSwapKey(i.chainID, item.swap.Pair.Hex()), envelope); err != nil {
+			if err := i.producer.Publish(ctx, envelope); err != nil {
 				return err
 			}
 		}

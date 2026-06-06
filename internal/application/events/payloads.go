@@ -1,10 +1,5 @@
 package events
 
-import (
-	"fmt"
-	"strings"
-)
-
 type ContractCreatedPayload struct {
 	Contract    string `json:"contract"`
 	Creator     string `json:"creator"`
@@ -23,26 +18,4 @@ type DexSwapPayload struct {
 	Token1      string `json:"token1"`
 	TxHash      string `json:"tx_hash"`
 	BlockNumber int64  `json:"block_number"`
-}
-
-type ProjectEventPayload struct {
-	Contract string `json:"contract"`
-	Action   string `json:"action"`
-	Reason   string `json:"reason,omitempty"`
-}
-
-func ContractCreatedKey(chainID int64, contract string) string {
-	return fmt.Sprintf("%d:%s", chainID, normalizeKeyAddress(contract))
-}
-
-func DexSwapKey(chainID int64, pair string) string {
-	return fmt.Sprintf("%d:%s", chainID, normalizeKeyAddress(pair))
-}
-
-func ProjectEventKey(chainID int64, contract string) string {
-	return fmt.Sprintf("%d:%s", chainID, normalizeKeyAddress(contract))
-}
-
-func normalizeKeyAddress(value string) string {
-	return strings.ToLower(strings.TrimSpace(value))
 }

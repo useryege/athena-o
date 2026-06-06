@@ -6,11 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/useryege/athena/internal/application/model"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
@@ -141,89 +138,4 @@ func (p *Processor) processDexSwap(ctx context.Context, envelope Envelope) error
 		}
 	}
 	return nil
-}
-
-type KafkaConsumer struct {
-	client    *kgo.Client
-	processor *Processor
-
-	mu      sync.Mutex
-	cancel  context.CancelFunc
-	wg      sync.WaitGroup
-	started bool
-}
-
-func NewKafkaConsumer(brokers []string, group string, store ProjectEventStore) (*KafkaConsumer, error) {
-	if len(brokers) == 0 {
-		return nil, errors.New("application kafka brokers are required")
-	}
-	group = strings.TrimSpace(group)
-	if group == "" {
-		return nil, errors.New("application kafka consumer group is required")
-	}
-	client, err := kgo.NewClient(
-		kgo.SeedBrokers(brokers...),
-		kgo.ConsumerGroup(group),
-		kgo.ConsumeTopics(TopicContractCreatedV1, TopicDexSwapV1),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("create application kafka consumer: %w", err)
-	}
-	return &KafkaConsumer{client: client, processor: NewProcessor(store)}, nil
-}
-
-func (c *KafkaConsumer) Start(ctx context.Context) error {
-	if c == nil || c.client == nil {
-		return nil
-	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.started {
-		return nil
-	}
-	runCtx, cancel := context.WithCancel(ctx)
-	c.cancel = cancel
-	c.started = true
-	c.wg.Add(1)
-	go c.run(runCtx)
-	return nil
-}
-
-func (c *KafkaConsumer) Stop() {
-	if c == nil {
-		return
-	}
-	c.mu.Lock()
-	cancel := c.cancel
-	c.cancel = nil
-	c.started = false
-	c.mu.Unlock()
-	if cancel != nil {
-		cancel()
-	}
-	c.wg.Wait()
-	if c.client != nil {
-		c.client.Close()
-	}
-}
-
-func (c *KafkaConsumer) run(ctx context.Context) {
-	defer c.wg.Done()
-	for {
-		fetches := c.client.PollFetches(ctx)
-		if err := fetches.Err(); err != nil {
-			if ctx.Err() != nil {
-				return
-			}
-			time.Sleep(time.Second)
-			continue
-		}
-		fetches.EachRecord(func(record *kgo.Record) {
-			var envelope Envelope
-			if err := json.Unmarshal(record.Value, &envelope); err != nil {
-				return
-			}
-			_ = c.processor.ProcessEnvelope(ctx, envelope)
-		})
-	}
 }

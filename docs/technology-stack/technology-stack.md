@@ -11,7 +11,6 @@
 * TypeScript
 * PostgreSQL
 * Redis
-* Redpanda
 * go-ethereum
 * REST
 * WebSocket

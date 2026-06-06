@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	appevents "github.com/useryege/athena/internal/application/events"
 	"github.com/useryege/athena/internal/application/store"
 	"github.com/useryege/athena/internal/application/workflows"
 )
@@ -116,23 +115,6 @@ type fakeWorkflowStarter struct {
 	err         error
 }
 
-type fakeProjectEventProducer struct {
-	records []projectEventRecord
-}
-
-type projectEventRecord struct {
-	topic    string
-	key      string
-	envelope appevents.Envelope
-}
-
-func (f *fakeProjectEventProducer) Publish(_ context.Context, topic string, key string, envelope appevents.Envelope) error {
-	f.records = append(f.records, projectEventRecord{topic: topic, key: key, envelope: envelope})
-	return nil
-}
-
-func (f *fakeProjectEventProducer) Close() {}
-
 func (f *fakeWorkflowStarter) StartProjectCollection(_ context.Context, input workflows.ProjectCollectionInput) (string, error) {
 	f.collections = append(f.collections, input)
 	if f.err != nil {
@@ -144,21 +126,16 @@ func (f *fakeWorkflowStarter) StartProjectCollection(_ context.Context, input wo
 	return workflows.ProjectCollectionWorkflowID(input.Project.ChainID, input.Project.Contract.Hex()), nil
 }
 
-func TestDispatcherClaimsWorkflowAndKafkaProjectOutboxTypes(t *testing.T) {
+func TestDispatcherClaimsWorkflowOutboxType(t *testing.T) {
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 	storeFake := &fakeOutboxStore{events: []store.OutboxEvent{
 		newOutboxEvent(2, store.OutboxTypeProjectCollectionRequested, 56, map[string]any{
 			"project": workflows.ProjectRef{ChainID: 56, Contract: contract},
 			"reason":  "pair_swap",
 		}),
-		newOutboxEvent(3, store.OutboxTypeKafkaProjectEventPublish, 56, map[string]any{
-			"project": workflows.ProjectRef{ChainID: 56, Contract: contract},
-			"action":  "collection_completed",
-		}),
 	}}
 	starter := &fakeWorkflowStarter{}
-	producer := &fakeProjectEventProducer{}
-	dispatcher, err := NewDispatcher(Options{Store: storeFake, Starter: starter, ProjectEventProducer: producer})
+	dispatcher, err := NewDispatcher(Options{Store: storeFake, Starter: starter})
 	if err != nil {
 		t.Fatalf("new dispatcher: %v", err)
 	}
@@ -168,11 +145,11 @@ func TestDispatcherClaimsWorkflowAndKafkaProjectOutboxTypes(t *testing.T) {
 		t.Fatalf("process once: %v", err)
 	}
 
-	if count != 2 {
-		t.Fatalf("claimed count = %d, want 2 dispatchable events", count)
+	if count != 1 {
+		t.Fatalf("claimed count = %d, want 1 dispatchable event", count)
 	}
-	if len(storeFake.claimedTypes) != 2 || !contains(storeFake.claimedTypes, store.OutboxTypeKafkaProjectEventPublish) {
-		t.Fatalf("claimed types = %#v, want workflow and kafka project event types", storeFake.claimedTypes)
+	if len(storeFake.claimedTypes) != 1 || storeFake.claimedTypes[0] != store.OutboxTypeProjectCollectionRequested {
+		t.Fatalf("claimed types = %#v, want workflow outbox type only", storeFake.claimedTypes)
 	}
 	if len(starter.collections) != 1 {
 		t.Fatalf("started collections=%d, want 1", len(starter.collections))
@@ -180,14 +157,8 @@ func TestDispatcherClaimsWorkflowAndKafkaProjectOutboxTypes(t *testing.T) {
 	if len(storeFake.running) != 1 || storeFake.running[0].chainID != 56 || storeFake.running[0].contract != contract || storeFake.running[0].workflowID == "" {
 		t.Fatalf("collection running marks = %#v, want workflow running state for %s", storeFake.running, contract.Hex())
 	}
-	if len(producer.records) != 1 {
-		t.Fatalf("project events published = %d, want 1", len(producer.records))
-	}
-	if producer.records[0].topic != appevents.TopicApplicationProjectV1 {
-		t.Fatalf("topic = %q, want application project topic", producer.records[0].topic)
-	}
-	if !equalIDs(storeFake.processed, []int64{2, 3}) {
-		t.Fatalf("processed ids = %#v, want [2 3]", storeFake.processed)
+	if !equalIDs(storeFake.processed, []int64{2}) {
+		t.Fatalf("processed ids = %#v, want [2]", storeFake.processed)
 	}
 }
 
@@ -254,15 +225,6 @@ func newOutboxEvent(id int64, eventType string, chainID int64, payload any) stor
 		panic(err)
 	}
 	return store.OutboxEvent{ID: id, Type: eventType, ChainID: chainID, Payload: raw}
-}
-
-func contains(items []string, target string) bool {
-	for _, item := range items {
-		if item == target {
-			return true
-		}
-	}
-	return false
 }
 
 func equalIDs(got []int64, want []int64) bool {
