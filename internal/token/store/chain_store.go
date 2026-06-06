@@ -68,9 +68,7 @@ func (s *SQLStore) UpsertChainIngestCheckpoint(ctx context.Context, item ChainIn
 	row, err := q.UpsertChainIngestCheckpoint(ctx, tokensqlc.UpsertChainIngestCheckpointParams{
 		ChainID:              item.ChainID,
 		FinalizedBlockNumber: finalizedBlockNumber,
-		FinalizedBlockHash:   optionalHashBytes(item.FinalizedBlockHash),
 		CursorBlockNumber:    cursorBlockNumber,
-		CursorBlockHash:      optionalHashBytes(item.CursorBlockHash),
 		Status:               status,
 	})
 	if err != nil {

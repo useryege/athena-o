@@ -112,9 +112,7 @@ func mapChainCheckpointRow(row tokensqlc.GetChainIngestCheckpointRow) (*ChainIng
 		ChainName:            row.ChainName,
 		Enabled:              row.Enabled,
 		FinalizedBlockNumber: finalizedBlockNumber,
-		FinalizedBlockHash:   bytesToHash(row.FinalizedBlockHash),
 		CursorBlockNumber:    cursorBlockNumber,
-		CursorBlockHash:      bytesToHash(row.CursorBlockHash),
 		Status:               row.Status,
 		CreatedAt:            timeValue(row.CreatedAt),
 	}, nil
@@ -136,9 +134,7 @@ func mapChainCheckpoint(row tokensqlc.ChainIngestCheckpoint) (*ChainIngestCheckp
 	return &ChainIngestCheckpoint{
 		ChainID:              row.ChainID,
 		FinalizedBlockNumber: finalizedBlockNumber,
-		FinalizedBlockHash:   bytesToHash(row.FinalizedBlockHash),
 		CursorBlockNumber:    cursorBlockNumber,
-		CursorBlockHash:      bytesToHash(row.CursorBlockHash),
 		Status:               row.Status,
 		CreatedAt:            timeValue(row.CreatedAt),
 	}, nil

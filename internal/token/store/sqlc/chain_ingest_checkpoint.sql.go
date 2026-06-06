@@ -17,9 +17,7 @@ SELECT
   c.name AS chain_name,
   c.enabled,
   COALESCE(cp.finalized_block_number, 0)::bigint AS finalized_block_number,
-  cp.finalized_block_hash,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
-  cp.cursor_block_hash,
   COALESCE(cp.status, 'stopped')::text AS status,
   COALESCE(cp.created_at, c.created_at) AS created_at
 FROM chain c
@@ -32,9 +30,7 @@ type GetChainIngestCheckpointRow struct {
 	ChainName            string
 	Enabled              bool
 	FinalizedBlockNumber int64
-	FinalizedBlockHash   []byte
 	CursorBlockNumber    int64
-	CursorBlockHash      []byte
 	Status               string
 	CreatedAt            pgtype.Timestamptz
 }
@@ -47,9 +43,7 @@ func (q *Queries) GetChainIngestCheckpoint(ctx context.Context, chainID int64) (
 		&i.ChainName,
 		&i.Enabled,
 		&i.FinalizedBlockNumber,
-		&i.FinalizedBlockHash,
 		&i.CursorBlockNumber,
-		&i.CursorBlockHash,
 		&i.Status,
 		&i.CreatedAt,
 	)
@@ -62,9 +56,7 @@ SELECT
   c.name AS chain_name,
   c.enabled,
   COALESCE(cp.finalized_block_number, 0)::bigint AS finalized_block_number,
-  cp.finalized_block_hash,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
-  cp.cursor_block_hash,
   COALESCE(cp.status, 'stopped')::text AS status,
   COALESCE(cp.created_at, c.created_at) AS created_at
 FROM chain c
@@ -77,9 +69,7 @@ type ListChainIngestCheckpointsRow struct {
 	ChainName            string
 	Enabled              bool
 	FinalizedBlockNumber int64
-	FinalizedBlockHash   []byte
 	CursorBlockNumber    int64
-	CursorBlockHash      []byte
 	Status               string
 	CreatedAt            pgtype.Timestamptz
 }
@@ -98,9 +88,7 @@ func (q *Queries) ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIn
 			&i.ChainName,
 			&i.Enabled,
 			&i.FinalizedBlockNumber,
-			&i.FinalizedBlockHash,
 			&i.CursorBlockNumber,
-			&i.CursorBlockHash,
 			&i.Status,
 			&i.CreatedAt,
 		); err != nil {
@@ -118,7 +106,7 @@ const updateChainIngestCheckpointStatus = `-- name: UpdateChainIngestCheckpointS
 UPDATE chain_ingest_checkpoint
 SET status = $1
 WHERE chain_id = $2
-RETURNING chain_id, finalized_block_number, finalized_block_hash, cursor_block_number, cursor_block_hash, status, created_at
+RETURNING chain_id, finalized_block_number, cursor_block_number, status, created_at
 `
 
 type UpdateChainIngestCheckpointStatusParams struct {
@@ -132,9 +120,7 @@ func (q *Queries) UpdateChainIngestCheckpointStatus(ctx context.Context, arg Upd
 	err := row.Scan(
 		&i.ChainID,
 		&i.FinalizedBlockNumber,
-		&i.FinalizedBlockHash,
 		&i.CursorBlockNumber,
-		&i.CursorBlockHash,
 		&i.Status,
 		&i.CreatedAt,
 	)
@@ -145,33 +131,25 @@ const upsertChainIngestCheckpoint = `-- name: UpsertChainIngestCheckpoint :one
 INSERT INTO chain_ingest_checkpoint (
   chain_id,
   finalized_block_number,
-  finalized_block_hash,
   cursor_block_number,
-  cursor_block_hash,
   status
 ) VALUES (
   $1,
   $2,
-  $3::bytea,
-  $4,
-  $5::bytea,
-  $6
+  $3,
+  $4
 )
 ON CONFLICT (chain_id) DO UPDATE
 SET finalized_block_number = EXCLUDED.finalized_block_number,
-  finalized_block_hash = EXCLUDED.finalized_block_hash,
   cursor_block_number = EXCLUDED.cursor_block_number,
-  cursor_block_hash = EXCLUDED.cursor_block_hash,
   status = EXCLUDED.status
-RETURNING chain_id, finalized_block_number, finalized_block_hash, cursor_block_number, cursor_block_hash, status, created_at
+RETURNING chain_id, finalized_block_number, cursor_block_number, status, created_at
 `
 
 type UpsertChainIngestCheckpointParams struct {
 	ChainID              int64
 	FinalizedBlockNumber int64
-	FinalizedBlockHash   []byte
 	CursorBlockNumber    int64
-	CursorBlockHash      []byte
 	Status               string
 }
 
@@ -179,18 +157,14 @@ func (q *Queries) UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertCha
 	row := q.db.QueryRow(ctx, upsertChainIngestCheckpoint,
 		arg.ChainID,
 		arg.FinalizedBlockNumber,
-		arg.FinalizedBlockHash,
 		arg.CursorBlockNumber,
-		arg.CursorBlockHash,
 		arg.Status,
 	)
 	var i ChainIngestCheckpoint
 	err := row.Scan(
 		&i.ChainID,
 		&i.FinalizedBlockNumber,
-		&i.FinalizedBlockHash,
 		&i.CursorBlockNumber,
-		&i.CursorBlockHash,
 		&i.Status,
 		&i.CreatedAt,
 	)

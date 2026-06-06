@@ -18,9 +18,7 @@ type Chain struct {
 type ChainIngestCheckpoint struct {
 	ChainID              int64
 	FinalizedBlockNumber int64
-	FinalizedBlockHash   []byte
 	CursorBlockNumber    int64
-	CursorBlockHash      []byte
 	Status               string
 	CreatedAt            pgtype.Timestamptz
 }

@@ -17,16 +17,12 @@ ON CONFLICT (id) DO NOTHING;
 CREATE TABLE IF NOT EXISTS chain_ingest_checkpoint (
   chain_id BIGINT PRIMARY KEY,
   finalized_block_number BIGINT NOT NULL DEFAULT 0,
-  finalized_block_hash BYTEA,
   cursor_block_number BIGINT NOT NULL DEFAULT 0,
-  cursor_block_hash BYTEA,
   status TEXT NOT NULL DEFAULT 'stopped',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT chain_ingest_checkpoint_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
   CONSTRAINT chain_ingest_checkpoint_finalized_block_nonnegative CHECK (finalized_block_number >= 0),
   CONSTRAINT chain_ingest_checkpoint_cursor_block_nonnegative CHECK (cursor_block_number >= 0),
-  CONSTRAINT chain_ingest_checkpoint_finalized_hash_len CHECK (finalized_block_hash IS NULL OR length(finalized_block_hash) = 32),
-  CONSTRAINT chain_ingest_checkpoint_cursor_hash_len CHECK (cursor_block_hash IS NULL OR length(cursor_block_hash) = 32),
   CONSTRAINT chain_ingest_checkpoint_status_allowed CHECK (status IN ('running', 'stopped'))
 );
 

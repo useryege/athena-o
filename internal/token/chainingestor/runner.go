@@ -122,9 +122,7 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 		if _, err := r.opts.store.UpsertChainIngestCheckpoint(ctx, tokenstore.ChainIngestCheckpoint{
 			ChainID:              r.opts.chainID,
 			FinalizedBlockNumber: block.NumberU64(),
-			FinalizedBlockHash:   block.Hash(),
 			CursorBlockNumber:    block.NumberU64(),
-			CursorBlockHash:      block.Hash(),
 			Status:               tokenstore.ChainIngestStatusRunning,
 		}); err != nil {
 			return err

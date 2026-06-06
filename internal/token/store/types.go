@@ -22,9 +22,7 @@ type ChainIngestCheckpoint struct {
 	ChainName            string
 	Enabled              bool
 	FinalizedBlockNumber uint64
-	FinalizedBlockHash   common.Hash
 	CursorBlockNumber    uint64
-	CursorBlockHash      common.Hash
 	Status               string
 	CreatedAt            time.Time
 }

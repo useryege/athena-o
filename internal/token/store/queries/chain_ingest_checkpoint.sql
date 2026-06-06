@@ -4,9 +4,7 @@ SELECT
   c.name AS chain_name,
   c.enabled,
   COALESCE(cp.finalized_block_number, 0)::bigint AS finalized_block_number,
-  cp.finalized_block_hash,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
-  cp.cursor_block_hash,
   COALESCE(cp.status, 'stopped')::text AS status,
   COALESCE(cp.created_at, c.created_at) AS created_at
 FROM chain c
@@ -17,23 +15,17 @@ WHERE c.id = @chain_id;
 INSERT INTO chain_ingest_checkpoint (
   chain_id,
   finalized_block_number,
-  finalized_block_hash,
   cursor_block_number,
-  cursor_block_hash,
   status
 ) VALUES (
   @chain_id,
   @finalized_block_number,
-  sqlc.narg('finalized_block_hash')::bytea,
   @cursor_block_number,
-  sqlc.narg('cursor_block_hash')::bytea,
   @status
 )
 ON CONFLICT (chain_id) DO UPDATE
 SET finalized_block_number = EXCLUDED.finalized_block_number,
-  finalized_block_hash = EXCLUDED.finalized_block_hash,
   cursor_block_number = EXCLUDED.cursor_block_number,
-  cursor_block_hash = EXCLUDED.cursor_block_hash,
   status = EXCLUDED.status
 RETURNING *;
 
@@ -49,9 +41,7 @@ SELECT
   c.name AS chain_name,
   c.enabled,
   COALESCE(cp.finalized_block_number, 0)::bigint AS finalized_block_number,
-  cp.finalized_block_hash,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
-  cp.cursor_block_hash,
   COALESCE(cp.status, 'stopped')::text AS status,
   COALESCE(cp.created_at, c.created_at) AS created_at
 FROM chain c
