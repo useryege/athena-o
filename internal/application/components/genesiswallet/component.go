@@ -76,7 +76,7 @@ func (c *Component) Collect(ctx context.Context, chainID int64, contract common.
 }
 
 func (c *Component) refresh(ctx context.Context, chainID int64, contract common.Address) error {
-	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, chainID, contract)
+	base, err := appcomponents.LoadProject(ctx, c.cache, c.store, chainID, contract)
 	if err != nil || base == nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 	return nil
 }
 
-func (c *Component) fetchGenesisWallets(ctx context.Context, base appstore.ProjectBase, totalSupply *big.Int) ([]GenesisWalletShare, error) {
+func (c *Component) fetchGenesisWallets(ctx context.Context, base appstore.Project, totalSupply *big.Int) ([]GenesisWalletShare, error) {
 	logs, err := c.fetchGenesisWalletsFromReceipt(ctx, base)
 	if err == nil {
 		return extractGenesisWalletShares(logs, base.Contract, totalSupply), nil
@@ -122,7 +122,7 @@ func (c *Component) fetchGenesisWallets(ctx context.Context, base appstore.Proje
 	return extractGenesisWalletShares(fallbackLogs, base.Contract, totalSupply), nil
 }
 
-func (c *Component) fetchGenesisWalletsFromReceipt(ctx context.Context, base appstore.ProjectBase) ([]*types.Log, error) {
+func (c *Component) fetchGenesisWalletsFromReceipt(ctx context.Context, base appstore.Project) ([]*types.Log, error) {
 	txHash := projectTxHash(base)
 	if txHash == (common.Hash{}) {
 		return nil, errors.New("project tx hash is empty")
@@ -137,7 +137,7 @@ func (c *Component) fetchGenesisWalletsFromReceipt(ctx context.Context, base app
 	return receipt.Logs, nil
 }
 
-func (c *Component) fetchGenesisWalletsFromLogsFallback(ctx context.Context, base appstore.ProjectBase) ([]*types.Log, error) {
+func (c *Component) fetchGenesisWalletsFromLogsFallback(ctx context.Context, base appstore.Project) ([]*types.Log, error) {
 	txHash := projectTxHash(base)
 	if txHash == (common.Hash{}) {
 		return nil, errors.New("project tx hash is empty")
@@ -161,7 +161,7 @@ func shouldFallbackToLogs(err error) bool {
 	return errors.Is(err, ethereum.NotFound) || errors.Is(err, errGenesisReceiptNil)
 }
 
-func projectTxHash(base appstore.ProjectBase) common.Hash {
+func projectTxHash(base appstore.Project) common.Hash {
 	if base.TxHash != (common.Hash{}) {
 		return base.TxHash
 	}
@@ -248,7 +248,7 @@ func ratioBPS(amount *big.Int, totalSupply *big.Int) int64 {
 	return result.Int64()
 }
 
-func genesisWalletsToStore(base appstore.ProjectBase, totalSupply *big.Int, shares []GenesisWalletShare) []appstore.ProjectGenesisWallet {
+func genesisWalletsToStore(base appstore.Project, totalSupply *big.Int, shares []GenesisWalletShare) []appstore.ProjectGenesisWallet {
 	txHash := projectTxHash(base)
 	result := make([]appstore.ProjectGenesisWallet, 0, len(shares))
 	for i, share := range shares {

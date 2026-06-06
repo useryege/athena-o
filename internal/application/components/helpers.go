@@ -13,8 +13,8 @@ import (
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
-func ProjectBaseFromCandidate(candidate model.DiscoveredProjectCandidate) appstore.ProjectBase {
-	return appstore.ProjectBase{
+func ProjectFromCandidate(candidate model.DiscoveredProjectCandidate) appstore.Project {
+	return appstore.Project{
 		ChainID:     candidate.ChainID,
 		BlockTime:   candidate.BlockTime,
 		BlockNumber: candidate.BlockNumber,
@@ -26,9 +26,9 @@ func ProjectBaseFromCandidate(candidate model.DiscoveredProjectCandidate) appsto
 	}
 }
 
-func LoadProjectBase(ctx context.Context, cache appcache.ProjectComponentCache, store appstore.ProjectBaseStore, chainID int64, contract common.Address) (*appstore.ProjectBase, error) {
+func LoadProject(ctx context.Context, cache appcache.ProjectComponentCache, store appstore.ProjectStore, chainID int64, contract common.Address) (*appstore.Project, error) {
 	if cache != nil {
-		if base, ok, err := cache.GetBase(ctx, chainID, contract); err != nil {
+		if base, ok, err := cache.GetProject(ctx, chainID, contract); err != nil {
 			return nil, err
 		} else if ok && base != nil {
 			return base, nil
@@ -37,12 +37,12 @@ func LoadProjectBase(ctx context.Context, cache appcache.ProjectComponentCache, 
 	if store == nil {
 		return nil, nil
 	}
-	base, err := store.GetProjectBaseByContract(ctx, chainID, contract)
+	base, err := store.GetProjectByContract(ctx, chainID, contract)
 	if err != nil || base == nil {
 		return base, err
 	}
 	if cache != nil {
-		if err := cache.SetBase(ctx, *base); err != nil {
+		if err := cache.SetProject(ctx, *base); err != nil {
 			return nil, err
 		}
 	}
@@ -82,7 +82,7 @@ func GenesisWalletAddresses(items []appstore.ProjectGenesisWallet) []common.Addr
 	return addresses
 }
 
-func ProjectQuery(base appstore.ProjectBase, genesisWallets []appstore.ProjectGenesisWallet) athenacontract.AthenaProjectQuery {
+func ProjectQuery(base appstore.Project, genesisWallets []appstore.ProjectGenesisWallet) athenacontract.AthenaProjectQuery {
 	return athenacontract.AthenaProjectQuery{
 		TokenContract:  base.Contract,
 		MsgCaller:      base.Creator,

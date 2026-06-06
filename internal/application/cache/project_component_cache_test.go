@@ -22,25 +22,25 @@ func TestProjectComponentCacheSeparatesSameContractByChainID(t *testing.T) {
 	ethCreator := common.HexToAddress("0x1000000000000000000000000000000000000002")
 	bscCreator := common.HexToAddress("0x1000000000000000000000000000000000000003")
 
-	if err := cache.SetBase(ctx, appstore.ProjectBase{ChainID: 1, Contract: contract, Creator: ethCreator, BlockNumber: 10}); err != nil {
-		t.Fatalf("set eth base: %v", err)
+	if err := cache.SetProject(ctx, appstore.Project{ChainID: 1, Contract: contract, Creator: ethCreator, BlockNumber: 10}); err != nil {
+		t.Fatalf("set eth project: %v", err)
 	}
-	if err := cache.SetBase(ctx, appstore.ProjectBase{ChainID: 56, Contract: contract, Creator: bscCreator, BlockNumber: 20}); err != nil {
-		t.Fatalf("set bsc base: %v", err)
+	if err := cache.SetProject(ctx, appstore.Project{ChainID: 56, Contract: contract, Creator: bscCreator, BlockNumber: 20}); err != nil {
+		t.Fatalf("set bsc project: %v", err)
 	}
 
-	ethBase, ok, err := cache.GetBase(ctx, 1, contract)
+	ethProject, ok, err := cache.GetProject(ctx, 1, contract)
 	if err != nil || !ok {
-		t.Fatalf("get eth base ok=%v err=%v", ok, err)
+		t.Fatalf("get eth project ok=%v err=%v", ok, err)
 	}
-	bscBase, ok, err := cache.GetBase(ctx, 56, contract)
+	bscProject, ok, err := cache.GetProject(ctx, 56, contract)
 	if err != nil || !ok {
-		t.Fatalf("get bsc base ok=%v err=%v", ok, err)
+		t.Fatalf("get bsc project ok=%v err=%v", ok, err)
 	}
-	if ethBase.Creator != ethCreator || ethBase.BlockNumber != 10 {
-		t.Fatalf("eth base = %#v, want eth creator/block", ethBase)
+	if ethProject.Creator != ethCreator || ethProject.BlockNumber != 10 {
+		t.Fatalf("eth project = %#v, want eth creator/block", ethProject)
 	}
-	if bscBase.Creator != bscCreator || bscBase.BlockNumber != 20 {
-		t.Fatalf("bsc base = %#v, want bsc creator/block", bscBase)
+	if bscProject.Creator != bscCreator || bscProject.BlockNumber != 20 {
+		t.Fatalf("bsc project = %#v, want bsc creator/block", bscProject)
 	}
 }

@@ -15,7 +15,7 @@ func TestComponentCollectWritesState(t *testing.T) {
 	contract := common.BigToAddress(big.NewInt(21))
 	creator := common.BigToAddress(big.NewInt(22))
 	store := &chainStateStoreFake{
-		baseByContract: map[common.Address]appstore.ProjectBase{
+		baseByContract: map[common.Address]appstore.Project{
 			contract: {ChainID: 1, Contract: contract, Creator: creator},
 		},
 	}
@@ -52,12 +52,12 @@ func TestComponentCollectWritesState(t *testing.T) {
 type chainStateStoreFake struct {
 	appstore.Store
 
-	baseByContract        map[common.Address]appstore.ProjectBase
+	baseByContract        map[common.Address]appstore.Project
 	upsertChainStateCalls int
 	lastComponentStatus   string
 }
 
-func (s *chainStateStoreFake) GetProjectBaseByContract(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectBase, error) {
+func (s *chainStateStoreFake) GetProjectByContract(_ context.Context, _ int64, contract common.Address) (*appstore.Project, error) {
 	item, ok := s.baseByContract[contract]
 	if !ok {
 		return nil, nil

@@ -125,7 +125,7 @@ func TestUpsertProjectCandidateAndEnqueueQualificationWritesProjectAndCollection
 		t.Fatalf("project params = %#v, want chain/contract", querier.lastProject)
 	}
 	if common.BytesToAddress(querier.lastProject.Creator) != creator || common.BytesToHash(querier.lastProject.TxHash) != txHash {
-		t.Fatalf("project base params = %#v, want creator/tx hash", querier.lastProject)
+		t.Fatalf("project params = %#v, want creator/tx hash", querier.lastProject)
 	}
 	if common.BytesToHash(querier.lastCodeHash) != codeHash {
 		t.Fatalf("code hash = %x, want %s", querier.lastCodeHash, codeHash.Hex())

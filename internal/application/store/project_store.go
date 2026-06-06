@@ -14,50 +14,34 @@ import (
 	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 )
 
-func (s *SQLStore) SaveProjectBase(ctx context.Context, base ProjectBase) error {
-	txHash := base.TxHash
-	if base.Tx != nil {
-		txHash = base.Tx.Hash()
+func (s *SQLStore) SaveProject(ctx context.Context, project Project) error {
+	txHash := project.TxHash
+	if project.Tx != nil {
+		txHash = project.Tx.Hash()
 	}
 	if txHash == (common.Hash{}) {
-		return errors.New("project base transaction is nil")
+		return errors.New("project transaction is nil")
 	}
-	if err := validateProjectBaseNumbers(base.BlockNumber, base.BlockTime, base.TxIndex); err != nil {
+	if err := validateProjectNumbers(project.BlockNumber, project.BlockTime, project.TxIndex); err != nil {
 		return err
 	}
 	queries, err := s.querier()
 	if err != nil {
 		return err
 	}
-	err = queries.InsertProjectBase(ctx, appsqlc.InsertProjectBaseParams{
-		ChainID:     s.chainIDForProject(base.ChainID),
-		BlockNumber: int64(base.BlockNumber),
-		BlockTime:   int64(base.BlockTime),
-		Contract:    base.Contract.Bytes(),
-		Creator:     base.Creator.Bytes(),
+	err = queries.InsertProject(ctx, appsqlc.InsertProjectParams{
+		ChainID:     s.chainIDForProject(project.ChainID),
+		BlockNumber: int64(project.BlockNumber),
+		BlockTime:   int64(project.BlockTime),
+		Contract:    project.Contract.Bytes(),
+		Creator:     project.Creator.Bytes(),
 		TxHash:      txHash.Bytes(),
-		TxIndex:     int64(base.TxIndex),
+		TxIndex:     int64(project.TxIndex),
 	})
 	if err != nil {
-		return fmt.Errorf("save project base: %w", err)
+		return fmt.Errorf("save project: %w", err)
 	}
 	return nil
-}
-
-func (s *SQLStore) SaveProjectMeta(ctx context.Context, meta ProjectMeta) error {
-	txHash := meta.TxHash
-	if txHash == (common.Hash{}) && meta.GenesisTx != nil {
-		txHash = meta.GenesisTx.Hash()
-	}
-	return s.SaveProjectBase(ctx, ProjectBase{
-		ChainID:     meta.ChainID,
-		BlockTime:   meta.BlockTime,
-		BlockNumber: meta.BlockNumber,
-		Contract:    meta.Contract,
-		Creator:     meta.Creator,
-		TxHash:      txHash,
-		TxIndex:     meta.TxIndex,
-	})
 }
 
 func (s *SQLStore) GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error) {
@@ -73,23 +57,23 @@ func (s *SQLStore) GetMaxProjectBlockNumber(ctx context.Context, chainID int64) 
 		return 0, false, nil
 	}
 	if row.MaxBlock < 0 {
-		return 0, false, fmt.Errorf("project base block number %d is negative", row.MaxBlock)
+		return 0, false, fmt.Errorf("project block number %d is negative", row.MaxBlock)
 	}
 	return uint64(row.MaxBlock), true, nil
 }
 
-func (s *SQLStore) ListProjectBases(ctx context.Context, chainID int64) ([]ProjectBase, error) {
+func (s *SQLStore) ListProjects(ctx context.Context, chainID int64) ([]Project, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectBases(ctx, s.chainIDForProject(chainID))
+	rows, err := queries.ListProjects(ctx, s.chainIDForProject(chainID))
 	if err != nil {
-		return nil, fmt.Errorf("list project bases: %w", err)
+		return nil, fmt.Errorf("list projects: %w", err)
 	}
-	items := make([]ProjectBase, 0, len(rows))
+	items := make([]Project, 0, len(rows))
 	for _, row := range rows {
-		item, err := projectBaseFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
+		item, err := projectFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -98,32 +82,32 @@ func (s *SQLStore) ListProjectBases(ctx context.Context, chainID int64) ([]Proje
 	return items, nil
 }
 
-func (s *SQLStore) ListProjectBasesPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]ProjectBase, int64, int32, int32, error) {
+func (s *SQLStore) ListProjectsPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]Project, int64, int32, int32, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
 	page, pageSize = normalizePage(page, pageSize)
 	chainID = s.chainIDForProject(chainID)
-	total, err := queries.CountProjectBases(ctx, chainID)
+	total, err := queries.CountProjects(ctx, chainID)
 	if err != nil {
-		return nil, 0, page, pageSize, fmt.Errorf("count project bases: %w", err)
+		return nil, 0, page, pageSize, fmt.Errorf("count projects: %w", err)
 	}
 	offset := int64(page-1) * int64(pageSize)
 	if offset > math.MaxInt32 {
-		return nil, 0, page, pageSize, fmt.Errorf("project base page offset %d exceeds int32", offset)
+		return nil, 0, page, pageSize, fmt.Errorf("project page offset %d exceeds int32", offset)
 	}
-	rows, err := queries.ListProjectBasesPage(ctx, appsqlc.ListProjectBasesPageParams{
+	rows, err := queries.ListProjectsPage(ctx, appsqlc.ListProjectsPageParams{
 		ChainID:     chainID,
 		LimitCount:  pageSize,
 		OffsetCount: int32(offset),
 	})
 	if err != nil {
-		return nil, 0, page, pageSize, fmt.Errorf("list project bases page: %w", err)
+		return nil, 0, page, pageSize, fmt.Errorf("list projects page: %w", err)
 	}
-	items := make([]ProjectBase, 0, len(rows))
+	items := make([]Project, 0, len(rows))
 	for _, row := range rows {
-		item, err := projectBaseFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
+		item, err := projectFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
 		if err != nil {
 			return nil, 0, page, pageSize, err
 		}
@@ -132,12 +116,12 @@ func (s *SQLStore) ListProjectBasesPage(ctx context.Context, chainID int64, page
 	return items, total, page, pageSize, nil
 }
 
-func (s *SQLStore) GetProjectBaseByContract(ctx context.Context, chainID int64, contract common.Address) (*ProjectBase, error) {
+func (s *SQLStore) GetProjectByContract(ctx context.Context, chainID int64, contract common.Address) (*Project, error) {
 	queries, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	row, err := queries.GetProjectBaseByContract(ctx, appsqlc.GetProjectBaseByContractParams{
+	row, err := queries.GetProjectByContract(ctx, appsqlc.GetProjectByContractParams{
 		ChainID:  s.chainIDForProject(chainID),
 		Contract: contract.Bytes(),
 	})
@@ -145,16 +129,16 @@ func (s *SQLStore) GetProjectBaseByContract(ctx context.Context, chainID int64, 
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("get project base by contract: %w", err)
+		return nil, fmt.Errorf("get project by contract: %w", err)
 	}
-	base, err := projectBaseFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
+	project, err := projectFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
-	return &base, nil
+	return &project, nil
 }
 
-func (s *SQLStore) ListProjectBasesByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectBase, error) {
+func (s *SQLStore) ListProjectsByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]Project, error) {
 	if err := validateProjectOrderNumbers(blockNumber, txIndex); err != nil {
 		return nil, err
 	}
@@ -162,18 +146,18 @@ func (s *SQLStore) ListProjectBasesByCreatorBefore(ctx context.Context, chainID 
 	if err != nil {
 		return nil, err
 	}
-	rows, err := queries.ListProjectBasesByCreatorBefore(ctx, appsqlc.ListProjectBasesByCreatorBeforeParams{
+	rows, err := queries.ListProjectsByCreatorBefore(ctx, appsqlc.ListProjectsByCreatorBeforeParams{
 		ChainID:     s.chainIDForProject(chainID),
 		Creator:     creator.Bytes(),
 		BlockNumber: int64(blockNumber),
 		TxIndex:     int64(txIndex),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("list project bases by creator before: %w", err)
+		return nil, fmt.Errorf("list projects by creator before: %w", err)
 	}
-	items := make([]ProjectBase, 0, len(rows))
+	items := make([]Project, 0, len(rows))
 	for _, row := range rows {
-		item, err := projectBaseFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
+		item, err := projectFromFields(row.ChainID, row.BlockNumber, row.BlockTime, row.Contract, row.Creator, row.TxHash, row.TxIndex, row.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -219,10 +203,6 @@ func (s *SQLStore) ListProjectMetas(ctx context.Context, chainID int64) ([]Proje
 		items = append(items, item)
 	}
 	return items, nil
-}
-
-func (s *SQLStore) ListAllProjectMetas(ctx context.Context, chainID int64) ([]ProjectMeta, error) {
-	return s.ListProjectMetas(ctx, chainID)
 }
 
 func (s *SQLStore) ListProjectMetasByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]ProjectMeta, error) {
@@ -627,11 +607,11 @@ func (s *SQLStore) GetProjectComponentState(ctx context.Context, chainID int64, 
 	return &item, nil
 }
 
-func projectBaseFromFields(chainID int64, blockNumber int64, blockTime int64, contract []byte, creator []byte, txHash []byte, txIndex int64, createdAt pgtype.Timestamptz) (ProjectBase, error) {
+func projectFromFields(chainID int64, blockNumber int64, blockTime int64, contract []byte, creator []byte, txHash []byte, txIndex int64, createdAt pgtype.Timestamptz) (Project, error) {
 	if blockNumber < 0 || blockTime < 0 || txIndex < 0 {
-		return ProjectBase{}, fmt.Errorf("project base has negative order fields")
+		return Project{}, fmt.Errorf("project has negative order fields")
 	}
-	item := ProjectBase{
+	item := Project{
 		ChainID:     chainID,
 		BlockNumber: uint64(blockNumber),
 		BlockTime:   uint64(blockTime),
@@ -720,19 +700,19 @@ func projectChainStateFromFields(chainID int64, projectContract []byte, chainSta
 	return item, nil
 }
 
-func validateProjectBaseNumbers(blockNumber, blockTime, txIndex uint64) error {
+func validateProjectNumbers(blockNumber, blockTime, txIndex uint64) error {
 	if blockTime > math.MaxInt64 {
-		return fmt.Errorf("project base block time %d exceeds postgres BIGINT", blockTime)
+		return fmt.Errorf("project block time %d exceeds postgres BIGINT", blockTime)
 	}
 	return validateProjectOrderNumbers(blockNumber, txIndex)
 }
 
 func validateProjectOrderNumbers(blockNumber, txIndex uint64) error {
 	if blockNumber > math.MaxInt64 {
-		return fmt.Errorf("project base block number %d exceeds postgres BIGINT", blockNumber)
+		return fmt.Errorf("project block number %d exceeds postgres BIGINT", blockNumber)
 	}
 	if txIndex > math.MaxInt64 {
-		return fmt.Errorf("project base tx index %d exceeds postgres BIGINT", txIndex)
+		return fmt.Errorf("project tx index %d exceeds postgres BIGINT", txIndex)
 	}
 	return nil
 }

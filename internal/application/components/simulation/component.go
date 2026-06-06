@@ -65,7 +65,7 @@ func (c *Component) Collect(ctx context.Context, chainID int64, contract common.
 }
 
 func (c *Component) refresh(ctx context.Context, chainID int64, contract common.Address) error {
-	base, err := appcomponents.LoadProjectBase(ctx, c.cache, c.store, chainID, contract)
+	base, err := appcomponents.LoadProject(ctx, c.cache, c.store, chainID, contract)
 	if err != nil || base == nil {
 		return err
 	}

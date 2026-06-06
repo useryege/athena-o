@@ -13,7 +13,7 @@ type Querier interface {
 	AddWalletBlacklistEntry(ctx context.Context, arg AddWalletBlacklistEntryParams) error
 	ClaimOutboxEvents(ctx context.Context, arg ClaimOutboxEventsParams) ([]OutboxEvent, error)
 	ClaimOutboxEventsByTypes(ctx context.Context, arg ClaimOutboxEventsByTypesParams) ([]OutboxEvent, error)
-	CountProjectBases(ctx context.Context, chainID int64) (int64, error)
+	CountProjects(ctx context.Context, chainID int64) (int64, error)
 	DeleteBytecodeBlacklist(ctx context.Context, codeHash []byte) (int64, error)
 	DeleteProjectCreatorHistoricalProjectsByContract(ctx context.Context, arg DeleteProjectCreatorHistoricalProjectsByContractParams) error
 	DeleteProjectGenesisWalletsByContract(ctx context.Context, arg DeleteProjectGenesisWalletsByContractParams) error
@@ -24,7 +24,7 @@ type Querier interface {
 	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (GetChainIngestCheckpointRow, error)
 	GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (GetMaxProjectBlockNumberRow, error)
 	GetProjectAveComponentState(ctx context.Context, arg GetProjectAveComponentStateParams) (GetProjectAveComponentStateRow, error)
-	GetProjectBaseByContract(ctx context.Context, arg GetProjectBaseByContractParams) (GetProjectBaseByContractRow, error)
+	GetProjectByContract(ctx context.Context, arg GetProjectByContractParams) (GetProjectByContractRow, error)
 	GetProjectChainState(ctx context.Context, arg GetProjectChainStateParams) (GetProjectChainStateRow, error)
 	GetProjectCollectionState(ctx context.Context, arg GetProjectCollectionStateParams) (GetProjectCollectionStateRow, error)
 	GetProjectComponentState(ctx context.Context, arg GetProjectComponentStateParams) (GetProjectComponentStateRow, error)
@@ -32,7 +32,7 @@ type Querier interface {
 	GetProjectSimulationResult(ctx context.Context, arg GetProjectSimulationResultParams) (GetProjectSimulationResultRow, error)
 	GetWalletBlacklistEntry(ctx context.Context, wallet []byte) (WalletBlacklist, error)
 	InsertOutboxEvent(ctx context.Context, arg InsertOutboxEventParams) (InsertOutboxEventRow, error)
-	InsertProjectBase(ctx context.Context, arg InsertProjectBaseParams) error
+	InsertProject(ctx context.Context, arg InsertProjectParams) error
 	InsertProjectCreatorHistoricalProject(ctx context.Context, arg InsertProjectCreatorHistoricalProjectParams) error
 	InsertProjectGenesisWallet(ctx context.Context, arg InsertProjectGenesisWalletParams) error
 	IsBytecodeBlacklisted(ctx context.Context, codeHash []byte) (bool, error)
@@ -42,9 +42,6 @@ type Querier interface {
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
 	ListProjectAveDetailsByContracts(ctx context.Context, arg ListProjectAveDetailsByContractsParams) ([]ListProjectAveDetailsByContractsRow, error)
 	ListProjectAveRefreshCandidates(ctx context.Context, arg ListProjectAveRefreshCandidatesParams) ([][]byte, error)
-	ListProjectBases(ctx context.Context, chainID int64) ([]ListProjectBasesRow, error)
-	ListProjectBasesByCreatorBefore(ctx context.Context, arg ListProjectBasesByCreatorBeforeParams) ([]ListProjectBasesByCreatorBeforeRow, error)
-	ListProjectBasesPage(ctx context.Context, arg ListProjectBasesPageParams) ([]ListProjectBasesPageRow, error)
 	ListProjectChainStatesByContracts(ctx context.Context, arg ListProjectChainStatesByContractsParams) ([]ListProjectChainStatesByContractsRow, error)
 	ListProjectChainStatesByPairAddresses(ctx context.Context, arg ListProjectChainStatesByPairAddressesParams) ([]ListProjectChainStatesByPairAddressesRow, error)
 	ListProjectComponentStates(ctx context.Context, arg ListProjectComponentStatesParams) ([]ListProjectComponentStatesRow, error)
@@ -57,6 +54,9 @@ type Querier interface {
 	ListProjectMetasByCreator(ctx context.Context, arg ListProjectMetasByCreatorParams) ([]ListProjectMetasByCreatorRow, error)
 	ListProjectMetasByCreatorBefore(ctx context.Context, arg ListProjectMetasByCreatorBeforeParams) ([]ListProjectMetasByCreatorBeforeRow, error)
 	ListProjectMetasByPairAddresses(ctx context.Context, arg ListProjectMetasByPairAddressesParams) ([]ListProjectMetasByPairAddressesRow, error)
+	ListProjects(ctx context.Context, chainID int64) ([]ListProjectsRow, error)
+	ListProjectsByCreatorBefore(ctx context.Context, arg ListProjectsByCreatorBeforeParams) ([]ListProjectsByCreatorBeforeRow, error)
+	ListProjectsPage(ctx context.Context, arg ListProjectsPageParams) ([]ListProjectsPageRow, error)
 	ListWalletBlacklistEntries(ctx context.Context) ([]WalletBlacklist, error)
 	MarkOutboxEventDiscarded(ctx context.Context, arg MarkOutboxEventDiscardedParams) error
 	MarkOutboxEventFailed(ctx context.Context, arg MarkOutboxEventFailedParams) error

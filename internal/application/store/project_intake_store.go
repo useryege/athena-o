@@ -25,7 +25,7 @@ func (s *SQLStore) UpsertProjectCandidateAndEnqueueQualification(ctx context.Con
 	if candidate.TxHash == (common.Hash{}) {
 		return errors.New("project discovery tx hash is empty")
 	}
-	if err := validateProjectBaseNumbers(candidate.BlockNumber, candidate.BlockTime, candidate.TxIndex); err != nil {
+	if err := validateProjectNumbers(candidate.BlockNumber, candidate.BlockTime, candidate.TxIndex); err != nil {
 		return err
 	}
 	chainID := s.chainIDForProject(candidate.ChainID)

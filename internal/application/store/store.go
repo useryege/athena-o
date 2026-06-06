@@ -17,7 +17,7 @@ type ProjectMeta = model.ProjectMeta
 type ProjectAveDetail = model.ProjectAveDetail
 type SimulateResult = model.SimulateResult
 
-type ProjectBase struct {
+type Project struct {
 	ChainID     int64
 	BlockTime   uint64
 	BlockNumber uint64
@@ -169,25 +169,18 @@ type OutboxStore interface {
 }
 
 type ProjectStore interface {
-	SaveProjectMeta(ctx context.Context, meta ProjectMeta) error
+	SaveProject(ctx context.Context, project Project) error
 	GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error)
+	GetProjectByContract(ctx context.Context, chainID int64, contract common.Address) (*Project, error)
+	ListProjects(ctx context.Context, chainID int64) ([]Project, error)
+	ListProjectsPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]Project, int64, int32, int32, error)
+	ListProjectsByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]Project, error)
 	ListProjectMetas(ctx context.Context, chainID int64) ([]ProjectMeta, error)
-	ListAllProjectMetas(ctx context.Context, chainID int64) ([]ProjectMeta, error)
 	ListProjectMetasByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]ProjectMeta, error)
-	UpsertProjectAveDetail(ctx context.Context, chainID int64, contract common.Address, response *utilave.TokenDetailResponse, fetchedAt time.Time) error
 	UpdateProjectCreatorResult(ctx context.Context, chainID int64, contract common.Address, result SimulateResult) error
 	ListProjectMetasByCreator(ctx context.Context, chainID int64, creator common.Address) ([]ProjectMeta, error)
 	ListProjectMetasByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error)
 	GetProjectMetaByContract(ctx context.Context, chainID int64, contract common.Address) (*ProjectMeta, error)
-}
-
-type ProjectBaseStore interface {
-	SaveProjectBase(ctx context.Context, base ProjectBase) error
-	GetProjectBaseByContract(ctx context.Context, chainID int64, contract common.Address) (*ProjectBase, error)
-	ListProjectBases(ctx context.Context, chainID int64) ([]ProjectBase, error)
-	ListProjectBasesPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]ProjectBase, int64, int32, int32, error)
-	ListProjectBasesByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectBase, error)
-	GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error)
 }
 
 type ProjectChainStateStore interface {
@@ -265,7 +258,6 @@ type Store interface {
 	OutboxStore
 	ProjectIntakeStore
 	ProjectStore
-	ProjectBaseStore
 	ProjectChainStateStore
 	ProjectSimulationStore
 	ProjectComponentStateStore

@@ -22,8 +22,8 @@ func NewKeyspace(prefix string) Keyspace {
 	return Keyspace{prefix: prefix}
 }
 
-func (k Keyspace) ProjectBase(chainID int64, contract common.Address) string {
-	return k.join("project", chainIDPart(chainID), contract.Hex(), "base")
+func (k Keyspace) Project(chainID int64, contract common.Address) string {
+	return k.join("project", chainIDPart(chainID), contract.Hex())
 }
 
 func (k Keyspace) ProjectChainState(chainID int64, contract common.Address) string {
@@ -46,8 +46,8 @@ func (k Keyspace) ProjectComponentState(chainID int64, contract common.Address, 
 	return k.join("project", chainIDPart(chainID), contract.Hex(), "component_state", component)
 }
 
-func (k Keyspace) ProjectIndexBase(chainID int64) string {
-	return k.join("index", "project", chainIDPart(chainID), "base")
+func (k Keyspace) ProjectIndex(chainID int64) string {
+	return k.join("index", "project", chainIDPart(chainID))
 }
 
 func (k Keyspace) ProjectIndexCreator(chainID int64, creator common.Address) string {

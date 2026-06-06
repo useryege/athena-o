@@ -32,7 +32,7 @@ func TestComponentCollectWritesState(t *testing.T) {
 	wethPair := common.BigToAddress(big.NewInt(33))
 	usdtPair := common.BigToAddress(big.NewInt(34))
 	store := &simulationStoreFake{
-		baseByContract: map[common.Address]appstore.ProjectBase{
+		baseByContract: map[common.Address]appstore.Project{
 			contract: {ChainID: 56, Contract: contract, Creator: creator},
 		},
 		chainStateByContract: map[common.Address]appstore.ProjectChainState{
@@ -71,7 +71,7 @@ func TestComponentMarksSuccessWhenPairMissingWithoutPersistingSimulation(t *test
 	contract := common.BigToAddress(big.NewInt(41))
 	creator := common.BigToAddress(big.NewInt(42))
 	store := &simulationStoreFake{
-		baseByContract: map[common.Address]appstore.ProjectBase{
+		baseByContract: map[common.Address]appstore.Project{
 			contract: {ChainID: 56, Contract: contract, Creator: creator},
 		},
 		chainStateByContract: map[common.Address]appstore.ProjectChainState{
@@ -112,7 +112,7 @@ func TestComponentMarksFailedWhenBatchCallFails(t *testing.T) {
 	wethPair := common.BigToAddress(big.NewInt(53))
 	usdtPair := common.BigToAddress(big.NewInt(54))
 	store := &simulationStoreFake{
-		baseByContract: map[common.Address]appstore.ProjectBase{
+		baseByContract: map[common.Address]appstore.Project{
 			contract: {ChainID: 56, Contract: contract, Creator: creator},
 		},
 		chainStateByContract: map[common.Address]appstore.ProjectChainState{
@@ -145,14 +145,14 @@ func TestComponentMarksFailedWhenBatchCallFails(t *testing.T) {
 type simulationStoreFake struct {
 	appstore.Store
 
-	baseByContract       map[common.Address]appstore.ProjectBase
+	baseByContract       map[common.Address]appstore.Project
 	chainStateByContract map[common.Address]appstore.ProjectChainState
 
 	lastComponentStatus   string
 	upsertSimulationCalls int
 }
 
-func (s *simulationStoreFake) GetProjectBaseByContract(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectBase, error) {
+func (s *simulationStoreFake) GetProjectByContract(_ context.Context, _ int64, contract common.Address) (*appstore.Project, error) {
 	item, ok := s.baseByContract[contract]
 	if !ok {
 		return nil, nil

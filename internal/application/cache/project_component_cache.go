@@ -18,11 +18,11 @@ const (
 )
 
 type ProjectComponentCache interface {
-	SetBase(ctx context.Context, item appstore.ProjectBase) error
-	GetBase(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectBase, bool, error)
-	ListBasePage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]appstore.ProjectBase, int64, int32, int32, error)
-	ListBasesByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectBase, error)
-	GetMaxBaseBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error)
+	SetProject(ctx context.Context, item appstore.Project) error
+	GetProject(ctx context.Context, chainID int64, contract common.Address) (*appstore.Project, bool, error)
+	ListProjectsPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]appstore.Project, int64, int32, int32, error)
+	ListProjectsByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.Project, error)
+	GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error)
 
 	SetChainState(ctx context.Context, item appstore.ProjectChainState) error
 	GetChainState(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectChainState, bool, error)
@@ -62,7 +62,7 @@ func NewProjectComponentCache(client projectComponentRedisClient) ProjectCompone
 	}
 }
 
-func (c *RedisProjectComponentCache) SetBase(ctx context.Context, item appstore.ProjectBase) error {
+func (c *RedisProjectComponentCache) SetProject(ctx context.Context, item appstore.Project) error {
 	if c == nil || c.client == nil {
 		return nil
 	}
@@ -70,43 +70,43 @@ func (c *RedisProjectComponentCache) SetBase(ctx context.Context, item appstore.
 	if err != nil {
 		return err
 	}
-	key := c.keys.ProjectBase(item.ChainID, item.Contract)
+	key := c.keys.Project(item.ChainID, item.Contract)
 	pipe := c.client.TxPipeline()
 	pipe.Set(ctx, key, string(data), projectComponentCacheTTL)
-	pipe.ZAdd(ctx, c.keys.ProjectIndexBase(item.ChainID), redisport.ZMember{Score: projectBaseScore(item), Member: item.Contract.Hex()})
-	pipe.ZAdd(ctx, c.keys.ProjectIndexCreator(item.ChainID, item.Creator), redisport.ZMember{Score: projectBaseScore(item), Member: item.Contract.Hex()})
-	pipe.Expire(ctx, c.keys.ProjectIndexBase(item.ChainID), projectComponentCacheTTL)
+	pipe.ZAdd(ctx, c.keys.ProjectIndex(item.ChainID), redisport.ZMember{Score: projectScore(item), Member: item.Contract.Hex()})
+	pipe.ZAdd(ctx, c.keys.ProjectIndexCreator(item.ChainID, item.Creator), redisport.ZMember{Score: projectScore(item), Member: item.Contract.Hex()})
+	pipe.Expire(ctx, c.keys.ProjectIndex(item.ChainID), projectComponentCacheTTL)
 	pipe.Expire(ctx, c.keys.ProjectIndexCreator(item.ChainID, item.Creator), projectComponentCacheTTL)
 	return pipe.Exec(ctx)
 }
 
-func (c *RedisProjectComponentCache) GetBase(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectBase, bool, error) {
-	var item appstore.ProjectBase
-	ok, err := c.getJSON(ctx, c.keys.ProjectBase(chainID, contract), &item)
+func (c *RedisProjectComponentCache) GetProject(ctx context.Context, chainID int64, contract common.Address) (*appstore.Project, bool, error) {
+	var item appstore.Project
+	ok, err := c.getJSON(ctx, c.keys.Project(chainID, contract), &item)
 	return &item, ok, err
 }
 
-func (c *RedisProjectComponentCache) ListBasePage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]appstore.ProjectBase, int64, int32, int32, error) {
+func (c *RedisProjectComponentCache) ListProjectsPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]appstore.Project, int64, int32, int32, error) {
 	if c == nil || c.client == nil {
 		return nil, 0, 0, 0, nil
 	}
 	page, pageSize = normalizeCachePage(page, pageSize)
-	total, err := c.client.ZCard(ctx, c.keys.ProjectIndexBase(chainID))
+	total, err := c.client.ZCard(ctx, c.keys.ProjectIndex(chainID))
 	if err != nil {
 		return nil, 0, page, pageSize, err
 	}
 	start := int64(page-1) * int64(pageSize)
 	stop := start + int64(pageSize) - 1
-	members, err := c.client.ZRange(ctx, c.keys.ProjectIndexBase(chainID), start, stop)
+	members, err := c.client.ZRange(ctx, c.keys.ProjectIndex(chainID), start, stop)
 	if err != nil {
 		return nil, 0, page, pageSize, err
 	}
-	items := make([]appstore.ProjectBase, 0, len(members))
+	items := make([]appstore.Project, 0, len(members))
 	for _, member := range members {
 		if !common.IsHexAddress(member) {
 			continue
 		}
-		item, ok, err := c.GetBase(ctx, chainID, common.HexToAddress(member))
+		item, ok, err := c.GetProject(ctx, chainID, common.HexToAddress(member))
 		if err != nil {
 			return nil, 0, page, pageSize, err
 		}
@@ -117,21 +117,21 @@ func (c *RedisProjectComponentCache) ListBasePage(ctx context.Context, chainID i
 	return items, total, page, pageSize, nil
 }
 
-func (c *RedisProjectComponentCache) ListBasesByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectBase, error) {
+func (c *RedisProjectComponentCache) ListProjectsByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.Project, error) {
 	if c == nil || c.client == nil {
 		return nil, nil
 	}
-	max := fmt.Sprintf("(%f", projectBaseOrderScore(blockNumber, txIndex))
+	max := fmt.Sprintf("(%f", projectOrderScore(blockNumber, txIndex))
 	members, err := c.client.ZRangeByScore(ctx, c.keys.ProjectIndexCreator(chainID, creator), "-inf", max, 0, 0)
 	if err != nil {
 		return nil, err
 	}
-	items := make([]appstore.ProjectBase, 0, len(members))
+	items := make([]appstore.Project, 0, len(members))
 	for _, member := range members {
 		if !common.IsHexAddress(member) {
 			continue
 		}
-		item, ok, err := c.GetBase(ctx, chainID, common.HexToAddress(member))
+		item, ok, err := c.GetProject(ctx, chainID, common.HexToAddress(member))
 		if err != nil {
 			return nil, err
 		}
@@ -142,18 +142,18 @@ func (c *RedisProjectComponentCache) ListBasesByCreatorBefore(ctx context.Contex
 	return items, nil
 }
 
-func (c *RedisProjectComponentCache) GetMaxBaseBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error) {
+func (c *RedisProjectComponentCache) GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error) {
 	if c == nil || c.client == nil {
 		return 0, false, nil
 	}
-	members, err := c.client.ZRevRange(ctx, c.keys.ProjectIndexBase(chainID), 0, 0)
+	members, err := c.client.ZRevRange(ctx, c.keys.ProjectIndex(chainID), 0, 0)
 	if err != nil {
 		return 0, false, err
 	}
 	if len(members) == 0 || !common.IsHexAddress(members[0]) {
 		return 0, false, nil
 	}
-	item, ok, err := c.GetBase(ctx, chainID, common.HexToAddress(members[0]))
+	item, ok, err := c.GetProject(ctx, chainID, common.HexToAddress(members[0]))
 	if err != nil || !ok || item == nil {
 		return 0, false, err
 	}
@@ -312,11 +312,11 @@ func (c *RedisProjectComponentCache) getJSON(ctx context.Context, key string, ta
 	return GetJSONInto(ctx, c.client, key, target)
 }
 
-func projectBaseScore(item appstore.ProjectBase) float64 {
-	return projectBaseOrderScore(item.BlockNumber, item.TxIndex)
+func projectScore(item appstore.Project) float64 {
+	return projectOrderScore(item.BlockNumber, item.TxIndex)
 }
 
-func projectBaseOrderScore(blockNumber uint64, txIndex uint64) float64 {
+func projectOrderScore(blockNumber uint64, txIndex uint64) float64 {
 	return float64(blockNumber)*1_000_000 + float64(txIndex)
 }
 

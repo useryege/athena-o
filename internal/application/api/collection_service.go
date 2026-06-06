@@ -59,11 +59,11 @@ func (s *Service) RequestProjectCollection(ctx context.Context, req *application
 	if err != nil {
 		return nil, err
 	}
-	base, err := s.store.GetProjectBaseByContract(ctx, chainID, contract)
+	project, err := s.store.GetProjectByContract(ctx, chainID, contract)
 	if err != nil {
 		return nil, err
 	}
-	if base == nil {
+	if project == nil {
 		return nil, status.Errorf(codes.NotFound, "project %d/%s not found", chainID, contract.Hex())
 	}
 	reason := strings.TrimSpace(req.GetReason())
@@ -88,11 +88,11 @@ func (s *Service) GetProjectCollectionStatus(ctx context.Context, req *applicati
 	if err != nil {
 		return nil, err
 	}
-	base, err := s.store.GetProjectBaseByContract(ctx, chainID, contract)
+	project, err := s.store.GetProjectByContract(ctx, chainID, contract)
 	if err != nil {
 		return nil, err
 	}
-	if base == nil {
+	if project == nil {
 		return nil, status.Errorf(codes.NotFound, "project %d/%s not found", chainID, contract.Hex())
 	}
 	item, err := s.store.GetProjectCollectionState(ctx, chainID, contract)
