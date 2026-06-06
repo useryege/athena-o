@@ -587,20 +587,14 @@ func (s *SQLStore) GetProjectSimulationResult(ctx context.Context, chainID int64
 }
 
 func (s *SQLStore) UpsertProjectBytecodeFact(ctx context.Context, item ProjectBytecodeFact) error {
-	fetchedAt := item.FetchedAt
-	if fetchedAt.IsZero() {
-		fetchedAt = time.Now().UTC()
-	}
 	queries, err := s.querier()
 	if err != nil {
 		return err
 	}
 	err = queries.UpsertProjectBytecodeFact(ctx, appsqlc.UpsertProjectBytecodeFactParams{
-		ChainID:               s.chainIDForProject(item.ChainID),
-		ProjectContract:       item.ProjectContract.Bytes(),
-		IsBytecodeBlacklisted: item.IsBytecodeBlacklisted,
-		FetchedAt:             pgtype.Timestamptz{Time: fetchedAt.UTC(), Valid: true},
-		CodeHash:              hashBytesOrNil(item.CodeHash),
+		ChainID:         s.chainIDForProject(item.ChainID),
+		ProjectContract: item.ProjectContract.Bytes(),
+		CodeHash:        hashBytesOrNil(item.CodeHash),
 	})
 	if err != nil {
 		return fmt.Errorf("upsert project bytecode fact: %w", err)
@@ -624,11 +618,10 @@ func (s *SQLStore) GetProjectBytecodeFact(ctx context.Context, chainID int64, co
 		return nil, fmt.Errorf("get project bytecode fact: %w", err)
 	}
 	item := ProjectBytecodeFact{
-		ChainID:               row.ChainID,
-		ProjectContract:       common.BytesToAddress(row.ProjectContract),
-		IsBytecodeBlacklisted: row.IsBytecodeBlacklisted,
-		FetchedAt:             row.FetchedAt.Time,
-		UpdatedAt:             row.UpdatedAt.Time,
+		ChainID:         row.ChainID,
+		ProjectContract: common.BytesToAddress(row.ProjectContract),
+		FetchedAt:       row.FetchedAt.Time,
+		UpdatedAt:       row.UpdatedAt.Time,
 	}
 	if len(row.CodeHash) > 0 {
 		item.CodeHash = common.BytesToHash(row.CodeHash)

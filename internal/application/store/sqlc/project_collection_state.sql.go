@@ -251,3 +251,42 @@ func (q *Queries) MarkProjectCollectionRunning(ctx context.Context, arg MarkProj
 	)
 	return err
 }
+
+const upsertProjectCollectionRequest = `-- name: UpsertProjectCollectionRequest :exec
+INSERT INTO project_collection_state (
+  project_id,
+  status,
+  last_requested_at,
+  next_run_at
+)
+SELECT
+  id,
+  'requested',
+  $1::timestamptz,
+  $2::timestamptz
+FROM project
+WHERE chain_id = $3
+  AND contract = $4
+ON CONFLICT (project_id) DO UPDATE
+SET status = EXCLUDED.status,
+  last_requested_at = EXCLUDED.last_requested_at,
+  next_run_at = EXCLUDED.next_run_at,
+  updated_at = now()
+`
+
+type UpsertProjectCollectionRequestParams struct {
+	RequestedAt     pgtype.Timestamptz
+	NextRunAt       pgtype.Timestamptz
+	ChainID         int64
+	ProjectContract []byte
+}
+
+func (q *Queries) UpsertProjectCollectionRequest(ctx context.Context, arg UpsertProjectCollectionRequestParams) error {
+	_, err := q.db.Exec(ctx, upsertProjectCollectionRequest,
+		arg.RequestedAt,
+		arg.NextRunAt,
+		arg.ChainID,
+		arg.ProjectContract,
+	)
+	return err
+}

@@ -71,10 +71,9 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 		return err
 	}
 	item := appstore.ProjectBytecodeFact{
-		ChainID:               chainID,
-		ProjectContract:       contract,
-		IsBytecodeBlacklisted: info.IsBytecodeBlacklisted,
-		FetchedAt:             nowUTC(),
+		ChainID:         chainID,
+		ProjectContract: contract,
+		FetchedAt:       nowUTC(),
 	}
 	if strings.TrimSpace(info.CodeBinHash) != "" {
 		item.CodeHash = common.HexToHash(info.CodeBinHash)

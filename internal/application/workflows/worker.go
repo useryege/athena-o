@@ -41,9 +41,7 @@ func NewControlWorkerSet(client client.Client, activities Activities) (*WorkerSe
 		return nil, fmt.Errorf("application temporal client is not configured")
 	}
 	control := worker.New(client, TaskQueueApplicationControl, worker.Options{})
-	control.RegisterWorkflowWithOptions(CandidateQualificationWorkflow, workflow.RegisterOptions{Name: "CandidateQualificationWorkflow"})
 	control.RegisterWorkflowWithOptions(ProjectCollectionWorkflow, workflow.RegisterOptions{Name: "ProjectCollectionWorkflow"})
-	control.RegisterActivityWithOptions(activities.ValidateCandidate, activity.RegisterOptions{Name: ValidateCandidateActivityName})
 	control.RegisterActivityWithOptions(activities.MarkProjectCollectionRunning, activity.RegisterOptions{Name: MarkProjectCollectionRunningActivityName})
 	control.RegisterActivityWithOptions(activities.MarkProjectCollectionCompleted, activity.RegisterOptions{Name: MarkProjectCollectionCompletedActivityName})
 	control.RegisterActivityWithOptions(activities.MarkProjectCollectionFailed, activity.RegisterOptions{Name: MarkProjectCollectionFailedActivityName})

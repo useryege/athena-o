@@ -15,6 +15,27 @@ LEFT JOIN project_collection_state s ON s.project_id = p.id
 WHERE p.chain_id = @chain_id
   AND p.contract = @project_contract;
 
+-- name: UpsertProjectCollectionRequest :exec
+INSERT INTO project_collection_state (
+  project_id,
+  status,
+  last_requested_at,
+  next_run_at
+)
+SELECT
+  id,
+  'requested',
+  @requested_at::timestamptz,
+  @next_run_at::timestamptz
+FROM project
+WHERE chain_id = @chain_id
+  AND contract = @project_contract
+ON CONFLICT (project_id) DO UPDATE
+SET status = EXCLUDED.status,
+  last_requested_at = EXCLUDED.last_requested_at,
+  next_run_at = EXCLUDED.next_run_at,
+  updated_at = now();
+
 -- name: MarkProjectCollectionRunning :exec
 INSERT INTO project_collection_state (
   project_id,

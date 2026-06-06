@@ -5,66 +5,10 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/mock"
-	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 )
-
-func TestCandidateQualificationWorkflowStartsCollectionChild(t *testing.T) {
-	var suite testsuite.WorkflowTestSuite
-	env := suite.NewTestWorkflowEnvironment()
-	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
-	input := CandidateQualificationInput{
-		Project: ProjectRef{ChainID: 56, Contract: contract},
-		Source:  "catch_up",
-	}
-	childInput := ProjectCollectionInput{
-		Project: input.Project,
-		Reason:  "candidate_accepted",
-	}
-	env.RegisterWorkflow(CandidateQualificationWorkflow)
-	env.RegisterActivityWithOptions(func(context.Context, CandidateQualificationInput) error {
-		return nil
-	}, activity.RegisterOptions{Name: ValidateCandidateActivityName})
-	env.OnWorkflow(ProjectCollectionWorkflow, mock.Anything, childInput).Return(nil).Once()
-
-	env.ExecuteWorkflow(CandidateQualificationWorkflow, input)
-
-	if !env.IsWorkflowCompleted() {
-		t.Fatalf("workflow did not complete")
-	}
-	if err := env.GetWorkflowError(); err != nil {
-		t.Fatalf("workflow error: %v", err)
-	}
-	env.AssertExpectations(t)
-}
-
-func TestCandidateQualificationWorkflowTreatsExistingCollectionAsSuccess(t *testing.T) {
-	var suite testsuite.WorkflowTestSuite
-	env := suite.NewTestWorkflowEnvironment()
-	contract := common.HexToAddress("0x1000000000000000000000000000000000000004")
-	input := CandidateQualificationInput{
-		Project: ProjectRef{ChainID: 56, Contract: contract},
-		Source:  "catch_up",
-	}
-	env.RegisterWorkflow(CandidateQualificationWorkflow)
-	env.RegisterActivityWithOptions(func(context.Context, CandidateQualificationInput) error {
-		return nil
-	}, activity.RegisterOptions{Name: ValidateCandidateActivityName})
-	env.OnWorkflow(ProjectCollectionWorkflow, mock.Anything, ProjectCollectionInput{
-		Project: input.Project,
-		Reason:  "candidate_accepted",
-	}).Return(serviceerror.NewWorkflowExecutionAlreadyStarted("already running", ProjectCollectionWorkflowID(56, contract.Hex()), "run-id")).Once()
-
-	env.ExecuteWorkflow(CandidateQualificationWorkflow, input)
-
-	if err := env.GetWorkflowError(); err != nil {
-		t.Fatalf("workflow error: %v", err)
-	}
-	env.AssertExpectations(t)
-}
 
 func TestProjectCollectionWorkflowRunsActivitiesInOrder(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite

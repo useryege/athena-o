@@ -11,9 +11,8 @@ import (
 )
 
 const (
-	OutboxTypeCandidateQualificationRequested = "candidate.qualification_requested"
-	OutboxTypeProjectCollectionRequested      = "project.collection_requested"
-	OutboxTypeKafkaProjectEventPublish        = "kafka.project_event_publish_requested"
+	OutboxTypeProjectCollectionRequested = "project.collection_requested"
+	OutboxTypeKafkaProjectEventPublish   = "kafka.project_event_publish_requested"
 )
 
 const (

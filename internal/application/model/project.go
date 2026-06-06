@@ -32,7 +32,6 @@ type ProjectMeta struct {
 	TxIndex                            uint64
 	GenesisTx                          *types.Transaction
 	ChainState                         athenacontract.AthenaProject
-	IsBytecodeBlacklisted              bool
 	GenesisWallets                     []GenesisWalletMeta
 	GenesisWalletsFetchedAt            time.Time
 	CreatorResult                      SimulateResult

@@ -36,42 +36,6 @@ CREATE TABLE IF NOT EXISTS chain_ingest_checkpoint (
   CONSTRAINT chain_ingest_checkpoint_status_not_empty CHECK (btrim(status) <> '')
 );
 
-CREATE TABLE IF NOT EXISTS project_candidate (
-  id BIGSERIAL PRIMARY KEY,
-  chain_id BIGINT NOT NULL,
-  contract BYTEA NOT NULL,
-  creator BYTEA,
-  tx_hash BYTEA,
-  block_number BIGINT,
-  block_time BIGINT,
-  tx_index BIGINT,
-  weth_pair BYTEA,
-  usdt_pair BYTEA,
-  source TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending',
-  reason TEXT,
-  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
-  discovered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_candidate_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
-  CONSTRAINT project_candidate_contract_len CHECK (length(contract) = 20),
-  CONSTRAINT project_candidate_creator_len CHECK (creator IS NULL OR length(creator) = 20),
-  CONSTRAINT project_candidate_tx_hash_len CHECK (tx_hash IS NULL OR length(tx_hash) = 32),
-  CONSTRAINT project_candidate_block_number_nonnegative CHECK (block_number IS NULL OR block_number >= 0),
-  CONSTRAINT project_candidate_block_time_nonnegative CHECK (block_time IS NULL OR block_time >= 0),
-  CONSTRAINT project_candidate_tx_index_nonnegative CHECK (tx_index IS NULL OR tx_index >= 0),
-  CONSTRAINT project_candidate_weth_pair_len CHECK (weth_pair IS NULL OR length(weth_pair) = 20),
-  CONSTRAINT project_candidate_usdt_pair_len CHECK (usdt_pair IS NULL OR length(usdt_pair) = 20),
-  CONSTRAINT project_candidate_source_not_empty CHECK (btrim(source) <> ''),
-  CONSTRAINT project_candidate_status_not_empty CHECK (btrim(status) <> '')
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS project_candidate_chain_contract_uidx
-  ON project_candidate (chain_id, contract);
-
-CREATE INDEX IF NOT EXISTS project_candidate_status_idx
-  ON project_candidate (status, discovered_at);
-
 CREATE TABLE IF NOT EXISTS project (
   id BIGSERIAL PRIMARY KEY,
   chain_id BIGINT NOT NULL,
@@ -81,12 +45,25 @@ CREATE TABLE IF NOT EXISTS project (
   creator BYTEA NOT NULL,
   tx_hash BYTEA NOT NULL,
   tx_index BIGINT NOT NULL,
+  weth_pair BYTEA,
+  usdt_pair BYTEA,
+  source TEXT NOT NULL DEFAULT 'catch_up',
+  status TEXT NOT NULL DEFAULT 'processed',
+  reason TEXT,
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  discovered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  code_hash BYTEA,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
   CONSTRAINT project_contract_len CHECK (length(contract) = 20),
   CONSTRAINT project_creator_len CHECK (length(creator) = 20),
   CONSTRAINT project_tx_hash_len CHECK (length(tx_hash) = 32),
+  CONSTRAINT project_weth_pair_len CHECK (weth_pair IS NULL OR length(weth_pair) = 20),
+  CONSTRAINT project_usdt_pair_len CHECK (usdt_pair IS NULL OR length(usdt_pair) = 20),
+  CONSTRAINT project_source_not_empty CHECK (btrim(source) <> ''),
+  CONSTRAINT project_status_not_empty CHECK (btrim(status) <> ''),
+  CONSTRAINT project_code_hash_len CHECK (code_hash IS NULL OR length(code_hash) = 32),
   CONSTRAINT project_block_number_nonnegative CHECK (block_number >= 0),
   CONSTRAINT project_block_time_nonnegative CHECK (block_time >= 0),
   CONSTRAINT project_tx_index_nonnegative CHECK (tx_index >= 0)
@@ -103,6 +80,18 @@ CREATE INDEX IF NOT EXISTS project_block_order_idx
 
 CREATE INDEX IF NOT EXISTS project_creator_order_idx
   ON project (chain_id, creator, block_number, tx_index, id);
+
+CREATE INDEX IF NOT EXISTS project_status_discovered_idx
+  ON project (status, discovered_at);
+
+CREATE INDEX IF NOT EXISTS project_weth_pair_idx
+  ON project (weth_pair);
+
+CREATE INDEX IF NOT EXISTS project_usdt_pair_idx
+  ON project (usdt_pair);
+
+CREATE INDEX IF NOT EXISTS project_code_hash_idx
+  ON project (code_hash);
 
 CREATE TABLE IF NOT EXISTS project_collection_state (
   project_id BIGINT PRIMARY KEY,
@@ -185,16 +174,6 @@ CREATE TABLE IF NOT EXISTS project_simulation_result (
   fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_simulation_result_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS project_bytecode_fact (
-  project_id BIGINT PRIMARY KEY,
-  code_hash BYTEA,
-  is_bytecode_blacklisted BOOLEAN NOT NULL DEFAULT false,
-  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_bytecode_fact_code_hash_len CHECK (code_hash IS NULL OR length(code_hash) = 32),
-  CONSTRAINT project_bytecode_fact_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS project_component_state (
@@ -418,12 +397,10 @@ DROP TABLE IF EXISTS project_creator_historical_project;
 DROP TABLE IF EXISTS project_ave_pair;
 DROP TABLE IF EXISTS project_ave_token_detail;
 DROP TABLE IF EXISTS project_component_state;
-DROP TABLE IF EXISTS project_bytecode_fact;
 DROP TABLE IF EXISTS project_simulation_result;
 DROP TABLE IF EXISTS project_chain_state;
 DROP TABLE IF EXISTS outbox_event;
 DROP TABLE IF EXISTS project_collection_state;
 DROP TABLE IF EXISTS project;
-DROP TABLE IF EXISTS project_candidate;
 DROP TABLE IF EXISTS chain_ingest_checkpoint;
 DROP TABLE IF EXISTS chain;

@@ -52,12 +52,11 @@ type ProjectSimulationResult struct {
 }
 
 type ProjectBytecodeFact struct {
-	ChainID               int64
-	ProjectContract       common.Address
-	CodeHash              common.Hash
-	IsBytecodeBlacklisted bool
-	FetchedAt             time.Time
-	UpdatedAt             time.Time
+	ChainID         int64
+	ProjectContract common.Address
+	CodeHash        common.Hash
+	FetchedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type ProjectComponentState struct {
@@ -73,7 +72,6 @@ type ProjectComponentState struct {
 }
 
 const (
-	ProjectComponentInitializer    = "initializer"
 	ProjectComponentChainState     = "chain_state"
 	ProjectComponentSimulation     = "simulation"
 	ProjectComponentGenesisWallet  = "genesis_wallet"

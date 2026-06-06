@@ -12,11 +12,17 @@ import (
 )
 
 const getProjectBytecodeFact = `-- name: GetProjectBytecodeFact :one
-SELECT p.chain_id, p.contract AS project_contract, bf.code_hash, bf.is_bytecode_blacklisted, bf.fetched_at, bf.updated_at
-FROM project_bytecode_fact bf
-JOIN project p ON p.id = bf.project_id
+SELECT
+  p.chain_id,
+  p.contract AS project_contract,
+  p.code_hash,
+  COALESCE(bf.last_success_at, p.updated_at) AS fetched_at,
+  p.updated_at
+FROM project p
+LEFT JOIN project_component_state bf ON bf.project_id = p.id AND bf.component = 'bytecode_fact'
 WHERE p.chain_id = $1
   AND p.contract = $2
+  AND (p.code_hash IS NOT NULL OR bf.last_success_at IS NOT NULL)
 `
 
 type GetProjectBytecodeFactParams struct {
@@ -25,12 +31,11 @@ type GetProjectBytecodeFactParams struct {
 }
 
 type GetProjectBytecodeFactRow struct {
-	ChainID               int64
-	ProjectContract       []byte
-	CodeHash              []byte
-	IsBytecodeBlacklisted bool
-	FetchedAt             pgtype.Timestamptz
-	UpdatedAt             pgtype.Timestamptz
+	ChainID         int64
+	ProjectContract []byte
+	CodeHash        []byte
+	FetchedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
 }
 
 func (q *Queries) GetProjectBytecodeFact(ctx context.Context, arg GetProjectBytecodeFactParams) (GetProjectBytecodeFactRow, error) {
@@ -40,7 +45,6 @@ func (q *Queries) GetProjectBytecodeFact(ctx context.Context, arg GetProjectByte
 		&i.ChainID,
 		&i.ProjectContract,
 		&i.CodeHash,
-		&i.IsBytecodeBlacklisted,
 		&i.FetchedAt,
 		&i.UpdatedAt,
 	)
@@ -48,39 +52,20 @@ func (q *Queries) GetProjectBytecodeFact(ctx context.Context, arg GetProjectByte
 }
 
 const upsertProjectBytecodeFact = `-- name: UpsertProjectBytecodeFact :exec
-INSERT INTO project_bytecode_fact (
-  project_id,
-  code_hash,
-  is_bytecode_blacklisted,
-  fetched_at
-) VALUES (
-  (SELECT id FROM project WHERE chain_id = $1 AND contract = $2),
-  $3::bytea,
-  $4,
-  $5
-)
-ON CONFLICT (project_id) DO UPDATE
-SET code_hash = EXCLUDED.code_hash,
-  is_bytecode_blacklisted = EXCLUDED.is_bytecode_blacklisted,
-  fetched_at = EXCLUDED.fetched_at,
+UPDATE project
+SET code_hash = $1::bytea,
   updated_at = now()
+WHERE chain_id = $2
+  AND contract = $3
 `
 
 type UpsertProjectBytecodeFactParams struct {
-	ChainID               int64
-	ProjectContract       []byte
-	CodeHash              []byte
-	IsBytecodeBlacklisted bool
-	FetchedAt             pgtype.Timestamptz
+	CodeHash        []byte
+	ChainID         int64
+	ProjectContract []byte
 }
 
 func (q *Queries) UpsertProjectBytecodeFact(ctx context.Context, arg UpsertProjectBytecodeFactParams) error {
-	_, err := q.db.Exec(ctx, upsertProjectBytecodeFact,
-		arg.ChainID,
-		arg.ProjectContract,
-		arg.CodeHash,
-		arg.IsBytecodeBlacklisted,
-		arg.FetchedAt,
-	)
+	_, err := q.db.Exec(ctx, upsertProjectBytecodeFact, arg.CodeHash, arg.ChainID, arg.ProjectContract)
 	return err
 }

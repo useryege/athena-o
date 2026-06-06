@@ -23,7 +23,6 @@ const (
 )
 
 var dispatchTypes = []string{
-	store.OutboxTypeCandidateQualificationRequested,
 	store.OutboxTypeProjectCollectionRequested,
 	store.OutboxTypeKafkaProjectEventPublish,
 }
@@ -31,7 +30,6 @@ var dispatchTypes = []string{
 var errProjectEventDiscarded = errors.New("project event outbox discarded")
 
 type WorkflowStarter interface {
-	StartCandidateQualification(ctx context.Context, input workflows.CandidateQualificationInput) error
 	StartProjectCollection(ctx context.Context, input workflows.ProjectCollectionInput) (string, error)
 }
 
@@ -175,14 +173,6 @@ func (d *Dispatcher) run(ctx context.Context) {
 
 func (d *Dispatcher) process(ctx context.Context, item store.OutboxEvent) error {
 	switch item.Type {
-	case store.OutboxTypeCandidateQualificationRequested:
-		input, err := candidateInput(item)
-		if err != nil {
-			return d.discard(ctx, item, err)
-		}
-		if err := d.starter.StartCandidateQualification(ctx, input); err != nil {
-			return d.fail(ctx, item, err)
-		}
 	case store.OutboxTypeProjectCollectionRequested:
 		input, err := collectionInput(item)
 		if err != nil {
@@ -241,29 +231,6 @@ func (d *Dispatcher) nextRetryDelay(attempts int32) time.Duration {
 		}
 	}
 	return delay
-}
-
-type candidatePayload struct {
-	Project   workflows.ProjectRef     `json:"project"`
-	Source    string                   `json:"source,omitempty"`
-	Candidate workflows.CandidateFacts `json:"candidate,omitempty"`
-}
-
-func candidateInput(item store.OutboxEvent) (workflows.CandidateQualificationInput, error) {
-	var payload candidatePayload
-	if err := json.Unmarshal(item.Payload, &payload); err != nil {
-		return workflows.CandidateQualificationInput{}, fmt.Errorf("decode candidate qualification payload: %w", err)
-	}
-	if payload.Project.ChainID <= 0 {
-		payload.Project.ChainID = item.ChainID
-	}
-	if payload.Project.ChainID <= 0 {
-		return workflows.CandidateQualificationInput{}, errors.New("candidate qualification payload chain_id is empty")
-	}
-	if payload.Project.Contract.Hex() == "0x0000000000000000000000000000000000000000" {
-		return workflows.CandidateQualificationInput{}, errors.New("candidate qualification payload contract is empty")
-	}
-	return workflows.CandidateQualificationInput{Project: payload.Project, Source: strings.TrimSpace(payload.Source), Candidate: payload.Candidate}, nil
 }
 
 type collectionPayload struct {

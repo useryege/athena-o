@@ -3,8 +3,8 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"math"
 	"strings"
 	"time"
 
@@ -15,48 +15,63 @@ import (
 )
 
 const (
-	outboxAggregateProjectCandidate = "project_candidate"
-	outboxAggregateProject          = "project"
+	outboxAggregateProject = "project"
 )
 
 func (s *SQLStore) UpsertProjectCandidateAndEnqueueQualification(ctx context.Context, candidate model.DiscoveredProjectCandidate) error {
 	if candidate.Contract == (common.Address{}) {
-		return nil
+		return errors.New("project discovery contract is empty")
+	}
+	if candidate.TxHash == (common.Hash{}) {
+		return errors.New("project discovery tx hash is empty")
+	}
+	if err := validateProjectBaseNumbers(candidate.BlockNumber, candidate.BlockTime, candidate.TxIndex); err != nil {
+		return err
 	}
 	chainID := s.chainIDForProject(candidate.ChainID)
 	if candidate.Source == "" {
 		candidate.Source = model.ProjectDiscoverySourceCatchUp
 	}
-	return s.withProjectIntakeQuerier(ctx, "project candidate intake", func(queries appsqlc.Querier) error {
+	now := time.Now().UTC()
+	return s.withProjectIntakeQuerier(ctx, "project discovery intake", func(queries appsqlc.Querier) error {
 		payload, err := json.Marshal(candidatePayload(candidate))
 		if err != nil {
-			return fmt.Errorf("marshal project candidate payload: %w", err)
+			return fmt.Errorf("marshal project discovery payload: %w", err)
 		}
-		if err := queries.UpsertProjectCandidate(ctx, appsqlc.UpsertProjectCandidateParams{
+		if err := queries.UpsertProjectFromDiscovery(ctx, appsqlc.UpsertProjectFromDiscoveryParams{
 			ChainID:     chainID,
 			Contract:    candidate.Contract.Bytes(),
-			Creator:     nullableAddressBytes(candidate.Creator),
-			TxHash:      nullableHashBytes(candidate.TxHash),
-			BlockNumber: nullableUint64(candidate.BlockNumber),
-			BlockTime:   nullableUint64(candidate.BlockTime),
-			TxIndex:     nullableUint64(candidate.TxIndex),
+			Creator:     candidate.Creator.Bytes(),
+			TxHash:      candidate.TxHash.Bytes(),
+			BlockNumber: int64(candidate.BlockNumber),
+			BlockTime:   int64(candidate.BlockTime),
+			TxIndex:     int64(candidate.TxIndex),
 			WethPair:    nullableAddressBytes(candidate.WethPair),
 			UsdtPair:    nullableAddressBytes(candidate.UsdtPair),
 			Source:      string(candidate.Source),
+			Reason:      pgtype.Text{},
 			Payload:     payload,
 		}); err != nil {
-			return fmt.Errorf("upsert project candidate: %w", err)
+			return fmt.Errorf("upsert discovered project: %w", err)
+		}
+		ref := model.ProjectRef{ChainID: chainID, Contract: candidate.Contract}
+		if err := queries.UpsertProjectCollectionRequest(ctx, appsqlc.UpsertProjectCollectionRequestParams{
+			RequestedAt:     pgTime(now),
+			NextRunAt:       pgTime(now),
+			ChainID:         chainID,
+			ProjectContract: candidate.Contract.Bytes(),
+		}); err != nil {
+			return fmt.Errorf("upsert project collection request: %w", err)
 		}
 		_, err = insertOutboxEvent(ctx, queries, CreateOutboxEventParams{
-			Type:          OutboxTypeCandidateQualificationRequested,
-			AggregateType: outboxAggregateProjectCandidate,
+			Type:          OutboxTypeProjectCollectionRequested,
+			AggregateType: outboxAggregateProject,
 			AggregateID:   projectDedupKey(candidate.Contract),
 			ChainID:       chainID,
 			DedupKey:      projectDedupKey(candidate.Contract),
 			Payload: map[string]any{
-				"project":   model.ProjectRef{ChainID: chainID, Contract: candidate.Contract},
-				"source":    candidate.Source,
-				"candidate": candidatePayload(candidate),
+				"project": ref,
+				"reason":  string(candidate.Source),
 			},
 		})
 		if err != nil {
@@ -155,11 +170,4 @@ func optionalHashHex(value common.Hash) string {
 		return ""
 	}
 	return value.Hex()
-}
-
-func nullableUint64(value uint64) pgtype.Int8 {
-	if value > math.MaxInt64 {
-		return pgtype.Int8{}
-	}
-	return pgtype.Int8{Int64: int64(value), Valid: true}
 }

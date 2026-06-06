@@ -81,10 +81,10 @@ type Querier interface {
 	UpsertContractBytecodeDeployment(ctx context.Context, arg UpsertContractBytecodeDeploymentParams) error
 	UpsertProjectAveTokenDetail(ctx context.Context, arg UpsertProjectAveTokenDetailParams) error
 	UpsertProjectBytecodeFact(ctx context.Context, arg UpsertProjectBytecodeFactParams) error
-	UpsertProjectCandidate(ctx context.Context, arg UpsertProjectCandidateParams) error
 	UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) error
 	UpsertProjectCollectionRequest(ctx context.Context, arg UpsertProjectCollectionRequestParams) error
 	UpsertProjectComponentState(ctx context.Context, arg UpsertProjectComponentStateParams) error
+	UpsertProjectFromDiscovery(ctx context.Context, arg UpsertProjectFromDiscoveryParams) error
 	UpsertProjectSimulationResult(ctx context.Context, arg UpsertProjectSimulationResultParams) error
 }
 

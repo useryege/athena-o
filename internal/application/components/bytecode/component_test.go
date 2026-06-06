@@ -21,8 +21,7 @@ func TestComponentCollectWritesState(t *testing.T) {
 	}
 	resolver := &contractSourceResolverFake{
 		info: &applicationv1alpha1.ContractSourceInfo{
-			IsBytecodeBlacklisted: true,
-			CodeBinHash:           "0x2222222222222222222222222222222222222222222222222222222222222222",
+			CodeBinHash: "0x2222222222222222222222222222222222222222222222222222222222222222",
 		},
 	}
 	component := NewComponent(Options{
@@ -44,6 +43,10 @@ func TestComponentCollectWritesState(t *testing.T) {
 	if store.upsertBytecodeFactCalls != 1 {
 		t.Fatalf("upsert bytecode fact calls = %d, want 1", store.upsertBytecodeFactCalls)
 	}
+	wantHash := common.HexToHash("0x2222222222222222222222222222222222222222222222222222222222222222")
+	if store.lastBytecodeFact.CodeHash != wantHash {
+		t.Fatalf("code hash = %s, want %s", store.lastBytecodeFact.CodeHash.Hex(), wantHash.Hex())
+	}
 	if store.lastComponentStatus != appstore.ProjectComponentStatusSuccess {
 		t.Fatalf("last status = %s, want success", store.lastComponentStatus)
 	}
@@ -54,6 +57,7 @@ type bytecodeStoreFake struct {
 
 	baseByContract          map[common.Address]appstore.ProjectBase
 	upsertBytecodeFactCalls int
+	lastBytecodeFact        appstore.ProjectBytecodeFact
 	lastComponentStatus     string
 }
 
@@ -71,8 +75,9 @@ func (s *bytecodeStoreFake) UpsertProjectComponentState(_ context.Context, item 
 	return nil
 }
 
-func (s *bytecodeStoreFake) UpsertProjectBytecodeFact(context.Context, appstore.ProjectBytecodeFact) error {
+func (s *bytecodeStoreFake) UpsertProjectBytecodeFact(_ context.Context, item appstore.ProjectBytecodeFact) error {
 	s.upsertBytecodeFactCalls++
+	s.lastBytecodeFact = item
 	return nil
 }
 

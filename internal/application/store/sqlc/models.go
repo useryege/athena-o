@@ -73,16 +73,24 @@ type OutboxEvent struct {
 }
 
 type Project struct {
-	ID          int64
-	ChainID     int64
-	BlockNumber int64
-	BlockTime   int64
-	Contract    []byte
-	Creator     []byte
-	TxHash      []byte
-	TxIndex     int64
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	ID           int64
+	ChainID      int64
+	BlockNumber  int64
+	BlockTime    int64
+	Contract     []byte
+	Creator      []byte
+	TxHash       []byte
+	TxIndex      int64
+	WethPair     []byte
+	UsdtPair     []byte
+	Source       string
+	Status       string
+	Reason       pgtype.Text
+	Payload      []byte
+	DiscoveredAt pgtype.Timestamptz
+	CodeHash     []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 type ProjectAvePair struct {
@@ -184,33 +192,6 @@ type ProjectAveTokenDetail struct {
 	IsInBlacklist       bool
 	IsHoneypot          bool
 	AveRiskLevel        int32
-}
-
-type ProjectBytecodeFact struct {
-	ProjectID             int64
-	CodeHash              []byte
-	IsBytecodeBlacklisted bool
-	FetchedAt             pgtype.Timestamptz
-	UpdatedAt             pgtype.Timestamptz
-}
-
-type ProjectCandidate struct {
-	ID           int64
-	ChainID      int64
-	Contract     []byte
-	Creator      []byte
-	TxHash       []byte
-	BlockNumber  pgtype.Int8
-	BlockTime    pgtype.Int8
-	TxIndex      pgtype.Int8
-	WethPair     []byte
-	UsdtPair     []byte
-	Source       string
-	Status       string
-	Reason       pgtype.Text
-	Payload      []byte
-	DiscoveredAt pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
 }
 
 type ProjectChainState struct {

@@ -5,8 +5,8 @@ SELECT
   p.block_time,
   p.contract,
   p.creator,
-  COALESCE(cs.weth_pair, decode(repeat('00', 20), 'hex')) AS weth_pair,
-  COALESCE(cs.usdt_pair, decode(repeat('00', 20), 'hex')) AS usdt_pair,
+  COALESCE(cs.weth_pair, p.weth_pair, decode(repeat('00', 20), 'hex')) AS weth_pair,
+  COALESCE(cs.usdt_pair, p.usdt_pair, decode(repeat('00', 20), 'hex')) AS usdt_pair,
   COALESCE(cs.fetched_at, p.created_at) AS fetch_at,
   p.tx_hash,
   p.tx_index,
@@ -33,8 +33,8 @@ SELECT
   p.block_time,
   p.contract,
   p.creator,
-  COALESCE(cs.weth_pair, decode(repeat('00', 20), 'hex')) AS weth_pair,
-  COALESCE(cs.usdt_pair, decode(repeat('00', 20), 'hex')) AS usdt_pair,
+  COALESCE(cs.weth_pair, p.weth_pair, decode(repeat('00', 20), 'hex')) AS weth_pair,
+  COALESCE(cs.usdt_pair, p.usdt_pair, decode(repeat('00', 20), 'hex')) AS usdt_pair,
   COALESCE(cs.fetched_at, p.created_at) AS fetch_at,
   p.tx_hash,
   p.tx_index,
@@ -52,7 +52,10 @@ LEFT JOIN project_simulation_result sr ON sr.project_id = p.id
 LEFT JOIN project_component_state gw ON gw.project_id = p.id AND gw.component = 'genesis_wallet'
 LEFT JOIN project_component_state ch ON ch.project_id = p.id AND ch.component = 'creator_history'
 WHERE p.chain_id = @chain_id
-  AND (cs.weth_pair = ANY(@pairs::bytea[]) OR cs.usdt_pair = ANY(@pairs::bytea[]))
+  AND (cs.weth_pair = ANY(@pairs::bytea[])
+    OR cs.usdt_pair = ANY(@pairs::bytea[])
+    OR p.weth_pair = ANY(@pairs::bytea[])
+    OR p.usdt_pair = ANY(@pairs::bytea[]))
 ORDER BY p.block_number, p.tx_index, p.id;
 
 -- name: ListProjectMetasByCreator :many
@@ -62,8 +65,8 @@ SELECT
   p.block_time,
   p.contract,
   p.creator,
-  COALESCE(cs.weth_pair, decode(repeat('00', 20), 'hex')) AS weth_pair,
-  COALESCE(cs.usdt_pair, decode(repeat('00', 20), 'hex')) AS usdt_pair,
+  COALESCE(cs.weth_pair, p.weth_pair, decode(repeat('00', 20), 'hex')) AS weth_pair,
+  COALESCE(cs.usdt_pair, p.usdt_pair, decode(repeat('00', 20), 'hex')) AS usdt_pair,
   COALESCE(cs.fetched_at, p.created_at) AS fetch_at,
   p.tx_hash,
   p.tx_index,
@@ -91,8 +94,8 @@ SELECT
   p.block_time,
   p.contract,
   p.creator,
-  COALESCE(cs.weth_pair, decode(repeat('00', 20), 'hex')) AS weth_pair,
-  COALESCE(cs.usdt_pair, decode(repeat('00', 20), 'hex')) AS usdt_pair,
+  COALESCE(cs.weth_pair, p.weth_pair, decode(repeat('00', 20), 'hex')) AS weth_pair,
+  COALESCE(cs.usdt_pair, p.usdt_pair, decode(repeat('00', 20), 'hex')) AS usdt_pair,
   COALESCE(cs.fetched_at, p.created_at) AS fetch_at,
   p.tx_hash,
   p.tx_index,
@@ -121,8 +124,8 @@ SELECT
   p.block_time,
   p.contract,
   p.creator,
-  COALESCE(cs.weth_pair, decode(repeat('00', 20), 'hex')) AS weth_pair,
-  COALESCE(cs.usdt_pair, decode(repeat('00', 20), 'hex')) AS usdt_pair,
+  COALESCE(cs.weth_pair, p.weth_pair, decode(repeat('00', 20), 'hex')) AS weth_pair,
+  COALESCE(cs.usdt_pair, p.usdt_pair, decode(repeat('00', 20), 'hex')) AS usdt_pair,
   COALESCE(cs.fetched_at, p.created_at) AS fetch_at,
   p.tx_hash,
   p.tx_index,

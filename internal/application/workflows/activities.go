@@ -8,7 +8,6 @@ import (
 )
 
 const (
-	ValidateCandidateActivityName              = "application.validate_candidate"
 	MarkProjectCollectionRunningActivityName   = "application.mark_project_collection_running"
 	MarkProjectCollectionCompletedActivityName = "application.mark_project_collection_completed"
 	MarkProjectCollectionFailedActivityName    = "application.mark_project_collection_failed"
@@ -21,7 +20,6 @@ const (
 )
 
 type Activities struct {
-	ValidateCandidateFunc              func(context.Context, CandidateQualificationInput) error
 	MarkProjectCollectionRunningFunc   func(context.Context, ProjectCollectionLifecycleInput) error
 	MarkProjectCollectionCompletedFunc func(context.Context, ProjectCollectionLifecycleInput) error
 	MarkProjectCollectionFailedFunc    func(context.Context, ProjectCollectionLifecycleInput) error
@@ -31,16 +29,6 @@ type Activities struct {
 	CollectCreatorHistoryFunc          func(context.Context, ProjectCollectionInput) error
 	CollectBytecodeSourceFunc          func(context.Context, ProjectCollectionInput) error
 	CollectAveDetailFunc               func(context.Context, ProjectCollectionInput) error
-}
-
-func (a Activities) ValidateCandidate(ctx context.Context, input CandidateQualificationInput) error {
-	if err := validateProjectRef(input.Project); err != nil {
-		return err
-	}
-	if a.ValidateCandidateFunc != nil {
-		return a.ValidateCandidateFunc(ctx, input)
-	}
-	return nil
 }
 
 func (a Activities) CollectChainState(ctx context.Context, input ProjectCollectionInput) error {

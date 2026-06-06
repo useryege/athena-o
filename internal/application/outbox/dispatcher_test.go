@@ -111,7 +111,6 @@ func (f *fakeOutboxStore) MarkProjectCollectionFailed(_ context.Context, chainID
 }
 
 type fakeWorkflowStarter struct {
-	candidates  []workflows.CandidateQualificationInput
 	collections []workflows.ProjectCollectionInput
 	workflowID  string
 	err         error
@@ -134,11 +133,6 @@ func (f *fakeProjectEventProducer) Publish(_ context.Context, topic string, key 
 
 func (f *fakeProjectEventProducer) Close() {}
 
-func (f *fakeWorkflowStarter) StartCandidateQualification(_ context.Context, input workflows.CandidateQualificationInput) error {
-	f.candidates = append(f.candidates, input)
-	return f.err
-}
-
 func (f *fakeWorkflowStarter) StartProjectCollection(_ context.Context, input workflows.ProjectCollectionInput) (string, error) {
 	f.collections = append(f.collections, input)
 	if f.err != nil {
@@ -153,10 +147,6 @@ func (f *fakeWorkflowStarter) StartProjectCollection(_ context.Context, input wo
 func TestDispatcherClaimsWorkflowAndKafkaProjectOutboxTypes(t *testing.T) {
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
 	storeFake := &fakeOutboxStore{events: []store.OutboxEvent{
-		newOutboxEvent(1, store.OutboxTypeCandidateQualificationRequested, 56, map[string]any{
-			"project": workflows.ProjectRef{ChainID: 56, Contract: contract},
-			"source":  "catch_up",
-		}),
 		newOutboxEvent(2, store.OutboxTypeProjectCollectionRequested, 56, map[string]any{
 			"project": workflows.ProjectRef{ChainID: 56, Contract: contract},
 			"reason":  "pair_swap",
@@ -178,14 +168,14 @@ func TestDispatcherClaimsWorkflowAndKafkaProjectOutboxTypes(t *testing.T) {
 		t.Fatalf("process once: %v", err)
 	}
 
-	if count != 3 {
-		t.Fatalf("claimed count = %d, want 3 dispatchable events", count)
+	if count != 2 {
+		t.Fatalf("claimed count = %d, want 2 dispatchable events", count)
 	}
-	if len(storeFake.claimedTypes) != 3 || !contains(storeFake.claimedTypes, store.OutboxTypeKafkaProjectEventPublish) {
+	if len(storeFake.claimedTypes) != 2 || !contains(storeFake.claimedTypes, store.OutboxTypeKafkaProjectEventPublish) {
 		t.Fatalf("claimed types = %#v, want workflow and kafka project event types", storeFake.claimedTypes)
 	}
-	if len(starter.candidates) != 1 || len(starter.collections) != 1 {
-		t.Fatalf("started candidates=%d collections=%d, want 1/1", len(starter.candidates), len(starter.collections))
+	if len(starter.collections) != 1 {
+		t.Fatalf("started collections=%d, want 1", len(starter.collections))
 	}
 	if len(storeFake.running) != 1 || storeFake.running[0].chainID != 56 || storeFake.running[0].contract != contract || storeFake.running[0].workflowID == "" {
 		t.Fatalf("collection running marks = %#v, want workflow running state for %s", storeFake.running, contract.Hex())
@@ -196,8 +186,8 @@ func TestDispatcherClaimsWorkflowAndKafkaProjectOutboxTypes(t *testing.T) {
 	if producer.records[0].topic != appevents.TopicApplicationProjectV1 {
 		t.Fatalf("topic = %q, want application project topic", producer.records[0].topic)
 	}
-	if !equalIDs(storeFake.processed, []int64{1, 2, 3}) {
-		t.Fatalf("processed ids = %#v, want [1 2 3]", storeFake.processed)
+	if !equalIDs(storeFake.processed, []int64{2, 3}) {
+		t.Fatalf("processed ids = %#v, want [2 3]", storeFake.processed)
 	}
 }
 
@@ -205,7 +195,7 @@ func TestDispatcherRetriesTransientWorkflowStartError(t *testing.T) {
 	now := time.Date(2026, 6, 5, 12, 0, 0, 0, time.UTC)
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000002")
 	storeFake := &fakeOutboxStore{events: []store.OutboxEvent{
-		newOutboxEvent(10, store.OutboxTypeCandidateQualificationRequested, 1, map[string]any{
+		newOutboxEvent(10, store.OutboxTypeProjectCollectionRequested, 1, map[string]any{
 			"project": workflows.ProjectRef{ChainID: 1, Contract: contract},
 		}),
 	}}

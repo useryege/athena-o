@@ -280,3 +280,78 @@ func (q *Queries) ListProjectBasesPage(ctx context.Context, arg ListProjectBases
 	}
 	return items, nil
 }
+
+const upsertProjectFromDiscovery = `-- name: UpsertProjectFromDiscovery :exec
+INSERT INTO project (
+  chain_id,
+  block_number,
+  block_time,
+  contract,
+  creator,
+  tx_hash,
+  tx_index,
+  weth_pair,
+  usdt_pair,
+  source,
+  status,
+  reason,
+  payload,
+  discovered_at
+) VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8::bytea,
+  $9::bytea,
+  $10,
+  'processed',
+  $11::text,
+  $12::jsonb,
+  now()
+)
+ON CONFLICT (chain_id, contract) DO UPDATE
+SET weth_pair = COALESCE(project.weth_pair, EXCLUDED.weth_pair),
+  usdt_pair = COALESCE(project.usdt_pair, EXCLUDED.usdt_pair),
+  source = EXCLUDED.source,
+  status = 'processed',
+  reason = COALESCE(EXCLUDED.reason, project.reason),
+  payload = project.payload || EXCLUDED.payload,
+  updated_at = now()
+`
+
+type UpsertProjectFromDiscoveryParams struct {
+	ChainID     int64
+	BlockNumber int64
+	BlockTime   int64
+	Contract    []byte
+	Creator     []byte
+	TxHash      []byte
+	TxIndex     int64
+	WethPair    []byte
+	UsdtPair    []byte
+	Source      string
+	Reason      pgtype.Text
+	Payload     []byte
+}
+
+func (q *Queries) UpsertProjectFromDiscovery(ctx context.Context, arg UpsertProjectFromDiscoveryParams) error {
+	_, err := q.db.Exec(ctx, upsertProjectFromDiscovery,
+		arg.ChainID,
+		arg.BlockNumber,
+		arg.BlockTime,
+		arg.Contract,
+		arg.Creator,
+		arg.TxHash,
+		arg.TxIndex,
+		arg.WethPair,
+		arg.UsdtPair,
+		arg.Source,
+		arg.Reason,
+		arg.Payload,
+	)
+	return err
+}

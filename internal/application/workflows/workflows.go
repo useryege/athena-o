@@ -1,45 +1,12 @@
 package workflows
 
 import (
-	"errors"
 	"strings"
 	"time"
 
-	enumspb "go.temporal.io/api/enums/v1"
-	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
-
-func CandidateQualificationWorkflow(ctx workflow.Context, input CandidateQualificationInput) error {
-	options := workflow.ActivityOptions{
-		StartToCloseTimeout: 5 * time.Minute,
-		RetryPolicy: &temporal.RetryPolicy{
-			InitialInterval: time.Second,
-			MaximumInterval: time.Minute,
-			MaximumAttempts: 5,
-		},
-		TaskQueue: TaskQueueApplicationControl,
-	}
-	ctx = workflow.WithActivityOptions(ctx, options)
-	if err := workflow.ExecuteActivity(ctx, ValidateCandidateActivityName, input).Get(ctx, nil); err != nil {
-		return err
-	}
-	childOptions := workflow.ChildWorkflowOptions{
-		WorkflowID:            ProjectCollectionWorkflowID(input.Project.ChainID, input.Project.Contract.Hex()),
-		TaskQueue:             TaskQueueApplicationControl,
-		WorkflowIDReusePolicy: enumspb.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-	}
-	childCtx := workflow.WithChildOptions(ctx, childOptions)
-	err := workflow.ExecuteChildWorkflow(childCtx, ProjectCollectionWorkflow, ProjectCollectionInput{
-		Project: input.Project,
-		Reason:  "candidate_accepted",
-	}).Get(childCtx, nil)
-	if isWorkflowAlreadyStarted(err) {
-		return nil
-	}
-	return err
-}
 
 func ProjectCollectionWorkflow(ctx workflow.Context, input ProjectCollectionInput) error {
 	controlOptions := workflow.ActivityOptions{
@@ -140,12 +107,4 @@ func ProjectCollectionAllActivityNames(reason string) []string {
 		externalActivities = append([]string{CollectBytecodeSourceActivityName}, externalActivities...)
 	}
 	return append(chainActivities, externalActivities...)
-}
-
-func isWorkflowAlreadyStarted(err error) bool {
-	if temporal.IsWorkflowExecutionAlreadyStartedError(err) {
-		return true
-	}
-	var alreadyStarted *serviceerror.WorkflowExecutionAlreadyStarted
-	return errors.As(err, &alreadyStarted)
 }

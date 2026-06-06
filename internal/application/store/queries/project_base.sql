@@ -10,6 +10,47 @@ INSERT INTO project (
 ) VALUES (@chain_id, @block_number, @block_time, @contract, @creator, @tx_hash, @tx_index)
 ON CONFLICT DO NOTHING;
 
+-- name: UpsertProjectFromDiscovery :exec
+INSERT INTO project (
+  chain_id,
+  block_number,
+  block_time,
+  contract,
+  creator,
+  tx_hash,
+  tx_index,
+  weth_pair,
+  usdt_pair,
+  source,
+  status,
+  reason,
+  payload,
+  discovered_at
+) VALUES (
+  @chain_id,
+  @block_number,
+  @block_time,
+  @contract,
+  @creator,
+  @tx_hash,
+  @tx_index,
+  sqlc.narg('weth_pair')::bytea,
+  sqlc.narg('usdt_pair')::bytea,
+  @source,
+  'processed',
+  sqlc.narg('reason')::text,
+  @payload::jsonb,
+  now()
+)
+ON CONFLICT (chain_id, contract) DO UPDATE
+SET weth_pair = COALESCE(project.weth_pair, EXCLUDED.weth_pair),
+  usdt_pair = COALESCE(project.usdt_pair, EXCLUDED.usdt_pair),
+  source = EXCLUDED.source,
+  status = 'processed',
+  reason = COALESCE(EXCLUDED.reason, project.reason),
+  payload = project.payload || EXCLUDED.payload,
+  updated_at = now();
+
 -- name: GetMaxProjectBlockNumber :one
 SELECT
   COALESCE(MAX(block_number), 0)::bigint AS max_block,

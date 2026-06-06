@@ -22,7 +22,6 @@ import (
 	chainstatecomponent "github.com/useryege/athena/internal/application/components/chainstate"
 	creatorhistorycomponent "github.com/useryege/athena/internal/application/components/creatorhistory"
 	genesiswalletcomponent "github.com/useryege/athena/internal/application/components/genesiswallet"
-	initializercomponent "github.com/useryege/athena/internal/application/components/initializer"
 	simulationcomponent "github.com/useryege/athena/internal/application/components/simulation"
 	"github.com/useryege/athena/internal/application/events"
 	"github.com/useryege/athena/internal/application/evm"
@@ -367,20 +366,7 @@ func buildControlWorkerActivities(opts runtimeOptions) (appworkflows.Activities,
 	if opts.Store == nil {
 		return appworkflows.Activities{}, func() {}, fmt.Errorf("application store is required for temporal-worker-control mode")
 	}
-	chainID := opts.ChainID
-	if chainID <= 0 {
-		chainID = appstore.DefaultChainID
-	}
-	initializer := initializercomponent.NewComponent(initializercomponent.Options{
-		ChainID: chainID,
-		Store:   opts.Store,
-		Cache:   appcache.NewProjectComponentCache(redisport.NewGoRedisAdapter(opts.RedisClient)),
-	})
 	return appworkflows.Activities{
-		ValidateCandidateFunc: func(ctx context.Context, input appworkflows.CandidateQualificationInput) error {
-			candidate := input.Candidate.DiscoveredProjectCandidate(input.Project, input.Source)
-			return initializer.IntakeCandidates(ctx, []model.DiscoveredProjectCandidate{candidate})
-		},
 		MarkProjectCollectionRunningFunc: func(ctx context.Context, input appworkflows.ProjectCollectionLifecycleInput) error {
 			return opts.Store.MarkProjectCollectionRunning(ctx, input.Project.ChainID, input.Project.Contract, input.WorkflowID, time.Now().UTC())
 		},
