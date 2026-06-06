@@ -33,11 +33,13 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Mode           string
-	StoreSrc       func(context.Context) (*tokenstore.SQLStore, error)
-	EthNodeWSURL   string
-	BSCNodeWSURL   string
-	NodeWSUseProxy bool
+	Mode              string
+	StoreSrc          func(context.Context) (*tokenstore.SQLStore, error)
+	EthNodeWSURL      string
+	BSCNodeWSURL      string
+	EthAthenaContract string
+	BSCAthenaContract string
+	NodeWSUseProxy    bool
 }
 
 func NormalizeMode(mode string) string {
@@ -108,10 +110,12 @@ func (s *Server) Start(ctx context.Context) error {
 			return err
 		}
 		s.qualifier = projectqualifier.NewWorker(projectqualifier.Options{
-			Store:          store,
-			EthNodeWSURL:   s.EthNodeWSURL,
-			BSCNodeWSURL:   s.BSCNodeWSURL,
-			NodeWSUseProxy: s.NodeWSUseProxy,
+			Store:             store,
+			EthNodeWSURL:      s.EthNodeWSURL,
+			BSCNodeWSURL:      s.BSCNodeWSURL,
+			EthAthenaContract: s.EthAthenaContract,
+			BSCAthenaContract: s.BSCAthenaContract,
+			NodeWSUseProxy:    s.NodeWSUseProxy,
 		})
 		if err := s.qualifier.Start(ctx); err != nil {
 			_ = store.Close()

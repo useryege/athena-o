@@ -28,12 +28,14 @@ const cliName = "athena-token"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost     string
-		listenPort     int
-		mode           string
-		ethNodeWSURL   string
-		bscNodeWSURL   string
-		nodeWSUseProxy bool
+		listenHost        string
+		listenPort        int
+		mode              string
+		ethNodeWSURL      string
+		bscNodeWSURL      string
+		ethAthenaContract string
+		bscAthenaContract string
+		nodeWSUseProxy    bool
 	)
 
 	command := &cobra.Command{
@@ -57,11 +59,13 @@ func NewCommand() *cobra.Command {
 			ctx := cmd.Context()
 
 			server, err := token.NewServer(token.ServerOpts{
-				Mode:           mode,
-				StoreSrc:       tokenstore.NewSQLStoreSource(),
-				EthNodeWSURL:   ethNodeWSURL,
-				BSCNodeWSURL:   bscNodeWSURL,
-				NodeWSUseProxy: nodeWSUseProxy,
+				Mode:              mode,
+				StoreSrc:          tokenstore.NewSQLStoreSource(),
+				EthNodeWSURL:      ethNodeWSURL,
+				BSCNodeWSURL:      bscNodeWSURL,
+				EthAthenaContract: ethAthenaContract,
+				BSCAthenaContract: bscAthenaContract,
+				NodeWSUseProxy:    nodeWSUseProxy,
 			})
 			if err != nil {
 				return err
@@ -102,6 +106,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&mode, "mode", env.StringFromEnv("ATHENA_TOKEN_MODE", token.ModeGRPC), "Run mode: grpc|chain-ingestor|project-qualifier")
 	command.Flags().StringVar(&ethNodeWSURL, "eth-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_ETH_NODE_WS_URL", ""), "Ethereum Mainnet node WebSocket address for worker modes")
 	command.Flags().StringVar(&bscNodeWSURL, "bsc-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_BSC_NODE_WS_URL", ""), "BSC Mainnet node WebSocket address for worker modes")
+	command.Flags().StringVar(&ethAthenaContract, "eth-athena-contract", env.StringFromEnv("ATHENA_TOKEN_ETH_ATHENA_CONTRACT", ""), "Ethereum Mainnet ATHENA contract address for project-qualifier mode")
+	command.Flags().StringVar(&bscAthenaContract, "bsc-athena-contract", env.StringFromEnv("ATHENA_TOKEN_BSC_ATHENA_CONTRACT", ""), "BSC Mainnet ATHENA contract address for project-qualifier mode")
 	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_TOKEN_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))

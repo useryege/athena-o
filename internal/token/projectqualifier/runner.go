@@ -6,33 +6,37 @@ import (
 	"sync"
 	"time"
 
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/common"
+	athenacommon "github.com/useryege/athena/common"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	"github.com/useryege/athena/util/ethws"
 )
 
 type qualifierRunnerOptions struct {
-	store          *tokenstore.SQLStore
-	nodeWSURLs     map[int64]string
-	nodeWSUseProxy bool
-	pollInterval   time.Duration
-	candidateLimit int32
+	store           *tokenstore.SQLStore
+	nodeWSURLs      map[int64]string
+	athenaContracts map[int64]ethcommon.Address
+	nodeWSUseProxy  bool
+	pollInterval    time.Duration
+	candidateLimit  int32
 }
 
 type qualifierRunner struct {
 	opts qualifierRunnerOptions
 
-	clientMu sync.Mutex
-	clients  map[int64]*ethclient.Client
+	clientMu   sync.Mutex
+	clients    map[int64]*ethclient.Client
+	validators map[int64]*athenaValidator
 }
 
 func newQualifierRunner(opts qualifierRunnerOptions) *qualifierRunner {
 	return &qualifierRunner{
-		opts:    opts,
-		clients: make(map[int64]*ethclient.Client),
+		opts:       opts,
+		clients:    make(map[int64]*ethclient.Client),
+		validators: make(map[int64]*athenaValidator),
 	}
 }
 
@@ -60,11 +64,12 @@ func (r *qualifierRunner) processPendingCandidates(ctx context.Context) error {
 		log.Debug("token project qualifier has no pending candidates")
 		return nil
 	}
-	for _, candidate := range candidates {
+	candidatesByChain := groupCandidatesByChain(candidates)
+	for chainID, chainCandidates := range candidatesByChain {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if err := r.processCandidate(ctx, candidate); err != nil {
+		if err := r.processChainCandidates(ctx, chainID, chainCandidates); err != nil {
 			return err
 		}
 	}
@@ -72,29 +77,53 @@ func (r *qualifierRunner) processPendingCandidates(ctx context.Context) error {
 	return nil
 }
 
-func (r *qualifierRunner) processCandidate(ctx context.Context, candidate tokenstore.ProjectCandidate) error {
-	client, err := r.ensureClient(ctx, candidate.ChainID)
+func (r *qualifierRunner) processChainCandidates(ctx context.Context, chainID int64, candidates []tokenstore.ProjectCandidate) error {
+	client, err := r.ensureClient(ctx, chainID)
 	if err != nil {
 		return err
 	}
+	validator, err := r.ensureValidator(ctx, chainID)
+	if err != nil {
+		return err
+	}
+	contracts := make([]ethcommon.Address, 0, len(candidates))
+	for _, candidate := range candidates {
+		contracts = append(contracts, candidate.Contract)
+	}
+	validations, err := validator.validateERC20(ctx, contracts)
+	if err != nil {
+		r.resetChain(chainID)
+		return fmt.Errorf("validate ERC20 chain_id=%d candidate_count=%d: %w", chainID, len(candidates), err)
+	}
+	if len(validations) != len(candidates) {
+		r.resetChain(chainID)
+		return fmt.Errorf("validate ERC20 chain_id=%d returned %d results for %d candidates", chainID, len(validations), len(candidates))
+	}
+	for i, candidate := range candidates {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := r.processValidatedCandidate(ctx, client, candidate, validations[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *qualifierRunner) processValidatedCandidate(ctx context.Context, client *ethclient.Client, candidate tokenstore.ProjectCandidate, validation tokenValidation) error {
+	if !validation.IsValidERC20 {
+		return r.rejectCandidate(ctx, candidate, "token project qualifier rejected non ERC20 candidate")
+	}
 	code, err := client.CodeAt(ctx, candidate.Contract, nil)
 	if err != nil {
-		r.resetClient(candidate.ChainID)
+		r.resetChain(candidate.ChainID)
 		return fmt.Errorf("fetch contract code chain_id=%d contract=%s: %w", candidate.ChainID, candidate.Contract.Hex(), err)
 	}
 	if len(code) == 0 {
-		if _, err := r.opts.store.MarkProjectCandidateStatus(ctx, candidate.ID, tokenstore.ProjectCandidateStatusRejected); err != nil {
-			return err
-		}
-		log.WithFields(log.Fields{
-			"candidate_id": candidate.ID,
-			"chain_id":     candidate.ChainID,
-			"contract":     candidate.Contract.Hex(),
-		}).Info("token project qualifier rejected candidate without code")
-		return nil
+		return r.rejectCandidate(ctx, candidate, "token project qualifier rejected candidate without code")
 	}
 	codeHash := crypto.Keccak256Hash(code)
-	if _, err := r.opts.store.QualifyProjectCandidate(ctx, candidate, codeHash); err != nil {
+	if _, err := r.opts.store.QualifyProjectCandidate(ctx, candidate, codeHash, validation.WethPair, validation.UsdtPair); err != nil {
 		return err
 	}
 	log.WithFields(log.Fields{
@@ -102,7 +131,21 @@ func (r *qualifierRunner) processCandidate(ctx context.Context, candidate tokens
 		"chain_id":     candidate.ChainID,
 		"contract":     candidate.Contract.Hex(),
 		"code_hash":    codeHash.Hex(),
+		"weth_pair":    validation.WethPair.Hex(),
+		"usdt_pair":    validation.UsdtPair.Hex(),
 	}).Info("token project qualifier qualified candidate")
+	return nil
+}
+
+func (r *qualifierRunner) rejectCandidate(ctx context.Context, candidate tokenstore.ProjectCandidate, message string) error {
+	if _, err := r.opts.store.MarkProjectCandidateStatus(ctx, candidate.ID, tokenstore.ProjectCandidateStatusRejected); err != nil {
+		return err
+	}
+	log.WithFields(log.Fields{
+		"candidate_id": candidate.ID,
+		"chain_id":     candidate.ChainID,
+		"contract":     candidate.Contract.Hex(),
+	}).Info(message)
 	return nil
 }
 
@@ -132,18 +175,53 @@ func (r *qualifierRunner) ensureClient(ctx context.Context, chainID int64) (*eth
 	r.clients[chainID] = client
 	log.WithFields(log.Fields{
 		"chain_id":   chainID,
-		"chain_name": common.ChainName(chainID),
+		"chain_name": athenacommon.ChainName(chainID),
 	}).Info("token project qualifier connected to node websocket")
 	return client, nil
 }
 
-func (r *qualifierRunner) resetClient(chainID int64) {
+func (r *qualifierRunner) ensureValidator(ctx context.Context, chainID int64) (*athenaValidator, error) {
+	r.clientMu.Lock()
+	if validator := r.validators[chainID]; validator != nil {
+		r.clientMu.Unlock()
+		return validator, nil
+	}
+	r.clientMu.Unlock()
+
+	client, err := r.ensureClient(ctx, chainID)
+	if err != nil {
+		return nil, err
+	}
+	athenaContract := r.opts.athenaContracts[chainID]
+	if athenaContract == (ethcommon.Address{}) {
+		return nil, errAthenaContractRequired(chainID)
+	}
+	validator, err := newAthenaValidator(athenaContract, client)
+	if err != nil {
+		return nil, err
+	}
+	r.clientMu.Lock()
+	defer r.clientMu.Unlock()
+	if current := r.validators[chainID]; current != nil {
+		return current, nil
+	}
+	r.validators[chainID] = validator
+	log.WithFields(log.Fields{
+		"chain_id":        chainID,
+		"chain_name":      athenacommon.ChainName(chainID),
+		"athena_contract": athenaContract.Hex(),
+	}).Info("token project qualifier initialized ATHENA validator")
+	return validator, nil
+}
+
+func (r *qualifierRunner) resetChain(chainID int64) {
 	r.clientMu.Lock()
 	defer r.clientMu.Unlock()
 	if client := r.clients[chainID]; client != nil {
 		client.Close()
 		delete(r.clients, chainID)
 	}
+	delete(r.validators, chainID)
 }
 
 func (r *qualifierRunner) close() {
@@ -155,6 +233,17 @@ func (r *qualifierRunner) close() {
 		}
 		delete(r.clients, chainID)
 	}
+	for chainID := range r.validators {
+		delete(r.validators, chainID)
+	}
+}
+
+func groupCandidatesByChain(candidates []tokenstore.ProjectCandidate) map[int64][]tokenstore.ProjectCandidate {
+	items := make(map[int64][]tokenstore.ProjectCandidate)
+	for _, candidate := range candidates {
+		items[candidate.ChainID] = append(items[candidate.ChainID], candidate)
+	}
+	return items
 }
 
 func sleepContext(ctx context.Context, interval time.Duration) bool {

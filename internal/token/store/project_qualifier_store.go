@@ -8,7 +8,7 @@ import (
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash) (*Project, error) {
+func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash, wethPair, usdtPair common.Address) (*Project, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token postgres database is not configured")
 	}
@@ -45,6 +45,8 @@ func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate Projec
 		BlockNumber: blockNumber,
 		BlockTime:   blockTime,
 		CodeHash:    codeHash.Bytes(),
+		WethPair:    optionalAddressBytes(wethPair),
+		UsdtPair:    optionalAddressBytes(usdtPair),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert project: %w", err)
