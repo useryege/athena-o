@@ -16,7 +16,7 @@ import (
 type Reader interface {
 	LatestBlockNumber(ctx context.Context) (uint64, error)
 	ReadBlock(ctx context.Context, number uint64) (Block, error)
-	ReadContractCode(ctx context.Context, contract common.Address, blockNumber uint64) ([]byte, error)
+	ReadContractCode(ctx context.Context, contract common.Address) ([]byte, error)
 }
 
 type Producer interface {
@@ -206,7 +206,7 @@ func (i *Ingestor) publishBlock(ctx context.Context, block Block) error {
 	}
 	if validatedCreations, ok := i.validatedContractCreations(ctx, block.ContractCreations); ok {
 		for _, item := range validatedCreations {
-			code, err := i.reader.ReadContractCode(ctx, item.creation.Contract, block.Number)
+			code, err := i.reader.ReadContractCode(ctx, item.creation.Contract)
 			if err != nil {
 				if ctxErr := ctx.Err(); ctxErr != nil {
 					return ctxErr

@@ -42,8 +42,8 @@ func (f *readerFake) ReadBlock(_ context.Context, number uint64) (Block, error) 
 	return f.blocks[number], nil
 }
 
-func (f *readerFake) ReadContractCode(_ context.Context, contract common.Address, blockNumber uint64) ([]byte, error) {
-	f.codeRequests = append(f.codeRequests, readContractCodeRequest{contract: contract, blockNumber: blockNumber})
+func (f *readerFake) ReadContractCode(_ context.Context, contract common.Address) ([]byte, error) {
+	f.codeRequests = append(f.codeRequests, readContractCodeRequest{contract: contract})
 	if f.codeErr != nil {
 		return nil, f.codeErr
 	}
