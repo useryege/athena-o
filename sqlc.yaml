@@ -45,3 +45,12 @@ sql:
         out: "internal/polymarket/store/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true
+  - engine: "postgresql"
+    schema: "internal/token/store/migrations"
+    queries: "internal/token/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/token/store/sqlc"
+        sql_package: "pgx/v5"
+        emit_interface: true

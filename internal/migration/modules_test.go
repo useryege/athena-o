@@ -7,8 +7,8 @@ func TestSelectAllModules(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Select(all) error = %v", err)
 	}
-	if len(modules) != 5 {
-		t.Fatalf("Select(all) returned %d modules, want 5", len(modules))
+	if len(modules) != 6 {
+		t.Fatalf("Select(all) returned %d modules, want 6", len(modules))
 	}
 }
 
