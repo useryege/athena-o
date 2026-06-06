@@ -10,12 +10,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/useryege/athena/internal/application/model"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
+	utilave "github.com/useryege/athena/util/ave"
 )
 
 type ProjectMeta = model.ProjectMeta
 type ProjectAveDetail = model.ProjectAveDetail
-type ProjectAveTokenDetail = model.ProjectAveTokenDetail
-type ProjectAvePair = model.ProjectAvePair
 type SimulateResult = model.SimulateResult
 
 type ProjectBase struct {
@@ -175,7 +174,7 @@ type ProjectStore interface {
 	ListProjectMetas(ctx context.Context, chainID int64) ([]ProjectMeta, error)
 	ListAllProjectMetas(ctx context.Context, chainID int64) ([]ProjectMeta, error)
 	ListProjectMetasByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]ProjectMeta, error)
-	UpsertProjectAveDetail(ctx context.Context, chainID int64, contract common.Address, detail ProjectAveDetail) error
+	UpsertProjectAveDetail(ctx context.Context, chainID int64, contract common.Address, response *utilave.TokenDetailResponse, fetchedAt time.Time) error
 	UpdateProjectCreatorResult(ctx context.Context, chainID int64, contract common.Address, result SimulateResult) error
 	ListProjectMetasByCreator(ctx context.Context, chainID int64, creator common.Address) ([]ProjectMeta, error)
 	ListProjectMetasByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error)
@@ -209,7 +208,7 @@ type ProjectComponentStateStore interface {
 }
 
 type ProjectAveDetailStore interface {
-	UpsertProjectAveDetail(ctx context.Context, chainID int64, contract common.Address, detail ProjectAveDetail) error
+	UpsertProjectAveDetail(ctx context.Context, chainID int64, contract common.Address, response *utilave.TokenDetailResponse, fetchedAt time.Time) error
 	GetProjectAveDetail(ctx context.Context, chainID int64, contract common.Address) (*ProjectAveDetail, error)
 	ListProjectAveDetailsByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address]ProjectAveDetail, error)
 }

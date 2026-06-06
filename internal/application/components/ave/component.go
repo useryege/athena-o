@@ -258,22 +258,23 @@ func (c *Component) refreshOne(ctx context.Context, contract common.Address) err
 		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
 		return err
 	}
-	detail, err := DetailFromResponse(response, c.now())
-	if err != nil {
-		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
-		return err
-	}
-	if detail == nil {
+	if response == nil {
 		err := errors.New("Ave token detail response is empty")
 		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
 		return err
 	}
-	if err := c.store.UpsertProjectAveDetail(ctx, c.chainID, contract, *detail); err != nil {
+	fetchedAt := c.now().UTC()
+	if err := c.store.UpsertProjectAveDetail(ctx, c.chainID, contract, response, fetchedAt); err != nil {
 		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
 		return err
 	}
+	detail := appstore.ProjectAveDetail{
+		ChainID:   c.chainID,
+		FetchedAt: fetchedAt,
+		Data:      response.Data,
+	}
 	if c.cache != nil {
-		if err := c.cache.SetAveDetail(ctx, c.chainID, contract, *detail); err != nil {
+		if err := c.cache.SetAveDetail(ctx, c.chainID, contract, detail); err != nil {
 			return err
 		}
 	}

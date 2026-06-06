@@ -1,13 +1,13 @@
 package model
 
 import (
-	"encoding/json"
 	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
+	utilave "github.com/useryege/athena/util/ave"
 )
 
 type Project struct {
@@ -41,106 +41,9 @@ type ProjectMeta struct {
 }
 
 type ProjectAveDetail struct {
-	ChainID     int64
-	Status      int
-	Msg         string
-	DataType    int
-	IsAudited   bool
-	FetchedAt   time.Time
-	RawResponse json.RawMessage `json:"-"`
-	Token       ProjectAveTokenDetail
-	Pairs       []ProjectAvePair
-}
-
-type ProjectAveTokenDetail struct {
-	Total               string
-	LaunchPrice         string
-	CurrentPriceETH     string
-	CurrentPriceUSD     string
-	PriceChange1D       string
-	PriceChange24H      string
-	PriceChange1H       string
-	LockAmount          string
-	BurnAmount          string
-	OtherAmount         string
-	TxAmount24H         string
-	TxVolumeU24H        string
-	LockedPercent       string
-	MarketCap           string
-	FDV                 string
-	TVL                 string
-	MainPairTVL         string
-	TokenPriceChange5M  string
-	TokenPriceChange1H  string
-	TokenPriceChange4H  string
-	TokenPriceChange24H string
-	TokenTxVolumeUSD5M  string
-	TokenTxVolumeUSD1H  string
-	TokenTxVolumeUSD4H  string
-	TokenTxVolumeUSD24H string
-	TokenBuyVolumeU5M   string
-	TokenSellVolumeU5M  string
-	Token               string
-	Chain               string
-	Decimal             int
-	Name                string
-	Symbol              string
-	Holders             int
-	Appendix            string
-	RiskLevel           int
-	LogoURL             string
-	RiskInfo            string
-	RiskScore           string
-	LaunchAt            int64
-	CreatedAt           int64
-	TxCount24H          int
-	LockPlatform        string
-	IsMintable          string
-	UpdatedAt           int64
-	MainPair            string
-	HasMintMethod       bool
-	IsLPNotLocked       bool
-	HasNotRenounced     bool
-	HasNotAudited       bool
-	HasNotOpenSource    bool
-	IsInBlacklist       bool
-	IsHoneypot          bool
-	AveRiskLevel        int
-}
-
-type ProjectAvePair struct {
-	Reserve0       string
-	Reserve1       string
-	Token0PriceETH string
-	Token0PriceUSD string
-	Token1PriceETH string
-	Token1PriceUSD string
-	PriceChange    string
-	PriceChange24H string
-	PriceChange1H  string
-	VolumeU        string
-	LowU           string
-	HighU          string
-	Fee            string
-	TotalSupply    string
-	TxAmount       string
-	Pair           string
-	Chain          string
-	AMM            string
-	Token0Address  string
-	Token0Symbol   string
-	Token0Decimal  int
-	Token1Address  string
-	Token1Symbol   string
-	Token1Decimal  int
-	TargetToken    string
-	PriceChange1D  string
-	CreatedAt      int64
-	TxCount        int
-	UpdatedAt      int64
-	MarketCap      string
-	FDV            string
-	IsFake         bool
+	ChainID   int64
+	FetchedAt time.Time
+	Data      utilave.TokenDetailData
 }
 
 type GenesisWalletMeta struct {
