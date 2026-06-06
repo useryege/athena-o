@@ -31,12 +31,6 @@ func NewProcessor(store ProjectEventStore) *Processor {
 }
 
 func (p *Processor) ProcessEnvelope(ctx context.Context, envelope Envelope) error {
-	if p == nil || p.store == nil {
-		return nil
-	}
-	if envelope.SchemaVersion != 0 && envelope.SchemaVersion != SchemaVersionV1 {
-		return fmt.Errorf("unsupported application event schema version %d", envelope.SchemaVersion)
-	}
 	if envelope.ChainID <= 0 {
 		return errors.New("application event chain_id must be positive")
 	}

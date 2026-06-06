@@ -191,12 +191,11 @@ func testEnvelope(t *testing.T, eventType string, chainID int64, payload any) En
 		t.Fatalf("marshal payload: %v", err)
 	}
 	return Envelope{
-		EventID:       "test",
-		EventType:     eventType,
-		SchemaVersion: SchemaVersionV1,
-		ChainID:       chainID,
-		OccurredAt:    time.Unix(1, 0).UTC(),
-		Payload:       raw,
+		EventID:    "test",
+		EventType:  eventType,
+		ChainID:    chainID,
+		OccurredAt: time.Unix(1, 0).UTC(),
+		Payload:    raw,
 	}
 }
 
