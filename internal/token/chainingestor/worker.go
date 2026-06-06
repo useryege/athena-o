@@ -95,10 +95,9 @@ func (w *Worker) Start(ctx context.Context) error {
 		})
 		runners[cfg.chainID] = runner
 		log.WithFields(log.Fields{
-			"chain_id":               checkpoint.ChainID,
-			"chain_name":             checkpoint.ChainName,
-			"cursor_block_number":    checkpoint.CursorBlockNumber,
-			"finalized_block_number": checkpoint.FinalizedBlockNumber,
+			"chain_id":            checkpoint.ChainID,
+			"chain_name":          checkpoint.ChainName,
+			"cursor_block_number": checkpoint.CursorBlockNumber,
 		}).Info("token chain ingestor checkpoint activated")
 	}
 

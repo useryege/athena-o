@@ -3,7 +3,6 @@ SELECT
   c.id AS chain_id,
   c.name AS chain_name,
   c.enabled,
-  COALESCE(cp.finalized_block_number, 0)::bigint AS finalized_block_number,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
   COALESCE(cp.status, 'stopped')::text AS status,
   COALESCE(cp.created_at, c.created_at) AS created_at
@@ -14,18 +13,15 @@ WHERE c.id = @chain_id;
 -- name: UpsertChainIngestCheckpoint :one
 INSERT INTO chain_ingest_checkpoint (
   chain_id,
-  finalized_block_number,
   cursor_block_number,
   status
 ) VALUES (
   @chain_id,
-  @finalized_block_number,
   @cursor_block_number,
   @status
 )
 ON CONFLICT (chain_id) DO UPDATE
-SET finalized_block_number = EXCLUDED.finalized_block_number,
-  cursor_block_number = EXCLUDED.cursor_block_number,
+SET cursor_block_number = EXCLUDED.cursor_block_number,
   status = EXCLUDED.status
 RETURNING *;
 
@@ -40,7 +36,6 @@ SELECT
   c.id AS chain_id,
   c.name AS chain_name,
   c.enabled,
-  COALESCE(cp.finalized_block_number, 0)::bigint AS finalized_block_number,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
   COALESCE(cp.status, 'stopped')::text AS status,
   COALESCE(cp.created_at, c.created_at) AS created_at

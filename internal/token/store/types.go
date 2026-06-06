@@ -18,13 +18,12 @@ const (
 )
 
 type ChainIngestCheckpoint struct {
-	ChainID              int64
-	ChainName            string
-	Enabled              bool
-	FinalizedBlockNumber uint64
-	CursorBlockNumber    uint64
-	Status               string
-	CreatedAt            time.Time
+	ChainID           int64
+	ChainName         string
+	Enabled           bool
+	CursorBlockNumber uint64
+	Status            string
+	CreatedAt         time.Time
 }
 
 type ProjectCandidate struct {

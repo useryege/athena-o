@@ -99,22 +99,17 @@ func normalizePage(page, pageSize int32) (int32, int32, int32) {
 }
 
 func mapChainCheckpointRow(row tokensqlc.GetChainIngestCheckpointRow) (*ChainIngestCheckpoint, error) {
-	finalizedBlockNumber, err := int64ToUint64("finalized_block_number", row.FinalizedBlockNumber)
-	if err != nil {
-		return nil, err
-	}
 	cursorBlockNumber, err := int64ToUint64("cursor_block_number", row.CursorBlockNumber)
 	if err != nil {
 		return nil, err
 	}
 	return &ChainIngestCheckpoint{
-		ChainID:              row.ChainID,
-		ChainName:            row.ChainName,
-		Enabled:              row.Enabled,
-		FinalizedBlockNumber: finalizedBlockNumber,
-		CursorBlockNumber:    cursorBlockNumber,
-		Status:               row.Status,
-		CreatedAt:            timeValue(row.CreatedAt),
+		ChainID:           row.ChainID,
+		ChainName:         row.ChainName,
+		Enabled:           row.Enabled,
+		CursorBlockNumber: cursorBlockNumber,
+		Status:            row.Status,
+		CreatedAt:         timeValue(row.CreatedAt),
 	}, nil
 }
 
@@ -123,20 +118,15 @@ func mapChainCheckpointListRow(row tokensqlc.ListChainIngestCheckpointsRow) (*Ch
 }
 
 func mapChainCheckpoint(row tokensqlc.ChainIngestCheckpoint) (*ChainIngestCheckpoint, error) {
-	finalizedBlockNumber, err := int64ToUint64("finalized_block_number", row.FinalizedBlockNumber)
-	if err != nil {
-		return nil, err
-	}
 	cursorBlockNumber, err := int64ToUint64("cursor_block_number", row.CursorBlockNumber)
 	if err != nil {
 		return nil, err
 	}
 	return &ChainIngestCheckpoint{
-		ChainID:              row.ChainID,
-		FinalizedBlockNumber: finalizedBlockNumber,
-		CursorBlockNumber:    cursorBlockNumber,
-		Status:               row.Status,
-		CreatedAt:            timeValue(row.CreatedAt),
+		ChainID:           row.ChainID,
+		CursorBlockNumber: cursorBlockNumber,
+		Status:            row.Status,
+		CreatedAt:         timeValue(row.CreatedAt),
 	}, nil
 }
 

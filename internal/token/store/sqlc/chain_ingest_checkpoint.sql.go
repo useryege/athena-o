@@ -16,7 +16,6 @@ SELECT
   c.id AS chain_id,
   c.name AS chain_name,
   c.enabled,
-  COALESCE(cp.finalized_block_number, 0)::bigint AS finalized_block_number,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
   COALESCE(cp.status, 'stopped')::text AS status,
   COALESCE(cp.created_at, c.created_at) AS created_at
@@ -26,13 +25,12 @@ WHERE c.id = $1
 `
 
 type GetChainIngestCheckpointRow struct {
-	ChainID              int64
-	ChainName            string
-	Enabled              bool
-	FinalizedBlockNumber int64
-	CursorBlockNumber    int64
-	Status               string
-	CreatedAt            pgtype.Timestamptz
+	ChainID           int64
+	ChainName         string
+	Enabled           bool
+	CursorBlockNumber int64
+	Status            string
+	CreatedAt         pgtype.Timestamptz
 }
 
 func (q *Queries) GetChainIngestCheckpoint(ctx context.Context, chainID int64) (GetChainIngestCheckpointRow, error) {
@@ -42,7 +40,6 @@ func (q *Queries) GetChainIngestCheckpoint(ctx context.Context, chainID int64) (
 		&i.ChainID,
 		&i.ChainName,
 		&i.Enabled,
-		&i.FinalizedBlockNumber,
 		&i.CursorBlockNumber,
 		&i.Status,
 		&i.CreatedAt,
@@ -55,7 +52,6 @@ SELECT
   c.id AS chain_id,
   c.name AS chain_name,
   c.enabled,
-  COALESCE(cp.finalized_block_number, 0)::bigint AS finalized_block_number,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
   COALESCE(cp.status, 'stopped')::text AS status,
   COALESCE(cp.created_at, c.created_at) AS created_at
@@ -65,13 +61,12 @@ ORDER BY c.id
 `
 
 type ListChainIngestCheckpointsRow struct {
-	ChainID              int64
-	ChainName            string
-	Enabled              bool
-	FinalizedBlockNumber int64
-	CursorBlockNumber    int64
-	Status               string
-	CreatedAt            pgtype.Timestamptz
+	ChainID           int64
+	ChainName         string
+	Enabled           bool
+	CursorBlockNumber int64
+	Status            string
+	CreatedAt         pgtype.Timestamptz
 }
 
 func (q *Queries) ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error) {
@@ -87,7 +82,6 @@ func (q *Queries) ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIn
 			&i.ChainID,
 			&i.ChainName,
 			&i.Enabled,
-			&i.FinalizedBlockNumber,
 			&i.CursorBlockNumber,
 			&i.Status,
 			&i.CreatedAt,
@@ -106,7 +100,7 @@ const updateChainIngestCheckpointStatus = `-- name: UpdateChainIngestCheckpointS
 UPDATE chain_ingest_checkpoint
 SET status = $1
 WHERE chain_id = $2
-RETURNING chain_id, finalized_block_number, cursor_block_number, status, created_at
+RETURNING chain_id, cursor_block_number, status, created_at
 `
 
 type UpdateChainIngestCheckpointStatusParams struct {
@@ -119,7 +113,6 @@ func (q *Queries) UpdateChainIngestCheckpointStatus(ctx context.Context, arg Upd
 	var i ChainIngestCheckpoint
 	err := row.Scan(
 		&i.ChainID,
-		&i.FinalizedBlockNumber,
 		&i.CursorBlockNumber,
 		&i.Status,
 		&i.CreatedAt,
@@ -130,40 +123,30 @@ func (q *Queries) UpdateChainIngestCheckpointStatus(ctx context.Context, arg Upd
 const upsertChainIngestCheckpoint = `-- name: UpsertChainIngestCheckpoint :one
 INSERT INTO chain_ingest_checkpoint (
   chain_id,
-  finalized_block_number,
   cursor_block_number,
   status
 ) VALUES (
   $1,
   $2,
-  $3,
-  $4
+  $3
 )
 ON CONFLICT (chain_id) DO UPDATE
-SET finalized_block_number = EXCLUDED.finalized_block_number,
-  cursor_block_number = EXCLUDED.cursor_block_number,
+SET cursor_block_number = EXCLUDED.cursor_block_number,
   status = EXCLUDED.status
-RETURNING chain_id, finalized_block_number, cursor_block_number, status, created_at
+RETURNING chain_id, cursor_block_number, status, created_at
 `
 
 type UpsertChainIngestCheckpointParams struct {
-	ChainID              int64
-	FinalizedBlockNumber int64
-	CursorBlockNumber    int64
-	Status               string
+	ChainID           int64
+	CursorBlockNumber int64
+	Status            string
 }
 
 func (q *Queries) UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertChainIngestCheckpointParams) (ChainIngestCheckpoint, error) {
-	row := q.db.QueryRow(ctx, upsertChainIngestCheckpoint,
-		arg.ChainID,
-		arg.FinalizedBlockNumber,
-		arg.CursorBlockNumber,
-		arg.Status,
-	)
+	row := q.db.QueryRow(ctx, upsertChainIngestCheckpoint, arg.ChainID, arg.CursorBlockNumber, arg.Status)
 	var i ChainIngestCheckpoint
 	err := row.Scan(
 		&i.ChainID,
-		&i.FinalizedBlockNumber,
 		&i.CursorBlockNumber,
 		&i.Status,
 		&i.CreatedAt,

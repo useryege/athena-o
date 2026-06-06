@@ -16,11 +16,10 @@ type Chain struct {
 }
 
 type ChainIngestCheckpoint struct {
-	ChainID              int64
-	FinalizedBlockNumber int64
-	CursorBlockNumber    int64
-	Status               string
-	CreatedAt            pgtype.Timestamptz
+	ChainID           int64
+	CursorBlockNumber int64
+	Status            string
+	CreatedAt         pgtype.Timestamptz
 }
 
 type ContractCode struct {
