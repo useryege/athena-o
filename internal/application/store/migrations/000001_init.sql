@@ -36,6 +36,16 @@ CREATE TABLE IF NOT EXISTS chain_ingest_checkpoint (
   CONSTRAINT chain_ingest_checkpoint_status_not_empty CHECK (btrim(status) <> '')
 );
 
+INSERT INTO chain_ingest_checkpoint (
+  chain_id,
+  finalized_block_number,
+  cursor_block_number,
+  status
+)
+VALUES
+  (56, 101609863, 101609863, 'running')
+ON CONFLICT (chain_id) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS project (
   id BIGSERIAL PRIMARY KEY,
   chain_id BIGINT NOT NULL,
