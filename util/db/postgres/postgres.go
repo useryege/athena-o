@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	pingAttempts = 5
+	pingAttempts = 60
 	pingInterval = time.Second
 
 	AutoMigrateEnv = "ATHENA_POSTGRES_AUTO_MIGRATE"
