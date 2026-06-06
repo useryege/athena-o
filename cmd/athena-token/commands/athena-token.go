@@ -74,7 +74,7 @@ func NewCommand() *cobra.Command {
 			switch token.NormalizeMode(mode) {
 			case token.ModeGRPC:
 				return runGRPCMode(ctx, server, listenHost, listenPort)
-			case token.ModeChainIngestor:
+			case token.ModeChainIngestor, token.ModeProjectQualifier:
 				return runWorkerMode(ctx, server)
 			default:
 				if err := server.Stop(); err != nil {
@@ -89,6 +89,9 @@ func NewCommand() *cobra.Command {
 
 			# Start the Athena Token chain ingestor worker
 			$ athena-token --mode chain-ingestor
+
+			# Start the Athena Token project qualifier worker
+			$ athena-token --mode project-qualifier
 		`),
 	}
 
@@ -96,9 +99,9 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv("ATHENA_TOKEN_LOGLEVEL", "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_TOKEN_LISTEN_ADDRESS", common.DefaultAddressToken), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortToken, "Listen on given port for incoming connections")
-	command.Flags().StringVar(&mode, "mode", env.StringFromEnv("ATHENA_TOKEN_MODE", token.ModeGRPC), "Run mode: grpc|chain-ingestor")
-	command.Flags().StringVar(&ethNodeWSURL, "eth-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_ETH_NODE_WS_URL", ""), "Ethereum Mainnet node WebSocket address for chain-ingestor mode")
-	command.Flags().StringVar(&bscNodeWSURL, "bsc-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_BSC_NODE_WS_URL", ""), "BSC Mainnet node WebSocket address for chain-ingestor mode")
+	command.Flags().StringVar(&mode, "mode", env.StringFromEnv("ATHENA_TOKEN_MODE", token.ModeGRPC), "Run mode: grpc|chain-ingestor|project-qualifier")
+	command.Flags().StringVar(&ethNodeWSURL, "eth-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_ETH_NODE_WS_URL", ""), "Ethereum Mainnet node WebSocket address for worker modes")
+	command.Flags().StringVar(&bscNodeWSURL, "bsc-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_BSC_NODE_WS_URL", ""), "BSC Mainnet node WebSocket address for worker modes")
 	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_TOKEN_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))

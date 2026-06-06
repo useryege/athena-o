@@ -36,8 +36,8 @@ func (s *SQLStore) UpsertProject(ctx context.Context, item Project) (*Project, e
 		BlockNumber: blockNumber,
 		BlockTime:   blockTime,
 		CodeHash:    item.CodeHash.Bytes(),
-		WethPair:    item.WethPair.Bytes(),
-		UsdtPair:    item.UsdtPair.Bytes(),
+		WethPair:    optionalAddressBytes(item.WethPair),
+		UsdtPair:    optionalAddressBytes(item.UsdtPair),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert project: %w", err)

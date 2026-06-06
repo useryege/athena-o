@@ -9,6 +9,7 @@ import (
 	"github.com/useryege/athena/internal/server/version"
 	"github.com/useryege/athena/internal/token/apiclient"
 	"github.com/useryege/athena/internal/token/chainingestor"
+	"github.com/useryege/athena/internal/token/projectqualifier"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"google.golang.org/grpc"
@@ -17,8 +18,9 @@ import (
 )
 
 const (
-	ModeGRPC          = "grpc"
-	ModeChainIngestor = "chain-ingestor"
+	ModeGRPC             = "grpc"
+	ModeChainIngestor    = "chain-ingestor"
+	ModeProjectQualifier = "project-qualifier"
 )
 
 type Server struct {
@@ -27,6 +29,7 @@ type Server struct {
 	healthService *health.Server
 	store         *tokenstore.SQLStore
 	chainWorker   *chainingestor.Worker
+	qualifier     *projectqualifier.Worker
 }
 
 type ServerOpts struct {
@@ -69,7 +72,7 @@ func (s *Server) CreateGRPC() *grpc.Server {
 func (s *Server) Start(ctx context.Context) error {
 	mode := NormalizeMode(s.Mode)
 	switch mode {
-	case ModeGRPC, ModeChainIngestor:
+	case ModeGRPC, ModeChainIngestor, ModeProjectQualifier:
 	default:
 		return fmt.Errorf("unsupported athena-token mode %q", s.Mode)
 	}
@@ -80,16 +83,11 @@ func (s *Server) Start(ctx context.Context) error {
 	switch mode {
 	case ModeGRPC:
 	case ModeChainIngestor:
-		if s.StoreSrc == nil {
-			_ = s.service.Stop()
-			return fmt.Errorf("token store source is required for chain-ingestor mode")
-		}
-		store, err := s.StoreSrc(ctx)
+		store, err := s.startStore(ctx, mode)
 		if err != nil {
 			_ = s.service.Stop()
 			return err
 		}
-		s.store = store
 		s.chainWorker = chainingestor.NewWorker(chainingestor.Options{
 			Store:          store,
 			EthNodeWSURL:   s.EthNodeWSURL,
@@ -103,9 +101,43 @@ func (s *Server) Start(ctx context.Context) error {
 			s.chainWorker = nil
 			return err
 		}
+	case ModeProjectQualifier:
+		store, err := s.startStore(ctx, mode)
+		if err != nil {
+			_ = s.service.Stop()
+			return err
+		}
+		s.qualifier = projectqualifier.NewWorker(projectqualifier.Options{
+			Store:          store,
+			EthNodeWSURL:   s.EthNodeWSURL,
+			BSCNodeWSURL:   s.BSCNodeWSURL,
+			NodeWSUseProxy: s.NodeWSUseProxy,
+		})
+		if err := s.qualifier.Start(ctx); err != nil {
+			_ = store.Close()
+			_ = s.service.Stop()
+			s.store = nil
+			s.qualifier = nil
+			return err
+		}
 	}
 	s.setHealthStatus(grpc_health_v1.HealthCheckResponse_SERVING)
 	return nil
+}
+
+func (s *Server) startStore(ctx context.Context, mode string) (*tokenstore.SQLStore, error) {
+	if s.store != nil {
+		return s.store, nil
+	}
+	if s.StoreSrc == nil {
+		return nil, fmt.Errorf("token store source is required for %s mode", mode)
+	}
+	store, err := s.StoreSrc(ctx)
+	if err != nil {
+		return nil, err
+	}
+	s.store = store
+	return store, nil
 }
 
 func (s *Server) Stop() error {
@@ -118,6 +150,14 @@ func (s *Server) Stop() error {
 		}
 		cancel()
 		s.chainWorker = nil
+	}
+	if s.qualifier != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		if err := s.qualifier.Stop(ctx); err != nil && result == nil {
+			result = err
+		}
+		cancel()
+		s.qualifier = nil
 	}
 	if err := s.service.Stop(); err != nil && result == nil {
 		result = err
