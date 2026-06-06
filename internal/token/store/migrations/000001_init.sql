@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS chain_ingest_checkpoint (
 INSERT INTO chain_ingest_checkpoint (chain_id, cursor_block_number, status)
 VALUES
   (1, 25211026, 'stopped'),
-  (56, 101719406, 'stopped')
+  (56, 101719440, 'stopped')
 ON CONFLICT (chain_id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS project_candidate (
