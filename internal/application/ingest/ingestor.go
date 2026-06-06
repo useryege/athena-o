@@ -207,13 +207,7 @@ func (i *Ingestor) publishBlock(ctx context.Context, block Block) error {
 	if validatedCreations, ok := i.validatedContractCreations(ctx, block.ContractCreations); ok {
 		for _, item := range validatedCreations {
 			code, err := i.reader.ReadContractCode(ctx, item.creation.Contract)
-			if err != nil {
-				if ctxErr := ctx.Err(); ctxErr != nil {
-					return ctxErr
-				}
-				continue
-			}
-			if len(code) == 0 {
+			if err != nil || len(code) == 0 {
 				continue
 			}
 			codeHash := crypto.Keccak256Hash(code)
