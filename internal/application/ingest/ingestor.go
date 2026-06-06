@@ -119,9 +119,6 @@ func DefaultConfirmationDepth(chainID int64) uint64 {
 }
 
 func (i *Ingestor) ProcessOnce(ctx context.Context) (int, error) {
-	if i == nil {
-		return 0, nil
-	}
 	checkpoint, err := i.store.GetChainIngestCheckpoint(ctx, i.chainID)
 	if err != nil {
 		return 0, err
