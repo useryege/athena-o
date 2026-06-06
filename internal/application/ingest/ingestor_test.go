@@ -7,16 +7,25 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	appevents "github.com/useryege/athena/internal/application/events"
 	"github.com/useryege/athena/internal/application/model"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
 type readerFake struct {
-	latest      uint64
-	blocks      map[uint64]Block
-	latestCalls *int
-	readNumbers *[]uint64
+	latest       uint64
+	blocks       map[uint64]Block
+	latestCalls  *int
+	readNumbers  *[]uint64
+	codeByAddr   map[common.Address][]byte
+	codeErr      error
+	codeRequests []readContractCodeRequest
+}
+
+type readContractCodeRequest struct {
+	contract    common.Address
+	blockNumber uint64
 }
 
 func (f *readerFake) LatestBlockNumber(context.Context) (uint64, error) {
@@ -31,6 +40,17 @@ func (f *readerFake) ReadBlock(_ context.Context, number uint64) (Block, error) 
 		*f.readNumbers = append(*f.readNumbers, number)
 	}
 	return f.blocks[number], nil
+}
+
+func (f *readerFake) ReadContractCode(_ context.Context, contract common.Address, blockNumber uint64) ([]byte, error) {
+	f.codeRequests = append(f.codeRequests, readContractCodeRequest{contract: contract, blockNumber: blockNumber})
+	if f.codeErr != nil {
+		return nil, f.codeErr
+	}
+	if f.codeByAddr != nil {
+		return append([]byte(nil), f.codeByAddr[contract]...), nil
+	}
+	return []byte{0x60, 0x00}, nil
 }
 
 type producerFake struct {
@@ -156,31 +176,34 @@ func TestIngestorPublishesEventsAndAdvancesCheckpoint(t *testing.T) {
 		56: {ChainID: 56, Status: appstore.ChainIngestStatusRunning},
 	}}
 	validator := &chainValidatorFake{defaultWeth: wethPair, defaultUsdt: usdtPair}
+	code := []byte{0x60, 0x01, 0x60, 0x02}
+	reader := &readerFake{
+		latest: 12,
+		blocks: map[uint64]Block{
+			10: {
+				ChainID: 56,
+				Number:  10,
+				Hash:    common.HexToHash("0x10"),
+				Time:    100,
+				ContractCreations: []ContractCreated{{
+					Contract: contract,
+					Creator:  common.HexToAddress("0x3000000000000000000000000000000000000003"),
+					TxHash:   common.HexToHash("0xabc"),
+					TxIndex:  1,
+				}},
+				DexSwaps: []DexSwap{{Pair: pair, TxHash: common.HexToHash("0xdef")}},
+			},
+		},
+		codeByAddr: map[common.Address][]byte{contract: code},
+	}
 	ingestor, err := NewIngestor(Options{
 		ChainID:           56,
 		ConfirmationDepth: 2,
 		StartBlock:        10,
-		Reader: &readerFake{
-			latest: 12,
-			blocks: map[uint64]Block{
-				10: {
-					ChainID: 56,
-					Number:  10,
-					Hash:    common.HexToHash("0x10"),
-					Time:    100,
-					ContractCreations: []ContractCreated{{
-						Contract: contract,
-						Creator:  common.HexToAddress("0x3000000000000000000000000000000000000003"),
-						TxHash:   common.HexToHash("0xabc"),
-						TxIndex:  1,
-					}},
-					DexSwaps: []DexSwap{{Pair: pair, TxHash: common.HexToHash("0xdef")}},
-				},
-			},
-		},
-		Producer:       producer,
-		Store:          store,
-		ChainValidator: validator,
+		Reader:            reader,
+		Producer:          producer,
+		Store:             store,
+		ChainValidator:    validator,
 	})
 	if err != nil {
 		t.Fatalf("NewIngestor: %v", err)
@@ -199,9 +222,15 @@ func TestIngestorPublishesEventsAndAdvancesCheckpoint(t *testing.T) {
 	if len(validator.contracts) != 1 || validator.contracts[0] != contract {
 		t.Fatalf("validated contracts = %#v, want contract", validator.contracts)
 	}
+	if len(reader.codeRequests) != 1 || reader.codeRequests[0].contract != contract || reader.codeRequests[0].blockNumber != 10 {
+		t.Fatalf("code requests = %#v, want contract at block 10", reader.codeRequests)
+	}
 	var payload appevents.ContractCreatedPayload
 	if err := json.Unmarshal(producer.records[0].event.Payload, &payload); err != nil {
 		t.Fatalf("decode contract payload: %v", err)
+	}
+	if wantHash := crypto.Keccak256Hash(code).Hex(); payload.CodeHash != wantHash {
+		t.Fatalf("payload code hash = %s, want %s", payload.CodeHash, wantHash)
 	}
 	if payload.WethPair != wethPair.Hex() || payload.UsdtPair != usdtPair.Hex() {
 		t.Fatalf("payload pairs = %s/%s, want %s/%s", payload.WethPair, payload.UsdtPair, wethPair.Hex(), usdtPair.Hex())
@@ -209,6 +238,64 @@ func TestIngestorPublishesEventsAndAdvancesCheckpoint(t *testing.T) {
 	checkpoint := store.items[56]
 	if checkpoint.CursorBlockNumber != 10 || checkpoint.FinalizedBlockNumber != 10 {
 		t.Fatalf("checkpoint = %#v, want block 10", checkpoint)
+	}
+}
+
+func TestIngestorSkipsContractCreationWhenBytecodeUnavailable(t *testing.T) {
+	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
+	for _, tc := range []struct {
+		name   string
+		reader *readerFake
+	}{
+		{
+			name:   "read error",
+			reader: &readerFake{codeErr: errors.New("code unavailable")},
+		},
+		{
+			name:   "empty code",
+			reader: &readerFake{codeByAddr: map[common.Address][]byte{contract: nil}},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			producer := &producerFake{}
+			store := &checkpointStoreFake{items: map[int64]appstore.ChainIngestCheckpoint{
+				1: {ChainID: 1, Status: appstore.ChainIngestStatusRunning},
+			}}
+			tc.reader.latest = 6
+			tc.reader.blocks = map[uint64]Block{
+				5: {
+					ChainID:           1,
+					Number:            5,
+					Hash:              common.HexToHash("0x5"),
+					ContractCreations: []ContractCreated{{Contract: contract}},
+				},
+			}
+			ingestor, err := NewIngestor(Options{
+				ChainID:           1,
+				ConfirmationDepth: 1,
+				StartBlock:        5,
+				Reader:            tc.reader,
+				Producer:          producer,
+				Store:             store,
+				ChainValidator:    &chainValidatorFake{},
+			})
+			if err != nil {
+				t.Fatalf("NewIngestor: %v", err)
+			}
+			count, err := ingestor.ProcessOnce(context.Background())
+			if err != nil {
+				t.Fatalf("ProcessOnce: %v", err)
+			}
+			if count != 1 {
+				t.Fatalf("count = %d, want 1", count)
+			}
+			if len(producer.records) != 0 {
+				t.Fatalf("published records = %#v, want none", producer.records)
+			}
+			if checkpoint := store.items[1]; checkpoint.CursorBlockNumber != 5 || checkpoint.FinalizedBlockNumber != 5 {
+				t.Fatalf("checkpoint = %#v, want block 5", checkpoint)
+			}
+		})
 	}
 }
 

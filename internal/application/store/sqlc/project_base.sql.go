@@ -296,7 +296,8 @@ INSERT INTO project (
   status,
   reason,
   payload,
-  discovered_at
+  discovered_at,
+  code_hash
 ) VALUES (
   $1,
   $2,
@@ -311,11 +312,18 @@ INSERT INTO project (
   'processed',
   $11::text,
   $12::jsonb,
-  now()
+  now(),
+  (
+    SELECT d.code_hash
+    FROM contract_bytecode_deployment d
+    WHERE d.chain_id = $1
+      AND d.contract = $4
+  )
 )
 ON CONFLICT (chain_id, contract) DO UPDATE
 SET weth_pair = COALESCE(project.weth_pair, EXCLUDED.weth_pair),
   usdt_pair = COALESCE(project.usdt_pair, EXCLUDED.usdt_pair),
+  code_hash = COALESCE(EXCLUDED.code_hash, project.code_hash),
   source = EXCLUDED.source,
   status = 'processed',
   reason = COALESCE(EXCLUDED.reason, project.reason),

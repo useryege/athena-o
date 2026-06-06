@@ -16,6 +16,7 @@ type EVMClient interface {
 	BlockNumber(ctx context.Context) (uint64, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
+	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
 }
 
 type EVMReader struct {
@@ -78,4 +79,8 @@ func (r *EVMReader) ReadBlock(ctx context.Context, number uint64) (Block, error)
 		}
 	}
 	return item, nil
+}
+
+func (r *EVMReader) ReadContractCode(ctx context.Context, contract common.Address, blockNumber uint64) ([]byte, error) {
+	return r.client.CodeAt(ctx, contract, new(big.Int).SetUint64(blockNumber))
 }

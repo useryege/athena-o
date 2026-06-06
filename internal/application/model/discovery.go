@@ -13,6 +13,7 @@ type DiscoveredProjectCandidate struct {
 	Contract    common.Address
 	Creator     common.Address
 	TxHash      common.Hash
+	CodeHash    common.Hash
 	WethPair    common.Address
 	UsdtPair    common.Address
 	Tx          *types.Transaction

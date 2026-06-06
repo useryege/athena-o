@@ -34,10 +34,6 @@ func (k Keyspace) ProjectSimulation(chainID int64, contract common.Address) stri
 	return k.join("project", chainIDPart(chainID), contract.Hex(), "simulation")
 }
 
-func (k Keyspace) ProjectBytecodeFact(chainID int64, contract common.Address) string {
-	return k.join("project", chainIDPart(chainID), contract.Hex(), "bytecode_fact")
-}
-
 func (k Keyspace) ProjectAveDetail(chainID int64, contract common.Address) string {
 	return k.join("project", chainIDPart(chainID), contract.Hex(), "ave_detail")
 }

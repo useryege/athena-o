@@ -51,14 +51,6 @@ type ProjectSimulationResult struct {
 	UpdatedAt       time.Time
 }
 
-type ProjectBytecodeFact struct {
-	ChainID         int64
-	ProjectContract common.Address
-	CodeHash        common.Hash
-	FetchedAt       time.Time
-	UpdatedAt       time.Time
-}
-
 type ProjectComponentState struct {
 	ChainID         int64
 	ProjectContract common.Address
@@ -76,7 +68,6 @@ const (
 	ProjectComponentSimulation     = "simulation"
 	ProjectComponentGenesisWallet  = "genesis_wallet"
 	ProjectComponentCreatorHistory = "creator_history"
-	ProjectComponentBytecodeFact   = "bytecode_fact"
 	ProjectComponentAveDetail      = "ave_detail"
 
 	ProjectComponentStatusPending = "pending"
@@ -212,11 +203,6 @@ type ProjectSimulationStore interface {
 	GetProjectSimulationResult(ctx context.Context, chainID int64, contract common.Address) (*ProjectSimulationResult, error)
 }
 
-type ProjectBytecodeFactStore interface {
-	UpsertProjectBytecodeFact(ctx context.Context, item ProjectBytecodeFact) error
-	GetProjectBytecodeFact(ctx context.Context, chainID int64, contract common.Address) (*ProjectBytecodeFact, error)
-}
-
 type ProjectComponentStateStore interface {
 	UpsertProjectComponentState(ctx context.Context, item ProjectComponentState) error
 	GetProjectComponentState(ctx context.Context, chainID int64, contract common.Address, component string) (*ProjectComponentState, error)
@@ -283,7 +269,6 @@ type Store interface {
 	ProjectBaseStore
 	ProjectChainStateStore
 	ProjectSimulationStore
-	ProjectBytecodeFactStore
 	ProjectComponentStateStore
 	ProjectAveDetailStore
 	ProjectAveRefreshStore

@@ -15,7 +15,6 @@ const (
 	CollectSimulationActivityName              = "application.collect_simulation"
 	CollectGenesisWalletsActivityName          = "application.collect_genesis_wallets"
 	CollectCreatorHistoryActivityName          = "application.collect_creator_history"
-	CollectBytecodeSourceActivityName          = "application.collect_bytecode_source"
 	CollectAveDetailActivityName               = "application.collect_ave_detail"
 )
 
@@ -27,7 +26,6 @@ type Activities struct {
 	CollectSimulationFunc              func(context.Context, ProjectCollectionInput) error
 	CollectGenesisWalletsFunc          func(context.Context, ProjectCollectionInput) error
 	CollectCreatorHistoryFunc          func(context.Context, ProjectCollectionInput) error
-	CollectBytecodeSourceFunc          func(context.Context, ProjectCollectionInput) error
 	CollectAveDetailFunc               func(context.Context, ProjectCollectionInput) error
 }
 
@@ -57,10 +55,6 @@ func (a Activities) CollectGenesisWallets(ctx context.Context, input ProjectColl
 
 func (a Activities) CollectCreatorHistory(ctx context.Context, input ProjectCollectionInput) error {
 	return a.runCollectionActivity(ctx, input, a.CollectCreatorHistoryFunc)
-}
-
-func (a Activities) CollectBytecodeSource(ctx context.Context, input ProjectCollectionInput) error {
-	return a.runCollectionActivity(ctx, input, a.CollectBytecodeSourceFunc)
 }
 
 func (a Activities) CollectAveDetail(ctx context.Context, input ProjectCollectionInput) error {

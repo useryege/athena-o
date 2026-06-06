@@ -586,49 +586,6 @@ func (s *SQLStore) GetProjectSimulationResult(ctx context.Context, chainID int64
 	return &item, nil
 }
 
-func (s *SQLStore) UpsertProjectBytecodeFact(ctx context.Context, item ProjectBytecodeFact) error {
-	queries, err := s.querier()
-	if err != nil {
-		return err
-	}
-	err = queries.UpsertProjectBytecodeFact(ctx, appsqlc.UpsertProjectBytecodeFactParams{
-		ChainID:         s.chainIDForProject(item.ChainID),
-		ProjectContract: item.ProjectContract.Bytes(),
-		CodeHash:        hashBytesOrNil(item.CodeHash),
-	})
-	if err != nil {
-		return fmt.Errorf("upsert project bytecode fact: %w", err)
-	}
-	return nil
-}
-
-func (s *SQLStore) GetProjectBytecodeFact(ctx context.Context, chainID int64, contract common.Address) (*ProjectBytecodeFact, error) {
-	queries, err := s.querier()
-	if err != nil {
-		return nil, err
-	}
-	row, err := queries.GetProjectBytecodeFact(ctx, appsqlc.GetProjectBytecodeFactParams{
-		ChainID:         s.chainIDForProject(chainID),
-		ProjectContract: contract.Bytes(),
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("get project bytecode fact: %w", err)
-	}
-	item := ProjectBytecodeFact{
-		ChainID:         row.ChainID,
-		ProjectContract: common.BytesToAddress(row.ProjectContract),
-		FetchedAt:       row.FetchedAt.Time,
-		UpdatedAt:       row.UpdatedAt.Time,
-	}
-	if len(row.CodeHash) > 0 {
-		item.CodeHash = common.BytesToHash(row.CodeHash)
-	}
-	return &item, nil
-}
-
 func (s *SQLStore) UpsertProjectComponentState(ctx context.Context, item ProjectComponentState) error {
 	queries, err := s.querier()
 	if err != nil {

@@ -44,12 +44,14 @@ func TestProcessorContractCreatedIsIdempotentByChainAndContract(t *testing.T) {
 	creator := common.HexToAddress("0x2000000000000000000000000000000000000002")
 	wethPair := common.HexToAddress("0x3000000000000000000000000000000000000003")
 	usdtPair := common.HexToAddress("0x4000000000000000000000000000000000000004")
+	codeHash := common.HexToHash("0x5555555555555555555555555555555555555555555555555555555555555555")
 	store := &processorStoreFake{}
 	processor := NewProcessor(store)
 	envelope := testEnvelope(t, EventTypeContractCreated, 56, ContractCreatedPayload{
 		Contract:    contract.Hex(),
 		Creator:     creator.Hex(),
 		TxHash:      "0xabc",
+		CodeHash:    codeHash.Hex(),
 		WethPair:    wethPair.Hex(),
 		UsdtPair:    usdtPair.Hex(),
 		BlockNumber: 123,
@@ -73,6 +75,9 @@ func TestProcessorContractCreatedIsIdempotentByChainAndContract(t *testing.T) {
 	if item.WethPair != wethPair || item.UsdtPair != usdtPair {
 		t.Fatalf("candidate pairs = %s/%s, want %s/%s", item.WethPair.Hex(), item.UsdtPair.Hex(), wethPair.Hex(), usdtPair.Hex())
 	}
+	if item.CodeHash != codeHash {
+		t.Fatalf("candidate code hash = %s, want %s", item.CodeHash.Hex(), codeHash.Hex())
+	}
 	if item.Source != model.ProjectDiscoverySourceFollowHeads {
 		t.Fatalf("source = %q, want follow_heads", item.Source)
 	}
@@ -86,6 +91,7 @@ func TestProcessorContractCreatedKeepsSameContractOnDifferentChainsSeparate(t *t
 	for _, chainID := range []int64{1, 56} {
 		envelope := testEnvelope(t, EventTypeContractCreated, chainID, ContractCreatedPayload{
 			Contract:    contract.Hex(),
+			CodeHash:    common.HexToHash("0x5555555555555555555555555555555555555555555555555555555555555555").Hex(),
 			BlockNumber: chainID,
 		})
 		if err := processor.ProcessEnvelope(context.Background(), envelope); err != nil {
@@ -94,6 +100,30 @@ func TestProcessorContractCreatedKeepsSameContractOnDifferentChainsSeparate(t *t
 	}
 	if len(store.candidates) != 2 {
 		t.Fatalf("candidate count = %d, want 2 chain-scoped records", len(store.candidates))
+	}
+}
+
+func TestProcessorContractCreatedRequiresCodeHash(t *testing.T) {
+	contract := common.HexToAddress("0x1000000000000000000000000000000000000001")
+	processor := NewProcessor(&processorStoreFake{})
+
+	for _, tc := range []struct {
+		name     string
+		codeHash string
+	}{
+		{name: "missing", codeHash: ""},
+		{name: "invalid", codeHash: "0x1234"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			envelope := testEnvelope(t, EventTypeContractCreated, 56, ContractCreatedPayload{
+				Contract:    contract.Hex(),
+				CodeHash:    tc.codeHash,
+				BlockNumber: 1,
+			})
+			if err := processor.ProcessEnvelope(context.Background(), envelope); err == nil {
+				t.Fatalf("ProcessEnvelope error = nil, want invalid code hash")
+			}
+		})
 	}
 }
 

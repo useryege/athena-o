@@ -63,12 +63,17 @@ func (p *Processor) processContractCreated(ctx context.Context, envelope Envelop
 	if payload.BlockNumber < 0 || payload.BlockTime < 0 || payload.TxIndex < 0 {
 		return errors.New("contract created payload block fields must be non-negative")
 	}
+	codeHash, err := parseContractCreatedCodeHash(payload.CodeHash)
+	if err != nil {
+		return err
+	}
 	candidate := model.DiscoveredProjectCandidate{
 		ChainID:     envelope.ChainID,
 		Contract:    common.HexToAddress(payload.Contract),
 		BlockNumber: uint64(payload.BlockNumber),
 		BlockTime:   uint64(payload.BlockTime),
 		TxIndex:     uint64(payload.TxIndex),
+		CodeHash:    codeHash,
 		Source:      model.ProjectDiscoverySourceFollowHeads,
 	}
 	if common.IsHexAddress(payload.Creator) {
@@ -84,6 +89,15 @@ func (p *Processor) processContractCreated(ctx context.Context, envelope Envelop
 		candidate.UsdtPair = common.HexToAddress(payload.UsdtPair)
 	}
 	return p.store.UpsertProjectCandidateAndEnqueueQualification(ctx, candidate)
+}
+
+func parseContractCreatedCodeHash(value string) (common.Hash, error) {
+	trimmed := strings.TrimSpace(value)
+	raw := common.FromHex(trimmed)
+	if trimmed == "" || len(raw) != common.HashLength {
+		return common.Hash{}, fmt.Errorf("contract created payload code_hash is invalid: %q", value)
+	}
+	return common.BytesToHash(raw), nil
 }
 
 func (p *Processor) processDexSwap(ctx context.Context, envelope Envelope) error {

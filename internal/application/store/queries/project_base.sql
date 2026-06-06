@@ -25,7 +25,8 @@ INSERT INTO project (
   status,
   reason,
   payload,
-  discovered_at
+  discovered_at,
+  code_hash
 ) VALUES (
   @chain_id,
   @block_number,
@@ -40,11 +41,18 @@ INSERT INTO project (
   'processed',
   sqlc.narg('reason')::text,
   @payload::jsonb,
-  now()
+  now(),
+  (
+    SELECT d.code_hash
+    FROM contract_bytecode_deployment d
+    WHERE d.chain_id = @chain_id
+      AND d.contract = @contract
+  )
 )
 ON CONFLICT (chain_id, contract) DO UPDATE
 SET weth_pair = COALESCE(project.weth_pair, EXCLUDED.weth_pair),
   usdt_pair = COALESCE(project.usdt_pair, EXCLUDED.usdt_pair),
+  code_hash = COALESCE(EXCLUDED.code_hash, project.code_hash),
   source = EXCLUDED.source,
   status = 'processed',
   reason = COALESCE(EXCLUDED.reason, project.reason),

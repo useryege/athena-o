@@ -31,9 +31,6 @@ type ProjectComponentCache interface {
 	SetSimulation(ctx context.Context, item appstore.ProjectSimulationResult) error
 	GetSimulation(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectSimulationResult, bool, error)
 
-	SetBytecodeFact(ctx context.Context, item appstore.ProjectBytecodeFact) error
-	GetBytecodeFact(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectBytecodeFact, bool, error)
-
 	SetAveDetail(ctx context.Context, chainID int64, contract common.Address, item appstore.ProjectAveDetail) error
 	GetAveDetail(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectAveDetail, bool, error)
 	SetGenesisWallets(ctx context.Context, chainID int64, contract common.Address, items []appstore.ProjectGenesisWallet) error
@@ -231,16 +228,6 @@ func (c *RedisProjectComponentCache) SetSimulation(ctx context.Context, item app
 func (c *RedisProjectComponentCache) GetSimulation(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectSimulationResult, bool, error) {
 	var item appstore.ProjectSimulationResult
 	ok, err := c.getJSON(ctx, c.keys.ProjectSimulation(chainID, contract), &item)
-	return &item, ok, err
-}
-
-func (c *RedisProjectComponentCache) SetBytecodeFact(ctx context.Context, item appstore.ProjectBytecodeFact) error {
-	return c.setJSON(ctx, c.keys.ProjectBytecodeFact(item.ChainID, item.ProjectContract), item)
-}
-
-func (c *RedisProjectComponentCache) GetBytecodeFact(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectBytecodeFact, bool, error) {
-	var item appstore.ProjectBytecodeFact
-	ok, err := c.getJSON(ctx, c.keys.ProjectBytecodeFact(chainID, contract), &item)
 	return &item, ok, err
 }
 

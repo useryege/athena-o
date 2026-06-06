@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	appevents "github.com/useryege/athena/internal/application/events"
 	"github.com/useryege/athena/internal/application/model"
 	appstore "github.com/useryege/athena/internal/application/store"
@@ -15,6 +16,7 @@ import (
 type Reader interface {
 	LatestBlockNumber(ctx context.Context) (uint64, error)
 	ReadBlock(ctx context.Context, number uint64) (Block, error)
+	ReadContractCode(ctx context.Context, contract common.Address, blockNumber uint64) ([]byte, error)
 }
 
 type Producer interface {
@@ -204,6 +206,17 @@ func (i *Ingestor) publishBlock(ctx context.Context, block Block) error {
 	}
 	if validatedCreations, ok := i.validatedContractCreations(ctx, block.ContractCreations); ok {
 		for _, item := range validatedCreations {
+			code, err := i.reader.ReadContractCode(ctx, item.creation.Contract, block.Number)
+			if err != nil {
+				if ctxErr := ctx.Err(); ctxErr != nil {
+					return ctxErr
+				}
+				continue
+			}
+			if len(code) == 0 {
+				continue
+			}
+			codeHash := crypto.Keccak256Hash(code)
 			txIndex, err := int64FromUint64(item.creation.TxIndex, "tx index")
 			if err != nil {
 				return err
@@ -212,6 +225,7 @@ func (i *Ingestor) publishBlock(ctx context.Context, block Block) error {
 				Contract:    item.creation.Contract.Hex(),
 				Creator:     item.creation.Creator.Hex(),
 				TxHash:      item.creation.TxHash.Hex(),
+				CodeHash:    codeHash.Hex(),
 				WethPair:    item.validation.WethPair.Hex(),
 				UsdtPair:    item.validation.UsdtPair.Hex(),
 				BlockNumber: blockNumber,

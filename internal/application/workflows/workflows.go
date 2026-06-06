@@ -76,9 +76,6 @@ func runProjectCollectionActivities(ctx workflow.Context, input ProjectCollectio
 	externalActivities := []string{
 		CollectAveDetailActivityName,
 	}
-	if strings.TrimSpace(input.Reason) != ProjectCollectionReasonDexSwap {
-		externalActivities = append([]string{CollectBytecodeSourceActivityName}, externalActivities...)
-	}
 
 	externalCtx := workflow.WithActivityOptions(ctx, externalOptions)
 	for _, name := range externalActivities {
@@ -102,9 +99,6 @@ func ProjectCollectionAllActivityNames(reason string) []string {
 	}
 	externalActivities := []string{
 		CollectAveDetailActivityName,
-	}
-	if strings.TrimSpace(reason) != ProjectCollectionReasonDexSwap {
-		externalActivities = append([]string{CollectBytecodeSourceActivityName}, externalActivities...)
 	}
 	return append(chainActivities, externalActivities...)
 }

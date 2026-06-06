@@ -68,7 +68,6 @@ func NewExternalWorkerSet(client client.Client, activities Activities) (*WorkerS
 		return nil, fmt.Errorf("application temporal client is not configured")
 	}
 	external := worker.New(client, TaskQueueApplicationExternal, worker.Options{})
-	external.RegisterActivityWithOptions(activities.CollectBytecodeSource, activity.RegisterOptions{Name: CollectBytecodeSourceActivityName})
 	external.RegisterActivityWithOptions(activities.CollectAveDetail, activity.RegisterOptions{Name: CollectAveDetailActivityName})
 	return &WorkerSet{workers: []worker.Worker{external}}, nil
 }

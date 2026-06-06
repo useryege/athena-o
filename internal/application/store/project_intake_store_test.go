@@ -14,11 +14,15 @@ type projectIntakeQuerierFake struct {
 	appsqlc.Querier
 
 	upsertProjectCalls     int
+	upsertBytecodeCalls    int
+	upsertDeploymentCalls  int
 	collectionRequestCalls int
 	newOutboxInserts       int
 	outboxByDedup          map[string]appsqlc.InsertOutboxEventRow
 
 	lastProject    appsqlc.UpsertProjectFromDiscoveryParams
+	lastDeployment appsqlc.UpsertContractBytecodeDeploymentParams
+	lastCodeHash   []byte
 	lastOutbox     appsqlc.InsertOutboxEventParams
 	lastCollection appsqlc.UpsertProjectCollectionRequestParams
 }
@@ -26,6 +30,18 @@ type projectIntakeQuerierFake struct {
 func (f *projectIntakeQuerierFake) UpsertProjectFromDiscovery(_ context.Context, arg appsqlc.UpsertProjectFromDiscoveryParams) error {
 	f.upsertProjectCalls++
 	f.lastProject = arg
+	return nil
+}
+
+func (f *projectIntakeQuerierFake) UpsertBytecode(_ context.Context, codeHash []byte) error {
+	f.upsertBytecodeCalls++
+	f.lastCodeHash = append([]byte(nil), codeHash...)
+	return nil
+}
+
+func (f *projectIntakeQuerierFake) UpsertContractBytecodeDeployment(_ context.Context, arg appsqlc.UpsertContractBytecodeDeploymentParams) error {
+	f.upsertDeploymentCalls++
+	f.lastDeployment = arg
 	return nil
 }
 
@@ -66,6 +82,7 @@ func TestUpsertProjectCandidateAndEnqueueQualificationWritesProjectAndCollection
 	wethPair := common.HexToAddress("0x1000000000000000000000000000000000000003")
 	usdtPair := common.HexToAddress("0x1000000000000000000000000000000000000004")
 	txHash := common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
+	codeHash := common.HexToHash("0x2222222222222222222222222222222222222222222222222222222222222222")
 	querier := &projectIntakeQuerierFake{}
 	store := NewSQLStoreWithQuerier(querier)
 
@@ -77,6 +94,7 @@ func TestUpsertProjectCandidateAndEnqueueQualificationWritesProjectAndCollection
 		BlockNumber: 10,
 		BlockTime:   20,
 		TxIndex:     1,
+		CodeHash:    codeHash,
 		WethPair:    wethPair,
 		UsdtPair:    usdtPair,
 		Source:      appmodel.ProjectDiscoverySourceCatchUp,
@@ -91,6 +109,12 @@ func TestUpsertProjectCandidateAndEnqueueQualificationWritesProjectAndCollection
 	if querier.upsertProjectCalls != 2 {
 		t.Fatalf("project upserts = %d, want 2", querier.upsertProjectCalls)
 	}
+	if querier.upsertBytecodeCalls != 2 {
+		t.Fatalf("bytecode upserts = %d, want 2", querier.upsertBytecodeCalls)
+	}
+	if querier.upsertDeploymentCalls != 2 {
+		t.Fatalf("deployment upserts = %d, want 2", querier.upsertDeploymentCalls)
+	}
 	if querier.collectionRequestCalls != 2 {
 		t.Fatalf("collection request calls = %d, want 2", querier.collectionRequestCalls)
 	}
@@ -102,6 +126,12 @@ func TestUpsertProjectCandidateAndEnqueueQualificationWritesProjectAndCollection
 	}
 	if common.BytesToAddress(querier.lastProject.Creator) != creator || common.BytesToHash(querier.lastProject.TxHash) != txHash {
 		t.Fatalf("project base params = %#v, want creator/tx hash", querier.lastProject)
+	}
+	if common.BytesToHash(querier.lastCodeHash) != codeHash {
+		t.Fatalf("code hash = %x, want %s", querier.lastCodeHash, codeHash.Hex())
+	}
+	if querier.lastDeployment.ChainID != 56 || common.BytesToAddress(querier.lastDeployment.Contract) != contract || common.BytesToHash(querier.lastDeployment.CodeHash) != codeHash {
+		t.Fatalf("deployment params = %#v, want chain/contract/code hash", querier.lastDeployment)
 	}
 	if common.BytesToAddress(querier.lastProject.WethPair) != wethPair || common.BytesToAddress(querier.lastProject.UsdtPair) != usdtPair {
 		t.Fatalf("project pair params = %#v, want weth/usdt pairs", querier.lastProject)

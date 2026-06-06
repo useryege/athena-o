@@ -38,6 +38,18 @@ func (s *SQLStore) UpsertProjectCandidateAndEnqueueQualification(ctx context.Con
 		if err != nil {
 			return fmt.Errorf("marshal project discovery payload: %w", err)
 		}
+		if candidate.CodeHash != (common.Hash{}) {
+			if err := queries.UpsertBytecode(ctx, candidate.CodeHash.Bytes()); err != nil {
+				return fmt.Errorf("upsert discovered project bytecode: %w", err)
+			}
+			if err := queries.UpsertContractBytecodeDeployment(ctx, appsqlc.UpsertContractBytecodeDeploymentParams{
+				ChainID:  chainID,
+				Contract: candidate.Contract.Bytes(),
+				CodeHash: candidate.CodeHash.Bytes(),
+			}); err != nil {
+				return fmt.Errorf("upsert discovered project bytecode deployment: %w", err)
+			}
+		}
 		if err := queries.UpsertProjectFromDiscovery(ctx, appsqlc.UpsertProjectFromDiscoveryParams{
 			ChainID:     chainID,
 			Contract:    candidate.Contract.Bytes(),
@@ -149,6 +161,7 @@ func candidatePayload(candidate model.DiscoveredProjectCandidate) map[string]any
 		"contract":     candidate.Contract.Hex(),
 		"creator":      optionalAddressHex(candidate.Creator),
 		"tx_hash":      optionalHashHex(candidate.TxHash),
+		"code_hash":    optionalHashHex(candidate.CodeHash),
 		"block_number": candidate.BlockNumber,
 		"block_time":   candidate.BlockTime,
 		"tx_index":     candidate.TxIndex,

@@ -23,7 +23,6 @@ func TestProjectCollectionWorkflowRunsActivitiesInOrder(t *testing.T) {
 	registerCollectionActivity(t, env, CollectSimulationActivityName, &calls)
 	registerCollectionActivity(t, env, CollectGenesisWalletsActivityName, &calls)
 	registerCollectionActivity(t, env, CollectCreatorHistoryActivityName, &calls)
-	registerCollectionActivity(t, env, CollectBytecodeSourceActivityName, &calls)
 	registerCollectionActivity(t, env, CollectAveDetailActivityName, &calls)
 	registerCollectionLifecycleActivity(t, env, MarkProjectCollectionCompletedActivityName, &calls)
 	registerCollectionLifecycleActivity(t, env, MarkProjectCollectionFailedActivityName, &calls)
@@ -39,7 +38,6 @@ func TestProjectCollectionWorkflowRunsActivitiesInOrder(t *testing.T) {
 		CollectSimulationActivityName,
 		CollectGenesisWalletsActivityName,
 		CollectCreatorHistoryActivityName,
-		CollectBytecodeSourceActivityName,
 		CollectAveDetailActivityName,
 		MarkProjectCollectionCompletedActivityName,
 	}
@@ -66,7 +64,6 @@ func TestProjectCollectionWorkflowDexSwapRunsDynamicActivitiesOnly(t *testing.T)
 	registerCollectionActivity(t, env, CollectSimulationActivityName, &calls)
 	registerCollectionActivity(t, env, CollectGenesisWalletsActivityName, &calls)
 	registerCollectionActivity(t, env, CollectCreatorHistoryActivityName, &calls)
-	registerCollectionActivity(t, env, CollectBytecodeSourceActivityName, &calls)
 	registerCollectionActivity(t, env, CollectAveDetailActivityName, &calls)
 	registerCollectionLifecycleActivity(t, env, MarkProjectCollectionCompletedActivityName, &calls)
 	registerCollectionLifecycleActivity(t, env, MarkProjectCollectionFailedActivityName, &calls)

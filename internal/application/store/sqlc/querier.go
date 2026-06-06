@@ -26,7 +26,6 @@ type Querier interface {
 	GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (GetMaxProjectBlockNumberRow, error)
 	GetProjectAveComponentState(ctx context.Context, arg GetProjectAveComponentStateParams) (GetProjectAveComponentStateRow, error)
 	GetProjectBaseByContract(ctx context.Context, arg GetProjectBaseByContractParams) (GetProjectBaseByContractRow, error)
-	GetProjectBytecodeFact(ctx context.Context, arg GetProjectBytecodeFactParams) (GetProjectBytecodeFactRow, error)
 	GetProjectChainState(ctx context.Context, arg GetProjectChainStateParams) (GetProjectChainStateRow, error)
 	GetProjectCollectionState(ctx context.Context, arg GetProjectCollectionStateParams) (GetProjectCollectionStateRow, error)
 	GetProjectComponentState(ctx context.Context, arg GetProjectComponentStateParams) (GetProjectComponentStateRow, error)
@@ -80,7 +79,6 @@ type Querier interface {
 	UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertChainIngestCheckpointParams) (ChainIngestCheckpoint, error)
 	UpsertContractBytecodeDeployment(ctx context.Context, arg UpsertContractBytecodeDeploymentParams) error
 	UpsertProjectAveTokenDetail(ctx context.Context, arg UpsertProjectAveTokenDetailParams) error
-	UpsertProjectBytecodeFact(ctx context.Context, arg UpsertProjectBytecodeFactParams) error
 	UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) error
 	UpsertProjectCollectionRequest(ctx context.Context, arg UpsertProjectCollectionRequestParams) error
 	UpsertProjectComponentState(ctx context.Context, arg UpsertProjectComponentStateParams) error

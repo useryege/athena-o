@@ -15,10 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/application/api"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	avecomponent "github.com/useryege/athena/internal/application/components/ave"
-	bytecodecomponent "github.com/useryege/athena/internal/application/components/bytecode"
 	chainstatecomponent "github.com/useryege/athena/internal/application/components/chainstate"
 	creatorhistorycomponent "github.com/useryege/athena/internal/application/components/creatorhistory"
 	genesiswalletcomponent "github.com/useryege/athena/internal/application/components/genesiswallet"
@@ -26,13 +24,11 @@ import (
 	"github.com/useryege/athena/internal/application/events"
 	"github.com/useryege/athena/internal/application/evm"
 	"github.com/useryege/athena/internal/application/ingest"
-	"github.com/useryege/athena/internal/application/model"
 	appoutbox "github.com/useryege/athena/internal/application/outbox"
 	appstore "github.com/useryege/athena/internal/application/store"
 	appworkflows "github.com/useryege/athena/internal/application/workflows"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/util/ave"
-	"github.com/useryege/athena/util/ethereumapi"
 	"github.com/useryege/athena/util/ethws"
 	"github.com/useryege/athena/util/redisport"
 	"go.temporal.io/sdk/client"
@@ -451,24 +447,6 @@ func buildExternalWorkerActivities(ctx context.Context, opts runtimeOptions) (ap
 	}
 	cache := appcache.NewProjectComponentCache(redisport.NewGoRedisAdapter(opts.RedisClient))
 	return appworkflows.Activities{
-		CollectBytecodeSourceFunc: func(ctx context.Context, input appworkflows.ProjectCollectionInput) error {
-			nodeClient, err := dialApplicationNodeForChain(ctx, opts, input.Project.ChainID)
-			if err != nil {
-				return err
-			}
-			defer nodeClient.Close()
-			resolver, err := newBytecodeResolver(nodeClient, opts, input.Project.ChainID)
-			if err != nil {
-				return err
-			}
-			component := bytecodecomponent.NewComponent(bytecodecomponent.Options{
-				Store:    opts.Store,
-				Cache:    cache,
-				Resolver: resolver,
-				ChainID:  input.Project.ChainID,
-			})
-			return component.Collect(ctx, input.Project.ChainID, input.Project.Contract)
-		},
 		CollectAveDetailFunc: func(ctx context.Context, input appworkflows.ProjectCollectionInput) error {
 			component, err := avecomponent.NewComponent(avecomponent.Options{
 				Config: ave.Config{
@@ -485,41 +463,6 @@ func buildExternalWorkerActivities(ctx context.Context, opts runtimeOptions) (ap
 			return component.RefreshDetail(ctx, input.Project.Contract)
 		},
 	}, func() {}, nil
-}
-
-func dialApplicationNodeForChain(ctx context.Context, opts runtimeOptions, chainID int64) (*ethclient.Client, error) {
-	nodeURL := strings.TrimSpace(opts.NodeWSURL)
-	switch chainID {
-	case model.ChainIDEthereumMainnet:
-		if value := strings.TrimSpace(os.Getenv("ATHENA_APPLICATION_ETH_NODE_WS_URL")); value != "" {
-			nodeURL = value
-		}
-	case model.ChainIDBSCMainnet:
-		if value := strings.TrimSpace(os.Getenv("ATHENA_APPLICATION_BSC_NODE_WS_URL")); value != "" {
-			nodeURL = value
-		}
-	}
-	if nodeURL == "" {
-		return nil, fmt.Errorf("node websocket URL is required for chain %d", chainID)
-	}
-	nodeClient, err := ethws.DialContext(ctx, nodeURL, opts.NodeWSUseProxy)
-	if err != nil {
-		return nil, fmt.Errorf("connect temporal external worker node for chain %d: %w", chainID, err)
-	}
-	return nodeClient, nil
-}
-
-func newBytecodeResolver(nodeClient *ethclient.Client, opts runtimeOptions, chainID int64) (*api.Service, error) {
-	var apiFetcher ethereumapi.EthereumAPI
-	if strings.TrimSpace(opts.EtherscanAPIBaseURL) != "" && strings.TrimSpace(opts.EtherscanAPIKey) != "" {
-		apiFetcher = ethereumapi.NewEthereumAPI(opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, chainID)
-	}
-	return api.NewService(api.ServiceOpts{
-		NodeClient: nodeClient,
-		ChainID:    chainID,
-		Store:      opts.Store,
-		APIFetcher: apiFetcher,
-	})
 }
 
 func loadAthenaContractOptions(ctx context.Context, nodeClient *ethclient.Client, athenaContract string) (ethcommon.Address, ethcommon.Address, ethcommon.Address, ethcommon.Address, uint8, uint8, error) {

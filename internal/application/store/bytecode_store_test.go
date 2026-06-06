@@ -17,6 +17,7 @@ type fakeApplicationQuerier struct {
 	appsqlc.Querier
 
 	upsertBytecodeHash       []byte
+	upsertDeploymentParams   appsqlc.UpsertContractBytecodeDeploymentParams
 	listBytecodesParams      appsqlc.ListBytecodesParams
 	listDeploymentsParams    appsqlc.ListBytecodeDeploymentsParams
 	addBlacklistParams       appsqlc.AddBytecodeBlacklistEntryParams
@@ -93,7 +94,8 @@ func (f *fakeApplicationQuerier) UpsertBytecode(_ context.Context, codeHash []by
 	f.upsertBytecodeHash = codeHash
 	return nil
 }
-func (f *fakeApplicationQuerier) UpsertContractBytecodeDeployment(context.Context, appsqlc.UpsertContractBytecodeDeploymentParams) error {
+func (f *fakeApplicationQuerier) UpsertContractBytecodeDeployment(_ context.Context, arg appsqlc.UpsertContractBytecodeDeploymentParams) error {
+	f.upsertDeploymentParams = arg
 	return nil
 }
 
