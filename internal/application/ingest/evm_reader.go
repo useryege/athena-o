@@ -2,11 +2,9 @@ package ingest
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 
-	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -55,14 +53,15 @@ func (r *EVMReader) ReadBlock(ctx context.Context, number uint64) (Block, error)
 		if creation != nil {
 			item.ContractCreations = append(item.ContractCreations, *creation)
 		}
-		receipt, err := r.client.TransactionReceipt(ctx, tx.Hash())
-		if err != nil {
-			if errors.Is(err, ethereum.NotFound) {
-				continue
-			}
-			return Block{}, err
-		}
-		item.DexSwaps = append(item.DexSwaps, dexSwapsFromReceipt(tx.Hash(), receipt)...)
+		// TODO: uncomment this
+		// receipt, err := r.client.TransactionReceipt(ctx, tx.Hash())
+		// if err != nil {
+		// 	if errors.Is(err, ethereum.NotFound) {
+		// 		continue
+		// 	}
+		// 	return Block{}, err
+		// }
+		// item.DexSwaps = append(item.DexSwaps, dexSwapsFromReceipt(tx.Hash(), receipt)...)
 	}
 	return item, nil
 }
