@@ -19,12 +19,13 @@ import (
 const maxBlocksPerBatch = uint64(100)
 
 type chainRunnerOptions struct {
-	store          *tokenstore.SQLStore
-	chainID        int64
-	chainName      string
-	nodeWSURL      string
-	nodeWSUseProxy bool
-	pollInterval   time.Duration
+	store                 *tokenstore.SQLStore
+	chainID               int64
+	chainName             string
+	nodeWSURL             string
+	nodeWSUseProxy        bool
+	pollInterval          time.Duration
+	blockFetchConcurrency int
 }
 
 type chainRunner struct {
@@ -33,17 +34,29 @@ type chainRunner struct {
 
 	clientMu sync.Mutex
 	client   *ethclient.Client
+
+	blockFetchJobs    chan blockFetchJob
+	blockFetchResults chan blockFetchResult
+	blockFetchCancel  context.CancelFunc
+	blockFetchWG      sync.WaitGroup
+	closeOnce         sync.Once
 }
 
 func newChainRunner(opts chainRunnerOptions) *chainRunner {
+	if opts.blockFetchConcurrency <= 0 {
+		opts.blockFetchConcurrency = 1
+	}
 	return &chainRunner{
-		opts:   opts,
-		signer: types.LatestSignerForChainID(big.NewInt(opts.chainID)),
+		opts:              opts,
+		signer:            types.LatestSignerForChainID(big.NewInt(opts.chainID)),
+		blockFetchJobs:    make(chan blockFetchJob, maxBlocksPerBatch),
+		blockFetchResults: make(chan blockFetchResult, maxBlocksPerBatch),
 	}
 }
 
 func (r *chainRunner) run(ctx context.Context) {
 	defer r.close()
+	r.startBlockFetchWorkers(ctx)
 	for {
 		if err := ctx.Err(); err != nil {
 			return
@@ -112,16 +125,13 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 		if batchEnd > latest {
 			batchEnd = latest
 		}
+		blocks, err := r.fetchBlockBatch(ctx, batchStart, batchEnd)
+		if err != nil {
+			r.resetClient()
+			return err
+		}
 		candidates := make([]tokenstore.ProjectCandidate, 0)
-		for number := batchStart; number <= batchEnd; number++ {
-			if err := ctx.Err(); err != nil {
-				return err
-			}
-			block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(number))
-			if err != nil {
-				r.resetClient()
-				return err
-			}
+		for _, block := range blocks {
 			blockCandidates, err := r.projectCandidatesFromBlock(block)
 			if err != nil {
 				return err
@@ -178,6 +188,88 @@ func (r *chainRunner) projectCandidatesFromBlock(block *types.Block) ([]tokensto
 	return candidates, nil
 }
 
+func (r *chainRunner) startBlockFetchWorkers(ctx context.Context) {
+	workerCtx, cancel := context.WithCancel(ctx)
+	r.blockFetchCancel = cancel
+	for i := 0; i < r.opts.blockFetchConcurrency; i++ {
+		r.blockFetchWG.Add(1)
+		go func() {
+			defer r.blockFetchWG.Done()
+			r.blockFetchWorker(workerCtx)
+		}()
+	}
+	log.WithFields(log.Fields{
+		"chain_id":          r.opts.chainID,
+		"chain_name":        r.opts.chainName,
+		"fetch_concurrency": r.opts.blockFetchConcurrency,
+	}).Info("token chain ingestor block fetch workers started")
+}
+
+func (r *chainRunner) blockFetchWorker(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case job := <-r.blockFetchJobs:
+			block, err := r.fetchBlock(ctx, job.number)
+			result := blockFetchResult{
+				number: job.number,
+				block:  block,
+				err:    err,
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case r.blockFetchResults <- result:
+			}
+		}
+	}
+}
+
+func (r *chainRunner) fetchBlock(ctx context.Context, number uint64) (*types.Block, error) {
+	client, err := r.ensureClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return client.BlockByNumber(ctx, new(big.Int).SetUint64(number))
+}
+
+func (r *chainRunner) fetchBlockBatch(ctx context.Context, batchStart, batchEnd uint64) ([]*types.Block, error) {
+	total := int(batchEnd - batchStart + 1)
+	for number := batchStart; number <= batchEnd; number++ {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case r.blockFetchJobs <- blockFetchJob{number: number}:
+		}
+	}
+
+	blocks := make([]*types.Block, total)
+	var firstErr error
+	for i := 0; i < total; i++ {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case result := <-r.blockFetchResults:
+			if result.err != nil && firstErr == nil {
+				firstErr = fmt.Errorf("fetch block %d: %w", result.number, result.err)
+				continue
+			}
+			if result.err == nil && result.block == nil && firstErr == nil {
+				firstErr = fmt.Errorf("fetch block %d returned nil block", result.number)
+				continue
+			}
+			if result.err == nil {
+				blocks[result.number-batchStart] = result.block
+			}
+		}
+	}
+	if firstErr != nil {
+		return nil, firstErr
+	}
+	return blocks, nil
+}
+
 func (r *chainRunner) ensureClient(ctx context.Context) (*ethclient.Client, error) {
 	r.clientMu.Lock()
 	defer r.clientMu.Unlock()
@@ -215,7 +307,23 @@ func (r *chainRunner) resetClient() {
 }
 
 func (r *chainRunner) close() {
-	r.resetClient()
+	r.closeOnce.Do(func() {
+		if r.blockFetchCancel != nil {
+			r.blockFetchCancel()
+		}
+		r.blockFetchWG.Wait()
+		r.resetClient()
+	})
+}
+
+type blockFetchJob struct {
+	number uint64
+}
+
+type blockFetchResult struct {
+	number uint64
+	block  *types.Block
+	err    error
 }
 
 func sleepContext(ctx context.Context, interval time.Duration) bool {

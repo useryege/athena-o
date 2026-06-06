@@ -15,6 +15,9 @@ import (
 const (
 	ethereumPollInterval = 30 * time.Second
 	bscPollInterval      = 3 * time.Second
+
+	ethereumBlockFetchConcurrency = 5
+	bscBlockFetchConcurrency      = 10
 )
 
 type Options struct {
@@ -85,12 +88,13 @@ func (w *Worker) Start(ctx context.Context) error {
 			return err
 		}
 		runner := newChainRunner(chainRunnerOptions{
-			store:          w.opts.Store,
-			chainID:        cfg.chainID,
-			chainName:      cfg.name,
-			nodeWSURL:      cfg.nodeWSURL,
-			nodeWSUseProxy: w.opts.NodeWSUseProxy,
-			pollInterval:   cfg.pollInterval,
+			store:                 w.opts.Store,
+			chainID:               cfg.chainID,
+			chainName:             cfg.name,
+			nodeWSURL:             cfg.nodeWSURL,
+			nodeWSUseProxy:        w.opts.NodeWSUseProxy,
+			pollInterval:          cfg.pollInterval,
+			blockFetchConcurrency: cfg.blockFetchConcurrency,
 		})
 		runners[cfg.chainID] = runner
 		log.WithFields(log.Fields{
@@ -98,6 +102,7 @@ func (w *Worker) Start(ctx context.Context) error {
 			"chain_name":          checkpoint.ChainName,
 			"cursor_block_number": checkpoint.CursorBlockNumber,
 			"poll_interval":       cfg.pollInterval.String(),
+			"fetch_concurrency":   cfg.blockFetchConcurrency,
 		}).Info("token chain ingestor checkpoint activated")
 	}
 	if len(runners) == 0 {
@@ -166,28 +171,31 @@ func (w *Worker) run(ctx context.Context, runners map[int64]*chainRunner) {
 }
 
 type chainConfig struct {
-	chainID      int64
-	name         string
-	nodeWSURL    string
-	pollInterval time.Duration
-	enabled      bool
+	chainID               int64
+	name                  string
+	nodeWSURL             string
+	pollInterval          time.Duration
+	blockFetchConcurrency int
+	enabled               bool
 }
 
 func (w *Worker) chainConfigs() []chainConfig {
 	return []chainConfig{
 		{
-			chainID:      common.ChainIDEthereumMainnet,
-			name:         common.ChainNameEthereumMainnet,
-			nodeWSURL:    w.opts.EthNodeWSURL,
-			pollInterval: ethereumPollInterval,
-			enabled:      w.opts.EthEnabled,
+			chainID:               common.ChainIDEthereumMainnet,
+			name:                  common.ChainNameEthereumMainnet,
+			nodeWSURL:             w.opts.EthNodeWSURL,
+			pollInterval:          ethereumPollInterval,
+			blockFetchConcurrency: ethereumBlockFetchConcurrency,
+			enabled:               w.opts.EthEnabled,
 		},
 		{
-			chainID:      common.ChainIDBSCMainnet,
-			name:         common.ChainNameBSCMainnet,
-			nodeWSURL:    w.opts.BSCNodeWSURL,
-			pollInterval: bscPollInterval,
-			enabled:      w.opts.BSCEnabled,
+			chainID:               common.ChainIDBSCMainnet,
+			name:                  common.ChainNameBSCMainnet,
+			nodeWSURL:             w.opts.BSCNodeWSURL,
+			pollInterval:          bscPollInterval,
+			blockFetchConcurrency: bscBlockFetchConcurrency,
+			enabled:               w.opts.BSCEnabled,
 		},
 	}
 }
