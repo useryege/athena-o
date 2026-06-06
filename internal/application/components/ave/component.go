@@ -39,7 +39,6 @@ type Options struct {
 	Store             Store
 	Cache             Cache
 	Fetcher           Fetcher
-	Chain             string
 	DetailTTL         time.Duration
 	PollInterval      time.Duration
 	FailureRetryDelay time.Duration
@@ -60,7 +59,6 @@ type Component struct {
 	store             Store
 	cache             Cache
 	fetcher           Fetcher
-	chain             string
 	detailTTL         time.Duration
 	pollInterval      time.Duration
 	failureRetryDelay time.Duration
@@ -80,7 +78,7 @@ func NewComponent(opts Options) (*Component, error) {
 	opts = opts.withDefaults()
 	if opts.Fetcher == nil {
 		if strings.TrimSpace(opts.Config.APIKey) != "" {
-			chain, ok := ChainNameForChainID(opts.ChainID)
+			_, ok := utilave.ChainNameForChainID(opts.ChainID)
 			if !ok {
 				log.WithField("chainID", opts.ChainID).Warn("Ave component disabled for unsupported chain")
 			} else {
@@ -89,13 +87,7 @@ func NewComponent(opts Options) (*Component, error) {
 					return nil, fmt.Errorf("configure Ave component: %w", err)
 				}
 				opts.Fetcher = NewFetcher(client)
-				opts.Chain = chain
 			}
-		}
-	} else if strings.TrimSpace(opts.Chain) == "" {
-		chain, ok := ChainNameForChainID(opts.ChainID)
-		if ok {
-			opts.Chain = chain
 		}
 	}
 	component := &Component{
@@ -103,7 +95,6 @@ func NewComponent(opts Options) (*Component, error) {
 		chainID:           opts.ChainID,
 		cache:             opts.Cache,
 		fetcher:           opts.Fetcher,
-		chain:             strings.TrimSpace(opts.Chain),
 		detailTTL:         opts.DetailTTL,
 		pollInterval:      opts.PollInterval,
 		failureRetryDelay: opts.FailureRetryDelay,
@@ -133,7 +124,7 @@ func (o Options) withDefaults() Options {
 }
 
 func (c *Component) Start(ctx context.Context) error {
-	if c == nil || c.store == nil || c.fetcher == nil || strings.TrimSpace(c.chain) == "" {
+	if c == nil || c.store == nil || c.fetcher == nil {
 		return nil
 	}
 	c.startStopMu.Lock()
@@ -168,7 +159,7 @@ func (c *Component) ScheduleRefresh(ctx context.Context, contract common.Address
 	if c == nil || c.store == nil {
 		return status.Error(codes.FailedPrecondition, "Ave component is not configured")
 	}
-	if c.fetcher == nil || strings.TrimSpace(c.chain) == "" {
+	if c.fetcher == nil {
 		return status.Error(codes.FailedPrecondition, "Ave refresh is not configured")
 	}
 	if contract == (common.Address{}) {
@@ -202,7 +193,7 @@ func (c *Component) State(ctx context.Context, contract common.Address) (*State,
 }
 
 func (c *Component) RefreshDetail(ctx context.Context, contract common.Address) error {
-	if c == nil || c.store == nil || c.fetcher == nil || strings.TrimSpace(c.chain) == "" {
+	if c == nil || c.store == nil || c.fetcher == nil {
 		return nil
 	}
 	if contract == (common.Address{}) {
@@ -253,7 +244,7 @@ func (c *Component) refreshOne(ctx context.Context, contract common.Address) err
 	if err := c.store.MarkProjectAveRefreshRunning(ctx, c.chainID, contract, attemptAt); err != nil {
 		return err
 	}
-	response, err := c.fetcher.FetchDetail(ctx, tokenID(contract, c.chain))
+	response, err := c.fetcher.FetchDetail(ctx, contract, c.chainID)
 	if err != nil {
 		_ = c.store.MarkProjectAveRefreshFailed(ctx, c.chainID, contract, attemptAt, attemptAt.Add(c.failureRetryDelay), err.Error())
 		return err
@@ -302,8 +293,4 @@ func (c *Component) detail(ctx context.Context, contract common.Address) (*appst
 		}
 	}
 	return item, nil
-}
-
-func tokenID(contract common.Address, chain string) string {
-	return strings.ToLower(contract.Hex()) + "-" + strings.TrimSpace(chain)
 }

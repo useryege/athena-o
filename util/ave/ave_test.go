@@ -6,10 +6,16 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
-const sampleTokenID = "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN-solana"
+const (
+	sampleContractHex = "0x79a11e727d00ef6333845b660c94c3e1478e6a41"
+	sampleTokenID     = sampleContractHex + "-bsc"
+)
+
+var sampleContract = common.HexToAddress(sampleContractHex)
 
 func TestNewClientRequiresAPIKey(t *testing.T) {
 	_, err := NewClient(Config{})
@@ -47,7 +53,7 @@ func TestGetTokenDetail(t *testing.T) {
 		t.Fatalf("NewClient: %v", err)
 	}
 
-	resp, err := client.GetTokenDetail(context.Background(), "  "+sampleTokenID+"  ")
+	resp, err := client.GetTokenDetail(context.Background(), sampleContract, 56)
 	if err != nil {
 		t.Fatalf("GetTokenDetail: %v", err)
 	}
@@ -90,23 +96,37 @@ func TestGetTokenDetail(t *testing.T) {
 	}
 }
 
-func TestGetTokenDetailRequiresTokenID(t *testing.T) {
-	var requests int
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
-	}))
-	defer server.Close()
+func TestGetTokenDetailValidatesInputs(t *testing.T) {
+	tests := []struct {
+		name     string
+		contract common.Address
+		chainID  int64
+		want     string
+	}{
+		{name: "empty contract", contract: common.Address{}, chainID: 56, want: "contract"},
+		{name: "unsupported chain", contract: sampleContract, chainID: 999, want: "chain id 999 is unsupported"},
+	}
 
-	client, err := NewClient(Config{BaseURL: server.URL, APIKey: "secret"})
-	if err != nil {
-		t.Fatalf("NewClient: %v", err)
-	}
-	_, err = client.GetTokenDetail(context.Background(), "   ")
-	if err == nil || !strings.Contains(err.Error(), "token id is required") {
-		t.Fatalf("error = %v, want token id error", err)
-	}
-	if requests != 0 {
-		t.Fatalf("requests = %d, want 0", requests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var requests int
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests++
+			}))
+			defer server.Close()
+
+			client, err := NewClient(Config{BaseURL: server.URL, APIKey: "secret"})
+			if err != nil {
+				t.Fatalf("NewClient: %v", err)
+			}
+			_, err = client.GetTokenDetail(context.Background(), tt.contract, tt.chainID)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("error = %v, want contains %q", err, tt.want)
+			}
+			if requests != 0 {
+				t.Fatalf("requests = %d, want 0", requests)
+			}
+		})
 	}
 }
 
@@ -134,7 +154,7 @@ func TestGetTokenDetailErrors(t *testing.T) {
 			if err != nil {
 				t.Fatalf("NewClient: %v", err)
 			}
-			_, err = client.GetTokenDetail(context.Background(), sampleTokenID)
+			_, err = client.GetTokenDetail(context.Background(), sampleContract, 56)
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("error = %v, want contains %q", err, tt.want)
 			}
@@ -143,19 +163,26 @@ func TestGetTokenDetailErrors(t *testing.T) {
 }
 
 func TestGetTokenDetailContextCanceled(t *testing.T) {
+	var requests int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+	}))
+	defer server.Close()
 
-	client, err := NewClient(Config{APIKey: "EVLzXhZZohZA04DWbRkXA9Hkp6PvwaMDmaNqQon5tfZKAEF6BOVsT2xpQpbilWLQ", Timeout: time.Second * 10})
+	client, err := NewClient(Config{BaseURL: server.URL, APIKey: "secret"})
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 
-	resp, err := client.GetTokenDetail(ctx, "0x79a11e727d00ef6333845b660c94c3e1478e6a41-bsc")
-	if err != nil {
-		t.Fatalf("GetTokenDetail: %v", err)
+	_, err = client.GetTokenDetail(ctx, sampleContract, 56)
+	if err == nil || !strings.Contains(err.Error(), "context canceled") {
+		t.Fatalf("error = %v, want context canceled", err)
 	}
-
-	t.Logf("resp = %+v", resp)
+	if requests != 0 {
+		t.Fatalf("requests = %d, want 0", requests)
+	}
 }
 
 const sampleTokenDetailResponse = `{

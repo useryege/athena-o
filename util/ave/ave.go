@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -20,7 +22,7 @@ const (
 )
 
 type Client interface {
-	GetTokenDetail(ctx context.Context, tokenID string) (*TokenDetailResponse, error)
+	GetTokenDetail(ctx context.Context, contract common.Address, chainID int64) (*TokenDetailResponse, error)
 }
 
 type Config struct {
@@ -164,10 +166,29 @@ func (c Config) withDefaults() Config {
 	return c
 }
 
-func (c *clientImpl) GetTokenDetail(ctx context.Context, tokenID string) (*TokenDetailResponse, error) {
-	tokenID = strings.TrimSpace(tokenID)
-	if tokenID == "" {
-		return nil, errors.New("ave token id is required")
+func ChainNameForChainID(chainID int64) (string, bool) {
+	switch chainID {
+	case 1:
+		return "eth", true
+	case 56:
+		return "bsc", true
+	case 137:
+		return "polygon", true
+	case 42161:
+		return "arbitrum", true
+	case 10:
+		return "optimism", true
+	case 8453:
+		return "base", true
+	default:
+		return "", false
+	}
+}
+
+func (c *clientImpl) GetTokenDetail(ctx context.Context, contract common.Address, chainID int64) (*TokenDetailResponse, error) {
+	tokenID, err := tokenID(contract, chainID)
+	if err != nil {
+		return nil, err
 	}
 
 	endpoint := strings.TrimRight(c.config.BaseURL, "/") + "/v2/tokens/" + url.PathEscape(tokenID)
@@ -195,6 +216,17 @@ func (c *clientImpl) GetTokenDetail(ctx context.Context, tokenID string) (*Token
 		return nil, fmt.Errorf("ave token detail request failed: %s", detail.Msg)
 	}
 	return &detail, nil
+}
+
+func tokenID(contract common.Address, chainID int64) (string, error) {
+	if contract == (common.Address{}) {
+		return "", errors.New("ave token contract is empty")
+	}
+	chain, ok := ChainNameForChainID(chainID)
+	if !ok {
+		return "", fmt.Errorf("ave chain id %d is unsupported", chainID)
+	}
+	return strings.ToLower(contract.Hex()) + "-" + chain, nil
 }
 
 func ensureHTTPSuccess(resp *http.Response, operation string) error {
