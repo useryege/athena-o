@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	tokenstore "github.com/useryege/athena/internal/token/store"
@@ -109,9 +110,8 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 			r.resetClient()
 			return err
 		}
-		candidates, err := r.projectCandidatesFromBlock(ctx, client, block)
+		candidates, err := r.projectCandidatesFromBlock(block)
 		if err != nil {
-			r.resetClient()
 			return err
 		}
 		for _, candidate := range candidates {
@@ -136,7 +136,7 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 	return nil
 }
 
-func (r *chainRunner) projectCandidatesFromBlock(ctx context.Context, client *ethclient.Client, block *types.Block) ([]tokenstore.ProjectCandidate, error) {
+func (r *chainRunner) projectCandidatesFromBlock(block *types.Block) ([]tokenstore.ProjectCandidate, error) {
 	if block == nil {
 		return nil, nil
 	}
@@ -149,16 +149,13 @@ func (r *chainRunner) projectCandidatesFromBlock(ctx context.Context, client *et
 		if err != nil {
 			return nil, fmt.Errorf("derive contract creator for tx %s: %w", tx.Hash().Hex(), err)
 		}
-		receipt, err := client.TransactionReceipt(ctx, tx.Hash())
-		if err != nil {
-			return nil, err
-		}
-		if receipt == nil || receipt.Status != types.ReceiptStatusSuccessful || receipt.ContractAddress == (common.Address{}) {
+		contract := crypto.CreateAddress(creator, tx.Nonce())
+		if contract == (common.Address{}) {
 			continue
 		}
 		candidates = append(candidates, tokenstore.ProjectCandidate{
 			ChainID:     r.opts.chainID,
-			Contract:    receipt.ContractAddress,
+			Contract:    contract,
 			Creator:     creator,
 			TxHash:      tx.Hash(),
 			TxIndex:     uint64(txIndex),
