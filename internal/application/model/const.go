@@ -12,3 +12,7 @@ const (
 	EthereumMainnetConfirmationDepth uint64 = 3
 	BSCMainnetConfirmationDepth      uint64 = 10
 )
+
+const (
+	ProjectCollectionReasonDexSwap = "dex_swap"
+)

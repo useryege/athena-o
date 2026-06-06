@@ -10,17 +10,12 @@ import (
 	utilave "github.com/useryege/athena/util/ave"
 )
 
-type Project struct {
-	Meta      ProjectMeta
-	AveDetail *ProjectAveDetail
-}
-
 type ProjectRef struct {
 	ChainID  int64          `json:"chain_id"`
 	Contract common.Address `json:"contract"`
 }
 
-type ProjectMeta struct {
+type Project struct {
 	ChainID                            int64
 	BlockTime                          uint64
 	BlockNumber                        uint64

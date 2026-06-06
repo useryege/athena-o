@@ -22,10 +22,10 @@ func TestProjectComponentCacheSeparatesSameContractByChainID(t *testing.T) {
 	ethCreator := common.HexToAddress("0x1000000000000000000000000000000000000002")
 	bscCreator := common.HexToAddress("0x1000000000000000000000000000000000000003")
 
-	if err := cache.SetProject(ctx, appstore.Project{ChainID: 1, Contract: contract, Creator: ethCreator, BlockNumber: 10}); err != nil {
+	if err := cache.SetProject(ctx, appstore.ProjectRecord{ChainID: 1, Contract: contract, Creator: ethCreator, BlockNumber: 10}); err != nil {
 		t.Fatalf("set eth project: %v", err)
 	}
-	if err := cache.SetProject(ctx, appstore.Project{ChainID: 56, Contract: contract, Creator: bscCreator, BlockNumber: 20}); err != nil {
+	if err := cache.SetProject(ctx, appstore.ProjectRecord{ChainID: 56, Contract: contract, Creator: bscCreator, BlockNumber: 20}); err != nil {
 		t.Fatalf("set bsc project: %v", err)
 	}
 

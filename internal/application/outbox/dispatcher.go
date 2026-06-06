@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 	appevents "github.com/useryege/athena/internal/application/events"
 	"github.com/useryege/athena/internal/application/store"
@@ -249,7 +250,7 @@ func collectionInput(item store.OutboxEvent) (workflows.ProjectCollectionInput, 
 	if payload.Project.ChainID <= 0 {
 		return workflows.ProjectCollectionInput{}, errors.New("project collection payload chain_id is empty")
 	}
-	if payload.Project.Contract.Hex() == "0x0000000000000000000000000000000000000000" {
+	if payload.Project.Contract == (common.Address{}) {
 		return workflows.ProjectCollectionInput{}, errors.New("project collection payload contract is empty")
 	}
 	return workflows.ProjectCollectionInput{Project: payload.Project, Reason: strings.TrimSpace(payload.Reason)}, nil
@@ -281,7 +282,7 @@ func (d *Dispatcher) publishProjectEvent(ctx context.Context, item store.OutboxE
 		}
 		return errProjectEventDiscarded
 	}
-	if payload.Project.Contract.Hex() == "0x0000000000000000000000000000000000000000" {
+	if payload.Project.Contract == (common.Address{}) {
 		if discardErr := d.discard(ctx, item, errors.New("project event payload contract is empty")); discardErr != nil {
 			return discardErr
 		}

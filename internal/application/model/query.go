@@ -5,19 +5,16 @@ import (
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
-func BuildProjectQueries(projects []*Project) ([]athenacontract.AthenaProjectQuery, []common.Address) {
+func BuildProjectQueries(projects []Project) ([]athenacontract.AthenaProjectQuery, []common.Address) {
 	queries := make([]athenacontract.AthenaProjectQuery, 0, len(projects))
 	contracts := make([]common.Address, 0, len(projects))
 	for _, project := range projects {
-		if project == nil {
-			continue
-		}
 		queries = append(queries, athenacontract.AthenaProjectQuery{
-			TokenContract:  project.Meta.Contract,
-			MsgCaller:      project.Meta.Creator,
-			GenesisWallets: GenesisWalletAddresses(project.Meta.GenesisWallets),
+			TokenContract:  project.Contract,
+			MsgCaller:      project.Creator,
+			GenesisWallets: GenesisWalletAddresses(project.GenesisWallets),
 		})
-		contracts = append(contracts, project.Meta.Contract)
+		contracts = append(contracts, project.Contract)
 	}
 	return queries, contracts
 }

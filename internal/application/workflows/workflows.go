@@ -6,6 +6,7 @@ import (
 
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
+	"github.com/useryege/athena/internal/application/model"
 )
 
 func ProjectCollectionWorkflow(ctx workflow.Context, input ProjectCollectionInput) error {
@@ -61,7 +62,7 @@ func runProjectCollectionActivities(ctx workflow.Context, input ProjectCollectio
 		CollectChainStateActivityName,
 		CollectSimulationActivityName,
 	}
-	if strings.TrimSpace(input.Reason) != ProjectCollectionReasonDexSwap {
+	if strings.TrimSpace(input.Reason) != model.ProjectCollectionReasonDexSwap {
 		chainActivities = append(chainActivities,
 			CollectGenesisWalletsActivityName,
 			CollectCreatorHistoryActivityName,
@@ -91,7 +92,7 @@ func ProjectCollectionAllActivityNames(reason string) []string {
 		CollectChainStateActivityName,
 		CollectSimulationActivityName,
 	}
-	if strings.TrimSpace(reason) != ProjectCollectionReasonDexSwap {
+	if strings.TrimSpace(reason) != model.ProjectCollectionReasonDexSwap {
 		chainActivities = append(chainActivities,
 			CollectGenesisWalletsActivityName,
 			CollectCreatorHistoryActivityName,

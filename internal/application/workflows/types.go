@@ -13,8 +13,6 @@ const (
 
 	DefaultTemporalAddress   = "localhost:7233"
 	DefaultTemporalNamespace = "default"
-
-	ProjectCollectionReasonDexSwap = "dex_swap"
 )
 
 type ProjectRef = model.ProjectRef

@@ -12,8 +12,6 @@ import (
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/ethereumapi"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type Service struct {
@@ -39,8 +37,6 @@ type Service struct {
 	startStopMu     sync.Mutex
 	lifecycleCtx    context.Context
 	lifecycleStop   context.CancelFunc
-	bootstrapStop   context.CancelFunc
-	starting        bool
 	started         bool
 }
 
@@ -83,68 +79,27 @@ func NewService(opts ServiceOpts) (*Service, error) {
 
 func (s *Service) Start() error {
 	s.startStopMu.Lock()
+	defer s.startStopMu.Unlock()
 	if s.started {
-		s.startStopMu.Unlock()
 		return nil
 	}
-	if s.starting {
-		s.startStopMu.Unlock()
-		return status.Error(codes.Aborted, "service start already in progress")
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
-	s.starting = true
-	s.bootstrapStop = cancel
-	s.startStopMu.Unlock()
-
-	s.startStopMu.Lock()
-	if !s.starting {
-		s.startStopMu.Unlock()
-		cancel()
-		return context.Canceled
-	}
 	s.lifecycleCtx = ctx
 	s.lifecycleStop = cancel
-	s.bootstrapStop = nil
-	s.starting = false
 	s.started = true
-	s.startStopMu.Unlock()
-
 	return nil
 }
 
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
-
-	if s.starting && !s.started {
-		stop := s.bootstrapStop
-		s.starting = false
-		s.bootstrapStop = nil
-		s.startStopMu.Unlock()
-		if stop != nil {
-			stop()
-		}
-		return nil
-	}
-
-	if !s.started {
-		s.startStopMu.Unlock()
-		return nil
-	}
-
 	stop := s.lifecycleStop
-
 	s.lifecycleCtx = nil
 	s.lifecycleStop = nil
-	s.bootstrapStop = nil
-	s.starting = false
 	s.started = false
 	s.startStopMu.Unlock()
-
 	if stop != nil {
 		stop()
 	}
-
 	return nil
 }
 

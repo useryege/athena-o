@@ -2,7 +2,6 @@ package creatorhistory
 
 import (
 	"context"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	appcache "github.com/useryege/athena/internal/application/cache"
@@ -41,7 +40,7 @@ func (c *Component) Collect(ctx context.Context, chainID int64, contract common.
 		return nil
 	}
 	if err := c.refresh(ctx, chainID, contract); err != nil {
-		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentCreatorHistory, err, nowUTC())
+		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentCreatorHistory, err, appcomponents.NowUTC())
 		return err
 	}
 	return nil
@@ -52,16 +51,16 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 	if err != nil || base == nil {
 		return err
 	}
-	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentCreatorHistory, nowUTC()); err != nil {
+	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentCreatorHistory, appcomponents.NowUTC()); err != nil {
 		return err
 	}
-	metas, err := c.store.ListProjectMetasByCreatorBefore(ctx, chainID, base.Creator, base.BlockNumber, base.TxIndex)
+	projects, err := c.store.ListProjectMetasByCreatorBefore(ctx, chainID, base.Creator, base.BlockNumber, base.TxIndex)
 	if err != nil {
 		return err
 	}
-	items := make([]appstore.ProjectCreatorHistoricalProject, 0, len(metas))
+	items := make([]appstore.ProjectCreatorHistoricalProject, 0, len(projects))
 	seen := map[common.Address]struct{}{}
-	for _, meta := range metas {
+	for _, meta := range projects {
 		if meta.Contract == (common.Address{}) || meta.Contract == contract {
 			continue
 		}
@@ -84,13 +83,10 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 			return err
 		}
 	}
-	at := nowUTC()
+	at := appcomponents.NowUTC()
 	if err := appcomponents.MarkComponentSuccess(ctx, c.store, chainID, contract, appstore.ProjectComponentCreatorHistory, at); err != nil {
 		return err
 	}
 	return nil
 }
 
-func nowUTC() time.Time {
-	return time.Now().UTC()
-}

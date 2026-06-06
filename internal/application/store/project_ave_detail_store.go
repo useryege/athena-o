@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/useryege/athena/internal/application/model"
 	appsqlc "github.com/useryege/athena/internal/application/store/sqlc"
 	utilave "github.com/useryege/athena/util/ave"
 )
@@ -39,7 +40,7 @@ func (s *SQLStore) UpsertProjectAveDetail(ctx context.Context, chainID int64, co
 	return nil
 }
 
-func (s *SQLStore) GetProjectAveDetail(ctx context.Context, chainID int64, contract common.Address) (*ProjectAveDetail, error) {
+func (s *SQLStore) GetProjectAveDetail(ctx context.Context, chainID int64, contract common.Address) (*model.ProjectAveDetail, error) {
 	details, err := s.ListProjectAveDetailsByContracts(ctx, chainID, []common.Address{contract})
 	if err != nil {
 		return nil, err
@@ -51,9 +52,9 @@ func (s *SQLStore) GetProjectAveDetail(ctx context.Context, chainID int64, contr
 	return &detail, nil
 }
 
-func (s *SQLStore) ListProjectAveDetailsByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address]ProjectAveDetail, error) {
+func (s *SQLStore) ListProjectAveDetailsByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address]model.ProjectAveDetail, error) {
 	unique := uniqueNonZeroAddresses(contracts)
-	result := make(map[common.Address]ProjectAveDetail, len(unique))
+	result := make(map[common.Address]model.ProjectAveDetail, len(unique))
 	if len(unique) == 0 {
 		return result, nil
 	}
@@ -78,19 +79,19 @@ func (s *SQLStore) ListProjectAveDetailsByContracts(ctx context.Context, chainID
 	return result, nil
 }
 
-func projectAveDetailFromSQLC(row appsqlc.ListProjectAveDetailsByContractsRow) (common.Address, ProjectAveDetail, error) {
+func projectAveDetailFromSQLC(row appsqlc.ListProjectAveDetailsByContractsRow) (common.Address, model.ProjectAveDetail, error) {
 	fetchedAt := time.Time{}
 	if row.FetchedAt.Valid {
 		fetchedAt = row.FetchedAt.Time
 	}
 	detail, err := projectAveDetailFromRawResponse(row.AveResponse, row.ChainID, fetchedAt)
 	if err != nil {
-		return common.Address{}, ProjectAveDetail{}, err
+		return common.Address{}, model.ProjectAveDetail{}, err
 	}
 	return common.BytesToAddress(row.ProjectContract), *detail, nil
 }
 
-func projectAveDetailFromRawResponse(raw []byte, chainID int64, fetchedAt time.Time) (*ProjectAveDetail, error) {
+func projectAveDetailFromRawResponse(raw []byte, chainID int64, fetchedAt time.Time) (*model.ProjectAveDetail, error) {
 	if len(raw) == 0 {
 		return nil, errors.New("project ave detail response is empty")
 	}
@@ -101,7 +102,7 @@ func projectAveDetailFromRawResponse(raw []byte, chainID int64, fetchedAt time.T
 	if fetchedAt.IsZero() {
 		fetchedAt = time.Now().UTC()
 	}
-	return &ProjectAveDetail{
+	return &model.ProjectAveDetail{
 		ChainID:   chainID,
 		FetchedAt: fetchedAt.UTC(),
 		Data:      resp.Data,

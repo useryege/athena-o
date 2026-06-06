@@ -16,12 +16,13 @@ import (
 )
 
 const (
-	ReasonDexSwap = "dex_swap"
+	// ReasonDexSwap is an alias for model.ProjectCollectionReasonDexSwap for use within this package.
+	ReasonDexSwap = model.ProjectCollectionReasonDexSwap
 )
 
 type ProjectEventStore interface {
 	appstore.ProjectIntakeStore
-	ListProjectMetasByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]appstore.ProjectMeta, error)
+	ListProjectMetasByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]model.Project, error)
 }
 
 type Processor struct {

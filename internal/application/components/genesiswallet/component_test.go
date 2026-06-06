@@ -19,7 +19,7 @@ func TestComponentCollectRerunsAfterSuccess(t *testing.T) {
 	creator := common.BigToAddress(big.NewInt(12))
 	txHash := common.HexToHash("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 	store := &refreshComponentStoreFake{
-		baseByContract: map[common.Address]appstore.Project{
+		baseByContract: map[common.Address]appstore.ProjectRecord{
 			contract: {
 				ChainID:     56,
 				Contract:    contract,
@@ -72,14 +72,14 @@ func TestComponentCollectRerunsAfterSuccess(t *testing.T) {
 type refreshComponentStoreFake struct {
 	appstore.Store
 
-	baseByContract       map[common.Address]appstore.Project
+	baseByContract       map[common.Address]appstore.ProjectRecord
 	chainStateByContract map[common.Address]appstore.ProjectChainState
 	componentStates      map[string]appstore.ProjectComponentState
 
 	replaceGenesisWalletCalls int
 }
 
-func (s *refreshComponentStoreFake) GetProjectByContract(_ context.Context, _ int64, contract common.Address) (*appstore.Project, error) {
+func (s *refreshComponentStoreFake) GetProjectByContract(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectRecord, error) {
 	item, ok := s.baseByContract[contract]
 	if !ok {
 		return nil, nil

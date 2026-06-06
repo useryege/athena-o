@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/application/model"
 	appstore "github.com/useryege/athena/internal/application/store"
 	utilave "github.com/useryege/athena/util/ave"
 	"google.golang.org/grpc/codes"
@@ -42,7 +43,7 @@ type Options struct {
 
 type State struct {
 	Contract        common.Address
-	Detail          *appstore.ProjectAveDetail
+	Detail          *model.ProjectAveDetail
 	ComponentState  *appstore.ProjectComponentState
 	DetailAvailable bool
 	Stale           bool
@@ -257,6 +258,6 @@ func (c *Component) refreshOne(ctx context.Context, contract common.Address) err
 	return nil
 }
 
-func (c *Component) detail(ctx context.Context, contract common.Address) (*appstore.ProjectAveDetail, error) {
+func (c *Component) detail(ctx context.Context, contract common.Address) (*model.ProjectAveDetail, error) {
 	return c.store.GetProjectAveDetail(ctx, c.chainID, contract)
 }

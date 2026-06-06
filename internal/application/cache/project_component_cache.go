@@ -18,10 +18,10 @@ const (
 )
 
 type ProjectComponentCache interface {
-	SetProject(ctx context.Context, item appstore.Project) error
-	GetProject(ctx context.Context, chainID int64, contract common.Address) (*appstore.Project, bool, error)
-	ListProjectsPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]appstore.Project, int64, int32, int32, error)
-	ListProjectsByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.Project, error)
+	SetProject(ctx context.Context, item appstore.ProjectRecord) error
+	GetProject(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectRecord, bool, error)
+	ListProjectsPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]appstore.ProjectRecord, int64, int32, int32, error)
+	ListProjectsByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectRecord, error)
 	GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error)
 
 	SetChainState(ctx context.Context, item appstore.ProjectChainState) error
@@ -62,7 +62,7 @@ func NewProjectComponentCache(client projectComponentRedisClient) ProjectCompone
 	}
 }
 
-func (c *RedisProjectComponentCache) SetProject(ctx context.Context, item appstore.Project) error {
+func (c *RedisProjectComponentCache) SetProject(ctx context.Context, item appstore.ProjectRecord) error {
 	if c == nil || c.client == nil {
 		return nil
 	}
@@ -80,13 +80,13 @@ func (c *RedisProjectComponentCache) SetProject(ctx context.Context, item appsto
 	return pipe.Exec(ctx)
 }
 
-func (c *RedisProjectComponentCache) GetProject(ctx context.Context, chainID int64, contract common.Address) (*appstore.Project, bool, error) {
-	var item appstore.Project
+func (c *RedisProjectComponentCache) GetProject(ctx context.Context, chainID int64, contract common.Address) (*appstore.ProjectRecord, bool, error) {
+	var item appstore.ProjectRecord
 	ok, err := c.getJSON(ctx, c.keys.Project(chainID, contract), &item)
 	return &item, ok, err
 }
 
-func (c *RedisProjectComponentCache) ListProjectsPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]appstore.Project, int64, int32, int32, error) {
+func (c *RedisProjectComponentCache) ListProjectsPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]appstore.ProjectRecord, int64, int32, int32, error) {
 	if c == nil || c.client == nil {
 		return nil, 0, 0, 0, nil
 	}
@@ -101,7 +101,7 @@ func (c *RedisProjectComponentCache) ListProjectsPage(ctx context.Context, chain
 	if err != nil {
 		return nil, 0, page, pageSize, err
 	}
-	items := make([]appstore.Project, 0, len(members))
+	items := make([]appstore.ProjectRecord, 0, len(members))
 	for _, member := range members {
 		if !common.IsHexAddress(member) {
 			continue
@@ -117,7 +117,7 @@ func (c *RedisProjectComponentCache) ListProjectsPage(ctx context.Context, chain
 	return items, total, page, pageSize, nil
 }
 
-func (c *RedisProjectComponentCache) ListProjectsByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.Project, error) {
+func (c *RedisProjectComponentCache) ListProjectsByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]appstore.ProjectRecord, error) {
 	if c == nil || c.client == nil {
 		return nil, nil
 	}
@@ -126,7 +126,7 @@ func (c *RedisProjectComponentCache) ListProjectsByCreatorBefore(ctx context.Con
 	if err != nil {
 		return nil, err
 	}
-	items := make([]appstore.Project, 0, len(members))
+	items := make([]appstore.ProjectRecord, 0, len(members))
 	for _, member := range members {
 		if !common.IsHexAddress(member) {
 			continue
@@ -312,7 +312,7 @@ func (c *RedisProjectComponentCache) getJSON(ctx context.Context, key string, ta
 	return GetJSONInto(ctx, c.client, key, target)
 }
 
-func projectScore(item appstore.Project) float64 {
+func projectScore(item appstore.ProjectRecord) float64 {
 	return projectOrderScore(item.BlockNumber, item.TxIndex)
 }
 

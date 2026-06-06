@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/useryege/athena/internal/application/model"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
@@ -55,7 +56,7 @@ func TestProjectCollectionWorkflowDexSwapRunsDynamicActivitiesOnly(t *testing.T)
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
 	contract := common.HexToAddress("0x1000000000000000000000000000000000000005")
-	input := ProjectCollectionInput{Project: ProjectRef{ChainID: 56, Contract: contract}, Reason: ProjectCollectionReasonDexSwap}
+	input := ProjectCollectionInput{Project: ProjectRef{ChainID: 56, Contract: contract}, Reason: model.ProjectCollectionReasonDexSwap}
 	var calls []string
 
 	env.RegisterWorkflow(ProjectCollectionWorkflow)

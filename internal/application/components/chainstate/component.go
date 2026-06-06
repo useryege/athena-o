@@ -2,7 +2,6 @@ package chainstate
 
 import (
 	"context"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	appcache "github.com/useryege/athena/internal/application/cache"
@@ -44,7 +43,7 @@ func (c *Component) Collect(ctx context.Context, chainID int64, contract common.
 		return nil
 	}
 	if err := c.refresh(ctx, chainID, contract); err != nil {
-		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentChainState, err, nowUTC())
+		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentChainState, err, appcomponents.NowUTC())
 		return err
 	}
 	return nil
@@ -55,14 +54,14 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 	if err != nil || base == nil {
 		return err
 	}
-	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentChainState, nowUTC()); err != nil {
+	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentChainState, appcomponents.NowUTC()); err != nil {
 		return err
 	}
 	snapshot, err := c.fetcher.FetchProject(ctx, appcomponents.ProjectQuery(*base, nil))
 	if err != nil {
 		return err
 	}
-	item, err := appcomponents.ChainStateFromSnapshot(chainID, contract, snapshot, nowUTC())
+	item, err := appcomponents.ChainStateFromSnapshot(chainID, contract, snapshot, appcomponents.NowUTC())
 	if err != nil {
 		return err
 	}
@@ -80,6 +79,3 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 	return nil
 }
 
-func nowUTC() time.Time {
-	return time.Now().UTC()
-}

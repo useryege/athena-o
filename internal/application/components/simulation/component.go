@@ -2,13 +2,13 @@ package simulation
 
 import (
 	"context"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
 	appcache "github.com/useryege/athena/internal/application/cache"
 	appcomponents "github.com/useryege/athena/internal/application/components"
 	"github.com/useryege/athena/internal/application/evm"
+	"github.com/useryege/athena/internal/application/model"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -58,7 +58,7 @@ func (c *Component) Collect(ctx context.Context, chainID int64, contract common.
 		return nil
 	}
 	if err := c.refresh(ctx, chainID, contract); err != nil {
-		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentSimulation, err, nowUTC())
+		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentSimulation, err, appcomponents.NowUTC())
 		return err
 	}
 	return nil
@@ -73,7 +73,7 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 	if err != nil || chainState == nil {
 		return err
 	}
-	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentSimulation, nowUTC()); err != nil {
+	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentSimulation, appcomponents.NowUTC()); err != nil {
 		return err
 	}
 	simulationState, err := c.fetcher.FetchSimulationState(ctx, appcomponents.ProjectQuery(*base, nil))
@@ -83,7 +83,7 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 	wethPair := chainState.WethPair
 	usdtPair := chainState.UsdtPair
 	if wethPair == (common.Address{}) || usdtPair == (common.Address{}) {
-		at := nowUTC()
+		at := appcomponents.NowUTC()
 		if err := appcomponents.MarkComponentSuccess(ctx, c.store, chainID, contract, appstore.ProjectComponentSimulation, at); err != nil {
 			return err
 		}
@@ -93,7 +93,7 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 	if err != nil {
 		return err
 	}
-	item := appstore.ProjectSimulationResult{ChainID: chainID, ProjectContract: contract, Result: appstore.SimulateResult(result), FetchedAt: nowUTC()}
+	item := appstore.ProjectSimulationResult{ChainID: chainID, ProjectContract: contract, Result: model.SimulateResult(result), FetchedAt: appcomponents.NowUTC()}
 	if err := c.store.UpsertProjectSimulationResult(ctx, item); err != nil {
 		return err
 	}
@@ -108,6 +108,3 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 	return nil
 }
 
-func nowUTC() time.Time {
-	return time.Now().UTC()
-}

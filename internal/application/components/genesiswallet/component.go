@@ -8,7 +8,6 @@ import (
 	"math"
 	"math/big"
 	"sort"
-	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -69,7 +68,7 @@ func (c *Component) Collect(ctx context.Context, chainID int64, contract common.
 		return nil
 	}
 	if err := c.refresh(ctx, chainID, contract); err != nil {
-		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentGenesisWallet, err, nowUTC())
+		_ = appcomponents.MarkComponentFailed(ctx, c.store, chainID, contract, appstore.ProjectComponentGenesisWallet, err, appcomponents.NowUTC())
 		return err
 	}
 	return nil
@@ -84,7 +83,7 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 	if err != nil || chainState == nil {
 		return err
 	}
-	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentGenesisWallet, nowUTC()); err != nil {
+	if err := appcomponents.MarkComponentRunning(ctx, c.store, chainID, contract, appstore.ProjectComponentGenesisWallet, appcomponents.NowUTC()); err != nil {
 		return err
 	}
 	shares, err := c.fetchGenesisWallets(ctx, *base, chainState.ChainState.Token.TotalSupply)
@@ -100,14 +99,14 @@ func (c *Component) refresh(ctx context.Context, chainID int64, contract common.
 			return err
 		}
 	}
-	at := nowUTC()
+	at := appcomponents.NowUTC()
 	if err := appcomponents.MarkComponentSuccess(ctx, c.store, chainID, contract, appstore.ProjectComponentGenesisWallet, at); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Component) fetchGenesisWallets(ctx context.Context, base appstore.Project, totalSupply *big.Int) ([]GenesisWalletShare, error) {
+func (c *Component) fetchGenesisWallets(ctx context.Context, base appstore.ProjectRecord, totalSupply *big.Int) ([]GenesisWalletShare, error) {
 	logs, err := c.fetchGenesisWalletsFromReceipt(ctx, base)
 	if err == nil {
 		return extractGenesisWalletShares(logs, base.Contract, totalSupply), nil
@@ -122,7 +121,7 @@ func (c *Component) fetchGenesisWallets(ctx context.Context, base appstore.Proje
 	return extractGenesisWalletShares(fallbackLogs, base.Contract, totalSupply), nil
 }
 
-func (c *Component) fetchGenesisWalletsFromReceipt(ctx context.Context, base appstore.Project) ([]*types.Log, error) {
+func (c *Component) fetchGenesisWalletsFromReceipt(ctx context.Context, base appstore.ProjectRecord) ([]*types.Log, error) {
 	txHash := projectTxHash(base)
 	if txHash == (common.Hash{}) {
 		return nil, errors.New("project tx hash is empty")
@@ -137,7 +136,7 @@ func (c *Component) fetchGenesisWalletsFromReceipt(ctx context.Context, base app
 	return receipt.Logs, nil
 }
 
-func (c *Component) fetchGenesisWalletsFromLogsFallback(ctx context.Context, base appstore.Project) ([]*types.Log, error) {
+func (c *Component) fetchGenesisWalletsFromLogsFallback(ctx context.Context, base appstore.ProjectRecord) ([]*types.Log, error) {
 	txHash := projectTxHash(base)
 	if txHash == (common.Hash{}) {
 		return nil, errors.New("project tx hash is empty")
@@ -161,7 +160,7 @@ func shouldFallbackToLogs(err error) bool {
 	return errors.Is(err, ethereum.NotFound) || errors.Is(err, errGenesisReceiptNil)
 }
 
-func projectTxHash(base appstore.Project) common.Hash {
+func projectTxHash(base appstore.ProjectRecord) common.Hash {
 	if base.TxHash != (common.Hash{}) {
 		return base.TxHash
 	}
@@ -248,7 +247,7 @@ func ratioBPS(amount *big.Int, totalSupply *big.Int) int64 {
 	return result.Int64()
 }
 
-func genesisWalletsToStore(base appstore.Project, totalSupply *big.Int, shares []GenesisWalletShare) []appstore.ProjectGenesisWallet {
+func genesisWalletsToStore(base appstore.ProjectRecord, totalSupply *big.Int, shares []GenesisWalletShare) []appstore.ProjectGenesisWallet {
 	txHash := projectTxHash(base)
 	result := make([]appstore.ProjectGenesisWallet, 0, len(shares))
 	for i, share := range shares {
@@ -267,8 +266,4 @@ func genesisWalletsToStore(base appstore.Project, totalSupply *big.Int, shares [
 		})
 	}
 	return result
-}
-
-func nowUTC() time.Time {
-	return time.Now().UTC()
 }

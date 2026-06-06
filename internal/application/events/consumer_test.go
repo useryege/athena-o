@@ -8,14 +8,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/useryege/athena/internal/application/model"
-	appstore "github.com/useryege/athena/internal/application/store"
 )
 
 type processorStoreFake struct {
 	candidates        map[string]model.DiscoveredProjectCandidate
 	collections       []model.ProjectRef
 	collectionReasons []string
-	projectsByPair    map[string][]appstore.ProjectMeta
+	projectsByPair    map[string][]model.Project
 }
 
 func (f *processorStoreFake) UpsertProjectCandidateAndEnqueueQualification(_ context.Context, candidate model.DiscoveredProjectCandidate) error {
@@ -32,11 +31,11 @@ func (f *processorStoreFake) EnqueueProjectCollection(_ context.Context, ref mod
 	return nil
 }
 
-func (f *processorStoreFake) ListProjectMetasByPairAddresses(_ context.Context, chainID int64, pairs []common.Address) ([]appstore.ProjectMeta, error) {
+func (f *processorStoreFake) ListProjectMetasByPairAddresses(_ context.Context, chainID int64, pairs []common.Address) ([]model.Project, error) {
 	if f.projectsByPair == nil || len(pairs) == 0 {
 		return nil, nil
 	}
-	return append([]appstore.ProjectMeta(nil), f.projectsByPair[projectKey(chainID, pairs[0])]...), nil
+	return append([]model.Project(nil), f.projectsByPair[projectKey(chainID, pairs[0])]...), nil
 }
 
 func TestProcessorContractCreatedIsIdempotentByChainAndContract(t *testing.T) {
@@ -133,7 +132,7 @@ func TestProcessorDexSwapSchedulesKnownProjects(t *testing.T) {
 	token1 := common.HexToAddress("0x6000000000000000000000000000000000000006")
 	project := common.HexToAddress("0x4000000000000000000000000000000000000004")
 	store := &processorStoreFake{
-		projectsByPair: map[string][]appstore.ProjectMeta{
+		projectsByPair: map[string][]model.Project{
 			projectKey(1, pair): {{ChainID: 1, Contract: project, WethPair: pair}},
 		},
 	}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/useryege/athena/internal/application/model"
 	appstore "github.com/useryege/athena/internal/application/store"
 )
 
@@ -16,7 +17,7 @@ func TestComponentCollectRerunsAfterSuccess(t *testing.T) {
 	creator := common.BigToAddress(big.NewInt(2))
 	historical := common.BigToAddress(big.NewInt(3))
 	store := &refreshComponentStoreFake{
-		baseByContract: map[common.Address]appstore.Project{
+		baseByContract: map[common.Address]appstore.ProjectRecord{
 			contract: {
 				ChainID:     56,
 				Contract:    contract,
@@ -25,7 +26,7 @@ func TestComponentCollectRerunsAfterSuccess(t *testing.T) {
 				TxIndex:     2,
 			},
 		},
-		metasByCreatorBefore: map[common.Address][]appstore.ProjectMeta{
+		metasByCreatorBefore: map[common.Address][]model.Project{
 			creator: {{
 				ChainID:  56,
 				Contract: historical,
@@ -64,15 +65,15 @@ func TestComponentCollectRerunsAfterSuccess(t *testing.T) {
 type refreshComponentStoreFake struct {
 	appstore.Store
 
-	baseByContract       map[common.Address]appstore.Project
+	baseByContract       map[common.Address]appstore.ProjectRecord
 	componentStates      map[string]appstore.ProjectComponentState
-	metasByCreatorBefore map[common.Address][]appstore.ProjectMeta
+	metasByCreatorBefore map[common.Address][]model.Project
 
 	replaceCreatorHistoryCalls int
 	lastCreatorHistoryItems    []appstore.ProjectCreatorHistoricalProject
 }
 
-func (s *refreshComponentStoreFake) GetProjectByContract(_ context.Context, _ int64, contract common.Address) (*appstore.Project, error) {
+func (s *refreshComponentStoreFake) GetProjectByContract(_ context.Context, _ int64, contract common.Address) (*appstore.ProjectRecord, error) {
 	item, ok := s.baseByContract[contract]
 	if !ok {
 		return nil, nil
@@ -98,9 +99,9 @@ func (s *refreshComponentStoreFake) UpsertProjectComponentState(_ context.Contex
 	return nil
 }
 
-func (s *refreshComponentStoreFake) ListProjectMetasByCreatorBefore(_ context.Context, _ int64, creator common.Address, _ uint64, _ uint64) ([]appstore.ProjectMeta, error) {
+func (s *refreshComponentStoreFake) ListProjectMetasByCreatorBefore(_ context.Context, _ int64, creator common.Address, _ uint64, _ uint64) ([]model.Project, error) {
 	items := s.metasByCreatorBefore[creator]
-	return append([]appstore.ProjectMeta(nil), items...), nil
+	return append([]model.Project(nil), items...), nil
 }
 
 func (s *refreshComponentStoreFake) ReplaceProjectCreatorHistoricalProjects(_ context.Context, _ int64, _ common.Address, items []appstore.ProjectCreatorHistoricalProject) error {

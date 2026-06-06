@@ -2,143 +2,12 @@ package store
 
 import (
 	"context"
-	"encoding/json"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/useryege/athena/internal/application/model"
-	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	utilave "github.com/useryege/athena/util/ave"
 )
-
-type ProjectMeta = model.ProjectMeta
-type ProjectAveDetail = model.ProjectAveDetail
-type SimulateResult = model.SimulateResult
-
-type Project struct {
-	ChainID     int64
-	BlockTime   uint64
-	BlockNumber uint64
-	Contract    common.Address
-	Creator     common.Address
-	Tx          *types.Transaction
-	TxHash      common.Hash
-	TxIndex     uint64
-	CreatedAt   time.Time
-}
-
-type ProjectChainState struct {
-	ChainID         int64
-	ProjectContract common.Address
-	ChainState      athenacontract.AthenaProject
-	RawChainState   json.RawMessage
-	WethPair        common.Address
-	UsdtPair        common.Address
-	TokenName       string
-	TokenSymbol     string
-	FetchedAt       time.Time
-	UpdatedAt       time.Time
-}
-
-type ProjectSimulationResult struct {
-	ChainID         int64
-	ProjectContract common.Address
-	Result          SimulateResult
-	FetchedAt       time.Time
-	UpdatedAt       time.Time
-}
-
-type ProjectComponentState struct {
-	ChainID         int64
-	ProjectContract common.Address
-	Component       string
-	Status          string
-	LastAttemptAt   time.Time
-	LastSuccessAt   time.Time
-	NextRunAt       time.Time
-	LastError       string
-	UpdatedAt       time.Time
-}
-
-const (
-	ProjectComponentChainState     = "chain_state"
-	ProjectComponentSimulation     = "simulation"
-	ProjectComponentGenesisWallet  = "genesis_wallet"
-	ProjectComponentCreatorHistory = "creator_history"
-	ProjectComponentAveDetail      = "ave_detail"
-
-	ProjectComponentStatusPending = "pending"
-	ProjectComponentStatusRunning = "running"
-	ProjectComponentStatusSuccess = "success"
-	ProjectComponentStatusFailed  = "failed"
-)
-
-const (
-	ProjectCollectionStatusRequested    = "requested"
-	ProjectCollectionStatusRunning      = "running"
-	ProjectCollectionStatusCompleted    = "completed"
-	ProjectCollectionStatusFailed       = "failed"
-	ProjectCollectionStatusNotRequested = "not_requested"
-)
-
-type ProjectGenesisWallet struct {
-	ID                int64
-	ChainID           int64
-	ProjectContract   common.Address
-	Wallet            common.Address
-	NetAmount         *big.Int
-	RatioBPS          int64
-	RankIndex         int32
-	TotalSupply       *big.Int
-	SourceTxHash      common.Hash
-	SourceBlockNumber uint64
-	CreatedAt         time.Time
-}
-
-type ProjectCreatorHistoricalProject struct {
-	ID                        int64
-	ChainID                   int64
-	ProjectContract           common.Address
-	HistoricalProjectContract common.Address
-	RankIndex                 int32
-	CreatedAt                 time.Time
-}
-
-type ChainInfo struct {
-	ID      int64
-	Name    string
-	Enabled bool
-}
-
-type ChainIngestCheckpoint struct {
-	ChainID              int64
-	ChainName            string
-	Enabled              bool
-	FinalizedBlockNumber uint64
-	FinalizedBlockHash   common.Hash
-	CursorBlockNumber    uint64
-	CursorBlockHash      common.Hash
-	Status               string
-	LockedAt             time.Time
-	LockedBy             string
-	UpdatedAt            time.Time
-}
-
-type ProjectCollectionState struct {
-	ChainID         int64
-	ProjectContract common.Address
-	Status          string
-	WorkflowID      string
-	LastRequestedAt time.Time
-	LastStartedAt   time.Time
-	LastCompletedAt time.Time
-	NextRunAt       time.Time
-	LastError       string
-	UpdatedAt       time.Time
-	ComponentStates []ProjectComponentState
-}
 
 type ChainStore interface {
 	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (*ChainIngestCheckpoint, error)
@@ -169,18 +38,18 @@ type OutboxStore interface {
 }
 
 type ProjectStore interface {
-	SaveProject(ctx context.Context, project Project) error
+	SaveProject(ctx context.Context, project ProjectRecord) error
 	GetMaxProjectBlockNumber(ctx context.Context, chainID int64) (uint64, bool, error)
-	GetProjectByContract(ctx context.Context, chainID int64, contract common.Address) (*Project, error)
-	ListProjects(ctx context.Context, chainID int64) ([]Project, error)
-	ListProjectsPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]Project, int64, int32, int32, error)
-	ListProjectsByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]Project, error)
-	ListProjectMetas(ctx context.Context, chainID int64) ([]ProjectMeta, error)
-	ListProjectMetasByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]ProjectMeta, error)
-	UpdateProjectCreatorResult(ctx context.Context, chainID int64, contract common.Address, result SimulateResult) error
-	ListProjectMetasByCreator(ctx context.Context, chainID int64, creator common.Address) ([]ProjectMeta, error)
-	ListProjectMetasByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectMeta, error)
-	GetProjectMetaByContract(ctx context.Context, chainID int64, contract common.Address) (*ProjectMeta, error)
+	GetProjectByContract(ctx context.Context, chainID int64, contract common.Address) (*ProjectRecord, error)
+	ListProjects(ctx context.Context, chainID int64) ([]ProjectRecord, error)
+	ListProjectsPage(ctx context.Context, chainID int64, page int32, pageSize int32) ([]ProjectRecord, int64, int32, int32, error)
+	ListProjectsByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]ProjectRecord, error)
+	ListProjectMetas(ctx context.Context, chainID int64) ([]model.Project, error)
+	ListProjectMetasByPairAddresses(ctx context.Context, chainID int64, pairs []common.Address) ([]model.Project, error)
+	UpdateProjectCreatorResult(ctx context.Context, chainID int64, contract common.Address, result model.SimulateResult) error
+	ListProjectMetasByCreator(ctx context.Context, chainID int64, creator common.Address) ([]model.Project, error)
+	ListProjectMetasByCreatorBefore(ctx context.Context, chainID int64, creator common.Address, blockNumber uint64, txIndex uint64) ([]model.Project, error)
+	GetProjectMetaByContract(ctx context.Context, chainID int64, contract common.Address) (*model.Project, error)
 }
 
 type ProjectChainStateStore interface {
@@ -202,8 +71,8 @@ type ProjectComponentStateStore interface {
 
 type ProjectAveDetailStore interface {
 	UpsertProjectAveDetail(ctx context.Context, chainID int64, contract common.Address, response *utilave.TokenDetailResponse, fetchedAt time.Time) error
-	GetProjectAveDetail(ctx context.Context, chainID int64, contract common.Address) (*ProjectAveDetail, error)
-	ListProjectAveDetailsByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address]ProjectAveDetail, error)
+	GetProjectAveDetail(ctx context.Context, chainID int64, contract common.Address) (*model.ProjectAveDetail, error)
+	ListProjectAveDetailsByContracts(ctx context.Context, chainID int64, contracts []common.Address) (map[common.Address]model.ProjectAveDetail, error)
 }
 
 type ProjectAveRefreshStore interface {
@@ -252,6 +121,7 @@ type WalletBlacklistStore interface {
 	GetWalletBlacklistEntry(ctx context.Context, wallet common.Address) (*WalletBlacklistEntry, error)
 }
 
+// Store is the aggregate interface for all store operations.
 type Store interface {
 	ChainStore
 	ProjectCollectionStateStore
