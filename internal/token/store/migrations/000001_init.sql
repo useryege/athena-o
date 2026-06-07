@@ -126,6 +126,31 @@ CREATE INDEX IF NOT EXISTS project_related_wallet_project_role_idx
 CREATE INDEX IF NOT EXISTS project_related_wallet_wallet_idx
   ON project_related_wallet (wallet);
 
+CREATE TABLE IF NOT EXISTS project_initial_recipient (
+  id BIGSERIAL PRIMARY KEY,
+  project_id BIGINT NOT NULL,
+  wallet BYTEA NOT NULL,
+  ratio_bps BIGINT NOT NULL,
+  rank_index INT NOT NULL,
+  source_tx_hash BYTEA NOT NULL,
+  source_block_number BIGINT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_initial_recipient_project_fk
+    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_initial_recipient_wallet_len CHECK (length(wallet) = 20),
+  CONSTRAINT project_initial_recipient_source_tx_hash_len CHECK (length(source_tx_hash) = 32),
+  CONSTRAINT project_initial_recipient_ratio_bps_nonnegative CHECK (ratio_bps >= 0),
+  CONSTRAINT project_initial_recipient_rank_index_nonnegative CHECK (rank_index >= 0),
+  CONSTRAINT project_initial_recipient_source_block_number_nonnegative CHECK (source_block_number >= 0),
+  CONSTRAINT project_initial_recipient_project_wallet_uidx UNIQUE (project_id, wallet)
+);
+
+CREATE INDEX IF NOT EXISTS project_initial_recipient_project_rank_idx
+  ON project_initial_recipient (project_id, rank_index);
+
+CREATE INDEX IF NOT EXISTS project_initial_recipient_wallet_ratio_idx
+  ON project_initial_recipient (wallet, ratio_bps DESC, project_id);
+
 CREATE TABLE IF NOT EXISTS wallet_asset_state (
   chain_id BIGINT NOT NULL,
   wallet BYTEA NOT NULL,
@@ -214,13 +239,33 @@ CREATE INDEX IF NOT EXISTS project_simulation_result_risk_idx
     OR can_mint_via_transfer_to_weth_pair
     OR can_mint_via_transfer_to_usdt_pair;
 
+CREATE TABLE IF NOT EXISTS bytecode_blacklist (
+  code_hash BYTEA PRIMARY KEY,
+  note TEXT,
+  source_chain_id BIGINT,
+  source_contract BYTEA,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT bytecode_blacklist_code_hash_len CHECK (length(code_hash) = 32),
+  CONSTRAINT bytecode_blacklist_source_contract_len CHECK (source_contract IS NULL OR length(source_contract) = 20)
+);
+
+CREATE TABLE IF NOT EXISTS wallet_blacklist (
+  wallet BYTEA PRIMARY KEY,
+  note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT wallet_blacklist_wallet_len CHECK (length(wallet) = 20)
+);
+
 -- +goose Down
 
+DROP TABLE IF EXISTS wallet_blacklist;
+DROP TABLE IF EXISTS bytecode_blacklist;
 DROP TABLE IF EXISTS project_data_collection_task;
 DROP TABLE IF EXISTS project_simulation_result;
 DROP TABLE IF EXISTS project_chain_state;
 DROP TABLE IF EXISTS project_ave_data;
 DROP TABLE IF EXISTS wallet_asset_state;
+DROP TABLE IF EXISTS project_initial_recipient;
 DROP TABLE IF EXISTS project_related_wallet;
 DROP TABLE IF EXISTS project;
 DROP TABLE IF EXISTS contract_code;

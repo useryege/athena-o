@@ -8,6 +8,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type BytecodeBlacklist struct {
+	CodeHash       []byte
+	Note           pgtype.Text
+	SourceChainID  pgtype.Int8
+	SourceContract []byte
+	CreatedAt      pgtype.Timestamptz
+}
+
 type Chain struct {
 	ID        int64
 	Name      string
@@ -82,6 +90,17 @@ type ProjectDataCollectionTask struct {
 	CreatedAt     pgtype.Timestamptz
 }
 
+type ProjectInitialRecipient struct {
+	ID                int64
+	ProjectID         int64
+	Wallet            []byte
+	RatioBps          int64
+	RankIndex         int32
+	SourceTxHash      []byte
+	SourceBlockNumber int64
+	CreatedAt         pgtype.Timestamptz
+}
+
 type ProjectRelatedWallet struct {
 	ProjectID int64
 	Wallet    []byte
@@ -111,4 +130,10 @@ type WalletAssetState struct {
 	UsdtValue     pgtype.Numeric
 	FetchedAt     pgtype.Timestamptz
 	CreatedAt     pgtype.Timestamptz
+}
+
+type WalletBlacklist struct {
+	Wallet    []byte
+	Note      pgtype.Text
+	CreatedAt pgtype.Timestamptz
 }

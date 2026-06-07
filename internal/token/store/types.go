@@ -104,6 +104,17 @@ type ProjectRelatedWallet struct {
 	CreatedAt time.Time
 }
 
+type ProjectInitialRecipient struct {
+	ID                int64
+	ProjectID         int64
+	Wallet            common.Address
+	RatioBPS          int64
+	RankIndex         int32
+	SourceTxHash      common.Hash
+	SourceBlockNumber uint64
+	CreatedAt         time.Time
+}
+
 type WalletAssetState struct {
 	ChainID       int64
 	Wallet        common.Address
@@ -126,6 +137,20 @@ type ProjectSimulationResult struct {
 	CanMintViaTransferToUsdtPair       bool
 	FetchedAt                          time.Time
 	CreatedAt                          time.Time
+}
+
+type BytecodeBlacklistEntry struct {
+	CodeHash       common.Hash
+	Note           string
+	SourceChainID  int64
+	SourceContract common.Address
+	CreatedAt      time.Time
+}
+
+type WalletBlacklistEntry struct {
+	Wallet    common.Address
+	Note      string
+	CreatedAt time.Time
 }
 
 type ProjectDataCollectionTask struct {

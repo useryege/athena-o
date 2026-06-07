@@ -73,6 +73,20 @@ func timeValue(value pgtype.Timestamptz) time.Time {
 	return value.Time
 }
 
+func nullableInt64(value int64) pgtype.Int8 {
+	if value == 0 {
+		return pgtype.Int8{}
+	}
+	return pgtype.Int8{Int64: value, Valid: true}
+}
+
+func int64Value(value pgtype.Int8) int64 {
+	if !value.Valid {
+		return 0
+	}
+	return value.Int64
+}
+
 func numericFromBigInt(value *big.Int) pgtype.Numeric {
 	if value == nil {
 		return pgtype.Numeric{Int: new(big.Int), Exp: 0, Valid: true}
@@ -287,6 +301,35 @@ func mapProjectRelatedWallets(rows []tokensqlc.ProjectRelatedWallet) []ProjectRe
 	return items
 }
 
+func mapProjectInitialRecipient(row tokensqlc.ProjectInitialRecipient) (*ProjectInitialRecipient, error) {
+	sourceBlockNumber, err := int64ToUint64("source_block_number", row.SourceBlockNumber)
+	if err != nil {
+		return nil, err
+	}
+	return &ProjectInitialRecipient{
+		ID:                row.ID,
+		ProjectID:         row.ProjectID,
+		Wallet:            bytesToAddress(row.Wallet),
+		RatioBPS:          row.RatioBps,
+		RankIndex:         row.RankIndex,
+		SourceTxHash:      bytesToHash(row.SourceTxHash),
+		SourceBlockNumber: sourceBlockNumber,
+		CreatedAt:         timeValue(row.CreatedAt),
+	}, nil
+}
+
+func mapProjectInitialRecipients(rows []tokensqlc.ProjectInitialRecipient) ([]ProjectInitialRecipient, error) {
+	items := make([]ProjectInitialRecipient, 0, len(rows))
+	for _, row := range rows {
+		item, err := mapProjectInitialRecipient(row)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, *item)
+	}
+	return items, nil
+}
+
 func mapWalletAssetState(row tokensqlc.WalletAssetState) *WalletAssetState {
 	return &WalletAssetState{
 		ChainID:       row.ChainID,
@@ -327,6 +370,40 @@ func mapProjectSimulationResults(rows []tokensqlc.ProjectSimulationResult) []Pro
 	items := make([]ProjectSimulationResult, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, *mapProjectSimulationResult(row))
+	}
+	return items
+}
+
+func mapBytecodeBlacklistEntry(row tokensqlc.BytecodeBlacklist) *BytecodeBlacklistEntry {
+	return &BytecodeBlacklistEntry{
+		CodeHash:       bytesToHash(row.CodeHash),
+		Note:           textValue(row.Note),
+		SourceChainID:  int64Value(row.SourceChainID),
+		SourceContract: bytesToAddress(row.SourceContract),
+		CreatedAt:      timeValue(row.CreatedAt),
+	}
+}
+
+func mapBytecodeBlacklistEntries(rows []tokensqlc.BytecodeBlacklist) []BytecodeBlacklistEntry {
+	items := make([]BytecodeBlacklistEntry, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, *mapBytecodeBlacklistEntry(row))
+	}
+	return items
+}
+
+func mapWalletBlacklistEntry(row tokensqlc.WalletBlacklist) *WalletBlacklistEntry {
+	return &WalletBlacklistEntry{
+		Wallet:    bytesToAddress(row.Wallet),
+		Note:      textValue(row.Note),
+		CreatedAt: timeValue(row.CreatedAt),
+	}
+}
+
+func mapWalletBlacklistEntries(rows []tokensqlc.WalletBlacklist) []WalletBlacklistEntry {
+	items := make([]WalletBlacklistEntry, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, *mapWalletBlacklistEntry(row))
 	}
 	return items
 }
