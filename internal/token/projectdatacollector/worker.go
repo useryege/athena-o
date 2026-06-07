@@ -23,17 +23,16 @@ const (
 )
 
 type Options struct {
-	Store                    *tokenstore.SQLStore
-	EthNodeWSURL             string
-	BSCNodeWSURL             string
-	EthAthenaContract        string
-	BSCAthenaContract        string
-	EthEnabled               bool
-	BSCEnabled               bool
-	NodeWSUseProxy           bool
-	AveAPIKey                string
-	AveAPIBaseURL            string
-	LiquidityLockerAddresses []string
+	Store             *tokenstore.SQLStore
+	EthNodeWSURL      string
+	BSCNodeWSURL      string
+	EthAthenaContract string
+	BSCAthenaContract string
+	EthEnabled        bool
+	BSCEnabled        bool
+	NodeWSUseProxy    bool
+	AveAPIKey         string
+	AveAPIBaseURL     string
 }
 
 type Worker struct {
@@ -76,11 +75,6 @@ func (w *Worker) Start(ctx context.Context) error {
 			return err
 		}
 	}
-	lockers, err := parseAddresses("liquidity locker", w.opts.LiquidityLockerAddresses)
-	if err != nil {
-		return err
-	}
-
 	runCtx, cancel := context.WithCancel(ctx)
 	runner := newDataCollectorRunner(dataCollectorRunnerOptions{
 		store:           w.opts.Store,
@@ -89,7 +83,6 @@ func (w *Worker) Start(ctx context.Context) error {
 		athenaContracts: athenaContracts,
 		nodeWSUseProxy:  w.opts.NodeWSUseProxy,
 		aveClient:       aveClient,
-		lockers:         lockers,
 		pollInterval:    pollInterval,
 	})
 	w.cancel = cancel

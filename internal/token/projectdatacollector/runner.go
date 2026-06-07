@@ -25,7 +25,6 @@ type dataCollectorRunnerOptions struct {
 	athenaContracts map[int64]ethcommon.Address
 	nodeWSUseProxy  bool
 	aveClient       ave.Client
-	lockers         []ethcommon.Address
 	pollInterval    time.Duration
 }
 
@@ -152,15 +151,11 @@ func (r *dataCollectorRunner) processChainStateTaskBatch(ctx context.Context, ch
 		r.failTasks(ctx, tasks, err)
 		return
 	}
-	queries := make([]athenacontract.AthenaProjectQuery, 0, len(tasks))
+	tokenContracts := make([]ethcommon.Address, 0, len(tasks))
 	for _, task := range tasks {
-		queries = append(queries, athenacontract.AthenaProjectQuery{
-			TokenContract:  task.Project.Contract,
-			MsgCaller:      task.Project.Creator,
-			GenesisWallets: []ethcommon.Address{},
-		})
+		tokenContracts = append(tokenContracts, task.Project.Contract)
 	}
-	items, err := caller.List(&bind.CallOpts{Context: ctx}, queries, r.opts.lockers)
+	items, err := caller.ListProjectStates(&bind.CallOpts{Context: ctx}, tokenContracts)
 	if err != nil {
 		r.resetChain(chainID)
 		r.failTasks(ctx, tasks, fmt.Errorf("fetch ATHENA chain state chain_id=%d task_count=%d: %w", chainID, len(tasks), err))
