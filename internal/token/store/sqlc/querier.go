@@ -26,6 +26,8 @@ type Querier interface {
 	DeleteProjectDataCollectionTask(ctx context.Context, arg DeleteProjectDataCollectionTaskParams) (int64, error)
 	DeleteProjectRelatedWallet(ctx context.Context, arg DeleteProjectRelatedWalletParams) (int64, error)
 	DeleteProjectRelatedWalletsByProject(ctx context.Context, projectID int64) (int64, error)
+	DeleteProjectSimulationResult(ctx context.Context, arg DeleteProjectSimulationResultParams) (int64, error)
+	DeleteProjectSimulationResultsByProject(ctx context.Context, projectID int64) (int64, error)
 	DeleteWalletAssetState(ctx context.Context, arg DeleteWalletAssetStateParams) (int64, error)
 	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (GetChainIngestCheckpointRow, error)
 	GetContractCode(ctx context.Context, codeHash []byte) (ContractCode, error)
@@ -36,6 +38,7 @@ type Querier interface {
 	GetProjectCandidateByContract(ctx context.Context, arg GetProjectCandidateByContractParams) (ProjectCandidate, error)
 	GetProjectChainState(ctx context.Context, projectID int64) (ProjectChainState, error)
 	GetProjectDataCollectionTask(ctx context.Context, arg GetProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
+	GetProjectSimulationResult(ctx context.Context, arg GetProjectSimulationResultParams) (ProjectSimulationResult, error)
 	GetWalletAssetState(ctx context.Context, arg GetWalletAssetStateParams) (WalletAssetState, error)
 	InsertProjectDataCollectionTaskIfNotExists(ctx context.Context, arg InsertProjectDataCollectionTaskIfNotExistsParams) error
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
@@ -48,6 +51,8 @@ type Querier interface {
 	ListProjectDataCollectionTasks(ctx context.Context, arg ListProjectDataCollectionTasksParams) ([]ProjectDataCollectionTask, error)
 	ListProjectRelatedWalletsByProject(ctx context.Context, projectID int64) ([]ProjectRelatedWallet, error)
 	ListProjectRelatedWalletsByWallet(ctx context.Context, wallet []byte) ([]ProjectRelatedWallet, error)
+	ListProjectSimulationResultsByProject(ctx context.Context, projectID int64) ([]ProjectSimulationResult, error)
+	ListProjectSimulationResultsByWallet(ctx context.Context, wallet []byte) ([]ProjectSimulationResult, error)
 	ListProjects(ctx context.Context, chainID int64) ([]Project, error)
 	ListProjectsPage(ctx context.Context, arg ListProjectsPageParams) ([]Project, error)
 	ListWalletAssetStatesByWallets(ctx context.Context, arg ListWalletAssetStatesByWalletsParams) ([]WalletAssetState, error)
@@ -64,6 +69,7 @@ type Querier interface {
 	UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) (ProjectChainState, error)
 	UpsertProjectDataCollectionTask(ctx context.Context, arg UpsertProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
 	UpsertProjectRelatedWallet(ctx context.Context, arg UpsertProjectRelatedWalletParams) (ProjectRelatedWallet, error)
+	UpsertProjectSimulationResult(ctx context.Context, arg UpsertProjectSimulationResultParams) (ProjectSimulationResult, error)
 	UpsertWalletAssetState(ctx context.Context, arg UpsertWalletAssetStateParams) (WalletAssetState, error)
 }
 

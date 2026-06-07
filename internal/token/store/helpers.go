@@ -309,6 +309,29 @@ func mapWalletAssetStates(rows []tokensqlc.WalletAssetState) []WalletAssetState 
 	return items
 }
 
+func mapProjectSimulationResult(row tokensqlc.ProjectSimulationResult) *ProjectSimulationResult {
+	return &ProjectSimulationResult{
+		ProjectID:                          row.ProjectID,
+		Wallet:                             bytesToAddress(row.Wallet),
+		CanMintFromDeadViaTransferFrom:     row.CanMintFromDeadViaTransferFrom,
+		CanMintFromZeroViaTransferFrom:     row.CanMintFromZeroViaTransferFrom,
+		CanMintFromWethPairViaTransferFrom: row.CanMintFromWethPairViaTransferFrom,
+		CanMintFromUsdtPairViaTransferFrom: row.CanMintFromUsdtPairViaTransferFrom,
+		CanMintViaTransferToWethPair:       row.CanMintViaTransferToWethPair,
+		CanMintViaTransferToUsdtPair:       row.CanMintViaTransferToUsdtPair,
+		FetchedAt:                          timeValue(row.FetchedAt),
+		CreatedAt:                          timeValue(row.CreatedAt),
+	}
+}
+
+func mapProjectSimulationResults(rows []tokensqlc.ProjectSimulationResult) []ProjectSimulationResult {
+	items := make([]ProjectSimulationResult, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, *mapProjectSimulationResult(row))
+	}
+	return items
+}
+
 func mapProjectDataCollectionTask(row tokensqlc.ProjectDataCollectionTask) *ProjectDataCollectionTask {
 	return &ProjectDataCollectionTask{
 		ProjectID:     row.ProjectID,

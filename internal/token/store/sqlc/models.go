@@ -90,6 +90,19 @@ type ProjectRelatedWallet struct {
 	CreatedAt pgtype.Timestamptz
 }
 
+type ProjectSimulationResult struct {
+	ProjectID                          int64
+	Wallet                             []byte
+	CanMintFromDeadViaTransferFrom     bool
+	CanMintFromZeroViaTransferFrom     bool
+	CanMintFromWethPairViaTransferFrom bool
+	CanMintFromUsdtPairViaTransferFrom bool
+	CanMintViaTransferToWethPair       bool
+	CanMintViaTransferToUsdtPair       bool
+	FetchedAt                          pgtype.Timestamptz
+	CreatedAt                          pgtype.Timestamptz
+}
+
 type WalletAssetState struct {
 	ChainID       int64
 	Wallet        []byte

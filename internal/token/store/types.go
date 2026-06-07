@@ -114,6 +114,19 @@ type WalletAssetState struct {
 	CreatedAt     time.Time
 }
 
+type ProjectSimulationResult struct {
+	ProjectID                          int64
+	Wallet                             common.Address
+	CanMintFromDeadViaTransferFrom     bool
+	CanMintFromZeroViaTransferFrom     bool
+	CanMintFromWethPairViaTransferFrom bool
+	CanMintFromUsdtPairViaTransferFrom bool
+	CanMintViaTransferToWethPair       bool
+	CanMintViaTransferToUsdtPair       bool
+	FetchedAt                          time.Time
+	CreatedAt                          time.Time
+}
+
 type ProjectDataCollectionTask struct {
 	ProjectID     int64
 	DataType      string

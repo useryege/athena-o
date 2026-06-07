@@ -186,9 +186,39 @@ CREATE TABLE IF NOT EXISTS project_chain_state (
   CONSTRAINT project_chain_state_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS project_simulation_result (
+  project_id BIGINT NOT NULL,
+  wallet BYTEA NOT NULL,
+  can_mint_from_dead_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
+  can_mint_from_zero_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
+  can_mint_from_weth_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
+  can_mint_from_usdt_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
+  can_mint_via_transfer_to_weth_pair BOOLEAN NOT NULL DEFAULT false,
+  can_mint_via_transfer_to_usdt_pair BOOLEAN NOT NULL DEFAULT false,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, wallet),
+  CONSTRAINT project_simulation_result_project_fk
+    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_simulation_result_wallet_len CHECK (length(wallet) = 20)
+);
+
+CREATE INDEX IF NOT EXISTS project_simulation_result_wallet_idx
+  ON project_simulation_result (wallet);
+
+CREATE INDEX IF NOT EXISTS project_simulation_result_risk_idx
+  ON project_simulation_result (project_id)
+  WHERE can_mint_from_dead_via_transfer_from
+    OR can_mint_from_zero_via_transfer_from
+    OR can_mint_from_weth_pair_via_transfer_from
+    OR can_mint_from_usdt_pair_via_transfer_from
+    OR can_mint_via_transfer_to_weth_pair
+    OR can_mint_via_transfer_to_usdt_pair;
+
 -- +goose Down
 
 DROP TABLE IF EXISTS project_data_collection_task;
+DROP TABLE IF EXISTS project_simulation_result;
 DROP TABLE IF EXISTS project_chain_state;
 DROP TABLE IF EXISTS project_ave_data;
 DROP TABLE IF EXISTS wallet_asset_state;
