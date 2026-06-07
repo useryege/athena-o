@@ -248,6 +248,23 @@ func mapProjectChainStateData(row tokensqlc.ProjectChainState) *ProjectChainStat
 	}
 }
 
+func mapProjectRelatedWallet(row tokensqlc.ProjectRelatedWallet) *ProjectRelatedWallet {
+	return &ProjectRelatedWallet{
+		ProjectID: row.ProjectID,
+		Wallet:    bytesToAddress(row.Wallet),
+		Role:      row.Role,
+		CreatedAt: timeValue(row.CreatedAt),
+	}
+}
+
+func mapProjectRelatedWallets(rows []tokensqlc.ProjectRelatedWallet) []ProjectRelatedWallet {
+	items := make([]ProjectRelatedWallet, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, *mapProjectRelatedWallet(row))
+	}
+	return items
+}
+
 func mapProjectDataCollectionTask(row tokensqlc.ProjectDataCollectionTask) *ProjectDataCollectionTask {
 	return &ProjectDataCollectionTask{
 		ProjectID:     row.ProjectID,

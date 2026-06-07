@@ -89,6 +89,13 @@ type ProjectChainStateData struct {
 	CreatedAt  time.Time
 }
 
+type ProjectRelatedWallet struct {
+	ProjectID int64
+	Wallet    common.Address
+	Role      string
+	CreatedAt time.Time
+}
+
 type ProjectDataCollectionTask struct {
 	ProjectID     int64
 	DataType      string

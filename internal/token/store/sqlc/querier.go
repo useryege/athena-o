@@ -24,6 +24,8 @@ type Querier interface {
 	DeleteProjectCandidate(ctx context.Context, id int64) (int64, error)
 	DeleteProjectChainState(ctx context.Context, projectID int64) (int64, error)
 	DeleteProjectDataCollectionTask(ctx context.Context, arg DeleteProjectDataCollectionTaskParams) (int64, error)
+	DeleteProjectRelatedWallet(ctx context.Context, arg DeleteProjectRelatedWalletParams) (int64, error)
+	DeleteProjectRelatedWalletsByProject(ctx context.Context, projectID int64) (int64, error)
 	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (GetChainIngestCheckpointRow, error)
 	GetContractCode(ctx context.Context, codeHash []byte) (ContractCode, error)
 	GetProject(ctx context.Context, id int64) (Project, error)
@@ -42,6 +44,8 @@ type Querier interface {
 	ListProjectCandidatesByStatus(ctx context.Context, arg ListProjectCandidatesByStatusParams) ([]ProjectCandidate, error)
 	ListProjectChainStates(ctx context.Context, arg ListProjectChainStatesParams) ([]ProjectChainState, error)
 	ListProjectDataCollectionTasks(ctx context.Context, arg ListProjectDataCollectionTasksParams) ([]ProjectDataCollectionTask, error)
+	ListProjectRelatedWalletsByProject(ctx context.Context, projectID int64) ([]ProjectRelatedWallet, error)
+	ListProjectRelatedWalletsByWallet(ctx context.Context, wallet []byte) ([]ProjectRelatedWallet, error)
 	ListProjects(ctx context.Context, chainID int64) ([]Project, error)
 	ListProjectsPage(ctx context.Context, arg ListProjectsPageParams) ([]Project, error)
 	MarkProjectCandidateStatus(ctx context.Context, arg MarkProjectCandidateStatusParams) (ProjectCandidate, error)
@@ -56,6 +60,7 @@ type Querier interface {
 	UpsertProjectCandidate(ctx context.Context, arg UpsertProjectCandidateParams) (ProjectCandidate, error)
 	UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) (ProjectChainState, error)
 	UpsertProjectDataCollectionTask(ctx context.Context, arg UpsertProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
+	UpsertProjectRelatedWallet(ctx context.Context, arg UpsertProjectRelatedWalletParams) (ProjectRelatedWallet, error)
 }
 
 var _ Querier = (*Queries)(nil)

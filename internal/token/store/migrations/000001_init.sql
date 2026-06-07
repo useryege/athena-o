@@ -109,6 +109,24 @@ CREATE INDEX IF NOT EXISTS project_code_hash_idx
 CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (chain_id, block_number, tx_index, id);
 
+CREATE TABLE IF NOT EXISTS project_related_wallet (
+  project_id BIGINT NOT NULL,
+  wallet BYTEA NOT NULL,
+  role TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, wallet, role),
+  CONSTRAINT project_related_wallet_project_fk
+    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_related_wallet_wallet_len CHECK (length(wallet) = 20),
+  CONSTRAINT project_related_wallet_role_not_empty CHECK (btrim(role) <> '')
+);
+
+CREATE INDEX IF NOT EXISTS project_related_wallet_project_role_idx
+  ON project_related_wallet (project_id, role);
+
+CREATE INDEX IF NOT EXISTS project_related_wallet_wallet_idx
+  ON project_related_wallet (wallet);
+
 CREATE TABLE IF NOT EXISTS project_data_collection_task (
   project_id BIGINT NOT NULL,
   data_type TEXT NOT NULL,
@@ -152,6 +170,7 @@ CREATE TABLE IF NOT EXISTS project_chain_state (
 DROP TABLE IF EXISTS project_data_collection_task;
 DROP TABLE IF EXISTS project_chain_state;
 DROP TABLE IF EXISTS project_ave_data;
+DROP TABLE IF EXISTS project_related_wallet;
 DROP TABLE IF EXISTS project;
 DROP TABLE IF EXISTS contract_code;
 DROP TABLE IF EXISTS project_candidate;

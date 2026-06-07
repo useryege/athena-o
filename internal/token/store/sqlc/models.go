@@ -82,3 +82,10 @@ type ProjectDataCollectionTask struct {
 	LastError     pgtype.Text
 	CreatedAt     pgtype.Timestamptz
 }
+
+type ProjectRelatedWallet struct {
+	ProjectID int64
+	Wallet    []byte
+	Role      string
+	CreatedAt pgtype.Timestamptz
+}
