@@ -28,6 +28,23 @@ message WalletBlacklist {
   string created_at = 3;
 }
 
+message ChainIngestCheckpoint {
+  int64 chain_id = 1;
+  string chain_name = 2;
+  bool enabled = 3;
+  uint64 cursor_block_number = 4;
+  string status = 5;
+  string created_at = 6;
+}
+
+message ContractCode {
+  string code_hash = 1;
+  string source_code = 2;
+  string source_code_hash = 3;
+  string source_code_fetched_at = 4;
+  string created_at = 5;
+}
+
 message GetBytecodeBlacklistRequest {
   string code_hash = 1;
 }
@@ -108,6 +125,61 @@ message DeleteWalletBlacklistResponse {
   int64 deleted_count = 1;
 }
 
+message GetChainIngestCheckpointRequest {
+  int64 chain_id = 1;
+}
+
+message GetChainIngestCheckpointResponse {
+  bool found = 1;
+  ChainIngestCheckpoint checkpoint = 2;
+}
+
+message ListChainIngestCheckpointsRequest {}
+
+message ListChainIngestCheckpointsResponse {
+  repeated ChainIngestCheckpoint checkpoints = 1;
+}
+
+message UpdateChainIngestCheckpointRequest {
+  int64 chain_id = 1;
+  string status = 2;
+}
+
+message UpdateChainIngestCheckpointResponse {
+  bool found = 1;
+  ChainIngestCheckpoint checkpoint = 2;
+}
+
+message GetContractCodeRequest {
+  string code_hash = 1;
+}
+
+message GetContractCodeResponse {
+  bool found = 1;
+  ContractCode contract_code = 2;
+}
+
+message ListContractCodesRequest {
+  string code_hash = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListContractCodesResponse {
+  repeated ContractCode contract_codes = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message DeleteContractCodeRequest {
+  string code_hash = 1;
+}
+
+message DeleteContractCodeResponse {
+  int64 deleted_count = 1;
+}
+
 service TokenAPIService {
   // GetTokenAPIStatus returns the token API service runtime status.
   rpc GetTokenAPIStatus(GetTokenAPIStatusRequest) returns (GetTokenAPIStatusResponse);
@@ -121,4 +193,10 @@ service TokenAPIService {
   rpc CreateWalletBlacklist(CreateWalletBlacklistRequest) returns (CreateWalletBlacklistResponse);
   rpc UpdateWalletBlacklist(UpdateWalletBlacklistRequest) returns (UpdateWalletBlacklistResponse);
   rpc DeleteWalletBlacklist(DeleteWalletBlacklistRequest) returns (DeleteWalletBlacklistResponse);
+  rpc GetChainIngestCheckpoint(GetChainIngestCheckpointRequest) returns (GetChainIngestCheckpointResponse);
+  rpc ListChainIngestCheckpoints(ListChainIngestCheckpointsRequest) returns (ListChainIngestCheckpointsResponse);
+  rpc UpdateChainIngestCheckpoint(UpdateChainIngestCheckpointRequest) returns (UpdateChainIngestCheckpointResponse);
+  rpc GetContractCode(GetContractCodeRequest) returns (GetContractCodeResponse);
+  rpc ListContractCodes(ListContractCodesRequest) returns (ListContractCodesResponse);
+  rpc DeleteContractCode(DeleteContractCodeRequest) returns (DeleteContractCodeResponse);
 }

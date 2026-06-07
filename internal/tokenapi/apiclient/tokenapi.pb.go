@@ -266,6 +266,172 @@ func (m *WalletBlacklist) GetCreatedAt() string {
 	return ""
 }
 
+type ChainIngestCheckpoint struct {
+	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	ChainName            string   `protobuf:"bytes,2,opt,name=chain_name,json=chainName,proto3" json:"chain_name,omitempty"`
+	Enabled              bool     `protobuf:"varint,3,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	CursorBlockNumber    uint64   `protobuf:"varint,4,opt,name=cursor_block_number,json=cursorBlockNumber,proto3" json:"cursor_block_number,omitempty"`
+	Status               string   `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedAt            string   `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ChainIngestCheckpoint) Reset()         { *m = ChainIngestCheckpoint{} }
+func (m *ChainIngestCheckpoint) String() string { return proto.CompactTextString(m) }
+func (*ChainIngestCheckpoint) ProtoMessage()    {}
+func (*ChainIngestCheckpoint) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{4}
+}
+func (m *ChainIngestCheckpoint) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ChainIngestCheckpoint) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ChainIngestCheckpoint.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ChainIngestCheckpoint) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChainIngestCheckpoint.Merge(m, src)
+}
+func (m *ChainIngestCheckpoint) XXX_Size() int {
+	return m.Size()
+}
+func (m *ChainIngestCheckpoint) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChainIngestCheckpoint.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChainIngestCheckpoint proto.InternalMessageInfo
+
+func (m *ChainIngestCheckpoint) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+func (m *ChainIngestCheckpoint) GetChainName() string {
+	if m != nil {
+		return m.ChainName
+	}
+	return ""
+}
+
+func (m *ChainIngestCheckpoint) GetEnabled() bool {
+	if m != nil {
+		return m.Enabled
+	}
+	return false
+}
+
+func (m *ChainIngestCheckpoint) GetCursorBlockNumber() uint64 {
+	if m != nil {
+		return m.CursorBlockNumber
+	}
+	return 0
+}
+
+func (m *ChainIngestCheckpoint) GetStatus() string {
+	if m != nil {
+		return m.Status
+	}
+	return ""
+}
+
+func (m *ChainIngestCheckpoint) GetCreatedAt() string {
+	if m != nil {
+		return m.CreatedAt
+	}
+	return ""
+}
+
+type ContractCode struct {
+	CodeHash             string   `protobuf:"bytes,1,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	SourceCode           string   `protobuf:"bytes,2,opt,name=source_code,json=sourceCode,proto3" json:"source_code,omitempty"`
+	SourceCodeHash       string   `protobuf:"bytes,3,opt,name=source_code_hash,json=sourceCodeHash,proto3" json:"source_code_hash,omitempty"`
+	SourceCodeFetchedAt  string   `protobuf:"bytes,4,opt,name=source_code_fetched_at,json=sourceCodeFetchedAt,proto3" json:"source_code_fetched_at,omitempty"`
+	CreatedAt            string   `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ContractCode) Reset()         { *m = ContractCode{} }
+func (m *ContractCode) String() string { return proto.CompactTextString(m) }
+func (*ContractCode) ProtoMessage()    {}
+func (*ContractCode) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{5}
+}
+func (m *ContractCode) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ContractCode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ContractCode.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ContractCode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ContractCode.Merge(m, src)
+}
+func (m *ContractCode) XXX_Size() int {
+	return m.Size()
+}
+func (m *ContractCode) XXX_DiscardUnknown() {
+	xxx_messageInfo_ContractCode.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ContractCode proto.InternalMessageInfo
+
+func (m *ContractCode) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+func (m *ContractCode) GetSourceCode() string {
+	if m != nil {
+		return m.SourceCode
+	}
+	return ""
+}
+
+func (m *ContractCode) GetSourceCodeHash() string {
+	if m != nil {
+		return m.SourceCodeHash
+	}
+	return ""
+}
+
+func (m *ContractCode) GetSourceCodeFetchedAt() string {
+	if m != nil {
+		return m.SourceCodeFetchedAt
+	}
+	return ""
+}
+
+func (m *ContractCode) GetCreatedAt() string {
+	if m != nil {
+		return m.CreatedAt
+	}
+	return ""
+}
+
 type GetBytecodeBlacklistRequest struct {
 	CodeHash             string   `protobuf:"bytes,1,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -277,7 +443,7 @@ func (m *GetBytecodeBlacklistRequest) Reset()         { *m = GetBytecodeBlacklis
 func (m *GetBytecodeBlacklistRequest) String() string { return proto.CompactTextString(m) }
 func (*GetBytecodeBlacklistRequest) ProtoMessage()    {}
 func (*GetBytecodeBlacklistRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{4}
+	return fileDescriptor_69a9063687639cbc, []int{6}
 }
 func (m *GetBytecodeBlacklistRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -325,7 +491,7 @@ func (m *GetBytecodeBlacklistResponse) Reset()         { *m = GetBytecodeBlackli
 func (m *GetBytecodeBlacklistResponse) String() string { return proto.CompactTextString(m) }
 func (*GetBytecodeBlacklistResponse) ProtoMessage()    {}
 func (*GetBytecodeBlacklistResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{5}
+	return fileDescriptor_69a9063687639cbc, []int{7}
 }
 func (m *GetBytecodeBlacklistResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -378,7 +544,7 @@ func (m *ListBytecodeBlacklistsRequest) Reset()         { *m = ListBytecodeBlack
 func (m *ListBytecodeBlacklistsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodeBlacklistsRequest) ProtoMessage()    {}
 func (*ListBytecodeBlacklistsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{6}
+	return fileDescriptor_69a9063687639cbc, []int{8}
 }
 func (m *ListBytecodeBlacklistsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -418,7 +584,7 @@ func (m *ListBytecodeBlacklistsResponse) Reset()         { *m = ListBytecodeBlac
 func (m *ListBytecodeBlacklistsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListBytecodeBlacklistsResponse) ProtoMessage()    {}
 func (*ListBytecodeBlacklistsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{7}
+	return fileDescriptor_69a9063687639cbc, []int{9}
 }
 func (m *ListBytecodeBlacklistsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -468,7 +634,7 @@ func (m *CreateBytecodeBlacklistRequest) Reset()         { *m = CreateBytecodeBl
 func (m *CreateBytecodeBlacklistRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateBytecodeBlacklistRequest) ProtoMessage()    {}
 func (*CreateBytecodeBlacklistRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{8}
+	return fileDescriptor_69a9063687639cbc, []int{10}
 }
 func (m *CreateBytecodeBlacklistRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -535,7 +701,7 @@ func (m *CreateBytecodeBlacklistResponse) Reset()         { *m = CreateBytecodeB
 func (m *CreateBytecodeBlacklistResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateBytecodeBlacklistResponse) ProtoMessage()    {}
 func (*CreateBytecodeBlacklistResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{9}
+	return fileDescriptor_69a9063687639cbc, []int{11}
 }
 func (m *CreateBytecodeBlacklistResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -576,7 +742,7 @@ func (m *UpdateBytecodeBlacklistRequest) Reset()         { *m = UpdateBytecodeBl
 func (m *UpdateBytecodeBlacklistRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateBytecodeBlacklistRequest) ProtoMessage()    {}
 func (*UpdateBytecodeBlacklistRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{10}
+	return fileDescriptor_69a9063687639cbc, []int{12}
 }
 func (m *UpdateBytecodeBlacklistRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -630,7 +796,7 @@ func (m *UpdateBytecodeBlacklistResponse) Reset()         { *m = UpdateBytecodeB
 func (m *UpdateBytecodeBlacklistResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateBytecodeBlacklistResponse) ProtoMessage()    {}
 func (*UpdateBytecodeBlacklistResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{11}
+	return fileDescriptor_69a9063687639cbc, []int{13}
 }
 func (m *UpdateBytecodeBlacklistResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -677,7 +843,7 @@ func (m *DeleteBytecodeBlacklistRequest) Reset()         { *m = DeleteBytecodeBl
 func (m *DeleteBytecodeBlacklistRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteBytecodeBlacklistRequest) ProtoMessage()    {}
 func (*DeleteBytecodeBlacklistRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{12}
+	return fileDescriptor_69a9063687639cbc, []int{14}
 }
 func (m *DeleteBytecodeBlacklistRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -724,7 +890,7 @@ func (m *DeleteBytecodeBlacklistResponse) Reset()         { *m = DeleteBytecodeB
 func (m *DeleteBytecodeBlacklistResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteBytecodeBlacklistResponse) ProtoMessage()    {}
 func (*DeleteBytecodeBlacklistResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{13}
+	return fileDescriptor_69a9063687639cbc, []int{15}
 }
 func (m *DeleteBytecodeBlacklistResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -771,7 +937,7 @@ func (m *GetWalletBlacklistRequest) Reset()         { *m = GetWalletBlacklistReq
 func (m *GetWalletBlacklistRequest) String() string { return proto.CompactTextString(m) }
 func (*GetWalletBlacklistRequest) ProtoMessage()    {}
 func (*GetWalletBlacklistRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{14}
+	return fileDescriptor_69a9063687639cbc, []int{16}
 }
 func (m *GetWalletBlacklistRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -819,7 +985,7 @@ func (m *GetWalletBlacklistResponse) Reset()         { *m = GetWalletBlacklistRe
 func (m *GetWalletBlacklistResponse) String() string { return proto.CompactTextString(m) }
 func (*GetWalletBlacklistResponse) ProtoMessage()    {}
 func (*GetWalletBlacklistResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{15}
+	return fileDescriptor_69a9063687639cbc, []int{17}
 }
 func (m *GetWalletBlacklistResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -872,7 +1038,7 @@ func (m *ListWalletBlacklistsRequest) Reset()         { *m = ListWalletBlacklist
 func (m *ListWalletBlacklistsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListWalletBlacklistsRequest) ProtoMessage()    {}
 func (*ListWalletBlacklistsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{16}
+	return fileDescriptor_69a9063687639cbc, []int{18}
 }
 func (m *ListWalletBlacklistsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -912,7 +1078,7 @@ func (m *ListWalletBlacklistsResponse) Reset()         { *m = ListWalletBlacklis
 func (m *ListWalletBlacklistsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListWalletBlacklistsResponse) ProtoMessage()    {}
 func (*ListWalletBlacklistsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{17}
+	return fileDescriptor_69a9063687639cbc, []int{19}
 }
 func (m *ListWalletBlacklistsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -960,7 +1126,7 @@ func (m *CreateWalletBlacklistRequest) Reset()         { *m = CreateWalletBlackl
 func (m *CreateWalletBlacklistRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateWalletBlacklistRequest) ProtoMessage()    {}
 func (*CreateWalletBlacklistRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{18}
+	return fileDescriptor_69a9063687639cbc, []int{20}
 }
 func (m *CreateWalletBlacklistRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1013,7 +1179,7 @@ func (m *CreateWalletBlacklistResponse) Reset()         { *m = CreateWalletBlack
 func (m *CreateWalletBlacklistResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateWalletBlacklistResponse) ProtoMessage()    {}
 func (*CreateWalletBlacklistResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{19}
+	return fileDescriptor_69a9063687639cbc, []int{21}
 }
 func (m *CreateWalletBlacklistResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1054,7 +1220,7 @@ func (m *UpdateWalletBlacklistRequest) Reset()         { *m = UpdateWalletBlackl
 func (m *UpdateWalletBlacklistRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateWalletBlacklistRequest) ProtoMessage()    {}
 func (*UpdateWalletBlacklistRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{20}
+	return fileDescriptor_69a9063687639cbc, []int{22}
 }
 func (m *UpdateWalletBlacklistRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1108,7 +1274,7 @@ func (m *UpdateWalletBlacklistResponse) Reset()         { *m = UpdateWalletBlack
 func (m *UpdateWalletBlacklistResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateWalletBlacklistResponse) ProtoMessage()    {}
 func (*UpdateWalletBlacklistResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{21}
+	return fileDescriptor_69a9063687639cbc, []int{23}
 }
 func (m *UpdateWalletBlacklistResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1155,7 +1321,7 @@ func (m *DeleteWalletBlacklistRequest) Reset()         { *m = DeleteWalletBlackl
 func (m *DeleteWalletBlacklistRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteWalletBlacklistRequest) ProtoMessage()    {}
 func (*DeleteWalletBlacklistRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{22}
+	return fileDescriptor_69a9063687639cbc, []int{24}
 }
 func (m *DeleteWalletBlacklistRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1202,7 +1368,7 @@ func (m *DeleteWalletBlacklistResponse) Reset()         { *m = DeleteWalletBlack
 func (m *DeleteWalletBlacklistResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteWalletBlacklistResponse) ProtoMessage()    {}
 func (*DeleteWalletBlacklistResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_69a9063687639cbc, []int{23}
+	return fileDescriptor_69a9063687639cbc, []int{25}
 }
 func (m *DeleteWalletBlacklistResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1238,11 +1404,641 @@ func (m *DeleteWalletBlacklistResponse) GetDeletedCount() int64 {
 	return 0
 }
 
+type GetChainIngestCheckpointRequest struct {
+	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetChainIngestCheckpointRequest) Reset()         { *m = GetChainIngestCheckpointRequest{} }
+func (m *GetChainIngestCheckpointRequest) String() string { return proto.CompactTextString(m) }
+func (*GetChainIngestCheckpointRequest) ProtoMessage()    {}
+func (*GetChainIngestCheckpointRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{26}
+}
+func (m *GetChainIngestCheckpointRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetChainIngestCheckpointRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetChainIngestCheckpointRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetChainIngestCheckpointRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetChainIngestCheckpointRequest.Merge(m, src)
+}
+func (m *GetChainIngestCheckpointRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetChainIngestCheckpointRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetChainIngestCheckpointRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetChainIngestCheckpointRequest proto.InternalMessageInfo
+
+func (m *GetChainIngestCheckpointRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+type GetChainIngestCheckpointResponse struct {
+	Found                bool                   `protobuf:"varint,1,opt,name=found,proto3" json:"found,omitempty"`
+	Checkpoint           *ChainIngestCheckpoint `protobuf:"bytes,2,opt,name=checkpoint,proto3" json:"checkpoint,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
+}
+
+func (m *GetChainIngestCheckpointResponse) Reset()         { *m = GetChainIngestCheckpointResponse{} }
+func (m *GetChainIngestCheckpointResponse) String() string { return proto.CompactTextString(m) }
+func (*GetChainIngestCheckpointResponse) ProtoMessage()    {}
+func (*GetChainIngestCheckpointResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{27}
+}
+func (m *GetChainIngestCheckpointResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetChainIngestCheckpointResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetChainIngestCheckpointResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetChainIngestCheckpointResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetChainIngestCheckpointResponse.Merge(m, src)
+}
+func (m *GetChainIngestCheckpointResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetChainIngestCheckpointResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetChainIngestCheckpointResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetChainIngestCheckpointResponse proto.InternalMessageInfo
+
+func (m *GetChainIngestCheckpointResponse) GetFound() bool {
+	if m != nil {
+		return m.Found
+	}
+	return false
+}
+
+func (m *GetChainIngestCheckpointResponse) GetCheckpoint() *ChainIngestCheckpoint {
+	if m != nil {
+		return m.Checkpoint
+	}
+	return nil
+}
+
+type ListChainIngestCheckpointsRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListChainIngestCheckpointsRequest) Reset()         { *m = ListChainIngestCheckpointsRequest{} }
+func (m *ListChainIngestCheckpointsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListChainIngestCheckpointsRequest) ProtoMessage()    {}
+func (*ListChainIngestCheckpointsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{28}
+}
+func (m *ListChainIngestCheckpointsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListChainIngestCheckpointsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListChainIngestCheckpointsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListChainIngestCheckpointsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListChainIngestCheckpointsRequest.Merge(m, src)
+}
+func (m *ListChainIngestCheckpointsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListChainIngestCheckpointsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListChainIngestCheckpointsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListChainIngestCheckpointsRequest proto.InternalMessageInfo
+
+type ListChainIngestCheckpointsResponse struct {
+	Checkpoints          []*ChainIngestCheckpoint `protobuf:"bytes,1,rep,name=checkpoints,proto3" json:"checkpoints,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
+}
+
+func (m *ListChainIngestCheckpointsResponse) Reset()         { *m = ListChainIngestCheckpointsResponse{} }
+func (m *ListChainIngestCheckpointsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListChainIngestCheckpointsResponse) ProtoMessage()    {}
+func (*ListChainIngestCheckpointsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{29}
+}
+func (m *ListChainIngestCheckpointsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListChainIngestCheckpointsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListChainIngestCheckpointsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListChainIngestCheckpointsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListChainIngestCheckpointsResponse.Merge(m, src)
+}
+func (m *ListChainIngestCheckpointsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListChainIngestCheckpointsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListChainIngestCheckpointsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListChainIngestCheckpointsResponse proto.InternalMessageInfo
+
+func (m *ListChainIngestCheckpointsResponse) GetCheckpoints() []*ChainIngestCheckpoint {
+	if m != nil {
+		return m.Checkpoints
+	}
+	return nil
+}
+
+type UpdateChainIngestCheckpointRequest struct {
+	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	Status               string   `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UpdateChainIngestCheckpointRequest) Reset()         { *m = UpdateChainIngestCheckpointRequest{} }
+func (m *UpdateChainIngestCheckpointRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateChainIngestCheckpointRequest) ProtoMessage()    {}
+func (*UpdateChainIngestCheckpointRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{30}
+}
+func (m *UpdateChainIngestCheckpointRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateChainIngestCheckpointRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateChainIngestCheckpointRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateChainIngestCheckpointRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateChainIngestCheckpointRequest.Merge(m, src)
+}
+func (m *UpdateChainIngestCheckpointRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateChainIngestCheckpointRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateChainIngestCheckpointRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateChainIngestCheckpointRequest proto.InternalMessageInfo
+
+func (m *UpdateChainIngestCheckpointRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+func (m *UpdateChainIngestCheckpointRequest) GetStatus() string {
+	if m != nil {
+		return m.Status
+	}
+	return ""
+}
+
+type UpdateChainIngestCheckpointResponse struct {
+	Found                bool                   `protobuf:"varint,1,opt,name=found,proto3" json:"found,omitempty"`
+	Checkpoint           *ChainIngestCheckpoint `protobuf:"bytes,2,opt,name=checkpoint,proto3" json:"checkpoint,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
+}
+
+func (m *UpdateChainIngestCheckpointResponse) Reset()         { *m = UpdateChainIngestCheckpointResponse{} }
+func (m *UpdateChainIngestCheckpointResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateChainIngestCheckpointResponse) ProtoMessage()    {}
+func (*UpdateChainIngestCheckpointResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{31}
+}
+func (m *UpdateChainIngestCheckpointResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateChainIngestCheckpointResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateChainIngestCheckpointResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateChainIngestCheckpointResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateChainIngestCheckpointResponse.Merge(m, src)
+}
+func (m *UpdateChainIngestCheckpointResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateChainIngestCheckpointResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateChainIngestCheckpointResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateChainIngestCheckpointResponse proto.InternalMessageInfo
+
+func (m *UpdateChainIngestCheckpointResponse) GetFound() bool {
+	if m != nil {
+		return m.Found
+	}
+	return false
+}
+
+func (m *UpdateChainIngestCheckpointResponse) GetCheckpoint() *ChainIngestCheckpoint {
+	if m != nil {
+		return m.Checkpoint
+	}
+	return nil
+}
+
+type GetContractCodeRequest struct {
+	CodeHash             string   `protobuf:"bytes,1,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetContractCodeRequest) Reset()         { *m = GetContractCodeRequest{} }
+func (m *GetContractCodeRequest) String() string { return proto.CompactTextString(m) }
+func (*GetContractCodeRequest) ProtoMessage()    {}
+func (*GetContractCodeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{32}
+}
+func (m *GetContractCodeRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetContractCodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetContractCodeRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetContractCodeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetContractCodeRequest.Merge(m, src)
+}
+func (m *GetContractCodeRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetContractCodeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetContractCodeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetContractCodeRequest proto.InternalMessageInfo
+
+func (m *GetContractCodeRequest) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+type GetContractCodeResponse struct {
+	Found                bool          `protobuf:"varint,1,opt,name=found,proto3" json:"found,omitempty"`
+	ContractCode         *ContractCode `protobuf:"bytes,2,opt,name=contract_code,json=contractCode,proto3" json:"contract_code,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *GetContractCodeResponse) Reset()         { *m = GetContractCodeResponse{} }
+func (m *GetContractCodeResponse) String() string { return proto.CompactTextString(m) }
+func (*GetContractCodeResponse) ProtoMessage()    {}
+func (*GetContractCodeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{33}
+}
+func (m *GetContractCodeResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetContractCodeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetContractCodeResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetContractCodeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetContractCodeResponse.Merge(m, src)
+}
+func (m *GetContractCodeResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetContractCodeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetContractCodeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetContractCodeResponse proto.InternalMessageInfo
+
+func (m *GetContractCodeResponse) GetFound() bool {
+	if m != nil {
+		return m.Found
+	}
+	return false
+}
+
+func (m *GetContractCodeResponse) GetContractCode() *ContractCode {
+	if m != nil {
+		return m.ContractCode
+	}
+	return nil
+}
+
+type ListContractCodesRequest struct {
+	CodeHash             string   `protobuf:"bytes,1,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	Page                 int32    `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32    `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListContractCodesRequest) Reset()         { *m = ListContractCodesRequest{} }
+func (m *ListContractCodesRequest) String() string { return proto.CompactTextString(m) }
+func (*ListContractCodesRequest) ProtoMessage()    {}
+func (*ListContractCodesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{34}
+}
+func (m *ListContractCodesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListContractCodesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListContractCodesRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListContractCodesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListContractCodesRequest.Merge(m, src)
+}
+func (m *ListContractCodesRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListContractCodesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListContractCodesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListContractCodesRequest proto.InternalMessageInfo
+
+func (m *ListContractCodesRequest) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+func (m *ListContractCodesRequest) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListContractCodesRequest) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+type ListContractCodesResponse struct {
+	ContractCodes        []*ContractCode `protobuf:"bytes,1,rep,name=contract_codes,json=contractCodes,proto3" json:"contract_codes,omitempty"`
+	Total                int64           `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page                 int32           `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32           `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
+}
+
+func (m *ListContractCodesResponse) Reset()         { *m = ListContractCodesResponse{} }
+func (m *ListContractCodesResponse) String() string { return proto.CompactTextString(m) }
+func (*ListContractCodesResponse) ProtoMessage()    {}
+func (*ListContractCodesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{35}
+}
+func (m *ListContractCodesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListContractCodesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListContractCodesResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListContractCodesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListContractCodesResponse.Merge(m, src)
+}
+func (m *ListContractCodesResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListContractCodesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListContractCodesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListContractCodesResponse proto.InternalMessageInfo
+
+func (m *ListContractCodesResponse) GetContractCodes() []*ContractCode {
+	if m != nil {
+		return m.ContractCodes
+	}
+	return nil
+}
+
+func (m *ListContractCodesResponse) GetTotal() int64 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *ListContractCodesResponse) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListContractCodesResponse) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+type DeleteContractCodeRequest struct {
+	CodeHash             string   `protobuf:"bytes,1,opt,name=code_hash,json=codeHash,proto3" json:"code_hash,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteContractCodeRequest) Reset()         { *m = DeleteContractCodeRequest{} }
+func (m *DeleteContractCodeRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteContractCodeRequest) ProtoMessage()    {}
+func (*DeleteContractCodeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{36}
+}
+func (m *DeleteContractCodeRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteContractCodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteContractCodeRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteContractCodeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteContractCodeRequest.Merge(m, src)
+}
+func (m *DeleteContractCodeRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteContractCodeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteContractCodeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteContractCodeRequest proto.InternalMessageInfo
+
+func (m *DeleteContractCodeRequest) GetCodeHash() string {
+	if m != nil {
+		return m.CodeHash
+	}
+	return ""
+}
+
+type DeleteContractCodeResponse struct {
+	DeletedCount         int64    `protobuf:"varint,1,opt,name=deleted_count,json=deletedCount,proto3" json:"deleted_count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteContractCodeResponse) Reset()         { *m = DeleteContractCodeResponse{} }
+func (m *DeleteContractCodeResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteContractCodeResponse) ProtoMessage()    {}
+func (*DeleteContractCodeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_69a9063687639cbc, []int{37}
+}
+func (m *DeleteContractCodeResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteContractCodeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteContractCodeResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteContractCodeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteContractCodeResponse.Merge(m, src)
+}
+func (m *DeleteContractCodeResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteContractCodeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteContractCodeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteContractCodeResponse proto.InternalMessageInfo
+
+func (m *DeleteContractCodeResponse) GetDeletedCount() int64 {
+	if m != nil {
+		return m.DeletedCount
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*GetTokenAPIStatusRequest)(nil), "athena.internal.tokenapi.GetTokenAPIStatusRequest")
 	proto.RegisterType((*GetTokenAPIStatusResponse)(nil), "athena.internal.tokenapi.GetTokenAPIStatusResponse")
 	proto.RegisterType((*BytecodeBlacklist)(nil), "athena.internal.tokenapi.BytecodeBlacklist")
 	proto.RegisterType((*WalletBlacklist)(nil), "athena.internal.tokenapi.WalletBlacklist")
+	proto.RegisterType((*ChainIngestCheckpoint)(nil), "athena.internal.tokenapi.ChainIngestCheckpoint")
+	proto.RegisterType((*ContractCode)(nil), "athena.internal.tokenapi.ContractCode")
 	proto.RegisterType((*GetBytecodeBlacklistRequest)(nil), "athena.internal.tokenapi.GetBytecodeBlacklistRequest")
 	proto.RegisterType((*GetBytecodeBlacklistResponse)(nil), "athena.internal.tokenapi.GetBytecodeBlacklistResponse")
 	proto.RegisterType((*ListBytecodeBlacklistsRequest)(nil), "athena.internal.tokenapi.ListBytecodeBlacklistsRequest")
@@ -1263,64 +2059,106 @@ func init() {
 	proto.RegisterType((*UpdateWalletBlacklistResponse)(nil), "athena.internal.tokenapi.UpdateWalletBlacklistResponse")
 	proto.RegisterType((*DeleteWalletBlacklistRequest)(nil), "athena.internal.tokenapi.DeleteWalletBlacklistRequest")
 	proto.RegisterType((*DeleteWalletBlacklistResponse)(nil), "athena.internal.tokenapi.DeleteWalletBlacklistResponse")
+	proto.RegisterType((*GetChainIngestCheckpointRequest)(nil), "athena.internal.tokenapi.GetChainIngestCheckpointRequest")
+	proto.RegisterType((*GetChainIngestCheckpointResponse)(nil), "athena.internal.tokenapi.GetChainIngestCheckpointResponse")
+	proto.RegisterType((*ListChainIngestCheckpointsRequest)(nil), "athena.internal.tokenapi.ListChainIngestCheckpointsRequest")
+	proto.RegisterType((*ListChainIngestCheckpointsResponse)(nil), "athena.internal.tokenapi.ListChainIngestCheckpointsResponse")
+	proto.RegisterType((*UpdateChainIngestCheckpointRequest)(nil), "athena.internal.tokenapi.UpdateChainIngestCheckpointRequest")
+	proto.RegisterType((*UpdateChainIngestCheckpointResponse)(nil), "athena.internal.tokenapi.UpdateChainIngestCheckpointResponse")
+	proto.RegisterType((*GetContractCodeRequest)(nil), "athena.internal.tokenapi.GetContractCodeRequest")
+	proto.RegisterType((*GetContractCodeResponse)(nil), "athena.internal.tokenapi.GetContractCodeResponse")
+	proto.RegisterType((*ListContractCodesRequest)(nil), "athena.internal.tokenapi.ListContractCodesRequest")
+	proto.RegisterType((*ListContractCodesResponse)(nil), "athena.internal.tokenapi.ListContractCodesResponse")
+	proto.RegisterType((*DeleteContractCodeRequest)(nil), "athena.internal.tokenapi.DeleteContractCodeRequest")
+	proto.RegisterType((*DeleteContractCodeResponse)(nil), "athena.internal.tokenapi.DeleteContractCodeResponse")
 }
 
 func init() { proto.RegisterFile("internal/tokenapi/tokenapi.proto", fileDescriptor_69a9063687639cbc) }
 
 var fileDescriptor_69a9063687639cbc = []byte{
-	// 822 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x97, 0xff, 0x6a, 0x13, 0x41,
-	0x10, 0xc7, 0x59, 0xd3, 0xd6, 0x66, 0x6c, 0x4d, 0xb3, 0xd6, 0x7a, 0xa6, 0xf9, 0xe5, 0x09, 0x5a,
-	0x11, 0x12, 0x68, 0x35, 0x55, 0xc1, 0x3f, 0xda, 0x06, 0x6b, 0x8b, 0x82, 0xc6, 0xaa, 0x50, 0x0a,
-	0x61, 0x73, 0xb7, 0x36, 0x47, 0xe3, 0x5d, 0xbc, 0xdd, 0x6b, 0x29, 0x88, 0x82, 0x20, 0x14, 0x04,
-	0xf1, 0x19, 0x7c, 0x06, 0x1f, 0xc2, 0x3f, 0x7d, 0x04, 0xe9, 0x93, 0xc8, 0xdd, 0x6d, 0xd2, 0xf6,
-	0xee, 0x76, 0xcb, 0x95, 0xe2, 0x7f, 0xd9, 0xb9, 0x99, 0xb9, 0x4f, 0x66, 0x67, 0xe6, 0xcb, 0x41,
-	0xd5, 0xb2, 0x39, 0x75, 0x6d, 0xd2, 0xab, 0x73, 0x67, 0x87, 0xda, 0xa4, 0x6f, 0x0d, 0x7f, 0xd4,
-	0xfa, 0xae, 0xc3, 0x1d, 0xac, 0x11, 0xde, 0xa5, 0x36, 0xa9, 0x0d, 0x1c, 0x6b, 0x83, 0xe7, 0x7a,
-	0x01, 0xb4, 0x55, 0xca, 0x37, 0xfc, 0xe3, 0xd2, 0x8b, 0xb5, 0x57, 0x9c, 0x70, 0x8f, 0xb5, 0xe8,
-	0x07, 0x8f, 0x32, 0xae, 0x3f, 0x87, 0xeb, 0x09, 0xcf, 0x58, 0xdf, 0xb1, 0x19, 0xc5, 0x1a, 0x5c,
-	0x64, 0x9c, 0xb8, 0x9c, 0x9a, 0x1a, 0xaa, 0xa2, 0xb9, 0xf1, 0xd6, 0xe0, 0x88, 0x67, 0x60, 0x8c,
-	0x05, 0xbe, 0xda, 0x85, 0x2a, 0x9a, 0xcb, 0xb6, 0xc4, 0x49, 0xff, 0x85, 0x20, 0xbf, 0xbc, 0xcf,
-	0xa9, 0xe1, 0x98, 0x74, 0xb9, 0x47, 0x8c, 0x9d, 0x9e, 0xc5, 0x38, 0x9e, 0x85, 0xac, 0x6f, 0x68,
-	0x77, 0x09, 0xeb, 0x06, 0x99, 0xb2, 0xad, 0x71, 0xdf, 0xf0, 0x94, 0xb0, 0x2e, 0xc6, 0x30, 0x62,
-	0x3b, 0x9c, 0x8a, 0x44, 0xc1, 0x6f, 0x7c, 0x0b, 0x72, 0xcc, 0xf1, 0x5c, 0x83, 0xb6, 0x8d, 0x2e,
-	0xb1, 0xec, 0xb6, 0x65, 0x6a, 0x99, 0x2a, 0x9a, 0xcb, 0xb4, 0x26, 0x43, 0xf3, 0x8a, 0x6f, 0x5d,
-	0x33, 0xf1, 0xed, 0x23, 0x3f, 0xc7, 0xe6, 0x2e, 0x31, 0xb8, 0x36, 0x12, 0xa4, 0xb9, 0x2c, 0xfc,
-	0x84, 0x15, 0x97, 0x00, 0x0c, 0x97, 0x12, 0x4e, 0xcd, 0x36, 0xe1, 0xda, 0x68, 0xe0, 0x93, 0x15,
-	0x96, 0x25, 0xae, 0x6f, 0x41, 0xee, 0x2d, 0xe9, 0xf5, 0x28, 0x3f, 0x62, 0x9e, 0x81, 0xb1, 0xbd,
-	0xc0, 0x24, 0x80, 0xc5, 0x29, 0x11, 0xf7, 0x64, 0xf6, 0x4c, 0x34, 0xfb, 0x23, 0x98, 0x5d, 0xa5,
-	0x3c, 0x56, 0x16, 0x71, 0x05, 0xca, 0xea, 0xe8, 0x3f, 0x10, 0x14, 0x93, 0x83, 0xc5, 0x1d, 0x4d,
-	0xc3, 0xe8, 0x3b, 0xc7, 0xb3, 0x07, 0x37, 0x14, 0x1e, 0xf0, 0x26, 0xe0, 0x8e, 0x08, 0x69, 0x77,
-	0x06, 0x31, 0x01, 0xf3, 0xa5, 0xf9, 0xbb, 0x35, 0x59, 0xa7, 0xd4, 0xe2, 0xaf, 0xc9, 0x77, 0xa2,
-	0x26, 0xbd, 0x02, 0xa5, 0x67, 0x16, 0x8b, 0x23, 0x0d, 0x7b, 0xea, 0x13, 0x94, 0x65, 0x0e, 0x02,
-	0x7a, 0x0b, 0xae, 0xc4, 0xf1, 0x98, 0x86, 0xaa, 0x99, 0xb4, 0x7c, 0x38, 0xc6, 0xc7, 0xf4, 0x9f,
-	0x08, 0xca, 0x2b, 0x41, 0xf5, 0xcf, 0x54, 0xf3, 0xff, 0xd2, 0x91, 0xfa, 0x0d, 0xa8, 0x48, 0x19,
-	0xc3, 0x2a, 0xe9, 0x2f, 0xa1, 0xfc, 0xba, 0x6f, 0x9e, 0xe7, 0xdf, 0xd0, 0x9f, 0x40, 0x45, 0x9a,
-	0x52, 0xdc, 0xcd, 0x4d, 0x98, 0xf4, 0x02, 0x17, 0xb3, 0x6d, 0x38, 0x9e, 0x1d, 0xf6, 0x7f, 0xa6,
-	0x35, 0x21, 0x8c, 0x2b, 0xbe, 0x4d, 0x7f, 0x0c, 0xe5, 0x26, 0xed, 0xd1, 0x33, 0xa2, 0xf9, 0x18,
-	0xd2, 0xf0, 0x23, 0x0c, 0x33, 0x70, 0x89, 0x60, 0x08, 0x63, 0x88, 0xb1, 0x10, 0x6c, 0xaf, 0xc8,
-	0xe8, 0x0e, 0x08, 0x24, 0x13, 0xac, 0x1f, 0x20, 0x28, 0x24, 0x45, 0x29, 0x07, 0x6a, 0x03, 0xa6,
-	0xc2, 0xf0, 0xd8, 0x38, 0xdd, 0x91, 0xb7, 0x6b, 0xf4, 0x15, 0xb9, 0xbd, 0x93, 0x06, 0xbd, 0x04,
-	0xb3, 0xfe, 0xa4, 0x44, 0xfc, 0x86, 0x83, 0xb4, 0x0b, 0xc5, 0xe4, 0xc7, 0x02, 0xf5, 0x0d, 0xe4,
-	0xa3, 0x50, 0x83, 0x21, 0x4a, 0x41, 0x35, 0x15, 0xa1, 0x62, 0xfa, 0x3a, 0x14, 0xc3, 0xde, 0x4c,
-	0x57, 0xd9, 0xc4, 0x8e, 0xab, 0x40, 0x49, 0x92, 0x4b, 0x74, 0xf9, 0x3a, 0x14, 0xc3, 0x96, 0x3c,
-	0x87, 0x97, 0x35, 0xa1, 0x24, 0xc9, 0x95, 0xa6, 0xb9, 0x1b, 0x50, 0x0c, 0xbb, 0x33, 0x65, 0x63,
-	0x35, 0xa1, 0x24, 0x89, 0x4b, 0xd1, 0xd3, 0xf3, 0x5f, 0x26, 0x20, 0x37, 0xd4, 0x63, 0xea, 0xee,
-	0x5a, 0x06, 0xc5, 0x1f, 0x21, 0x1f, 0x53, 0x69, 0x3c, 0x2f, 0xbf, 0x62, 0x99, 0xdc, 0x17, 0x16,
-	0x52, 0xc5, 0x08, 0xec, 0xaf, 0x08, 0xa6, 0x93, 0x34, 0x08, 0xdf, 0x57, 0x66, 0x93, 0xad, 0x86,
-	0x42, 0x23, 0x6d, 0x98, 0xe0, 0xf8, 0x86, 0x60, 0x26, 0x59, 0x58, 0xf0, 0xa2, 0x3c, 0xa5, 0x52,
-	0xab, 0x0a, 0x0f, 0xd2, 0x07, 0x0a, 0x9a, 0xef, 0x08, 0xae, 0x49, 0x36, 0x38, 0x56, 0x64, 0x55,
-	0x0b, 0x53, 0xe1, 0xe1, 0x19, 0x22, 0x8f, 0x01, 0x49, 0x96, 0xbb, 0x0a, 0x48, 0x2d, 0x31, 0x2a,
-	0xa0, 0xd3, 0x94, 0xc4, 0x07, 0x92, 0xac, 0x79, 0x15, 0x90, 0x5a, 0x58, 0x54, 0x40, 0xa7, 0x69,
-	0xca, 0x67, 0xc0, 0xf1, 0xc5, 0x8f, 0xd5, 0x33, 0x91, 0xbc, 0x03, 0x0a, 0xf7, 0xd2, 0x05, 0x1d,
-	0x9b, 0xa4, 0xa4, 0x8d, 0xae, 0x9a, 0x24, 0x85, 0x40, 0xa8, 0x26, 0x49, 0x29, 0x1c, 0x07, 0x08,
-	0xae, 0x26, 0x6e, 0x65, 0xdc, 0x38, 0xad, 0xff, 0x24, 0xf5, 0x58, 0x4c, 0x1d, 0x77, 0x0c, 0x25,
-	0x71, 0x67, 0xab, 0x50, 0x54, 0x82, 0xa1, 0x42, 0x51, 0x8b, 0x83, 0x8f, 0x92, 0xb8, 0xc0, 0x55,
-	0x28, 0x2a, 0xa5, 0x50, 0xa1, 0x28, 0x95, 0x62, 0xb9, 0xf9, 0xfb, 0xb0, 0x8c, 0xfe, 0x1c, 0x96,
-	0xd1, 0xdf, 0xc3, 0x32, 0xda, 0x6c, 0x6c, 0x5b, 0xbc, 0xeb, 0x75, 0x6a, 0x86, 0xf3, 0xbe, 0xee,
-	0x31, 0xea, 0xee, 0xd3, 0x6d, 0x5a, 0x0f, 0x33, 0xd7, 0xe3, 0xdf, 0x85, 0xa4, 0x6f, 0x19, 0x3d,
-	0x8b, 0xda, 0xbc, 0x33, 0x16, 0x7c, 0x19, 0x2e, 0xfc, 0x0b, 0x00, 0x00, 0xff, 0xff, 0xad, 0xf9,
-	0x7e, 0x63, 0x3d, 0x0e, 0x00, 0x00,
+	// 1309 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x58, 0xdd, 0x6e, 0xdc, 0x44,
+	0x14, 0xd6, 0xb0, 0x49, 0x9a, 0x9c, 0x34, 0x4d, 0x77, 0xda, 0xa6, 0x1b, 0x27, 0xfb, 0x53, 0x47,
+	0x2a, 0x41, 0x48, 0x1b, 0x48, 0x68, 0xfa, 0x43, 0x7a, 0x91, 0x1f, 0x35, 0xb4, 0xd0, 0x42, 0xb7,
+	0x85, 0x4a, 0x55, 0xa5, 0x95, 0xd7, 0x9e, 0x66, 0xad, 0x6c, 0xec, 0xc5, 0x9e, 0x4d, 0xd4, 0x2a,
+	0xa2, 0x57, 0x48, 0x45, 0x20, 0x04, 0x57, 0x48, 0x5c, 0xf2, 0x06, 0x48, 0x3c, 0x02, 0x17, 0x88,
+	0x2b, 0xc4, 0x13, 0xa0, 0x3c, 0x09, 0xf2, 0x78, 0xbc, 0xeb, 0xd8, 0x9e, 0x93, 0x78, 0x55, 0xf5,
+	0x6a, 0x77, 0xce, 0x9c, 0x73, 0xe6, 0x3b, 0x7f, 0xe3, 0xcf, 0x86, 0x9a, 0xed, 0x70, 0xe6, 0x39,
+	0x46, 0x67, 0x89, 0xbb, 0xbb, 0xcc, 0x31, 0xba, 0x76, 0xff, 0x4f, 0xbd, 0xeb, 0xb9, 0xdc, 0xa5,
+	0x25, 0x83, 0xb7, 0x99, 0x63, 0xd4, 0x23, 0xc5, 0x7a, 0xb4, 0xaf, 0x6b, 0x50, 0xda, 0x66, 0xfc,
+	0x71, 0xb0, 0x5c, 0xff, 0xe2, 0xee, 0x23, 0x6e, 0xf0, 0x9e, 0xdf, 0x60, 0x5f, 0xf7, 0x98, 0xcf,
+	0xf5, 0xfb, 0x30, 0x9b, 0xb1, 0xe7, 0x77, 0x5d, 0xc7, 0x67, 0xb4, 0x04, 0x67, 0x7c, 0x6e, 0x78,
+	0x9c, 0x59, 0x25, 0x52, 0x23, 0x8b, 0xe3, 0x8d, 0x68, 0x49, 0x67, 0x60, 0xcc, 0x17, 0xba, 0xa5,
+	0x77, 0x6a, 0x64, 0x71, 0xa2, 0x21, 0x57, 0xfa, 0x1f, 0x04, 0x8a, 0x1b, 0x2f, 0x38, 0x33, 0x5d,
+	0x8b, 0x6d, 0x74, 0x0c, 0x73, 0xb7, 0x63, 0xfb, 0x9c, 0xce, 0xc1, 0x44, 0x20, 0x68, 0xb6, 0x0d,
+	0xbf, 0x2d, 0x3c, 0x4d, 0x34, 0xc6, 0x03, 0xc1, 0x27, 0x86, 0xdf, 0xa6, 0x14, 0x46, 0x1c, 0x97,
+	0x33, 0xe9, 0x48, 0xfc, 0xa7, 0x57, 0x61, 0xda, 0x77, 0x7b, 0x9e, 0xc9, 0x9a, 0x66, 0xdb, 0xb0,
+	0x9d, 0xa6, 0x6d, 0x95, 0x0a, 0x35, 0xb2, 0x58, 0x68, 0x4c, 0x85, 0xe2, 0xcd, 0x40, 0x7a, 0xd7,
+	0xa2, 0xef, 0x0e, 0xf4, 0x5c, 0x87, 0x7b, 0x86, 0xc9, 0x4b, 0x23, 0xc2, 0xcd, 0x39, 0xa9, 0x27,
+	0xa5, 0xb4, 0x0c, 0x60, 0x7a, 0xcc, 0xe0, 0xcc, 0x6a, 0x1a, 0xbc, 0x34, 0x2a, 0x74, 0x26, 0xa4,
+	0x64, 0x9d, 0xeb, 0xcf, 0x60, 0xfa, 0x89, 0xd1, 0xe9, 0x30, 0x3e, 0xc0, 0x3c, 0x03, 0x63, 0x07,
+	0x42, 0x24, 0x01, 0xcb, 0x55, 0x26, 0xdc, 0xe3, 0xde, 0x0b, 0x49, 0xef, 0xff, 0x12, 0xb8, 0x14,
+	0x22, 0x76, 0x76, 0x98, 0xcf, 0x37, 0xdb, 0xcc, 0xdc, 0xed, 0xba, 0xb6, 0xc3, 0xe9, 0x2c, 0x8c,
+	0xf7, 0x03, 0x24, 0x22, 0xc0, 0x33, 0xa6, 0x0c, 0x2d, 0xf0, 0x29, 0xb6, 0x1c, 0x63, 0x2f, 0x3a,
+	0x6d, 0x42, 0x48, 0x1e, 0x18, 0x7b, 0xa2, 0x34, 0xcc, 0x31, 0x5a, 0x1d, 0x16, 0x66, 0x66, 0xbc,
+	0x11, 0x2d, 0x69, 0x1d, 0x2e, 0x98, 0x3d, 0xcf, 0x77, 0xbd, 0x66, 0xab, 0xe3, 0x9a, 0xbb, 0x4d,
+	0xa7, 0xb7, 0xd7, 0x62, 0x9e, 0xc8, 0xcb, 0x48, 0xa3, 0x18, 0x6e, 0x6d, 0x04, 0x3b, 0x0f, 0xc4,
+	0x46, 0xac, 0x94, 0xa3, 0xf1, 0x52, 0x26, 0x82, 0x1a, 0x4b, 0x06, 0xf5, 0x37, 0x81, 0xb3, 0x51,
+	0x7a, 0x37, 0x5d, 0x8b, 0xe1, 0x45, 0xae, 0xc2, 0x64, 0xbf, 0x50, 0x56, 0x14, 0x0e, 0x44, 0x45,
+	0xb2, 0x18, 0x5d, 0x84, 0xf3, 0x31, 0x85, 0xd0, 0x49, 0xe1, 0x78, 0x29, 0xa5, 0xab, 0x15, 0x98,
+	0x89, 0x6b, 0x3e, 0x67, 0xdc, 0x6c, 0x87, 0x18, 0xc3, 0xd2, 0x5f, 0x18, 0xe8, 0xdf, 0x09, 0xf7,
+	0xd6, 0x4f, 0xac, 0xff, 0x2d, 0x98, 0xdb, 0x66, 0x3c, 0xd5, 0xb8, 0x72, 0x48, 0xd0, 0xd0, 0xf4,
+	0x9f, 0x08, 0xcc, 0x67, 0x1b, 0xcb, 0x29, 0xba, 0x08, 0xa3, 0xcf, 0xdd, 0x9e, 0x13, 0xcd, 0x50,
+	0xb8, 0xa0, 0x4f, 0x81, 0xb6, 0xa4, 0x49, 0xb3, 0x15, 0xd9, 0x88, 0xc4, 0x4c, 0x2e, 0xbf, 0x5f,
+	0x57, 0xcd, 0x72, 0x3d, 0x7d, 0x4c, 0xb1, 0x95, 0x14, 0xe9, 0x55, 0x28, 0x7f, 0x66, 0xfb, 0x69,
+	0x48, 0xfd, 0xa9, 0xff, 0x06, 0x2a, 0x2a, 0x05, 0x09, 0xfa, 0x19, 0x5c, 0x48, 0xc3, 0xf3, 0x4b,
+	0xa4, 0x56, 0xc8, 0x8b, 0x8f, 0xa6, 0xf0, 0xf9, 0xfa, 0x6f, 0x04, 0x2a, 0x9b, 0x22, 0xfb, 0x43,
+	0xe5, 0xfc, 0xad, 0xdc, 0x19, 0xfa, 0x15, 0xa8, 0x2a, 0x31, 0x86, 0x59, 0xd2, 0x1f, 0x42, 0xe5,
+	0xcb, 0xae, 0xf5, 0x26, 0xc3, 0xd0, 0xef, 0x40, 0x55, 0xe9, 0x52, 0xd6, 0x66, 0x01, 0xa6, 0x7a,
+	0x42, 0xc5, 0x6a, 0x9a, 0x6e, 0xcf, 0xe1, 0xf2, 0xea, 0x38, 0x2b, 0x85, 0x9b, 0x81, 0x4c, 0xbf,
+	0x0d, 0x95, 0x2d, 0xd6, 0x61, 0x43, 0x42, 0x0b, 0x60, 0x28, 0xcd, 0x07, 0x30, 0x2c, 0xa1, 0x92,
+	0x80, 0x21, 0x85, 0x21, 0x8c, 0x15, 0xf1, 0x7c, 0x49, 0x5c, 0xae, 0x11, 0x02, 0xc5, 0x1d, 0xab,
+	0xbf, 0x26, 0xa0, 0x65, 0x59, 0xa1, 0x03, 0xf5, 0x18, 0xce, 0x87, 0xe6, 0xa9, 0x71, 0x7a, 0x4f,
+	0xdd, 0xae, 0xc9, 0x23, 0xa6, 0x0f, 0x8e, 0x0b, 0xf4, 0x32, 0xcc, 0x05, 0x93, 0x92, 0xd0, 0xeb,
+	0x0f, 0xd2, 0x3e, 0xcc, 0x67, 0x6f, 0x4b, 0xa8, 0x5f, 0x41, 0x31, 0x09, 0x2a, 0x1a, 0xa2, 0x1c,
+	0xa8, 0xce, 0x27, 0x50, 0xf9, 0xfa, 0x3d, 0x98, 0x0f, 0x7b, 0x33, 0x5f, 0x66, 0x33, 0x3b, 0xae,
+	0x0a, 0x65, 0x85, 0x2f, 0xd9, 0xe5, 0xf7, 0x60, 0x3e, 0x6c, 0xc9, 0x37, 0x70, 0xd8, 0x16, 0x94,
+	0x15, 0xbe, 0xf2, 0x34, 0xf7, 0x2a, 0xcc, 0x87, 0xdd, 0x99, 0xb3, 0xb1, 0xb6, 0xa0, 0xac, 0xb0,
+	0xcb, 0xd3, 0xd3, 0x6b, 0x50, 0xdd, 0x66, 0x3c, 0xf3, 0x89, 0x1e, 0x01, 0x50, 0x3f, 0xd8, 0xf5,
+	0xef, 0x08, 0xd4, 0xd4, 0xe6, 0x68, 0x8b, 0x7f, 0x1e, 0x70, 0x82, 0x48, 0x57, 0x36, 0xf7, 0x92,
+	0xba, 0x8d, 0xb2, 0x8f, 0x88, 0xb9, 0xd0, 0x17, 0xe0, 0x4a, 0xd0, 0xbe, 0x99, 0x8a, 0xfd, 0x1e,
+	0x3f, 0x00, 0x1d, 0x53, 0x92, 0x88, 0x1f, 0xc2, 0xe4, 0xc0, 0x71, 0xd4, 0xe3, 0xb9, 0xc1, 0xc5,
+	0x7d, 0xe8, 0x4f, 0x40, 0x0f, 0x7b, 0x65, 0xc8, 0x54, 0x2b, 0x59, 0xea, 0x0f, 0x04, 0x16, 0x50,
+	0xcf, 0x6f, 0xb7, 0x0a, 0xd7, 0x60, 0x26, 0x68, 0x88, 0x18, 0x99, 0x3a, 0xd5, 0x15, 0x7d, 0x08,
+	0x97, 0x53, 0x66, 0x28, 0xf0, 0x4f, 0x61, 0x2a, 0x7a, 0xe4, 0x0d, 0x68, 0xd8, 0xe4, 0xf2, 0x55,
+	0x04, 0x7b, 0xdc, 0xf9, 0x59, 0x33, 0xb6, 0xd2, 0xdb, 0x50, 0x12, 0x5d, 0x11, 0x93, 0xf9, 0xa7,
+	0x7d, 0xe8, 0x75, 0x8d, 0x9d, 0xf0, 0xf0, 0xd1, 0x86, 0xf8, 0x1f, 0x18, 0x04, 0xbf, 0x4d, 0xdf,
+	0x7e, 0xc9, 0xc4, 0x53, 0x7b, 0xb4, 0x31, 0x1e, 0x08, 0x1e, 0xd9, 0x2f, 0x99, 0xfe, 0x3b, 0x81,
+	0xd9, 0x8c, 0xa3, 0x64, 0xa8, 0xf7, 0xe1, 0xdc, 0xb1, 0xa0, 0xa2, 0xd6, 0x3b, 0x6d, 0x54, 0x53,
+	0xf1, 0xa8, 0xfc, 0x20, 0x73, 0xdc, 0xe5, 0x46, 0x47, 0xc0, 0x2b, 0x34, 0xc2, 0x45, 0x1f, 0x73,
+	0x41, 0x85, 0x79, 0x24, 0x81, 0xf9, 0x06, 0xcc, 0x86, 0x17, 0x4d, 0xee, 0xaa, 0xae, 0x83, 0x96,
+	0x65, 0x99, 0xe3, 0x7e, 0x5a, 0xfe, 0x93, 0xc2, 0x74, 0xff, 0x8d, 0x8e, 0x79, 0xfb, 0xb6, 0xc9,
+	0xe8, 0x21, 0x14, 0x53, 0xef, 0x79, 0x74, 0x59, 0x9d, 0x23, 0xd5, 0x0b, 0xa3, 0xb6, 0x92, 0xcb,
+	0x46, 0xc2, 0xfe, 0x96, 0xc0, 0xc5, 0x2c, 0x8e, 0x4c, 0xaf, 0xa1, 0xde, 0x54, 0xd4, 0x45, 0x5b,
+	0xcd, 0x6b, 0x26, 0x71, 0x7c, 0x4f, 0x60, 0x26, 0x9b, 0xf8, 0xd2, 0xeb, 0x6a, 0x97, 0x28, 0x97,
+	0xd6, 0x6e, 0xe4, 0x37, 0x94, 0x68, 0x7e, 0x24, 0x70, 0x59, 0xc1, 0x30, 0x29, 0xe2, 0x15, 0x27,
+	0xce, 0xda, 0xcd, 0x21, 0x2c, 0x63, 0x80, 0x14, 0xe4, 0x13, 0x03, 0x84, 0x53, 0x60, 0x0c, 0xd0,
+	0x49, 0x4c, 0x37, 0x00, 0xa4, 0xa0, 0xa1, 0x18, 0x20, 0x9c, 0xf8, 0x62, 0x80, 0x4e, 0xe2, 0xbc,
+	0xaf, 0x80, 0xa6, 0x89, 0x29, 0xc5, 0x67, 0x22, 0x9b, 0xa3, 0x68, 0x1f, 0xe5, 0x33, 0x8a, 0x4d,
+	0x52, 0x16, 0xe3, 0xc4, 0x26, 0x09, 0x21, 0xb0, 0xd8, 0x24, 0xa1, 0xc4, 0xf6, 0x35, 0x81, 0x4b,
+	0x99, 0xac, 0x91, 0xae, 0x9e, 0xd4, 0x7f, 0x8a, 0x7c, 0x5c, 0xcf, 0x6d, 0x17, 0x83, 0x92, 0xc9,
+	0x29, 0x31, 0x28, 0x18, 0xa1, 0xc5, 0xa0, 0xe0, 0xe4, 0x35, 0x80, 0x92, 0x49, 0x30, 0x31, 0x28,
+	0x18, 0x93, 0xc5, 0xa0, 0xe0, 0x4c, 0xf6, 0x67, 0x22, 0xbe, 0xfa, 0x65, 0x7f, 0x77, 0xba, 0x89,
+	0xf6, 0x1e, 0x46, 0xb7, 0xb4, 0x5b, 0xc3, 0x98, 0x4a, 0x4c, 0xbf, 0x10, 0xd0, 0xd4, 0x54, 0x92,
+	0x7e, 0x8c, 0xf7, 0x22, 0xca, 0x52, 0xb5, 0xb5, 0xe1, 0x8c, 0x25, 0xb2, 0x5f, 0x09, 0xcc, 0x21,
+	0x8c, 0x90, 0xae, 0x9d, 0xd4, 0x11, 0x68, 0xce, 0x6e, 0x0f, 0x69, 0x2d, 0xc1, 0xed, 0xc3, 0x74,
+	0x82, 0xe8, 0xd1, 0x0f, 0xf0, 0x2a, 0xa4, 0x49, 0x87, 0xf6, 0x61, 0x0e, 0x0b, 0x79, 0xee, 0x21,
+	0x14, 0x53, 0xbc, 0x0b, 0xe3, 0x0c, 0x2a, 0x3e, 0x88, 0x71, 0x06, 0x35, 0xb1, 0x7b, 0x05, 0x34,
+	0x4d, 0x84, 0xb0, 0xab, 0x56, 0x49, 0xb8, 0xb0, 0xab, 0x56, 0xcd, 0xb5, 0x36, 0xb6, 0xfe, 0x3a,
+	0xaa, 0x90, 0x7f, 0x8e, 0x2a, 0xe4, 0xbf, 0xa3, 0x0a, 0x79, 0xba, 0xba, 0x63, 0xf3, 0x76, 0xaf,
+	0x55, 0x37, 0xdd, 0xbd, 0xa5, 0x9e, 0xcf, 0xbc, 0x17, 0x6c, 0x87, 0x2d, 0x85, 0x6e, 0x97, 0xd2,
+	0xdf, 0xe6, 0x8d, 0xae, 0x6d, 0x76, 0x6c, 0xe6, 0xf0, 0xd6, 0x98, 0xf8, 0x3a, 0xbf, 0xf2, 0x7f,
+	0x00, 0x00, 0x00, 0xff, 0xff, 0xc1, 0x62, 0x16, 0xd9, 0xc1, 0x17, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1347,6 +2185,12 @@ type TokenAPIServiceClient interface {
 	CreateWalletBlacklist(ctx context.Context, in *CreateWalletBlacklistRequest, opts ...grpc.CallOption) (*CreateWalletBlacklistResponse, error)
 	UpdateWalletBlacklist(ctx context.Context, in *UpdateWalletBlacklistRequest, opts ...grpc.CallOption) (*UpdateWalletBlacklistResponse, error)
 	DeleteWalletBlacklist(ctx context.Context, in *DeleteWalletBlacklistRequest, opts ...grpc.CallOption) (*DeleteWalletBlacklistResponse, error)
+	GetChainIngestCheckpoint(ctx context.Context, in *GetChainIngestCheckpointRequest, opts ...grpc.CallOption) (*GetChainIngestCheckpointResponse, error)
+	ListChainIngestCheckpoints(ctx context.Context, in *ListChainIngestCheckpointsRequest, opts ...grpc.CallOption) (*ListChainIngestCheckpointsResponse, error)
+	UpdateChainIngestCheckpoint(ctx context.Context, in *UpdateChainIngestCheckpointRequest, opts ...grpc.CallOption) (*UpdateChainIngestCheckpointResponse, error)
+	GetContractCode(ctx context.Context, in *GetContractCodeRequest, opts ...grpc.CallOption) (*GetContractCodeResponse, error)
+	ListContractCodes(ctx context.Context, in *ListContractCodesRequest, opts ...grpc.CallOption) (*ListContractCodesResponse, error)
+	DeleteContractCode(ctx context.Context, in *DeleteContractCodeRequest, opts ...grpc.CallOption) (*DeleteContractCodeResponse, error)
 }
 
 type tokenAPIServiceClient struct {
@@ -1456,6 +2300,60 @@ func (c *tokenAPIServiceClient) DeleteWalletBlacklist(ctx context.Context, in *D
 	return out, nil
 }
 
+func (c *tokenAPIServiceClient) GetChainIngestCheckpoint(ctx context.Context, in *GetChainIngestCheckpointRequest, opts ...grpc.CallOption) (*GetChainIngestCheckpointResponse, error) {
+	out := new(GetChainIngestCheckpointResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.tokenapi.TokenAPIService/GetChainIngestCheckpoint", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tokenAPIServiceClient) ListChainIngestCheckpoints(ctx context.Context, in *ListChainIngestCheckpointsRequest, opts ...grpc.CallOption) (*ListChainIngestCheckpointsResponse, error) {
+	out := new(ListChainIngestCheckpointsResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.tokenapi.TokenAPIService/ListChainIngestCheckpoints", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tokenAPIServiceClient) UpdateChainIngestCheckpoint(ctx context.Context, in *UpdateChainIngestCheckpointRequest, opts ...grpc.CallOption) (*UpdateChainIngestCheckpointResponse, error) {
+	out := new(UpdateChainIngestCheckpointResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.tokenapi.TokenAPIService/UpdateChainIngestCheckpoint", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tokenAPIServiceClient) GetContractCode(ctx context.Context, in *GetContractCodeRequest, opts ...grpc.CallOption) (*GetContractCodeResponse, error) {
+	out := new(GetContractCodeResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.tokenapi.TokenAPIService/GetContractCode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tokenAPIServiceClient) ListContractCodes(ctx context.Context, in *ListContractCodesRequest, opts ...grpc.CallOption) (*ListContractCodesResponse, error) {
+	out := new(ListContractCodesResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.tokenapi.TokenAPIService/ListContractCodes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tokenAPIServiceClient) DeleteContractCode(ctx context.Context, in *DeleteContractCodeRequest, opts ...grpc.CallOption) (*DeleteContractCodeResponse, error) {
+	out := new(DeleteContractCodeResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.tokenapi.TokenAPIService/DeleteContractCode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TokenAPIServiceServer is the server API for TokenAPIService service.
 type TokenAPIServiceServer interface {
 	// GetTokenAPIStatus returns the token API service runtime status.
@@ -1470,6 +2368,12 @@ type TokenAPIServiceServer interface {
 	CreateWalletBlacklist(context.Context, *CreateWalletBlacklistRequest) (*CreateWalletBlacklistResponse, error)
 	UpdateWalletBlacklist(context.Context, *UpdateWalletBlacklistRequest) (*UpdateWalletBlacklistResponse, error)
 	DeleteWalletBlacklist(context.Context, *DeleteWalletBlacklistRequest) (*DeleteWalletBlacklistResponse, error)
+	GetChainIngestCheckpoint(context.Context, *GetChainIngestCheckpointRequest) (*GetChainIngestCheckpointResponse, error)
+	ListChainIngestCheckpoints(context.Context, *ListChainIngestCheckpointsRequest) (*ListChainIngestCheckpointsResponse, error)
+	UpdateChainIngestCheckpoint(context.Context, *UpdateChainIngestCheckpointRequest) (*UpdateChainIngestCheckpointResponse, error)
+	GetContractCode(context.Context, *GetContractCodeRequest) (*GetContractCodeResponse, error)
+	ListContractCodes(context.Context, *ListContractCodesRequest) (*ListContractCodesResponse, error)
+	DeleteContractCode(context.Context, *DeleteContractCodeRequest) (*DeleteContractCodeResponse, error)
 }
 
 // UnimplementedTokenAPIServiceServer can be embedded to have forward compatible implementations.
@@ -1508,6 +2412,24 @@ func (*UnimplementedTokenAPIServiceServer) UpdateWalletBlacklist(ctx context.Con
 }
 func (*UnimplementedTokenAPIServiceServer) DeleteWalletBlacklist(ctx context.Context, req *DeleteWalletBlacklistRequest) (*DeleteWalletBlacklistResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteWalletBlacklist not implemented")
+}
+func (*UnimplementedTokenAPIServiceServer) GetChainIngestCheckpoint(ctx context.Context, req *GetChainIngestCheckpointRequest) (*GetChainIngestCheckpointResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetChainIngestCheckpoint not implemented")
+}
+func (*UnimplementedTokenAPIServiceServer) ListChainIngestCheckpoints(ctx context.Context, req *ListChainIngestCheckpointsRequest) (*ListChainIngestCheckpointsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListChainIngestCheckpoints not implemented")
+}
+func (*UnimplementedTokenAPIServiceServer) UpdateChainIngestCheckpoint(ctx context.Context, req *UpdateChainIngestCheckpointRequest) (*UpdateChainIngestCheckpointResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateChainIngestCheckpoint not implemented")
+}
+func (*UnimplementedTokenAPIServiceServer) GetContractCode(ctx context.Context, req *GetContractCodeRequest) (*GetContractCodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetContractCode not implemented")
+}
+func (*UnimplementedTokenAPIServiceServer) ListContractCodes(ctx context.Context, req *ListContractCodesRequest) (*ListContractCodesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListContractCodes not implemented")
+}
+func (*UnimplementedTokenAPIServiceServer) DeleteContractCode(ctx context.Context, req *DeleteContractCodeRequest) (*DeleteContractCodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteContractCode not implemented")
 }
 
 func RegisterTokenAPIServiceServer(s *grpc.Server, srv TokenAPIServiceServer) {
@@ -1712,6 +2634,114 @@ func _TokenAPIService_DeleteWalletBlacklist_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TokenAPIService_GetChainIngestCheckpoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetChainIngestCheckpointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TokenAPIServiceServer).GetChainIngestCheckpoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.tokenapi.TokenAPIService/GetChainIngestCheckpoint",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TokenAPIServiceServer).GetChainIngestCheckpoint(ctx, req.(*GetChainIngestCheckpointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TokenAPIService_ListChainIngestCheckpoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChainIngestCheckpointsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TokenAPIServiceServer).ListChainIngestCheckpoints(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.tokenapi.TokenAPIService/ListChainIngestCheckpoints",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TokenAPIServiceServer).ListChainIngestCheckpoints(ctx, req.(*ListChainIngestCheckpointsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TokenAPIService_UpdateChainIngestCheckpoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateChainIngestCheckpointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TokenAPIServiceServer).UpdateChainIngestCheckpoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.tokenapi.TokenAPIService/UpdateChainIngestCheckpoint",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TokenAPIServiceServer).UpdateChainIngestCheckpoint(ctx, req.(*UpdateChainIngestCheckpointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TokenAPIService_GetContractCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetContractCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TokenAPIServiceServer).GetContractCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.tokenapi.TokenAPIService/GetContractCode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TokenAPIServiceServer).GetContractCode(ctx, req.(*GetContractCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TokenAPIService_ListContractCodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListContractCodesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TokenAPIServiceServer).ListContractCodes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.tokenapi.TokenAPIService/ListContractCodes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TokenAPIServiceServer).ListContractCodes(ctx, req.(*ListContractCodesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TokenAPIService_DeleteContractCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteContractCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TokenAPIServiceServer).DeleteContractCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.tokenapi.TokenAPIService/DeleteContractCode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TokenAPIServiceServer).DeleteContractCode(ctx, req.(*DeleteContractCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _TokenAPIService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "athena.internal.tokenapi.TokenAPIService",
 	HandlerType: (*TokenAPIServiceServer)(nil),
@@ -1759,6 +2789,30 @@ var _TokenAPIService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteWalletBlacklist",
 			Handler:    _TokenAPIService_DeleteWalletBlacklist_Handler,
+		},
+		{
+			MethodName: "GetChainIngestCheckpoint",
+			Handler:    _TokenAPIService_GetChainIngestCheckpoint_Handler,
+		},
+		{
+			MethodName: "ListChainIngestCheckpoints",
+			Handler:    _TokenAPIService_ListChainIngestCheckpoints_Handler,
+		},
+		{
+			MethodName: "UpdateChainIngestCheckpoint",
+			Handler:    _TokenAPIService_UpdateChainIngestCheckpoint_Handler,
+		},
+		{
+			MethodName: "GetContractCode",
+			Handler:    _TokenAPIService_GetContractCode_Handler,
+		},
+		{
+			MethodName: "ListContractCodes",
+			Handler:    _TokenAPIService_ListContractCodes_Handler,
+		},
+		{
+			MethodName: "DeleteContractCode",
+			Handler:    _TokenAPIService_DeleteContractCode_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1938,6 +2992,136 @@ func (m *WalletBlacklist) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.Wallet)
 		copy(dAtA[i:], m.Wallet)
 		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.Wallet)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ChainIngestCheckpoint) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ChainIngestCheckpoint) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ChainIngestCheckpoint) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CreatedAt) > 0 {
+		i -= len(m.CreatedAt)
+		copy(dAtA[i:], m.CreatedAt)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.CreatedAt)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.Status) > 0 {
+		i -= len(m.Status)
+		copy(dAtA[i:], m.Status)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.Status)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.CursorBlockNumber != 0 {
+		i = encodeVarintTokenapi(dAtA, i, uint64(m.CursorBlockNumber))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Enabled {
+		i--
+		if m.Enabled {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.ChainName) > 0 {
+		i -= len(m.ChainName)
+		copy(dAtA[i:], m.ChainName)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.ChainName)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintTokenapi(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ContractCode) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ContractCode) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ContractCode) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CreatedAt) > 0 {
+		i -= len(m.CreatedAt)
+		copy(dAtA[i:], m.CreatedAt)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.CreatedAt)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.SourceCodeFetchedAt) > 0 {
+		i -= len(m.SourceCodeFetchedAt)
+		copy(dAtA[i:], m.SourceCodeFetchedAt)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.SourceCodeFetchedAt)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.SourceCodeHash) > 0 {
+		i -= len(m.SourceCodeHash)
+		copy(dAtA[i:], m.SourceCodeHash)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.SourceCodeHash)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.SourceCode) > 0 {
+		i -= len(m.SourceCode)
+		copy(dAtA[i:], m.SourceCode)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.SourceCode)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.CodeHash)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -2672,6 +3856,492 @@ func (m *DeleteWalletBlacklistResponse) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
+func (m *GetChainIngestCheckpointRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetChainIngestCheckpointRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetChainIngestCheckpointRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintTokenapi(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetChainIngestCheckpointResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetChainIngestCheckpointResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetChainIngestCheckpointResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Checkpoint != nil {
+		{
+			size, err := m.Checkpoint.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTokenapi(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Found {
+		i--
+		if m.Found {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListChainIngestCheckpointsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListChainIngestCheckpointsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListChainIngestCheckpointsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListChainIngestCheckpointsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListChainIngestCheckpointsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListChainIngestCheckpointsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Checkpoints) > 0 {
+		for iNdEx := len(m.Checkpoints) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Checkpoints[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTokenapi(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateChainIngestCheckpointRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateChainIngestCheckpointRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateChainIngestCheckpointRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Status) > 0 {
+		i -= len(m.Status)
+		copy(dAtA[i:], m.Status)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.Status)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintTokenapi(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateChainIngestCheckpointResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateChainIngestCheckpointResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateChainIngestCheckpointResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Checkpoint != nil {
+		{
+			size, err := m.Checkpoint.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTokenapi(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Found {
+		i--
+		if m.Found {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetContractCodeRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetContractCodeRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetContractCodeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.CodeHash)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetContractCodeResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetContractCodeResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetContractCodeResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ContractCode != nil {
+		{
+			size, err := m.ContractCode.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTokenapi(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Found {
+		i--
+		if m.Found {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListContractCodesRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListContractCodesRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListContractCodesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintTokenapi(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Page != 0 {
+		i = encodeVarintTokenapi(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.CodeHash)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListContractCodesResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListContractCodesResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListContractCodesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintTokenapi(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Page != 0 {
+		i = encodeVarintTokenapi(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Total != 0 {
+		i = encodeVarintTokenapi(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.ContractCodes) > 0 {
+		for iNdEx := len(m.ContractCodes) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ContractCodes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTokenapi(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeleteContractCodeRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteContractCodeRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteContractCodeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CodeHash) > 0 {
+		i -= len(m.CodeHash)
+		copy(dAtA[i:], m.CodeHash)
+		i = encodeVarintTokenapi(dAtA, i, uint64(len(m.CodeHash)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeleteContractCodeResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteContractCodeResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteContractCodeResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.DeletedCount != 0 {
+		i = encodeVarintTokenapi(dAtA, i, uint64(m.DeletedCount))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTokenapi(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTokenapi(v)
 	base := offset
@@ -2756,6 +4426,71 @@ func (m *WalletBlacklist) Size() (n int) {
 		n += 1 + l + sovTokenapi(uint64(l))
 	}
 	l = len(m.Note)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	l = len(m.CreatedAt)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ChainIngestCheckpoint) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovTokenapi(uint64(m.ChainId))
+	}
+	l = len(m.ChainName)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	if m.Enabled {
+		n += 2
+	}
+	if m.CursorBlockNumber != 0 {
+		n += 1 + sovTokenapi(uint64(m.CursorBlockNumber))
+	}
+	l = len(m.Status)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	l = len(m.CreatedAt)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ContractCode) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	l = len(m.SourceCode)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	l = len(m.SourceCodeHash)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	l = len(m.SourceCodeFetchedAt)
 	if l > 0 {
 		n += 1 + l + sovTokenapi(uint64(l))
 	}
@@ -3088,6 +4823,223 @@ func (m *DeleteWalletBlacklistRequest) Size() (n int) {
 }
 
 func (m *DeleteWalletBlacklistResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DeletedCount != 0 {
+		n += 1 + sovTokenapi(uint64(m.DeletedCount))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetChainIngestCheckpointRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovTokenapi(uint64(m.ChainId))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetChainIngestCheckpointResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Found {
+		n += 2
+	}
+	if m.Checkpoint != nil {
+		l = m.Checkpoint.Size()
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListChainIngestCheckpointsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListChainIngestCheckpointsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Checkpoints) > 0 {
+		for _, e := range m.Checkpoints {
+			l = e.Size()
+			n += 1 + l + sovTokenapi(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateChainIngestCheckpointRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovTokenapi(uint64(m.ChainId))
+	}
+	l = len(m.Status)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateChainIngestCheckpointResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Found {
+		n += 2
+	}
+	if m.Checkpoint != nil {
+		l = m.Checkpoint.Size()
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetContractCodeRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetContractCodeResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Found {
+		n += 2
+	}
+	if m.ContractCode != nil {
+		l = m.ContractCode.Size()
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListContractCodesRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	if m.Page != 0 {
+		n += 1 + sovTokenapi(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovTokenapi(uint64(m.PageSize))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListContractCodesResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.ContractCodes) > 0 {
+		for _, e := range m.ContractCodes {
+			l = e.Size()
+			n += 1 + l + sovTokenapi(uint64(l))
+		}
+	}
+	if m.Total != 0 {
+		n += 1 + sovTokenapi(uint64(m.Total))
+	}
+	if m.Page != 0 {
+		n += 1 + sovTokenapi(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovTokenapi(uint64(m.PageSize))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteContractCodeRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CodeHash)
+	if l > 0 {
+		n += 1 + l + sovTokenapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteContractCodeResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3554,6 +5506,422 @@ func (m *WalletBlacklist) Unmarshal(dAtA []byte) error {
 			m.Note = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CreatedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ChainIngestCheckpoint) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ChainIngestCheckpoint: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ChainIngestCheckpoint: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChainName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Enabled = bool(v != 0)
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CursorBlockNumber", wireType)
+			}
+			m.CursorBlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CursorBlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Status = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CreatedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ContractCode) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ContractCode: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ContractCode: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceCode", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceCode = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceCodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeFetchedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceCodeFetchedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
 			}
@@ -5275,6 +7643,1134 @@ func (m *DeleteWalletBlacklistResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: DeleteWalletBlacklistResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeletedCount", wireType)
+			}
+			m.DeletedCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DeletedCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetChainIngestCheckpointRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetChainIngestCheckpointRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetChainIngestCheckpointRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetChainIngestCheckpointResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetChainIngestCheckpointResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetChainIngestCheckpointResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Found", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Found = bool(v != 0)
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Checkpoint", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Checkpoint == nil {
+				m.Checkpoint = &ChainIngestCheckpoint{}
+			}
+			if err := m.Checkpoint.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListChainIngestCheckpointsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListChainIngestCheckpointsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListChainIngestCheckpointsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListChainIngestCheckpointsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListChainIngestCheckpointsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListChainIngestCheckpointsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Checkpoints", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Checkpoints = append(m.Checkpoints, &ChainIngestCheckpoint{})
+			if err := m.Checkpoints[len(m.Checkpoints)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateChainIngestCheckpointRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateChainIngestCheckpointRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateChainIngestCheckpointRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Status = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateChainIngestCheckpointResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateChainIngestCheckpointResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateChainIngestCheckpointResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Found", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Found = bool(v != 0)
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Checkpoint", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Checkpoint == nil {
+				m.Checkpoint = &ChainIngestCheckpoint{}
+			}
+			if err := m.Checkpoint.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetContractCodeRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetContractCodeRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetContractCodeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetContractCodeResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetContractCodeResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetContractCodeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Found", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Found = bool(v != 0)
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractCode", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ContractCode == nil {
+				m.ContractCode = &ContractCode{}
+			}
+			if err := m.ContractCode.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListContractCodesRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListContractCodesRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListContractCodesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListContractCodesResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListContractCodesResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListContractCodesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractCodes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ContractCodes = append(m.ContractCodes, &ContractCode{})
+			if err := m.ContractCodes[len(m.ContractCodes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteContractCodeRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteContractCodeRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteContractCodeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CodeHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTokenapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CodeHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTokenapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTokenapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteContractCodeResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTokenapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteContractCodeResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteContractCodeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

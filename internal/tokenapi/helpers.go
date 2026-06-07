@@ -42,6 +42,31 @@ func parseHashField(name, value string) (common.Hash, error) {
 	return common.BytesToHash(bytes), nil
 }
 
+func parseOptionalHashField(name, value string) (common.Hash, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return common.Hash{}, nil
+	}
+	return parseHashField(name, value)
+}
+
+func validatePositiveInt64Field(name string, value int64) error {
+	if value <= 0 {
+		return status.Errorf(codes.InvalidArgument, "%s must be positive", name)
+	}
+	return nil
+}
+
+func validateChainIngestStatus(value string) error {
+	value = strings.TrimSpace(value)
+	switch value {
+	case tokenstore.ChainIngestStatusRunning, tokenstore.ChainIngestStatusStopped:
+		return nil
+	default:
+		return status.Errorf(codes.InvalidArgument, "status must be %q or %q", tokenstore.ChainIngestStatusRunning, tokenstore.ChainIngestStatusStopped)
+	}
+}
+
 func grpcStoreError(err error) error {
 	if err == nil {
 		return nil
@@ -61,6 +86,50 @@ func formatTime(value time.Time) string {
 		return ""
 	}
 	return value.UTC().Format(time.RFC3339Nano)
+}
+
+func formatHash(value common.Hash) string {
+	if value == (common.Hash{}) {
+		return ""
+	}
+	return value.Hex()
+}
+
+func mapChainIngestCheckpoint(item tokenstore.ChainIngestCheckpoint) *apiclient.ChainIngestCheckpoint {
+	return &apiclient.ChainIngestCheckpoint{
+		ChainId:           item.ChainID,
+		ChainName:         item.ChainName,
+		Enabled:           item.Enabled,
+		CursorBlockNumber: item.CursorBlockNumber,
+		Status:            item.Status,
+		CreatedAt:         formatTime(item.CreatedAt),
+	}
+}
+
+func mapChainIngestCheckpoints(items []tokenstore.ChainIngestCheckpoint) []*apiclient.ChainIngestCheckpoint {
+	results := make([]*apiclient.ChainIngestCheckpoint, 0, len(items))
+	for _, item := range items {
+		results = append(results, mapChainIngestCheckpoint(item))
+	}
+	return results
+}
+
+func mapContractCode(item tokenstore.ContractCode) *apiclient.ContractCode {
+	return &apiclient.ContractCode{
+		CodeHash:            item.CodeHash.Hex(),
+		SourceCode:          item.SourceCode,
+		SourceCodeHash:      formatHash(item.SourceCodeHash),
+		SourceCodeFetchedAt: formatTime(item.SourceCodeFetchedAt),
+		CreatedAt:           formatTime(item.CreatedAt),
+	}
+}
+
+func mapContractCodes(items []tokenstore.ContractCode) []*apiclient.ContractCode {
+	results := make([]*apiclient.ContractCode, 0, len(items))
+	for _, item := range items {
+		results = append(results, mapContractCode(item))
+	}
+	return results
 }
 
 func mapBytecodeBlacklist(item tokenstore.BytecodeBlacklistEntry) *apiclient.BytecodeBlacklist {
