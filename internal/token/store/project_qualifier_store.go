@@ -8,7 +8,7 @@ import (
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash, wethPair, usdtPair common.Address) (*Project, error) {
+func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash, wethPair, usdtPair common.Address, relatedWallets []ProjectRelatedWallet) (*Project, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token postgres database is not configured")
 	}
@@ -63,6 +63,18 @@ func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate Projec
 			DataType:  dataType,
 		}); err != nil {
 			return nil, fmt.Errorf("insert project data collection task %s: %w", dataType, err)
+		}
+	}
+	for _, wallet := range relatedWallets {
+		if wallet.Wallet == (common.Address{}) || wallet.Role == "" {
+			continue
+		}
+		if _, err := q.UpsertProjectRelatedWallet(ctx, tokensqlc.UpsertProjectRelatedWalletParams{
+			ProjectID: row.ID,
+			Wallet:    wallet.Wallet.Bytes(),
+			Role:      wallet.Role,
+		}); err != nil {
+			return nil, fmt.Errorf("upsert project related wallet %s %s: %w", wallet.Role, wallet.Wallet.Hex(), err)
 		}
 	}
 	if err := tx.Commit(ctx); err != nil {

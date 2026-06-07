@@ -29,6 +29,11 @@ const (
 	ProjectDataCollectionStatusFailed    = "failed"
 )
 
+const (
+	ProjectRelatedWalletRoleCreator          = "creator"
+	ProjectRelatedWalletRoleInitialRecipient = "initial_recipient"
+)
+
 type ChainIngestCheckpoint struct {
 	ChainID           int64
 	ChainName         string
