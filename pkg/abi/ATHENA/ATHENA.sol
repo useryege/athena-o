@@ -84,6 +84,13 @@ contract Athena {
         uint256 usdtValue;
     }
 
+    struct WalletBalanceState {
+        uint256 wethBalance;
+        uint256 usdtBalance;
+        uint256 nativeBalance;
+        uint256 usdtValue;
+    }
+
     struct GenesisWalletAssetState {
         address wallet;
         AssetState assetState;
@@ -113,15 +120,9 @@ contract Athena {
         address[] genesisWallets;
     }
 
-    struct WalletAssetStateQuery {
-        address tokenContract;
-        address wallet;
-    }
-
     struct WalletAssetState {
-        address tokenContract;
         address wallet;
-        AssetState assetState;
+        WalletBalanceState assetState;
     }
 
     struct WalletSimulationStateQuery {
@@ -230,16 +231,15 @@ contract Athena {
         }
     }
 
-    function ListWalletAssetStates(WalletAssetStateQuery[] calldata queries)
+    function ListWalletAssetStates(address[] calldata wallets)
         external
         view
         returns (WalletAssetState[] memory states)
     {
-        states = new WalletAssetState[](queries.length);
-        for (uint256 i = 0; i < queries.length;) {
-            states[i].tokenContract = queries[i].tokenContract;
-            states[i].wallet = queries[i].wallet;
-            states[i].assetState = _getAssetState(queries[i].tokenContract, queries[i].wallet);
+        states = new WalletAssetState[](wallets.length);
+        for (uint256 i = 0; i < wallets.length;) {
+            states[i].wallet = wallets[i];
+            states[i].assetState = _getWalletBalanceState(wallets[i]);
             unchecked {
                 i++;
             }
@@ -502,6 +502,20 @@ contract Athena {
         }
 
         (, state.tokenBalance) = _safeBalanceOf(tokenContract, wallet);
+        (, state.wethBalance) = _safeBalanceOf(wethContract, wallet);
+        (, state.usdtBalance) = _safeBalanceOf(usdtContract, wallet);
+        state.nativeBalance = wallet.balance;
+
+        uint256 wethUsdtValue = _quoteToUsdtValue(state.wethBalance, wethContract);
+        uint256 nativeUsdtValue = _quoteToUsdtValue(state.nativeBalance, wethContract);
+        state.usdtValue = wethUsdtValue + state.usdtBalance + nativeUsdtValue;
+    }
+
+    function _getWalletBalanceState(address wallet) private view returns (WalletBalanceState memory state) {
+        if (wallet == ZERO_ADDRESS) {
+            return state;
+        }
+
         (, state.wethBalance) = _safeBalanceOf(wethContract, wallet);
         (, state.usdtBalance) = _safeBalanceOf(usdtContract, wallet);
         state.nativeBalance = wallet.balance;
