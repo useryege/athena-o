@@ -76,6 +76,31 @@ func (s *SQLStore) ListContractCodes(ctx context.Context, codeHash common.Hash, 
 	}, nil
 }
 
+func (s *SQLStore) ListContractCodesByDeploymentCount(ctx context.Context, page, pageSize int32) (*ContractCodePage, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	page, pageSize, offset := normalizePage(page, pageSize)
+	total, err := q.CountContractCodes(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("count contract codes: %w", err)
+	}
+	rows, err := q.ListContractCodesByDeploymentCount(ctx, tokensqlc.ListContractCodesByDeploymentCountParams{
+		Offset: offset,
+		Limit:  pageSize,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list contract codes by deployment count: %w", err)
+	}
+	return &ContractCodePage{
+		Items:    mapContractCodes(rows),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
 func (s *SQLStore) UpdateContractCodeSource(ctx context.Context, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, fetchedAt time.Time) (*ContractCode, error) {
 	q, err := s.querier()
 	if err != nil {

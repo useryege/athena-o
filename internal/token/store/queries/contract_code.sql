@@ -20,6 +20,12 @@ WHERE (sqlc.narg('code_hash')::bytea IS NULL OR code_hash = sqlc.narg('code_hash
 ORDER BY created_at DESC, code_hash
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
+-- name: ListContractCodesByDeploymentCount :many
+SELECT *
+FROM contract_code
+ORDER BY deployment_count DESC, created_at DESC, code_hash
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
 -- name: UpdateContractCodeSource :one
 UPDATE contract_code
 SET source_code = sqlc.narg('source_code')::text,

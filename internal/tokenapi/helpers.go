@@ -121,6 +121,7 @@ func mapContractCode(item tokenstore.ContractCode) *apiclient.ContractCode {
 		SourceCodeHash:      formatHash(item.SourceCodeHash),
 		SourceCodeFetchedAt: formatTime(item.SourceCodeFetchedAt),
 		CreatedAt:           formatTime(item.CreatedAt),
+		DeploymentCount:     item.DeploymentCount,
 	}
 }
 

@@ -43,6 +43,7 @@ message ContractCode {
   string source_code_hash = 3;
   string source_code_fetched_at = 4;
   string created_at = 5;
+  int64 deployment_count = 6;
 }
 
 message GetBytecodeBlacklistRequest {
@@ -172,6 +173,18 @@ message ListContractCodesResponse {
   int32 page_size = 4;
 }
 
+message ListContractCodesByDeploymentCountRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListContractCodesByDeploymentCountResponse {
+  repeated ContractCode contract_codes = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
 message DeleteContractCodeRequest {
   string code_hash = 1;
 }
@@ -198,5 +211,6 @@ service TokenAPIService {
   rpc UpdateChainIngestCheckpoint(UpdateChainIngestCheckpointRequest) returns (UpdateChainIngestCheckpointResponse);
   rpc GetContractCode(GetContractCodeRequest) returns (GetContractCodeResponse);
   rpc ListContractCodes(ListContractCodesRequest) returns (ListContractCodesResponse);
+  rpc ListContractCodesByDeploymentCount(ListContractCodesByDeploymentCountRequest) returns (ListContractCodesByDeploymentCountResponse);
   rpc DeleteContractCode(DeleteContractCodeRequest) returns (DeleteContractCodeResponse);
 }

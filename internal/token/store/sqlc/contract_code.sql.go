@@ -38,7 +38,7 @@ func (q *Queries) DeleteContractCode(ctx context.Context, codeHash []byte) (int6
 }
 
 const getContractCode = `-- name: GetContractCode :one
-SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, created_at
+SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, deployment_count, created_at
 FROM contract_code
 WHERE code_hash = $1
 `
@@ -51,13 +51,14 @@ func (q *Queries) GetContractCode(ctx context.Context, codeHash []byte) (Contrac
 		&i.SourceCode,
 		&i.SourceCodeHash,
 		&i.SourceCodeFetchedAt,
+		&i.DeploymentCount,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listContractCodes = `-- name: ListContractCodes :many
-SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, created_at
+SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, deployment_count, created_at
 FROM contract_code
 WHERE ($1::bytea IS NULL OR code_hash = $1::bytea)
 ORDER BY created_at DESC, code_hash
@@ -84,6 +85,46 @@ func (q *Queries) ListContractCodes(ctx context.Context, arg ListContractCodesPa
 			&i.SourceCode,
 			&i.SourceCodeHash,
 			&i.SourceCodeFetchedAt,
+			&i.DeploymentCount,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContractCodesByDeploymentCount = `-- name: ListContractCodesByDeploymentCount :many
+SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, deployment_count, created_at
+FROM contract_code
+ORDER BY deployment_count DESC, created_at DESC, code_hash
+LIMIT $2 OFFSET $1
+`
+
+type ListContractCodesByDeploymentCountParams struct {
+	Offset int32
+	Limit  int32
+}
+
+func (q *Queries) ListContractCodesByDeploymentCount(ctx context.Context, arg ListContractCodesByDeploymentCountParams) ([]ContractCode, error) {
+	rows, err := q.db.Query(ctx, listContractCodesByDeploymentCount, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ContractCode
+	for rows.Next() {
+		var i ContractCode
+		if err := rows.Scan(
+			&i.CodeHash,
+			&i.SourceCode,
+			&i.SourceCodeHash,
+			&i.SourceCodeFetchedAt,
+			&i.DeploymentCount,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -102,7 +143,7 @@ SET source_code = $1::text,
   source_code_hash = $2::bytea,
   source_code_fetched_at = $3::timestamptz
 WHERE code_hash = $4
-RETURNING code_hash, source_code, source_code_hash, source_code_fetched_at, created_at
+RETURNING code_hash, source_code, source_code_hash, source_code_fetched_at, deployment_count, created_at
 `
 
 type UpdateContractCodeSourceParams struct {
@@ -125,6 +166,7 @@ func (q *Queries) UpdateContractCodeSource(ctx context.Context, arg UpdateContra
 		&i.SourceCode,
 		&i.SourceCodeHash,
 		&i.SourceCodeFetchedAt,
+		&i.DeploymentCount,
 		&i.CreatedAt,
 	)
 	return i, err

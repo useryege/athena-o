@@ -65,6 +65,7 @@ type ContractCode struct {
 	SourceCode          string
 	SourceCodeHash      common.Hash
 	SourceCodeFetchedAt time.Time
+	DeploymentCount     int64
 	CreatedAt           time.Time
 }
 

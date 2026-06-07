@@ -35,6 +35,7 @@ type ContractCode struct {
 	SourceCode          pgtype.Text
 	SourceCodeHash      []byte
 	SourceCodeFetchedAt pgtype.Timestamptz
+	DeploymentCount     int64
 	CreatedAt           pgtype.Timestamptz
 }
 

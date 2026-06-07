@@ -65,10 +65,15 @@ CREATE TABLE IF NOT EXISTS contract_code (
   source_code TEXT,
   source_code_hash BYTEA,
   source_code_fetched_at TIMESTAMPTZ,
+  deployment_count BIGINT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT contract_code_code_hash_len CHECK (length(code_hash) = 32),
-  CONSTRAINT contract_code_source_code_hash_len CHECK (source_code_hash IS NULL OR length(source_code_hash) = 32)
+  CONSTRAINT contract_code_source_code_hash_len CHECK (source_code_hash IS NULL OR length(source_code_hash) = 32),
+  CONSTRAINT contract_code_deployment_count_nonnegative CHECK (deployment_count >= 0)
 );
+
+CREATE INDEX IF NOT EXISTS contract_code_deployment_count_idx
+  ON contract_code (deployment_count DESC, created_at DESC, code_hash);
 
 CREATE TABLE IF NOT EXISTS project (
   id BIGSERIAL PRIMARY KEY,
@@ -107,6 +112,39 @@ CREATE INDEX IF NOT EXISTS project_code_hash_idx
 
 CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (chain_id, block_number, tx_index, id);
+
+CREATE OR REPLACE FUNCTION update_contract_code_deployment_count()
+RETURNS trigger AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE contract_code
+    SET deployment_count = deployment_count + 1
+    WHERE code_hash = NEW.code_hash;
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE contract_code
+    SET deployment_count = GREATEST(deployment_count - 1, 0)
+    WHERE code_hash = OLD.code_hash;
+    RETURN OLD;
+  ELSIF TG_OP = 'UPDATE' THEN
+    IF OLD.code_hash IS DISTINCT FROM NEW.code_hash THEN
+      UPDATE contract_code
+      SET deployment_count = GREATEST(deployment_count - 1, 0)
+      WHERE code_hash = OLD.code_hash;
+
+      UPDATE contract_code
+      SET deployment_count = deployment_count + 1
+      WHERE code_hash = NEW.code_hash;
+    END IF;
+    RETURN NEW;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER project_contract_code_deployment_count_trigger
+AFTER INSERT OR UPDATE OF code_hash OR DELETE ON project
+FOR EACH ROW EXECUTE FUNCTION update_contract_code_deployment_count();
 
 CREATE TABLE IF NOT EXISTS project_related_wallet (
   project_id BIGINT NOT NULL,
@@ -272,3 +310,4 @@ DROP TABLE IF EXISTS contract_code;
 DROP TABLE IF EXISTS project_candidate;
 DROP TABLE IF EXISTS chain_ingest_checkpoint;
 DROP TABLE IF EXISTS chain;
+DROP FUNCTION IF EXISTS update_contract_code_deployment_count();

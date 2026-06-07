@@ -55,6 +55,7 @@ type Querier interface {
 	ListBytecodeBlacklistEntries(ctx context.Context) ([]BytecodeBlacklist, error)
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
 	ListContractCodes(ctx context.Context, arg ListContractCodesParams) ([]ContractCode, error)
+	ListContractCodesByDeploymentCount(ctx context.Context, arg ListContractCodesByDeploymentCountParams) ([]ContractCode, error)
 	ListDueProjectDataCollectionTasks(ctx context.Context, arg ListDueProjectDataCollectionTasksParams) ([]ListDueProjectDataCollectionTasksRow, error)
 	ListProjectAveData(ctx context.Context, arg ListProjectAveDataParams) ([]ProjectAveDatum, error)
 	ListProjectCandidates(ctx context.Context, arg ListProjectCandidatesParams) ([]ProjectCandidate, error)

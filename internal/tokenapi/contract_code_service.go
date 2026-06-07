@@ -49,6 +49,23 @@ func (s *Service) ListContractCodes(ctx context.Context, req *apiclient.ListCont
 	}, nil
 }
 
+func (s *Service) ListContractCodesByDeploymentCount(ctx context.Context, req *apiclient.ListContractCodesByDeploymentCountRequest) (*apiclient.ListContractCodesByDeploymentCountResponse, error) {
+	store, err := requiredStore(s.tokenStore())
+	if err != nil {
+		return nil, err
+	}
+	page, err := store.ListContractCodesByDeploymentCount(ctx, req.GetPage(), req.GetPageSize())
+	if err != nil {
+		return nil, wrapStoreError("list contract codes by deployment count", err)
+	}
+	return &apiclient.ListContractCodesByDeploymentCountResponse{
+		ContractCodes: mapContractCodes(page.Items),
+		Total:         page.Total,
+		Page:          page.Page,
+		PageSize:      page.PageSize,
+	}, nil
+}
+
 func (s *Service) DeleteContractCode(ctx context.Context, req *apiclient.DeleteContractCodeRequest) (*apiclient.DeleteContractCodeResponse, error) {
 	store, err := requiredStore(s.tokenStore())
 	if err != nil {
