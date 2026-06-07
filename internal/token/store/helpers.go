@@ -199,7 +199,6 @@ func mapContractCode(row tokensqlc.ContractCode) *ContractCode {
 		SourceCode:          textValue(row.SourceCode),
 		SourceCodeHash:      bytesToHash(row.SourceCodeHash),
 		SourceCodeFetchedAt: timeValue(row.SourceCodeFetchedAt),
-		SourceCodeOrigin:    textValue(row.SourceCodeOrigin),
 		CreatedAt:           timeValue(row.CreatedAt),
 	}
 }

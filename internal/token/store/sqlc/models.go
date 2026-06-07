@@ -27,7 +27,6 @@ type ContractCode struct {
 	SourceCode          pgtype.Text
 	SourceCodeHash      []byte
 	SourceCodeFetchedAt pgtype.Timestamptz
-	SourceCodeOrigin    pgtype.Text
 	CreatedAt           pgtype.Timestamptz
 }
 

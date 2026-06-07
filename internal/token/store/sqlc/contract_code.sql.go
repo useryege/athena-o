@@ -38,7 +38,7 @@ func (q *Queries) DeleteContractCode(ctx context.Context, codeHash []byte) (int6
 }
 
 const getContractCode = `-- name: GetContractCode :one
-SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, source_code_origin, created_at
+SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, created_at
 FROM contract_code
 WHERE code_hash = $1
 `
@@ -51,14 +51,13 @@ func (q *Queries) GetContractCode(ctx context.Context, codeHash []byte) (Contrac
 		&i.SourceCode,
 		&i.SourceCodeHash,
 		&i.SourceCodeFetchedAt,
-		&i.SourceCodeOrigin,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listContractCodes = `-- name: ListContractCodes :many
-SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, source_code_origin, created_at
+SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, created_at
 FROM contract_code
 WHERE ($1::bytea IS NULL OR code_hash = $1::bytea)
 ORDER BY created_at DESC, code_hash
@@ -85,7 +84,6 @@ func (q *Queries) ListContractCodes(ctx context.Context, arg ListContractCodesPa
 			&i.SourceCode,
 			&i.SourceCodeHash,
 			&i.SourceCodeFetchedAt,
-			&i.SourceCodeOrigin,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -102,17 +100,15 @@ const updateContractCodeSource = `-- name: UpdateContractCodeSource :one
 UPDATE contract_code
 SET source_code = $1::text,
   source_code_hash = $2::bytea,
-  source_code_fetched_at = $3::timestamptz,
-  source_code_origin = $4::text
-WHERE code_hash = $5
-RETURNING code_hash, source_code, source_code_hash, source_code_fetched_at, source_code_origin, created_at
+  source_code_fetched_at = $3::timestamptz
+WHERE code_hash = $4
+RETURNING code_hash, source_code, source_code_hash, source_code_fetched_at, created_at
 `
 
 type UpdateContractCodeSourceParams struct {
 	SourceCode          pgtype.Text
 	SourceCodeHash      []byte
 	SourceCodeFetchedAt pgtype.Timestamptz
-	SourceCodeOrigin    pgtype.Text
 	CodeHash            []byte
 }
 
@@ -121,7 +117,6 @@ func (q *Queries) UpdateContractCodeSource(ctx context.Context, arg UpdateContra
 		arg.SourceCode,
 		arg.SourceCodeHash,
 		arg.SourceCodeFetchedAt,
-		arg.SourceCodeOrigin,
 		arg.CodeHash,
 	)
 	var i ContractCode
@@ -130,7 +125,6 @@ func (q *Queries) UpdateContractCodeSource(ctx context.Context, arg UpdateContra
 		&i.SourceCode,
 		&i.SourceCodeHash,
 		&i.SourceCodeFetchedAt,
-		&i.SourceCodeOrigin,
 		&i.CreatedAt,
 	)
 	return i, err

@@ -76,7 +76,7 @@ func (s *SQLStore) ListContractCodes(ctx context.Context, codeHash common.Hash, 
 	}, nil
 }
 
-func (s *SQLStore) UpdateContractCodeSource(ctx context.Context, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, fetchedAt time.Time, origin string) (*ContractCode, error) {
+func (s *SQLStore) UpdateContractCodeSource(ctx context.Context, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, fetchedAt time.Time) (*ContractCode, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -86,7 +86,6 @@ func (s *SQLStore) UpdateContractCodeSource(ctx context.Context, codeHash common
 		SourceCode:          nullableText(sourceCode),
 		SourceCodeHash:      optionalHashBytes(sourceCodeHash),
 		SourceCodeFetchedAt: nullableTime(fetchedAt),
-		SourceCodeOrigin:    nullableText(origin),
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil

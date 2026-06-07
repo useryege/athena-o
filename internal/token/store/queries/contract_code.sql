@@ -24,8 +24,7 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 UPDATE contract_code
 SET source_code = sqlc.narg('source_code')::text,
   source_code_hash = sqlc.narg('source_code_hash')::bytea,
-  source_code_fetched_at = sqlc.narg('source_code_fetched_at')::timestamptz,
-  source_code_origin = sqlc.narg('source_code_origin')::text
+  source_code_fetched_at = sqlc.narg('source_code_fetched_at')::timestamptz
 WHERE code_hash = @code_hash
 RETURNING *;
 
