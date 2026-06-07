@@ -99,10 +99,34 @@ contract Athena {
         GenesisWalletAssetState[] genesisWalletAssetStates;
     }
 
+    struct ProjectState {
+        address tokenContract;
+        uint256 updatedAt;
+        Token token;
+        Pair wethPair;
+        Pair usdtPair;
+    }
+
     struct ProjectQuery {
         address tokenContract;
         address msgCaller;
         address[] genesisWallets;
+    }
+
+    struct WalletAssetStateQuery {
+        address tokenContract;
+        address wallet;
+    }
+
+    struct WalletAssetState {
+        address tokenContract;
+        address wallet;
+        AssetState assetState;
+    }
+
+    struct WalletSimulationStateQuery {
+        address tokenContract;
+        address msgCaller;
     }
 
     struct SimulationState {
@@ -186,6 +210,50 @@ contract Athena {
         results = new PairValidation[](pairContracts.length);
         for (uint256 i = 0; i < pairContracts.length;) {
             results[i] = _validatePair(pairContracts[i]);
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    function ListProjectStates(address[] calldata tokenContracts)
+        external
+        view
+        returns (ProjectState[] memory states)
+    {
+        states = new ProjectState[](tokenContracts.length);
+        for (uint256 i = 0; i < tokenContracts.length;) {
+            states[i] = _getProjectState(tokenContracts[i]);
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    function ListWalletAssetStates(WalletAssetStateQuery[] calldata queries)
+        external
+        view
+        returns (WalletAssetState[] memory states)
+    {
+        states = new WalletAssetState[](queries.length);
+        for (uint256 i = 0; i < queries.length;) {
+            states[i].tokenContract = queries[i].tokenContract;
+            states[i].wallet = queries[i].wallet;
+            states[i].assetState = _getAssetState(queries[i].tokenContract, queries[i].wallet);
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    function ListWalletSimulationStates(WalletSimulationStateQuery[] calldata queries)
+        external
+        view
+        returns (SimulationState[] memory states)
+    {
+        states = new SimulationState[](queries.length);
+        for (uint256 i = 0; i < queries.length;) {
+            states[i] = _getWalletSimulationState(queries[i].tokenContract, queries[i].msgCaller);
             unchecked {
                 i++;
             }
@@ -318,6 +386,55 @@ contract Athena {
         return project;
     }
 
+    function _getProjectState(address tokenContract) private view returns (ProjectState memory state) {
+        state.tokenContract = tokenContract;
+        state.updatedAt = block.timestamp;
+        state.token = _getToken(tokenContract);
+
+        if (!state.token.isValidERC20 || tokenContract == wethContract) {
+            return state;
+        }
+
+        state.wethPair = _getPairWithDefaultLockers(tokenContract, wethContract);
+        if (tokenContract != usdtContract) {
+            state.usdtPair = _getPairWithDefaultLockers(tokenContract, usdtContract);
+        }
+
+        if (state.usdtPair.isCreated) {
+            state.usdtPair.quoteUsdtValue = state.usdtPair.quoteBalance;
+        }
+        if (state.wethPair.isCreated) {
+            state.wethPair.quoteUsdtValue = _quoteToUsdtValue(state.wethPair.quoteBalance, wethContract);
+        }
+    }
+
+    function _getWalletSimulationState(address tokenContract, address msgCaller)
+        private
+        view
+        returns (SimulationState memory state)
+    {
+        Token memory token = _getToken(tokenContract);
+        if (!token.isValidERC20) {
+            return state;
+        }
+
+        (, state.deadAllowance) = _safeAllowance(tokenContract, DEAD_ADDRESS, msgCaller);
+        (, state.zeroAllowance) = _safeAllowance(tokenContract, ZERO_ADDRESS, msgCaller);
+        if (tokenContract != wethContract) {
+            Pair memory wethPair = _getPairWithDefaultLockers(tokenContract, wethContract);
+            if (wethPair.isCreated) {
+                (, state.wethPairAllowance) = _safeAllowance(tokenContract, wethPair.contractAddress, msgCaller);
+            }
+        }
+        if (tokenContract != usdtContract) {
+            Pair memory usdtPair = _getPairWithDefaultLockers(tokenContract, usdtContract);
+            if (usdtPair.isCreated) {
+                (, state.usdtPairAllowance) = _safeAllowance(tokenContract, usdtPair.contractAddress, msgCaller);
+            }
+        }
+        (, state.callerBalance) = _safeBalanceOf(tokenContract, msgCaller);
+    }
+
     function _getToken(address tokenContract) private view returns (Token memory token) {
         bool nameOk;
         bool symbolOk;
@@ -421,6 +538,33 @@ contract Athena {
         }
     }
 
+    function _getPairWithDefaultLockers(address baseTokenContract, address quoteTokenContract)
+        private
+        view
+        returns (Pair memory pair)
+    {
+        pair.contractAddress = _pairFor(baseTokenContract, quoteTokenContract);
+        pair.isCreated = pair.contractAddress.code.length > 0;
+        if (!pair.isCreated) {
+            return pair;
+        }
+
+        pair.token0 = _safeAddress(pair.contractAddress, IUniswapV2PairView.token0.selector);
+        pair.token1 = _safeAddress(pair.contractAddress, IUniswapV2PairView.token1.selector);
+        (, pair.totalSupply) = _safeUint256(pair.contractAddress, IUniswapV2PairView.totalSupply.selector);
+        (pair.reserve0, pair.reserve1, pair.blockTimestampLast) = _safeReserves(pair.contractAddress);
+
+        (, pair.baseBalance) = _safeBalanceOf(baseTokenContract, pair.contractAddress);
+        (, pair.quoteBalance) = _safeBalanceOf(quoteTokenContract, pair.contractAddress);
+        pair.lockedLiquidity = _lockedLiquidityWithDefaultLockers(pair.contractAddress);
+
+        (, pair.feeAddressHoldLiquidityBalance) = _safeBalanceOf(pair.contractAddress, v2pairFeeToAddress);
+        if (pair.totalSupply > 0) {
+            pair.isRemoveLiquidity = pair.feeAddressHoldLiquidityBalance * 100 >= pair.totalSupply * 90;
+            pair.feeAddressHoldLiquidityRatio = pair.feeAddressHoldLiquidityBalance * 100 / pair.totalSupply;
+        }
+    }
+
     function _quoteToUsdtValue(uint256 quoteAmount, address quoteTokenContract) private view returns (uint256) {
         if (quoteAmount == 0 || quoteTokenContract == usdtContract) {
             return quoteAmount;
@@ -441,6 +585,16 @@ contract Athena {
             return quoteAmount * reserve1 / reserve0;
         }
         return quoteAmount * reserve0 / reserve1;
+    }
+
+    function _lockedLiquidityWithDefaultLockers(address pairContract)
+        private
+        view
+        returns (uint256 lockedLiquidity)
+    {
+        (, uint256 zeroBalance) = _safeBalanceOf(pairContract, ZERO_ADDRESS);
+        (, uint256 deadBalance) = _safeBalanceOf(pairContract, DEAD_ADDRESS);
+        lockedLiquidity = zeroBalance + deadBalance;
     }
 
     function _lockedLiquidity(address pairContract, address[] calldata lockers) private view returns (uint256 lockedLiquidity) {
