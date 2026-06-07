@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
@@ -145,4 +146,50 @@ func (s *SQLStore) CompleteProjectChainStateCollection(ctx context.Context, proj
 		return nil, fmt.Errorf("commit project chain state collection transaction: %w", err)
 	}
 	return mapProjectChainStateData(row), nil
+}
+
+func (s *SQLStore) CompleteProjectWalletAssetStateCollection(ctx context.Context, projectID int64, states []WalletAssetState, fetchedAt time.Time) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("token postgres database is not configured")
+	}
+	if fetchedAt.IsZero() {
+		fetchedAt = time.Now().UTC()
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin project wallet asset state collection transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+	q := tokensqlc.New(tx)
+	for _, state := range states {
+		if state.Wallet == (common.Address{}) {
+			continue
+		}
+		if state.FetchedAt.IsZero() {
+			state.FetchedAt = fetchedAt
+		}
+		if _, err := q.UpsertWalletAssetState(ctx, tokensqlc.UpsertWalletAssetStateParams{
+			ChainID:       state.ChainID,
+			Wallet:        state.Wallet.Bytes(),
+			WethBalance:   numericFromBigInt(state.WethBalance),
+			UsdtBalance:   numericFromBigInt(state.UsdtBalance),
+			NativeBalance: numericFromBigInt(state.NativeBalance),
+			UsdtValue:     numericFromBigInt(state.UsdtValue),
+			FetchedAt:     nullableTime(state.FetchedAt),
+		}); err != nil {
+			return fmt.Errorf("upsert wallet asset state %s: %w", state.Wallet.Hex(), err)
+		}
+	}
+	if _, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
+		ProjectID: projectID,
+		DataType:  ProjectDataCollectionTypeWalletAssetState,
+	}); err != nil {
+		return fmt.Errorf("mark project wallet asset state collection succeeded: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit project wallet asset state collection transaction: %w", err)
+	}
+	return nil
 }

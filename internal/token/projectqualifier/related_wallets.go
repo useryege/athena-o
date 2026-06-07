@@ -109,6 +109,32 @@ func buildProjectRelatedWallets(candidate tokenstore.ProjectCandidate, initialRe
 	return wallets
 }
 
+func buildWalletAssetStates(candidate tokenstore.ProjectCandidate, initialRecipients []common.Address) []tokenstore.WalletAssetState {
+	wallets := make([]tokenstore.WalletAssetState, 0, 1+len(initialRecipients))
+	seen := make(map[common.Address]struct{}, 1+len(initialRecipients))
+	if candidate.Creator != (common.Address{}) {
+		seen[candidate.Creator] = struct{}{}
+		wallets = append(wallets, tokenstore.WalletAssetState{
+			ChainID: candidate.ChainID,
+			Wallet:  candidate.Creator,
+		})
+	}
+	for _, wallet := range initialRecipients {
+		if wallet == (common.Address{}) {
+			continue
+		}
+		if _, exists := seen[wallet]; exists {
+			continue
+		}
+		seen[wallet] = struct{}{}
+		wallets = append(wallets, tokenstore.WalletAssetState{
+			ChainID: candidate.ChainID,
+			Wallet:  wallet,
+		})
+	}
+	return wallets
+}
+
 type initialRecipientWallet struct {
 	wallet common.Address
 	amount *big.Int

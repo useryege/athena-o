@@ -20,8 +20,9 @@ const (
 )
 
 const (
-	ProjectDataCollectionTypeAve        = "ave"
-	ProjectDataCollectionTypeChainState = "chain_state"
+	ProjectDataCollectionTypeAve              = "ave"
+	ProjectDataCollectionTypeChainState       = "chain_state"
+	ProjectDataCollectionTypeWalletAssetState = "wallet_asset_state"
 )
 
 const (

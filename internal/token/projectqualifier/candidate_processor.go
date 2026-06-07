@@ -94,7 +94,8 @@ func (r *qualifierRunner) processValidatedCandidate(ctx context.Context, client 
 	}
 	initialRecipients := extractInitialRecipientWallets(receipt.Logs, candidate.Contract, initialRecipientWalletLimit)
 	relatedWallets := buildProjectRelatedWallets(candidate, initialRecipients)
-	if _, err := r.opts.store.QualifyProjectCandidate(ctx, candidate, codeHash, validation.WethPair, validation.UsdtPair, relatedWallets); err != nil {
+	walletAssetStates := buildWalletAssetStates(candidate, initialRecipients)
+	if _, err := r.opts.store.QualifyProjectCandidate(ctx, candidate, codeHash, validation.WethPair, validation.UsdtPair, relatedWallets, walletAssetStates); err != nil {
 		return err
 	}
 	log.WithFields(log.Fields{
@@ -105,6 +106,7 @@ func (r *qualifierRunner) processValidatedCandidate(ctx context.Context, client 
 		"weth_pair":               validation.WethPair.Hex(),
 		"usdt_pair":               validation.UsdtPair.Hex(),
 		"related_wallet_count":    len(relatedWallets),
+		"asset_wallet_count":      len(walletAssetStates),
 		"initial_recipient_count": len(initialRecipients),
 	}).Info("token project qualifier qualified candidate")
 	return nil

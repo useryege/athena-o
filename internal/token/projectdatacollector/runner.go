@@ -63,6 +63,9 @@ func (r *dataCollectorRunner) processAvailableTasks(ctx context.Context) {
 	if err := r.processChainStateTasks(ctx); err != nil {
 		log.WithError(err).Error("token project data collector chain state task loop failed")
 	}
+	if err := r.processWalletAssetStateTasks(ctx); err != nil {
+		log.WithError(err).Error("token project data collector wallet asset state task loop failed")
+	}
 }
 
 func (r *dataCollectorRunner) failTasks(ctx context.Context, tasks []tokenstore.ProjectDataCollectionTaskWithProject, err error) {

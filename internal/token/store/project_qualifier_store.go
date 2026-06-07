@@ -3,12 +3,13 @@ package store
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash, wethPair, usdtPair common.Address, relatedWallets []ProjectRelatedWallet) (*Project, error) {
+func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash, wethPair, usdtPair common.Address, relatedWallets []ProjectRelatedWallet, walletAssetStates []WalletAssetState) (*Project, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token postgres database is not configured")
 	}
@@ -57,7 +58,7 @@ func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate Projec
 	}); err != nil {
 		return nil, fmt.Errorf("mark project candidate qualified: %w", err)
 	}
-	for _, dataType := range []string{ProjectDataCollectionTypeAve, ProjectDataCollectionTypeChainState} {
+	for _, dataType := range []string{ProjectDataCollectionTypeAve, ProjectDataCollectionTypeChainState, ProjectDataCollectionTypeWalletAssetState} {
 		if err := q.InsertProjectDataCollectionTaskIfNotExists(ctx, tokensqlc.InsertProjectDataCollectionTaskIfNotExistsParams{
 			ProjectID: row.ID,
 			DataType:  dataType,
@@ -75,6 +76,29 @@ func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate Projec
 			Role:      wallet.Role,
 		}); err != nil {
 			return nil, fmt.Errorf("upsert project related wallet %s %s: %w", wallet.Role, wallet.Wallet.Hex(), err)
+		}
+	}
+	fetchedAt := time.Now().UTC()
+	for _, walletState := range walletAssetStates {
+		if walletState.Wallet == (common.Address{}) {
+			continue
+		}
+		if walletState.ChainID == 0 {
+			walletState.ChainID = candidate.ChainID
+		}
+		if walletState.FetchedAt.IsZero() {
+			walletState.FetchedAt = fetchedAt
+		}
+		if _, err := q.UpsertWalletAssetState(ctx, tokensqlc.UpsertWalletAssetStateParams{
+			ChainID:       walletState.ChainID,
+			Wallet:        walletState.Wallet.Bytes(),
+			WethBalance:   numericFromBigInt(walletState.WethBalance),
+			UsdtBalance:   numericFromBigInt(walletState.UsdtBalance),
+			NativeBalance: numericFromBigInt(walletState.NativeBalance),
+			UsdtValue:     numericFromBigInt(walletState.UsdtValue),
+			FetchedAt:     nullableTime(walletState.FetchedAt),
+		}); err != nil {
+			return nil, fmt.Errorf("upsert wallet asset state %s: %w", walletState.Wallet.Hex(), err)
 		}
 	}
 	if err := tx.Commit(ctx); err != nil {
