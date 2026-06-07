@@ -2,6 +2,7 @@ package store
 
 import (
 	"encoding/json"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -99,6 +100,17 @@ type ProjectRelatedWallet struct {
 	Wallet    common.Address
 	Role      string
 	CreatedAt time.Time
+}
+
+type WalletAssetState struct {
+	ChainID       int64
+	Wallet        common.Address
+	WethBalance   *big.Int
+	UsdtBalance   *big.Int
+	NativeBalance *big.Int
+	UsdtValue     *big.Int
+	FetchedAt     time.Time
+	CreatedAt     time.Time
 }
 
 type ProjectDataCollectionTask struct {

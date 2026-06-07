@@ -127,6 +127,27 @@ CREATE INDEX IF NOT EXISTS project_related_wallet_project_role_idx
 CREATE INDEX IF NOT EXISTS project_related_wallet_wallet_idx
   ON project_related_wallet (wallet);
 
+CREATE TABLE IF NOT EXISTS wallet_asset_state (
+  chain_id BIGINT NOT NULL,
+  wallet BYTEA NOT NULL,
+  weth_balance NUMERIC(78, 0) NOT NULL DEFAULT 0,
+  usdt_balance NUMERIC(78, 0) NOT NULL DEFAULT 0,
+  native_balance NUMERIC(78, 0) NOT NULL DEFAULT 0,
+  usdt_value NUMERIC(78, 0) NOT NULL DEFAULT 0,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (chain_id, wallet),
+  CONSTRAINT wallet_asset_state_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
+  CONSTRAINT wallet_asset_state_wallet_len CHECK (length(wallet) = 20),
+  CONSTRAINT wallet_asset_state_weth_balance_nonnegative CHECK (weth_balance >= 0),
+  CONSTRAINT wallet_asset_state_usdt_balance_nonnegative CHECK (usdt_balance >= 0),
+  CONSTRAINT wallet_asset_state_native_balance_nonnegative CHECK (native_balance >= 0),
+  CONSTRAINT wallet_asset_state_usdt_value_nonnegative CHECK (usdt_value >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS wallet_asset_state_usdt_value_idx
+  ON wallet_asset_state (chain_id, usdt_value DESC);
+
 CREATE TABLE IF NOT EXISTS project_data_collection_task (
   project_id BIGINT NOT NULL,
   data_type TEXT NOT NULL,
@@ -170,6 +191,7 @@ CREATE TABLE IF NOT EXISTS project_chain_state (
 DROP TABLE IF EXISTS project_data_collection_task;
 DROP TABLE IF EXISTS project_chain_state;
 DROP TABLE IF EXISTS project_ave_data;
+DROP TABLE IF EXISTS wallet_asset_state;
 DROP TABLE IF EXISTS project_related_wallet;
 DROP TABLE IF EXISTS project;
 DROP TABLE IF EXISTS contract_code;

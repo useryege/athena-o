@@ -26,6 +26,7 @@ type Querier interface {
 	DeleteProjectDataCollectionTask(ctx context.Context, arg DeleteProjectDataCollectionTaskParams) (int64, error)
 	DeleteProjectRelatedWallet(ctx context.Context, arg DeleteProjectRelatedWalletParams) (int64, error)
 	DeleteProjectRelatedWalletsByProject(ctx context.Context, projectID int64) (int64, error)
+	DeleteWalletAssetState(ctx context.Context, arg DeleteWalletAssetStateParams) (int64, error)
 	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (GetChainIngestCheckpointRow, error)
 	GetContractCode(ctx context.Context, codeHash []byte) (ContractCode, error)
 	GetProject(ctx context.Context, id int64) (Project, error)
@@ -35,6 +36,7 @@ type Querier interface {
 	GetProjectCandidateByContract(ctx context.Context, arg GetProjectCandidateByContractParams) (ProjectCandidate, error)
 	GetProjectChainState(ctx context.Context, projectID int64) (ProjectChainState, error)
 	GetProjectDataCollectionTask(ctx context.Context, arg GetProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
+	GetWalletAssetState(ctx context.Context, arg GetWalletAssetStateParams) (WalletAssetState, error)
 	InsertProjectDataCollectionTaskIfNotExists(ctx context.Context, arg InsertProjectDataCollectionTaskIfNotExistsParams) error
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
 	ListContractCodes(ctx context.Context, arg ListContractCodesParams) ([]ContractCode, error)
@@ -48,6 +50,7 @@ type Querier interface {
 	ListProjectRelatedWalletsByWallet(ctx context.Context, wallet []byte) ([]ProjectRelatedWallet, error)
 	ListProjects(ctx context.Context, chainID int64) ([]Project, error)
 	ListProjectsPage(ctx context.Context, arg ListProjectsPageParams) ([]Project, error)
+	ListWalletAssetStatesByWallets(ctx context.Context, arg ListWalletAssetStatesByWalletsParams) ([]WalletAssetState, error)
 	MarkProjectCandidateStatus(ctx context.Context, arg MarkProjectCandidateStatusParams) (ProjectCandidate, error)
 	MarkProjectDataCollectionTaskFailed(ctx context.Context, arg MarkProjectDataCollectionTaskFailedParams) (ProjectDataCollectionTask, error)
 	MarkProjectDataCollectionTaskSucceeded(ctx context.Context, arg MarkProjectDataCollectionTaskSucceededParams) (ProjectDataCollectionTask, error)
@@ -61,6 +64,7 @@ type Querier interface {
 	UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) (ProjectChainState, error)
 	UpsertProjectDataCollectionTask(ctx context.Context, arg UpsertProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
 	UpsertProjectRelatedWallet(ctx context.Context, arg UpsertProjectRelatedWalletParams) (ProjectRelatedWallet, error)
+	UpsertWalletAssetState(ctx context.Context, arg UpsertWalletAssetStateParams) (WalletAssetState, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -89,3 +89,14 @@ type ProjectRelatedWallet struct {
 	Role      string
 	CreatedAt pgtype.Timestamptz
 }
+
+type WalletAssetState struct {
+	ChainID       int64
+	Wallet        []byte
+	WethBalance   pgtype.Numeric
+	UsdtBalance   pgtype.Numeric
+	NativeBalance pgtype.Numeric
+	UsdtValue     pgtype.Numeric
+	FetchedAt     pgtype.Timestamptz
+	CreatedAt     pgtype.Timestamptz
+}

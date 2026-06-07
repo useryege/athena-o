@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -70,6 +71,28 @@ func timeValue(value pgtype.Timestamptz) time.Time {
 		return time.Time{}
 	}
 	return value.Time
+}
+
+func numericFromBigInt(value *big.Int) pgtype.Numeric {
+	if value == nil {
+		return pgtype.Numeric{Int: new(big.Int), Exp: 0, Valid: true}
+	}
+	return pgtype.Numeric{Int: new(big.Int).Set(value), Exp: 0, Valid: true}
+}
+
+func bigIntFromNumeric(value pgtype.Numeric) *big.Int {
+	if !value.Valid || value.Int == nil {
+		return new(big.Int)
+	}
+	if value.Exp >= 0 {
+		result := new(big.Int).Set(value.Int)
+		if value.Exp > 0 {
+			result.Mul(result, new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(value.Exp)), nil))
+		}
+		return result
+	}
+	result := new(big.Int).Set(value.Int)
+	return result.Quo(result, new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(-value.Exp)), nil))
 }
 
 func uint64ToInt64(field string, value uint64) (int64, error) {
@@ -261,6 +284,27 @@ func mapProjectRelatedWallets(rows []tokensqlc.ProjectRelatedWallet) []ProjectRe
 	items := make([]ProjectRelatedWallet, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, *mapProjectRelatedWallet(row))
+	}
+	return items
+}
+
+func mapWalletAssetState(row tokensqlc.WalletAssetState) *WalletAssetState {
+	return &WalletAssetState{
+		ChainID:       row.ChainID,
+		Wallet:        bytesToAddress(row.Wallet),
+		WethBalance:   bigIntFromNumeric(row.WethBalance),
+		UsdtBalance:   bigIntFromNumeric(row.UsdtBalance),
+		NativeBalance: bigIntFromNumeric(row.NativeBalance),
+		UsdtValue:     bigIntFromNumeric(row.UsdtValue),
+		FetchedAt:     timeValue(row.FetchedAt),
+		CreatedAt:     timeValue(row.CreatedAt),
+	}
+}
+
+func mapWalletAssetStates(rows []tokensqlc.WalletAssetState) []WalletAssetState {
+	items := make([]WalletAssetState, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, *mapWalletAssetState(row))
 	}
 	return items
 }
