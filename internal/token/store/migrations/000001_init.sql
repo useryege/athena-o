@@ -109,6 +109,28 @@ CREATE INDEX IF NOT EXISTS project_code_hash_idx
 CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (chain_id, block_number, tx_index, id);
 
+CREATE TABLE IF NOT EXISTS project_data_collection_task (
+  project_id BIGINT NOT NULL,
+  data_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  attempts INT NOT NULL DEFAULT 0,
+  next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, data_type),
+  CONSTRAINT project_data_collection_task_project_fk
+    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_data_collection_task_data_type_allowed
+    CHECK (data_type IN ('ave', 'chain_state')),
+  CONSTRAINT project_data_collection_task_status_allowed
+    CHECK (status IN ('pending', 'succeeded', 'failed')),
+  CONSTRAINT project_data_collection_task_attempts_range
+    CHECK (attempts >= 0 AND attempts <= 5)
+);
+
+CREATE INDEX IF NOT EXISTS project_data_collection_task_due_idx
+  ON project_data_collection_task (status, next_attempt_at, data_type, project_id);
+
 CREATE TABLE IF NOT EXISTS project_ave_data (
   project_id BIGINT PRIMARY KEY,
   ave_response JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -127,6 +149,7 @@ CREATE TABLE IF NOT EXISTS project_chain_state (
 
 -- +goose Down
 
+DROP TABLE IF EXISTS project_data_collection_task;
 DROP TABLE IF EXISTS project_chain_state;
 DROP TABLE IF EXISTS project_ave_data;
 DROP TABLE IF EXISTS project;

@@ -72,3 +72,13 @@ type ProjectChainState struct {
 	FetchedAt  pgtype.Timestamptz
 	CreatedAt  pgtype.Timestamptz
 }
+
+type ProjectDataCollectionTask struct {
+	ProjectID     int64
+	DataType      string
+	Status        string
+	Attempts      int32
+	NextAttemptAt pgtype.Timestamptz
+	LastError     pgtype.Text
+	CreatedAt     pgtype.Timestamptz
+}
