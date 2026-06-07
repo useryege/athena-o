@@ -20,6 +20,7 @@ const (
 	aveFetchConcurrency  = 5
 	chainStateTaskLimit  = int32(20)
 	walletAssetTaskLimit = int32(20)
+	simulationTaskLimit  = int32(20)
 	aveHTTPClientTimeout = 60 * time.Second
 )
 

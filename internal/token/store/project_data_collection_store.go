@@ -193,3 +193,54 @@ func (s *SQLStore) CompleteProjectWalletAssetStateCollection(ctx context.Context
 	}
 	return nil
 }
+
+func (s *SQLStore) CompleteProjectSimulationResultCollection(ctx context.Context, projectID int64, results []ProjectSimulationResult, fetchedAt time.Time) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("token postgres database is not configured")
+	}
+	if fetchedAt.IsZero() {
+		fetchedAt = time.Now().UTC()
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin project simulation result collection transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+	q := tokensqlc.New(tx)
+	for _, result := range results {
+		if result.Wallet == (common.Address{}) {
+			continue
+		}
+		if result.ProjectID == 0 {
+			result.ProjectID = projectID
+		}
+		if result.FetchedAt.IsZero() {
+			result.FetchedAt = fetchedAt
+		}
+		if _, err := q.UpsertProjectSimulationResult(ctx, tokensqlc.UpsertProjectSimulationResultParams{
+			ProjectID:                          result.ProjectID,
+			Wallet:                             result.Wallet.Bytes(),
+			CanMintFromDeadViaTransferFrom:     result.CanMintFromDeadViaTransferFrom,
+			CanMintFromZeroViaTransferFrom:     result.CanMintFromZeroViaTransferFrom,
+			CanMintFromWethPairViaTransferFrom: result.CanMintFromWethPairViaTransferFrom,
+			CanMintFromUsdtPairViaTransferFrom: result.CanMintFromUsdtPairViaTransferFrom,
+			CanMintViaTransferToWethPair:       result.CanMintViaTransferToWethPair,
+			CanMintViaTransferToUsdtPair:       result.CanMintViaTransferToUsdtPair,
+			FetchedAt:                          nullableTime(result.FetchedAt),
+		}); err != nil {
+			return fmt.Errorf("upsert project simulation result %s: %w", result.Wallet.Hex(), err)
+		}
+	}
+	if _, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
+		ProjectID: projectID,
+		DataType:  ProjectDataCollectionTypeSimulationResult,
+	}); err != nil {
+		return fmt.Errorf("mark project simulation result collection succeeded: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit project simulation result collection transaction: %w", err)
+	}
+	return nil
+}

@@ -23,6 +23,7 @@ const (
 	ProjectDataCollectionTypeAve              = "ave"
 	ProjectDataCollectionTypeChainState       = "chain_state"
 	ProjectDataCollectionTypeWalletAssetState = "wallet_asset_state"
+	ProjectDataCollectionTypeSimulationResult = "simulation_result"
 )
 
 const (
