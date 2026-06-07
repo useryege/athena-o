@@ -46,6 +46,13 @@ type Project struct {
 	CreatedAt   pgtype.Timestamptz
 }
 
+type ProjectAveDatum struct {
+	ProjectID   int64
+	AveResponse []byte
+	FetchedAt   pgtype.Timestamptz
+	CreatedAt   pgtype.Timestamptz
+}
+
 type ProjectCandidate struct {
 	ID          int64
 	ChainID     int64
@@ -57,4 +64,11 @@ type ProjectCandidate struct {
 	BlockTime   int64
 	Status      string
 	CreatedAt   pgtype.Timestamptz
+}
+
+type ProjectChainState struct {
+	ProjectID  int64
+	ChainState []byte
+	FetchedAt  pgtype.Timestamptz
+	CreatedAt  pgtype.Timestamptz
 }

@@ -6,26 +6,36 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
 	BatchUpsertProjectCandidates(ctx context.Context, arg BatchUpsertProjectCandidatesParams) error
 	CountContractCodes(ctx context.Context, codeHash []byte) (int64, error)
+	CountProjectAveData(ctx context.Context, projectID pgtype.Int8) (int64, error)
 	CountProjectCandidates(ctx context.Context, arg CountProjectCandidatesParams) (int64, error)
+	CountProjectChainStates(ctx context.Context, projectID pgtype.Int8) (int64, error)
 	CountProjects(ctx context.Context, arg CountProjectsParams) (int64, error)
 	DeleteContractCode(ctx context.Context, codeHash []byte) (int64, error)
 	DeleteProject(ctx context.Context, id int64) (int64, error)
+	DeleteProjectAveData(ctx context.Context, projectID int64) (int64, error)
 	DeleteProjectCandidate(ctx context.Context, id int64) (int64, error)
+	DeleteProjectChainState(ctx context.Context, projectID int64) (int64, error)
 	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (GetChainIngestCheckpointRow, error)
 	GetContractCode(ctx context.Context, codeHash []byte) (ContractCode, error)
 	GetProject(ctx context.Context, id int64) (Project, error)
+	GetProjectAveData(ctx context.Context, projectID int64) (ProjectAveDatum, error)
 	GetProjectByContract(ctx context.Context, arg GetProjectByContractParams) (Project, error)
 	GetProjectCandidate(ctx context.Context, id int64) (ProjectCandidate, error)
 	GetProjectCandidateByContract(ctx context.Context, arg GetProjectCandidateByContractParams) (ProjectCandidate, error)
+	GetProjectChainState(ctx context.Context, projectID int64) (ProjectChainState, error)
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
 	ListContractCodes(ctx context.Context, arg ListContractCodesParams) ([]ContractCode, error)
+	ListProjectAveData(ctx context.Context, arg ListProjectAveDataParams) ([]ProjectAveDatum, error)
 	ListProjectCandidates(ctx context.Context, arg ListProjectCandidatesParams) ([]ProjectCandidate, error)
 	ListProjectCandidatesByStatus(ctx context.Context, arg ListProjectCandidatesByStatusParams) ([]ProjectCandidate, error)
+	ListProjectChainStates(ctx context.Context, arg ListProjectChainStatesParams) ([]ProjectChainState, error)
 	ListProjects(ctx context.Context, chainID int64) ([]Project, error)
 	ListProjectsPage(ctx context.Context, arg ListProjectsPageParams) ([]Project, error)
 	MarkProjectCandidateStatus(ctx context.Context, arg MarkProjectCandidateStatusParams) (ProjectCandidate, error)
@@ -34,7 +44,9 @@ type Querier interface {
 	UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertChainIngestCheckpointParams) (ChainIngestCheckpoint, error)
 	UpsertContractCode(ctx context.Context, codeHash []byte) error
 	UpsertProject(ctx context.Context, arg UpsertProjectParams) (Project, error)
+	UpsertProjectAveData(ctx context.Context, arg UpsertProjectAveDataParams) (ProjectAveDatum, error)
 	UpsertProjectCandidate(ctx context.Context, arg UpsertProjectCandidateParams) (ProjectCandidate, error)
+	UpsertProjectChainState(ctx context.Context, arg UpsertProjectChainStateParams) (ProjectChainState, error)
 }
 
 var _ Querier = (*Queries)(nil)

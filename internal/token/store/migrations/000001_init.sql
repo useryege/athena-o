@@ -109,8 +109,26 @@ CREATE INDEX IF NOT EXISTS project_code_hash_idx
 CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (chain_id, block_number, tx_index, id);
 
+CREATE TABLE IF NOT EXISTS project_ave_data (
+  project_id BIGINT PRIMARY KEY,
+  ave_response JSONB NOT NULL DEFAULT '{}'::jsonb,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_ave_data_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS project_chain_state (
+  project_id BIGINT PRIMARY KEY,
+  chain_state JSONB NOT NULL DEFAULT '{}'::jsonb,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_chain_state_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
+);
+
 -- +goose Down
 
+DROP TABLE IF EXISTS project_chain_state;
+DROP TABLE IF EXISTS project_ave_data;
 DROP TABLE IF EXISTS project;
 DROP TABLE IF EXISTS contract_code;
 DROP TABLE IF EXISTS project_candidate;
