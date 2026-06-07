@@ -15,6 +15,7 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
+	tokenstore "github.com/useryege/athena/internal/token/store"
 	"github.com/useryege/athena/internal/tokenapi"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
@@ -49,7 +50,9 @@ func NewCommand() *cobra.Command {
 
 			ctx := cmd.Context()
 
-			server, err := tokenapi.NewServer(tokenapi.ServerOpts{})
+			server, err := tokenapi.NewServer(tokenapi.ServerOpts{
+				StoreSrc: tokenstore.NewSQLStoreSource(),
+			})
 			if err != nil {
 				return err
 			}
@@ -59,7 +62,7 @@ func NewCommand() *cobra.Command {
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
 			errors.CheckError(err)
 
-			if err := server.Start(); err != nil {
+			if err := server.Start(ctx); err != nil {
 				return err
 			}
 

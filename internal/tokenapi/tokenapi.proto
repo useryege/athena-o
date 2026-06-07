@@ -14,7 +14,111 @@ message GetTokenAPIStatusResponse {
   string status = 2;
 }
 
+message BytecodeBlacklist {
+  string code_hash = 1;
+  string note = 2;
+  int64 source_chain_id = 3;
+  string source_contract = 4;
+  string created_at = 5;
+}
+
+message WalletBlacklist {
+  string wallet = 1;
+  string note = 2;
+  string created_at = 3;
+}
+
+message GetBytecodeBlacklistRequest {
+  string code_hash = 1;
+}
+
+message GetBytecodeBlacklistResponse {
+  bool found = 1;
+  BytecodeBlacklist bytecode_blacklist = 2;
+}
+
+message ListBytecodeBlacklistsRequest {}
+
+message ListBytecodeBlacklistsResponse {
+  repeated BytecodeBlacklist bytecode_blacklists = 1;
+}
+
+message CreateBytecodeBlacklistRequest {
+  string code_hash = 1;
+  string note = 2;
+  int64 source_chain_id = 3;
+  string source_contract = 4;
+}
+
+message CreateBytecodeBlacklistResponse {}
+
+message UpdateBytecodeBlacklistRequest {
+  string code_hash = 1;
+  string note = 2;
+}
+
+message UpdateBytecodeBlacklistResponse {
+  int64 updated_count = 1;
+}
+
+message DeleteBytecodeBlacklistRequest {
+  string code_hash = 1;
+}
+
+message DeleteBytecodeBlacklistResponse {
+  int64 deleted_count = 1;
+}
+
+message GetWalletBlacklistRequest {
+  string wallet = 1;
+}
+
+message GetWalletBlacklistResponse {
+  bool found = 1;
+  WalletBlacklist wallet_blacklist = 2;
+}
+
+message ListWalletBlacklistsRequest {}
+
+message ListWalletBlacklistsResponse {
+  repeated WalletBlacklist wallet_blacklists = 1;
+}
+
+message CreateWalletBlacklistRequest {
+  string wallet = 1;
+  string note = 2;
+}
+
+message CreateWalletBlacklistResponse {}
+
+message UpdateWalletBlacklistRequest {
+  string wallet = 1;
+  string note = 2;
+}
+
+message UpdateWalletBlacklistResponse {
+  int64 updated_count = 1;
+}
+
+message DeleteWalletBlacklistRequest {
+  string wallet = 1;
+}
+
+message DeleteWalletBlacklistResponse {
+  int64 deleted_count = 1;
+}
+
 service TokenAPIService {
   // GetTokenAPIStatus returns the token API service runtime status.
   rpc GetTokenAPIStatus(GetTokenAPIStatusRequest) returns (GetTokenAPIStatusResponse);
+  rpc GetBytecodeBlacklist(GetBytecodeBlacklistRequest) returns (GetBytecodeBlacklistResponse);
+  rpc ListBytecodeBlacklists(ListBytecodeBlacklistsRequest) returns (ListBytecodeBlacklistsResponse);
+  rpc CreateBytecodeBlacklist(CreateBytecodeBlacklistRequest) returns (CreateBytecodeBlacklistResponse);
+  rpc UpdateBytecodeBlacklist(UpdateBytecodeBlacklistRequest) returns (UpdateBytecodeBlacklistResponse);
+  rpc DeleteBytecodeBlacklist(DeleteBytecodeBlacklistRequest) returns (DeleteBytecodeBlacklistResponse);
+  rpc GetWalletBlacklist(GetWalletBlacklistRequest) returns (GetWalletBlacklistResponse);
+  rpc ListWalletBlacklists(ListWalletBlacklistsRequest) returns (ListWalletBlacklistsResponse);
+  rpc CreateWalletBlacklist(CreateWalletBlacklistRequest) returns (CreateWalletBlacklistResponse);
+  rpc UpdateWalletBlacklist(UpdateWalletBlacklistRequest) returns (UpdateWalletBlacklistResponse);
+  rpc DeleteWalletBlacklist(DeleteWalletBlacklistRequest) returns (DeleteWalletBlacklistResponse);
 }
