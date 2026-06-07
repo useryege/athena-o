@@ -15,6 +15,7 @@ import (
 )
 
 const initialRecipientWalletLimit = 10
+const basisPointsDenominator int64 = 10000
 
 var errProjectCreationReceiptNil = errors.New("project creation transaction receipt is nil")
 
@@ -29,7 +30,7 @@ func fetchProjectCreationReceipt(ctx context.Context, client *ethclient.Client, 
 	return receipt, nil
 }
 
-func extractInitialRecipientWallets(logs []*types.Log, tokenContract common.Address, limit int) []common.Address {
+func extractInitialRecipientWallets(logs []*types.Log, tokenContract common.Address, limit int) []initialRecipientWallet {
 	if len(logs) == 0 || tokenContract == (common.Address{}) || limit == 0 {
 		return nil
 	}
@@ -82,14 +83,10 @@ func extractInitialRecipientWallets(logs []*types.Log, tokenContract common.Addr
 	if limit > 0 && len(recipients) > limit {
 		recipients = recipients[:limit]
 	}
-	wallets := make([]common.Address, 0, len(recipients))
-	for _, recipient := range recipients {
-		wallets = append(wallets, recipient.wallet)
-	}
-	return wallets
+	return recipients
 }
 
-func buildProjectRelatedWallets(candidate tokenstore.ProjectCandidate, initialRecipients []common.Address) []tokenstore.ProjectRelatedWallet {
+func buildProjectRelatedWallets(candidate tokenstore.ProjectCandidate, initialRecipients []initialRecipientWallet) []tokenstore.ProjectRelatedWallet {
 	wallets := make([]tokenstore.ProjectRelatedWallet, 0, 1+len(initialRecipients))
 	if candidate.Creator != (common.Address{}) {
 		wallets = append(wallets, tokenstore.ProjectRelatedWallet{
@@ -97,7 +94,8 @@ func buildProjectRelatedWallets(candidate tokenstore.ProjectCandidate, initialRe
 			Role:   tokenstore.ProjectRelatedWalletRoleCreator,
 		})
 	}
-	for _, wallet := range initialRecipients {
+	for _, recipient := range initialRecipients {
+		wallet := recipient.wallet
 		if wallet == (common.Address{}) {
 			continue
 		}
@@ -109,7 +107,7 @@ func buildProjectRelatedWallets(candidate tokenstore.ProjectCandidate, initialRe
 	return wallets
 }
 
-func buildWalletAssetStates(candidate tokenstore.ProjectCandidate, initialRecipients []common.Address) []tokenstore.WalletAssetState {
+func buildWalletAssetStates(candidate tokenstore.ProjectCandidate, initialRecipients []initialRecipientWallet) []tokenstore.WalletAssetState {
 	wallets := make([]tokenstore.WalletAssetState, 0, 1+len(initialRecipients))
 	seen := make(map[common.Address]struct{}, 1+len(initialRecipients))
 	if candidate.Creator != (common.Address{}) {
@@ -119,7 +117,8 @@ func buildWalletAssetStates(candidate tokenstore.ProjectCandidate, initialRecipi
 			Wallet:  candidate.Creator,
 		})
 	}
-	for _, wallet := range initialRecipients {
+	for _, recipient := range initialRecipients {
+		wallet := recipient.wallet
 		if wallet == (common.Address{}) {
 			continue
 		}
@@ -133,6 +132,28 @@ func buildWalletAssetStates(candidate tokenstore.ProjectCandidate, initialRecipi
 		})
 	}
 	return wallets
+}
+
+func buildProjectInitialRecipients(candidate tokenstore.ProjectCandidate, initialRecipients []initialRecipientWallet, totalSupply *big.Int) []tokenstore.ProjectInitialRecipient {
+	if len(initialRecipients) == 0 || totalSupply == nil || totalSupply.Sign() <= 0 {
+		return nil
+	}
+	items := make([]tokenstore.ProjectInitialRecipient, 0, len(initialRecipients))
+	for i, recipient := range initialRecipients {
+		if recipient.wallet == (common.Address{}) || recipient.amount == nil || recipient.amount.Sign() <= 0 {
+			continue
+		}
+		ratio := new(big.Int).Mul(recipient.amount, big.NewInt(basisPointsDenominator))
+		ratio.Div(ratio, totalSupply)
+		items = append(items, tokenstore.ProjectInitialRecipient{
+			Wallet:            recipient.wallet,
+			RatioBPS:          ratio.Int64(),
+			RankIndex:         int32(i),
+			SourceTxHash:      candidate.TxHash,
+			SourceBlockNumber: candidate.BlockNumber,
+		})
+	}
+	return items
 }
 
 type initialRecipientWallet struct {

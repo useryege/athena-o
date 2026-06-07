@@ -37,6 +37,10 @@ contract Athena {
 
     struct TokenValidation {
         bool isValidERC20;
+        string name;
+        string symbol;
+        uint8 decimals;
+        uint256 totalSupply;
         address wethPair;
         address usdtPair;
     }
@@ -193,6 +197,10 @@ contract Athena {
         for (uint256 i = 0; i < tokenContracts.length;) {
             Token memory token = _getToken(tokenContracts[i]);
             results[i].isValidERC20 = token.isValidERC20;
+            results[i].name = token.name;
+            results[i].symbol = token.symbol;
+            results[i].decimals = token.decimals;
+            results[i].totalSupply = token.totalSupply;
             if (token.isValidERC20) {
                 if (tokenContracts[i] != wethContract) {
                     results[i].wethPair = _pairFor(tokenContracts[i], wethContract);

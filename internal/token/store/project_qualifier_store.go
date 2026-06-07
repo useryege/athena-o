@@ -9,7 +9,7 @@ import (
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash, wethPair, usdtPair common.Address, relatedWallets []ProjectRelatedWallet, walletAssetStates []WalletAssetState) (*Project, error) {
+func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash, wethPair, usdtPair common.Address, relatedWallets []ProjectRelatedWallet, walletAssetStates []WalletAssetState, initialRecipients []ProjectInitialRecipient) (*Project, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token postgres database is not configured")
 	}
@@ -76,6 +76,28 @@ func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate Projec
 			Role:      wallet.Role,
 		}); err != nil {
 			return nil, fmt.Errorf("upsert project related wallet %s %s: %w", wallet.Role, wallet.Wallet.Hex(), err)
+		}
+	}
+	if _, err := q.DeleteProjectInitialRecipientsByProject(ctx, row.ID); err != nil {
+		return nil, fmt.Errorf("delete project initial recipients: %w", err)
+	}
+	for _, recipient := range initialRecipients {
+		if recipient.Wallet == (common.Address{}) {
+			continue
+		}
+		sourceBlockNumber, err := uint64ToInt64("source_block_number", recipient.SourceBlockNumber)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := q.UpsertProjectInitialRecipient(ctx, tokensqlc.UpsertProjectInitialRecipientParams{
+			ProjectID:         row.ID,
+			Wallet:            recipient.Wallet.Bytes(),
+			RatioBps:          recipient.RatioBPS,
+			RankIndex:         recipient.RankIndex,
+			SourceTxHash:      recipient.SourceTxHash.Bytes(),
+			SourceBlockNumber: sourceBlockNumber,
+		}); err != nil {
+			return nil, fmt.Errorf("upsert project initial recipient %s: %w", recipient.Wallet.Hex(), err)
 		}
 	}
 	fetchedAt := time.Now().UTC()

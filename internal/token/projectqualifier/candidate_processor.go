@@ -95,19 +95,21 @@ func (r *qualifierRunner) processValidatedCandidate(ctx context.Context, client 
 	initialRecipients := extractInitialRecipientWallets(receipt.Logs, candidate.Contract, initialRecipientWalletLimit)
 	relatedWallets := buildProjectRelatedWallets(candidate, initialRecipients)
 	walletAssetStates := buildWalletAssetStates(candidate, initialRecipients)
-	if _, err := r.opts.store.QualifyProjectCandidate(ctx, candidate, codeHash, validation.WethPair, validation.UsdtPair, relatedWallets, walletAssetStates); err != nil {
+	projectInitialRecipients := buildProjectInitialRecipients(candidate, initialRecipients, validation.TotalSupply)
+	if _, err := r.opts.store.QualifyProjectCandidate(ctx, candidate, codeHash, validation.WethPair, validation.UsdtPair, relatedWallets, walletAssetStates, projectInitialRecipients); err != nil {
 		return err
 	}
 	log.WithFields(log.Fields{
-		"candidate_id":            candidate.ID,
-		"chain_id":                candidate.ChainID,
-		"contract":                candidate.Contract.Hex(),
-		"code_hash":               codeHash.Hex(),
-		"weth_pair":               validation.WethPair.Hex(),
-		"usdt_pair":               validation.UsdtPair.Hex(),
-		"related_wallet_count":    len(relatedWallets),
-		"asset_wallet_count":      len(walletAssetStates),
-		"initial_recipient_count": len(initialRecipients),
+		"candidate_id":                   candidate.ID,
+		"chain_id":                       candidate.ChainID,
+		"contract":                       candidate.Contract.Hex(),
+		"code_hash":                      codeHash.Hex(),
+		"weth_pair":                      validation.WethPair.Hex(),
+		"usdt_pair":                      validation.UsdtPair.Hex(),
+		"related_wallet_count":           len(relatedWallets),
+		"asset_wallet_count":             len(walletAssetStates),
+		"initial_recipient_count":        len(initialRecipients),
+		"initial_recipient_detail_count": len(projectInitialRecipients),
 	}).Info("token project qualifier qualified candidate")
 	return nil
 }

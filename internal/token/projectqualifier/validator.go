@@ -2,6 +2,7 @@ package projectqualifier
 
 import (
 	"context"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -11,6 +12,10 @@ import (
 
 type tokenValidation struct {
 	IsValidERC20 bool
+	Name         string
+	Symbol       string
+	Decimals     uint8
+	TotalSupply  *big.Int
 	WethPair     common.Address
 	UsdtPair     common.Address
 }
@@ -36,6 +41,10 @@ func (v *athenaValidator) validateERC20(ctx context.Context, contracts []common.
 	for _, item := range items {
 		results = append(results, tokenValidation{
 			IsValidERC20: item.IsValidERC20,
+			Name:         item.Name,
+			Symbol:       item.Symbol,
+			Decimals:     item.Decimals,
+			TotalSupply:  item.TotalSupply,
 			WethPair:     item.WethPair,
 			UsdtPair:     item.UsdtPair,
 		})
