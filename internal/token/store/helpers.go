@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -221,6 +222,88 @@ func mapProjects(rows []tokensqlc.Project) ([]Project, error) {
 	items := make([]Project, 0, len(rows))
 	for _, row := range rows {
 		item, err := mapProject(row)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, *item)
+	}
+	return items, nil
+}
+
+func mapProjectAveData(row tokensqlc.ProjectAveDatum) *ProjectAveData {
+	return &ProjectAveData{
+		ProjectID:   row.ProjectID,
+		AveResponse: json.RawMessage(row.AveResponse),
+		FetchedAt:   timeValue(row.FetchedAt),
+		CreatedAt:   timeValue(row.CreatedAt),
+	}
+}
+
+func mapProjectChainStateData(row tokensqlc.ProjectChainState) *ProjectChainStateData {
+	return &ProjectChainStateData{
+		ProjectID:  row.ProjectID,
+		ChainState: json.RawMessage(row.ChainState),
+		FetchedAt:  timeValue(row.FetchedAt),
+		CreatedAt:  timeValue(row.CreatedAt),
+	}
+}
+
+func mapProjectDataCollectionTask(row tokensqlc.ProjectDataCollectionTask) *ProjectDataCollectionTask {
+	return &ProjectDataCollectionTask{
+		ProjectID:     row.ProjectID,
+		DataType:      row.DataType,
+		Status:        row.Status,
+		Attempts:      row.Attempts,
+		NextAttemptAt: timeValue(row.NextAttemptAt),
+		LastError:     textValue(row.LastError),
+		CreatedAt:     timeValue(row.CreatedAt),
+	}
+}
+
+func mapDueProjectDataCollectionTask(row tokensqlc.ListDueProjectDataCollectionTasksRow) (*ProjectDataCollectionTaskWithProject, error) {
+	txIndex, err := int64ToUint64("tx_index", row.TxIndex)
+	if err != nil {
+		return nil, err
+	}
+	blockNumber, err := int64ToUint64("block_number", row.BlockNumber)
+	if err != nil {
+		return nil, err
+	}
+	blockTime, err := int64ToUint64("block_time", row.BlockTime)
+	if err != nil {
+		return nil, err
+	}
+	return &ProjectDataCollectionTaskWithProject{
+		Task: ProjectDataCollectionTask{
+			ProjectID:     row.ProjectID,
+			DataType:      row.DataType,
+			Status:        row.Status,
+			Attempts:      row.Attempts,
+			NextAttemptAt: timeValue(row.NextAttemptAt),
+			LastError:     textValue(row.LastError),
+			CreatedAt:     timeValue(row.CreatedAt),
+		},
+		Project: Project{
+			ID:          row.ProjectID,
+			ChainID:     row.ChainID,
+			Contract:    bytesToAddress(row.Contract),
+			Creator:     bytesToAddress(row.Creator),
+			TxHash:      bytesToHash(row.TxHash),
+			TxIndex:     txIndex,
+			BlockNumber: blockNumber,
+			BlockTime:   blockTime,
+			CodeHash:    bytesToHash(row.CodeHash),
+			WethPair:    bytesToAddress(row.WethPair),
+			UsdtPair:    bytesToAddress(row.UsdtPair),
+			CreatedAt:   timeValue(row.ProjectCreatedAt),
+		},
+	}, nil
+}
+
+func mapDueProjectDataCollectionTasks(rows []tokensqlc.ListDueProjectDataCollectionTasksRow) ([]ProjectDataCollectionTaskWithProject, error) {
+	items := make([]ProjectDataCollectionTaskWithProject, 0, len(rows))
+	for _, row := range rows {
+		item, err := mapDueProjectDataCollectionTask(row)
 		if err != nil {
 			return nil, err
 		}

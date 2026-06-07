@@ -18,6 +18,7 @@ import (
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/token"
 	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
@@ -38,6 +39,9 @@ func NewCommand() *cobra.Command {
 		ethEnabled        bool
 		bscEnabled        bool
 		nodeWSUseProxy    bool
+		aveAPIKey         string
+		aveAPIBaseURL     string
+		liquidityLockers  []string
 	)
 
 	command := &cobra.Command{
@@ -61,15 +65,18 @@ func NewCommand() *cobra.Command {
 			ctx := cmd.Context()
 
 			server, err := token.NewServer(token.ServerOpts{
-				Mode:              mode,
-				StoreSrc:          tokenstore.NewSQLStoreSource(),
-				EthNodeWSURL:      ethNodeWSURL,
-				BSCNodeWSURL:      bscNodeWSURL,
-				EthAthenaContract: ethAthenaContract,
-				BSCAthenaContract: bscAthenaContract,
-				EthEnabled:        ethEnabled,
-				BSCEnabled:        bscEnabled,
-				NodeWSUseProxy:    nodeWSUseProxy,
+				Mode:                     mode,
+				StoreSrc:                 tokenstore.NewSQLStoreSource(),
+				EthNodeWSURL:             ethNodeWSURL,
+				BSCNodeWSURL:             bscNodeWSURL,
+				EthAthenaContract:        ethAthenaContract,
+				BSCAthenaContract:        bscAthenaContract,
+				EthEnabled:               ethEnabled,
+				BSCEnabled:               bscEnabled,
+				NodeWSUseProxy:           nodeWSUseProxy,
+				AveAPIKey:                aveAPIKey,
+				AveAPIBaseURL:            aveAPIBaseURL,
+				LiquidityLockerAddresses: liquidityLockers,
 			})
 			if err != nil {
 				return err
@@ -82,7 +89,7 @@ func NewCommand() *cobra.Command {
 			switch token.NormalizeMode(mode) {
 			case token.ModeGRPC:
 				return runGRPCMode(ctx, server, listenHost, listenPort)
-			case token.ModeChainIngestor, token.ModeProjectQualifier:
+			case token.ModeChainIngestor, token.ModeProjectQualifier, token.ModeProjectDataCollector:
 				return runWorkerMode(ctx, server)
 			default:
 				if err := server.Stop(); err != nil {
@@ -100,6 +107,9 @@ func NewCommand() *cobra.Command {
 
 			# Start the Athena Token project qualifier worker
 			$ athena-token --mode project-qualifier
+
+			# Start the Athena Token project data collector worker
+			$ athena-token --mode project-data-collector
 		`),
 	}
 
@@ -107,7 +117,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv("ATHENA_TOKEN_LOGLEVEL", "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_TOKEN_LISTEN_ADDRESS", common.DefaultAddressToken), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortToken, "Listen on given port for incoming connections")
-	command.Flags().StringVar(&mode, "mode", env.StringFromEnv("ATHENA_TOKEN_MODE", token.ModeGRPC), "Run mode: grpc|chain-ingestor|project-qualifier")
+	command.Flags().StringVar(&mode, "mode", env.StringFromEnv("ATHENA_TOKEN_MODE", token.ModeGRPC), "Run mode: grpc|chain-ingestor|project-qualifier|project-data-collector")
 	command.Flags().StringVar(&ethNodeWSURL, "eth-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_ETH_NODE_WS_URL", ""), "Ethereum Mainnet node WebSocket address for worker modes")
 	command.Flags().StringVar(&bscNodeWSURL, "bsc-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_BSC_NODE_WS_URL", ""), "BSC Mainnet node WebSocket address for worker modes")
 	command.Flags().StringVar(&ethAthenaContract, "eth-athena-contract", env.StringFromEnv("ATHENA_TOKEN_ETH_ATHENA_CONTRACT", ""), "Ethereum Mainnet ATHENA contract address for project-qualifier mode")
@@ -115,6 +125,9 @@ func NewCommand() *cobra.Command {
 	command.Flags().BoolVar(&ethEnabled, "eth-enabled", env.ParseBoolFromEnv("ATHENA_TOKEN_ETH_ENABLED", true), "Whether to enable Ethereum Mainnet token worker logic")
 	command.Flags().BoolVar(&bscEnabled, "bsc-enabled", env.ParseBoolFromEnv("ATHENA_TOKEN_BSC_ENABLED", true), "Whether to enable BSC Mainnet token worker logic")
 	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_TOKEN_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
+	command.Flags().StringVar(&aveAPIKey, "ave-api-key", env.StringFromEnv("ATHENA_TOKEN_AVE_API_KEY", ""), "Ave API key for project data collector mode")
+	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_TOKEN_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL for project data collector mode")
+	command.Flags().StringSliceVar(&liquidityLockers, "liquidity-locker-addresses", env.StringsFromEnv("ATHENA_TOKEN_LIQUIDITY_LOCKER_ADDRESSES", nil, ","), "Comma-separated liquidity locker wallet addresses for project data collector mode")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

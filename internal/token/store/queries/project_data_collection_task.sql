@@ -21,6 +21,16 @@ SET status = EXCLUDED.status,
   last_error = EXCLUDED.last_error
 RETURNING *;
 
+-- name: InsertProjectDataCollectionTaskIfNotExists :exec
+INSERT INTO project_data_collection_task (
+  project_id,
+  data_type
+) VALUES (
+  @project_id,
+  @data_type
+)
+ON CONFLICT (project_id, data_type) DO NOTHING;
+
 -- name: GetProjectDataCollectionTask :one
 SELECT *
 FROM project_data_collection_task
@@ -66,11 +76,37 @@ SELECT
 FROM project_data_collection_task AS t
 JOIN project AS p ON p.id = t.project_id
 WHERE t.data_type = @data_type
+  AND p.chain_id = ANY(@chain_ids::bigint[])
   AND t.status = 'pending'
   AND t.attempts < 5
   AND t.next_attempt_at <= now()
 ORDER BY t.next_attempt_at ASC, t.created_at ASC, t.project_id ASC
 LIMIT sqlc.arg('limit');
+
+-- name: MarkProjectDataCollectionTaskSucceeded :one
+UPDATE project_data_collection_task
+SET status = 'succeeded',
+  next_attempt_at = now(),
+  last_error = NULL
+WHERE project_id = @project_id
+  AND data_type = @data_type
+RETURNING *;
+
+-- name: MarkProjectDataCollectionTaskFailed :one
+UPDATE project_data_collection_task
+SET attempts = attempts + 1,
+  status = CASE
+    WHEN attempts + 1 >= 5 THEN 'failed'
+    ELSE 'pending'
+  END,
+  next_attempt_at = CASE
+    WHEN attempts + 1 >= 5 THEN now()
+    ELSE now() + INTERVAL '1 minute'
+  END,
+  last_error = @last_error
+WHERE project_id = @project_id
+  AND data_type = @data_type
+RETURNING *;
 
 -- name: DeleteProjectDataCollectionTask :execrows
 DELETE FROM project_data_collection_task

@@ -9,6 +9,7 @@ import (
 	"github.com/useryege/athena/internal/server/version"
 	"github.com/useryege/athena/internal/token/apiclient"
 	"github.com/useryege/athena/internal/token/chainingestor"
+	"github.com/useryege/athena/internal/token/projectdatacollector"
 	"github.com/useryege/athena/internal/token/projectqualifier"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
@@ -18,9 +19,10 @@ import (
 )
 
 const (
-	ModeGRPC             = "grpc"
-	ModeChainIngestor    = "chain-ingestor"
-	ModeProjectQualifier = "project-qualifier"
+	ModeGRPC                 = "grpc"
+	ModeChainIngestor        = "chain-ingestor"
+	ModeProjectQualifier     = "project-qualifier"
+	ModeProjectDataCollector = "project-data-collector"
 )
 
 type Server struct {
@@ -30,18 +32,22 @@ type Server struct {
 	store         *tokenstore.SQLStore
 	chainWorker   *chainingestor.Worker
 	qualifier     *projectqualifier.Worker
+	dataCollector *projectdatacollector.Worker
 }
 
 type ServerOpts struct {
-	Mode              string
-	StoreSrc          func(context.Context) (*tokenstore.SQLStore, error)
-	EthNodeWSURL      string
-	BSCNodeWSURL      string
-	EthAthenaContract string
-	BSCAthenaContract string
-	EthEnabled        bool
-	BSCEnabled        bool
-	NodeWSUseProxy    bool
+	Mode                     string
+	StoreSrc                 func(context.Context) (*tokenstore.SQLStore, error)
+	EthNodeWSURL             string
+	BSCNodeWSURL             string
+	EthAthenaContract        string
+	BSCAthenaContract        string
+	EthEnabled               bool
+	BSCEnabled               bool
+	NodeWSUseProxy           bool
+	AveAPIKey                string
+	AveAPIBaseURL            string
+	LiquidityLockerAddresses []string
 }
 
 func NormalizeMode(mode string) string {
@@ -76,7 +82,7 @@ func (s *Server) CreateGRPC() *grpc.Server {
 func (s *Server) Start(ctx context.Context) error {
 	mode := NormalizeMode(s.Mode)
 	switch mode {
-	case ModeGRPC, ModeChainIngestor, ModeProjectQualifier:
+	case ModeGRPC, ModeChainIngestor, ModeProjectQualifier, ModeProjectDataCollector:
 	default:
 		return fmt.Errorf("unsupported athena-token mode %q", s.Mode)
 	}
@@ -130,6 +136,32 @@ func (s *Server) Start(ctx context.Context) error {
 			s.qualifier = nil
 			return err
 		}
+	case ModeProjectDataCollector:
+		store, err := s.startStore(ctx, mode)
+		if err != nil {
+			_ = s.service.Stop()
+			return err
+		}
+		s.dataCollector = projectdatacollector.NewWorker(projectdatacollector.Options{
+			Store:                    store,
+			EthNodeWSURL:             s.EthNodeWSURL,
+			BSCNodeWSURL:             s.BSCNodeWSURL,
+			EthAthenaContract:        s.EthAthenaContract,
+			BSCAthenaContract:        s.BSCAthenaContract,
+			EthEnabled:               s.EthEnabled,
+			BSCEnabled:               s.BSCEnabled,
+			NodeWSUseProxy:           s.NodeWSUseProxy,
+			AveAPIKey:                s.AveAPIKey,
+			AveAPIBaseURL:            s.AveAPIBaseURL,
+			LiquidityLockerAddresses: s.LiquidityLockerAddresses,
+		})
+		if err := s.dataCollector.Start(ctx); err != nil {
+			_ = store.Close()
+			_ = s.service.Stop()
+			s.store = nil
+			s.dataCollector = nil
+			return err
+		}
 	}
 	s.setHealthStatus(grpc_health_v1.HealthCheckResponse_SERVING)
 	return nil
@@ -168,6 +200,14 @@ func (s *Server) Stop() error {
 		}
 		cancel()
 		s.qualifier = nil
+	}
+	if s.dataCollector != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		if err := s.dataCollector.Stop(ctx); err != nil && result == nil {
+			result = err
+		}
+		cancel()
+		s.dataCollector = nil
 	}
 	if err := s.service.Stop(); err != nil && result == nil {
 		result = err

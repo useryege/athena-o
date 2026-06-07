@@ -78,6 +78,27 @@ func (q *Queries) GetProjectDataCollectionTask(ctx context.Context, arg GetProje
 	return i, err
 }
 
+const insertProjectDataCollectionTaskIfNotExists = `-- name: InsertProjectDataCollectionTaskIfNotExists :exec
+INSERT INTO project_data_collection_task (
+  project_id,
+  data_type
+) VALUES (
+  $1,
+  $2
+)
+ON CONFLICT (project_id, data_type) DO NOTHING
+`
+
+type InsertProjectDataCollectionTaskIfNotExistsParams struct {
+	ProjectID int64
+	DataType  string
+}
+
+func (q *Queries) InsertProjectDataCollectionTaskIfNotExists(ctx context.Context, arg InsertProjectDataCollectionTaskIfNotExistsParams) error {
+	_, err := q.db.Exec(ctx, insertProjectDataCollectionTaskIfNotExists, arg.ProjectID, arg.DataType)
+	return err
+}
+
 const listDueProjectDataCollectionTasks = `-- name: ListDueProjectDataCollectionTasks :many
 SELECT
   t.project_id,
@@ -101,15 +122,17 @@ SELECT
 FROM project_data_collection_task AS t
 JOIN project AS p ON p.id = t.project_id
 WHERE t.data_type = $1
+  AND p.chain_id = ANY($2::bigint[])
   AND t.status = 'pending'
   AND t.attempts < 5
   AND t.next_attempt_at <= now()
 ORDER BY t.next_attempt_at ASC, t.created_at ASC, t.project_id ASC
-LIMIT $2
+LIMIT $3
 `
 
 type ListDueProjectDataCollectionTasksParams struct {
 	DataType string
+	ChainIds []int64
 	Limit    int32
 }
 
@@ -135,7 +158,7 @@ type ListDueProjectDataCollectionTasksRow struct {
 }
 
 func (q *Queries) ListDueProjectDataCollectionTasks(ctx context.Context, arg ListDueProjectDataCollectionTasksParams) ([]ListDueProjectDataCollectionTasksRow, error) {
-	rows, err := q.db.Query(ctx, listDueProjectDataCollectionTasks, arg.DataType, arg.Limit)
+	rows, err := q.db.Query(ctx, listDueProjectDataCollectionTasks, arg.DataType, arg.ChainIds, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -223,6 +246,74 @@ func (q *Queries) ListProjectDataCollectionTasks(ctx context.Context, arg ListPr
 		return nil, err
 	}
 	return items, nil
+}
+
+const markProjectDataCollectionTaskFailed = `-- name: MarkProjectDataCollectionTaskFailed :one
+UPDATE project_data_collection_task
+SET attempts = attempts + 1,
+  status = CASE
+    WHEN attempts + 1 >= 5 THEN 'failed'
+    ELSE 'pending'
+  END,
+  next_attempt_at = CASE
+    WHEN attempts + 1 >= 5 THEN now()
+    ELSE now() + INTERVAL '1 minute'
+  END,
+  last_error = $1
+WHERE project_id = $2
+  AND data_type = $3
+RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at
+`
+
+type MarkProjectDataCollectionTaskFailedParams struct {
+	LastError pgtype.Text
+	ProjectID int64
+	DataType  string
+}
+
+func (q *Queries) MarkProjectDataCollectionTaskFailed(ctx context.Context, arg MarkProjectDataCollectionTaskFailedParams) (ProjectDataCollectionTask, error) {
+	row := q.db.QueryRow(ctx, markProjectDataCollectionTaskFailed, arg.LastError, arg.ProjectID, arg.DataType)
+	var i ProjectDataCollectionTask
+	err := row.Scan(
+		&i.ProjectID,
+		&i.DataType,
+		&i.Status,
+		&i.Attempts,
+		&i.NextAttemptAt,
+		&i.LastError,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const markProjectDataCollectionTaskSucceeded = `-- name: MarkProjectDataCollectionTaskSucceeded :one
+UPDATE project_data_collection_task
+SET status = 'succeeded',
+  next_attempt_at = now(),
+  last_error = NULL
+WHERE project_id = $1
+  AND data_type = $2
+RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at
+`
+
+type MarkProjectDataCollectionTaskSucceededParams struct {
+	ProjectID int64
+	DataType  string
+}
+
+func (q *Queries) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, arg MarkProjectDataCollectionTaskSucceededParams) (ProjectDataCollectionTask, error) {
+	row := q.db.QueryRow(ctx, markProjectDataCollectionTaskSucceeded, arg.ProjectID, arg.DataType)
+	var i ProjectDataCollectionTask
+	err := row.Scan(
+		&i.ProjectID,
+		&i.DataType,
+		&i.Status,
+		&i.Attempts,
+		&i.NextAttemptAt,
+		&i.LastError,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const upsertProjectDataCollectionTask = `-- name: UpsertProjectDataCollectionTask :one

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -15,6 +16,17 @@ const (
 	ProjectCandidateStatusPending   = "pending"
 	ProjectCandidateStatusQualified = "qualified"
 	ProjectCandidateStatusRejected  = "rejected"
+)
+
+const (
+	ProjectDataCollectionTypeAve        = "ave"
+	ProjectDataCollectionTypeChainState = "chain_state"
+)
+
+const (
+	ProjectDataCollectionStatusPending   = "pending"
+	ProjectDataCollectionStatusSucceeded = "succeeded"
+	ProjectDataCollectionStatusFailed    = "failed"
 )
 
 type ChainIngestCheckpoint struct {
@@ -61,6 +73,35 @@ type Project struct {
 	WethPair    common.Address
 	UsdtPair    common.Address
 	CreatedAt   time.Time
+}
+
+type ProjectAveData struct {
+	ProjectID   int64
+	AveResponse json.RawMessage
+	FetchedAt   time.Time
+	CreatedAt   time.Time
+}
+
+type ProjectChainStateData struct {
+	ProjectID  int64
+	ChainState json.RawMessage
+	FetchedAt  time.Time
+	CreatedAt  time.Time
+}
+
+type ProjectDataCollectionTask struct {
+	ProjectID     int64
+	DataType      string
+	Status        string
+	Attempts      int32
+	NextAttemptAt time.Time
+	LastError     string
+	CreatedAt     time.Time
+}
+
+type ProjectDataCollectionTaskWithProject struct {
+	Task    ProjectDataCollectionTask
+	Project Project
 }
 
 type ProjectCandidatePage struct {

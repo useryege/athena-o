@@ -33,6 +33,7 @@ type Querier interface {
 	GetProjectCandidateByContract(ctx context.Context, arg GetProjectCandidateByContractParams) (ProjectCandidate, error)
 	GetProjectChainState(ctx context.Context, projectID int64) (ProjectChainState, error)
 	GetProjectDataCollectionTask(ctx context.Context, arg GetProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
+	InsertProjectDataCollectionTaskIfNotExists(ctx context.Context, arg InsertProjectDataCollectionTaskIfNotExistsParams) error
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
 	ListContractCodes(ctx context.Context, arg ListContractCodesParams) ([]ContractCode, error)
 	ListDueProjectDataCollectionTasks(ctx context.Context, arg ListDueProjectDataCollectionTasksParams) ([]ListDueProjectDataCollectionTasksRow, error)
@@ -44,6 +45,8 @@ type Querier interface {
 	ListProjects(ctx context.Context, chainID int64) ([]Project, error)
 	ListProjectsPage(ctx context.Context, arg ListProjectsPageParams) ([]Project, error)
 	MarkProjectCandidateStatus(ctx context.Context, arg MarkProjectCandidateStatusParams) (ProjectCandidate, error)
+	MarkProjectDataCollectionTaskFailed(ctx context.Context, arg MarkProjectDataCollectionTaskFailedParams) (ProjectDataCollectionTask, error)
+	MarkProjectDataCollectionTaskSucceeded(ctx context.Context, arg MarkProjectDataCollectionTaskSucceededParams) (ProjectDataCollectionTask, error)
 	UpdateChainIngestCheckpointStatus(ctx context.Context, arg UpdateChainIngestCheckpointStatusParams) (ChainIngestCheckpoint, error)
 	UpdateContractCodeSource(ctx context.Context, arg UpdateContractCodeSourceParams) (ContractCode, error)
 	UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertChainIngestCheckpointParams) (ChainIngestCheckpoint, error)
