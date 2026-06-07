@@ -58,7 +58,7 @@ func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate Projec
 	}); err != nil {
 		return nil, fmt.Errorf("mark project candidate qualified: %w", err)
 	}
-	for _, dataType := range []string{ProjectDataCollectionTypeAve, ProjectDataCollectionTypeChainState, ProjectDataCollectionTypeWalletAssetState, ProjectDataCollectionTypeSimulationResult} {
+	for _, dataType := range []string{ProjectDataCollectionTypeAve, ProjectDataCollectionTypeContractCodeSource, ProjectDataCollectionTypeChainState, ProjectDataCollectionTypeWalletAssetState, ProjectDataCollectionTypeSimulationResult} {
 		if err := q.InsertProjectDataCollectionTaskIfNotExists(ctx, tokensqlc.InsertProjectDataCollectionTaskIfNotExistsParams{
 			ProjectID: row.ID,
 			DataType:  dataType,

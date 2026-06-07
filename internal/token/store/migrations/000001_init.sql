@@ -159,7 +159,7 @@ CREATE TABLE IF NOT EXISTS project_data_collection_task (
   CONSTRAINT project_data_collection_task_project_fk
     FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
   CONSTRAINT project_data_collection_task_data_type_allowed
-    CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result')),
+    CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source')),
   CONSTRAINT project_data_collection_task_status_allowed
     CHECK (status IN ('pending', 'succeeded', 'failed')),
   CONSTRAINT project_data_collection_task_attempts_range

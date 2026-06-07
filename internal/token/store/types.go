@@ -20,10 +20,11 @@ const (
 )
 
 const (
-	ProjectDataCollectionTypeAve              = "ave"
-	ProjectDataCollectionTypeChainState       = "chain_state"
-	ProjectDataCollectionTypeWalletAssetState = "wallet_asset_state"
-	ProjectDataCollectionTypeSimulationResult = "simulation_result"
+	ProjectDataCollectionTypeAve                = "ave"
+	ProjectDataCollectionTypeChainState         = "chain_state"
+	ProjectDataCollectionTypeWalletAssetState   = "wallet_asset_state"
+	ProjectDataCollectionTypeSimulationResult   = "simulation_result"
+	ProjectDataCollectionTypeContractCodeSource = "contract_code_source"
 )
 
 const (

@@ -34,7 +34,7 @@ func runAPIMode(ctx context.Context, opts Options) error {
 
 	var apiFetcher ethereumapi.EthereumAPI
 	if opts.EtherscanAPIBaseURL != "" && opts.EtherscanAPIKey != "" {
-		apiFetcher = ethereumapi.NewEthereumAPI(opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey, nodeChainID.Int64())
+		apiFetcher = ethereumapi.NewEthereumAPI(opts.EtherscanAPIBaseURL, opts.EtherscanAPIKey)
 	}
 
 	athenaContractAddress, v2FactoryContractAddress, wethContractAddress, usdtContractAddress, wethDecimals, usdtDecimals, err := loadAthenaContractOptions(ctx, nodeClient, opts.AthenaContract)

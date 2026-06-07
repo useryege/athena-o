@@ -10,6 +10,10 @@ func errAveAPIKeyRequired() error {
 	return fmt.Errorf("token project data collector ave api key is required")
 }
 
+func errEtherscanAPIKeyRequired() error {
+	return fmt.Errorf("token project data collector etherscan api key is required")
+}
+
 func errNodeWSURLRequired(chainID int64) error {
 	return fmt.Errorf("token project data collector node websocket url is required for chain %d", chainID)
 }

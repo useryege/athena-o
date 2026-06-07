@@ -116,6 +116,41 @@ func (s *SQLStore) CompleteProjectAveDataCollection(ctx context.Context, project
 	return mapProjectAveData(row), nil
 }
 
+func (s *SQLStore) CompleteProjectContractCodeSourceCollection(ctx context.Context, projectID int64, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, fetchedAt time.Time) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("token postgres database is not configured")
+	}
+	if fetchedAt.IsZero() {
+		fetchedAt = time.Now().UTC()
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin project contract code source collection transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+	q := tokensqlc.New(tx)
+	if _, err := q.UpdateContractCodeSource(ctx, tokensqlc.UpdateContractCodeSourceParams{
+		CodeHash:            codeHash.Bytes(),
+		SourceCode:          nullableText(sourceCode),
+		SourceCodeHash:      optionalHashBytes(sourceCodeHash),
+		SourceCodeFetchedAt: nullableTime(fetchedAt),
+	}); err != nil {
+		return fmt.Errorf("update contract code source %s: %w", codeHash.Hex(), err)
+	}
+	if _, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
+		ProjectID: projectID,
+		DataType:  ProjectDataCollectionTypeContractCodeSource,
+	}); err != nil {
+		return fmt.Errorf("mark project contract code source collection succeeded: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit project contract code source collection transaction: %w", err)
+	}
+	return nil
+}
+
 func (s *SQLStore) CompleteProjectChainStateCollection(ctx context.Context, projectID int64, payload json.RawMessage, fetchedAt time.Time) (*ProjectChainStateData, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token postgres database is not configured")

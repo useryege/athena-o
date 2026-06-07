@@ -39,7 +39,7 @@ func (s *Service) GetContractSourceInfo(ctx context.Context, req *applicationpkg
 	if err != nil {
 		return nil, err
 	}
-	if err := s.enrichBytecodeSource(ctx, contract, codeHash); err != nil {
+	if err := s.enrichBytecodeSource(ctx, chainID, contract, codeHash); err != nil {
 		return nil, err
 	}
 	return s.contractSourceInfo(ctx, chainID, contract, codeHash)
@@ -259,7 +259,7 @@ func (s *Service) resolveContractBytecode(ctx context.Context, chainID int64, co
 	return codeHash, nil
 }
 
-func (s *Service) enrichBytecodeSource(ctx context.Context, contract common.Address, codeHash common.Hash) error {
+func (s *Service) enrichBytecodeSource(ctx context.Context, chainID int64, contract common.Address, codeHash common.Hash) error {
 	record, err := s.store.GetBytecode(ctx, codeHash)
 	if err != nil {
 		return err
@@ -268,7 +268,7 @@ func (s *Service) enrichBytecodeSource(ctx context.Context, contract common.Addr
 		return nil
 	}
 	if strings.TrimSpace(record.SourceCode) == "" && s.apiFetcher != nil {
-		sourceCode, err := s.fetchSourceCode(ctx, contract)
+		sourceCode, err := s.fetchSourceCode(ctx, chainID, contract)
 		if err == nil && len(strings.TrimSpace(sourceCode)) > 100 {
 			sourceCodeHash := crypto.Keccak256Hash([]byte(sourceCode))
 			if err := s.store.UpdateBytecodeSourceCode(ctx, codeHash, sourceCode, sourceCodeHash, sourceOriginThirdPartyAPI); err != nil {
@@ -334,8 +334,8 @@ func (s *Service) fetchContractBytecode(ctx context.Context, contract common.Add
 	return s.nodeClient.CodeAt(ctx, contract, nil)
 }
 
-func (s *Service) fetchSourceCode(ctx context.Context, contract common.Address) (string, error) {
-	response, err := s.apiFetcher.GetSourceCode(ctx, contract.Hex())
+func (s *Service) fetchSourceCode(ctx context.Context, chainID int64, contract common.Address) (string, error) {
+	response, err := s.apiFetcher.GetSourceCode(ctx, chainID, contract.Hex())
 	if err != nil {
 		return "", err
 	}

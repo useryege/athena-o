@@ -12,29 +12,34 @@ import (
 	"github.com/useryege/athena/common"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	"github.com/useryege/athena/util/ave"
+	"github.com/useryege/athena/util/ethereumapi"
 )
 
 const (
-	pollInterval         = 1 * time.Second
-	aveTaskLimit         = int32(20)
-	aveFetchConcurrency  = 5
-	chainStateTaskLimit  = int32(20)
-	walletAssetTaskLimit = int32(20)
-	simulationTaskLimit  = int32(20)
-	aveHTTPClientTimeout = 60 * time.Second
+	pollInterval               = 1 * time.Second
+	aveTaskLimit               = int32(20)
+	aveFetchConcurrency        = 5
+	contractCodeSourceLimit    = int32(20)
+	chainStateTaskLimit        = int32(20)
+	walletAssetTaskLimit       = int32(20)
+	simulationTaskLimit        = int32(20)
+	aveHTTPClientTimeout       = 60 * time.Second
+	defaultEtherscanAPIBaseURL = "https://api.etherscan.io/v2/api"
 )
 
 type Options struct {
-	Store             *tokenstore.SQLStore
-	EthNodeWSURL      string
-	BSCNodeWSURL      string
-	EthAthenaContract string
-	BSCAthenaContract string
-	EthEnabled        bool
-	BSCEnabled        bool
-	NodeWSUseProxy    bool
-	AveAPIKey         string
-	AveAPIBaseURL     string
+	Store               *tokenstore.SQLStore
+	EthNodeWSURL        string
+	BSCNodeWSURL        string
+	EthAthenaContract   string
+	BSCAthenaContract   string
+	EthEnabled          bool
+	BSCEnabled          bool
+	NodeWSUseProxy      bool
+	AveAPIKey           string
+	AveAPIBaseURL       string
+	EtherscanAPIKey     string
+	EtherscanAPIBaseURL string
 }
 
 type Worker struct {
@@ -64,9 +69,13 @@ func (w *Worker) Start(ctx context.Context) error {
 		return err
 	}
 	var aveClient ave.Client
+	var etherscanClient ethereumapi.EthereumAPI
 	if len(chainIDs) > 0 {
 		if strings.TrimSpace(w.opts.AveAPIKey) == "" {
 			return errAveAPIKeyRequired()
+		}
+		if strings.TrimSpace(w.opts.EtherscanAPIKey) == "" {
+			return errEtherscanAPIKeyRequired()
 		}
 		aveClient, err = ave.NewClient(ave.Config{
 			BaseURL: w.opts.AveAPIBaseURL,
@@ -76,6 +85,11 @@ func (w *Worker) Start(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		etherscanAPIBaseURL := strings.TrimSpace(w.opts.EtherscanAPIBaseURL)
+		if etherscanAPIBaseURL == "" {
+			etherscanAPIBaseURL = defaultEtherscanAPIBaseURL
+		}
+		etherscanClient = ethereumapi.NewEthereumAPI(etherscanAPIBaseURL, w.opts.EtherscanAPIKey)
 	}
 	runCtx, cancel := context.WithCancel(ctx)
 	runner := newDataCollectorRunner(dataCollectorRunnerOptions{
@@ -85,6 +99,7 @@ func (w *Worker) Start(ctx context.Context) error {
 		athenaContracts: athenaContracts,
 		nodeWSUseProxy:  w.opts.NodeWSUseProxy,
 		aveClient:       aveClient,
+		etherscanClient: etherscanClient,
 		pollInterval:    pollInterval,
 	})
 	w.cancel = cancel

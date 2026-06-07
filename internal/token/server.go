@@ -36,17 +36,19 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Mode              string
-	StoreSrc          func(context.Context) (*tokenstore.SQLStore, error)
-	EthNodeWSURL      string
-	BSCNodeWSURL      string
-	EthAthenaContract string
-	BSCAthenaContract string
-	EthEnabled        bool
-	BSCEnabled        bool
-	NodeWSUseProxy    bool
-	AveAPIKey         string
-	AveAPIBaseURL     string
+	Mode                string
+	StoreSrc            func(context.Context) (*tokenstore.SQLStore, error)
+	EthNodeWSURL        string
+	BSCNodeWSURL        string
+	EthAthenaContract   string
+	BSCAthenaContract   string
+	EthEnabled          bool
+	BSCEnabled          bool
+	NodeWSUseProxy      bool
+	AveAPIKey           string
+	AveAPIBaseURL       string
+	EtherscanAPIKey     string
+	EtherscanAPIBaseURL string
 }
 
 func NormalizeMode(mode string) string {
@@ -142,16 +144,18 @@ func (s *Server) Start(ctx context.Context) error {
 			return err
 		}
 		s.dataCollector = projectdatacollector.NewWorker(projectdatacollector.Options{
-			Store:             store,
-			EthNodeWSURL:      s.EthNodeWSURL,
-			BSCNodeWSURL:      s.BSCNodeWSURL,
-			EthAthenaContract: s.EthAthenaContract,
-			BSCAthenaContract: s.BSCAthenaContract,
-			EthEnabled:        s.EthEnabled,
-			BSCEnabled:        s.BSCEnabled,
-			NodeWSUseProxy:    s.NodeWSUseProxy,
-			AveAPIKey:         s.AveAPIKey,
-			AveAPIBaseURL:     s.AveAPIBaseURL,
+			Store:               store,
+			EthNodeWSURL:        s.EthNodeWSURL,
+			BSCNodeWSURL:        s.BSCNodeWSURL,
+			EthAthenaContract:   s.EthAthenaContract,
+			BSCAthenaContract:   s.BSCAthenaContract,
+			EthEnabled:          s.EthEnabled,
+			BSCEnabled:          s.BSCEnabled,
+			NodeWSUseProxy:      s.NodeWSUseProxy,
+			AveAPIKey:           s.AveAPIKey,
+			AveAPIBaseURL:       s.AveAPIBaseURL,
+			EtherscanAPIKey:     s.EtherscanAPIKey,
+			EtherscanAPIBaseURL: s.EtherscanAPIBaseURL,
 		})
 		if err := s.dataCollector.Start(ctx); err != nil {
 			_ = store.Close()

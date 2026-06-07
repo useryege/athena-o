@@ -11,22 +11,20 @@ import (
 )
 
 type EthereumAPI interface {
-	GetSourceCode(ctx context.Context, contractAddress string) (*SourceCodeResponse, error)
-	GetABI(ctx context.Context, contractAddress string) (*ABIResponse, error)
+	GetSourceCode(ctx context.Context, chainID int64, contractAddress string) (*SourceCodeResponse, error)
+	GetABI(ctx context.Context, chainID int64, contractAddress string) (*ABIResponse, error)
 }
 
 type ethereumAPIImpl struct {
 	baseURL string
 	apiKey  string
-	chainID int64
 	client  *http.Client
 }
 
-func NewEthereumAPI(baseURL string, apiKey string, chainID int64) EthereumAPI {
+func NewEthereumAPI(baseURL string, apiKey string) EthereumAPI {
 	return &ethereumAPIImpl{
 		baseURL: baseURL,
 		apiKey:  apiKey,
-		chainID: chainID,
 		client:  &http.Client{},
 	}
 }
@@ -57,8 +55,8 @@ type ABIResponse struct {
 	Result  string `json:"result"`
 }
 
-func (e *ethereumAPIImpl) GetSourceCode(ctx context.Context, contractAddress string) (*SourceCodeResponse, error) {
-	resp, err := e.do(ctx, e.apiKey, e.chainID, "contract", "getsourcecode", map[string]interface{}{
+func (e *ethereumAPIImpl) GetSourceCode(ctx context.Context, chainID int64, contractAddress string) (*SourceCodeResponse, error) {
+	resp, err := e.do(ctx, e.apiKey, chainID, "contract", "getsourcecode", map[string]interface{}{
 		"address": contractAddress,
 	})
 	if err != nil {
@@ -80,8 +78,8 @@ func (e *ethereumAPIImpl) GetSourceCode(ctx context.Context, contractAddress str
 	return &sourceCodeResp, nil
 }
 
-func (e *ethereumAPIImpl) GetABI(ctx context.Context, contractAddress string) (*ABIResponse, error) {
-	resp, err := e.do(ctx, e.apiKey, e.chainID, "contract", "getabi", map[string]interface{}{
+func (e *ethereumAPIImpl) GetABI(ctx context.Context, chainID int64, contractAddress string) (*ABIResponse, error) {
+	resp, err := e.do(ctx, e.apiKey, chainID, "contract", "getabi", map[string]interface{}{
 		"address": contractAddress,
 	})
 	if err != nil {

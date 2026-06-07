@@ -11,6 +11,7 @@ import (
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/util/ave"
+	"github.com/useryege/athena/util/ethereumapi"
 )
 
 type dataCollectorRunnerOptions struct {
@@ -20,6 +21,7 @@ type dataCollectorRunnerOptions struct {
 	athenaContracts map[int64]ethcommon.Address
 	nodeWSUseProxy  bool
 	aveClient       ave.Client
+	etherscanClient ethereumapi.EthereumAPI
 	pollInterval    time.Duration
 }
 
@@ -59,6 +61,9 @@ func (r *dataCollectorRunner) processAvailableTasks(ctx context.Context) {
 	}
 	if err := r.processAveTasks(ctx); err != nil {
 		log.WithError(err).Error("token project data collector ave task loop failed")
+	}
+	if err := r.processContractCodeSourceTasks(ctx); err != nil {
+		log.WithError(err).Error("token project data collector contract code source task loop failed")
 	}
 	if err := r.processChainStateTasks(ctx); err != nil {
 		log.WithError(err).Error("token project data collector chain state task loop failed")
