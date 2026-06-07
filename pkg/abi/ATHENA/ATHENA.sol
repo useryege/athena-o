@@ -130,6 +130,10 @@ contract Athena {
     bytes32 public immutable initCodePairHash;
     address public immutable v2pairFeeToAddress;
 
+    uint256 private constant TOKEN_PROBE_GAS = 30000;
+    uint256 private constant STRING_PROBE_GAS = 50000;
+    uint256 private constant STRING_RETURN_DATA_MAX_BYTES = 4096;
+
     constructor(uint256 chainId) {
         if (chainId == 1) {
             factoryContract = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
@@ -469,15 +473,25 @@ contract Athena {
     }
 
     function _safeString(address target, bytes4 selector) private view returns (bool ok, string memory value) {
-        (bool callOk, bytes memory data) = target.staticcall(abi.encodeWithSelector(selector));
-        if (!callOk || data.length < 64) {
+        (bool callOk, bytes memory data) = target.staticcall{gas: STRING_PROBE_GAS}(abi.encodeWithSelector(selector));
+        if (!callOk || data.length < 64 || data.length > STRING_RETURN_DATA_MAX_BYTES) {
+            return (false, "");
+        }
+        uint256 offset;
+        uint256 length;
+        assembly {
+            offset := mload(add(data, 32))
+            length := mload(add(data, 64))
+        }
+        uint256 paddedLength = (length + 31) & ~uint256(31);
+        if (offset != 32 || length > STRING_RETURN_DATA_MAX_BYTES || data.length < 64 + paddedLength) {
             return (false, "");
         }
         return (true, abi.decode(data, (string)));
     }
 
     function _safeUint8(address target, bytes4 selector) private view returns (bool ok, uint8 value) {
-        (bool callOk, bytes memory data) = target.staticcall(abi.encodeWithSelector(selector));
+        (bool callOk, bytes memory data) = target.staticcall{gas: TOKEN_PROBE_GAS}(abi.encodeWithSelector(selector));
         if (!callOk || data.length < 32) {
             return (false, 0);
         }
@@ -485,7 +499,7 @@ contract Athena {
     }
 
     function _safeUint256(address target, bytes4 selector) private view returns (bool ok, uint256 value) {
-        (bool callOk, bytes memory data) = target.staticcall(abi.encodeWithSelector(selector));
+        (bool callOk, bytes memory data) = target.staticcall{gas: TOKEN_PROBE_GAS}(abi.encodeWithSelector(selector));
         if (!callOk || data.length < 32) {
             return (false, 0);
         }
@@ -501,7 +515,7 @@ contract Athena {
     }
 
     function _safeBalanceOf(address token, address account) private view returns (bool ok, uint256 value) {
-        (bool callOk, bytes memory data) = token.staticcall(abi.encodeWithSelector(IERC20View.balanceOf.selector, account));
+        (bool callOk, bytes memory data) = token.staticcall{gas: TOKEN_PROBE_GAS}(abi.encodeWithSelector(IERC20View.balanceOf.selector, account));
         if (!callOk || data.length < 32) {
             return (false, 0);
         }
@@ -509,7 +523,7 @@ contract Athena {
     }
 
     function _safeAllowance(address token, address owner, address spender) private view returns (bool ok, uint256 value) {
-        (bool callOk, bytes memory data) = token.staticcall(abi.encodeWithSelector(IERC20View.allowance.selector, owner, spender));
+        (bool callOk, bytes memory data) = token.staticcall{gas: TOKEN_PROBE_GAS}(abi.encodeWithSelector(IERC20View.allowance.selector, owner, spender));
         if (!callOk || data.length < 32) {
             return (false, 0);
         }
