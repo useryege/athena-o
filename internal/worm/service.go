@@ -1,20 +1,20 @@
 package worm
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/worm/apiclient"
 	wormstore "github.com/useryege/athena/internal/worm/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilworm "github.com/useryege/athena/util/worm"
-	"golang.org/x/sync/singleflight"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -22,6 +22,7 @@ import (
 const (
 	defaultWormMarketsLimit = 20
 	maxWormMarketsLimit     = 100
+	wormMarketSyncInterval  = time.Minute
 
 	defaultWormMarketsCategorySlug = "sports"
 	defaultWormMarketsSortOption   = "leverage"
@@ -30,37 +31,21 @@ const (
 
 type wormMarketClient interface {
 	ListMarkets(context.Context, utilworm.ListMarketsOptions) (*utilworm.ListMarketsResponse, error)
-	GetMarket(context.Context, string) (*utilworm.Market, error)
 }
 
 type Service struct {
 	apiclient.UnimplementedWormServiceServer
-	store         *wormstore.SQLStore
-	wormClient    wormMarketClient
-	assetBaseURL  string
-	redisClient   *redis.Client
-	cacheConfig   CacheConfig
-	refreshCh     chan refreshRequest
-	refreshGroup  singleflight.Group
-	refreshCancel context.CancelFunc
-	refreshWG     sync.WaitGroup
-	startStopMu   sync.Mutex
-	started       bool
+	store        *wormstore.SQLStore
+	wormClient   wormMarketClient
+	assetBaseURL string
+	syncCancel   context.CancelFunc
+	syncWG       sync.WaitGroup
+	syncMu       sync.Mutex
+	startStopMu  sync.Mutex
+	started      bool
 }
 
 type ServiceOption func(*Service)
-
-func WithRedisClient(client *redis.Client) ServiceOption {
-	return func(s *Service) {
-		s.redisClient = client
-	}
-}
-
-func WithCacheConfig(config CacheConfig) ServiceOption {
-	return func(s *Service) {
-		s.cacheConfig = config.withDefaults()
-	}
-}
 
 func NewService(store *wormstore.SQLStore, wormClient wormMarketClient, assetBaseURL string, opts ...ServiceOption) *Service {
 	assetBaseURL = strings.TrimSpace(assetBaseURL)
@@ -71,8 +56,6 @@ func NewService(store *wormstore.SQLStore, wormClient wormMarketClient, assetBas
 		store:        store,
 		wormClient:   wormClient,
 		assetBaseURL: assetBaseURL,
-		cacheConfig:  DefaultCacheConfig(),
-		refreshCh:    make(chan refreshRequest, 256),
 	}
 	for _, opt := range opts {
 		opt(service)
@@ -92,29 +75,23 @@ func (s *Service) Start() error {
 	if s.wormClient == nil {
 		return status.Error(codes.FailedPrecondition, "worm API client is required")
 	}
-	if s.redisClient != nil && s.cacheConfig.RefreshWorkers > 0 {
-		ctx, cancel := context.WithCancel(context.Background())
-		s.refreshCancel = cancel
-		for i := 0; i < s.cacheConfig.RefreshWorkers; i++ {
-			s.refreshWG.Add(1)
-			go s.refreshWorker(ctx)
-		}
-		s.refreshWG.Add(1)
-		go s.warmupLoop(ctx)
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	s.syncCancel = cancel
+	s.syncWG.Add(1)
+	go s.syncLoop(ctx)
 	s.started = true
 	return nil
 }
 
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
-	cancel := s.refreshCancel
-	s.refreshCancel = nil
+	cancel := s.syncCancel
+	s.syncCancel = nil
 	s.started = false
 	s.startStopMu.Unlock()
 	if cancel != nil {
 		cancel()
-		s.refreshWG.Wait()
+		s.syncWG.Wait()
 	}
 	return nil
 }
@@ -135,11 +112,11 @@ func (s *Service) GetWormStatus(context.Context, *apiclient.GetWormStatusRequest
 }
 
 func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMarketsRequest) (*apiclient.ListWormMarketsResponse, error) {
-	if s.wormClient == nil {
-		return nil, status.Error(codes.FailedPrecondition, "worm API client is required")
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "worm store is required")
 	}
 
-	params := listWormMarketsParams{
+	params := wormMarketsListParams{
 		Limit:        defaultWormMarketsLimit,
 		SortOption:   defaultWormMarketsSortOption,
 		CategorySlug: defaultWormMarketsCategorySlug,
@@ -156,130 +133,62 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 	if params.Limit < 1 || params.Limit > maxWormMarketsLimit {
 		return nil, status.Errorf(codes.InvalidArgument, "limit must be between 1 and %d", maxWormMarketsLimit)
 	}
-	sortOption, err := normalizeWormMarketSortOption(params.SortOption)
+	if err := validateFixedWormMarketParams(params); err != nil {
+		return nil, err
+	}
+	offset, err := parseWormMarketCursor(params.Cursor)
 	if err != nil {
 		return nil, err
 	}
-	categorySlug, err := normalizeWormMarketCategorySlug(params.CategorySlug)
+	page := int32(offset/params.Limit) + 1
+	result, err := s.store.ListWormMarketsPage(ctx, "", "", page, int32(params.Limit))
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Unavailable, "failed to list worm markets: %v", err)
 	}
-	params.SortOption = sortOption
-	params.CategorySlug = categorySlug
-	params.State = defaultWormMarketsState
-
-	if s.redisClient != nil {
-		return s.listWormMarketsCached(ctx, params)
+	resp := &apiclient.ListWormMarketsResponse{
+		Markets: make([]*v1alpha1.WormMarketItem, 0, len(result.Items)),
 	}
-	return s.fetchWormMarkets(ctx, params)
-}
-
-func (s *Service) fetchWormMarkets(ctx context.Context, params listWormMarketsParams) (*apiclient.ListWormMarketsResponse, error) {
-	markets, err := s.wormClient.ListMarkets(ctx, utilworm.ListMarketsOptions{
-		PageOptions: utilworm.PageOptions{
-			Limit:  params.Limit,
-			Cursor: params.Cursor,
-		},
-		State:    params.State,
-		Category: upstreamWormMarketCategory(params.CategorySlug),
-		Sort:     upstreamWormMarketSort(params.SortOption),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &apiclient.ListWormMarketsResponse{FetchedAt: time.Now().Unix()}
-	if markets.Meta.NextCursor != nil {
-		resp.NextCursor = *markets.Meta.NextCursor
-	}
-	resp.Markets = make([]*v1alpha1.WormMarketItem, 0, len(markets.Markets))
-	for i := range markets.Markets {
-		if !isWormMarketOpen(markets.Markets[i].State) {
-			continue
+	var fetchedAt time.Time
+	for _, item := range result.Items {
+		if item.FetchedAt.After(fetchedAt) {
+			fetchedAt = item.FetchedAt
 		}
-		resp.Markets = append(resp.Markets, s.toAPIMarketSummary(markets.Markets[i]))
+		resp.Markets = append(resp.Markets, s.wormMarketToAPIItem(item))
+	}
+	if !fetchedAt.IsZero() {
+		resp.FetchedAt = fetchedAt.Unix()
+	}
+	nextOffset := offset + len(result.Items)
+	if int64(nextOffset) < result.Total {
+		resp.NextCursor = strconv.Itoa(nextOffset)
 	}
 	return resp, nil
 }
 
-func isWormMarketOpen(state string) bool {
-	return strings.EqualFold(strings.TrimSpace(state), defaultWormMarketsState)
+type wormMarketsListParams struct {
+	Limit        int
+	Cursor       string
+	SortOption   string
+	CategorySlug string
+	State        string
 }
 
-func normalizeWormMarketSortOption(value string) (string, error) {
-	value = strings.ToLower(strings.TrimSpace(value))
-	if value == "" {
-		return defaultWormMarketsSortOption, nil
+func validateFixedWormMarketParams(params wormMarketsListParams) error {
+	sortOption := strings.ToLower(strings.TrimSpace(params.SortOption))
+	if sortOption == "" {
+		sortOption = defaultWormMarketsSortOption
 	}
-	switch value {
-	case "new", "trending", "ending_soon", "leverage":
-		return value, nil
-	default:
-		return "", status.Errorf(codes.InvalidArgument, "sort_option must be one of new, trending, ending_soon, leverage")
+	categorySlug := strings.ToLower(strings.TrimSpace(params.CategorySlug))
+	if categorySlug == "" {
+		categorySlug = defaultWormMarketsCategorySlug
 	}
-}
-
-func normalizeWormMarketCategorySlug(value string) (string, error) {
-	value = strings.ToLower(strings.TrimSpace(value))
-	if value == "" {
-		return defaultWormMarketsCategorySlug, nil
+	if sortOption != defaultWormMarketsSortOption {
+		return status.Errorf(codes.InvalidArgument, "sort_option must be %s", defaultWormMarketsSortOption)
 	}
-	switch value {
-	case "all", "politics", "sports", "crypto", "tech", "finance", "wtf":
-		return value, nil
-	default:
-		return "", status.Errorf(codes.InvalidArgument, "category_slug must be one of all, politics, sports, crypto, tech, finance, wtf")
+	if categorySlug != defaultWormMarketsCategorySlug {
+		return status.Errorf(codes.InvalidArgument, "category_slug must be %s", defaultWormMarketsCategorySlug)
 	}
-}
-
-func upstreamWormMarketSort(value string) string {
-	if value == "new" {
-		return ""
-	}
-	return value
-}
-
-func upstreamWormMarketCategory(value string) string {
-	if value == "all" {
-		return ""
-	}
-	return value
-}
-
-func (s *Service) GetWormMarket(ctx context.Context, req *apiclient.GetWormMarketRequest) (*apiclient.GetWormMarketResponse, error) {
-	if s.wormClient == nil {
-		return nil, status.Error(codes.FailedPrecondition, "worm API client is required")
-	}
-
-	conditionID := ""
-	if req != nil {
-		conditionID = strings.TrimSpace(req.GetConditionId())
-	}
-	if conditionID == "" {
-		return nil, status.Error(codes.InvalidArgument, "condition_id is required")
-	}
-	if s.redisClient != nil {
-		return s.getWormMarketCached(ctx, conditionID)
-	}
-	return s.fetchWormMarket(ctx, conditionID)
-}
-
-func (s *Service) fetchWormMarket(ctx context.Context, conditionID string) (*apiclient.GetWormMarketResponse, error) {
-	market, err := s.wormClient.GetMarket(ctx, conditionID)
-	if err != nil {
-		return nil, err
-	}
-	if market == nil {
-		return nil, status.Error(codes.NotFound, "worm market not found")
-	}
-	if !isWormMarketOpen(market.State) {
-		return nil, status.Error(codes.NotFound, "worm market not found")
-	}
-
-	return &apiclient.GetWormMarketResponse{
-		Market:    s.toAPIMarketDetail(market),
-		FetchedAt: time.Now().Unix(),
-	}, nil
+	return nil
 }
 
 func (s *Service) toAPIMarketSummary(market utilworm.MarketSummary) *v1alpha1.WormMarketItem {
@@ -302,67 +211,21 @@ func (s *Service) toAPIMarketSummary(market utilworm.MarketSummary) *v1alpha1.Wo
 	return item
 }
 
-func (s *Service) toAPIMarketDetail(market *utilworm.Market) *v1alpha1.WormMarketDetail {
-	item := s.toAPIMarketSummary(market.MarketSummary)
-	detail := &v1alpha1.WormMarketDetail{
-		Market:          *item,
-		YesOutcomeLabel: stringValue(market.YesOutcomeLabel),
-		NoOutcomeLabel:  stringValue(market.NoOutcomeLabel),
-		Rules:           rawJSONText(market.Rules),
-		ResolutionDate:  int64Value(market.ResolutionDate),
-		MakerFee:        stringValue(market.MakerFee),
-		TakerFee:        stringValue(market.TakerFee),
-		Config:          toAPIMarketConfig(market.Config),
-		Outcomes:        make([]v1alpha1.WormMarketOutcome, 0, len(market.Outcomes)),
+func (s *Service) wormMarketToAPIItem(market wormstore.WormMarket) *v1alpha1.WormMarketItem {
+	return &v1alpha1.WormMarketItem{
+		ConditionID:      market.ConditionID,
+		Title:            market.Title,
+		Description:      market.Description,
+		Logo:             market.Logo,
+		LastTradePrice:   market.LastTradePrice,
+		State:            market.State,
+		Category:         market.Category,
+		Created:          market.Created,
+		EventTitle:       market.EventTitle,
+		EventConditionID: market.EventConditionID,
+		EventLogo:        market.EventLogo,
+		MarginEnabled:    market.MarginEnabled,
 	}
-	for i := range market.Outcomes {
-		detail.Outcomes = append(detail.Outcomes, v1alpha1.WormMarketOutcome{
-			IsYes: market.Outcomes[i].IsYes,
-			Text:  market.Outcomes[i].Text,
-		})
-	}
-	return detail
-}
-
-func toAPIMarketConfig(config *utilworm.MarketConfig) v1alpha1.WormMarketConfig {
-	if config == nil {
-		return v1alpha1.WormMarketConfig{}
-	}
-	return v1alpha1.WormMarketConfig{
-		Kind:                config.Kind,
-		MaxLeverageYes:      stringValue(config.MaxLeverageYes),
-		MaxLeverageNo:       stringValue(config.MaxLeverageNo),
-		OpeningFee:          stringValue(config.OpeningFee),
-		ClosingFee:          stringValue(config.ClosingFee),
-		AnnualFeeRate:       stringValue(config.AnnualFeeRate),
-		OrderMinSize:        stringValue(config.OrderMinSize),
-		PriceDecimals:       int32Value(config.PriceDecimals),
-		SharesDecimals:      int32Value(config.SharesDecimals),
-		MinPrice:            stringValue(config.MinPrice),
-		MaxPrice:            stringValue(config.MaxPrice),
-		MinAmount:           stringValue(config.MinAmount),
-		MaxAmount:           stringValue(config.MaxAmount),
-		MinFunds:            stringValue(config.MinFunds),
-		MaxFunds:            stringValue(config.MaxFunds),
-		PricePrecision:      int32Value(config.PricePrecision),
-		AmountPrecision:     int32Value(config.AmountPrecision),
-		FundsPrecision:      int32Value(config.FundsPrecision),
-		MakerFeeRate:        stringValue(config.MakerFeeRate),
-		TakerFeeRate:        stringValue(config.TakerFeeRate),
-		DefaultSlippageRate: stringValue(config.DefaultSlippageRate),
-	}
-}
-
-func rawJSONText(raw json.RawMessage) string {
-	raw = bytes.TrimSpace(raw)
-	if len(raw) == 0 || bytes.Equal(raw, []byte("null")) {
-		return ""
-	}
-	var compacted bytes.Buffer
-	if err := json.Compact(&compacted, raw); err != nil {
-		return string(raw)
-	}
-	return compacted.String()
 }
 
 func (s *Service) normalizeAssetURL(value string) string {
@@ -381,6 +244,123 @@ func (s *Service) normalizeAssetURL(value string) string {
 	return baseURL.ResolveReference(assetURL).String()
 }
 
+func (s *Service) syncLoop(ctx context.Context) {
+	defer s.syncWG.Done()
+	s.syncWormMarkets(ctx)
+	ticker := time.NewTicker(wormMarketSyncInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			s.syncWormMarkets(ctx)
+		}
+	}
+}
+
+func (s *Service) syncWormMarkets(ctx context.Context) {
+	if err := s.syncWormMarketsOnce(ctx); err != nil {
+		log.Warnf("failed to sync worm markets: %v", err)
+	}
+}
+
+func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
+	s.syncMu.Lock()
+	defer s.syncMu.Unlock()
+
+	if s.store == nil {
+		return status.Error(codes.FailedPrecondition, "worm store is required")
+	}
+	if s.wormClient == nil {
+		return status.Error(codes.FailedPrecondition, "worm API client is required")
+	}
+
+	syncStartedAt := time.Now().UTC()
+	cursor := ""
+	seen := map[string]bool{}
+	for {
+		markets, err := s.wormClient.ListMarkets(ctx, utilworm.ListMarketsOptions{
+			PageOptions: utilworm.PageOptions{
+				Limit:  maxWormMarketsLimit,
+				Cursor: cursor,
+			},
+			State:    defaultWormMarketsState,
+			Category: defaultWormMarketsCategorySlug,
+			Sort:     defaultWormMarketsSortOption,
+		})
+		if err != nil {
+			return fmt.Errorf("list upstream worm markets: %w", err)
+		}
+		items := make([]wormstore.WormMarket, 0, len(markets.Markets))
+		fetchedAt := time.Now().UTC()
+		for i := range markets.Markets {
+			market := markets.Markets[i]
+			if !isSyncedWormMarket(market) || seen[market.ConditionID] {
+				continue
+			}
+			seen[market.ConditionID] = true
+			raw, err := json.Marshal(market)
+			if err != nil {
+				return fmt.Errorf("marshal worm market %s: %w", market.ConditionID, err)
+			}
+			item := s.toAPIMarketSummary(market)
+			items = append(items, wormstore.WormMarket{
+				ConditionID:      item.ConditionID,
+				Title:            item.Title,
+				Description:      item.Description,
+				Logo:             item.Logo,
+				LastTradePrice:   item.LastTradePrice,
+				State:            defaultWormMarketsState,
+				Category:         defaultWormMarketsCategorySlug,
+				SortOption:       defaultWormMarketsSortOption,
+				Created:          item.Created,
+				EventTitle:       item.EventTitle,
+				EventConditionID: item.EventConditionID,
+				EventLogo:        item.EventLogo,
+				MarginEnabled:    item.MarginEnabled,
+				Raw:              raw,
+				FetchedAt:        fetchedAt,
+				LastSeenAt:       syncStartedAt,
+			})
+		}
+		if err := s.store.BatchUpsertWormMarkets(ctx, items); err != nil {
+			return err
+		}
+		nextCursor := ""
+		if markets.Meta.NextCursor != nil {
+			nextCursor = strings.TrimSpace(*markets.Meta.NextCursor)
+		}
+		if nextCursor == "" || nextCursor == cursor {
+			break
+		}
+		cursor = nextCursor
+	}
+	if _, err := s.store.DeleteWormMarketsNotSeenSince(ctx, syncStartedAt); err != nil {
+		return err
+	}
+	log.Debugf("synced %d worm markets", len(seen))
+	return nil
+}
+
+func isSyncedWormMarket(market utilworm.MarketSummary) bool {
+	return strings.TrimSpace(market.ConditionID) != "" &&
+		strings.EqualFold(strings.TrimSpace(market.State), defaultWormMarketsState) &&
+		strings.EqualFold(strings.TrimSpace(market.Category), defaultWormMarketsCategorySlug)
+}
+
+func parseWormMarketCursor(cursor string) (int, error) {
+	cursor = strings.TrimSpace(cursor)
+	if cursor == "" {
+		return 0, nil
+	}
+	offset, err := strconv.Atoi(cursor)
+	if err != nil || offset < 0 {
+		return 0, status.Error(codes.InvalidArgument, "cursor must be a nonnegative offset")
+	}
+	return offset, nil
+}
+
 func stringValue(value *string) string {
 	if value == nil {
 		return ""
@@ -393,11 +373,4 @@ func int64Value(value *int64) int64 {
 		return 0
 	}
 	return *value
-}
-
-func int32Value(value *int) int32 {
-	if value == nil {
-		return 0
-	}
-	return int32(*value)
 }

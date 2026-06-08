@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/worm/store/sqlc"
+	wormsqlc "github.com/useryege/athena/internal/worm/store/sqlc"
 	"github.com/useryege/athena/util/db/postgres"
 )
 
@@ -20,15 +20,25 @@ func Migrations() embed.FS {
 
 type SQLStore struct {
 	pool    *pgxpool.Pool
-	queries *sqlc.Queries
+	queries wormsqlc.Querier
 }
 
-func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
-	var queries *sqlc.Queries
-	if pool != nil {
-		queries = sqlc.New(pool)
+func NewSQLStore(db any) *SQLStore {
+	switch value := db.(type) {
+	case *pgxpool.Pool:
+		if value == nil {
+			return &SQLStore{}
+		}
+		return &SQLStore{pool: value, queries: wormsqlc.New(value)}
+	case nil:
+		return &SQLStore{}
+	default:
+		panic(fmt.Sprintf("unsupported worm postgres store db %T", db))
 	}
-	return &SQLStore{pool: pool, queries: queries}
+}
+
+func NewSQLStoreWithQuerier(querier wormsqlc.Querier) *SQLStore {
+	return &SQLStore{queries: querier}
 }
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
@@ -54,4 +64,11 @@ func (s *SQLStore) Close() error {
 	}
 	s.pool.Close()
 	return nil
+}
+
+func (s *SQLStore) querier() (wormsqlc.Querier, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("worm postgres database is not configured")
+	}
+	return s.queries, nil
 }

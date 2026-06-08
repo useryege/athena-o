@@ -6,10 +6,21 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	BatchUpsertWormMarkets(ctx context.Context, arg BatchUpsertWormMarketsParams) error
+	CountWormMarkets(ctx context.Context, arg CountWormMarketsParams) (int64, error)
+	DeleteWormMarket(ctx context.Context, conditionID string) (int64, error)
+	DeleteWormMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
+	GetWormMarket(ctx context.Context, conditionID string) (WormMarket, error)
+	ListWormMarkets(ctx context.Context) ([]WormMarket, error)
+	ListWormMarketsPage(ctx context.Context, arg ListWormMarketsPageParams) ([]WormMarket, error)
 	Ping(ctx context.Context) (int32, error)
+	UpdateWormMarket(ctx context.Context, arg UpdateWormMarketParams) (WormMarket, error)
+	UpsertWormMarket(ctx context.Context, arg UpsertWormMarketParams) (WormMarket, error)
 }
 
 var _ Querier = (*Queries)(nil)

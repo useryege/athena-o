@@ -1,7 +1,6 @@
 package worm
 
 import (
-	"github.com/redis/go-redis/v9"
 	"github.com/useryege/athena/internal/server/version"
 	"github.com/useryege/athena/internal/worm/apiclient"
 	wormstore "github.com/useryege/athena/internal/worm/store"
@@ -22,8 +21,6 @@ type ServerOpts struct {
 	Store          *wormstore.SQLStore
 	WormClient     utilworm.Client
 	WormAPIBaseURL string
-	RedisClient    *redis.Client
-	CacheConfig    CacheConfig
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -31,7 +28,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
 		ServerOpts:    opts,
-		service:       NewService(opts.Store, opts.WormClient, opts.WormAPIBaseURL, WithRedisClient(opts.RedisClient), WithCacheConfig(opts.CacheConfig)),
+		service:       NewService(opts.Store, opts.WormClient, opts.WormAPIBaseURL),
 		healthService: healthService,
 	}, nil
 }

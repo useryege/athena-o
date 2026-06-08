@@ -58,24 +58,3 @@ func (s *Server) ListWormMarkets(ctx context.Context, req *wormpkg.ListWormMarke
 		Stale:      resp.GetStale(),
 	}, nil
 }
-
-func (s *Server) GetWormMarket(ctx context.Context, req *wormpkg.GetWormMarketRequest) (*wormpkg.GetWormMarketResponse, error) {
-	closer, client, err := s.wormClientSet.NewWormServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetWormMarket(ctx, &wormapiclient.GetWormMarketRequest{
-		ConditionId: req.GetConditionId(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &wormpkg.GetWormMarketResponse{
-		Market:    resp.GetMarket(),
-		FetchedAt: resp.GetFetchedAt(),
-		Stale:     resp.GetStale(),
-	}, nil
-}

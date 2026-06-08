@@ -1,14 +1,12 @@
-import {Button, Collapse, Modal, Select, Space, Tag, Typography} from 'antd';
+import {Select, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import * as React from 'react';
-import {AppPage, KeyValueGrid, MetricRow, ResponsiveResourceList, TruncatedText, useAsyncData} from '../components';
+import {AppPage, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';
-import {DEFAULT_WORM_MARKET_CATEGORY, DEFAULT_WORM_MARKET_SORT, WormMarketDetail, WormMarketItem} from '../../shared/services/worm-service';
+import {DEFAULT_WORM_MARKET_CATEGORY, DEFAULT_WORM_MARKET_SORT, WormMarketItem} from '../../shared/services/worm-service';
 import {boolTag} from './shared';
-import {WormMarketSummary, wormMarketLogo} from './worm-shared';
+import {WormMarketSummary} from './worm-shared';
 
 export const WormPage = () => {
-    const [detailId, setDetailId] = React.useState('');
     const data = useAsyncData(
         () =>
             services.worm.listMarkets({
@@ -18,11 +16,10 @@ export const WormPage = () => {
             }),
         []
     );
-    const detail = useAsyncData<WormMarketDetail>(() => (detailId ? services.worm.getMarket(detailId) : Promise.resolve(null as WormMarketDetail)) as any, [detailId]);
     const columns: ColumnsType<WormMarketItem> = [
         {
             title: 'Market',
-            render: item => <WormMarketSummary item={item} onOpen={() => setDetailId(item.conditionId)} />
+            render: item => <WormMarketSummary item={item} />
         },
         {title: 'Category', dataIndex: 'category'},
         {title: 'State', dataIndex: 'state'},
@@ -58,7 +55,7 @@ export const WormPage = () => {
                 columns={columns}
                 loading={data.loading}
                 card={item => (
-                    <div onClick={() => setDetailId(item.conditionId)}>
+                    <div>
                         <WormMarketSummary item={item} />
                         <MetricRow
                             items={[
@@ -70,68 +67,6 @@ export const WormPage = () => {
                     </div>
                 )}
             />
-            <Modal
-                className='worm-detail-modal'
-                open={!!detailId}
-                title='Market Detail'
-                onCancel={() => setDetailId('')}
-                footer={<Button onClick={() => setDetailId('')}>Close</Button>}
-                width={860}>
-                <WormDetail detail={detail.data} />
-            </Modal>
         </AppPage>
     );
-};
-
-const WormDetail = (props: {detail?: WormMarketDetail}) => {
-    const detail = props.detail;
-    if (!detail) {
-        return null;
-    }
-    const image = wormMarketLogo(detail.market);
-    const rulesText = formatJSONText(detail.rules);
-    return (
-        <Space className='worm-detail' orientation='vertical' style={{width: '100%'}}>
-            <div className='worm-detail__header'>
-                {image && <img src={image} alt='' />}
-                <div className='worm-detail__heading'>
-                    <Typography.Title level={4}>{detail.market.title || '-'}</Typography.Title>
-                    <Space className='worm-detail__meta' wrap={true}>
-                        {detail.market.eventTitle && <Tag>{detail.market.eventTitle}</Tag>}
-                        {detail.market.category && <Tag>{detail.market.category}</Tag>}
-                        {detail.market.state && <Tag>{detail.market.state}</Tag>}
-                        {detail.market.marginEnabled && <Tag color='green'>Margin</Tag>}
-                    </Space>
-                </div>
-            </div>
-            <KeyValueGrid
-                columns={2}
-                items={[
-                    {label: 'Condition', value: <TruncatedText value={detail.market.conditionId} copyable={true} />},
-                    {label: 'Resolution', value: detail.resolutionDate},
-                    {label: 'Maker Fee', value: detail.makerFee},
-                    {label: 'Taker Fee', value: detail.takerFee},
-                    {label: 'Stale', value: boolTag(detail.stale)}
-                ]}
-            />
-            <Collapse
-                items={[
-                    {key: 'rules', label: 'Rules', children: <pre className='code-block'>{rulesText || 'No rules'}</pre>},
-                    {key: 'config', label: 'Config', children: <pre className='code-block'>{JSON.stringify(detail.config || {}, null, 2)}</pre>}
-                ]}
-            />
-        </Space>
-    );
-};
-
-const formatJSONText = (value?: string) => {
-    const text = String(value || '').trim();
-    if (!text) {
-        return '';
-    }
-    try {
-        return JSON.stringify(JSON.parse(text), null, 2);
-    } catch {
-        return text;
-    }
 };

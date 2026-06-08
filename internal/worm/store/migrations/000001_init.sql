@@ -1,9 +1,45 @@
 
 -- +goose Up
 
--- The worm database is intentionally schema-free until worm business data is defined.
-SELECT 1;
+CREATE TABLE IF NOT EXISTS worm_market (
+  condition_id TEXT PRIMARY KEY,
+  title TEXT NOT NULL DEFAULT '',
+  description TEXT NOT NULL DEFAULT '',
+  logo TEXT NOT NULL DEFAULT '',
+  last_trade_price TEXT NOT NULL DEFAULT '',
+  state TEXT NOT NULL DEFAULT 'open',
+  category TEXT NOT NULL DEFAULT 'sports',
+  sort_option TEXT NOT NULL DEFAULT 'leverage',
+  created BIGINT NOT NULL DEFAULT 0,
+  event_title TEXT NOT NULL DEFAULT '',
+  event_condition_id TEXT NOT NULL DEFAULT '',
+  event_logo TEXT NOT NULL DEFAULT '',
+  margin_enabled BOOLEAN NOT NULL DEFAULT false,
+  raw JSONB NOT NULL DEFAULT '{}'::jsonb,
+  fetched_at TIMESTAMPTZ NOT NULL,
+  last_seen_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT worm_market_condition_id_not_empty CHECK (btrim(condition_id) <> ''),
+  CONSTRAINT worm_market_state_open CHECK (state = 'open'),
+  CONSTRAINT worm_market_category_sports CHECK (category = 'sports'),
+  CONSTRAINT worm_market_sort_option_leverage CHECK (sort_option = 'leverage'),
+  CONSTRAINT worm_market_created_nonnegative CHECK (created >= 0),
+  CONSTRAINT worm_market_raw_object CHECK (jsonb_typeof(raw) = 'object')
+);
+
+CREATE INDEX IF NOT EXISTS worm_market_last_seen_idx
+  ON worm_market (last_seen_at DESC);
+
+CREATE INDEX IF NOT EXISTS worm_market_created_idx
+  ON worm_market (created DESC, condition_id);
+
+CREATE INDEX IF NOT EXISTS worm_market_updated_idx
+  ON worm_market (updated_at DESC);
+
+CREATE INDEX IF NOT EXISTS worm_market_event_condition_idx
+  ON worm_market (event_condition_id);
 
 -- +goose Down
 
-SELECT 1;
+DROP TABLE IF EXISTS worm_market;

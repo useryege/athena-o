@@ -11,7 +11,6 @@ import (
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
-	wormpkg "github.com/useryege/athena/pkg/apiclient/worm"
 	"github.com/useryege/athena/util/rbac"
 	util_session "github.com/useryege/athena/util/session"
 	"google.golang.org/grpc"
@@ -117,13 +116,6 @@ func walletObject(req any) string {
 	}
 }
 
-func wormObject(req any) string {
-	if r, ok := req.(*wormpkg.GetWormMarketRequest); ok {
-		return nonEmptyObject(r.GetConditionId())
-	}
-	return "*"
-}
-
 func nonEmptyObject(value string) string {
 	if value == "" {
 		return "*"
@@ -172,7 +164,6 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/wallet.WalletService/UpdateWalletAlias": {resource: rbac.ResourceWallets, action: rbac.ActionUpdate, object: walletObject},
 	"/worm.WormService/GetWormStatus":         fixedRule(rbac.ResourceWorm, rbac.ActionGet),
 	"/worm.WormService/ListWormMarkets":       fixedRule(rbac.ResourceWorm, rbac.ActionGet),
-	"/worm.WormService/GetWormMarket":         {resource: rbac.ResourceWorm, action: rbac.ActionGet, object: wormObject},
 
 	"/polymarket.PolymarketService/GetPolymarketStatus":             fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ListPolymarketHotMarkets":        fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),

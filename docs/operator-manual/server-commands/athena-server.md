@@ -53,6 +53,7 @@ athena-server [flags]
       --sentinel stringArray                          Redis sentinel hostname and port (e.g. athena-redis-ha-announce-0:6379). 
       --sentinelmaster string                         Redis sentinel master group name. (default "master")
       --staticassets string                           Directory path that contains additional static assets (default "/shared/app")
+      --token-api-server-address string               Athena token API server address (default "localhost:8096")
       --wallet-server-address string                  Athena wallet server address (default "localhost:8088")
       --worm-server-address string                    Athena worm server address (default "localhost:8084")
       --x-frame-options value                         Set X-Frame-Options header in HTTP responses to value. To disable, set to "". (default "sameorigin")
@@ -61,3 +62,4 @@ athena-server [flags]
 ### SEE ALSO
 
 * [athena-server version](athena-server_version.md)	 - Print version information
+

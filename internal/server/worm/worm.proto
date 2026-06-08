@@ -35,18 +35,6 @@ message ListWormMarketsResponse {
   bool stale = 4;
 }
 
-// GetWormMarketRequest queries one public Worm market detail.
-message GetWormMarketRequest {
-  string condition_id = 1;
-}
-
-// GetWormMarketResponse returns one Worm market detail.
-message GetWormMarketResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketDetail market = 1;
-  int64 fetched_at = 2;
-  bool stale = 3;
-}
-
 service WormService {
   // GetWormStatus returns the worm service runtime status.
   rpc GetWormStatus(GetWormStatusRequest) returns (GetWormStatusResponse) {
@@ -56,10 +44,5 @@ service WormService {
   // ListWormMarkets returns markets for the requested browse filters.
   rpc ListWormMarkets(ListWormMarketsRequest) returns (ListWormMarketsResponse) {
     option (google.api.http) = {get: "/api/v1/worm/markets"};
-  }
-
-  // GetWormMarket returns one market detail from Worm.
-  rpc GetWormMarket(GetWormMarketRequest) returns (GetWormMarketResponse) {
-    option (google.api.http) = {get: "/api/v1/worm/markets/{condition_id}"};
   }
 }

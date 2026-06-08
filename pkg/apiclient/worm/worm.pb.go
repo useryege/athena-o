@@ -272,169 +272,49 @@ func (m *ListWormMarketsResponse) GetStale() bool {
 	return false
 }
 
-// GetWormMarketRequest queries one public Worm market detail.
-type GetWormMarketRequest struct {
-	ConditionId          string   `protobuf:"bytes,1,opt,name=condition_id,json=conditionId,proto3" json:"condition_id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetWormMarketRequest) Reset()         { *m = GetWormMarketRequest{} }
-func (m *GetWormMarketRequest) String() string { return proto.CompactTextString(m) }
-func (*GetWormMarketRequest) ProtoMessage()    {}
-func (*GetWormMarketRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7c0b2f2b28aeea67, []int{4}
-}
-func (m *GetWormMarketRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *GetWormMarketRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_GetWormMarketRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *GetWormMarketRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetWormMarketRequest.Merge(m, src)
-}
-func (m *GetWormMarketRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *GetWormMarketRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetWormMarketRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetWormMarketRequest proto.InternalMessageInfo
-
-func (m *GetWormMarketRequest) GetConditionId() string {
-	if m != nil {
-		return m.ConditionId
-	}
-	return ""
-}
-
-// GetWormMarketResponse returns one Worm market detail.
-type GetWormMarketResponse struct {
-	Market               *v1alpha1.WormMarketDetail `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
-	FetchedAt            int64                      `protobuf:"varint,2,opt,name=fetched_at,json=fetchedAt,proto3" json:"fetched_at,omitempty"`
-	Stale                bool                       `protobuf:"varint,3,opt,name=stale,proto3" json:"stale,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
-	XXX_unrecognized     []byte                     `json:"-"`
-	XXX_sizecache        int32                      `json:"-"`
-}
-
-func (m *GetWormMarketResponse) Reset()         { *m = GetWormMarketResponse{} }
-func (m *GetWormMarketResponse) String() string { return proto.CompactTextString(m) }
-func (*GetWormMarketResponse) ProtoMessage()    {}
-func (*GetWormMarketResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7c0b2f2b28aeea67, []int{5}
-}
-func (m *GetWormMarketResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *GetWormMarketResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_GetWormMarketResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *GetWormMarketResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetWormMarketResponse.Merge(m, src)
-}
-func (m *GetWormMarketResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *GetWormMarketResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetWormMarketResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetWormMarketResponse proto.InternalMessageInfo
-
-func (m *GetWormMarketResponse) GetMarket() *v1alpha1.WormMarketDetail {
-	if m != nil {
-		return m.Market
-	}
-	return nil
-}
-
-func (m *GetWormMarketResponse) GetFetchedAt() int64 {
-	if m != nil {
-		return m.FetchedAt
-	}
-	return 0
-}
-
-func (m *GetWormMarketResponse) GetStale() bool {
-	if m != nil {
-		return m.Stale
-	}
-	return false
-}
-
 func init() {
 	proto.RegisterType((*GetWormStatusRequest)(nil), "worm.GetWormStatusRequest")
 	proto.RegisterType((*GetWormStatusResponse)(nil), "worm.GetWormStatusResponse")
 	proto.RegisterType((*ListWormMarketsRequest)(nil), "worm.ListWormMarketsRequest")
 	proto.RegisterType((*ListWormMarketsResponse)(nil), "worm.ListWormMarketsResponse")
-	proto.RegisterType((*GetWormMarketRequest)(nil), "worm.GetWormMarketRequest")
-	proto.RegisterType((*GetWormMarketResponse)(nil), "worm.GetWormMarketResponse")
 }
 
 func init() { proto.RegisterFile("internal/server/worm/worm.proto", fileDescriptor_7c0b2f2b28aeea67) }
 
 var fileDescriptor_7c0b2f2b28aeea67 = []byte{
-	// 601 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0x4d, 0x6f, 0xd3, 0x40,
-	0x10, 0x95, 0x93, 0xb6, 0xb4, 0x9b, 0x56, 0x48, 0x4b, 0x1b, 0xac, 0x34, 0x4d, 0x83, 0x2b, 0xa4,
-	0x48, 0x08, 0x5b, 0x09, 0x27, 0xc4, 0x89, 0x0f, 0x89, 0x06, 0x81, 0x90, 0xdc, 0x03, 0x12, 0x07,
-	0xa2, 0x8d, 0x33, 0x38, 0xab, 0xd8, 0x5e, 0xb3, 0x3b, 0x0e, 0x54, 0x88, 0x0b, 0x67, 0x6e, 0xfc,
-	0x11, 0x7e, 0x06, 0x37, 0x90, 0x38, 0x71, 0x43, 0x11, 0x3f, 0x04, 0x79, 0xd7, 0x4e, 0x93, 0x90,
-	0x8a, 0x0b, 0x97, 0x28, 0xf3, 0x66, 0xe7, 0x8d, 0xdf, 0xbc, 0xd9, 0x25, 0xc7, 0x3c, 0x41, 0x90,
-	0x09, 0x8b, 0x3c, 0x05, 0x72, 0x0a, 0xd2, 0x7b, 0x2b, 0x64, 0xac, 0x7f, 0xdc, 0x54, 0x0a, 0x14,
-	0x74, 0x23, 0xff, 0xdf, 0x38, 0x0d, 0x39, 0x8e, 0xb3, 0xa1, 0x1b, 0x88, 0xd8, 0xcb, 0x14, 0xc8,
-	0x73, 0x08, 0xc1, 0x63, 0x38, 0x86, 0x84, 0x79, 0xe9, 0x24, 0xf4, 0x58, 0xca, 0x95, 0xc7, 0xd2,
-	0x34, 0xe2, 0x01, 0x43, 0x2e, 0x12, 0x6f, 0xda, 0x65, 0x51, 0x3a, 0x66, 0x5d, 0x2f, 0x84, 0x04,
-	0x24, 0x43, 0x18, 0x19, 0xbe, 0x46, 0x33, 0x14, 0x22, 0x8c, 0x20, 0xaf, 0xf0, 0x58, 0x92, 0x08,
-	0xd4, 0xe7, 0x95, 0xc9, 0x3a, 0x75, 0xb2, 0xff, 0x18, 0xf0, 0x85, 0x90, 0xf1, 0x19, 0x32, 0xcc,
-	0x94, 0x0f, 0x6f, 0x32, 0x50, 0xe8, 0xf4, 0xc9, 0xc1, 0x0a, 0xae, 0x52, 0x91, 0x28, 0xa0, 0x36,
-	0xb9, 0xa2, 0x90, 0x49, 0x84, 0x91, 0x6d, 0xb5, 0xad, 0xce, 0xb6, 0x5f, 0x86, 0xb4, 0x4e, 0xb6,
-	0x94, 0x3e, 0x6b, 0x57, 0xda, 0x56, 0x67, 0xc7, 0x2f, 0x22, 0xe7, 0x93, 0x45, 0xea, 0x4f, 0xb9,
-	0xd2, 0x64, 0xcf, 0x98, 0x9c, 0x00, 0x96, 0x5d, 0xe8, 0x3e, 0xd9, 0x8c, 0x78, 0xcc, 0x51, 0x53,
-	0x6d, 0xfa, 0x26, 0xc8, 0x89, 0x82, 0x4c, 0x2a, 0x21, 0x4b, 0x22, 0x13, 0xd1, 0x63, 0x52, 0x53,
-	0x42, 0xe2, 0x40, 0xa4, 0xb9, 0x02, 0xbb, 0xaa, 0x93, 0x24, 0x87, 0x9e, 0x6b, 0x84, 0x9e, 0x90,
-	0xbd, 0x80, 0x21, 0x84, 0x42, 0x9e, 0x0f, 0x54, 0x94, 0x85, 0xf6, 0x86, 0x3e, 0xb2, 0x5b, 0x82,
-	0x67, 0x51, 0x16, 0x3a, 0xdf, 0x2c, 0x72, 0xfd, 0xaf, 0xcf, 0x29, 0xc4, 0xbd, 0x22, 0x9b, 0x1c,
-	0x21, 0x56, 0xb6, 0xd5, 0xae, 0x76, 0x6a, 0xbd, 0x53, 0xf7, 0xc2, 0x05, 0xb7, 0x74, 0xc1, 0x35,
-	0x2e, 0xb8, 0xe9, 0x24, 0x74, 0x73, 0x17, 0xdc, 0x05, 0x17, 0xdc, 0xd2, 0x05, 0xf7, 0x82, 0xbd,
-	0x8f, 0x10, 0xfb, 0x86, 0x36, 0x57, 0x90, 0xc0, 0x3b, 0x1c, 0x2c, 0xc9, 0x23, 0x39, 0xf4, 0xd0,
-	0x48, 0x3c, 0x22, 0xe4, 0x35, 0x60, 0x30, 0x86, 0xd1, 0x80, 0xa1, 0x56, 0x58, 0xf5, 0x77, 0x0a,
-	0xe4, 0xbe, 0x9e, 0x97, 0x42, 0x16, 0x81, 0x16, 0xb6, 0xed, 0x9b, 0xc0, 0xb9, 0x3b, 0xf7, 0xd0,
-	0x74, 0x2c, 0xa7, 0x7b, 0x83, 0xec, 0x06, 0x22, 0x19, 0xf1, 0xfc, 0xcb, 0x06, 0xdc, 0xf8, 0xb5,
-	0xe3, 0xd7, 0xe6, 0x58, 0x7f, 0xe4, 0x7c, 0xb1, 0xe6, 0x3e, 0x97, 0xb5, 0xc5, 0x28, 0x86, 0x64,
-	0x2b, 0xd6, 0x88, 0x2e, 0xab, 0xf5, 0x9e, 0xfc, 0x8f, 0x59, 0x3c, 0x02, 0x64, 0x3c, 0xf2, 0x0b,
-	0xe6, 0x15, 0xb5, 0x95, 0x4b, 0xd5, 0x56, 0x17, 0xd4, 0xf6, 0x7e, 0x56, 0x48, 0x4d, 0xef, 0x25,
-	0xc8, 0x29, 0x0f, 0x80, 0x02, 0xd9, 0x5b, 0xda, 0x54, 0xda, 0x70, 0xf5, 0x6d, 0x5a, 0xb7, 0xd6,
-	0x8d, 0xc3, 0xb5, 0x39, 0x23, 0xd9, 0x39, 0xfc, 0xf8, 0xe3, 0xf7, 0xe7, 0xca, 0x01, 0xbd, 0xa6,
-	0xef, 0xca, 0xb4, 0x6b, 0xae, 0xa6, 0xd9, 0x62, 0x1a, 0x91, 0xab, 0x2b, 0x5b, 0x43, 0x9b, 0x86,
-	0x6c, 0xfd, 0x6e, 0x37, 0x8e, 0x2e, 0xc9, 0x16, 0xcd, 0x9a, 0xba, 0x59, 0x9d, 0xee, 0x2f, 0x35,
-	0x8b, 0x0b, 0xea, 0x6c, 0x2e, 0xca, 0xd4, 0xad, 0x88, 0x5a, 0xf2, 0x79, 0x45, 0xd4, 0xb2, 0x8f,
-	0xce, 0x2d, 0xdd, 0xe7, 0x26, 0x3d, 0x59, 0xd7, 0xc7, 0x7b, 0xbf, 0xb8, 0x20, 0x1f, 0x1e, 0xdc,
-	0xfb, 0x3a, 0x6b, 0x59, 0xdf, 0x67, 0x2d, 0xeb, 0xd7, 0xac, 0x65, 0xbd, 0xbc, 0xfd, 0xef, 0x37,
-	0x28, 0x88, 0x38, 0x24, 0xa8, 0x39, 0x87, 0x5b, 0xfa, 0x45, 0xb9, 0xf3, 0x27, 0x00, 0x00, 0xff,
-	0xff, 0xa1, 0x6e, 0x49, 0x1a, 0xe2, 0x04, 0x00, 0x00,
+	// 501 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0x4f, 0x6f, 0xd3, 0x4c,
+	0x10, 0xc6, 0xe5, 0xa6, 0xe9, 0xdb, 0x6e, 0xde, 0x0a, 0x69, 0x49, 0x83, 0x95, 0xa6, 0x69, 0x64,
+	0x2e, 0xb9, 0xb0, 0x56, 0xca, 0x91, 0x13, 0x70, 0xa0, 0x95, 0x40, 0x48, 0xee, 0x01, 0x89, 0x03,
+	0xd1, 0xd6, 0x19, 0x36, 0xab, 0xac, 0x77, 0xcd, 0xee, 0x38, 0xd0, 0x2b, 0x67, 0x6e, 0x7c, 0x29,
+	0x6e, 0x20, 0xf1, 0x05, 0x50, 0xc4, 0x07, 0x41, 0xde, 0x8d, 0x55, 0x52, 0x82, 0xb8, 0x44, 0x99,
+	0x3f, 0x7e, 0xc6, 0xcf, 0xfc, 0xc6, 0xe4, 0x54, 0x6a, 0x04, 0xab, 0xb9, 0x4a, 0x1d, 0xd8, 0x25,
+	0xd8, 0xf4, 0xbd, 0xb1, 0x85, 0xff, 0x61, 0xa5, 0x35, 0x68, 0xe8, 0x6e, 0xfd, 0xbf, 0x7f, 0x2e,
+	0x24, 0xce, 0xab, 0x2b, 0x96, 0x9b, 0x22, 0xad, 0x1c, 0xd8, 0x6b, 0x10, 0x90, 0x72, 0x9c, 0x83,
+	0xe6, 0x69, 0xb9, 0x10, 0x29, 0x2f, 0xa5, 0x4b, 0x79, 0x59, 0x2a, 0x99, 0x73, 0x94, 0x46, 0xa7,
+	0xcb, 0x09, 0x57, 0xe5, 0x9c, 0x4f, 0x52, 0x01, 0x1a, 0x2c, 0x47, 0x98, 0x05, 0xbd, 0xfe, 0x40,
+	0x18, 0x23, 0x14, 0xd4, 0x4f, 0xa4, 0x5c, 0x6b, 0x83, 0xbe, 0xdf, 0x85, 0x6a, 0xd2, 0x23, 0xdd,
+	0x67, 0x80, 0xaf, 0x8c, 0x2d, 0x2e, 0x91, 0x63, 0xe5, 0x32, 0x78, 0x57, 0x81, 0xc3, 0xe4, 0x82,
+	0x1c, 0xdd, 0xca, 0xbb, 0xd2, 0x68, 0x07, 0x34, 0x26, 0xff, 0x39, 0xe4, 0x16, 0x61, 0x16, 0x47,
+	0xa3, 0x68, 0xbc, 0x9f, 0x35, 0x21, 0xed, 0x91, 0x3d, 0xe7, 0x7b, 0xe3, 0x9d, 0x51, 0x34, 0x3e,
+	0xc8, 0xd6, 0x51, 0xf2, 0x29, 0x22, 0xbd, 0xe7, 0xd2, 0x79, 0xb1, 0x17, 0xdc, 0x2e, 0x00, 0x9b,
+	0x29, 0xb4, 0x4b, 0xda, 0x4a, 0x16, 0x12, 0xbd, 0x54, 0x3b, 0x0b, 0x41, 0x2d, 0x94, 0x57, 0xd6,
+	0x19, 0xdb, 0x08, 0x85, 0x88, 0x9e, 0x92, 0x8e, 0x33, 0x16, 0xa7, 0xa6, 0xac, 0x1d, 0xc4, 0x2d,
+	0x5f, 0x24, 0x75, 0xea, 0xa5, 0xcf, 0xd0, 0xfb, 0xe4, 0x30, 0xe7, 0x08, 0xc2, 0xd8, 0xeb, 0xa9,
+	0x53, 0x95, 0x88, 0x77, 0x7d, 0xcb, 0xff, 0x4d, 0xf2, 0x52, 0x55, 0x22, 0xf9, 0x1a, 0x91, 0x7b,
+	0x7f, 0xbc, 0xce, 0xda, 0xdc, 0x1b, 0xd2, 0x96, 0x08, 0x85, 0x8b, 0xa3, 0x51, 0x6b, 0xdc, 0x39,
+	0x3b, 0x67, 0x37, 0x14, 0x58, 0x43, 0x81, 0x05, 0x0a, 0xac, 0x5c, 0x08, 0x56, 0x53, 0x60, 0xbf,
+	0x51, 0x60, 0x0d, 0x05, 0x76, 0xa3, 0x7e, 0x81, 0x50, 0x64, 0x41, 0xb6, 0x76, 0xa0, 0xe1, 0x03,
+	0x4e, 0x37, 0xec, 0x91, 0x3a, 0xf5, 0x34, 0x58, 0x3c, 0x21, 0xe4, 0x2d, 0x60, 0x3e, 0x87, 0xd9,
+	0x94, 0xa3, 0x77, 0xd8, 0xca, 0x0e, 0xd6, 0x99, 0xc7, 0x7e, 0x5f, 0x0e, 0xb9, 0x02, 0x6f, 0x6c,
+	0x3f, 0x0b, 0xc1, 0xd9, 0x2a, 0x22, 0x1d, 0x4f, 0x0a, 0xec, 0x52, 0xe6, 0x40, 0x81, 0x1c, 0x6e,
+	0xb0, 0xa3, 0x7d, 0xe6, 0xef, 0x6b, 0x1b, 0xe8, 0xfe, 0xf1, 0xd6, 0x5a, 0xd8, 0x47, 0x72, 0xfc,
+	0xf1, 0xfb, 0xcf, 0xcf, 0x3b, 0x47, 0xf4, 0xae, 0xbf, 0x9e, 0xe5, 0x24, 0x1c, 0x6b, 0xe0, 0x4a,
+	0x15, 0xb9, 0x73, 0x6b, 0x8f, 0x74, 0x10, 0xc4, 0xb6, 0xd3, 0xee, 0x9f, 0xfc, 0xa5, 0xba, 0x1e,
+	0x36, 0xf0, 0xc3, 0x7a, 0xb4, 0xbb, 0x31, 0xac, 0x08, 0x5d, 0x4f, 0x1e, 0x7d, 0x59, 0x0d, 0xa3,
+	0x6f, 0xab, 0x61, 0xf4, 0x63, 0x35, 0x8c, 0x5e, 0x3f, 0xf8, 0xf7, 0xe7, 0x91, 0x2b, 0x09, 0x1a,
+	0xbd, 0xc8, 0xd5, 0x9e, 0x3f, 0xf6, 0x87, 0xbf, 0x02, 0x00, 0x00, 0xff, 0xff, 0x47, 0x3e, 0xb9,
+	0xe6, 0x7d, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -453,8 +333,6 @@ type WormServiceClient interface {
 	GetWormStatus(ctx context.Context, in *GetWormStatusRequest, opts ...grpc.CallOption) (*GetWormStatusResponse, error)
 	// ListWormMarkets returns markets for the requested browse filters.
 	ListWormMarkets(ctx context.Context, in *ListWormMarketsRequest, opts ...grpc.CallOption) (*ListWormMarketsResponse, error)
-	// GetWormMarket returns one market detail from Worm.
-	GetWormMarket(ctx context.Context, in *GetWormMarketRequest, opts ...grpc.CallOption) (*GetWormMarketResponse, error)
 }
 
 type wormServiceClient struct {
@@ -483,23 +361,12 @@ func (c *wormServiceClient) ListWormMarkets(ctx context.Context, in *ListWormMar
 	return out, nil
 }
 
-func (c *wormServiceClient) GetWormMarket(ctx context.Context, in *GetWormMarketRequest, opts ...grpc.CallOption) (*GetWormMarketResponse, error) {
-	out := new(GetWormMarketResponse)
-	err := c.cc.Invoke(ctx, "/worm.WormService/GetWormMarket", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // WormServiceServer is the server API for WormService service.
 type WormServiceServer interface {
 	// GetWormStatus returns the worm service runtime status.
 	GetWormStatus(context.Context, *GetWormStatusRequest) (*GetWormStatusResponse, error)
 	// ListWormMarkets returns markets for the requested browse filters.
 	ListWormMarkets(context.Context, *ListWormMarketsRequest) (*ListWormMarketsResponse, error)
-	// GetWormMarket returns one market detail from Worm.
-	GetWormMarket(context.Context, *GetWormMarketRequest) (*GetWormMarketResponse, error)
 }
 
 // UnimplementedWormServiceServer can be embedded to have forward compatible implementations.
@@ -511,9 +378,6 @@ func (*UnimplementedWormServiceServer) GetWormStatus(ctx context.Context, req *G
 }
 func (*UnimplementedWormServiceServer) ListWormMarkets(ctx context.Context, req *ListWormMarketsRequest) (*ListWormMarketsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListWormMarkets not implemented")
-}
-func (*UnimplementedWormServiceServer) GetWormMarket(ctx context.Context, req *GetWormMarketRequest) (*GetWormMarketResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetWormMarket not implemented")
 }
 
 func RegisterWormServiceServer(s *grpc.Server, srv WormServiceServer) {
@@ -556,24 +420,6 @@ func _WormService_ListWormMarkets_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WormService_GetWormMarket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetWormMarketRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WormServiceServer).GetWormMarket(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/worm.WormService/GetWormMarket",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WormServiceServer).GetWormMarket(ctx, req.(*GetWormMarketRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _WormService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "worm.WormService",
 	HandlerType: (*WormServiceServer)(nil),
@@ -585,10 +431,6 @@ var _WormService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListWormMarkets",
 			Handler:    _WormService_ListWormMarkets_Handler,
-		},
-		{
-			MethodName: "GetWormMarket",
-			Handler:    _WormService_GetWormMarket_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -782,94 +624,6 @@ func (m *ListWormMarketsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *GetWormMarketRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GetWormMarketRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GetWormMarketRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.ConditionId) > 0 {
-		i -= len(m.ConditionId)
-		copy(dAtA[i:], m.ConditionId)
-		i = encodeVarintWorm(dAtA, i, uint64(len(m.ConditionId)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *GetWormMarketResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GetWormMarketResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GetWormMarketResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Stale {
-		i--
-		if m.Stale {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
-	}
-	if m.FetchedAt != 0 {
-		i = encodeVarintWorm(dAtA, i, uint64(m.FetchedAt))
-		i--
-		dAtA[i] = 0x10
-	}
-	if m.Market != nil {
-		{
-			size, err := m.Market.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintWorm(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintWorm(dAtA []byte, offset int, v uint64) int {
 	offset -= sovWorm(v)
 	base := offset
@@ -953,44 +707,6 @@ func (m *ListWormMarketsResponse) Size() (n int) {
 	}
 	l = len(m.NextCursor)
 	if l > 0 {
-		n += 1 + l + sovWorm(uint64(l))
-	}
-	if m.FetchedAt != 0 {
-		n += 1 + sovWorm(uint64(m.FetchedAt))
-	}
-	if m.Stale {
-		n += 2
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *GetWormMarketRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.ConditionId)
-	if l > 0 {
-		n += 1 + l + sovWorm(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *GetWormMarketResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Market != nil {
-		l = m.Market.Size()
 		n += 1 + l + sovWorm(uint64(l))
 	}
 	if m.FetchedAt != 0 {
@@ -1446,215 +1162,6 @@ func (m *ListWormMarketsResponse) Unmarshal(dAtA []byte) error {
 				}
 			}
 		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Stale", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowWorm
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Stale = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipWorm(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthWorm
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetWormMarketRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowWorm
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetWormMarketRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetWormMarketRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ConditionId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowWorm
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthWorm
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthWorm
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ConditionId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipWorm(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthWorm
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetWormMarketResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowWorm
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetWormMarketResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetWormMarketResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Market", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowWorm
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthWorm
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthWorm
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Market == nil {
-				m.Market = &v1alpha1.WormMarketDetail{}
-			}
-			if err := m.Market.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FetchedAt", wireType)
-			}
-			m.FetchedAt = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowWorm
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.FetchedAt |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Stale", wireType)
 			}

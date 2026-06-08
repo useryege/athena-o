@@ -61,10 +61,4 @@ func (*WalletItem) ProtoMessage() {}
 
 func (*WalletStatus) ProtoMessage() {}
 
-func (*WormMarketConfig) ProtoMessage() {}
-
-func (*WormMarketDetail) ProtoMessage() {}
-
 func (*WormMarketItem) ProtoMessage() {}
-
-func (*WormMarketOutcome) ProtoMessage() {}

@@ -474,70 +474,6 @@ message WalletStatus {
   optional string status = 2;
 }
 
-message WormMarketConfig {
-  optional string kind = 1;
-
-  optional string maxLeverageYes = 2;
-
-  optional string maxLeverageNo = 3;
-
-  optional string openingFee = 4;
-
-  optional string closingFee = 5;
-
-  optional string annualFeeRate = 6;
-
-  optional string orderMinSize = 7;
-
-  optional int32 priceDecimals = 8;
-
-  optional int32 sharesDecimals = 9;
-
-  optional string minPrice = 10;
-
-  optional string maxPrice = 11;
-
-  optional string minAmount = 12;
-
-  optional string maxAmount = 13;
-
-  optional string minFunds = 14;
-
-  optional string maxFunds = 15;
-
-  optional int32 pricePrecision = 16;
-
-  optional int32 amountPrecision = 17;
-
-  optional int32 fundsPrecision = 18;
-
-  optional string makerFeeRate = 19;
-
-  optional string takerFeeRate = 20;
-
-  optional string defaultSlippageRate = 21;
-}
-
-message WormMarketDetail {
-  optional WormMarketItem market = 1;
-
-  optional string yesOutcomeLabel = 2;
-
-  optional string noOutcomeLabel = 3;
-
-  repeated WormMarketOutcome outcomes = 4;
-
-  optional string rules = 5;
-
-  optional int64 resolutionDate = 6;
-
-  optional string makerFee = 7;
-
-  optional string takerFee = 8;
-
-  optional WormMarketConfig config = 9;
-}
-
 message WormMarketItem {
   optional string conditionId = 1;
 
@@ -562,11 +498,5 @@ message WormMarketItem {
   optional string eventLogo = 11;
 
   optional bool marginEnabled = 12;
-}
-
-message WormMarketOutcome {
-  optional bool isYes = 1;
-
-  optional string text = 2;
 }
 

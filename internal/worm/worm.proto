@@ -32,25 +32,10 @@ message ListWormMarketsResponse {
   bool stale = 4;
 }
 
-// GetWormMarketRequest queries one Worm market detail by condition id.
-message GetWormMarketRequest {
-  string condition_id = 1;
-}
-
-// GetWormMarketResponse returns a Worm market detail with pricing context.
-message GetWormMarketResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketDetail market = 1;
-  int64 fetched_at = 2;
-  bool stale = 3;
-}
-
 service WormService {
   // GetWormStatus returns the worm service runtime status.
   rpc GetWormStatus(GetWormStatusRequest) returns (GetWormStatusResponse);
 
   // ListWormMarkets returns markets for the requested browse filters.
   rpc ListWormMarkets(ListWormMarketsRequest) returns (ListWormMarketsResponse);
-
-  // GetWormMarket returns one market detail from Worm.
-  rpc GetWormMarket(GetWormMarketRequest) returns (GetWormMarketResponse);
 }

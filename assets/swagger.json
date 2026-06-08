@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-659-g6562bb6-dirty"
+    "version": "v1.0.0-662-ge76901f-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1548,37 +1548,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/wormListWormMarketsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/worm/markets/{condition_id}": {
-      "get": {
-        "tags": [
-          "WormService"
-        ],
-        "summary": "GetWormMarket returns one market detail from Worm.",
-        "operationId": "WormService_GetWormMarket",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "condition_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/wormGetWormMarketResponse"
             }
           },
           "default": {
@@ -3288,115 +3257,6 @@
         }
       }
     },
-    "v1alpha1WormMarketConfig": {
-      "type": "object",
-      "properties": {
-        "amountPrecision": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "annualFeeRate": {
-          "type": "string"
-        },
-        "closingFee": {
-          "type": "string"
-        },
-        "defaultSlippageRate": {
-          "type": "string"
-        },
-        "fundsPrecision": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "kind": {
-          "type": "string"
-        },
-        "makerFeeRate": {
-          "type": "string"
-        },
-        "maxAmount": {
-          "type": "string"
-        },
-        "maxFunds": {
-          "type": "string"
-        },
-        "maxLeverageNo": {
-          "type": "string"
-        },
-        "maxLeverageYes": {
-          "type": "string"
-        },
-        "maxPrice": {
-          "type": "string"
-        },
-        "minAmount": {
-          "type": "string"
-        },
-        "minFunds": {
-          "type": "string"
-        },
-        "minPrice": {
-          "type": "string"
-        },
-        "openingFee": {
-          "type": "string"
-        },
-        "orderMinSize": {
-          "type": "string"
-        },
-        "priceDecimals": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "pricePrecision": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "sharesDecimals": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "takerFeeRate": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1WormMarketDetail": {
-      "type": "object",
-      "properties": {
-        "config": {
-          "$ref": "#/definitions/v1alpha1WormMarketConfig"
-        },
-        "makerFee": {
-          "type": "string"
-        },
-        "market": {
-          "$ref": "#/definitions/v1alpha1WormMarketItem"
-        },
-        "noOutcomeLabel": {
-          "type": "string"
-        },
-        "outcomes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1WormMarketOutcome"
-          }
-        },
-        "resolutionDate": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "rules": {
-          "type": "string"
-        },
-        "takerFee": {
-          "type": "string"
-        },
-        "yesOutcomeLabel": {
-          "type": "string"
-        }
-      }
-    },
     "v1alpha1WormMarketItem": {
       "type": "object",
       "properties": {
@@ -3435,17 +3295,6 @@
           "type": "string"
         },
         "title": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1WormMarketOutcome": {
-      "type": "object",
-      "properties": {
-        "isYes": {
-          "type": "boolean"
-        },
-        "text": {
           "type": "string"
         }
       }
@@ -3616,22 +3465,6 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1WalletItem"
-        }
-      }
-    },
-    "wormGetWormMarketResponse": {
-      "description": "GetWormMarketResponse returns one Worm market detail.",
-      "type": "object",
-      "properties": {
-        "fetched_at": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "market": {
-          "$ref": "#/definitions/v1alpha1WormMarketDetail"
-        },
-        "stale": {
-          "type": "boolean"
         }
       }
     },
