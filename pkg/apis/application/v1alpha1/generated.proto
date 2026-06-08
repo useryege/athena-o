@@ -380,6 +380,32 @@ message TokenAPIOptions {
   repeated TokenAPIChainOption chains = 1;
 }
 
+message TokenAPIProject {
+  optional int64 projectId = 1;
+
+  optional int64 chainId = 2;
+
+  optional string name = 3;
+
+  optional string symbol = 4;
+
+  optional string contract = 5;
+
+  optional string creator = 6;
+
+  optional string txHash = 7;
+
+  optional uint64 txIndex = 8;
+
+  optional uint64 blockNumber = 9;
+
+  optional uint64 blockTime = 10;
+
+  optional string codeHash = 11;
+
+  optional string createdAt = 12;
+}
+
 message TokenAPIProjectDataCollectionTask {
   optional int64 projectId = 1;
 

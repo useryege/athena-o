@@ -41,6 +41,21 @@ export interface TokenAPIContractCode {
     deploymentCount?: number;
 }
 
+export interface TokenAPIProject {
+    projectID?: number;
+    chainID?: number;
+    name?: string;
+    symbol?: string;
+    contract?: string;
+    creator?: string;
+    txHash?: string;
+    txIndex?: number;
+    blockNumber?: number;
+    blockTime?: number;
+    codeHash?: string;
+    createdAt?: string;
+}
+
 export interface TokenAPIProjectDataCollectionTask {
     projectID?: number;
     dataType?: string;
@@ -113,6 +128,23 @@ function normalizeContractCode(item: any): TokenAPIContractCode {
         sourceCodeFetchedAt: item.sourceCodeFetchedAt ?? item.source_code_fetched_at,
         createdAt: item.createdAt ?? item.created_at,
         deploymentCount: numberValue(item.deploymentCount ?? item.deployment_count)
+    };
+}
+
+function normalizeProject(item: any): TokenAPIProject {
+    return {
+        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
+        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
+        name: item.name,
+        symbol: item.symbol,
+        contract: item.contract,
+        creator: item.creator,
+        txHash: item.txHash ?? item.tx_hash,
+        txIndex: numberValue(item.txIndex ?? item.tx_index),
+        blockNumber: numberValue(item.blockNumber ?? item.block_number),
+        blockTime: numberValue(item.blockTime ?? item.block_time),
+        codeHash: item.codeHash ?? item.code_hash,
+        createdAt: item.createdAt ?? item.created_at
     };
 }
 
@@ -247,6 +279,29 @@ export class TokenAPIService {
         const promise = req.then(res => {
             const item = res.body?.contractCode || res.body?.contract_code;
             return item ? normalizeContractCode(item) : undefined;
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listProjects(
+        options: {page?: number; pageSize?: number; chainID?: number; codeHash?: string; contract?: string} = {}
+    ): Promise<PagedResponse<TokenAPIProject>> & {abort?: () => void} {
+        const req = requests.get('/tokenapi/projects').query({
+            chain_id: options.chainID,
+            code_hash: options.codeHash || undefined,
+            contract: options.contract || undefined,
+            page: options.page,
+            page_size: options.pageSize
+        });
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                items: ((body.projects || []) as any[]).map(normalizeProject),
+                total: numberValue(body.total) || 0,
+                page: numberValue(body.page) || options.page || 1,
+                pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 20
+            };
         }) as any;
         promise.abort = () => req.abort();
         return promise;

@@ -201,6 +201,31 @@ func mapContractCodes(items []tokenstore.ContractCode) []*v1alpha1.TokenAPIContr
 	return results
 }
 
+func mapProject(item tokenstore.Project) *v1alpha1.TokenAPIProject {
+	return &v1alpha1.TokenAPIProject{
+		ProjectID:   item.ID,
+		ChainID:     item.ChainID,
+		Name:        item.Name,
+		Symbol:      item.Symbol,
+		Contract:    item.Contract.Hex(),
+		Creator:     item.Creator.Hex(),
+		TxHash:      item.TxHash.Hex(),
+		TxIndex:     item.TxIndex,
+		BlockNumber: item.BlockNumber,
+		BlockTime:   item.BlockTime,
+		CodeHash:    item.CodeHash.Hex(),
+		CreatedAt:   formatTime(item.CreatedAt),
+	}
+}
+
+func mapProjects(items []tokenstore.Project) []*v1alpha1.TokenAPIProject {
+	results := make([]*v1alpha1.TokenAPIProject, 0, len(items))
+	for _, item := range items {
+		results = append(results, mapProject(item))
+	}
+	return results
+}
+
 func mapProjectDataCollectionTask(item tokenstore.ProjectDataCollectionTask) *v1alpha1.TokenAPIProjectDataCollectionTask {
 	return &v1alpha1.TokenAPIProjectDataCollectionTask{
 		ProjectID:     item.ProjectID,

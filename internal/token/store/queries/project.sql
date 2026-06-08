@@ -54,7 +54,7 @@ WHERE chain_id = @chain_id
 -- name: CountProjects :one
 SELECT COUNT(*)::bigint
 FROM project
-WHERE chain_id = @chain_id
+WHERE (sqlc.arg('chain_id')::bigint = 0 OR chain_id = sqlc.arg('chain_id')::bigint)
   AND (sqlc.narg('code_hash')::bytea IS NULL OR code_hash = sqlc.narg('code_hash')::bytea)
   AND (sqlc.narg('contract')::bytea IS NULL OR contract = sqlc.narg('contract')::bytea);
 
@@ -67,7 +67,7 @@ ORDER BY block_number, tx_index, id;
 -- name: ListProjectsPage :many
 SELECT *
 FROM project
-WHERE chain_id = @chain_id
+WHERE (sqlc.arg('chain_id')::bigint = 0 OR chain_id = sqlc.arg('chain_id')::bigint)
   AND (sqlc.narg('code_hash')::bytea IS NULL OR code_hash = sqlc.narg('code_hash')::bytea)
   AND (sqlc.narg('contract')::bytea IS NULL OR contract = sqlc.narg('contract')::bytea)
 ORDER BY created_at DESC, id DESC

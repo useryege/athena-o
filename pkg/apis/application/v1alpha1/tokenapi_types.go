@@ -41,6 +41,21 @@ type TokenAPIContractCode struct {
 	DeploymentCount     int64  `protobuf:"varint,6,opt,name=deploymentCount" json:"deploymentCount"`
 }
 
+type TokenAPIProject struct {
+	ProjectID   int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
+	ChainID     int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
+	Name        string `protobuf:"bytes,3,opt,name=name" json:"name"`
+	Symbol      string `protobuf:"bytes,4,opt,name=symbol" json:"symbol"`
+	Contract    string `protobuf:"bytes,5,opt,name=contract" json:"contract"`
+	Creator     string `protobuf:"bytes,6,opt,name=creator" json:"creator"`
+	TxHash      string `protobuf:"bytes,7,opt,name=txHash" json:"txHash"`
+	TxIndex     uint64 `protobuf:"varint,8,opt,name=txIndex" json:"txIndex"`
+	BlockNumber uint64 `protobuf:"varint,9,opt,name=blockNumber" json:"blockNumber"`
+	BlockTime   uint64 `protobuf:"varint,10,opt,name=blockTime" json:"blockTime"`
+	CodeHash    string `protobuf:"bytes,11,opt,name=codeHash" json:"codeHash"`
+	CreatedAt   string `protobuf:"bytes,12,opt,name=createdAt" json:"createdAt"`
+}
+
 type TokenAPIProjectDataCollectionTask struct {
 	ProjectID     int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
 	DataType      string `protobuf:"bytes,2,opt,name=dataType" json:"dataType"`

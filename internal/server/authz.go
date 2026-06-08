@@ -187,6 +187,7 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/tokenapi.TokenAPIService/UpdateChainIngestCheckpoint":    {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/GetContractCode":                {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/ListContractCodes":              fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
+	"/tokenapi.TokenAPIService/ListProjects":                   fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
 	"/tokenapi.TokenAPIService/GetProjectDataCollectionTask":   {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/ListProjectDataCollectionTasks": fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
 }

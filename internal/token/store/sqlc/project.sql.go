@@ -14,7 +14,7 @@ import (
 const countProjects = `-- name: CountProjects :one
 SELECT COUNT(*)::bigint
 FROM project
-WHERE chain_id = $1
+WHERE ($1::bigint = 0 OR chain_id = $1::bigint)
   AND ($2::bytea IS NULL OR code_hash = $2::bytea)
   AND ($3::bytea IS NULL OR contract = $3::bytea)
 `
@@ -158,7 +158,7 @@ func (q *Queries) ListProjects(ctx context.Context, chainID int64) ([]Project, e
 const listProjectsPage = `-- name: ListProjectsPage :many
 SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
-WHERE chain_id = $1
+WHERE ($1::bigint = 0 OR chain_id = $1::bigint)
   AND ($2::bytea IS NULL OR code_hash = $2::bytea)
   AND ($3::bytea IS NULL OR contract = $3::bytea)
 ORDER BY created_at DESC, id DESC

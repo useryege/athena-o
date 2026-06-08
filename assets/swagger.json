@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-644-ga0c6c60-dirty"
+    "version": "v1.0.0-646-g3c20dda-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1058,6 +1058,58 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tokenapiGetProjectDataCollectionTaskResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/projects": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_ListProjects",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListProjectsResponse"
             }
           },
           "default": {
@@ -2274,6 +2326,29 @@
         }
       }
     },
+    "tokenapiListProjectsResponse": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenAPIProject"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "tokenapiListWalletBlacklistsResponse": {
       "type": "object",
       "properties": {
@@ -3028,6 +3103,52 @@
           "items": {
             "$ref": "#/definitions/v1alpha1TokenAPIChainOption"
           }
+        }
+      }
+    },
+    "v1alpha1TokenAPIProject": {
+      "type": "object",
+      "properties": {
+        "blockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "blockTime": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "codeHash": {
+          "type": "string"
+        },
+        "contract": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "creator": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "txHash": {
+          "type": "string"
+        },
+        "txIndex": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

@@ -291,6 +291,31 @@ func (s *Server) ListContractCodes(ctx context.Context, req *tokenapipkg.ListCon
 	}, nil
 }
 
+func (s *Server) ListProjects(ctx context.Context, req *tokenapipkg.ListProjectsRequest) (*tokenapipkg.ListProjectsResponse, error) {
+	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListProjects(ctx, &tokenapiapiclient.ListProjectsRequest{
+		ChainId:  req.GetChainId(),
+		CodeHash: req.GetCodeHash(),
+		Contract: req.GetContract(),
+		Page:     req.GetPage(),
+		PageSize: req.GetPageSize(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &tokenapipkg.ListProjectsResponse{
+		Projects: resp.GetProjects(),
+		Total:    resp.GetTotal(),
+		Page:     resp.GetPage(),
+		PageSize: resp.GetPageSize(),
+	}, nil
+}
+
 func (s *Server) GetProjectDataCollectionTask(ctx context.Context, req *tokenapipkg.GetProjectDataCollectionTaskRequest) (*tokenapipkg.GetProjectDataCollectionTaskResponse, error) {
 	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
 	if err != nil {
