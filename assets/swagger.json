@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-652-g67d1302-dirty"
+    "version": "v1.0.0-657-g692e020-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -2116,7 +2116,27 @@
         "loggedIn": {
           "type": "boolean"
         },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/sessionResourcePermission"
+          }
+        },
         "username": {
+          "type": "string"
+        }
+      }
+    },
+    "sessionResourcePermission": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "subresource": {
           "type": "string"
         }
       }

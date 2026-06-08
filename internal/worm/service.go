@@ -313,8 +313,9 @@ func toAPIMarketConfig(config *utilworm.MarketConfig) v1alpha1.WormMarketConfig 
 		return v1alpha1.WormMarketConfig{}
 	}
 	return v1alpha1.WormMarketConfig{
-		Kind:                config.Kind,
-		MaxLeverage:         stringValue(config.MaxLeverage),
+		Kind: config.Kind,
+		// MaxLeverageNo:       stringValue(config.MaxLeverageNo),
+		// MaxLeverageYes:      stringValue(config.MaxLeverageYes),
 		OpeningFee:          stringValue(config.OpeningFee),
 		ClosingFee:          stringValue(config.ClosingFee),
 		AnnualFeeRate:       stringValue(config.AnnualFeeRate),

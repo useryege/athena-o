@@ -6,6 +6,7 @@ import (
 
 	"github.com/useryege/athena/util/settings"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,6 +14,7 @@ import (
 	"github.com/useryege/athena/internal/server/rbacpolicy"
 	"github.com/useryege/athena/pkg/apiclient/session"
 	utilio "github.com/useryege/athena/util/io"
+	"github.com/useryege/athena/util/rbac"
 	sessionmgr "github.com/useryege/athena/util/session"
 )
 
@@ -33,6 +35,20 @@ const (
 	success = "success"
 	failure = "failure"
 )
+
+var uiBootstrapPermissions = []*session.ResourcePermission{
+	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "options"},
+	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "projects"},
+	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "contract-codes"},
+	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "bytecode-blacklists"},
+	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "wallet-blacklists"},
+	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "chain-checkpoints"},
+	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "collection-tasks"},
+	{Resource: rbac.ResourceWallets, Action: rbac.ActionGet, Subresource: "*"},
+	{Resource: rbac.ResourceWorm, Action: rbac.ActionGet, Subresource: "*"},
+	{Resource: rbac.ResourcePolymarket, Action: rbac.ActionGet, Subresource: "*"},
+	{Resource: rbac.ResourceNotifications, Action: rbac.ActionGet, Subresource: "*"},
+}
 
 // NewServer returns a new instance of the Session service
 func NewServer(mgr *sessionmgr.SessionManager, settingsMgr *settings.SettingsManager, authenticator Authenticator, policyEnf *rbacpolicy.RBACPolicyEnforcer, rateLimiter func() (utilio.Closer, error)) *Server {
@@ -118,9 +134,32 @@ func (s *Server) AuthFuncOverride(ctx context.Context, _ string) (context.Contex
 
 func (s *Server) GetUserInfo(ctx context.Context, _ *session.GetUserInfoRequest) (*session.GetUserInfoResponse, error) {
 	return &session.GetUserInfoResponse{
-		LoggedIn: sessionmgr.LoggedIn(ctx),
-		Username: sessionmgr.Username(ctx),
-		Iss:      sessionmgr.Iss(ctx),
-		Groups:   sessionmgr.Groups(ctx, s.policyEnf.GetScopes()),
+		LoggedIn:    sessionmgr.LoggedIn(ctx),
+		Username:    sessionmgr.Username(ctx),
+		Iss:         sessionmgr.Iss(ctx),
+		Groups:      sessionmgr.Groups(ctx, s.policyEnf.GetScopes()),
+		Permissions: s.userPermissions(ctx),
 	}, nil
+}
+
+func (s *Server) userPermissions(ctx context.Context) []*session.ResourcePermission {
+	if !sessionmgr.LoggedIn(ctx) {
+		return nil
+	}
+
+	claims, ok := ctx.Value("claims").(jwt.Claims)
+	if !ok {
+		return nil
+	}
+	permissions := make([]*session.ResourcePermission, 0, len(uiBootstrapPermissions))
+	for _, perm := range uiBootstrapPermissions {
+		if s.policyEnf.EnforceClaims(claims, claims, perm.Resource, perm.Action, perm.Subresource) {
+			permissions = append(permissions, &session.ResourcePermission{
+				Resource:    perm.Resource,
+				Action:      perm.Action,
+				Subresource: perm.Subresource,
+			})
+		}
+	}
+	return permissions
 }

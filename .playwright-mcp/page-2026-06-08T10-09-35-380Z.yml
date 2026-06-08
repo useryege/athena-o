@@ -1,0 +1,23 @@
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7] [cursor=pointer]:
+        - generic [ref=e8]: A
+        - generic [ref=e9]: Athena
+      - menu [ref=e10]
+  - generic [ref=e11]:
+    - banner [ref=e12]:
+      - generic [ref=e13]:
+        - button "menu-fold" [ref=e14] [cursor=pointer]:
+          - img "menu-fold" [ref=e16]:
+            - img [ref=e17]
+        - heading "Projects" [level=4] [ref=e19]
+      - generic [ref=e20]:
+        - button "sun" [ref=e21] [cursor=pointer]:
+          - img "sun" [ref=e23]:
+            - img [ref=e24]
+        - button "user" [ref=e26] [cursor=pointer]:
+          - img "user" [ref=e28]:
+            - img [ref=e29]
+    - main [ref=e31]:
+      - generic [ref=e32]: Loading Athena...

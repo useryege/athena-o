@@ -45,6 +45,13 @@ export interface UserInfo {
     username: string;
     iss: string;
     groups: string[];
+    permissions: Permission[];
+}
+
+export interface Permission {
+    resource: string;
+    action: string;
+    subresource: string;
 }
 
 export interface Token {

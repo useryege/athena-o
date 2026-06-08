@@ -39,6 +39,16 @@ func fixedRule(resource, action string) authzRule {
 	}
 }
 
+func fixedObjectRule(resource, action, object string) authzRule {
+	return authzRule{
+		resource: resource,
+		action:   action,
+		object: func(any) string {
+			return object
+		},
+	}
+}
+
 func accountName(req any) string {
 	switch r := req.(type) {
 	case *accountpkg.GetAccountRequest:
@@ -171,25 +181,25 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/polymarket.PolymarketService/ListPolymarketSportsLiveMarkets": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/GetPolymarketSportsLiveSnapshot": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 
-	"/tokenapi.TokenAPIService/GetOptions":                     fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
-	"/tokenapi.TokenAPIService/GetBytecodeBlacklist":           {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/ListBytecodeBlacklists":         fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
+	"/tokenapi.TokenAPIService/GetOptions":                     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "options"),
+	"/tokenapi.TokenAPIService/GetBytecodeBlacklist":           fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "bytecode-blacklists"),
+	"/tokenapi.TokenAPIService/ListBytecodeBlacklists":         fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "bytecode-blacklists"),
 	"/tokenapi.TokenAPIService/CreateBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/UpdateBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/DeleteBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/GetWalletBlacklist":             {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/ListWalletBlacklists":           fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
+	"/tokenapi.TokenAPIService/GetWalletBlacklist":             fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "wallet-blacklists"),
+	"/tokenapi.TokenAPIService/ListWalletBlacklists":           fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "wallet-blacklists"),
 	"/tokenapi.TokenAPIService/CreateWalletBlacklist":          {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/UpdateWalletBlacklist":          {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/DeleteWalletBlacklist":          {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/GetChainIngestCheckpoint":       {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/ListChainIngestCheckpoints":     fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
+	"/tokenapi.TokenAPIService/GetChainIngestCheckpoint":       fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
+	"/tokenapi.TokenAPIService/ListChainIngestCheckpoints":     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
 	"/tokenapi.TokenAPIService/UpdateChainIngestCheckpoint":    {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/GetContractCode":                {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/ListContractCodes":              fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
-	"/tokenapi.TokenAPIService/ListProjects":                   fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
-	"/tokenapi.TokenAPIService/GetProjectDataCollectionTask":   {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/ListProjectDataCollectionTasks": fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
+	"/tokenapi.TokenAPIService/GetContractCode":                fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),
+	"/tokenapi.TokenAPIService/ListContractCodes":              fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),
+	"/tokenapi.TokenAPIService/ListProjects":                   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
+	"/tokenapi.TokenAPIService/GetProjectDataCollectionTask":   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "collection-tasks"),
+	"/tokenapi.TokenAPIService/ListProjectDataCollectionTasks": fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "collection-tasks"),
 }
 
 func (server *AthenaServer) unaryAuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {

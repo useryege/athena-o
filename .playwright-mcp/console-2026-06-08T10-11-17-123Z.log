@@ -1,0 +1,8 @@
+[      83ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:4000/@fs/home/yege/work/athena/ui/node_modules/.vite/deps/chunk-CJSRII5H.js?v=af8d237b:21608
+[   44139ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:4000/@vite/client:864
+[  165680ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:4000/@fs/home/yege/work/athena/ui/node_modules/.vite/deps/chunk-CJSRII5H.js?v=af8d237b:21608
+[  165723ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4000/api/v1/settings:0
+[  166227ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4000/api/v1/settings:0
+[  167233ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4000/api/v1/settings:0
+[  169237ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4000/api/v1/settings:0
+[  199643ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:4000/@vite/client:864

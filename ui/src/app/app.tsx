@@ -23,7 +23,7 @@ import * as React from 'react';
 import {BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
 import {Subscription} from 'rxjs';
 import {AuthSettingsCtx, Provider} from './shared/context';
-import {AuthSettings} from './shared/models';
+import {AuthSettings, Permission, UserInfo} from './shared/models';
 import {services, ViewPreferences} from './shared/services';
 import requests from './shared/services/requests';
 import {BrandMark} from './mobile/components';
@@ -65,7 +65,39 @@ interface NavItem {
     icon: React.ReactNode;
     path?: string;
     children?: NavItem[];
+    permission?: Permission;
 }
+
+interface AccessState {
+    user: UserInfo;
+    permissions: Record<string, boolean>;
+}
+
+const rbacResources = {
+    notifications: 'notifications',
+    polymarket: 'polymarket',
+    tokenapi: 'tokenapi',
+    wallets: 'wallets',
+    worm: 'worm'
+};
+
+const rbacActions = {
+    get: 'get'
+};
+
+const tokenapiSubresources = {
+    projects: 'projects',
+    contractCodes: 'contract-codes',
+    bytecodeBlacklists: 'bytecode-blacklists',
+    walletBlacklists: 'wallet-blacklists',
+    chainCheckpoints: 'chain-checkpoints',
+    collectionTasks: 'collection-tasks'
+};
+
+const permission = (resource: string, action: string, subresource = '*'): Permission => ({resource, action, subresource});
+const tokenapiPermission = (subresource: string) => permission(rbacResources.tokenapi, rbacActions.get, subresource);
+const permissionKey = (perm: Permission) => `${perm.resource}:${perm.action}:${perm.subresource}`;
+const hasPermission = (access: AccessState, perm?: Permission) => !perm || access?.permissions[permissionKey(perm)] === true;
 
 const navItems: NavItem[] = [
     {
@@ -73,34 +105,93 @@ const navItems: NavItem[] = [
         label: 'Token',
         icon: <DashboardOutlined />,
         children: [
-            {key: '/token/projects', label: 'Projects', path: '/token/projects', icon: <FileTextOutlined />},
-            {key: '/token/contract-codes', label: 'Contract Codes', path: '/token/contract-codes', icon: <CodeOutlined />},
-            {key: '/token/bytecode-blacklists', label: 'Bytecode Blacklists', path: '/token/bytecode-blacklists', icon: <ApiOutlined />},
-            {key: '/token/wallet-blacklists', label: 'Wallet Blacklists', path: '/token/wallet-blacklists', icon: <WalletOutlined />},
-            {key: '/token/chain-checkpoints', label: 'Chain Checkpoints', path: '/token/chain-checkpoints', icon: <ApiOutlined />},
-            {key: '/token/collection-tasks', label: 'Collection Tasks', path: '/token/collection-tasks', icon: <FileTextOutlined />}
+            {key: '/token/projects', label: 'Projects', path: '/token/projects', icon: <FileTextOutlined />, permission: tokenapiPermission(tokenapiSubresources.projects)},
+            {
+                key: '/token/contract-codes',
+                label: 'Contract Codes',
+                path: '/token/contract-codes',
+                icon: <CodeOutlined />,
+                permission: tokenapiPermission(tokenapiSubresources.contractCodes)
+            },
+            {
+                key: '/token/bytecode-blacklists',
+                label: 'Bytecode Blacklists',
+                path: '/token/bytecode-blacklists',
+                icon: <ApiOutlined />,
+                permission: tokenapiPermission(tokenapiSubresources.bytecodeBlacklists)
+            },
+            {
+                key: '/token/wallet-blacklists',
+                label: 'Wallet Blacklists',
+                path: '/token/wallet-blacklists',
+                icon: <WalletOutlined />,
+                permission: tokenapiPermission(tokenapiSubresources.walletBlacklists)
+            },
+            {
+                key: '/token/chain-checkpoints',
+                label: 'Chain Checkpoints',
+                path: '/token/chain-checkpoints',
+                icon: <ApiOutlined />,
+                permission: tokenapiPermission(tokenapiSubresources.chainCheckpoints)
+            },
+            {
+                key: '/token/collection-tasks',
+                label: 'Collection Tasks',
+                path: '/token/collection-tasks',
+                icon: <FileTextOutlined />,
+                permission: tokenapiPermission(tokenapiSubresources.collectionTasks)
+            }
         ]
     },
-    {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />},
-    {key: '/worm', label: 'Worm', path: '/worm', icon: <ApiOutlined />},
+    {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, permission: permission(rbacResources.wallets, rbacActions.get)},
+    {key: '/worm', label: 'Worm', path: '/worm', icon: <ApiOutlined />, permission: permission(rbacResources.worm, rbacActions.get)},
     {
         key: 'polymarket',
         label: 'Polymarket',
         icon: <DashboardOutlined />,
         children: [
-            {key: '/polymarket', label: 'Hot Markets', path: '/polymarket', icon: <DashboardOutlined />},
-            {key: '/polymarket/realtime', label: 'Realtime', path: '/polymarket/realtime', icon: <DashboardOutlined />},
-            {key: '/polymarket/movers', label: 'Movers', path: '/polymarket/movers', icon: <DashboardOutlined />},
-            {key: '/polymarket/sports-live', label: 'Sports Live', path: '/polymarket/sports-live', icon: <DashboardOutlined />}
+            {key: '/polymarket', label: 'Hot Markets', path: '/polymarket', icon: <DashboardOutlined />, permission: permission(rbacResources.polymarket, rbacActions.get)},
+            {
+                key: '/polymarket/realtime',
+                label: 'Realtime',
+                path: '/polymarket/realtime',
+                icon: <DashboardOutlined />,
+                permission: permission(rbacResources.polymarket, rbacActions.get)
+            },
+            {
+                key: '/polymarket/movers',
+                label: 'Movers',
+                path: '/polymarket/movers',
+                icon: <DashboardOutlined />,
+                permission: permission(rbacResources.polymarket, rbacActions.get)
+            },
+            {
+                key: '/polymarket/sports-live',
+                label: 'Sports Live',
+                path: '/polymarket/sports-live',
+                icon: <DashboardOutlined />,
+                permission: permission(rbacResources.polymarket, rbacActions.get)
+            }
         ]
     },
-    {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />},
+    {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, permission: permission(rbacResources.notifications, rbacActions.get)},
     {key: '/settings', label: 'Settings', path: '/settings', icon: <SettingOutlined />},
     {key: '/user-info', label: 'User Info', path: '/user-info', icon: <UserOutlined />},
     {key: '/help', label: 'Help', path: '/help', icon: <QuestionCircleOutlined />}
 ];
 
 const flattenNav = (items: NavItem[]): NavItem[] => items.flatMap(item => [item, ...(item.children ? flattenNav(item.children) : [])]);
+
+const filterNavItems = (items: NavItem[], access: AccessState): NavItem[] =>
+    items
+        .map(item => {
+            const children = item.children ? filterNavItems(item.children, access) : undefined;
+            if (children) {
+                return children.length > 0 && hasPermission(access, item.permission) ? {...item, children} : null;
+            }
+            return hasPermission(access, item.permission) ? item : null;
+        })
+        .filter((item): item is NavItem => item !== null);
 
 const toMenuItems = (items: NavItem[]): MenuProps['items'] =>
     items.map(item => ({
@@ -151,32 +242,52 @@ export async function loadAuthSettingsWithRetry(
     throw lastError;
 }
 
-const AppRoutes = () => (
-    <Routes>
-        <Route path='/' element={<Navigate replace={true} to='/user-info' />} />
-        <Route path='/login' element={<LoginPage />} />
-        <Route path='/wallet' element={<WalletsPage />} />
-        <Route path='/worm' element={<WormPage />} />
-        <Route path='/polymarket' element={<PolymarketHotPage />} />
-        <Route path='/polymarket/realtime' element={<PolymarketRealtimePage />} />
-        <Route path='/polymarket/movers' element={<PolymarketMoversPage />} />
-        <Route path='/polymarket/sports-live' element={<PolymarketSportsLivePage />} />
-        <Route path='/notifications' element={<NotificationsPage />} />
-        <Route path='/notifications/:id' element={<NotificationsDetailPage />} />
-        <Route path='/settings/*' element={<SettingsPage />} />
-        <Route path='/user-info' element={<UserInfoPage />} />
-        <Route path='/help' element={<HelpPage />} />
-        <Route path='/token' element={<Navigate replace={true} to='/token/projects' />} />
-        <Route path='/token/projects' element={<ProjectsPage />} />
-        <Route path='/token/contract-codes' element={<ContractCodesPage />} />
-        <Route path='/token/contract-codes/:codeHash' element={<ContractCodeDetailPage />} />
-        <Route path='/token/bytecode-blacklists' element={<BytecodeBlacklistsPage />} />
-        <Route path='/token/wallet-blacklists' element={<WalletBlacklistsPage />} />
-        <Route path='/token/chain-checkpoints' element={<ChainCheckpointsPage />} />
-        <Route path='/token/collection-tasks' element={<CollectionTasksPage />} />
-        <Route path='*' element={<Navigate replace={true} to='/user-info' />} />
-    </Routes>
-);
+const loadAccessState = (user: UserInfo): AccessState => ({
+    user,
+    permissions: Object.fromEntries((user.permissions || []).map(perm => [permissionKey(perm), true]))
+});
+
+const ForbiddenPage = () => <Result status='403' title='403' subTitle='You do not have permission to access this page.' />;
+
+const RequirePermission = (props: {access: AccessState; permission: Permission; children: React.ReactElement}) =>
+    hasPermission(props.access, props.permission) ? props.children : <ForbiddenPage />;
+
+const AppRoutes = (props: {access: AccessState}) => {
+    const visibleTokenDefault = filterNavItems(navItems, props.access)
+        .find(item => item.key === 'token')
+        ?.children?.find(item => item.path)?.path;
+    const withPermission = (perm: Permission, element: React.ReactElement) => (
+        <RequirePermission access={props.access} permission={perm}>
+            {element}
+        </RequirePermission>
+    );
+    return (
+        <Routes>
+            <Route path='/' element={<Navigate replace={true} to='/user-info' />} />
+            <Route path='/login' element={<LoginPage />} />
+            <Route path='/wallet' element={withPermission(permission(rbacResources.wallets, rbacActions.get), <WalletsPage />)} />
+            <Route path='/worm' element={withPermission(permission(rbacResources.worm, rbacActions.get), <WormPage />)} />
+            <Route path='/polymarket' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketHotPage />)} />
+            <Route path='/polymarket/realtime' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketRealtimePage />)} />
+            <Route path='/polymarket/movers' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketMoversPage />)} />
+            <Route path='/polymarket/sports-live' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketSportsLivePage />)} />
+            <Route path='/notifications' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsPage />)} />
+            <Route path='/notifications/:id' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsDetailPage />)} />
+            <Route path='/settings/*' element={<SettingsPage />} />
+            <Route path='/user-info' element={<UserInfoPage />} />
+            <Route path='/help' element={<HelpPage />} />
+            <Route path='/token' element={visibleTokenDefault ? <Navigate replace={true} to={visibleTokenDefault} /> : <ForbiddenPage />} />
+            <Route path='/token/projects' element={withPermission(tokenapiPermission(tokenapiSubresources.projects), <ProjectsPage />)} />
+            <Route path='/token/contract-codes' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodesPage />)} />
+            <Route path='/token/contract-codes/:codeHash' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodeDetailPage />)} />
+            <Route path='/token/bytecode-blacklists' element={withPermission(tokenapiPermission(tokenapiSubresources.bytecodeBlacklists), <BytecodeBlacklistsPage />)} />
+            <Route path='/token/wallet-blacklists' element={withPermission(tokenapiPermission(tokenapiSubresources.walletBlacklists), <WalletBlacklistsPage />)} />
+            <Route path='/token/chain-checkpoints' element={withPermission(tokenapiPermission(tokenapiSubresources.chainCheckpoints), <ChainCheckpointsPage />)} />
+            <Route path='/token/collection-tasks' element={withPermission(tokenapiPermission(tokenapiSubresources.collectionTasks), <CollectionTasksPage />)} />
+            <Route path='*' element={<Navigate replace={true} to='/user-info' />} />
+        </Routes>
+    );
+};
 
 const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     const navigate = useNavigate();
@@ -187,6 +298,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     const isLoginPath = location.pathname.startsWith('/login');
     const locationKey = `${location.pathname}${location.search}`;
     const [authorizedLocationKey, setAuthorizedLocationKey] = React.useState(isLoginPath ? locationKey : '');
+    const [access, setAccess] = React.useState<AccessState>(null);
 
     React.useEffect(() => {
         setDesktopCollapsed(props.pref.hideSidebar);
@@ -194,12 +306,14 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
 
     React.useEffect(() => {
         if (isLoginPath) {
+            setAccess(null);
             setAuthorizedLocationKey(locationKey);
             return;
         }
 
         let active = true;
         setAuthorizedLocationKey('');
+        setAccess(null);
         services.users
             .get()
             .then(user => {
@@ -210,6 +324,11 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                     navigate('/login', {replace: true});
                     return;
                 }
+                const nextAccess = loadAccessState(user);
+                if (!active) {
+                    return;
+                }
+                setAccess(nextAccess);
                 setAuthorizedLocationKey(locationKey);
             })
             .catch(err => {
@@ -220,6 +339,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                     navigate('/login', {replace: true});
                     return;
                 }
+                setAccess({user: {loggedIn: true, username: '', iss: '', groups: [], permissions: []}, permissions: {}});
                 setAuthorizedLocationKey(locationKey);
             });
         return () => {
@@ -244,8 +364,10 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         document.body.dataset.theme = props.pref.theme || 'light';
     }, [props.pref.theme]);
 
+    const visibleNavItems = access ? filterNavItems(navItems, access) : [];
+
     const onMenuClick: MenuProps['onClick'] = item => {
-        const target = flattenNav(navItems).find(navItem => navItem.key === item.key);
+        const target = flattenNav(visibleNavItems).find(navItem => navItem.key === item.key);
         if (target?.path) {
             navigate(target.path);
             setMobileNavOpen(false);
@@ -281,10 +403,16 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     ];
 
     const menu = (
-        <Menu mode='inline' items={toMenuItems(navItems)} selectedKeys={[selectedKey(location.pathname)]} defaultOpenKeys={openKeys(location.pathname)} onClick={onMenuClick} />
+        <Menu
+            mode='inline'
+            items={toMenuItems(visibleNavItems)}
+            selectedKeys={[selectedKey(location.pathname)]}
+            defaultOpenKeys={openKeys(location.pathname)}
+            onClick={onMenuClick}
+        />
     );
 
-    const routes = !isLoginPath && authorizedLocationKey !== locationKey ? <div className='athena-boot'>Loading Athena...</div> : <AppRoutes />;
+    const routes = !isLoginPath && (authorizedLocationKey !== locationKey || !access) ? <div className='athena-boot'>Loading Athena...</div> : <AppRoutes access={access} />;
     const content = isLoginPath ? (
         routes
     ) : (

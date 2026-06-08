@@ -27,12 +27,19 @@ message SessionResponse {
 // Get the current user's userInfo info
 message GetUserInfoRequest {}
 
+message ResourcePermission {
+  string resource = 1;
+  string action = 2;
+  string subresource = 3;
+}
+
 // The current user's userInfo info
 message GetUserInfoResponse {
   bool loggedIn = 1;
   string username = 2;
   string iss = 3;
   repeated string groups = 4;
+  repeated ResourcePermission permissions = 5;
 }
 
 // SessionService
