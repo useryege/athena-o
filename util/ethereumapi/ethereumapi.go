@@ -30,23 +30,25 @@ func NewEthereumAPI(baseURL string, apiKey string) EthereumAPI {
 }
 
 type SourceCodeResponse struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
-	Result  []struct {
-		SourceCode           string `json:"SourceCode"`
-		ABI                  string `json:"ABI"`
-		ContractName         string `json:"ContractName"`
-		CompilerVersion      string `json:"CompilerVersion"`
-		OptimizationUsed     string `json:"OptimizationUsed"`
-		Runs                 string `json:"Runs"`
-		ConstructorArguments string `json:"ConstructorArguments"`
-		EVMVersion           string `json:"EVMVersion"`
-		Library              string `json:"Library"`
-		LicenseType          string `json:"LicenseType"`
-		Proxy                string `json:"Proxy"`
-		Implementation       string `json:"Implementation"`
-		SwarmSource          string `json:"SwarmSource"`
-	} `json:"result"`
+	Status  string             `json:"status"`
+	Message string             `json:"message"`
+	Result  []SourceCodeResult `json:"result"`
+}
+
+type SourceCodeResult struct {
+	SourceCode           string `json:"SourceCode"`
+	ABI                  string `json:"ABI"`
+	ContractName         string `json:"ContractName"`
+	CompilerVersion      string `json:"CompilerVersion"`
+	OptimizationUsed     string `json:"OptimizationUsed"`
+	Runs                 string `json:"Runs"`
+	ConstructorArguments string `json:"ConstructorArguments"`
+	EVMVersion           string `json:"EVMVersion"`
+	Library              string `json:"Library"`
+	LicenseType          string `json:"LicenseType"`
+	Proxy                string `json:"Proxy"`
+	Implementation       string `json:"Implementation"`
+	SwarmSource          string `json:"SwarmSource"`
 }
 
 type ABIResponse struct {
@@ -68,12 +70,31 @@ func (e *ethereumAPIImpl) GetSourceCode(ctx context.Context, chainID int64, cont
 		return nil, err
 	}
 
-	var sourceCodeResp SourceCodeResponse
-	if err := json.NewDecoder(resp.Body).Decode(&sourceCodeResp); err != nil {
+	var rawResp struct {
+		Status  string          `json:"status"`
+		Message string          `json:"message"`
+		Result  json.RawMessage `json:"result"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&rawResp); err != nil {
 		return nil, fmt.Errorf("failed to decode etherscan getsourcecode response: %w", err)
 	}
-	if sourceCodeResp.Status != "1" {
-		return nil, fmt.Errorf("etherscan getsourcecode failed: %s", sourceCodeResp.Message)
+	if rawResp.Status != "1" {
+		var result string
+		if err := json.Unmarshal(rawResp.Result, &result); err != nil {
+			result = summarizeRawJSON(rawResp.Result)
+		}
+		if result == "" {
+			return nil, fmt.Errorf("etherscan getsourcecode failed: %s", rawResp.Message)
+		}
+		return nil, fmt.Errorf("etherscan getsourcecode failed: %s: %s", rawResp.Message, result)
+	}
+
+	sourceCodeResp := SourceCodeResponse{
+		Status:  rawResp.Status,
+		Message: rawResp.Message,
+	}
+	if err := json.Unmarshal(rawResp.Result, &sourceCodeResp.Result); err != nil {
+		return nil, fmt.Errorf("malformed etherscan getsourcecode response: message=%s result=%s: %w", rawResp.Message, summarizeRawJSON(rawResp.Result), err)
 	}
 	return &sourceCodeResp, nil
 }
@@ -146,4 +167,17 @@ func ensureHTTPSuccess(resp *http.Response) error {
 		return fmt.Errorf("etherscan http request failed with status %s and unreadable body: %w", resp.Status, err)
 	}
 	return fmt.Errorf("etherscan http request failed with status %s: %s", resp.Status, string(body))
+}
+
+func summarizeRawJSON(raw json.RawMessage) string {
+	const maxRawJSONSummaryLength = 256
+
+	if len(raw) == 0 {
+		return ""
+	}
+	summary := string(raw)
+	if len(summary) <= maxRawJSONSummaryLength {
+		return summary
+	}
+	return summary[:maxRawJSONSummaryLength] + "..."
 }
