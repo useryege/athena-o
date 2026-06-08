@@ -6,6 +6,7 @@
   - [Project Status](#project-status)
   - [No Historical Compatibility](#no-historical-compatibility)
   - [No Tests](#no-tests)
+  - [Chinese Plans](#chinese-plans)
 
 ## Rules
 
@@ -25,4 +26,8 @@ Do not preserve historical compatibility. When implementing changes:
 ### No Tests
 
 Do not plan, propose, add, or run tests (unit tests, integration tests, end-to-end tests, etc.) unless the user explicitly asks for them. We trust the code we write.
+
+### Chinese Plans
+
+When outlining or listing a plan (implementation steps, task breakdown, approach summary, etc.), write the plan in Chinese (简体中文).
 
