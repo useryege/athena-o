@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/useryege/athena/util/ratelimit"
 )
 
 type EthereumAPI interface {
@@ -16,16 +18,35 @@ type EthereumAPI interface {
 }
 
 type ethereumAPIImpl struct {
-	baseURL string
-	apiKey  string
-	client  *http.Client
+	baseURL     string
+	apiKey      string
+	client      *http.Client
+	rateLimiter ratelimit.Limiter
+}
+
+type Config struct {
+	BaseURL     string
+	APIKey      string
+	RateLimiter ratelimit.Limiter
 }
 
 func NewEthereumAPI(baseURL string, apiKey string) EthereumAPI {
+	return NewEthereumAPIWithConfig(Config{
+		BaseURL: baseURL,
+		APIKey:  apiKey,
+	})
+}
+
+func NewEthereumAPIWithConfig(config Config) EthereumAPI {
+	rateLimiter := config.RateLimiter
+	if rateLimiter == nil {
+		rateLimiter = ratelimit.Noop()
+	}
 	return &ethereumAPIImpl{
-		baseURL: baseURL,
-		apiKey:  apiKey,
-		client:  &http.Client{},
+		baseURL:     config.BaseURL,
+		apiKey:      config.APIKey,
+		client:      &http.Client{},
+		rateLimiter: rateLimiter,
 	}
 }
 
@@ -144,6 +165,10 @@ func (e *ethereumAPIImpl) do(ctx context.Context, apiKey string, chainID int64, 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create etherscan request: %w", err)
+	}
+
+	if err := e.rateLimiter.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("wait etherscan rate limit: %w", err)
 	}
 
 	client := e.client

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/useryege/athena/util/ratelimit"
 )
 
 const (
@@ -26,9 +27,10 @@ type Client interface {
 }
 
 type Config struct {
-	BaseURL string
-	APIKey  string
-	Timeout time.Duration
+	BaseURL     string
+	APIKey      string
+	Timeout     time.Duration
+	RateLimiter ratelimit.Limiter
 }
 
 type TokenDetailResponse struct {
@@ -136,8 +138,9 @@ type Pair struct {
 }
 
 type clientImpl struct {
-	config Config
-	client *http.Client
+	config      Config
+	client      *http.Client
+	rateLimiter ratelimit.Limiter
 }
 
 func NewClient(config Config) (Client, error) {
@@ -145,9 +148,14 @@ func NewClient(config Config) (Client, error) {
 	if strings.TrimSpace(config.APIKey) == "" {
 		return nil, errors.New("ave api key is required")
 	}
+	rateLimiter := config.RateLimiter
+	if rateLimiter == nil {
+		rateLimiter = ratelimit.Noop()
+	}
 	return &clientImpl{
-		config: config,
-		client: &http.Client{Timeout: config.Timeout},
+		config:      config,
+		client:      &http.Client{Timeout: config.Timeout},
+		rateLimiter: rateLimiter,
 	}, nil
 }
 
@@ -197,6 +205,10 @@ func (c *clientImpl) GetTokenDetail(ctx context.Context, contract common.Address
 		return nil, fmt.Errorf("failed to create ave token detail request: %w", err)
 	}
 	req.Header.Set("X-API-KEY", c.config.APIKey)
+
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("wait ave rate limit: %w", err)
+	}
 
 	resp, err := c.client.Do(req)
 	if err != nil {

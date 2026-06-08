@@ -13,6 +13,7 @@ import (
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/ethereumapi"
+	"github.com/useryege/athena/util/ratelimit"
 )
 
 const (
@@ -25,6 +26,8 @@ const (
 	simulationTaskLimit        = int32(20)
 	aveHTTPClientTimeout       = 60 * time.Second
 	defaultEtherscanAPIBaseURL = "https://api.etherscan.io/v2/api"
+	etherscanRateLimitRequests = 3
+	etherscanRateLimitPeriod   = time.Second
 )
 
 type Options struct {
@@ -89,7 +92,18 @@ func (w *Worker) Start(ctx context.Context) error {
 		if etherscanAPIBaseURL == "" {
 			etherscanAPIBaseURL = defaultEtherscanAPIBaseURL
 		}
-		etherscanClient = ethereumapi.NewEthereumAPI(etherscanAPIBaseURL, w.opts.EtherscanAPIKey)
+		etherscanRateLimiter, err := ratelimit.New(ratelimit.Config{
+			Requests: etherscanRateLimitRequests,
+			Per:      etherscanRateLimitPeriod,
+		})
+		if err != nil {
+			return err
+		}
+		etherscanClient = ethereumapi.NewEthereumAPIWithConfig(ethereumapi.Config{
+			BaseURL:     etherscanAPIBaseURL,
+			APIKey:      w.opts.EtherscanAPIKey,
+			RateLimiter: etherscanRateLimiter,
+		})
 	}
 	runCtx, cancel := context.WithCancel(ctx)
 	runner := newDataCollectorRunner(dataCollectorRunnerOptions{
