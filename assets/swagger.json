@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-657-g692e020-dirty"
+    "version": "v1.0.0-659-g6562bb6-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3320,7 +3320,10 @@
         "maxFunds": {
           "type": "string"
         },
-        "maxLeverage": {
+        "maxLeverageNo": {
+          "type": "string"
+        },
+        "maxLeverageYes": {
           "type": "string"
         },
         "maxPrice": {
@@ -3384,10 +3387,7 @@
           "format": "int64"
         },
         "rules": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "type": "string"
         },
         "takerFee": {
           "type": "string"

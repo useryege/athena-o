@@ -413,12 +413,11 @@ type Market struct {
 	YesOutcomeLabel *string          `json:"yes_outcome_label,omitempty"`
 	NoOutcomeLabel  *string          `json:"no_outcome_label,omitempty"`
 	Outcomes        []Outcome        `json:"outcomes,omitempty"`
-	Rules           []string         `json:"rules,omitempty"`
+	Rules           json.RawMessage  `json:"rules,omitempty"`
 	ResolutionDate  *int64           `json:"resolution_date,omitempty"`
 	MakerFee        *string          `json:"maker_fee,omitempty"`
 	TakerFee        *string          `json:"taker_fee,omitempty"`
 	Config          *MarketConfig    `json:"config,omitempty"`
-	RawRules        *json.RawMessage `json:"-"`
 	RawConfig       *json.RawMessage `json:"-"`
 }
 
@@ -446,14 +445,8 @@ func (m *Market) UnmarshalJSON(data []byte) error {
 	m.TakerFee = raw.TakerFee
 	m.Config = raw.Config
 	m.Rules = nil
-	m.RawRules = nil
 	if len(raw.Rules) > 0 && string(raw.Rules) != "null" {
-		rulesCopy := append(json.RawMessage(nil), raw.Rules...)
-		m.RawRules = &rulesCopy
-		var rules []string
-		if err := json.Unmarshal(raw.Rules, &rules); err == nil {
-			m.Rules = rules
-		}
+		m.Rules = append(json.RawMessage(nil), raw.Rules...)
 	}
 	if raw.Config != nil {
 		var rawFields map[string]json.RawMessage
@@ -577,12 +570,11 @@ type SearchSummary struct {
 	Markets         []MarketSummary  `json:"markets,omitempty"`
 	YesOutcomeLabel *string          `json:"yes_outcome_label,omitempty"`
 	NoOutcomeLabel  *string          `json:"no_outcome_label,omitempty"`
-	Rules           []string         `json:"rules,omitempty"`
+	Rules           json.RawMessage  `json:"rules,omitempty"`
 	ResolutionDate  *int64           `json:"resolution_date,omitempty"`
 	MakerFee        *string          `json:"maker_fee,omitempty"`
 	TakerFee        *string          `json:"taker_fee,omitempty"`
 	Config          *MarketConfig    `json:"config,omitempty"`
-	RawRules        *json.RawMessage `json:"-"`
 	RawConfig       *json.RawMessage `json:"-"`
 }
 
@@ -612,14 +604,8 @@ func (s *SearchSummary) UnmarshalJSON(data []byte) error {
 	s.TakerFee = raw.TakerFee
 	s.Config = raw.Config
 	s.Rules = nil
-	s.RawRules = nil
 	if len(raw.Rules) > 0 && string(raw.Rules) != "null" {
-		rulesCopy := append(json.RawMessage(nil), raw.Rules...)
-		s.RawRules = &rulesCopy
-		var rules []string
-		if err := json.Unmarshal(raw.Rules, &rules); err == nil {
-			s.Rules = rules
-		}
+		s.Rules = append(json.RawMessage(nil), raw.Rules...)
 	}
 	if raw.Config != nil {
 		var rawFields map[string]json.RawMessage

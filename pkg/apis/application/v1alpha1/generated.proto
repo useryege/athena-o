@@ -477,43 +477,45 @@ message WalletStatus {
 message WormMarketConfig {
   optional string kind = 1;
 
-  optional string maxLeverage = 2;
+  optional string maxLeverageYes = 2;
 
-  optional string openingFee = 3;
+  optional string maxLeverageNo = 3;
 
-  optional string closingFee = 4;
+  optional string openingFee = 4;
 
-  optional string annualFeeRate = 5;
+  optional string closingFee = 5;
 
-  optional string orderMinSize = 6;
+  optional string annualFeeRate = 6;
 
-  optional int32 priceDecimals = 7;
+  optional string orderMinSize = 7;
 
-  optional int32 sharesDecimals = 8;
+  optional int32 priceDecimals = 8;
 
-  optional string minPrice = 9;
+  optional int32 sharesDecimals = 9;
 
-  optional string maxPrice = 10;
+  optional string minPrice = 10;
 
-  optional string minAmount = 11;
+  optional string maxPrice = 11;
 
-  optional string maxAmount = 12;
+  optional string minAmount = 12;
 
-  optional string minFunds = 13;
+  optional string maxAmount = 13;
 
-  optional string maxFunds = 14;
+  optional string minFunds = 14;
 
-  optional int32 pricePrecision = 15;
+  optional string maxFunds = 15;
 
-  optional int32 amountPrecision = 16;
+  optional int32 pricePrecision = 16;
 
-  optional int32 fundsPrecision = 17;
+  optional int32 amountPrecision = 17;
 
-  optional string makerFeeRate = 18;
+  optional int32 fundsPrecision = 18;
 
-  optional string takerFeeRate = 19;
+  optional string makerFeeRate = 19;
 
-  optional string defaultSlippageRate = 20;
+  optional string takerFeeRate = 20;
+
+  optional string defaultSlippageRate = 21;
 }
 
 message WormMarketDetail {
@@ -525,7 +527,7 @@ message WormMarketDetail {
 
   repeated WormMarketOutcome outcomes = 4;
 
-  repeated string rules = 5;
+  optional string rules = 5;
 
   optional int64 resolutionDate = 6;
 

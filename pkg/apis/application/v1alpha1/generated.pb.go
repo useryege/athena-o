@@ -1822,93 +1822,100 @@ func (m *WormMarketConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0x1
 	i--
-	dAtA[i] = 0xa2
+	dAtA[i] = 0xaa
 	i -= len(m.TakerFeeRate)
 	copy(dAtA[i:], m.TakerFeeRate)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TakerFeeRate)))
 	i--
 	dAtA[i] = 0x1
 	i--
-	dAtA[i] = 0x9a
+	dAtA[i] = 0xa2
 	i -= len(m.MakerFeeRate)
 	copy(dAtA[i:], m.MakerFeeRate)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MakerFeeRate)))
 	i--
 	dAtA[i] = 0x1
 	i--
-	dAtA[i] = 0x92
+	dAtA[i] = 0x9a
 	i = encodeVarintGenerated(dAtA, i, uint64(m.FundsPrecision))
 	i--
 	dAtA[i] = 0x1
 	i--
-	dAtA[i] = 0x88
+	dAtA[i] = 0x90
 	i = encodeVarintGenerated(dAtA, i, uint64(m.AmountPrecision))
 	i--
 	dAtA[i] = 0x1
 	i--
-	dAtA[i] = 0x80
+	dAtA[i] = 0x88
 	i = encodeVarintGenerated(dAtA, i, uint64(m.PricePrecision))
 	i--
-	dAtA[i] = 0x78
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x80
 	i -= len(m.MaxFunds)
 	copy(dAtA[i:], m.MaxFunds)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MaxFunds)))
 	i--
-	dAtA[i] = 0x72
+	dAtA[i] = 0x7a
 	i -= len(m.MinFunds)
 	copy(dAtA[i:], m.MinFunds)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MinFunds)))
 	i--
-	dAtA[i] = 0x6a
+	dAtA[i] = 0x72
 	i -= len(m.MaxAmount)
 	copy(dAtA[i:], m.MaxAmount)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MaxAmount)))
 	i--
-	dAtA[i] = 0x62
+	dAtA[i] = 0x6a
 	i -= len(m.MinAmount)
 	copy(dAtA[i:], m.MinAmount)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MinAmount)))
 	i--
-	dAtA[i] = 0x5a
+	dAtA[i] = 0x62
 	i -= len(m.MaxPrice)
 	copy(dAtA[i:], m.MaxPrice)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MaxPrice)))
 	i--
-	dAtA[i] = 0x52
+	dAtA[i] = 0x5a
 	i -= len(m.MinPrice)
 	copy(dAtA[i:], m.MinPrice)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MinPrice)))
 	i--
-	dAtA[i] = 0x4a
+	dAtA[i] = 0x52
 	i = encodeVarintGenerated(dAtA, i, uint64(m.SharesDecimals))
 	i--
-	dAtA[i] = 0x40
+	dAtA[i] = 0x48
 	i = encodeVarintGenerated(dAtA, i, uint64(m.PriceDecimals))
 	i--
-	dAtA[i] = 0x38
+	dAtA[i] = 0x40
 	i -= len(m.OrderMinSize)
 	copy(dAtA[i:], m.OrderMinSize)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.OrderMinSize)))
 	i--
-	dAtA[i] = 0x32
+	dAtA[i] = 0x3a
 	i -= len(m.AnnualFeeRate)
 	copy(dAtA[i:], m.AnnualFeeRate)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AnnualFeeRate)))
 	i--
-	dAtA[i] = 0x2a
+	dAtA[i] = 0x32
 	i -= len(m.ClosingFee)
 	copy(dAtA[i:], m.ClosingFee)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ClosingFee)))
 	i--
-	dAtA[i] = 0x22
+	dAtA[i] = 0x2a
 	i -= len(m.OpeningFee)
 	copy(dAtA[i:], m.OpeningFee)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.OpeningFee)))
 	i--
+	dAtA[i] = 0x22
+	i -= len(m.MaxLeverageNo)
+	copy(dAtA[i:], m.MaxLeverageNo)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MaxLeverageNo)))
+	i--
 	dAtA[i] = 0x1a
-	i -= len(m.MaxLeverage)
-	copy(dAtA[i:], m.MaxLeverage)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MaxLeverage)))
+	i -= len(m.MaxLeverageYes)
+	copy(dAtA[i:], m.MaxLeverageYes)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MaxLeverageYes)))
 	i--
 	dAtA[i] = 0x12
 	i -= len(m.Kind)
@@ -1962,15 +1969,11 @@ func (m *WormMarketDetail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintGenerated(dAtA, i, uint64(m.ResolutionDate))
 	i--
 	dAtA[i] = 0x30
-	if len(m.Rules) > 0 {
-		for iNdEx := len(m.Rules) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Rules[iNdEx])
-			copy(dAtA[i:], m.Rules[iNdEx])
-			i = encodeVarintGenerated(dAtA, i, uint64(len(m.Rules[iNdEx])))
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
+	i -= len(m.Rules)
+	copy(dAtA[i:], m.Rules)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Rules)))
+	i--
+	dAtA[i] = 0x2a
 	if len(m.Outcomes) > 0 {
 		for iNdEx := len(m.Outcomes) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -2788,7 +2791,9 @@ func (m *WormMarketConfig) Size() (n int) {
 	_ = l
 	l = len(m.Kind)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.MaxLeverage)
+	l = len(m.MaxLeverageYes)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.MaxLeverageNo)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.OpeningFee)
 	n += 1 + l + sovGenerated(uint64(l))
@@ -2812,7 +2817,7 @@ func (m *WormMarketConfig) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.MaxFunds)
 	n += 1 + l + sovGenerated(uint64(l))
-	n += 1 + sovGenerated(uint64(m.PricePrecision))
+	n += 2 + sovGenerated(uint64(m.PricePrecision))
 	n += 2 + sovGenerated(uint64(m.AmountPrecision))
 	n += 2 + sovGenerated(uint64(m.FundsPrecision))
 	l = len(m.MakerFeeRate)
@@ -2842,12 +2847,8 @@ func (m *WormMarketDetail) Size() (n int) {
 			n += 1 + l + sovGenerated(uint64(l))
 		}
 	}
-	if len(m.Rules) > 0 {
-		for _, s := range m.Rules {
-			l = len(s)
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
+	l = len(m.Rules)
+	n += 1 + l + sovGenerated(uint64(l))
 	n += 1 + sovGenerated(uint64(m.ResolutionDate))
 	l = len(m.MakerFee)
 	n += 1 + l + sovGenerated(uint64(l))
@@ -3415,7 +3416,8 @@ func (this *WormMarketConfig) String() string {
 	}
 	s := strings.Join([]string{`&WormMarketConfig{`,
 		`Kind:` + fmt.Sprintf("%v", this.Kind) + `,`,
-		`MaxLeverage:` + fmt.Sprintf("%v", this.MaxLeverage) + `,`,
+		`MaxLeverageYes:` + fmt.Sprintf("%v", this.MaxLeverageYes) + `,`,
+		`MaxLeverageNo:` + fmt.Sprintf("%v", this.MaxLeverageNo) + `,`,
 		`OpeningFee:` + fmt.Sprintf("%v", this.OpeningFee) + `,`,
 		`ClosingFee:` + fmt.Sprintf("%v", this.ClosingFee) + `,`,
 		`AnnualFeeRate:` + fmt.Sprintf("%v", this.AnnualFeeRate) + `,`,
@@ -10389,7 +10391,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MaxLeverage", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxLeverageYes", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -10417,9 +10419,41 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.MaxLeverage = string(dAtA[iNdEx:postIndex])
+			m.MaxLeverageYes = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxLeverageNo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MaxLeverageNo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OpeningFee", wireType)
 			}
@@ -10451,7 +10485,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.OpeningFee = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ClosingFee", wireType)
 			}
@@ -10483,7 +10517,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.ClosingFee = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AnnualFeeRate", wireType)
 			}
@@ -10515,7 +10549,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.AnnualFeeRate = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 6:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OrderMinSize", wireType)
 			}
@@ -10547,7 +10581,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.OrderMinSize = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 7:
+		case 8:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PriceDecimals", wireType)
 			}
@@ -10566,7 +10600,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 8:
+		case 9:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field SharesDecimals", wireType)
 			}
@@ -10585,7 +10619,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 9:
+		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MinPrice", wireType)
 			}
@@ -10617,7 +10651,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.MinPrice = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 10:
+		case 11:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MaxPrice", wireType)
 			}
@@ -10649,7 +10683,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.MaxPrice = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 11:
+		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MinAmount", wireType)
 			}
@@ -10681,7 +10715,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.MinAmount = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 12:
+		case 13:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MaxAmount", wireType)
 			}
@@ -10713,7 +10747,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.MaxAmount = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 13:
+		case 14:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MinFunds", wireType)
 			}
@@ -10745,7 +10779,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.MinFunds = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 14:
+		case 15:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MaxFunds", wireType)
 			}
@@ -10777,7 +10811,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.MaxFunds = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 15:
+		case 16:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PricePrecision", wireType)
 			}
@@ -10796,7 +10830,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 16:
+		case 17:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AmountPrecision", wireType)
 			}
@@ -10815,7 +10849,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 17:
+		case 18:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FundsPrecision", wireType)
 			}
@@ -10834,7 +10868,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 18:
+		case 19:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MakerFeeRate", wireType)
 			}
@@ -10866,7 +10900,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.MakerFeeRate = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 19:
+		case 20:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TakerFeeRate", wireType)
 			}
@@ -10898,7 +10932,7 @@ func (m *WormMarketConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.TakerFeeRate = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 20:
+		case 21:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DefaultSlippageRate", wireType)
 			}
@@ -11141,7 +11175,7 @@ func (m *WormMarketDetail) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Rules = append(m.Rules, string(dAtA[iNdEx:postIndex]))
+			m.Rules = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 6:
 			if wireType != 0 {

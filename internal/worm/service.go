@@ -1,7 +1,9 @@
 package worm
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"net/url"
 	"strings"
 	"sync"
@@ -292,7 +294,7 @@ func (s *Service) toAPIMarketDetail(market *utilworm.Market) *v1alpha1.WormMarke
 		Market:          *item,
 		YesOutcomeLabel: stringValue(market.YesOutcomeLabel),
 		NoOutcomeLabel:  stringValue(market.NoOutcomeLabel),
-		Rules:           append([]string(nil), market.Rules...),
+		Rules:           rawJSONText(market.Rules),
 		ResolutionDate:  int64Value(market.ResolutionDate),
 		MakerFee:        stringValue(market.MakerFee),
 		TakerFee:        stringValue(market.TakerFee),
@@ -313,9 +315,9 @@ func toAPIMarketConfig(config *utilworm.MarketConfig) v1alpha1.WormMarketConfig 
 		return v1alpha1.WormMarketConfig{}
 	}
 	return v1alpha1.WormMarketConfig{
-		Kind: config.Kind,
-		// MaxLeverageNo:       stringValue(config.MaxLeverageNo),
-		// MaxLeverageYes:      stringValue(config.MaxLeverageYes),
+		Kind:                config.Kind,
+		MaxLeverageYes:      stringValue(config.MaxLeverageYes),
+		MaxLeverageNo:       stringValue(config.MaxLeverageNo),
 		OpeningFee:          stringValue(config.OpeningFee),
 		ClosingFee:          stringValue(config.ClosingFee),
 		AnnualFeeRate:       stringValue(config.AnnualFeeRate),
@@ -335,6 +337,18 @@ func toAPIMarketConfig(config *utilworm.MarketConfig) v1alpha1.WormMarketConfig 
 		TakerFeeRate:        stringValue(config.TakerFeeRate),
 		DefaultSlippageRate: stringValue(config.DefaultSlippageRate),
 	}
+}
+
+func rawJSONText(raw json.RawMessage) string {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 || bytes.Equal(raw, []byte("null")) {
+		return ""
+	}
+	var compacted bytes.Buffer
+	if err := json.Compact(&compacted, raw); err != nil {
+		return string(raw)
+	}
+	return compacted.String()
 }
 
 func (s *Service) normalizeAssetURL(value string) string {

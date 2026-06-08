@@ -39,7 +39,8 @@ export interface WormMarketOutcome {
 
 export interface WormMarketConfig {
     kind?: string;
-    maxLeverage?: string;
+    maxLeverageYes?: string;
+    maxLeverageNo?: string;
     openingFee?: string;
     closingFee?: string;
     annualFeeRate?: string;
@@ -67,7 +68,7 @@ export interface WormMarketDetail {
     yesOutcomeLabel?: string;
     noOutcomeLabel?: string;
     outcomes: WormMarketOutcome[];
-    rules: string[];
+    rules: string;
     resolutionDate?: number;
     makerFee?: string;
     takerFee?: string;
@@ -109,7 +110,8 @@ const normalizeOutcome = (item: any): WormMarketOutcome => ({
 
 const normalizeConfig = (item: any = {}): WormMarketConfig => ({
     kind: readString(item, 'kind', 'kind'),
-    maxLeverage: readString(item, 'maxLeverage', 'max_leverage'),
+    maxLeverageYes: readString(item, 'maxLeverageYes', 'max_leverage_yes'),
+    maxLeverageNo: readString(item, 'maxLeverageNo', 'max_leverage_no'),
     openingFee: readString(item, 'openingFee', 'opening_fee'),
     closingFee: readString(item, 'closingFee', 'closing_fee'),
     annualFeeRate: readString(item, 'annualFeeRate', 'annual_fee_rate'),
@@ -137,7 +139,7 @@ const normalizeMarketDetail = (item: any): WormMarketDetail => ({
     yesOutcomeLabel: readString(item, 'yesOutcomeLabel', 'yes_outcome_label'),
     noOutcomeLabel: readString(item, 'noOutcomeLabel', 'no_outcome_label'),
     outcomes: (item?.outcomes || []).map(normalizeOutcome),
-    rules: (item?.rules || []).map((rule: any) => String(rule || '')).filter((rule: string) => rule),
+    rules: readString(item, 'rules', 'rules'),
     resolutionDate: readNumber(item, 'resolutionDate', 'resolution_date'),
     makerFee: readString(item, 'makerFee', 'maker_fee'),
     takerFee: readString(item, 'takerFee', 'taker_fee'),

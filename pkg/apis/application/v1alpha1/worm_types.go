@@ -20,7 +20,7 @@ type WormMarketDetail struct {
 	YesOutcomeLabel string              `protobuf:"bytes,2,opt,name=yesOutcomeLabel" json:"yesOutcomeLabel"`
 	NoOutcomeLabel  string              `protobuf:"bytes,3,opt,name=noOutcomeLabel" json:"noOutcomeLabel"`
 	Outcomes        []WormMarketOutcome `protobuf:"bytes,4,rep,name=outcomes" json:"outcomes"`
-	Rules           []string            `protobuf:"bytes,5,rep,name=rules" json:"rules"`
+	Rules           string              `protobuf:"bytes,5,opt,name=rules" json:"rules"`
 	ResolutionDate  int64               `protobuf:"varint,6,opt,name=resolutionDate" json:"resolutionDate"`
 	MakerFee        string              `protobuf:"bytes,7,opt,name=makerFee" json:"makerFee"`
 	TakerFee        string              `protobuf:"bytes,8,opt,name=takerFee" json:"takerFee"`
@@ -34,23 +34,24 @@ type WormMarketOutcome struct {
 
 type WormMarketConfig struct {
 	Kind                string `protobuf:"bytes,1,opt,name=kind" json:"kind"`
-	MaxLeverage         string `protobuf:"bytes,2,opt,name=maxLeverage" json:"maxLeverage"`
-	OpeningFee          string `protobuf:"bytes,3,opt,name=openingFee" json:"openingFee"`
-	ClosingFee          string `protobuf:"bytes,4,opt,name=closingFee" json:"closingFee"`
-	AnnualFeeRate       string `protobuf:"bytes,5,opt,name=annualFeeRate" json:"annualFeeRate"`
-	OrderMinSize        string `protobuf:"bytes,6,opt,name=orderMinSize" json:"orderMinSize"`
-	PriceDecimals       int32  `protobuf:"varint,7,opt,name=priceDecimals" json:"priceDecimals"`
-	SharesDecimals      int32  `protobuf:"varint,8,opt,name=sharesDecimals" json:"sharesDecimals"`
-	MinPrice            string `protobuf:"bytes,9,opt,name=minPrice" json:"minPrice"`
-	MaxPrice            string `protobuf:"bytes,10,opt,name=maxPrice" json:"maxPrice"`
-	MinAmount           string `protobuf:"bytes,11,opt,name=minAmount" json:"minAmount"`
-	MaxAmount           string `protobuf:"bytes,12,opt,name=maxAmount" json:"maxAmount"`
-	MinFunds            string `protobuf:"bytes,13,opt,name=minFunds" json:"minFunds"`
-	MaxFunds            string `protobuf:"bytes,14,opt,name=maxFunds" json:"maxFunds"`
-	PricePrecision      int32  `protobuf:"varint,15,opt,name=pricePrecision" json:"pricePrecision"`
-	AmountPrecision     int32  `protobuf:"varint,16,opt,name=amountPrecision" json:"amountPrecision"`
-	FundsPrecision      int32  `protobuf:"varint,17,opt,name=fundsPrecision" json:"fundsPrecision"`
-	MakerFeeRate        string `protobuf:"bytes,18,opt,name=makerFeeRate" json:"makerFeeRate"`
-	TakerFeeRate        string `protobuf:"bytes,19,opt,name=takerFeeRate" json:"takerFeeRate"`
-	DefaultSlippageRate string `protobuf:"bytes,20,opt,name=defaultSlippageRate" json:"defaultSlippageRate"`
+	MaxLeverageYes      string `protobuf:"bytes,2,opt,name=maxLeverageYes" json:"maxLeverageYes"`
+	MaxLeverageNo       string `protobuf:"bytes,3,opt,name=maxLeverageNo" json:"maxLeverageNo"`
+	OpeningFee          string `protobuf:"bytes,4,opt,name=openingFee" json:"openingFee"`
+	ClosingFee          string `protobuf:"bytes,5,opt,name=closingFee" json:"closingFee"`
+	AnnualFeeRate       string `protobuf:"bytes,6,opt,name=annualFeeRate" json:"annualFeeRate"`
+	OrderMinSize        string `protobuf:"bytes,7,opt,name=orderMinSize" json:"orderMinSize"`
+	PriceDecimals       int32  `protobuf:"varint,8,opt,name=priceDecimals" json:"priceDecimals"`
+	SharesDecimals      int32  `protobuf:"varint,9,opt,name=sharesDecimals" json:"sharesDecimals"`
+	MinPrice            string `protobuf:"bytes,10,opt,name=minPrice" json:"minPrice"`
+	MaxPrice            string `protobuf:"bytes,11,opt,name=maxPrice" json:"maxPrice"`
+	MinAmount           string `protobuf:"bytes,12,opt,name=minAmount" json:"minAmount"`
+	MaxAmount           string `protobuf:"bytes,13,opt,name=maxAmount" json:"maxAmount"`
+	MinFunds            string `protobuf:"bytes,14,opt,name=minFunds" json:"minFunds"`
+	MaxFunds            string `protobuf:"bytes,15,opt,name=maxFunds" json:"maxFunds"`
+	PricePrecision      int32  `protobuf:"varint,16,opt,name=pricePrecision" json:"pricePrecision"`
+	AmountPrecision     int32  `protobuf:"varint,17,opt,name=amountPrecision" json:"amountPrecision"`
+	FundsPrecision      int32  `protobuf:"varint,18,opt,name=fundsPrecision" json:"fundsPrecision"`
+	MakerFeeRate        string `protobuf:"bytes,19,opt,name=makerFeeRate" json:"makerFeeRate"`
+	TakerFeeRate        string `protobuf:"bytes,20,opt,name=takerFeeRate" json:"takerFeeRate"`
+	DefaultSlippageRate string `protobuf:"bytes,21,opt,name=defaultSlippageRate" json:"defaultSlippageRate"`
 }

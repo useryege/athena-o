@@ -83,6 +83,7 @@ const WormDetail = (props: {detail?: WormMarketDetail}) => {
         return null;
     }
     const image = wormMarketLogo(detail.market);
+    const rulesText = formatJSONText(detail.rules);
     return (
         <Space className='worm-detail' orientation='vertical' style={{width: '100%'}}>
             <div className='worm-detail__header'>
@@ -109,10 +110,22 @@ const WormDetail = (props: {detail?: WormMarketDetail}) => {
             />
             <Collapse
                 items={[
-                    {key: 'rules', label: 'Rules', children: <pre className='code-block'>{(detail.rules || []).join('\n\n') || 'No rules'}</pre>},
+                    {key: 'rules', label: 'Rules', children: <pre className='code-block'>{rulesText || 'No rules'}</pre>},
                     {key: 'config', label: 'Config', children: <pre className='code-block'>{JSON.stringify(detail.config || {}, null, 2)}</pre>}
                 ]}
             />
         </Space>
     );
+};
+
+const formatJSONText = (value?: string) => {
+    const text = String(value || '').trim();
+    if (!text) {
+        return '';
+    }
+    try {
+        return JSON.stringify(JSON.parse(text), null, 2);
+    } catch {
+        return text;
+    }
 };

@@ -143,8 +143,6 @@ const navItems: NavItem[] = [
             }
         ]
     },
-    {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, permission: permission(rbacResources.wallets, rbacActions.get)},
-    {key: '/worm', label: 'Worm', path: '/worm', icon: <ApiOutlined />, permission: permission(rbacResources.worm, rbacActions.get)},
     {
         key: 'polymarket',
         label: 'Polymarket',
@@ -174,7 +172,9 @@ const navItems: NavItem[] = [
             }
         ]
     },
+    {key: '/worm', label: 'Worm', path: '/worm', icon: <ApiOutlined />, permission: permission(rbacResources.worm, rbacActions.get)},
     {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, permission: permission(rbacResources.notifications, rbacActions.get)},
+    {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, permission: permission(rbacResources.wallets, rbacActions.get)},
     {key: '/settings', label: 'Settings', path: '/settings', icon: <SettingOutlined />},
     {key: '/user-info', label: 'User Info', path: '/user-info', icon: <UserOutlined />},
     {key: '/help', label: 'Help', path: '/help', icon: <QuestionCircleOutlined />}
