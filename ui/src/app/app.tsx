@@ -42,7 +42,6 @@ import {
     PolymarketRealtimePage,
     PolymarketSportsLivePage,
     SettingsPage,
-    TokenStatusPage,
     UserInfoPage,
     WalletBlacklistsPage,
     WalletsPage,
@@ -73,7 +72,6 @@ const navItems: NavItem[] = [
         label: 'Token',
         icon: <DashboardOutlined />,
         children: [
-            {key: '/token/status', label: 'Status', path: '/token/status', icon: <DashboardOutlined />},
             {key: '/token/contract-codes', label: 'Contract Codes', path: '/token/contract-codes', icon: <CodeOutlined />},
             {key: '/token/bytecode-blacklists', label: 'Bytecode Blacklists', path: '/token/bytecode-blacklists', icon: <ApiOutlined />},
             {key: '/token/wallet-blacklists', label: 'Wallet Blacklists', path: '/token/wallet-blacklists', icon: <WalletOutlined />},
@@ -166,8 +164,7 @@ const AppRoutes = () => (
         <Route path='/settings/*' element={<SettingsPage />} />
         <Route path='/user-info' element={<UserInfoPage />} />
         <Route path='/help' element={<HelpPage />} />
-        <Route path='/token' element={<Navigate replace={true} to='/token/status' />} />
-        <Route path='/token/status' element={<TokenStatusPage />} />
+        <Route path='/token' element={<Navigate replace={true} to='/token/contract-codes' />} />
         <Route path='/token/contract-codes' element={<ContractCodesPage />} />
         <Route path='/token/contract-codes/:codeHash' element={<ContractCodeDetailPage />} />
         <Route path='/token/bytecode-blacklists' element={<BytecodeBlacklistsPage />} />

@@ -7,9 +7,6 @@ import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto
 
 option go_package = "github.com/useryege/athena/internal/tokenapi/apiclient";
 
-// GetTokenAPIStatusRequest queries the token API service runtime status.
-message GetTokenAPIStatusRequest {}
-
 message GetBytecodeBlacklistRequest {
   string code_hash = 1;
 }
@@ -164,8 +161,6 @@ message ListProjectDataCollectionTasksResponse {
 }
 
 service TokenAPIService {
-  // GetTokenAPIStatus returns the token API service runtime status.
-  rpc GetTokenAPIStatus(GetTokenAPIStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenAPIStatus);
   rpc GetBytecodeBlacklist(GetBytecodeBlacklistRequest) returns (GetBytecodeBlacklistResponse);
   rpc ListBytecodeBlacklists(ListBytecodeBlacklistsRequest) returns (ListBytecodeBlacklistsResponse);
   rpc CreateBytecodeBlacklist(CreateBytecodeBlacklistRequest) returns (CreateBytecodeBlacklistResponse);

@@ -358,22 +358,6 @@ export const WalletsPage = () => {
     );
 };
 
-export const TokenStatusPage = () => {
-    const data = useAsyncData(() => services.tokenapi.getStatus(), []);
-    return (
-        <AppPage title='Token Status' subtitle='Token module runtime status' loading={data.loading} error={data.error} onRefresh={data.reload}>
-            <Section title='Runtime'>
-                <KeyValueGrid
-                    items={[
-                        {label: 'Started', value: boolTag(data.data?.started)},
-                        {label: 'Status', value: <StatusTag value={data.data?.status || '-'} positive={data.data?.status === 'running'} negative={data.data?.started === false} />}
-                    ]}
-                />
-            </Section>
-        </AppPage>
-    );
-};
-
 export const ContractCodesPage = () => {
     const navigate = useNavigate();
     const {page, pageSize, setPage} = usePagedParams();

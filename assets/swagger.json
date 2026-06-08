@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-640-g8661a5a-dirty"
+    "version": "v1.0.0-641-gc8e17b0-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1036,29 +1036,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tokenapiGetProjectDataCollectionTaskResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/tokenapi/status": {
-      "get": {
-        "tags": [
-          "TokenAPIService"
-        ],
-        "summary": "GetTokenAPIStatus returns the token API service runtime status.",
-        "operationId": "TokenAPIService_GetTokenAPIStatus",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1alpha1TokenAPIStatus"
             }
           },
           "default": {
@@ -3026,17 +3003,6 @@
         "projectId": {
           "type": "integer",
           "format": "int64"
-        },
-        "status": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1TokenAPIStatus": {
-      "type": "object",
-      "properties": {
-        "started": {
-          "type": "boolean"
         },
         "status": {
           "type": "string"

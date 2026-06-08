@@ -1,10 +1,5 @@
 import requests from './requests';
 
-export interface TokenAPIStatus {
-    started?: boolean;
-    status?: string;
-}
-
 export interface TokenAPIBytecodeBlacklist {
     codeHash?: string;
     note?: string;
@@ -118,13 +113,6 @@ function normalizeTask(item: any): TokenAPIProjectDataCollectionTask {
 }
 
 export class TokenAPIService {
-    public getStatus(): Promise<TokenAPIStatus> & {abort?: () => void} {
-        const req = requests.get('/tokenapi/status');
-        const promise = req.then(res => res.body || {}) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
     public listBytecodeBlacklists(): Promise<TokenAPIBytecodeBlacklist[]> & {abort?: () => void} {
         const req = requests.get('/tokenapi/bytecode-blacklists');
         const promise = req.then(res => ((res.body?.bytecodeBlacklists || res.body?.bytecode_blacklists || []) as any[]).map(normalizeBytecodeBlacklist)) as any;

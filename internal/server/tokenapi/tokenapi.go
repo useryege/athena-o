@@ -5,7 +5,6 @@ import (
 
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
-	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
 type Server struct {
@@ -15,16 +14,6 @@ type Server struct {
 
 func NewServer(tokenAPIClientSet tokenapiapiclient.Clientset) *Server {
 	return &Server{tokenAPIClientSet: tokenAPIClientSet}
-}
-
-func (s *Server) GetTokenAPIStatus(ctx context.Context, _ *tokenapipkg.GetTokenAPIStatusRequest) (*v1alpha1.TokenAPIStatus, error) {
-	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	return client.GetTokenAPIStatus(ctx, &tokenapiapiclient.GetTokenAPIStatusRequest{})
 }
 
 func (s *Server) GetBytecodeBlacklist(ctx context.Context, req *tokenapipkg.GetBytecodeBlacklistRequest) (*tokenapipkg.GetBytecodeBlacklistResponse, error) {

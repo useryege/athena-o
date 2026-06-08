@@ -47,8 +47,6 @@ func (*TokenAPIContractCode) ProtoMessage() {}
 
 func (*TokenAPIProjectDataCollectionTask) ProtoMessage() {}
 
-func (*TokenAPIStatus) ProtoMessage() {}
-
 func (*TokenAPIWalletBlacklist) ProtoMessage() {}
 
 func (*WalletDetail) ProtoMessage() {}

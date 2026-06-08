@@ -33,24 +33,6 @@ var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
 var _ = metadata.Join
 
-func request_TokenAPIService_GetTokenAPIStatus_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetTokenAPIStatusRequest
-	var metadata runtime.ServerMetadata
-
-	msg, err := client.GetTokenAPIStatus(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_TokenAPIService_GetTokenAPIStatus_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetTokenAPIStatusRequest
-	var metadata runtime.ServerMetadata
-
-	msg, err := server.GetTokenAPIStatus(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
 func request_TokenAPIService_GetBytecodeBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetBytecodeBlacklistRequest
 	var metadata runtime.ServerMetadata
@@ -861,29 +843,6 @@ func local_request_TokenAPIService_ListProjectDataCollectionTasks_0(ctx context.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterTokenAPIServiceHandlerFromEndpoint instead.
 func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server TokenAPIServiceServer) error {
 
-	mux.Handle("GET", pattern_TokenAPIService_GetTokenAPIStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_TokenAPIService_GetTokenAPIStatus_0(rctx, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_TokenAPIService_GetTokenAPIStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
 	mux.Handle("GET", pattern_TokenAPIService_GetBytecodeBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1316,26 +1275,6 @@ func RegisterTokenAPIServiceHandler(ctx context.Context, mux *runtime.ServeMux, 
 // "TokenAPIServiceClient" to call the correct interceptors.
 func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client TokenAPIServiceClient) error {
 
-	mux.Handle("GET", pattern_TokenAPIService_GetTokenAPIStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_TokenAPIService_GetTokenAPIStatus_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_TokenAPIService_GetTokenAPIStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
 	mux.Handle("GET", pattern_TokenAPIService_GetBytecodeBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1680,8 +1619,6 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 }
 
 var (
-	pattern_TokenAPIService_GetTokenAPIStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "status"}, "", runtime.AssumeColonVerbOpt(true)))
-
 	pattern_TokenAPIService_GetBytecodeBlacklist_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "bytecode-blacklists", "code_hash"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_TokenAPIService_ListBytecodeBlacklists_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "bytecode-blacklists"}, "", runtime.AssumeColonVerbOpt(true)))
@@ -1718,8 +1655,6 @@ var (
 )
 
 var (
-	forward_TokenAPIService_GetTokenAPIStatus_0 = runtime.ForwardResponseMessage
-
 	forward_TokenAPIService_GetBytecodeBlacklist_0 = runtime.ForwardResponseMessage
 
 	forward_TokenAPIService_ListBytecodeBlacklists_0 = runtime.ForwardResponseMessage

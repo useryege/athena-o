@@ -1,10 +1,5 @@
 package v1alpha1
 
-type TokenAPIStatus struct {
-	Started bool   `protobuf:"varint,1,opt,name=started" json:"started"`
-	Status  string `protobuf:"bytes,2,opt,name=status" json:"status"`
-}
-
 type TokenAPIBytecodeBlacklist struct {
 	CodeHash       string `protobuf:"bytes,1,opt,name=codeHash" json:"codeHash"`
 	Note           string `protobuf:"bytes,2,opt,name=note" json:"note"`

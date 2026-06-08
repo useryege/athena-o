@@ -386,12 +386,6 @@ message TokenAPIProjectDataCollectionTask {
   optional string createdAt = 7;
 }
 
-message TokenAPIStatus {
-  optional bool started = 1;
-
-  optional string status = 2;
-}
-
 message TokenAPIWalletBlacklist {
   optional string wallet = 1;
 

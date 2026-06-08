@@ -10,9 +10,6 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/tokenapi";
 
-// GetTokenAPIStatusRequest queries the token API service runtime status.
-message GetTokenAPIStatusRequest {}
-
 message GetBytecodeBlacklistRequest {
   string code_hash = 1;
 }
@@ -167,11 +164,6 @@ message ListProjectDataCollectionTasksResponse {
 }
 
 service TokenAPIService {
-  // GetTokenAPIStatus returns the token API service runtime status.
-  rpc GetTokenAPIStatus(GetTokenAPIStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenAPIStatus) {
-    option (google.api.http) = {get: "/api/v1/tokenapi/status"};
-  }
-
   rpc GetBytecodeBlacklist(GetBytecodeBlacklistRequest) returns (GetBytecodeBlacklistResponse) {
     option (google.api.http) = {get: "/api/v1/tokenapi/bytecode-blacklists/{code_hash}"};
   }
