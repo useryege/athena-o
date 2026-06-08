@@ -383,6 +383,15 @@ body[data-theme='dark'] .app-page__header {
     cursor: pointer;
 }
 
+.resource-list--paint-select {
+    cursor: crosshair;
+}
+
+.resource-list--paint-select .resource-table__row--clickable,
+.resource-list--paint-select .resource-card--clickable {
+    cursor: crosshair;
+}
+
 .resource-list__pager {
     display: flex;
     justify-content: center;

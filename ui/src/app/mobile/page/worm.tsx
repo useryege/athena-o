@@ -53,7 +53,7 @@ export const WormPage = () => {
     return (
         <AppPage
             title='Worm'
-            subtitle='Polymarket-derived markets for Worm module'
+            subtitle='Polymarket-derived markets for Worm module. Hold X and move the mouse to batch select or deselect.'
             loading={data.loading}
             error={data.error}
             onRefresh={data.reload}
@@ -99,6 +99,7 @@ export const WormPage = () => {
                 loading={data.loading}
                 selectedRowKeys={selectedRowKeys}
                 onSelectionChange={keys => setSelectedRowKeys(keys)}
+                enableHoverKeyboardSelect={true}
                 card={item => (
                     <div>
                         <WormMarketSummary item={item} />
