@@ -1,11 +1,14 @@
 syntax = "proto3";
 
-// Token API Service API exposes token-api-level workload status.
-package athena.internal.tokenapi;
+// TokenAPI Service
+//
+// TokenAPI Service API exposes token-api-level operational data.
+package tokenapi;
 
 import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "google/api/annotations.proto";
 
-option go_package = "github.com/useryege/athena/internal/tokenapi/apiclient";
+option go_package = "github.com/useryege/athena/pkg/apiclient/tokenapi";
 
 // GetTokenAPIStatusRequest queries the token API service runtime status.
 message GetTokenAPIStatusRequest {}
@@ -173,23 +176,94 @@ message ListProjectDataCollectionTasksResponse {
 
 service TokenAPIService {
   // GetTokenAPIStatus returns the token API service runtime status.
-  rpc GetTokenAPIStatus(GetTokenAPIStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenAPIStatus);
-  rpc GetBytecodeBlacklist(GetBytecodeBlacklistRequest) returns (GetBytecodeBlacklistResponse);
-  rpc ListBytecodeBlacklists(ListBytecodeBlacklistsRequest) returns (ListBytecodeBlacklistsResponse);
-  rpc CreateBytecodeBlacklist(CreateBytecodeBlacklistRequest) returns (CreateBytecodeBlacklistResponse);
-  rpc UpdateBytecodeBlacklist(UpdateBytecodeBlacklistRequest) returns (UpdateBytecodeBlacklistResponse);
-  rpc DeleteBytecodeBlacklist(DeleteBytecodeBlacklistRequest) returns (DeleteBytecodeBlacklistResponse);
-  rpc GetWalletBlacklist(GetWalletBlacklistRequest) returns (GetWalletBlacklistResponse);
-  rpc ListWalletBlacklists(ListWalletBlacklistsRequest) returns (ListWalletBlacklistsResponse);
-  rpc CreateWalletBlacklist(CreateWalletBlacklistRequest) returns (CreateWalletBlacklistResponse);
-  rpc UpdateWalletBlacklist(UpdateWalletBlacklistRequest) returns (UpdateWalletBlacklistResponse);
-  rpc DeleteWalletBlacklist(DeleteWalletBlacklistRequest) returns (DeleteWalletBlacklistResponse);
-  rpc GetChainIngestCheckpoint(GetChainIngestCheckpointRequest) returns (GetChainIngestCheckpointResponse);
-  rpc ListChainIngestCheckpoints(ListChainIngestCheckpointsRequest) returns (ListChainIngestCheckpointsResponse);
-  rpc UpdateChainIngestCheckpoint(UpdateChainIngestCheckpointRequest) returns (UpdateChainIngestCheckpointResponse);
-  rpc GetContractCode(GetContractCodeRequest) returns (GetContractCodeResponse);
-  rpc ListContractCodes(ListContractCodesRequest) returns (ListContractCodesResponse);
-  rpc DeleteContractCode(DeleteContractCodeRequest) returns (DeleteContractCodeResponse);
-  rpc GetProjectDataCollectionTask(GetProjectDataCollectionTaskRequest) returns (GetProjectDataCollectionTaskResponse);
-  rpc ListProjectDataCollectionTasks(ListProjectDataCollectionTasksRequest) returns (ListProjectDataCollectionTasksResponse);
+  rpc GetTokenAPIStatus(GetTokenAPIStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenAPIStatus) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/status"};
+  }
+
+  rpc GetBytecodeBlacklist(GetBytecodeBlacklistRequest) returns (GetBytecodeBlacklistResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/bytecode-blacklists/{code_hash}"};
+  }
+
+  rpc ListBytecodeBlacklists(ListBytecodeBlacklistsRequest) returns (ListBytecodeBlacklistsResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/bytecode-blacklists"};
+  }
+
+  rpc CreateBytecodeBlacklist(CreateBytecodeBlacklistRequest) returns (CreateBytecodeBlacklistResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/tokenapi/bytecode-blacklists"
+      body: "*"
+    };
+  }
+
+  rpc UpdateBytecodeBlacklist(UpdateBytecodeBlacklistRequest) returns (UpdateBytecodeBlacklistResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/tokenapi/bytecode-blacklists/{code_hash}"
+      body: "*"
+    };
+  }
+
+  rpc DeleteBytecodeBlacklist(DeleteBytecodeBlacklistRequest) returns (DeleteBytecodeBlacklistResponse) {
+    option (google.api.http) = {delete: "/api/v1/tokenapi/bytecode-blacklists/{code_hash}"};
+  }
+
+  rpc GetWalletBlacklist(GetWalletBlacklistRequest) returns (GetWalletBlacklistResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/wallet-blacklists/{wallet}"};
+  }
+
+  rpc ListWalletBlacklists(ListWalletBlacklistsRequest) returns (ListWalletBlacklistsResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/wallet-blacklists"};
+  }
+
+  rpc CreateWalletBlacklist(CreateWalletBlacklistRequest) returns (CreateWalletBlacklistResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/tokenapi/wallet-blacklists"
+      body: "*"
+    };
+  }
+
+  rpc UpdateWalletBlacklist(UpdateWalletBlacklistRequest) returns (UpdateWalletBlacklistResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/tokenapi/wallet-blacklists/{wallet}"
+      body: "*"
+    };
+  }
+
+  rpc DeleteWalletBlacklist(DeleteWalletBlacklistRequest) returns (DeleteWalletBlacklistResponse) {
+    option (google.api.http) = {delete: "/api/v1/tokenapi/wallet-blacklists/{wallet}"};
+  }
+
+  rpc GetChainIngestCheckpoint(GetChainIngestCheckpointRequest) returns (GetChainIngestCheckpointResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/chain-ingest-checkpoints/{chain_id}"};
+  }
+
+  rpc ListChainIngestCheckpoints(ListChainIngestCheckpointsRequest) returns (ListChainIngestCheckpointsResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/chain-ingest-checkpoints"};
+  }
+
+  rpc UpdateChainIngestCheckpoint(UpdateChainIngestCheckpointRequest) returns (UpdateChainIngestCheckpointResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/tokenapi/chain-ingest-checkpoints/{chain_id}/status"
+      body: "*"
+    };
+  }
+
+  rpc GetContractCode(GetContractCodeRequest) returns (GetContractCodeResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/contract-codes/{code_hash}"};
+  }
+
+  rpc ListContractCodes(ListContractCodesRequest) returns (ListContractCodesResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/contract-codes"};
+  }
+
+  rpc DeleteContractCode(DeleteContractCodeRequest) returns (DeleteContractCodeResponse) {
+    option (google.api.http) = {delete: "/api/v1/tokenapi/contract-codes/{code_hash}"};
+  }
+
+  rpc GetProjectDataCollectionTask(GetProjectDataCollectionTaskRequest) returns (GetProjectDataCollectionTaskResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/project-data-collection-tasks/{project_id}/{data_type}"};
+  }
+
+  rpc ListProjectDataCollectionTasks(ListProjectDataCollectionTasksRequest) returns (ListProjectDataCollectionTasksResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/project-data-collection-tasks"};
+  }
 }

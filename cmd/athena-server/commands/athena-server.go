@@ -18,6 +18,7 @@ import (
 	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
+	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
 	"github.com/useryege/athena/pkg/stats"
@@ -57,6 +58,7 @@ func NewCommand() *cobra.Command {
 		walletServerAddress       string
 		wormServerAddress         string
 		polymarketServerAddress   string
+		tokenAPIServerAddress     string
 		// hydratorEnabled        bool
 		// syncWithReplaceAllowed bool
 
@@ -108,6 +110,7 @@ func NewCommand() *cobra.Command {
 			walletclientset := walletapiclient.NewWalletClientset(walletServerAddress)
 			wormclientset := wormapiclient.NewWormClientset(wormServerAddress)
 			polymarketclientset := polymarketapiclient.NewPolymarketClientset(polymarketServerAddress)
+			tokenAPIClientset := tokenapiapiclient.NewTokenAPIClientset(tokenAPIServerAddress)
 			log.Infof("waiting for athena application grpc service at %s", applicationServerAddress)
 			errors.CheckError(applicationapiclient.WaitForApplicationService(ctx, applicationServerAddress))
 			log.Infof("athena application grpc service is ready at %s", applicationServerAddress)
@@ -123,6 +126,9 @@ func NewCommand() *cobra.Command {
 			log.Infof("waiting for athena polymarket grpc service at %s", polymarketServerAddress)
 			errors.CheckError(polymarketapiclient.WaitForPolymarketService(ctx, polymarketServerAddress))
 			log.Infof("athena polymarket grpc service is ready at %s", polymarketServerAddress)
+			log.Infof("waiting for athena token API grpc service at %s", tokenAPIServerAddress)
+			errors.CheckError(tokenapiapiclient.WaitForTokenAPIService(ctx, tokenAPIServerAddress))
+			log.Infof("athena token API grpc service is ready at %s", tokenAPIServerAddress)
 
 			athenaOpts := server.AthenaServerOpts{
 				ContentTypes:          contentTypesList,
@@ -142,6 +148,7 @@ func NewCommand() *cobra.Command {
 				WalletClientset:       walletclientset,
 				WormClientset:         wormclientset,
 				PolymarketClientset:   polymarketclientset,
+				TokenAPIClientset:     tokenAPIClientset,
 				// HydratorEnabled:        hydratorEnabled,
 				// SyncWithReplaceAllowed: syncWithReplaceAllowed,
 			}
@@ -208,6 +215,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_WALLET_SERVER_ADDRESS", "localhost:8088"), "Athena wallet server address")
 	command.Flags().StringVar(&wormServerAddress, "worm-server-address", env.StringFromEnv("ATHENA_WORM_SERVER_ADDRESS", "localhost:8084"), "Athena worm server address")
 	command.Flags().StringVar(&polymarketServerAddress, "polymarket-server-address", env.StringFromEnv("ATHENA_POLYMARKET_SERVER_ADDRESS", "localhost:8092"), "Athena polymarket server address")
+	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", "localhost:8096"), "Athena token API server address")
 	// command.Flags().BoolVar(&hydratorEnabled, "hydrator-enabled", env.ParseBoolFromEnv("ATHENA_SERVER_HYDRATOR_ENABLED", false), "Feature flag to enable Hydrator. Default (\"false\")")
 	// command.Flags().BoolVar(&syncWithReplaceAllowed, "sync-with-replace-allowed", env.ParseBoolFromEnv("ATHENA_SERVER_SYNC_WITH_REPLACE_ALLOWED", true), "Whether to allow users to select replace for syncs from UI/CLI")
 

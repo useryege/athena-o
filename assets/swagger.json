@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-629-g5c81b8e-dirty"
+    "version": "v1.0.0-631-gc4a0809-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1292,6 +1292,606 @@
         }
       }
     },
+    "/api/v1/tokenapi/bytecode-blacklists": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_ListBytecodeBlacklists",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListBytecodeBlacklistsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_CreateBytecodeBlacklist",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tokenapiCreateBytecodeBlacklistRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiCreateBytecodeBlacklistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/bytecode-blacklists/{code_hash}": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_GetBytecodeBlacklist",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiGetBytecodeBlacklistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_UpdateBytecodeBlacklist",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tokenapiUpdateBytecodeBlacklistRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiUpdateBytecodeBlacklistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_DeleteBytecodeBlacklist",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiDeleteBytecodeBlacklistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/chain-ingest-checkpoints": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_ListChainIngestCheckpoints",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListChainIngestCheckpointsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/chain-ingest-checkpoints/{chain_id}": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_GetChainIngestCheckpoint",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiGetChainIngestCheckpointResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/chain-ingest-checkpoints/{chain_id}/status": {
+      "post": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_UpdateChainIngestCheckpoint",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tokenapiUpdateChainIngestCheckpointRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiUpdateChainIngestCheckpointResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/contract-codes": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_ListContractCodes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "order_by",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListContractCodesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/contract-codes/{code_hash}": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_GetContractCode",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiGetContractCodeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_DeleteContractCode",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiDeleteContractCodeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/project-data-collection-tasks": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_ListProjectDataCollectionTasks",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "project_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "data_type",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListProjectDataCollectionTasksResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/project-data-collection-tasks/{project_id}/{data_type}": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_GetProjectDataCollectionTask",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "data_type",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiGetProjectDataCollectionTaskResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/status": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "summary": "GetTokenAPIStatus returns the token API service runtime status.",
+        "operationId": "TokenAPIService_GetTokenAPIStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1TokenAPIStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/wallet-blacklists": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_ListWalletBlacklists",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListWalletBlacklistsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_CreateWalletBlacklist",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tokenapiCreateWalletBlacklistRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiCreateWalletBlacklistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/wallet-blacklists/{wallet}": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_GetWalletBlacklist",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiGetWalletBlacklistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_UpdateWalletBlacklist",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tokenapiUpdateWalletBlacklistRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiUpdateWalletBlacklistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_DeleteWalletBlacklist",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiDeleteWalletBlacklistResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/wallet/status": {
       "get": {
         "tags": [
@@ -2402,6 +3002,265 @@
         }
       }
     },
+    "tokenapiCreateBytecodeBlacklistRequest": {
+      "type": "object",
+      "properties": {
+        "code_hash": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "source_chain_id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "source_contract": {
+          "type": "string"
+        }
+      }
+    },
+    "tokenapiCreateBytecodeBlacklistResponse": {
+      "type": "object"
+    },
+    "tokenapiCreateWalletBlacklistRequest": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "tokenapiCreateWalletBlacklistResponse": {
+      "type": "object"
+    },
+    "tokenapiDeleteBytecodeBlacklistResponse": {
+      "type": "object",
+      "properties": {
+        "deleted_count": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "tokenapiDeleteContractCodeResponse": {
+      "type": "object",
+      "properties": {
+        "deleted_count": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "tokenapiDeleteWalletBlacklistResponse": {
+      "type": "object",
+      "properties": {
+        "deleted_count": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "tokenapiGetBytecodeBlacklistResponse": {
+      "type": "object",
+      "properties": {
+        "bytecode_blacklist": {
+          "$ref": "#/definitions/v1alpha1TokenAPIBytecodeBlacklist"
+        },
+        "found": {
+          "type": "boolean"
+        }
+      }
+    },
+    "tokenapiGetChainIngestCheckpointResponse": {
+      "type": "object",
+      "properties": {
+        "checkpoint": {
+          "$ref": "#/definitions/v1alpha1TokenAPIChainIngestCheckpoint"
+        },
+        "found": {
+          "type": "boolean"
+        }
+      }
+    },
+    "tokenapiGetContractCodeResponse": {
+      "type": "object",
+      "properties": {
+        "contract_code": {
+          "$ref": "#/definitions/v1alpha1TokenAPIContractCode"
+        },
+        "found": {
+          "type": "boolean"
+        }
+      }
+    },
+    "tokenapiGetProjectDataCollectionTaskResponse": {
+      "type": "object",
+      "properties": {
+        "found": {
+          "type": "boolean"
+        },
+        "task": {
+          "$ref": "#/definitions/v1alpha1TokenAPIProjectDataCollectionTask"
+        }
+      }
+    },
+    "tokenapiGetWalletBlacklistResponse": {
+      "type": "object",
+      "properties": {
+        "found": {
+          "type": "boolean"
+        },
+        "wallet_blacklist": {
+          "$ref": "#/definitions/v1alpha1TokenAPIWalletBlacklist"
+        }
+      }
+    },
+    "tokenapiListBytecodeBlacklistsResponse": {
+      "type": "object",
+      "properties": {
+        "bytecode_blacklists": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenAPIBytecodeBlacklist"
+          }
+        }
+      }
+    },
+    "tokenapiListChainIngestCheckpointsResponse": {
+      "type": "object",
+      "properties": {
+        "checkpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenAPIChainIngestCheckpoint"
+          }
+        }
+      }
+    },
+    "tokenapiListContractCodesResponse": {
+      "type": "object",
+      "properties": {
+        "contract_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenAPIContractCode"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "tokenapiListProjectDataCollectionTasksResponse": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenAPIProjectDataCollectionTask"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "tokenapiListWalletBlacklistsResponse": {
+      "type": "object",
+      "properties": {
+        "wallet_blacklists": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenAPIWalletBlacklist"
+          }
+        }
+      }
+    },
+    "tokenapiUpdateBytecodeBlacklistRequest": {
+      "type": "object",
+      "properties": {
+        "code_hash": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "tokenapiUpdateBytecodeBlacklistResponse": {
+      "type": "object",
+      "properties": {
+        "updated_count": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "tokenapiUpdateChainIngestCheckpointRequest": {
+      "type": "object",
+      "properties": {
+        "chain_id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "tokenapiUpdateChainIngestCheckpointResponse": {
+      "type": "object",
+      "properties": {
+        "checkpoint": {
+          "$ref": "#/definitions/v1alpha1TokenAPIChainIngestCheckpoint"
+        },
+        "found": {
+          "type": "boolean"
+        }
+      }
+    },
+    "tokenapiUpdateWalletBlacklistRequest": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "tokenapiUpdateWalletBlacklistResponse": {
+      "type": "object",
+      "properties": {
+        "updated_count": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "v1alpha1ApplicationChain": {
       "type": "object",
       "properties": {
@@ -3261,6 +4120,129 @@
         "wethDecimals": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "v1alpha1TokenAPIBytecodeBlacklist": {
+      "type": "object",
+      "properties": {
+        "codeHash": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "sourceChainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "sourceContract": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenAPIChainIngestCheckpoint": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "chainName": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "cursorBlockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenAPIContractCode": {
+      "type": "object",
+      "properties": {
+        "codeHash": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "deploymentCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "sourceCode": {
+          "type": "string"
+        },
+        "sourceCodeFetchedAt": {
+          "type": "string"
+        },
+        "sourceCodeHash": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenAPIProjectDataCollectionTask": {
+      "type": "object",
+      "properties": {
+        "attempts": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "dataType": {
+          "type": "string"
+        },
+        "lastError": {
+          "type": "string"
+        },
+        "nextAttemptAt": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenAPIStatus": {
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenAPIWalletBlacklist": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
         }
       }
     },

@@ -6,6 +6,7 @@ import (
 
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
 type Service struct {
@@ -49,7 +50,7 @@ func (s *Service) Stop() error {
 	return nil
 }
 
-func (s *Service) GetTokenAPIStatus(context.Context, *apiclient.GetTokenAPIStatusRequest) (*apiclient.GetTokenAPIStatusResponse, error) {
+func (s *Service) GetTokenAPIStatus(context.Context, *apiclient.GetTokenAPIStatusRequest) (*v1alpha1.TokenAPIStatus, error) {
 	s.startStopMu.Lock()
 	started := s.started
 	s.startStopMu.Unlock()
@@ -58,7 +59,7 @@ func (s *Service) GetTokenAPIStatus(context.Context, *apiclient.GetTokenAPIStatu
 	if started {
 		statusText = "running"
 	}
-	return &apiclient.GetTokenAPIStatusResponse{
+	return &v1alpha1.TokenAPIStatus{
 		Started: started,
 		Status:  statusText,
 	}, nil

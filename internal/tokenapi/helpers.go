@@ -8,7 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	tokenstore "github.com/useryege/athena/internal/token/store"
-	"github.com/useryege/athena/internal/tokenapi/apiclient"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -152,9 +152,9 @@ func formatHash(value common.Hash) string {
 	return value.Hex()
 }
 
-func mapChainIngestCheckpoint(item tokenstore.ChainIngestCheckpoint) *apiclient.ChainIngestCheckpoint {
-	return &apiclient.ChainIngestCheckpoint{
-		ChainId:           item.ChainID,
+func mapChainIngestCheckpoint(item tokenstore.ChainIngestCheckpoint) *v1alpha1.TokenAPIChainIngestCheckpoint {
+	return &v1alpha1.TokenAPIChainIngestCheckpoint{
+		ChainID:           item.ChainID,
 		ChainName:         item.ChainName,
 		Enabled:           item.Enabled,
 		CursorBlockNumber: item.CursorBlockNumber,
@@ -163,16 +163,16 @@ func mapChainIngestCheckpoint(item tokenstore.ChainIngestCheckpoint) *apiclient.
 	}
 }
 
-func mapChainIngestCheckpoints(items []tokenstore.ChainIngestCheckpoint) []*apiclient.ChainIngestCheckpoint {
-	results := make([]*apiclient.ChainIngestCheckpoint, 0, len(items))
+func mapChainIngestCheckpoints(items []tokenstore.ChainIngestCheckpoint) []*v1alpha1.TokenAPIChainIngestCheckpoint {
+	results := make([]*v1alpha1.TokenAPIChainIngestCheckpoint, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapChainIngestCheckpoint(item))
 	}
 	return results
 }
 
-func mapContractCode(item tokenstore.ContractCode) *apiclient.ContractCode {
-	return &apiclient.ContractCode{
+func mapContractCode(item tokenstore.ContractCode) *v1alpha1.TokenAPIContractCode {
+	return &v1alpha1.TokenAPIContractCode{
 		CodeHash:            item.CodeHash.Hex(),
 		SourceCode:          item.SourceCode,
 		SourceCodeHash:      formatHash(item.SourceCodeHash),
@@ -182,17 +182,17 @@ func mapContractCode(item tokenstore.ContractCode) *apiclient.ContractCode {
 	}
 }
 
-func mapContractCodes(items []tokenstore.ContractCode) []*apiclient.ContractCode {
-	results := make([]*apiclient.ContractCode, 0, len(items))
+func mapContractCodes(items []tokenstore.ContractCode) []*v1alpha1.TokenAPIContractCode {
+	results := make([]*v1alpha1.TokenAPIContractCode, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapContractCode(item))
 	}
 	return results
 }
 
-func mapProjectDataCollectionTask(item tokenstore.ProjectDataCollectionTask) *apiclient.ProjectDataCollectionTask {
-	return &apiclient.ProjectDataCollectionTask{
-		ProjectId:     item.ProjectID,
+func mapProjectDataCollectionTask(item tokenstore.ProjectDataCollectionTask) *v1alpha1.TokenAPIProjectDataCollectionTask {
+	return &v1alpha1.TokenAPIProjectDataCollectionTask{
+		ProjectID:     item.ProjectID,
 		DataType:      item.DataType,
 		Status:        item.Status,
 		Attempts:      item.Attempts,
@@ -202,46 +202,46 @@ func mapProjectDataCollectionTask(item tokenstore.ProjectDataCollectionTask) *ap
 	}
 }
 
-func mapProjectDataCollectionTasks(items []tokenstore.ProjectDataCollectionTask) []*apiclient.ProjectDataCollectionTask {
-	results := make([]*apiclient.ProjectDataCollectionTask, 0, len(items))
+func mapProjectDataCollectionTasks(items []tokenstore.ProjectDataCollectionTask) []*v1alpha1.TokenAPIProjectDataCollectionTask {
+	results := make([]*v1alpha1.TokenAPIProjectDataCollectionTask, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapProjectDataCollectionTask(item))
 	}
 	return results
 }
 
-func mapBytecodeBlacklist(item tokenstore.BytecodeBlacklistEntry) *apiclient.BytecodeBlacklist {
+func mapBytecodeBlacklist(item tokenstore.BytecodeBlacklistEntry) *v1alpha1.TokenAPIBytecodeBlacklist {
 	sourceContract := ""
 	if item.SourceContract != (common.Address{}) {
 		sourceContract = item.SourceContract.Hex()
 	}
-	return &apiclient.BytecodeBlacklist{
+	return &v1alpha1.TokenAPIBytecodeBlacklist{
 		CodeHash:       item.CodeHash.Hex(),
 		Note:           item.Note,
-		SourceChainId:  item.SourceChainID,
+		SourceChainID:  item.SourceChainID,
 		SourceContract: sourceContract,
 		CreatedAt:      formatTime(item.CreatedAt),
 	}
 }
 
-func mapBytecodeBlacklists(items []tokenstore.BytecodeBlacklistEntry) []*apiclient.BytecodeBlacklist {
-	results := make([]*apiclient.BytecodeBlacklist, 0, len(items))
+func mapBytecodeBlacklists(items []tokenstore.BytecodeBlacklistEntry) []*v1alpha1.TokenAPIBytecodeBlacklist {
+	results := make([]*v1alpha1.TokenAPIBytecodeBlacklist, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapBytecodeBlacklist(item))
 	}
 	return results
 }
 
-func mapWalletBlacklist(item tokenstore.WalletBlacklistEntry) *apiclient.WalletBlacklist {
-	return &apiclient.WalletBlacklist{
+func mapWalletBlacklist(item tokenstore.WalletBlacklistEntry) *v1alpha1.TokenAPIWalletBlacklist {
+	return &v1alpha1.TokenAPIWalletBlacklist{
 		Wallet:    item.Wallet.Hex(),
 		Note:      item.Note,
 		CreatedAt: formatTime(item.CreatedAt),
 	}
 }
 
-func mapWalletBlacklists(items []tokenstore.WalletBlacklistEntry) []*apiclient.WalletBlacklist {
-	results := make([]*apiclient.WalletBlacklist, 0, len(items))
+func mapWalletBlacklists(items []tokenstore.WalletBlacklistEntry) []*v1alpha1.TokenAPIWalletBlacklist {
+	results := make([]*v1alpha1.TokenAPIWalletBlacklist, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapWalletBlacklist(item))
 	}

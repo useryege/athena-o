@@ -59,6 +59,18 @@ func (*ProjectComponentStatus) ProtoMessage() {}
 
 func (*ProjectOption) ProtoMessage() {}
 
+func (*TokenAPIBytecodeBlacklist) ProtoMessage() {}
+
+func (*TokenAPIChainIngestCheckpoint) ProtoMessage() {}
+
+func (*TokenAPIContractCode) ProtoMessage() {}
+
+func (*TokenAPIProjectDataCollectionTask) ProtoMessage() {}
+
+func (*TokenAPIStatus) ProtoMessage() {}
+
+func (*TokenAPIWalletBlacklist) ProtoMessage() {}
+
 func (*WalletBlacklistEntry) ProtoMessage() {}
 
 func (*WalletDetail) ProtoMessage() {}

@@ -488,6 +488,76 @@ message ProjectOption {
   optional uint32 usdtDecimals = 5;
 }
 
+message TokenAPIBytecodeBlacklist {
+  optional string codeHash = 1;
+
+  optional string note = 2;
+
+  optional int64 sourceChainId = 3;
+
+  optional string sourceContract = 4;
+
+  optional string createdAt = 5;
+}
+
+message TokenAPIChainIngestCheckpoint {
+  optional int64 chainId = 1;
+
+  optional string chainName = 2;
+
+  optional bool enabled = 3;
+
+  optional uint64 cursorBlockNumber = 4;
+
+  optional string status = 5;
+
+  optional string createdAt = 6;
+}
+
+message TokenAPIContractCode {
+  optional string codeHash = 1;
+
+  optional string sourceCode = 2;
+
+  optional string sourceCodeHash = 3;
+
+  optional string sourceCodeFetchedAt = 4;
+
+  optional string createdAt = 5;
+
+  optional int64 deploymentCount = 6;
+}
+
+message TokenAPIProjectDataCollectionTask {
+  optional int64 projectId = 1;
+
+  optional string dataType = 2;
+
+  optional string status = 3;
+
+  optional int32 attempts = 4;
+
+  optional string nextAttemptAt = 5;
+
+  optional string lastError = 6;
+
+  optional string createdAt = 7;
+}
+
+message TokenAPIStatus {
+  optional bool started = 1;
+
+  optional string status = 2;
+}
+
+message TokenAPIWalletBlacklist {
+  optional string wallet = 1;
+
+  optional string note = 2;
+
+  optional string createdAt = 3;
+}
+
 message WalletBlacklistEntry {
   optional string wallet = 1;
 

@@ -10,6 +10,7 @@ import (
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
+	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	wormpkg "github.com/useryege/athena/pkg/apiclient/worm"
 	"github.com/useryege/athena/util/rbac"
@@ -84,6 +85,39 @@ func applicationObject(req any) string {
 	case *applicationpkg.UpdateWalletBlacklistEntryNoteRequest:
 		return nonEmptyObject(r.GetWallet())
 	case *applicationpkg.DeleteWalletBlacklistEntryRequest:
+		return nonEmptyObject(r.GetWallet())
+	default:
+		return "*"
+	}
+}
+
+func tokenAPIObject(req any) string {
+	switch r := req.(type) {
+	case *tokenapipkg.GetBytecodeBlacklistRequest:
+		return nonEmptyObject(r.GetCodeHash())
+	case *tokenapipkg.UpdateBytecodeBlacklistRequest:
+		return nonEmptyObject(r.GetCodeHash())
+	case *tokenapipkg.DeleteBytecodeBlacklistRequest:
+		return nonEmptyObject(r.GetCodeHash())
+	case *tokenapipkg.GetWalletBlacklistRequest:
+		return nonEmptyObject(r.GetWallet())
+	case *tokenapipkg.UpdateWalletBlacklistRequest:
+		return nonEmptyObject(r.GetWallet())
+	case *tokenapipkg.DeleteWalletBlacklistRequest:
+		return nonEmptyObject(r.GetWallet())
+	case *tokenapipkg.GetChainIngestCheckpointRequest:
+		return fmt.Sprintf("%d", r.GetChainId())
+	case *tokenapipkg.UpdateChainIngestCheckpointRequest:
+		return fmt.Sprintf("%d", r.GetChainId())
+	case *tokenapipkg.GetContractCodeRequest:
+		return nonEmptyObject(r.GetCodeHash())
+	case *tokenapipkg.DeleteContractCodeRequest:
+		return nonEmptyObject(r.GetCodeHash())
+	case *tokenapipkg.GetProjectDataCollectionTaskRequest:
+		return fmt.Sprintf("%d/%s", r.GetProjectId(), nonEmptyObject(r.GetDataType()))
+	case *tokenapipkg.CreateBytecodeBlacklistRequest:
+		return nonEmptyObject(r.GetCodeHash())
+	case *tokenapipkg.CreateWalletBlacklistRequest:
 		return nonEmptyObject(r.GetWallet())
 	default:
 		return "*"
@@ -183,6 +217,26 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/polymarket.PolymarketService/ListPolymarketMovers":            fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ListPolymarketSportsLiveMarkets": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/GetPolymarketSportsLiveSnapshot": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+
+	"/tokenapi.TokenAPIService/GetTokenAPIStatus":              fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
+	"/tokenapi.TokenAPIService/GetBytecodeBlacklist":           {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/ListBytecodeBlacklists":         fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
+	"/tokenapi.TokenAPIService/CreateBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/UpdateBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/DeleteBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/GetWalletBlacklist":             {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/ListWalletBlacklists":           fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
+	"/tokenapi.TokenAPIService/CreateWalletBlacklist":          {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/UpdateWalletBlacklist":          {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/DeleteWalletBlacklist":          {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/GetChainIngestCheckpoint":       {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/ListChainIngestCheckpoints":     fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
+	"/tokenapi.TokenAPIService/UpdateChainIngestCheckpoint":    {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/GetContractCode":                {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/ListContractCodes":              fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
+	"/tokenapi.TokenAPIService/DeleteContractCode":             {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/GetProjectDataCollectionTask":   {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/ListProjectDataCollectionTasks": fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
 }
 
 func (server *AthenaServer) unaryAuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
