@@ -47,7 +47,7 @@ import {
     WalletBlacklistsPage,
     WalletsPage,
     WormPage
-} from './mobile/pages';
+} from './mobile/page';
 
 services.viewPreferences.init();
 
