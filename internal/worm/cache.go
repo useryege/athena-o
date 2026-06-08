@@ -91,6 +91,7 @@ type listWormMarketsParams struct {
 	Cursor       string `json:"cursor"`
 	SortOption   string `json:"sort_option"`
 	CategorySlug string `json:"category_slug"`
+	State        string `json:"state"`
 }
 
 type cachedListWormMarketsResponse struct {
@@ -270,6 +271,7 @@ func (s *Service) warmupLoop(ctx context.Context) {
 		Limit:        defaultWormMarketsLimit,
 		SortOption:   defaultWormMarketsSortOption,
 		CategorySlug: defaultWormMarketsCategorySlug,
+		State:        defaultWormMarketsState,
 	}
 	s.enqueueRefresh(refreshRequest{kind: refreshKindList, listParams: defaultParams})
 	ticker := time.NewTicker(s.cacheConfig.ActiveRefreshInterval)
@@ -592,15 +594,17 @@ func (p listWormMarketsParams) isDefaultFirstPage() bool {
 	return p.Limit == defaultWormMarketsLimit &&
 		strings.TrimSpace(p.Cursor) == "" &&
 		p.SortOption == defaultWormMarketsSortOption &&
-		p.CategorySlug == defaultWormMarketsCategorySlug
+		p.CategorySlug == defaultWormMarketsCategorySlug &&
+		p.State == defaultWormMarketsState
 }
 
 func wormListCacheKey(params listWormMarketsParams) string {
 	cursorHash := sha256.Sum256([]byte(params.Cursor))
 	return fmt.Sprintf(
-		"worm:list:v1:%s:%s:%d:%s",
+		"worm:list:v1:%s:%s:%s:%d:%s",
 		params.SortOption,
 		params.CategorySlug,
+		params.State,
 		params.Limit,
 		hex.EncodeToString(cursorHash[:])[:16],
 	)

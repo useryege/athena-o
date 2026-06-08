@@ -25,6 +25,7 @@ const (
 
 	defaultWormMarketsCategorySlug = "sports"
 	defaultWormMarketsSortOption   = "leverage"
+	defaultWormMarketsState        = "open"
 )
 
 type wormMarketClient interface {
@@ -142,6 +143,7 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 		Limit:        defaultWormMarketsLimit,
 		SortOption:   defaultWormMarketsSortOption,
 		CategorySlug: defaultWormMarketsCategorySlug,
+		State:        defaultWormMarketsState,
 	}
 	if req != nil {
 		if req.GetLimit() != 0 {
@@ -164,6 +166,7 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 	}
 	params.SortOption = sortOption
 	params.CategorySlug = categorySlug
+	params.State = defaultWormMarketsState
 
 	if s.redisClient != nil {
 		return s.listWormMarketsCached(ctx, params)
@@ -177,6 +180,7 @@ func (s *Service) fetchWormMarkets(ctx context.Context, params listWormMarketsPa
 			Limit:  params.Limit,
 			Cursor: params.Cursor,
 		},
+		State:    params.State,
 		Category: upstreamWormMarketCategory(params.CategorySlug),
 		Sort:     upstreamWormMarketSort(params.SortOption),
 	})
@@ -190,9 +194,16 @@ func (s *Service) fetchWormMarkets(ctx context.Context, params listWormMarketsPa
 	}
 	resp.Markets = make([]*v1alpha1.WormMarketItem, 0, len(markets.Markets))
 	for i := range markets.Markets {
+		if !isWormMarketOpen(markets.Markets[i].State) {
+			continue
+		}
 		resp.Markets = append(resp.Markets, s.toAPIMarketSummary(markets.Markets[i]))
 	}
 	return resp, nil
+}
+
+func isWormMarketOpen(state string) bool {
+	return strings.EqualFold(strings.TrimSpace(state), defaultWormMarketsState)
 }
 
 func normalizeWormMarketSortOption(value string) (string, error) {
@@ -259,6 +270,9 @@ func (s *Service) fetchWormMarket(ctx context.Context, conditionID string) (*api
 		return nil, err
 	}
 	if market == nil {
+		return nil, status.Error(codes.NotFound, "worm market not found")
+	}
+	if !isWormMarketOpen(market.State) {
 		return nil, status.Error(codes.NotFound, "worm market not found")
 	}
 

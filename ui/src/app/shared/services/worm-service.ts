@@ -27,6 +27,9 @@ export type WormMarketCategorySlug = 'all' | 'politics' | 'sports' | 'crypto' | 
 
 export const DEFAULT_WORM_MARKET_SORT: WormMarketSortOption = 'leverage';
 export const DEFAULT_WORM_MARKET_CATEGORY: WormMarketCategorySlug = 'sports';
+export const DEFAULT_WORM_MARKET_STATE = 'open';
+
+const isOpenWormMarket = (item: Pick<WormMarketItem, 'state'>) => item.state?.toLowerCase() === DEFAULT_WORM_MARKET_STATE;
 
 export interface ListWormMarketsOptions {
     limit?: number;
@@ -165,7 +168,7 @@ export class WormService {
         const promise = req.then(res => {
             const body = res.body || {};
             return {
-                items: (body.items || []).map(normalizeMarket),
+                items: (body.items || []).map(normalizeMarket).filter(isOpenWormMarket),
                 nextCursor: body.nextCursor || body.next_cursor || '',
                 fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
                 stale: readBoolean(body, 'stale', 'stale')
