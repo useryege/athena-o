@@ -113,6 +113,7 @@ CREATE INDEX IF NOT EXISTS project_code_hash_idx
 CREATE INDEX IF NOT EXISTS project_block_order_idx
   ON project (chain_id, block_number, tx_index, id);
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_contract_code_deployment_count()
 RETURNS trigger AS $$
 BEGIN
@@ -141,6 +142,7 @@ BEGIN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 CREATE TRIGGER project_contract_code_deployment_count_trigger
 AFTER INSERT OR UPDATE OF code_hash OR DELETE ON project
