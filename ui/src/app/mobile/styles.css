@@ -680,6 +680,21 @@ body[data-theme='dark'] .metric {
     border-color: var(--athena-border);
 }
 
+.chain-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+}
+
+.chain-badge img {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 auto;
+}
+
 .ant-tabs .ant-tabs-nav {
     margin-bottom: 14px;
 }

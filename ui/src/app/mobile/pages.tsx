@@ -39,6 +39,9 @@ import {
 } from '../shared/services/tokenapi-service';
 import {WalletDetail, WalletItem} from '../shared/services/wallet-service';
 import {WormMarketDetail, WormMarketItem} from '../shared/services/worm-service';
+import bscIcon from '../../assets/images/bsc.png';
+import ethIcon from '../../assets/images/eth.png';
+import solanaIcon from '../../assets/images/solana.png';
 
 const fmt = (value: unknown) => {
     if (value === undefined || value === null || value === '') {
@@ -53,6 +56,34 @@ const fmt = (value: unknown) => {
 const fmtNumber = (value?: number) => (value === undefined ? '-' : new Intl.NumberFormat().format(value));
 const short = (value?: string, head = 10, tail = 8) => (value && value.length > head + tail ? `${value.slice(0, head)}...${value.slice(-tail)}` : value || '-');
 const boolTag = (value?: boolean) => <StatusTag value={fmt(value)} positive={value === true} negative={value === false} />;
+
+const chainIconAssets = {
+    eth: ethIcon,
+    bsc: bscIcon,
+    solana: solanaIcon
+};
+
+const projectChainDisplayByID: Record<number, {label: string; icon?: string}> = {
+    1: {label: 'ETH', icon: chainIconAssets.eth},
+    56: {label: 'BSC', icon: chainIconAssets.bsc}
+};
+
+const chainLabel = (chainID?: number) => {
+    if (chainID === undefined) {
+        return '-';
+    }
+    return projectChainDisplayByID[chainID]?.label || String(chainID);
+};
+
+const ChainBadge = (props: {chainID?: number}) => {
+    const display = props.chainID === undefined ? undefined : projectChainDisplayByID[props.chainID];
+    return (
+        <Tag className='chain-badge'>
+            {display?.icon && <img src={display.icon} alt='' />}
+            <span>{chainLabel(props.chainID)}</span>
+        </Tag>
+    );
+};
 
 const wormMarketLogo = (item: WormMarketItem) => item.logo || item.eventLogo || '';
 
@@ -423,7 +454,7 @@ export const ProjectsPage = () => {
     );
     const columns: ColumnsType<TokenAPIProject> = [
         {title: 'ID', dataIndex: 'projectID'},
-        {title: 'Chain', dataIndex: 'chainID'},
+        {title: 'Chain', render: item => <ChainBadge chainID={item.chainID} />},
         {
             title: 'Token',
             render: item => (
@@ -484,7 +515,7 @@ export const ProjectsPage = () => {
                         <CardTitle
                             title={`${item.symbol || '-'} #${item.projectID || '-'}`}
                             subtitle={<TruncatedText value={item.contract} copyable={true} />}
-                            tags={<Tag>{item.chainID || '-'}</Tag>}
+                            tags={<ChainBadge chainID={item.chainID} />}
                         />
                         <MetricRow
                             items={[
