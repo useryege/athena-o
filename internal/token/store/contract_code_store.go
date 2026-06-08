@@ -120,15 +120,3 @@ func (s *SQLStore) UpdateContractCodeSource(ctx context.Context, codeHash common
 	}
 	return mapContractCode(row), nil
 }
-
-func (s *SQLStore) DeleteContractCode(ctx context.Context, codeHash common.Hash) (int64, error) {
-	q, err := s.querier()
-	if err != nil {
-		return 0, err
-	}
-	rowsAffected, err := q.DeleteContractCode(ctx, codeHash.Bytes())
-	if err != nil {
-		return 0, fmt.Errorf("delete contract code: %w", err)
-	}
-	return rowsAffected, nil
-}

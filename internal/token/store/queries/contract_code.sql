@@ -33,7 +33,3 @@ SET source_code = sqlc.narg('source_code')::text,
   source_code_fetched_at = sqlc.narg('source_code_fetched_at')::timestamptz
 WHERE code_hash = @code_hash
 RETURNING *;
-
--- name: DeleteContractCode :execrows
-DELETE FROM contract_code
-WHERE code_hash = @code_hash;

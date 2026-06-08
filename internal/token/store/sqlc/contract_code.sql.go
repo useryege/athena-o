@@ -24,19 +24,6 @@ func (q *Queries) CountContractCodes(ctx context.Context, codeHash []byte) (int6
 	return column_1, err
 }
 
-const deleteContractCode = `-- name: DeleteContractCode :execrows
-DELETE FROM contract_code
-WHERE code_hash = $1
-`
-
-func (q *Queries) DeleteContractCode(ctx context.Context, codeHash []byte) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteContractCode, codeHash)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const getContractCode = `-- name: GetContractCode :one
 SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, deployment_count, created_at
 FROM contract_code

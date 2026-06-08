@@ -242,13 +242,6 @@ export class TokenAPIService {
         return promise;
     }
 
-    public deleteContractCode(codeHash: string): Promise<number> & {abort?: () => void} {
-        const req = requests.delete(`/tokenapi/contract-codes/${encodeURIComponent(codeHash)}`);
-        const promise = req.then(res => numberValue(res.body?.deletedCount ?? res.body?.deleted_count) || 0) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
     public listProjectDataCollectionTasks(
         options: {page?: number; pageSize?: number; projectID?: number; dataType?: string; status?: string} = {}
     ): Promise<PagedResponse<TokenAPIProjectDataCollectionTask>> & {abort?: () => void} {

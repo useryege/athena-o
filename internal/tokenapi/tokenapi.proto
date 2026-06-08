@@ -138,14 +138,6 @@ message ListContractCodesResponse {
   int32 page_size = 4;
 }
 
-message DeleteContractCodeRequest {
-  string code_hash = 1;
-}
-
-message DeleteContractCodeResponse {
-  int64 deleted_count = 1;
-}
-
 message GetProjectDataCollectionTaskRequest {
   int64 project_id = 1;
   string data_type = 2;
@@ -189,7 +181,6 @@ service TokenAPIService {
   rpc UpdateChainIngestCheckpoint(UpdateChainIngestCheckpointRequest) returns (UpdateChainIngestCheckpointResponse);
   rpc GetContractCode(GetContractCodeRequest) returns (GetContractCodeResponse);
   rpc ListContractCodes(ListContractCodesRequest) returns (ListContractCodesResponse);
-  rpc DeleteContractCode(DeleteContractCodeRequest) returns (DeleteContractCodeResponse);
   rpc GetProjectDataCollectionTask(GetProjectDataCollectionTaskRequest) returns (GetProjectDataCollectionTaskResponse);
   rpc ListProjectDataCollectionTasks(ListProjectDataCollectionTasksRequest) returns (ListProjectDataCollectionTasksResponse);
 }

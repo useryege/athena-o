@@ -289,22 +289,6 @@ func (s *Server) ListContractCodes(ctx context.Context, req *tokenapipkg.ListCon
 	}, nil
 }
 
-func (s *Server) DeleteContractCode(ctx context.Context, req *tokenapipkg.DeleteContractCodeRequest) (*tokenapipkg.DeleteContractCodeResponse, error) {
-	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.DeleteContractCode(ctx, &tokenapiapiclient.DeleteContractCodeRequest{
-		CodeHash: req.GetCodeHash(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &tokenapipkg.DeleteContractCodeResponse{DeletedCount: resp.GetDeletedCount()}, nil
-}
-
 func (s *Server) GetProjectDataCollectionTask(ctx context.Context, req *tokenapipkg.GetProjectDataCollectionTaskRequest) (*tokenapipkg.GetProjectDataCollectionTaskResponse, error) {
 	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
 	if err != nil {

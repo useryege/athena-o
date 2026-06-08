@@ -1,18 +1,13 @@
 package common
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 // Default service addresses and URLS of Athena internal services
@@ -203,24 +198,3 @@ const (
 	// RedisInitialCredentialsKey is the key for the athena kubernetes secret that maps to the redis password
 	RedisInitialCredentialsKey = "auth"
 )
-
-/*
-SetOptionalRedisPasswordFromKubeConfig sets the optional Redis password if it exists in the k8s namespace's secrets.
-
-We specify kubeClient as kubernetes.Interface to allow for mocking in tests, but this should be treated as a kubernetes.Clientset param.
-*/
-func SetOptionalRedisPasswordFromKubeConfig(ctx context.Context, kubeClient kubernetes.Interface, namespace string, redisOptions *redis.Options) error {
-	secret, err := kubeClient.CoreV1().Secrets(namespace).Get(ctx, RedisInitialCredentials, metav1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to get secret %s/%s: %w", namespace, RedisInitialCredentials, err)
-	}
-	if secret == nil {
-		return fmt.Errorf("failed to get secret %s/%s: secret is nil", namespace, RedisInitialCredentials)
-	}
-	_, ok := secret.Data[RedisInitialCredentialsKey]
-	if !ok {
-		return fmt.Errorf("secret %s/%s does not contain key %s", namespace, RedisInitialCredentials, RedisInitialCredentialsKey)
-	}
-	redisOptions.Password = string(secret.Data[RedisInitialCredentialsKey])
-	return nil
-}

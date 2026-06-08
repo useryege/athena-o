@@ -71,19 +71,3 @@ func (s *Service) ListContractCodes(ctx context.Context, req *apiclient.ListCont
 		PageSize:      page.PageSize,
 	}, nil
 }
-
-func (s *Service) DeleteContractCode(ctx context.Context, req *apiclient.DeleteContractCodeRequest) (*apiclient.DeleteContractCodeResponse, error) {
-	store, err := requiredStore(s.tokenStore())
-	if err != nil {
-		return nil, err
-	}
-	codeHash, err := parseHashField("code_hash", req.GetCodeHash())
-	if err != nil {
-		return nil, err
-	}
-	deleted, err := store.DeleteContractCode(ctx, codeHash)
-	if err != nil {
-		return nil, wrapStoreError("delete contract code", err)
-	}
-	return &apiclient.DeleteContractCodeResponse{DeletedCount: deleted}, nil
-}

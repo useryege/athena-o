@@ -85,8 +85,6 @@ func tokenAPIObject(req any) string {
 		return fmt.Sprintf("%d", r.GetChainId())
 	case *tokenapipkg.GetContractCodeRequest:
 		return nonEmptyObject(r.GetCodeHash())
-	case *tokenapipkg.DeleteContractCodeRequest:
-		return nonEmptyObject(r.GetCodeHash())
 	case *tokenapipkg.GetProjectDataCollectionTaskRequest:
 		return fmt.Sprintf("%d/%s", r.GetProjectId(), nonEmptyObject(r.GetDataType()))
 	case *tokenapipkg.CreateBytecodeBlacklistRequest:
@@ -189,7 +187,6 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/tokenapi.TokenAPIService/UpdateChainIngestCheckpoint":    {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/GetContractCode":                {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/ListContractCodes":              fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
-	"/tokenapi.TokenAPIService/DeleteContractCode":             {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/GetProjectDataCollectionTask":   {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/ListProjectDataCollectionTasks": fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
 }

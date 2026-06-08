@@ -375,40 +375,16 @@ export const TokenStatusPage = () => {
 };
 
 export const ContractCodesPage = () => {
-    const ctx = React.useContext(Context);
     const navigate = useNavigate();
     const {page, pageSize, setPage} = usePagedParams();
     const [codeHash, setCodeHash] = useKeywordParam('codeHash');
     const data = useAsyncData(() => services.tokenapi.listContractCodes({page, pageSize, codeHash: codeHash || undefined}), [page, pageSize, codeHash]);
-    const canUpdate = useCanI(rbacResources.tokenapi, rbacActions.update);
-    const canModify = canUpdate.data === true;
-    const remove = (item: TokenAPIContractCode) => {
-        if (!canModify) {
-            return;
-        }
-        ctx.modal.confirm({
-            title: 'Delete contract code?',
-            content: item.codeHash,
-            onOk: async () => {
-                await services.tokenapi.deleteContractCode(item.codeHash || '');
-                data.reload();
-            }
-        });
-    };
     const columns: ColumnsType<TokenAPIContractCode> = [
         {title: 'Code Hash', render: item => <Link to={`/token/contract-codes/${encodeURIComponent(item.codeHash || '')}`}>{short(item.codeHash)}</Link>},
         {title: 'Deployments', dataIndex: 'deploymentCount'},
         {title: 'Source Hash', render: item => <TruncatedText value={item.sourceCodeHash} copyable={true} />},
         {title: 'Fetched', dataIndex: 'sourceCodeFetchedAt'},
-        {title: 'Created', dataIndex: 'createdAt'},
-        {
-            title: 'Actions',
-            render: item => (
-                <Button danger={true} icon={<DeleteOutlined />} disabled={!canModify || !item.codeHash} onClick={() => remove(item)}>
-                    Delete
-                </Button>
-            )
-        }
+        {title: 'Created', dataIndex: 'createdAt'}
     ];
     return (
         <AppPage
@@ -436,19 +412,6 @@ export const ContractCodesPage = () => {
                                 {label: 'Created', value: item.createdAt}
                             ]}
                         />
-                        <InlineActions>
-                            <Button
-                                size='small'
-                                danger={true}
-                                icon={<DeleteOutlined />}
-                                disabled={!canModify || !item.codeHash}
-                                onClick={event => {
-                                    event.stopPropagation();
-                                    remove(item);
-                                }}>
-                                Delete
-                            </Button>
-                        </InlineActions>
                     </div>
                 )}
             />
@@ -457,38 +420,16 @@ export const ContractCodesPage = () => {
 };
 
 export const ContractCodeDetailPage = () => {
-    const ctx = React.useContext(Context);
     const {codeHash = ''} = useParams();
-    const navigate = useNavigate();
     const decoded = decodeURIComponent(codeHash);
     const detail = useAsyncData(() => services.tokenapi.getContractCode(decoded), [decoded]);
-    const canUpdate = useCanI(rbacResources.tokenapi, rbacActions.update);
-    const canModify = canUpdate.data === true;
-    const remove = () => {
-        if (!canModify) {
-            return;
-        }
-        ctx.modal.confirm({
-            title: 'Delete contract code?',
-            content: decoded,
-            onOk: async () => {
-                await services.tokenapi.deleteContractCode(decoded);
-                navigate('/token/contract-codes');
-            }
-        });
-    };
     return (
         <AppPage
             title='Contract Code Detail'
             subtitle={<TruncatedText value={decoded} copyable={true} />}
             loading={detail.loading}
             error={detail.error}
-            onRefresh={detail.reload}
-            extra={
-                <Button danger={true} icon={<DeleteOutlined />} disabled={!canModify || !decoded} onClick={remove}>
-                    Delete
-                </Button>
-            }>
+            onRefresh={detail.reload}>
             <Section title='Summary'>
                 <KeyValueGrid
                     items={[

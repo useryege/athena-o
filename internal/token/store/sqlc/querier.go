@@ -21,7 +21,6 @@ type Querier interface {
 	CountProjectDataCollectionTasks(ctx context.Context, arg CountProjectDataCollectionTasksParams) (int64, error)
 	CountProjects(ctx context.Context, arg CountProjectsParams) (int64, error)
 	DeleteBytecodeBlacklistEntry(ctx context.Context, codeHash []byte) (int64, error)
-	DeleteContractCode(ctx context.Context, codeHash []byte) (int64, error)
 	DeleteProject(ctx context.Context, id int64) (int64, error)
 	DeleteProjectAveData(ctx context.Context, projectID int64) (int64, error)
 	DeleteProjectCandidate(ctx context.Context, id int64) (int64, error)

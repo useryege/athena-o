@@ -141,14 +141,6 @@ message ListContractCodesResponse {
   int32 page_size = 4;
 }
 
-message DeleteContractCodeRequest {
-  string code_hash = 1;
-}
-
-message DeleteContractCodeResponse {
-  int64 deleted_count = 1;
-}
-
 message GetProjectDataCollectionTaskRequest {
   int64 project_id = 1;
   string data_type = 2;
@@ -253,10 +245,6 @@ service TokenAPIService {
 
   rpc ListContractCodes(ListContractCodesRequest) returns (ListContractCodesResponse) {
     option (google.api.http) = {get: "/api/v1/tokenapi/contract-codes"};
-  }
-
-  rpc DeleteContractCode(DeleteContractCodeRequest) returns (DeleteContractCodeResponse) {
-    option (google.api.http) = {delete: "/api/v1/tokenapi/contract-codes/{code_hash}"};
   }
 
   rpc GetProjectDataCollectionTask(GetProjectDataCollectionTaskRequest) returns (GetProjectDataCollectionTaskResponse) {

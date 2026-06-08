@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-632-g5a95f56-dirty"
+    "version": "v1.0.0-640-g8661a5a-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -947,34 +947,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tokenapiGetContractCodeResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "TokenAPIService"
-        ],
-        "operationId": "TokenAPIService_DeleteContractCode",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "code_hash",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tokenapiDeleteContractCodeResponse"
             }
           },
           "default": {
@@ -2158,15 +2130,6 @@
       "type": "object"
     },
     "tokenapiDeleteBytecodeBlacklistResponse": {
-      "type": "object",
-      "properties": {
-        "deleted_count": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "tokenapiDeleteContractCodeResponse": {
       "type": "object",
       "properties": {
         "deleted_count": {
