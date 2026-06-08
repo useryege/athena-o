@@ -155,7 +155,7 @@ func (s *SQLStore) CompleteProjectAveDataCollection(ctx context.Context, project
 	return mapProjectAveData(row), nil
 }
 
-func (s *SQLStore) CompleteProjectContractCodeSourceCollection(ctx context.Context, projectID int64, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, fetchedAt time.Time) error {
+func (s *SQLStore) CompleteProjectContractCodeSourceCollection(ctx context.Context, projectID int64, codeHash common.Hash, sourceCode string, fetchedAt time.Time) error {
 	if s == nil || s.pool == nil {
 		return fmt.Errorf("token postgres database is not configured")
 	}
@@ -173,7 +173,6 @@ func (s *SQLStore) CompleteProjectContractCodeSourceCollection(ctx context.Conte
 	if _, err := q.UpdateContractCodeSource(ctx, tokensqlc.UpdateContractCodeSourceParams{
 		CodeHash:            codeHash.Bytes(),
 		SourceCode:          nullableText(sourceCode),
-		SourceCodeHash:      optionalHashBytes(sourceCodeHash),
 		SourceCodeFetchedAt: nullableTime(fetchedAt),
 	}); err != nil {
 		return fmt.Errorf("update contract code source %s: %w", codeHash.Hex(), err)

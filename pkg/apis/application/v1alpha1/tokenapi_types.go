@@ -35,10 +35,9 @@ type TokenAPIOptions struct {
 type TokenAPIContractCode struct {
 	CodeHash            string `protobuf:"bytes,1,opt,name=codeHash" json:"codeHash"`
 	SourceCode          string `protobuf:"bytes,2,opt,name=sourceCode" json:"sourceCode"`
-	SourceCodeHash      string `protobuf:"bytes,3,opt,name=sourceCodeHash" json:"sourceCodeHash"`
-	SourceCodeFetchedAt string `protobuf:"bytes,4,opt,name=sourceCodeFetchedAt" json:"sourceCodeFetchedAt"`
-	CreatedAt           string `protobuf:"bytes,5,opt,name=createdAt" json:"createdAt"`
-	DeploymentCount     int64  `protobuf:"varint,6,opt,name=deploymentCount" json:"deploymentCount"`
+	SourceCodeFetchedAt string `protobuf:"bytes,3,opt,name=sourceCodeFetchedAt" json:"sourceCodeFetchedAt"`
+	CreatedAt           string `protobuf:"bytes,4,opt,name=createdAt" json:"createdAt"`
+	DeploymentCount     int64  `protobuf:"varint,5,opt,name=deploymentCount" json:"deploymentCount"`
 }
 
 type TokenAPIProject struct {

@@ -33,7 +33,6 @@ type ChainIngestCheckpoint struct {
 type ContractCode struct {
 	CodeHash            []byte
 	SourceCode          pgtype.Text
-	SourceCodeHash      []byte
 	SourceCodeFetchedAt pgtype.Timestamptz
 	DeploymentCount     int64
 	CreatedAt           pgtype.Timestamptz

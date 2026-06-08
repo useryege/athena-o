@@ -35,7 +35,6 @@ export interface TokenAPIOptions {
 export interface TokenAPIContractCode {
     codeHash?: string;
     sourceCode?: string;
-    sourceCodeHash?: string;
     sourceCodeFetchedAt?: string;
     createdAt?: string;
     deploymentCount?: number;
@@ -124,7 +123,6 @@ function normalizeContractCode(item: any): TokenAPIContractCode {
     return {
         codeHash: item.codeHash ?? item.code_hash,
         sourceCode: item.sourceCode ?? item.source_code,
-        sourceCodeHash: item.sourceCodeHash ?? item.source_code_hash,
         sourceCodeFetchedAt: item.sourceCodeFetchedAt ?? item.source_code_fetched_at,
         createdAt: item.createdAt ?? item.created_at,
         deploymentCount: numberValue(item.deploymentCount ?? item.deployment_count)

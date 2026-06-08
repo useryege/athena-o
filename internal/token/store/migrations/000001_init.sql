@@ -63,12 +63,10 @@ CREATE INDEX IF NOT EXISTS project_candidate_status_created_idx
 CREATE TABLE IF NOT EXISTS contract_code (
   code_hash BYTEA PRIMARY KEY,
   source_code TEXT,
-  source_code_hash BYTEA,
   source_code_fetched_at TIMESTAMPTZ,
   deployment_count BIGINT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT contract_code_code_hash_len CHECK (length(code_hash) = 32),
-  CONSTRAINT contract_code_source_code_hash_len CHECK (source_code_hash IS NULL OR length(source_code_hash) = 32),
   CONSTRAINT contract_code_deployment_count_nonnegative CHECK (deployment_count >= 0)
 );
 

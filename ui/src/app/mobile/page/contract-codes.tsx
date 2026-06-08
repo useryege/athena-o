@@ -13,7 +13,6 @@ export const ContractCodesPage = () => {
     const columns: ColumnsType<TokenAPIContractCode> = [
         {title: 'Code Hash', render: item => <Link to={`/token/contract-codes/${encodeURIComponent(item.codeHash || '')}`}>{short(item.codeHash)}</Link>},
         {title: 'Deployments', dataIndex: 'deploymentCount'},
-        {title: 'Source Hash', render: item => <TruncatedText value={item.sourceCodeHash} copyable={true} />},
         {title: 'Fetched', dataIndex: 'sourceCodeFetchedAt'},
         {title: 'Created', dataIndex: 'createdAt'}
     ];

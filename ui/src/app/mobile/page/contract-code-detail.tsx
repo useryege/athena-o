@@ -16,7 +16,6 @@ export const ContractCodeDetailPage = () => {
                         {label: 'Code Hash', value: <TruncatedText value={decoded} copyable={true} />},
                         {label: 'Found', value: boolTag(!!detail.data)},
                         {label: 'Deployments', value: fmtNumber(detail.data?.deploymentCount)},
-                        {label: 'Source Hash', value: <TruncatedText value={detail.data?.sourceCodeHash} copyable={true} />},
                         {label: 'Fetched', value: detail.data?.sourceCodeFetchedAt},
                         {label: 'Created', value: detail.data?.createdAt}
                     ]}

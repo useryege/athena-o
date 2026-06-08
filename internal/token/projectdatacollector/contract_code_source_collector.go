@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 )
@@ -59,8 +58,7 @@ func (r *dataCollectorRunner) processContractCodeSourceTask(ctx context.Context,
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
-	sourceCodeHash := crypto.Keccak256Hash([]byte(sourceCode))
-	if err := r.opts.store.CompleteProjectContractCodeSourceCollection(ctx, task.Project.ID, task.Project.CodeHash, sourceCode, sourceCodeHash, time.Now().UTC()); err != nil {
+	if err := r.opts.store.CompleteProjectContractCodeSourceCollection(ctx, task.Project.ID, task.Project.CodeHash, sourceCode, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}

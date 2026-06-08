@@ -367,13 +367,11 @@ message TokenAPIContractCode {
 
   optional string sourceCode = 2;
 
-  optional string sourceCodeHash = 3;
+  optional string sourceCodeFetchedAt = 3;
 
-  optional string sourceCodeFetchedAt = 4;
+  optional string createdAt = 4;
 
-  optional string createdAt = 5;
-
-  optional int64 deploymentCount = 6;
+  optional int64 deploymentCount = 5;
 }
 
 message TokenAPIOptions {

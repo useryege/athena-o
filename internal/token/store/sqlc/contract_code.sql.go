@@ -25,7 +25,7 @@ func (q *Queries) CountContractCodes(ctx context.Context, codeHash []byte) (int6
 }
 
 const getContractCode = `-- name: GetContractCode :one
-SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, deployment_count, created_at
+SELECT code_hash, source_code, source_code_fetched_at, deployment_count, created_at
 FROM contract_code
 WHERE code_hash = $1
 `
@@ -36,7 +36,6 @@ func (q *Queries) GetContractCode(ctx context.Context, codeHash []byte) (Contrac
 	err := row.Scan(
 		&i.CodeHash,
 		&i.SourceCode,
-		&i.SourceCodeHash,
 		&i.SourceCodeFetchedAt,
 		&i.DeploymentCount,
 		&i.CreatedAt,
@@ -45,7 +44,7 @@ func (q *Queries) GetContractCode(ctx context.Context, codeHash []byte) (Contrac
 }
 
 const listContractCodes = `-- name: ListContractCodes :many
-SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, deployment_count, created_at
+SELECT code_hash, source_code, source_code_fetched_at, deployment_count, created_at
 FROM contract_code
 WHERE ($1::bytea IS NULL OR code_hash = $1::bytea)
 ORDER BY created_at DESC, code_hash
@@ -70,7 +69,6 @@ func (q *Queries) ListContractCodes(ctx context.Context, arg ListContractCodesPa
 		if err := rows.Scan(
 			&i.CodeHash,
 			&i.SourceCode,
-			&i.SourceCodeHash,
 			&i.SourceCodeFetchedAt,
 			&i.DeploymentCount,
 			&i.CreatedAt,
@@ -86,7 +84,7 @@ func (q *Queries) ListContractCodes(ctx context.Context, arg ListContractCodesPa
 }
 
 const listContractCodesByDeploymentCount = `-- name: ListContractCodesByDeploymentCount :many
-SELECT code_hash, source_code, source_code_hash, source_code_fetched_at, deployment_count, created_at
+SELECT code_hash, source_code, source_code_fetched_at, deployment_count, created_at
 FROM contract_code
 ORDER BY deployment_count DESC, created_at DESC, code_hash
 LIMIT $2 OFFSET $1
@@ -109,7 +107,6 @@ func (q *Queries) ListContractCodesByDeploymentCount(ctx context.Context, arg Li
 		if err := rows.Scan(
 			&i.CodeHash,
 			&i.SourceCode,
-			&i.SourceCodeHash,
 			&i.SourceCodeFetchedAt,
 			&i.DeploymentCount,
 			&i.CreatedAt,
@@ -127,31 +124,23 @@ func (q *Queries) ListContractCodesByDeploymentCount(ctx context.Context, arg Li
 const updateContractCodeSource = `-- name: UpdateContractCodeSource :one
 UPDATE contract_code
 SET source_code = $1::text,
-  source_code_hash = $2::bytea,
-  source_code_fetched_at = $3::timestamptz
-WHERE code_hash = $4
-RETURNING code_hash, source_code, source_code_hash, source_code_fetched_at, deployment_count, created_at
+  source_code_fetched_at = $2::timestamptz
+WHERE code_hash = $3
+RETURNING code_hash, source_code, source_code_fetched_at, deployment_count, created_at
 `
 
 type UpdateContractCodeSourceParams struct {
 	SourceCode          pgtype.Text
-	SourceCodeHash      []byte
 	SourceCodeFetchedAt pgtype.Timestamptz
 	CodeHash            []byte
 }
 
 func (q *Queries) UpdateContractCodeSource(ctx context.Context, arg UpdateContractCodeSourceParams) (ContractCode, error) {
-	row := q.db.QueryRow(ctx, updateContractCodeSource,
-		arg.SourceCode,
-		arg.SourceCodeHash,
-		arg.SourceCodeFetchedAt,
-		arg.CodeHash,
-	)
+	row := q.db.QueryRow(ctx, updateContractCodeSource, arg.SourceCode, arg.SourceCodeFetchedAt, arg.CodeHash)
 	var i ContractCode
 	err := row.Scan(
 		&i.CodeHash,
 		&i.SourceCode,
-		&i.SourceCodeHash,
 		&i.SourceCodeFetchedAt,
 		&i.DeploymentCount,
 		&i.CreatedAt,

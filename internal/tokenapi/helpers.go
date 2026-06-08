@@ -186,7 +186,6 @@ func mapContractCode(item tokenstore.ContractCode) *v1alpha1.TokenAPIContractCod
 	return &v1alpha1.TokenAPIContractCode{
 		CodeHash:            item.CodeHash.Hex(),
 		SourceCode:          item.SourceCode,
-		SourceCodeHash:      formatHash(item.SourceCodeHash),
 		SourceCodeFetchedAt: formatTime(item.SourceCodeFetchedAt),
 		CreatedAt:           formatTime(item.CreatedAt),
 		DeploymentCount:     item.DeploymentCount,

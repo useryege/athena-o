@@ -70,7 +70,6 @@ type ProjectCandidate struct {
 type ContractCode struct {
 	CodeHash            common.Hash
 	SourceCode          string
-	SourceCodeHash      common.Hash
 	SourceCodeFetchedAt time.Time
 	DeploymentCount     int64
 	CreatedAt           time.Time

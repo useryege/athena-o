@@ -1402,20 +1402,15 @@ func (m *TokenAPIContractCode) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = l
 	i = encodeVarintGenerated(dAtA, i, uint64(m.DeploymentCount))
 	i--
-	dAtA[i] = 0x30
+	dAtA[i] = 0x28
 	i -= len(m.CreatedAt)
 	copy(dAtA[i:], m.CreatedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatedAt)))
 	i--
-	dAtA[i] = 0x2a
+	dAtA[i] = 0x22
 	i -= len(m.SourceCodeFetchedAt)
 	copy(dAtA[i:], m.SourceCodeFetchedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCodeFetchedAt)))
-	i--
-	dAtA[i] = 0x22
-	i -= len(m.SourceCodeHash)
-	copy(dAtA[i:], m.SourceCodeHash)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SourceCodeHash)))
 	i--
 	dAtA[i] = 0x1a
 	i -= len(m.SourceCode)
@@ -2634,8 +2629,6 @@ func (m *TokenAPIContractCode) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.SourceCode)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.SourceCodeHash)
-	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.SourceCodeFetchedAt)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.CreatedAt)
@@ -3298,7 +3291,6 @@ func (this *TokenAPIContractCode) String() string {
 	s := strings.Join([]string{`&TokenAPIContractCode{`,
 		`CodeHash:` + fmt.Sprintf("%v", this.CodeHash) + `,`,
 		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
-		`SourceCodeHash:` + fmt.Sprintf("%v", this.SourceCodeHash) + `,`,
 		`SourceCodeFetchedAt:` + fmt.Sprintf("%v", this.SourceCodeFetchedAt) + `,`,
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
 		`DeploymentCount:` + fmt.Sprintf("%v", this.DeploymentCount) + `,`,
@@ -8633,38 +8625,6 @@ func (m *TokenAPIContractCode) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeHash", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SourceCodeHash = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field SourceCodeFetchedAt", wireType)
 			}
 			var stringLen uint64
@@ -8695,7 +8655,7 @@ func (m *TokenAPIContractCode) Unmarshal(dAtA []byte) error {
 			}
 			m.SourceCodeFetchedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
 			}
@@ -8727,7 +8687,7 @@ func (m *TokenAPIContractCode) Unmarshal(dAtA []byte) error {
 			}
 			m.CreatedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 6:
+		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentCount", wireType)
 			}

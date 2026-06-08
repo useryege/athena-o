@@ -101,7 +101,7 @@ func (s *SQLStore) ListContractCodesByDeploymentCount(ctx context.Context, page,
 	}, nil
 }
 
-func (s *SQLStore) UpdateContractCodeSource(ctx context.Context, codeHash common.Hash, sourceCode string, sourceCodeHash common.Hash, fetchedAt time.Time) (*ContractCode, error) {
+func (s *SQLStore) UpdateContractCodeSource(ctx context.Context, codeHash common.Hash, sourceCode string, fetchedAt time.Time) (*ContractCode, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -109,7 +109,6 @@ func (s *SQLStore) UpdateContractCodeSource(ctx context.Context, codeHash common
 	row, err := q.UpdateContractCodeSource(ctx, tokensqlc.UpdateContractCodeSourceParams{
 		CodeHash:            codeHash.Bytes(),
 		SourceCode:          nullableText(sourceCode),
-		SourceCodeHash:      optionalHashBytes(sourceCodeHash),
 		SourceCodeFetchedAt: nullableTime(fetchedAt),
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
