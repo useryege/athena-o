@@ -33,6 +33,8 @@ const (
 
 type Client interface {
 	Search(ctx context.Context, options SearchOptions) (*SearchResponse, error)
+	// SPORTS
+	ListSports(ctx context.Context) (*ListSportsResponse, error)
 	// MARKETS
 	ListMarkets(ctx context.Context, options ListMarketsOptions) (*ListMarketsResponse, error)
 	GetMarket(ctx context.Context, conditionID string) (*Market, error)
@@ -167,12 +169,21 @@ type PageOptions struct {
 
 type SearchOptions struct {
 	PageOptions
-	MarketTitle       string
-	EventTitle        string
-	MarketDescription string
-	EventDescription  string
+	Q                 string
 	Category          string
 	State             string
+	Sport             string
+	League            string
+	ResolutionTimeGT  int64
+	ResolutionTimeLT  int64
+	PriceGTE          string
+	PriceLTE          string
+	Leveraged         *bool
+	MaxLeverageYesGTE string
+	MaxLeverageYesLTE string
+	MaxLeverageNoGTE  string
+	MaxLeverageNoLTE  string
+	ResultType        string
 	Sort              string
 }
 
@@ -181,6 +192,8 @@ type ListMarketsOptions struct {
 	State    string
 	Category string
 	Sort     string
+	Sport    string
+	League   string
 }
 
 type ListEventsOptions = ListMarketsOptions
@@ -281,6 +294,11 @@ type SearchResponse struct {
 	Meta    EnvelopeMeta
 }
 
+type ListSportsResponse struct {
+	Sports []Sport
+	Meta   EnvelopeMeta
+}
+
 type ListMarketsResponse struct {
 	Markets []MarketSummary
 	Meta    EnvelopeMeta
@@ -364,6 +382,17 @@ type MarketMini struct {
 	Title       string `json:"title,omitempty"`
 }
 
+type Sport struct {
+	Name    string   `json:"name,omitempty"`
+	Slug    string   `json:"slug,omitempty"`
+	Leagues []League `json:"leagues,omitempty"`
+}
+
+type League struct {
+	Name string `json:"name,omitempty"`
+	Slug string `json:"slug,omitempty"`
+}
+
 type MarketSummary struct {
 	ConditionID    string       `json:"condition_id,omitempty"`
 	Title          string       `json:"title,omitempty"`
@@ -376,6 +405,7 @@ type MarketSummary struct {
 	Creator        *UserSummary `json:"creator,omitempty"`
 	Event          *EventMini   `json:"event,omitempty"`
 	MarginEnabled  bool         `json:"margin_enabled,omitempty"`
+	Outcomes       []Outcome    `json:"outcomes,omitempty"`
 }
 
 type Market struct {
@@ -444,7 +474,8 @@ type Outcome struct {
 
 type MarketConfig struct {
 	Kind                string  `json:"kind,omitempty"`
-	MaxLeverage         *string `json:"max_leverage,omitempty"`
+	MaxLeverageYes      *string `json:"max_leverage_yes,omitempty"`
+	MaxLeverageNo       *string `json:"max_leverage_no,omitempty"`
 	OpeningFee          *string `json:"opening_fee,omitempty"`
 	ClosingFee          *string `json:"closing_fee,omitempty"`
 	AnnualFeeRate       *string `json:"annual_fee_rate,omitempty"`
@@ -542,7 +573,64 @@ type SearchResult struct {
 
 type SearchSummary struct {
 	MarketSummary
-	Markets []MarketSummary `json:"markets,omitempty"`
+	VideoURL        *string          `json:"video_url,omitempty"`
+	Markets         []MarketSummary  `json:"markets,omitempty"`
+	YesOutcomeLabel *string          `json:"yes_outcome_label,omitempty"`
+	NoOutcomeLabel  *string          `json:"no_outcome_label,omitempty"`
+	Rules           []string         `json:"rules,omitempty"`
+	ResolutionDate  *int64           `json:"resolution_date,omitempty"`
+	MakerFee        *string          `json:"maker_fee,omitempty"`
+	TakerFee        *string          `json:"taker_fee,omitempty"`
+	Config          *MarketConfig    `json:"config,omitempty"`
+	RawRules        *json.RawMessage `json:"-"`
+	RawConfig       *json.RawMessage `json:"-"`
+}
+
+func (s *SearchSummary) UnmarshalJSON(data []byte) error {
+	var raw struct {
+		MarketSummary
+		VideoURL        *string         `json:"video_url,omitempty"`
+		Markets         []MarketSummary `json:"markets,omitempty"`
+		YesOutcomeLabel *string         `json:"yes_outcome_label,omitempty"`
+		NoOutcomeLabel  *string         `json:"no_outcome_label,omitempty"`
+		Rules           json.RawMessage `json:"rules"`
+		ResolutionDate  *int64          `json:"resolution_date,omitempty"`
+		MakerFee        *string         `json:"maker_fee,omitempty"`
+		TakerFee        *string         `json:"taker_fee,omitempty"`
+		Config          *MarketConfig   `json:"config,omitempty"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	s.MarketSummary = raw.MarketSummary
+	s.VideoURL = raw.VideoURL
+	s.Markets = raw.Markets
+	s.YesOutcomeLabel = raw.YesOutcomeLabel
+	s.NoOutcomeLabel = raw.NoOutcomeLabel
+	s.ResolutionDate = raw.ResolutionDate
+	s.MakerFee = raw.MakerFee
+	s.TakerFee = raw.TakerFee
+	s.Config = raw.Config
+	s.Rules = nil
+	s.RawRules = nil
+	if len(raw.Rules) > 0 && string(raw.Rules) != "null" {
+		rulesCopy := append(json.RawMessage(nil), raw.Rules...)
+		s.RawRules = &rulesCopy
+		var rules []string
+		if err := json.Unmarshal(raw.Rules, &rules); err == nil {
+			s.Rules = rules
+		}
+	}
+	if raw.Config != nil {
+		var rawFields map[string]json.RawMessage
+		if err := json.Unmarshal(data, &rawFields); err == nil && len(rawFields["config"]) > 0 && string(rawFields["config"]) != "null" {
+			configCopy := append(json.RawMessage(nil), rawFields["config"]...)
+			s.RawConfig = &configCopy
+		}
+	} else {
+		s.RawConfig = nil
+	}
+	return nil
 }
 
 type CreateAuthChallengeRequest struct {
@@ -782,12 +870,21 @@ type Redeem struct {
 
 func (c *clientImpl) Search(ctx context.Context, options SearchOptions) (*SearchResponse, error) {
 	query := options.pageValues()
-	setString(query, "market_title", options.MarketTitle)
-	setString(query, "event_title", options.EventTitle)
-	setString(query, "market_description", options.MarketDescription)
-	setString(query, "event_description", options.EventDescription)
+	setString(query, "q", options.Q)
 	setString(query, "category", options.Category)
 	setString(query, "state", options.State)
+	setString(query, "sport", options.Sport)
+	setString(query, "league", options.League)
+	setInt64(query, "resolution_time_gt", options.ResolutionTimeGT)
+	setInt64(query, "resolution_time_lt", options.ResolutionTimeLT)
+	setString(query, "price_gte", options.PriceGTE)
+	setString(query, "price_lte", options.PriceLTE)
+	setBoolPtr(query, "leveraged", options.Leveraged)
+	setString(query, "max_leverage_yes_gte", options.MaxLeverageYesGTE)
+	setString(query, "max_leverage_yes_lte", options.MaxLeverageYesLTE)
+	setString(query, "max_leverage_no_gte", options.MaxLeverageNoGTE)
+	setString(query, "max_leverage_no_lte", options.MaxLeverageNoLTE)
+	setString(query, "result_type", options.ResultType)
 	setString(query, "sort", options.Sort)
 	var data []SearchResult
 	meta, err := c.do(ctx, http.MethodGet, "/search/", query, nil, false, &data)
@@ -797,11 +894,22 @@ func (c *clientImpl) Search(ctx context.Context, options SearchOptions) (*Search
 	return &SearchResponse{Results: data, Meta: meta}, nil
 }
 
+func (c *clientImpl) ListSports(ctx context.Context) (*ListSportsResponse, error) {
+	var data []Sport
+	meta, err := c.do(ctx, http.MethodGet, "/sports/", nil, nil, false, &data)
+	if err != nil {
+		return nil, err
+	}
+	return &ListSportsResponse{Sports: data, Meta: meta}, nil
+}
+
 func (c *clientImpl) ListMarkets(ctx context.Context, options ListMarketsOptions) (*ListMarketsResponse, error) {
 	query := options.pageValues()
 	setString(query, "state", options.State)
 	setString(query, "category", options.Category)
 	setString(query, "sort", options.Sort)
+	setString(query, "sport", options.Sport)
+	setString(query, "league", options.League)
 	var data []MarketSummary
 	meta, err := c.do(ctx, http.MethodGet, "/markets/", query, nil, false, &data)
 	if err != nil {
@@ -878,6 +986,8 @@ func (c *clientImpl) ListEvents(ctx context.Context, options ListEventsOptions) 
 	setString(query, "state", options.State)
 	setString(query, "category", options.Category)
 	setString(query, "sort", options.Sort)
+	setString(query, "sport", options.Sport)
+	setString(query, "league", options.League)
 	var data []Event
 	meta, err := c.do(ctx, http.MethodGet, "/events/", query, nil, false, &data)
 	if err != nil {
