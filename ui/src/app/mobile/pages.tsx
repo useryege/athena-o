@@ -784,7 +784,7 @@ export const CollectionTasksPage = () => {
                         placeholder='Status'
                         style={{width: 150}}
                         onChange={value => setStatus(value || '')}
-                        options={['pending', 'running', 'succeeded', 'failed'].map(value => ({value, label: value}))}
+                        options={['pending', 'succeeded', 'failed'].map(value => ({value, label: value}))}
                     />
                 </Space>
             }>
