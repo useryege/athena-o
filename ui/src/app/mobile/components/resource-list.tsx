@@ -94,6 +94,16 @@ const useKeyboardPaintSelection = <T,>(options: {
         };
 
         const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                if (isTypingTarget(event.target)) {
+                    return;
+                }
+                if (selectedKeysRef.current.length > 0) {
+                    selectedKeysRef.current = [];
+                    onSelectionChangeRef.current?.([], []);
+                }
+                return;
+            }
             if (event.key !== 'x' && event.key !== 'X') {
                 return;
             }

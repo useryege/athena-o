@@ -53,7 +53,7 @@ export const WormPage = () => {
     return (
         <AppPage
             title='Worm'
-            subtitle='Polymarket-derived markets for Worm module. Hold X and move the mouse to select rows. Checkboxes are keyboard-only.'
+            subtitle='Polymarket-derived markets for Worm module. Hold X to select rows, ESC to clear selection.'
             loading={data.loading}
             error={data.error}
             onRefresh={data.reload}
