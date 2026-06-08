@@ -36,6 +36,10 @@ func (s *SQLStore) UpsertProject(ctx context.Context, item Project) (*Project, e
 		BlockNumber: blockNumber,
 		BlockTime:   blockTime,
 		CodeHash:    item.CodeHash.Bytes(),
+		Name:        item.Name,
+		Symbol:      item.Symbol,
+		Decimals:    int16(item.Decimals),
+		TotalSupply: numericFromBigInt(item.TotalSupply),
 		WethPair:    optionalAddressBytes(item.WethPair),
 		UsdtPair:    optionalAddressBytes(item.UsdtPair),
 	})

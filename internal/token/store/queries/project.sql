@@ -8,6 +8,10 @@ INSERT INTO project (
   block_number,
   block_time,
   code_hash,
+  name,
+  symbol,
+  decimals,
+  total_supply,
   weth_pair,
   usdt_pair
 ) VALUES (
@@ -19,11 +23,19 @@ INSERT INTO project (
   @block_number,
   @block_time,
   @code_hash,
+  @name,
+  @symbol,
+  @decimals,
+  @total_supply,
   @weth_pair,
   @usdt_pair
 )
 ON CONFLICT (chain_id, contract) DO UPDATE
 SET code_hash = EXCLUDED.code_hash,
+  name = EXCLUDED.name,
+  symbol = EXCLUDED.symbol,
+  decimals = EXCLUDED.decimals,
+  total_supply = EXCLUDED.total_supply,
   weth_pair = EXCLUDED.weth_pair,
   usdt_pair = EXCLUDED.usdt_pair
 RETURNING *;

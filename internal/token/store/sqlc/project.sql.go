@@ -7,6 +7,8 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countProjects = `-- name: CountProjects :one
@@ -44,7 +46,7 @@ func (q *Queries) DeleteProject(ctx context.Context, id int64) (int64, error) {
 }
 
 const getProject = `-- name: GetProject :one
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE id = $1
 `
@@ -62,6 +64,10 @@ func (q *Queries) GetProject(ctx context.Context, id int64) (Project, error) {
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.CodeHash,
+		&i.Name,
+		&i.Symbol,
+		&i.Decimals,
+		&i.TotalSupply,
 		&i.WethPair,
 		&i.UsdtPair,
 		&i.CreatedAt,
@@ -70,7 +76,7 @@ func (q *Queries) GetProject(ctx context.Context, id int64) (Project, error) {
 }
 
 const getProjectByContract = `-- name: GetProjectByContract :one
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE chain_id = $1
   AND contract = $2
@@ -94,6 +100,10 @@ func (q *Queries) GetProjectByContract(ctx context.Context, arg GetProjectByCont
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.CodeHash,
+		&i.Name,
+		&i.Symbol,
+		&i.Decimals,
+		&i.TotalSupply,
 		&i.WethPair,
 		&i.UsdtPair,
 		&i.CreatedAt,
@@ -102,7 +112,7 @@ func (q *Queries) GetProjectByContract(ctx context.Context, arg GetProjectByCont
 }
 
 const listProjects = `-- name: ListProjects :many
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE chain_id = $1
 ORDER BY block_number, tx_index, id
@@ -127,6 +137,10 @@ func (q *Queries) ListProjects(ctx context.Context, chainID int64) ([]Project, e
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.CodeHash,
+			&i.Name,
+			&i.Symbol,
+			&i.Decimals,
+			&i.TotalSupply,
 			&i.WethPair,
 			&i.UsdtPair,
 			&i.CreatedAt,
@@ -142,7 +156,7 @@ func (q *Queries) ListProjects(ctx context.Context, chainID int64) ([]Project, e
 }
 
 const listProjectsPage = `-- name: ListProjectsPage :many
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE chain_id = $1
   AND ($2::bytea IS NULL OR code_hash = $2::bytea)
@@ -184,6 +198,10 @@ func (q *Queries) ListProjectsPage(ctx context.Context, arg ListProjectsPagePara
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.CodeHash,
+			&i.Name,
+			&i.Symbol,
+			&i.Decimals,
+			&i.TotalSupply,
 			&i.WethPair,
 			&i.UsdtPair,
 			&i.CreatedAt,
@@ -208,6 +226,10 @@ INSERT INTO project (
   block_number,
   block_time,
   code_hash,
+  name,
+  symbol,
+  decimals,
+  total_supply,
   weth_pair,
   usdt_pair
 ) VALUES (
@@ -220,13 +242,21 @@ INSERT INTO project (
   $7,
   $8,
   $9,
-  $10
+  $10,
+  $11,
+  $12,
+  $13,
+  $14
 )
 ON CONFLICT (chain_id, contract) DO UPDATE
 SET code_hash = EXCLUDED.code_hash,
+  name = EXCLUDED.name,
+  symbol = EXCLUDED.symbol,
+  decimals = EXCLUDED.decimals,
+  total_supply = EXCLUDED.total_supply,
   weth_pair = EXCLUDED.weth_pair,
   usdt_pair = EXCLUDED.usdt_pair
-RETURNING id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, weth_pair, usdt_pair, created_at
+RETURNING id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 `
 
 type UpsertProjectParams struct {
@@ -238,6 +268,10 @@ type UpsertProjectParams struct {
 	BlockNumber int64
 	BlockTime   int64
 	CodeHash    []byte
+	Name        string
+	Symbol      string
+	Decimals    int16
+	TotalSupply pgtype.Numeric
 	WethPair    []byte
 	UsdtPair    []byte
 }
@@ -252,6 +286,10 @@ func (q *Queries) UpsertProject(ctx context.Context, arg UpsertProjectParams) (P
 		arg.BlockNumber,
 		arg.BlockTime,
 		arg.CodeHash,
+		arg.Name,
+		arg.Symbol,
+		arg.Decimals,
+		arg.TotalSupply,
 		arg.WethPair,
 		arg.UsdtPair,
 	)
@@ -266,6 +304,10 @@ func (q *Queries) UpsertProject(ctx context.Context, arg UpsertProjectParams) (P
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.CodeHash,
+		&i.Name,
+		&i.Symbol,
+		&i.Decimals,
+		&i.TotalSupply,
 		&i.WethPair,
 		&i.UsdtPair,
 		&i.CreatedAt,

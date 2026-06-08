@@ -85,6 +85,10 @@ CREATE TABLE IF NOT EXISTS project (
   block_number BIGINT NOT NULL,
   block_time BIGINT NOT NULL,
   code_hash BYTEA NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  symbol TEXT NOT NULL DEFAULT '',
+  decimals SMALLINT NOT NULL DEFAULT 0,
+  total_supply NUMERIC(78, 0) NOT NULL DEFAULT 0,
   weth_pair BYTEA,
   usdt_pair BYTEA,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -98,7 +102,9 @@ CREATE TABLE IF NOT EXISTS project (
   CONSTRAINT project_usdt_pair_len CHECK (usdt_pair IS NULL OR length(usdt_pair) = 20),
   CONSTRAINT project_tx_index_nonnegative CHECK (tx_index >= 0),
   CONSTRAINT project_block_number_nonnegative CHECK (block_number >= 0),
-  CONSTRAINT project_block_time_nonnegative CHECK (block_time >= 0)
+  CONSTRAINT project_block_time_nonnegative CHECK (block_time >= 0),
+  CONSTRAINT project_decimals_uint8 CHECK (decimals BETWEEN 0 AND 255),
+  CONSTRAINT project_total_supply_nonnegative CHECK (total_supply >= 0)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS project_chain_contract_uidx

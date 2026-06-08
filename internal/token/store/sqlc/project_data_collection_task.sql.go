@@ -116,6 +116,10 @@ SELECT
   p.block_number,
   p.block_time,
   p.code_hash,
+  p.name,
+  p.symbol,
+  p.decimals,
+  p.total_supply,
   p.weth_pair,
   p.usdt_pair,
   p.created_at AS project_created_at
@@ -152,6 +156,10 @@ type ListDueProjectDataCollectionTasksRow struct {
 	BlockNumber      int64
 	BlockTime        int64
 	CodeHash         []byte
+	Name             string
+	Symbol           string
+	Decimals         int16
+	TotalSupply      pgtype.Numeric
 	WethPair         []byte
 	UsdtPair         []byte
 	ProjectCreatedAt pgtype.Timestamptz
@@ -182,6 +190,10 @@ func (q *Queries) ListDueProjectDataCollectionTasks(ctx context.Context, arg Lis
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.CodeHash,
+			&i.Name,
+			&i.Symbol,
+			&i.Decimals,
+			&i.TotalSupply,
 			&i.WethPair,
 			&i.UsdtPair,
 			&i.ProjectCreatedAt,

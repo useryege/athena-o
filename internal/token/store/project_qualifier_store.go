@@ -9,7 +9,7 @@ import (
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash, wethPair, usdtPair common.Address, relatedWallets []ProjectRelatedWallet, walletAssetStates []WalletAssetState, initialRecipients []ProjectInitialRecipient) (*Project, error) {
+func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash, token ProjectTokenMetadata, wethPair, usdtPair common.Address, relatedWallets []ProjectRelatedWallet, walletAssetStates []WalletAssetState, initialRecipients []ProjectInitialRecipient) (*Project, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token postgres database is not configured")
 	}
@@ -46,6 +46,10 @@ func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate Projec
 		BlockNumber: blockNumber,
 		BlockTime:   blockTime,
 		CodeHash:    codeHash.Bytes(),
+		Name:        token.Name,
+		Symbol:      token.Symbol,
+		Decimals:    int16(token.Decimals),
+		TotalSupply: numericFromBigInt(token.TotalSupply),
 		WethPair:    optionalAddressBytes(wethPair),
 		UsdtPair:    optionalAddressBytes(usdtPair),
 	})

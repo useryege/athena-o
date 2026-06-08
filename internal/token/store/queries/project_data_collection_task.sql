@@ -70,6 +70,10 @@ SELECT
   p.block_number,
   p.block_time,
   p.code_hash,
+  p.name,
+  p.symbol,
+  p.decimals,
+  p.total_supply,
   p.weth_pair,
   p.usdt_pair,
   p.created_at AS project_created_at

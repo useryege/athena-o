@@ -79,9 +79,20 @@ type Project struct {
 	BlockNumber uint64
 	BlockTime   uint64
 	CodeHash    common.Hash
+	Name        string
+	Symbol      string
+	Decimals    uint8
+	TotalSupply *big.Int
 	WethPair    common.Address
 	UsdtPair    common.Address
 	CreatedAt   time.Time
+}
+
+type ProjectTokenMetadata struct {
+	Name        string
+	Symbol      string
+	Decimals    uint8
+	TotalSupply *big.Int
 }
 
 type ProjectAveData struct {

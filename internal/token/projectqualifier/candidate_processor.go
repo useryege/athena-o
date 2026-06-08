@@ -96,7 +96,13 @@ func (r *qualifierRunner) processValidatedCandidate(ctx context.Context, client 
 	relatedWallets := buildProjectRelatedWallets(candidate, initialRecipients)
 	walletAssetStates := buildWalletAssetStates(candidate, initialRecipients)
 	projectInitialRecipients := buildProjectInitialRecipients(candidate, initialRecipients, validation.TotalSupply)
-	if _, err := r.opts.store.QualifyProjectCandidate(ctx, candidate, codeHash, validation.WethPair, validation.UsdtPair, relatedWallets, walletAssetStates, projectInitialRecipients); err != nil {
+	token := tokenstore.ProjectTokenMetadata{
+		Name:        validation.Name,
+		Symbol:      validation.Symbol,
+		Decimals:    validation.Decimals,
+		TotalSupply: validation.TotalSupply,
+	}
+	if _, err := r.opts.store.QualifyProjectCandidate(ctx, candidate, codeHash, token, validation.WethPair, validation.UsdtPair, relatedWallets, walletAssetStates, projectInitialRecipients); err != nil {
 		return err
 	}
 	log.WithFields(log.Fields{

@@ -49,6 +49,10 @@ type Project struct {
 	BlockNumber int64
 	BlockTime   int64
 	CodeHash    []byte
+	Name        string
+	Symbol      string
+	Decimals    int16
+	TotalSupply pgtype.Numeric
 	WethPair    []byte
 	UsdtPair    []byte
 	CreatedAt   pgtype.Timestamptz

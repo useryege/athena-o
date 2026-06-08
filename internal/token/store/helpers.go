@@ -87,6 +87,13 @@ func int64Value(value pgtype.Int8) int64 {
 	return value.Int64
 }
 
+func int16ToUint8(field string, value int16) (uint8, error) {
+	if value < 0 || value > math.MaxUint8 {
+		return 0, fmt.Errorf("%s exceeds uint8 range", field)
+	}
+	return uint8(value), nil
+}
+
 func numericFromBigInt(value *big.Int) pgtype.Numeric {
 	if value == nil {
 		return pgtype.Numeric{Int: new(big.Int), Exp: 0, Valid: true}
@@ -239,6 +246,10 @@ func mapProject(row tokensqlc.Project) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
+	decimals, err := int16ToUint8("decimals", row.Decimals)
+	if err != nil {
+		return nil, err
+	}
 	return &Project{
 		ID:          row.ID,
 		ChainID:     row.ChainID,
@@ -249,6 +260,10 @@ func mapProject(row tokensqlc.Project) (*Project, error) {
 		BlockNumber: blockNumber,
 		BlockTime:   blockTime,
 		CodeHash:    bytesToHash(row.CodeHash),
+		Name:        row.Name,
+		Symbol:      row.Symbol,
+		Decimals:    decimals,
+		TotalSupply: bigIntFromNumeric(row.TotalSupply),
 		WethPair:    bytesToAddress(row.WethPair),
 		UsdtPair:    bytesToAddress(row.UsdtPair),
 		CreatedAt:   timeValue(row.CreatedAt),
@@ -434,6 +449,10 @@ func mapDueProjectDataCollectionTask(row tokensqlc.ListDueProjectDataCollectionT
 	if err != nil {
 		return nil, err
 	}
+	decimals, err := int16ToUint8("decimals", row.Decimals)
+	if err != nil {
+		return nil, err
+	}
 	return &ProjectDataCollectionTaskWithProject{
 		Task: ProjectDataCollectionTask{
 			ProjectID:     row.ProjectID,
@@ -454,6 +473,10 @@ func mapDueProjectDataCollectionTask(row tokensqlc.ListDueProjectDataCollectionT
 			BlockNumber: blockNumber,
 			BlockTime:   blockTime,
 			CodeHash:    bytesToHash(row.CodeHash),
+			Name:        row.Name,
+			Symbol:      row.Symbol,
+			Decimals:    decimals,
+			TotalSupply: bigIntFromNumeric(row.TotalSupply),
 			WethPair:    bytesToAddress(row.WethPair),
 			UsdtPair:    bytesToAddress(row.UsdtPair),
 			CreatedAt:   timeValue(row.ProjectCreatedAt),
