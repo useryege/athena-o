@@ -13,7 +13,6 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
-	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/internal/server"
@@ -53,7 +52,6 @@ func NewCommand() *cobra.Command {
 		otlpAttrs                 []string
 		frameOptions              string
 		contentSecurityPolicy     string
-		applicationServerAddress  string
 		notificationServerAddress string
 		walletServerAddress       string
 		wormServerAddress         string
@@ -105,15 +103,11 @@ func NewCommand() *cobra.Command {
 				contentTypesList = strings.Split(contentTypes, ";")
 			}
 
-			applicationclientset := applicationapiclient.NewApplicationClientset(applicationServerAddress)
 			notificationclientset := notificationapiclient.NewNotificationClientset(notificationServerAddress)
 			walletclientset := walletapiclient.NewWalletClientset(walletServerAddress)
 			wormclientset := wormapiclient.NewWormClientset(wormServerAddress)
 			polymarketclientset := polymarketapiclient.NewPolymarketClientset(polymarketServerAddress)
 			tokenAPIClientset := tokenapiapiclient.NewTokenAPIClientset(tokenAPIServerAddress)
-			log.Infof("waiting for athena application grpc service at %s", applicationServerAddress)
-			errors.CheckError(applicationapiclient.WaitForApplicationService(ctx, applicationServerAddress))
-			log.Infof("athena application grpc service is ready at %s", applicationServerAddress)
 			log.Infof("waiting for athena notification grpc service at %s", notificationServerAddress)
 			errors.CheckError(notificationapiclient.WaitForNotificationService(ctx, notificationServerAddress))
 			log.Infof("athena notification grpc service is ready at %s", notificationServerAddress)
@@ -143,7 +137,6 @@ func NewCommand() *cobra.Command {
 				ContentSecurityPolicy: contentSecurityPolicy,
 				RedisClient:           redisClient,
 				Cache:                 cache,
-				ApplicationClientset:  applicationclientset,
 				NotificationClientset: notificationclientset,
 				WalletClientset:       walletclientset,
 				WormClientset:         wormclientset,
@@ -210,7 +203,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringSliceVar(&otlpAttrs, "otlp-attrs", env.StringsFromEnv("ATHENA_SERVER_OTLP_ATTRS", []string{}, ","), "List of OpenTelemetry collector extra attrs when send traces, each attribute is separated by a colon(e.g. key:value)")
 	command.Flags().StringVar(&frameOptions, "x-frame-options", env.StringFromEnv("ATHENA_SERVER_X_FRAME_OPTIONS", "sameorigin"), "Set X-Frame-Options header in HTTP responses to `value`. To disable, set to \"\".")
 	command.Flags().StringVar(&contentSecurityPolicy, "content-security-policy", env.StringFromEnv("ATHENA_SERVER_CONTENT_SECURITY_POLICY", "frame-ancestors 'self';"), "Set Content-Security-Policy header in HTTP responses to `value`. To disable, set to \"\".")
-	command.Flags().StringVar(&applicationServerAddress, "application-server-address", env.StringFromEnv("ATHENA_APPLICATION_SERVER_ADDRESS", "localhost:8082"), "Athena application server address")
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_NOTIFICATION_SERVER_ADDRESS", "localhost:8086"), "Athena notification server address")
 	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_WALLET_SERVER_ADDRESS", "localhost:8088"), "Athena wallet server address")
 	command.Flags().StringVar(&wormServerAddress, "worm-server-address", env.StringFromEnv("ATHENA_WORM_SERVER_ADDRESS", "localhost:8084"), "Athena worm server address")

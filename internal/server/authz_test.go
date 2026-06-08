@@ -8,7 +8,6 @@ import (
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/server/rbacpolicy"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
-	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	"github.com/useryege/athena/util/assets"
 	"github.com/useryege/athena/util/rbac"
@@ -63,7 +62,7 @@ func TestAuthorizeGRPCDisableAuthInjectsAdminSession(t *testing.T) {
 	server := newAuthzTestServer(t)
 	server.DisableAuth = true
 
-	ctx, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/GetProjectOptions", nil, &applicationpkg.GetProjectOptionsRequest{})
+	ctx, err := server.authorizeGRPC(context.Background(), "/wallet.WalletService/GetWallet", nil, &walletpkg.GetWalletRequest{})
 	if err != nil {
 		t.Fatalf("authorize disable auth: %v", err)
 	}
@@ -92,46 +91,9 @@ func TestAuthorizeGRPCPublicMethodAllowsMissingSession(t *testing.T) {
 func TestAuthorizeGRPCProtectedMethodRequiresSession(t *testing.T) {
 	server := newAuthzTestServer(t)
 
-	_, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/GetProjectOptions", testAuthOverride{err: ErrNoSession}, &applicationpkg.GetProjectOptionsRequest{})
+	_, err := server.authorizeGRPC(context.Background(), "/wallet.WalletService/GetWallet", testAuthOverride{err: ErrNoSession}, &walletpkg.GetWalletRequest{})
 	if status.Code(err) != codes.Unauthenticated {
 		t.Fatalf("error = %v, want Unauthenticated", err)
-	}
-}
-
-func TestAuthorizeGRPCReadonlyAndAdminPolicy(t *testing.T) {
-	server := newAuthzTestServer(t)
-
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/GetProjectOptions", testAuthOverride{ctx: claimsCtx("LINGJIE")}, &applicationpkg.GetProjectOptionsRequest{}); err != nil {
-		t.Fatalf("readonly get project options: %v", err)
-	}
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/StartChainIngest", testAuthOverride{ctx: claimsCtx("LINGJIE")}, &applicationpkg.StartChainIngestRequest{ChainId: 56}); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("readonly start chain ingest error = %v, want PermissionDenied", err)
-	}
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/StartChainIngest", testAuthOverride{ctx: claimsCtx("admin")}, &applicationpkg.StartChainIngestRequest{ChainId: 56}); err != nil {
-		t.Fatalf("admin start chain ingest: %v", err)
-	}
-}
-
-func TestAuthorizeGRPCApplicationBytecodePolicy(t *testing.T) {
-	server := newAuthzTestServer(t)
-
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/ListBytecodes", testAuthOverride{ctx: claimsCtx("LINGJIE")}, &applicationpkg.ListBytecodesRequest{}); err != nil {
-		t.Fatalf("readonly list bytecodes: %v", err)
-	}
-	req := &applicationpkg.AddBytecodeBlacklistEntryRequest{CodeHash: "0x1111111111111111111111111111111111111111111111111111111111111111"}
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/AddBytecodeBlacklistEntry", testAuthOverride{ctx: claimsCtx("LINGJIE")}, req); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("readonly add bytecode blacklist error = %v, want PermissionDenied", err)
-	}
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/AddBytecodeBlacklistEntry", testAuthOverride{ctx: claimsCtx("admin")}, req); err != nil {
-		t.Fatalf("admin add bytecode blacklist: %v", err)
-	}
-
-	walletReq := &applicationpkg.AddWalletBlacklistEntryRequest{Wallet: "0x00000000000000000000000000000000000000a1"}
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/AddWalletBlacklistEntry", testAuthOverride{ctx: claimsCtx("LINGJIE")}, walletReq); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("readonly add wallet blacklist error = %v, want PermissionDenied", err)
-	}
-	if _, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/AddWalletBlacklistEntry", testAuthOverride{ctx: claimsCtx("admin")}, walletReq); err != nil {
-		t.Fatalf("admin add wallet blacklist: %v", err)
 	}
 }
 
@@ -166,7 +128,7 @@ func TestAuthorizeGRPCAllowsLocalAccountSelfService(t *testing.T) {
 func TestAuthorizeGRPCRejectsUnmappedBusinessMethods(t *testing.T) {
 	server := newAuthzTestServer(t)
 
-	_, err := server.authorizeGRPC(context.Background(), "/application.ApplicationService/FutureMethod", testAuthOverride{ctx: claimsCtx("admin")}, &applicationpkg.ListBytecodesRequest{})
+	_, err := server.authorizeGRPC(context.Background(), "/wallet.WalletService/FutureMethod", testAuthOverride{ctx: claimsCtx("admin")}, &walletpkg.ListWalletsRequest{})
 	if status.Code(err) != codes.PermissionDenied {
 		t.Fatalf("error = %v, want PermissionDenied", err)
 	}

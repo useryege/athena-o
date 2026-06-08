@@ -3,7 +3,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-DEFAULT_RUN_EXCLUDE="application-ingestor-bsc,application-ingestor-eth,application-temporal-eth"
+DEFAULT_RUN_EXCLUDE=""
 goreman_pid=""
 cleanup_started=false
 
@@ -150,7 +150,6 @@ stop_stale_process() {
 cleanup_athena_ports() {
 	local ports=(
 		"api-server:${ATHENA_SERVER_PORT:-8080}"
-		"application:${ATHENA_APPLICATION_PORT:-8082}"
 		"worm:${ATHENA_WORM_PORT:-8084}"
 		"notification:${ATHENA_NOTIFICATION_PORT:-8086}"
 		"wallet:${ATHENA_WALLET_PORT:-8088}"

@@ -36,11 +36,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"github.com/useryege/athena/common"
-	applicationapiclient "github.com/useryege/athena/internal/application/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/internal/server/account"
-	"github.com/useryege/athena/internal/server/application"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	"github.com/useryege/athena/internal/server/logout"
 	servernotification "github.com/useryege/athena/internal/server/notification"
@@ -87,7 +85,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
-	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
 	polymarketpkg "github.com/useryege/athena/pkg/apiclient/polymarket"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
@@ -148,10 +145,6 @@ type AthenaServer struct {
 	enf         *rbac.Enforcer
 	// projInformer   cache.SharedIndexInformer
 	policyEnforcer *rbacpolicy.RBACPolicyEnforcer
-	// appInformer    cache.SharedIndexInformer
-	// appLister      applisters.ApplicationLister
-	// appsetInformer cache.SharedIndexInformer
-	// appsetLister   applisters.ApplicationSetLister
 	// db db.AthenaDB
 
 	// stopCh is the channel which when closed, will shutdown the Athena server
@@ -166,12 +159,9 @@ type AthenaServer struct {
 	// configMapInformer cache.SharedIndexInformer
 	serviceSet *AthenaServiceSet
 	// extensionManager   *extension.Manager
-	Shutdown            func()
-	terminateRequested  atomic.Bool
-	available           atomic.Bool
-	applicationClientMu gosync.Mutex
-	applicationConn     *grpc.ClientConn
-	applicationClient   applicationapiclient.ApplicationServiceClient
+	Shutdown           func()
+	terminateRequested atomic.Bool
+	available          atomic.Bool
 }
 
 type AthenaServerOpts struct {
@@ -192,13 +182,11 @@ type AthenaServerOpts struct {
 	RedisClient           *redis.Client
 	XFrameOptions         string
 	ContentSecurityPolicy string
-	ApplicationClientset  applicationapiclient.Clientset
 	NotificationClientset notificationapiclient.Clientset
 	WalletClientset       walletapiclient.Clientset
 	WormClientset         wormapiclient.Clientset
 	PolymarketClientset   polymarketapiclient.Clientset
 	TokenAPIClientset     tokenapiapiclient.Clientset
-	// ApplicationNamespaces []string
 	// EnableProxyExtension  bool
 	// WebhookParallelism     int
 	// EnableK8sEvent         []string
@@ -358,10 +346,6 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	// 	"/repository.RepositoryService/ValidateWriteAccess":            true,
 	// 	"/repocreds.RepoCredsService/CreateWriteRepositoryCredentials": true,
 	// 	"/repocreds.RepoCredsService/UpdateWriteRepositoryCredentials": true,
-	// 	"/application.ApplicationService/PatchResource":                true,
-	// 	// Remove from logs both because the contents are sensitive and because they may be very large.
-	// 	"/application.ApplicationService/GetManifestsWithFiles": true,
-	// }
 	sOpts = append(sOpts, grpc.ChainStreamInterceptor(
 		logging.StreamServerInterceptor(grpc_util.InterceptorLogger(server.log)),
 		server.streamAuthInterceptor,
@@ -395,7 +379,6 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	sessionpkg.RegisterSessionServiceServer(grpcS, server.serviceSet.SessionService)
 	settingspkg.RegisterSettingsServiceServer(grpcS, server.serviceSet.SettingsService)
 	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
-	applicationpkg.RegisterApplicationServiceServer(grpcS, server.serviceSet.ApplicationService)
 	notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
 	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
 	wormpkg.RegisterWormServiceServer(grpcS, server.serviceSet.WormService)
@@ -415,7 +398,6 @@ type AthenaServiceSet struct {
 	SettingsService     *settings.Server
 	AccountService      *account.Server
 	VersionService      *version.Server
-	ApplicationService  *application.Server
 	NotificationService *servernotification.Server
 	WalletService       *serverwallet.Server
 	WormService         *serverworm.Server
@@ -438,8 +420,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	settingsService := settings.NewServer(server.settingsMgr, server, server.DisableAuth)
 	// account service
 	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf)
-	// application service
-	applicationService := application.NewServer(server.ApplicationClientset, server.enf)
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service
@@ -464,7 +444,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		SettingsService:     settingsService,
 		AccountService:      accountService,
 		VersionService:      versionService,
-		ApplicationService:  applicationService,
 		NotificationService: notificationService,
 		WalletService:       walletService,
 		WormService:         wormService,
@@ -702,7 +681,6 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 			handler: mux,
 			// do not need to be authenticated methods
 			urlToHandler: map[string]http.Handler{
-				// "/api/badge":          badge.NewHandler(server.AppClientset, server.settingsMgr, server.Namespace, server.ApplicationNamespaces),
 				common.LogoutEndpoint: logout.NewHandler(server.settingsMgr, server.sessionMgr, server.RootPath, server.BaseHRef),
 			},
 			contentTypeToHandler: map[string]http.Handler{
@@ -753,7 +731,6 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// }
 
 	mustRegisterGWHandler(ctx, versionpkg.RegisterVersionServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, applicationpkg.RegisterApplicationServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, notificationpkg.RegisterNotificationServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, walletpkg.RegisterWalletServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormpkg.RegisterWormServiceHandler, gwmux, conn)
@@ -880,7 +857,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 
 	// Start the muxed listeners for our servers
 	log.Infof("athena %s serving on port %d (url: %s)", common.GetVersion(), server.ListenPort, server.settings.URL)
-	// log.Infof("Enabled application namespace patterns: %s", server.allowedApplicationNamespacesAsString())
 
 	go func() { server.checkServeErr("gRPC server", grpcS.Serve(grpcL)) }()
 	go func() { server.checkServeErr("HTTP server", httpS.Serve(httpL)) }()

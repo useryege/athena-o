@@ -15,12 +15,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// Component names
-const (
-	ApplicationController    = "athena-application-controller"
-	ApplicationSetController = "athena-applicationset-controller"
-)
-
 // Default service addresses and URLS of Athena internal services
 const (
 	// DefaultRedisAddr is the default redis address
@@ -152,8 +146,6 @@ const (
 	LabelKeyAppName = "app.kubernetes.io/name"
 	// LabelKeyAutoLabelClusterInfo if set to true will automatically add extra labels from the cluster info (currently it only adds a k8s version label)
 	LabelKeyAutoLabelClusterInfo = "athena.useryege.io/auto-label-cluster-info"
-	// LabelKeyLegacyApplicationName is the legacy label (v0.10 and below) and is superseded by 'app.kubernetes.io/instance'
-	LabelKeyLegacyApplicationName = "applications.useryege.io/app-name"
 	// LabelKeySecretType contains the type of athena secret (currently: 'cluster', 'repository', 'repo-config' or 'repo-creds')
 	LabelKeySecretType = "athena.useryege.io/secret-type"
 	// LabelKeyClusterKubernetesVersion contains the kubernetes version of the cluster secret if it has been enabled
@@ -282,17 +274,12 @@ const (
 	EnvServerName = "ATHENA_SERVER_NAME"
 	// EnvRepoServerName is the name of the Athena repo server component, as specified by the value under the LabelKeyAppName label key.
 	EnvRepoServerName = "ATHENA_REPO_SERVER_NAME"
-	// EnvAppControllerName is the name of the Athena application controller component, as specified by the value under the LabelKeyAppName label key.
-	EnvAppControllerName = "ATHENA_APPLICATION_CONTROLLER_NAME"
 	// EnvRedisName is the name of the Athena redis component, as specified by the value under the LabelKeyAppName label key.
 	EnvRedisName = "ATHENA_REDIS_NAME"
 	// EnvRedisHaProxyName is the name of the Athena Redis HA proxy component, as specified by the value under the LabelKeyAppName label key.
 	EnvRedisHaProxyName = "ATHENA_REDIS_HAPROXY_NAME"
 	// EnvGRPCKeepAliveMin defines the GRPCKeepAliveEnforcementMinimum, used in the grpc.KeepaliveEnforcementPolicy. Expects a "Duration" format (e.g. 10s).
 	EnvGRPCKeepAliveMin = "ATHENA_GRPC_KEEP_ALIVE_MIN"
-	// EnvServerSideDiff defines the env var used to enable ServerSide Diff feature.
-	// If defined, value must be "true" or "false".
-	EnvServerSideDiff = "ATHENA_APPLICATION_CONTROLLER_SERVER_SIDE_DIFF"
 	// EnvGRPCMaxSizeMB is the environment variable to look for a max GRPC message size
 	EnvGRPCMaxSizeMB = "ATHENA_GRPC_MAX_SIZE_MB"
 )
@@ -337,7 +324,6 @@ const (
 const (
 	DefaultServerName = "athena-server"
 	// DefaultRepoServerName            = "athena-repo-server"
-	// DefaultApplicationControllerName = "athena-application-controller"
 	DefaultRedisName        = "athena-redis"
 	DefaultRedisHaProxyName = "athena-redis-ha-haproxy"
 )
@@ -382,11 +368,6 @@ func GetCMPWorkDir() string {
 	}
 	return filepath.Join(os.TempDir(), DefaultCMPWorkDirName)
 }
-
-const (
-	// AnnotationApplicationSetRefresh is an annotation that is added when an ApplicationSet is requested to be refreshed by a webhook. The ApplicationSet controller will remove this annotation at the end of reconciliation.
-	AnnotationApplicationSetRefresh = "athena.useryege.io/application-set-refresh"
-)
 
 // gRPC settings
 const (

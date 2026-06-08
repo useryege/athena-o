@@ -8,112 +8,6 @@ package github.com.useryege.athena.pkg.apis.application.v1alpha1;
 // Package-wide variables from generator "generated".
 option go_package = "github.com/useryege/athena/pkg/apis/application/v1alpha1";
 
-message ApplicationChain {
-  optional int64 chainID = 1;
-
-  optional string name = 2;
-
-  optional bool enabled = 3;
-}
-
-message BytecodeBlacklistEntry {
-  optional string codeHash = 1;
-
-  optional string note = 2;
-
-  optional int64 sourceChainId = 3;
-
-  optional string sourceContract = 4;
-
-  optional string createdAt = 5;
-}
-
-message BytecodeDeployment {
-  optional int64 chainId = 1;
-
-  optional string contract = 2;
-
-  optional string firstSeenAt = 3;
-
-  optional string updatedAt = 4;
-}
-
-message BytecodeDetail {
-  optional string codeHash = 1;
-
-  optional int64 deploymentCount = 3;
-
-  optional bool isOpenSource = 4;
-
-  optional bool isBytecodeBlacklisted = 5;
-
-  optional string createdAt = 6;
-
-  optional string updatedAt = 7;
-
-  optional string sourceCode = 9;
-
-  optional string sourceCodeHash = 10;
-
-  optional string sourceCodeFetchedAt = 11;
-
-  optional string sourceCodeOrigin = 12;
-}
-
-message BytecodeListItem {
-  optional string codeHash = 1;
-
-  optional int64 deploymentCount = 3;
-
-  optional bool isOpenSource = 4;
-
-  optional bool isBytecodeBlacklisted = 5;
-
-  optional string createdAt = 6;
-
-  optional string updatedAt = 7;
-}
-
-message ChainIngestStatus {
-  optional int64 chainID = 1;
-
-  optional string name = 2;
-
-  optional bool enabled = 3;
-
-  optional string status = 4;
-
-  optional uint64 finalizedBlockNumber = 5;
-
-  optional string finalizedBlockHash = 6;
-
-  optional uint64 cursorBlockNumber = 7;
-
-  optional string cursorBlockHash = 8;
-
-  optional string updatedAt = 9;
-}
-
-message ContractSourceInfo {
-  optional string contract = 1;
-
-  optional int64 chainId = 2;
-
-  optional string codeBinHash = 3;
-
-  optional string sourceCode = 4;
-
-  optional string sourceCodeHash = 5;
-
-  optional string sourceCodeFetchedAt = 6;
-
-  optional string sourceCodeOrigin = 7;
-
-  optional bool isOpenSource = 11;
-
-  optional bool isBytecodeBlacklisted = 12;
-}
-
 message NotificationDeliveryDetail {
   optional int64 id = 1;
 
@@ -436,58 +330,6 @@ message PolymarketStatus {
   optional string status = 2;
 }
 
-message ProjectCollectionStatus {
-  optional int64 chainID = 1;
-
-  optional string contract = 2;
-
-  optional string status = 3;
-
-  optional string workflowID = 4;
-
-  optional string lastRequestedAt = 5;
-
-  optional string lastStartedAt = 6;
-
-  optional string lastCompletedAt = 7;
-
-  optional string nextRunAt = 8;
-
-  optional string lastError = 9;
-
-  optional string updatedAt = 10;
-
-  repeated ProjectComponentStatus components = 11;
-}
-
-message ProjectComponentStatus {
-  optional string component = 1;
-
-  optional string status = 2;
-
-  optional string lastAttemptAt = 3;
-
-  optional string lastSuccessAt = 4;
-
-  optional string nextRunAt = 5;
-
-  optional string lastError = 6;
-
-  optional string updatedAt = 7;
-}
-
-message ProjectOption {
-  optional string factoryContract = 1;
-
-  optional string wethContract = 2;
-
-  optional string usdtContract = 3;
-
-  optional uint32 wethDecimals = 4;
-
-  optional uint32 usdtDecimals = 5;
-}
-
 message TokenAPIBytecodeBlacklist {
   optional string codeHash = 1;
 
@@ -551,14 +393,6 @@ message TokenAPIStatus {
 }
 
 message TokenAPIWalletBlacklist {
-  optional string wallet = 1;
-
-  optional string note = 2;
-
-  optional string createdAt = 3;
-}
-
-message WalletBlacklistEntry {
   optional string wallet = 1;
 
   optional string note = 2;

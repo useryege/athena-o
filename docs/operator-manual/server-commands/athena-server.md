@@ -28,7 +28,6 @@ athena-server [flags]
       --address string                                Listen on given address (default "0.0.0.0")
       --api-content-types string                      Semicolon separated list of allowed content types for non GET api requests. Any content type is allowed if empty. (default "application/json")
       --app-state-cache-expiration duration           Cache expiration for app state (default 1h0m0s)
-      --application-server-address string             Athena application server address (default "localhost:8082")
       --basehref string                               Value for base href in index.html. Used if Athena is running behind reverse proxy under subpath different from / (default "/")
       --connection-status-cache-expiration duration   Cache expiration for cluster/repo connection status (default 1h0m0s)
       --content-security-policy value                 Set Content-Security-Policy header in HTTP responses to value. To disable, set to "". (default "frame-ancestors 'self';")
@@ -62,4 +61,3 @@ athena-server [flags]
 ### SEE ALSO
 
 * [athena-server version](athena-server_version.md)	 - Print version information
-

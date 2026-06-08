@@ -11,7 +11,6 @@ import (
 
 var (
 	ErrCacheMiss = cacheutil.ErrCacheMiss
-	// treeShardSize = env.ParseInt64FromEnv("ATHENA_APPLICATION_TREE_SHARD_SIZE", 0, 0, 1000)
 )
 
 // const (

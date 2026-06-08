@@ -63,160 +63,6 @@ services:
     ports:
       - "${TEMPORAL_UI_BIND_ADDR:-127.0.0.1}:${TEMPORAL_UI_PORT:-8233}:8080"
 
-  athena-application-api:
-    image: athena:local
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-application
-      ATHENA_APPLICATION_MODE: api
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_APPLICATION_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-      ATHENA_APPLICATION_WALLET_SERVER_ADDRESS: athena-wallet:8088
-      REDIS_SERVER: redis:6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
-    command: ["athena", "--port", "8082"]
-    expose:
-      - "8082"
-
-  athena-application-ingestor-eth:
-    image: athena:local
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-application
-      ATHENA_APPLICATION_MODE: chain-ingestor
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_APPLICATION_CHAIN_ID: "1"
-      ATHENA_APPLICATION_CONFIRMATION_DEPTH: "3"
-      ATHENA_APPLICATION_NODE_WS_URL: ${ATHENA_APPLICATION_ETH_NODE_WS_URL:-ws://localhost:8546}
-      ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-    command: ["athena"]
-
-  athena-application-ingestor-bsc:
-    image: athena:local
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-application
-      ATHENA_APPLICATION_MODE: chain-ingestor
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_APPLICATION_CHAIN_ID: "56"
-      ATHENA_APPLICATION_CONFIRMATION_DEPTH: "10"
-      ATHENA_APPLICATION_NODE_WS_URL: ${ATHENA_APPLICATION_BSC_NODE_WS_URL:-ws://localhost:8546}
-      ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-    command: ["athena"]
-
-  athena-application-outbox-worker:
-    image: athena:local
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      temporal:
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-application
-      ATHENA_APPLICATION_MODE: outbox-worker
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-      ATHENA_APPLICATION_TEMPORAL_ADDRESS: temporal:7233
-    command: ["athena"]
-
-  athena-application-temporal-worker-control:
-    image: athena:local
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      temporal:
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-application
-      ATHENA_APPLICATION_MODE: temporal-worker-control
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-      ATHENA_APPLICATION_TEMPORAL_ADDRESS: temporal:7233
-    command: ["athena"]
-
-  athena-application-temporal-worker-eth:
-    image: athena:local
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      temporal:
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-application
-      ATHENA_APPLICATION_MODE: temporal-worker-chain
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_APPLICATION_CHAIN_ID: "1"
-      ATHENA_APPLICATION_NODE_WS_URL: ${ATHENA_APPLICATION_ETH_NODE_WS_URL:-ws://localhost:8546}
-      ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-      ATHENA_APPLICATION_TEMPORAL_ADDRESS: temporal:7233
-    command: ["athena"]
-
-  athena-application-temporal-worker-bsc:
-    image: athena:local
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      temporal:
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-application
-      ATHENA_APPLICATION_MODE: temporal-worker-chain
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_APPLICATION_CHAIN_ID: "56"
-      ATHENA_APPLICATION_NODE_WS_URL: ${ATHENA_APPLICATION_BSC_NODE_WS_URL:-ws://localhost:8546}
-      ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-      ATHENA_APPLICATION_TEMPORAL_ADDRESS: temporal:7233
-    command: ["athena"]
-
-  athena-application-temporal-worker-external:
-    image: athena:local
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      temporal:
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-application
-      ATHENA_APPLICATION_MODE: temporal-worker-external
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_APPLICATION_NODE_WS_URL: ${ATHENA_APPLICATION_ETH_NODE_WS_URL:-ws://localhost:8546}
-      ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
-      ATHENA_APPLICATION_TEMPORAL_ADDRESS: temporal:7233
-    command: ["athena"]
-
   athena-worm:
     image: athena:local
     restart: unless-stopped
@@ -301,7 +147,6 @@ services:
       - .env
     environment:
       ATHENA_BINARY_NAME: athena-migrate
-      ATHENA_APPLICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=application sslmode=disable
       ATHENA_WORM_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm sslmode=disable
       ATHENA_POLYMARKET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=polymarket sslmode=disable
       ATHENA_NOTIFICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=notification sslmode=disable
@@ -314,8 +159,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      athena-application-api:
-        condition: service_started
       athena-notification:
         condition: service_started
       athena-wallet:
@@ -328,7 +171,6 @@ services:
       - .env
     environment:
       ATHENA_BINARY_NAME: athena-server
-      ATHENA_APPLICATION_SERVER_ADDRESS: athena-application-api:8082
       ATHENA_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
       ATHENA_WALLET_SERVER_ADDRESS: athena-wallet:8088
       ATHENA_WORM_SERVER_ADDRESS: athena-worm:8084

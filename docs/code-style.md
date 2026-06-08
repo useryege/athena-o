@@ -191,8 +191,6 @@ func NewService(opts ServiceOpts) (*Service, error) { /* ... */ }
 跨模块或生成代码 import 时使用简短、稳定的别名，避免与本地包名冲突：
 
 ```go
-appstore "github.com/useryege/athena/internal/application/store"
-applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 servernotification "github.com/useryege/athena/internal/server/notification"
 ```
 

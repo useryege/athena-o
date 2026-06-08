@@ -1,4 +1,3 @@
 package v1alpha1
 
-func (*WalletStatus) ProtoMessage()         {}
-func (*WalletBlacklistEntry) ProtoMessage() {}
+func (*WalletStatus) ProtoMessage() {}

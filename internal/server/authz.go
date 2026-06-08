@@ -8,7 +8,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/useryege/athena/common"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
-	applicationpkg "github.com/useryege/athena/pkg/apiclient/application"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
@@ -61,31 +60,6 @@ func notificationObject(req any) string {
 		return fmt.Sprintf("%d", r.GetId())
 	case *notificationpkg.SendTestNotificationRequest:
 		return nonEmptyObject(r.GetTopic())
-	default:
-		return "*"
-	}
-}
-
-func applicationObject(req any) string {
-	switch r := req.(type) {
-	case *applicationpkg.GetContractSourceInfoRequest:
-		return nonEmptyObject(r.GetContract())
-	case *applicationpkg.GetBytecodeRequest:
-		return nonEmptyObject(r.GetCodeHash())
-	case *applicationpkg.ListBytecodeDeploymentsRequest:
-		return nonEmptyObject(r.GetCodeHash())
-	case *applicationpkg.AddBytecodeBlacklistEntryRequest:
-		return nonEmptyObject(r.GetCodeHash())
-	case *applicationpkg.UpdateBytecodeBlacklistNoteRequest:
-		return nonEmptyObject(r.GetCodeHash())
-	case *applicationpkg.DeleteBytecodeBlacklistRequest:
-		return nonEmptyObject(r.GetCodeHash())
-	case *applicationpkg.AddWalletBlacklistEntryRequest:
-		return nonEmptyObject(r.GetWallet())
-	case *applicationpkg.UpdateWalletBlacklistEntryNoteRequest:
-		return nonEmptyObject(r.GetWallet())
-	case *applicationpkg.DeleteWalletBlacklistEntryRequest:
-		return nonEmptyObject(r.GetWallet())
 	default:
 		return "*"
 	}
@@ -176,29 +150,10 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/account.AccountService/CreateToken":    {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
 	"/account.AccountService/DeleteToken":    {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
 
-	"/application.ApplicationService/GetProjectOptions":              fixedRule(rbac.ResourceProjects, rbac.ActionGet),
-	"/application.ApplicationService/ListChains":                     fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/GetChainIngestStatus":           fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/StartChainIngest":               fixedRule(rbac.ResourceApplication, rbac.ActionUpdate),
-	"/application.ApplicationService/StopChainIngest":                fixedRule(rbac.ResourceApplication, rbac.ActionUpdate),
-	"/application.ApplicationService/RequestProjectCollection":       fixedRule(rbac.ResourceApplication, rbac.ActionUpdate),
-	"/application.ApplicationService/GetProjectCollectionStatus":     fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/GetContractSourceInfo":          {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/ListBytecodes":                  fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/GetBytecode":                    {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/ListBytecodeDeployments":        {resource: rbac.ResourceApplication, action: rbac.ActionGet, object: applicationObject},
-	"/application.ApplicationService/ListBytecodeBlacklistEntries":   fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/AddBytecodeBlacklistEntry":      {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/UpdateBytecodeBlacklistNote":    {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/DeleteBytecodeBlacklist":        {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/ListWalletBlacklistEntries":     fixedRule(rbac.ResourceApplication, rbac.ActionGet),
-	"/application.ApplicationService/AddWalletBlacklistEntry":        {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/UpdateWalletBlacklistEntryNote": {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/application.ApplicationService/DeleteWalletBlacklistEntry":     {resource: rbac.ResourceApplication, action: rbac.ActionUpdate, object: applicationObject},
-	"/notification.NotificationService/GetNotificationStatus":        fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
-	"/notification.NotificationService/ListNotificationDeliveries":   fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
-	"/notification.NotificationService/GetNotificationDelivery":      {resource: rbac.ResourceNotifications, action: rbac.ActionGet, object: notificationObject},
-	"/notification.NotificationService/SendTestNotification":         {resource: rbac.ResourceNotifications, action: rbac.ActionInvoke, object: notificationObject},
+	"/notification.NotificationService/GetNotificationStatus":      fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
+	"/notification.NotificationService/ListNotificationDeliveries": fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
+	"/notification.NotificationService/GetNotificationDelivery":    {resource: rbac.ResourceNotifications, action: rbac.ActionGet, object: notificationObject},
+	"/notification.NotificationService/SendTestNotification":       {resource: rbac.ResourceNotifications, action: rbac.ActionInvoke, object: notificationObject},
 
 	"/wallet.WalletService/GetWalletStatus":   fixedRule(rbac.ResourceWallets, rbac.ActionGet),
 	"/wallet.WalletService/ListWallets":       fixedRule(rbac.ResourceWallets, rbac.ActionGet),

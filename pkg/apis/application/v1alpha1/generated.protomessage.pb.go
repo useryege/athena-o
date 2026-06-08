@@ -5,20 +5,6 @@
 
 package v1alpha1
 
-func (*ApplicationChain) ProtoMessage() {}
-
-func (*BytecodeBlacklistEntry) ProtoMessage() {}
-
-func (*BytecodeDeployment) ProtoMessage() {}
-
-func (*BytecodeDetail) ProtoMessage() {}
-
-func (*BytecodeListItem) ProtoMessage() {}
-
-func (*ChainIngestStatus) ProtoMessage() {}
-
-func (*ContractSourceInfo) ProtoMessage() {}
-
 func (*NotificationDeliveryDetail) ProtoMessage() {}
 
 func (*NotificationDeliveryItem) ProtoMessage() {}
@@ -53,12 +39,6 @@ func (*PolymarketSportsLiveTeamItem) ProtoMessage() {}
 
 func (*PolymarketStatus) ProtoMessage() {}
 
-func (*ProjectCollectionStatus) ProtoMessage() {}
-
-func (*ProjectComponentStatus) ProtoMessage() {}
-
-func (*ProjectOption) ProtoMessage() {}
-
 func (*TokenAPIBytecodeBlacklist) ProtoMessage() {}
 
 func (*TokenAPIChainIngestCheckpoint) ProtoMessage() {}
@@ -70,8 +50,6 @@ func (*TokenAPIProjectDataCollectionTask) ProtoMessage() {}
 func (*TokenAPIStatus) ProtoMessage() {}
 
 func (*TokenAPIWalletBlacklist) ProtoMessage() {}
-
-func (*WalletBlacklistEntry) ProtoMessage() {}
 
 func (*WalletDetail) ProtoMessage() {}
 

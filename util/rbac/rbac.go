@@ -51,7 +51,6 @@ type CasbinEnforcer interface {
 const (
 	// please add new items to Resources
 	ResourceAccounts      = "accounts"
-	ResourceApplication   = "application"
 	ResourceLogs          = "logs"
 	ResourceProjects      = "projects"
 	ResourceNotifications = "notifications"
@@ -70,7 +69,6 @@ var (
 	DefaultScopes = []string{"groups"}
 	Resources     = []string{
 		ResourceAccounts,
-		ResourceApplication,
 		ResourceLogs,
 		ResourceProjects,
 		ResourceNotifications,

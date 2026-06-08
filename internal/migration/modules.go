@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 
-	appstore "github.com/useryege/athena/internal/application/store"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
 	tokenstore "github.com/useryege/athena/internal/token/store"
@@ -25,7 +24,6 @@ type Module struct {
 }
 
 var modules = []Module{
-	{Name: "application", DSNEnv: "ATHENA_APPLICATION_POSTGRES_DSN", Database: "application", Migrations: appstore.Migrations()},
 	{Name: "worm", DSNEnv: "ATHENA_WORM_POSTGRES_DSN", Database: "worm", Migrations: wormstore.Migrations()},
 	{Name: "notification", DSNEnv: "ATHENA_NOTIFICATION_POSTGRES_DSN", Database: "notification", Migrations: notificationstore.Migrations()},
 	{Name: "wallet", DSNEnv: "ATHENA_WALLET_POSTGRES_DSN", Database: "wallet", Migrations: walletstore.Migrations()},

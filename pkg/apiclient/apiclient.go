@@ -25,7 +25,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 
-	// applicationsetpkg "github.com/useryege/athena/v3/pkg/apiclient/applicationset"
 	// certificatepkg "github.com/useryege/athena/v3/pkg/apiclient/certificate"
 	// clusterpkg "github.com/useryege/athena/v3/pkg/apiclient/cluster"
 	// gpgkeypkg "github.com/useryege/athena/v3/pkg/apiclient/gpgkey"
@@ -70,10 +69,6 @@ type Client interface {
 	// NewClusterClientOrDie() (io.Closer, clusterpkg.ClusterServiceClient)
 	// NewGPGKeyClient() (io.Closer, gpgkeypkg.GPGKeyServiceClient, error)
 	// NewGPGKeyClientOrDie() (io.Closer, gpgkeypkg.GPGKeyServiceClient)
-	// NewApplicationClient() (io.Closer, applicationpkg.ApplicationServiceClient, error)
-	// NewApplicationSetClient() (io.Closer, applicationsetpkg.ApplicationSetServiceClient, error)
-	// NewApplicationClientOrDie() (io.Closer, applicationpkg.ApplicationServiceClient)
-	// NewApplicationSetClientOrDie() (io.Closer, applicationsetpkg.ApplicationSetServiceClient)
 	// NewNotificationClient() (io.Closer, notificationpkg.NotificationServiceClient, error)
 	// NewNotificationClientOrDie() (io.Closer, notificationpkg.NotificationServiceClient)
 	NewSessionClient() (io.Closer, sessionpkg.SessionServiceClient, error)
@@ -409,32 +404,6 @@ func (c *client) ClientOptions() ClientOptions {
 // 	return conn, gpgkeyIf
 // }
 
-// func (c *client) NewApplicationClient() (io.Closer, applicationpkg.ApplicationServiceClient, error) {
-// 	conn, closer, err := c.newConn(context.Background())
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-// 	appIf := applicationpkg.NewApplicationServiceClient(conn)
-// 	return closer, appIf, nil
-// }
-
-// func (c *client) NewApplicationSetClient() (io.Closer, applicationsetpkg.ApplicationSetServiceClient, error) {
-// 	conn, closer, err := c.newConn(context.Background())
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-// 	appIf := applicationsetpkg.NewApplicationSetServiceClient(conn)
-// 	return closer, appIf, nil
-// }
-
-// func (c *client) NewApplicationClientOrDie() (io.Closer, applicationpkg.ApplicationServiceClient) {
-// 	conn, appIf, err := c.NewApplicationClient()
-// 	if err != nil {
-// 		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
-// 	}
-// 	return conn, appIf
-// }
-
 // func (c *client) NewNotificationClient() (io.Closer, notificationpkg.NotificationServiceClient, error) {
 // 	conn, closer, err := c.newConn(context.Background())
 // 	if err != nil {
@@ -544,50 +513,6 @@ func (c *client) NewAccountClientOrDie() (io.Closer, accountpkg.AccountServiceCl
 	}
 	return conn, usrIf
 }
-
-// WatchApplicationWithRetry returns a channel of watch events for an application, retrying the
-// watch upon errors. Closes the returned channel when the context is cancelled.
-// func (c *client) WatchApplicationWithRetry(ctx context.Context, appName string, revision string) chan *v1alpha1.ApplicationWatchEvent {
-// 	appEventsCh := make(chan *v1alpha1.ApplicationWatchEvent)
-// 	cancelled := false
-// 	appName, appNs := athena.ParseFromQualifiedName(appName, "")
-// 	go func() {
-// 		defer close(appEventsCh)
-// 		for !cancelled {
-// 			conn, appIf, err := c.NewApplicationClient()
-// 			if err == nil {
-// 				var wc applicationpkg.ApplicationService_WatchClient
-// 				wc, err = appIf.Watch(ctx, &applicationpkg.ApplicationQuery{
-// 					Name:            &appName,
-// 					AppNamespace:    &appNs,
-// 					ResourceVersion: &revision,
-// 				})
-// 				if err == nil {
-// 					for {
-// 						var appEvent *v1alpha1.ApplicationWatchEvent
-// 						appEvent, err = wc.Recv()
-// 						if err != nil {
-// 							break
-// 						}
-// 						revision = appEvent.Application.ResourceVersion
-// 						appEventsCh <- appEvent
-// 					}
-// 				}
-// 			}
-// 			if err != nil {
-// 				if isCanceledContextErr(err) {
-// 					cancelled = true
-// 				} else {
-// 					time.Sleep(1 * time.Second)
-// 				}
-// 			}
-// 			if conn != nil {
-// 				_ = conn.Close()
-// 			}
-// 		}
-// 	}()
-// 	return appEventsCh
-// }
 
 // func isCanceledContextErr(err error) bool {
 // 	if err != nil && errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
