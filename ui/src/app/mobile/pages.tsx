@@ -63,7 +63,7 @@ const chainIconAssets = {
     solana: solanaIcon
 };
 
-const projectChainDisplayByID: Record<number, {label: string; icon?: string}> = {
+const tokenChainDisplayByID: Record<number, {label: string; icon?: string}> = {
     1: {label: 'ETH', icon: chainIconAssets.eth},
     56: {label: 'BSC', icon: chainIconAssets.bsc}
 };
@@ -72,11 +72,11 @@ const chainLabel = (chainID?: number) => {
     if (chainID === undefined) {
         return '-';
     }
-    return projectChainDisplayByID[chainID]?.label || String(chainID);
+    return tokenChainDisplayByID[chainID]?.label || String(chainID);
 };
 
 const ChainBadge = (props: {chainID?: number}) => {
-    const display = props.chainID === undefined ? undefined : projectChainDisplayByID[props.chainID];
+    const display = props.chainID === undefined ? undefined : tokenChainDisplayByID[props.chainID];
     return (
         <Tag className='chain-badge'>
             {display?.icon && <img src={display.icon} alt='' />}
@@ -577,20 +577,10 @@ export const BytecodeBlacklistsPage = () => {
                 .filter(item => item.chainID !== undefined)
                 .map(item => ({
                     value: item.chainID,
-                    label: item.chainName || item.chainID
+                    label: <ChainBadge chainID={item.chainID} />
                 })),
         [options.data]
     );
-    const chainNameByID = React.useMemo(() => {
-        const names = new Map<number, string>();
-        (options.data?.chains || []).forEach(item => {
-            if (item.chainID !== undefined && item.chainName) {
-                names.set(item.chainID, item.chainName);
-            }
-        });
-        return names;
-    }, [options.data]);
-    const chainLabel = React.useCallback((chainID?: number) => (chainID === undefined ? '-' : chainNameByID.get(chainID) || chainID), [chainNameByID]);
     const refresh = React.useCallback(() => {
         options.reload();
         data.reload();
@@ -628,7 +618,7 @@ export const BytecodeBlacklistsPage = () => {
     const columns: ColumnsType<TokenAPIBytecodeBlacklist> = [
         {title: 'Code Hash', render: item => <TruncatedText value={item.codeHash} copyable={true} />},
         {title: 'Note', dataIndex: 'note'},
-        {title: 'Source Chain', render: item => chainLabel(item.sourceChainID)},
+        {title: 'Source Chain', render: item => <ChainBadge chainID={item.sourceChainID} />},
         {title: 'Source Contract', render: item => <TruncatedText value={item.sourceContract} copyable={true} />},
         {title: 'Created', dataIndex: 'createdAt'},
         {
@@ -677,7 +667,7 @@ export const BytecodeBlacklistsPage = () => {
                         <CardTitle title={<TruncatedText value={item.codeHash} copyable={true} />} subtitle={item.note} />
                         <MetricRow
                             items={[
-                                {label: 'Source Chain', value: chainLabel(item.sourceChainID)},
+                                {label: 'Source Chain', value: <ChainBadge chainID={item.sourceChainID} />},
                                 {label: 'Created', value: item.createdAt}
                             ]}
                         />
@@ -832,7 +822,7 @@ export const ChainCheckpointsPage = () => {
         data.reload();
     };
     const columns: ColumnsType<TokenAPIChainIngestCheckpoint> = [
-        {title: 'Chain', render: item => item.chainName || item.chainID},
+        {title: 'Chain', render: item => <ChainBadge chainID={item.chainID} />},
         {title: 'Enabled', render: item => boolTag(item.enabled)},
         {title: 'Cursor', render: item => fmtNumber(item.cursorBlockNumber)},
         {title: 'Status', render: item => <StatusTag value={item.status} positive={item.status === 'running'} />},
@@ -859,9 +849,10 @@ export const ChainCheckpointsPage = () => {
                 loading={data.loading}
                 card={item => (
                     <>
-                        <CardTitle title={item.chainName || `Chain ${item.chainID}`} subtitle={`Cursor ${fmtNumber(item.cursorBlockNumber)}`} tags={<Tag>{item.status}</Tag>} />
+                        <CardTitle title={item.chainName || `Chain ${item.chainID}`} subtitle={`Cursor ${fmtNumber(item.cursorBlockNumber)}`} tags={<ChainBadge chainID={item.chainID} />} />
                         <MetricRow
                             items={[
+                                {label: 'Status', value: <StatusTag value={item.status} positive={item.status === 'running'} />},
                                 {label: 'Enabled', value: fmt(item.enabled)},
                                 {label: 'Created', value: item.createdAt}
                             ]}
