@@ -12,8 +12,6 @@ import (
 	tokenstore "github.com/useryege/athena/internal/token/store"
 )
 
-const minimumSourceCodeLength = 100
-
 func (r *dataCollectorRunner) processContractCodeSourceTasks(ctx context.Context) error {
 	tasks, err := r.opts.store.ListDueProjectDataCollectionTasks(ctx, tokenstore.ProjectDataCollectionTypeContractCodeSource, r.opts.chainIDs, contractCodeSourceLimit)
 	if err != nil {
@@ -39,7 +37,7 @@ func (r *dataCollectorRunner) processContractCodeSourceTask(ctx context.Context,
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
-	if record != nil && validSourceCode(record.SourceCode) {
+	if record != nil && !record.SourceCodeFetchedAt.IsZero() {
 		if _, err := r.opts.store.MarkProjectDataCollectionTaskSucceeded(ctx, task.Project.ID, tokenstore.ProjectDataCollectionTypeContractCodeSource); err != nil {
 			r.markTaskFailed(ctx, task.Task, err)
 			return
@@ -82,13 +80,5 @@ func (r *dataCollectorRunner) fetchContractSourceCode(ctx context.Context, chain
 	if response == nil || len(response.Result) == 0 {
 		return "", fmt.Errorf("fetch etherscan source code chain_id=%d contract=%s returned empty result", chainID, contract.Hex())
 	}
-	sourceCode := strings.TrimSpace(response.Result[0].SourceCode)
-	if !validSourceCode(sourceCode) {
-		return "", fmt.Errorf("fetch etherscan source code chain_id=%d contract=%s returned invalid source code length %d", chainID, contract.Hex(), len(sourceCode))
-	}
-	return sourceCode, nil
-}
-
-func validSourceCode(sourceCode string) bool {
-	return len(strings.TrimSpace(sourceCode)) > minimumSourceCodeLength
+	return strings.TrimSpace(response.Result[0].SourceCode), nil
 }
