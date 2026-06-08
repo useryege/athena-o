@@ -3,8 +3,14 @@ import type {ColumnsType} from 'antd/es/table';
 import {AppPage, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';
 import {DEFAULT_WORM_MARKET_CATEGORY, DEFAULT_WORM_MARKET_SORT, WormMarketItem} from '../../shared/services/worm-service';
-import {boolTag} from './shared';
 import {WormMarketSummary} from './worm-shared';
+
+const openWormMarket = (item: WormMarketItem) => {
+    if (!item.conditionId) {
+        return;
+    }
+    window.open(`https://www.worm.wtf/market/${encodeURIComponent(item.conditionId)}`, '_blank', 'noopener,noreferrer');
+};
 
 export const WormPage = () => {
     const data = useAsyncData(
@@ -21,10 +27,7 @@ export const WormPage = () => {
             title: 'Market',
             render: item => <WormMarketSummary item={item} />
         },
-        {title: 'Category', dataIndex: 'category'},
-        {title: 'State', dataIndex: 'state'},
-        {title: 'Last Price', dataIndex: 'lastTradePrice'},
-        {title: 'Margin', render: item => boolTag(item.marginEnabled)}
+        {title: 'Last Price', dataIndex: 'lastTradePrice'}
     ];
     return (
         <AppPage
@@ -60,12 +63,12 @@ export const WormPage = () => {
                         <MetricRow
                             items={[
                                 {label: 'Price', value: item.lastTradePrice},
-                                {label: 'State', value: item.state},
                                 {label: 'Created', value: item.created}
                             ]}
                         />
                     </div>
                 )}
+                onItemClick={openWormMarket}
             />
         </AppPage>
     );

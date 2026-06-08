@@ -14,8 +14,16 @@ export const ResponsiveResourceList = <T,>(props: {
     pageSize?: number;
     total?: number;
     onPageChange?: (page: number, pageSize: number) => void;
+    onItemClick?: (record: T) => void;
 }) => {
     const {isMobile} = useBreakpoint();
+    const handleCardKeyDown = (event: React.KeyboardEvent, item: T) => {
+        if (!props.onItemClick || (event.key !== 'Enter' && event.key !== ' ')) {
+            return;
+        }
+        event.preventDefault();
+        props.onItemClick(item);
+    };
     if (isMobile) {
         return (
             <div className='resource-list resource-list--mobile'>
@@ -23,8 +31,17 @@ export const ResponsiveResourceList = <T,>(props: {
                 {!props.loading && props.items.length === 0 && <Empty description={props.emptyText || 'No data'} />}
                 {props.items.map(item => {
                     const key = typeof props.rowKey === 'function' ? props.rowKey(item) : (item[props.rowKey] as React.Key);
+                    const clickProps = props.onItemClick
+                        ? {
+                              className: 'resource-card resource-card--clickable',
+                              onClick: () => props.onItemClick?.(item),
+                              onKeyDown: (event: React.KeyboardEvent) => handleCardKeyDown(event, item),
+                              role: 'link',
+                              tabIndex: 0
+                          }
+                        : {className: 'resource-card'};
                     return (
-                        <Card key={key} className='resource-card' size='small'>
+                        <Card key={key} size='small' {...clickProps}>
                             {props.card(item)}
                         </Card>
                     );
@@ -48,6 +65,14 @@ export const ResponsiveResourceList = <T,>(props: {
                     : false
             }
             scroll={{x: 'max-content'}}
+            onRow={
+                props.onItemClick
+                    ? record => ({
+                          className: 'resource-table__row--clickable',
+                          onClick: () => props.onItemClick?.(record)
+                      })
+                    : undefined
+            }
         />
     );
 };

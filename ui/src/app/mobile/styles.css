@@ -374,7 +374,8 @@ body[data-theme='dark'] .app-page__header {
     padding: 14px;
 }
 
-.resource-card [onclick] {
+.resource-card--clickable,
+.resource-table__row--clickable {
     cursor: pointer;
 }
 
