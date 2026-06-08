@@ -169,6 +169,13 @@ type ProjectDataCollectionTaskWithProject struct {
 	Project Project
 }
 
+type ProjectDataCollectionTaskPage struct {
+	Items    []ProjectDataCollectionTask
+	Total    int64
+	Page     int32
+	PageSize int32
+}
+
 type ProjectCandidatePage struct {
 	Items    []ProjectCandidate
 	Total    int64

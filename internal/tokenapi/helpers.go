@@ -57,6 +57,13 @@ func validatePositiveInt64Field(name string, value int64) error {
 	return nil
 }
 
+func validateNonNegativeInt64Field(name string, value int64) error {
+	if value < 0 {
+		return status.Errorf(codes.InvalidArgument, "%s must not be negative", name)
+	}
+	return nil
+}
+
 func validateChainIngestStatus(value string) error {
 	value = strings.TrimSpace(value)
 	switch value {
@@ -64,6 +71,56 @@ func validateChainIngestStatus(value string) error {
 		return nil
 	default:
 		return status.Errorf(codes.InvalidArgument, "status must be %q or %q", tokenstore.ChainIngestStatusRunning, tokenstore.ChainIngestStatusStopped)
+	}
+}
+
+func validateRequiredProjectDataCollectionType(value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return status.Error(codes.InvalidArgument, "data_type must not be empty")
+	}
+	return validateProjectDataCollectionType(value)
+}
+
+func validateProjectDataCollectionType(value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	switch value {
+	case tokenstore.ProjectDataCollectionTypeAve,
+		tokenstore.ProjectDataCollectionTypeChainState,
+		tokenstore.ProjectDataCollectionTypeWalletAssetState,
+		tokenstore.ProjectDataCollectionTypeSimulationResult,
+		tokenstore.ProjectDataCollectionTypeContractCodeSource:
+		return nil
+	default:
+		return status.Errorf(codes.InvalidArgument, "data_type must be one of %q, %q, %q, %q, or %q",
+			tokenstore.ProjectDataCollectionTypeAve,
+			tokenstore.ProjectDataCollectionTypeChainState,
+			tokenstore.ProjectDataCollectionTypeWalletAssetState,
+			tokenstore.ProjectDataCollectionTypeSimulationResult,
+			tokenstore.ProjectDataCollectionTypeContractCodeSource,
+		)
+	}
+}
+
+func validateProjectDataCollectionStatus(value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	switch value {
+	case tokenstore.ProjectDataCollectionStatusPending,
+		tokenstore.ProjectDataCollectionStatusSucceeded,
+		tokenstore.ProjectDataCollectionStatusFailed:
+		return nil
+	default:
+		return status.Errorf(codes.InvalidArgument, "status must be one of %q, %q, or %q",
+			tokenstore.ProjectDataCollectionStatusPending,
+			tokenstore.ProjectDataCollectionStatusSucceeded,
+			tokenstore.ProjectDataCollectionStatusFailed,
+		)
 	}
 }
 
@@ -129,6 +186,26 @@ func mapContractCodes(items []tokenstore.ContractCode) []*apiclient.ContractCode
 	results := make([]*apiclient.ContractCode, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapContractCode(item))
+	}
+	return results
+}
+
+func mapProjectDataCollectionTask(item tokenstore.ProjectDataCollectionTask) *apiclient.ProjectDataCollectionTask {
+	return &apiclient.ProjectDataCollectionTask{
+		ProjectId:     item.ProjectID,
+		DataType:      item.DataType,
+		Status:        item.Status,
+		Attempts:      item.Attempts,
+		NextAttemptAt: formatTime(item.NextAttemptAt),
+		LastError:     item.LastError,
+		CreatedAt:     formatTime(item.CreatedAt),
+	}
+}
+
+func mapProjectDataCollectionTasks(items []tokenstore.ProjectDataCollectionTask) []*apiclient.ProjectDataCollectionTask {
+	results := make([]*apiclient.ProjectDataCollectionTask, 0, len(items))
+	for _, item := range items {
+		results = append(results, mapProjectDataCollectionTask(item))
 	}
 	return results
 }

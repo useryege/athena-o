@@ -53,6 +53,45 @@ func (s *SQLStore) GetProjectDataCollectionTask(ctx context.Context, projectID i
 	return mapProjectDataCollectionTask(row), nil
 }
 
+func (s *SQLStore) ListProjectDataCollectionTasks(ctx context.Context, projectID int64, dataType, status string, page, pageSize int32) (*ProjectDataCollectionTaskPage, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	page, pageSize, offset := normalizePage(page, pageSize)
+	projectIDFilter := nullableInt64(projectID)
+	dataTypeFilter := nullableText(dataType)
+	statusFilter := nullableText(status)
+	total, err := q.CountProjectDataCollectionTasks(ctx, tokensqlc.CountProjectDataCollectionTasksParams{
+		ProjectID: projectIDFilter,
+		DataType:  dataTypeFilter,
+		Status:    statusFilter,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("count project data collection tasks: %w", err)
+	}
+	rows, err := q.ListProjectDataCollectionTasks(ctx, tokensqlc.ListProjectDataCollectionTasksParams{
+		ProjectID: projectIDFilter,
+		DataType:  dataTypeFilter,
+		Status:    statusFilter,
+		Offset:    offset,
+		Limit:     pageSize,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list project data collection tasks: %w", err)
+	}
+	items := make([]ProjectDataCollectionTask, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, *mapProjectDataCollectionTask(row))
+	}
+	return &ProjectDataCollectionTaskPage{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
 func (s *SQLStore) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, projectID int64, dataType string) (*ProjectDataCollectionTask, error) {
 	q, err := s.querier()
 	if err != nil {
