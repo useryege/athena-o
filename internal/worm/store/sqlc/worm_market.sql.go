@@ -351,12 +351,12 @@ SELECT condition_id, title, description, logo, last_trade_price, state, category
 FROM worm_market
 WHERE ignored = false
   AND live_state <> 'live'
+  AND state = 'open'
 ORDER BY live_checked_at ASC NULLS FIRST, created DESC, condition_id
-LIMIT $1
 `
 
-func (q *Queries) ListWormMarketsPendingLiveCheck(ctx context.Context, limit int32) ([]WormMarket, error) {
-	rows, err := q.db.Query(ctx, listWormMarketsPendingLiveCheck, limit)
+func (q *Queries) ListWormMarketsPendingLiveCheck(ctx context.Context) ([]WormMarket, error) {
+	rows, err := q.db.Query(ctx, listWormMarketsPendingLiveCheck)
 	if err != nil {
 		return nil, err
 	}

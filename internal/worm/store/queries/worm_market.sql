@@ -162,8 +162,8 @@ SELECT *
 FROM worm_market
 WHERE ignored = false
   AND live_state <> 'live'
-ORDER BY live_checked_at ASC NULLS FIRST, created DESC, condition_id
-LIMIT sqlc.arg('limit');
+  AND state = 'open'
+ORDER BY live_checked_at ASC NULLS FIRST, created DESC, condition_id;
 
 -- name: BatchUpdateWormMarketsIgnored :execrows
 UPDATE worm_market

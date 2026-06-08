@@ -115,18 +115,12 @@ func (s *SQLStore) ListWormMarketsPage(ctx context.Context, conditionID, eventCo
 	}, nil
 }
 
-func (s *SQLStore) ListWormMarketsPendingLiveCheck(ctx context.Context, limit int32) ([]WormMarket, error) {
+func (s *SQLStore) ListWormMarketsPendingLiveCheck(ctx context.Context) ([]WormMarket, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	if limit <= 0 {
-		limit = defaultPageSize
-	}
-	if limit > maxPageSize {
-		limit = maxPageSize
-	}
-	rows, err := q.ListWormMarketsPendingLiveCheck(ctx, limit)
+	rows, err := q.ListWormMarketsPendingLiveCheck(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list worm markets pending live check: %w", err)
 	}

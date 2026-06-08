@@ -25,8 +25,7 @@ const (
 	defaultWormMarketsLimit   = 20
 	maxWormMarketsLimit       = 100
 	wormMarketSyncInterval    = time.Minute
-	wormLiveCheckBatchSize    = 20
-	wormLiveCheckIdleDelay    = 30 * time.Second
+	wormLiveStateLoopInterval = 5 * time.Minute
 	wormLiveRateLimitBuffer   = 500 * time.Millisecond
 	wormLiveRateLimitFallback = 5 * time.Second
 	wormLiveCandleWindow      = 30 * time.Minute
@@ -416,8 +415,36 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 
 func (s *Service) liveStateLoop(ctx context.Context) {
 	defer s.syncWG.Done()
+	s.updateWormMarketLiveStates(ctx)
+	ticker := time.NewTicker(wormLiveStateLoopInterval)
+	defer ticker.Stop()
 	for {
-		processed, err := s.updateWormMarketLiveStates(ctx)
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			s.updateWormMarketLiveStates(ctx)
+		}
+	}
+}
+
+func (s *Service) updateWormMarketLiveStates(ctx context.Context) {
+	if s.store == nil || s.wormClient == nil {
+		return
+	}
+	markets, err := s.store.ListWormMarketsPendingLiveCheck(ctx)
+	if err != nil {
+		if ctx.Err() == nil {
+			log.Warnf("failed to list worm markets pending live check: %v", err)
+		}
+		return
+	}
+	for i := range markets {
+		if ctx.Err() != nil {
+			return
+		}
+		market := markets[i]
+		liveState, liveCheckedAt, livePriceChange, err := s.detectWormMarketLiveState(ctx, market)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -427,49 +454,29 @@ func (s *Service) liveStateLoop(ctx context.Context) {
 				if !waitWormLiveWorker(ctx, backoff) {
 					return
 				}
+				liveState, liveCheckedAt, livePriceChange, err = s.detectWormMarketLiveState(ctx, market)
+				if err != nil {
+					if ctx.Err() == nil {
+						log.Warnf("failed to detect worm market live state for %s: %v", market.ConditionID, err)
+					}
+					continue
+				}
 			} else {
-				log.Warnf("failed to update worm market live states: %v", err)
+				log.Warnf("failed to detect worm market live state for %s: %v", market.ConditionID, err)
+				continue
 			}
 		}
-		if processed == 0 {
-			if !waitWormLiveWorker(ctx, wormLiveCheckIdleDelay) {
-				return
-			}
-		}
-		if ctx.Err() != nil {
-			return
-		}
-	}
-}
-
-func (s *Service) updateWormMarketLiveStates(ctx context.Context) (int, error) {
-	if s.store == nil {
-		return 0, status.Error(codes.FailedPrecondition, "worm store is required")
-	}
-	if s.wormClient == nil {
-		return 0, status.Error(codes.FailedPrecondition, "worm API client is required")
-	}
-	markets, err := s.store.ListWormMarketsPendingLiveCheck(ctx, wormLiveCheckBatchSize)
-	if err != nil {
-		return 0, err
-	}
-	for i := range markets {
-		if ctx.Err() != nil {
-			return i, ctx.Err()
-		}
-		market := markets[i]
-		liveState, liveCheckedAt, livePriceChange, err := s.detectWormMarketLiveState(ctx, market)
 		market.LiveState = liveState
 		market.LiveCheckedAt = liveCheckedAt
 		market.LivePriceChange = livePriceChange
 		if _, err := s.store.UpdateWormMarketLiveState(ctx, market); err != nil {
-			return i, err
-		}
-		if err != nil {
-			return i + 1, err
+			if ctx.Err() == nil {
+				log.Warnf("failed to update worm market live state for %s: %v", market.ConditionID, err)
+			}
+			return
 		}
 	}
-	return len(markets), nil
+	log.Debugf("updated live states for %d worm markets", len(markets))
 }
 
 func (s *Service) detectWormMarketLiveState(ctx context.Context, market wormstore.WormMarket) (string, time.Time, string, error) {
