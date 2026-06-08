@@ -175,6 +175,8 @@ export const ResponsiveResourceList = <T,>(props: {
     const selectedKeySet = React.useMemo(() => new Set(selectedKeys), [selectedKeys]);
     const itemKey = (item: T) => (typeof props.rowKey === 'function' ? props.rowKey(item) : (item[props.rowKey] as React.Key));
     const paintEnabled = Boolean(props.enableHoverKeyboardSelect && props.onSelectionChange);
+    const keyboardOnlySelection = paintEnabled;
+    const selectionVisible = !keyboardOnlySelection || selectedKeys.length > 0;
     const {listClassName, getRowMouseHandlers} = useKeyboardPaintSelection({
         enabled: paintEnabled,
         items: props.items,
@@ -217,12 +219,13 @@ export const ResponsiveResourceList = <T,>(props: {
                         : {className: 'resource-card'};
                     return (
                         <Card key={key} size='small' {...clickProps} {...(paintEnabled ? getRowMouseHandlers(key) : {})}>
-                            {props.onSelectionChange && (
+                            {props.onSelectionChange && selectionVisible && (
                                 <Checkbox
                                     className='resource-card__select'
                                     checked={selectedKeySet.has(key)}
+                                    disabled={keyboardOnlySelection}
                                     onClick={event => event.stopPropagation()}
-                                    onChange={event => handleSelectionChange(key, item, event.target.checked)}
+                                    onChange={keyboardOnlySelection ? undefined : event => handleSelectionChange(key, item, event.target.checked)}
                                 />
                             )}
                             {props.card(item)}
@@ -236,12 +239,15 @@ export const ResponsiveResourceList = <T,>(props: {
         );
     }
 
-    const rowSelection: TableRowSelection<T> | undefined = props.onSelectionChange
-        ? {
-              selectedRowKeys: selectedKeys,
-              onChange: (keys, records) => props.onSelectionChange?.(keys, records)
-          }
-        : undefined;
+    const rowSelection: TableRowSelection<T> | undefined =
+        props.onSelectionChange && selectionVisible
+            ? {
+                  selectedRowKeys: selectedKeys,
+                  hideSelectAll: keyboardOnlySelection,
+                  getCheckboxProps: keyboardOnlySelection ? () => ({disabled: true}) : undefined,
+                  onChange: keyboardOnlySelection ? () => {} : (keys, records) => props.onSelectionChange?.(keys, records)
+              }
+            : undefined;
     const tableOnRow =
         paintEnabled || props.onItemClick
             ? (record: T) => {
