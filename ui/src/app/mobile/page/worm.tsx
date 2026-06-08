@@ -3,15 +3,21 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, KeyValueGrid, MetricRow, ResponsiveResourceList, TruncatedText, useAsyncData} from '../components';
 import {services} from '../../shared/services';
-import {WormMarketDetail, WormMarketItem} from '../../shared/services/worm-service';
+import {DEFAULT_WORM_MARKET_CATEGORY, DEFAULT_WORM_MARKET_SORT, WormMarketDetail, WormMarketItem} from '../../shared/services/worm-service';
 import {boolTag} from './shared';
 import {WormMarketSummary, wormMarketLogo} from './worm-shared';
 
 export const WormPage = () => {
-    const [sortOption, setSortOption] = React.useState('trending');
-    const [categorySlug, setCategorySlug] = React.useState('all');
     const [detailId, setDetailId] = React.useState('');
-    const data = useAsyncData(() => services.worm.listMarkets({limit: 50, sortOption: sortOption as any, categorySlug: categorySlug as any}), [sortOption, categorySlug]);
+    const data = useAsyncData(
+        () =>
+            services.worm.listMarkets({
+                limit: 50,
+                sortOption: DEFAULT_WORM_MARKET_SORT,
+                categorySlug: DEFAULT_WORM_MARKET_CATEGORY
+            }),
+        []
+    );
     const detail = useAsyncData<WormMarketDetail>(() => (detailId ? services.worm.getMarket(detailId) : Promise.resolve(null as WormMarketDetail)) as any, [detailId]);
     const columns: ColumnsType<WormMarketItem> = [
         {
@@ -33,15 +39,15 @@ export const WormPage = () => {
             filters={
                 <Space wrap={true}>
                     <Select
-                        value={sortOption}
+                        disabled={true}
+                        value={DEFAULT_WORM_MARKET_SORT}
                         style={{width: 160}}
-                        onChange={setSortOption}
                         options={['new', 'trending', 'ending_soon', 'leverage'].map(value => ({value, label: value}))}
                     />
                     <Select
-                        value={categorySlug}
+                        disabled={true}
+                        value={DEFAULT_WORM_MARKET_CATEGORY}
                         style={{width: 150}}
-                        onChange={setCategorySlug}
                         options={['all', 'politics', 'sports', 'crypto', 'tech', 'finance', 'wtf'].map(value => ({value, label: value}))}
                     />
                 </Space>

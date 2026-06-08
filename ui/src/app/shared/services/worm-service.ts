@@ -25,6 +25,9 @@ export interface ListWormMarketsResult {
 export type WormMarketSortOption = 'new' | 'trending' | 'ending_soon' | 'leverage';
 export type WormMarketCategorySlug = 'all' | 'politics' | 'sports' | 'crypto' | 'tech' | 'finance' | 'wtf';
 
+export const DEFAULT_WORM_MARKET_SORT: WormMarketSortOption = 'leverage';
+export const DEFAULT_WORM_MARKET_CATEGORY: WormMarketCategorySlug = 'sports';
+
 export interface ListWormMarketsOptions {
     limit?: number;
     cursor?: string;
