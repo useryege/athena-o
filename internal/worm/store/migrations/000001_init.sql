@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS worm_market (
   event_condition_id TEXT NOT NULL DEFAULT '',
   event_logo TEXT NOT NULL DEFAULT '',
   margin_enabled BOOLEAN NOT NULL DEFAULT false,
+  live_state TEXT NOT NULL DEFAULT 'unknown',
+  live_checked_at TIMESTAMPTZ,
+  live_price_change TEXT NOT NULL DEFAULT '',
   raw JSONB NOT NULL DEFAULT '{}'::jsonb,
   fetched_at TIMESTAMPTZ NOT NULL,
   last_seen_at TIMESTAMPTZ NOT NULL,
@@ -24,9 +27,16 @@ CREATE TABLE IF NOT EXISTS worm_market (
   CONSTRAINT worm_market_state_open CHECK (state = 'open'),
   CONSTRAINT worm_market_category_sports CHECK (category = 'sports'),
   CONSTRAINT worm_market_sort_option_leverage CHECK (sort_option = 'leverage'),
+  CONSTRAINT worm_market_live_state_valid CHECK (live_state IN ('live', 'not_live', 'unknown')),
   CONSTRAINT worm_market_created_nonnegative CHECK (created >= 0),
   CONSTRAINT worm_market_raw_object CHECK (jsonb_typeof(raw) = 'object')
 );
+
+CREATE INDEX IF NOT EXISTS worm_market_live_sort_idx
+  ON worm_market ((live_state = 'live') DESC, created DESC, condition_id);
+
+CREATE INDEX IF NOT EXISTS worm_market_live_check_idx
+  ON worm_market (live_state, live_checked_at ASC NULLS FIRST, condition_id);
 
 CREATE INDEX IF NOT EXISTS worm_market_last_seen_idx
   ON worm_market (last_seen_at DESC);

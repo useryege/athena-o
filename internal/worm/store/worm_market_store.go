@@ -112,6 +112,24 @@ func (s *SQLStore) ListWormMarketsPage(ctx context.Context, conditionID, eventCo
 	}, nil
 }
 
+func (s *SQLStore) ListWormMarketsPendingLiveCheck(ctx context.Context, limit int32) ([]WormMarket, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	if limit <= 0 {
+		limit = defaultPageSize
+	}
+	if limit > maxPageSize {
+		limit = maxPageSize
+	}
+	rows, err := q.ListWormMarketsPendingLiveCheck(ctx, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list worm markets pending live check: %w", err)
+	}
+	return mapWormMarkets(rows), nil
+}
+
 func (s *SQLStore) UpdateWormMarket(ctx context.Context, item WormMarket) (*WormMarket, error) {
 	q, err := s.querier()
 	if err != nil {
@@ -121,6 +139,26 @@ func (s *SQLStore) UpdateWormMarket(ctx context.Context, item WormMarket) (*Worm
 	row, err := q.UpdateWormMarket(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("update worm market: %w", err)
+	}
+	return mapWormMarket(row), nil
+}
+
+func (s *SQLStore) UpdateWormMarketLiveState(ctx context.Context, item WormMarket) (*WormMarket, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	if item.LiveState == "" {
+		item.LiveState = "unknown"
+	}
+	row, err := q.UpdateWormMarketLiveState(ctx, wormsqlc.UpdateWormMarketLiveStateParams{
+		ConditionID:     item.ConditionID,
+		LiveState:       item.LiveState,
+		LiveCheckedAt:   nullableTime(item.LiveCheckedAt),
+		LivePriceChange: item.LivePriceChange,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("update worm market live state: %w", err)
 	}
 	return mapWormMarket(row), nil
 }
@@ -156,6 +194,9 @@ func upsertWormMarketParams(item WormMarket) wormsqlc.UpsertWormMarketParams {
 	if item.LastSeenAt.IsZero() {
 		item.LastSeenAt = item.FetchedAt
 	}
+	if item.LiveState == "" {
+		item.LiveState = "unknown"
+	}
 	if len(item.Raw) == 0 {
 		item.Raw = []byte("{}")
 	}
@@ -173,6 +214,9 @@ func upsertWormMarketParams(item WormMarket) wormsqlc.UpsertWormMarketParams {
 		EventConditionID: item.EventConditionID,
 		EventLogo:        item.EventLogo,
 		MarginEnabled:    item.MarginEnabled,
+		LiveState:        item.LiveState,
+		LiveCheckedAt:    nullableTime(item.LiveCheckedAt),
+		LivePriceChange:  item.LivePriceChange,
 		Raw:              []byte(item.Raw),
 		FetchedAt:        nullableTime(item.FetchedAt),
 		LastSeenAt:       nullableTime(item.LastSeenAt),
@@ -195,6 +239,9 @@ func updateWormMarketParams(item WormMarket) wormsqlc.UpdateWormMarketParams {
 		EventConditionID: params.EventConditionID,
 		EventLogo:        params.EventLogo,
 		MarginEnabled:    params.MarginEnabled,
+		LiveState:        params.LiveState,
+		LiveCheckedAt:    params.LiveCheckedAt,
+		LivePriceChange:  params.LivePriceChange,
 		Raw:              params.Raw,
 		FetchedAt:        params.FetchedAt,
 		LastSeenAt:       params.LastSeenAt,
@@ -217,6 +264,9 @@ func batchUpsertWormMarketsParams(items []WormMarket) wormsqlc.BatchUpsertWormMa
 		EventConditionIds:   make([]string, 0, len(items)),
 		EventLogos:          make([]string, 0, len(items)),
 		MarginEnabledValues: make([]bool, 0, len(items)),
+		LiveStates:          make([]string, 0, len(items)),
+		LiveCheckedAtValues: make([]pgtype.Timestamptz, 0, len(items)),
+		LivePriceChanges:    make([]string, 0, len(items)),
 		RawValues:           make([][]byte, 0, len(items)),
 		FetchedAtValues:     make([]pgtype.Timestamptz, 0, len(items)),
 		LastSeenAtValues:    make([]pgtype.Timestamptz, 0, len(items)),
@@ -227,6 +277,9 @@ func batchUpsertWormMarketsParams(items []WormMarket) wormsqlc.BatchUpsertWormMa
 		}
 		if item.LastSeenAt.IsZero() {
 			item.LastSeenAt = item.FetchedAt
+		}
+		if item.LiveState == "" {
+			item.LiveState = "unknown"
 		}
 		if len(item.Raw) == 0 {
 			item.Raw = []byte("{}")
@@ -244,6 +297,9 @@ func batchUpsertWormMarketsParams(items []WormMarket) wormsqlc.BatchUpsertWormMa
 		params.EventConditionIds = append(params.EventConditionIds, item.EventConditionID)
 		params.EventLogos = append(params.EventLogos, item.EventLogo)
 		params.MarginEnabledValues = append(params.MarginEnabledValues, item.MarginEnabled)
+		params.LiveStates = append(params.LiveStates, item.LiveState)
+		params.LiveCheckedAtValues = append(params.LiveCheckedAtValues, nullableTime(item.LiveCheckedAt))
+		params.LivePriceChanges = append(params.LivePriceChanges, item.LivePriceChange)
 		params.RawValues = append(params.RawValues, []byte(item.Raw))
 		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(item.FetchedAt))
 		params.LastSeenAtValues = append(params.LastSeenAtValues, nullableTime(item.LastSeenAt))

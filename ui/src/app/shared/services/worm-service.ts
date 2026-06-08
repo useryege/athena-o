@@ -13,6 +13,9 @@ export interface WormMarketItem {
     eventConditionId?: string;
     eventLogo?: string;
     marginEnabled: boolean;
+    liveState?: 'live' | 'not_live' | 'unknown';
+    liveCheckedAt?: number;
+    livePriceChange?: string;
 }
 
 export interface ListWormMarketsResult {
@@ -50,6 +53,7 @@ const readValue = (item: any, ...names: string[]) => {
 const readString = (item: any, ...names: string[]) => String(readValue(item, ...names) || '');
 const readNumber = (item: any, ...names: string[]) => Number(readValue(item, ...names) || 0) || undefined;
 const readBoolean = (item: any, ...names: string[]) => Boolean(readValue(item, ...names));
+const isLiveWormMarket = (item: Pick<WormMarketItem, 'liveState'>) => item.liveState === 'live';
 
 const normalizeMarket = (item: any): WormMarketItem => ({
     conditionId: readString(item, 'conditionId', 'condition_id'),
@@ -63,8 +67,20 @@ const normalizeMarket = (item: any): WormMarketItem => ({
     eventTitle: readString(item, 'eventTitle', 'event_title'),
     eventConditionId: readString(item, 'eventConditionId', 'event_condition_id'),
     eventLogo: readString(item, 'eventLogo', 'event_logo'),
-    marginEnabled: readBoolean(item, 'marginEnabled', 'margin_enabled')
+    marginEnabled: readBoolean(item, 'marginEnabled', 'margin_enabled'),
+    liveState: readString(item, 'liveState', 'live_state') as WormMarketItem['liveState'],
+    liveCheckedAt: readNumber(item, 'liveCheckedAt', 'live_checked_at'),
+    livePriceChange: readString(item, 'livePriceChange', 'live_price_change')
 });
+
+const sortLiveFirst = (items: WormMarketItem[]) =>
+    items
+        .map((item, index) => ({item, index}))
+        .sort((left, right) => {
+            const liveDelta = Number(isLiveWormMarket(right.item)) - Number(isLiveWormMarket(left.item));
+            return liveDelta || left.index - right.index;
+        })
+        .map(entry => entry.item);
 
 export class WormService {
     public listMarkets(options: ListWormMarketsOptions = {}): Promise<ListWormMarketsResult> & {abort?: () => void} {
@@ -81,8 +97,9 @@ export class WormService {
         const req = requests.get('/worm/markets').query(query);
         const promise = req.then(res => {
             const body = res.body || {};
+            const items = (body.items || []).map(normalizeMarket).filter(isOpenWormMarket);
             return {
-                items: (body.items || []).map(normalizeMarket).filter(isOpenWormMarket),
+                items: sortLiveFirst(items),
                 nextCursor: body.nextCursor || body.next_cursor || '',
                 fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
                 stale: readBoolean(body, 'stale', 'stale')

@@ -13,4 +13,7 @@ type WormMarketItem struct {
 	EventConditionID string `protobuf:"bytes,10,opt,name=eventConditionId" json:"eventConditionId"`
 	EventLogo        string `protobuf:"bytes,11,opt,name=eventLogo" json:"eventLogo"`
 	MarginEnabled    bool   `protobuf:"varint,12,opt,name=marginEnabled" json:"marginEnabled"`
+	LiveState        string `protobuf:"bytes,13,opt,name=liveState" json:"liveState"`
+	LiveCheckedAt    int64  `protobuf:"varint,14,opt,name=liveCheckedAt" json:"liveCheckedAt"`
+	LivePriceChange  string `protobuf:"bytes,15,opt,name=livePriceChange" json:"livePriceChange"`
 }

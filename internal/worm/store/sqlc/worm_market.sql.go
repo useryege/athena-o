@@ -26,6 +26,9 @@ INSERT INTO worm_market (
   event_condition_id,
   event_logo,
   margin_enabled,
+  live_state,
+  live_checked_at,
+  live_price_change,
   raw,
   fetched_at,
   last_seen_at
@@ -44,9 +47,12 @@ SELECT
   unnest($11::text[]),
   unnest($12::text[]),
   unnest($13::boolean[]),
-  unnest($14::jsonb[]),
+  unnest($14::text[]),
   unnest($15::timestamptz[]),
-  unnest($16::timestamptz[])
+  unnest($16::text[]),
+  unnest($17::jsonb[]),
+  unnest($18::timestamptz[]),
+  unnest($19::timestamptz[])
 ON CONFLICT (condition_id) DO UPDATE
 SET title = EXCLUDED.title,
   description = EXCLUDED.description,
@@ -60,6 +66,9 @@ SET title = EXCLUDED.title,
   event_condition_id = EXCLUDED.event_condition_id,
   event_logo = EXCLUDED.event_logo,
   margin_enabled = EXCLUDED.margin_enabled,
+  live_state = worm_market.live_state,
+  live_checked_at = worm_market.live_checked_at,
+  live_price_change = worm_market.live_price_change,
   raw = EXCLUDED.raw,
   fetched_at = EXCLUDED.fetched_at,
   last_seen_at = EXCLUDED.last_seen_at,
@@ -80,6 +89,9 @@ type BatchUpsertWormMarketsParams struct {
 	EventConditionIds   []string
 	EventLogos          []string
 	MarginEnabledValues []bool
+	LiveStates          []string
+	LiveCheckedAtValues []pgtype.Timestamptz
+	LivePriceChanges    []string
 	RawValues           [][]byte
 	FetchedAtValues     []pgtype.Timestamptz
 	LastSeenAtValues    []pgtype.Timestamptz
@@ -100,6 +112,9 @@ func (q *Queries) BatchUpsertWormMarkets(ctx context.Context, arg BatchUpsertWor
 		arg.EventConditionIds,
 		arg.EventLogos,
 		arg.MarginEnabledValues,
+		arg.LiveStates,
+		arg.LiveCheckedAtValues,
+		arg.LivePriceChanges,
 		arg.RawValues,
 		arg.FetchedAtValues,
 		arg.LastSeenAtValues,
@@ -153,7 +168,7 @@ func (q *Queries) DeleteWormMarketsNotSeenSince(ctx context.Context, lastSeenAt 
 }
 
 const getWormMarket = `-- name: GetWormMarket :one
-SELECT condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, raw, fetched_at, last_seen_at, created_at, updated_at
+SELECT condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, live_state, live_checked_at, live_price_change, raw, fetched_at, last_seen_at, created_at, updated_at
 FROM worm_market
 WHERE condition_id = $1
 `
@@ -175,6 +190,9 @@ func (q *Queries) GetWormMarket(ctx context.Context, conditionID string) (WormMa
 		&i.EventConditionID,
 		&i.EventLogo,
 		&i.MarginEnabled,
+		&i.LiveState,
+		&i.LiveCheckedAt,
+		&i.LivePriceChange,
 		&i.Raw,
 		&i.FetchedAt,
 		&i.LastSeenAt,
@@ -185,9 +203,9 @@ func (q *Queries) GetWormMarket(ctx context.Context, conditionID string) (WormMa
 }
 
 const listWormMarkets = `-- name: ListWormMarkets :many
-SELECT condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, raw, fetched_at, last_seen_at, created_at, updated_at
+SELECT condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, live_state, live_checked_at, live_price_change, raw, fetched_at, last_seen_at, created_at, updated_at
 FROM worm_market
-ORDER BY created DESC, condition_id
+ORDER BY (live_state = 'live') DESC, created DESC, condition_id
 `
 
 func (q *Queries) ListWormMarkets(ctx context.Context) ([]WormMarket, error) {
@@ -213,6 +231,9 @@ func (q *Queries) ListWormMarkets(ctx context.Context) ([]WormMarket, error) {
 			&i.EventConditionID,
 			&i.EventLogo,
 			&i.MarginEnabled,
+			&i.LiveState,
+			&i.LiveCheckedAt,
+			&i.LivePriceChange,
 			&i.Raw,
 			&i.FetchedAt,
 			&i.LastSeenAt,
@@ -230,11 +251,11 @@ func (q *Queries) ListWormMarkets(ctx context.Context) ([]WormMarket, error) {
 }
 
 const listWormMarketsPage = `-- name: ListWormMarketsPage :many
-SELECT condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, raw, fetched_at, last_seen_at, created_at, updated_at
+SELECT condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, live_state, live_checked_at, live_price_change, raw, fetched_at, last_seen_at, created_at, updated_at
 FROM worm_market
 WHERE ($1::text IS NULL OR condition_id = $1::text)
   AND ($2::text IS NULL OR event_condition_id = $2::text)
-ORDER BY created DESC, condition_id
+ORDER BY (live_state = 'live') DESC, created DESC, condition_id
 LIMIT $4 OFFSET $3
 `
 
@@ -273,6 +294,59 @@ func (q *Queries) ListWormMarketsPage(ctx context.Context, arg ListWormMarketsPa
 			&i.EventConditionID,
 			&i.EventLogo,
 			&i.MarginEnabled,
+			&i.LiveState,
+			&i.LiveCheckedAt,
+			&i.LivePriceChange,
+			&i.Raw,
+			&i.FetchedAt,
+			&i.LastSeenAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listWormMarketsPendingLiveCheck = `-- name: ListWormMarketsPendingLiveCheck :many
+SELECT condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, live_state, live_checked_at, live_price_change, raw, fetched_at, last_seen_at, created_at, updated_at
+FROM worm_market
+WHERE live_state <> 'live'
+ORDER BY live_checked_at ASC NULLS FIRST, created DESC, condition_id
+LIMIT $1
+`
+
+func (q *Queries) ListWormMarketsPendingLiveCheck(ctx context.Context, limit int32) ([]WormMarket, error) {
+	rows, err := q.db.Query(ctx, listWormMarketsPendingLiveCheck, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WormMarket
+	for rows.Next() {
+		var i WormMarket
+		if err := rows.Scan(
+			&i.ConditionID,
+			&i.Title,
+			&i.Description,
+			&i.Logo,
+			&i.LastTradePrice,
+			&i.State,
+			&i.Category,
+			&i.SortOption,
+			&i.Created,
+			&i.EventTitle,
+			&i.EventConditionID,
+			&i.EventLogo,
+			&i.MarginEnabled,
+			&i.LiveState,
+			&i.LiveCheckedAt,
+			&i.LivePriceChange,
 			&i.Raw,
 			&i.FetchedAt,
 			&i.LastSeenAt,
@@ -303,12 +377,15 @@ SET title = $1,
   event_condition_id = $10,
   event_logo = $11,
   margin_enabled = $12,
-  raw = $13,
-  fetched_at = $14,
-  last_seen_at = $15,
+  live_state = $13,
+  live_checked_at = $14,
+  live_price_change = $15,
+  raw = $16,
+  fetched_at = $17,
+  last_seen_at = $18,
   updated_at = now()
-WHERE condition_id = $16
-RETURNING condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, raw, fetched_at, last_seen_at, created_at, updated_at
+WHERE condition_id = $19
+RETURNING condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, live_state, live_checked_at, live_price_change, raw, fetched_at, last_seen_at, created_at, updated_at
 `
 
 type UpdateWormMarketParams struct {
@@ -324,6 +401,9 @@ type UpdateWormMarketParams struct {
 	EventConditionID string
 	EventLogo        string
 	MarginEnabled    bool
+	LiveState        string
+	LiveCheckedAt    pgtype.Timestamptz
+	LivePriceChange  string
 	Raw              []byte
 	FetchedAt        pgtype.Timestamptz
 	LastSeenAt       pgtype.Timestamptz
@@ -344,6 +424,9 @@ func (q *Queries) UpdateWormMarket(ctx context.Context, arg UpdateWormMarketPara
 		arg.EventConditionID,
 		arg.EventLogo,
 		arg.MarginEnabled,
+		arg.LiveState,
+		arg.LiveCheckedAt,
+		arg.LivePriceChange,
 		arg.Raw,
 		arg.FetchedAt,
 		arg.LastSeenAt,
@@ -364,6 +447,60 @@ func (q *Queries) UpdateWormMarket(ctx context.Context, arg UpdateWormMarketPara
 		&i.EventConditionID,
 		&i.EventLogo,
 		&i.MarginEnabled,
+		&i.LiveState,
+		&i.LiveCheckedAt,
+		&i.LivePriceChange,
+		&i.Raw,
+		&i.FetchedAt,
+		&i.LastSeenAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateWormMarketLiveState = `-- name: UpdateWormMarketLiveState :one
+UPDATE worm_market
+SET live_state = CASE WHEN live_state = 'live' THEN live_state ELSE $1 END,
+  live_checked_at = CASE WHEN live_state = 'live' THEN live_checked_at ELSE $2 END,
+  live_price_change = CASE WHEN live_state = 'live' THEN live_price_change ELSE $3 END,
+  updated_at = now()
+WHERE condition_id = $4
+RETURNING condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, live_state, live_checked_at, live_price_change, raw, fetched_at, last_seen_at, created_at, updated_at
+`
+
+type UpdateWormMarketLiveStateParams struct {
+	LiveState       string
+	LiveCheckedAt   pgtype.Timestamptz
+	LivePriceChange string
+	ConditionID     string
+}
+
+func (q *Queries) UpdateWormMarketLiveState(ctx context.Context, arg UpdateWormMarketLiveStateParams) (WormMarket, error) {
+	row := q.db.QueryRow(ctx, updateWormMarketLiveState,
+		arg.LiveState,
+		arg.LiveCheckedAt,
+		arg.LivePriceChange,
+		arg.ConditionID,
+	)
+	var i WormMarket
+	err := row.Scan(
+		&i.ConditionID,
+		&i.Title,
+		&i.Description,
+		&i.Logo,
+		&i.LastTradePrice,
+		&i.State,
+		&i.Category,
+		&i.SortOption,
+		&i.Created,
+		&i.EventTitle,
+		&i.EventConditionID,
+		&i.EventLogo,
+		&i.MarginEnabled,
+		&i.LiveState,
+		&i.LiveCheckedAt,
+		&i.LivePriceChange,
 		&i.Raw,
 		&i.FetchedAt,
 		&i.LastSeenAt,
@@ -388,6 +525,9 @@ INSERT INTO worm_market (
   event_condition_id,
   event_logo,
   margin_enabled,
+  live_state,
+  live_checked_at,
+  live_price_change,
   raw,
   fetched_at,
   last_seen_at
@@ -407,7 +547,10 @@ INSERT INTO worm_market (
   $13,
   $14,
   $15,
-  $16
+  $16,
+  $17,
+  $18,
+  $19
 )
 ON CONFLICT (condition_id) DO UPDATE
 SET title = EXCLUDED.title,
@@ -422,11 +565,14 @@ SET title = EXCLUDED.title,
   event_condition_id = EXCLUDED.event_condition_id,
   event_logo = EXCLUDED.event_logo,
   margin_enabled = EXCLUDED.margin_enabled,
+  live_state = worm_market.live_state,
+  live_checked_at = worm_market.live_checked_at,
+  live_price_change = worm_market.live_price_change,
   raw = EXCLUDED.raw,
   fetched_at = EXCLUDED.fetched_at,
   last_seen_at = EXCLUDED.last_seen_at,
   updated_at = now()
-RETURNING condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, raw, fetched_at, last_seen_at, created_at, updated_at
+RETURNING condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, live_state, live_checked_at, live_price_change, raw, fetched_at, last_seen_at, created_at, updated_at
 `
 
 type UpsertWormMarketParams struct {
@@ -443,6 +589,9 @@ type UpsertWormMarketParams struct {
 	EventConditionID string
 	EventLogo        string
 	MarginEnabled    bool
+	LiveState        string
+	LiveCheckedAt    pgtype.Timestamptz
+	LivePriceChange  string
 	Raw              []byte
 	FetchedAt        pgtype.Timestamptz
 	LastSeenAt       pgtype.Timestamptz
@@ -463,6 +612,9 @@ func (q *Queries) UpsertWormMarket(ctx context.Context, arg UpsertWormMarketPara
 		arg.EventConditionID,
 		arg.EventLogo,
 		arg.MarginEnabled,
+		arg.LiveState,
+		arg.LiveCheckedAt,
+		arg.LivePriceChange,
 		arg.Raw,
 		arg.FetchedAt,
 		arg.LastSeenAt,
@@ -482,6 +634,9 @@ func (q *Queries) UpsertWormMarket(ctx context.Context, arg UpsertWormMarketPara
 		&i.EventConditionID,
 		&i.EventLogo,
 		&i.MarginEnabled,
+		&i.LiveState,
+		&i.LiveCheckedAt,
+		&i.LivePriceChange,
 		&i.Raw,
 		&i.FetchedAt,
 		&i.LastSeenAt,

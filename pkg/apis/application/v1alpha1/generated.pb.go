@@ -1810,6 +1810,19 @@ func (m *WormMarketItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.LivePriceChange)
+	copy(dAtA[i:], m.LivePriceChange)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LivePriceChange)))
+	i--
+	dAtA[i] = 0x7a
+	i = encodeVarintGenerated(dAtA, i, uint64(m.LiveCheckedAt))
+	i--
+	dAtA[i] = 0x70
+	i -= len(m.LiveState)
+	copy(dAtA[i:], m.LiveState)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LiveState)))
+	i--
+	dAtA[i] = 0x6a
 	i--
 	if m.MarginEnabled {
 		dAtA[i] = 1
@@ -2554,6 +2567,11 @@ func (m *WormMarketItem) Size() (n int) {
 	l = len(m.EventLogo)
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 2
+	l = len(m.LiveState)
+	n += 1 + l + sovGenerated(uint64(l))
+	n += 1 + sovGenerated(uint64(m.LiveCheckedAt))
+	l = len(m.LivePriceChange)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -3082,6 +3100,9 @@ func (this *WormMarketItem) String() string {
 		`EventConditionID:` + fmt.Sprintf("%v", this.EventConditionID) + `,`,
 		`EventLogo:` + fmt.Sprintf("%v", this.EventLogo) + `,`,
 		`MarginEnabled:` + fmt.Sprintf("%v", this.MarginEnabled) + `,`,
+		`LiveState:` + fmt.Sprintf("%v", this.LiveState) + `,`,
+		`LiveCheckedAt:` + fmt.Sprintf("%v", this.LiveCheckedAt) + `,`,
+		`LivePriceChange:` + fmt.Sprintf("%v", this.LivePriceChange) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -10307,6 +10328,89 @@ func (m *WormMarketItem) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.MarginEnabled = bool(v != 0)
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LiveState", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LiveState = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LiveCheckedAt", wireType)
+			}
+			m.LiveCheckedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LiveCheckedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LivePriceChange", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LivePriceChange = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

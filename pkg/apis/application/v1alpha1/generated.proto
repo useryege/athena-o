@@ -498,5 +498,11 @@ message WormMarketItem {
   optional string eventLogo = 11;
 
   optional bool marginEnabled = 12;
+
+  optional string liveState = 13;
+
+  optional int64 liveCheckedAt = 14;
+
+  optional string livePriceChange = 15;
 }
 

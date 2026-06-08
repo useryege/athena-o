@@ -22,6 +22,9 @@ type WormMarket struct {
 	EventConditionID string
 	EventLogo        string
 	MarginEnabled    bool
+	LiveState        string
+	LiveCheckedAt    pgtype.Timestamptz
+	LivePriceChange  string
 	Raw              []byte
 	FetchedAt        pgtype.Timestamptz
 	LastSeenAt       pgtype.Timestamptz

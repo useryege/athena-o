@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-663-g8ff0153-dirty"
+    "version": "v1.0.0-665-g2c954b8-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3232,6 +3232,16 @@
           "type": "string"
         },
         "lastTradePrice": {
+          "type": "string"
+        },
+        "liveCheckedAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "livePriceChange": {
+          "type": "string"
+        },
+        "liveState": {
           "type": "string"
         },
         "logo": {

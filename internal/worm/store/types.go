@@ -19,6 +19,9 @@ type WormMarket struct {
 	EventConditionID string
 	EventLogo        string
 	MarginEnabled    bool
+	LiveState        string
+	LiveCheckedAt    time.Time
+	LivePriceChange  string
 	Raw              json.RawMessage
 	FetchedAt        time.Time
 	LastSeenAt       time.Time

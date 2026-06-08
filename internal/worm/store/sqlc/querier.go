@@ -18,8 +18,10 @@ type Querier interface {
 	GetWormMarket(ctx context.Context, conditionID string) (WormMarket, error)
 	ListWormMarkets(ctx context.Context) ([]WormMarket, error)
 	ListWormMarketsPage(ctx context.Context, arg ListWormMarketsPageParams) ([]WormMarket, error)
+	ListWormMarketsPendingLiveCheck(ctx context.Context, limit int32) ([]WormMarket, error)
 	Ping(ctx context.Context) (int32, error)
 	UpdateWormMarket(ctx context.Context, arg UpdateWormMarketParams) (WormMarket, error)
+	UpdateWormMarketLiveState(ctx context.Context, arg UpdateWormMarketLiveStateParams) (WormMarket, error)
 	UpsertWormMarket(ctx context.Context, arg UpsertWormMarketParams) (WormMarket, error)
 }
 

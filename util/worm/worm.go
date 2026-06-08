@@ -18,11 +18,14 @@ import (
 	"time"
 
 	"github.com/mr-tron/base58/base58"
+	"github.com/useryege/athena/util/ratelimit"
 )
 
 const (
-	DefaultBaseURL = "https://api.worm.wtf"
-	DefaultTimeout = 30 * time.Second
+	DefaultBaseURL           = "https://api.worm.wtf"
+	DefaultTimeout           = 30 * time.Second
+	DefaultRateLimitRequests = 120
+	DefaultRateLimitPeriod   = time.Minute
 
 	errorBodyLimit = 4096
 
@@ -88,16 +91,18 @@ type Client interface {
 }
 
 type Config struct {
-	BaseURL   string
-	APIKey    string
-	APISecret string
-	Timeout   time.Duration
-	Now       func() time.Time
+	BaseURL     string
+	APIKey      string
+	APISecret   string
+	Timeout     time.Duration
+	Now         func() time.Time
+	RateLimiter ratelimit.Limiter
 }
 
 type clientImpl struct {
-	config Config
-	client *http.Client
+	config      Config
+	client      *http.Client
+	rateLimiter ratelimit.Limiter
 }
 
 var _ Client = (*clientImpl)(nil)
@@ -107,9 +112,21 @@ func NewClient(config Config) (Client, error) {
 	if _, err := url.ParseRequestURI(config.BaseURL); err != nil {
 		return nil, fmt.Errorf("invalid worm base url: %w", err)
 	}
+	rateLimiter := config.RateLimiter
+	if rateLimiter == nil {
+		var err error
+		rateLimiter, err = ratelimit.New(ratelimit.Config{
+			Requests: DefaultRateLimitRequests,
+			Per:      DefaultRateLimitPeriod,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("create worm rate limiter: %w", err)
+		}
+	}
 	return &clientImpl{
-		config: config,
-		client: &http.Client{Timeout: config.Timeout},
+		config:      config,
+		client:      &http.Client{Timeout: config.Timeout},
+		rateLimiter: rateLimiter,
 	}, nil
 }
 
@@ -1289,6 +1306,10 @@ func (c *clientImpl) do(ctx context.Context, method string, path string, query u
 	}
 	if authRequired {
 		c.sign(req, method, rawBody)
+	}
+
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return EnvelopeMeta{}, fmt.Errorf("wait worm rate limit: %w", err)
 	}
 
 	resp, err := c.client.Do(req)
