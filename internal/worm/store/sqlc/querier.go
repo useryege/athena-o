@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	BatchUpdateWormMarketsIgnored(ctx context.Context, arg BatchUpdateWormMarketsIgnoredParams) (int64, error)
 	BatchUpsertWormMarkets(ctx context.Context, arg BatchUpsertWormMarketsParams) error
 	CountWormMarkets(ctx context.Context, arg CountWormMarketsParams) (int64, error)
 	DeleteWormMarket(ctx context.Context, conditionID string) (int64, error)

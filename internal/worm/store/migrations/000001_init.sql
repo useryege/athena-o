@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS worm_market (
   event_condition_id TEXT NOT NULL DEFAULT '',
   event_logo TEXT NOT NULL DEFAULT '',
   margin_enabled BOOLEAN NOT NULL DEFAULT false,
+  ignored BOOLEAN NOT NULL DEFAULT false,
   live_state TEXT NOT NULL DEFAULT 'unknown',
   live_checked_at TIMESTAMPTZ,
   live_price_change TEXT NOT NULL DEFAULT '',
@@ -36,7 +37,10 @@ CREATE INDEX IF NOT EXISTS worm_market_live_sort_idx
   ON worm_market ((live_state = 'live') DESC, created DESC, condition_id);
 
 CREATE INDEX IF NOT EXISTS worm_market_live_check_idx
-  ON worm_market (live_state, live_checked_at ASC NULLS FIRST, condition_id);
+  ON worm_market (ignored, live_state, live_checked_at ASC NULLS FIRST, condition_id);
+
+CREATE INDEX IF NOT EXISTS worm_market_ignored_sort_idx
+  ON worm_market (ignored, created DESC, condition_id);
 
 CREATE INDEX IF NOT EXISTS worm_market_last_seen_idx
   ON worm_market (last_seen_at DESC);

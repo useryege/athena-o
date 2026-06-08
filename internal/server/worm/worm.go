@@ -42,10 +42,11 @@ func (s *Server) ListWormMarkets(ctx context.Context, req *wormpkg.ListWormMarke
 	defer closer.Close()
 
 	resp, err := client.ListWormMarkets(ctx, &wormapiclient.ListWormMarketsRequest{
-		Limit:        req.GetLimit(),
-		Cursor:       req.GetCursor(),
-		SortOption:   req.GetSortOption(),
-		CategorySlug: req.GetCategorySlug(),
+		Limit:         req.GetLimit(),
+		Cursor:        req.GetCursor(),
+		SortOption:    req.GetSortOption(),
+		CategorySlug:  req.GetCategorySlug(),
+		IgnoredFilter: req.GetIgnoredFilter(),
 	})
 	if err != nil {
 		return nil, err
@@ -56,5 +57,25 @@ func (s *Server) ListWormMarkets(ctx context.Context, req *wormpkg.ListWormMarke
 		NextCursor: resp.GetNextCursor(),
 		FetchedAt:  resp.GetFetchedAt(),
 		Stale:      resp.GetStale(),
+	}, nil
+}
+
+func (s *Server) BatchUpdateWormMarketsIgnored(ctx context.Context, req *wormpkg.BatchUpdateWormMarketsIgnoredRequest) (*wormpkg.BatchUpdateWormMarketsIgnoredResponse, error) {
+	closer, client, err := s.wormClientSet.NewWormServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.BatchUpdateWormMarketsIgnored(ctx, &wormapiclient.BatchUpdateWormMarketsIgnoredRequest{
+		ConditionIds: req.GetConditionIds(),
+		Ignored:      req.GetIgnored(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &wormpkg.BatchUpdateWormMarketsIgnoredResponse{
+		Updated: resp.GetUpdated(),
 	}, nil
 }

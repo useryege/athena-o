@@ -27,6 +27,13 @@ func nullableTime(value time.Time) pgtype.Timestamptz {
 	return pgtype.Timestamptz{Time: value, Valid: true}
 }
 
+func nullableBool(value *bool) pgtype.Bool {
+	if value == nil {
+		return pgtype.Bool{}
+	}
+	return pgtype.Bool{Bool: *value, Valid: true}
+}
+
 func timeValue(value pgtype.Timestamptz) time.Time {
 	if !value.Valid {
 		return time.Time{}
@@ -62,6 +69,7 @@ func mapWormMarket(row wormsqlc.WormMarket) *WormMarket {
 		EventConditionID: row.EventConditionID,
 		EventLogo:        row.EventLogo,
 		MarginEnabled:    row.MarginEnabled,
+		Ignored:          row.Ignored,
 		LiveState:        row.LiveState,
 		LiveCheckedAt:    timeValue(row.LiveCheckedAt),
 		LivePriceChange:  row.LivePriceChange,

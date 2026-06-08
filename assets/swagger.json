@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-665-g2c954b8-dirty"
+    "version": "v1.0.0-668-g5c7cf16-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1498,6 +1498,11 @@
             "type": "string",
             "name": "category_slug",
             "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "ignored_filter",
+            "in": "query"
           }
         ],
         "responses": {
@@ -1505,6 +1510,39 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/wormListWormMarketsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/worm/markets/ignored": {
+      "post": {
+        "tags": [
+          "WormService"
+        ],
+        "summary": "BatchUpdateWormMarketsIgnored updates ignored state for selected markets.",
+        "operationId": "WormService_BatchUpdateWormMarketsIgnored",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/wormBatchUpdateWormMarketsIgnoredRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/wormBatchUpdateWormMarketsIgnoredResponse"
             }
           },
           "default": {
@@ -3231,6 +3269,9 @@
         "eventTitle": {
           "type": "string"
         },
+        "ignored": {
+          "type": "boolean"
+        },
         "lastTradePrice": {
           "type": "string"
         },
@@ -3424,6 +3465,31 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1WalletItem"
+        }
+      }
+    },
+    "wormBatchUpdateWormMarketsIgnoredRequest": {
+      "description": "BatchUpdateWormMarketsIgnoredRequest updates ignored state for market rows.",
+      "type": "object",
+      "properties": {
+        "condition_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ignored": {
+          "type": "boolean"
+        }
+      }
+    },
+    "wormBatchUpdateWormMarketsIgnoredResponse": {
+      "description": "BatchUpdateWormMarketsIgnoredResponse returns the number of updated rows.",
+      "type": "object",
+      "properties": {
+        "updated": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

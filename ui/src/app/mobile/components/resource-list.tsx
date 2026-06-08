@@ -1,5 +1,6 @@
-import {Card, Empty, Pagination, Skeleton, Table} from 'antd';
+import {Card, Checkbox, Empty, Pagination, Skeleton, Table} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
+import type {TableRowSelection} from 'antd/es/table/interface';
 import * as React from 'react';
 import {useBreakpoint} from './data';
 
@@ -15,8 +16,21 @@ export const ResponsiveResourceList = <T,>(props: {
     total?: number;
     onPageChange?: (page: number, pageSize: number) => void;
     onItemClick?: (record: T) => void;
+    selectedRowKeys?: React.Key[];
+    onSelectionChange?: (keys: React.Key[], records: T[]) => void;
 }) => {
     const {isMobile} = useBreakpoint();
+    const selectedKeys = props.selectedRowKeys || [];
+    const selectedKeySet = React.useMemo(() => new Set(selectedKeys), [selectedKeys]);
+    const itemKey = (item: T) => (typeof props.rowKey === 'function' ? props.rowKey(item) : (item[props.rowKey] as React.Key));
+    const handleSelectionChange = (key: React.Key, item: T, checked: boolean) => {
+        const nextKeys = checked ? [...selectedKeys, key] : selectedKeys.filter(value => value !== key);
+        const nextKeySet = new Set(nextKeys);
+        props.onSelectionChange?.(
+            nextKeys,
+            props.items.filter(value => nextKeySet.has(itemKey(value)))
+        );
+    };
     const handleCardKeyDown = (event: React.KeyboardEvent, item: T) => {
         if (!props.onItemClick || (event.key !== 'Enter' && event.key !== ' ')) {
             return;
@@ -30,7 +44,7 @@ export const ResponsiveResourceList = <T,>(props: {
                 {props.loading && <Skeleton active={true} />}
                 {!props.loading && props.items.length === 0 && <Empty description={props.emptyText || 'No data'} />}
                 {props.items.map(item => {
-                    const key = typeof props.rowKey === 'function' ? props.rowKey(item) : (item[props.rowKey] as React.Key);
+                    const key = itemKey(item);
                     const clickProps = props.onItemClick
                         ? {
                               className: 'resource-card resource-card--clickable',
@@ -42,6 +56,14 @@ export const ResponsiveResourceList = <T,>(props: {
                         : {className: 'resource-card'};
                     return (
                         <Card key={key} size='small' {...clickProps}>
+                            {props.onSelectionChange && (
+                                <Checkbox
+                                    className='resource-card__select'
+                                    checked={selectedKeySet.has(key)}
+                                    onClick={event => event.stopPropagation()}
+                                    onChange={event => handleSelectionChange(key, item, event.target.checked)}
+                                />
+                            )}
                             {props.card(item)}
                         </Card>
                     );
@@ -52,6 +74,12 @@ export const ResponsiveResourceList = <T,>(props: {
             </div>
         );
     }
+    const rowSelection: TableRowSelection<T> | undefined = props.onSelectionChange
+        ? {
+              selectedRowKeys: selectedKeys,
+              onChange: (keys, records) => props.onSelectionChange?.(keys, records)
+          }
+        : undefined;
     return (
         <Table<T>
             className='resource-table'
@@ -59,6 +87,7 @@ export const ResponsiveResourceList = <T,>(props: {
             columns={props.columns as any}
             dataSource={props.items}
             loading={props.loading}
+            rowSelection={rowSelection}
             pagination={
                 props.total !== undefined && props.onPageChange
                     ? {current: props.page, pageSize: props.pageSize, total: props.total, showSizeChanger: true, onChange: props.onPageChange}
