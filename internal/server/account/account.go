@@ -11,7 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/kubectl/pkg/util/slice"
 
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/pkg/apiclient/account"
@@ -96,22 +95,6 @@ func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRe
 		log.Infof("user '%s' updated password of user '%s'", username, updatedUsername)
 	}
 	return &account.UpdatePasswordResponse{}, nil
-}
-
-// CanI checks if the current account has permission to perform an action
-func (s *Server) CanI(ctx context.Context, r *account.CanIRequest) (*account.CanIResponse, error) {
-	if !slice.ContainsString(rbac.Actions, r.Action, nil) {
-		return nil, status.Errorf(codes.InvalidArgument, "%v does not contain %s", rbac.Actions, r.Action)
-	}
-	if !slice.ContainsString(rbac.Resources, r.Resource, nil) {
-		return nil, status.Errorf(codes.InvalidArgument, "%v does not contain %s", rbac.Resources, r.Resource)
-	}
-
-	ok := s.enf.Enforce(ctx.Value("claims"), r.Resource, r.Action, r.Subresource)
-	if ok {
-		return &account.CanIResponse{Value: "yes"}, nil
-	}
-	return &account.CanIResponse{Value: "no"}, nil
 }
 
 func toAPIAccount(name string, a settings.Account) *account.Account {

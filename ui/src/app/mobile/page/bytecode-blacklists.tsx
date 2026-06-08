@@ -6,7 +6,6 @@ import {AppPage, CardTitle, InlineActions, MetricRow, ResponsiveResourceList, Tr
 import {Context} from '../../shared/context';
 import {services} from '../../shared/services';
 import {TokenAPIBytecodeBlacklist} from '../../shared/services/tokenapi-service';
-import {rbacActions, rbacResources, useCanI} from './shared';
 import {ChainBadge} from './token-shared';
 
 export const BytecodeBlacklistsPage = () => {
@@ -15,8 +14,6 @@ export const BytecodeBlacklistsPage = () => {
     const [editing, setEditing] = React.useState<TokenAPIBytecodeBlacklist>(null);
     const data = useAsyncData(() => services.tokenapi.listBytecodeBlacklists(), []);
     const options = useAsyncData(() => services.tokenapi.getOptions(), []);
-    const canUpdate = useCanI(rbacResources.tokenapi, rbacActions.update);
-    const canModify = canUpdate.data === true;
     const chainOptions = React.useMemo(
         () =>
             (options.data?.chains || [])
@@ -32,16 +29,13 @@ export const BytecodeBlacklistsPage = () => {
         data.reload();
     }, [data, options]);
     const add = async (values: {note?: string; sourceChainID?: number; sourceContract?: string}) => {
-        if (!canModify) {
-            return;
-        }
         await services.tokenapi.createBytecodeBlacklist(values);
         ctx.notifications.success('Bytecode blacklisted');
         form.resetFields();
         data.reload();
     };
     const saveNote = async (values: {note?: string}) => {
-        if (!canModify || !editing?.codeHash) {
+        if (!editing?.codeHash) {
             return;
         }
         await services.tokenapi.updateBytecodeBlacklist(editing.codeHash, values.note || '');
@@ -49,9 +43,6 @@ export const BytecodeBlacklistsPage = () => {
         data.reload();
     };
     const remove = (item: TokenAPIBytecodeBlacklist) => {
-        if (!canModify) {
-            return;
-        }
         ctx.modal.confirm({
             title: 'Delete bytecode blacklist entry?',
             content: item.codeHash,
@@ -71,10 +62,10 @@ export const BytecodeBlacklistsPage = () => {
             title: 'Actions',
             render: item => (
                 <Space>
-                    <Button icon={<EditOutlined />} disabled={!canModify || !item.codeHash} onClick={() => setEditing(item)}>
+                    <Button icon={<EditOutlined />} disabled={!item.codeHash} onClick={() => setEditing(item)}>
                         Edit Note
                     </Button>
-                    <Button danger={true} icon={<DeleteOutlined />} disabled={!canModify || !item.codeHash} onClick={() => remove(item)}>
+                    <Button danger={true} icon={<DeleteOutlined />} disabled={!item.codeHash} onClick={() => remove(item)}>
                         Delete
                     </Button>
                 </Space>
@@ -98,7 +89,7 @@ export const BytecodeBlacklistsPage = () => {
                     <Form.Item name='note'>
                         <Input placeholder='Note' />
                     </Form.Item>
-                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />} disabled={!canModify}>
+                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />}>
                         Add
                     </Button>
                 </Form>
@@ -118,10 +109,10 @@ export const BytecodeBlacklistsPage = () => {
                             ]}
                         />
                         <InlineActions>
-                            <Button size='small' icon={<EditOutlined />} disabled={!canModify || !item.codeHash} onClick={() => setEditing(item)}>
+                            <Button size='small' icon={<EditOutlined />} disabled={!item.codeHash} onClick={() => setEditing(item)}>
                                 Edit Note
                             </Button>
-                            <Button size='small' danger={true} icon={<DeleteOutlined />} disabled={!canModify || !item.codeHash} onClick={() => remove(item)}>
+                            <Button size='small' danger={true} icon={<DeleteOutlined />} disabled={!item.codeHash} onClick={() => remove(item)}>
                                 Delete
                             </Button>
                         </InlineActions>
@@ -136,7 +127,7 @@ export const BytecodeBlacklistsPage = () => {
                     <Form.Item name='note' label='Note'>
                         <Input.TextArea rows={4} />
                     </Form.Item>
-                    <Button type='primary' htmlType='submit' disabled={!canModify}>
+                    <Button type='primary' htmlType='submit'>
                         Save
                     </Button>
                 </Form>

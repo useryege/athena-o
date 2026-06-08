@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-662-ge76901f-dirty"
+    "version": "v1.0.0-663-g8ff0153-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -24,49 +24,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountAccountsList"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/account/can-i/{resource}/{action}/{subresource}": {
-      "get": {
-        "tags": [
-          "AccountService"
-        ],
-        "summary": "CanI checks if the current account has permission to perform an action",
-        "operationId": "AccountService_CanI",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "resource",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "action",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "subresource",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/accountCanIResponse"
             }
           },
           "default": {
@@ -1638,14 +1595,6 @@
           "items": {
             "$ref": "#/definitions/accountAccount"
           }
-        }
-      }
-    },
-    "accountCanIResponse": {
-      "type": "object",
-      "properties": {
-        "value": {
-          "type": "string"
         }
       }
     },

@@ -6,26 +6,20 @@ import {AppPage, CardTitle, InlineActions, MetricRow, ResponsiveResourceList, Tr
 import {Context} from '../../shared/context';
 import {services} from '../../shared/services';
 import {TokenAPIWalletBlacklist} from '../../shared/services/tokenapi-service';
-import {rbacActions, rbacResources, useCanI} from './shared';
 
 export const WalletBlacklistsPage = () => {
     const ctx = React.useContext(Context);
     const [form] = Form.useForm();
     const [editing, setEditing] = React.useState<TokenAPIWalletBlacklist>(null);
     const data = useAsyncData(() => services.tokenapi.listWalletBlacklists(), []);
-    const canUpdate = useCanI(rbacResources.tokenapi, rbacActions.update);
-    const canModify = canUpdate.data === true;
     const add = async (values: {wallet: string; note?: string}) => {
-        if (!canModify) {
-            return;
-        }
         await services.tokenapi.createWalletBlacklist(values.wallet, values.note || '');
         ctx.notifications.success('Wallet blacklisted');
         form.resetFields();
         data.reload();
     };
     const saveNote = async (values: {note?: string}) => {
-        if (!canModify || !editing?.wallet) {
+        if (!editing?.wallet) {
             return;
         }
         await services.tokenapi.updateWalletBlacklist(editing.wallet, values.note || '');
@@ -33,9 +27,6 @@ export const WalletBlacklistsPage = () => {
         data.reload();
     };
     const remove = (item: TokenAPIWalletBlacklist) => {
-        if (!canModify) {
-            return;
-        }
         ctx.modal.confirm({
             title: 'Delete wallet blacklist entry?',
             content: item.wallet,
@@ -53,10 +44,10 @@ export const WalletBlacklistsPage = () => {
             title: 'Actions',
             render: item => (
                 <Space>
-                    <Button icon={<EditOutlined />} disabled={!canModify || !item.wallet} onClick={() => setEditing(item)}>
+                    <Button icon={<EditOutlined />} disabled={!item.wallet} onClick={() => setEditing(item)}>
                         Edit Note
                     </Button>
-                    <Button danger={true} icon={<DeleteOutlined />} disabled={!canModify || !item.wallet} onClick={() => remove(item)}>
+                    <Button danger={true} icon={<DeleteOutlined />} disabled={!item.wallet} onClick={() => remove(item)}>
                         Delete
                     </Button>
                 </Space>
@@ -77,7 +68,7 @@ export const WalletBlacklistsPage = () => {
                     <Form.Item name='note'>
                         <Input placeholder='Note' />
                     </Form.Item>
-                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />} disabled={!canModify}>
+                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />}>
                         Add
                     </Button>
                 </Form>
@@ -92,10 +83,10 @@ export const WalletBlacklistsPage = () => {
                         <CardTitle title={<TruncatedText value={item.wallet} copyable={true} />} subtitle={item.note} />
                         <MetricRow items={[{label: 'Created', value: item.createdAt}]} />
                         <InlineActions>
-                            <Button size='small' icon={<EditOutlined />} disabled={!canModify || !item.wallet} onClick={() => setEditing(item)}>
+                            <Button size='small' icon={<EditOutlined />} disabled={!item.wallet} onClick={() => setEditing(item)}>
                                 Edit Note
                             </Button>
-                            <Button size='small' danger={true} icon={<DeleteOutlined />} disabled={!canModify || !item.wallet} onClick={() => remove(item)}>
+                            <Button size='small' danger={true} icon={<DeleteOutlined />} disabled={!item.wallet} onClick={() => remove(item)}>
                                 Delete
                             </Button>
                         </InlineActions>
@@ -110,7 +101,7 @@ export const WalletBlacklistsPage = () => {
                     <Form.Item name='note' label='Note'>
                         <Input.TextArea rows={4} />
                     </Form.Item>
-                    <Button type='primary' htmlType='submit' disabled={!canModify}>
+                    <Button type='primary' htmlType='submit'>
                         Save
                     </Button>
                 </Form>

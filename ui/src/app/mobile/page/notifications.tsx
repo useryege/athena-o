@@ -6,7 +6,7 @@ import {useNavigate} from 'react-router-dom';
 import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, SearchBar, useAsyncData, useBreakpoint} from '../components';
 import {services} from '../../shared/services';
 import {NotificationDelivery} from '../../shared/services/notification-service';
-import {rbacActions, rbacResources, useCanI, useKeywordParam, usePagedParams} from './shared';
+import {useKeywordParam, usePagedParams} from './shared';
 import {notificationTestTopics} from './notification-shared';
 
 export const NotificationsPage = () => {
@@ -16,30 +16,23 @@ export const NotificationsPage = () => {
     const [keyword, setKeyword] = useKeywordParam('keyword');
     const [status, setStatus] = React.useState('');
     const data = useAsyncData(() => services.notification.listNotifications({page, pageSize, keyword, status: status || undefined}), [page, pageSize, keyword, status]);
-    const canInvoke = useCanI(rbacResources.notifications, rbacActions.invoke);
-    const canSendTest = canInvoke.data === true;
     const sendTest = async (topic: string) => {
-        if (!canSendTest) {
-            return;
-        }
         await services.notification.sendTestNotification(topic);
         data.reload();
     };
     const testNotificationActions = isMobile ? (
         <Dropdown
             menu={{
-                items: notificationTestTopics.map(item => ({key: item.topic, label: item.label, disabled: !canSendTest})),
+                items: notificationTestTopics.map(item => ({key: item.topic, label: item.label})),
                 onClick: item => void sendTest(item.key)
             }}
             trigger={['click']}>
-            <Button icon={<SendOutlined />} disabled={!canSendTest}>
-                Test
-            </Button>
+            <Button icon={<SendOutlined />}>Test</Button>
         </Dropdown>
     ) : (
         <Space>
             {notificationTestTopics.map(item => (
-                <Button key={item.topic} icon={<SendOutlined />} disabled={!canSendTest} onClick={() => void sendTest(item.topic)}>
+                <Button key={item.topic} icon={<SendOutlined />} onClick={() => void sendTest(item.topic)}>
                     {item.label}
                 </Button>
             ))}

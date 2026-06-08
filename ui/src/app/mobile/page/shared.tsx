@@ -1,6 +1,5 @@
 import {useSearchParams} from 'react-router-dom';
-import {StatusTag, useAsyncData} from '../components';
-import {services} from '../../shared/services';
+import {StatusTag} from '../components';
 
 export const fmt = (value: unknown) => {
     if (value === undefined || value === null || value === '') {
@@ -15,20 +14,6 @@ export const fmt = (value: unknown) => {
 export const fmtNumber = (value?: number) => (value === undefined ? '-' : new Intl.NumberFormat().format(value));
 export const short = (value?: string, head = 10, tail = 8) => (value && value.length > head + tail ? `${value.slice(0, head)}...${value.slice(-tail)}` : value || '-');
 export const boolTag = (value?: boolean) => <StatusTag value={fmt(value)} positive={value === true} negative={value === false} />;
-
-export const rbacResources = {
-    notifications: 'notifications',
-    tokenapi: 'tokenapi',
-    wallets: 'wallets'
-};
-
-export const rbacActions = {
-    update: 'update',
-    invoke: 'invoke'
-};
-
-export const useCanI = (resource: string, action: string, subresource = '*') =>
-    useAsyncData<boolean>(() => services.accounts.canI(resource, action, subresource) as any, [resource, action, subresource]);
 
 export const usePagedParams = (defaultPageSize = 20) => {
     const [params, setParams] = useSearchParams();

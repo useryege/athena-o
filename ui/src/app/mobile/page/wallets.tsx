@@ -6,7 +6,7 @@ import {AppPage, CardTitle, InlineActions, KeyValueGrid, MetricRow, ResponsiveRe
 import {Context} from '../../shared/context';
 import {services} from '../../shared/services';
 import {WalletDetail, WalletItem} from '../../shared/services/wallet-service';
-import {rbacActions, rbacResources, useCanI, useKeywordParam, usePagedParams} from './shared';
+import {useKeywordParam, usePagedParams} from './shared';
 
 export const WalletsPage = () => {
     const ctx = React.useContext(Context);
@@ -16,20 +16,10 @@ export const WalletsPage = () => {
     const [createOpen, setCreateOpen] = React.useState(false);
     const [secret, setSecret] = React.useState<WalletDetail>(null);
     const data = useAsyncData(() => services.wallet.listWallets({page, pageSize, query, chain: chain || undefined}), [page, pageSize, query, chain]);
-    const canUpdateWallets = useCanI(rbacResources.wallets, rbacActions.update);
-    const canRevealWallets = useCanI(rbacResources.wallets, rbacActions.invoke);
-    const canCreateWallet = canUpdateWallets.data === true;
-    const canRevealWallet = canRevealWallets.data === true;
     const reveal = async (id: number) => {
-        if (!canRevealWallet) {
-            return;
-        }
         setSecret(await services.wallet.getWallet(id, true));
     };
     const create = async (values: {chain: string; alias?: string}) => {
-        if (!canCreateWallet) {
-            return;
-        }
         await services.wallet.createWallet(values.chain, values.alias || '');
         setCreateOpen(false);
         ctx.notifications.success('Wallet created');
@@ -43,7 +33,7 @@ export const WalletsPage = () => {
         {
             title: 'Actions',
             render: item => (
-                <Button icon={<EyeOutlined />} disabled={!canRevealWallet} onClick={() => reveal(item.id)}>
+                <Button icon={<EyeOutlined />} onClick={() => reveal(item.id)}>
                     Reveal
                 </Button>
             )
@@ -57,7 +47,7 @@ export const WalletsPage = () => {
             error={data.error}
             onRefresh={data.reload}
             extra={
-                <Button type='primary' icon={<PlusOutlined />} disabled={!canCreateWallet} onClick={() => setCreateOpen(true)}>
+                <Button type='primary' icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
                     Create
                 </Button>
             }
@@ -93,7 +83,7 @@ export const WalletsPage = () => {
                             ]}
                         />
                         <InlineActions>
-                            <Button size='small' icon={<EyeOutlined />} disabled={!canRevealWallet} onClick={() => reveal(item.id)}>
+                            <Button size='small' icon={<EyeOutlined />} onClick={() => reveal(item.id)}>
                                 Reveal
                             </Button>
                         </InlineActions>
@@ -108,7 +98,7 @@ export const WalletsPage = () => {
                     <Form.Item name='alias' label='Alias'>
                         <Input />
                     </Form.Item>
-                    <Button type='primary' htmlType='submit' disabled={!canCreateWallet}>
+                    <Button type='primary' htmlType='submit'>
                         Create
                     </Button>
                 </Form>

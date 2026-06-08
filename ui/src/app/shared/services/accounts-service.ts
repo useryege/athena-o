@@ -27,9 +27,4 @@ export class AccountsService {
     public deleteToken(name: string, id: string): Promise<any> {
         return requests.delete(`/account/${name}/token/${id}`);
     }
-
-    public canI(resource: string, action: string, subresource: string): Promise<boolean> {
-        const parts = [resource, action, subresource || '*'].map(part => encodeURIComponent(part));
-        return requests.get(`/account/can-i/${parts.join('/')}`).then(res => res.body.value === 'yes');
-    }
 }

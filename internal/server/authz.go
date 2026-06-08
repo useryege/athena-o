@@ -143,7 +143,6 @@ var publicGRPCMethods = map[string]bool{
 }
 
 var rbacGRPCMethods = map[string]authzRule{
-	"/account.AccountService/CanI":           fixedRule(rbac.ResourceAccounts, rbac.ActionGet),
 	"/account.AccountService/ListAccounts":   fixedRule(rbac.ResourceAccounts, rbac.ActionGet),
 	"/account.AccountService/GetAccount":     {resource: rbac.ResourceAccounts, action: rbac.ActionGet, object: accountName},
 	"/account.AccountService/UpdatePassword": {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},

@@ -63,7 +63,6 @@ require (
 	k8s.io/code-generator v0.35.3
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912
-	k8s.io/kubectl v0.35.3
 	sigs.k8s.io/yaml v1.6.0
 )
 

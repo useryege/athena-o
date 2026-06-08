@@ -129,116 +129,6 @@ func (m *UpdatePasswordResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_UpdatePasswordResponse proto.InternalMessageInfo
 
-type CanIRequest struct {
-	Resource             string   `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
-	Action               string   `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
-	Subresource          string   `protobuf:"bytes,3,opt,name=subresource,proto3" json:"subresource,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *CanIRequest) Reset()         { *m = CanIRequest{} }
-func (m *CanIRequest) String() string { return proto.CompactTextString(m) }
-func (*CanIRequest) ProtoMessage()    {}
-func (*CanIRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{2}
-}
-func (m *CanIRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CanIRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CanIRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CanIRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CanIRequest.Merge(m, src)
-}
-func (m *CanIRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *CanIRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_CanIRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CanIRequest proto.InternalMessageInfo
-
-func (m *CanIRequest) GetResource() string {
-	if m != nil {
-		return m.Resource
-	}
-	return ""
-}
-
-func (m *CanIRequest) GetAction() string {
-	if m != nil {
-		return m.Action
-	}
-	return ""
-}
-
-func (m *CanIRequest) GetSubresource() string {
-	if m != nil {
-		return m.Subresource
-	}
-	return ""
-}
-
-type CanIResponse struct {
-	Value                string   `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *CanIResponse) Reset()         { *m = CanIResponse{} }
-func (m *CanIResponse) String() string { return proto.CompactTextString(m) }
-func (*CanIResponse) ProtoMessage()    {}
-func (*CanIResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{3}
-}
-func (m *CanIResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CanIResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CanIResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CanIResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CanIResponse.Merge(m, src)
-}
-func (m *CanIResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *CanIResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CanIResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CanIResponse proto.InternalMessageInfo
-
-func (m *CanIResponse) GetValue() string {
-	if m != nil {
-		return m.Value
-	}
-	return ""
-}
-
 type GetAccountRequest struct {
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -250,7 +140,7 @@ func (m *GetAccountRequest) Reset()         { *m = GetAccountRequest{} }
 func (m *GetAccountRequest) String() string { return proto.CompactTextString(m) }
 func (*GetAccountRequest) ProtoMessage()    {}
 func (*GetAccountRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{4}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{2}
 }
 func (m *GetAccountRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -300,7 +190,7 @@ func (m *Account) Reset()         { *m = Account{} }
 func (m *Account) String() string { return proto.CompactTextString(m) }
 func (*Account) ProtoMessage()    {}
 func (*Account) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{5}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{3}
 }
 func (m *Account) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -368,7 +258,7 @@ func (m *AccountsList) Reset()         { *m = AccountsList{} }
 func (m *AccountsList) String() string { return proto.CompactTextString(m) }
 func (*AccountsList) ProtoMessage()    {}
 func (*AccountsList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{6}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{4}
 }
 func (m *AccountsList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -417,7 +307,7 @@ func (m *Token) Reset()         { *m = Token{} }
 func (m *Token) String() string { return proto.CompactTextString(m) }
 func (*Token) ProtoMessage()    {}
 func (*Token) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{7}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{5}
 }
 func (m *Token) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -478,7 +368,7 @@ func (m *TokensList) Reset()         { *m = TokensList{} }
 func (m *TokensList) String() string { return proto.CompactTextString(m) }
 func (*TokensList) ProtoMessage()    {}
 func (*TokensList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{8}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{6}
 }
 func (m *TokensList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -528,7 +418,7 @@ func (m *CreateTokenRequest) Reset()         { *m = CreateTokenRequest{} }
 func (m *CreateTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateTokenRequest) ProtoMessage()    {}
 func (*CreateTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{9}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{7}
 }
 func (m *CreateTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -589,7 +479,7 @@ func (m *CreateTokenResponse) Reset()         { *m = CreateTokenResponse{} }
 func (m *CreateTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateTokenResponse) ProtoMessage()    {}
 func (*CreateTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{10}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{8}
 }
 func (m *CreateTokenResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -637,7 +527,7 @@ func (m *DeleteTokenRequest) Reset()         { *m = DeleteTokenRequest{} }
 func (m *DeleteTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteTokenRequest) ProtoMessage()    {}
 func (*DeleteTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{11}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{9}
 }
 func (m *DeleteTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -690,7 +580,7 @@ func (m *ListAccountRequest) Reset()         { *m = ListAccountRequest{} }
 func (m *ListAccountRequest) String() string { return proto.CompactTextString(m) }
 func (*ListAccountRequest) ProtoMessage()    {}
 func (*ListAccountRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{12}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{10}
 }
 func (m *ListAccountRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -729,7 +619,7 @@ func (m *EmptyResponse) Reset()         { *m = EmptyResponse{} }
 func (m *EmptyResponse) String() string { return proto.CompactTextString(m) }
 func (*EmptyResponse) ProtoMessage()    {}
 func (*EmptyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{13}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{11}
 }
 func (m *EmptyResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -761,8 +651,6 @@ var xxx_messageInfo_EmptyResponse proto.InternalMessageInfo
 func init() {
 	proto.RegisterType((*UpdatePasswordRequest)(nil), "account.UpdatePasswordRequest")
 	proto.RegisterType((*UpdatePasswordResponse)(nil), "account.UpdatePasswordResponse")
-	proto.RegisterType((*CanIRequest)(nil), "account.CanIRequest")
-	proto.RegisterType((*CanIResponse)(nil), "account.CanIResponse")
 	proto.RegisterType((*GetAccountRequest)(nil), "account.GetAccountRequest")
 	proto.RegisterType((*Account)(nil), "account.Account")
 	proto.RegisterType((*AccountsList)(nil), "account.AccountsList")
@@ -780,54 +668,47 @@ func init() {
 }
 
 var fileDescriptor_da6bf34a9e69bf9c = []byte{
-	// 744 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x55, 0x4b, 0x6f, 0xdb, 0x46,
-	0x10, 0x06, 0x25, 0xcb, 0x8f, 0x91, 0x2a, 0xd7, 0x5b, 0x5b, 0x25, 0x58, 0x55, 0x95, 0xd7, 0xae,
-	0xad, 0xaa, 0xa8, 0xd9, 0xba, 0x40, 0x10, 0x18, 0x49, 0x00, 0xdb, 0x09, 0x02, 0x03, 0x39, 0x24,
-	0xca, 0xe3, 0xe0, 0x9c, 0x56, 0xd4, 0x40, 0x5e, 0x58, 0x5a, 0xd2, 0xdc, 0xa5, 0x14, 0x43, 0xd0,
-	0x25, 0xf9, 0x09, 0xb9, 0xe6, 0x07, 0xe5, 0x18, 0x20, 0x7f, 0x20, 0x30, 0xf2, 0x43, 0x02, 0x2e,
-	0x1f, 0xa2, 0x1e, 0x0e, 0x72, 0x92, 0xe6, 0xb1, 0xf3, 0x7d, 0xf3, 0xed, 0x0c, 0x17, 0xfe, 0xe4,
-	0x42, 0xa1, 0x2f, 0x58, 0xcf, 0x96, 0xe8, 0x0f, 0xd0, 0xb7, 0x99, 0xe3, 0xb8, 0x81, 0x50, 0xc9,
-	0xef, 0x81, 0xe7, 0xbb, 0xca, 0x25, 0x2b, 0xb1, 0x69, 0x55, 0xbb, 0xae, 0xdb, 0xed, 0xa1, 0xcd,
-	0x3c, 0x6e, 0x33, 0x21, 0x5c, 0xc5, 0x14, 0x77, 0x85, 0x8c, 0xd2, 0xe8, 0x10, 0xb6, 0x5e, 0x7a,
-	0x1d, 0xa6, 0xf0, 0x29, 0x93, 0x72, 0xe8, 0xfa, 0x9d, 0x16, 0x5e, 0x05, 0x28, 0x15, 0xa9, 0x43,
-	0x51, 0xe0, 0x30, 0xf1, 0x9a, 0x46, 0xdd, 0x68, 0xac, 0xb5, 0xb2, 0x2e, 0xd2, 0x80, 0x75, 0x27,
-	0xf0, 0x7d, 0x14, 0x2a, 0xcd, 0xca, 0xe9, 0xac, 0x59, 0x37, 0x21, 0xb0, 0x24, 0x58, 0x1f, 0xcd,
-	0xbc, 0x0e, 0xeb, 0xff, 0xd4, 0x84, 0xca, 0x2c, 0xb0, 0xf4, 0x5c, 0x21, 0x91, 0x3a, 0x50, 0x3c,
-	0x65, 0xe2, 0x2c, 0x21, 0x62, 0xc1, 0xaa, 0x8f, 0xd2, 0x0d, 0x7c, 0x07, 0x63, 0x16, 0xa9, 0x4d,
-	0x2a, 0xb0, 0xcc, 0x9c, 0xb0, 0x9d, 0x18, 0x39, 0xb6, 0x42, 0xf2, 0x32, 0x68, 0xa7, 0xc7, 0x22,
-	0xdc, 0xac, 0x8b, 0xee, 0x42, 0x29, 0x02, 0x89, 0x40, 0xc9, 0x26, 0x14, 0x06, 0xac, 0x17, 0x24,
-	0x10, 0x91, 0x41, 0xf7, 0x61, 0xe3, 0x31, 0xaa, 0xe3, 0x48, 0xc9, 0x84, 0x50, 0xd2, 0x8d, 0x91,
-	0xe9, 0xe6, 0x9d, 0x01, 0x2b, 0x71, 0xda, 0xa2, 0x38, 0x31, 0x61, 0x05, 0x05, 0x6b, 0xf7, 0x30,
-	0xd2, 0x68, 0xb5, 0x95, 0x98, 0x84, 0x42, 0xc9, 0x61, 0x1e, 0x6b, 0xf3, 0x1e, 0x57, 0x1c, 0xa5,
-	0x99, 0xaf, 0xe7, 0x1b, 0x6b, 0xad, 0x29, 0x1f, 0xd9, 0x83, 0x65, 0xe5, 0x5e, 0xa2, 0x90, 0xe6,
-	0x52, 0x3d, 0xdf, 0x28, 0x1e, 0x96, 0x0f, 0x92, 0xbb, 0x7e, 0x11, 0xba, 0x5b, 0x71, 0x94, 0xde,
-	0x81, 0x52, 0x4c, 0x42, 0x3e, 0xe1, 0x52, 0x91, 0x3d, 0x28, 0x70, 0x85, 0x7d, 0x69, 0x1a, 0xfa,
-	0xd8, 0xcf, 0xe9, 0xb1, 0xa4, 0xa3, 0x28, 0x4c, 0x9f, 0x41, 0x41, 0x17, 0x22, 0x65, 0xc8, 0xf1,
-	0xe4, 0xae, 0x73, 0xbc, 0x13, 0x6a, 0xcf, 0xa5, 0x0c, 0xb0, 0x73, 0xac, 0x34, 0xef, 0x7c, 0x2b,
-	0xb5, 0x49, 0x15, 0xd6, 0xf0, 0x8d, 0xc7, 0x7d, 0x94, 0xc7, 0x4a, 0x2b, 0x9c, 0x6f, 0x4d, 0x1c,
-	0xf4, 0x10, 0x40, 0x97, 0x8c, 0x88, 0xec, 0x4e, 0x13, 0x99, 0xe5, 0x1f, 0xd3, 0x78, 0x05, 0xe4,
-	0xd4, 0x47, 0xa6, 0x30, 0xf2, 0xde, 0x2e, 0x77, 0x06, 0xfb, 0x4c, 0xc4, 0xc4, 0x26, 0x8e, 0xb8,
-	0x8b, 0x7c, 0xd2, 0x05, 0xfd, 0x1b, 0x7e, 0x99, 0xaa, 0x3b, 0xb9, 0x72, 0xad, 0x5b, 0x72, 0xe5,
-	0xda, 0xa0, 0x77, 0x81, 0x3c, 0xc4, 0x1e, 0xfe, 0x00, 0x89, 0x08, 0x26, 0x97, 0xc2, 0x6c, 0x02,
-	0x09, 0x9b, 0x9d, 0x9e, 0x16, 0xba, 0x0e, 0x3f, 0x3d, 0xea, 0x7b, 0xea, 0x3a, 0x81, 0x3d, 0xfc,
-	0x50, 0x80, 0x72, 0x9c, 0xf3, 0x1c, 0xfd, 0x01, 0x77, 0x90, 0x0c, 0x61, 0x29, 0x1c, 0x46, 0xb2,
-	0x99, 0xea, 0x92, 0x59, 0x00, 0x6b, 0x6b, 0xc6, 0x1b, 0xaf, 0xc9, 0xc9, 0xdb, 0xcf, 0x5f, 0xdf,
-	0xe7, 0xee, 0x91, 0x23, 0xbd, 0xd9, 0x83, 0xff, 0xd2, 0xef, 0x80, 0xc3, 0xc4, 0x3f, 0xdc, 0x1e,
-	0x25, 0xa3, 0x3e, 0xb6, 0x47, 0xd1, 0x56, 0x8c, 0xed, 0x51, 0x66, 0x03, 0xee, 0x37, 0x9b, 0x63,
-	0x32, 0x80, 0xf2, 0xf4, 0x12, 0x92, 0x5a, 0x0a, 0xb6, 0xf0, 0xb3, 0x60, 0xfd, 0x71, 0x6b, 0x3c,
-	0xa6, 0xb5, 0xa3, 0x69, 0xfd, 0x6e, 0x99, 0xb3, 0xb4, 0xbc, 0x38, 0xf3, 0xc8, 0x68, 0x92, 0xd7,
-	0x50, 0xca, 0x48, 0x25, 0xc9, 0x6f, 0x69, 0xd5, 0x79, 0x05, 0x33, 0xfd, 0x67, 0x87, 0x9b, 0xfe,
-	0xaa, 0x81, 0x36, 0xc8, 0xfa, 0x0c, 0x10, 0x39, 0x07, 0x98, 0x2c, 0x2d, 0xb1, 0xd2, 0xd3, 0x73,
-	0x9b, 0x6c, 0xcd, 0x2d, 0x04, 0xad, 0xe9, 0xa2, 0x26, 0xa9, 0xcc, 0xb2, 0x1f, 0x85, 0x57, 0x3e,
-	0x26, 0x57, 0x50, 0xcc, 0x8c, 0x52, 0x86, 0xf7, 0xfc, 0xe0, 0x5a, 0xd5, 0xc5, 0xc1, 0x58, 0xa7,
-	0x7d, 0x8d, 0xb4, 0x4d, 0xab, 0x8b, 0x91, 0x6c, 0x3d, 0x8d, 0xa1, 0x56, 0x7d, 0x28, 0x66, 0x06,
-	0x32, 0x03, 0x39, 0x3f, 0xa6, 0x56, 0x25, 0x0d, 0x4e, 0xcd, 0x1c, 0xfd, 0x4b, 0x83, 0xed, 0x34,
-	0xb7, 0xbf, 0x07, 0x66, 0x8f, 0x78, 0x67, 0x7c, 0xf2, 0xe0, 0xe3, 0x4d, 0xcd, 0xf8, 0x74, 0x53,
-	0x33, 0xbe, 0xdc, 0xd4, 0x8c, 0xf3, 0x7f, 0xbb, 0x5c, 0x5d, 0x04, 0xed, 0x03, 0xc7, 0xed, 0xdb,
-	0x81, 0x44, 0xff, 0x1a, 0xbb, 0x68, 0x33, 0x75, 0x81, 0x82, 0xd9, 0xde, 0x65, 0x37, 0x2c, 0xe7,
-	0xf4, 0x38, 0x4e, 0x5e, 0x9f, 0xf6, 0xb2, 0x7e, 0x57, 0xfe, 0xff, 0x16, 0x00, 0x00, 0xff, 0xff,
-	0x65, 0xea, 0x66, 0x33, 0xa7, 0x06, 0x00, 0x00,
+	// 640 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xdb, 0x6e, 0xd3, 0x40,
+	0x10, 0x95, 0xe3, 0x5e, 0x27, 0x25, 0xa5, 0x43, 0x5b, 0x2c, 0x13, 0x42, 0xba, 0x85, 0x12, 0x8a,
+	0x54, 0x43, 0x91, 0x10, 0xe2, 0x01, 0xa9, 0x5c, 0x84, 0x90, 0x78, 0x00, 0x73, 0x79, 0x28, 0x4f,
+	0x1b, 0x67, 0x94, 0xae, 0x9a, 0xac, 0x5d, 0xef, 0x26, 0xa5, 0xaa, 0xfa, 0x02, 0x9f, 0xc0, 0x27,
+	0xf0, 0x33, 0x3c, 0x22, 0xf1, 0x03, 0xa8, 0xe2, 0x43, 0x50, 0xd6, 0x97, 0x38, 0x97, 0x22, 0x9e,
+	0x92, 0x9d, 0x99, 0x3d, 0xe7, 0xcc, 0xec, 0x19, 0xc3, 0x2d, 0x21, 0x35, 0xc5, 0x92, 0x77, 0x3c,
+	0x45, 0x71, 0x9f, 0x62, 0x8f, 0x07, 0x41, 0xd8, 0x93, 0x3a, 0xfb, 0xdd, 0x89, 0xe2, 0x50, 0x87,
+	0x38, 0x9f, 0x1e, 0xdd, 0x6a, 0x3b, 0x0c, 0xdb, 0x1d, 0xf2, 0x78, 0x24, 0x3c, 0x2e, 0x65, 0xa8,
+	0xb9, 0x16, 0xa1, 0x54, 0x49, 0x19, 0x3b, 0x86, 0xb5, 0x0f, 0x51, 0x8b, 0x6b, 0x7a, 0xc3, 0x95,
+	0x3a, 0x0e, 0xe3, 0x96, 0x4f, 0x47, 0x3d, 0x52, 0x1a, 0xeb, 0x50, 0x96, 0x74, 0x9c, 0x45, 0x1d,
+	0xab, 0x6e, 0x35, 0x16, 0xfd, 0x62, 0x08, 0x1b, 0xb0, 0x1c, 0xf4, 0xe2, 0x98, 0xa4, 0xce, 0xab,
+	0x4a, 0xa6, 0x6a, 0x3c, 0x8c, 0x08, 0x33, 0x92, 0x77, 0xc9, 0xb1, 0x4d, 0xda, 0xfc, 0x67, 0x0e,
+	0xac, 0x8f, 0x13, 0xab, 0x28, 0x94, 0x8a, 0xd8, 0x6d, 0x58, 0x79, 0x49, 0x7a, 0x2f, 0x91, 0x9f,
+	0xc9, 0xc9, 0x20, 0xac, 0x02, 0xc4, 0x57, 0x0b, 0xe6, 0xd3, 0xb2, 0x69, 0x79, 0x74, 0x60, 0x9e,
+	0x24, 0x6f, 0x76, 0x28, 0x11, 0xb6, 0xe0, 0x67, 0x47, 0x64, 0xb0, 0x14, 0xf0, 0x88, 0x37, 0x45,
+	0x47, 0x68, 0x41, 0xca, 0xb1, 0xeb, 0x76, 0x63, 0xd1, 0x1f, 0x89, 0xe1, 0x16, 0xcc, 0xe9, 0xf0,
+	0x90, 0xa4, 0x72, 0x66, 0xea, 0x76, 0xa3, 0xbc, 0x5b, 0xd9, 0xc9, 0x06, 0xfc, 0x7e, 0x10, 0xf6,
+	0xd3, 0x2c, 0x7b, 0x08, 0x4b, 0xa9, 0x08, 0xf5, 0x5a, 0x28, 0x8d, 0x5b, 0x30, 0x2b, 0x34, 0x75,
+	0x95, 0x63, 0x99, 0x6b, 0x97, 0xf3, 0x6b, 0x59, 0x47, 0x49, 0x9a, 0xbd, 0x85, 0x59, 0x03, 0x84,
+	0x15, 0x28, 0x89, 0x6c, 0xc0, 0x25, 0xd1, 0x42, 0x17, 0x16, 0x84, 0x52, 0x3d, 0x6a, 0xed, 0x69,
+	0xa3, 0xdb, 0xf6, 0xf3, 0x33, 0x56, 0x61, 0x91, 0x3e, 0x47, 0x22, 0x26, 0xb5, 0xa7, 0xcd, 0x38,
+	0x6d, 0x7f, 0x18, 0x60, 0xbb, 0x00, 0x06, 0x32, 0x11, 0x72, 0x73, 0x54, 0xc8, 0xb8, 0xfe, 0x54,
+	0xc6, 0x47, 0xc0, 0x67, 0x31, 0x71, 0x4d, 0x49, 0xf4, 0xe2, 0x71, 0x17, 0xb8, 0x5f, 0xc9, 0x54,
+	0xd8, 0x30, 0x90, 0x76, 0x61, 0x67, 0x5d, 0xb0, 0xbb, 0x70, 0x65, 0x04, 0x37, 0x79, 0x5c, 0x5c,
+	0x85, 0x59, 0x33, 0xb7, 0x14, 0x39, 0x39, 0xb0, 0x47, 0x80, 0xcf, 0xa9, 0x43, 0xff, 0x21, 0x22,
+	0xa1, 0x29, 0xe5, 0x34, 0xab, 0x80, 0x83, 0x66, 0x47, 0xdd, 0xc2, 0x96, 0xe1, 0xd2, 0x8b, 0x6e,
+	0xa4, 0x4f, 0x32, 0xda, 0xdd, 0xef, 0x33, 0x50, 0x49, 0x6b, 0xde, 0x51, 0xdc, 0x17, 0x01, 0x61,
+	0x1f, 0x2a, 0xa3, 0x06, 0xc4, 0x5a, 0x3e, 0xa1, 0xa9, 0x2b, 0xe1, 0xde, 0xb8, 0x30, 0x9f, 0x3a,
+	0x77, 0xf3, 0xcb, 0xaf, 0x3f, 0xdf, 0x4a, 0xd7, 0x5d, 0xc7, 0x2c, 0x5b, 0xff, 0x7e, 0xbe, 0x9a,
+	0x51, 0x5a, 0xf9, 0xd8, 0xda, 0xc6, 0x4f, 0xb0, 0x54, 0x50, 0xac, 0xf0, 0x5a, 0x8e, 0x3a, 0xd9,
+	0x88, 0xbb, 0x36, 0xee, 0x1e, 0xf3, 0xb4, 0xec, 0xaa, 0x21, 0x5a, 0xc1, 0xe5, 0x31, 0x22, 0xdc,
+	0x07, 0x18, 0xee, 0x0e, 0xba, 0xf9, 0xed, 0x89, 0x85, 0x72, 0x27, 0x7c, 0xc9, 0x6a, 0x06, 0xd4,
+	0xc1, 0xf5, 0x71, 0xf5, 0xa7, 0x83, 0xc9, 0x9f, 0xe1, 0x11, 0x94, 0x0b, 0x2f, 0x5a, 0xd0, 0x3d,
+	0xe9, 0x1f, 0xb7, 0x3a, 0x3d, 0x99, 0x6d, 0xb8, 0x61, 0xda, 0x60, 0xd5, 0xe9, 0x4c, 0x9e, 0x31,
+	0xc5, 0x60, 0x56, 0x5d, 0x28, 0x17, 0x7c, 0x51, 0xa0, 0x9c, 0x74, 0x8b, 0xbb, 0x9e, 0x27, 0x47,
+	0x9e, 0x9e, 0xdd, 0x31, 0x64, 0x9b, 0xdb, 0x1b, 0xff, 0x22, 0xf3, 0x4e, 0x45, 0xeb, 0xec, 0xe9,
+	0x93, 0x1f, 0xe7, 0x35, 0xeb, 0xe7, 0x79, 0xcd, 0xfa, 0x7d, 0x5e, 0xb3, 0xf6, 0xef, 0xb5, 0x85,
+	0x3e, 0xe8, 0x35, 0x77, 0x82, 0xb0, 0xeb, 0xf5, 0x14, 0xc5, 0x27, 0xd4, 0x26, 0x8f, 0xeb, 0x03,
+	0x92, 0xdc, 0x8b, 0x0e, 0xdb, 0x03, 0xb8, 0xa0, 0x23, 0x68, 0xf8, 0xe5, 0x6d, 0xce, 0x99, 0x6f,
+	0xea, 0x83, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x85, 0x9d, 0xf1, 0xa8, 0xa3, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -842,8 +723,6 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AccountServiceClient interface {
-	// CanI checks if the current account has permission to perform an action
-	CanI(ctx context.Context, in *CanIRequest, opts ...grpc.CallOption) (*CanIResponse, error)
 	// UpdatePassword updates an account's password to a new value
 	UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error)
 	// ListAccounts returns the list of accounts
@@ -862,15 +741,6 @@ type accountServiceClient struct {
 
 func NewAccountServiceClient(cc *grpc.ClientConn) AccountServiceClient {
 	return &accountServiceClient{cc}
-}
-
-func (c *accountServiceClient) CanI(ctx context.Context, in *CanIRequest, opts ...grpc.CallOption) (*CanIResponse, error) {
-	out := new(CanIResponse)
-	err := c.cc.Invoke(ctx, "/account.AccountService/CanI", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *accountServiceClient) UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error) {
@@ -920,8 +790,6 @@ func (c *accountServiceClient) DeleteToken(ctx context.Context, in *DeleteTokenR
 
 // AccountServiceServer is the server API for AccountService service.
 type AccountServiceServer interface {
-	// CanI checks if the current account has permission to perform an action
-	CanI(context.Context, *CanIRequest) (*CanIResponse, error)
 	// UpdatePassword updates an account's password to a new value
 	UpdatePassword(context.Context, *UpdatePasswordRequest) (*UpdatePasswordResponse, error)
 	// ListAccounts returns the list of accounts
@@ -938,9 +806,6 @@ type AccountServiceServer interface {
 type UnimplementedAccountServiceServer struct {
 }
 
-func (*UnimplementedAccountServiceServer) CanI(ctx context.Context, req *CanIRequest) (*CanIResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CanI not implemented")
-}
 func (*UnimplementedAccountServiceServer) UpdatePassword(ctx context.Context, req *UpdatePasswordRequest) (*UpdatePasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePassword not implemented")
 }
@@ -959,24 +824,6 @@ func (*UnimplementedAccountServiceServer) DeleteToken(ctx context.Context, req *
 
 func RegisterAccountServiceServer(s *grpc.Server, srv AccountServiceServer) {
 	s.RegisterService(&_AccountService_serviceDesc, srv)
-}
-
-func _AccountService_CanI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CanIRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AccountServiceServer).CanI(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/account.AccountService/CanI",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).CanI(ctx, req.(*CanIRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _AccountService_UpdatePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1074,10 +921,6 @@ var _AccountService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*AccountServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CanI",
-			Handler:    _AccountService_CanI_Handler,
-		},
-		{
 			MethodName: "UpdatePassword",
 			Handler:    _AccountService_UpdatePassword_Handler,
 		},
@@ -1173,88 +1016,6 @@ func (m *UpdatePasswordResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *CanIRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CanIRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CanIRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Subresource) > 0 {
-		i -= len(m.Subresource)
-		copy(dAtA[i:], m.Subresource)
-		i = encodeVarintAccount(dAtA, i, uint64(len(m.Subresource)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.Action) > 0 {
-		i -= len(m.Action)
-		copy(dAtA[i:], m.Action)
-		i = encodeVarintAccount(dAtA, i, uint64(len(m.Action)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Resource) > 0 {
-		i -= len(m.Resource)
-		copy(dAtA[i:], m.Resource)
-		i = encodeVarintAccount(dAtA, i, uint64(len(m.Resource)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *CanIResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CanIResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CanIResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Value) > 0 {
-		i -= len(m.Value)
-		copy(dAtA[i:], m.Value)
-		i = encodeVarintAccount(dAtA, i, uint64(len(m.Value)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1708,46 +1469,6 @@ func (m *UpdatePasswordResponse) Size() (n int) {
 	return n
 }
 
-func (m *CanIRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Resource)
-	if l > 0 {
-		n += 1 + l + sovAccount(uint64(l))
-	}
-	l = len(m.Action)
-	if l > 0 {
-		n += 1 + l + sovAccount(uint64(l))
-	}
-	l = len(m.Subresource)
-	if l > 0 {
-		n += 1 + l + sovAccount(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *CanIResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Value)
-	if l > 0 {
-		n += 1 + l + sovAccount(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *GetAccountRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2118,236 +1839,6 @@ func (m *UpdatePasswordResponse) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: UpdatePasswordResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipAccount(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthAccount
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CanIRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowAccount
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CanIRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CanIRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Resource", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAccount
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAccount
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAccount
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Resource = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Action", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAccount
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAccount
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAccount
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Action = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Subresource", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAccount
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAccount
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAccount
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Subresource = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipAccount(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthAccount
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CanIResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowAccount
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CanIResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CanIResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAccount
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAccount
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAccount
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Value = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipAccount(dAtA[iNdEx:])
