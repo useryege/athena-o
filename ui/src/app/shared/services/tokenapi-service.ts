@@ -185,11 +185,7 @@ export class TokenAPIService {
     }
 
     public updateChainIngestCheckpoint(chainID: number, status: string): Promise<TokenAPIChainIngestCheckpoint | undefined> & {abort?: () => void} {
-        const req = requests.post(`/tokenapi/chain-ingest-checkpoints/${encodeURIComponent(String(chainID))}/status`).send({
-            chainId: chainID,
-            chain_id: chainID,
-            status
-        });
+        const req = requests.post(`/tokenapi/chain-ingest-checkpoints/${encodeURIComponent(String(chainID))}/status`).send({status});
         const promise = req.then(res => {
             const item = res.body?.checkpoint;
             return item ? normalizeCheckpoint(item) : undefined;

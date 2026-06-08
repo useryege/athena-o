@@ -79,6 +79,7 @@ type Querier interface {
 	UpdateContractCodeSource(ctx context.Context, arg UpdateContractCodeSourceParams) (ContractCode, error)
 	UpdateWalletBlacklistNote(ctx context.Context, arg UpdateWalletBlacklistNoteParams) (int64, error)
 	UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertChainIngestCheckpointParams) (ChainIngestCheckpoint, error)
+	UpsertChainIngestCheckpointCursor(ctx context.Context, arg UpsertChainIngestCheckpointCursorParams) (ChainIngestCheckpoint, error)
 	UpsertContractCode(ctx context.Context, codeHash []byte) error
 	UpsertProject(ctx context.Context, arg UpsertProjectParams) (Project, error)
 	UpsertProjectAveData(ctx context.Context, arg UpsertProjectAveDataParams) (ProjectAveDatum, error)

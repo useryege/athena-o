@@ -15,10 +15,6 @@ func (s *SQLStore) IngestProjectCandidateBatch(ctx context.Context, checkpoint C
 	if err != nil {
 		return nil, err
 	}
-	status := checkpoint.Status
-	if status == "" {
-		status = ChainIngestStatusRunning
-	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin ingest project candidate batch transaction: %w", err)
@@ -37,13 +33,13 @@ func (s *SQLStore) IngestProjectCandidateBatch(ctx context.Context, checkpoint C
 			return nil, fmt.Errorf("batch upsert project candidates: %w", err)
 		}
 	}
-	row, err := q.UpsertChainIngestCheckpoint(ctx, tokensqlc.UpsertChainIngestCheckpointParams{
+	row, err := q.UpsertChainIngestCheckpointCursor(ctx, tokensqlc.UpsertChainIngestCheckpointCursorParams{
 		ChainID:           checkpoint.ChainID,
 		CursorBlockNumber: cursorBlockNumber,
-		Status:            status,
+		Status:            checkpoint.Status,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("upsert chain ingest checkpoint: %w", err)
+		return nil, fmt.Errorf("upsert chain ingest checkpoint cursor: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("commit ingest project candidate batch transaction: %w", err)

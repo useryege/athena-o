@@ -153,3 +153,36 @@ func (q *Queries) UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertCha
 	)
 	return i, err
 }
+
+const upsertChainIngestCheckpointCursor = `-- name: UpsertChainIngestCheckpointCursor :one
+INSERT INTO chain_ingest_checkpoint (
+  chain_id,
+  cursor_block_number,
+  status
+) VALUES (
+  $1,
+  $2,
+  COALESCE(NULLIF($3::text, ''), 'running')
+)
+ON CONFLICT (chain_id) DO UPDATE
+SET cursor_block_number = EXCLUDED.cursor_block_number
+RETURNING chain_id, cursor_block_number, status, created_at
+`
+
+type UpsertChainIngestCheckpointCursorParams struct {
+	ChainID           int64
+	CursorBlockNumber int64
+	Status            string
+}
+
+func (q *Queries) UpsertChainIngestCheckpointCursor(ctx context.Context, arg UpsertChainIngestCheckpointCursorParams) (ChainIngestCheckpoint, error) {
+	row := q.db.QueryRow(ctx, upsertChainIngestCheckpointCursor, arg.ChainID, arg.CursorBlockNumber, arg.Status)
+	var i ChainIngestCheckpoint
+	err := row.Scan(
+		&i.ChainID,
+		&i.CursorBlockNumber,
+		&i.Status,
+		&i.CreatedAt,
+	)
+	return i, err
+}

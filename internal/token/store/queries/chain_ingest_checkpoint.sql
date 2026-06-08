@@ -25,6 +25,20 @@ SET cursor_block_number = EXCLUDED.cursor_block_number,
   status = EXCLUDED.status
 RETURNING *;
 
+-- name: UpsertChainIngestCheckpointCursor :one
+INSERT INTO chain_ingest_checkpoint (
+  chain_id,
+  cursor_block_number,
+  status
+) VALUES (
+  @chain_id,
+  @cursor_block_number,
+  COALESCE(NULLIF(sqlc.arg('status')::text, ''), 'running')
+)
+ON CONFLICT (chain_id) DO UPDATE
+SET cursor_block_number = EXCLUDED.cursor_block_number
+RETURNING *;
+
 -- name: UpdateChainIngestCheckpointStatus :one
 UPDATE chain_ingest_checkpoint
 SET status = @status
