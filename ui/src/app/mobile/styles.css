@@ -423,9 +423,6 @@ body[data-theme='dark'] .app-page__header {
 
 .worm-market-summary {
     min-width: 260px;
-    display: grid;
-    gap: 6px;
-    align-content: start;
 }
 
 .worm-market-summary .card-title__main > span {
@@ -437,10 +434,16 @@ body[data-theme='dark'] .app-page__header {
     width: fit-content;
     align-items: center;
     gap: 6px;
+    min-height: 22px;
+    padding: 0 7px;
+    border: 1px solid rgba(209, 75, 87, 0.3);
+    border-radius: 8px;
+    background: rgba(209, 75, 87, 0.08);
     color: var(--athena-red);
     font-size: 12px;
     font-weight: 850;
-    line-height: 1;
+    line-height: 20px;
+    flex: 0 0 auto;
 }
 
 .worm-live-dot {

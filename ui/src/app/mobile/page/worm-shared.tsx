@@ -19,8 +19,7 @@ export const WormMarketSummary = (props: {item: WormMarketItem}) => {
     const item = props.item;
     return (
         <div className='worm-market-summary'>
-            <WormLiveIndicator item={item} />
-            <CardTitle title={item.title} subtitle={item.eventTitle} image={wormMarketLogo(item)} />
+            <CardTitle title={item.title} subtitle={item.eventTitle} image={wormMarketLogo(item)} tags={<WormLiveIndicator item={item} />} />
         </div>
     );
 };

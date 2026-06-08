@@ -3,7 +3,7 @@ import type {ColumnsType} from 'antd/es/table';
 import {AppPage, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';
 import {DEFAULT_WORM_MARKET_CATEGORY, DEFAULT_WORM_MARKET_SORT, WormMarketItem} from '../../shared/services/worm-service';
-import {WormLiveIndicator, WormMarketSummary} from './worm-shared';
+import {WormMarketSummary} from './worm-shared';
 
 const openWormMarket = (item: WormMarketItem) => {
     if (!item.conditionId) {
@@ -27,7 +27,6 @@ export const WormPage = () => {
             title: 'Market',
             render: item => <WormMarketSummary item={item} />
         },
-        {title: 'Live', render: item => <WormLiveIndicator item={item} />},
         {title: 'Last Price', dataIndex: 'lastTradePrice'}
     ];
     return (
