@@ -156,8 +156,8 @@ func NewCommand() *cobra.Command {
 		`),
 	}
 
-	command.Flags().StringVar(&cmdutil.LogFormat, "logformat", env.StringFromEnv("ATHENA_NOTIFICATION_LOGFORMAT", "json"), "Set the logging format. One of: json|text")
-	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv("ATHENA_NOTIFICATION_LOGLEVEL", "info"), "Set the logging level. One of: debug|info|warn|error")
+	command.Flags().StringVar(&cmdutil.LogFormat, "logformat", env.StringFromEnv(common.EnvLogFormat, "json"), "Set the logging format. One of: json|text")
+	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_NOTIFICATION_LISTEN_ADDRESS", common.DefaultAddressNotification), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortNotification, "Listen on given port for incoming connections")
 	command.Flags().DurationVar(&workerSendInterval, "worker-send-interval", env.ParseDurationFromEnv("ATHENA_NOTIFICATION_WORKER_SEND_INTERVAL", notification.DefaultWorkerConfig().SendInterval, time.Millisecond, time.Minute), "Delay between Telegram notification sends")

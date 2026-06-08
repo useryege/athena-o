@@ -84,9 +84,9 @@ const (
 	// EnvGnuPGHome is the path to Athena's GnuPG keyring for signature verification
 	EnvGnuPGHome = "ATHENA_GNUPGHOME"
 	// EnvLogFormat log format that is defined by `--logformat` option
-	EnvLogFormat = "ATHENA_LOG_FORMAT"
+	EnvLogFormat = "ATHENA_LOGFORMAT"
 	// EnvLogLevel log level that is defined by `--loglevel` option
-	EnvLogLevel = "ATHENA_LOG_LEVEL"
+	EnvLogLevel = "ATHENA_LOGLEVEL"
 	// EnvLogFormatEnableFullTimestamp enables the FullTimestamp option in logs
 	EnvLogFormatEnableFullTimestamp = "ATHENA_LOG_FORMAT_ENABLE_FULL_TIMESTAMP"
 	// EnvLogFormatTimestamp is the timestamp format used in logs
