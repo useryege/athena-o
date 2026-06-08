@@ -23,6 +23,15 @@ export interface TokenAPIChainIngestCheckpoint {
     createdAt?: string;
 }
 
+export interface TokenAPIChainOption {
+    chainID?: number;
+    chainName?: string;
+}
+
+export interface TokenAPIOptions {
+    chains: TokenAPIChainOption[];
+}
+
 export interface TokenAPIContractCode {
     codeHash?: string;
     sourceCode?: string;
@@ -89,6 +98,13 @@ function normalizeCheckpoint(item: any): TokenAPIChainIngestCheckpoint {
     };
 }
 
+function normalizeChainOption(item: any): TokenAPIChainOption {
+    return {
+        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
+        chainName: item.chainName ?? item.chain_name
+    };
+}
+
 function normalizeContractCode(item: any): TokenAPIContractCode {
     return {
         codeHash: item.codeHash ?? item.code_hash,
@@ -113,6 +129,18 @@ function normalizeTask(item: any): TokenAPIProjectDataCollectionTask {
 }
 
 export class TokenAPIService {
+    public getOptions(): Promise<TokenAPIOptions> & {abort?: () => void} {
+        const req = requests.get('/tokenapi/options');
+        const promise = req.then(res => {
+            const options = res.body?.options || {};
+            return {
+                chains: ((options.chains || []) as any[]).map(normalizeChainOption)
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
     public listBytecodeBlacklists(): Promise<TokenAPIBytecodeBlacklist[]> & {abort?: () => void} {
         const req = requests.get('/tokenapi/bytecode-blacklists');
         const promise = req.then(res => ((res.body?.bytecodeBlacklists || res.body?.bytecode_blacklists || []) as any[]).map(normalizeBytecodeBlacklist)) as any;
@@ -120,10 +148,8 @@ export class TokenAPIService {
         return promise;
     }
 
-    public createBytecodeBlacklist(values: {codeHash: string; note?: string; sourceChainID?: number; sourceContract?: string}): Promise<void> & {abort?: () => void} {
+    public createBytecodeBlacklist(values: {note?: string; sourceChainID?: number; sourceContract?: string}): Promise<void> & {abort?: () => void} {
         const req = requests.post('/tokenapi/bytecode-blacklists').send({
-            codeHash: values.codeHash,
-            code_hash: values.codeHash,
             note: values.note || '',
             sourceChainId: values.sourceChainID,
             source_chain_id: values.sourceChainID,

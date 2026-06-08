@@ -408,12 +408,7 @@ export const ContractCodeDetailPage = () => {
     const decoded = decodeURIComponent(codeHash);
     const detail = useAsyncData(() => services.tokenapi.getContractCode(decoded), [decoded]);
     return (
-        <AppPage
-            title='Contract Code Detail'
-            subtitle={<TruncatedText value={decoded} copyable={true} />}
-            loading={detail.loading}
-            error={detail.error}
-            onRefresh={detail.reload}>
+        <AppPage title='Contract Code Detail' subtitle={<TruncatedText value={decoded} copyable={true} />} loading={detail.loading} error={detail.error} onRefresh={detail.reload}>
             <Section title='Summary'>
                 <KeyValueGrid
                     items={[
@@ -436,9 +431,34 @@ export const BytecodeBlacklistsPage = () => {
     const [form] = Form.useForm();
     const [editing, setEditing] = React.useState<TokenAPIBytecodeBlacklist>(null);
     const data = useAsyncData(() => services.tokenapi.listBytecodeBlacklists(), []);
+    const options = useAsyncData(() => services.tokenapi.getOptions(), []);
     const canUpdate = useCanI(rbacResources.tokenapi, rbacActions.update);
     const canModify = canUpdate.data === true;
-    const add = async (values: {codeHash: string; note?: string; sourceChainID?: number; sourceContract?: string}) => {
+    const chainOptions = React.useMemo(
+        () =>
+            (options.data?.chains || [])
+                .filter(item => item.chainID !== undefined)
+                .map(item => ({
+                    value: item.chainID,
+                    label: item.chainName || item.chainID
+                })),
+        [options.data]
+    );
+    const chainNameByID = React.useMemo(() => {
+        const names = new Map<number, string>();
+        (options.data?.chains || []).forEach(item => {
+            if (item.chainID !== undefined && item.chainName) {
+                names.set(item.chainID, item.chainName);
+            }
+        });
+        return names;
+    }, [options.data]);
+    const chainLabel = React.useCallback((chainID?: number) => (chainID === undefined ? '-' : chainNameByID.get(chainID) || chainID), [chainNameByID]);
+    const refresh = React.useCallback(() => {
+        options.reload();
+        data.reload();
+    }, [data, options]);
+    const add = async (values: {note?: string; sourceChainID?: number; sourceContract?: string}) => {
         if (!canModify) {
             return;
         }
@@ -471,7 +491,7 @@ export const BytecodeBlacklistsPage = () => {
     const columns: ColumnsType<TokenAPIBytecodeBlacklist> = [
         {title: 'Code Hash', render: item => <TruncatedText value={item.codeHash} copyable={true} />},
         {title: 'Note', dataIndex: 'note'},
-        {title: 'Source Chain', dataIndex: 'sourceChainID'},
+        {title: 'Source Chain', render: item => chainLabel(item.sourceChainID)},
         {title: 'Source Contract', render: item => <TruncatedText value={item.sourceContract} copyable={true} />},
         {title: 'Created', dataIndex: 'createdAt'},
         {
@@ -491,18 +511,15 @@ export const BytecodeBlacklistsPage = () => {
     return (
         <AppPage
             title='Bytecode Blacklists'
-            loading={data.loading}
-            error={data.error}
-            onRefresh={data.reload}
+            loading={data.loading || options.loading}
+            error={data.error || options.error}
+            onRefresh={refresh}
             filters={
                 <Form form={form} layout='inline' onFinish={add}>
-                    <Form.Item name='codeHash' rules={[{required: true}]}>
-                        <Input placeholder='Code hash' />
+                    <Form.Item name='sourceChainID' rules={[{required: true}]}>
+                        <Select placeholder='Source chain' options={chainOptions} style={{minWidth: 180}} />
                     </Form.Item>
-                    <Form.Item name='sourceChainID'>
-                        <InputNumber placeholder='Source chain' />
-                    </Form.Item>
-                    <Form.Item name='sourceContract'>
+                    <Form.Item name='sourceContract' rules={[{required: true}]}>
                         <Input placeholder='Source contract' />
                     </Form.Item>
                     <Form.Item name='note'>
@@ -523,7 +540,7 @@ export const BytecodeBlacklistsPage = () => {
                         <CardTitle title={<TruncatedText value={item.codeHash} copyable={true} />} subtitle={item.note} />
                         <MetricRow
                             items={[
-                                {label: 'Source Chain', value: item.sourceChainID},
+                                {label: 'Source Chain', value: chainLabel(item.sourceChainID)},
                                 {label: 'Created', value: item.createdAt}
                             ]}
                         />

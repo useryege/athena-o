@@ -47,6 +47,13 @@ type ChainIngestCheckpoint struct {
 	CreatedAt         time.Time
 }
 
+type Chain struct {
+	ID        int64
+	Name      string
+	Enabled   bool
+	CreatedAt time.Time
+}
+
 type ProjectCandidate struct {
 	ID          int64
 	ChainID     int64

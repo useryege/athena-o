@@ -26,13 +26,18 @@ message ListBytecodeBlacklistsResponse {
 }
 
 message CreateBytecodeBlacklistRequest {
-  string code_hash = 1;
-  string note = 2;
-  int64 source_chain_id = 3;
-  string source_contract = 4;
+  string note = 1;
+  int64 source_chain_id = 2;
+  string source_contract = 3;
 }
 
 message CreateBytecodeBlacklistResponse {}
+
+message GetOptionsRequest {}
+
+message GetOptionsResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenAPIOptions options = 1;
+}
 
 message UpdateBytecodeBlacklistRequest {
   string code_hash = 1;
@@ -164,6 +169,10 @@ message ListProjectDataCollectionTasksResponse {
 }
 
 service TokenAPIService {
+  rpc GetOptions(GetOptionsRequest) returns (GetOptionsResponse) {
+    option (google.api.http) = {get: "/api/v1/tokenapi/options"};
+  }
+
   rpc GetBytecodeBlacklist(GetBytecodeBlacklistRequest) returns (GetBytecodeBlacklistResponse) {
     option (google.api.http) = {get: "/api/v1/tokenapi/bytecode-blacklists/{code_hash}"};
   }

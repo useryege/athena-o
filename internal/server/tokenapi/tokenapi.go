@@ -16,6 +16,20 @@ func NewServer(tokenAPIClientSet tokenapiapiclient.Clientset) *Server {
 	return &Server{tokenAPIClientSet: tokenAPIClientSet}
 }
 
+func (s *Server) GetOptions(ctx context.Context, _ *tokenapipkg.GetOptionsRequest) (*tokenapipkg.GetOptionsResponse, error) {
+	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.GetOptions(ctx, &tokenapiapiclient.GetOptionsRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &tokenapipkg.GetOptionsResponse{Options: resp.GetOptions()}, nil
+}
+
 func (s *Server) GetBytecodeBlacklist(ctx context.Context, req *tokenapipkg.GetBytecodeBlacklistRequest) (*tokenapipkg.GetBytecodeBlacklistResponse, error) {
 	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
 	if err != nil {
@@ -57,7 +71,6 @@ func (s *Server) CreateBytecodeBlacklist(ctx context.Context, req *tokenapipkg.C
 	defer closer.Close()
 
 	if _, err := client.CreateBytecodeBlacklist(ctx, &tokenapiapiclient.CreateBytecodeBlacklistRequest{
-		CodeHash:       req.GetCodeHash(),
 		Note:           req.GetNote(),
 		SourceChainId:  req.GetSourceChainId(),
 		SourceContract: req.GetSourceContract(),

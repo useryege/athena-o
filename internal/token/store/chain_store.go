@@ -99,3 +99,24 @@ func (s *SQLStore) UpdateChainIngestCheckpointStatus(ctx context.Context, chainI
 	}
 	return item, nil
 }
+
+func (s *SQLStore) ListChains(ctx context.Context) ([]Chain, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListChains(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list chains: %w", err)
+	}
+	items := make([]Chain, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, Chain{
+			ID:        row.ID,
+			Name:      row.Name,
+			Enabled:   row.Enabled,
+			CreatedAt: timeValue(row.CreatedAt),
+		})
+	}
+	return items, nil
+}

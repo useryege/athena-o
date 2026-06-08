@@ -88,7 +88,7 @@ func tokenAPIObject(req any) string {
 	case *tokenapipkg.GetProjectDataCollectionTaskRequest:
 		return fmt.Sprintf("%d/%s", r.GetProjectId(), nonEmptyObject(r.GetDataType()))
 	case *tokenapipkg.CreateBytecodeBlacklistRequest:
-		return nonEmptyObject(r.GetCodeHash())
+		return nonEmptyObject(r.GetSourceContract())
 	case *tokenapipkg.CreateWalletBlacklistRequest:
 		return nonEmptyObject(r.GetWallet())
 	default:
@@ -171,6 +171,7 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/polymarket.PolymarketService/ListPolymarketSportsLiveMarkets": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/GetPolymarketSportsLiveSnapshot": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 
+	"/tokenapi.TokenAPIService/GetOptions":                     fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
 	"/tokenapi.TokenAPIService/GetBytecodeBlacklist":           {resource: rbac.ResourceTokenAPI, action: rbac.ActionGet, object: tokenAPIObject},
 	"/tokenapi.TokenAPIService/ListBytecodeBlacklists":         fixedRule(rbac.ResourceTokenAPI, rbac.ActionGet),
 	"/tokenapi.TokenAPIService/CreateBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},

@@ -27,8 +27,11 @@ const cliName = "athena-token-api"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost string
-		listenPort int
+		listenHost     string
+		listenPort     int
+		ethNodeWSURL   string
+		bscNodeWSURL   string
+		nodeWSUseProxy bool
 	)
 
 	command := &cobra.Command{
@@ -51,7 +54,10 @@ func NewCommand() *cobra.Command {
 			ctx := cmd.Context()
 
 			server, err := tokenapi.NewServer(tokenapi.ServerOpts{
-				StoreSrc: tokenstore.NewSQLStoreSource(),
+				StoreSrc:       tokenstore.NewSQLStoreSource(),
+				EthNodeWSURL:   ethNodeWSURL,
+				BSCNodeWSURL:   bscNodeWSURL,
+				NodeWSUseProxy: nodeWSUseProxy,
 			})
 			if err != nil {
 				return err
@@ -100,6 +106,9 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_TOKEN_API_LISTEN_ADDRESS", common.DefaultAddressTokenAPI), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortTokenAPI, "Listen on given port for incoming connections")
+	command.Flags().StringVar(&ethNodeWSURL, "eth-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_ETH_NODE_WS_URL", ""), "Ethereum Mainnet node WebSocket address")
+	command.Flags().StringVar(&bscNodeWSURL, "bsc-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_BSC_NODE_WS_URL", ""), "BSC Mainnet node WebSocket address")
+	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_TOKEN_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

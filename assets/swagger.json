@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-641-gc8e17b0-dirty"
+    "version": "v1.0.0-644-ga0c6c60-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -947,6 +947,28 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tokenapiGetContractCodeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/options": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_GetOptions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiGetOptionsResponse"
             }
           },
           "default": {
@@ -2074,9 +2096,6 @@
     "tokenapiCreateBytecodeBlacklistRequest": {
       "type": "object",
       "properties": {
-        "code_hash": {
-          "type": "string"
-        },
         "note": {
           "type": "string"
         },
@@ -2154,6 +2173,14 @@
         },
         "found": {
           "type": "boolean"
+        }
+      }
+    },
+    "tokenapiGetOptionsResponse": {
+      "type": "object",
+      "properties": {
+        "options": {
+          "$ref": "#/definitions/v1alpha1TokenAPIOptions"
         }
       }
     },
@@ -2957,6 +2984,18 @@
         }
       }
     },
+    "v1alpha1TokenAPIChainOption": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "chainName": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1TokenAPIContractCode": {
       "type": "object",
       "properties": {
@@ -2978,6 +3017,17 @@
         },
         "sourceCodeHash": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenAPIOptions": {
+      "type": "object",
+      "properties": {
+        "chains": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenAPIChainOption"
+          }
         }
       }
     },

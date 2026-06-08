@@ -43,7 +43,11 @@ func (*TokenAPIBytecodeBlacklist) ProtoMessage() {}
 
 func (*TokenAPIChainIngestCheckpoint) ProtoMessage() {}
 
+func (*TokenAPIChainOption) ProtoMessage() {}
+
 func (*TokenAPIContractCode) ProtoMessage() {}
+
+func (*TokenAPIOptions) ProtoMessage() {}
 
 func (*TokenAPIProjectDataCollectionTask) ProtoMessage() {}
 

@@ -171,6 +171,17 @@ func mapChainIngestCheckpoints(items []tokenstore.ChainIngestCheckpoint) []*v1al
 	return results
 }
 
+func mapChainOptions(items []tokenstore.Chain) []v1alpha1.TokenAPIChainOption {
+	results := make([]v1alpha1.TokenAPIChainOption, 0, len(items))
+	for _, item := range items {
+		results = append(results, v1alpha1.TokenAPIChainOption{
+			ChainID:   item.ID,
+			ChainName: item.Name,
+		})
+	}
+	return results
+}
+
 func mapContractCode(item tokenstore.ContractCode) *v1alpha1.TokenAPIContractCode {
 	return &v1alpha1.TokenAPIContractCode{
 		CodeHash:            item.CodeHash.Hex(),

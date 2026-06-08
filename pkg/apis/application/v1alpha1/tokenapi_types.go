@@ -23,6 +23,15 @@ type TokenAPIChainIngestCheckpoint struct {
 	CreatedAt         string `protobuf:"bytes,6,opt,name=createdAt" json:"createdAt"`
 }
 
+type TokenAPIChainOption struct {
+	ChainID   int64  `protobuf:"varint,1,opt,name=chainId" json:"chainId"`
+	ChainName string `protobuf:"bytes,2,opt,name=chainName" json:"chainName"`
+}
+
+type TokenAPIOptions struct {
+	Chains []TokenAPIChainOption `protobuf:"bytes,1,rep,name=chains" json:"chains"`
+}
+
 type TokenAPIContractCode struct {
 	CodeHash            string `protobuf:"bytes,1,opt,name=codeHash" json:"codeHash"`
 	SourceCode          string `protobuf:"bytes,2,opt,name=sourceCode" json:"sourceCode"`

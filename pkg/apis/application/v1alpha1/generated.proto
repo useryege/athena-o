@@ -356,6 +356,12 @@ message TokenAPIChainIngestCheckpoint {
   optional string createdAt = 6;
 }
 
+message TokenAPIChainOption {
+  optional int64 chainId = 1;
+
+  optional string chainName = 2;
+}
+
 message TokenAPIContractCode {
   optional string codeHash = 1;
 
@@ -368,6 +374,10 @@ message TokenAPIContractCode {
   optional string createdAt = 5;
 
   optional int64 deploymentCount = 6;
+}
+
+message TokenAPIOptions {
+  repeated TokenAPIChainOption chains = 1;
 }
 
 message TokenAPIProjectDataCollectionTask {

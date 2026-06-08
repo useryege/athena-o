@@ -53,6 +53,7 @@ type Querier interface {
 	IsWalletBlacklisted(ctx context.Context, wallet []byte) (bool, error)
 	ListBytecodeBlacklistEntries(ctx context.Context) ([]BytecodeBlacklist, error)
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
+	ListChains(ctx context.Context) ([]Chain, error)
 	ListContractCodes(ctx context.Context, arg ListContractCodesParams) ([]ContractCode, error)
 	ListContractCodesByDeploymentCount(ctx context.Context, arg ListContractCodesByDeploymentCountParams) ([]ContractCode, error)
 	ListDueProjectDataCollectionTasks(ctx context.Context, arg ListDueProjectDataCollectionTasksParams) ([]ListDueProjectDataCollectionTasksRow, error)
