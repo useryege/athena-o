@@ -1,4 +1,4 @@
-import {CheckCircleOutlined, DeleteOutlined, EyeOutlined, LoginOutlined, PlusOutlined, SaveOutlined, SendOutlined} from '@ant-design/icons';
+import {DeleteOutlined, EditOutlined, EyeOutlined, LoginOutlined, PlusOutlined, SendOutlined} from '@ant-design/icons';
 import {Alert, Button, Card, Collapse, Dropdown, Form, Input, InputNumber, Modal, Select, Space, Tabs, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
@@ -19,7 +19,6 @@ import {
     useBreakpoint
 } from './components';
 import {Context} from '../shared/context';
-import {BytecodeBlacklistEntry, BytecodeDeployment, BytecodeListItem, SourceQualityPrompt, WalletBlacklistEntry} from '../shared/services/athena-application-service';
 import {Account, UserInfo, VersionMessage} from '../shared/models';
 import {NotificationDelivery} from '../shared/services/notification-service';
 import {
@@ -30,6 +29,13 @@ import {
     PolymarketSportsLiveMarketItem
 } from '../shared/services/polymarket-service';
 import {services} from '../shared/services';
+import {
+    TokenAPIBytecodeBlacklist,
+    TokenAPIChainIngestCheckpoint,
+    TokenAPIContractCode,
+    TokenAPIProjectDataCollectionTask,
+    TokenAPIWalletBlacklist
+} from '../shared/services/tokenapi-service';
 import {WalletDetail, WalletItem} from '../shared/services/wallet-service';
 import {WormMarketDetail, WormMarketItem} from '../shared/services/worm-service';
 
@@ -46,7 +52,6 @@ const fmt = (value: unknown) => {
 const fmtNumber = (value?: number) => (value === undefined ? '-' : new Intl.NumberFormat().format(value));
 const short = (value?: string, head = 10, tail = 8) => (value && value.length > head + tail ? `${value.slice(0, head)}...${value.slice(-tail)}` : value || '-');
 const boolTag = (value?: boolean) => <StatusTag value={fmt(value)} positive={value === true} negative={value === false} />;
-const dangerTag = (value?: boolean) => <StatusTag value={fmt(value)} positive={value === false} negative={value === true} />;
 
 const wormMarketLogo = (item: WormMarketItem) => item.logo || item.eventLogo || '';
 
@@ -85,8 +90,8 @@ export const notificationTestTopics = [
 ];
 
 const rbacResources = {
-    application: 'application',
     notifications: 'notifications',
+    tokenapi: 'tokenapi',
     wallets: 'wallets'
 };
 
@@ -235,8 +240,6 @@ export const UserInfoPage = () => {
     );
 };
 
-export const ProjectsPage = () => <AppPage title='Projects'>{null}</AppPage>;
-
 export const WalletsPage = () => {
     const ctx = React.useContext(Context);
     const {page, pageSize, setPage} = usePagedParams();
@@ -355,68 +358,53 @@ export const WalletsPage = () => {
     );
 };
 
-export const WalletBlacklistPage = () => {
+export const TokenStatusPage = () => {
+    const data = useAsyncData(() => services.tokenapi.getStatus(), []);
+    return (
+        <AppPage title='Token Status' subtitle='Token module runtime status' loading={data.loading} error={data.error} onRefresh={data.reload}>
+            <Section title='Runtime'>
+                <KeyValueGrid
+                    items={[
+                        {label: 'Started', value: boolTag(data.data?.started)},
+                        {label: 'Status', value: <StatusTag value={data.data?.status || '-'} positive={data.data?.status === 'running'} negative={data.data?.started === false} />}
+                    ]}
+                />
+            </Section>
+        </AppPage>
+    );
+};
+
+export const ContractCodesPage = () => {
     const ctx = React.useContext(Context);
-    const data = useAsyncData(() => services.athenaApplication.listWalletBlacklistEntries(), []);
-    const canUpdate = useCanI(rbacResources.application, rbacActions.update);
+    const navigate = useNavigate();
+    const {page, pageSize, setPage} = usePagedParams();
+    const [codeHash, setCodeHash] = useKeywordParam('codeHash');
+    const data = useAsyncData(() => services.tokenapi.listContractCodes({page, pageSize, codeHash: codeHash || undefined}), [page, pageSize, codeHash]);
+    const canUpdate = useCanI(rbacResources.tokenapi, rbacActions.update);
     const canModify = canUpdate.data === true;
-    const add = async (values: {wallet: string; note?: string}) => {
-        if (!canModify) {
-            return;
-        }
-        await services.athenaApplication.addWalletBlacklistEntry(values.wallet, values.note || '');
-        ctx.notifications.success('Wallet blacklisted');
-        data.reload();
-    };
-    const remove = (wallet: string) => {
+    const remove = (item: TokenAPIContractCode) => {
         if (!canModify) {
             return;
         }
         ctx.modal.confirm({
-            title: 'Delete wallet blacklist entry?',
-            content: wallet,
+            title: 'Delete contract code?',
+            content: item.codeHash,
             onOk: async () => {
-                await services.athenaApplication.deleteWalletBlacklistEntry(wallet);
+                await services.tokenapi.deleteContractCode(item.codeHash || '');
                 data.reload();
             }
         });
     };
-    return (
-        <BlacklistPage
-            title='Wallet Blacklist'
-            items={data.data || []}
-            loading={data.loading}
-            error={data.error}
-            onRefresh={data.reload}
-            idField='wallet'
-            add={add}
-            remove={remove}
-            canModify={canModify}
-        />
-    );
-};
-
-const BlacklistPage = <T extends WalletBlacklistEntry | BytecodeBlacklistEntry>(props: {
-    title: string;
-    items: T[];
-    loading?: boolean;
-    error?: Error;
-    onRefresh: () => void;
-    idField: 'wallet' | 'codeHash';
-    add: (values: any) => Promise<void>;
-    remove: (id: string) => void;
-    canModify: boolean;
-}) => {
-    const [form] = Form.useForm();
-    const idLabel = props.idField === 'wallet' ? 'Wallet' : 'Contract or Code Hash';
-    const columns: ColumnsType<T> = [
-        {title: idLabel, render: item => <TruncatedText value={(item as any)[props.idField]} copyable={true} />},
-        {title: 'Note', dataIndex: 'note'},
+    const columns: ColumnsType<TokenAPIContractCode> = [
+        {title: 'Code Hash', render: item => <Link to={`/token/contract-codes/${encodeURIComponent(item.codeHash || '')}`}>{short(item.codeHash)}</Link>},
+        {title: 'Deployments', dataIndex: 'deploymentCount'},
+        {title: 'Source Hash', render: item => <TruncatedText value={item.sourceCodeHash} copyable={true} />},
+        {title: 'Fetched', dataIndex: 'sourceCodeFetchedAt'},
         {title: 'Created', dataIndex: 'createdAt'},
         {
             title: 'Actions',
             render: item => (
-                <Button danger={true} icon={<DeleteOutlined />} disabled={!props.canModify} onClick={() => props.remove((item as any)[props.idField])}>
+                <Button danger={true} icon={<DeleteOutlined />} disabled={!canModify || !item.codeHash} onClick={() => remove(item)}>
                     Delete
                 </Button>
             )
@@ -424,69 +412,7 @@ const BlacklistPage = <T extends WalletBlacklistEntry | BytecodeBlacklistEntry>(
     ];
     return (
         <AppPage
-            title={props.title}
-            loading={props.loading}
-            error={props.error}
-            onRefresh={props.onRefresh}
-            filters={
-                <Form
-                    form={form}
-                    layout='inline'
-                    onFinish={async values => {
-                        await props.add(values);
-                        form.resetFields();
-                    }}>
-                    <Form.Item name={props.idField === 'wallet' ? 'wallet' : 'sourceContract'} rules={[{required: true}]}>
-                        <Input placeholder={idLabel} />
-                    </Form.Item>
-                    {props.idField === 'codeHash' && (
-                        <Form.Item name='sourceChainID'>
-                            <InputNumber placeholder='Chain ID' />
-                        </Form.Item>
-                    )}
-                    <Form.Item name='note'>
-                        <Input placeholder='Note' />
-                    </Form.Item>
-                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />} disabled={!props.canModify}>
-                        Add
-                    </Button>
-                </Form>
-            }>
-            <ResponsiveResourceList
-                rowKey={item => (item as any)[props.idField] || Math.random()}
-                items={props.items}
-                columns={columns}
-                loading={props.loading}
-                card={item => (
-                    <>
-                        <CardTitle title={<TruncatedText value={(item as any)[props.idField]} copyable={true} />} subtitle={(item as any).note} />
-                        <MetricRow items={[{label: 'Created', value: (item as any).createdAt}]} />
-                        <InlineActions>
-                            <Button size='small' danger={true} icon={<DeleteOutlined />} disabled={!props.canModify} onClick={() => props.remove((item as any)[props.idField])}>
-                                Delete
-                            </Button>
-                        </InlineActions>
-                    </>
-                )}
-            />
-        </AppPage>
-    );
-};
-
-export const BytecodesPage = () => {
-    const navigate = useNavigate();
-    const {page, pageSize, setPage} = usePagedParams();
-    const [codeHash, setCodeHash] = useKeywordParam('codeHash');
-    const data = useAsyncData(() => services.athenaApplication.listBytecodes({page, pageSize, codeHash: codeHash || undefined}), [page, pageSize, codeHash]);
-    const columns: ColumnsType<BytecodeListItem> = [
-        {title: 'Code Hash', render: item => <Link to={`/application/bytecodes/${encodeURIComponent(item.codeHash || '')}`}>{short(item.codeHash)}</Link>},
-        {title: 'Deployments', dataIndex: 'deploymentCount'},
-        {title: 'Open Source', render: item => boolTag(item.isOpenSource)},
-        {title: 'Blacklisted', render: item => dangerTag(item.isBytecodeBlacklisted)}
-    ];
-    return (
-        <AppPage
-            title='Bytecodes'
+            title='Contract Codes'
             loading={data.loading}
             error={data.error}
             onRefresh={data.reload}
@@ -501,18 +427,28 @@ export const BytecodesPage = () => {
                 pageSize={pageSize}
                 onPageChange={setPage}
                 card={item => (
-                    <div onClick={() => navigate(`/application/bytecodes/${encodeURIComponent(item.codeHash || '')}`)}>
-                        <CardTitle
-                            title={short(item.codeHash)}
-                            subtitle={<TruncatedText value={item.codeHash} copyable={true} />}
-                            tags={item.isBytecodeBlacklisted ? <Tag color='red'>Blacklisted</Tag> : <Tag>Tracked</Tag>}
-                        />
+                    <div onClick={() => navigate(`/token/contract-codes/${encodeURIComponent(item.codeHash || '')}`)}>
+                        <CardTitle title={short(item.codeHash)} subtitle={<TruncatedText value={item.codeHash} copyable={true} />} />
                         <MetricRow
                             items={[
                                 {label: 'Deployments', value: item.deploymentCount},
-                                {label: 'Open Source', value: fmt(item.isOpenSource)}
+                                {label: 'Fetched', value: item.sourceCodeFetchedAt},
+                                {label: 'Created', value: item.createdAt}
                             ]}
                         />
+                        <InlineActions>
+                            <Button
+                                size='small'
+                                danger={true}
+                                icon={<DeleteOutlined />}
+                                disabled={!canModify || !item.codeHash}
+                                onClick={event => {
+                                    event.stopPropagation();
+                                    remove(item);
+                                }}>
+                                Delete
+                            </Button>
+                        </InlineActions>
                     </div>
                 )}
             />
@@ -520,178 +456,418 @@ export const BytecodesPage = () => {
     );
 };
 
-export const BytecodeDetailPage = () => {
+export const ContractCodeDetailPage = () => {
+    const ctx = React.useContext(Context);
     const {codeHash = ''} = useParams();
+    const navigate = useNavigate();
     const decoded = decodeURIComponent(codeHash);
-    const detail = useAsyncData<any>(
-        () =>
-            Promise.all([services.athenaApplication.getBytecode(decoded), services.athenaApplication.listBytecodeDeployments(decoded, {page: 1, pageSize: 20})]).then(
-                ([bytecode, deployments]) => ({bytecode, deployments})
-            ) as any,
-        [decoded]
-    );
-    const deploymentColumns: ColumnsType<BytecodeDeployment> = [
-        {title: 'Chain', dataIndex: 'chainID'},
-        {title: 'Contract', render: item => <TruncatedText value={item.contract} copyable={true} />},
-        {title: 'First Seen', dataIndex: 'firstSeenAt'},
-        {title: 'Updated', dataIndex: 'updatedAt'}
-    ];
+    const detail = useAsyncData(() => services.tokenapi.getContractCode(decoded), [decoded]);
+    const canUpdate = useCanI(rbacResources.tokenapi, rbacActions.update);
+    const canModify = canUpdate.data === true;
+    const remove = () => {
+        if (!canModify) {
+            return;
+        }
+        ctx.modal.confirm({
+            title: 'Delete contract code?',
+            content: decoded,
+            onOk: async () => {
+                await services.tokenapi.deleteContractCode(decoded);
+                navigate('/token/contract-codes');
+            }
+        });
+    };
     return (
-        <AppPage title='Bytecode Detail' subtitle={<TruncatedText value={decoded} copyable={true} />} loading={detail.loading} error={detail.error} onRefresh={detail.reload}>
+        <AppPage
+            title='Contract Code Detail'
+            subtitle={<TruncatedText value={decoded} copyable={true} />}
+            loading={detail.loading}
+            error={detail.error}
+            onRefresh={detail.reload}
+            extra={
+                <Button danger={true} icon={<DeleteOutlined />} disabled={!canModify || !decoded} onClick={remove}>
+                    Delete
+                </Button>
+            }>
             <Section title='Summary'>
                 <KeyValueGrid
                     items={[
                         {label: 'Code Hash', value: <TruncatedText value={decoded} copyable={true} />},
-                        {label: 'Open Source', value: boolTag(detail.data?.bytecode.isOpenSource)},
-                        {label: 'Blacklisted', value: dangerTag(detail.data?.bytecode.isBytecodeBlacklisted)}
+                        {label: 'Found', value: boolTag(!!detail.data)},
+                        {label: 'Deployments', value: fmtNumber(detail.data?.deploymentCount)},
+                        {label: 'Source Hash', value: <TruncatedText value={detail.data?.sourceCodeHash} copyable={true} />},
+                        {label: 'Fetched', value: detail.data?.sourceCodeFetchedAt},
+                        {label: 'Created', value: detail.data?.createdAt}
                     ]}
                 />
             </Section>
-            <Tabs
-                items={[
-                    {
-                        key: 'deployments',
-                        label: 'Deployments',
-                        children: (
-                            <ResponsiveResourceList
-                                rowKey={item => `${item.chainID}-${item.contract}`}
-                                items={detail.data?.deployments.items || []}
-                                columns={deploymentColumns}
-                                card={item => <CardTitle title={item.contract} subtitle={`Chain ${item.chainID}`} />}
-                            />
-                        )
-                    },
-                    {key: 'source', label: 'Source', children: <pre className='code-block'>{detail.data?.bytecode.sourceCode || 'No source available'}</pre>},
-                    {key: 'report', label: 'Report', children: <pre className='code-block'>{detail.data?.bytecode.sourceQualityReport || 'No report available'}</pre>}
-                ]}
-            />
+            <Tabs items={[{key: 'source', label: 'Source', children: <pre className='code-block'>{detail.data?.sourceCode || 'No source available'}</pre>}]} />
         </AppPage>
     );
 };
 
-export const BytecodeBlacklistPage = () => {
+export const BytecodeBlacklistsPage = () => {
     const ctx = React.useContext(Context);
-    const data = useAsyncData(() => services.athenaApplication.listBytecodeBlacklistEntries(), []);
-    const canUpdate = useCanI(rbacResources.application, rbacActions.update);
+    const [form] = Form.useForm();
+    const [editing, setEditing] = React.useState<TokenAPIBytecodeBlacklist>(null);
+    const data = useAsyncData(() => services.tokenapi.listBytecodeBlacklists(), []);
+    const canUpdate = useCanI(rbacResources.tokenapi, rbacActions.update);
     const canModify = canUpdate.data === true;
-    const add = async (values: {sourceContract: string; note?: string; sourceChainID?: number}) => {
+    const add = async (values: {codeHash: string; note?: string; sourceChainID?: number; sourceContract?: string}) => {
         if (!canModify) {
             return;
         }
-        await services.athenaApplication.addBytecodeBlacklistEntry(values.sourceContract, values.note || '', values.sourceChainID);
+        await services.tokenapi.createBytecodeBlacklist(values);
         ctx.notifications.success('Bytecode blacklisted');
+        form.resetFields();
         data.reload();
     };
-    const remove = (codeHash: string) => {
+    const saveNote = async (values: {note?: string}) => {
+        if (!canModify || !editing?.codeHash) {
+            return;
+        }
+        await services.tokenapi.updateBytecodeBlacklist(editing.codeHash, values.note || '');
+        setEditing(null);
+        data.reload();
+    };
+    const remove = (item: TokenAPIBytecodeBlacklist) => {
         if (!canModify) {
             return;
         }
         ctx.modal.confirm({
             title: 'Delete bytecode blacklist entry?',
-            content: codeHash,
+            content: item.codeHash,
             onOk: async () => {
-                await services.athenaApplication.deleteBytecodeBlacklist(codeHash);
+                await services.tokenapi.deleteBytecodeBlacklist(item.codeHash || '');
                 data.reload();
             }
         });
     };
-    return (
-        <BlacklistPage
-            title='Bytecode Blacklist'
-            items={data.data || []}
-            loading={data.loading}
-            error={data.error}
-            onRefresh={data.reload}
-            idField='codeHash'
-            add={add}
-            remove={remove}
-            canModify={canModify}
-        />
-    );
-};
-
-export const SourceQualityPromptsPage = () => {
-    const ctx = React.useContext(Context);
-    const [editing, setEditing] = React.useState<SourceQualityPrompt>(null);
-    const data = useAsyncData(() => services.athenaApplication.listSourceQualityPrompts(), []);
-    const canUpdate = useCanI(rbacResources.application, rbacActions.update);
-    const canModify = canUpdate.data === true;
-    const save = async (values: {name: string; systemPrompt: string}) => {
-        if (!canModify) {
-            return;
+    const columns: ColumnsType<TokenAPIBytecodeBlacklist> = [
+        {title: 'Code Hash', render: item => <TruncatedText value={item.codeHash} copyable={true} />},
+        {title: 'Note', dataIndex: 'note'},
+        {title: 'Source Chain', dataIndex: 'sourceChainID'},
+        {title: 'Source Contract', render: item => <TruncatedText value={item.sourceContract} copyable={true} />},
+        {title: 'Created', dataIndex: 'createdAt'},
+        {
+            title: 'Actions',
+            render: item => (
+                <Space>
+                    <Button icon={<EditOutlined />} disabled={!canModify || !item.codeHash} onClick={() => setEditing(item)}>
+                        Edit Note
+                    </Button>
+                    <Button danger={true} icon={<DeleteOutlined />} disabled={!canModify || !item.codeHash} onClick={() => remove(item)}>
+                        Delete
+                    </Button>
+                </Space>
+            )
         }
-        if (editing?.id) {
-            await services.athenaApplication.updateSourceQualityPrompt(editing.id, values.name, values.systemPrompt);
-        } else {
-            await services.athenaApplication.createSourceQualityPrompt(values.name, values.systemPrompt);
-        }
-        setEditing(null);
-        data.reload();
-    };
+    ];
     return (
         <AppPage
-            title='Source Quality Prompts'
+            title='Bytecode Blacklists'
             loading={data.loading}
             error={data.error}
             onRefresh={data.reload}
-            extra={
-                <Button type='primary' icon={<PlusOutlined />} disabled={!canModify} onClick={() => setEditing({})}>
-                    New
-                </Button>
+            filters={
+                <Form form={form} layout='inline' onFinish={add}>
+                    <Form.Item name='codeHash' rules={[{required: true}]}>
+                        <Input placeholder='Code hash' />
+                    </Form.Item>
+                    <Form.Item name='sourceChainID'>
+                        <InputNumber placeholder='Source chain' />
+                    </Form.Item>
+                    <Form.Item name='sourceContract'>
+                        <Input placeholder='Source contract' />
+                    </Form.Item>
+                    <Form.Item name='note'>
+                        <Input placeholder='Note' />
+                    </Form.Item>
+                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />} disabled={!canModify}>
+                        Add
+                    </Button>
+                </Form>
             }>
             <ResponsiveResourceList
-                rowKey={item => item.id || Math.random()}
+                rowKey={item => item.codeHash || Math.random()}
                 items={data.data || []}
-                columns={[
-                    {title: 'Version', dataIndex: 'version'},
-                    {title: 'Name', dataIndex: 'name'},
-                    {title: 'Active', render: item => boolTag(item.isActive)},
-                    {title: 'Updated', dataIndex: 'updatedAt'},
-                    {
-                        title: 'Actions',
-                        render: item => (
-                            <Space>
-                                <Button icon={<SaveOutlined />} disabled={!canModify} onClick={() => setEditing(item)}>
-                                    Edit
-                                </Button>
-                                <Button
-                                    icon={<CheckCircleOutlined />}
-                                    disabled={!canModify || !item.id}
-                                    onClick={async () => {
-                                        await services.athenaApplication.activateSourceQualityPrompt(item.id || 0);
-                                        ctx.notifications.success('Prompt activated');
-                                        data.reload();
-                                    }}>
-                                    Activate
-                                </Button>
-                            </Space>
-                        )
-                    }
-                ]}
+                columns={columns}
+                loading={data.loading}
                 card={item => (
                     <>
-                        <CardTitle title={item.name} subtitle={`v${item.version || '-'}`} tags={item.isActive ? <Tag color='green'>Active</Tag> : <Tag>Draft</Tag>} />
+                        <CardTitle title={<TruncatedText value={item.codeHash} copyable={true} />} subtitle={item.note} />
+                        <MetricRow
+                            items={[
+                                {label: 'Source Chain', value: item.sourceChainID},
+                                {label: 'Created', value: item.createdAt}
+                            ]}
+                        />
                         <InlineActions>
-                            <Button size='small' disabled={!canModify} onClick={() => setEditing(item)}>
-                                Edit
+                            <Button size='small' icon={<EditOutlined />} disabled={!canModify || !item.codeHash} onClick={() => setEditing(item)}>
+                                Edit Note
+                            </Button>
+                            <Button size='small' danger={true} icon={<DeleteOutlined />} disabled={!canModify || !item.codeHash} onClick={() => remove(item)}>
+                                Delete
                             </Button>
                         </InlineActions>
                     </>
                 )}
             />
-            <Modal open={!!editing} title={editing?.id ? 'Edit Prompt' : 'New Prompt'} footer={null} onCancel={() => setEditing(null)} width={760}>
-                <Form layout='vertical' initialValues={editing || {}} onFinish={save}>
-                    <Form.Item name='name' label='Name' rules={[{required: true}]}>
-                        <Input />
+            <Modal open={!!editing} title='Edit Bytecode Note' footer={null} onCancel={() => setEditing(null)}>
+                <Form key={editing?.codeHash || 'bytecode-note'} layout='vertical' initialValues={editing || {}} onFinish={saveNote}>
+                    <Form.Item label='Code Hash'>
+                        <TruncatedText value={editing?.codeHash} copyable={true} />
                     </Form.Item>
-                    <Form.Item name='systemPrompt' label='System Prompt' rules={[{required: true}]}>
-                        <Input.TextArea rows={10} />
+                    <Form.Item name='note' label='Note'>
+                        <Input.TextArea rows={4} />
                     </Form.Item>
                     <Button type='primary' htmlType='submit' disabled={!canModify}>
                         Save
                     </Button>
                 </Form>
             </Modal>
+        </AppPage>
+    );
+};
+
+export const WalletBlacklistsPage = () => {
+    const ctx = React.useContext(Context);
+    const [form] = Form.useForm();
+    const [editing, setEditing] = React.useState<TokenAPIWalletBlacklist>(null);
+    const data = useAsyncData(() => services.tokenapi.listWalletBlacklists(), []);
+    const canUpdate = useCanI(rbacResources.tokenapi, rbacActions.update);
+    const canModify = canUpdate.data === true;
+    const add = async (values: {wallet: string; note?: string}) => {
+        if (!canModify) {
+            return;
+        }
+        await services.tokenapi.createWalletBlacklist(values.wallet, values.note || '');
+        ctx.notifications.success('Wallet blacklisted');
+        form.resetFields();
+        data.reload();
+    };
+    const saveNote = async (values: {note?: string}) => {
+        if (!canModify || !editing?.wallet) {
+            return;
+        }
+        await services.tokenapi.updateWalletBlacklist(editing.wallet, values.note || '');
+        setEditing(null);
+        data.reload();
+    };
+    const remove = (item: TokenAPIWalletBlacklist) => {
+        if (!canModify) {
+            return;
+        }
+        ctx.modal.confirm({
+            title: 'Delete wallet blacklist entry?',
+            content: item.wallet,
+            onOk: async () => {
+                await services.tokenapi.deleteWalletBlacklist(item.wallet || '');
+                data.reload();
+            }
+        });
+    };
+    const columns: ColumnsType<TokenAPIWalletBlacklist> = [
+        {title: 'Wallet', render: item => <TruncatedText value={item.wallet} copyable={true} />},
+        {title: 'Note', dataIndex: 'note'},
+        {title: 'Created', dataIndex: 'createdAt'},
+        {
+            title: 'Actions',
+            render: item => (
+                <Space>
+                    <Button icon={<EditOutlined />} disabled={!canModify || !item.wallet} onClick={() => setEditing(item)}>
+                        Edit Note
+                    </Button>
+                    <Button danger={true} icon={<DeleteOutlined />} disabled={!canModify || !item.wallet} onClick={() => remove(item)}>
+                        Delete
+                    </Button>
+                </Space>
+            )
+        }
+    ];
+    return (
+        <AppPage
+            title='Wallet Blacklists'
+            loading={data.loading}
+            error={data.error}
+            onRefresh={data.reload}
+            filters={
+                <Form form={form} layout='inline' onFinish={add}>
+                    <Form.Item name='wallet' rules={[{required: true}]}>
+                        <Input placeholder='Wallet' />
+                    </Form.Item>
+                    <Form.Item name='note'>
+                        <Input placeholder='Note' />
+                    </Form.Item>
+                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />} disabled={!canModify}>
+                        Add
+                    </Button>
+                </Form>
+            }>
+            <ResponsiveResourceList
+                rowKey={item => item.wallet || Math.random()}
+                items={data.data || []}
+                columns={columns}
+                loading={data.loading}
+                card={item => (
+                    <>
+                        <CardTitle title={<TruncatedText value={item.wallet} copyable={true} />} subtitle={item.note} />
+                        <MetricRow items={[{label: 'Created', value: item.createdAt}]} />
+                        <InlineActions>
+                            <Button size='small' icon={<EditOutlined />} disabled={!canModify || !item.wallet} onClick={() => setEditing(item)}>
+                                Edit Note
+                            </Button>
+                            <Button size='small' danger={true} icon={<DeleteOutlined />} disabled={!canModify || !item.wallet} onClick={() => remove(item)}>
+                                Delete
+                            </Button>
+                        </InlineActions>
+                    </>
+                )}
+            />
+            <Modal open={!!editing} title='Edit Wallet Note' footer={null} onCancel={() => setEditing(null)}>
+                <Form key={editing?.wallet || 'wallet-note'} layout='vertical' initialValues={editing || {}} onFinish={saveNote}>
+                    <Form.Item label='Wallet'>
+                        <TruncatedText value={editing?.wallet} copyable={true} />
+                    </Form.Item>
+                    <Form.Item name='note' label='Note'>
+                        <Input.TextArea rows={4} />
+                    </Form.Item>
+                    <Button type='primary' htmlType='submit' disabled={!canModify}>
+                        Save
+                    </Button>
+                </Form>
+            </Modal>
+        </AppPage>
+    );
+};
+
+export const ChainCheckpointsPage = () => {
+    const data = useAsyncData(() => services.tokenapi.listChainIngestCheckpoints(), []);
+    const canUpdate = useCanI(rbacResources.tokenapi, rbacActions.update);
+    const canModify = canUpdate.data === true;
+    const updateStatus = async (item: TokenAPIChainIngestCheckpoint, status: string) => {
+        if (!canModify || item.chainID === undefined) {
+            return;
+        }
+        await services.tokenapi.updateChainIngestCheckpoint(item.chainID, status);
+        data.reload();
+    };
+    const columns: ColumnsType<TokenAPIChainIngestCheckpoint> = [
+        {title: 'Chain', render: item => item.chainName || item.chainID},
+        {title: 'Enabled', render: item => boolTag(item.enabled)},
+        {title: 'Cursor', render: item => fmtNumber(item.cursorBlockNumber)},
+        {title: 'Status', render: item => <StatusTag value={item.status} positive={item.status === 'running'} />},
+        {title: 'Created', dataIndex: 'createdAt'},
+        {
+            title: 'Actions',
+            render: item => (
+                <Select
+                    disabled={!canModify || item.chainID === undefined}
+                    value={item.status}
+                    style={{width: 130}}
+                    onChange={value => void updateStatus(item, value)}
+                    options={['running', 'stopped'].map(value => ({value, label: value}))}
+                />
+            )
+        }
+    ];
+    return (
+        <AppPage title='Chain Checkpoints' loading={data.loading} error={data.error} onRefresh={data.reload}>
+            <ResponsiveResourceList
+                rowKey={item => item.chainID ?? Math.random()}
+                items={data.data || []}
+                columns={columns}
+                loading={data.loading}
+                card={item => (
+                    <>
+                        <CardTitle title={item.chainName || `Chain ${item.chainID}`} subtitle={`Cursor ${fmtNumber(item.cursorBlockNumber)}`} tags={<Tag>{item.status}</Tag>} />
+                        <MetricRow
+                            items={[
+                                {label: 'Enabled', value: fmt(item.enabled)},
+                                {label: 'Created', value: item.createdAt}
+                            ]}
+                        />
+                        <Select
+                            disabled={!canModify || item.chainID === undefined}
+                            value={item.status}
+                            style={{width: '100%'}}
+                            onChange={value => void updateStatus(item, value)}
+                            options={['running', 'stopped'].map(value => ({value, label: value}))}
+                        />
+                    </>
+                )}
+            />
+        </AppPage>
+    );
+};
+
+export const CollectionTasksPage = () => {
+    const {page, pageSize, setPage} = usePagedParams();
+    const [projectID, setProjectID] = React.useState<number>();
+    const [dataType, setDataType] = React.useState('');
+    const [status, setStatus] = React.useState('');
+    const data = useAsyncData(
+        () =>
+            services.tokenapi.listProjectDataCollectionTasks({
+                page,
+                pageSize,
+                projectID,
+                dataType: dataType || undefined,
+                status: status || undefined
+            }),
+        [page, pageSize, projectID, dataType, status]
+    );
+    const columns: ColumnsType<TokenAPIProjectDataCollectionTask> = [
+        {title: 'Project', dataIndex: 'projectID'},
+        {title: 'Data Type', dataIndex: 'dataType'},
+        {title: 'Status', dataIndex: 'status'},
+        {title: 'Attempts', dataIndex: 'attempts'},
+        {title: 'Next Attempt', dataIndex: 'nextAttemptAt'},
+        {title: 'Last Error', render: item => <TruncatedText value={item.lastError} />},
+        {title: 'Created', dataIndex: 'createdAt'}
+    ];
+    return (
+        <AppPage
+            title='Collection Tasks'
+            loading={data.loading}
+            error={data.error}
+            onRefresh={data.reload}
+            filters={
+                <Space wrap={true}>
+                    <InputNumber value={projectID} placeholder='Project ID' onChange={value => setProjectID(typeof value === 'number' ? value : undefined)} />
+                    <Input value={dataType} placeholder='Data type' onChange={event => setDataType(event.target.value)} />
+                    <Select
+                        allowClear={true}
+                        value={status || undefined}
+                        placeholder='Status'
+                        style={{width: 150}}
+                        onChange={value => setStatus(value || '')}
+                        options={['pending', 'running', 'succeeded', 'failed'].map(value => ({value, label: value}))}
+                    />
+                </Space>
+            }>
+            <ResponsiveResourceList
+                rowKey={item => `${item.projectID}-${item.dataType}`}
+                items={data.data?.items || []}
+                columns={columns}
+                loading={data.loading}
+                total={data.data?.total}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                card={item => (
+                    <>
+                        <CardTitle title={`${item.projectID} / ${item.dataType}`} subtitle={item.lastError} tags={<Tag>{item.status}</Tag>} />
+                        <MetricRow
+                            items={[
+                                {label: 'Attempts', value: item.attempts},
+                                {label: 'Next', value: item.nextAttemptAt},
+                                {label: 'Created', value: item.createdAt}
+                            ]}
+                        />
+                    </>
+                )}
+            />
         </AppPage>
     );
 };

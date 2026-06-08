@@ -1,8 +1,8 @@
 import {AccountsService} from './accounts-service';
-import {AthenaApplicationService} from './athena-application-service';
 import {AuthService} from './auth-service';
 import {NotificationService} from './notification-service';
 import {PolymarketService} from './polymarket-service';
+import {TokenAPIService} from './tokenapi-service';
 import {UserService} from './user-service';
 import {VersionService} from './version-service';
 import {ViewPreferencesService} from './view-preferences-service';
@@ -10,7 +10,7 @@ import {WalletService} from './wallet-service';
 import {WormService} from './worm-service';
 
 export interface Services {
-    athenaApplication: AthenaApplicationService;
+    tokenapi: TokenAPIService;
     users: UserService;
     authService: AuthService;
     viewPreferences: ViewPreferencesService;
@@ -23,7 +23,7 @@ export interface Services {
 }
 
 export const services: Services = {
-    athenaApplication: new AthenaApplicationService(),
+    tokenapi: new TokenAPIService(),
     authService: new AuthService(),
     users: new UserService(),
     viewPreferences: new ViewPreferencesService(),

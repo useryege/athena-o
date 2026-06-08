@@ -11,4 +11,4 @@ wallet: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./c
 redis: hack/start-redis-with-password.sh
 postgres: hack/start-postgres-with-password.sh
 # temporal: hack/start-temporal.sh
-# ui: sh -c 'cd ui && ${ATHENA_YARN_CMD:-yarn} start'
+ui: sh -c 'cd ui && ${ATHENA_YARN_CMD:-yarn} start'

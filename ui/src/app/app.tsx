@@ -11,7 +11,6 @@ import {
     MenuFoldOutlined,
     MenuUnfoldOutlined,
     MoonOutlined,
-    ProjectOutlined,
     QuestionCircleOutlined,
     SettingOutlined,
     SunOutlined,
@@ -29,9 +28,11 @@ import {services, ViewPreferences} from './shared/services';
 import requests from './shared/services/requests';
 import {BrandMark} from './mobile/components';
 import {
-    BytecodeBlacklistPage,
-    BytecodeDetailPage,
-    BytecodesPage,
+    BytecodeBlacklistsPage,
+    ChainCheckpointsPage,
+    CollectionTasksPage,
+    ContractCodeDetailPage,
+    ContractCodesPage,
     HelpPage,
     LoginPage,
     NotificationsDetailPage,
@@ -40,11 +41,10 @@ import {
     PolymarketMoversPage,
     PolymarketRealtimePage,
     PolymarketSportsLivePage,
-    ProjectsPage,
     SettingsPage,
-    SourceQualityPromptsPage,
+    TokenStatusPage,
     UserInfoPage,
-    WalletBlacklistPage,
+    WalletBlacklistsPage,
     WalletsPage,
     WormPage
 } from './mobile/pages';
@@ -69,15 +69,16 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     {
-        key: 'application',
-        label: 'Application',
+        key: 'token',
+        label: 'Token',
         icon: <DashboardOutlined />,
         children: [
-            {key: '/projects', label: 'Projects', path: '/projects', icon: <ProjectOutlined />},
-            {key: '/wallet-blacklist', label: 'Wallet Blacklist', path: '/wallet-blacklist', icon: <ApiOutlined />},
-            {key: '/application/bytecodes', label: 'Bytecodes', path: '/application/bytecodes', icon: <CodeOutlined />},
-            {key: '/application/bytecode-blacklist', label: 'Bytecode Blacklist', path: '/application/bytecode-blacklist', icon: <ApiOutlined />},
-            {key: '/application/source-quality/prompts', label: 'Quality Prompts', path: '/application/source-quality/prompts', icon: <FileTextOutlined />}
+            {key: '/token/status', label: 'Status', path: '/token/status', icon: <DashboardOutlined />},
+            {key: '/token/contract-codes', label: 'Contract Codes', path: '/token/contract-codes', icon: <CodeOutlined />},
+            {key: '/token/bytecode-blacklists', label: 'Bytecode Blacklists', path: '/token/bytecode-blacklists', icon: <ApiOutlined />},
+            {key: '/token/wallet-blacklists', label: 'Wallet Blacklists', path: '/token/wallet-blacklists', icon: <WalletOutlined />},
+            {key: '/token/chain-checkpoints', label: 'Chain Checkpoints', path: '/token/chain-checkpoints', icon: <ApiOutlined />},
+            {key: '/token/collection-tasks', label: 'Collection Tasks', path: '/token/collection-tasks', icon: <FileTextOutlined />}
         ]
     },
     {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />},
@@ -154,9 +155,7 @@ const AppRoutes = () => (
     <Routes>
         <Route path='/' element={<Navigate replace={true} to='/user-info' />} />
         <Route path='/login' element={<LoginPage />} />
-        <Route path='/projects' element={<ProjectsPage />} />
         <Route path='/wallet' element={<WalletsPage />} />
-        <Route path='/wallet-blacklist' element={<WalletBlacklistPage />} />
         <Route path='/worm' element={<WormPage />} />
         <Route path='/polymarket' element={<PolymarketHotPage />} />
         <Route path='/polymarket/realtime' element={<PolymarketRealtimePage />} />
@@ -167,11 +166,14 @@ const AppRoutes = () => (
         <Route path='/settings/*' element={<SettingsPage />} />
         <Route path='/user-info' element={<UserInfoPage />} />
         <Route path='/help' element={<HelpPage />} />
-        <Route path='/application' element={<Navigate replace={true} to='/application/bytecodes' />} />
-        <Route path='/application/bytecodes' element={<BytecodesPage />} />
-        <Route path='/application/bytecodes/:codeHash' element={<BytecodeDetailPage />} />
-        <Route path='/application/bytecode-blacklist' element={<BytecodeBlacklistPage />} />
-        <Route path='/application/source-quality/prompts' element={<SourceQualityPromptsPage />} />
+        <Route path='/token' element={<Navigate replace={true} to='/token/status' />} />
+        <Route path='/token/status' element={<TokenStatusPage />} />
+        <Route path='/token/contract-codes' element={<ContractCodesPage />} />
+        <Route path='/token/contract-codes/:codeHash' element={<ContractCodeDetailPage />} />
+        <Route path='/token/bytecode-blacklists' element={<BytecodeBlacklistsPage />} />
+        <Route path='/token/wallet-blacklists' element={<WalletBlacklistsPage />} />
+        <Route path='/token/chain-checkpoints' element={<ChainCheckpointsPage />} />
+        <Route path='/token/collection-tasks' element={<CollectionTasksPage />} />
         <Route path='*' element={<Navigate replace={true} to='/user-info' />} />
     </Routes>
 );
