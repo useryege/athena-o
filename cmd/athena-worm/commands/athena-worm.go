@@ -19,6 +19,7 @@ import (
 	"github.com/useryege/athena/internal/worm"
 	wormstore "github.com/useryege/athena/internal/worm/store"
 	"github.com/useryege/athena/util/cli"
+	"github.com/useryege/athena/util/deepseek"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
 	utilio "github.com/useryege/athena/util/io"
@@ -30,9 +31,12 @@ const cliName = "athena-worm"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost     string
-		listenPort     int
-		wormAPIBaseURL string
+		listenHost      string
+		listenPort      int
+		wormAPIBaseURL  string
+		deepSeekAPIKey  string
+		deepSeekBaseURL string
+		deepSeekModel   string
 
 		storeSrc func(context.Context) (*wormstore.SQLStore, error)
 	)
@@ -64,10 +68,19 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			deepSeekClient, err := deepseek.NewClient(deepseek.Config{
+				APIKey:  deepSeekAPIKey,
+				BaseURL: deepSeekBaseURL,
+				Model:   deepSeekModel,
+			})
+			if err != nil {
+				return err
+			}
 
 			server, err := worm.NewServer(worm.ServerOpts{
 				Store:          store,
 				WormClient:     wormClient,
+				DeepSeekClient: deepSeekClient,
 				WormAPIBaseURL: wormAPIBaseURL,
 			})
 			if err != nil {
@@ -119,6 +132,9 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_WORM_LISTEN_ADDRESS", common.DefaultAddressWorm), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortWorm, "Listen on given port for incoming connections")
 	command.Flags().StringVar(&wormAPIBaseURL, "worm-api-base-url", env.StringFromEnv("ATHENA_WORM_API_BASE_URL", utilworm.DefaultBaseURL), "Worm API base URL")
+	command.Flags().StringVar(&deepSeekAPIKey, "deepseek-api-key", env.StringFromEnv("ATHENA_WORM_DEEPSEEK_API_KEY", ""), "DeepSeek API key")
+	command.Flags().StringVar(&deepSeekBaseURL, "deepseek-base-url", env.StringFromEnv("ATHENA_WORM_DEEPSEEK_BASE_URL", deepseek.DefaultBaseURL), "DeepSeek API base URL")
+	command.Flags().StringVar(&deepSeekModel, "deepseek-model", env.StringFromEnv("ATHENA_WORM_DEEPSEEK_MODEL", deepseek.DefaultModel), "DeepSeek model")
 
 	storeSrc = wormstore.NewSQLStoreSource()
 

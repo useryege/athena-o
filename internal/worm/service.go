@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"net/url"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/useryege/athena/internal/worm/apiclient"
 	wormstore "github.com/useryege/athena/internal/worm/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
+	"github.com/useryege/athena/util/deepseek"
 	utilworm "github.com/useryege/athena/util/worm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,6 +28,7 @@ const (
 	maxWormMarketsSyncLimit   = 100
 	wormMarketSyncInterval    = time.Minute
 	wormMarketRulesInterval   = time.Minute
+	wormMatchStartInterval    = time.Minute
 	wormLiveStateLoopInterval = time.Minute
 	wormLivePriceWindow       = 30 * time.Minute
 
@@ -36,6 +39,12 @@ const (
 	wormMarketLiveStateLive    = "live"
 	wormMarketLiveStateNotLive = "not_live"
 	wormMarketLiveStateUnknown = "unknown"
+
+	wormMatchStartSystemPrompt = `Extract the scheduled official start time of the sports match from the provided market rules.
+Return exactly one JSON object with this shape: {"match_start_time":"RFC3339 timestamp with timezone"}.
+If the official match start time or its timezone cannot be determined reliably, return exactly {"match_start_time":null}.
+Do not use a market resolution deadline, settlement deadline, review time, or result publication time as the match start time.
+Do not return markdown, explanations, confidence scores, or additional fields.`
 )
 
 type wormMarketClient interface {
@@ -43,29 +52,41 @@ type wormMarketClient interface {
 	GetMarket(context.Context, string) (*utilworm.Market, error)
 }
 
+type deepSeekClient interface {
+	CreateChatCompletion(context.Context, deepseek.ChatCompletionRequest) (*deepseek.ChatCompletionResponse, error)
+}
+
 type Service struct {
 	apiclient.UnimplementedWormServiceServer
-	store        *wormstore.SQLStore
-	wormClient   wormMarketClient
-	assetBaseURL string
-	syncCancel   context.CancelFunc
-	syncWG       sync.WaitGroup
-	syncMu       sync.Mutex
-	startStopMu  sync.Mutex
-	started      bool
+	store          *wormstore.SQLStore
+	wormClient     wormMarketClient
+	deepSeekClient deepSeekClient
+	assetBaseURL   string
+	syncCancel     context.CancelFunc
+	syncWG         sync.WaitGroup
+	syncMu         sync.Mutex
+	startStopMu    sync.Mutex
+	started        bool
 }
 
 type ServiceOption func(*Service)
 
-func NewService(store *wormstore.SQLStore, wormClient wormMarketClient, assetBaseURL string, opts ...ServiceOption) *Service {
+func NewService(
+	store *wormstore.SQLStore,
+	wormClient wormMarketClient,
+	deepSeekClient deepSeekClient,
+	assetBaseURL string,
+	opts ...ServiceOption,
+) *Service {
 	assetBaseURL = strings.TrimSpace(assetBaseURL)
 	if assetBaseURL == "" {
 		assetBaseURL = utilworm.DefaultBaseURL
 	}
 	service := &Service{
-		store:        store,
-		wormClient:   wormClient,
-		assetBaseURL: assetBaseURL,
+		store:          store,
+		wormClient:     wormClient,
+		deepSeekClient: deepSeekClient,
+		assetBaseURL:   assetBaseURL,
 	}
 	for _, opt := range opts {
 		opt(service)
@@ -85,11 +106,15 @@ func (s *Service) Start() error {
 	if s.wormClient == nil {
 		return status.Error(codes.FailedPrecondition, "worm API client is required")
 	}
+	if s.deepSeekClient == nil {
+		return status.Error(codes.FailedPrecondition, "deepseek client is required")
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	s.syncCancel = cancel
-	s.syncWG.Add(3)
+	s.syncWG.Add(4)
 	go s.syncLoop(ctx)
 	go s.rulesLoop(ctx)
+	go s.matchStartLoop(ctx)
 	go s.liveStateLoop(ctx)
 	s.started = true
 	return nil
@@ -449,6 +474,115 @@ func (s *Service) updateWormMarketRules(ctx context.Context) {
 		}
 	}
 	log.Debugf("updated rules for %d worm markets", updated)
+}
+
+func (s *Service) matchStartLoop(ctx context.Context) {
+	defer s.syncWG.Done()
+	s.updateWormMarketMatchStarts(ctx)
+	ticker := time.NewTicker(wormMatchStartInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			s.updateWormMarketMatchStarts(ctx)
+		}
+	}
+}
+
+func (s *Service) updateWormMarketMatchStarts(ctx context.Context) {
+	if s.store == nil || s.deepSeekClient == nil {
+		return
+	}
+	markets, err := s.store.ListWormMarketsPendingMatchStartAnalysis(ctx)
+	if err != nil {
+		if ctx.Err() == nil {
+			log.Warnf("failed to list worm markets pending match start analysis: %v", err)
+		}
+		return
+	}
+	updated := 0
+	for _, market := range markets {
+		if ctx.Err() != nil {
+			return
+		}
+		matchStartAt, err := s.extractWormMarketMatchStart(ctx, market.Rules)
+		if err != nil {
+			if ctx.Err() == nil {
+				log.Warnf("failed to analyze worm market %s match start: %v", market.ConditionID, err)
+			}
+			continue
+		}
+		rowsAffected, err := s.store.SetWormMarketMatchStartAnalysisIfPending(
+			ctx,
+			market.ConditionID,
+			matchStartAt,
+			time.Now().UTC(),
+		)
+		if err != nil {
+			if ctx.Err() == nil {
+				log.Warnf("failed to store worm market %s match start analysis: %v", market.ConditionID, err)
+			}
+			continue
+		}
+		if rowsAffected > 0 {
+			updated++
+		}
+	}
+	log.Debugf("updated match start analysis for %d worm markets", updated)
+}
+
+func (s *Service) extractWormMarketMatchStart(ctx context.Context, rules json.RawMessage) (time.Time, error) {
+	temperature := 0.0
+	response, err := s.deepSeekClient.CreateChatCompletion(ctx, deepseek.ChatCompletionRequest{
+		Messages: []deepseek.ChatMessage{
+			{Role: "system", Content: wormMatchStartSystemPrompt},
+			{Role: "user", Content: string(rules)},
+		},
+		MaxTokens:   128,
+		Temperature: &temperature,
+	})
+	if err != nil {
+		return time.Time{}, err
+	}
+	return parseWormMarketMatchStartResponse(response.Content)
+}
+
+func parseWormMarketMatchStartResponse(content string) (time.Time, error) {
+	var payload struct {
+		MatchStartTime json.RawMessage `json:"match_start_time"`
+	}
+	decoder := json.NewDecoder(strings.NewReader(strings.TrimSpace(content)))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&payload); err != nil {
+		return time.Time{}, fmt.Errorf("decode match start response: %w", err)
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		if err == nil {
+			return time.Time{}, fmt.Errorf("decode match start response: multiple JSON values")
+		}
+		return time.Time{}, fmt.Errorf("decode match start response trailing content: %w", err)
+	}
+	if len(payload.MatchStartTime) == 0 {
+		return time.Time{}, fmt.Errorf("match_start_time is required")
+	}
+	if string(payload.MatchStartTime) == "null" {
+		return time.Time{}, nil
+	}
+	var value string
+	if err := json.Unmarshal(payload.MatchStartTime, &value); err != nil {
+		return time.Time{}, fmt.Errorf("decode match_start_time: %w", err)
+	}
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}, fmt.Errorf("match_start_time must be RFC3339 or null")
+	}
+	matchStartAt, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("parse match_start_time: %w", err)
+	}
+	return matchStartAt.UTC(), nil
 }
 
 func (s *Service) liveStateLoop(ctx context.Context) {

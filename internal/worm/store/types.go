@@ -6,28 +6,35 @@ import (
 )
 
 type WormMarket struct {
-	ConditionID      string
-	Title            string
-	Description      string
-	Logo             string
-	LastTradePrice   string
-	State            string
-	Category         string
-	SortOption       string
-	Created          int64
-	EventTitle       string
-	EventConditionID string
-	EventLogo        string
-	MarginEnabled    bool
-	LiveState        string
-	LiveCheckedAt    time.Time
-	LivePriceChange  string
-	Raw              json.RawMessage
-	Rules            json.RawMessage
-	FetchedAt        time.Time
-	LastSeenAt       time.Time
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	ConditionID          string
+	Title                string
+	Description          string
+	Logo                 string
+	LastTradePrice       string
+	State                string
+	Category             string
+	SortOption           string
+	Created              int64
+	EventTitle           string
+	EventConditionID     string
+	EventLogo            string
+	MarginEnabled        bool
+	LiveState            string
+	LiveCheckedAt        time.Time
+	LivePriceChange      string
+	Raw                  json.RawMessage
+	Rules                json.RawMessage
+	MatchStartAt         time.Time
+	MatchStartAnalyzedAt time.Time
+	FetchedAt            time.Time
+	LastSeenAt           time.Time
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+}
+
+type WormMarketPendingMatchStartAnalysis struct {
+	ConditionID string
+	Rules       json.RawMessage
 }
 
 type WormEvent struct {

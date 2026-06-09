@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS worm_market (
   live_price_change TEXT NOT NULL DEFAULT '',
   raw JSONB NOT NULL DEFAULT '{}'::jsonb,
   rules JSONB,
+  match_start_at TIMESTAMPTZ,
+  match_start_analyzed_at TIMESTAMPTZ,
   fetched_at TIMESTAMPTZ NOT NULL,
   last_seen_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

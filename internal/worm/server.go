@@ -5,6 +5,7 @@ import (
 	"github.com/useryege/athena/internal/worm/apiclient"
 	wormstore "github.com/useryege/athena/internal/worm/store"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
+	"github.com/useryege/athena/util/deepseek"
 	utilworm "github.com/useryege/athena/util/worm"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -20,6 +21,7 @@ type Server struct {
 type ServerOpts struct {
 	Store          *wormstore.SQLStore
 	WormClient     utilworm.Client
+	DeepSeekClient deepseek.Client
 	WormAPIBaseURL string
 }
 
@@ -28,7 +30,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
 		ServerOpts:    opts,
-		service:       NewService(opts.Store, opts.WormClient, opts.WormAPIBaseURL),
+		service:       NewService(opts.Store, opts.WormClient, opts.DeepSeekClient, opts.WormAPIBaseURL),
 		healthService: healthService,
 	}, nil
 }
