@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -125,6 +126,33 @@ func (s *SQLStore) ListWormMarketsPendingLiveCheck(ctx context.Context) ([]WormM
 		return nil, fmt.Errorf("list worm markets pending live check: %w", err)
 	}
 	return mapWormMarkets(rows), nil
+}
+
+func (s *SQLStore) ListWormMarketsPendingGetMarket(ctx context.Context) ([]WormMarket, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListWormMarketsPendingGetMarket(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list worm markets pending get market: %w", err)
+	}
+	return mapWormMarkets(rows), nil
+}
+
+func (s *SQLStore) UpdateWormMarketGetMarketData(ctx context.Context, conditionID string, data json.RawMessage) (int64, error) {
+	q, err := s.querier()
+	if err != nil {
+		return 0, err
+	}
+	rowsAffected, err := q.UpdateWormMarketGetMarketData(ctx, wormsqlc.UpdateWormMarketGetMarketDataParams{
+		ConditionID:   conditionID,
+		GetMarketData: []byte(data),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("update worm market get market data: %w", err)
+	}
+	return rowsAffected, nil
 }
 
 func (s *SQLStore) UpdateWormMarket(ctx context.Context, item WormMarket) (*WormMarket, error) {

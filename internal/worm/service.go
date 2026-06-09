@@ -25,6 +25,7 @@ const (
 	defaultWormMarketsLimit   = 20
 	maxWormMarketsLimit       = 100
 	wormMarketSyncInterval    = time.Minute
+	wormMarketDetailInterval  = time.Minute
 	wormLiveStateLoopInterval = 5 * time.Minute
 	wormLiveRateLimitBuffer   = 500 * time.Millisecond
 	wormLiveRateLimitFallback = 5 * time.Second
@@ -48,6 +49,7 @@ const (
 
 type wormMarketClient interface {
 	ListMarkets(context.Context, utilworm.ListMarketsOptions) (*utilworm.ListMarketsResponse, error)
+	GetMarket(context.Context, string) (*utilworm.Market, error)
 	GetMarketCandles(context.Context, string, utilworm.GetMarketCandlesOptions) (*utilworm.ListMarketCandlesResponse, error)
 }
 
@@ -95,8 +97,9 @@ func (s *Service) Start() error {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	s.syncCancel = cancel
-	s.syncWG.Add(2)
+	s.syncWG.Add(3)
 	go s.syncLoop(ctx)
+	go s.marketDetailLoop(ctx)
 	go s.liveStateLoop(ctx)
 	s.started = true
 	return nil
@@ -411,6 +414,68 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 	}
 	log.Debugf("synced %d worm markets", len(seen))
 	return nil
+}
+
+func (s *Service) marketDetailLoop(ctx context.Context) {
+	defer s.syncWG.Done()
+	s.updateWormMarketDetails(ctx)
+	ticker := time.NewTicker(wormMarketDetailInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			s.updateWormMarketDetails(ctx)
+		}
+	}
+}
+
+func (s *Service) updateWormMarketDetails(ctx context.Context) {
+	if s.store == nil || s.wormClient == nil {
+		return
+	}
+	markets, err := s.store.ListWormMarketsPendingGetMarket(ctx)
+	if err != nil {
+		if ctx.Err() == nil {
+			log.Warnf("failed to list worm markets pending get market: %v", err)
+		}
+		return
+	}
+	updated := 0
+	for i := range markets {
+		if ctx.Err() != nil {
+			return
+		}
+		conditionID := markets[i].ConditionID
+		market, err := s.wormClient.GetMarket(ctx, conditionID)
+		if err != nil {
+			if ctx.Err() == nil {
+				log.Warnf("failed to get worm market %s: %v", conditionID, err)
+			}
+			continue
+		}
+		if market == nil {
+			log.Warnf("failed to get worm market %s: empty response", conditionID)
+			continue
+		}
+		data, err := json.Marshal(market)
+		if err != nil {
+			log.Warnf("failed to marshal worm market detail %s: %v", conditionID, err)
+			continue
+		}
+		rowsAffected, err := s.store.UpdateWormMarketGetMarketData(ctx, conditionID, data)
+		if err != nil {
+			if ctx.Err() == nil {
+				log.Warnf("failed to update worm market detail %s: %v", conditionID, err)
+			}
+			continue
+		}
+		if rowsAffected > 0 {
+			updated++
+		}
+	}
+	log.Debugf("updated details for %d worm markets", updated)
 }
 
 func (s *Service) liveStateLoop(ctx context.Context) {
