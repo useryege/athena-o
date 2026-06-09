@@ -9,13 +9,14 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/notification"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilio "github.com/useryege/athena/util/io"
 )
 
 const (
+	moverAlertNotificationTopicLabel = "[POLY] 市场异动"
+
 	moverAlertSource           = "polymarket.movers"
 	moverAlertSeverityWarning  = "warning"
 	moverAlertSeverityCritical = "critical"
@@ -271,7 +272,7 @@ func renderMoverAlertNotification(item *v1alpha1.PolymarketMoverMarketItem, seve
 		Title:      title,
 		Body:       body,
 		Link:       polymarketMoverLink(item),
-		TopicLabel: notification.NotificationTopicLabelPolyMover,
+		TopicLabel: moverAlertNotificationTopicLabel,
 	}
 }
 

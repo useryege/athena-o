@@ -7,11 +7,6 @@ import (
 )
 
 const (
-	NotificationTopicLabelToken       = "[TOKEN] 代币通知"
-	NotificationTopicLabelPolyMover   = "[POLY] 市场异动"
-	NotificationTopicLabelPolyKickoff = "[POLY] 开赛通知"
-	NotificationTopicLabelWorm        = "[WORM] 比赛通知"
-
 	maxTopicLabelLength = 128
 )
 

@@ -8,13 +8,14 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/notification"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilio "github.com/useryege/athena/util/io"
 )
 
 const (
+	sportsKickoffNotificationTopicLabel = "[POLY] 开赛通知"
+
 	sportsKickoffAlertSource        = "polymarket.sports-live"
 	defaultSportsKickoffStateTTL    = 72 * time.Hour
 	defaultSportsKickoffSendTimeout = 10 * time.Second
@@ -103,7 +104,7 @@ func renderSportsKickoffNotification(item *v1alpha1.PolymarketSportsLiveMarketIt
 		Title:      title,
 		Body:       body,
 		Link:       polymarketEventLink(eventSlug),
-		TopicLabel: notification.NotificationTopicLabelPolyKickoff,
+		TopicLabel: sportsKickoffNotificationTopicLabel,
 	}
 }
 

@@ -8,13 +8,13 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/notification"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	wormstore "github.com/useryege/athena/internal/worm/store"
 	utilio "github.com/useryege/athena/util/io"
 )
 
 const (
+	wormNotificationTopicLabel      = "[WORM] 比赛通知"
 	wormNewEventNotificationSource  = "worm.new-event"
 	wormLiveEventNotificationSource = "worm.live-event"
 	wormNotificationSendTimeout     = 10 * time.Second
@@ -49,7 +49,7 @@ func newWormEventNotifications(events map[string]wormstore.WormMarket) []wormNot
 				Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
 				Title:      fmt.Sprintf("Worm new event: %s", eventTitle),
 				Body:       body,
-				TopicLabel: notification.NotificationTopicLabelWorm,
+				TopicLabel: wormNotificationTopicLabel,
 			},
 		})
 	}
@@ -72,7 +72,7 @@ func newWormLiveNotification(change wormstore.WormMarketLivePriceChange) wormNot
 			Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
 			Title:      fmt.Sprintf("Worm event is live: %s", eventTitle),
 			Body:       body,
-			TopicLabel: notification.NotificationTopicLabelWorm,
+			TopicLabel: wormNotificationTopicLabel,
 		},
 	}
 }
