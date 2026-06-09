@@ -1,6 +1,7 @@
 package worm
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -25,6 +26,7 @@ const (
 	maxWormEventsLimit        = 100
 	maxWormMarketsSyncLimit   = 100
 	wormMarketSyncInterval    = time.Minute
+	wormMarketRulesInterval   = time.Minute
 	wormLiveStateLoopInterval = time.Minute
 	wormLivePriceWindow       = 30 * time.Minute
 
@@ -39,6 +41,7 @@ const (
 
 type wormMarketClient interface {
 	ListMarkets(context.Context, utilworm.ListMarketsOptions) (*utilworm.ListMarketsResponse, error)
+	GetMarket(context.Context, string) (*utilworm.Market, error)
 }
 
 type Service struct {
@@ -85,8 +88,9 @@ func (s *Service) Start() error {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	s.syncCancel = cancel
-	s.syncWG.Add(2)
+	s.syncWG.Add(3)
 	go s.syncLoop(ctx)
+	go s.rulesLoop(ctx)
 	go s.liveStateLoop(ctx)
 	s.started = true
 	return nil
@@ -383,6 +387,66 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 	return nil
 }
 
+func (s *Service) rulesLoop(ctx context.Context) {
+	defer s.syncWG.Done()
+	s.updateWormMarketRules(ctx)
+	ticker := time.NewTicker(wormMarketRulesInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			s.updateWormMarketRules(ctx)
+		}
+	}
+}
+
+func (s *Service) updateWormMarketRules(ctx context.Context) {
+	if s.store == nil || s.wormClient == nil {
+		return
+	}
+	conditionIDs, err := s.store.ListWormMarketConditionIDsMissingRules(ctx)
+	if err != nil {
+		if ctx.Err() == nil {
+			log.Warnf("failed to list worm markets missing rules: %v", err)
+		}
+		return
+	}
+	updated := 0
+	for _, conditionID := range conditionIDs {
+		if ctx.Err() != nil {
+			return
+		}
+		market, err := s.wormClient.GetMarket(ctx, conditionID)
+		if err != nil {
+			if ctx.Err() == nil {
+				log.Warnf("failed to get worm market %s rules: %v", conditionID, err)
+			}
+			continue
+		}
+		if market == nil || strings.TrimSpace(market.ConditionID) != conditionID {
+			log.Warnf("worm market rules response condition ID mismatch for %s", conditionID)
+			continue
+		}
+		if !isJSONObject(market.Rules) {
+			log.Warnf("worm market %s returned missing or invalid rules", conditionID)
+			continue
+		}
+		rowsAffected, err := s.store.SetWormMarketRulesIfMissing(ctx, conditionID, market.Rules)
+		if err != nil {
+			if ctx.Err() == nil {
+				log.Warnf("failed to store worm market %s rules: %v", conditionID, err)
+			}
+			continue
+		}
+		if rowsAffected > 0 {
+			updated++
+		}
+	}
+	log.Debugf("updated rules for %d worm markets", updated)
+}
+
 func (s *Service) liveStateLoop(ctx context.Context) {
 	defer s.syncWG.Done()
 	s.updateWormMarketLiveStates(ctx)
@@ -452,6 +516,11 @@ func parseWormMarketPrice(value string) (string, bool) {
 		return "", false
 	}
 	return value, true
+}
+
+func isJSONObject(value json.RawMessage) bool {
+	value = bytes.TrimSpace(value)
+	return len(value) >= 2 && value[0] == '{' && value[len(value)-1] == '}' && json.Valid(value)
 }
 
 func isSyncedWormMarket(market utilworm.MarketSummary) bool {

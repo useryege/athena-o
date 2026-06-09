@@ -59,6 +59,7 @@ func mapWormMarket(row wormsqlc.WormMarket) *WormMarket {
 		LiveCheckedAt:    timeValue(row.LiveCheckedAt),
 		LivePriceChange:  row.LivePriceChange,
 		Raw:              json.RawMessage(row.Raw),
+		Rules:            json.RawMessage(row.Rules),
 		FetchedAt:        timeValue(row.FetchedAt),
 		LastSeenAt:       timeValue(row.LastSeenAt),
 		CreatedAt:        timeValue(row.CreatedAt),

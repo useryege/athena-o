@@ -26,6 +26,7 @@ type WormMarket struct {
 	LiveCheckedAt    pgtype.Timestamptz
 	LivePriceChange  string
 	Raw              []byte
+	Rules            []byte
 	FetchedAt        pgtype.Timestamptz
 	LastSeenAt       pgtype.Timestamptz
 	CreatedAt        pgtype.Timestamptz

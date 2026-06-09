@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS worm_market (
   live_checked_at TIMESTAMPTZ,
   live_price_change TEXT NOT NULL DEFAULT '',
   raw JSONB NOT NULL DEFAULT '{}'::jsonb,
+  rules JSONB,
   fetched_at TIMESTAMPTZ NOT NULL,
   last_seen_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -29,7 +30,8 @@ CREATE TABLE IF NOT EXISTS worm_market (
   CONSTRAINT worm_market_sort_option_leverage CHECK (sort_option = 'leverage'),
   CONSTRAINT worm_market_live_state_valid CHECK (live_state IN ('live', 'not_live', 'unknown')),
   CONSTRAINT worm_market_created_nonnegative CHECK (created >= 0),
-  CONSTRAINT worm_market_raw_object CHECK (jsonb_typeof(raw) = 'object')
+  CONSTRAINT worm_market_raw_object CHECK (jsonb_typeof(raw) = 'object'),
+  CONSTRAINT worm_market_rules_object CHECK (rules IS NULL OR jsonb_typeof(rules) = 'object')
 );
 
 CREATE TABLE IF NOT EXISTS worm_market_price_history (

@@ -135,6 +135,19 @@ SELECT *
 FROM worm_market
 ORDER BY (live_state = 'live') DESC, created DESC, condition_id;
 
+-- name: ListWormMarketConditionIDsMissingRules :many
+SELECT condition_id
+FROM worm_market
+WHERE rules IS NULL
+ORDER BY condition_id;
+
+-- name: SetWormMarketRulesIfMissing :execrows
+UPDATE worm_market
+SET rules = @rules,
+  updated_at = now()
+WHERE condition_id = @condition_id
+  AND rules IS NULL;
+
 -- name: CountWormEvents :one
 SELECT COUNT(DISTINCT event_condition_id)::bigint
 FROM worm_market

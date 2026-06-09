@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -120,6 +121,33 @@ func (s *SQLStore) ListWormMarkets(ctx context.Context) ([]WormMarket, error) {
 		return nil, fmt.Errorf("list worm markets: %w", err)
 	}
 	return mapWormMarkets(rows), nil
+}
+
+func (s *SQLStore) ListWormMarketConditionIDsMissingRules(ctx context.Context) ([]string, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	conditionIDs, err := q.ListWormMarketConditionIDsMissingRules(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list worm markets missing rules: %w", err)
+	}
+	return conditionIDs, nil
+}
+
+func (s *SQLStore) SetWormMarketRulesIfMissing(ctx context.Context, conditionID string, rules json.RawMessage) (int64, error) {
+	q, err := s.querier()
+	if err != nil {
+		return 0, err
+	}
+	rowsAffected, err := q.SetWormMarketRulesIfMissing(ctx, wormsqlc.SetWormMarketRulesIfMissingParams{
+		ConditionID: conditionID,
+		Rules:       []byte(rules),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("set worm market rules for %s: %w", conditionID, err)
+	}
+	return rowsAffected, nil
 }
 
 func (s *SQLStore) ListWormEventsPage(ctx context.Context, page, pageSize int32) (*WormEventPage, error) {

@@ -23,6 +23,7 @@ type WormMarket struct {
 	LiveCheckedAt    time.Time
 	LivePriceChange  string
 	Raw              json.RawMessage
+	Rules            json.RawMessage
 	FetchedAt        time.Time
 	LastSeenAt       time.Time
 	CreatedAt        time.Time
