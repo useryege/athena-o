@@ -150,49 +150,6 @@ func (s *SQLStore) SetWormMarketRulesIfMissing(ctx context.Context, conditionID 
 	return rowsAffected, nil
 }
 
-func (s *SQLStore) ListWormMarketsPendingMatchStartAnalysis(ctx context.Context) ([]WormMarketPendingMatchStartAnalysis, error) {
-	q, err := s.querier()
-	if err != nil {
-		return nil, err
-	}
-	rows, err := q.ListWormMarketsPendingMatchStartAnalysis(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list worm markets pending match start analysis: %w", err)
-	}
-	items := make([]WormMarketPendingMatchStartAnalysis, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, WormMarketPendingMatchStartAnalysis{
-			ConditionID: row.ConditionID,
-			Rules:       json.RawMessage(row.Rules),
-		})
-	}
-	return items, nil
-}
-
-func (s *SQLStore) SetWormMarketMatchStartAnalysisIfPending(
-	ctx context.Context,
-	conditionID string,
-	matchStartAt time.Time,
-	analyzedAt time.Time,
-) (int64, error) {
-	q, err := s.querier()
-	if err != nil {
-		return 0, err
-	}
-	rowsAffected, err := q.SetWormMarketMatchStartAnalysisIfPending(
-		ctx,
-		wormsqlc.SetWormMarketMatchStartAnalysisIfPendingParams{
-			ConditionID:          conditionID,
-			MatchStartAt:         nullableTime(matchStartAt),
-			MatchStartAnalyzedAt: nullableTime(analyzedAt),
-		},
-	)
-	if err != nil {
-		return 0, fmt.Errorf("set worm market match start analysis for %s: %w", conditionID, err)
-	}
-	return rowsAffected, nil
-}
-
 func (s *SQLStore) ListWormEventsPage(ctx context.Context, page, pageSize int32) (*WormEventPage, error) {
 	q, err := s.querier()
 	if err != nil {

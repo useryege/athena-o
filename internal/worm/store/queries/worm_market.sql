@@ -148,21 +148,6 @@ SET rules = @rules,
 WHERE condition_id = @condition_id
   AND rules IS NULL;
 
--- name: ListWormMarketsPendingMatchStartAnalysis :many
-SELECT condition_id, rules
-FROM worm_market
-WHERE rules IS NOT NULL
-  AND match_start_analyzed_at IS NULL
-ORDER BY condition_id;
-
--- name: SetWormMarketMatchStartAnalysisIfPending :execrows
-UPDATE worm_market
-SET match_start_at = sqlc.narg('match_start_at'),
-  match_start_analyzed_at = @match_start_analyzed_at,
-  updated_at = now()
-WHERE condition_id = @condition_id
-  AND match_start_analyzed_at IS NULL;
-
 -- name: CountWormEvents :one
 SELECT COUNT(DISTINCT event_condition_id)::bigint
 FROM worm_market

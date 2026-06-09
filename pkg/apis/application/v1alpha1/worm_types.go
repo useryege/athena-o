@@ -16,7 +16,6 @@ type WormMarketItem struct {
 	LiveState        string `protobuf:"bytes,13,opt,name=liveState" json:"liveState"`
 	LiveCheckedAt    int64  `protobuf:"varint,14,opt,name=liveCheckedAt" json:"liveCheckedAt"`
 	LivePriceChange  string `protobuf:"bytes,15,opt,name=livePriceChange" json:"livePriceChange"`
-	MatchStartAt     int64  `protobuf:"varint,16,opt,name=matchStartAt" json:"matchStartAt"`
 }
 
 type WormEventItem struct {

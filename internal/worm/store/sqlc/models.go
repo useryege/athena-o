@@ -9,30 +9,28 @@ import (
 )
 
 type WormMarket struct {
-	ConditionID          string
-	Title                string
-	Description          string
-	Logo                 string
-	LastTradePrice       string
-	State                string
-	Category             string
-	SortOption           string
-	Created              int64
-	EventTitle           string
-	EventConditionID     string
-	EventLogo            string
-	MarginEnabled        bool
-	LiveState            string
-	LiveCheckedAt        pgtype.Timestamptz
-	LivePriceChange      string
-	Raw                  []byte
-	Rules                []byte
-	MatchStartAt         pgtype.Timestamptz
-	MatchStartAnalyzedAt pgtype.Timestamptz
-	FetchedAt            pgtype.Timestamptz
-	LastSeenAt           pgtype.Timestamptz
-	CreatedAt            pgtype.Timestamptz
-	UpdatedAt            pgtype.Timestamptz
+	ConditionID      string
+	Title            string
+	Description      string
+	Logo             string
+	LastTradePrice   string
+	State            string
+	Category         string
+	SortOption       string
+	Created          int64
+	EventTitle       string
+	EventConditionID string
+	EventLogo        string
+	MarginEnabled    bool
+	LiveState        string
+	LiveCheckedAt    pgtype.Timestamptz
+	LivePriceChange  string
+	Raw              []byte
+	Rules            []byte
+	FetchedAt        pgtype.Timestamptz
+	LastSeenAt       pgtype.Timestamptz
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
 }
 
 type WormMarketPriceHistory struct {
