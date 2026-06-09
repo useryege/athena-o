@@ -64,7 +64,7 @@ if [ -f '${REMOTE_APP_DIR}/docker-compose.prod.yml' ]; then
   else
     compose_env_file=/dev/null
   fi
-  POSTGRES_PASSWORD=dummy REDIS_PASSWORD=dummy ATHENA_WALLET_ENCRYPTION_KEY=dummy PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file \"\${compose_env_file}\" down --remove-orphans
+  POSTGRES_PASSWORD=dummy REDIS_PASSWORD=dummy ATHENA_WALLET_ENCRYPTION_KEY=dummy PROD_IMAGE='${IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file \"\${compose_env_file}\" down --remove-orphans
 fi
 docker volume rm '${POSTGRES_VOLUME}' >/dev/null 2>&1 || true
 docker volume create '${POSTGRES_VOLUME}' >/dev/null"
@@ -90,13 +90,16 @@ tar -C '${REMOTE_APP_DIR}' -xf -"
 echo "Streaming Docker image ${IMAGE} to ${REMOTE}..."
 docker save "${IMAGE}" | ssh "${REMOTE}" "docker load"
 
-echo "Starting Athena on ${REMOTE}..."
-ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env up -d"
-
 if [[ "${RUN_REMOTE_MIGRATIONS}" == "yes" ]]; then
+  echo "Starting PostgreSQL on ${REMOTE}..."
+  ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env up -d postgres"
+
   echo "Running Athena migrations on ${REMOTE}..."
-  ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env --profile tools run --rm athena-migrate athena up --module '${MIGRATE_MODULE}'"
+  ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env --profile tools run --rm athena-migrate athena up --module '${MIGRATE_MODULE}'"
 fi
 
+echo "Starting Athena on ${REMOTE}..."
+ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env up -d"
+
 echo "Remote deployment status:"
-ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env ps"
+ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env ps"

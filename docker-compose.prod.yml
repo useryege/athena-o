@@ -34,37 +34,8 @@ services:
       timeout: 5s
       retries: 5
 
-  temporal:
-    image: docker.io/temporalio/auto-setup:1.24
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DB: postgres12
-      DB_PORT: "5432"
-      POSTGRES_SEEDS: postgres
-      POSTGRES_USER: ${POSTGRES_USER:-athena}
-      POSTGRES_PWD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      DBNAME: temporal
-      VISIBILITY_DBNAME: temporal_visibility
-    expose:
-      - "7233"
-
-  temporal-ui:
-    image: docker.io/temporalio/ui:2.26.2
-    restart: unless-stopped
-    depends_on:
-      temporal:
-        condition: service_started
-    environment:
-      TEMPORAL_ADDRESS: temporal:7233
-      TEMPORAL_CORS_ORIGINS: http://localhost:3000
-    ports:
-      - "${TEMPORAL_UI_BIND_ADDR:-127.0.0.1}:${TEMPORAL_UI_PORT:-8233}:8080"
-
   athena-worm:
-    image: athena:local
+    image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -85,7 +56,7 @@ services:
       - "8084"
 
   athena-polymarket:
-    image: athena:local
+    image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -102,7 +73,7 @@ services:
       - "8092"
 
   athena-notification:
-    image: athena:local
+    image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -119,7 +90,7 @@ services:
       - "8086"
 
   athena-wallet:
-    image: athena:local
+    image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -136,8 +107,83 @@ services:
     expose:
       - "8088"
 
+  athena-token:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-token
+      ATHENA_TOKEN_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_TOKEN_MODE: grpc
+    command: ["athena", "--port", "8094"]
+    expose:
+      - "8094"
+
+  athena-token-api:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-token-api
+      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_TOKEN_API_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
+    command: ["athena", "--port", "8096"]
+    expose:
+      - "8096"
+
+  athena-token-chain-ingestor:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-token
+      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_TOKEN_MODE: chain-ingestor
+      ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
+    command: ["athena"]
+
+  athena-token-project-qualifier:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-token
+      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_TOKEN_MODE: project-qualifier
+      ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
+    command: ["athena"]
+
+  athena-token-project-data-collector:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-token
+      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_TOKEN_MODE: project-data-collector
+      ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
+    command: ["athena"]
+
   athena-migrate:
-    image: athena:local
+    image: ${PROD_IMAGE:-athena:local}
     profiles:
       - tools
     depends_on:
@@ -151,10 +197,11 @@ services:
       ATHENA_POLYMARKET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=polymarket sslmode=disable
       ATHENA_NOTIFICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=notification sslmode=disable
       ATHENA_WALLET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wallet sslmode=disable
+      ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
     command: ["athena", "status", "--module", "all"]
 
   athena-server:
-    image: athena:local
+    image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
       redis:
@@ -167,6 +214,8 @@ services:
         condition: service_started
       athena-polymarket:
         condition: service_started
+      athena-token-api:
+        condition: service_started
     env_file:
       - .env
     environment:
@@ -175,6 +224,7 @@ services:
       ATHENA_WALLET_SERVER_ADDRESS: athena-wallet:8088
       ATHENA_WORM_SERVER_ADDRESS: athena-worm:8084
       ATHENA_POLYMARKET_SERVER_ADDRESS: athena-polymarket:8092
+      ATHENA_TOKEN_API_SERVER_ADDRESS: athena-token-api:8096
       ATHENA_SERVER_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_SERVER_DISABLE_AUTH: ${ATHENA_SERVER_DISABLE_AUTH:-false}
       REDIS_SERVER: redis:6379

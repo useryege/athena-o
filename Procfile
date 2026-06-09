@@ -10,5 +10,4 @@ notification: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go r
 wallet: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-wallet} FORCE_LOG_COLORS=1 ATHENA_FAKE_IN_CLUSTER=true ATHENA_BINARY_NAME=athena-wallet ATHENA_WALLET_ENCRYPTION_KEY=${ATHENA_WALLET_ENCRYPTION_KEY:-athena-local-wallet-encryption-key} $COMMAND --port ${ATHENA_WALLET_PORT:-8088}"
 redis: hack/start-redis-with-password.sh
 postgres: hack/start-postgres-with-password.sh
-# temporal: hack/start-temporal.sh
 ui: sh -c 'cd ui && ${ATHENA_YARN_CMD:-yarn} start'
