@@ -22,10 +22,8 @@ type Querier interface {
 	ListWormMarketLivePriceChanges(ctx context.Context, sampledAt pgtype.Timestamptz) ([]ListWormMarketLivePriceChangesRow, error)
 	ListWormMarkets(ctx context.Context) ([]WormMarket, error)
 	ListWormMarketsByEventConditionIDs(ctx context.Context, eventConditionIds []string) ([]WormMarket, error)
-	ListWormMarketsPendingGetMarket(ctx context.Context) ([]WormMarket, error)
 	Ping(ctx context.Context) (int32, error)
 	UpdateWormMarket(ctx context.Context, arg UpdateWormMarketParams) (WormMarket, error)
-	UpdateWormMarketGetMarketData(ctx context.Context, arg UpdateWormMarketGetMarketDataParams) (int64, error)
 	UpdateWormMarketLiveState(ctx context.Context, arg UpdateWormMarketLiveStateParams) (WormMarket, error)
 	UpsertWormMarket(ctx context.Context, arg UpsertWormMarketParams) (WormMarket, error)
 }

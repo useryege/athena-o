@@ -199,12 +199,6 @@ WHERE market.live_state <> 'live'
 GROUP BY market.condition_id
 ORDER BY market.condition_id;
 
--- name: ListWormMarketsPendingGetMarket :many
-SELECT *
-FROM worm_market
-WHERE get_market_data IS NULL
-ORDER BY created DESC, condition_id;
-
 -- name: UpdateWormMarketLiveState :one
 UPDATE worm_market
 SET live_state = CASE WHEN live_state = 'live' THEN live_state ELSE @live_state END,
@@ -213,13 +207,6 @@ SET live_state = CASE WHEN live_state = 'live' THEN live_state ELSE @live_state 
   updated_at = now()
 WHERE condition_id = @condition_id
 RETURNING *;
-
--- name: UpdateWormMarketGetMarketData :execrows
-UPDATE worm_market
-SET get_market_data = @get_market_data,
-  updated_at = now()
-WHERE condition_id = @condition_id
-  AND get_market_data IS NULL;
 
 -- name: UpdateWormMarket :one
 UPDATE worm_market
