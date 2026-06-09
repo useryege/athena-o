@@ -25,18 +25,49 @@ func (s *SQLStore) UpsertWormMarket(ctx context.Context, item WormMarket) (*Worm
 	return mapWormMarket(row), nil
 }
 
-func (s *SQLStore) BatchUpsertWormMarkets(ctx context.Context, items []WormMarket) error {
+func (s *SQLStore) BatchUpsertWormMarkets(ctx context.Context, items []WormMarket) ([]string, error) {
 	if len(items) == 0 {
-		return nil
+		return nil, nil
 	}
 	q, err := s.querier()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err := q.BatchUpsertWormMarkets(ctx, batchUpsertWormMarketsParams(items)); err != nil {
-		return fmt.Errorf("batch upsert worm markets: %w", err)
+	rows, err := q.BatchUpsertWormMarkets(ctx, batchUpsertWormMarketsParams(items))
+	if err != nil {
+		return nil, fmt.Errorf("batch upsert worm markets: %w", err)
 	}
-	return nil
+	inserted := make([]string, 0, len(rows))
+	for _, row := range rows {
+		if row.Inserted {
+			inserted = append(inserted, row.ConditionID)
+		}
+	}
+	return inserted, nil
+}
+
+func (s *SQLStore) CountWormMarkets(ctx context.Context) (int64, error) {
+	q, err := s.querier()
+	if err != nil {
+		return 0, err
+	}
+	count, err := q.CountWormMarkets(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("count worm markets: %w", err)
+	}
+	return count, nil
+}
+
+func (s *SQLStore) ListWormEventConditionIDs(ctx context.Context) ([]string, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	conditionIDs, err := q.ListWormEventConditionIDs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list worm event condition IDs: %w", err)
+	}
+	return conditionIDs, nil
 }
 
 func (s *SQLStore) BatchInsertWormMarketPriceHistory(ctx context.Context, samples []WormMarketPriceSample) error {
@@ -87,10 +118,14 @@ func (s *SQLStore) ListWormMarketLivePriceChanges(ctx context.Context, sampledAt
 	items := make([]WormMarketLivePriceChange, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, WormMarketLivePriceChange{
-			ConditionID: row.ConditionID,
-			SampleCount: row.SampleCount,
-			PriceChange: row.PriceChange,
-			IsLive:      row.IsLive,
+			ConditionID:      row.ConditionID,
+			Title:            row.Title,
+			EventConditionID: row.EventConditionID,
+			EventTitle:       row.EventTitle,
+			SampleCount:      row.SampleCount,
+			PriceChange:      row.PriceChange,
+			IsLive:           row.IsLive,
+			EventHasLive:     row.EventHasLive,
 		})
 	}
 	return items, nil

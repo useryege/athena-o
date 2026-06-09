@@ -1,6 +1,7 @@
 package worm
 
 import (
+	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/server/version"
 	"github.com/useryege/athena/internal/worm/apiclient"
 	wormstore "github.com/useryege/athena/internal/worm/store"
@@ -18,9 +19,10 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Store          *wormstore.SQLStore
-	WormClient     utilworm.Client
-	WormAPIBaseURL string
+	Store                 *wormstore.SQLStore
+	WormClient            utilworm.Client
+	WormAPIBaseURL        string
+	NotificationClientset notificationapiclient.Clientset
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -28,7 +30,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
 		ServerOpts:    opts,
-		service:       NewService(opts.Store, opts.WormClient, opts.WormAPIBaseURL),
+		service:       NewService(opts.Store, opts.WormClient, opts.WormAPIBaseURL, WithNotificationClientset(opts.NotificationClientset)),
 		healthService: healthService,
 	}, nil
 }

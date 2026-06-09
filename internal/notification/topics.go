@@ -10,6 +10,7 @@ const (
 	notificationTopicToken       = "token"
 	notificationTopicPolyMover   = "poly-mover"
 	notificationTopicPolyKickoff = "poly-kickoff"
+	notificationTopicWorm        = "worm"
 
 	maxTopicKeyLength   = 64
 	maxTopicTitleLength = 128
@@ -19,6 +20,7 @@ const (
 	NotificationTopicToken       = notificationTopicToken
 	NotificationTopicPolyMover   = notificationTopicPolyMover
 	NotificationTopicPolyKickoff = notificationTopicPolyKickoff
+	NotificationTopicWorm        = notificationTopicWorm
 )
 
 type TopicConfig struct {
@@ -31,6 +33,7 @@ func DefaultTopicConfigs() []TopicConfig {
 		{Key: notificationTopicToken, Title: "[TOKEN] 代币通知"},
 		{Key: notificationTopicPolyMover, Title: "[POLY] 市场异动"},
 		{Key: notificationTopicPolyKickoff, Title: "[POLY] 开赛通知"},
+		{Key: notificationTopicWorm, Title: "[WORM] 比赛通知"},
 	}
 }
 

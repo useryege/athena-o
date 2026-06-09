@@ -12,6 +12,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/worm/apiclient"
 	wormstore "github.com/useryege/athena/internal/worm/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
@@ -45,17 +46,24 @@ type wormMarketClient interface {
 
 type Service struct {
 	apiclient.UnimplementedWormServiceServer
-	store        *wormstore.SQLStore
-	wormClient   wormMarketClient
-	assetBaseURL string
-	syncCancel   context.CancelFunc
-	syncWG       sync.WaitGroup
-	syncMu       sync.Mutex
-	startStopMu  sync.Mutex
-	started      bool
+	store                 *wormstore.SQLStore
+	wormClient            wormMarketClient
+	notificationClientset notificationapiclient.Clientset
+	assetBaseURL          string
+	syncCancel            context.CancelFunc
+	syncWG                sync.WaitGroup
+	syncMu                sync.Mutex
+	startStopMu           sync.Mutex
+	started               bool
 }
 
 type ServiceOption func(*Service)
+
+func WithNotificationClientset(clientset notificationapiclient.Clientset) ServiceOption {
+	return func(s *Service) {
+		s.notificationClientset = clientset
+	}
+}
 
 func NewService(
 	store *wormstore.SQLStore,
@@ -312,6 +320,21 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 		return status.Error(codes.FailedPrecondition, "worm API client is required")
 	}
 
+	marketCount, err := s.store.CountWormMarkets(ctx)
+	if err != nil {
+		return err
+	}
+	existingEventIDs, err := s.store.ListWormEventConditionIDs(ctx)
+	if err != nil {
+		return err
+	}
+	existingEvents := make(map[string]struct{}, len(existingEventIDs))
+	for _, eventConditionID := range existingEventIDs {
+		existingEvents[eventConditionID] = struct{}{}
+	}
+	suppressNewEventNotifications := marketCount == 0
+	newEvents := make(map[string]wormstore.WormMarket)
+
 	syncStartedAt := time.Now().UTC()
 	cursor := ""
 	seen := map[string]bool{}
@@ -369,8 +392,24 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 				})
 			}
 		}
-		if err := s.store.BatchUpsertWormMarkets(ctx, items); err != nil {
+		insertedConditionIDs, err := s.store.BatchUpsertWormMarkets(ctx, items)
+		if err != nil {
 			return err
+		}
+		inserted := make(map[string]struct{}, len(insertedConditionIDs))
+		for _, conditionID := range insertedConditionIDs {
+			inserted[conditionID] = struct{}{}
+		}
+		for _, item := range items {
+			if _, ok := inserted[item.ConditionID]; !ok {
+				continue
+			}
+			if _, existed := existingEvents[item.EventConditionID]; existed {
+				continue
+			}
+			if _, collected := newEvents[item.EventConditionID]; !collected {
+				newEvents[item.EventConditionID] = item
+			}
 		}
 		if err := s.store.BatchInsertWormMarketPriceHistory(ctx, priceSamples); err != nil {
 			return err
@@ -386,6 +425,9 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 	}
 	if _, err := s.store.DeleteWormMarketsNotSeenSince(ctx, syncStartedAt); err != nil {
 		return err
+	}
+	if !suppressNewEventNotifications {
+		s.sendWormNotifications(ctx, newWormEventNotifications(newEvents))
 	}
 	log.Debugf("synced %d worm markets", len(seen))
 	return nil
@@ -490,6 +532,8 @@ func (s *Service) updateWormMarketLiveStates(ctx context.Context) {
 		}
 		return
 	}
+	liveNotifications := make([]wormNotification, 0)
+	notifiedEvents := make(map[string]struct{})
 	for _, priceChange := range priceChanges {
 		if ctx.Err() != nil {
 			return
@@ -512,9 +556,19 @@ func (s *Service) updateWormMarketLiveStates(ctx context.Context) {
 			if ctx.Err() == nil {
 				log.Warnf("failed to update worm market live state for %s: %v", priceChange.ConditionID, err)
 			}
+			s.sendWormNotifications(ctx, liveNotifications)
 			return
 		}
+		if liveState != wormMarketLiveStateLive || priceChange.EventHasLive {
+			continue
+		}
+		if _, exists := notifiedEvents[priceChange.EventConditionID]; exists {
+			continue
+		}
+		notifiedEvents[priceChange.EventConditionID] = struct{}{}
+		liveNotifications = append(liveNotifications, newWormLiveNotification(priceChange))
 	}
+	s.sendWormNotifications(ctx, liveNotifications)
 	log.Debugf("updated live states for %d worm markets", len(priceChanges))
 }
 

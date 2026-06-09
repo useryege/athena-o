@@ -62,7 +62,7 @@ SET title = EXCLUDED.title,
   updated_at = now()
 RETURNING *;
 
--- name: BatchUpsertWormMarkets :exec
+-- name: BatchUpsertWormMarkets :many
 INSERT INTO worm_market (
   condition_id,
   title,
@@ -123,7 +123,18 @@ SET title = EXCLUDED.title,
   raw = EXCLUDED.raw,
   fetched_at = EXCLUDED.fetched_at,
   last_seen_at = EXCLUDED.last_seen_at,
-  updated_at = now();
+  updated_at = now()
+RETURNING condition_id, (xmax = 0)::boolean AS inserted;
+
+-- name: CountWormMarkets :one
+SELECT COUNT(*)::bigint
+FROM worm_market;
+
+-- name: ListWormEventConditionIDs :many
+SELECT DISTINCT event_condition_id
+FROM worm_market
+WHERE event_condition_id <> ''
+ORDER BY event_condition_id;
 
 -- name: GetWormMarket :one
 SELECT *
@@ -200,16 +211,25 @@ WHERE sampled_at < @sampled_at;
 -- name: ListWormMarketLivePriceChanges :many
 SELECT
   market.condition_id,
+  market.title,
+  market.event_condition_id,
+  market.event_title,
   COUNT(history.price)::bigint AS sample_count,
   COALESCE((MAX(history.price) - MIN(history.price))::text, '')::text AS price_change,
-  COALESCE(MAX(history.price) - MIN(history.price) > 0.05, false)::boolean AS is_live
+  COALESCE(MAX(history.price) - MIN(history.price) > 0.05, false)::boolean AS is_live,
+  EXISTS (
+    SELECT 1
+    FROM worm_market AS live_market
+    WHERE live_market.event_condition_id = market.event_condition_id
+      AND live_market.live_state = 'live'
+  )::boolean AS event_has_live
 FROM worm_market AS market
 LEFT JOIN worm_market_price_history AS history
   ON history.condition_id = market.condition_id
   AND history.sampled_at >= @sampled_at
 WHERE market.live_state <> 'live'
   AND market.state = 'open'
-GROUP BY market.condition_id
+GROUP BY market.condition_id, market.title, market.event_condition_id, market.event_title
 ORDER BY market.condition_id;
 
 -- name: UpdateWormMarketLiveState :one

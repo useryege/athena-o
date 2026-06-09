@@ -16,6 +16,7 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
+	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/worm"
 	wormstore "github.com/useryege/athena/internal/worm/store"
 	"github.com/useryege/athena/util/cli"
@@ -30,9 +31,11 @@ const cliName = "athena-worm"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost     string
-		listenPort     int
-		wormAPIBaseURL string
+		listenHost                string
+		listenPort                int
+		wormAPIBaseURL            string
+		notificationEnabled       bool
+		notificationServerAddress string
 
 		storeSrc func(context.Context) (*wormstore.SQLStore, error)
 	)
@@ -65,10 +68,16 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 
+			var notificationClientset notificationapiclient.Clientset
+			if notificationEnabled {
+				notificationClientset = notificationapiclient.NewNotificationClientset(notificationServerAddress)
+			}
+
 			server, err := worm.NewServer(worm.ServerOpts{
-				Store:          store,
-				WormClient:     wormClient,
-				WormAPIBaseURL: wormAPIBaseURL,
+				Store:                 store,
+				WormClient:            wormClient,
+				WormAPIBaseURL:        wormAPIBaseURL,
+				NotificationClientset: notificationClientset,
 			})
 			if err != nil {
 				return err
@@ -119,6 +128,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_WORM_LISTEN_ADDRESS", common.DefaultAddressWorm), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortWorm, "Listen on given port for incoming connections")
 	command.Flags().StringVar(&wormAPIBaseURL, "worm-api-base-url", env.StringFromEnv("ATHENA_WORM_API_BASE_URL", utilworm.DefaultBaseURL), "Worm API base URL")
+	command.Flags().BoolVar(&notificationEnabled, "notification-enabled", env.ParseBoolFromEnv("ATHENA_WORM_NOTIFICATION_ENABLED", true), "Enable Worm notifications through Athena Notification")
+	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_WORM_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortNotification)), "Athena notification gRPC server address for Worm alerts")
 
 	storeSrc = wormstore.NewSQLStoreSource()
 

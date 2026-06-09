@@ -55,8 +55,12 @@ type WormMarketPriceSample struct {
 }
 
 type WormMarketLivePriceChange struct {
-	ConditionID string
-	SampleCount int64
-	PriceChange string
-	IsLive      bool
+	ConditionID      string
+	Title            string
+	EventConditionID string
+	EventTitle       string
+	SampleCount      int64
+	PriceChange      string
+	IsLive           bool
+	EventHasLive     bool
 }

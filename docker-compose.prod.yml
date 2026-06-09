@@ -69,6 +69,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      athena-notification:
+        condition: service_started
     env_file:
       - .env
     environment:
@@ -76,6 +78,8 @@ services:
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_WORM_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_WORM_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm sslmode=disable
+      ATHENA_WORM_NOTIFICATION_ENABLED: "true"
+      ATHENA_WORM_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
     command: ["athena", "--port", "8084"]
     expose:
       - "8084"

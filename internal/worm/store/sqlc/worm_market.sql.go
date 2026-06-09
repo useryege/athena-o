@@ -36,7 +36,7 @@ func (q *Queries) BatchInsertWormMarketPriceHistory(ctx context.Context, arg Bat
 	return err
 }
 
-const batchUpsertWormMarkets = `-- name: BatchUpsertWormMarkets :exec
+const batchUpsertWormMarkets = `-- name: BatchUpsertWormMarkets :many
 INSERT INTO worm_market (
   condition_id,
   title,
@@ -98,6 +98,7 @@ SET title = EXCLUDED.title,
   fetched_at = EXCLUDED.fetched_at,
   last_seen_at = EXCLUDED.last_seen_at,
   updated_at = now()
+RETURNING condition_id, (xmax = 0)::boolean AS inserted
 `
 
 type BatchUpsertWormMarketsParams struct {
@@ -122,8 +123,13 @@ type BatchUpsertWormMarketsParams struct {
 	LastSeenAtValues    []pgtype.Timestamptz
 }
 
-func (q *Queries) BatchUpsertWormMarkets(ctx context.Context, arg BatchUpsertWormMarketsParams) error {
-	_, err := q.db.Exec(ctx, batchUpsertWormMarkets,
+type BatchUpsertWormMarketsRow struct {
+	ConditionID string
+	Inserted    bool
+}
+
+func (q *Queries) BatchUpsertWormMarkets(ctx context.Context, arg BatchUpsertWormMarketsParams) ([]BatchUpsertWormMarketsRow, error) {
+	rows, err := q.db.Query(ctx, batchUpsertWormMarkets,
 		arg.ConditionIds,
 		arg.Titles,
 		arg.Descriptions,
@@ -144,7 +150,22 @@ func (q *Queries) BatchUpsertWormMarkets(ctx context.Context, arg BatchUpsertWor
 		arg.FetchedAtValues,
 		arg.LastSeenAtValues,
 	)
-	return err
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BatchUpsertWormMarketsRow
+	for rows.Next() {
+		var i BatchUpsertWormMarketsRow
+		if err := rows.Scan(&i.ConditionID, &i.Inserted); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const countWormEvents = `-- name: CountWormEvents :one
@@ -155,6 +176,18 @@ WHERE event_condition_id <> ''
 
 func (q *Queries) CountWormEvents(ctx context.Context) (int64, error) {
 	row := q.db.QueryRow(ctx, countWormEvents)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const countWormMarkets = `-- name: CountWormMarkets :one
+SELECT COUNT(*)::bigint
+FROM worm_market
+`
+
+func (q *Queries) CountWormMarkets(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countWormMarkets)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -233,6 +266,33 @@ func (q *Queries) GetWormMarket(ctx context.Context, conditionID string) (WormMa
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listWormEventConditionIDs = `-- name: ListWormEventConditionIDs :many
+SELECT DISTINCT event_condition_id
+FROM worm_market
+WHERE event_condition_id <> ''
+ORDER BY event_condition_id
+`
+
+func (q *Queries) ListWormEventConditionIDs(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, listWormEventConditionIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var event_condition_id string
+		if err := rows.Scan(&event_condition_id); err != nil {
+			return nil, err
+		}
+		items = append(items, event_condition_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listWormEventsPage = `-- name: ListWormEventsPage :many
@@ -330,24 +390,37 @@ func (q *Queries) ListWormMarketConditionIDsMissingRules(ctx context.Context) ([
 const listWormMarketLivePriceChanges = `-- name: ListWormMarketLivePriceChanges :many
 SELECT
   market.condition_id,
+  market.title,
+  market.event_condition_id,
+  market.event_title,
   COUNT(history.price)::bigint AS sample_count,
   COALESCE((MAX(history.price) - MIN(history.price))::text, '')::text AS price_change,
-  COALESCE(MAX(history.price) - MIN(history.price) > 0.05, false)::boolean AS is_live
+  COALESCE(MAX(history.price) - MIN(history.price) > 0.05, false)::boolean AS is_live,
+  EXISTS (
+    SELECT 1
+    FROM worm_market AS live_market
+    WHERE live_market.event_condition_id = market.event_condition_id
+      AND live_market.live_state = 'live'
+  )::boolean AS event_has_live
 FROM worm_market AS market
 LEFT JOIN worm_market_price_history AS history
   ON history.condition_id = market.condition_id
   AND history.sampled_at >= $1
 WHERE market.live_state <> 'live'
   AND market.state = 'open'
-GROUP BY market.condition_id
+GROUP BY market.condition_id, market.title, market.event_condition_id, market.event_title
 ORDER BY market.condition_id
 `
 
 type ListWormMarketLivePriceChangesRow struct {
-	ConditionID string
-	SampleCount int64
-	PriceChange string
-	IsLive      bool
+	ConditionID      string
+	Title            string
+	EventConditionID string
+	EventTitle       string
+	SampleCount      int64
+	PriceChange      string
+	IsLive           bool
+	EventHasLive     bool
 }
 
 func (q *Queries) ListWormMarketLivePriceChanges(ctx context.Context, sampledAt pgtype.Timestamptz) ([]ListWormMarketLivePriceChangesRow, error) {
@@ -361,9 +434,13 @@ func (q *Queries) ListWormMarketLivePriceChanges(ctx context.Context, sampledAt 
 		var i ListWormMarketLivePriceChangesRow
 		if err := rows.Scan(
 			&i.ConditionID,
+			&i.Title,
+			&i.EventConditionID,
+			&i.EventTitle,
 			&i.SampleCount,
 			&i.PriceChange,
 			&i.IsLive,
+			&i.EventHasLive,
 		); err != nil {
 			return nil, err
 		}

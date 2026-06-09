@@ -12,12 +12,14 @@ import (
 
 type Querier interface {
 	BatchInsertWormMarketPriceHistory(ctx context.Context, arg BatchInsertWormMarketPriceHistoryParams) error
-	BatchUpsertWormMarkets(ctx context.Context, arg BatchUpsertWormMarketsParams) error
+	BatchUpsertWormMarkets(ctx context.Context, arg BatchUpsertWormMarketsParams) ([]BatchUpsertWormMarketsRow, error)
 	CountWormEvents(ctx context.Context) (int64, error)
+	CountWormMarkets(ctx context.Context) (int64, error)
 	DeleteWormMarket(ctx context.Context, conditionID string) (int64, error)
 	DeleteWormMarketPriceHistoryBefore(ctx context.Context, sampledAt pgtype.Timestamptz) (int64, error)
 	DeleteWormMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	GetWormMarket(ctx context.Context, conditionID string) (WormMarket, error)
+	ListWormEventConditionIDs(ctx context.Context) ([]string, error)
 	ListWormEventsPage(ctx context.Context, arg ListWormEventsPageParams) ([]ListWormEventsPageRow, error)
 	ListWormMarketConditionIDsMissingRules(ctx context.Context) ([]string, error)
 	ListWormMarketLivePriceChanges(ctx context.Context, sampledAt pgtype.Timestamptz) ([]ListWormMarketLivePriceChangesRow, error)
