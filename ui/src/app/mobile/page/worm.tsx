@@ -1,4 +1,4 @@
-import {Button, Empty, Select, Skeleton, Space} from 'antd';
+import {Empty, Select, Skeleton, Space, Spin} from 'antd';
 import * as React from 'react';
 import {AppPage} from '../components';
 import {services} from '../../shared/services';
@@ -17,6 +17,7 @@ export const WormPage = () => {
     const [error, setError] = React.useState<Error>();
     const requestRef = React.useRef<(Promise<ListWormEventsResult> & {abort?: () => void}) | null>(null);
     const requestIDRef = React.useRef(0);
+    const sentinelRef = React.useRef<HTMLDivElement>(null);
 
     const load = React.useCallback((cursor = '', append = false) => {
         const requestID = ++requestIDRef.current;
@@ -67,6 +68,21 @@ export const WormPage = () => {
         };
     }, [load]);
 
+    React.useEffect(() => {
+        const el = sentinelRef.current;
+        if (!el || !nextCursor || loadingMore) return;
+        const observer = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting) {
+                    load(nextCursor, true);
+                }
+            },
+            {rootMargin: '200px'}
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [nextCursor, loadingMore, load]);
+
     return (
         <AppPage
             title='Worm'
@@ -102,10 +118,8 @@ export const WormPage = () => {
                         ))}
                     </div>
                     {nextCursor && (
-                        <div className='worm-event-load-more'>
-                            <Button loading={loadingMore} onClick={() => load(nextCursor, true)}>
-                                Load more
-                            </Button>
+                        <div className='worm-event-load-more' ref={sentinelRef}>
+                            {loadingMore && <Spin />}
                         </div>
                     )}
                 </>
