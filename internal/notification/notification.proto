@@ -29,12 +29,12 @@ enum NotificationDeliveryStatus {
 
 // SendNotificationRequest enqueues one notification for the configured channel.
 message SendNotificationRequest {
-  string source = 1;
-  NotificationSeverity severity = 2;
-  string title = 3;
-  string body = 4;
-  string link = 5;
-  string topic = 6;
+  string topic_label = 1;
+  string source = 2;
+  NotificationSeverity severity = 3;
+  string title = 4;
+  string body = 5;
+  string link = 6;
 }
 
 // SendNotificationResponse returns the persisted delivery queued for processing.
@@ -53,7 +53,7 @@ message ListNotificationDeliveriesRequest {
   string severity = 4;
   string source = 5;
   string keyword = 6;
-  string topic = 7;
+  string topic_label = 7;
 }
 
 // ListNotificationDeliveriesResponse returns persisted notification deliveries.

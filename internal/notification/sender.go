@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 
 	tgbot "github.com/go-telegram/bot"
@@ -13,16 +12,13 @@ import (
 )
 
 type Sender interface {
+	CreateTopic(ctx context.Context, label string) (int, error)
 	Send(ctx context.Context, request SendRequest) (string, error)
 }
 
-type TopicProvisioner interface {
-	ProvisionTopics(ctx context.Context, configs []TopicConfig) error
-}
-
 type SendRequest struct {
-	Topic string
-	Text  string
+	MessageThreadID int
+	Text            string
 }
 
 type RateLimitError struct {
@@ -42,59 +38,35 @@ func (e *RateLimitError) Unwrap() error {
 }
 
 type TelegramSender struct {
-	client       utiltelegram.Client
-	threadsMu    sync.RWMutex
-	topicThreads map[string]int
+	client utiltelegram.Client
 }
 
-func NewTelegramSender(client utiltelegram.Client, topicThreads map[string]int) (*TelegramSender, error) {
-	if err := validateTopicThreads(topicThreads); err != nil {
-		return nil, err
-	}
-	threads := make(map[string]int, len(topicThreads))
-	for topic, threadID := range topicThreads {
-		threads[NormalizeTopicKey(topic)] = threadID
-	}
-	return &TelegramSender{client: client, topicThreads: threads}, nil
+func NewTelegramSender(client utiltelegram.Client) *TelegramSender {
+	return &TelegramSender{client: client}
 }
 
-func (s *TelegramSender) ProvisionTopics(ctx context.Context, configs []TopicConfig) error {
+func (s *TelegramSender) CreateTopic(ctx context.Context, label string) (int, error) {
 	if s.client == nil {
-		return fmt.Errorf("telegram client is required")
+		return 0, fmt.Errorf("telegram client is required")
 	}
-	configs, err := normalizeTopicConfigs(configs)
+	topic, err := s.client.CreateForumTopic(ctx, utiltelegram.CreateForumTopicRequest{Name: label})
 	if err != nil {
-		return err
+		return 0, fmt.Errorf("failed to create telegram topic %q: %w", label, err)
 	}
-	threads := make(map[string]int, len(configs))
-	for _, config := range configs {
-		topic, err := s.client.CreateForumTopic(ctx, utiltelegram.CreateForumTopicRequest{Name: config.Title})
-		if err != nil {
-			return fmt.Errorf("failed to create telegram topic %s: %w", config.Key, err)
-		}
-		if topic == nil || topic.MessageThreadID <= 0 {
-			return fmt.Errorf("telegram topic %s returned invalid message thread id", config.Key)
-		}
-		threads[config.Key] = topic.MessageThreadID
+	if topic == nil || topic.MessageThreadID <= 0 {
+		return 0, fmt.Errorf("telegram topic %q returned invalid message thread id", label)
 	}
-	s.threadsMu.Lock()
-	s.topicThreads = threads
-	s.threadsMu.Unlock()
-	return nil
+	return topic.MessageThreadID, nil
 }
 
 func (s *TelegramSender) Send(ctx context.Context, request SendRequest) (string, error) {
 	if s.client == nil {
 		return "", fmt.Errorf("telegram client is required")
 	}
-	topic := NormalizeTopicKey(request.Topic)
-	s.threadsMu.RLock()
-	threadID, ok := s.topicThreads[topic]
-	s.threadsMu.RUnlock()
-	if !ok || threadID <= 0 {
-		return "", fmt.Errorf("telegram topic %s is not initialized", topic)
+	if request.MessageThreadID <= 0 {
+		return "", fmt.Errorf("telegram message thread id is required")
 	}
-	resp, err := s.client.SendMessage(ctx, utiltelegram.SendMessageRequest{Text: request.Text, MessageThreadID: threadID})
+	resp, err := s.client.SendMessage(ctx, utiltelegram.SendMessageRequest{Text: request.Text, MessageThreadID: request.MessageThreadID})
 	if err != nil {
 		var rateLimitErr *tgbot.TooManyRequestsError
 		if errors.As(err, &rateLimitErr) && rateLimitErr.RetryAfter > 0 {
@@ -111,17 +83,4 @@ func RetryAfterFromError(err error) (time.Duration, bool) {
 		return rateLimitErr.RetryAfter, true
 	}
 	return 0, false
-}
-
-func validateTopicThreads(topicThreads map[string]int) error {
-	for topic, threadID := range topicThreads {
-		topic = NormalizeTopicKey(topic)
-		if topic == "" {
-			return fmt.Errorf("telegram topic key is required")
-		}
-		if threadID <= 0 {
-			return fmt.Errorf("telegram message thread id is required for topic %s", topic)
-		}
-	}
-	return nil
 }

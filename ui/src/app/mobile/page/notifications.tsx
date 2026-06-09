@@ -16,14 +16,14 @@ export const NotificationsPage = () => {
     const [keyword, setKeyword] = useKeywordParam('keyword');
     const [status, setStatus] = React.useState('');
     const data = useAsyncData(() => services.notification.listNotifications({page, pageSize, keyword, status: status || undefined}), [page, pageSize, keyword, status]);
-    const sendTest = async (topic: string) => {
-        await services.notification.sendTestNotification(topic);
+    const sendTest = async (topicLabel: string) => {
+        await services.notification.sendTestNotification(topicLabel);
         data.reload();
     };
     const testNotificationActions = isMobile ? (
         <Dropdown
             menu={{
-                items: notificationTestTopics.map(item => ({key: item.topic, label: item.label})),
+                items: notificationTestTopics.map(topicLabel => ({key: topicLabel, label: topicLabel})),
                 onClick: item => void sendTest(item.key)
             }}
             trigger={['click']}>
@@ -31,9 +31,9 @@ export const NotificationsPage = () => {
         </Dropdown>
     ) : (
         <Space>
-            {notificationTestTopics.map(item => (
-                <Button key={item.topic} icon={<SendOutlined />} onClick={() => void sendTest(item.topic)}>
-                    {item.label}
+            {notificationTestTopics.map(topicLabel => (
+                <Button key={topicLabel} icon={<SendOutlined />} onClick={() => void sendTest(topicLabel)}>
+                    {topicLabel}
                 </Button>
             ))}
         </Space>
@@ -43,12 +43,12 @@ export const NotificationsPage = () => {
             title: 'Title',
             render: item => (
                 <Button type='link' onClick={() => navigate(`/notifications/${item.id}`)}>
-                    {item.title || item.topic}
+                    {item.title || item.topicLabel}
                 </Button>
             )
         },
         {title: 'Severity', dataIndex: 'severity'},
-        {title: 'Topic', dataIndex: 'topic'},
+        {title: 'Topic', dataIndex: 'topicLabel'},
         {title: 'Status', dataIndex: 'status'},
         {title: 'Channel', dataIndex: 'channel'},
         {title: 'Created', dataIndex: 'createdAt'}
@@ -84,7 +84,7 @@ export const NotificationsPage = () => {
                 onPageChange={setPage}
                 card={item => (
                     <div onClick={() => navigate(`/notifications/${item.id}`)}>
-                        <CardTitle title={item.title || item.topic} subtitle={item.body} tags={<Tag>{item.status}</Tag>} />
+                        <CardTitle title={item.title || item.topicLabel} subtitle={item.body} tags={<Tag>{item.status}</Tag>} />
                         <MetricRow
                             items={[
                                 {label: 'Severity', value: item.severity},

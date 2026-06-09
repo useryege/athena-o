@@ -94,9 +94,9 @@ func (m *NotificationDeliveryDetail) MarshalToSizedBuffer(dAtA []byte) (int, err
 	_ = i
 	var l int
 	_ = l
-	i -= len(m.Topic)
-	copy(dAtA[i:], m.Topic)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Topic)))
+	i -= len(m.TopicLabel)
+	copy(dAtA[i:], m.TopicLabel)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TopicLabel)))
 	i--
 	dAtA[i] = 0x6a
 	i -= len(m.SentAt)
@@ -180,9 +180,9 @@ func (m *NotificationDeliveryItem) MarshalToSizedBuffer(dAtA []byte) (int, error
 	_ = i
 	var l int
 	_ = l
-	i -= len(m.Topic)
-	copy(dAtA[i:], m.Topic)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Topic)))
+	i -= len(m.TopicLabel)
+	copy(dAtA[i:], m.TopicLabel)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TopicLabel)))
 	i--
 	dAtA[i] = 0x6a
 	i -= len(m.SentAt)
@@ -1992,7 +1992,7 @@ func (m *NotificationDeliveryDetail) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.SentAt)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.Topic)
+	l = len(m.TopicLabel)
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -2026,7 +2026,7 @@ func (m *NotificationDeliveryItem) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.SentAt)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.Topic)
+	l = len(m.TopicLabel)
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -2686,7 +2686,7 @@ func (this *NotificationDeliveryDetail) String() string {
 		`ErrorMessage:` + fmt.Sprintf("%v", this.ErrorMessage) + `,`,
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
 		`SentAt:` + fmt.Sprintf("%v", this.SentAt) + `,`,
-		`Topic:` + fmt.Sprintf("%v", this.Topic) + `,`,
+		`TopicLabel:` + fmt.Sprintf("%v", this.TopicLabel) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -2708,7 +2708,7 @@ func (this *NotificationDeliveryItem) String() string {
 		`ErrorMessage:` + fmt.Sprintf("%v", this.ErrorMessage) + `,`,
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
 		`SentAt:` + fmt.Sprintf("%v", this.SentAt) + `,`,
-		`Topic:` + fmt.Sprintf("%v", this.Topic) + `,`,
+		`TopicLabel:` + fmt.Sprintf("%v", this.TopicLabel) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -3625,7 +3625,7 @@ func (m *NotificationDeliveryDetail) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 13:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Topic", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TopicLabel", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3653,7 +3653,7 @@ func (m *NotificationDeliveryDetail) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Topic = string(dAtA[iNdEx:postIndex])
+			m.TopicLabel = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -4078,7 +4078,7 @@ func (m *NotificationDeliveryItem) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 13:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Topic", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TopicLabel", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -4106,7 +4106,7 @@ func (m *NotificationDeliveryItem) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Topic = string(dAtA[iNdEx:postIndex])
+			m.TopicLabel = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

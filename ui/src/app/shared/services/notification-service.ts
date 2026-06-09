@@ -4,7 +4,7 @@ export interface NotificationDelivery {
     id: number;
     source: string;
     severity: string;
-    topic: string;
+    topicLabel: string;
     title: string;
     body: string;
     link: string;
@@ -21,7 +21,7 @@ export interface ListNotificationsOptions {
     pageSize?: number;
     status?: string;
     severity?: string;
-    topic?: string;
+    topicLabel?: string;
     source?: string;
     keyword?: string;
 }
@@ -56,7 +56,7 @@ const normalizeDelivery = (item: any = {}): NotificationDelivery => ({
     id: readNumber(item, 'id'),
     source: readString(item, 'source'),
     severity: readString(item, 'severity'),
-    topic: readString(item, 'topic'),
+    topicLabel: readString(item, 'topicLabel', 'topic_label'),
     title: readString(item, 'title'),
     body: readString(item, 'body'),
     link: readString(item, 'link'),
@@ -80,8 +80,8 @@ export class NotificationService {
         if (options.severity) {
             query.severity = options.severity;
         }
-        if (options.topic) {
-            query.topic = options.topic;
+        if (options.topicLabel) {
+            query.topic_label = options.topicLabel;
         }
         if (options.source) {
             query.source = options.source;
@@ -111,8 +111,8 @@ export class NotificationService {
         return promise;
     }
 
-    public sendTestNotification(topic: string): Promise<SendTestNotificationResult> & {abort?: () => void} {
-        const req = requests.post(`/notifications/test/${encodeURIComponent(topic)}`).send({});
+    public sendTestNotification(topicLabel: string): Promise<SendTestNotificationResult> & {abort?: () => void} {
+        const req = requests.post(`/notifications/test/${encodeURIComponent(topicLabel)}`).send({});
         const promise = req.then(res => {
             const body = res.body || {};
             return {

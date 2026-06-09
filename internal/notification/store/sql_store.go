@@ -30,24 +30,24 @@ type SQLStore struct {
 }
 
 type CreateDeliveryRequest struct {
-	Source   string
-	Severity string
-	Title    string
-	Body     string
-	Link     string
-	Channel  string
-	Status   string
-	Topic    string
+	Source     string
+	Severity   string
+	Title      string
+	Body       string
+	Link       string
+	Channel    string
+	Status     string
+	TopicLabel string
 }
 
 type ListDeliveriesOptions struct {
-	Page     int
-	PageSize int
-	Status   string
-	Severity string
-	Source   string
-	Topic    string
-	Keyword  string
+	Page       int
+	PageSize   int
+	Status     string
+	Severity   string
+	Source     string
+	TopicLabel string
+	Keyword    string
 }
 
 type ClaimDeliveriesOptions struct {
@@ -57,16 +57,17 @@ type ClaimDeliveriesOptions struct {
 }
 
 type ClaimedDelivery struct {
-	ID       int64
-	Source   string
-	Severity string
-	Title    string
-	Body     string
-	Link     string
-	Channel  string
-	Status   string
-	Topic    string
-	Attempts int
+	ID              int64
+	Source          string
+	Severity        string
+	Title           string
+	Body            string
+	Link            string
+	Channel         string
+	Status          string
+	TopicLabel      string
+	MessageThreadID int
+	Attempts        int
 }
 
 func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
@@ -110,23 +111,77 @@ func (s *SQLStore) CreateDelivery(ctx context.Context, req CreateDeliveryRequest
 		return nil, fmt.Errorf("notification postgres database is not configured")
 	}
 	row, err := s.queries.CreateDelivery(ctx, notificationsqlc.CreateDeliveryParams{
-		Source:   req.Source,
-		Severity: req.Severity,
-		Title:    textValue(req.Title),
-		Body:     req.Body,
-		Link:     textValue(req.Link),
-		Channel:  req.Channel,
-		Status:   req.Status,
-		Topic:    req.Topic,
+		Source:     req.Source,
+		Severity:   req.Severity,
+		Title:      textValue(req.Title),
+		Body:       req.Body,
+		Link:       textValue(req.Link),
+		Channel:    req.Channel,
+		Status:     req.Status,
+		TopicLabel: req.TopicLabel,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create notification delivery: %w", err)
 	}
 	item := deliveryDetailFromRow(deliveryRow{
 		ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-		Status: row.Status, Topic: row.Topic, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+		Status: row.Status, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
 	})
 	return item, nil
+}
+
+func (s *SQLStore) EnsureTopic(ctx context.Context, label string, create func(context.Context) (int, error)) (int, error) {
+	if s.pool == nil || s.queries == nil {
+		return 0, fmt.Errorf("notification postgres database is not configured")
+	}
+	topic, err := s.queries.GetTopic(ctx, label)
+	if err == nil {
+		return int(topic.MessageThreadID), nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return 0, fmt.Errorf("failed to get notification topic: %w", err)
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to begin notification topic transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := notificationsqlc.New(tx)
+	if err := queries.LockTopicLabel(ctx, label); err != nil {
+		return 0, fmt.Errorf("failed to lock notification topic label: %w", err)
+	}
+	topic, err = queries.GetTopic(ctx, label)
+	if err == nil {
+		if err := tx.Commit(ctx); err != nil {
+			return 0, fmt.Errorf("failed to commit notification topic lookup: %w", err)
+		}
+		return int(topic.MessageThreadID), nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return 0, fmt.Errorf("failed to get notification topic: %w", err)
+	}
+
+	messageThreadID, err := create(ctx)
+	if err != nil {
+		return 0, err
+	}
+	if messageThreadID <= 0 {
+		return 0, fmt.Errorf("notification topic returned invalid message thread id")
+	}
+	if _, err := queries.CreateTopic(ctx, notificationsqlc.CreateTopicParams{
+		Label:           label,
+		MessageThreadID: int32(messageThreadID),
+	}); err != nil {
+		return 0, fmt.Errorf("failed to create notification topic record: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("failed to commit notification topic: %w", err)
+	}
+	return messageThreadID, nil
 }
 
 func (s *SQLStore) ClaimPendingDeliveries(ctx context.Context, opts ClaimDeliveriesOptions) ([]ClaimedDelivery, error) {
@@ -152,16 +207,17 @@ func (s *SQLStore) ClaimPendingDeliveries(ctx context.Context, opts ClaimDeliver
 	items := make([]ClaimedDelivery, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, ClaimedDelivery{
-			ID:       row.ID,
-			Source:   row.Source,
-			Severity: row.Severity,
-			Title:    row.Title,
-			Body:     row.Body,
-			Link:     row.Link,
-			Channel:  row.Channel,
-			Status:   row.Status,
-			Topic:    row.Topic,
-			Attempts: int(row.Attempts),
+			ID:              row.ID,
+			Source:          row.Source,
+			Severity:        row.Severity,
+			Title:           row.Title,
+			Body:            row.Body,
+			Link:            row.Link,
+			Channel:         row.Channel,
+			Status:          row.Status,
+			TopicLabel:      row.TopicLabel,
+			MessageThreadID: int(row.MessageThreadID),
+			Attempts:        int(row.Attempts),
 		})
 	}
 	return items, nil
@@ -207,11 +263,11 @@ func (s *SQLStore) ListDeliveries(ctx context.Context, opts ListDeliveriesOption
 	}
 	params := deliveryFilterParams(opts)
 	total, err := s.queries.CountDeliveries(ctx, notificationsqlc.CountDeliveriesParams{
-		Status:   params.Status,
-		Severity: params.Severity,
-		Source:   params.Source,
-		Topic:    params.Topic,
-		Keyword:  params.Keyword,
+		Status:     params.Status,
+		Severity:   params.Severity,
+		Source:     params.Source,
+		TopicLabel: params.TopicLabel,
+		Keyword:    params.Keyword,
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count notification deliveries: %w", err)
@@ -226,13 +282,13 @@ func (s *SQLStore) ListDeliveries(ctx context.Context, opts ListDeliveriesOption
 		pageSize = 20
 	}
 	rows, err := s.queries.ListDeliveries(ctx, notificationsqlc.ListDeliveriesParams{
-		Limit:    int32(pageSize),
-		Offset:   int32((page - 1) * pageSize),
-		Status:   params.Status,
-		Severity: params.Severity,
-		Source:   params.Source,
-		Topic:    params.Topic,
-		Keyword:  params.Keyword,
+		Limit:      int32(pageSize),
+		Offset:     int32((page - 1) * pageSize),
+		Status:     params.Status,
+		Severity:   params.Severity,
+		Source:     params.Source,
+		TopicLabel: params.TopicLabel,
+		Keyword:    params.Keyword,
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list notification deliveries: %w", err)
@@ -242,7 +298,7 @@ func (s *SQLStore) ListDeliveries(ctx context.Context, opts ListDeliveriesOption
 	for _, row := range rows {
 		items = append(items, deliveryItemFromRow(deliveryRow{
 			ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-			Status: row.Status, Topic: row.Topic, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+			Status: row.Status, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
 		}))
 	}
 	return items, total, nil
@@ -261,25 +317,25 @@ func (s *SQLStore) GetDelivery(ctx context.Context, id int64) (*v1alpha1.Notific
 	}
 	return deliveryDetailFromRow(deliveryRow{
 		ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-		Status: row.Status, Topic: row.Topic, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+		Status: row.Status, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
 	}), nil
 }
 
 type deliveryFilter struct {
-	Status   pgtype.Text
-	Severity pgtype.Text
-	Source   pgtype.Text
-	Topic    pgtype.Text
-	Keyword  pgtype.Text
+	Status     pgtype.Text
+	Severity   pgtype.Text
+	Source     pgtype.Text
+	TopicLabel pgtype.Text
+	Keyword    pgtype.Text
 }
 
 func deliveryFilterParams(opts ListDeliveriesOptions) deliveryFilter {
 	return deliveryFilter{
-		Status:   nullableText(strings.TrimSpace(opts.Status)),
-		Severity: nullableText(strings.TrimSpace(opts.Severity)),
-		Source:   nullableText(strings.TrimSpace(opts.Source)),
-		Topic:    nullableText(strings.TrimSpace(opts.Topic)),
-		Keyword:  nullableKeyword(opts.Keyword),
+		Status:     nullableText(strings.TrimSpace(opts.Status)),
+		Severity:   nullableText(strings.TrimSpace(opts.Severity)),
+		Source:     nullableText(strings.TrimSpace(opts.Source)),
+		TopicLabel: nullableText(strings.TrimSpace(opts.TopicLabel)),
+		Keyword:    nullableKeyword(opts.Keyword),
 	}
 }
 
@@ -292,7 +348,7 @@ type deliveryRow struct {
 	Link              string
 	Channel           string
 	Status            string
-	Topic             string
+	TopicLabel        string
 	ProviderMessageID pgtype.Text
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
@@ -309,7 +365,7 @@ func deliveryItemFromRow(row deliveryRow) *v1alpha1.NotificationDeliveryItem {
 		Link:              row.Link,
 		Channel:           row.Channel,
 		Status:            row.Status,
-		Topic:             row.Topic,
+		TopicLabel:        row.TopicLabel,
 		ProviderMessageID: row.ProviderMessageID.String,
 		ErrorMessage:      row.ErrorMessage.String,
 		CreatedAt:         formatTime(row.CreatedAt.Time),
@@ -331,7 +387,7 @@ func deliveryDetailFromRow(row deliveryRow) *v1alpha1.NotificationDeliveryDetail
 		Link:              item.Link,
 		Channel:           item.Channel,
 		Status:            item.Status,
-		Topic:             item.Topic,
+		TopicLabel:        item.TopicLabel,
 		ProviderMessageID: item.ProviderMessageID,
 		ErrorMessage:      item.ErrorMessage,
 		CreatedAt:         item.CreatedAt,

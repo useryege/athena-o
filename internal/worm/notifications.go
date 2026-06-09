@@ -45,11 +45,11 @@ func newWormEventNotifications(events map[string]wormstore.WormMarket) []wormNot
 		notifications = append(notifications, wormNotification{
 			eventConditionID: eventConditionID,
 			request: &notificationapiclient.SendNotificationRequest{
-				Source:   wormNewEventNotificationSource,
-				Severity: notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
-				Title:    fmt.Sprintf("Worm new event: %s", eventTitle),
-				Body:     body,
-				Topic:    notification.NotificationTopicWorm,
+				Source:     wormNewEventNotificationSource,
+				Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
+				Title:      fmt.Sprintf("Worm new event: %s", eventTitle),
+				Body:       body,
+				TopicLabel: notification.NotificationTopicLabelWorm,
 			},
 		})
 	}
@@ -68,11 +68,11 @@ func newWormLiveNotification(change wormstore.WormMarketLivePriceChange) wormNot
 	return wormNotification{
 		eventConditionID: change.EventConditionID,
 		request: &notificationapiclient.SendNotificationRequest{
-			Source:   wormLiveEventNotificationSource,
-			Severity: notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
-			Title:    fmt.Sprintf("Worm event is live: %s", eventTitle),
-			Body:     body,
-			Topic:    notification.NotificationTopicWorm,
+			Source:     wormLiveEventNotificationSource,
+			Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
+			Title:      fmt.Sprintf("Worm event is live: %s", eventTitle),
+			Body:       body,
+			TopicLabel: notification.NotificationTopicLabelWorm,
 		},
 	}
 }

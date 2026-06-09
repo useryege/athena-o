@@ -266,12 +266,12 @@ func renderMoverAlertNotification(item *v1alpha1.PolymarketMoverMarketItem, seve
 	}, "\n")
 
 	return &notificationapiclient.SendNotificationRequest{
-		Source:   moverAlertSource,
-		Severity: notificationSeverityForMoverAlert(severity),
-		Title:    title,
-		Body:     body,
-		Link:     polymarketMoverLink(item),
-		Topic:    notification.NotificationTopicPolyMover,
+		Source:     moverAlertSource,
+		Severity:   notificationSeverityForMoverAlert(severity),
+		Title:      title,
+		Body:       body,
+		Link:       polymarketMoverLink(item),
+		TopicLabel: notification.NotificationTopicLabelPolyMover,
 	}
 }
 

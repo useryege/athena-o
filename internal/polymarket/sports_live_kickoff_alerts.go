@@ -98,12 +98,12 @@ func renderSportsKickoffNotification(item *v1alpha1.PolymarketSportsLiveMarketIt
 	}, "\n")
 
 	return &notificationapiclient.SendNotificationRequest{
-		Source:   sportsKickoffAlertSource,
-		Severity: notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
-		Title:    title,
-		Body:     body,
-		Link:     polymarketEventLink(eventSlug),
-		Topic:    notification.NotificationTopicPolyKickoff,
+		Source:     sportsKickoffAlertSource,
+		Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
+		Title:      title,
+		Body:       body,
+		Link:       polymarketEventLink(eventSlug),
+		TopicLabel: notification.NotificationTopicLabelPolyKickoff,
 	}
 }
 

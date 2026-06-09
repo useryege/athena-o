@@ -68,7 +68,7 @@ func notificationObject(req any) string {
 	case *notificationpkg.GetNotificationDeliveryRequest:
 		return fmt.Sprintf("%d", r.GetId())
 	case *notificationpkg.SendTestNotificationRequest:
-		return nonEmptyObject(r.GetTopic())
+		return nonEmptyObject(r.GetTopicLabel())
 	default:
 		return "*"
 	}

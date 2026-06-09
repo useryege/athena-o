@@ -43,13 +43,13 @@ func (s *Server) ListNotificationDeliveries(ctx context.Context, req *notificati
 	defer closer.Close()
 
 	resp, err := client.ListNotificationDeliveries(ctx, &notificationapiclient.ListNotificationDeliveriesRequest{
-		Page:     req.GetPage(),
-		PageSize: req.GetPageSize(),
-		Status:   req.GetStatus(),
-		Severity: req.GetSeverity(),
-		Source:   req.GetSource(),
-		Keyword:  req.GetKeyword(),
-		Topic:    req.GetTopic(),
+		Page:       req.GetPage(),
+		PageSize:   req.GetPageSize(),
+		Status:     req.GetStatus(),
+		Severity:   req.GetSeverity(),
+		Source:     req.GetSource(),
+		Keyword:    req.GetKeyword(),
+		TopicLabel: req.GetTopicLabel(),
 	})
 	if err != nil {
 		return nil, err
@@ -77,11 +77,10 @@ func (s *Server) GetNotificationDelivery(ctx context.Context, req *notificationp
 }
 
 func (s *Server) SendTestNotification(ctx context.Context, req *notificationpkg.SendTestNotificationRequest) (*notificationpkg.SendTestNotificationResponse, error) {
-	topic, err := normalizeNotificationTopic(req.GetTopic())
+	topicLabel, err := normalizeNotificationTopicLabel(req.GetTopicLabel())
 	if err != nil {
 		return nil, err
 	}
-	topicLabel := strings.ToUpper(topic)
 
 	closer, client, err := s.notificationClientSet.NewNotificationServiceClient()
 	if err != nil {
@@ -90,11 +89,11 @@ func (s *Server) SendTestNotification(ctx context.Context, req *notificationpkg.
 	defer closer.Close()
 
 	resp, err := client.SendNotification(ctx, &notificationapiclient.SendNotificationRequest{
-		Source:   testNotificationSource,
-		Severity: notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
-		Title:    "ATHENA " + topicLabel + " test notification",
-		Body:     "Manual " + topicLabel + " test notification sent from ATHENA UI at " + time.Now().UTC().Format(time.RFC3339),
-		Topic:    topic,
+		TopicLabel: topicLabel,
+		Source:     testNotificationSource,
+		Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
+		Title:      "ATHENA " + topicLabel + " test notification",
+		Body:       "Manual " + topicLabel + " test notification sent from ATHENA UI at " + time.Now().UTC().Format(time.RFC3339),
 	})
 	if err != nil {
 		return nil, err
@@ -107,12 +106,12 @@ func (s *Server) SendTestNotification(ctx context.Context, req *notificationpkg.
 	}, nil
 }
 
-func normalizeNotificationTopic(value string) (string, error) {
-	topic := strings.ToLower(strings.TrimSpace(value))
-	if topic == "" {
-		return "", status.Error(codes.InvalidArgument, "topic is required")
+func normalizeNotificationTopicLabel(value string) (string, error) {
+	topicLabel := strings.TrimSpace(value)
+	if topicLabel == "" {
+		return "", status.Error(codes.InvalidArgument, "topic_label is required")
 	}
-	return topic, nil
+	return topicLabel, nil
 }
 
 func deliveryStatusString(status notificationapiclient.NotificationDeliveryStatus) string {

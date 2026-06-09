@@ -1,6 +1,12 @@
 
 -- +goose Up
 
+CREATE TABLE IF NOT EXISTS notification_topics (
+  label TEXT PRIMARY KEY,
+  message_thread_id INT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS notification_deliveries (
   id BIGSERIAL PRIMARY KEY,
   source TEXT NOT NULL,
@@ -14,7 +20,7 @@ CREATE TABLE IF NOT EXISTS notification_deliveries (
   error_message TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   sent_at TIMESTAMPTZ,
-  topic TEXT NOT NULL,
+  topic_label TEXT NOT NULL REFERENCES notification_topics (label),
   attempts INT NOT NULL DEFAULT 0,
   next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   last_attempt_at TIMESTAMPTZ,
@@ -26,10 +32,11 @@ CREATE INDEX IF NOT EXISTS idx_notification_deliveries_created_at ON notificatio
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_status ON notification_deliveries (status);
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_severity ON notification_deliveries (severity);
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_source ON notification_deliveries (source);
-CREATE INDEX IF NOT EXISTS idx_notification_deliveries_topic ON notification_deliveries (topic);
+CREATE INDEX IF NOT EXISTS idx_notification_deliveries_topic_label ON notification_deliveries (topic_label);
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_pending_ready
   ON notification_deliveries (status, next_attempt_at, id);
 
 -- +goose Down
 
 DROP TABLE IF EXISTS notification_deliveries;
+DROP TABLE IF EXISTS notification_topics;

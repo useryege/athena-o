@@ -1,5 +1,1 @@
-export const notificationTestTopics = [
-    {topic: 'token', label: '[TOKEN] 代币通知'},
-    {topic: 'poly-mover', label: '[POLY] 市场异动'},
-    {topic: 'poly-kickoff', label: '[POLY] 开赛通知'}
-];
+export const notificationTestTopics = ['[TOKEN] 代币通知', '[POLY] 市场异动', '[POLY] 开赛通知'];

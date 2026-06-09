@@ -29,7 +29,8 @@ SET locked_at = NOW(),
     last_attempt_at = NOW()
 FROM ready
 WHERE d.id = ready.id
-RETURNING d.id, d.source, d.severity, COALESCE(d.title, '') AS title, d.body, COALESCE(d.link, '') AS link, d.channel, d.status, d.topic, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.attempts
+RETURNING d.id, d.source, d.severity, COALESCE(d.title, '') AS title, d.body, COALESCE(d.link, '') AS link, d.channel, d.status, d.topic_label, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.attempts,
+  (SELECT t.message_thread_id FROM notification_topics AS t WHERE t.label = d.topic_label) AS message_thread_id
 `
 
 type ClaimPendingDeliveriesParams struct {
@@ -47,12 +48,13 @@ type ClaimPendingDeliveriesRow struct {
 	Link              string
 	Channel           string
 	Status            string
-	Topic             string
+	TopicLabel        string
 	ProviderMessageID pgtype.Text
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
 	SentAt            pgtype.Timestamptz
 	Attempts          int32
+	MessageThreadID   int32
 }
 
 func (q *Queries) ClaimPendingDeliveries(ctx context.Context, arg ClaimPendingDeliveriesParams) ([]ClaimPendingDeliveriesRow, error) {
@@ -73,12 +75,13 @@ func (q *Queries) ClaimPendingDeliveries(ctx context.Context, arg ClaimPendingDe
 			&i.Link,
 			&i.Channel,
 			&i.Status,
-			&i.Topic,
+			&i.TopicLabel,
 			&i.ProviderMessageID,
 			&i.ErrorMessage,
 			&i.CreatedAt,
 			&i.SentAt,
 			&i.Attempts,
+			&i.MessageThreadID,
 		); err != nil {
 			return nil, err
 		}
@@ -96,7 +99,7 @@ FROM notification_deliveries
 WHERE ($1::text IS NULL OR status = $1)
   AND ($2::text IS NULL OR severity = $2)
   AND ($3::text IS NULL OR source = $3)
-  AND ($4::text IS NULL OR topic = $4)
+  AND ($4::text IS NULL OR topic_label = $4)
   AND (
     $5::text IS NULL
     OR title ILIKE $5
@@ -107,11 +110,11 @@ WHERE ($1::text IS NULL OR status = $1)
 `
 
 type CountDeliveriesParams struct {
-	Status   pgtype.Text
-	Severity pgtype.Text
-	Source   pgtype.Text
-	Topic    pgtype.Text
-	Keyword  pgtype.Text
+	Status     pgtype.Text
+	Severity   pgtype.Text
+	Source     pgtype.Text
+	TopicLabel pgtype.Text
+	Keyword    pgtype.Text
 }
 
 func (q *Queries) CountDeliveries(ctx context.Context, arg CountDeliveriesParams) (int64, error) {
@@ -119,7 +122,7 @@ func (q *Queries) CountDeliveries(ctx context.Context, arg CountDeliveriesParams
 		arg.Status,
 		arg.Severity,
 		arg.Source,
-		arg.Topic,
+		arg.TopicLabel,
 		arg.Keyword,
 	)
 	var column_1 int64
@@ -128,20 +131,20 @@ func (q *Queries) CountDeliveries(ctx context.Context, arg CountDeliveriesParams
 }
 
 const createDelivery = `-- name: CreateDelivery :one
-INSERT INTO notification_deliveries (source, severity, title, body, link, channel, status, topic)
+INSERT INTO notification_deliveries (source, severity, title, body, link, channel, status, topic_label)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, topic, provider_message_id, error_message, created_at, sent_at
+RETURNING id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, topic_label, provider_message_id, error_message, created_at, sent_at
 `
 
 type CreateDeliveryParams struct {
-	Source   string
-	Severity string
-	Title    pgtype.Text
-	Body     string
-	Link     pgtype.Text
-	Channel  string
-	Status   string
-	Topic    string
+	Source     string
+	Severity   string
+	Title      pgtype.Text
+	Body       string
+	Link       pgtype.Text
+	Channel    string
+	Status     string
+	TopicLabel string
 }
 
 type CreateDeliveryRow struct {
@@ -153,7 +156,7 @@ type CreateDeliveryRow struct {
 	Link              string
 	Channel           string
 	Status            string
-	Topic             string
+	TopicLabel        string
 	ProviderMessageID pgtype.Text
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
@@ -169,7 +172,7 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 		arg.Link,
 		arg.Channel,
 		arg.Status,
-		arg.Topic,
+		arg.TopicLabel,
 	)
 	var i CreateDeliveryRow
 	err := row.Scan(
@@ -181,7 +184,7 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 		&i.Link,
 		&i.Channel,
 		&i.Status,
-		&i.Topic,
+		&i.TopicLabel,
 		&i.ProviderMessageID,
 		&i.ErrorMessage,
 		&i.CreatedAt,
@@ -190,8 +193,26 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 	return i, err
 }
 
+const createTopic = `-- name: CreateTopic :one
+INSERT INTO notification_topics (label, message_thread_id)
+VALUES ($1, $2)
+RETURNING label, message_thread_id, created_at
+`
+
+type CreateTopicParams struct {
+	Label           string
+	MessageThreadID int32
+}
+
+func (q *Queries) CreateTopic(ctx context.Context, arg CreateTopicParams) (NotificationTopic, error) {
+	row := q.db.QueryRow(ctx, createTopic, arg.Label, arg.MessageThreadID)
+	var i NotificationTopic
+	err := row.Scan(&i.Label, &i.MessageThreadID, &i.CreatedAt)
+	return i, err
+}
+
 const getDelivery = `-- name: GetDelivery :one
-SELECT id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, topic, provider_message_id, error_message, created_at, sent_at
+SELECT id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, topic_label, provider_message_id, error_message, created_at, sent_at
 FROM notification_deliveries
 WHERE id = $1
 `
@@ -205,7 +226,7 @@ type GetDeliveryRow struct {
 	Link              string
 	Channel           string
 	Status            string
-	Topic             string
+	TopicLabel        string
 	ProviderMessageID pgtype.Text
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
@@ -224,7 +245,7 @@ func (q *Queries) GetDelivery(ctx context.Context, id int64) (GetDeliveryRow, er
 		&i.Link,
 		&i.Channel,
 		&i.Status,
-		&i.Topic,
+		&i.TopicLabel,
 		&i.ProviderMessageID,
 		&i.ErrorMessage,
 		&i.CreatedAt,
@@ -233,13 +254,26 @@ func (q *Queries) GetDelivery(ctx context.Context, id int64) (GetDeliveryRow, er
 	return i, err
 }
 
+const getTopic = `-- name: GetTopic :one
+SELECT label, message_thread_id, created_at
+FROM notification_topics
+WHERE label = $1
+`
+
+func (q *Queries) GetTopic(ctx context.Context, label string) (NotificationTopic, error) {
+	row := q.db.QueryRow(ctx, getTopic, label)
+	var i NotificationTopic
+	err := row.Scan(&i.Label, &i.MessageThreadID, &i.CreatedAt)
+	return i, err
+}
+
 const listDeliveries = `-- name: ListDeliveries :many
-SELECT id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, topic, provider_message_id, error_message, created_at, sent_at
+SELECT id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, topic_label, provider_message_id, error_message, created_at, sent_at
 FROM notification_deliveries
 WHERE ($3::text IS NULL OR status = $3)
   AND ($4::text IS NULL OR severity = $4)
   AND ($5::text IS NULL OR source = $5)
-  AND ($6::text IS NULL OR topic = $6)
+  AND ($6::text IS NULL OR topic_label = $6)
   AND (
     $7::text IS NULL
     OR title ILIKE $7
@@ -252,13 +286,13 @@ LIMIT $1 OFFSET $2
 `
 
 type ListDeliveriesParams struct {
-	Limit    int32
-	Offset   int32
-	Status   pgtype.Text
-	Severity pgtype.Text
-	Source   pgtype.Text
-	Topic    pgtype.Text
-	Keyword  pgtype.Text
+	Limit      int32
+	Offset     int32
+	Status     pgtype.Text
+	Severity   pgtype.Text
+	Source     pgtype.Text
+	TopicLabel pgtype.Text
+	Keyword    pgtype.Text
 }
 
 type ListDeliveriesRow struct {
@@ -270,7 +304,7 @@ type ListDeliveriesRow struct {
 	Link              string
 	Channel           string
 	Status            string
-	Topic             string
+	TopicLabel        string
 	ProviderMessageID pgtype.Text
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
@@ -284,7 +318,7 @@ func (q *Queries) ListDeliveries(ctx context.Context, arg ListDeliveriesParams) 
 		arg.Status,
 		arg.Severity,
 		arg.Source,
-		arg.Topic,
+		arg.TopicLabel,
 		arg.Keyword,
 	)
 	if err != nil {
@@ -303,7 +337,7 @@ func (q *Queries) ListDeliveries(ctx context.Context, arg ListDeliveriesParams) 
 			&i.Link,
 			&i.Channel,
 			&i.Status,
-			&i.Topic,
+			&i.TopicLabel,
 			&i.ProviderMessageID,
 			&i.ErrorMessage,
 			&i.CreatedAt,
@@ -317,6 +351,15 @@ func (q *Queries) ListDeliveries(ctx context.Context, arg ListDeliveriesParams) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockTopicLabel = `-- name: LockTopicLabel :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1, 0))
+`
+
+func (q *Queries) LockTopicLabel(ctx context.Context, hashtextextended string) error {
+	_, err := q.db.Exec(ctx, lockTopicLabel, hashtextextended)
+	return err
 }
 
 const markDeliveryFailed = `-- name: MarkDeliveryFailed :exec

@@ -21,7 +21,7 @@ message ListNotificationDeliveriesRequest {
   string severity = 4;
   string source = 5;
   string keyword = 6;
-  string topic = 7;
+  string topic_label = 7;
 }
 
 // ListNotificationDeliveriesResponse returns a page of notification delivery records.
@@ -44,7 +44,7 @@ message GetNotificationDeliveryResponse {
 
 // SendTestNotificationRequest sends a fixed notification for manual connectivity testing.
 message SendTestNotificationRequest {
-  string topic = 1;
+  string topic_label = 1;
 }
 
 // SendTestNotificationResponse returns the fixed test notification delivery result.
@@ -73,6 +73,6 @@ service NotificationService {
 
   // SendTestNotification sends a fixed test notification from the UI.
   rpc SendTestNotification(SendTestNotificationRequest) returns (SendTestNotificationResponse) {
-    option (google.api.http) = {post: "/api/v1/notifications/test/{topic}"};
+    option (google.api.http) = {post: "/api/v1/notifications/test/{topic_label}"};
   }
 }

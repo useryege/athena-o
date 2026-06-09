@@ -33,7 +33,7 @@ message NotificationDeliveryDetail {
 
   optional string sent_at = 12;
 
-  optional string topic = 13;
+  optional string topic_label = 13;
 }
 
 message NotificationDeliveryItem {
@@ -61,7 +61,7 @@ message NotificationDeliveryItem {
 
   optional string sent_at = 12;
 
-  optional string topic = 13;
+  optional string topic_label = 13;
 }
 
 message NotificationStatus {

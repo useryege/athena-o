@@ -20,7 +20,6 @@ type Service struct {
 	store         *notificationstore.SQLStore
 	sender        Sender
 	profileSyncer ProfileSyncer
-	topicConfigs  []TopicConfig
 	workerConfig  WorkerConfig
 	workerCancel  context.CancelFunc
 	workerWG      sync.WaitGroup
@@ -55,7 +54,7 @@ func NewService(store *notificationstore.SQLStore, sender Sender, profileSyncer 
 }
 
 func NewServiceWithWorkerConfig(store *notificationstore.SQLStore, sender Sender, profileSyncer ProfileSyncer, workerConfig WorkerConfig) *Service {
-	return &Service{store: store, sender: sender, profileSyncer: profileSyncer, topicConfigs: DefaultTopicConfigs(), workerConfig: normalizeWorkerConfig(workerConfig)}
+	return &Service{store: store, sender: sender, profileSyncer: profileSyncer, workerConfig: normalizeWorkerConfig(workerConfig)}
 }
 
 func (s *Service) Start(ctx context.Context) error {
@@ -75,11 +74,6 @@ func (s *Service) Start(ctx context.Context) error {
 	}
 	if err := s.profileSyncer.SyncProfile(ctx); err != nil {
 		return status.Errorf(codes.Unavailable, "failed to sync notification telegram bot profile: %v", err)
-	}
-	if provisioner, ok := s.sender.(TopicProvisioner); ok {
-		if err := provisioner.ProvisionTopics(ctx, s.topicConfigs); err != nil {
-			return status.Errorf(codes.Unavailable, "failed to provision notification telegram topics: %v", err)
-		}
 	}
 	s.startWorkerLocked(ctx)
 	s.started = true
@@ -124,16 +118,21 @@ func (s *Service) SendNotification(ctx context.Context, req *apiclient.SendNotif
 	if utf8.RuneCountInString(text) > maxTelegramTextLength {
 		return nil, status.Errorf(codes.InvalidArgument, "telegram notification text must be at most %d characters", maxTelegramTextLength)
 	}
+	if _, err := s.store.EnsureTopic(ctx, params.topicLabel, func(createCtx context.Context) (int, error) {
+		return s.sender.CreateTopic(createCtx, params.topicLabel)
+	}); err != nil {
+		return nil, status.Errorf(codes.Unavailable, "failed to ensure notification topic: %v", err)
+	}
 
 	delivery, err := s.store.CreateDelivery(ctx, notificationstore.CreateDeliveryRequest{
-		Source:   params.source,
-		Severity: params.severity,
-		Title:    params.title,
-		Body:     params.body,
-		Link:     params.link,
-		Channel:  notificationChannelTelegram,
-		Status:   notificationStatusPending,
-		Topic:    params.topic,
+		Source:     params.source,
+		Severity:   params.severity,
+		Title:      params.title,
+		Body:       params.body,
+		Link:       params.link,
+		Channel:    notificationChannelTelegram,
+		Status:     notificationStatusPending,
+		TopicLabel: params.topicLabel,
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create notification delivery: %v", err)
@@ -169,13 +168,13 @@ func (s *Service) ListNotificationDeliveries(ctx context.Context, req *apiclient
 		return nil, err
 	}
 	items, total, err := s.store.ListDeliveries(ctx, notificationstore.ListDeliveriesOptions{
-		Page:     page,
-		PageSize: pageSize,
-		Status:   statusFilter,
-		Severity: severityFilter,
-		Source:   strings.TrimSpace(req.GetSource()),
-		Topic:    normalizeTopicFilter(req.GetTopic()),
-		Keyword:  strings.TrimSpace(req.GetKeyword()),
+		Page:       page,
+		PageSize:   pageSize,
+		Status:     statusFilter,
+		Severity:   severityFilter,
+		Source:     strings.TrimSpace(req.GetSource()),
+		TopicLabel: strings.TrimSpace(req.GetTopicLabel()),
+		Keyword:    strings.TrimSpace(req.GetKeyword()),
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to list notification deliveries: %v", err)
@@ -206,12 +205,12 @@ func (s *Service) GetNotificationDelivery(ctx context.Context, req *apiclient.Ge
 }
 
 type sendNotificationParams struct {
-	source   string
-	severity string
-	title    string
-	body     string
-	link     string
-	topic    string
+	source     string
+	severity   string
+	title      string
+	body       string
+	link       string
+	topicLabel string
 }
 
 func normalizeSendNotificationRequest(req *apiclient.SendNotificationRequest) (sendNotificationParams, error) {
@@ -233,17 +232,17 @@ func normalizeSendNotificationRequest(req *apiclient.SendNotificationRequest) (s
 	if err != nil {
 		return sendNotificationParams{}, err
 	}
-	topic, err := normalizeTopicKeyValue(req.GetTopic())
+	topicLabel, err := normalizeTopicLabel(req.GetTopicLabel())
 	if err != nil {
 		return sendNotificationParams{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 	return sendNotificationParams{
-		source:   source,
-		severity: severity,
-		title:    strings.TrimSpace(req.GetTitle()),
-		body:     body,
-		link:     strings.TrimSpace(req.GetLink()),
-		topic:    topic,
+		source:     source,
+		severity:   severity,
+		title:      strings.TrimSpace(req.GetTitle()),
+		body:       body,
+		link:       strings.TrimSpace(req.GetLink()),
+		topicLabel: topicLabel,
 	}, nil
 }
 
@@ -260,10 +259,6 @@ func severityFromEnum(value apiclient.NotificationSeverity) (string, error) {
 	default:
 		return "", status.Error(codes.InvalidArgument, "severity is invalid")
 	}
-}
-
-func normalizeTopicFilter(value string) string {
-	return NormalizeTopicKey(value)
 }
 
 func normalizeSeverityFilter(value string) (string, error) {

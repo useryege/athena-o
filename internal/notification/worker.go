@@ -127,14 +127,14 @@ func (s *Service) runWorker(ctx context.Context) {
 
 func (s *Service) processClaimedDelivery(ctx context.Context, delivery notificationstore.ClaimedDelivery) {
 	text := renderNotificationText(sendNotificationParams{
-		source:   delivery.Source,
-		severity: delivery.Severity,
-		title:    delivery.Title,
-		body:     delivery.Body,
-		link:     delivery.Link,
-		topic:    delivery.Topic,
+		source:     delivery.Source,
+		severity:   delivery.Severity,
+		title:      delivery.Title,
+		body:       delivery.Body,
+		link:       delivery.Link,
+		topicLabel: delivery.TopicLabel,
 	})
-	providerMessageID, err := s.sender.Send(ctx, SendRequest{Topic: delivery.Topic, Text: text})
+	providerMessageID, err := s.sender.Send(ctx, SendRequest{MessageThreadID: delivery.MessageThreadID, Text: text})
 	if err == nil {
 		if markErr := s.store.MarkDeliverySent(ctx, delivery.ID, providerMessageID); markErr != nil {
 			log.WithError(markErr).WithField("notification_id", delivery.ID).Warn("failed to mark notification delivery sent")

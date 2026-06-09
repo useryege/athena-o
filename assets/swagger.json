@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-686-g0fc924c-dirty"
+    "version": "v1.0.0-688-g20bcffa-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -240,7 +240,7 @@
           },
           {
             "type": "string",
-            "name": "topic",
+            "name": "topic_label",
             "in": "query"
           }
         ],
@@ -260,7 +260,7 @@
         }
       }
     },
-    "/api/v1/notifications/test/{topic}": {
+    "/api/v1/notifications/test/{topic_label}": {
       "post": {
         "tags": [
           "NotificationService"
@@ -270,7 +270,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "topic",
+            "name": "topic_label",
             "in": "path",
             "required": true
           }
@@ -2401,7 +2401,7 @@
         "title": {
           "type": "string"
         },
-        "topic": {
+        "topic_label": {
           "type": "string"
         }
       }
@@ -2446,7 +2446,7 @@
         "title": {
           "type": "string"
         },
-        "topic": {
+        "topic_label": {
           "type": "string"
         }
       }

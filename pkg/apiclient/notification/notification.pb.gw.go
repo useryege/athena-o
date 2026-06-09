@@ -152,15 +152,15 @@ func request_NotificationService_SendTestNotification_0(ctx context.Context, mar
 		_   = err
 	)
 
-	val, ok = pathParams["topic"]
+	val, ok = pathParams["topic_label"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "topic")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "topic_label")
 	}
 
-	protoReq.Topic, err = runtime.String(val)
+	protoReq.TopicLabel, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "topic", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "topic_label", err)
 	}
 
 	msg, err := client.SendTestNotification(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -179,15 +179,15 @@ func local_request_NotificationService_SendTestNotification_0(ctx context.Contex
 		_   = err
 	)
 
-	val, ok = pathParams["topic"]
+	val, ok = pathParams["topic_label"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "topic")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "topic_label")
 	}
 
-	protoReq.Topic, err = runtime.String(val)
+	protoReq.TopicLabel, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "topic", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "topic_label", err)
 	}
 
 	msg, err := server.SendTestNotification(ctx, &protoReq)
@@ -424,7 +424,7 @@ var (
 
 	pattern_NotificationService_GetNotificationDelivery_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "notifications", "id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_NotificationService_SendTestNotification_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "notifications", "test", "topic"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_NotificationService_SendTestNotification_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "notifications", "test", "topic_label"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

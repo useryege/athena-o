@@ -96,10 +96,7 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			sender, err := notification.NewTelegramSender(telegramClient, nil)
-			if err != nil {
-				return err
-			}
+			sender := notification.NewTelegramSender(telegramClient)
 
 			server, err := notification.NewServer(notification.ServerOpts{
 				Store:         store,
