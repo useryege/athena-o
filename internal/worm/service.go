@@ -281,6 +281,7 @@ func (s *Service) wormMarketToAPIItem(market wormstore.WormMarket) *v1alpha1.Wor
 		LiveState:        market.LiveState,
 		LiveCheckedAt:    unixTime(market.LiveCheckedAt),
 		LivePriceChange:  market.LivePriceChange,
+		MatchStartAt:     unixTime(market.MatchStartAt),
 	}
 }
 

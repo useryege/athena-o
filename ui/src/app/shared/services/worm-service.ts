@@ -16,6 +16,7 @@ export interface WormMarketItem {
     liveState?: 'live' | 'not_live' | 'unknown';
     liveCheckedAt?: number;
     livePriceChange?: string;
+    matchStartAt?: number;
 }
 
 export interface WormEventItem {
@@ -77,7 +78,8 @@ const normalizeMarket = (item: any): WormMarketItem => ({
     marginEnabled: readBoolean(item, 'marginEnabled', 'margin_enabled'),
     liveState: readString(item, 'liveState', 'live_state') as WormMarketItem['liveState'],
     liveCheckedAt: readNumber(item, 'liveCheckedAt', 'live_checked_at'),
-    livePriceChange: readString(item, 'livePriceChange', 'live_price_change')
+    livePriceChange: readString(item, 'livePriceChange', 'live_price_change'),
+    matchStartAt: readNumber(item, 'matchStartAt', 'match_start_at')
 });
 
 const normalizeEvent = (item: any): WormEventItem => {

@@ -1875,6 +1875,11 @@ func (m *WormMarketItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i = encodeVarintGenerated(dAtA, i, uint64(m.MatchStartAt))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x80
 	i -= len(m.LivePriceChange)
 	copy(dAtA[i:], m.LivePriceChange)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LivePriceChange)))
@@ -2660,6 +2665,7 @@ func (m *WormMarketItem) Size() (n int) {
 	n += 1 + sovGenerated(uint64(m.LiveCheckedAt))
 	l = len(m.LivePriceChange)
 	n += 1 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.MatchStartAt))
 	return n
 }
 
@@ -3211,6 +3217,7 @@ func (this *WormMarketItem) String() string {
 		`LiveState:` + fmt.Sprintf("%v", this.LiveState) + `,`,
 		`LiveCheckedAt:` + fmt.Sprintf("%v", this.LiveCheckedAt) + `,`,
 		`LivePriceChange:` + fmt.Sprintf("%v", this.LivePriceChange) + `,`,
+		`MatchStartAt:` + fmt.Sprintf("%v", this.MatchStartAt) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -10738,6 +10745,25 @@ func (m *WormMarketItem) Unmarshal(dAtA []byte) error {
 			}
 			m.LivePriceChange = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MatchStartAt", wireType)
+			}
+			m.MatchStartAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MatchStartAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
