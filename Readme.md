@@ -145,6 +145,8 @@ PROD_ENV_FILE=.env.prod make prod-build-local
 PROD_ENV_FILE=.env.prod make prod-start-local
 ```
 
+`prod-start-local` 会强制设置 `ATHENA_SERVER_DISABLE_AUTH=false`，即使环境文件中配置为 `true`，本地生产预演仍会启用服务端认证。
+
 生产 compose 中各后端服务设置了 `ATHENA_POSTGRES_AUTO_MIGRATE=false`，因此本地预演和远程部署一样，需要显式执行数据库迁移：
 
 ```bash

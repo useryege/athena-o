@@ -164,7 +164,7 @@ prod-build-local:
 .PHONY: prod-start-local	
 prod-start-local:
 	$(DOCKER) volume create $(PROD_POSTGRES_VOLUME) >/dev/null
-	PROD_IMAGE=$(PROD_IMAGE) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) up -d
+	ATHENA_SERVER_DISABLE_AUTH=false PROD_IMAGE=$(PROD_IMAGE) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) up -d
 
 .PHONY: prod-stop-local
 prod-stop-local:
