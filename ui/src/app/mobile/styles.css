@@ -531,6 +531,19 @@ body[data-theme='dark'] .app-page__header {
     color: var(--athena-text);
 }
 
+.worm-event-market__move {
+    margin-left: 6px;
+    font-weight: 800;
+}
+
+.worm-event-market__move--up {
+    color: var(--athena-green);
+}
+
+.worm-event-market__move--down {
+    color: var(--athena-red);
+}
+
 .worm-event-load-more {
     display: flex;
     justify-content: center;
