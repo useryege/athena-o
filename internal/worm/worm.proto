@@ -22,7 +22,6 @@ message ListWormMarketsRequest {
   string cursor = 2;
   string sort_option = 3;
   string category_slug = 4;
-  string ignored_filter = 5;
 }
 
 // ListWormMarketsResponse returns Worm market rows and cursor pagination.
@@ -33,24 +32,10 @@ message ListWormMarketsResponse {
   bool stale = 4;
 }
 
-// BatchUpdateWormMarketsIgnoredRequest updates ignored state for market rows.
-message BatchUpdateWormMarketsIgnoredRequest {
-  repeated string condition_ids = 1;
-  bool ignored = 2;
-}
-
-// BatchUpdateWormMarketsIgnoredResponse returns the number of updated rows.
-message BatchUpdateWormMarketsIgnoredResponse {
-  int64 updated = 1;
-}
-
 service WormService {
   // GetWormStatus returns the worm service runtime status.
   rpc GetWormStatus(GetWormStatusRequest) returns (GetWormStatusResponse);
 
   // ListWormMarkets returns markets for the requested browse filters.
   rpc ListWormMarkets(ListWormMarketsRequest) returns (ListWormMarketsResponse);
-
-  // BatchUpdateWormMarketsIgnored updates ignored state for selected markets.
-  rpc BatchUpdateWormMarketsIgnored(BatchUpdateWormMarketsIgnoredRequest) returns (BatchUpdateWormMarketsIgnoredResponse);
 }

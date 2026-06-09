@@ -33,18 +33,13 @@ const (
 	wormLiveCandleInterval    = "5m"
 	wormLivePriceThreshold    = 0.05
 
-	defaultWormMarketsCategorySlug  = "sports"
-	defaultWormMarketsSortOption    = "leverage"
-	defaultWormMarketsState         = "open"
-	defaultWormMarketsIgnoredFilter = "active"
+	defaultWormMarketsCategorySlug = "sports"
+	defaultWormMarketsSortOption   = "leverage"
+	defaultWormMarketsState        = "open"
 
 	wormMarketLiveStateLive    = "live"
 	wormMarketLiveStateNotLive = "not_live"
 	wormMarketLiveStateUnknown = "unknown"
-
-	wormMarketsIgnoredFilterActive  = "active"
-	wormMarketsIgnoredFilterIgnored = "ignored"
-	wormMarketsIgnoredFilterAll     = "all"
 )
 
 type wormMarketClient interface {
@@ -139,11 +134,10 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 	}
 
 	params := wormMarketsListParams{
-		Limit:         defaultWormMarketsLimit,
-		SortOption:    defaultWormMarketsSortOption,
-		CategorySlug:  defaultWormMarketsCategorySlug,
-		State:         defaultWormMarketsState,
-		IgnoredFilter: defaultWormMarketsIgnoredFilter,
+		Limit:        defaultWormMarketsLimit,
+		SortOption:   defaultWormMarketsSortOption,
+		CategorySlug: defaultWormMarketsCategorySlug,
+		State:        defaultWormMarketsState,
 	}
 	if req != nil {
 		if req.GetLimit() != 0 {
@@ -152,7 +146,6 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 		params.Cursor = req.GetCursor()
 		params.SortOption = strings.TrimSpace(req.GetSortOption())
 		params.CategorySlug = strings.TrimSpace(req.GetCategorySlug())
-		params.IgnoredFilter = strings.TrimSpace(req.GetIgnoredFilter())
 	}
 	if params.Limit < 1 || params.Limit > maxWormMarketsLimit {
 		return nil, status.Errorf(codes.InvalidArgument, "limit must be between 1 and %d", maxWormMarketsLimit)
@@ -160,16 +153,12 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 	if err := validateFixedWormMarketParams(params); err != nil {
 		return nil, err
 	}
-	ignoredFilter, err := wormMarketsIgnoredFilter(params.IgnoredFilter)
-	if err != nil {
-		return nil, err
-	}
 	offset, err := parseWormMarketCursor(params.Cursor)
 	if err != nil {
 		return nil, err
 	}
 	page := int32(offset/params.Limit) + 1
-	result, err := s.store.ListWormMarketsPage(ctx, "", "", ignoredFilter, page, int32(params.Limit))
+	result, err := s.store.ListWormMarketsPage(ctx, "", "", page, int32(params.Limit))
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "failed to list worm markets: %v", err)
 	}
@@ -193,31 +182,12 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 	return resp, nil
 }
 
-func (s *Service) BatchUpdateWormMarketsIgnored(ctx context.Context, req *apiclient.BatchUpdateWormMarketsIgnoredRequest) (*apiclient.BatchUpdateWormMarketsIgnoredResponse, error) {
-	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "worm store is required")
-	}
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is required")
-	}
-	conditionIDs := normalizedWormMarketConditionIDs(req.GetConditionIds())
-	if len(conditionIDs) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "condition_ids is required")
-	}
-	updated, err := s.store.BatchUpdateWormMarketsIgnored(ctx, conditionIDs, req.GetIgnored())
-	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, "failed to update worm markets ignored: %v", err)
-	}
-	return &apiclient.BatchUpdateWormMarketsIgnoredResponse{Updated: updated}, nil
-}
-
 type wormMarketsListParams struct {
-	Limit         int
-	Cursor        string
-	SortOption    string
-	CategorySlug  string
-	State         string
-	IgnoredFilter string
+	Limit        int
+	Cursor       string
+	SortOption   string
+	CategorySlug string
+	State        string
 }
 
 func validateFixedWormMarketParams(params wormMarketsListParams) error {
@@ -236,25 +206,6 @@ func validateFixedWormMarketParams(params wormMarketsListParams) error {
 		return status.Errorf(codes.InvalidArgument, "category_slug must be %s", defaultWormMarketsCategorySlug)
 	}
 	return nil
-}
-
-func wormMarketsIgnoredFilter(value string) (*bool, error) {
-	value = strings.ToLower(strings.TrimSpace(value))
-	if value == "" {
-		value = defaultWormMarketsIgnoredFilter
-	}
-	switch value {
-	case wormMarketsIgnoredFilterActive:
-		ignored := false
-		return &ignored, nil
-	case wormMarketsIgnoredFilterIgnored:
-		ignored := true
-		return &ignored, nil
-	case wormMarketsIgnoredFilterAll:
-		return nil, nil
-	default:
-		return nil, status.Errorf(codes.InvalidArgument, "ignored_filter must be one of %s, %s, %s", wormMarketsIgnoredFilterActive, wormMarketsIgnoredFilterIgnored, wormMarketsIgnoredFilterAll)
-	}
 }
 
 func (s *Service) toAPIMarketSummary(market utilworm.MarketSummary) *v1alpha1.WormMarketItem {
@@ -295,7 +246,6 @@ func (s *Service) wormMarketToAPIItem(market wormstore.WormMarket) *v1alpha1.Wor
 		LiveState:        market.LiveState,
 		LiveCheckedAt:    unixTime(market.LiveCheckedAt),
 		LivePriceChange:  market.LivePriceChange,
-		Ignored:          market.Ignored,
 	}
 }
 
@@ -390,7 +340,6 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 				EventConditionID: item.EventConditionID,
 				EventLogo:        item.EventLogo,
 				MarginEnabled:    item.MarginEnabled,
-				Ignored:          false,
 				LiveState:        wormMarketLiveStateUnknown,
 				Raw:              raw,
 				FetchedAt:        fetchedAt,
@@ -648,20 +597,6 @@ func parseWormMarketCursor(cursor string) (int, error) {
 		return 0, status.Error(codes.InvalidArgument, "cursor must be a nonnegative offset")
 	}
 	return offset, nil
-}
-
-func normalizedWormMarketConditionIDs(values []string) []string {
-	seen := map[string]bool{}
-	conditionIDs := make([]string, 0, len(values))
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		if value == "" || seen[value] {
-			continue
-		}
-		seen[value] = true
-		conditionIDs = append(conditionIDs, value)
-	}
-	return conditionIDs
 }
 
 func stringValue(value *string) string {

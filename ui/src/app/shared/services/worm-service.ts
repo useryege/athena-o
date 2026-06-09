@@ -16,7 +16,6 @@ export interface WormMarketItem {
     liveState?: 'live' | 'not_live' | 'unknown';
     liveCheckedAt?: number;
     livePriceChange?: string;
-    ignored: boolean;
 }
 
 export interface ListWormMarketsResult {
@@ -28,11 +27,8 @@ export interface ListWormMarketsResult {
 
 export type WormMarketSortOption = 'new' | 'trending' | 'ending_soon' | 'leverage';
 export type WormMarketCategorySlug = 'all' | 'politics' | 'sports' | 'crypto' | 'tech' | 'finance' | 'wtf';
-export type WormMarketIgnoredFilter = 'active' | 'ignored' | 'all';
-
 export const DEFAULT_WORM_MARKET_SORT: WormMarketSortOption = 'leverage';
 export const DEFAULT_WORM_MARKET_CATEGORY: WormMarketCategorySlug = 'sports';
-export const DEFAULT_WORM_MARKET_IGNORED_FILTER: WormMarketIgnoredFilter = 'active';
 export const DEFAULT_WORM_MARKET_STATE = 'open';
 
 const isOpenWormMarket = (item: Pick<WormMarketItem, 'state'>) => item.state?.toLowerCase() === DEFAULT_WORM_MARKET_STATE;
@@ -42,7 +38,6 @@ export interface ListWormMarketsOptions {
     cursor?: string;
     sortOption?: WormMarketSortOption;
     categorySlug?: WormMarketCategorySlug;
-    ignoredFilter?: WormMarketIgnoredFilter;
 }
 
 const readValue = (item: any, ...names: string[]) => {
@@ -74,8 +69,7 @@ const normalizeMarket = (item: any): WormMarketItem => ({
     marginEnabled: readBoolean(item, 'marginEnabled', 'margin_enabled'),
     liveState: readString(item, 'liveState', 'live_state') as WormMarketItem['liveState'],
     liveCheckedAt: readNumber(item, 'liveCheckedAt', 'live_checked_at'),
-    livePriceChange: readString(item, 'livePriceChange', 'live_price_change'),
-    ignored: readBoolean(item, 'ignored', 'ignored')
+    livePriceChange: readString(item, 'livePriceChange', 'live_price_change')
 });
 
 const sortLiveFirst = (items: WormMarketItem[]) =>
@@ -99,7 +93,6 @@ export class WormService {
         if (options.categorySlug) {
             query.category_slug = options.categorySlug;
         }
-        query.ignored_filter = options.ignoredFilter || DEFAULT_WORM_MARKET_IGNORED_FILTER;
         const req = requests.get('/worm/markets').query(query);
         const promise = req.then(res => {
             const body = res.body || {};
@@ -111,17 +104,6 @@ export class WormService {
                 stale: readBoolean(body, 'stale', 'stale')
             };
         }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public batchUpdateMarketsIgnored(conditionIds: string[], ignored: boolean): Promise<{updated: number}> & {abort?: () => void} {
-        const req = requests.post('/worm/markets/ignored').send({
-            conditionIds,
-            condition_ids: conditionIds,
-            ignored
-        });
-        const promise = req.then(res => ({updated: readNumber(res.body || {}, 'updated', 'updated') || 0})) as any;
         promise.abort = () => req.abort();
         return promise;
     }

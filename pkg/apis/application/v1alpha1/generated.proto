@@ -504,7 +504,5 @@ message WormMarketItem {
   optional int64 liveCheckedAt = 14;
 
   optional string livePriceChange = 15;
-
-  optional bool ignored = 16;
 }
 

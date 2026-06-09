@@ -134,7 +134,6 @@ type ListWormMarketsRequest struct {
 	Cursor               string   `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	SortOption           string   `protobuf:"bytes,3,opt,name=sort_option,json=sortOption,proto3" json:"sort_option,omitempty"`
 	CategorySlug         string   `protobuf:"bytes,4,opt,name=category_slug,json=categorySlug,proto3" json:"category_slug,omitempty"`
-	IgnoredFilter        string   `protobuf:"bytes,5,opt,name=ignored_filter,json=ignoredFilter,proto3" json:"ignored_filter,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -197,13 +196,6 @@ func (m *ListWormMarketsRequest) GetSortOption() string {
 func (m *ListWormMarketsRequest) GetCategorySlug() string {
 	if m != nil {
 		return m.CategorySlug
-	}
-	return ""
-}
-
-func (m *ListWormMarketsRequest) GetIgnoredFilter() string {
-	if m != nil {
-		return m.IgnoredFilter
 	}
 	return ""
 }
@@ -280,163 +272,49 @@ func (m *ListWormMarketsResponse) GetStale() bool {
 	return false
 }
 
-// BatchUpdateWormMarketsIgnoredRequest updates ignored state for market rows.
-type BatchUpdateWormMarketsIgnoredRequest struct {
-	ConditionIds         []string `protobuf:"bytes,1,rep,name=condition_ids,json=conditionIds,proto3" json:"condition_ids,omitempty"`
-	Ignored              bool     `protobuf:"varint,2,opt,name=ignored,proto3" json:"ignored,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *BatchUpdateWormMarketsIgnoredRequest) Reset()         { *m = BatchUpdateWormMarketsIgnoredRequest{} }
-func (m *BatchUpdateWormMarketsIgnoredRequest) String() string { return proto.CompactTextString(m) }
-func (*BatchUpdateWormMarketsIgnoredRequest) ProtoMessage()    {}
-func (*BatchUpdateWormMarketsIgnoredRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7c0b2f2b28aeea67, []int{4}
-}
-func (m *BatchUpdateWormMarketsIgnoredRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *BatchUpdateWormMarketsIgnoredRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_BatchUpdateWormMarketsIgnoredRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *BatchUpdateWormMarketsIgnoredRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BatchUpdateWormMarketsIgnoredRequest.Merge(m, src)
-}
-func (m *BatchUpdateWormMarketsIgnoredRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *BatchUpdateWormMarketsIgnoredRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_BatchUpdateWormMarketsIgnoredRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_BatchUpdateWormMarketsIgnoredRequest proto.InternalMessageInfo
-
-func (m *BatchUpdateWormMarketsIgnoredRequest) GetConditionIds() []string {
-	if m != nil {
-		return m.ConditionIds
-	}
-	return nil
-}
-
-func (m *BatchUpdateWormMarketsIgnoredRequest) GetIgnored() bool {
-	if m != nil {
-		return m.Ignored
-	}
-	return false
-}
-
-// BatchUpdateWormMarketsIgnoredResponse returns the number of updated rows.
-type BatchUpdateWormMarketsIgnoredResponse struct {
-	Updated              int64    `protobuf:"varint,1,opt,name=updated,proto3" json:"updated,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *BatchUpdateWormMarketsIgnoredResponse) Reset()         { *m = BatchUpdateWormMarketsIgnoredResponse{} }
-func (m *BatchUpdateWormMarketsIgnoredResponse) String() string { return proto.CompactTextString(m) }
-func (*BatchUpdateWormMarketsIgnoredResponse) ProtoMessage()    {}
-func (*BatchUpdateWormMarketsIgnoredResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7c0b2f2b28aeea67, []int{5}
-}
-func (m *BatchUpdateWormMarketsIgnoredResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *BatchUpdateWormMarketsIgnoredResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_BatchUpdateWormMarketsIgnoredResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *BatchUpdateWormMarketsIgnoredResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BatchUpdateWormMarketsIgnoredResponse.Merge(m, src)
-}
-func (m *BatchUpdateWormMarketsIgnoredResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *BatchUpdateWormMarketsIgnoredResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_BatchUpdateWormMarketsIgnoredResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_BatchUpdateWormMarketsIgnoredResponse proto.InternalMessageInfo
-
-func (m *BatchUpdateWormMarketsIgnoredResponse) GetUpdated() int64 {
-	if m != nil {
-		return m.Updated
-	}
-	return 0
-}
-
 func init() {
 	proto.RegisterType((*GetWormStatusRequest)(nil), "worm.GetWormStatusRequest")
 	proto.RegisterType((*GetWormStatusResponse)(nil), "worm.GetWormStatusResponse")
 	proto.RegisterType((*ListWormMarketsRequest)(nil), "worm.ListWormMarketsRequest")
 	proto.RegisterType((*ListWormMarketsResponse)(nil), "worm.ListWormMarketsResponse")
-	proto.RegisterType((*BatchUpdateWormMarketsIgnoredRequest)(nil), "worm.BatchUpdateWormMarketsIgnoredRequest")
-	proto.RegisterType((*BatchUpdateWormMarketsIgnoredResponse)(nil), "worm.BatchUpdateWormMarketsIgnoredResponse")
 }
 
 func init() { proto.RegisterFile("internal/server/worm/worm.proto", fileDescriptor_7c0b2f2b28aeea67) }
 
 var fileDescriptor_7c0b2f2b28aeea67 = []byte{
-	// 627 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xdf, 0x4e, 0xd4, 0x4e,
-	0x14, 0x4e, 0x59, 0x96, 0x1f, 0x0c, 0x3f, 0x34, 0x19, 0x61, 0x6d, 0x96, 0xe5, 0x8f, 0x55, 0x22,
-	0xc1, 0xd8, 0x06, 0xbc, 0xd3, 0x2b, 0x30, 0x51, 0x36, 0xd1, 0x98, 0x94, 0x18, 0x13, 0x2f, 0xdc,
-	0x0c, 0xed, 0xa1, 0x3b, 0xa1, 0x9d, 0xa9, 0x33, 0xa7, 0xab, 0xdc, 0x7a, 0xe1, 0x0b, 0xf8, 0x04,
-	0x3e, 0x83, 0x2f, 0xe1, 0x9d, 0x26, 0xbe, 0x80, 0x21, 0x3e, 0x88, 0x99, 0x99, 0x36, 0xb0, 0xb8,
-	0x0a, 0x37, 0x9b, 0x3d, 0xdf, 0x9c, 0x7e, 0xe7, 0x9c, 0xef, 0x3b, 0x33, 0x64, 0x8d, 0x0b, 0x04,
-	0x25, 0x58, 0x1e, 0x69, 0x50, 0x23, 0x50, 0xd1, 0x3b, 0xa9, 0x0a, 0xfb, 0x13, 0x96, 0x4a, 0xa2,
-	0xa4, 0xd3, 0xe6, 0x7f, 0x77, 0x3f, 0xe3, 0x38, 0xac, 0x0e, 0xc3, 0x44, 0x16, 0x51, 0xa5, 0x41,
-	0x9d, 0x40, 0x06, 0x11, 0xc3, 0x21, 0x08, 0x16, 0x95, 0xc7, 0x59, 0xc4, 0x4a, 0xae, 0x23, 0x56,
-	0x96, 0x39, 0x4f, 0x18, 0x72, 0x29, 0xa2, 0xd1, 0x36, 0xcb, 0xcb, 0x21, 0xdb, 0x8e, 0x32, 0x10,
-	0xa0, 0x18, 0x42, 0xea, 0xf8, 0xba, 0xbd, 0x4c, 0xca, 0x2c, 0x07, 0xf3, 0x45, 0xc4, 0x84, 0x90,
-	0x68, 0xf3, 0xb5, 0x3b, 0x0d, 0x3a, 0x64, 0xf1, 0x29, 0xe0, 0x2b, 0xa9, 0x8a, 0x03, 0x64, 0x58,
-	0xe9, 0x18, 0xde, 0x56, 0xa0, 0x31, 0xe8, 0x93, 0xa5, 0x0b, 0xb8, 0x2e, 0xa5, 0xd0, 0x40, 0x7d,
-	0xf2, 0x9f, 0x46, 0xa6, 0x10, 0x52, 0xdf, 0x5b, 0xf7, 0x36, 0x67, 0xe3, 0x26, 0xa4, 0x1d, 0x32,
-	0xa3, 0x6d, 0xae, 0x3f, 0xb5, 0xee, 0x6d, 0xce, 0xc5, 0x75, 0x14, 0x7c, 0xf1, 0x48, 0xe7, 0x19,
-	0xd7, 0x96, 0xec, 0x39, 0x53, 0xc7, 0x80, 0x4d, 0x15, 0xba, 0x48, 0xda, 0x39, 0x2f, 0x38, 0x5a,
-	0xaa, 0x76, 0xec, 0x02, 0x43, 0x94, 0x54, 0x4a, 0x4b, 0xd5, 0x10, 0xb9, 0x88, 0xae, 0x91, 0x79,
-	0x2d, 0x15, 0x0e, 0x64, 0x69, 0x26, 0xf0, 0x5b, 0xf6, 0x90, 0x18, 0xe8, 0x85, 0x45, 0xe8, 0x6d,
-	0xb2, 0x90, 0x30, 0x84, 0x4c, 0xaa, 0x93, 0x81, 0xce, 0xab, 0xcc, 0x9f, 0xb6, 0x29, 0xff, 0x37,
-	0xe0, 0x41, 0x5e, 0x65, 0x74, 0x83, 0x5c, 0xe3, 0x99, 0x90, 0x0a, 0xd2, 0xc1, 0x11, 0xcf, 0x11,
-	0x94, 0xdf, 0xb6, 0x59, 0x0b, 0x35, 0xfa, 0xc4, 0x82, 0xc1, 0x37, 0x8f, 0xdc, 0xfc, 0xa3, 0xeb,
-	0x5a, 0x83, 0x37, 0xa4, 0xcd, 0x11, 0x0a, 0xed, 0x7b, 0xeb, 0xad, 0xcd, 0xf9, 0x9d, 0xfd, 0xf0,
-	0xcc, 0xac, 0xb0, 0x31, 0x2b, 0x74, 0x66, 0x85, 0xe5, 0x71, 0x16, 0x1a, 0xb3, 0xc2, 0x73, 0x66,
-	0x85, 0x8d, 0x59, 0xe1, 0x19, 0x7b, 0x1f, 0xa1, 0x88, 0x1d, 0xad, 0x19, 0x54, 0xc0, 0x7b, 0x1c,
-	0x8c, 0xa9, 0x40, 0x0c, 0xf4, 0xd8, 0x29, 0xb1, 0x42, 0xc8, 0x11, 0x60, 0x32, 0x84, 0x74, 0xc0,
-	0xd0, 0x0a, 0xd1, 0x8a, 0xe7, 0x6a, 0x64, 0xd7, 0xca, 0xaa, 0x91, 0xe5, 0x60, 0xe7, 0x9f, 0x8d,
-	0x5d, 0x10, 0x00, 0xb9, 0xb3, 0xc7, 0x30, 0x19, 0xbe, 0x2c, 0x53, 0x86, 0x70, 0x6e, 0xae, 0xbe,
-	0x1b, 0xbc, 0x31, 0xc5, 0xa8, 0x28, 0x45, 0xca, 0x4d, 0xa7, 0x03, 0x9e, 0xba, 0x29, 0x8d, 0x8a,
-	0x0d, 0xd8, 0x4f, 0xb5, 0x59, 0x83, 0x5a, 0x2f, 0xdb, 0xde, 0x6c, 0xdc, 0x84, 0xc1, 0x2e, 0xd9,
-	0xb8, 0xa4, 0xcc, 0xd9, 0x26, 0x55, 0x36, 0xc7, 0x6d, 0x52, 0x2b, 0x6e, 0xc2, 0x9d, 0x8f, 0x2d,
-	0x32, 0x6f, 0x57, 0x0f, 0xd4, 0x88, 0x27, 0x40, 0x81, 0x2c, 0x8c, 0x2d, 0x23, 0xed, 0x86, 0xf6,
-	0xc2, 0x4c, 0xda, 0xdc, 0xee, 0xf2, 0xc4, 0x33, 0x57, 0x33, 0x58, 0xfe, 0xf0, 0xe3, 0xd7, 0xa7,
-	0xa9, 0x25, 0x7a, 0xc3, 0x5e, 0x87, 0xd1, 0xb6, 0xbb, 0x7d, 0x6e, 0x51, 0x69, 0x4e, 0xae, 0x5f,
-	0x70, 0x9c, 0xf6, 0x1c, 0xd9, 0xe4, 0xf5, 0xed, 0xae, 0xfc, 0xe5, 0xb4, 0x2e, 0xd6, 0xb3, 0xc5,
-	0x3a, 0x74, 0x71, 0xac, 0x58, 0x51, 0x53, 0x7f, 0xf6, 0xc8, 0xca, 0x3f, 0x85, 0xa2, 0x5b, 0x8e,
-	0xfe, 0x2a, 0xa6, 0x75, 0xef, 0x5d, 0x29, 0xb7, 0x6e, 0xec, 0xae, 0x6d, 0xec, 0x56, 0xd0, 0x9b,
-	0xd4, 0x58, 0x54, 0x1b, 0xf9, 0xd0, 0xdb, 0xda, 0x7b, 0xf4, 0xf5, 0x74, 0xd5, 0xfb, 0x7e, 0xba,
-	0xea, 0xfd, 0x3c, 0x5d, 0xf5, 0x5e, 0xdf, 0xbf, 0xfc, 0x4d, 0x4a, 0x72, 0x0e, 0x02, 0x2d, 0xdf,
-	0xe1, 0x8c, 0x7d, 0x61, 0x1e, 0xfc, 0x0e, 0x00, 0x00, 0xff, 0xff, 0x08, 0x5d, 0xc7, 0x97, 0xf2,
-	0x04, 0x00, 0x00,
+	// 501 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0x4f, 0x6f, 0xd3, 0x4c,
+	0x10, 0xc6, 0xe5, 0xa6, 0xe9, 0xdb, 0x6e, 0xde, 0x0a, 0x69, 0x49, 0x83, 0x95, 0xa6, 0x69, 0x64,
+	0x2e, 0xb9, 0xb0, 0x56, 0xca, 0x91, 0x13, 0x70, 0xa0, 0x95, 0x40, 0x48, 0xee, 0x01, 0x89, 0x03,
+	0xd1, 0xd6, 0x19, 0x36, 0xab, 0xac, 0x77, 0xcd, 0xee, 0x38, 0xd0, 0x2b, 0x67, 0x6e, 0x7c, 0x29,
+	0x6e, 0x20, 0xf1, 0x05, 0x50, 0xc4, 0x07, 0x41, 0xde, 0x8d, 0x55, 0x52, 0x82, 0xb8, 0x44, 0x99,
+	0x3f, 0x7e, 0xc6, 0xcf, 0xfc, 0xc6, 0xe4, 0x54, 0x6a, 0x04, 0xab, 0xb9, 0x4a, 0x1d, 0xd8, 0x25,
+	0xd8, 0xf4, 0xbd, 0xb1, 0x85, 0xff, 0x61, 0xa5, 0x35, 0x68, 0xe8, 0x6e, 0xfd, 0xbf, 0x7f, 0x2e,
+	0x24, 0xce, 0xab, 0x2b, 0x96, 0x9b, 0x22, 0xad, 0x1c, 0xd8, 0x6b, 0x10, 0x90, 0x72, 0x9c, 0x83,
+	0xe6, 0x69, 0xb9, 0x10, 0x29, 0x2f, 0xa5, 0x4b, 0x79, 0x59, 0x2a, 0x99, 0x73, 0x94, 0x46, 0xa7,
+	0xcb, 0x09, 0x57, 0xe5, 0x9c, 0x4f, 0x52, 0x01, 0x1a, 0x2c, 0x47, 0x98, 0x05, 0xbd, 0xfe, 0x40,
+	0x18, 0x23, 0x14, 0xd4, 0x4f, 0xa4, 0x5c, 0x6b, 0x83, 0xbe, 0xdf, 0x85, 0x6a, 0xd2, 0x23, 0xdd,
+	0x67, 0x80, 0xaf, 0x8c, 0x2d, 0x2e, 0x91, 0x63, 0xe5, 0x32, 0x78, 0x57, 0x81, 0xc3, 0xe4, 0x82,
+	0x1c, 0xdd, 0xca, 0xbb, 0xd2, 0x68, 0x07, 0x34, 0x26, 0xff, 0x39, 0xe4, 0x16, 0x61, 0x16, 0x47,
+	0xa3, 0x68, 0xbc, 0x9f, 0x35, 0x21, 0xed, 0x91, 0x3d, 0xe7, 0x7b, 0xe3, 0x9d, 0x51, 0x34, 0x3e,
+	0xc8, 0xd6, 0x51, 0xf2, 0x29, 0x22, 0xbd, 0xe7, 0xd2, 0x79, 0xb1, 0x17, 0xdc, 0x2e, 0x00, 0x9b,
+	0x29, 0xb4, 0x4b, 0xda, 0x4a, 0x16, 0x12, 0xbd, 0x54, 0x3b, 0x0b, 0x41, 0x2d, 0x94, 0x57, 0xd6,
+	0x19, 0xdb, 0x08, 0x85, 0x88, 0x9e, 0x92, 0x8e, 0x33, 0x16, 0xa7, 0xa6, 0xac, 0x1d, 0xc4, 0x2d,
+	0x5f, 0x24, 0x75, 0xea, 0xa5, 0xcf, 0xd0, 0xfb, 0xe4, 0x30, 0xe7, 0x08, 0xc2, 0xd8, 0xeb, 0xa9,
+	0x53, 0x95, 0x88, 0x77, 0x7d, 0xcb, 0xff, 0x4d, 0xf2, 0x52, 0x55, 0x22, 0xf9, 0x1a, 0x91, 0x7b,
+	0x7f, 0xbc, 0xce, 0xda, 0xdc, 0x1b, 0xd2, 0x96, 0x08, 0x85, 0x8b, 0xa3, 0x51, 0x6b, 0xdc, 0x39,
+	0x3b, 0x67, 0x37, 0x14, 0x58, 0x43, 0x81, 0x05, 0x0a, 0xac, 0x5c, 0x08, 0x56, 0x53, 0x60, 0xbf,
+	0x51, 0x60, 0x0d, 0x05, 0x76, 0xa3, 0x7e, 0x81, 0x50, 0x64, 0x41, 0xb6, 0x76, 0xa0, 0xe1, 0x03,
+	0x4e, 0x37, 0xec, 0x91, 0x3a, 0xf5, 0x34, 0x58, 0x3c, 0x21, 0xe4, 0x2d, 0x60, 0x3e, 0x87, 0xd9,
+	0x94, 0xa3, 0x77, 0xd8, 0xca, 0x0e, 0xd6, 0x99, 0xc7, 0x7e, 0x5f, 0x0e, 0xb9, 0x02, 0x6f, 0x6c,
+	0x3f, 0x0b, 0xc1, 0xd9, 0x2a, 0x22, 0x1d, 0x4f, 0x0a, 0xec, 0x52, 0xe6, 0x40, 0x81, 0x1c, 0x6e,
+	0xb0, 0xa3, 0x7d, 0xe6, 0xef, 0x6b, 0x1b, 0xe8, 0xfe, 0xf1, 0xd6, 0x5a, 0xd8, 0x47, 0x72, 0xfc,
+	0xf1, 0xfb, 0xcf, 0xcf, 0x3b, 0x47, 0xf4, 0xae, 0xbf, 0x9e, 0xe5, 0x24, 0x1c, 0x6b, 0xe0, 0x4a,
+	0x15, 0xb9, 0x73, 0x6b, 0x8f, 0x74, 0x10, 0xc4, 0xb6, 0xd3, 0xee, 0x9f, 0xfc, 0xa5, 0xba, 0x1e,
+	0x36, 0xf0, 0xc3, 0x7a, 0xb4, 0xbb, 0x31, 0xac, 0x08, 0x5d, 0x4f, 0x1e, 0x7d, 0x59, 0x0d, 0xa3,
+	0x6f, 0xab, 0x61, 0xf4, 0x63, 0x35, 0x8c, 0x5e, 0x3f, 0xf8, 0xf7, 0xe7, 0x91, 0x2b, 0x09, 0x1a,
+	0xbd, 0xc8, 0xd5, 0x9e, 0x3f, 0xf6, 0x87, 0xbf, 0x02, 0x00, 0x00, 0xff, 0xff, 0x47, 0x3e, 0xb9,
+	0xe6, 0x7d, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -455,8 +333,6 @@ type WormServiceClient interface {
 	GetWormStatus(ctx context.Context, in *GetWormStatusRequest, opts ...grpc.CallOption) (*GetWormStatusResponse, error)
 	// ListWormMarkets returns markets for the requested browse filters.
 	ListWormMarkets(ctx context.Context, in *ListWormMarketsRequest, opts ...grpc.CallOption) (*ListWormMarketsResponse, error)
-	// BatchUpdateWormMarketsIgnored updates ignored state for selected markets.
-	BatchUpdateWormMarketsIgnored(ctx context.Context, in *BatchUpdateWormMarketsIgnoredRequest, opts ...grpc.CallOption) (*BatchUpdateWormMarketsIgnoredResponse, error)
 }
 
 type wormServiceClient struct {
@@ -485,23 +361,12 @@ func (c *wormServiceClient) ListWormMarkets(ctx context.Context, in *ListWormMar
 	return out, nil
 }
 
-func (c *wormServiceClient) BatchUpdateWormMarketsIgnored(ctx context.Context, in *BatchUpdateWormMarketsIgnoredRequest, opts ...grpc.CallOption) (*BatchUpdateWormMarketsIgnoredResponse, error) {
-	out := new(BatchUpdateWormMarketsIgnoredResponse)
-	err := c.cc.Invoke(ctx, "/worm.WormService/BatchUpdateWormMarketsIgnored", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // WormServiceServer is the server API for WormService service.
 type WormServiceServer interface {
 	// GetWormStatus returns the worm service runtime status.
 	GetWormStatus(context.Context, *GetWormStatusRequest) (*GetWormStatusResponse, error)
 	// ListWormMarkets returns markets for the requested browse filters.
 	ListWormMarkets(context.Context, *ListWormMarketsRequest) (*ListWormMarketsResponse, error)
-	// BatchUpdateWormMarketsIgnored updates ignored state for selected markets.
-	BatchUpdateWormMarketsIgnored(context.Context, *BatchUpdateWormMarketsIgnoredRequest) (*BatchUpdateWormMarketsIgnoredResponse, error)
 }
 
 // UnimplementedWormServiceServer can be embedded to have forward compatible implementations.
@@ -513,9 +378,6 @@ func (*UnimplementedWormServiceServer) GetWormStatus(ctx context.Context, req *G
 }
 func (*UnimplementedWormServiceServer) ListWormMarkets(ctx context.Context, req *ListWormMarketsRequest) (*ListWormMarketsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListWormMarkets not implemented")
-}
-func (*UnimplementedWormServiceServer) BatchUpdateWormMarketsIgnored(ctx context.Context, req *BatchUpdateWormMarketsIgnoredRequest) (*BatchUpdateWormMarketsIgnoredResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BatchUpdateWormMarketsIgnored not implemented")
 }
 
 func RegisterWormServiceServer(s *grpc.Server, srv WormServiceServer) {
@@ -558,24 +420,6 @@ func _WormService_ListWormMarkets_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WormService_BatchUpdateWormMarketsIgnored_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BatchUpdateWormMarketsIgnoredRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WormServiceServer).BatchUpdateWormMarketsIgnored(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/worm.WormService/BatchUpdateWormMarketsIgnored",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WormServiceServer).BatchUpdateWormMarketsIgnored(ctx, req.(*BatchUpdateWormMarketsIgnoredRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _WormService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "worm.WormService",
 	HandlerType: (*WormServiceServer)(nil),
@@ -587,10 +431,6 @@ var _WormService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListWormMarkets",
 			Handler:    _WormService_ListWormMarkets_Handler,
-		},
-		{
-			MethodName: "BatchUpdateWormMarketsIgnored",
-			Handler:    _WormService_BatchUpdateWormMarketsIgnored_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -692,13 +532,6 @@ func (m *ListWormMarketsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.IgnoredFilter) > 0 {
-		i -= len(m.IgnoredFilter)
-		copy(dAtA[i:], m.IgnoredFilter)
-		i = encodeVarintWorm(dAtA, i, uint64(len(m.IgnoredFilter)))
-		i--
-		dAtA[i] = 0x2a
-	}
 	if len(m.CategorySlug) > 0 {
 		i -= len(m.CategorySlug)
 		copy(dAtA[i:], m.CategorySlug)
@@ -791,84 +624,6 @@ func (m *ListWormMarketsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *BatchUpdateWormMarketsIgnoredRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *BatchUpdateWormMarketsIgnoredRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *BatchUpdateWormMarketsIgnoredRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Ignored {
-		i--
-		if m.Ignored {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.ConditionIds) > 0 {
-		for iNdEx := len(m.ConditionIds) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.ConditionIds[iNdEx])
-			copy(dAtA[i:], m.ConditionIds[iNdEx])
-			i = encodeVarintWorm(dAtA, i, uint64(len(m.ConditionIds[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *BatchUpdateWormMarketsIgnoredResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *BatchUpdateWormMarketsIgnoredResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *BatchUpdateWormMarketsIgnoredResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Updated != 0 {
-		i = encodeVarintWorm(dAtA, i, uint64(m.Updated))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintWorm(dAtA []byte, offset int, v uint64) int {
 	offset -= sovWorm(v)
 	base := offset
@@ -932,10 +687,6 @@ func (m *ListWormMarketsRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovWorm(uint64(l))
 	}
-	l = len(m.IgnoredFilter)
-	if l > 0 {
-		n += 1 + l + sovWorm(uint64(l))
-	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -963,42 +714,6 @@ func (m *ListWormMarketsResponse) Size() (n int) {
 	}
 	if m.Stale {
 		n += 2
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *BatchUpdateWormMarketsIgnoredRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.ConditionIds) > 0 {
-		for _, s := range m.ConditionIds {
-			l = len(s)
-			n += 1 + l + sovWorm(uint64(l))
-		}
-	}
-	if m.Ignored {
-		n += 2
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *BatchUpdateWormMarketsIgnoredResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Updated != 0 {
-		n += 1 + sovWorm(uint64(m.Updated))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1310,38 +1025,6 @@ func (m *ListWormMarketsRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.CategorySlug = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IgnoredFilter", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowWorm
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthWorm
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthWorm
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.IgnoredFilter = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipWorm(dAtA[iNdEx:])
@@ -1498,179 +1181,6 @@ func (m *ListWormMarketsResponse) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.Stale = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipWorm(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthWorm
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *BatchUpdateWormMarketsIgnoredRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowWorm
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: BatchUpdateWormMarketsIgnoredRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BatchUpdateWormMarketsIgnoredRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ConditionIds", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowWorm
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthWorm
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthWorm
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ConditionIds = append(m.ConditionIds, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Ignored", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowWorm
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Ignored = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipWorm(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthWorm
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *BatchUpdateWormMarketsIgnoredResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowWorm
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: BatchUpdateWormMarketsIgnoredResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BatchUpdateWormMarketsIgnoredResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Updated", wireType)
-			}
-			m.Updated = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowWorm
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Updated |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipWorm(dAtA[iNdEx:])

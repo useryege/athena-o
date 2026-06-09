@@ -13,7 +13,6 @@ INSERT INTO worm_market (
   event_condition_id,
   event_logo,
   margin_enabled,
-  ignored,
   live_state,
   live_checked_at,
   live_price_change,
@@ -34,7 +33,6 @@ INSERT INTO worm_market (
   @event_condition_id,
   @event_logo,
   @margin_enabled,
-  @ignored,
   @live_state,
   @live_checked_at,
   @live_price_change,
@@ -55,7 +53,6 @@ SET title = EXCLUDED.title,
   event_condition_id = EXCLUDED.event_condition_id,
   event_logo = EXCLUDED.event_logo,
   margin_enabled = EXCLUDED.margin_enabled,
-  ignored = worm_market.ignored,
   live_state = worm_market.live_state,
   live_checked_at = worm_market.live_checked_at,
   live_price_change = worm_market.live_price_change,
@@ -80,7 +77,6 @@ INSERT INTO worm_market (
   event_condition_id,
   event_logo,
   margin_enabled,
-  ignored,
   live_state,
   live_checked_at,
   live_price_change,
@@ -102,7 +98,6 @@ SELECT
   unnest(sqlc.arg('event_condition_ids')::text[]),
   unnest(sqlc.arg('event_logos')::text[]),
   unnest(sqlc.arg('margin_enabled_values')::boolean[]),
-  unnest(sqlc.arg('ignored_values')::boolean[]),
   unnest(sqlc.arg('live_states')::text[]),
   unnest(sqlc.arg('live_checked_at_values')::timestamptz[]),
   unnest(sqlc.arg('live_price_changes')::text[]),
@@ -122,7 +117,6 @@ SET title = EXCLUDED.title,
   event_condition_id = EXCLUDED.event_condition_id,
   event_logo = EXCLUDED.event_logo,
   margin_enabled = EXCLUDED.margin_enabled,
-  ignored = worm_market.ignored,
   live_state = worm_market.live_state,
   live_checked_at = worm_market.live_checked_at,
   live_price_change = worm_market.live_price_change,
@@ -140,28 +134,25 @@ WHERE condition_id = @condition_id;
 SELECT COUNT(*)::bigint
 FROM worm_market
 WHERE (sqlc.narg('condition_id')::text IS NULL OR condition_id = sqlc.narg('condition_id')::text)
-  AND (sqlc.narg('event_condition_id')::text IS NULL OR event_condition_id = sqlc.narg('event_condition_id')::text)
-  AND (sqlc.narg('ignored')::boolean IS NULL OR ignored = sqlc.narg('ignored')::boolean);
+  AND (sqlc.narg('event_condition_id')::text IS NULL OR event_condition_id = sqlc.narg('event_condition_id')::text);
 
 -- name: ListWormMarkets :many
 SELECT *
 FROM worm_market
-ORDER BY ignored ASC, (live_state = 'live') DESC, created DESC, condition_id;
+ORDER BY (live_state = 'live') DESC, created DESC, condition_id;
 
 -- name: ListWormMarketsPage :many
 SELECT *
 FROM worm_market
 WHERE (sqlc.narg('condition_id')::text IS NULL OR condition_id = sqlc.narg('condition_id')::text)
   AND (sqlc.narg('event_condition_id')::text IS NULL OR event_condition_id = sqlc.narg('event_condition_id')::text)
-  AND (sqlc.narg('ignored')::boolean IS NULL OR ignored = sqlc.narg('ignored')::boolean)
 ORDER BY (live_state = 'live') DESC, created DESC, condition_id
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: ListWormMarketsPendingLiveCheck :many
 SELECT *
 FROM worm_market
-WHERE ignored = false
-  AND live_state <> 'live'
+WHERE live_state <> 'live'
   AND state = 'open'
 ORDER BY live_checked_at ASC NULLS FIRST, created DESC, condition_id;
 
@@ -170,12 +161,6 @@ SELECT *
 FROM worm_market
 WHERE get_market_data IS NULL
 ORDER BY created DESC, condition_id;
-
--- name: BatchUpdateWormMarketsIgnored :execrows
-UPDATE worm_market
-SET ignored = @ignored,
-  updated_at = now()
-WHERE condition_id = ANY(sqlc.arg('condition_ids')::text[]);
 
 -- name: UpdateWormMarketLiveState :one
 UPDATE worm_market
@@ -207,7 +192,6 @@ SET title = @title,
   event_condition_id = @event_condition_id,
   event_logo = @event_logo,
   margin_enabled = @margin_enabled,
-  ignored = @ignored,
   live_state = @live_state,
   live_checked_at = @live_checked_at,
   live_price_change = @live_price_change,

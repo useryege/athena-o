@@ -442,7 +442,7 @@ body[data-theme='dark'] .app-page__header {
     white-space: normal;
 }
 
-.worm-live-indicator {
+.live-status-indicator {
     display: inline-flex;
     width: fit-content;
     align-items: center;
@@ -459,17 +459,17 @@ body[data-theme='dark'] .app-page__header {
     flex: 0 0 auto;
 }
 
-.worm-live-dot {
+.live-status-indicator__dot {
     position: relative;
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: var(--athena-red);
     box-shadow: 0 0 0 0 rgba(209, 75, 87, 0.42);
-    animation: worm-live-pulse 1.35s ease-out infinite;
+    animation: live-status-pulse 1.35s ease-out infinite;
 }
 
-@keyframes worm-live-pulse {
+@keyframes live-status-pulse {
     0% {
         box-shadow: 0 0 0 0 rgba(209, 75, 87, 0.42);
     }

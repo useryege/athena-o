@@ -54,7 +54,7 @@ func (s *SQLStore) GetWormMarket(ctx context.Context, conditionID string) (*Worm
 	return mapWormMarket(row), nil
 }
 
-func (s *SQLStore) CountWormMarkets(ctx context.Context, conditionID, eventConditionID string, ignored *bool) (int64, error) {
+func (s *SQLStore) CountWormMarkets(ctx context.Context, conditionID, eventConditionID string) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err
@@ -62,7 +62,6 @@ func (s *SQLStore) CountWormMarkets(ctx context.Context, conditionID, eventCondi
 	total, err := q.CountWormMarkets(ctx, wormsqlc.CountWormMarketsParams{
 		ConditionID:      nullableText(conditionID),
 		EventConditionID: nullableText(eventConditionID),
-		Ignored:          nullableBool(ignored),
 	})
 	if err != nil {
 		return 0, fmt.Errorf("count worm markets: %w", err)
@@ -82,7 +81,7 @@ func (s *SQLStore) ListWormMarkets(ctx context.Context) ([]WormMarket, error) {
 	return mapWormMarkets(rows), nil
 }
 
-func (s *SQLStore) ListWormMarketsPage(ctx context.Context, conditionID, eventConditionID string, ignored *bool, page, pageSize int32) (*WormMarketPage, error) {
+func (s *SQLStore) ListWormMarketsPage(ctx context.Context, conditionID, eventConditionID string, page, pageSize int32) (*WormMarketPage, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -93,7 +92,6 @@ func (s *SQLStore) ListWormMarketsPage(ctx context.Context, conditionID, eventCo
 	total, err := q.CountWormMarkets(ctx, wormsqlc.CountWormMarketsParams{
 		ConditionID:      conditionIDFilter,
 		EventConditionID: eventConditionIDFilter,
-		Ignored:          nullableBool(ignored),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("count worm markets: %w", err)
@@ -101,7 +99,6 @@ func (s *SQLStore) ListWormMarketsPage(ctx context.Context, conditionID, eventCo
 	rows, err := q.ListWormMarketsPage(ctx, wormsqlc.ListWormMarketsPageParams{
 		ConditionID:      conditionIDFilter,
 		EventConditionID: eventConditionIDFilter,
-		Ignored:          nullableBool(ignored),
 		Offset:           offset,
 		Limit:            pageSize,
 	})
@@ -188,24 +185,6 @@ func (s *SQLStore) UpdateWormMarketLiveState(ctx context.Context, item WormMarke
 	return mapWormMarket(row), nil
 }
 
-func (s *SQLStore) BatchUpdateWormMarketsIgnored(ctx context.Context, conditionIDs []string, ignored bool) (int64, error) {
-	if len(conditionIDs) == 0 {
-		return 0, nil
-	}
-	q, err := s.querier()
-	if err != nil {
-		return 0, err
-	}
-	rowsAffected, err := q.BatchUpdateWormMarketsIgnored(ctx, wormsqlc.BatchUpdateWormMarketsIgnoredParams{
-		ConditionIds: conditionIDs,
-		Ignored:      ignored,
-	})
-	if err != nil {
-		return 0, fmt.Errorf("batch update worm markets ignored: %w", err)
-	}
-	return rowsAffected, nil
-}
-
 func (s *SQLStore) DeleteWormMarket(ctx context.Context, conditionID string) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
@@ -257,7 +236,6 @@ func upsertWormMarketParams(item WormMarket) wormsqlc.UpsertWormMarketParams {
 		EventConditionID: item.EventConditionID,
 		EventLogo:        item.EventLogo,
 		MarginEnabled:    item.MarginEnabled,
-		Ignored:          item.Ignored,
 		LiveState:        item.LiveState,
 		LiveCheckedAt:    nullableTime(item.LiveCheckedAt),
 		LivePriceChange:  item.LivePriceChange,
@@ -283,7 +261,6 @@ func updateWormMarketParams(item WormMarket) wormsqlc.UpdateWormMarketParams {
 		EventConditionID: params.EventConditionID,
 		EventLogo:        params.EventLogo,
 		MarginEnabled:    params.MarginEnabled,
-		Ignored:          params.Ignored,
 		LiveState:        params.LiveState,
 		LiveCheckedAt:    params.LiveCheckedAt,
 		LivePriceChange:  params.LivePriceChange,
@@ -309,7 +286,6 @@ func batchUpsertWormMarketsParams(items []WormMarket) wormsqlc.BatchUpsertWormMa
 		EventConditionIds:   make([]string, 0, len(items)),
 		EventLogos:          make([]string, 0, len(items)),
 		MarginEnabledValues: make([]bool, 0, len(items)),
-		IgnoredValues:       make([]bool, 0, len(items)),
 		LiveStates:          make([]string, 0, len(items)),
 		LiveCheckedAtValues: make([]pgtype.Timestamptz, 0, len(items)),
 		LivePriceChanges:    make([]string, 0, len(items)),
@@ -343,7 +319,6 @@ func batchUpsertWormMarketsParams(items []WormMarket) wormsqlc.BatchUpsertWormMa
 		params.EventConditionIds = append(params.EventConditionIds, item.EventConditionID)
 		params.EventLogos = append(params.EventLogos, item.EventLogo)
 		params.MarginEnabledValues = append(params.MarginEnabledValues, item.MarginEnabled)
-		params.IgnoredValues = append(params.IgnoredValues, item.Ignored)
 		params.LiveStates = append(params.LiveStates, item.LiveState)
 		params.LiveCheckedAtValues = append(params.LiveCheckedAtValues, nullableTime(item.LiveCheckedAt))
 		params.LivePriceChanges = append(params.LivePriceChanges, item.LivePriceChange)

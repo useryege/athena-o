@@ -19,7 +19,6 @@ type WormMarket struct {
 	EventConditionID string
 	EventLogo        string
 	MarginEnabled    bool
-	Ignored          bool
 	LiveState        string
 	LiveCheckedAt    time.Time
 	LivePriceChange  string
