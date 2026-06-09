@@ -39,6 +39,63 @@ func (s *SQLStore) BatchUpsertWormMarkets(ctx context.Context, items []WormMarke
 	return nil
 }
 
+func (s *SQLStore) BatchInsertWormMarketPriceHistory(ctx context.Context, samples []WormMarketPriceSample) error {
+	if len(samples) == 0 {
+		return nil
+	}
+	q, err := s.querier()
+	if err != nil {
+		return err
+	}
+	params := wormsqlc.BatchInsertWormMarketPriceHistoryParams{
+		ConditionIds:    make([]string, 0, len(samples)),
+		Prices:          make([]string, 0, len(samples)),
+		SampledAtValues: make([]pgtype.Timestamptz, 0, len(samples)),
+	}
+	for _, sample := range samples {
+		params.ConditionIds = append(params.ConditionIds, sample.ConditionID)
+		params.Prices = append(params.Prices, sample.Price)
+		params.SampledAtValues = append(params.SampledAtValues, nullableTime(sample.SampledAt))
+	}
+	if err := q.BatchInsertWormMarketPriceHistory(ctx, params); err != nil {
+		return fmt.Errorf("batch insert worm market price history: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) DeleteWormMarketPriceHistoryBefore(ctx context.Context, sampledAt time.Time) (int64, error) {
+	q, err := s.querier()
+	if err != nil {
+		return 0, err
+	}
+	rowsAffected, err := q.DeleteWormMarketPriceHistoryBefore(ctx, nullableTime(sampledAt))
+	if err != nil {
+		return 0, fmt.Errorf("delete worm market price history before %s: %w", sampledAt.Format(time.RFC3339), err)
+	}
+	return rowsAffected, nil
+}
+
+func (s *SQLStore) ListWormMarketLivePriceChanges(ctx context.Context, sampledAt time.Time) ([]WormMarketLivePriceChange, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListWormMarketLivePriceChanges(ctx, nullableTime(sampledAt))
+	if err != nil {
+		return nil, fmt.Errorf("list worm market live price changes: %w", err)
+	}
+	items := make([]WormMarketLivePriceChange, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, WormMarketLivePriceChange{
+			ConditionID: row.ConditionID,
+			SampleCount: row.SampleCount,
+			PriceChange: row.PriceChange,
+			IsLive:      row.IsLive,
+		})
+	}
+	return items, nil
+}
+
 func (s *SQLStore) GetWormMarket(ctx context.Context, conditionID string) (*WormMarket, error) {
 	q, err := s.querier()
 	if err != nil {
@@ -111,18 +168,6 @@ func (s *SQLStore) ListWormMarketsPage(ctx context.Context, conditionID, eventCo
 		Page:     page,
 		PageSize: pageSize,
 	}, nil
-}
-
-func (s *SQLStore) ListWormMarketsPendingLiveCheck(ctx context.Context) ([]WormMarket, error) {
-	q, err := s.querier()
-	if err != nil {
-		return nil, err
-	}
-	rows, err := q.ListWormMarketsPendingLiveCheck(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list worm markets pending live check: %w", err)
-	}
-	return mapWormMarkets(rows), nil
 }
 
 func (s *SQLStore) ListWormMarketsPendingGetMarket(ctx context.Context) ([]WormMarket, error) {

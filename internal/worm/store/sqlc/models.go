@@ -32,3 +32,9 @@ type WormMarket struct {
 	CreatedAt        pgtype.Timestamptz
 	UpdatedAt        pgtype.Timestamptz
 }
+
+type WormMarketPriceHistory struct {
+	ConditionID string
+	Price       pgtype.Numeric
+	SampledAt   pgtype.Timestamptz
+}

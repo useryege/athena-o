@@ -3,9 +3,8 @@ package worm
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
+	"math"
 	"net/url"
 	"strconv"
 	"strings"
@@ -26,12 +25,8 @@ const (
 	maxWormMarketsLimit       = 100
 	wormMarketSyncInterval    = time.Minute
 	wormMarketDetailInterval  = time.Minute
-	wormLiveStateLoopInterval = 5 * time.Minute
-	wormLiveRateLimitBuffer   = 500 * time.Millisecond
-	wormLiveRateLimitFallback = 5 * time.Second
-	wormLiveCandleWindow      = 30 * time.Minute
-	wormLiveCandleInterval    = "5m"
-	wormLivePriceThreshold    = 0.05
+	wormLiveStateLoopInterval = time.Minute
+	wormLivePriceWindow       = 30 * time.Minute
 
 	defaultWormMarketsCategorySlug = "sports"
 	defaultWormMarketsSortOption   = "leverage"
@@ -45,7 +40,6 @@ const (
 type wormMarketClient interface {
 	ListMarkets(context.Context, utilworm.ListMarketsOptions) (*utilworm.ListMarketsResponse, error)
 	GetMarket(context.Context, string) (*utilworm.Market, error)
-	GetMarketCandles(context.Context, string, utilworm.GetMarketCandlesOptions) (*utilworm.ListMarketCandlesResponse, error)
 }
 
 type Service struct {
@@ -314,6 +308,7 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 			return fmt.Errorf("list upstream worm markets: %w", err)
 		}
 		items := make([]wormstore.WormMarket, 0, len(markets.Markets))
+		priceSamples := make([]wormstore.WormMarketPriceSample, 0, len(markets.Markets))
 		fetchedAt := time.Now().UTC()
 		for i := range markets.Markets {
 			market := markets.Markets[i]
@@ -345,8 +340,18 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 				FetchedAt:        fetchedAt,
 				LastSeenAt:       syncStartedAt,
 			})
+			if price, ok := parseWormMarketPrice(item.LastTradePrice); ok {
+				priceSamples = append(priceSamples, wormstore.WormMarketPriceSample{
+					ConditionID: item.ConditionID,
+					Price:       price,
+					SampledAt:   fetchedAt,
+				})
+			}
 		}
 		if err := s.store.BatchUpsertWormMarkets(ctx, items); err != nil {
+			return err
+		}
+		if err := s.store.BatchInsertWormMarketPriceHistory(ctx, priceSamples); err != nil {
 			return err
 		}
 		nextCursor := ""
@@ -443,142 +448,59 @@ func (s *Service) liveStateLoop(ctx context.Context) {
 }
 
 func (s *Service) updateWormMarketLiveStates(ctx context.Context) {
-	if s.store == nil || s.wormClient == nil {
+	if s.store == nil {
 		return
 	}
-	markets, err := s.store.ListWormMarketsPendingLiveCheck(ctx)
-	if err != nil {
+	checkedAt := time.Now().UTC()
+	windowStart := checkedAt.Add(-wormLivePriceWindow)
+	if _, err := s.store.DeleteWormMarketPriceHistoryBefore(ctx, windowStart); err != nil {
 		if ctx.Err() == nil {
-			log.Warnf("failed to list worm markets pending live check: %v", err)
+			log.Warnf("failed to delete expired worm market price history: %v", err)
 		}
 		return
 	}
-	for i := range markets {
+	priceChanges, err := s.store.ListWormMarketLivePriceChanges(ctx, windowStart)
+	if err != nil {
+		if ctx.Err() == nil {
+			log.Warnf("failed to list worm market live price changes: %v", err)
+		}
+		return
+	}
+	for _, priceChange := range priceChanges {
 		if ctx.Err() != nil {
 			return
 		}
-		market := markets[i]
-		liveState, liveCheckedAt, livePriceChange, err := s.detectWormMarketLiveState(ctx, market)
-		if err != nil {
-			if ctx.Err() != nil {
-				return
-			}
-			if backoff, ok := wormLiveRateLimitBackoff(err); ok {
-				log.Warnf("worm live state worker rate limited; pausing for %s: %v", backoff, err)
-				if !waitWormLiveWorker(ctx, backoff) {
-					return
-				}
-				liveState, liveCheckedAt, livePriceChange, err = s.detectWormMarketLiveState(ctx, market)
-				if err != nil {
-					if ctx.Err() == nil {
-						log.Warnf("failed to detect worm market live state for %s: %v", market.ConditionID, err)
-					}
-					continue
-				}
-			} else {
-				log.Warnf("failed to detect worm market live state for %s: %v", market.ConditionID, err)
-				continue
+		liveState := wormMarketLiveStateUnknown
+		livePriceChange := ""
+		if priceChange.SampleCount >= 2 {
+			liveState = wormMarketLiveStateNotLive
+			livePriceChange = priceChange.PriceChange
+			if priceChange.IsLive {
+				liveState = wormMarketLiveStateLive
 			}
 		}
-		market.LiveState = liveState
-		market.LiveCheckedAt = liveCheckedAt
-		market.LivePriceChange = livePriceChange
-		if _, err := s.store.UpdateWormMarketLiveState(ctx, market); err != nil {
+		if _, err := s.store.UpdateWormMarketLiveState(ctx, wormstore.WormMarket{
+			ConditionID:     priceChange.ConditionID,
+			LiveState:       liveState,
+			LiveCheckedAt:   checkedAt,
+			LivePriceChange: livePriceChange,
+		}); err != nil {
 			if ctx.Err() == nil {
-				log.Warnf("failed to update worm market live state for %s: %v", market.ConditionID, err)
+				log.Warnf("failed to update worm market live state for %s: %v", priceChange.ConditionID, err)
 			}
 			return
 		}
 	}
-	log.Debugf("updated live states for %d worm markets", len(markets))
+	log.Debugf("updated live states for %d worm markets", len(priceChanges))
 }
 
-func (s *Service) detectWormMarketLiveState(ctx context.Context, market wormstore.WormMarket) (string, time.Time, string, error) {
-	if market.LiveState == wormMarketLiveStateLive {
-		return market.LiveState, market.LiveCheckedAt, market.LivePriceChange, nil
+func parseWormMarketPrice(value string) (string, bool) {
+	value = strings.TrimSpace(value)
+	price, err := strconv.ParseFloat(value, 64)
+	if err != nil || price < 0 || math.IsNaN(price) || math.IsInf(price, 0) {
+		return "", false
 	}
-
-	checkedAt := time.Now().UTC()
-	isYes := true
-	candles, err := s.wormClient.GetMarketCandles(ctx, market.ConditionID, utilworm.GetMarketCandlesOptions{
-		StartTime: checkedAt.Add(-wormLiveCandleWindow).Unix(),
-		EndTime:   checkedAt.Unix(),
-		Interval:  wormLiveCandleInterval,
-		IsYes:     &isYes,
-	})
-	if err != nil {
-		log.Warnf("failed to get worm market candles for %s: %v", market.ConditionID, err)
-		return wormMarketLiveStateUnknown, checkedAt, "", err
-	}
-
-	priceChange, ok := wormMarketCandlePriceChange(candles.Candles)
-	if !ok {
-		return wormMarketLiveStateNotLive, checkedAt, "", nil
-	}
-	priceChangeText := strconv.FormatFloat(priceChange, 'f', 6, 64)
-	if priceChange >= wormLivePriceThreshold {
-		return wormMarketLiveStateLive, checkedAt, priceChangeText, nil
-	}
-	return wormMarketLiveStateNotLive, checkedAt, priceChangeText, nil
-}
-
-func waitWormLiveWorker(ctx context.Context, delay time.Duration) bool {
-	if delay <= 0 {
-		return true
-	}
-	timer := time.NewTimer(delay)
-	defer timer.Stop()
-	select {
-	case <-ctx.Done():
-		return false
-	case <-timer.C:
-		return true
-	}
-}
-
-func wormLiveRateLimitBackoff(err error) (time.Duration, bool) {
-	var wormErr *utilworm.Error
-	if !errors.As(err, &wormErr) || wormErr == nil {
-		return 0, false
-	}
-	if wormErr.StatusCode != http.StatusTooManyRequests && !strings.EqualFold(wormErr.Slug, "throttled") {
-		return 0, false
-	}
-	backoff := wormErr.RetryAfter
-	if backoff <= 0 && wormErr.RateLimitReset > 0 {
-		backoff = time.Until(time.Unix(wormErr.RateLimitReset, 0))
-	}
-	if backoff <= 0 {
-		backoff = wormLiveRateLimitFallback
-	}
-	return backoff + wormLiveRateLimitBuffer, true
-}
-
-func wormMarketCandlePriceChange(candles []utilworm.MarketCandle) (float64, bool) {
-	var maxHigh float64
-	var minLow float64
-	found := false
-	for _, candle := range candles {
-		high, err := strconv.ParseFloat(strings.TrimSpace(candle.High), 64)
-		if err != nil {
-			continue
-		}
-		low, err := strconv.ParseFloat(strings.TrimSpace(candle.Low), 64)
-		if err != nil {
-			continue
-		}
-		if !found || high > maxHigh {
-			maxHigh = high
-		}
-		if !found || low < minLow {
-			minLow = low
-		}
-		found = true
-	}
-	if !found || maxHigh < minLow {
-		return 0, false
-	}
-	return maxHigh - minLow, true
+	return value, true
 }
 
 func isSyncedWormMarket(market utilworm.MarketSummary) bool {

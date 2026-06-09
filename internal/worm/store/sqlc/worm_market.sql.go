@@ -11,6 +11,31 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const batchInsertWormMarketPriceHistory = `-- name: BatchInsertWormMarketPriceHistory :exec
+INSERT INTO worm_market_price_history (
+  condition_id,
+  price,
+  sampled_at
+)
+SELECT
+  unnest($1::text[]),
+  unnest($2::text[])::numeric,
+  unnest($3::timestamptz[])
+ON CONFLICT (condition_id, sampled_at) DO UPDATE
+SET price = EXCLUDED.price
+`
+
+type BatchInsertWormMarketPriceHistoryParams struct {
+	ConditionIds    []string
+	Prices          []string
+	SampledAtValues []pgtype.Timestamptz
+}
+
+func (q *Queries) BatchInsertWormMarketPriceHistory(ctx context.Context, arg BatchInsertWormMarketPriceHistoryParams) error {
+	_, err := q.db.Exec(ctx, batchInsertWormMarketPriceHistory, arg.ConditionIds, arg.Prices, arg.SampledAtValues)
+	return err
+}
+
 const batchUpsertWormMarkets = `-- name: BatchUpsertWormMarkets :exec
 INSERT INTO worm_market (
   condition_id,
@@ -154,6 +179,19 @@ func (q *Queries) DeleteWormMarket(ctx context.Context, conditionID string) (int
 	return result.RowsAffected(), nil
 }
 
+const deleteWormMarketPriceHistoryBefore = `-- name: DeleteWormMarketPriceHistoryBefore :execrows
+DELETE FROM worm_market_price_history
+WHERE sampled_at < $1
+`
+
+func (q *Queries) DeleteWormMarketPriceHistoryBefore(ctx context.Context, sampledAt pgtype.Timestamptz) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteWormMarketPriceHistoryBefore, sampledAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteWormMarketsNotSeenSince = `-- name: DeleteWormMarketsNotSeenSince :execrows
 DELETE FROM worm_market
 WHERE last_seen_at < $1
@@ -201,6 +239,54 @@ func (q *Queries) GetWormMarket(ctx context.Context, conditionID string) (WormMa
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listWormMarketLivePriceChanges = `-- name: ListWormMarketLivePriceChanges :many
+SELECT
+  market.condition_id,
+  COUNT(history.price)::bigint AS sample_count,
+  COALESCE((MAX(history.price) - MIN(history.price))::text, '')::text AS price_change,
+  COALESCE(MAX(history.price) - MIN(history.price) > 0.05, false)::boolean AS is_live
+FROM worm_market AS market
+LEFT JOIN worm_market_price_history AS history
+  ON history.condition_id = market.condition_id
+  AND history.sampled_at >= $1
+WHERE market.live_state <> 'live'
+  AND market.state = 'open'
+GROUP BY market.condition_id
+ORDER BY market.condition_id
+`
+
+type ListWormMarketLivePriceChangesRow struct {
+	ConditionID string
+	SampleCount int64
+	PriceChange string
+	IsLive      bool
+}
+
+func (q *Queries) ListWormMarketLivePriceChanges(ctx context.Context, sampledAt pgtype.Timestamptz) ([]ListWormMarketLivePriceChangesRow, error) {
+	rows, err := q.db.Query(ctx, listWormMarketLivePriceChanges, sampledAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListWormMarketLivePriceChangesRow
+	for rows.Next() {
+		var i ListWormMarketLivePriceChangesRow
+		if err := rows.Scan(
+			&i.ConditionID,
+			&i.SampleCount,
+			&i.PriceChange,
+			&i.IsLive,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listWormMarkets = `-- name: ListWormMarkets :many
@@ -325,57 +411,6 @@ ORDER BY created DESC, condition_id
 
 func (q *Queries) ListWormMarketsPendingGetMarket(ctx context.Context) ([]WormMarket, error) {
 	rows, err := q.db.Query(ctx, listWormMarketsPendingGetMarket)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []WormMarket
-	for rows.Next() {
-		var i WormMarket
-		if err := rows.Scan(
-			&i.ConditionID,
-			&i.Title,
-			&i.Description,
-			&i.Logo,
-			&i.LastTradePrice,
-			&i.State,
-			&i.Category,
-			&i.SortOption,
-			&i.Created,
-			&i.EventTitle,
-			&i.EventConditionID,
-			&i.EventLogo,
-			&i.MarginEnabled,
-			&i.LiveState,
-			&i.LiveCheckedAt,
-			&i.LivePriceChange,
-			&i.GetMarketData,
-			&i.Raw,
-			&i.FetchedAt,
-			&i.LastSeenAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listWormMarketsPendingLiveCheck = `-- name: ListWormMarketsPendingLiveCheck :many
-SELECT condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, live_state, live_checked_at, live_price_change, get_market_data, raw, fetched_at, last_seen_at, created_at, updated_at
-FROM worm_market
-WHERE live_state <> 'live'
-  AND state = 'open'
-ORDER BY live_checked_at ASC NULLS FIRST, created DESC, condition_id
-`
-
-func (q *Queries) ListWormMarketsPendingLiveCheck(ctx context.Context) ([]WormMarket, error) {
-	rows, err := q.db.Query(ctx, listWormMarketsPendingLiveCheck)
 	if err != nil {
 		return nil, err
 	}

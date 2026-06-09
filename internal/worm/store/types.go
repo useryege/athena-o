@@ -36,3 +36,16 @@ type WormMarketPage struct {
 	Page     int32
 	PageSize int32
 }
+
+type WormMarketPriceSample struct {
+	ConditionID string
+	Price       string
+	SampledAt   time.Time
+}
+
+type WormMarketLivePriceChange struct {
+	ConditionID string
+	SampleCount int64
+	PriceChange string
+	IsLive      bool
+}

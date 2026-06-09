@@ -36,6 +36,16 @@ CREATE TABLE IF NOT EXISTS worm_market (
   CONSTRAINT worm_market_raw_object CHECK (jsonb_typeof(raw) = 'object')
 );
 
+CREATE TABLE IF NOT EXISTS worm_market_price_history (
+  condition_id TEXT NOT NULL,
+  price NUMERIC NOT NULL,
+  sampled_at TIMESTAMPTZ NOT NULL,
+  PRIMARY KEY (condition_id, sampled_at),
+  CONSTRAINT worm_market_price_history_market_fk
+    FOREIGN KEY (condition_id) REFERENCES worm_market(condition_id) ON DELETE CASCADE,
+  CONSTRAINT worm_market_price_history_price_nonnegative CHECK (price >= 0)
+);
+
 CREATE INDEX IF NOT EXISTS worm_market_live_sort_idx
   ON worm_market ((live_state = 'live') DESC, created DESC, condition_id);
 
@@ -54,6 +64,13 @@ CREATE INDEX IF NOT EXISTS worm_market_updated_idx
 CREATE INDEX IF NOT EXISTS worm_market_event_condition_idx
   ON worm_market (event_condition_id);
 
+CREATE INDEX IF NOT EXISTS worm_market_price_history_market_time_idx
+  ON worm_market_price_history (condition_id, sampled_at DESC);
+
+CREATE INDEX IF NOT EXISTS worm_market_price_history_sampled_at_idx
+  ON worm_market_price_history (sampled_at);
+
 -- +goose Down
 
+DROP TABLE IF EXISTS worm_market_price_history;
 DROP TABLE IF EXISTS worm_market;

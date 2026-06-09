@@ -149,12 +149,37 @@ WHERE (sqlc.narg('condition_id')::text IS NULL OR condition_id = sqlc.narg('cond
 ORDER BY (live_state = 'live') DESC, created DESC, condition_id
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
--- name: ListWormMarketsPendingLiveCheck :many
-SELECT *
-FROM worm_market
-WHERE live_state <> 'live'
-  AND state = 'open'
-ORDER BY live_checked_at ASC NULLS FIRST, created DESC, condition_id;
+-- name: BatchInsertWormMarketPriceHistory :exec
+INSERT INTO worm_market_price_history (
+  condition_id,
+  price,
+  sampled_at
+)
+SELECT
+  unnest(sqlc.arg('condition_ids')::text[]),
+  unnest(sqlc.arg('prices')::text[])::numeric,
+  unnest(sqlc.arg('sampled_at_values')::timestamptz[])
+ON CONFLICT (condition_id, sampled_at) DO UPDATE
+SET price = EXCLUDED.price;
+
+-- name: DeleteWormMarketPriceHistoryBefore :execrows
+DELETE FROM worm_market_price_history
+WHERE sampled_at < @sampled_at;
+
+-- name: ListWormMarketLivePriceChanges :many
+SELECT
+  market.condition_id,
+  COUNT(history.price)::bigint AS sample_count,
+  COALESCE((MAX(history.price) - MIN(history.price))::text, '')::text AS price_change,
+  COALESCE(MAX(history.price) - MIN(history.price) > 0.05, false)::boolean AS is_live
+FROM worm_market AS market
+LEFT JOIN worm_market_price_history AS history
+  ON history.condition_id = market.condition_id
+  AND history.sampled_at >= @sampled_at
+WHERE market.live_state <> 'live'
+  AND market.state = 'open'
+GROUP BY market.condition_id
+ORDER BY market.condition_id;
 
 -- name: ListWormMarketsPendingGetMarket :many
 SELECT *
